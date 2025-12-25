@@ -14,26 +14,26 @@
     <span>
     <%= link_to "New Valuation",
         new_valuation_path("valuation[owner_id]": owner_id, "valuation[owner_type]": owner_type),
-        {class: "btn btn-outline-primary ti ti-plus"}  %>
+        {class: "btn btn-outline-primary ti ti-plus", data: {bs_toggle: "tooltip", bs_title: "Opens form to create a new Valuation"} }  %>
 
 
     <%= link_to "Value Bridge",
         value_bridge_valuations_path("portfolio_company_id": owner_id),
-        {class: "btn btn-outline-primary ti ti-chart-column"} if owner_type == "Investor" %>
+        {class: "btn btn-outline-primary ti ti-chart-column", data: {bs_toggle: "tooltip", bs_title: "View Value Bridge for this Portfolio Company"}} if owner_type == "Investor" %>
 
     <%= link_to "Upload",
                   new_import_upload_path("import_upload[owner_id]": owner_id,
                   "import_upload[owner_type]": owner_type,
                   "import_upload[import_type]": "Valuation",
                   "sample_upload": "VALUATION_SAMPLE"),
-                  { class: "btn btn-outline-primary ti ti-upload"}   %>
+                  { class: "btn btn-outline-primary ti ti-upload", data: {bs_toggle: "tooltip", bs_title: "Opens page to bulk upload Valuations in excel"} }   %>
 
     <%
       xl_data_source ||= valuations_path( params: params.to_unsafe_h, import_upload_id: import_upload_id, all: true, format: :xlsx)
       xl_link = download_xl_link(xl_data_source)
     %>
 
-    <%= link_to t_common(:export_all), xl_link, class: "btn btn-outline-primary ti ti-download", data: { turbo: false } %>
+    <%= link_to t_common(:export_all), xl_link, class: "btn btn-outline-primary ti ti-download", data: { turbo: false, bs_toggle: "tooltip", bs_title: "Download all Valuations as Excel"} %>
 
     </span>
   </div>

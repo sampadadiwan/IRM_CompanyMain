@@ -41,7 +41,7 @@
       <% end %>
 
       <% import_upload_id ||=  nil%>
-      <%= link_to "Download", investment_instruments_path(params: params.to_unsafe_h, import_upload_id:, format: :xlsx), {class: "btn btn-outline-success ti ti-download"} %>
+      <%= link_to "Download", investment_instruments_path(params: params.to_unsafe_h, import_upload_id:, format: :xlsx), {class: "btn btn-outline-success ti ti-download", data: {bs_toggle: "tooltip", bs_title: "Download Investment Instruments as Excel"} } %>
 
 
       <% owner_id = if params[:portfolio_company_id].present?
@@ -61,7 +61,7 @@
                       "import_upload[owner_type]": owner_type,
                       "import_upload[import_type]": "InvestmentInstrument",
                       "sample_upload": "INVESTMENT_INSTRUMENT_SAMPLE"),
-                      { class: "btn btn-outline-success ti ti-upload"}%>
+                      { class: "btn btn-outline-success ti ti-upload", data: {bs_toggle: "tooltip", bs_title: "Opens page to bulk upload Investment Instruments in excel"} } %>
     </span>
   </div>
   <div class="table-responsive" data-controller="datatable">

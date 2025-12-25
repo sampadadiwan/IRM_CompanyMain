@@ -13,9 +13,9 @@
       <%
         xl_link = investor_kpi_mappings_path(investor_id: investor_id, import_upload_id: import_upload_id, format: :xlsx)
       %>
-      <%= link_to "New Investor Kpi Mapping", new_investor_kpi_mapping_path("investor_kpi_mapping[investor_id]": investor_id), {class: "btn btn-outline-primary ti ti-plus"} if  investor_id.present? %>
+      <%= link_to "New Investor Kpi Mapping", new_investor_kpi_mapping_path("investor_kpi_mapping[investor_id]": investor_id), {class: "btn btn-outline-primary ti ti-plus", data: {bs_toggle: "tooltip", bs_title: "Opens form to create a new KPI mapping"} } if  investor_id.present? %>
 
-      <%= link_to xl_link, id: "investor_kpi_mappings_download_xl_btn", class: "btn btn-outline-primary" do %>
+      <%= link_to xl_link, id: "investor_kpi_mappings_download_xl_btn", class: "btn btn-outline-primary", data: {bs_toggle: "tooltip", bs_title: "Download KPI mappings as Excel"} do %>
           <i class="ti ti-download"></i> <%= t_common(:download) %>
       <% end %>
 
@@ -26,11 +26,11 @@
                         "sample_upload": "INVESTOR_KPI_MAPPING_SAMPLE"),
                     class: "btn btn-outline-primary",
                     id: "upload_investor_kpi_mappings",
-                    data: { turbo: false } do %>
+                    data: { turbo: false, bs_toggle: "tooltip", bs_title: "Opens page to bulk upload KPI mappings in excel" } do %>
             <i class="ti ti-upload"></i> <%= t_common(:upload) %>
         <% end %>
 
-      <%= button_to "Generate From Last Report", generate_investor_kpi_mappings_path(investor_id: investor_id), {method: :post, class: "btn btn-outline-success ti ti-file-code-2"}  %>
+      <%= button_to "Generate From Last Report", generate_investor_kpi_mappings_path(investor_id: investor_id), {method: :post, class: "btn btn-outline-success ti ti-file-code-2", data: {bs_toggle: "tooltip", bs_title: "Generates KPI mappings from the last uploaded KPI report"} }  %>
 
       <% end %>
   </span>

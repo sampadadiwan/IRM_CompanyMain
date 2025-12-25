@@ -172,7 +172,7 @@ commands = [
                                   "import_upload[owner_type]": "Fund",
                                   "import_upload[import_type]": "AccountEntry",
                                   "sample_upload": "ACCOUNT_ENTRY_SAMPLE"),
-                                class: "dropdown-item" do %>
+                                class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Bulk upload fees, income, expenses etc in an excel file. These can be fund level or individual folio level across periods"} do %>
                       <i class="ti ti-file-text"></i>Import Account Entries
                     <% end %>
                   <% end %>
@@ -182,7 +182,7 @@ commands = [
                                 "import_upload[owner_type]": "Fund",
                                 "import_upload[import_type]": "FundDocs",
                                 "sample_upload": "FUND_DOCS_SAMPLE"),
-                              class: "dropdown-item" do %>
+                              class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Bulk upload investor level documents like statements, call / distbution notice, agreements. \n Attach a zip file containing index for mapping the documents to investors. Sample upload zip is provided on the next screen."} do %>
                     <i class="ti ti-file-upload"></i>Import Documents
                   <% end %>
 
@@ -191,7 +191,7 @@ commands = [
                                 "import_upload[owner_type]": "Fund",
                                 "import_upload[import_type]": "InvestorAdvisor",
                                 "sample_upload": "FUND_INVESTOR_ADVISORS_SAMPLE"),
-                              class: "dropdown-item" do %>
+                              class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Bulk upload investor advisors"} do %>
                     <i class="ti ti-user-plus"></i>Import Investor Advisors
                   <% end %>
 
@@ -209,7 +209,7 @@ commands = [
               <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
                   <% if policy(@fund).update? %>
-                    <%= link_to edit_fund_path(@fund), class: "dropdown-item" do %>
+                    <%= link_to edit_fund_path(@fund), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Edit fund level setting such as defining unit types, linking Master Fund, Fund signatory email"} do %>
                       <i class="ti ti-edit"></i> <%= t_common(:edit) %> Fund
                     <% end %>
 
@@ -220,7 +220,7 @@ commands = [
                       <% end %>
                     <% end %>
 
-                    <%= link_to new_approval_path("approval[owner_id]": @fund.id, "approval[owner_type]": "Fund"), class: "dropdown-item" do %>
+                    <%= link_to new_approval_path("approval[owner_id]": @fund.id, "approval[owner_type]": "Fund"), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Create a approval request for users with access to the fund"} do %>
                       <i class="ti ti-checkup-list"></i>Fund Approval
                     <% end %>
 
@@ -246,18 +246,18 @@ commands = [
                       </a>
                       <ul class="dropdown-menu">
                         <li>
-                          <%= link_to account_entries_path(fund_id: @fund.id, fund_accounts_only: true), class: "dropdown-item" do %>
+                          <%= link_to account_entries_path(fund_id: @fund.id, fund_accounts_only: true), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "View / add fund / investor level  fees, income, expenses"} do %>
                             <i class="ti ti-article"></i>Fund Account Entries
                           <% end %>
                         </li>
                         <li>
-                          <%= link_to fund_formulas_path(fund_id: @fund.id), class: "dropdown-item" do %>
+                          <%= link_to fund_formulas_path(fund_id: @fund.id), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: " View the rules set up for allocations / computations for this fund"} do %>
                             <i class="ti ti-function"></i>Allocation Formulas
                           <% end %>
                         </li>
                         <% if policy(@fund).allocate? %>
                           <li>
-                            <%= link_to allocate_form_fund_path(@fund, run_allocations: true), class: "dropdown-item" do %>
+                            <%= link_to allocate_form_fund_path(@fund, run_allocations: true), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Run allocation computations for this fund"} do %>
                               <i class="ti ti-calculator"></i>Allocate Account Entries
                             <% end %>
                           </li>
@@ -279,12 +279,12 @@ commands = [
                         </a>
                         <ul class="dropdown-menu">
                           <li>
-                            <%= link_to new_document_path(document: doc_attributes, "document[folder_id]": @fund.document_folder.id), class: "dropdown-item" do %>
+                            <%= link_to new_document_path(document: doc_attributes, "document[folder_id]": @fund.document_folder.id), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Add word templates for agreement, notices, statements"} do %>
                               <i class="ti ti-file-plus"></i>New Template
                             <% end %>
                           </li>
                           <li>
-                            <%= link_to new_investor_notice_path("investor_notice[owner_id]": @fund.id, "investor_notice[owner_type]": "Fund"), class: "dropdown-item" do %>
+                            <%= link_to new_investor_notice_path("investor_notice[owner_id]": @fund.id, "investor_notice[owner_type]": "Fund"), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Add a new investor notice for this fund"} do %>
                               <i class="ti ti-bell-plus"></i>Add Investor Notice
                             <% end %>
                           </li>
@@ -294,17 +294,17 @@ commands = [
                             <% end %>
                           </li>
                           <li>
-                            <%= link_to check_access_rights_fund_path(@fund, create_missing: false), class: "dropdown-item" do %>
+                            <%= link_to check_access_rights_fund_path(@fund, create_missing: false), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Check whether all commitments for the fund have associated access rights"} do %>
                               <i class="ti ti-lock-access"></i>Check Access Rights
                             <% end %>
                           </li>
                           <li>
-                            <%= link_to show_email_list_fund_path(@fund), class: "dropdown-item" do %>
+                            <%= link_to show_email_list_fund_path(@fund), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "View the details of all users with access to your fund "} do %>
                               <i class="ti ti-list-details"></i>Show Email List
                             <% end %>
                           </li>
                           <li>
-                            <%= button_to generate_tracking_numbers_fund_path(@fund), method: :post, class: "dropdown-item", form_class: "deleteButton" do %>
+                            <%= button_to generate_tracking_numbers_fund_path(@fund), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {bs_toggle: "tooltip", bs_title: "In case a second tracking currency (i.e. a reference currency amount converting all payments, account entries etc based ont he exchange rates uploaded for the relevant dates) is set up for your fund, select this option to generate the numbers now. By default the numbers are generated every night"} do %>
                               <i class="ti ti-barcode"></i>Generate Tracking Numbers
                             <% end %>
                           </li>
@@ -316,21 +316,21 @@ commands = [
                   <% if @fund.entity.permissions.enable_units? %>
                     <div class="dropdown-divider"></div>
 
-                    <%= link_to fund_unit_settings_path(fund_id: @fund.id), class: "dropdown-item" do %>
+                    <%= link_to fund_unit_settings_path(fund_id: @fund.id), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "View / edit commercials (management fees, carry, etc) set up for different fund unit types"} do %>
                       <i class="ti ti-settings"></i>Fund Unit Settings
                     <% end %>
 
-                    <%= link_to fund_units_path(fund_id: @fund.id, cols: :all), class: "dropdown-item" do %>
+                    <%= link_to fund_units_path(fund_id: @fund.id, cols: :all), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "View, download or upload fund units allocated to investors of the fund"} do %>
                       <i class="ti ti-building-community"></i>Fund Units
                     <% end %>
 
                     <% if current_user.enable_investors %>
-                      <%= link_to investors_path(owner_id: @fund.id, owner_type: "Fund"), class: "dropdown-item" do %>
+                      <%= link_to investors_path(owner_id: @fund.id, owner_type: "Fund"), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "View list of investors of the fund"} do %>
                         <i class="ti ti-users-group"></i>View Stakeholders
                       <% end %>
                     <% end %>
 
-                    <%= link_to excused_investors_path(fund_id: @fund.id), class: "dropdown-item" do %>
+                    <%= link_to excused_investors_path(fund_id: @fund.id), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "View all the excused investors specified for various portfolio investments for this fund"} do %>
                       <i class="ti ti-user-off"></i>Excused Investors
                     <% end %>
                   <% end %>

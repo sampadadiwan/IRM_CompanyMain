@@ -1,112 +1,160 @@
+<%# View local variables and defaults %>
 <% toolbar ||= "Yes" %>
 <% title ||= "Capital Commitments" %>
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800"><%= title.html_safe %></h1>
 
-    <% if toolbar == "Yes" %>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800"><%= title.html_safe %></h1>
+
+  <% if toolbar == "Yes" %>
     <div class="d-flex flex-wrap align-items-center gap-2">
 
-        <% if fund && policy(fund).update? %>
-            <% form_types = FormType.where(entity_id: current_user.entity_id, name: "CapitalCommitment") %>
-            <% if form_types.length > 1 %>
-                <div class="btn-group">
-                    <div class="dropdown">
-                        <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
-                                data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="ti ti-plus"></i> New Commitment:
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <% form_types.each do |form_type| %>
-                                <%= link_to form_type.tag, new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[form_type_id]": form_type.id), class: "dropdown-item d-flex align-items-center", data: { turbo: false } %>
-                            <% end %>
-                        </div>
-                    </div>
-                </div>
-            <% else %>
-                <%= link_to new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[form_type_id]": form_types.first&.id), class: "btn btn-outline-primary d-inline-flex align-items-center", data: { turbo: false } do %>
-                <i class="ti ti-plus"></i> New Commitment
-                <% end %>
-            <% end %>
+      <%# Actions for users with fund update permissions %>
+      <% if fund && policy(fund).update? %>
+        <% form_types = FormType.where(entity_id: current_user.entity_id, name: "CapitalCommitment") %>
 
-            <div class="btn-group">
+        <%# New Commitment Button/Dropdown %>
+        <% if form_types.length > 1 %>
+          <div class="btn-group">
             <div class="dropdown">
-                <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
-                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <i class="ti ti-script"></i> Generate
-                </button>
+              <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
+                      data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="ti ti-plus"></i> New Commitment:
+              </button>
 
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
-
-
-                <%= link_to "View Generated Documents", documents_path(no_folders: true, filter: true, q: ransack_query_params_multiple([[:commitments_fund_id, :eq, fund.id], [:owner_type, :eq, "CapitalCommitment"], [:owner_tag, :cont, "Generated"]])), class: "dropdown-item ti ti-search" %>
-
-                <div class="dropdown-divider"></div>
-
-                <%= button_to generate_documentation_fund_path(fund),
-                                method: :patch,
-                                class: "dropdown-item d-flex align-items-center",
-                                form_class: "deleteButton",
-                                data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } do %>
-                    <i class="ti ti-file-text"></i> All Documents
+              <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                <% form_types.each do |form_type| %>
+                  <%= link_to form_type.tag,
+                              new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[form_type_id]": form_type.id),
+                              class: "dropdown-item d-flex align-items-center",
+                              data: {
+                                turbo: false,
+                                bs_toggle: "tooltip",
+                                bs_title: "Create a new capital commitment of type #{form_type.tag} for the fund"
+                              } %>
                 <% end %>
-
-                <% fund.documents.where(owner_tag: ["Commitment Template"]).each do |template| %>
-                    <%= button_to generate_documentation_fund_path(fund, template_id: template.id),
-                                method: :patch,
-                                class: "dropdown-item d-flex align-items-center",
-                                form_class: "deleteButton",
-                                data: { action: "click->confirm#popup", method: :patch, msg: msg, turbo: false } do %>
-                    <i class="ti ti-file-description"></i> <%= template.name %>
-                    <% end %>
-                <% end %>
-
-                <% if policy(fund).allocate? %>
-                    <%= link_to allocate_form_fund_path(fund, generate_soa: true),
-                                class: "dropdown-item d-flex align-items-center",
-                                data: { turbo: false } do %>
-                    <i class="ti ti-file-invoice"></i> Generate Investor Statement
-                    <% end %>
-                <% end %>
-                </div>
+              </div>
             </div>
-            </div>
-
-            <%= link_to new_import_upload_path(
-                        "import_upload[owner_id]": fund.id,
-                        "import_upload[owner_type]": "Fund",
-                        "import_upload[import_type]": "CapitalCommitment",
-                        "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"),
-                        class: "btn btn-outline-primary d-inline-flex align-items-center",
-                        data: { turbo: false } do %>
-            <i class="ti ti-upload"></i> <%= t_common(:upload) %>
-            <% end %>
-
+          </div>
+        <% else %>
+          <%= link_to new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[form_type_id]": form_types.first&.id),
+                      class: "btn btn-outline-primary d-inline-flex align-items-center",
+                      data: {
+                        turbo: false,
+                        bs_toggle: "tooltip",
+                        bs_title: "Create a new capital commitment for the fund"
+                      } do %>
+            <i class="ti ti-plus"></i> New Commitment
+          <% end %>
         <% end %>
 
+        <%# Generate Documents Dropdown %>
         <div class="btn-group">
-            <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="ti ti-download"></i> <%= t_common(:download) %>
+          <div class="dropdown">
+            <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
+                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              <i class="ti ti-script"></i> Generate
             </button>
-            <ul class="dropdown-menu">
-                <li>
-                <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
-                    <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
+
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
+
+              <%# Link to view all generated documents for this fund's commitments %>
+              <%= link_to "View Generated Documents",
+                          documents_path(
+                            no_folders: true,
+                            filter: true,
+                            q: ransack_query_params_multiple([
+                              [:commitments_fund_id, :eq, fund.id],
+                              [:owner_type, :eq, "CapitalCommitment"],
+                              [:owner_tag, :cont, "Generated"]
+                            ])
+                          ),
+                          class: "dropdown-item ti ti-search",
+                          data: {
+                            bs_toggle: "tooltip",
+                            bs_title: "View All generated Agreements and Statement for this fund"
+                          } %>
+
+              <div class="dropdown-divider"></div>
+
+              <%# Options to generate documentation based on available templates %>
+              <% fund.documents.where(owner_tag: ["Commitment Template"]).each do |template| %>
+                <%= button_to generate_documentation_fund_path(fund, template_id: template.id),
+                              method: :patch,
+                              class: "dropdown-item d-flex align-items-center",
+                              form_class: "deleteButton",
+                              data: {
+                                action: "click->confirm#popup",
+                                method: :patch,
+                                msg: msg,
+                                turbo: false,
+                                bs_toggle: "tooltip",
+                                bs_title: "This will generate Commitment agreements for ALL folios of this fund. For individual folios, please go to the respective folio to generate"
+                              } do %>
+                  <i class="ti ti-file-description"></i> <%= template.name %>
                 <% end %>
-                </li>
-                <li>
-                <button class="dropdown-item" data-controller="export-xl"
-                        data-action="click->export-xl#export"
-                        data-tableid="capital_commitments"
-                        data-filename="Capital Commitments">
-                    <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
-                </button>
-                </li>
-            </ul>
+              <% end %>
+
+              <%# Generate Investor Statement option %>
+              <% if policy(fund).allocate? %>
+                <%= link_to allocate_form_fund_path(fund, generate_soa: true),
+                            class: "dropdown-item d-flex align-items-center",
+                            data: {
+                              turbo: false,
+                              bs_toggle: "tooltip",
+                              bs_title: "Generate Investor Statement for the fund"
+                            } do %>
+                  <i class="ti ti-file-invoice"></i> Generate Investor Statement
+                <% end %>
+              <% end %>
+            </div>
+          </div>
         </div>
 
+        <%# Bulk Upload Button %>
+        <%= link_to new_import_upload_path(
+                      "import_upload[owner_id]": fund.id,
+                      "import_upload[owner_type]": "Fund",
+                      "import_upload[import_type]": "CapitalCommitment",
+                      "sample_upload": "CAPITAL_COMMITMENT_SAMPLE"
+                    ),
+                    class: "btn btn-outline-primary d-inline-flex align-items-center",
+                    data: {
+                      turbo: false,
+                      bs_toggle: "tooltip",
+                      bs_title: "Bulk upload Commitment details for all investors"
+                    } do %>
+          <i class="ti ti-upload"></i> <%= t_common(:upload) %>
+        <% end %>
+      <% end %>
+
+      <%# Download/Export Dropdown %>
+      <div class="btn-group">
+        <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-download"></i> <%= t_common(:download) %>
+        </button>
+
+        <ul class="dropdown-menu">
+          <%# Export all records as Excel %>
+          <li>
+            <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
+              <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
+            <% end %>
+          </li>
+
+          <%# Export only currently visible records %>
+          <li>
+            <button class="dropdown-item"
+                    data-controller="export-xl"
+                    data-action="click->export-xl#export"
+                    data-tableid="capital_commitments"
+                    data-filename="Capital Commitments">
+              <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
+            </button>
+          </li>
+        </ul>
+      </div>
 
     </div>
-
-    <% end %>
+  <% end %>
 </div>

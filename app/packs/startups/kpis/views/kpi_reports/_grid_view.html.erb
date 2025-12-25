@@ -30,13 +30,13 @@
                 Actions
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                <%= link_to "New", new_kpi_report_path('kpi_report[portfolio_company_id]': investor.id), class: "dropdown-item ti ti-plus" if investor %>
+                <%= link_to "New", new_kpi_report_path('kpi_report[portfolio_company_id]': investor.id), class: "dropdown-item ti ti-plus", data: {bs_toggle: "tooltip", bs_title: "Add a new KPI report"} if investor %>
 
-                <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item ti ti-report" %>
+                <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item ti ti-report", data: {bs_toggle: "tooltip", bs_title: "Opens the report view for KPI analytics"} %>
 
-                <button class="dropdown-item ti ti-download", data-action="click->export-xl#export" data-tableid="kpi_reports_grid" data-filename='kpi_reports'>Download</button>
+                <%= content_tag :button, "Download", class: "dropdown-item ti ti-download", data: {action: "click->export-xl#export", tableid: "kpi_reports_grid", filename: 'kpi_reports', bs_toggle: "tooltip", bs_title: "Download KPI reports as Excel file"} %>
 
-                <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-percentage" if kpi_reports.last %>
+                <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-percentage", data: {bs_toggle: "tooltip", bs_title: "Regenrate % change compared to the previous period (by default this is computed when uploading KPI data)"} if kpi_reports.last %>
 
                 <!- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader ->
                 <%= link_to "Upload",
@@ -49,10 +49,10 @@
                         { class: "dropdown-item ti ti-upload"} if Rails.env.test? %>
 
 
-                <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item ti ti-line-scan" if investor %>
+                <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item ti ti-line-scan", data: {bs_toggle: "tooltip", bs_title: "Generate report to compare period KPIs for this company"} if investor %>
 
 
-                <%= link_to "Actuals/Budget", kpi_reports_path(portfolio_company_id: params[:portfolio_company_id], budget_view: true, tag_list: ["Actual","Budget"], all: true, num_periods: 2), class: "dropdown-item ti ti-presentation-analytics" %>
+                <%= link_to "Actuals/Budget", kpi_reports_path(portfolio_company_id: params[:portfolio_company_id], budget_view: true, tag_list: ["Actual","Budget"], all: true, num_periods: 2), class: "dropdown-item ti ti-presentation-analytics", data: {bs_toggle: "tooltip", bs_title: "Opens the analytical view showing actual vs budget"} %>
             </div>
         </div>
         </div>

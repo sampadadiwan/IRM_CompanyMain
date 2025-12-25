@@ -45,38 +45,36 @@
 
           <% if policy(@investor).cap_table? %>
             <%= link_to investments_path(portfolio_company_id: @investor.id),
-                        class: "dropdown-item d-flex align-items-center",
-                        data: { turbo: false } do %>
+                        class: "dropdown-item d-flex align-items-center", data: {turbo: false, bs_toggle: "tooltip", bs_title: "Opens detailed CapTable view"} do %>
               <i class="ti ti-table"></i> CapTable
             <% end %>
           <% end %>
 
           <%= link_to dashboard_investor_path(id: @investor.id),
                       class: "dropdown-item d-flex align-items-center",
-                      data: { turbo: false } do %>
+                      data: { turbo: false, bs_toggle: "tooltip", bs_title: "Opens the detailed dashboard" } do %>
             <i class="ti ti-layout-dashboard"></i> Dashboard
           <% end %>
 
           <%= link_to folder_documents_path(folder_id: @investor.document_folder.id),
-                      class: "dropdown-item d-flex align-items-center",
-                      data: { turbo: false } do %>
+                      class: "dropdown-item d-flex align-items-center", data: {turbo: false, bs_toggle: "tooltip", bs_title: "Opens the documents data room"} do %>
             <i class="ti ti-folder"></i> Documents
           <% end %>
 
           <%= link_to generate_reports_investor_path(@investor),
                       class: "dropdown-item d-flex align-items-center",
-                      data: { turbo: false } do %>
+                      data: { turbo: false, bs_toggle: "tooltip", bs_title: "Generate Portfolio company analyst report using AI + templates"} do %>
             <i class="ti ti-report"></i> Portfolio Report
           <% end %>
 
           <%= link_to portfolio_investments_report_investor_path(@investor),
                       class: "dropdown-item d-flex align-items-center",
-                      data: { turbo: false } do %>
+                      data: { turbo: false, bs_toggle: "tooltip", bs_title: "Generate an excel file with investment details for this portfolio company across funds"} do %>
             <i class="ti ti-file-text"></i> Portfolio Investment Report
           <% end %>
 
-          <% if @investor.entity.support_agents.set?(:portfolio_company_agent) %>
-              <%= button_to run_support_agents_path(agent_type: "PortfolioCompanyAgent", target_id: @investor.id, method: :post), class: "dropdown-item" do %>
+          <% if @investor.entity.support_agents.set?(:portfolio_company_agent) && @investor.category == "Portfolio Company" %>
+              <%= button_to run_support_agents_path(agent_type: "PortfolioCompanyAgent", target_id: @investor.id, method: :post), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Checks the portfolio company data and generates updated AI charts based on prompts which have been set up"} do %>
                 <i class="ti ti-robot"></i> Run Portfolio Company Agent
               <% end %>
           <% end %>

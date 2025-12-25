@@ -8,7 +8,7 @@
     </h1>
     <span>
 
-        <%= link_to "New Kpi Report", new_kpi_report_path("kpi_report[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  %>
+        <%= link_to "New Kpi Report", new_kpi_report_path("kpi_report[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary", data: {bs_toggle: "tooltip", bs_title: "Add a new KPI report"}}  %>
 
         <%= link_to "Grid View", kpi_reports_path(entity_id: current_user.entity_id, months: 12, grid_view: true), {class: "btn btn-outline-primary"} if params[:q].blank? %>
 
