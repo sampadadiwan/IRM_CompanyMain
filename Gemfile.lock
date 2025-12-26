@@ -526,6 +526,7 @@ GEM
       raabro (~> 1.4)
     globalid (1.3.0)
       activesupport (>= 6.1)
+    google_search_results (2.2.0)
     groupdate (6.7.0)
       activesupport (>= 7.1)
     hana (1.3.7)
@@ -1223,6 +1224,7 @@ DEPENDENCIES
   ferrum_pdf (~> 0.3.0)
   foreman
   friendly_id
+  google_search_results
   groupdate
   has_scope
   hashie
