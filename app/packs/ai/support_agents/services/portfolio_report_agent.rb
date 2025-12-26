@@ -806,8 +806,14 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # NEW: Build search queries based on section type
-  def build_search_queries(section_type, company_name)
+  def build_search_queries(section_type, company_name, user_prompt: nil )
     base_query = company_name
+
+      # If user has a specific refinement prompt, use it for search
+    if user_prompt.present?
+      return ["#{base_query}, #{user_prompt}"]
+    end
+
 
     queries = case section_type
               when "Company Overview"
