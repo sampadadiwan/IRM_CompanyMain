@@ -12,7 +12,7 @@
           <th>Portfolio Company</th>
           <th>Status</th>
           <th>Report Date</th>
-          <th>Sections</th>
+          <!--<th>Sections</th>-->
           <th>Created</th>
           <th>Actions</th>
         </tr>
@@ -36,9 +36,9 @@
               </span>
             </td>
             <td><%= report.report_date&.strftime('%Y-%m-%d') %></td>
-            <td>
+            <!--<td>
               <%= report.ai_report_sections.select(&:completed?).count %>/<%= report.ai_report_sections.count %>
-            </td>
+            </td>-->
             <td><%= report.created_at.strftime('%Y-%m-%d %H:%M') %></td>
             <td>
               
