@@ -79,6 +79,12 @@
               <% end %>
           <% end %>
 
+          <%= link_to incoming_emails_path(owner_id: @investor.id, owner_type: "Investor"),
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false, bs_toggle: "tooltip", bs_title: "View all emails associated with this investor" } do %>
+            <i class="ti ti-mail"></i> Emails
+          <% end %>
+
         </div>
       </div>
     </div>

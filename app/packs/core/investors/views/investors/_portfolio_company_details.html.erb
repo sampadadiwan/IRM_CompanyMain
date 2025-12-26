@@ -35,11 +35,9 @@
         </a>
     <% end %>
 
-    <% if current_user.has_cached_role?(:company_admin) %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#emails-tab">
-          <%= t('investor_details_nav.emails') %>
-      </a>
-    <% end %>
+    <a id="stakeholder_users_tab" class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#investors-tab">
+      <%= t('investor_details_nav.users') %>
+    </a>
 
   </nav>
 
@@ -131,15 +129,13 @@
         </div>
     </div>
 
-    <% if current_user.has_cached_role?(:company_admin) %>
-      <div id="emails-tab" class="tab-pane fade">
-        <div id="emails" class="associated_entity">
-          <%= turbo_frame_tag "incoming_emails_list", target: "_top", src: incoming_emails_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>
-            <%= render "/layouts/loading" %>
-          <% end %>
-        </div>
+    <div id="investors-tab" class="tab-pane fade in">
+      <div id="investor_accesses" class="associated_entity">
+        <% params[:investor_id] = investor.id %>
+        <%= render "/investor_accesses/index", investor_accesses: investor.investor_accesses.includes(:user, :granter),
+            investor: investor, label: t('investor_details_nav.users') %>
       </div>
-    <% end %>
+    </div>
 
   </div>
 </div>
