@@ -344,6 +344,9 @@ namespace :IRM do
       execute :mkdir, "-p", "/home/ubuntu/IRM/shared/tmp/sockets"
       execute :touch, "/home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock"
 
+      # Install Pandoc for DOCX export with charts
+      execute :sudo, "apt-get install -y pandoc"
+
       # restart nginx - Does not work as the nginx config is pointing to the app, which is not yet deployed
       # execute :sudo, "service nginx restart"
     end
