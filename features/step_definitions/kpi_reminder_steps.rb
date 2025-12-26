@@ -60,6 +60,9 @@ end
 
 When('I press {string}') do |button_text|
   click_on button_text
+  click_on "Proceed"
+  sleep(2)
+  page.should have_content("Notification sent")
 end
 
 

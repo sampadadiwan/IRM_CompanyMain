@@ -10,7 +10,7 @@ Feature: KPI Self-Reporting Reminder Email
   @javascript
   Scenario: Send reminder email and verify the link
     When the periodic KPI report generation job runs for today
-    Then an email should be sent to "founder@startupone.com" with subject containing "Reminder: KPI Reporting for Startup One"
+    Then an email should be sent to "founder@startupone.com" with subject containing "Reminder to report KPIs for Startup One"
     And the email should contain a link to "Fill KPI Report"
     When I follow the "Fill KPI Report" link in the email
     Given I fill and submit the login page
