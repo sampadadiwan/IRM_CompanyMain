@@ -176,6 +176,7 @@ build {
       "sudo apt install --yes imagemagick",
       "sudo apt install --yes poppler-utils",
       "sudo apt install --yes ffmpeg",
+      "sudo apt install --yes pandoc",
 
 
     ]
