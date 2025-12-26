@@ -8,7 +8,7 @@ class SectionContentGenerator
     "Market Size & Target" => "Analyze total addressable market, target segments, and market opportunity.",
     "Recent Updates & Developments" => "Highlight recent news, product launches, partnerships, or significant milestones.",
     "Founders & Shareholders" => "Provide background on founders, key shareholders, and ownership structure.",
-    "SWOT Analysis - Blitz" => "Conduct a SWOT analysis covering Strengths, Weaknesses, Opportunities, and Threats.",
+    "SWOT Analysis" => "Conduct a SWOT analysis covering Strengths, Weaknesses, Opportunities, and Threats.",
     "Competition Analysis" => "Analyze key competitors, market positioning, and competitive dynamics.",
     "Key Risks" => "Identify and assess major risks including market, operational, financial, and regulatory.",
     "Operational Red Flags" => "Highlight operational concerns or warning signs that merit attention.",

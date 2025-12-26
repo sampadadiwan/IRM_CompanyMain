@@ -410,7 +410,7 @@ class PortfolioReportAgent < SupportAgentService
         ],
         length: "1 table plus 4-5 bullet points of commentary"
       },
-      "SWOT Analysis - Blitz" => {
+      "SWOT Analysis" => {
         description: "Comprehensive SWOT analysis rooted in sector realities and company-specific data.",
         structure: [
           "Strengths: 6-10 points on brand, tech, distribution, margins, community, etc.",
