@@ -1,3 +1,20 @@
+V9.1.64
+#####################################
+192050c95 Ae pivot pagination (#1172)
+748a61c50 Fixed tests for send portfo kpi_report notification
+909b76261 Added pandock install to appserver ami
+1d9392f5d Now PortCo have InvestorAccess to enable Kpi Upload
+7c628320a changes made to rename section from SWOT analysis - Blitz to SWOT Analysis (#1169)
+f2ac07176 Fixes to export word and pdf document: charts export errors (#1168)
+c6651b09c Changes to change web search tool as serpapi from google (#1165)
+85f3c36bd Removed section column from index page (#1164)
+e10352676 Feature/unsave section from final report (#1163)
+3aec8c8cf (origin/fix/rename_swot_analysis_section) Removed section column from index page
+acb5ac17a Resolving rubocop errors
+23f8f923a changes made to toggle keep/unkeep section in final report
+ec604bab6 Kpi direct upload (#1166)
+
+
 V9.1.63
 #####################################
 ad171e5a8 Kpi direct upload (#1161)
