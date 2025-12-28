@@ -43,10 +43,13 @@ module AccountEntryAllocation
       # in some cases we want to use the investment date as the reporting date
       use_investment_date = fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["reporting_date"]&.strip == "investment_date"
 
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).each_with_index do |capital_commitment, idx|
+      # Pre-load portfolio investments to avoid repeated queries in the loop
+      portfolio_investments_array = portfolio_investments.includes(:fund, :investment_instrument).to_a
+
+      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).find_each.with_index do |capital_commitment, idx|
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
-        portfolio_investments.each do |portfolio_investment|
+        portfolio_investments_array.each do |portfolio_investment|
           # result = RubyProf.profile do
 
           reporting_date = if use_investment_date
@@ -69,21 +72,16 @@ module AccountEntryAllocation
           begin
             create_instance_variables(ctx)
             AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: portfolio_investment, bdg: binding))
-
-            commitment_cache.computed_fields_cache(capital_commitment, start_date)
           rescue StandardError => e
             raise "Error in #{fund_formula.name} for #{capital_commitment} #{portfolio_investment}: #{e.message}"
           end
-
-          # end
-
-          # printer = RubyProf::CallStackPrinter.new(result)
-          # File.open("tmp/ruby_prof_callstack_#{Time.zone.now}.html", "w") do |file|
-          #   printer.print(file)
-          # end
         end
 
-        notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
+        # Move cache refresh outside the inner loop as it's redundant to refresh it for every portfolio investment
+        # if the capital_commitment hasn't changed. CreateAccountEntry updates the cache internally.
+        commitment_cache.computed_fields_cache(capital_commitment, start_date)
+
+        notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 5).zero?
       end
 
       true

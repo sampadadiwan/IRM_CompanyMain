@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_26_022408) do
+ActiveRecord::Schema[8.0].define(version: 2025_12_28_075538) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -78,6 +78,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_26_022408) do
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
     t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
+    t.index ["fund_id", "generated", "deleted_at", "reporting_date", "fund_formula_id"], name: "idx_ae_del_fund_gen_date_formula"
     t.index ["fund_id", "name", "reporting_date"], name: "idx_fund_id_and_name_and_reporting_date"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
@@ -2687,6 +2688,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_26_022408) do
     t.date "investment_date"
     t.decimal "sale_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "gain_cents", precision: 20, scale: 2, default: "0.0"
+    t.index ["bought_pi_id", "deleted_at", "sold_pi_id", "quantity"], name: "idx_pa_bought_deleted_sold_qty"
     t.index ["bought_pi_id", "deleted_at", "sold_pi_id"], name: "idx_portfolio_attributions_bought_sold_deleted"
     t.index ["bought_pi_id"], name: "index_portfolio_attributions_on_bought_pi_id"
     t.index ["deleted_at"], name: "index_portfolio_attributions_on_deleted_at"
@@ -3341,6 +3343,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_26_022408) do
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
+    t.index ["investment_instrument_id", "deleted_at", "synthetic", "valuation_date"], name: "idx_latest_valuation"
     t.index ["investment_instrument_id"], name: "index_valuations_on_investment_instrument_id"
     t.index ["owner_id", "owner_type", "deleted_at"], name: "idx_valuations_full_optimized"
     t.index ["owner_type", "owner_id"], name: "index_valuations_on_owner"

@@ -173,6 +173,7 @@ Metrics/CyclomaticComplexity:
   Max: 15
   Enabled: true
   Exclude:
+    - "app/packs/funds/capital_commitments/services/account_entry_pivot.rb"
     - "app/packs/funds/funds/helpers/fund_dashboard_helper.rb"
     - "app/packs/core/base/decorators/template_decorator.rb"
     - "app/packs/core/users/models/user.rb"
@@ -192,6 +193,8 @@ Metrics/CyclomaticComplexity:
 Metrics/PerceivedComplexity:
   Max: 20
   Exclude:
+    - "app/packs/funds/capital_commitments/services/account_entry_pivot.rb"
+    - "app/services/account_entry_allocation/allocate_master_fund_account_entries.rb"
     - "app/packs/core/users/models/user.rb"
     - "app/packs/funds/funds/models/fund_portfolio_calcs.rb"
     - "app/packs/core/tasks/controllers/tasks_controller.rb"
@@ -231,6 +234,7 @@ Metrics/ParameterLists:
   Max: 6
   Enabled: true
   Exclude:
+    - "app/packs/funds/capital_commitments/services/account_entry_pivot.rb"
     - "app/packs/funds/funds/jobs/fund_ratios_scenario_job.rb"
     - "app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb"
     - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
@@ -250,6 +254,7 @@ Metrics/MethodLength:
   Max: 35
   Enabled: true
   Exclude:
+    - "app/packs/funds/capital_commitments/services/account_entry_pivot.rb"
     - "app/packs/funds/funds/helpers/fund_dashboard_helper.rb"
     - "app/packs/secondaries/secondary_sales/jobs/custom_allocation_job.rb"
     - "app/packs/core/users/models/user.rb"

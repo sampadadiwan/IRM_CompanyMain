@@ -39,17 +39,17 @@ module AccountEntryAllocation
 
       account_entry_names = fund_formula.meta_data_hash["account_entry_names"]&.split(",")&.map(&:strip) if fund_formula.meta_data_hash.present?
 
+      # Determine the set of capital commitments to iterate over
+      # If `for_folios` is true, use all commitments of the fund
+      # Otherwise, treat as a single nil commitment (used in build_account_entry to signify no commitment)
+      capital_commitments_collection = for_folios ? fund.capital_commitments.includes(:entity, :fund, :investor_kyc) : [nil]
+
       # For each portfolio company, generate cumulative entries
-      portfolio_companies.each do |portfolio_company|
+      portfolio_companies.find_each do |portfolio_company|
         Rails.logger.debug { "Cumulating #{fund_formula} to #{portfolio_company}" }
 
-        # Determine the set of capital commitments to iterate over
-        # If `for_folios` is true, use all commitments of the fund
-        # Otherwise, treat as a single nil commitment (used in build_account_entry to signify no commitment)
-        capital_commitments = for_folios ? fund.capital_commitments.includes(:entity, :fund, :investor_kyc) : [nil]
-
         # Iterate through each capital commitment
-        capital_commitments.each do |capital_commitment|
+        capital_commitments_collection.each do |capital_commitment|
           commitment_cache.computed_fields_cache(capital_commitment, start_date) if capital_commitment
           if account_entry_names.present?
             # If specific account entry names are provided,
@@ -63,6 +63,7 @@ module AccountEntryAllocation
             build_account_entry(portfolio_company, capital_commitment, binding, ctx, account_entry_name)
           end
 
+          # CreateAccountEntry updates the cache internally. No need to call it twice in the inner loop.
           commitment_cache.computed_fields_cache(capital_commitment, start_date) if capital_commitment
         end
       end

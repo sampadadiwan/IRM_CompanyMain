@@ -1,5 +1,6 @@
 module PortfolioComputations
   extend ActiveSupport::Concern
+  include Memoized
 
   included do
     ##########################################################
@@ -105,6 +106,7 @@ module PortfolioComputations
 
   # FMV = latest price * quantity held (in fund currency)
   def compute_fmv_cents_on(date)
+    Rails.logger.debug { "compute_fmv_cents_on called for date #{date} for PI id=#{id}" }
     valuation = latest_valuation_on(date)
     quantity_to_use = date == Time.zone.today ? net_quantity : net_quantity_on(date)
 
@@ -131,7 +133,7 @@ module PortfolioComputations
     # Quantity of this investment that has been sold
     sold_quantity_on = buys_portfolio_attributions
                        .joins(:sold_pi)
-                       .merge(PortfolioInvestment.before(date))
+                       .merge(PortfolioInvestment.include_proforma.before(date))
                        .sum(:quantity)
 
     # Quantity that has been converted into another investment
@@ -141,6 +143,8 @@ module PortfolioComputations
 
     quantity + sold_quantity_on - conversion_quantity
   end
+
+  memoize :compute_fmv_cents_on, :compute_instrument_currency_fmv_cents_on, :latest_valuation_on, :net_quantity_on
 
   # Per-share price in cents for this transaction
   def price_per_share_cents
