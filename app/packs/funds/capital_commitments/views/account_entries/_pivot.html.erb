@@ -77,6 +77,12 @@
   </tbody>
 </table>
 
+<% if @pivot.pagy %>
+  <div class="d-flex justify-content-center mt-3">
+    <%== pagy_bootstrap_nav(@pivot.pagy) %>
+  </div>
+<% end %>
+
 <% if params[:show_chart] == "true" %>
   <%= render ToggleCard.new(title: "Chart", css_class: "show_ae_pivot_chart", state: "show") do %>
     <%= line_chart @pivot.chart,  library: { title: { text: "" } } %>

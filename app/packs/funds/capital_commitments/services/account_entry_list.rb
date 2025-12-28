@@ -94,7 +94,13 @@ class AccountEntryList
   def build_pivot_table
     group_by_param = @params[:group_by] || 'entry_type'
     show_breakdown = @params[:show_breakdown] == "true"
-    AccountEntryPivot.new(@account_entries.includes(:fund), group_by: group_by_param, show_breakdown:).call
+    AccountEntryPivot.new(
+      @account_entries.includes(:fund),
+      group_by: group_by_param,
+      show_breakdown: show_breakdown,
+      page: @params[:page],
+      per_page: @params[:per_page] || 20
+    ).call
   end
 
   def simple_predicate_match?(query_hash, attrs)
