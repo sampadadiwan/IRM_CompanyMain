@@ -1,5 +1,5 @@
 class AiReportSectionsController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [:regenerate] # Skip CSRF for AJAX
+  skip_before_action :verify_authenticity_token, only: %i[regenerate generate_chart_preview] # Skip CSRF for AJAX
   skip_after_action :verify_authorized
   skip_after_action :verify_policy_scoped
 
@@ -107,6 +107,20 @@ class AiReportSectionsController < ApplicationController
       reviewed: @section.reviewed,
       message: @section.reviewed ? 'Section included in report' : 'Section excluded from report'
     }
+  rescue StandardError => e
+    render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
+  def generate_chart_preview
+    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
+    @section = @report.ai_report_sections.find(params[:id])
+    user_prompt = params[:prompt]
+
+    chart_service = PortfolioChartAgentService.new
+
+    chart_config = chart_service.generate_chart!(prompt: user_prompt)
+
+    render json: { success: true, chart_config: chart_config }
   rescue StandardError => e
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end

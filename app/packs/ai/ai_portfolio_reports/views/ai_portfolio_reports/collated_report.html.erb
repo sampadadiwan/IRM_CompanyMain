@@ -253,7 +253,21 @@
       if (!chartConfig) return;
 
       try {
-        let data = JSON.parse(chartConfig);
+        let parsedConfig = JSON.parse(chartConfig);
+
+        // Handle both formats: full config { type, data, options } or just data { labels, datasets }
+        let data;
+        if (parsedConfig.data && parsedConfig.data.datasets) {
+          // Full Chart.js config format - extract the data portion
+          data = parsedConfig.data;
+          chartType = parsedConfig.type || chartType;
+        } else if (parsedConfig.datasets) {
+          // Already just the data portion
+          data = parsedConfig;
+        } else {
+          console.error(`Chart ${index}: Invalid config structure`);
+          return;
+        }
 
         if (chartType === 'area') {
           chartType = 'line';
