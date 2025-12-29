@@ -80,7 +80,7 @@ class ImportInvestorKyc < ImportUtil
                                    send_kyc_form_to_user:)
 
     # Form Tag is optional, so we remove it from the custom_field_headers, so it does not get saved as a custom field
-    custom_field_headers -= ["Form Tag"]
+    custom_field_headers.delete("Form Tag")
     setup_custom_fields(user_data, investor_kyc, custom_field_headers, form_type:)
 
     result = if investor_kyc.new_record?

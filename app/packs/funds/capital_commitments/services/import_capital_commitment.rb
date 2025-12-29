@@ -57,7 +57,8 @@ class ImportCapitalCommitment < ImportUtil
     # Get the form type for the capital commitment
     form_type = get_form_type(import_upload, user_data)
     # Setup custom fields
-    setup_custom_fields(user_data, capital_commitment, custom_field_headers - ["Feeder Fund"], form_type:)
+    custom_field_headers.delete("Feeder Fund")
+    setup_custom_fields(user_data, capital_commitment, custom_field_headers, form_type:)
     # Setup exchange rate if foreign currency
     setup_exchange_rate(capital_commitment, user_data) if capital_commitment.foreign_currency?
 

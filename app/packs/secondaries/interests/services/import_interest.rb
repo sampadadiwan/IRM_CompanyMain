@@ -51,7 +51,11 @@ class ImportInterest < ImportUtil
     end
 
     setup_shortlist(user_data, interest, import_upload)
-    setup_custom_fields(user_data, interest, custom_field_headers - IGNORE_CF_HEADERS, form_type: @form_type)
+
+    # Remove ignored headers from custom fields
+    IGNORE_CF_HEADERS.each { |h| custom_field_headers.delete(h) } if IGNORE_CF_HEADERS.present?
+
+    setup_custom_fields(user_data, interest, custom_field_headers, form_type: @form_type)
 
     AccessRight.create(owner: interest.secondary_sale, entity: interest.entity, access_to_investor_id: interest.investor_id, metadata: "Buyer")
     interest.save!

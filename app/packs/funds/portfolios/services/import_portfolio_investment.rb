@@ -26,7 +26,9 @@ class ImportPortfolioInvestment < ImportUtil
     # add the sebi reporting fields in invesment instrument in json_fields (merge with any existing)
     investment_instrument.json_fields = (investment_instrument.json_fields || {}).merge(user_data.slice(*InvestmentInstrument::REPORTING_FIELDS.values.map(&:keys).flatten.map { |x| x.to_s.titleize })&.transform_keys { |key| key.downcase.tr(' ', '_') })
 
-    custom_field_headers -= InvestmentInstrument::REPORTING_FIELDS.values.map(&:keys).flatten.map { |x| x.to_s.titleize }
+    InvestmentInstrument::REPORTING_FIELDS.values.map(&:keys).flatten.map { |x| x.to_s.titleize }.each do |field|
+      custom_field_headers.delete(field)
+    end
 
     if investment_instrument.valid?
       investment_instrument.investment_domicile ||= investment_domicile
@@ -73,7 +75,9 @@ class ImportPortfolioInvestment < ImportUtil
   end
 
   def create_custom_fields(ctx, import_upload:, custom_field_headers:, **)
-    custom_field_headers -= ["Type Of Investee Company", "Type Of Security", "Isin", "Sebi Registration Number", "Is Associate", "Is Managed Or Sponsored By Aif"]
+    ["Type Of Investee Company", "Type Of Security", "Isin", "Sebi Registration Number", "Is Associate", "Is Managed Or Sponsored By Aif"].each do |field|
+      custom_field_headers.delete(field)
+    end
     super(ctx, import_upload:, custom_field_headers:)
   end
 

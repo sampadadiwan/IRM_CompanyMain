@@ -122,7 +122,7 @@ class ImportUtil < Trailblazer::Operation
     Rails.logger.debug { "##### process_rows #{data.count}" }
     custom_field_headers = headers - standard_headers
     # Some imports require some custom fields to be ignored, specifically those imports created from the downloaded data, as downloaded data may have additional columns that are not part of the import
-    custom_field_headers -= ignore_headers if respond_to?(:ignore_headers)
+    ignore_headers.each { |h| custom_field_headers.delete(h) } if respond_to?(:ignore_headers)
 
     ctx[:custom_field_headers] = custom_field_headers
 
@@ -193,9 +193,10 @@ class ImportUtil < Trailblazer::Operation
       fcf_label_map = form_type.form_custom_fields.index_by { |f| f.label.downcase }
     end
 
-    custom_field_headers -= ["Update Only", "Id"]
+    custom_field_headers.delete("Update Only")
+    custom_field_headers.delete("Id")
     # Some imports require some custom fields to be ignored, specifically those imports created from the downloaded data, as downloaded data may have additional columns that are not part of the import
-    custom_field_headers -= ignore_headers if respond_to?(:ignore_headers)
+    ignore_headers.each { |h| custom_field_headers.delete(h) } if respond_to?(:ignore_headers)
 
     # Were any custom fields passed in ? Set them up
     if custom_field_headers.length.positive? && model.respond_to?(:properties)
