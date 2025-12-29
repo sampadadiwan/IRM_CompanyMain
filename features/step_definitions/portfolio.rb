@@ -160,6 +160,7 @@ Given('The old valuations are deleted') do
 end
 
 Then('There should be {string} portfolio investments created') do |count|
+  binding.pry
   PortfolioInvestment.count.should == count.to_i
 end
 

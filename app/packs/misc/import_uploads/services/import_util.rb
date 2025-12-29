@@ -27,15 +27,20 @@ class ImportUtil < Trailblazer::Operation
     valid = true
     if respond_to?(:standard_headers)
       # Check if all the standard headers are present
+      missing_headers = []
       standard_headers.each do |header_name|
         next if headers.include?(header_name.downcase.strip.squeeze(" ").titleize)
 
-        import_upload.status = "Column not found #{header_name}"
+        missing_headers << header_name
+      end
+
+      if missing_headers.any?
+        import_upload.status = "Column(s) not found: #{missing_headers.join(', ')}"
         import_upload.failed_row_count = import_upload.total_rows_count
         import_upload.save
         valid = false
-        break
       end
+
       # Check there are no duplicate column names
       if headers.uniq.length != headers.length
         valid = false

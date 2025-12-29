@@ -1,3 +1,8 @@
+V9.1.65
+#####################################
+1891c607b Fixed typo in model name
+1e74d53b8 Feature/insert chart at cursor position (#1170)
+
 V9.1.64
 #####################################
 192050c95 Ae pivot pagination (#1172)

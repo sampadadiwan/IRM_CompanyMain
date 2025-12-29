@@ -12,7 +12,7 @@ class ImportUploadJob < ApplicationJob
           if result.success?
             import_upload.status = "Completed"
           else
-            import_upload.status = "Failed"
+            import_upload.status ||= "Failed"
             import_upload.error_text = result[:errors]
           end
         end
