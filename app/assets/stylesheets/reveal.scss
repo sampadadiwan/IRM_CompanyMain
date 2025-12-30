@@ -1,0 +1,196 @@
+/* reveal.scss - Professional slideshow styles for AI Assistant */
+
+@import url("https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/reveal.css");
+@import url("https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/dist/theme/white.css");
+@import url("https://cdn.jsdelivr.net/npm/reveal.js@5.2.1/plugin/highlight/monokai.css");
+
+/* Reveal.js overrides for better embedding */
+.reveal {
+  font-size: 28px;
+  height: 100% !important;
+  max-height: none !important;
+  overflow: visible !important;
+
+  .slides {
+    height: 100% !important;
+    width: 100% !important;
+
+    section {
+      padding: 20px 40px !important;
+      overflow-y: auto !important;
+      height: 100% !important;
+      box-sizing: border-box;
+      width: 100% !important;
+      top: 0 !important;
+      display: block !important;
+      text-align: left;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: rgba(0,0,0,0.1);
+        border-radius: 3px;
+      }
+
+      img {
+        max-width: 100%;
+        height: auto;
+        border: none;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+        border-radius: 8px;
+      }
+
+      p, li {
+        text-align: left;
+        font-size: 0.8em;
+        line-height: 1.4;
+      }
+
+      h1, h2, h3, h4 {
+        text-transform: none;
+      }
+    }
+  }
+
+  /* Force controls visibility and accessibility */
+  .controls {
+    bottom: 20px !important;
+    right: 20px !important;
+    color: #007bff !important;
+    z-index: 9999 !important;
+    visibility: visible !important;
+    display: block !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+
+    .navigate-up, .navigate-down {
+      display: none !important;
+    }
+
+    button {
+      visibility: visible !important;
+      opacity: 0.9 !important;
+      pointer-events: auto !important;
+      width: 40px !important;
+      height: 40px !important;
+    }
+  }
+
+  table {
+    font-size: 0.5em;
+    margin: 0 auto !important;
+    border-collapse: collapse;
+    width: 100% !important;
+    table-layout: auto !important;
+    color: #333 !important;
+    background: white !important;
+    display: table !important;
+    visibility: visible !important;
+    border: 1px solid #ddd !important;
+
+    thead { display: table-header-group !important; }
+    tbody { display: table-row-group !important; }
+    tr { display: table-row !important; }
+    th { display: table-cell !important; }
+    td { display: table-cell !important; }
+    th, td {
+      border: 1px solid #ddd !important;
+      padding: 8px !important;
+    }
+    th {
+      background: #f1f3f5 !important;
+      font-weight: bold !important;
+      text-align: center !important;
+      color: #333 !important;
+    }
+    td {
+      text-align: left !important;
+      color: #333 !important;
+    }
+  }
+
+  .table-wrapper {
+    margin: 0 auto;
+    width: 100%;
+    background: white;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+
+  .step-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: #e9ecef;
+    border-radius: 20px;
+    font-size: 0.5em;
+    font-weight: bold;
+    color: #6c757d;
+    margin-bottom: 20px;
+  }
+
+  .question-text {
+    color: #333;
+    font-weight: bold;
+    line-height: 1.2;
+  }
+}
+
+/* Fix Mobile View Controls and Content */
+@media (max-width: 768px) {
+  .reveal {
+    font-size: 16px;
+
+    .slides {
+      section {
+        padding: 40px 15px !important;
+
+        h2.question-text {
+          font-size: 1.2em !important;
+        }
+      }
+    }
+
+    .controls {
+      bottom: 10px !important;
+      right: 10px !important;
+      display: block !important;
+      visibility: visible !important;
+      transform: scale(1.4) !important; /* Make buttons larger for mobile */
+
+      button {
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+    }
+  }
+}
+
+/* Mobile touch navigation overlay (fallback) */
+.slideshow-touch-nav {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  z-index: 10000;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 16px;
+  pointer-events: auto;
+}
+
+.slideshow-touch-nav__btn {
+  pointer-events: auto;
+  border-radius: 999px;
+  width: 56px;
+  height: 56px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  opacity: 0.92;
+}

@@ -1,8 +1,15 @@
-<div id="assistant-chat" class="d-flex flex-column h-100 bg-white position-relative" data-controller="voice-chat ppt-export" style="min-height: 80vh;">
+<div id="assistant-chat" class="d-flex flex-column h-100 bg-white position-relative" data-controller="voice-chat ppt-export slideshow" style="min-height: 80vh;">
   <%= turbo_stream_from [current_user, "assistant"] if current_user %>
 
   <!-- Assistant Selection & Export (Top Right) -->
   <div class="position-absolute top-0 end-0 p-3 d-flex gap-2" style="z-index: 1050;">
+    <button type="button"
+            class="btn btn-sm btn-outline-info px-3 d-none d-md-flex align-items-center gap-2 ti ti-presentation"
+            data-action="click->slideshow#open"
+            title="Present chat as Slideshow">
+      Present
+    </button>
+
     <button type="button"
             class="btn btn-sm btn-outline-success px-3 d-flex align-items-center gap-2 ti ti-file-export"
             data-action="click->ppt-export#export"
@@ -46,6 +53,42 @@
   <% if params[:assistant_type].present? %>
     <div class="d-flex flex-column h-100" data-voice-chat-target="chatInterface">
     <!-- Main Chat Container -->
+
+    <!-- Slideshow Overlay -->
+      <div class="position-absolute top-0 start-0 w-100 bg-white d-none shadow-lg border"
+           style="z-index: 2000; height: 100%; min-height: 800px;"
+           data-slideshow-target="container">
+       <div class="d-flex flex-column h-100 position-relative">
+         <div class="p-2 d-flex justify-content-between align-items-center border-bottom bg-light">
+           <h5 class="mb-0 px-3"><i class="ti ti-presentation text-primary me-2"></i>Assistant Presentation</h5>
+           <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle" data-action="click->slideshow#close">
+             <i class="ti ti-x fs-4"></i>
+           </button>
+         </div>
+         <div class="reveal flex-grow-1" data-slideshow-target="reveal">
+           <div class="slides" data-slideshow-target="slides">
+             <!-- Slides will be injected here -->
+           </div>
+         </div>
+
+         <!-- Mobile-only navigation (reliable fallback if Reveal controls are hidden) -->
+         <div class="slideshow-touch-nav d-md-none" aria-label="Slideshow navigation">
+           <button type="button"
+                   class="btn btn-primary slideshow-touch-nav__btn"
+                   aria-label="Previous slide"
+                   data-action="click->slideshow#prev touchstart->slideshow#prev">
+             <i class="ti ti-chevron-left fs-2"></i>
+           </button>
+           <button type="button"
+                   class="btn btn-primary slideshow-touch-nav__btn"
+                   aria-label="Next slide"
+                   data-action="click->slideshow#next touchstart->slideshow#next">
+             <i class="ti ti-chevron-right fs-2"></i>
+           </button>
+         </div>
+       </div>
+     </div>
+
     <div class="flex-grow-1 overflow-auto py-4 px-3 d-flex flex-column align-items-center" id="chat-feed" style="scroll-behavior: smooth;">
       <div class="w-100">
 
@@ -62,7 +105,7 @@
          </div>
 
          <!-- Responses will be inserted here -->
-         <div data-voice-chat-target="responses" data-ppt-export-target="responses" class="d-flex flex-column gap-3">
+         <div data-voice-chat-target="responses" data-ppt-export-target="responses" data-slideshow-target="source" class="d-flex flex-column gap-3">
            <% if @messages.present? %>
              <% @messages.each do |msg| %>
                <%= render partial: "assistants/ask", locals: { msg: msg } %>

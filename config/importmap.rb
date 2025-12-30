@@ -42,3 +42,7 @@ pin "highcharts/modules/offline-exporting", to: "https://cdn.jsdelivr.net/npm/hi
 pin "chart.js", to: "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm", preload: true
 pin "xlsx", to: "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
 pin "pptxgenjs", to: "https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.0/+esm"
+pin "reveal.js" # @5.2.1
+pin "reveal.js/plugin/highlight/highlight.esm.js", to: "reveal.js--plugin--highlight--highlight.esm.js.js" # @5.2.1
+pin "reveal.js/plugin/markdown/markdown.esm.js", to: "reveal.js--plugin--markdown--markdown.esm.js.js" # @5.2.1
+pin "reveal.js/plugin/notes/notes.esm.js", to: "reveal.js--plugin--notes--notes.esm.js.js" # @5.2.1

@@ -7,26 +7,38 @@
   end
 %>
 <% if show_card %>
-<div class="card border-0 shadow-sm mb-3 <%= 'assistant-message-card' if defined?(msg) && msg.role == 'assistant' || defined?(response) %>">
+<div class="card border-0 shadow-sm mb-3 <%= 'assistant-message-card' if (local_assigns[:msg]&.role == 'assistant') || local_assigns[:response].present? %>">
   <div class="card-body p-4">
     <% if defined?(msg) %>
       <% if msg.role == "user" %>
-        <div class="small text-muted mb-2">You asked</div>
-        <div class="fw-semibold mb-3"><%= h(msg.content) %></div>
-        <hr class="my-3">
+        <div class="small text-muted mb-2 d-flex align-items-center gap-2">
+          <i class="ti ti-user fs-5 text-primary"></i>
+          <span>You asked</span>
+        </div>
+        <div class="fw-semibold mb-3 fs-5 text-dark"><%= h(msg.content) %></div>
+        <hr class="my-3 opacity-25">
       <% elsif msg.role == "assistant" && msg.content.present? %>
-        <div class="small text-muted mb-2">Assistant</div>
+        <div class="small text-muted mb-3 d-flex align-items-center gap-2">
+          <i class="ti ti-robot fs-5 text-success"></i>
+          <span>Assistant</span>
+        </div>
         <div class="prose">
           <%= markdown_to_html(msg.content) %>
         </div>
       <% end %>
     <% else %>
-      <div class="small text-muted mb-2">You asked</div>
-      <div class="fw-semibold mb-3"><%= h(query) %></div>
-      <hr class="my-3">
+      <div class="small text-muted mb-2 d-flex align-items-center gap-2">
+        <i class="ti ti-user fs-5 text-primary"></i>
+        <span>You asked</span>
+      </div>
+      <div class="fw-semibold mb-3 fs-5 text-dark"><%= h(query) %></div>
+      <hr class="my-3 opacity-25">
 
       <% if response&.content.present? %>
-        <div class="small text-muted mb-2">Assistant</div>
+        <div class="small text-muted mb-3 d-flex align-items-center gap-2">
+          <i class="ti ti-robot fs-5 text-success"></i>
+          <span>Assistant</span>
+        </div>
         <div class="prose">
           <%= markdown_to_html(response.content) %>
         </div>
