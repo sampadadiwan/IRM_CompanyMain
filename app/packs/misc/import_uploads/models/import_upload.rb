@@ -72,7 +72,8 @@ class ImportUpload < ApplicationRecord
   end
 
   def success?
-    status.nil? && total_rows_count == processed_row_count
+    # nil status is for historical reasons, when status was not being set
+    (status.nil? || status == "Completed") && total_rows_count == processed_row_count
   end
 
   def imported_data

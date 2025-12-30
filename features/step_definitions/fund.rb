@@ -817,6 +817,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
   ImportUploadJob.perform_now(ImportUpload.last.id)
   binding.pry if ImportUpload.last.failed_row_count > 0
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('Given I upload {string} file for Call remittances of the fund') do |file|
@@ -834,6 +835,7 @@ Then('Given I upload {string} file for Call remittances of the fund') do |file|
   ImportUploadJob.perform_now(ImportUpload.last.id)
   # sleep(4)
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('There should be {string} capital commitments created') do |count|
@@ -1491,6 +1493,7 @@ Then('Given I upload {string} file for Account Entries') do |file|
   # sleep(4)
   # binding.pry if ImportUpload.last.failed_row_count > 0
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('There should be {string} account_entries created') do |count|
@@ -1706,6 +1709,7 @@ Given('Given I upload a fund unit settings {string} for the fund') do |file_name
   ImportUploadJob.perform_now(ImportUpload.last.id)
   #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('There should be {string} fund unit settings created with data in {string}') do |count, file_name|
@@ -1781,6 +1785,7 @@ Then('Given I upload {string} file for Distributions of the fund') do |string|
   ImportUploadJob.perform_now(ImportUpload.last.id)
   #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('Given I upload {string} file for Fund Units of the fund') do |file_name|
@@ -1845,6 +1850,7 @@ Then('Given I upload {string} file for the Distribution Payments of the fund') d
   ImportUploadJob.perform_now(ImportUpload.last.id)
   #sleep((4)
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('There should be {string} distribution payments created') do |count|
@@ -2500,6 +2506,7 @@ Given('Given I upload fund formulas update only sheet for the fund') do
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Given('Given I upload fund formulas for the fund') do
@@ -2519,6 +2526,7 @@ Given('Given I upload fund formulas for the fund') do
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('There should be {string} fund formulas created') do |string|

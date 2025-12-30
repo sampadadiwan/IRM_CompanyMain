@@ -16,6 +16,7 @@ Given('I upload an allocation file {string}') do |file_name|
   ImportUploadJob.perform_now(ImportUpload.last.id)
   #sleep(5)
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('I should find allocations created with correct data') do

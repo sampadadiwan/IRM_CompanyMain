@@ -192,6 +192,8 @@ Then('the portfolio investments must have the data in the sheet') do
     pi.properties["custom_field_1"].should == user_data["Custom Field 1"]
     pi.import_upload_id.should == ImportUpload.last.id
   end
+
+  binding.pry
 end
 
 

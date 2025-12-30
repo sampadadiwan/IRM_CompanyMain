@@ -187,6 +187,7 @@ Given('Given I upload a offer file {string}') do |file_name|
     #sleep(5)
 
     ImportUpload.last.failed_row_count.should == 0
+    ImportUpload.last.status.should == "Completed"
 end
 
 Then('when the offers are approved') do

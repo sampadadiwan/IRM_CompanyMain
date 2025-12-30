@@ -301,6 +301,7 @@ Given('I upload investments file {string}') do |string|
   ImportUploadJob.perform_now(ImportUpload.last.id)
   # binding.pry if ImportUpload.last.failed_row_count > 0
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Then('{string} Investments should be created for the portfolio company with expected details') do |count|

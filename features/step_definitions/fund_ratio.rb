@@ -12,6 +12,7 @@ Given("a Bulk Upload is performed for FundRatios with file {string}") do |file_n
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
   ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
 end
 
 Given("there is a CapitalCommitment with {string}") do |arg|

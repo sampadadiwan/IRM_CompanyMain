@@ -22,9 +22,10 @@ class ImportUploadJob < ApplicationJob
         import_upload.status = e.message
         import_upload.error_text = e.backtrace
         Rails.logger.error e.backtrace
+      ensure
+        import_upload.save
       end
 
-      import_upload.save
       if import_upload.failed_row_count.positive? || import_upload.status == "Failed"
         msg = "Import of #{import_upload.name} failed with #{import_upload.failed_row_count}, #{import_upload.error_text} errors"
         level = "danger"
