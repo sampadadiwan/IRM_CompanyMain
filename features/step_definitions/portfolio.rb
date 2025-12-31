@@ -193,7 +193,6 @@ Then('the portfolio investments must have the data in the sheet') do
     pi.import_upload_id.should == ImportUpload.last.id
   end
 
-  binding.pry
 end
 
 
