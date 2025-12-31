@@ -184,6 +184,7 @@ class ImportUtil < Trailblazer::Operation
     end
   end
 
+  # rubocop:disable Metrics/CyclomaticComplexity
   def setup_custom_fields(user_data, model, custom_field_headers, form_type: nil)
     # Ensure that we have the form type for the MULTIPLE_FORM_TYPES_ALLOWED
     if form_type.nil? && FormType::MULTIPLE_FORM_TYPES_ALLOWED.include?(model.class.name)
@@ -220,6 +221,7 @@ class ImportUtil < Trailblazer::Operation
       end
     end
   end
+  # rubocop:enable Metrics/CyclomaticComplexity
 
   def setup_exchange_rate(model, user_data)
     as_of = Date.local_parse(user_data["As Of"]) if user_data["As Of"].present?

@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "assistant_response_#{request_id}" do %>
+<%= turbo_frame_tag "assistant_response_#{request_id}", target: "_top" do %>
   <% if error.present? %>
     <div class="text-danger small">
       <%= h(error) %>

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html class="reveal-presentation">
+  <head>
+    <title><%= content_for?(:title) ? yield(:title) : "Presentation" %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS (Play CDN for isolation and rapid development) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+
+    <!-- Reveal.js Core Styles -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.min.css">
+    <!-- Base Reveal.js Theme (we'll override much with Tailwind) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/theme/white.min.css" id="theme">
+
+    <style>
+      /* Let Reveal.js handle positioning/scaling; just remove padding and theme overrides. */
+      .reveal {
+        font-family: "Inter", sans-serif;
+      }
+
+      .reveal .slides {
+        text-align: left;
+      }
+
+      .reveal .slides section {
+        padding: 0;
+      }
+
+      /* Reset headings so Tailwind typography looks correct */
+      .reveal h1,
+      .reveal h2,
+      .reveal h3,
+      .reveal h4,
+      .reveal h5,
+      .reveal h6 {
+        text-transform: none;
+        margin: 0;
+        line-height: inherit;
+        font-family: inherit;
+      }
+    </style>
+
+    <%= yield :head %>
+  </head>
+
+  <body class="bg-slate-50">
+    <%= yield :turbo_streams %>
+
+    <div class="reveal">
+      <div class="slides" id="slides_container">
+        <%= yield %>
+      </div>
+    </div>
+
+    <!-- Reveal.js Core Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/reveal.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/notes/notes.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/markdown/markdown.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.1.0/plugin/highlight/highlight.min.js"></script>
+
+    <!-- Load the Rails JS bundle so Stimulus controllers (e.g., chart-renderer) work in presentation mode -->
+    <%= javascript_importmap_tags %>
+
+    <script>
+      // Initialize / refresh Reveal.js.
+      // Slides can be injected asynchronously via Turbo Streams, so we also re-sync on DOM updates.
+      (function () {
+        const initOrSync = () => {
+          if (!window.Reveal || typeof window.Reveal.initialize !== 'function') return
+
+          try {
+            if (typeof window.Reveal.isReady === 'function' && window.Reveal.isReady()) {
+              if (typeof window.Reveal.sync === 'function') window.Reveal.sync()
+              if (typeof window.Reveal.layout === 'function') window.Reveal.layout()
+              return
+            }
+
+            window.Reveal.initialize({
+              hash: true,
+              margin: 0,
+              width: 1920,
+              height: 1080,
+              minScale: 0.2,
+              maxScale: 2.0,
+              center: false,
+              plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+            })
+          } catch (e) {
+            console.error('[presentation] Reveal init/sync failed', e)
+          }
+        }
+
+        document.addEventListener('DOMContentLoaded', initOrSync)
+        document.addEventListener('turbo:load', initOrSync)
+
+        const slidesEl = document.getElementById('slides_container')
+        if (slidesEl && window.MutationObserver) {
+          const observer = new MutationObserver(() => initOrSync())
+          observer.observe(slidesEl, { childList: true, subtree: true })
+        }
+      })()
+    </script>
+  </body>
+</html>

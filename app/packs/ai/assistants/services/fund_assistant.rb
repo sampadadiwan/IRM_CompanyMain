@@ -10,7 +10,7 @@ require 'erb'
 # and the underlying data and tools.
 #
 class FundAssistant
-  AI_MODEL = 'gemini-3-flash-preview'.freeze
+  AI_MODEL = ENV.fetch("DEFAULT_MODEL").freeze
 
   # Initializes the FundAssistant.
   #
@@ -52,6 +52,12 @@ class FundAssistant
     <<~SYSTEM
       You are a helpful AI assistant for a Private Equity Fund Management platform.
       You have access to tools to retrieve information and plot charts. You will format the response as markdown and typically as a table when possible. Always use the tools to get accurate data.
+
+      Hyperlinking Rules:
+      - Most data objects returned by tools include a `view_link` field.
+      - ALWAYS use this `view_link` to hyperlink the primary identifier (like name, folio, or ID) in your markdown tables or text.
+      - Use an HTML anchor tag with `target="_blank"` for these links to ensure they open in a new window.
+      - Example: `<a href="/funds/123" target="_blank">Fund Name</a>` or `<a href="/investors/456" target="_blank">Investor Name</a>`.
 
       Tool Usage Rules:
       - When searching for items like remittances or commitments, you can filter by `fund_id`, `folio_id`, or a Ransack `query`.

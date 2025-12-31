@@ -40,6 +40,9 @@ resources :ai_portfolio_reports do
 end
 
 resources :assistants, only: [:show] do
-  post :ask, on: :collection
-  post :transcribe, on: :collection
+  collection do
+    post :ask
+    post :transcribe
+    get :generate_slides
+  end
 end

@@ -14,7 +14,16 @@ class AssistantQueryJob < ApplicationJob
 
     assistant = case assistant_type.to_s
                 when 'portfolio_company'
-                  PortfolioCompanyAssistant.new(user: user)
+                  latest_chat = Chat.where(user: user, assistant_type: 'PortfolioCompanyAssistant').order(created_at: :desc).first
+                  portfolio_company = latest_chat&.owner if latest_chat&.owner_type == 'Investor'
+                  PortfolioCompanyAssistant.new(user: user, portfolio_company: portfolio_company)
+                when 'portfolio'
+                  PortfolioAssistant.new(user: user)
+                when 'capital_commitment'
+                  # Try to find the latest chat for this user/assistant_type to get the commitment context
+                  latest_chat = Chat.where(user: user, assistant_type: 'CapitalCommitmentAssistant').order(created_at: :desc).first
+                  commitment = latest_chat&.owner if latest_chat&.owner_type == 'CapitalCommitment'
+                  CapitalCommitmentAssistant.new(user: user, capital_commitment: commitment)
                 else
                   FundAssistant.new(user: user)
                 end

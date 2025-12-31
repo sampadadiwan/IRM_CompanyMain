@@ -1,0 +1,68 @@
+<section class="h-full w-full bg-slate-50 flex items-center justify-center p-0">
+  <div class="w-full h-full relative grid grid-cols-2">
+
+    <!-- Left Side -->
+    <div class="h-full flex flex-col p-16 bg-white border-r border-slate-200">
+      <div class="mb-12">
+         <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Option A</span>
+         <h2 class="text-4xl font-bold text-slate-900 mt-2 flex items-center gap-4">
+            <div class="p-2 bg-blue-50 rounded-lg text-blue-600">
+               <i class="ti ti-<%= left_col['icon'].presence || 'building' %> text-2xl"></i>
+            </div>
+            <%= left_col[:title] %>
+         </h2>
+      </div>
+
+      <div class="space-y-6 flex-grow">
+        <% if left_col[:items].is_a?(Array) %>
+          <% left_col[:items].each do |item| %>
+            <div class="flex items-start gap-4">
+               <div class="w-1.5 h-1.5 bg-blue-500 rounded-full mt-2.5 flex-shrink-0"></div>
+               <p class="text-lg text-slate-600 leading-relaxed"><%= item %></p>
+            </div>
+          <% end %>
+        <% else %>
+           <p class="text-lg text-slate-600 leading-relaxed"><%= left_col[:content] %></p>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Center VS Badge -->
+    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg border border-slate-100">
+      <span class="text-sm font-black text-slate-300 italic">VS</span>
+    </div>
+
+    <!-- Right Side -->
+    <div class="h-full flex flex-col p-16 bg-slate-50/50">
+      <div class="mb-12">
+         <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Option B</span>
+         <h2 class="text-4xl font-bold text-slate-900 mt-2 flex items-center gap-4">
+            <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+               <i class="ti ti-<%= right_col['icon'].presence || 'chart-dots' %> text-2xl"></i>
+            </div>
+            <%= right_col[:title] %>
+         </h2>
+      </div>
+
+      <div class="space-y-6 flex-grow">
+        <% if right_col[:items].is_a?(Array) %>
+          <% right_col[:items].each do |item| %>
+            <div class="flex items-start gap-4">
+               <div class="w-1.5 h-1.5 bg-indigo-500 rounded-full mt-2.5 flex-shrink-0"></div>
+               <p class="text-lg text-slate-600 leading-relaxed"><%= item %></p>
+            </div>
+          <% end %>
+        <% else %>
+           <p class="text-lg text-slate-600 leading-relaxed"><%= right_col[:content] %></p>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Shared Footer -->
+    <div class="absolute bottom-0 left-0 w-full p-8 border-t border-slate-200 bg-white/80 backdrop-blur-sm flex justify-between items-center">
+       <h3 class="text-xl font-semibold text-slate-800"><%= title %></h3>
+       <div class="text-xs font-bold text-slate-400 uppercase tracking-widest">Comparative Analysis</div>
+    </div>
+
+  </div>
+</section>

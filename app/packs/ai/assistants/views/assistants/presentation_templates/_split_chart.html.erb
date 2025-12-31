@@ -1,0 +1,53 @@
+<section class="h-full w-full bg-white flex items-center justify-center p-0">
+  <div class="w-full h-full grid grid-cols-12 relative">
+
+    <!-- Left Column: Context & Analysis -->
+    <div class="col-span-4 bg-slate-50 border-r border-slate-100 p-12 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center gap-3 mb-8">
+           <div class="p-2 bg-blue-100 rounded-lg text-blue-600">
+              <i class="ti ti-<%= local_assigns[:icon].presence || 'presentation-analytics' %> text-xl"></i>
+           </div>
+           <span class="text-xs font-bold tracking-widest text-slate-400 uppercase">Data Analysis</span>
+        </div>
+
+        <h2 class="text-4xl font-bold text-slate-900 leading-tight mb-8">
+          <%= title %>
+        </h2>
+
+        <div class="prose prose-slate prose-lg">
+          <p class="text-slate-600 leading-relaxed">
+            <%= analysis %>
+          </p>
+        </div>
+      </div>
+
+      <div class="border-t border-slate-200 pt-6">
+        <div class="flex items-center gap-4">
+          <div class="h-10 w-1 bg-blue-500 rounded-full"></div>
+          <p class="text-sm font-medium text-slate-500 italic">
+            "Automated insight generated from real-time data processing."
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Visualization -->
+    <div class="col-span-8 p-16 flex items-center justify-center bg-white relative">
+       <!-- Subtle Grid Background -->
+       <div class="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"></div>
+
+       <!-- Chart Container -->
+       <div class="w-full h-full relative z-10">
+          <div
+            data-controller="chart-renderer"
+            data-chart-renderer-spec-value="<%= chart_config.to_json %>"
+            class="w-full h-full drop-shadow-sm"
+          >
+            <canvas data-chart-renderer-target="canvas" class="w-full h-full"></canvas>
+          </div>
+       </div>
+    </div>
+
+  </div>
+</section>

@@ -2,6 +2,9 @@ class AssistantsController < ApplicationController
   def show
     authorize :assistant, :show?
 
+    # Handle the generate_slides action when requested via the collection route
+    return generate_slides if params[:id] == 'generate_slides'
+
     return if params[:assistant_type].blank?
 
     @chat = find_or_create_chat
@@ -43,6 +46,42 @@ class AssistantsController < ApplicationController
     end
   end
 
+  def generate_slides
+    authorize :assistant, :show?
+
+    @chat_id = params.require(:chat_id)
+    force_generate = params[:generate] == 'true'
+
+    existing = (AiPresentation.find_by(chat_id: @chat_id, entity_id: current_user.entity_id) unless force_generate)
+
+    respond_to do |format|
+      format.json do
+        if existing
+          render json: { html: existing.content_html, status: "ready" }
+        else
+          GenerateSlidesJob.perform_later(current_user.id, @chat_id, force_generate: force_generate)
+          render json: { status: "queued" }, status: :accepted
+        end
+      end
+
+      format.html do
+        if existing
+          @slides_html = existing.content_html
+        else
+          GenerateSlidesJob.perform_later(current_user.id, @chat_id, force_generate: force_generate)
+        end
+
+        # Avoid calling Devise helpers in ActionController::Base.renderer contexts.
+        @slides_user = current_user
+
+        render layout: "presentation", template: "/assistants/generate_slides"
+      end
+    end
+  rescue StandardError => e
+    Rails.logger.error("Slide generation failed: #{e.message}")
+    render json: { error: "Failed to generate slides: #{e.message}" }, status: :unprocessable_entity
+  end
+
   private
 
   def find_or_create_chat
@@ -58,12 +97,17 @@ class AssistantsController < ApplicationController
   end
 
   def create_chat
+    commitment = CapitalCommitment.find_by(id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
+    portfolio_company = Investor.find_by(id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+
+    owner = commitment || portfolio_company || current_user
+
     ActiveRecord::Base.connected_to(role: :writing) do
       Chat.create!(
         user: current_user,
         entity_id: current_user.entity_id,
         assistant_type: assistant_class,
-        owner: current_user,
+        owner: owner,
         enable_broadcast: false,
         model_id: PortfolioCompanyAssistant::AI_MODEL,
         name: "#{assistant_initials} Chat #{I18n.l(Time.zone.now, format: :default)}"
@@ -72,10 +116,18 @@ class AssistantsController < ApplicationController
   end
 
   def assistant_initials
-    assistant_class == 'PortfolioCompanyAssistant' ? 'PCA' : 'FA'
+    case assistant_class
+    when 'PortfolioCompanyAssistant' then 'PCA'
+    when 'CapitalCommitmentAssistant' then 'CCA'
+    else 'FA'
+    end
   end
 
   def assistant_class
-    @assistant_class ||= (params[:assistant_type] == 'portfolio_company' ? 'PortfolioCompanyAssistant' : 'FundAssistant')
+    @assistant_class ||= case params[:assistant_type]
+                         when 'portfolio_company' then 'PortfolioCompanyAssistant'
+                         when 'capital_commitment' then 'CapitalCommitmentAssistant'
+                         else 'FundAssistant'
+                         end
   end
 end

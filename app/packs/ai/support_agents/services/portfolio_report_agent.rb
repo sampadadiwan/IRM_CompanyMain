@@ -849,7 +849,7 @@ class PortfolioReportAgent < SupportAgentService
     PROMPT
 
     # Call LLM using RubyLLM
-    chat = RubyLLM.chat(model: 'gemini-2.0-flash')
+    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
 
     response = chat.ask(prompt)
     company_name = response.content.strip

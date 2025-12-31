@@ -1,0 +1,96 @@
+<section class="h-full w-full bg-white flex items-center justify-center p-0 selection:bg-indigo-100">
+  <div class="w-full h-full max-w-7xl mx-auto px-16 py-12 flex flex-col items-center">
+
+    <!-- Hero Header -->
+    <div class="text-center space-y-4 mb-16 max-w-4xl">
+      <h2 class="text-6xl font-extrabold text-slate-900 tracking-tight leading-tight">
+        <%= title %>
+      </h2>
+      <p class="text-xl text-slate-500 font-medium italic">
+        From analysis to action: Strategic pathways for fund optimization.
+      </p>
+    </div>
+
+    <!-- Visual Card Grid -->
+    <div class="grid grid-cols-3 gap-8 w-full items-stretch">
+      <%
+        accent_colors = [
+          { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200', tag_bg: 'bg-red-100', tag_text: 'text-red-700', label: 'LOWERS AMBITION', bar: 'bg-red-500' },
+          { bg: 'bg-orange-50', text: 'text-orange-600', border: 'border-orange-200', tag_bg: 'bg-orange-100', tag_text: 'text-orange-700', label: 'MAINTAINS AMBITION', bar: 'bg-orange-500' },
+          { bg: 'bg-emerald-50', text: 'text-emerald-600', border: 'border-emerald-200', tag_bg: 'bg-emerald-100', tag_text: 'text-emerald-700', label: 'INCREASES AMBITION', bar: 'bg-emerald-500' }
+        ]
+      %>
+      <% items.first(3).each_with_index do |item, index| %>
+        <% color = accent_colors[index % accent_colors.length] %>
+        <div class="relative group flex flex-col bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/50 p-8 transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl hover:shadow-indigo-100">
+
+          <!-- Icon Container -->
+          <div class="flex justify-center mb-8">
+            <div class="w-20 h-20 <%= color[:bg] %> rounded-2xl flex items-center justify-center <%= color[:text] %> transform rotate-3 group-hover:rotate-0 transition-transform duration-500">
+              <i class="ti ti-<%= item['icon'].presence || (index == 0 ? 'alert-circle' : (index == 1 ? 'settings' : 'rocket')) %> text-4xl"></i>
+            </div>
+          </div>
+
+          <!-- Status Tag -->
+          <div class="flex justify-center mb-6">
+            <span class="px-4 py-1 rounded-full <%= color[:tag_bg] %> <%= color[:tag_text] %> text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5">
+              <span class="text-lg">
+                <%= index == 0 ? '↓' : (index == 1 ? '↔' : '↑') %>
+              </span>
+              <%= color[:label] %>
+            </span>
+          </div>
+
+          <!-- Content -->
+          <div class="text-center flex-grow flex flex-col">
+            <h3 class="text-2xl font-black <%= color[:text] %> uppercase tracking-tight mb-6">
+              <%= item['title'] || "Point #{index + 1}" %>
+            </h3>
+
+            <p class="text-slate-600 leading-relaxed text-sm font-medium mb-8">
+              <%= item['text'] || item %>
+            </p>
+
+            <!-- Bottom Quote Box -->
+            <div class="mt-auto pt-6 border-t-2 border-slate-50 relative">
+              <div class="absolute -top-[2px] left-1/2 -translate-x-1/2 w-12 h-1 <%= color[:bar] %> rounded-full"></div>
+              <p class="text-slate-400 italic text-sm font-serif">
+                "<%= item['summary'] || "Actionable insight for strategic growth" %>"
+              </p>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Connected Visual Elements (Background) -->
+    <div class="absolute top-1/2 left-0 w-full -z-10 flex justify-center pointer-events-none">
+      <div class="w-[80%] h-px bg-slate-100 flex justify-between px-32">
+        <div class="w-8 h-8 -mt-4 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-300">
+          <i class="ti ti-chevron-right"></i>
+        </div>
+        <div class="w-8 h-8 -mt-4 bg-white border border-slate-100 rounded-full flex items-center justify-center text-slate-300">
+          <i class="ti ti-chevron-right"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- Progressive Footer -->
+    <div class="mt-auto w-full pt-12 flex items-center justify-between text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">
+      <div class="flex items-center gap-4">
+        <div class="flex gap-1">
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-slate-200"></div>
+          <div class="w-1.5 h-1.5 rounded-full bg-indigo-500"></div>
+        </div>
+        <span>Strategic Outlook 2024</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span>Confidential</span>
+        <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+        <span>Slide 03</span>
+      </div>
+    </div>
+
+  </div>
+</section>

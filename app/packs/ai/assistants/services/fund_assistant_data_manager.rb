@@ -111,7 +111,8 @@ class FundAssistantDataManager
         collected_amount: f.collected_amount.format,
         committed_amount: f.committed_amount.format,
         distribution_amount: f.distribution_amount.format,
-        call_amount: f.call_amount.format
+        call_amount: f.call_amount.format,
+        view_link: "/funds/#{f.id}"
       }
     end
   end
@@ -134,7 +135,8 @@ class FundAssistantDataManager
       details: fund.details,
       first_close_date: fund.first_close_date,
       last_close_date: fund.last_close_date,
-      signatory_emails: fund.esign_emails
+      signatory_emails: fund.esign_emails,
+      view_link: "/funds/#{fund.id}"
     }
 
     details[:master_fund] = fund.master_fund&.name if fund.master_fund_id.present?
@@ -176,7 +178,8 @@ class FundAssistantDataManager
         percentage_called: c.percentage_called,
         percentage_raised: c.percentage_raised,
         status: c.status,
-        approved: c.approved
+        approved: c.approved,
+        view_link: "/capital_calls/#{c.id}"
       }
     end
   end
@@ -214,7 +217,8 @@ class FundAssistantDataManager
         collected_amount: c.collected_amount.format,
         distribution_amount: c.distribution_amount.format,
         commitment_date: c.commitment_date,
-        onboarding_completed: c.onboarding_completed
+        onboarding_completed: c.onboarding_completed,
+        view_link: "/capital_commitments/#{c.id}"
       }
     end
   end
@@ -255,7 +259,8 @@ class FundAssistantDataManager
           capital: r.capital_fee.format,
           other: r.other_fee.format,
           investment: r.investment_amount.format
-        }
+        },
+        view_link: "/capital_remittances/#{r.id}"
       }
     end
   end
@@ -283,7 +288,8 @@ class FundAssistantDataManager
         reinvestment: d.reinvestment.format,
         notes: d.notes,
         approved: d.approved,
-        completed: d.completed
+        completed: d.completed,
+        view_link: "/capital_distributions/#{d.id}"
       }
     end
   end
@@ -309,7 +315,8 @@ class FundAssistantDataManager
         folio_id: p.capital_commitment.folio_id,
         amount: p.amount.format,
         payment_date: p.payment_date,
-        reference_no: p.reference_no
+        reference_no: p.reference_no,
+        view_link: "/capital_remittance_payments/#{p.id}"
       }
     end
   end
@@ -340,7 +347,8 @@ class FundAssistantDataManager
         net_payable: p.net_payable.format,
         gross_payable: p.gross_payable.format,
         payment_date: p.payment_date,
-        units_quantity: p.units_quantity
+        units_quantity: p.units_quantity,
+        view_link: "/capital_distribution_payments/#{p.id}"
       }
     end
   end
@@ -375,7 +383,8 @@ class FundAssistantDataManager
         quantity: i.quantity,
         unrealized_gain: i.unrealized_gain.format,
         gain: i.gain.format,
-        fund_name: i.fund.name
+        fund_name: i.fund.name,
+        view_link: "/portfolio_investments/#{i.id}"
       }
     end
   end
@@ -405,7 +414,8 @@ class FundAssistantDataManager
         owner_type: r.owner_type,
         owner_id: r.owner_id,
         scenario: r.scenario,
-        portfolio_scenario: r.portfolio_scenario&.name
+        portfolio_scenario: r.portfolio_scenario&.name,
+        view_link: "/fund_ratios/#{r.id}"
       }
     end
   end

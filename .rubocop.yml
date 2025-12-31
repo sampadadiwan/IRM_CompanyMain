@@ -218,6 +218,7 @@ Metrics/ClassLength:
     - "app/packs/core/base/services/xlsx_to_template.rb"
     - "app/packs/core/entities/models/entity.rb"
     - "app/packs/funds/funds/services/fund_portfolio_calcs.rb"
+    - "app/packs/ai/assistants/services/portfolio_assistant_data_manager.rb"
 
 Metrics/ModuleLength:
   Description: "Avoid modules longer than 100 lines of code."
@@ -279,6 +280,7 @@ Metrics/MethodLength:
     - "app/packs/core/base/services/xlsx_to_template.rb"
     - "app/packs/core/entities/models/entity.rb"
     - "app/packs/funds/funds/services/fund_portfolio_calcs.rb"
+    - "app/packs/funds/portfolios/services/import_portfolio_investment.rb"
 
 Metrics/BlockNesting:
   Exclude:

@@ -29,7 +29,7 @@ export default class extends Controller {
 
     pres.layout = 'LAYOUT_WIDE'
 
-    const messages = this.responsesTarget.querySelectorAll('.assistant-message-card')
+    const messages = this.responsesTarget.querySelectorAll('.assistant-message-card, .card.assistant-message-card')
 
     if (messages.length === 0) {
       alert("No assistant responses found to export.")

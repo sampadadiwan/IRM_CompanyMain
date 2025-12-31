@@ -1,214 +1,190 @@
-<div id="assistant-chat" class="d-flex flex-column h-100 bg-white position-relative" data-controller="voice-chat ppt-export slideshow" style="min-height: 80vh;">
+<div id="assistant-chat" class="d-flex flex-column h-100 ai-chat-container position-relative"
+     data-controller="voice-chat ppt-export slideshow"
+     data-slideshow-chat-id-value="<%= @chat&.id %>">
   <%= turbo_stream_from [current_user, "assistant"] if current_user %>
 
-  <!-- Assistant Selection & Export (Top Right) -->
-  <div class="position-absolute top-0 end-0 p-3 d-flex gap-2" style="z-index: 1050;">
-    <button type="button"
-            class="btn btn-sm btn-outline-info px-3 d-none d-md-flex align-items-center gap-2 ti ti-presentation"
-            data-action="click->slideshow#open"
-            title="Present chat as Slideshow">
-      Present
-    </button>
+  <!-- Header Section -->
+  <header class="chat-header d-flex align-items-center justify-content-between p-3 border-bottom bg-white sticky-top">
+    <div class="d-flex align-items-center gap-3">
+      <div class="header-icon rounded-circle d-flex align-items-center justify-content-center">
+        <i class="ti ti-sparkles text-primary fs-4"></i>
+      </div>
+      <div>
+        <h5 class="mb-0 fw-bold text-dark">AI Assistant</h5>
+        <p class="small text-muted mb-0">Fintech Intelligence</p>
+      </div>
+    </div>
 
-    <button type="button"
-            class="btn btn-sm btn-outline-success px-3 d-flex align-items-center gap-2 ti ti-file-export"
-            data-action="click->ppt-export#export"
-            title="Export chat to PowerPoint">
-      Export PPT
-    </button>
+    <div class="d-flex gap-2 align-items-center">
+      <!-- Actions Dropdown (Present/Export) -->
+      <div class="dropdown">
+        <button type="button" class="btn btn-action-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-dots-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4">
+          <li><h6 class="dropdown-header">Presentation & Export</h6></li>
+          <li>
+            <button class="dropdown-item d-flex align-items-center gap-2 py-2" data-action="click->slideshow#openNew">
+              <i class="ti ti-presentation text-primary"></i> AI Slides (New)
+            </button>
+          </li>
+          <li>
+            <button class="dropdown-item d-flex align-items-center gap-2 py-2" data-action="click->slideshow#openOld" data-chat-id="<%= @chat&.id %>">
+              <i class="ti ti-layers-subtract text-info"></i> Chat Slides (Old)
+            </button>
+          </li>
+          <li><hr class="dropdown-divider"></li>
+          <li>
+            <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2" data-action="click->ppt-export#export">
+              <i class="ti ti-file-export text-success"></i> Export PowerPoint
+            </button>
+          </li>
+        </ul>
+      </div>
 
-    <form action="<%= assistant_path('assistant') %>" method="get" data-turbo-frame="_self" class="d-flex gap-2 align-items-center">
-      <a href="<%= assistant_path('assistant', assistant_type: params[:assistant_type], new: true) %>"
-         class="btn btn-sm btn-outline-primary d-flex align-items-center gap-2"
-         title="Start new chat">
-        <i class="ti ti-plus"></i> New Chat
-      </a>
+      <form action="<%= assistant_path('assistant') %>" method="get" data-turbo-frame="_self" class="d-flex gap-2 align-items-center">
+        <a href="<%= assistant_path('assistant', assistant_type: params[:assistant_type], new: true) %>"
+           class="btn btn-action-primary"
+           title="Start new chat">
+          <i class="ti ti-plus"></i> <span class="d-none d-md-inline">New Chat</span>
+        </a>
 
-      <% if @chats.present? %>
-        <select name="chat_id"
-                class="form-select form-select-sm border-0 bg-light shadow-sm rounded-pill px-3"
-                style="width: auto; max-width: 200px; cursor: pointer;"
-                onchange="this.form.requestSubmit()">
-          <option value="" <%= 'selected' if params[:chat_id].blank? %> disabled>Chat History...</option>
-          <% @chats.each do |chat| %>
-            <option value="<%= chat.id %>" <%= 'selected' if @chat&.id == chat.id %>>
-              <%= chat.name.presence || "Chat #{chat.id}" %>
-            </option>
-          <% end %>
+        <% if @chats.present? %>
+          <select name="chat_id"
+                  class="chat-select"
+                  onchange="this.form.requestSubmit()">
+            <option value="" <%= 'selected' if params[:chat_id].blank? %> disabled>History...</option>
+            <% @chats.each do |chat| %>
+              <option value="<%= chat.id %>" <%= 'selected' if @chat&.id == chat.id %>>
+                <%= chat.name.presence || "Chat ##{chat.id}" %>
+              </option>
+            <% end %>
+          </select>
+        <% end %>
+
+        <select name="assistant_type"
+                class="chat-select"
+                data-voice-chat-target="assistantType"
+                onchange="const chatId = this.form.querySelector('select[name=chat_id]'); if(chatId) chatId.disabled = true; this.form.requestSubmit()">
+          <option value="" <%= 'selected' if params[:assistant_type].blank? %> disabled>Choose Assistant...</option>
+          <option value="fund" <%= 'selected' if params[:assistant_type] == 'fund' %>>Fund</option>
+          <option value="portfolio" <%= 'selected' if params[:assistant_type] == 'portfolio' %>>Portfolio</option>
+          <option value="portfolio_company" <%= 'selected' if params[:assistant_type] == 'portfolio_company' %>>Company</option>
+          <option value="capital_commitment" <%= 'selected' if params[:assistant_type] == 'capital_commitment' %>>Commitment</option>
         </select>
-      <% end %>
 
-      <select name="assistant_type"
-              class="form-select form-select-sm border-0 bg-light shadow-sm rounded-pill px-3"
-              style="width: auto; cursor: pointer;"
-              data-voice-chat-target="assistantType"
-              onchange="const chatId = this.form.querySelector('select[name=chat_id]'); if(chatId) chatId.disabled = true; this.form.requestSubmit()">
-        <option value="" <%= 'selected' if params[:assistant_type].blank? %> disabled>Select Assistant...</option>
-        <option value="fund" <%= 'selected' if params[:assistant_type] == 'fund' %>>Fund Assistant</option>
-        <option value="portfolio_company" <%= 'selected' if params[:assistant_type] == 'portfolio_company' %>>Portfolio Company Assistant</option>
-      </select>
-    </form>
-  </div>
+        <% if params[:capital_commitment_id].present? %>
+          <input type="hidden" name="capital_commitment_id" value="<%= params[:capital_commitment_id] %>">
+        <% elsif params[:portfolio_company_id].present? %>
+          <input type="hidden" name="portfolio_company_id" value="<%= params[:portfolio_company_id] %>">
+        <% end %>
+      </form>
+    </div>
+  </header>
 
   <% if params[:assistant_type].present? %>
-    <div class="d-flex flex-column h-100" data-voice-chat-target="chatInterface">
-    <!-- Main Chat Container -->
-
-    <!-- Slideshow Overlay -->
-      <div class="position-absolute top-0 start-0 w-100 bg-white d-none shadow-lg border"
-           style="z-index: 2000; height: 100%; min-height: 800px;"
-           data-slideshow-target="container">
-       <div class="d-flex flex-column h-100 position-relative">
-         <div class="p-2 d-flex justify-content-between align-items-center border-bottom bg-light">
-           <h5 class="mb-0 px-3"><i class="ti ti-presentation text-primary me-2"></i>Assistant Presentation</h5>
-           <button type="button" class="btn btn-sm btn-outline-danger border-0 rounded-circle" data-action="click->slideshow#close">
-             <i class="ti ti-x fs-4"></i>
-           </button>
-         </div>
-         <div class="reveal flex-grow-1" data-slideshow-target="reveal">
-           <div class="slides" data-slideshow-target="slides">
-             <!-- Slides will be injected here -->
-           </div>
-         </div>
-
-         <!-- Mobile-only navigation (reliable fallback if Reveal controls are hidden) -->
-         <div class="slideshow-touch-nav d-md-none" aria-label="Slideshow navigation">
-           <button type="button"
-                   class="btn btn-primary slideshow-touch-nav__btn"
-                   aria-label="Previous slide"
-                   data-action="click->slideshow#prev touchstart->slideshow#prev">
-             <i class="ti ti-chevron-left fs-2"></i>
-           </button>
-           <button type="button"
-                   class="btn btn-primary slideshow-touch-nav__btn"
-                   aria-label="Next slide"
-                   data-action="click->slideshow#next touchstart->slideshow#next">
-             <i class="ti ti-chevron-right fs-2"></i>
-           </button>
-         </div>
-       </div>
-     </div>
-
-    <div class="flex-grow-1 overflow-auto py-4 px-3 d-flex flex-column align-items-center" id="chat-feed" style="scroll-behavior: smooth;">
-      <div class="w-100">
-
-         <!-- Empty State / Welcome -->
-         <div class="text-center py-5 my-5 text-muted opacity-75 <%= 'd-none' if @messages.present? %>" id="welcome-message" data-voice-chat-target="welcome">
-            <div class="mb-4">
-              <div class="d-inline-flex align-items-center justify-content-center bg-light rounded-circle" style="width: 80px; height: 80px;">
-                <span class="fs-1">🤖</span>
-              </div>
+    <main class="chat-main flex-grow-1 overflow-auto" id="chat-feed" data-voice-chat-target="chatInterface">
+      <!-- Slideshow Overlay (Moved inside main for containment) -->
+      <div class="slideshow-overlay d-none" data-slideshow-target="container">
+        <div class="d-flex flex-column h-100 position-relative">
+          <div class="p-3 d-flex justify-content-between align-items-center bg-white border-bottom shadow-sm">
+            <h5 class="mb-0"><i class="ti ti-presentation text-primary me-2"></i>Assistant Presentation</h5>
+            <button type="button" class="btn-close" data-action="click->slideshow#close"></button>
+          </div>
+          <div class="reveal flex-grow-1" data-slideshow-target="reveal">
+            <div class="slideshow-loading d-none text-center" data-slideshow-target="loading">
+              <div class="spinner-border text-primary" role="status"></div>
+              <p class="mt-2 text-primary fw-medium">Generating High-Fidelity Slides...</p>
             </div>
-            <h2 class="fw-bold text-dark mb-2">How can I help you?</h2>
-            <p class="lead mb-0">Ask about your portfolio, funds, or investments.</p>
-            <span class="small">Chat Id <%= @chat.id %>.</span>
-         </div>
-
-         <!-- Responses will be inserted here -->
-         <div data-voice-chat-target="responses" data-ppt-export-target="responses" data-slideshow-target="source" class="d-flex flex-column gap-3">
-           <% if @messages.present? %>
-             <% @messages.each do |msg| %>
-               <%= render partial: "assistants/ask", locals: { msg: msg } %>
-             <% end %>
-           <% end %>
-         </div>
-
-         <!-- Loading Indicator -->
-         <div class="d-none py-3 text-center" data-voice-chat-target="spinner">
-           <div class="spinner-grow text-primary spinner-grow-sm" role="status"></div>
-           <div class="spinner-grow text-primary spinner-grow-sm mx-1" role="status"></div>
-           <div class="spinner-grow text-primary spinner-grow-sm" role="status"></div>
-         </div>
-
+            <div class="slides" data-slideshow-target="slides"></div>
+          </div>
         </div>
       </div>
 
-
-      <!-- Input Area (Sticky Bottom) -->
-      <div class="p-3 bg-white">
-        <div class="container" style="max-width: 800px;">
-        <!-- div class="text-center mb-2">
-          <span class="badge rounded-pill bg-light text-secondary border fw-normal transition-all" data-voice-chat-target="status">
-            Idle
-          </span>
-        </div -->
-
-        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-          <div class="card-body p-2 bg-light d-flex align-items-end gap-2">
-
-              <!-- Text Input -->
-              <textarea
-                class="form-control border-0 bg-transparent shadow-none py-2 px-3"
-                rows="1"
-                placeholder="Message..."
-                style="resize: none; min-height: 48px; max-height: 150px;"
-                data-voice-chat-target="input"
-                data-action="keydown.enter->voice-chat#handleEnter input->voice-chat#autoResize"
-              ></textarea>
-
-              <!-- Send Button -->
-              <button class="btn btn-link text-primary p-2 text-decoration-none"
-                      type="button"
-                      data-action="click->voice-chat#sendText"
-                      title="Send message">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-arrow-up-circle-fill" viewBox="0 0 16 16">
-                  <path d="M16 8A8 8 0 1 0 0 8a8 8 0 0 0 16 0zm-7.5 3.5a.5.5 0 0 1-1 0V5.707L5.354 7.854a.5.5 0 1 1-.708-.708l3-3a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 5.707V11.5z"/>
-                </svg>
-              </button>
-
-              <!-- Mic Button -->
-              <button class="btn btn-primary rounded-circle p-0 d-flex align-items-center justify-content-center flex-shrink-0 transition-all"
-                      type="button"
-                      style="width: 48px; height: 48px;"
-                      data-voice-chat-target="micBtn"
-                      data-action="mousedown->voice-chat#startRecording mouseup->voice-chat#stopRecording mouseleave->voice-chat#stopRecording touchstart->voice-chat#startRecording touchend->voice-chat#stopRecording">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-mic-fill" viewBox="0 0 16 16">
-                    <path d="M5 3a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0V3z"/>
-                    <path d="M3.5 6.5A.5.5 0 0 1 4 7v1a4 4 0 0 0 8 0V7a.5.5 0 0 1 1 0v1a5 5 0 0 1-4.5 4.975V15h3a.5.5 0 0 1 0 1h-7a.5.5 0 0 1 0-1h3v-2.025A5 5 0 0 1 3 8V7a.5.5 0 0 1 .5-.5z"/>
-                  </svg>
-              </button>
-
-          </div>
-        </div>
-
-          <div class="text-center mt-2 text-muted small opacity-75" data-voice-chat-target="hint">
-            Hold 🎙️ to speak • Enter to send
+      <div class="container-fluid py-5 px-3 d-flex flex-column align-items-center">
+        <div class="chat-content-wrapper">
+          <!-- Empty State / Welcome -->
+          <div class="welcome-state text-center py-5 <%= 'd-none' if @messages.present? %>" id="welcome-message" data-voice-chat-target="welcome">
+            <div class="welcome-icon bg-white shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center mb-4">
+              <span class="fs-1">⚡</span>
+            </div>
+            <h2 class="fw-bold text-dark mb-3">Hello, <%= current_user.name.split.first %></h2>
+            <p class="lead text-muted mb-4">I'm your intelligent fintech assistant. How can I help you today?</p>
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+              <span class="badge welcome-badge">Portfolio Analysis</span>
+              <span class="badge welcome-badge">Fund Performance</span>
+              <span class="badge welcome-badge">Asset Valuation</span>
+            </div>
+            <div class="mt-4 small text-muted opacity-50">Session ID: <%= @chat&.id %></div>
           </div>
 
+          <!-- Messages -->
+          <div data-voice-chat-target="responses" data-ppt-export-target="responses" data-slideshow-target="source" class="d-flex flex-column gap-4">
+            <% if @messages.present? %>
+              <% @messages.each do |msg| %>
+                <%= render partial: "assistants/ask", locals: { msg: msg } %>
+              <% end %>
+            <% end %>
+          </div>
+
+          <!-- Typing Indicator -->
+          <div class="typing-indicator d-none py-4" data-voice-chat-target="spinner">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+          </div>
         </div>
       </div>
-    <% end %>
-  </div>
+    </main>
+
+    <!-- Footer Input Area -->
+    <footer class="chat-footer p-3 bg-white border-top">
+      <div class="container-md">
+        <div class="input-card shadow-sm border rounded-pill overflow-hidden bg-light d-flex align-items-center px-2 py-1">
+          <textarea
+            class="form-control border-0 bg-transparent shadow-none py-2 px-3"
+            rows="1"
+            placeholder="Ask anything about your investments..."
+            style="resize: none; min-height: 44px; max-height: 200px;"
+            data-voice-chat-target="input"
+            data-action="keydown.enter->voice-chat#handleEnter input->voice-chat#autoResize"
+          ></textarea>
+
+          <div class="d-flex gap-2 align-items-center px-2">
+            <!-- Send Button -->
+            <button class="btn btn-send rounded-circle p-0"
+                    type="button"
+                    data-action="click->voice-chat#sendText"
+                    title="Send Message">
+              <i class="ti ti-arrow-up fs-4"></i>
+            </button>
+
+            <!-- Mic Button -->
+            <button class="btn btn-mic rounded-circle p-0"
+                    type="button"
+                    data-voice-chat-target="micBtn"
+                    data-action="mousedown->voice-chat#startRecording mouseup->voice-chat#stopRecording mouseleave->voice-chat#stopRecording touchstart->voice-chat#startRecording touchend->voice-chat#stopRecording"
+                    title="Voice Message">
+              <i class="ti ti-microphone fs-4"></i>
+            </button>
+          </div>
+        </div>
+        <div class="text-center mt-2 text-muted-extra-small" data-voice-chat-target="hint">
+          Hold <i class="ti ti-microphone"></i> to speak • Press <strong>Enter</strong> to send
+        </div>
+      </div>
+    </footer>
+  <% end %>
 
   <style>
-    .transition-all {
-        transition: all 0.3s ease;
-    }
-
-    /* Mic Pulse Animation */
-    .mic-active {
-        background-color: #dc3545 !important; /* Red */
-        transform: scale(1.1);
-        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
-        animation: mic-pulse 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
-    }
-
-    @keyframes mic-pulse {
-        to {
-            box-shadow: 0 0 0 20px rgba(220, 53, 69, 0);
-        }
-    }
-
-    /* Hide scrollbar but keep functionality */
-    #chat-feed::-webkit-scrollbar {
-        width: 8px;
-    }
-    #chat-feed::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    #chat-feed::-webkit-scrollbar-thumb {
-        background-color: rgba(0,0,0,0.1);
-        border-radius: 4px;
+    .slideshow-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      z-index: 2000;
     }
   </style>
 </div>

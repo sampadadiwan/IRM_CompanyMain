@@ -7,43 +7,35 @@
   end
 %>
 <% if show_card %>
-<div class="card border-0 shadow-sm mb-3 <%= 'assistant-message-card' if (local_assigns[:msg]&.role == 'assistant') || local_assigns[:response].present? %>">
-  <div class="card-body p-4">
-    <% if defined?(msg) %>
-      <% if msg.role == "user" %>
-        <div class="small text-muted mb-2 d-flex align-items-center gap-2">
-          <i class="ti ti-user fs-5 text-primary"></i>
-          <span>You asked</span>
-        </div>
-        <div class="fw-semibold mb-3 fs-5 text-dark"><%= h(msg.content) %></div>
-        <hr class="my-3 opacity-25">
-      <% elsif msg.role == "assistant" && msg.content.present? %>
-        <div class="small text-muted mb-3 d-flex align-items-center gap-2">
-          <i class="ti ti-robot fs-5 text-success"></i>
-          <span>Assistant</span>
-        </div>
-        <div class="prose">
-          <%= markdown_to_html(msg.content) %>
-        </div>
-      <% end %>
-    <% else %>
-      <div class="small text-muted mb-2 d-flex align-items-center gap-2">
-        <i class="ti ti-user fs-5 text-primary"></i>
-        <span>You asked</span>
-      </div>
-      <div class="fw-semibold mb-3 fs-5 text-dark"><%= h(query) %></div>
-      <hr class="my-3 opacity-25">
+  <%
+    role = defined?(msg) ? msg.role : "user"
+    is_assistant = (role == "assistant") || local_assigns[:response].present?
+    content = defined?(msg) ? msg.content : (local_assigns[:query] || "")
+    assistant_content = defined?(msg) ? (msg.role == "assistant" ? msg.content : nil) : (local_assigns[:response]&.content)
+  %>
 
-      <% if response&.content.present? %>
-        <div class="small text-muted mb-3 d-flex align-items-center gap-2">
-          <i class="ti ti-robot fs-5 text-success"></i>
-          <span>Assistant</span>
+  <div class="message-wrapper d-flex flex-column <%= is_assistant ? 'align-items-start assistant-message-card' : 'align-items-end' %> mb-4">
+    <div class="message-bubble <%= is_assistant ? 'assistant-bubble' : 'user-bubble' %>">
+      <% if !is_assistant %>
+        <div class="message-content">
+          <%= h(content) %>
         </div>
-        <div class="prose">
-          <%= markdown_to_html(response.content) %>
+      <% else %>
+        <div class="assistant-header d-flex align-items-center gap-2 mb-2">
+          <div class="assistant-avatar rounded-circle d-flex align-items-center justify-content-center">
+            <i class="ti ti-robot text-success"></i>
+          </div>
+          <span class="fw-bold small text-dark assistant-label">Assistant</span>
+        </div>
+        <div class="prose message-content assistant-table-container">
+          <%= markdown_to_html(assistant_content || "") %>
         </div>
       <% end %>
-    <% end %>
+    </div>
+    <div class="message-meta mt-1 px-2">
+      <span class="text-muted-extra-small">
+        <%= Time.current.strftime("%H:%M") %>
+      </span>
+    </div>
   </div>
-</div>
 <% end %>

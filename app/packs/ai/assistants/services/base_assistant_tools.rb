@@ -14,7 +14,17 @@ class BaseAssistantTools
       @assistant = assistant
     end
 
-    def execute(data:, prompt:)
+    def execute(data: nil, prompt: nil, **args)
+      # Some LLMs might pass parameters via the **args hash instead of direct keywords,
+      # or they might use different names. We prioritize the direct keywords.
+      data ||= args[:data]
+      prompt ||= args[:prompt]
+
+      # Log what we received to help debug if it fails again
+      Rails.logger.debug { "PlotChart#execute called with data: #{data.inspect}, prompt: #{prompt.inspect}, args: #{args.inspect}" }
+
+      raise ArgumentError, "PlotChart requires both :data and :prompt (received data: #{data.inspect}, prompt: #{prompt.inspect}, args: #{args.inspect})" if data.nil? || prompt.nil?
+
       html = generate_chart_html(data, prompt)
       RubyLLM::Content.new(html)
     end
