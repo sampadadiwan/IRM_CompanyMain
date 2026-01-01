@@ -4,6 +4,7 @@
 # Handles queries about a specific portfolio company's valuations, investments, KPIs, and documents.
 #
 class PortfolioCompanyAssistant
+  DESCRIPTION = "I can help you with this portfolio company's valuations, investments, cap table, KPIs, fund ratios, and documents.".freeze
   AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
 
   # A set of queries to generate a monthly update/report for a portfolio company.

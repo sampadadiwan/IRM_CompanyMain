@@ -17,29 +17,28 @@
 
     <div class="d-flex gap-2 align-items-center">
       <!-- Actions Dropdown (Present/Export) -->
-      <div class="dropdown">
-        <button type="button" class="btn btn-action-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-          <i class="ti ti-dots-vertical"></i>
-        </button>
-        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4">
-          <li><h6 class="dropdown-header">Presentation & Export</h6></li>
-          <li>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-success dropdown-toggle" type="button" id="commitment_actions"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ti ti-file-export"></i> Export
+          </button>
+          <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4" aria-labelledby="dropdownMenuButton">
             <button class="dropdown-item d-flex align-items-center gap-2 py-2" data-action="click->slideshow#openNew">
               <i class="ti ti-presentation text-primary"></i> AI Slides (New)
             </button>
-          </li>
-          <li>
+
             <button class="dropdown-item d-flex align-items-center gap-2 py-2" data-action="click->slideshow#openOld" data-chat-id="<%= @chat&.id %>">
               <i class="ti ti-layers-subtract text-info"></i> Chat Slides (Old)
             </button>
-          </li>
-          <li><hr class="dropdown-divider"></li>
-          <li>
+
+            <div class="dropdown-divider"></div>
+
             <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2" data-action="click->ppt-export#export">
-              <i class="ti ti-file-export text-success"></i> Export PowerPoint
+              <i class="ti ti-file-export text-success "></i> Export PowerPoint
             </button>
-          </li>
-        </ul>
+          </div>
+        </div>
       </div>
 
       <form action="<%= assistant_path('assistant') %>" method="get" data-turbo-frame="_self" class="d-flex gap-2 align-items-center">
@@ -109,7 +108,7 @@
               <span class="fs-1">⚡</span>
             </div>
             <h2 class="fw-bold text-dark mb-3">Hello, <%= current_user.name.split.first %></h2>
-            <p class="lead text-muted mb-4">I'm the CapHive assistant for <%= @chat&.owner %>. How can I help you today?</p>
+            <p class="lead text-muted mb-4"><%= @assistant_description || "I'm the CapHive assistant for #{@chat&.owner}. How can I help you today?" %></p>
             <div class="mt-4 small text-muted opacity-50">Session ID: <%= @chat&.id %></div>
           </div>
 

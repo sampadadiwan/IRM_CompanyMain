@@ -11,6 +11,7 @@ class AssistantsController < ApplicationController
     return unless @chat
 
     Rails.logger.debug { "Loaded chat: #{@chat.id}" }
+    @assistant_description = assistant_class.constantize::DESCRIPTION
     @messages = @chat.messages.where(role: %w[user assistant]).order(created_at: :asc)
     @chats = Chat.where(user: current_user, entity_id: current_user.entity_id, assistant_type: assistant_class).order(created_at: :desc)
   end
@@ -92,14 +93,23 @@ class AssistantsController < ApplicationController
     owner = commitment || portfolio_company || current_user
 
     ActiveRecord::Base.connected_to(role: :writing) do
-      chat = Chat.find_or_initialize_by(
-        user: current_user,
-        entity_id: current_user.entity_id,
-        assistant_type: assistant_class,
-        owner: owner
-      )
+      chat = if params[:new].present?
+               Chat.new(
+                 user: current_user,
+                 entity_id: current_user.entity_id,
+                 assistant_type: assistant_class,
+                 owner: owner
+               )
+             else
+               Chat.find_or_initialize_by(
+                 user: current_user,
+                 entity_id: current_user.entity_id,
+                 assistant_type: assistant_class,
+                 owner: owner
+               )
+             end
 
-      if chat.new_record? || params[:new].present?
+      if chat.new_record?
         chat.assign_attributes(
           enable_broadcast: false,
           model_id: PortfolioCompanyAssistant::AI_MODEL,

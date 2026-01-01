@@ -4,7 +4,8 @@
 # Handles queries about valuations, investments, KPIs, and documents.
 #
 class PortfolioAssistant
-  AI_MODEL = ENV.fetch('DEFAULT_MODEL', nil).freeze
+  DESCRIPTION = "I can help you with portfolio companies, valuations, investments, cap tables, KPIs, fund ratios, and documents.".freeze
+  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
 
   def initialize(user:, chat: nil)
     @user = user

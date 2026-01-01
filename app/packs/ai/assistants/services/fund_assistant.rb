@@ -10,6 +10,7 @@ require 'erb'
 # and the underlying data and tools.
 #
 class FundAssistant
+  DESCRIPTION = "I can help you with fund details, capital calls, commitments, remittances, distributions, portfolio investments, and fund ratios.".freeze
   AI_MODEL = ENV.fetch("DEFAULT_MODEL").freeze
 
   # Initializes the FundAssistant.

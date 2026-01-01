@@ -7,6 +7,7 @@ require 'erb'
 # and registers the available tools that the AI can use.
 #
 class CapitalCommitmentAssistant
+  DESCRIPTION = "I can help you with your capital commitment details, remittances, distributions, and documents.".freeze
   AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
   # A realistic set of prompts/queries an LP might ask to generate a monthly
   # reporting pack for a single capital commitment.
