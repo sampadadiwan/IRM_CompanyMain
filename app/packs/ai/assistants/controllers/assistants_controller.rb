@@ -85,33 +85,29 @@ class AssistantsController < ApplicationController
   private
 
   def find_or_create_chat
-    if params[:new].present?
-      create_chat
-    elsif params[:chat_id].present?
-      Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id, assistant_type: assistant_class)
-    else
-      @chat = Chat.where(user: current_user, entity_id: current_user.entity_id, assistant_type: assistant_class)
-                  .order(created_at: :desc).first
-      @chat || create_chat
-    end
-  end
+    return Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id, assistant_type: assistant_class) if params[:new].blank? && params[:chat_id].present?
 
-  def create_chat
     commitment = CapitalCommitment.find_by(id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     portfolio_company = Investor.find_by(id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
-
     owner = commitment || portfolio_company || current_user
 
     ActiveRecord::Base.connected_to(role: :writing) do
-      Chat.create!(
+      chat = Chat.find_or_initialize_by(
         user: current_user,
         entity_id: current_user.entity_id,
         assistant_type: assistant_class,
-        owner: owner,
-        enable_broadcast: false,
-        model_id: PortfolioCompanyAssistant::AI_MODEL,
-        name: "#{assistant_initials} Chat #{I18n.l(Time.zone.now, format: :default)}"
+        owner: owner
       )
+
+      if chat.new_record? || params[:new].present?
+        chat.assign_attributes(
+          enable_broadcast: false,
+          model_id: PortfolioCompanyAssistant::AI_MODEL,
+          name: "#{assistant_initials} Chat #{I18n.l(Time.zone.now, format: :default)}"
+        )
+        chat.save!
+      end
+      chat
     end
   end
 

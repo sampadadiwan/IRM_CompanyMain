@@ -19,6 +19,14 @@
       <% end %>
     <% end %>
 
+    <% if @capital_commitment.entity.support_agents.set?(:folio_assistant) %>
+      <%= link_to assistant_path('assistant', assistant_type: 'capital_commitment', capital_commitment_id: @capital_commitment.id),
+                  class: "btn btn-outline-secondary",
+                  data: { turbo: false } do %>
+        <i class="ti ti-brand-github-copilot"></i> AI Assistant
+      <% end %>
+    <% end %>
+
     <% if policy(@capital_commitment).update? %>
       <div class="btn-group">
         <div class="dropdown">

@@ -10,8 +10,8 @@
         <i class="ti ti-sparkles text-primary fs-4"></i>
       </div>
       <div>
-        <h5 class="mb-0 fw-bold text-dark">AI Assistant</h5>
-        <p class="small text-muted mb-0">Fintech Intelligence</p>
+        <h5 class="mb-0 fw-bold text-dark">CapHive Assistant</h5>
+        <p class="small text-muted mb-0"><%= @chat.owner %></p>
       </div>
     </div>
 
@@ -43,8 +43,8 @@
       </div>
 
       <form action="<%= assistant_path('assistant') %>" method="get" data-turbo-frame="_self" class="d-flex gap-2 align-items-center">
-        <a href="<%= assistant_path('assistant', assistant_type: params[:assistant_type], new: true) %>"
-           class="btn btn-action-primary"
+        <a href="<%= assistant_path('assistant', assistant_type: params[:assistant_type], new: true, portfolio_company_id: params[:portfolio_company_id], capital_commitment_id: params[:capital_commitment_id]) %>"
+           class="btn btn-outline-primary"
            title="Start new chat">
           <i class="ti ti-plus"></i> <span class="d-none d-md-inline">New Chat</span>
         </a>
@@ -83,7 +83,7 @@
   </header>
 
   <% if params[:assistant_type].present? %>
-    <main class="chat-main flex-grow-1 overflow-auto" id="chat-feed" data-voice-chat-target="chatInterface">
+    <main class="chat-main overflow-auto" id="chat-feed" data-voice-chat-target="chatInterface">
       <!-- Slideshow Overlay (Moved inside main for containment) -->
       <div class="slideshow-overlay d-none" data-slideshow-target="container">
         <div class="d-flex flex-column h-100 position-relative">
@@ -109,12 +109,7 @@
               <span class="fs-1">⚡</span>
             </div>
             <h2 class="fw-bold text-dark mb-3">Hello, <%= current_user.name.split.first %></h2>
-            <p class="lead text-muted mb-4">I'm your intelligent fintech assistant. How can I help you today?</p>
-            <div class="d-flex flex-wrap justify-content-center gap-2">
-              <span class="badge welcome-badge">Portfolio Analysis</span>
-              <span class="badge welcome-badge">Fund Performance</span>
-              <span class="badge welcome-badge">Asset Valuation</span>
-            </div>
+            <p class="lead text-muted mb-4">I'm the CapHive assistant for <%= @chat&.owner %>. How can I help you today?</p>
             <div class="mt-4 small text-muted opacity-50">Session ID: <%= @chat&.id %></div>
           </div>
 
@@ -144,7 +139,7 @@
           <textarea
             class="form-control border-0 bg-transparent shadow-none py-2 px-3"
             rows="1"
-            placeholder="Ask anything about your investments..."
+            placeholder="Ask anything about your data..."
             style="resize: none; min-height: 44px; max-height: 200px;"
             data-voice-chat-target="input"
             data-action="keydown.enter->voice-chat#handleEnter input->voice-chat#autoResize"
