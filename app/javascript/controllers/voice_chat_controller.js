@@ -56,8 +56,8 @@ export default class extends Controller {
     } catch (err) {
       console.error(err)
       this.appendErrorMessage("Sorry, something went wrong. Please try again.")
-    } finally {
       this.hideSpinner()
+    } finally {
       this.scrollToBottom()
     }
   }
@@ -143,8 +143,8 @@ export default class extends Controller {
       } catch (err) {
         console.error(err)
         this.appendErrorMessage("Audio upload failed.")
-      } finally {
         this.hideSpinner()
+      } finally {
         this.cleanupStream()
         // this.setIdle()
         this.scrollToBottom()
@@ -247,6 +247,9 @@ export default class extends Controller {
     // already provides the necessary structure and styling, or targets a specific Turbo Frame.
     this.responsesTarget.insertAdjacentHTML("beforeend", htmlContent)
     this.removeDuplicateResponses()
+    if (!this.spinnerTarget.classList.contains("d-none")) {
+      this.responsesTarget.appendChild(this.spinnerTarget)
+    }
   }
 
   // Prevents duplicate assistant responses by checking if a Turbo Frame with the same ID already exists

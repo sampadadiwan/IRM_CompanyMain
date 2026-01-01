@@ -46,9 +46,22 @@ class AssistantQueryJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.error { "AssistantQueryJob failed: #{e.class}: #{e.message}\n#{e.backtrace&.join("\n")}" }
     broadcast_error(user_id, request_id, query, e.message)
+  ensure
+    broadcast_hide_spinner(user_id)
   end
 
   private
+
+  def broadcast_hide_spinner(user_id)
+    user = User.find_by(id: user_id)
+    return unless user
+
+    Turbo::StreamsChannel.broadcast_append_to(
+      [user, "assistant"],
+      target: "chat-feed", # Or wherever the spinner can be targeted
+      content: "<script>const s = document.querySelector('[data-voice-chat-target=\"spinner\"]'); if(s) s.classList.add('d-none');</script>"
+    )
+  end
 
   def broadcast_error(user_id, request_id, query, error_message)
     user = User.find_by(id: user_id)

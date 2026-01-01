@@ -171,12 +171,13 @@
 
   .typing-indicator {
     display: flex;
-    gap: 4px;
+    gap: 6px;
     justify-content: center;
     .dot {
-      width: 6px;
-      height: 6px;
-      background-color: #cbd5e1;
+      width: 10px;
+      height: 10px;
+      background-color: var(--primary-accent);
+      opacity: 0.6;
       border-radius: 50%;
       animation: bounce 1.4s infinite ease-in-out both;
       &:nth-child(1) { animation-delay: -0.32s; }
@@ -235,6 +236,10 @@
   .message-content {
     font-size: 0.95rem;
     line-height: 1.6;
+    p {
+      margin-top: 0.8rem;
+      margin-bottom: 0rem;
+    }
   }
 
   .text-muted-extra-small {
