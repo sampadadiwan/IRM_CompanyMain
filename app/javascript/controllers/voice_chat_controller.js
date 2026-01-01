@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static targets = ["input", "responses", "spinner", "micBtn", "hint", "welcome", "assistantType", "chatInterface"]
+  static values = { chatId: Number }
 
   connect() {
     this.mediaRecorder = null
@@ -42,17 +43,21 @@ export default class extends Controller {
     this.appendUserMessage(query)
     this.inputTarget.value = ""
     this.autoResize() // Reset height
-    // this.setBusy("Thinking…")
+    this.showSpinner()
     this.scrollToBottom()
 
     try {
-      const html = await this.postForm("/assistants/ask", { query, assistant_type })
+      const html = await this.postForm("/assistants/ask", {
+        query,
+        assistant_type,
+        chat_id: this.chatIdValue
+      })
       this.appendAssistantResponse(html)
     } catch (err) {
       console.error(err)
       this.appendErrorMessage("Sorry, something went wrong. Please try again.")
     } finally {
-      // this.setIdle()
+      this.hideSpinner()
       this.scrollToBottom()
     }
   }
@@ -127,9 +132,11 @@ export default class extends Controller {
         formData.append("audio", file)
         const assistant_type = this.hasAssistantTypeTarget ? this.assistantTypeTarget.value : 'fund'
         formData.append("assistant_type", assistant_type)
+        formData.append("chat_id", this.chatIdValue)
 
         this.hideWelcome()
         // Optionally append a placeholder like "🎤 Audio message..." if you want immediate feedback
+        this.showSpinner()
 
         const html = await this.postMultipart("/assistants/transcribe", formData)
         this.appendAssistantResponse(html)
@@ -137,6 +144,7 @@ export default class extends Controller {
         console.error(err)
         this.appendErrorMessage("Audio upload failed.")
       } finally {
+        this.hideSpinner()
         this.cleanupStream()
         // this.setIdle()
         this.scrollToBottom()
@@ -196,6 +204,20 @@ export default class extends Controller {
   hideWelcome() {
     if (this.hasWelcomeTarget) {
       this.welcomeTarget.classList.add("d-none")
+    }
+  }
+
+  showSpinner() {
+    if (this.hasSpinnerTarget) {
+      this.spinnerTarget.classList.remove("d-none")
+      // Ensure it's at the end of the responses container
+      this.responsesTarget.appendChild(this.spinnerTarget)
+    }
+  }
+
+  hideSpinner() {
+    if (this.hasSpinnerTarget) {
+      this.spinnerTarget.classList.add("d-none")
     }
   }
 

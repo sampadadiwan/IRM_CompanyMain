@@ -7,26 +7,24 @@ class AssistantQueryJob < ApplicationJob
   # Runs the assistant in the background and replaces the placeholder turbo-frame in the UI.
   #
   # @param user_id [Integer]
+  # @param chat_id [Integer]
   # @param request_id [String] client-generated id used to target a turbo-frame in the DOM
   # @param query [String]
-  def perform(user_id, request_id, query, assistant_type = 'fund')
+  def perform(user_id, chat_id, request_id, query, assistant_type = 'fund')
     user = User.find(user_id)
+    chat = Chat.find(chat_id)
 
     assistant = case assistant_type.to_s
                 when 'portfolio_company'
-                  latest_chat = Chat.where(user: user, assistant_type: 'PortfolioCompanyAssistant').order(created_at: :desc).first
-                  portfolio_company = latest_chat&.owner if latest_chat&.owner_type == 'Investor'
+                  portfolio_company = chat.owner if chat.owner_type == 'Investor'
                   PortfolioCompanyAssistant.new(user: user, portfolio_company: portfolio_company)
                 when 'portfolio'
                   PortfolioAssistant.new(user: user)
                 when 'capital_commitment'
-                  # Try to find the latest chat for this user/assistant_type to get the commitment context
-                  latest_chat = Chat.where(user: user, assistant_type: 'CapitalCommitmentAssistant').order(created_at: :desc).first
-                  commitment = latest_chat&.owner if latest_chat&.owner_type == 'CapitalCommitment'
+                  commitment = chat.owner if chat.owner_type == 'CapitalCommitment'
                   CapitalCommitmentAssistant.new(user: user, capital_commitment: commitment)
                 when 'specific_fund'
-                  latest_chat = Chat.where(user: user, assistant_type: 'SpecificFundAssistant').order(created_at: :desc).first
-                  fund = latest_chat&.owner if latest_chat&.owner_type == 'Fund'
+                  fund = chat.owner if chat.owner_type == 'Fund'
                   SpecificFundAssistant.new(user: user, fund: fund)
                 else
                   FundAssistant.new(user: user)

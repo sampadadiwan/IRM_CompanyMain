@@ -19,23 +19,23 @@ class SpecificFundAssistant < FundAssistant
   # - `PlotChart`
   MONTHLY_REPORT_QUERIES = [
     # 1. Summary & Profile
-    # "Provide a summary of this fund. Include its name, vintage, strategy, and current status.",
+    "Provide the details of this fund.",
 
     # # 2. Performance Metrics
-    # "List the latest performance ratios for this fund. Show TVPI, DPI, RVPI, and IRR if available. Format as a table.",
-    # "Plot a bar chart of the performance ratios (TVPI, DPI, RVPI) for this fund.",
+    "List the latest performance ratios for this fund. Show TVPI, DPI, RVPI, and IRR if available. Format as a table.",
+    "Plot a bar chart of the performance ratios (TVPI, DPI, RVPI) for this fund.",
 
     # 3. Capital Activity (Calls & Distributions)
-    "List the most recent 5 capital calls for this fund. Include name, due date, and total call amount.",
-    "List the most recent 5 capital distributions for this fund. Include title, distribution date, and gross amount.",
+    "List the most recent 5 capital calls for this fund.",
+    "List the most recent 5 capital distributions for this fund.",
     "Plot a chart of total called amount vs total distributed amount for this fund over time.",
 
     # 4. Commitments & LP Summary
-    "Show a summary of capital commitments for this fund. Group by investor name if possible and show committed vs collected amounts.",
+    "Show a summary of capital commitments for this fund.",
 
     # 5. Portfolio Overview
     "List all portfolio company investments made by this fund. Include company name, investment date, amount, and current FMV.",
-    "Plot a pie chart of the portfolio allocation by sector using the current FMV of investments.",
+    "Plot a pie chart of the portfolio allocation by company using the current FMV of investments.",
 
     # 6. Cash Flow Analysis
     "Show the monthly cash flow trend (capital calls vs distributions) for the last 12 months. Present as a table."

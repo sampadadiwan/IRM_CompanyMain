@@ -1,6 +1,7 @@
 <div id="assistant-chat" class="d-flex flex-column h-100 ai-chat-container position-relative"
      data-controller="voice-chat ppt-export slideshow"
-     data-slideshow-chat-id-value="<%= @chat&.id %>">
+     data-slideshow-chat-id-value="<%= @chat&.id %>"
+     data-voice-chat-chat-id-value="<%= @chat&.id %>">
   <%= turbo_stream_from [current_user, "assistant"] if current_user %>
 
   <!-- Header Section -->
@@ -42,7 +43,7 @@
       </div>
 
       <form action="<%= assistant_path('assistant') %>" method="get" data-turbo-frame="_self" class="d-flex gap-2 align-items-center">
-        <a href="<%= assistant_path('assistant', assistant_type: params[:assistant_type], new: true, fund_id: params[:fund_id], portfolio_company_id: params[:portfolio_company_id], capital_commitment_id: params[:capital_commitment_id]) %>"
+        <a href="<%= assistant_path('assistant', assistant_type: params[:assistant_type], new: true, owner_id: @chat.owner&.id, owner_type: @chat.owner_type) %>"
            class="btn btn-outline-primary"
            title="Start new chat">
           <i class="ti ti-plus"></i> <span class="d-none d-md-inline">New Chat</span>
@@ -124,13 +125,13 @@
                 <%= render partial: "assistants/ask", locals: { msg: msg } %>
               <% end %>
             <% end %>
-          </div>
 
-          <!-- Typing Indicator -->
-          <div class="typing-indicator d-none py-4" data-voice-chat-target="spinner">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
+            <!-- Typing Indicator (Moved inside responses container) -->
+            <div class="typing-indicator d-none py-4" data-voice-chat-target="spinner">
+              <div class="dot"></div>
+              <div class="dot"></div>
+              <div class="dot"></div>
+            </div>
           </div>
         </div>
       </div>

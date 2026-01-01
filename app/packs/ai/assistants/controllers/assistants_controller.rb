@@ -19,10 +19,11 @@ class AssistantsController < ApplicationController
   def ask
     authorize :assistant, :ask?
     query = params.require(:query).to_s
+    chat_id = params.require(:chat_id)
     assistant_type = params[:assistant_type] || 'fund'
     request_id = SecureRandom.hex(12)
 
-    AssistantQueryJob.perform_later(current_user.id, request_id, query, assistant_type)
+    AssistantQueryJob.perform_later(current_user.id, chat_id, request_id, query, assistant_type)
 
     render partial: "ask_frame", locals: { query: query, response: nil, request_id: request_id, error: nil }
   end
@@ -30,6 +31,7 @@ class AssistantsController < ApplicationController
   def transcribe
     authorize :assistant, :transcribe?
     audio = params.require(:audio)
+    chat_id = params.require(:chat_id)
 
     Tempfile.create(["voice", File.extname(audio.original_filename.presence || ".webm")]) do |f|
       f.binmode
@@ -41,7 +43,7 @@ class AssistantsController < ApplicationController
       assistant_type = params[:assistant_type] || 'fund'
       request_id = SecureRandom.hex(12)
 
-      AssistantQueryJob.perform_later(current_user.id, request_id, query, assistant_type)
+      AssistantQueryJob.perform_later(current_user.id, chat_id, request_id, query, assistant_type)
 
       render partial: "ask_frame", locals: { query: query, response: nil, request_id: request_id, error: nil }
     end
@@ -88,10 +90,13 @@ class AssistantsController < ApplicationController
   def find_or_create_chat
     return Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id, assistant_type: assistant_class) if params[:new].blank? && params[:chat_id].present?
 
-    commitment = CapitalCommitment.find_by(id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
-    portfolio_company = Investor.find_by(id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
-    fund = Fund.find_by(id: params[:fund_id]) if params[:fund_id].present?
-    owner = commitment || portfolio_company || fund || current_user
+    owner = params[:owner_type].constantize.find_by(id: params[:owner_id]) if params[:owner_type].present? && params[:owner_id].present?
+
+    if ["PortfolioCompanyAssistant", "CapitalCommitmentAssistant", "SpecificFundAssistant"].include?(assistant_class)
+      owner ||= current_user
+    else
+      owner = current_user
+    end
 
     ActiveRecord::Base.connected_to(role: :writing) do
       chat = if params[:new].present?
