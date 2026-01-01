@@ -62,20 +62,10 @@
           </select>
         <% end %>
 
-        <select name="assistant_type"
-                class="chat-select"
-                data-voice-chat-target="assistantType"
-                onchange="const chatId = this.form.querySelector('select[name=chat_id]'); if(chatId) chatId.disabled = true; this.form.requestSubmit()">
-          <option value="" <%= 'selected' if params[:assistant_type].blank? %> disabled>Choose Assistant...</option>
-          <option value="fund" <%= 'selected' if params[:assistant_type] == 'fund' %>>Fund</option>
-          <option value="specific_fund" <%= 'selected' if params[:assistant_type] == 'specific_fund' %>>Specific Fund</option>
-          <option value="portfolio" <%= 'selected' if params[:assistant_type] == 'portfolio' %>>Portfolio</option>
-          <option value="portfolio_company" <%= 'selected' if params[:assistant_type] == 'portfolio_company' %>>Company</option>
-          <option value="capital_commitment" <%= 'selected' if params[:assistant_type] == 'capital_commitment' %>>Commitment</option>
-        </select>
 
         <% if params[:fund_id].present? %>
           <input type="hidden" name="fund_id" value="<%= params[:fund_id] %>">
+          <input type="hidden" name="assistant_type" value="<%= params[:assistant_type] %>">
         <% end %>
 
         <% if params[:capital_commitment_id].present? %>
