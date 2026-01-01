@@ -141,7 +141,7 @@ class CapitalCall < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name due_date approved call_date status verified call_amount collected_amount capital_fees other_fees percentage_called].sort
+    %w[name due_date approved call_date status verified call_amount collected_amount capital_fees other_fees percentage_called fund_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

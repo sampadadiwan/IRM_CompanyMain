@@ -62,13 +62,11 @@
           </select>
         <% end %>
 
+        <input type="hidden" name="assistant_type" value="<%= params[:assistant_type] %>">
 
         <% if params[:fund_id].present? %>
           <input type="hidden" name="fund_id" value="<%= params[:fund_id] %>">
-          <input type="hidden" name="assistant_type" value="<%= params[:assistant_type] %>">
-        <% end %>
-
-        <% if params[:capital_commitment_id].present? %>
+        <% elsif params[:capital_commitment_id].present? %>
           <input type="hidden" name="capital_commitment_id" value="<%= params[:capital_commitment_id] %>">
         <% elsif params[:portfolio_company_id].present? %>
           <input type="hidden" name="portfolio_company_id" value="<%= params[:portfolio_company_id] %>">

@@ -130,6 +130,7 @@ class PortfolioCompanyAssistant
       Hyperlinking Rules:
       - Most data objects returned by tools include a `view_link` field.
       - ALWAYS use this `view_link` to hyperlink the primary identifier (like name or ID) in your markdown tables or text.
+      - DO NOT create a separate column for "view_link" or "Link". Instead, embed the link into the specific column it refers to.
       - Use an HTML anchor tag with `target="_blank"` for these links to ensure they open in a new window.
       - Example: `<a href="/portfolio_investments/123" target="_blank">Investment ID</a>` or `<a href="/documents/456" target="_blank">Document Name</a>`.
 

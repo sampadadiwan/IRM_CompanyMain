@@ -198,6 +198,7 @@ class CapitalCommitmentAssistant
       Hyperlinking Rules:
       - Most data objects returned by tools include a `view_link` field.
       - ALWAYS use this `view_link` to hyperlink the primary identifier (like name, folio, or ID) in your markdown tables or text.
+      - DO NOT create a separate column for "view_link" or "Link". Instead, embed the link into the specific column it refers to.
       - Use an HTML anchor tag with `target="_blank"` for these links to ensure they open in a new window.
       - Example: `<a href="/capital_commitments/123" target="_blank">Folio-123</a>` or `<a href="/documents/456" target="_blank">Document Name</a>`.
 

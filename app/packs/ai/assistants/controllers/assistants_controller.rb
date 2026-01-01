@@ -92,7 +92,7 @@ class AssistantsController < ApplicationController
 
     owner = params[:owner_type].constantize.find_by(id: params[:owner_id]) if params[:owner_type].present? && params[:owner_id].present?
 
-    if ["PortfolioCompanyAssistant", "CapitalCommitmentAssistant", "SpecificFundAssistant"].include?(assistant_class)
+    if %w[PortfolioCompanyAssistant CapitalCommitmentAssistant SpecificFundAssistant].include?(assistant_class)
       owner ||= current_user
     else
       owner = current_user

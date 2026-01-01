@@ -1,6 +1,4 @@
 class AiReportSectionsController < ApplicationController
-  
-
   def update
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -98,7 +96,6 @@ class AiReportSectionsController < ApplicationController
     render json: { success: true, content: @section.content_html }
   end
 
-  
   def toggle_reviewed
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])

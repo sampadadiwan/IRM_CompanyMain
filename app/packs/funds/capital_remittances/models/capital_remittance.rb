@@ -209,7 +209,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[call_amount collected_amount capital_fee other_fee folio_id investor_name payment_date remittance_date status verified arrear_amount].sort
+    %w[call_amount collected_amount capital_fee other_fee folio_id investor_name payment_date remittance_date status verified arrear_amount fund_id capital_call_id capital_commitment_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

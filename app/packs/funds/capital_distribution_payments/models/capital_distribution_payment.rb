@@ -178,7 +178,7 @@ class CapitalDistributionPayment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[created_at updated_at folio_id payment_date investor_name completed income cost_of_investment cost_of_investment_with_fees folio_amount net_of_account_entries net_payable income_with_fees reinvestment reinvestment_with_fees gross_payable gross_of_account_entries tracking_net_payable units_quantity percentage].sort
+    %w[created_at updated_at folio_id payment_date investor_name completed income cost_of_investment cost_of_investment_with_fees folio_amount net_of_account_entries net_payable income_with_fees reinvestment reinvestment_with_fees gross_payable gross_of_account_entries tracking_net_payable units_quantity percentage fund_id capital_commitment_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

@@ -139,7 +139,7 @@ class KpiReport < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[as_of period tag_list owner_id]
+    %w[as_of period tag_list owner_id portfolio_company_id]
   end
 
   def self.ransackable_associations(_auth_object = nil)

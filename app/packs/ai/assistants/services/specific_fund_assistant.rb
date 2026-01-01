@@ -19,26 +19,28 @@ class SpecificFundAssistant < FundAssistant
   # - `PlotChart`
   MONTHLY_REPORT_QUERIES = [
     # 1. Summary & Profile
-    "Provide the details of this fund.",
+    "Provide a concise summary of this fund's profile and current status.",
 
-    # # 2. Performance Metrics
-    "List the latest performance ratios for this fund. Show TVPI, DPI, RVPI, and IRR if available. Format as a table.",
-    "Plot a bar chart of the performance ratios (TVPI, DPI, RVPI) for this fund.",
+    # 2. Performance Analysis (Trends & Outliers)
+    "Analyze the trend of performance ratios (XIRR, TVPI, DPI) over the last few reporting periods. Identify any significant improvements or declines.",
+    "Plot a line chart showing the historical trend of TVPI and DPI for this fund.",
 
-    # 3. Capital Activity (Calls & Distributions)
-    "List the most recent 5 capital calls for this fund.",
-    "List the most recent 5 capital distributions for this fund.",
-    "Plot a chart of total called amount vs total distributed amount for this fund over time.",
+    # 3. Capital Activity & Cash Flow Risk
+    "Examine the capital call and distribution history. Are there any unusual spikes or outliers in the last 12 months? Analyze the 'Called vs Distributed' ratio trend.",
+    "Plot a dual-axis chart showing cumulative capital called vs cumulative capital distributed over the fund's lifetime.",
 
-    # 4. Commitments & LP Summary
-    "Show a summary of capital commitments for this fund.",
+    # 4. Portfolio Concentration & Risk
+    "Analyze the portfolio for concentration risk. Identify the top 3 investments by FMV and calculate their percentage of the total portfolio. Are there any specific tags that are over-indexed?",
+    "Plot a bar chart of the top 10 portfolio companies by FMV, highlighting any investment that represents more than 15% of the total FMV.",
 
-    # 5. Portfolio Overview
-    "List all portfolio company investments made by this fund. Include company name, investment date, amount, and current FMV.",
-    "Plot a pie chart of the portfolio allocation by company using the current FMV of investments.",
+    # 5. Investment Performance Outliers
+    "Identify 'star' performers and 'underperformers' in the portfolio by comparing investment cost vs current FMV. List the top 3 and bottom 3 investments by gain/loss multiple.",
 
-    # 6. Cash Flow Analysis
-    "Show the monthly cash flow trend (capital calls vs distributions) for the last 12 months. Present as a table."
+    # 6. LP Commitment & Remittance Health
+    "Review the capital commitments. Identify any LPs with significant outstanding (unpaid) capital calls or delayed remittances. Is there a risk to the fund's liquidity?",
+
+    # 7. Strategic Insights & Forward Look
+    "Based on the current cash flow trends and portfolio valuation, provide a brief analysis of the fund's trajectory towards its target returns."
   ].freeze
 
   # Initializes the SpecificFundAssistant.
@@ -131,11 +133,12 @@ class SpecificFundAssistant < FundAssistant
       Hyperlinking Rules:
       - Most data objects returned by tools include a `view_link` field.
       - ALWAYS use this `view_link` to hyperlink the primary identifier.
+      - DO NOT create a separate column for "view_link" or "Link". Instead, embed the link into the specific column it refers to.
       - Use an HTML anchor tag with `target="_blank"`.
 
       Tool Usage Rules:
-      - All data you retrieve is already filtered for **#{@fund.name}**.
-      - You do NOT need to provide a `fund_id` to any tool.
+      - All data you retrieve MUST be for **#{@fund.name}** (ID: #{@fund.id}).
+      - You MUST provide the `fund_id: "#{@fund.id}"` to ALL tools when calling them.
       - To create a visualization, first retrieve the data using a `list_` tool, then pass that data to the `PlotChart` tool.
       - When calling `PlotChart`, you MUST provide both the `data` (as a JSON string) and a `prompt` (describing the chart). Example: `plot_chart(data: '[...]', prompt: 'Monthly cash flow for #{@fund.name}')`.
       - Never guess IDs.

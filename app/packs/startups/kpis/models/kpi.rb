@@ -80,7 +80,7 @@ class Kpi < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name value notes percentage_change]
+    %w[name value notes percentage_change portfolio_company_id]
   end
 
   def self.ransackable_associations(_auth_object = nil)

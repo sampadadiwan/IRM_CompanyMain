@@ -30,7 +30,6 @@ class AiReportSectionPolicy < ApplicationPolicy
     report_policy.update?
   end
 
-
   private
 
   def report_policy

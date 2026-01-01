@@ -88,7 +88,7 @@ class CapitalDistribution < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved carry completed cost_of_investment created_at distribution_amount distribution_date distribution_on fee gross_amount income reinvestment title updated_at]
+    %w[approved carry completed cost_of_investment created_at distribution_amount distribution_date distribution_on fee gross_amount income reinvestment title updated_at fund_id]
   end
 
   def self.ransackable_associations(_auth_object = nil)
