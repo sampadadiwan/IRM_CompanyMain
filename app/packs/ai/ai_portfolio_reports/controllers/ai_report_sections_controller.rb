@@ -1,11 +1,11 @@
 class AiReportSectionsController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: %i[regenerate generate_chart_preview] # Skip CSRF for AJAX
-  skip_after_action :verify_authorized
-  skip_after_action :verify_policy_scoped
+  
 
   def update
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
+
+    authorize @section
 
     # Handle content from contenteditable
     if params[:ai_report_section][:content].present?
@@ -31,6 +31,8 @@ class AiReportSectionsController < ApplicationController
   def toggle_web_search
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
+
+    authorize @section
 
     # Get the desired state from params (if provided) or toggle
     desired_state = if params[:enable_web_search].present?
@@ -79,6 +81,9 @@ class AiReportSectionsController < ApplicationController
   def add_content
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
+
+    authorize @section
+
     content_to_add = params[:content]
 
     # Add attribution with HTML formatting
@@ -93,11 +98,12 @@ class AiReportSectionsController < ApplicationController
     render json: { success: true, content: @section.content_html }
   end
 
-  # Add this to ai_report_sections_controller.rb
-
+  
   def toggle_reviewed
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
+
+    authorize @section
 
     @section.reviewed = !@section.reviewed
     @section.save!
@@ -114,6 +120,8 @@ class AiReportSectionsController < ApplicationController
   def generate_chart_preview
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
+
+    authorize @section
     user_prompt = params[:prompt]
 
     chart_service = PortfolioChartAgentService.new
@@ -125,10 +133,38 @@ class AiReportSectionsController < ApplicationController
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
 
+  def insert_chart
+    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
+    @section = @report.ai_report_sections.find(params[:id])
+
+    authorize @section
+
+    chart_config = params[:chart_config]
+    user_prompt = params[:prompt]
+
+    # Create AgentChart record
+    chart = AgentChart.create!(
+      entity_id: @report.analyst.entity_id,
+      owner: @report,
+      prompt: user_prompt,
+      spec: chart_config,
+      status: 'ready'
+    )
+
+    # Add chart to section
+    @section.add_chart(chart)
+
+    render json: { success: true, chart_id: chart.id }
+  rescue StandardError => e
+    render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
   # rubocop:disable Metrics/MethodLength
   def regenerate
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
+
+    authorize @section
 
     user_prompt = params[:prompt]
     current_content = params[:current_content]

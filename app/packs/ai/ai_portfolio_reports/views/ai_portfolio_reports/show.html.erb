@@ -1264,36 +1264,62 @@
   }
   }
 
-  function insertChartAtCursor() {
+  async function insertChartAtCursor() {
   if (!currentChartConfig) {
     alert('Please generate a chart first');
     return;
   }
 
-  // Create chart placeholder HTML
-  const chartHtml = `<div class="chart-placeholder" contenteditable="false" data-chart-config='${JSON.stringify(currentChartConfig)}' data-chart-type="${currentChartConfig.type || 'bar'}" style="margin: 20px 0; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"></div>`;
+  const insertBtn = document.getElementById('insert-chart-btn');
+  const originalText = insertBtn.innerHTML;
+  insertBtn.disabled = true;
+  insertBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Inserting...';
 
-  const editorContent = document.getElementById('report-content');
+  try {
+    // Save chart to database
+    const response = await fetch(`/ai_portfolio_reports/${reportId}/ai_report_sections/${sectionId}/insert_chart`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+      },
+      body: JSON.stringify({ 
+        chart_config: currentChartConfig,
+        prompt: document.getElementById('chart-prompt-input').value.trim()
+      })
+    });
 
-  // Insert at cursor position or at end
-  if (savedCursorRange) {
-    const selection = window.getSelection();
-    selection.removeAllRanges();
-    selection.addRange(savedCursorRange);
+    const data = await response.json();
 
-    // Insert HTML at cursor
-    document.execCommand('insertHTML', false, chartHtml);
-  } else {
-    // No cursor saved - append at end
-    editorContent.insertAdjacentHTML('beforeend', chartHtml);
+    if (data.success) {
+      // Create chart placeholder HTML with chart_id
+      const chartHtml = `<div class="chart-placeholder" contenteditable="false" data-chart-id="${data.chart_id}" data-chart-config='${JSON.stringify(currentChartConfig)}' data-chart-type="${currentChartConfig.type || 'bar'}" style="margin: 20px 0; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);"></div>`;
+
+      const editorContent = document.getElementById('report-content');
+
+      if (savedCursorRange) {
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(savedCursorRange);
+        document.execCommand('insertHTML', false, chartHtml);
+      } else {
+        editorContent.insertAdjacentHTML('beforeend', chartHtml);
+      }
+
+      renderAllCharts();
+      closeChartModal();
+    } else {
+      alert('Error: ' + (data.error || 'Failed to insert chart'));
+    }
+  } catch (error) {
+    console.error('Error inserting chart:', error);
+    alert('Connection error. Please try again.');
+  } finally {
+    insertBtn.disabled = false;
+    insertBtn.innerHTML = originalText;
   }
+}
 
-  // Re-render all charts
-  renderAllCharts();
-
-  // Close modal
-  closeChartModal();
-  }
 </script>
 <style>
   /* ========================================

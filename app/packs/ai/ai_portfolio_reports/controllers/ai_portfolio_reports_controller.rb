@@ -1,5 +1,4 @@
 class AiPortfolioReportsController < ApplicationController
-  skip_after_action :verify_authorized
   before_action :set_report, only: %i[show edit update destroy collated_report save_collated_report export_pdf export_docx toggle_master_web_search]
 
   def index
