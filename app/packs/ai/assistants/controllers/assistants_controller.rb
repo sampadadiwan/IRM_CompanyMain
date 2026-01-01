@@ -90,7 +90,8 @@ class AssistantsController < ApplicationController
 
     commitment = CapitalCommitment.find_by(id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
     portfolio_company = Investor.find_by(id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
-    owner = commitment || portfolio_company || current_user
+    fund = Fund.find_by(id: params[:fund_id]) if params[:fund_id].present?
+    owner = commitment || portfolio_company || fund || current_user
 
     ActiveRecord::Base.connected_to(role: :writing) do
       chat = if params[:new].present?
@@ -125,6 +126,7 @@ class AssistantsController < ApplicationController
     case assistant_class
     when 'PortfolioCompanyAssistant' then 'PCA'
     when 'CapitalCommitmentAssistant' then 'CCA'
+    when 'SpecificFundAssistant' then 'SFA'
     else 'FA'
     end
   end
@@ -133,6 +135,7 @@ class AssistantsController < ApplicationController
     @assistant_class ||= case params[:assistant_type]
                          when 'portfolio_company' then 'PortfolioCompanyAssistant'
                          when 'capital_commitment' then 'CapitalCommitmentAssistant'
+                         when 'specific_fund' then 'SpecificFundAssistant'
                          else 'FundAssistant'
                          end
   end

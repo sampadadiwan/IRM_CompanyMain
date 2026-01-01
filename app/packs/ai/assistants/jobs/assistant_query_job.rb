@@ -24,6 +24,10 @@ class AssistantQueryJob < ApplicationJob
                   latest_chat = Chat.where(user: user, assistant_type: 'CapitalCommitmentAssistant').order(created_at: :desc).first
                   commitment = latest_chat&.owner if latest_chat&.owner_type == 'CapitalCommitment'
                   CapitalCommitmentAssistant.new(user: user, capital_commitment: commitment)
+                when 'specific_fund'
+                  latest_chat = Chat.where(user: user, assistant_type: 'SpecificFundAssistant').order(created_at: :desc).first
+                  fund = latest_chat&.owner if latest_chat&.owner_type == 'Fund'
+                  SpecificFundAssistant.new(user: user, fund: fund)
                 else
                   FundAssistant.new(user: user)
                 end

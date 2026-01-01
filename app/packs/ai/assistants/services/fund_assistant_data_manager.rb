@@ -171,13 +171,13 @@ class FundAssistantDataManager
         id: c.id,
         name: c.name,
         due_date: c.due_date,
+        call_basis: c.call_basis,
         call_date: c.call_date,
         call_amount: c.call_amount.format,
         collected_amount: c.collected_amount.format,
         due_amount: c.due_amount.format,
         percentage_called: c.percentage_called,
-        percentage_raised: c.percentage_raised,
-        status: c.status,
+        close_percentages: c.close_percentages,
         approved: c.approved,
         view_link: "/capital_calls/#{c.id}"
       }
