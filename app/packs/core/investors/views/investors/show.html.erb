@@ -44,7 +44,7 @@
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
           <% if policy(@investor).cap_table? %>
-            <%= link_to investments_path(portfolio_company_id: @investor.id),
+            <%= link_to investments_path(portfolio_company_id: @investor.id, show_captable: true),
                         class: "dropdown-item d-flex align-items-center", data: {turbo: false, bs_toggle: "tooltip", bs_title: "Opens detailed CapTable view"} do %>
               <i class="ti ti-table"></i> CapTable
             <% end %>

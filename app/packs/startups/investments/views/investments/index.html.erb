@@ -10,6 +10,11 @@
       <i class="ti ti-upload"></i> <%= t_common(:upload) %>
     <% end %>
 
+    <%= link_to investments_path(portfolio_company_id: params[:portfolio_company_id], index: true),
+                class: "btn btn-outline-success" do %>
+      <i class="ti ti-list"></i> View Investments
+    <% end %>
+
     <%
       data_source ||= investments_path(params: params.to_unsafe_h, format: :xlsx)
       xl_link = download_xl_link(data_source)
@@ -25,16 +30,11 @@
 
 <%= turbo_frame_tag with_frame("investments_frame"), target: "_top"  do %>
 
-  <% if params[:show_investments].blank? || params[:show_investments] == "true"  %>
-    <% if params[:ag].present? %>
-      <%= render "/investments/index_ag" %>
-    <% else %>
-      <%= render "/investments/index" %>
-    <% end %>
-  <% end %>
 
-  <% if params[:portfolio_company_id].present? %>
 
+  <% if params[:portfolio_company_id].present? && params[:show_captable].present? %>
+
+    <%= render "/investments/horizontal_captable" %>
 
     <div class="associated_entity">
 
@@ -47,7 +47,14 @@
       <% end %>
 
     </div>
-
+  <% else %>
+    <% if params[:show_investments].blank? || params[:show_investments] == "true"  %>
+      <% if params[:ag].present? %>
+        <%= render "/investments/index_ag" %>
+      <% else %>
+        <%= render "/investments/index" %>
+      <% end %>
+    <% end %>
   <% end %>
 <% end %>
 

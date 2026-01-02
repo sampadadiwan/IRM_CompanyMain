@@ -56,9 +56,29 @@
         <%= @investment.quantity %>
       </td>
     </tr>
+
     <tr>
       <td>
-        Price 
+        Instrument Name
+      </td>
+      <td>
+        <%= @investment.instrument_name %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Instrument Quantity
+      </td>
+      <td>
+        <%= @investment.instrument_quantity %>
+      </td>
+    </tr>
+
+
+    <tr>
+      <td>
+        Price
       </td>
       <td>
         <%= money_to_currency @investment.price, params %>
@@ -66,7 +86,7 @@
     </tr>
     <tr>
       <td>
-        Amount 
+        Amount
       </td>
       <td>
         <%= money_to_currency @investment.amount, params %>
@@ -90,7 +110,7 @@
     </tr>
 
     <%= display_custom_fields(@investment) if current_user %>
-    
+
   </table>
   <div class="associated_entity">
     <% if policy(@investment).update? %>

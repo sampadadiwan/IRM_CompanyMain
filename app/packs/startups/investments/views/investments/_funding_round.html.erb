@@ -1,4 +1,10 @@
-<% investments = Investment.generate_cap_table(funding_rounds, portfolio_company_id) %>
+<%
+  result = GenerateCapTable.call(params: {
+    funding_rounds: funding_rounds,
+    portfolio_company_id: portfolio_company_id
+  })
+  investments = result[:model]
+%>
 <div class="table-responsive" data-controller="datatable">
 
   <table id="funding_round_<%= funding_round.underscore.downcase %>" class="table table-bordered dataTable jqDataTable">

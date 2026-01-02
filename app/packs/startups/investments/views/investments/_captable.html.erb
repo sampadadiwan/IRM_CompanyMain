@@ -1,9 +1,9 @@
-<% 
+<%
     portfolio_company_id = params[:portfolio_company_id]
     all_funding_rounds = @investments.select(:funding_round, :investment_date).
                                 order(investment_date: :asc).pluck(:funding_round).uniq
     # This is required to ensure that the funding_round tables are cumulative. i.e first table from round A is displayed, then for funding_round B, we need to display the investments from round A and B and for funding_round C, we need to display the investments from round A, B and C.
-    funding_rounds = []                                  
+    funding_rounds = []
 %>
 
 <%= render ToggleCard.new(title: "Cap Table by Funding Round", css_class: "show_cap_table", state: "show") do %>
@@ -27,3 +27,4 @@
         <% end %>
     </div>
 <% end %>
+

@@ -99,7 +99,9 @@ Given('there is an existing investor {string}') do |arg1|
   steps %(
         Given there is an existing investor entity "#{arg1}"
     )
-  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
+  @investor = FactoryBot.build(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
+  key_values(@investor, arg1)
+  @investor.save!
 
   puts "\n####Investor####\n"
   puts @investor.to_json
@@ -109,7 +111,9 @@ Given('there is an existing portfolio company {string}') do |arg1|
   steps %(
     Given there is an existing investor entity "#{arg1}"
   )
-  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id, category: "Portfolio Company")
+  @investor = FactoryBot.build(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id, category: "Portfolio Company")
+  key_values(@investor, arg1)
+  @investor.save!
 
   puts "\n####Portfolio Company####\n"
   puts @investor.to_json

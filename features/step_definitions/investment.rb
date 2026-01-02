@@ -167,6 +167,48 @@ Given('there are {string} investments {string}') do |count, args|
   end
 end
 
+Given('there are the following investments for {string}:') do |portfolio_company_name, table|
+  portfolio_company = Investor.find_by(investor_name: portfolio_company_name)
+  entity = portfolio_company.entity
+
+  table.hashes.each do |row|
+    # Find or create portfolio company (Investor record for the entity itself or other)
+    # portfolio_company = Investor.find_by(entity: entity) || FactoryBot.create(:investor, entity: entity)
+
+    investment = Investment.new(
+      portfolio_company: portfolio_company,
+      entity: entity,
+      investor_name: row['investor_name'],
+      category: row['category'],
+      investment_type: row['investment_type'],
+      funding_round: row['funding_round'],
+      quantity: row['quantity'],
+      price: row['price'],
+      investment_date: row['investment_date'],
+      currency: entity.currency || 'USD'
+    )
+    investment.save!
+  end
+end
+
+Then('I should see {string} funding round cap table') do |round|
+  expect(page).to have_content("Funding Round: #{round}")
+end
+
+Then('I should see {string} total percentage for {string}') do |percentage, round|
+  # This assumes there's some scoping in the UI for the specific round table
+  expect(page).to have_content(percentage)
+end
+
+Then('I should see the horizontal cap table table') do
+  expect(page).to have_css(".show_horizontal_cap_table")
+end
+
+Then('I should see {string} with {string} stake in {string} round') do |name, stake, round|
+  expect(page).to have_content(name)
+  expect(page).to have_content(stake)
+end
+
 
 ############################################################################
 ############################################################################
@@ -279,14 +321,11 @@ Then('I should be able to see only my investments for each entity') do
   end
 end
 
-Given('I go to the portfolio company page') do
-  @portfolio_company ||= Investor.all.portfolio_company.last
-  visit(investor_path(@portfolio_company))
-end
-
 Given('I go to the captable of the portfolio company') do
- click_on("Misc")
- click_on("CapTable")
+  @portfolio_company ||= Investor.all.portfolio_companies.last
+  visit(investor_path(@portfolio_company))
+  click_on("Misc")
+  click_on("CapTable")
 end
 
 Given('I upload investments file {string}') do |string|

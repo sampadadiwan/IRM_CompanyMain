@@ -15,6 +15,11 @@ class InvestmentsController < ApplicationController
       :import_upload_id
     )
 
+    if params[:portfolio_company_id].present?
+      @portfolio_company_id = params[:portfolio_company_id]
+      @portfolio_company = Investor.find(@portfolio_company_id)
+    end
+
     # We want to disable pagination when using the ag grid or filtering by portfolio company. For portfolio_company specially the cap table grpahs and charts depend on having all investments loaded.
     @use_pagy = params[:ag].blank? && params[:portfolio_company_id].blank?
 
@@ -78,6 +83,6 @@ class InvestmentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investment_params
-    params.require(:investment).permit(:portfolio_company_id, :category, :investor_name, :investment_type, :funding_round, :quantity, :price, :investment_date, :notes, :currency, properties: {})
+    params.require(:investment).permit(:portfolio_company_id, :category, :investor_name, :investment_type, :funding_round, :quantity, :price, :investment_date, :notes, :currency, :instrument_name, :instrument_quantity, properties: {})
   end
 end

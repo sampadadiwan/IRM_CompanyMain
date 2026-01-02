@@ -4,7 +4,7 @@
     <%= link_to investment.portfolio_company %>
   </td>
   <td>
-    <%= investment.category %>
+    <%= investment.display_category %>
   </td>
   <td>
     <%= investment.investor_name %>
@@ -29,5 +29,6 @@
   </td>
   <td>
     <%= link_to  t_common(:show), investment , {class: "btn btn-outline-primary ti ti-eye"}%>
+    <%= link_to  t_common(:edit), edit_investment_path(investment) , {class: "btn btn-outline-success ti ti-pencil"} if policy(investment).edit? %>
   </td>
 </tr>

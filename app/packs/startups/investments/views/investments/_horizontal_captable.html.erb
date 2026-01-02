@@ -1,0 +1,80 @@
+<%
+    portfolio_company_id = params[:portfolio_company_id]
+    result = GenerateHorizontalCapTable.call(params: { portfolio_company_id: portfolio_company_id })
+    h_data = result[:model]
+    funding_rounds = h_data[:funding_rounds]
+    latest_round = funding_rounds.last
+%>
+
+<%= render ToggleCard.new(title: "Cap Table", css_class: "show_horizontal_cap_table", state: "show") do %>
+    <div class="table-responsive">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th rowspan="2">Particulars</th>
+                    <th colspan="<%= funding_rounds.size %>" class="text-center">% stake fully diluted</th>
+                    <th class="text-center">Quantity actual (as on the latest round)</th>
+                    <th class="text-center">Quantity- fully diluted (as on the latest round)</th>
+                </tr>
+                <tr>
+                    <% funding_rounds.each do |round| %>
+                        <th class="text-center"><%= round %></th>
+                    <% end %>
+                    <th class="text-center"><%= latest_round %></th>
+                    <th class="text-center"><%= latest_round %></th>
+                </tr>
+            </thead>
+            <tbody>
+                <% h_data[:categories].each do |category| %>
+                    <tr class="bg-light">
+                        <td colspan="<%= funding_rounds.size + 3 %>">
+                            <strong>
+                                <% if category == "Self" %>
+                                    <%= Investor.find(portfolio_company_id).entity.name %>
+                                <% else %>
+                                    <%= category.pluralize %>
+                                <% end %>
+                            </strong>
+                        </td>
+                    </tr>
+                    <% h_data[:investors_by_category][category].each do |investor| %>
+                        <tr>
+                            <td>
+                                <% if category == "Self" %>
+                                    <%= @portfolio_company.entity.name %>
+                                <% else %>
+                                    <%= investor.investor_name %>
+                                <% end %>
+                            </td>
+                            <% funding_rounds.each do |round| %>
+                                <td class="text-center">
+                                    <%= h_data.dig(:table_data, category, investor.investor_name, round)&.fetch(:fully_diluted_percentage, "-") || "-" %>
+                                </td>
+                            <% end %>
+                            <td class="text-right">
+                                <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:quantity, 0) || 0, precision: 2, delimiter: ',') %>
+                            </td>
+                            <td class="text-right">
+                                <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0, precision: 2, delimiter: ',') %>
+                            </td>
+                        </tr>
+                    <% end %>
+                <% end %>
+            </tbody>
+            <tfoot>
+                <tr class="font-weight-bold">
+                    <td>Total</td>
+                    <% funding_rounds.each do |round| %>
+                        <td class="text-center">100.0%</td>
+                    <% end %>
+                    <td class="text-right">
+                        <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_equity) || 0, precision: 2, delimiter: ',') %>
+                    </td>
+                    <td class="text-right">
+                        <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_fully_diluted) || 0, precision: 2, delimiter: ',') %>
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+<% end %>

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_02_115205) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -36,7 +36,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
-  create_table "account_entries", primary_key: ["id", "reporting_date"], charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB\n/*!50100 PARTITION BY RANGE (year(`reporting_date`))\n(PARTITION p2023 VALUES LESS THAN (2024) ENGINE = InnoDB,\n PARTITION p2024 VALUES LESS THAN (2025) ENGINE = InnoDB,\n PARTITION p2025 VALUES LESS THAN (2026) ENGINE = InnoDB,\n PARTITION pmax VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */", force: :cascade do |t|
+  create_table "account_entries", primary_key: ["id", "reporting_date"], charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", options: "ENGINE=InnoDB\n/*!50100 PARTITION BY RANGE (year(`reporting_date`))\n(PARTITION p2023 VALUES LESS THAN (2024) ENGINE = InnoDB,\n PARTITION p2024 VALUES LESS THAN (2025) ENGINE = InnoDB,\n PARTITION p2025 VALUES LESS THAN (2026) ENGINE = InnoDB,\n PARTITION p2026 VALUES LESS THAN (2027) ENGINE = InnoDB,\n PARTITION pmax VALUES LESS THAN MAXVALUE ENGINE = InnoDB) */", force: :cascade do |t|
     t.bigint "id", null: false, auto_increment: true
     t.bigint "capital_commitment_id"
     t.bigint "entity_id", null: false
@@ -82,6 +82,57 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
+    t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
+  end
+
+  create_table "account_entries_old", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "capital_commitment_id"
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.bigint "investor_id"
+    t.bigint "form_type_id"
+    t.string "folio_id", limit: 40
+    t.date "reporting_date"
+    t.string "entry_type", limit: 50
+    t.string "name", limit: 125
+    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.text "notes"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.text "explanation"
+    t.boolean "cumulative", default: false
+    t.string "period", limit: 25
+    t.string "parent_type"
+    t.bigint "parent_id"
+    t.boolean "generated", default: false
+    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
+    t.bigint "exchange_rate_id"
+    t.bigint "fund_formula_id"
+    t.string "rule_for", limit: 10, default: "Accounting"
+    t.json "json_fields"
+    t.bigint "import_upload_id"
+    t.datetime "deleted_at"
+    t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
+    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.bigint "allocation_run_id"
+    t.string "parent_name"
+    t.string "commitment_name"
+    t.integer "ref_id", default: 0, null: false
+    t.index ["capital_commitment_id", "fund_id", "name", "entry_type", "reporting_date", "cumulative", "deleted_at"], name: "idx_on_capital_commitment_id_fund_id_name_entry_type_report"
+    t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
+    t.index ["deleted_at"], name: "index_account_entries_on_deleted_at"
+    t.index ["entity_id"], name: "index_account_entries_on_entity_id"
+    t.index ["entry_type"], name: "index_account_entries_on_entry_type"
+    t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
+    t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
+    t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
+    t.index ["fund_id", "allocation_run_id"], name: "idx_ae_fund_alloc"
+    t.index ["fund_id"], name: "index_account_entries_on_fund_id"
+    t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
+    t.index ["investor_id"], name: "index_account_entries_on_investor_id"
+    t.index ["name", "fund_id", "capital_commitment_id", "entry_type", "reporting_date", "cumulative", "deleted_at", "parent_type", "parent_id", "ref_id", "amount_cents"], name: "index_accounts_on_unique_fields", unique: true
+    t.index ["name"], name: "index_account_entries_on_name"
+    t.index ["parent_type", "parent_id"], name: "index_account_entries_on_parent"
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
   end
 
@@ -309,6 +360,25 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
     t.datetime "updated_at_web_included"
     t.json "metadata"
     t.index ["ai_portfolio_report_id"], name: "index_ai_report_sections_on_ai_portfolio_report_id"
+  end
+
+  create_table "ai_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "report_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "status"
+    t.text "ai_response"
+    t.text "status_message"
+    t.text "prompt_used"
+    t.text "notes"
+    t.json "charts_spec"
+    t.integer "record_count"
+    t.datetime "triggered_at"
+    t.string "trigger_type"
+    t.bigint "triggered_by_id"
+    t.index ["entity_id"], name: "index_ai_reports_on_entity_id"
+    t.index ["report_id"], name: "index_ai_reports_on_report_id"
   end
 
   create_table "ai_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -842,17 +912,18 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
   end
 
   create_table "chats", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.string "model_id"
-    t.bigint "entity_id", null: false
-    t.bigint "user_id", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "model_id"
+    t.bigint "entity_id"
+    t.bigint "user_id"
     t.string "owner_type"
     t.bigint "owner_id"
     t.string "name"
     t.boolean "enable_broadcast", default: true, null: false
-    t.string "assistant_type", limit: 100
+    t.string "assistant_type", limit: 50
     t.index ["entity_id"], name: "index_chats_on_entity_id"
+    t.index ["model_id"], name: "index_chats_on_model_id"
     t.index ["owner_type", "owner_id"], name: "index_chats_on_owner"
     t.index ["user_id"], name: "index_chats_on_user_id"
   end
@@ -1487,12 +1558,11 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
 
   create_table "faq_threads", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "user_id", null: false
-    t.string "external_thread_id"
+    t.string "openai_thread_id"
     t.string "title", default: "New Support Chat"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.json "messages"
-    t.string "last_openai_response_id"
     t.index ["user_id"], name: "index_faq_threads_on_user_id"
   end
 
@@ -2103,6 +2173,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
     t.integer "import_upload_id"
     t.json "json_fields"
     t.bigint "form_type_id"
+    t.string "instrument_name", limit: 50
+    t.decimal "instrument_quantity", precision: 10, scale: 2
     t.index ["entity_id"], name: "index_investments_on_entity_id"
     t.index ["form_type_id"], name: "index_investments_on_form_type_id"
     t.index ["portfolio_company_id"], name: "index_investments_on_portfolio_company_id"
@@ -2471,20 +2543,42 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
   end
 
   create_table "messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "chat_id", null: false
-    t.string "role"
-    t.text "content", size: :medium
-    t.string "model_id"
+    t.string "role", null: false
+    t.text "content"
+    t.json "content_raw"
     t.integer "input_tokens"
     t.integer "output_tokens"
-    t.bigint "tool_call_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
     t.integer "cached_tokens"
     t.integer "cache_creation_tokens"
-    t.json "content_raw"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "chat_id", null: false
+    t.bigint "model_id"
+    t.bigint "tool_call_id"
     t.index ["chat_id"], name: "index_messages_on_chat_id"
+    t.index ["model_id"], name: "index_messages_on_model_id"
+    t.index ["role"], name: "index_messages_on_role"
     t.index ["tool_call_id"], name: "index_messages_on_tool_call_id"
+  end
+
+  create_table "models", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.string "model_id", null: false
+    t.string "name", null: false
+    t.string "provider", null: false
+    t.string "family"
+    t.datetime "model_created_at"
+    t.integer "context_window"
+    t.integer "max_output_tokens"
+    t.date "knowledge_cutoff"
+    t.json "modalities"
+    t.json "capabilities"
+    t.json "pricing"
+    t.json "metadata"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["family"], name: "index_models_on_family"
+    t.index ["provider", "model_id"], name: "index_models_on_provider_and_model_id", unique: true
+    t.index ["provider"], name: "index_models_on_provider"
   end
 
   create_table "notes", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2966,6 +3060,16 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
     t.text "metadata"
     t.json "template"
     t.text "template_xls_data"
+    t.text "ai_prompt"
+    t.boolean "send_notification", default: false
+    t.string "notification_recipients"
+    t.string "notification_ccs"
+    t.integer "notification_start_after", default: 0
+    t.string "notification_start_unit", default: "days"
+    t.integer "notification_repeat_interval", default: 1
+    t.string "notification_repeat_unit", default: "days"
+    t.datetime "notify_next_run_at"
+    t.datetime "notify_last_run_at"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
@@ -3302,14 +3406,15 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
   end
 
   create_table "tool_calls", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "message_id", null: false
     t.string "tool_call_id", null: false
     t.string "name", null: false
     t.json "arguments"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.bigint "message_id", null: false
     t.text "thought_signature"
     t.index ["message_id"], name: "index_tool_calls_on_message_id"
+    t.index ["name"], name: "index_tool_calls_on_name"
     t.index ["tool_call_id"], name: "index_tool_calls_on_tool_call_id", unique: true
   end
 
@@ -3464,6 +3569,13 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
   add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
   add_foreign_key "access_rights", "users"
   add_foreign_key "access_rights", "users", column: "granted_by_id"
+  add_foreign_key "account_entries_old", "capital_commitments"
+  add_foreign_key "account_entries_old", "entities"
+  add_foreign_key "account_entries_old", "exchange_rates"
+  add_foreign_key "account_entries_old", "form_types"
+  add_foreign_key "account_entries_old", "fund_formulas"
+  add_foreign_key "account_entries_old", "funds"
+  add_foreign_key "account_entries_old", "investors"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
@@ -3477,9 +3589,10 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
   add_foreign_key "ai_chat_sessions", "ai_portfolio_reports"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
-  add_foreign_key "ai_presentations", "chats"
   add_foreign_key "ai_presentations", "entities"
   add_foreign_key "ai_report_sections", "ai_portfolio_reports"
+  add_foreign_key "ai_reports", "entities"
+  add_foreign_key "ai_reports", "reports"
   add_foreign_key "ai_rules", "entities"
   add_foreign_key "allocation_runs", "entities"
   add_foreign_key "allocation_runs", "funds"
@@ -3544,8 +3657,7 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
   add_foreign_key "capital_remittances", "folders", column: "document_folder_id"
   add_foreign_key "capital_remittances", "funds"
   add_foreign_key "capital_remittances", "investors"
-  add_foreign_key "chats", "entities"
-  add_foreign_key "chats", "users"
+  add_foreign_key "chats", "models"
   add_foreign_key "ci_profiles", "entities"
   add_foreign_key "ci_profiles", "funds"
   add_foreign_key "ci_track_records", "entities"
@@ -3714,6 +3826,8 @@ ActiveRecord::Schema[8.0].define(version: 2025_12_30_091116) do
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
   add_foreign_key "messages", "chats"
+  add_foreign_key "messages", "models"
+  add_foreign_key "messages", "tool_calls"
   add_foreign_key "nudges", "entities"
   add_foreign_key "nudges", "users"
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
