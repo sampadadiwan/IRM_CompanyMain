@@ -52,6 +52,16 @@ class AiPortfolioReport < ApplicationRecord
     "Negative News"
   ].freeze
 
+  # Sections eligible for auto-generated charts (if document data supports it)
+  CHART_ELIGIBLE_SECTIONS = [
+    "Key Products & Services",
+    "Financial Snapshot",
+    "Market Size & Target",
+    "Founders & Shareholders",
+    "Raise History, Valuations & Funding Trend",
+    "Investment Ask"
+  ].freeze
+
   private
 
   def create_default_sections

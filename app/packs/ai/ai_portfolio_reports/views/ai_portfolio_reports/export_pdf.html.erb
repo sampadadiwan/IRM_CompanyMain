@@ -6,11 +6,12 @@
     pastel_colors = ['#93C5FD', '#A5B4FC', '#F9A8D4', '#FCD34D', '#6EE7B7', '#FDBA74', '#C4B5FD', '#FCA5A5', '#7DD3FC', '#67E8F9']
 
     begin
-      data = JSON.parse(chart_config)
-      data['datasets']&.each { |ds| ds.delete('yAxisID') }
+      parsed = JSON.parse(chart_config)
+      data = parsed.is_a?(Hash) ? (parsed['data'] || parsed[:data] || parsed) : parsed
+      data['datasets']&.each { |ds| ds.delete('yAxisID') } if data.is_a?(Hash)
 
       # Apply pastel colors
-      if data['datasets']
+      if data.is_a?(Hash) && data['datasets']
         data['datasets'].each_with_index do |dataset, idx|
           color = pastel_colors[idx % pastel_colors.length]
 
@@ -29,19 +30,27 @@
 
       chart_type = 'line' if chart_type == 'area'
 
-      chart_config_obj = {
-        type: chart_type,
-        data: data,
-        options: {
-          responsive: true,
-          plugins: {
-            legend: { display: true, position: 'top' }
-          },
-          scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
-        }
-      }
+      chart_config_obj = if parsed.is_a?(Hash) && parsed.key?('data') && parsed.key?('type')
+                           parsed['data'] = data if data.is_a?(Hash)
+                           parsed['type'] ||= chart_type
+                           parsed
+                         else
+                           {
+                             type: chart_type,
+                             data: data,
+                             options: {
+                               responsive: true,
+                               plugins: {
+                                 legend: { display: true, position: 'top' }
+                               },
+                               scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
+                             }
+                           }
+                         end
 
       encoded_config = ERB::Util.url_encode(chart_config_obj.to_json)
+      Rails.logger.debug "Generated chart URL with config: #{encoded_config}"
+
       "https://quickchart.io/chart?c=#{encoded_config}&width=700&height=400&backgroundColor=white&v=3"
     rescue => e
       Rails.logger.error "Chart conversion error: #{e.message}"

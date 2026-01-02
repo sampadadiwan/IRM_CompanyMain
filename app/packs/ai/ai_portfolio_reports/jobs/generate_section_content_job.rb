@@ -27,16 +27,21 @@ class GenerateSectionContentJob < ApplicationJob
         # next unless section.section_type == "Custom Charts"
         # next unless section.section_type == "Company Overview"
 
-        # next unless ["Company Overview", "Key Products & Services"].include?(section.section_type) # Skip this section as per requirements
+        # next unless ["Company Overview", "Competition Analysis"].include?(section.section_type) # Skip this section as per requirements
 
-        # SPECIAL HANDLING: Custom Charts section uses Rails service
-        if section.section_type == "Custom Charts"
-          generate_charts_section(report, section)
-          next
-        else
-          # All other sections use PortfolioReportAgent with cached documents
-          generate_text_section(report, section, cached_documents_context)
-        end
+        # REMOVED CUSTOM CHARTS AS OF NOW. WE WILL IMPLEMENT IN SECTION CHARTS LATER.
+
+        # # SPECIAL HANDLING: Custom Charts section uses Rails service
+        # if section.section_type == "Custom Charts"
+        #   generate_charts_section(report, section)
+        #   next
+        # else
+        #   # All other sections use PortfolioReportAgent with cached documents
+        #   generate_text_section(report, section, cached_documents_context)
+        # end
+        next if section.section_type == "Custom Charts"
+
+        generate_text_section(report, section, cached_documents_context)
       rescue StandardError => e
         Rails.logger.error "Error: #{section.section_type}: #{e.message}"
       end
@@ -48,6 +53,71 @@ class GenerateSectionContentJob < ApplicationJob
   end
 
   private
+
+  # Auto-generate charts for a section if chartable data exists in documents
+  def generate_section_charts_if_data_exists(report, section)
+    Rails.logger.info "  → Checking for chartable data: #{section.section_type}"
+
+    generator = ChartSectionGenerator.new(report: report, section: section, cached_document_paths: @document_paths)
+
+    # Get data preview to check if chartable data exists
+    document_paths = generator.find_csv_documents
+    data_preview = generator.extract_data_preview(document_paths)
+
+    return if data_preview.blank?
+
+    # Ask LLM if chartable data exists for this section type
+    chart_prompts = check_and_generate_chart_prompts(section.section_type, data_preview)
+
+    if chart_prompts.present?
+      Rails.logger.info "  → Generating #{chart_prompts.count} charts for #{section.section_type}"
+      charts_html = generator.generate_charts_html(chart_prompts: chart_prompts)
+
+      # Append charts to existing content
+      updated_content = section.content_html.to_s + charts_html
+      section.update(content_html: updated_content)
+
+      Rails.logger.info "  ✓ Added #{section.agent_chart_ids.count} charts to #{section.section_type}"
+    else
+      Rails.logger.info "  → No chartable data found for #{section.section_type}"
+    end
+  rescue StandardError => e
+    Rails.logger.error "  ✗ Chart generation failed for #{section.section_type}: #{e.message}"
+  end
+
+  # Check if document data has chartable information for this section
+  def check_and_generate_chart_prompts(section_type, data_preview)
+    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+
+    prompt = <<~PROMPT
+      Analyze the following document data and determine if there is numerical/chartable data relevant to a "#{section_type}" section.
+
+      DATA:
+      #{data_preview[0..4000]}
+
+      TASK:
+      - If chartable data exists (numbers, percentages, trends, comparisons), return 1-2 chart prompts as a JSON array
+      - If NO chartable data exists, return an empty array: []
+      - Be strict: only suggest charts if clear numerical data is present
+      - Do not invent or assume data that isn't there
+
+      Examples of valid chart prompts:
+      - "Revenue growth over 2022-2024 as a line chart"
+      - "Market share breakdown as a pie chart"
+      - "Funding rounds comparison as a bar chart"
+
+      Return ONLY a JSON array, nothing else.
+    PROMPT
+
+    response = chat.ask(prompt)
+    result = response.content.strip.sub(/\A```(?:json)?\s*/i, "").sub(/\s*```\z/, "")
+
+    prompts = JSON.parse(result)
+    prompts.is_a?(Array) ? prompts : []
+  rescue StandardError => e
+    Rails.logger.error "Error checking for chartable data: #{e.message}"
+    []
+  end
 
   # Load documents ONCE and return the formatted context string
   def load_documents_once(folder_path)
@@ -265,6 +335,10 @@ class GenerateSectionContentJob < ApplicationJob
 
     if result.success?
       Rails.logger.info "  ✓ Generated #{section.section_type}"
+
+      # Auto-generate charts for eligible sections if document data supports it
+      generate_section_charts_if_data_exists(report, section) if AiPortfolioReport::CHART_ELIGIBLE_SECTIONS.include?(section.section_type)
+
     else
       error_msg = result['error'] || result[:error] || result.inspect
       Rails.logger.error "  ✗ Failed #{section.section_type}: #{error_msg}"

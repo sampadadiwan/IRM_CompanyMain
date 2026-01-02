@@ -121,8 +121,17 @@ class AiReportSectionsController < ApplicationController
     authorize @section
     user_prompt = params[:prompt]
 
-    chart_service = PortfolioChartAgentService.new
+    # Use ChartSectionGenerator which has document context
+    generator = ChartSectionGenerator.new(report: @report, section: @section)
 
+    # Get document paths and convert them to context
+
+    document_paths = generator.find_csv_documents
+    temp_csv_paths = generator.get_or_create_converted_files(document_paths)
+
+    # Now pass documents to the chart service
+
+    chart_service = PortfolioChartAgentService.new(csv_paths: temp_csv_paths, skip_cleanup: true)
     chart_config = chart_service.generate_chart!(prompt: user_prompt)
 
     render json: { success: true, chart_config: chart_config }
@@ -139,19 +148,39 @@ class AiReportSectionsController < ApplicationController
     chart_config = params[:chart_config]
     user_prompt = params[:prompt]
 
+    Rails.logger.info "Chart title: #{chart_config['title'] || 'N/A'}"
     # Create AgentChart record
     chart = AgentChart.create!(
       entity_id: @report.analyst.entity_id,
       owner: @report,
       prompt: user_prompt,
       spec: chart_config,
-      status: 'ready'
+      status: 'ready',
+      title: chart_config['title'] || chart_config[:title] || "Chart #{(@section.agent_chart_ids&.size || 0) + 1}: #{ChartSectionGenerator.new(report: @report, section: @section).extract_title(user_prompt)}"
     )
 
     # Add chart to section
     @section.add_chart(chart)
 
-    render json: { success: true, chart_id: chart.id }
+    render json: { success: true, chart_id: chart.id, title: chart.title, prompt: chart.prompt }
+  rescue StandardError => e
+    render json: { success: false, error: e.message }, status: :unprocessable_entity
+  end
+
+  def remove_chart
+    @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
+    @section = @report.ai_report_sections.find(params[:id])
+
+    authorize @section
+    chart_id = params[:chart_id].to_i
+
+    # Remove from section's agent_chart_ids
+    if @section.agent_chart_ids&.include?(chart_id)
+      @section.agent_chart_ids.delete(chart_id)
+      @section.save!
+    end
+
+    render json: { success: true }
   rescue StandardError => e
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end

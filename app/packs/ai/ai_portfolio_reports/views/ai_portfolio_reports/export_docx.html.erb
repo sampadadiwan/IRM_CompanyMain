@@ -6,11 +6,12 @@
   pastel_colors = ['#93C5FD', '#A5B4FC', '#F9A8D4', '#FCD34D', '#6EE7B7', '#FDBA74', '#C4B5FD', '#FCA5A5', '#7DD3FC', '#67E8F9']
 
   begin
-    data = JSON.parse(chart_config)
-    data['datasets']&.each { |ds| ds.delete('yAxisID') }
+    parsed = JSON.parse(chart_config)
+    data = parsed.is_a?(Hash) ? (parsed['data'] || parsed[:data] || parsed) : parsed
+    data['datasets']&.each { |ds| ds.delete('yAxisID') } if data.is_a?(Hash)
 
 
-    if data['datasets']
+    if data.is_a?(Hash) && data['datasets']
       data['datasets'].each_with_index do |dataset, idx|
         color = pastel_colors[idx % pastel_colors.length]
         if ['pie', 'doughnut'].include?(chart_type)
@@ -38,16 +39,22 @@
     #   }
     # }
 
-    chart_config_obj = {
-      type: chart_type,
-      data: data,
-      options: {
-        responsive: true,
-        plugins: { legend: { display: true, position: 'top' } },
-        scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
+    chart_config_obj = if parsed.is_a?(Hash) && parsed.key?('data') && parsed.key?('type')
+                         parsed['data'] = data if data.is_a?(Hash)
+                         parsed['type'] ||= chart_type
+                         parsed
+                       else
+                         {
+                           type: chart_type,
+                           data: data,
+                           options: {
+                             responsive: true,
+                             plugins: { legend: { display: true, position: 'top' } },
+                             scales: ['pie', 'doughnut'].include?(chart_type) ? {} : { y: { beginAtZero: true } }
 
-      }
-    }
+                           }
+                         }
+                       end
 
     # encoded = ERB::Util.url_encode(chart_config_obj.to_json)
     # return "https://quickchart.io/chart?c=#{encoded}&width=600&height=350&backgroundColor=white&v=3&format=png"

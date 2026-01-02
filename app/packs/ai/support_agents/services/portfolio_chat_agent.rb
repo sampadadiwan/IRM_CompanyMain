@@ -1,4 +1,7 @@
 class PortfolioChatAgent < SupportAgentService
+
+  require_relative '../tools/langchain_web_search_tool'
+
   # PortfolioChatAgent provides conversational AI assistance for portfolio reports
   # with full conversation memory, tool execution, and document context capabilities.
   #
@@ -94,11 +97,15 @@ class PortfolioChatAgent < SupportAgentService
     # Initialize Langchain LLM
     llm = initialize_langchain_llm
 
-    # Create assistant with document context in system instructions
+    # Initialize web search tool
+    web_search_tool = LangchainWebSearchTool.new
+
     assistant = Langchain::Assistant.new(
       llm: llm,
-      instructions: build_system_instructions(chat_session, documents_context)
+      instructions: build_system_instructions(chat_session, documents_context),
+      tools: [web_search_tool]
     )
+
 
     # Load conversation history from database into assistant
     load_conversation_history(chat_session, assistant)
@@ -142,8 +149,10 @@ class PortfolioChatAgent < SupportAgentService
     new_messages = assistant.messages.last(2)
 
     Rails.logger.info "[PortfolioChatAgent] Persisting #{new_messages.count} new messages"
-
     new_messages.each do |msg|
+      # Skip tool messages - only persist user and assistant messages
+      next unless %w[user assistant].include?(msg.role.to_s)
+      
       # Avoid duplicates - check if message was just created
       next if message_exists_in_session?(chat_session, msg)
 
@@ -153,6 +162,7 @@ class PortfolioChatAgent < SupportAgentService
         metadata: extract_message_metadata(msg)
       )
     end
+
 
     Rails.logger.info "[PortfolioChatAgent] Conversation persisted successfully"
   end
@@ -313,6 +323,8 @@ class PortfolioChatAgent < SupportAgentService
       #{"- If information isn't in the documents, acknowledge this" if documents_context.present?}
       - If you don't know something, be honest about it
       - When referencing report sections, be specific
+      - You have access to web_search and news_search tools to find current information
+      - Use tools judiciously to enhance responses
     GUIDELINES
 
     instructions

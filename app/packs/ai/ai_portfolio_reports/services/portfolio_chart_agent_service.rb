@@ -18,6 +18,7 @@ class PortfolioChartAgentService
       You are a Chart.js config generator.
       TASK: Output ONLY a single JSON object representing a valid Chart.js config:
         {
+          "title": "<descriptive chart title based on the data>",
           "type": "<one of: #{ALLOWED_TYPES.join(', ')}>",
           "data": {
             "labels": [<strings or numbers>],
@@ -80,13 +81,36 @@ class PortfolioChartAgentService
     Rails.logger.debug user_msg.inspect
 
     # Attach the CSV files if provided; otherwise just send the message
-    raw = if @csv_paths.any?
-            Rails.logger.info "Sending #{@csv_paths.count} files to LLM: #{@csv_paths.map { |p| "#{File.basename(p)} (#{File.size(p)} bytes)" }.join(', ')}"
-            chat.ask(system_msg)
-            chat.ask(user_msg, with: @csv_paths)
-          else
-            chat.ask([system_msg, user_msg].join("\n\n"))
-          end
+    if @csv_paths.any?
+      Rails.logger.info "Sending #{@csv_paths.count} files to LLM: #{@csv_paths.map { |p| "#{File.basename(p)} (#{File.size(p)} bytes)" }.join(', ')}"
+
+      chat.ask(system_msg)
+      # LlmUsageTracker.track(
+      #   provider: "gemini",
+      #   model: ENV.fetch("DEFAULT_MODEL", nil),
+      #   feature: "portfolio_chart_agent.system",
+      #   response: system_response,
+      #   trackable: nil
+      # )
+
+      raw = chat.ask(user_msg, with: @csv_paths)
+      # LlmUsageTracker.track(
+      #   provider: "gemini",
+      #   model: ENV.fetch("DEFAULT_MODEL", nil),
+      #   feature: "portfolio_chart_agent.user_with_files",
+      #   response: raw,
+      #   trackable: nil
+      # )
+    else
+      raw = chat.ask([system_msg, user_msg].join("\n\n"))
+      # LlmUsageTracker.track(
+      #   provider: "gemini",
+      #   model: ENV.fetch("DEFAULT_MODEL", nil),
+      #   feature: "portfolio_chart_agent.single_call",
+      #   response: raw,
+      #   trackable: nil
+      # )
+    end
 
     Rails.logger.debug raw.inspect
     # Parse & validate the LLM's JSON

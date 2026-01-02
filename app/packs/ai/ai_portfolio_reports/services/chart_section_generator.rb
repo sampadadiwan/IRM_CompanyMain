@@ -81,6 +81,122 @@ class ChartSectionGenerator
     end
   end
 
+  # Find CSV documents for this portfolio company
+  # Find relevant documents (CSV, TXT, MD, PDF, DOCX, XLSX, PPTX) for this portfolio company
+  # Find relevant documents from demo_documents folder (like Python backend)
+  def find_csv_documents
+    document_paths = []
+
+    # Supported file types for chart generation
+    supported_extensions = ['.csv', '.txt', '.md', '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt']
+
+    Rails.logger.info "=== Searching for documents ==="
+
+    # Use same path as GenerateSectionContentJob
+    demo_docs_path = Pathname.new('/tmp/test_documents')
+
+    if demo_docs_path.exist?
+      Rails.logger.info "Checking folder: #{demo_docs_path}"
+
+      supported_extensions.each do |ext|
+        Dir.glob(demo_docs_path.join("*#{ext}")).each do |file_path|
+          document_paths << file_path
+          Rails.logger.info "  ? Found: #{File.basename(file_path)}"
+        end
+      end
+    else
+      Rails.logger.warn "demo_documents folder not found at: #{demo_docs_path}"
+      Rails.logger.info "Creating demo_documents folder..."
+      FileUtils.mkdir_p(demo_docs_path)
+    end
+
+    Rails.logger.info "Total documents found: #{document_paths.count}"
+    document_paths
+  end
+
+  def get_or_create_converted_files(document_paths)
+    return @converted_files_cache[:paths] if @converted_files_cache[:paths].present?
+
+    Rails.logger.info "[ChartSectionGenerator] Converting documents once (will be cached for all charts)"
+
+    temp_csv_paths = []
+
+    document_paths.each do |original_path|
+      extension = File.extname(original_path).downcase
+
+      case extension
+      when '.xlsx', '.xls'
+        csv_path = convert_excel_to_csv(original_path)
+        temp_csv_paths << csv_path if csv_path
+      when '.pptx', '.ppt'
+        csv_path = convert_pptx_to_csv(original_path)
+        temp_csv_paths << csv_path if csv_path
+      when '.csv'
+        temp_file = Tempfile.new(['chart_data', '.csv'])
+        FileUtils.cp(original_path, temp_file.path)
+        @temp_files_to_keep << temp_file
+        temp_csv_paths << temp_file.path
+      when '.pdf'
+        temp_file, text_path = convert_pdf_to_text(original_path)
+        if temp_file
+          @temp_files_to_keep << temp_file
+          temp_csv_paths << text_path
+        end
+      when '.docx', '.doc'
+        temp_file, text_path = convert_docx_to_text(original_path)
+        if temp_file
+          @temp_files_to_keep << temp_file
+          temp_csv_paths << text_path
+        end
+      else
+        Rails.logger.warn "[ChartSectionGenerator] Skipping unsupported file: #{File.basename(original_path)}"
+      end
+    end
+
+    @converted_files_cache[:paths] = temp_csv_paths
+    temp_csv_paths
+  end
+
+  # Extract a preview of data from documents for LLM analysis
+  def extract_data_preview(document_paths)
+    preview_parts = []
+
+    document_paths.each do |file_path|
+      extension = File.extname(file_path).downcase
+      filename = File.basename(file_path)
+
+      begin
+        case extension
+        when '.xlsx', '.xls'
+          preview_parts << extract_excel_preview(file_path, filename)
+        when '.pptx', '.ppt'
+          preview_parts << extract_pptx_preview(file_path, filename)
+        when '.csv'
+          preview_parts << extract_csv_preview(file_path, filename)
+        when '.pdf'
+          preview_parts << extract_pdf_preview(file_path, filename)
+        when '.docx', '.doc'
+          preview_parts << extract_docx_preview(file_path, filename)
+        end
+      rescue StandardError => e
+        Rails.logger.warn "[ChartSectionGenerator] Could not extract preview from #{filename}: #{e.message}"
+      end
+    end
+
+    preview_parts.compact.join("\n\n")
+  end
+
+  # Extract a short title from the prompt
+  def extract_title(prompt)
+    # Take first part before dash or hyphen
+    # Handle if prompt is a Hash (from Gemini response)
+    prompt_str = prompt.is_a?(Hash) ? (prompt['prompt'] || prompt[:prompt] || prompt.to_s) : prompt.to_s
+    # Take first part before dash or hyphen
+    title = prompt_str.split('-').first.to_s.strip
+    # Limit to 50 characters
+    title.truncate(50)
+  end
+
   private
 
   # Create a single chart using AgentChart + ChartAgentService
@@ -151,49 +267,6 @@ class ChartSectionGenerator
     chart.update!(spec: spec_hash, status: "ready")
 
     chart
-  end
-
-  def get_or_create_converted_files(document_paths)
-    return @converted_files_cache[:paths] if @converted_files_cache[:paths].present?
-
-    Rails.logger.info "[ChartSectionGenerator] Converting documents once (will be cached for all charts)"
-
-    temp_csv_paths = []
-
-    document_paths.each do |original_path|
-      extension = File.extname(original_path).downcase
-
-      case extension
-      when '.xlsx', '.xls'
-        csv_path = convert_excel_to_csv(original_path)
-        temp_csv_paths << csv_path if csv_path
-      when '.pptx', '.ppt'
-        csv_path = convert_pptx_to_csv(original_path)
-        temp_csv_paths << csv_path if csv_path
-      when '.csv'
-        temp_file = Tempfile.new(['chart_data', '.csv'])
-        FileUtils.cp(original_path, temp_file.path)
-        @temp_files_to_keep << temp_file
-        temp_csv_paths << temp_file.path
-      when '.pdf'
-        temp_file, text_path = convert_pdf_to_text(original_path)
-        if temp_file
-          @temp_files_to_keep << temp_file
-          temp_csv_paths << text_path
-        end
-      when '.docx', '.doc'
-        temp_file, text_path = convert_docx_to_text(original_path)
-        if temp_file
-          @temp_files_to_keep << temp_file
-          temp_csv_paths << text_path
-        end
-      else
-        Rails.logger.warn "[ChartSectionGenerator] Skipping unsupported file: #{File.basename(original_path)}"
-      end
-    end
-
-    @converted_files_cache[:paths] = temp_csv_paths
-    temp_csv_paths
   end
 
   # Convert Excel file to CSV
@@ -344,68 +417,6 @@ class ChartSectionGenerator
         <p style="color: #721c24;">Error: #{error_message}</p>
       </div>
     HTML
-  end
-
-  # Find CSV documents for this portfolio company
-  # Find relevant documents (CSV, TXT, MD, PDF, DOCX, XLSX, PPTX) for this portfolio company
-  # Find relevant documents from demo_documents folder (like Python backend)
-  def find_csv_documents
-    document_paths = []
-
-    # Supported file types for chart generation
-    supported_extensions = ['.csv', '.txt', '.md', '.pdf', '.docx', '.doc', '.xlsx', '.xls', '.pptx', '.ppt']
-
-    Rails.logger.info "=== Searching for documents ==="
-
-    # Use same path as GenerateSectionContentJob
-    demo_docs_path = Pathname.new('/tmp/test_documents')
-
-    if demo_docs_path.exist?
-      Rails.logger.info "Checking folder: #{demo_docs_path}"
-
-      supported_extensions.each do |ext|
-        Dir.glob(demo_docs_path.join("*#{ext}")).each do |file_path|
-          document_paths << file_path
-          Rails.logger.info "  ? Found: #{File.basename(file_path)}"
-        end
-      end
-    else
-      Rails.logger.warn "demo_documents folder not found at: #{demo_docs_path}"
-      Rails.logger.info "Creating demo_documents folder..."
-      FileUtils.mkdir_p(demo_docs_path)
-    end
-
-    Rails.logger.info "Total documents found: #{document_paths.count}"
-    document_paths
-  end
-
-  # Extract a preview of data from documents for LLM analysis
-  def extract_data_preview(document_paths)
-    preview_parts = []
-
-    document_paths.each do |file_path|
-      extension = File.extname(file_path).downcase
-      filename = File.basename(file_path)
-
-      begin
-        case extension
-        when '.xlsx', '.xls'
-          preview_parts << extract_excel_preview(file_path, filename)
-        when '.pptx', '.ppt'
-          preview_parts << extract_pptx_preview(file_path, filename)
-        when '.csv'
-          preview_parts << extract_csv_preview(file_path, filename)
-        when '.pdf'
-          preview_parts << extract_pdf_preview(file_path, filename)
-        when '.docx', '.doc'
-          preview_parts << extract_docx_preview(file_path, filename)
-        end
-      rescue StandardError => e
-        Rails.logger.warn "[ChartSectionGenerator] Could not extract preview from #{filename}: #{e.message}"
-      end
-    end
-
-    preview_parts.compact.join("\n\n")
   end
 
   # Extract preview from Excel file
@@ -588,17 +599,6 @@ class ChartSectionGenerator
   rescue StandardError => e
     Rails.logger.error "Failed to extract text from #{extension}: #{e.message}"
     "[Document content could not be extracted]"
-  end
-
-  # Extract a short title from the prompt
-  def extract_title(prompt)
-    # Take first part before dash or hyphen
-    # Handle if prompt is a Hash (from Gemini response)
-    prompt_str = prompt.is_a?(Hash) ? (prompt['prompt'] || prompt[:prompt] || prompt.to_s) : prompt.to_s
-    # Take first part before dash or hyphen
-    title = prompt_str.split('-').first.to_s.strip
-    # Limit to 50 characters
-    title.truncate(50)
   end
 end
 # rubocop:enable Metrics/ClassLength

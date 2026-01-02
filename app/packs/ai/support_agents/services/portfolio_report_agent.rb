@@ -71,11 +71,15 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # rubocop:disable Metrics/MethodLength
-  def load_web_search_context(ctx, target:, web_search_enabled: false, **)
+  def load_web_search_context(ctx, target:, web_search_enabled: false,user_prompt: nil, **)
     ctx[:web_search_enabled] = web_search_enabled
     ctx[:web_search_context] = ""
 
+    
     Rails.logger.info "[PortfolioReportAgent] Web search enabled in : #{web_search_enabled}"
+    
+
+    
     return true unless web_search_enabled
 
     section = target
@@ -93,7 +97,8 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.info "[PortfolioReportAgent] Web search enabled - searching for #{company_name}"
 
     begin
-      queries = build_search_queries(section.section_type, company_name)
+      queries = build_search_queries(section.section_type, company_name, user_prompt: user_prompt)
+      search_method = determine_search_method(section.section_type)
       Rails.logger.info "[PortfolioReportAgent] Executing #{queries.count} web searches..."
 
       search_results = []
@@ -101,7 +106,7 @@ class PortfolioReportAgent < SupportAgentService
       threads = queries.map do |query|
         Thread.new do
           Rails.logger.info "[PortfolioReportAgent] Starting search for: #{query}"
-          result = AgentTools::WebSearchTool.search(query)
+          result = execute_search(query, search_method)
           formatted = format_search_result(query, result) unless result[:error]
           Rails.logger.info "[PortfolioReportAgent] Finished search for: #{query}"
           formatted
@@ -121,6 +126,30 @@ class PortfolioReportAgent < SupportAgentService
       Rails.logger.error "[PortfolioReportAgent] Web search error: #{e.message}"
       ctx[:web_search_context] = ""
       true
+    end
+  end
+
+    # Determine which search method to use based on section type
+  def determine_search_method(section_type)
+    case section_type
+    when "Recent Updates & Developments", "Negative News"
+      :news_search
+    when "Key Risks", "Competition Analysis"
+      :recent_search
+    else
+      :search
+    end
+  end
+
+  # Execute search using the appropriate method
+  def execute_search(query, method)
+    case method
+    when :news_search
+      AgentTools::WebSearchTool.news_search(query, time_period: "m3")
+    when :recent_search
+      AgentTools::WebSearchTool.recent_search(query, time_period: "y")
+    else
+      AgentTools::WebSearchTool.search(query)
     end
   end
 
@@ -171,6 +200,9 @@ class PortfolioReportAgent < SupportAgentService
     documents = ctx[:documents_context]
     web_search = ctx[:web_search_context]
     section = ctx[:section]
+
+     # Clear refinement history on fresh generation
+    clear_refinement_history(section)
 
     Rails.logger.info "[PortfolioReportAgent] ===== GENERATE SECTION CONTENT ====="
     Rails.logger.info "[PortfolioReportAgent] Section type: #{section_type}"
@@ -228,62 +260,264 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Refine existing content
-  def refine_section_content(ctx, **)
-    section_type = ctx[:section_type]
-    documents = ctx[:documents_context]
-    web_search = ctx[:web_search_context]
-    current_content = ctx[:current_content]
-    user_prompt = ctx[:user_prompt]
-    web_search_enabled = ctx[:web_search_enabled]
-    section = ctx[:section]
+  # def refine_section_content(ctx, **)
+  #   section_type = ctx[:section_type]
+  #   documents = ctx[:documents_context]
+  #   web_search = ctx[:web_search_context]
+  #   current_content = ctx[:current_content]
+  #   user_prompt = ctx[:user_prompt]
+  #   web_search_enabled = ctx[:web_search_enabled]
+  #   section = ctx[:section]
 
-    report = section.ai_portfolio_report
-    company = report.portfolio_company
+  #   report = section.ai_portfolio_report
+  #   company = report.portfolio_company
 
-    Rails.logger.info "[PortfolioReportAgent] ===== REFINE SECTION CONTENT ====="
-    Rails.logger.info "[PortfolioReportAgent] Web Search Enabled: #{web_search_enabled}"
-    Rails.logger.info "[PortfolioReportAgent] Web Search Context Present: #{web_search.present?}"
+  #   Rails.logger.info "[PortfolioReportAgent] ===== REFINE SECTION CONTENT ====="
+  #   Rails.logger.info "[PortfolioReportAgent] Web Search Enabled: #{web_search_enabled}"
+  #   Rails.logger.info "[PortfolioReportAgent] Web Search Context Present: #{web_search.present?}"
 
-    # Build refinement prompt
-    prompt = build_refinement_prompt(
+  #   # Build refinement prompt
+  #   prompt = build_refinement_prompt(
+  #     section_type: section_type,
+  #     current_content: current_content,
+  #     user_prompt: user_prompt,
+  #     documents: documents,
+  #     web_search: web_search,
+  #     company_name: company.name,
+  #     web_search_enabled: web_search_enabled
+  #   )
+
+  #   # # Call LLM
+  #   # api_key = ENV.fetch('OPENAI_API_KEY', nil)
+  #   # raise "OpenAI API key not found" unless api_key
+
+  #   # llm = Langchain::LLM::OpenAI.new(
+  #   #   api_key: api_key,
+  #   #   default_options: {
+  #   #     chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
+  #   #     temperature: 0.7
+  #   #   }
+  #   # )
+
+  #   # Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
+
+  #   # response = llm.complete(prompt: prompt)
+  #   # content = clean_llm_output(response.completion)
+  #   #
+  #   # Call LLM using RubyLLM
+  #   Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
+
+  #   chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+  #   response = chat.ask(prompt)
+  #   content = clean_llm_output(response.content)
+
+  #   ctx[:generated_content] = content
+
+  #   Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
+  #   true
+  # end
+
+# def refine_section_content(ctx, **)
+#   section = ctx[:section]
+#   section_type = ctx[:section_type]
+#   documents = ctx[:documents_context]
+#   web_search = ctx[:web_search_context]
+#   current_content = ctx[:current_content]
+#   user_prompt = ctx[:user_prompt]
+#   web_search_enabled = ctx[:web_search_enabled]
+
+#   report = section.ai_portfolio_report
+#   company = report.portfolio_company
+
+#   Rails.logger.info "[PortfolioReportAgent] ===== REFINE SECTION CONTENT (Langchain) ====="
+
+#   # Initialize Gemini LLM
+#   llm = Langchain::LLM::GoogleGemini.new(
+#     api_key: Rails.application.credentials[:GOOGLE_GEMINI_API_KEY],
+#     default_options: { 
+#       chat_model: 'gemini-2.5-pro',
+#       temperature: 0.3 
+#     }
+#   )
+
+#   # Create assistant with system instructions
+#   assistant = Langchain::Assistant.new(
+#     llm: llm,
+#     instructions: build_refinement_system_prompt(
+#       section_type: section_type,
+#       documents: documents,
+#       web_search: web_search,
+#       company_name: company.name,
+#       current_content: current_content
+#     )
+#   )
+
+#   # Load refinement history from section
+#   load_refinement_history(section, assistant)
+
+#   # Add new user message
+#   assistant.add_message(content: user_prompt)
+
+#   # Run assistant
+#   assistant.run
+
+#   # Get response
+#   #content = clean_llm_output(assistant.messages.last.content)
+#     # Get response - handle different response formats
+#   last_message = assistant.messages.last
+#   raw_content = last_message.content
+
+#   # Debug: log the response type
+#   Rails.logger.info "[PortfolioReportAgent] Response type: #{raw_content.class}"
+#   Rails.logger.info "[PortfolioReportAgent] Response: #{raw_content.inspect[0..500]}"
+
+#   # Handle Hash response from Gemini
+#   if raw_content.is_a?(Hash)
+#     content = raw_content[:text] || raw_content['text'] || raw_content.to_s
+#   elsif raw_content.is_a?(Array)
+#     content = raw_content.map { |p| p[:text] || p['text'] }.join("\n")
+#   else
+#     content = raw_content.to_s
+#   end
+
+#   content = clean_llm_output(content)
+#   ctx[:generated_content] = content
+
+
+#   # Save to refinement history
+#   save_refinement_exchange(section, user_prompt, content, web_search_enabled)
+
+#   Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
+#   true
+# end
+
+
+# # Load previous refinements into assistant
+# def load_refinement_history(section, assistant)
+#   history = section.refinement_history || []
+#   history = JSON.parse(history) if history.is_a?(String)
+#   history ||= []
+#   history.each do |exchange|
+#     assistant.add_message(role: 'user', content: exchange['user_prompt'])
+#     assistant.add_message(role: 'model', content: exchange['response'])  # Gemini uses 'model' not 'assistant'
+#   end
+# end
+
+def refine_section_content(ctx, **)
+  section = ctx[:section]
+  section_type = ctx[:section_type]
+  documents = ctx[:documents_context]
+  web_search = ctx[:web_search_context]
+  current_content = ctx[:current_content]
+  user_prompt = ctx[:user_prompt]
+  web_search_enabled = ctx[:web_search_enabled]
+
+    # Use the latest refined content from history if available
+  section.reload #Get latest data from DB
+  history = section.refinement_history || []
+  history = JSON.parse(history) if history.is_a?(String)
+  history ||= []
+  
+  if history.any?
+    # Use the last response as current content (it has the cumulative changes)
+    current_content = history.last['response']
+  end
+
+  report = section.ai_portfolio_report
+  company = report.portfolio_company
+
+  Rails.logger.info "[PortfolioReportAgent] ===== REFINE SECTION CONTENT (OpenAI) ====="
+
+  # Initialize OpenAI LLM
+  llm = Langchain::LLM::OpenAI.new(
+    api_key: Rails.application.credentials[:OPENAI_API_KEY],
+    default_options: { 
+      chat_completion_model_name: 'gpt-4o',
+      temperature: 0.3 
+    }
+  )
+
+  # Create assistant with system instructions
+  assistant = Langchain::Assistant.new(
+    llm: llm,
+    instructions: build_refinement_system_prompt(
       section_type: section_type,
-      current_content: current_content,
-      user_prompt: user_prompt,
       documents: documents,
       web_search: web_search,
       company_name: company.name,
-      web_search_enabled: web_search_enabled
+      current_content: current_content
     )
+  )
 
-    # # Call LLM
-    # api_key = ENV.fetch('OPENAI_API_KEY', nil)
-    # raise "OpenAI API key not found" unless api_key
+  # Load refinement history from section
+  load_refinement_history_openai(section, assistant)
 
-    # llm = Langchain::LLM::OpenAI.new(
-    #   api_key: api_key,
-    #   default_options: {
-    #     chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
-    #     temperature: 0.7
-    #   }
-    # )
+  # Add new user message
+  assistant.add_message(content: user_prompt)
 
-    # Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
+  # Run assistant
+  assistant.run
 
-    # response = llm.complete(prompt: prompt)
-    # content = clean_llm_output(response.completion)
-    #
-    # Call LLM using RubyLLM
-    Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
+  # Get response
+  last_message = assistant.messages.last
+  content = last_message.content.to_s
 
-    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
-    response = chat.ask(prompt)
-    content = clean_llm_output(response.content)
+  content = clean_llm_output(content)
+  ctx[:generated_content] = content
 
-    ctx[:generated_content] = content
+  # Save to refinement history
+  save_refinement_exchange(section, user_prompt, content, web_search_enabled)
 
-    Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
-    true
+  Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
+  true
+end
+
+# Load previous refinements into assistant (OpenAI uses 'assistant' role)
+def load_refinement_history_openai(section, assistant)
+  history = section.refinement_history || []
+  history = JSON.parse(history) if history.is_a?(String)
+  history ||= []
+  history.each do |exchange|
+    assistant.add_message(role: 'user', content: exchange['user_prompt'])
+    assistant.add_message(role: 'assistant', content: exchange['response'])
   end
+end
+
+
+
+# Save new exchange to history
+def save_refinement_exchange(section, user_prompt, response, web_search_enabled)
+  history = section.refinement_history
+  
+  # Parse JSON string if needed
+  if history.is_a?(String) && history.present?
+    history = JSON.parse(history)
+  end
+  history ||= []
+  
+  history << {
+    'user_prompt' => user_prompt,
+    'response' => response,
+    'web_search_enabled' => web_search_enabled,
+    'timestamp' => Time.current.iso8601
+  }
+  
+  # Keep last 10 exchanges to avoid context overflow
+  history = history.last(10)
+  
+  # Convert to JSON string for MySQL
+  section.update_column(:refinement_history, history.to_json)
+end
+
+
+# Clear history when section is regenerated (not refined)
+def clear_refinement_history(section)
+  section.update_column(:refinement_history, '[]')
+end
+
+
+
+
 
   # Save section to database
   def save_section(ctx, section:, generated_content:, **)
@@ -557,51 +791,66 @@ class PortfolioReportAgent < SupportAgentService
   # Refinement prompt
   # rubocop:disable Metrics/ParameterLists
   # rubocop:disable Lint/UnusedMethodArgument
-  def build_refinement_prompt(section_type:, current_content:, user_prompt:, documents:, company_name:, web_search: "", web_search_enabled: false)
-    <<~PROMPT
-      You are a professional investment analyst refining a #{section_type} section for a portfolio company report.
+  def build_refinement_system_prompt(section_type:, documents:, web_search:, company_name:, current_content:)
+  template = get_section_template(section_type)
+  
+  <<~PROMPT
+    You are a professional investment analyst refining a #{section_type} section for a portfolio company report.
+    
+    Company name must be inferred from documents if present
 
-      Company name must be inferred from documents if present
+    CURRENT CONTENT (HTML):
+    #{current_content}
 
-      CURRENT CONTENT (HTML):
-      #{current_content}
+    #{"AVAILABLE DOCUMENTS:\n#{documents}\n" if documents.present?}
+    #{"WEB SEARCH RESULTS:\n#{web_search}\n" if web_search.present?}
 
-      USER REQUEST (treat as refinement instruction, not a question):
-      #{user_prompt}
+    SECTION REQUIREMENTS:
+    Description: #{template[:description]}
+    Structure: #{template[:structure].join(', ')}
+    Length: #{template[:length]}
 
-      #{"AVAILABLE DOCUMENTS FOR REFERENCE:\n#{documents}\n" if documents.present?}
+    CRITICAL RULES - YOU MUST FOLLOW THESE:
+    1. NEVER ask questions or request more information - work with what you have
+    2. NEVER explain what you will do - just DO IT
+    3. NEVER use conversational language like "I will", "Let me", "Here is"
+    4. OUTPUT ONLY the refined HTML content - nothing else
 
-      #{"LATEST WEB SEARCH RESULTS:\n#{web_search}\n" if web_search.present?}
+    CRITICAL - OUTPUT FORMAT (MANDATORY):
+    - Return ONLY valid HTML content (absolutely NO markdown)
+    - DO NOT use markdown syntax: no **, no `, no |, no #
+    - Use HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
+    - For tables: <table>, <thead>, <tbody>, <tr>, <th>, <td>
+    - Start DIRECTLY with an HTML tag (e.g., <h2>)
+    - End with a closing HTML tag - no extra text
 
-      CRITICAL - OUTPUT FORMAT:
-      - Return ONLY HTML content (no markdown, no code blocks)
-      - Use proper HTML tags: <h2>, <h3>, <p>, <ul>, <li>, <strong>, <em>
-      - Maintain professional formatting
+    INSTRUCTIONS:
+    - IMPORTANT: Keep ALL existing content from CURRENT CONTENT above
+    - ADD or MODIFY only what the user specifically requests
+    - Do NOT remove or replace existing content unless explicitly asked
+    - Apply user's requested changes while maintaining professional quality
+    - Follow the section structure and length requirements above
+    #{if documents.present? && web_search.blank?
+        <<~DOC_RULES
+          CRITICAL - SOURCE RESTRICTIONS:
+          - ONLY use information from the provided documents or current content
+          - DO NOT add any facts, figures, or claims not found in documents
+          - DO NOT use your general knowledge about the company or industry
+          - If user requests information not in documents, state "Information not available in provided documents"
+          - If documents are provided, DO NOT rely on any externally provided company name
+          - Identify and use the company name ONLY if explicitly mentioned in the documents
+          - If multiple or conflicting company names appear, state "Multiple companies referenced in provided documents"
+          - If no company name is mentioned, use "Company (name not specified in documents)"
+        DOC_RULES
+      end}
+    #{'- You may incorporate facts from web search results' if web_search.present?}
 
-      INSTRUCTIONS:
-      1. Carefully read the current content and user request
-      2. Apply the requested changes while maintaining professional quality
-      3. Preserve important information unless asked to remove it
-      4. Adjust tone, length, or focus as requested
-      #{if documents.present?
-          <<~DOC_RULES
-            CRITICAL - SOURCE RESTRICTIONS:
-            - ONLY use information from the provided documents or current content
-            - DO NOT add any facts, figures, or claims not found in documents
-            - DO NOT use your general knowledge about the company or industry
-            - If user requests information not in documents, state "Information not available in provided documents"
-            - If documents are provided, DO NOT rely on any externally provided company name
-            - Identify and use the company name ONLY if explicitly mentioned in the documents
-            - If multiple or conflicting company names appear, state "Multiple companies referenced in provided documents"
-            - If no company name is mentioned, use "Company (name not specified in documents)"
+    Generate the refined #{section_type} section now in pure HTML format:
+  PROMPT
+end
 
-          DOC_RULES
-        end}
-      #{'- You may also incorporate facts from the web search results provided above' if web_search.present?}
 
-      Refine the content according to the user's request now:
-    PROMPT
-  end
+
 
   # rubocop:enable Metrics/ParameterLists
   # rubocop:enable Lint/UnusedMethodArgument
@@ -806,31 +1055,57 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # NEW: Build search queries based on section type
-  def build_search_queries(section_type, company_name, user_prompt: nil)
-    base_query = company_name
+  
+def build_search_queries(section_type, company_name, user_prompt: nil)
+  quoted_name = "\"#{company_name}\""
+  current_year = Date.current.year
 
-    # If user has a specific refinement prompt, use it for search
-    return ["#{base_query}, #{user_prompt}"] if user_prompt.present?
+  # Base section-specific queries
+  section_queries = case section_type
+                    when "Company Overview"
+                      [
+                        "#{quoted_name} company overview OR profile OR \"about us\"",
+                        "#{quoted_name} business model OR products OR services #{current_year}"
+                      ]
+                    when "Market Size & Target"
+                      [
+                        "#{quoted_name} market size TAM SAM \"addressable market\"",
+                        "#{quoted_name} target market OR customers OR segments"
+                      ]
+                    when "Recent Updates & Developments"
+                      [
+                        "#{quoted_name} news funding OR acquisition OR launch #{current_year}",
+                        "#{quoted_name} latest updates OR announcements #{current_year}"
+                      ]
+                    when "Competition Analysis"
+                      [
+                        "#{quoted_name} competitors OR \"competitive landscape\" OR rivals",
+                        "#{quoted_name} market share OR market position #{current_year}"
+                      ]
+                    when "Key Risks"
+                      [
+                        "#{quoted_name} risks OR challenges OR threats #{current_year}",
+                        "#{quoted_name} regulatory OR compliance OR legal issues"
+                      ]
+                    when "Negative News"
+                      [
+                        "#{quoted_name} lawsuit OR fraud OR scandal OR investigation #{current_year}",
+                        "#{quoted_name} controversy OR criticism OR complaints #{current_year}"
+                      ]
+                    else
+                      ["#{quoted_name} #{section_type.downcase} #{current_year}"]
+                    end
 
-    queries = case section_type
-              when "Company Overview"
-                ["#{base_query} company overview", "#{base_query} business model"]
-              when "Market Size & Target"
-                ["#{base_query} market size", "#{base_query} target market"]
-              when "Recent Updates & Developments"
-                ["#{base_query} news", "#{base_query} recent developments"]
-              when "Competition Analysis"
-                ["#{base_query} competitors", "#{base_query} market position"]
-              when "Key Risks"
-                ["#{base_query} risks", "#{base_query} challenges"]
-              when "Negative News"
-                ["#{base_query} controversy", "#{base_query} negative news"]
-              else
-                ["#{base_query} #{section_type.downcase}"]
-              end
-
-    queries.first(2) # Limit to 2 queries to avoid rate limiting
+  # If user has a specific refinement prompt, add it as a query alongside section context
+  if user_prompt.present?
+    user_query = "#{quoted_name} #{section_type.downcase} #{user_prompt} #{current_year}"
+    return [user_query, section_queries.first]
   end
+
+  section_queries.first(2)
+end
+
+
 
   def extract_company_name_via_llm(documents_context)
     return nil if documents_context.blank?
@@ -849,6 +1124,7 @@ class PortfolioReportAgent < SupportAgentService
     PROMPT
 
     # Call LLM using RubyLLM
+    #chat = RubyLLM.chat(model: 'gemini-2.0-flash')
     chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
 
     response = chat.ask(prompt)
