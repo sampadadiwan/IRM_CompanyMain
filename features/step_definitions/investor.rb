@@ -99,9 +99,9 @@ Given('there is an existing investor {string}') do |arg1|
   steps %(
         Given there is an existing investor entity "#{arg1}"
     )
-  @investor = FactoryBot.build(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
-  key_values(@investor, arg1)
-  @investor.save!
+  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
+  # key_values(@investor, arg1)
+  # @investor.save!
 
   puts "\n####Investor####\n"
   puts @investor.to_json

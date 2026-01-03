@@ -1,3 +1,18 @@
+V9.1.68
+#####################################
+35b79f4d7 Captable cleanup (#1181)
+bce16243b Features/addon features post ops recos (#1178)
+17551d32b Added better ransack attributes to support assistants
+90b0eefe6 Feature/backend save charts against sections (#1174)
+5a807757c Removed assistant type from the show page
+b9f669563 Refactored to allow for chat_id to be passed to ask
+7699dd06c Fixed passing the right owner to the assistant
+c3f0c0cfc Added link to Fund assistant across all funds
+1f8105c9d Added SpecificFund Assistant
+55fda2f04 Enabled support agents from the admin console
+a59bb6b23 Better support for styling in assistants
+b7ab432b3 Better linkages to the assistants
+
 V9.1.67
 #####################################
 7e4f77bca Sync schema
