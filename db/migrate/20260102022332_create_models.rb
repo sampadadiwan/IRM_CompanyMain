@@ -1,6 +1,6 @@
 class CreateModels < ActiveRecord::Migration[8.0]
   def change
-    create_table :models do |t|
+    create_table :models, if_not_exists: true do |t|
       t.string :model_id, null: false
       t.string :name, null: false
       t.string :provider, null: false
