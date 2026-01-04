@@ -51,6 +51,13 @@ module FormTypeHelper
     end
   end
 
+  def excel_text_if_numeric(value)
+    return value unless value.is_a?(String)
+
+    # if value contains only digits, prefix with tab to force excel to treat as text
+    value.match?(/\A\d+\z/) ? "\t#{value}" : value
+  end
+
   def get_custom_calc_values(model, form_type, custom_calcs)
     calc_values = []
     custom_calcs.each do |custom_calc|

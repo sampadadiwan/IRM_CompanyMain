@@ -10,6 +10,7 @@ if params[:form_type_name] == "IndividualKyc"
     # Create entries for each item
     @investor_kycs.individual.each do |cc|
       custom_field_values = get_custom_values(cc, form_type, custom_field_names)
+      custom_field_values = custom_field_values.map { |v| excel_text_if_numeric(v) }
 
       bank_verified = cc.bank_verified ? "Yes" : "No"
       pan_verified = cc.pan_verified ? "Yes" : "No"
@@ -30,6 +31,7 @@ if params[:form_type_name] == "NonIndividualKyc"
     # Create entries for each item
     @investor_kycs.non_individual.each do |cc|
       custom_field_values = get_custom_values(cc, form_type, custom_field_names)
+      custom_field_values = custom_field_values.map { |v| excel_text_if_numeric(v) }
 
       bank_verified = cc.bank_verified ? "Yes" : "No"
       pan_verified = cc.pan_verified ? "Yes" : "No"
