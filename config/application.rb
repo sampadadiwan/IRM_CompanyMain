@@ -99,6 +99,11 @@ module CapHive
       Devise::ConfirmationsController.layout "devise"
       Devise::UnlocksController.layout "devise"
       Devise::PasswordsController.layout "devise"
+
+      if RubyLLM.config.use_new_acts_as
+        require 'ruby_llm/active_record/acts_as'
+        ::ActiveRecord::Base.include RubyLLM::ActiveRecord::ActsAs unless ::ActiveRecord::Base.include?(RubyLLM::ActiveRecord::ActsAs)
+      end
     end
 
     if ENV['VULN_SCAN'].blank?
