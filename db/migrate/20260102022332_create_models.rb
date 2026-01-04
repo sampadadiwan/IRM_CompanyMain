@@ -25,9 +25,9 @@ class CreateModels < ActiveRecord::Migration[8.0]
 
     # Load models from JSON
     say_with_time "Loading models from models.json" do
-      RubyLLM.models.refresh!
-      RubyLLM.models.save_to_json  # Saves to configured model_registry_file (v1.9.0+)
-      Model.save_to_database
+      # RubyLLM.models.refresh!
+      # RubyLLM.models.save_to_json  # Saves to configured model_registry_file (v1.9.0+)
+      # Model.save_to_database
     end
   end
 end
