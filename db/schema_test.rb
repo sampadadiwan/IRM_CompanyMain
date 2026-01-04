@@ -9,7 +9,7 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.0].define(version: 2026_01_02_115205) do
+ActiveRecord::Schema[8.0].define(version: 2026_01_03_082050) do
   create_table "access_rights", force: :cascade do |t|
     t.string "owner_type", null: false
     t.bigint "owner_id", null: false
@@ -452,7 +452,21 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_02_115205) do
     t.index ["owner_type", "owner_id"], name: "index_approvals_on_owner"
   end
 
-  create_table "audits", force: :cascade do |t|
+  create_table "assistant_tasks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "entity_id", null: false
+    t.string "assistant_type", limit: 50
+    t.string "assistant_metadata"
+    t.string "period", limit: 10
+    t.string "tag_list"
+    t.text "instructions"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_assistant_tasks_on_entity_id"
+    t.index ["user_id"], name: "index_assistant_tasks_on_user_id"
+  end
+
+  create_table "audits", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "auditable_id"
     t.string "auditable_type"
     t.integer "associated_id"
