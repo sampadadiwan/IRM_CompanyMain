@@ -43,7 +43,7 @@ class DocLlmContext < DocLlmBase
     ctx[:llm_instructions] ||= "#{ctx[:section].data} Format your output as json array with each point as an item in the array. The key is the index and value is the extracted info. Do not generate nested json, just one level. Do not add any \n (newlines), \t (tabs) within an array item and do not add ```json to the output."
   end
 
-  def extract_data(ctx, llm_client:, **) # rubocop:disable Metrics/MethodLength
+  def extract_data(ctx, llm_client:, **)
     messages = [
       { role: "user", parts: [{ text: ctx[:llm_instructions] }] },
       { role: "user", parts: [{ text: ctx[:context] }] }

@@ -1,0 +1,20 @@
+<tr id="assistant_task_<%= assistant_task.id %>">
+  <td>
+    <%= assistant_task.assistant_type %>
+  </td>
+  <td>
+    <%= assistant_task.user.name %>
+  </td>
+  <td>
+    <%= assistant_task.period %>
+  </td>
+  <td>
+    <%= assistant_task.tag_list %>
+  </td>
+  <td>
+    <%= assistant_task.instructions.to_s.truncate(50) %>
+  </td>
+  <td>
+    <%= link_to t_common(:show), assistant_task_path(assistant_task), {class: "btn btn-outline-primary ti ti-eye"} %>
+  </td>
+</tr>

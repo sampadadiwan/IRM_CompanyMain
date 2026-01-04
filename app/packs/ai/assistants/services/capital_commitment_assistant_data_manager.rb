@@ -50,20 +50,17 @@ class CapitalCommitmentAssistantDataManager
   #
   # @param user [User] The user context for data retrieval.
   # @param capital_commitment [CapitalCommitment] The commitment context.
-  def initialize(user:, capital_commitment: nil)
+  def initialize(user:, capital_commitment:)
     @user = user
     @capital_commitment = capital_commitment
   end
 
-  # Retrieves detailed information for a specific capital commitment.
+  # Retrieves detailed information for the capital commitment.
   #
-  # @param commitment_id [Integer] ID of the commitment.
   # @return [Hash, String] Commitment details or error message.
-  def get_commitment_details(commitment_id:)
-    cid = commitment_id || @capital_commitment&.id
-    return "No commitment ID provided" unless cid
-
-    commitment = Pundit.policy_scope(@user, CapitalCommitment).includes(:fund, :investor).find_by(id: cid)
+  def get_commitment_details(*)
+    Rails.logger.debug { "[CapitalCommitmentAssistantDataManager] get_commitment_details called" }
+    commitment = Pundit.policy_scope(@user, CapitalCommitment).includes(:fund, :investor).find_by(id: @capital_commitment.id)
     return "Commitment not found or access denied" unless commitment
 
     {
@@ -84,34 +81,38 @@ class CapitalCommitmentAssistantDataManager
     }
   end
 
-  # Lists capital remittances for a specific commitment.
+  # Lists capital remittances for the commitment.
   #
-  # @param commitment_id [Integer] ID of the commitment.
   # @param scope [String, nil] Predefined scope name.
   # @param query [Hash] Ransack query parameters.
   # @param sort [String, nil] Sort string.
-  # @return [Array<Hash>] List of capital remittances.
-  def list_capital_remittances(commitment_id:, scope: nil, query: {}, sort: nil)
+  # @param limit [Integer, nil] Maximum number of records to return.
+  # @param aggregate [String, nil] Optional aggregation: 'count', 'sum', 'group_by'.
+  # @return [Array<Hash>, Hash] List of capital remittances or aggregate result.
+  def list_capital_remittances(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    Rails.logger.debug { "[CapitalCommitmentAssistantDataManager] list_capital_remittances called with scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
-
-    cid = commitment_id || @capital_commitment&.id
-    raise "commitment_id must be provided or available in context." unless cid
 
     # Ensure we don't have duplicate keys in the ransack query hash
     # This helps avoid 'Repeated map key' errors in some LLM providers
     ransack_query = ransack_query.transform_keys(&:to_sym)
     ransack_query.delete(:capital_commitment_id_eq)
-    ransack_query[:capital_commitment_id_eq] = cid
+    ransack_query[:capital_commitment_id_eq] = @capital_commitment.id
 
-    relation = Pundit.policy_scope(@user, CapitalRemittance).where(capital_commitment_id: cid).includes(:fund, :capital_call, :capital_commitment)
+    relation = Pundit.policy_scope(@user, CapitalRemittance).where(capital_commitment_id: @capital_commitment.id).includes(:fund, :capital_call, :capital_commitment)
 
     # Use HasScope to apply filters safely
     scope_params = scope.present? ? { scope => true } : {}
     relation = CapitalRemittanceQuery.new.perform(collection: relation, params: scope_params)
 
-    remittances = relation.ransack(ransack_query).result
-    remittances.map do |r|
+    results = relation.ransack(ransack_query).result
+
+    return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
+
+    results = results.limit(limit) if limit.present?
+
+    results.map do |r|
       {
         id: r.id,
         capital_call: r.capital_call&.name,
@@ -127,25 +128,30 @@ class CapitalCommitmentAssistantDataManager
     end
   end
 
-  # Lists distribution payments for a specific commitment.
+  # Lists distribution payments for the commitment.
   #
-  # @param commitment_id [Integer] ID of the commitment.
   # @param scope [String, nil] Predefined scope name.
   # @param sort [String, nil] Sort string.
-  # @return [Array<Hash>] List of distribution payments.
-  def list_capital_distribution_payments(commitment_id:, scope: nil, sort: nil)
-    cid = commitment_id || @capital_commitment&.id
-    raise "commitment_id must be provided or available in context." unless cid
-
+  # @param limit [Integer, nil] Maximum number of records to return.
+  # @param aggregate [String, nil] Optional aggregation: 'count', 'sum', 'group_by'.
+  # @param query [Hash] Ransack query parameters.
+  # @return [Array<Hash>, Hash] List of distribution payments or aggregate result.
+  def list_capital_distribution_payments(scope: nil, sort: nil, limit: nil, aggregate: nil, query: {})
+    Rails.logger.debug { "[CapitalCommitmentAssistantDataManager] list_capital_distribution_payments called with scope: #{scope.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     relation = Pundit.policy_scope(@user, CapitalDistributionPayment).includes(:fund, :capital_commitment)
-    relation = relation.where(capital_commitment_id: cid)
+    relation = relation.where(capital_commitment_id: @capital_commitment.id)
 
     # Use HasScope to apply filters safely
     scope_params = scope.present? ? { scope => true } : {}
     relation = CapitalDistributionPaymentQuery.new.perform(collection: relation, params: scope_params)
 
-    payments = sort.present? ? relation.ransack(s: sort).result : relation
-    payments.map do |p|
+    results = sort.present? ? relation.ransack(s: sort).result : relation
+
+    return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
+
+    results = results.limit(limit) if limit.present?
+
+    results.map do |p|
       {
         id: p.id,
         net_payable: p.net_payable.format,
@@ -160,20 +166,19 @@ class CapitalCommitmentAssistantDataManager
   end
 
   # Lists documents associated with the commitment.
-  def list_documents(commitment_id:, scope: nil, query: {}, sort: nil)
-    cid = commitment_id || @capital_commitment&.id
-    return [] unless cid
-
-    commitment = Pundit.policy_scope(@user, CapitalCommitment).find_by(id: cid)
+  def list_documents(scope: nil, query: {}, sort: nil, limit: nil)
+    Rails.logger.debug { "[CapitalCommitmentAssistantDataManager] list_documents called with scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}" }
+    commitment = Pundit.policy_scope(@user, CapitalCommitment).find_by(id: @capital_commitment.id)
     return [] unless commitment
 
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
 
     # Find documents associated with the commitment
-    relation = Pundit.policy_scope(@user, Document).where(owner_id: cid, owner_type: 'CapitalCommitment')
+    relation = Pundit.policy_scope(@user, Document).where(owner_id: @capital_commitment.id, owner_type: 'CapitalCommitment')
     relation = relation.send(scope) if scope.present? && Document.respond_to?(scope)
     documents = relation.ransack(ransack_query).result
+    documents = documents.limit(limit) if limit.present?
 
     documents.map do |d|
       {
@@ -195,11 +200,9 @@ class CapitalCommitmentAssistantDataManager
   end
 
   # Gets details and text for a specific document.
-  def get_document(commitment_id:, document_id: nil, name: nil)
-    cid = commitment_id || @capital_commitment&.id
-    return "No commitment ID provided" unless cid
-
-    scope = Pundit.policy_scope(@user, Document).where(owner_id: cid, owner_type: 'CapitalCommitment')
+  def get_document(document_id: nil, name: nil)
+    Rails.logger.debug { "[CapitalCommitmentAssistantDataManager] get_document called with document_id: #{document_id.inspect}, name: #{name.inspect}" }
+    scope = Pundit.policy_scope(@user, Document).where(owner_id: @capital_commitment.id, owner_type: 'CapitalCommitment')
     document = if document_id.present?
                  scope.find_by(id: document_id)
                elsif name.present?
@@ -223,11 +226,9 @@ class CapitalCommitmentAssistantDataManager
   end
 
   # Analyzes documents using RubyLLM.
-  def analyze_documents(commitment_id:, prompt:, document_ids: [], document_names: [])
-    cid = commitment_id || @capital_commitment&.id
-    return "No commitment ID provided" unless cid
-
-    scope = Pundit.policy_scope(@user, Document).where(owner_id: cid, owner_type: 'CapitalCommitment')
+  def analyze_documents(prompt:, document_ids: [], document_names: [])
+    Rails.logger.debug { "[CapitalCommitmentAssistantDataManager] analyze_documents called with prompt: #{prompt.inspect}, document_ids: #{document_ids.inspect}, document_names: #{document_names.inspect}" }
+    scope = Pundit.policy_scope(@user, Document).where(owner_id: @capital_commitment.id, owner_type: 'CapitalCommitment')
     documents = []
 
     documents += scope.where(id: document_ids).to_a if document_ids.present?
@@ -248,5 +249,37 @@ class CapitalCommitmentAssistantDataManager
     chat = RubyLLM.chat
     response = chat.ask prompt, with: attachments
     response.content
+  end
+
+  # Lists fund units for the commitment.
+  #
+  # @param query [Hash] Ransack query parameters.
+  # @param sort [String, nil] Sort string.
+  # @param limit [Integer, nil] Maximum number of records to return.
+  # @param aggregate [String, nil] Optional aggregation: 'count', 'sum', 'group_by'.
+  # @return [Array<Hash>, Hash] List of fund units or aggregate result.
+  def list_fund_units(query: {}, sort: nil, limit: nil, aggregate: nil)
+    Rails.logger.debug { "[CapitalCommitmentAssistantDataManager] list_fund_units called with query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
+    ransack_query = query || {}
+    ransack_query[:s] ||= sort if sort.present?
+    ransack_query[:capital_commitment_id_eq] = @capital_commitment.id
+
+    results = Pundit.policy_scope(@user, FundUnit).ransack(ransack_query).result
+
+    return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
+
+    results = results.limit(limit) if limit.present?
+    results.map do |u|
+      {
+        id: u.id,
+        unit_type: u.unit_type,
+        quantity: u.quantity,
+        price: u.price.format,
+        amount: u.amount.format,
+        as_of_date: u.as_of_date,
+        folio_id: u.capital_commitment.folio_id,
+        view_link: "/fund_units/#{u.id}"
+      }
+    end
   end
 end

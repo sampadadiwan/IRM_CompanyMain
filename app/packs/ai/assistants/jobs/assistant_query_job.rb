@@ -10,24 +10,24 @@ class AssistantQueryJob < ApplicationJob
   # @param chat_id [Integer]
   # @param request_id [String] client-generated id used to target a turbo-frame in the DOM
   # @param query [String]
-  def perform(user_id, chat_id, request_id, query, assistant_type = 'fund')
+  def perform(user_id, chat_id, request_id, query, assistant_type)
     user = User.find(user_id)
     chat = Chat.find(chat_id)
 
     assistant = case assistant_type.to_s
-                when 'portfolio_company'
+                when 'PortfolioCompanyAssistant'
                   portfolio_company = chat.owner if chat.owner_type == 'Investor'
-                  PortfolioCompanyAssistant.new(user: user, portfolio_company: portfolio_company)
-                when 'portfolio'
-                  PortfolioAssistant.new(user: user)
-                when 'capital_commitment'
+                  PortfolioCompanyAssistant.new(user: user, portfolio_company: portfolio_company, chat: chat)
+                when 'PortfolioAssistant'
+                  PortfolioAssistant.new(user: user, chat: chat)
+                when 'CapitalCommitmentAssistant'
                   commitment = chat.owner if chat.owner_type == 'CapitalCommitment'
-                  CapitalCommitmentAssistant.new(user: user, capital_commitment: commitment)
-                when 'specific_fund'
+                  CapitalCommitmentAssistant.new(user: user, capital_commitment: commitment, chat: chat)
+                when 'SpecificFundAssistant'
                   fund = chat.owner if chat.owner_type == 'Fund'
-                  SpecificFundAssistant.new(user: user, fund: fund)
+                  SpecificFundAssistant.new(user: user, fund: fund, chat: chat)
                 else
-                  FundAssistant.new(user: user)
+                  FundAssistant.new(user: user, chat: chat)
                 end
 
     response = Timeout.timeout(TIMEOUT) do

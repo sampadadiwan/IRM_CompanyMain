@@ -10,28 +10,28 @@ class PortfolioCompanyAssistantDataManager < PortfolioAssistantDataManager
   end
 
   # Lists valuations for the mandatory portfolio company.
-  def list_valuations(scope: nil, query: {}, sort: nil)
-    super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort)
+  def list_valuations(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
   # Lists portfolio investments for the mandatory portfolio company.
-  def list_portfolio_investments(scope: nil, query: {}, sort: nil)
-    super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort)
+  def list_portfolio_investments(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
   # Lists KPIs for the mandatory portfolio company.
-  def list_portfolio_kpis(scope: nil, query: {}, sort: nil)
-    super(portfolio_company_ids: [@portfolio_company.id], scope: scope, query: query, sort: sort)
+  def list_portfolio_kpis(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(portfolio_company_ids: [@portfolio_company.id], scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
   # Lists fund ratios for the mandatory portfolio company.
-  def list_fund_ratios(query: {}, sort: nil)
-    super(portfolio_company_id: @portfolio_company.id, query: query, sort: sort)
+  def list_fund_ratios(query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(portfolio_company_id: @portfolio_company.id, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
   # Lists documents for the mandatory portfolio company.
-  def list_documents(scope: nil, query: {}, sort: nil)
-    super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort)
+  def list_documents(scope: nil, query: {}, sort: nil, limit: nil)
+    super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort, limit: limit)
   end
 
   # Generates a cap table for the mandatory portfolio company.
@@ -40,8 +40,8 @@ class PortfolioCompanyAssistantDataManager < PortfolioAssistantDataManager
   end
 
   # Gets investments in cap table for the mandatory portfolio company.
-  def get_investments_in_cap_table(query: {}, sort: nil)
-    super(portfolio_company_ids: [@portfolio_company.id], query: query, sort: sort)
+  def get_investments_in_cap_table(query: {}, sort: nil, limit: nil)
+    super(portfolio_company_ids: [@portfolio_company.id], query: query, sort: sort, limit: limit)
   end
 
   # Gets details for the mandatory portfolio company.

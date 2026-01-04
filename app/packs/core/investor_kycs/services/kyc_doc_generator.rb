@@ -156,7 +156,6 @@ class KycDocGenerator
   end
 
   # doc_template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
-  # rubocop:disable Metrics/ParameterLists
   def generate(investor_kyc, start_date, end_date, doc_template, doc_template_path, fund_id, file_name: nil)
     template = Sablon.template(File.expand_path(doc_template_path))
 

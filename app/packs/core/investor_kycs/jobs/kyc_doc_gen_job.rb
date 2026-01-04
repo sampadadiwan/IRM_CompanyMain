@@ -51,7 +51,6 @@ class KycDocGenJob < DocGenJob
     end
   end
 
-  # rubocop:disable Metrics/ParameterLists
   def perform(investor_kyc_id, document_template_ids, start_date, end_date,
               user_id, entity_id: nil, options: {})
     @document_template_ids = document_template_ids

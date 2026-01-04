@@ -29,6 +29,8 @@ class AccountEntry < ApplicationRecord
   belongs_to :investor, optional: true
   belongs_to :parent, polymorphic: true, optional: true
 
+  scope :for_folios, ->() { where.not(folio_id: nil) }
+
   scope :for_aggregate_portfolio_investments, lambda {
     joins("INNER JOIN aggregate_portfolio_investments ON account_entries.parent_id = aggregate_portfolio_investments.id AND account_entries.parent_type = 'AggregatePortfolioInvestment'")
   }

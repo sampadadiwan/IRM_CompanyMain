@@ -200,7 +200,7 @@ commands = [
             </div>
 
             <% if @fund.entity.support_agents.fund_assistant? %>
-              <%= link_to assistant_path('assistant', assistant_type: 'specific_fund', owner_id: @fund.id, owner_type: "Fund"), class: "btn btn-outline-success", data: {bs_toggle: "tooltip", bs_title: "Launch Fund Assistant to help you with fund details, capital calls, commitments, remittances, distributions, portfolio investments, and fund ratios."} do %>
+              <%= link_to assistant_path('assistant', assistant_type: 'SpecificFundAssistant', owner_id: @fund.id, owner_type: "Fund"), class: "btn btn-outline-success", data: {bs_toggle: "tooltip", bs_title: "Launch Fund Assistant to help you with fund details, capital calls, commitments, remittances, distributions, portfolio investments, and fund ratios."} do %>
                 <i class="ti ti-brand-github-copilot"></i> Fund Assistant
               <% end %>
             <% end %>

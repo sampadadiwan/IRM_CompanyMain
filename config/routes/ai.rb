@@ -32,10 +32,9 @@ resources :ai_portfolio_reports do
       post :regenerate
       patch :toggle_web_search
       post :toggle_reviewed
-      post  :generate_chart_preview
-      post :insert_chart 
+      post :generate_chart_preview
+      post :insert_chart
       post :remove_chart
-
     end
   end
 
@@ -47,5 +46,8 @@ resources :assistants, only: [:show] do
     post :ask
     post :transcribe
     get :generate_slides
+    get :efficiency_report
   end
 end
+
+resources :assistant_tasks

@@ -1,0 +1,52 @@
+<%= render ToggleCard.new(title: "Assistant Task: #{@assistant_task.assistant_type}", css_class: "show_assistant_task") do %>
+  <table class="table table-bordered dataTable">
+    <tr>
+      <td>Assistant Type</td>
+      <td><%= @assistant_task.assistant_type %></td>
+    </tr>
+    <tr>
+      <td>User</td>
+      <td><%= @assistant_task.user.name %></td>
+    </tr>
+    <tr>
+      <td>Period</td>
+      <td><%= @assistant_task.period %></td>
+    </tr>
+    <tr>
+      <td>Metadata</td>
+      <td><%= @assistant_task.assistant_metadata %></td>
+    </tr>
+    <tr>
+      <td>Tags</td>
+      <td>
+        <% @assistant_task.tags.each do |tag| %>
+          <span class="badge bg-success"><%= tag %></span>
+        <% end %>
+      </td>
+    </tr>
+    <tr>
+      <td>Instructions</td>
+      <td>
+        <div class="well">
+          <ol>
+          <% @assistant_task.instructions.to_s.split("\n").each do |line| %>
+            <% next if line.blank? %>
+            <li><%= line %></li>
+          <% end %>
+          </ol>
+        </div>
+      </td>
+    </tr>
+  </table>
+<% end %>
+
+<div class="mt-3">
+  <% if @assistant_task.owner_type.present? && @assistant_task.owner_id.present? %>
+    <%= link_to 'Go to Assistant', assistant_path('assistant', assistant_type: @assistant_task.assistant_type, owner_type: @assistant_task.owner_type, owner_id: @assistant_task.owner_id), class: "btn btn-outline-info" %>
+  <% else %>
+    <%= link_to 'Go to Assistant', assistant_path('assistant', assistant_type: @assistant_task.assistant_type), class: "btn btn-outline-info" %>
+  <% end %>
+
+  <%= link_to t_common(:edit), edit_assistant_task_path(@assistant_task), {class: "btn btn-outline-primary ti ti-edit"} if policy(@assistant_task).update? %>
+  <%= button_to t_common(:delete), @assistant_task, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton d-inline", data: {action: "click->confirm#popup", turbo:false} if policy(@assistant_task).destroy? %>
+</div>

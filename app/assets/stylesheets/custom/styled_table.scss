@@ -49,6 +49,10 @@ table.dataTable>tbody>tr.child ul.dtr-details {
   width: 100% !important;
   th {
     padding: 10px !important;
+    color: var(--bs-body-bg) !important;
+    a {
+      color: var(--bs-body-bg) !important;
+    }
   }
   td {
     padding: 10px !important;

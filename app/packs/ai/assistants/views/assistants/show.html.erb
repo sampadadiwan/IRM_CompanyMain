@@ -12,7 +12,7 @@
       </div>
       <div>
         <h5 class="mb-0 fw-bold text-dark">CapHive Assistant</h5>
-        <p class="small text-muted mb-0"><%= @chat.owner %></p>
+        <p class="small text-muted mb-0"><%= link_to @chat.owner %></p>
       </div>
     </div>
 
@@ -38,6 +38,14 @@
             <button type="button" class="dropdown-item d-flex align-items-center gap-2 py-2" data-action="click->ppt-export#export">
               <i class="ti ti-file-export text-success "></i> Export PowerPoint
             </button>
+
+            <div class="dropdown-divider"></div>
+
+            <a href="<%= efficiency_report_assistants_path(chat_id: @chat&.id, assistant_type: params[:assistant_type]) %>"
+               class="dropdown-item d-flex align-items-center gap-2 py-2"
+               data-turbo="false">
+              <i class="ti ti-chart-bar text-warning"></i> Efficiency Report
+            </a>
           </div>
         </div>
       </div>
@@ -62,7 +70,7 @@
           </select>
         <% end %>
 
-        <input type="hidden" name="assistant_type" value="<%= params[:assistant_type] %>">
+        <input type="hidden" name="assistant_type" value="<%= @chat&.assistant_type %>" data-voice-chat-target="assistantType">
 
         <% if params[:fund_id].present? %>
           <input type="hidden" name="fund_id" value="<%= params[:fund_id] %>">

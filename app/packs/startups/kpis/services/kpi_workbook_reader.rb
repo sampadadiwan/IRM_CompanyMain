@@ -228,7 +228,6 @@ class KpiWorkbookReader
     @results[key]
   end
 
-  # rubocop:disable Metrics/ParameterLists
   # Saves a KPI entry into the database
   def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row, row_index, col_index)
     investor_kpi_mapping = @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)]

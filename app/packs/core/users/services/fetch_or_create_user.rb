@@ -1,7 +1,7 @@
 class FetchOrCreateUser < Trailblazer::Operation
   step :find_or_create_user
 
-  def find_or_create_user(ctx, email:, first_name:, last_name:, entity_id:, role:, **) # rubocop:disable Metrics/ParameterLists
+  def find_or_create_user(ctx, email:, first_name:, last_name:, entity_id:, role:, **)
     user = User.find_by(email: email)
     created_new_user = false
 

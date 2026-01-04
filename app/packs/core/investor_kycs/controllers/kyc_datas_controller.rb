@@ -125,7 +125,7 @@ class KycDatasController < ApplicationController
 
   # Compares CKYC and KRA data side-by-side for an InvestorKYC
   # Falls back to fetch if either is missing
-  def compare_ckyc_kra # rubocop:disable Metrics/MethodLength
+  def compare_ckyc_kra
     @ckyc_data = nil
     @kra_data = nil
     authorize(KycData)

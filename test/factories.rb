@@ -831,4 +831,13 @@ FactoryBot.define do
     email_sent { false }
     view_count { 0 }
   end
+
+  factory :assistant_task do
+    user { nil }
+    entity { nil }
+    assistant_type { "fund" }
+    period { %w[Week Month Quarter Year].sample }
+    tag_list { "tag1, tag2" }
+    instructions { Faker::Company.catch_phrase }
+  end
 end

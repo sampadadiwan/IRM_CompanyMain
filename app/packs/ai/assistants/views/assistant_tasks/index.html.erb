@@ -1,0 +1,5 @@
+<%= render "/layouts/steps", steps: ["Add / Manage Assistant Tasks", "Automate with AI", "Schedule Workflows"].freeze %>
+
+<%= turbo_frame_tag with_frame("assistant_tasks_frame"), target: "_top" do %>
+  <%= render "index", assistant_tasks: @assistant_tasks %>
+<% end %>

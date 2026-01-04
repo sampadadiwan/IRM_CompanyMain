@@ -1,5 +1,4 @@
 module FundDashboardHelper
-  # rubocop:disable Metrics/ParameterLists
   def fund_ratios_line_chart(fund, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 12, chart_id: "fund_ratios_chart")
     months ||= 12
     ratio_names ||= ["XIRR", "RVPI", "DPI", "TVPI", "Fund Utilization", "Portfolio Value to Cost", "Paid In to Committed Capital", "Quarterly IRR", "IRR", "Value To Cost", "Gross Portfolio IRR"]

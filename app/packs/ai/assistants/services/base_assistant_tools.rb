@@ -97,4 +97,52 @@ class BaseAssistantTools
     end
     # rubocop:enable Metrics/CyclomaticComplexity
   end
+
+  # Tool to generate chart visualizations directly from a data query.
+  # This avoids sending large JSON datasets back and forth between the LLM and the server.
+  class PlotChartFromQuery < PlotChart
+    description "Generates an interactive Chart.js chart by fetching data directly from the database using a query. " \
+                "Use this for large datasets instead of fetching data first. " \
+                "Supported resources: 'funds', 'capital_calls', 'capital_commitments', 'capital_remittances', 'capital_distributions', 'portfolio_investments', 'fund_ratios'."
+    param :resource, type: :string, desc: "The resource name to query (e.g., 'capital_remittances')."
+    param :query, type: :object, desc: "Ransack query hash.", required: false
+    param :scope, type: :string, desc: "Predefined scope name.", required: false
+    param :sort, type: :string, desc: "Optional sort string.", required: false
+    param :limit, type: :integer, desc: "Optional limit.", required: false
+    param :prompt, type: :string, desc: "A natural language prompt describing what the chart should represent."
+
+    def execute(resource: nil, query: {}, scope: nil, sort: nil, limit: nil, prompt: nil, **args)
+      resource ||= args[:resource]
+      query ||= args[:query]
+      scope ||= args[:scope]
+      sort ||= args[:sort]
+      limit ||= args[:limit]
+      prompt ||= args[:prompt]
+
+      Rails.logger.debug { "PlotChartFromQuery#execute called for #{resource} with prompt: #{prompt.inspect}" }
+
+      raise ArgumentError, "PlotChartFromQuery requires :resource and :prompt" if resource.nil? || prompt.nil?
+
+      # Map resource name to data manager method
+      method_name = "list_#{resource}"
+      data_manager = @assistant.respond_to?(:data_manager) ? @assistant.data_manager : @assistant
+
+      return RubyLLM::Content.new("Error: Unsupported resource '#{resource}' for chart plotting.") unless data_manager.respond_to?(method_name)
+
+      # Fetch data directly via data manager
+      data_results = data_manager.public_send(method_name, query: query, scope: scope, sort: sort, limit: limit)
+
+      return RubyLLM::Content.new("No data found for the given query to plot a chart.") if data_results.blank?
+
+      # Generate chart HTML
+      html = generate_chart_html(data_results.to_json, prompt)
+
+      # Provide a summary so the LLM knows what was plotted without seeing the raw data
+      summary = "Successfully plotted a chart for #{resource}. "
+      summary += "Data points: #{data_results.size}. "
+      summary += "Summary of data: #{data_results.take(3).to_json}..." if data_results.is_a?(Array)
+
+      RubyLLM::Content.new("#{summary}\n\n#{html}")
+    end
+  end
 end

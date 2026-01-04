@@ -28,18 +28,26 @@ module PortfolioCompanyAssistantTools
                 "Construct a query hash using available attributes and predicates. " \
                 "Attributes: valuation_date, per_share_value_cents, currency, synthetic. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
-                "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'valuation_date desc'."
+                "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'valuation_date desc', limit: 10. (Maps to Ransack `s`)"
     param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'with_synthetic'", required: false
+    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
+    param :group_by_field, type: :string, desc: "Field to group results by", required: false
     param :query, type: :object, desc: "Ransack query hash, e.g. { currency_eq: 'USD' }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'valuation_date desc'. (Maps to Ransack `s`)", required: false
+    param :sort, type: :string, desc: "Optional sort string, e.g. 'valuation_date desc'. (Maps to Ransack `s`) ", required: false
+    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil)
-      @data_manager.list_valuations(scope: scope, query: query || {}, sort: sort).to_json
+    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
+      q = (query || {}).with_indifferent_access
+      q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
+      q[:group_by] ||= group_by_field if group_by_field.present?
+
+      @data_manager.list_valuations(scope: scope, query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
     end
   end
 
@@ -51,18 +59,28 @@ module PortfolioCompanyAssistantTools
                 "Construct a query hash using available attributes and predicates. " \
                 "Attributes: investment_date, amount_cents, fmv_cents, gain_cents, quantity, notes, startup, proforma. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
-                "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'investment_date desc'."
+                "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'investment_date desc', limit: 10. (Maps to Ransack `s`)"
     param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'buys', 'sells', 'conversions', 'distributed', 'not_distributed', 'proforma', 'non_proforma'", required: false
+    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
+    param :group_by_field, type: :string, desc: "Field to group results by", required: false
     param :query, type: :object, desc: "Ransack query hash, e.g. { notes_cont: 'initial' }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`)", required: false
+    param :sort, type: :string, desc: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`) ", required: false
+    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil)
-      @data_manager.list_portfolio_investments(scope: scope, query: query || {}, sort: sort).to_json
+    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
+      return { error: "At least one filter (scope, query, or aggregate) must be provided for list_portfolio_investments for this company as the dataset is too large." }.to_json if scope.blank? && (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
+
+      q = (query || {}).with_indifferent_access
+      q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
+      q[:group_by] ||= group_by_field if group_by_field.present?
+
+      @data_manager.list_portfolio_investments(scope: scope, query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
     end
   end
 
@@ -74,18 +92,28 @@ module PortfolioCompanyAssistantTools
                 "Construct a query hash using available attributes and predicates. " \
                 "Attributes: name, value, source. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
-                "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'name asc'."
+                "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'name asc', limit: 10."
     param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'actuals', 'budgets', 'ics', 'monthly', 'quarterly', 'yearly', 'ytd'", required: false
+    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
+    param :group_by_field, type: :string, desc: "Field to group results by", required: false
     param :query, type: :object, desc: "Ransack query hash, e.g. { name_cont: 'Revenue', kpi_report_as_of_gteq: '2023-01-01' }", required: false
     param :sort, type: :string, desc: "Optional sort string, e.g. 'name asc'. (Maps to Ransack `s`)", required: false
+    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil)
-      @data_manager.list_portfolio_kpis(scope: scope, query: query || {}, sort: sort).to_json
+    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
+      return { error: "At least one filter (scope, query, or aggregate) must be provided for list_portfolio_kpis for this company as the dataset is too large." }.to_json if scope.blank? && (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
+
+      q = (query || {}).with_indifferent_access
+      q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
+      q[:group_by] ||= group_by_field if group_by_field.present?
+
+      @data_manager.list_portfolio_kpis(scope: scope, query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
     end
   end
 
@@ -93,19 +121,29 @@ module PortfolioCompanyAssistantTools
   class ListFundRatios < RubyLLM::Tool
     def name = "list_fund_ratios"
 
-    description "List fund ratios (performance metrics) for the portfolio company, with optional Ransack filtering and ordering. " \
+    description "List fund ratios (performance metrics) for the portfolio company, with optional Ransack filtering, ordering, and limiting. " \
                 "Attributes: name, value, end_date, latest. " \
-                "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'end_date desc'."
+                "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'end_date desc', limit: 10. (Maps to Ransack `s`)"
+    param :aggregate_field, type: :string, desc: "Field to perform sum or group_by on", required: false
+    param :group_by_field, type: :string, desc: "Field to group results by", required: false
     param :query, type: :object, desc: "Ransack query hash, e.g. { name_eq: 'TVPI', latest_eq: true }", required: false
-    param :sort, type: :string, desc: "Optional sort string, e.g. 'end_date desc'. (Maps to Ransack `s`)", required: false
+    param :sort, type: :string, desc: "Optional sort string, e.g. 'end_date desc'. (Maps to Ransack `s`) ", required: false
+    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
+    param :aggregate, type: :string, desc: "Perform an aggregation: 'count', 'sum', 'group_by'", required: false
 
     def initialize(data_manager)
       super()
       @data_manager = data_manager
     end
 
-    def execute(query: {}, sort: nil)
-      @data_manager.list_fund_ratios(query: query || {}, sort: sort).to_json
+    def execute(query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
+      return { error: "A query filter or aggregate must be provided for list_fund_ratios for this company as the dataset is too large." }.to_json if (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
+
+      q = (query || {}).with_indifferent_access
+      q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
+      q[:group_by] ||= group_by_field if group_by_field.present?
+
+      @data_manager.list_fund_ratios(query: q, sort: sort, limit: limit, aggregate: aggregate).to_json
     end
   end
 
@@ -117,18 +155,19 @@ module PortfolioCompanyAssistantTools
                 "Construct a query hash using available attributes and predicates. " \
                 "Attributes: name, owner_tag, text, public_visibility, esign_status. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
-                "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'created_at desc'."
+                "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'created_at desc', limit: 10."
     param :scope, type: :string, desc: "Filter by a predefined scope. Available scopes: 'approved', 'not_approved', 'template', 'not_template', 'sent_for_esign', 'not_sent_for_esign', 'signed', 'esign_status_completed', 'esign_status_failed', 'esign_status_requested'", required: false
     param :query, type: :object, desc: "Ransack query hash, e.g. { name_cont: 'Agreement' }", required: false
     param :sort, type: :string, desc: "Optional sort string, e.g. 'created_at desc'. (Maps to Ransack `s`)", required: false
+    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
 
     def initialize(data_manager)
       super()
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil)
-      @data_manager.list_documents(scope: scope, query: query || {}, sort: sort).to_json
+    def execute(scope: nil, query: {}, sort: nil, limit: nil)
+      @data_manager.list_documents(scope: scope, query: query || {}, sort: sort, limit: limit).to_json
     end
   end
 
@@ -199,19 +238,21 @@ module PortfolioCompanyAssistantTools
                 "Construct a query hash using available attributes and predicates. " \
                 "Attributes: investor_name, category, investment_type, funding_round, investment_date, quantity, amount_cents. " \
                 "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
-                "Ordering: pass `sort` (recommended) or include `s` inside query, e.g. sort: 'investment_date desc'."
+                "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Examples: sort: 'investment_date desc', limit: 10."
     param :query, type: :object, desc: "Ransack query hash", required: false
-    param :sort, type: :string, desc: "Optional sort string", required: false
+    param :sort, type: :string, desc: "Optional sort string, e.g. 'investment_date desc'. (Maps to Ransack `s`)", required: false
+    param :limit, type: :integer, desc: "Optional limit on the number of records returned. Recommended for efficiency.", required: false
 
     def initialize(data_manager)
       super()
       @data_manager = data_manager
     end
 
-    def execute(query: {}, sort: nil)
+    def execute(query: {}, sort: nil, limit: nil)
       @data_manager.get_investments_in_cap_table(
         query: query || {},
-        sort: sort
+        sort: sort,
+        limit: limit
       ).to_json
     end
   end
@@ -222,5 +263,13 @@ module PortfolioCompanyAssistantTools
 
     param :data, type: :string, desc: "A JSON string of the data to be plotted.", required: true
     param :prompt, type: :string, desc: "A natural language prompt describing what the chart should represent.", required: true
+  end
+
+  # PlotChartFromQuery for PortfolioCompanyAssistant.
+  class PlotChartFromQuery < BaseAssistantTools::PlotChartFromQuery
+    def name = "plot_chart_from_query"
+
+    param :resource, type: :string, desc: "The resource to fetch data from (e.g. 'valuations', 'kpis', 'investments').", required: true
+    param :prompt, type: :string, desc: "A natural language prompt describing what data to fetch and how to plot it.", required: true
   end
 end

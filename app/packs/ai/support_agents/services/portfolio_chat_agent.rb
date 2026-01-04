@@ -1,5 +1,4 @@
 class PortfolioChatAgent < SupportAgentService
-
   require_relative '../tools/langchain_web_search_tool'
 
   # PortfolioChatAgent provides conversational AI assistance for portfolio reports
@@ -106,7 +105,6 @@ class PortfolioChatAgent < SupportAgentService
       tools: [web_search_tool]
     )
 
-
     # Load conversation history from database into assistant
     load_conversation_history(chat_session, assistant)
 
@@ -152,7 +150,7 @@ class PortfolioChatAgent < SupportAgentService
     new_messages.each do |msg|
       # Skip tool messages - only persist user and assistant messages
       next unless %w[user assistant].include?(msg.role.to_s)
-      
+
       # Avoid duplicates - check if message was just created
       next if message_exists_in_session?(chat_session, msg)
 
@@ -162,7 +160,6 @@ class PortfolioChatAgent < SupportAgentService
         metadata: extract_message_metadata(msg)
       )
     end
-
 
     Rails.logger.info "[PortfolioChatAgent] Conversation persisted successfully"
   end

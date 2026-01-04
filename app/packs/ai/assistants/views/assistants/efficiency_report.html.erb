@@ -1,0 +1,341 @@
+<div class="card shadow mb-4">
+  <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+    <h6 class="m-0 font-weight-bold text-primary">
+      <i class="ti ti-chart-bar mr-2"></i>AI Tool Efficiency Report
+    </h6>
+    <div class="d-flex gap-2">
+      <%= link_to 'Back to Chat', assistant_path('assistant', chat_id: params[:chat_id], assistant_type: params[:assistant_type]), class: "btn btn-sm btn-outline-secondary" %>
+    </div>
+  </div>
+  <div class="card-body">
+
+    <%
+      # Map tool_call_id (FK to tool_calls.id) -> tool result message, so we can show tokens per tool call.
+      tool_result_by_tool_call_id = @all_messages
+                                      .select { |m| m.role.to_s == 'tool' && m.tool_call_id.present? }
+                                      .index_by { |m| m.tool_call_id.to_i }
+
+      # Calculate total durations and latencies
+      total_latency = 0
+      tool_calls_count = 0
+      @all_messages.each_with_index do |msg, i|
+        if msg.role.to_s == 'tool' && i > 0
+          prev_msg = @all_messages[i-1]
+          total_latency += (msg.created_at - prev_msg.created_at)
+          tool_calls_count += 1
+        end
+      end
+      avg_latency = tool_calls_count > 0 ? (total_latency / tool_calls_count).round(2) : 0
+
+      # Context window stats (assuming a default if model context is missing)
+      current_total_tokens = @stats[:total_input_tokens] + @stats[:total_output_tokens]
+      model_context = @all_messages.first&.model&.context_window || 128_000
+      context_usage_pct = ([current_total_tokens.to_f / model_context * 100, 100].min).round(1)
+
+      report_types = {
+        total_calls: { value: @stats[:total_calls], subtitle: "Total Calls", color: "primary", icon: "ti ti-tool" },
+        avg_latency: { value: "#{avg_latency}s", subtitle: "Avg Tool Latency", color: "warning", icon: "ti ti-clock" },
+        tokens: { value: number_with_delimiter(current_total_tokens), subtitle: "Tokens Used", color: "info", icon: "ti ti-database" },
+        cost: {
+          value: "$#{number_with_precision(@stats[:total_cost_usd], precision: 4)}",
+          subtitle: "Total Cost",
+          color: "success",
+          icon: "ti ti-currency-dollar",
+          footer: "In: $#{@input_rate}/1M | Out: $#{@output_rate}/1M",
+          details: [
+            "In: #{number_with_delimiter(@stats[:total_input_tokens])} * $#{@input_rate}/1M = $#{number_with_precision((@stats[:total_input_tokens]/1_000_000.0)*@input_rate, precision: 4)}",
+            "Out: #{number_with_delimiter(@stats[:total_output_tokens])} * $#{@output_rate}/1M = $#{number_with_precision((@stats[:total_output_tokens]/1_000_000.0)*@output_rate, precision: 4)}"
+          ]
+        },
+        context: { value: "#{context_usage_pct}%", subtitle: "Context Used", color: context_usage_pct > 80 ? "danger" : "success", icon: "ti ti-layers-intersect" }
+      }
+    %>
+
+    <div class="row mb-4">
+      <% report_types.each do |type, data| %>
+        <div class="col">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <div>
+                  <h3 class="fs-7 font-weight-bold"><%= data[:value] %></h3>
+                  <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
+                </div>
+                <div class="ms-auto">
+                  <span class="text-<%= data[:color] %> display-6"><i class="<%= data[:icon] %>"></i></span>
+                </div>
+              </div>
+              <% if type == :context %>
+                <div class="progress" style="height: 6px;">
+                  <div class="progress-bar bg-<%= data[:color] %>" role="progressbar" style="width: <%= data[:value] %>" aria-valuenow="<%= data[:value].to_f %>" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+              <% else %>
+                <div class="progress-bar text-bg-<%= data[:color] %>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+              <% end %>
+              <% if type == :tokens %>
+                <div class="mt-2 extra-small text-muted">Est. Cost: $<%= number_with_precision(@stats[:total_cost_usd], precision: 4) %></div>
+              <% end %>
+              <% if data[:footer].present? %>
+                <div class="mt-2 extra-small text-muted font-italic"><%= data[:footer] %></div>
+              <% end %>
+              <% if data[:details].present? %>
+                <div class="mt-1 border-top pt-1">
+                  <% data[:details].each do |detail| %>
+                    <div class="extra-small text-muted" style="font-size: 0.65rem;"><%= detail %></div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <%
+      # Tool Leaderboard Data
+      tool_usage = {}
+      @all_messages.each do |msg|
+        msg.tool_calls.each do |tc|
+          tool_usage[tc.name] ||= { count: 0, total_tokens: 0, total_latency: 0 }
+          tool_usage[tc.name][:count] += 1
+
+          # Try to find result message for tokens/latency
+          result_msg = tool_result_by_tool_call_id[tc.id]
+          if result_msg
+            tool_usage[tc.name][:total_tokens] += (result_msg.input_tokens.to_i + result_msg.output_tokens.to_i)
+            # Find the message that triggered this tool call to calculate latency
+            triggering_msg = @all_messages.find { |m| m.tool_calls.any? { |call| call.id == tc.id } }
+            if triggering_msg
+              tool_usage[tc.name][:total_latency] += (result_msg.created_at - triggering_msg.created_at)
+            end
+          end
+        end
+      end
+    %>
+
+    <% if tool_usage.any? %>
+      <div class="row mb-4">
+        <div class="col-12">
+          <div class="card">
+            <div class="card-header bg-light">
+              <h6 class="m-0 font-weight-bold text-dark">Tool Performance Leaderboard</h6>
+            </div>
+            <div class="card-body p-0">
+              <table class="table table-sm mb-0">
+                <thead>
+                  <tr>
+                    <th class="pl-3">Tool Name</th>
+                    <th class="text-center">Calls</th>
+                    <th class="text-center">Avg Tokens</th>
+                    <th class="text-center">Avg Latency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% tool_usage.each do |name, stats| %>
+                    <tr>
+                      <td class="pl-3"><code><%= name %></code></td>
+                      <td class="text-center"><%= stats[:count] %></td>
+                      <td class="text-center"><%= number_with_delimiter((stats[:total_tokens] / stats[:count]).to_i) %></td>
+                      <td class="text-center"><%= (stats[:total_latency] / stats[:count]).round(2) %>s</td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover" id="efficiencyTable" width="100%" cellspacing="0" style="table-layout: fixed;">
+        <thead class="bg-gray-100">
+          <tr>
+            <th style="width: 150px;">Interaction</th>
+            <th style="width: auto;">Message / Tool Calls Flow</th>
+            <th class="text-right" style="width: 250px;">Tokens (In/Out)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <%
+            # --- Token highlighting thresholds (rough heuristics) ---
+            # These are intentionally conservative so "expensive" calls stand out.
+            expensive_message_total_tokens = 2_000
+            very_expensive_message_total_tokens = 5_000
+            expensive_tool_total_tokens = 1_500
+            very_expensive_tool_total_tokens = 3_500
+
+            # Group messages by interaction (user message followed by its responses)
+            interactions = []
+            current_interaction = nil
+
+            @all_messages.each do |msg|
+              msg_role = msg.role.to_s
+              if msg_role == 'user'
+                interactions << current_interaction if current_interaction
+                current_interaction = { user_msg: msg, responses: [] }
+              elsif current_interaction
+                current_interaction[:responses] << msg
+              else
+                # Responses without a user message (shouldn't happen in a normal chat)
+                interactions << { user_msg: nil, responses: [msg] }
+              end
+            end
+            interactions << current_interaction if current_interaction
+          %>
+
+          <% interactions.each_with_index do |interaction, idx| %>
+            <tr class="bg-gray-100 font-weight-bold">
+              <td colspan="3">
+                <i class="ti ti-message-2 mr-1"></i> Interaction #<%= idx + 1 %>
+                <% if interaction[:user_msg] %>
+                   <span class="text-muted small ml-2"><%= interaction[:user_msg].created_at.strftime("%Y-%m-%d %H:%M:%S") %></span>
+                <% end %>
+              </td>
+            </tr>
+
+            <% if interaction[:user_msg] %>
+              <% user_total_tokens = interaction[:user_msg].input_tokens.to_i + interaction[:user_msg].output_tokens.to_i + interaction[:user_msg].cached_tokens.to_i + interaction[:user_msg].cache_creation_tokens.to_i %>
+              <% user_is_very_expensive = user_total_tokens >= very_expensive_message_total_tokens %>
+              <% user_is_expensive = !user_is_very_expensive && user_total_tokens >= expensive_message_total_tokens %>
+              <tr class="bg-success-subtle <%= user_is_very_expensive ? 'border border-danger' : (user_is_expensive ? 'border border-warning' : '') %>">
+                <td><span class="badge bg-success">USER</span></td>
+                <td style="word-wrap: break-word; overflow-wrap: break-word;">
+                   <div class="font-weight-bold text-success mb-1">Query:</div>
+                   <div class="text-dark"><%= interaction[:user_msg].content %></div>
+                </td>
+                <td class="text-right small text-muted">
+                   <div class="small font-weight-bold"><%= number_with_delimiter(interaction[:user_msg].input_tokens.to_i) %> / <%= number_with_delimiter(interaction[:user_msg].output_tokens.to_i) %></div>
+                   <div class="extra-small">Cost: $<%= number_with_precision(((interaction[:user_msg].input_tokens.to_i / 1_000_000.0) * @input_rate) + ((interaction[:user_msg].output_tokens.to_i / 1_000_000.0) * @output_rate), precision: 6) %></div>
+                   <% if interaction[:user_msg].cached_tokens.to_i > 0 || interaction[:user_msg].cache_creation_tokens.to_i > 0 %>
+                     <div class="extra-small text-muted">
+                       cached: <%= number_with_delimiter(interaction[:user_msg].cached_tokens.to_i) %>,
+                       cache_create: <%= number_with_delimiter(interaction[:user_msg].cache_creation_tokens.to_i) %>
+                     </div>
+                   <% end %>
+                   <% if user_is_very_expensive %>
+                     <span class="badge bg-danger">VERY EXPENSIVE: <%= number_with_delimiter(user_total_tokens) %></span>
+                   <% elsif user_is_expensive %>
+                     <span class="badge bg-warning text-dark">EXPENSIVE: <%= number_with_delimiter(user_total_tokens) %></span>
+                   <% end %>
+                </td>
+              </tr>
+            <% end %>
+
+            <% interaction[:responses].each_with_index do |msg, r_idx| %>
+              <% prev_msg = r_idx == 0 ? interaction[:user_msg] : interaction[:responses][r_idx-1] %>
+              <% latency = prev_msg ? (msg.created_at - prev_msg.created_at).round(2) : nil %>
+              <% msg_total_tokens = msg.input_tokens.to_i + msg.output_tokens.to_i + msg.cached_tokens.to_i + msg.cache_creation_tokens.to_i %>
+              <% msg_is_very_expensive = msg_total_tokens >= very_expensive_message_total_tokens %>
+              <% msg_is_expensive = !msg_is_very_expensive && msg_total_tokens >= expensive_message_total_tokens %>
+              <% msg_role = msg.role.to_s %>
+              <tr class="<%= msg_is_very_expensive ? 'bg-danger-subtle' : (msg_is_expensive ? 'bg-warning-subtle' : '') %>">
+                <td class="text-center">
+                  <i class="ti ti-arrow-forward-up text-muted"></i>
+                  <div class="extra-small text-muted"><%= msg_role.upcase %></div>
+                  <% if latency %>
+                    <div class="badge bg-light text-dark mt-1 border"><%= latency %>s</div>
+                  <% end %>
+                </td>
+                <td class="pl-4" style="word-wrap: break-word; overflow-wrap: break-word;">
+                  <% if msg.content.present? %>
+                    <div class="mb-2 text-dark"><%= msg.content.truncate(500) %></div>
+                  <% end %>
+
+                  <% if msg.tool_calls.any? %>
+                    <div class="mt-2 border-left pl-3 py-1">
+                      <div class="extra-small text-muted mb-2 text-uppercase font-weight-bold">Tool Calls Triggered:</div>
+                      <%
+                        # Check for duplicate tool calls in this message
+                        seen_calls = {}
+                      %>
+                      <% msg.tool_calls.each do |tc| %>
+                        <%
+                          call_key = "#{tc.name}-#{tc.arguments.to_json}"
+                          is_duplicate = seen_calls[call_key]
+                          seen_calls[call_key] = true
+
+                          tool_result_msg = tool_result_by_tool_call_id[tc.id]
+                          tool_latency = tool_result_msg ? (tool_result_msg.created_at - msg.created_at).round(2) : nil
+                          tool_in_tokens = tool_result_msg&.input_tokens.to_i + tool_result_msg&.cached_tokens.to_i + tool_result_msg&.cache_creation_tokens.to_i
+                          tool_out_tokens = tool_result_msg&.output_tokens.to_i
+                          tool_total_tokens = tool_in_tokens + tool_out_tokens
+                          tool_is_very_expensive = tool_total_tokens >= very_expensive_tool_total_tokens
+                          tool_is_expensive = !tool_is_very_expensive && tool_total_tokens >= expensive_tool_total_tokens
+                          missing_limit = tc.name.start_with?('list_') && tc.arguments['limit'].blank?
+                        %>
+                        <div class="tool-call-item mb-2 p-2 rounded <%= missing_limit || is_duplicate ? 'bg-warning-subtle' : 'bg-light' %> <%= tool_is_very_expensive ? 'border border-danger' : (tool_is_expensive || tool_latency.to_f > 3 ? 'border border-warning' : 'border') %>">
+                          <div class="d-flex align-items-center gap-2 mb-1">
+                            <code class="text-primary font-weight-bold"><%= tc.name %></code>
+                            <% if is_duplicate %>
+                              <span class="badge bg-danger">DUPLICATE CALL</span>
+                            <% end %>
+                            <% if tc.arguments['limit'] %>
+                              <span class="badge bg-success">Limit: <%= tc.arguments['limit'] %></span>
+                            <% elsif tc.name.start_with?('list_') %>
+                              <span class="badge bg-danger">NO LIMIT</span>
+                            <% end %>
+                            <% if tool_latency %>
+                              <span class="badge <%= tool_latency > 3 ? 'bg-danger' : 'bg-light text-dark border' %>">
+                                <i class="ti ti-clock mr-1"></i><%= tool_latency %>s
+                              </span>
+                            <% end %>
+                          </div>
+
+                          <div class="extra-small text-muted mb-1">
+                            <div class="font-weight-bold">Arguments:</div>
+                            <div class="p-1 mt-1 bg-white border rounded">
+                              <code><%= tc.arguments.to_json %></code>
+                            </div>
+                          </div>
+
+                          <% if tool_result_msg&.content.present? %>
+                            <div class="d-flex justify-content-between align-items-center mt-1">
+                              <div class="extra-small text-muted">
+                                Result: <%= number_with_delimiter(tool_result_msg.content.to_s.bytesize) %> bytes |
+                                Tokens: <%= number_with_delimiter(tool_in_tokens.to_i) %> / <%= number_with_delimiter(tool_out_tokens.to_i) %> |
+                                Cost: $<%= number_with_precision(((tool_in_tokens.to_i / 1_000_000.0) * @input_rate) + ((tool_out_tokens.to_i / 1_000_000.0) * @output_rate), precision: 6) %>
+                              </div>
+                              <details class="extra-small">
+                                <summary class="text-primary cursor-pointer">View Output</summary>
+                                <div class="p-1 mt-1 bg-white border rounded" style="max-height: 150px; overflow-y: auto;">
+                                  <pre class="mb-0" style="white-space: pre-wrap; font-size: 10px;"><%= tool_result_msg.content.truncate(2000) %></pre>
+                                </div>
+                              </details>
+                            </div>
+                            <% if tool_is_very_expensive %>
+                              <span class="badge bg-danger">VERY EXPENSIVE</span>
+                            <% elsif tool_is_expensive %>
+                              <span class="badge bg-warning text-dark">EXPENSIVE</span>
+                            <% end %>
+                          <% end %>
+                        </div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                </td>
+                <td class="text-right">
+                  <% if msg.input_tokens.to_i > 0 || msg.output_tokens.to_i > 0 %>
+                    <div class="small font-weight-bold"><%= number_with_delimiter(msg.input_tokens.to_i) %> / <%= number_with_delimiter(msg.output_tokens.to_i) %></div>
+                    <div class="extra-small text-muted">Cost: $<%= number_with_precision(((msg.input_tokens.to_i / 1_000_000.0) * @input_rate) + ((msg.output_tokens.to_i / 1_000_000.0) * @output_rate), precision: 6) %></div>
+                    <% if msg.cached_tokens.to_i > 0 || msg.cache_creation_tokens.to_i > 0 %>
+                      <div class="extra-small text-muted">
+                        cached: <%= number_with_delimiter(msg.cached_tokens.to_i) %>,
+                        cache_create: <%= number_with_delimiter(msg.cache_creation_tokens.to_i) %>
+                      </div>
+                    <% end %>
+                    <% if msg_is_very_expensive %>
+                      <span class="badge bg-danger">VERY EXPENSIVE: <%= number_with_delimiter(msg_total_tokens) %></span>
+                    <% elsif msg_is_expensive %>
+                      <span class="badge bg-warning text-dark">EXPENSIVE: <%= number_with_delimiter(msg_total_tokens) %></span>
+                    <% end %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

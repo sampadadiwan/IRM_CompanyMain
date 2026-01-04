@@ -116,8 +116,8 @@ class ImportCapitalCommitment < ImportUtil
     import_upload.imported_data
                  .group_by(&:fund_id)
                  .each_value do |ccs_of_fund|
-      # Pick one cc from this fund to trigger compute_percentage for the whole fund
-      ccs_of_fund.first&.compute_percentage
+                   # Pick one cc from this fund to trigger compute_percentage for the whole fund
+                   ccs_of_fund.first&.compute_percentage
     end
     last_cc = import_upload.reload.imported_data.last
     last_cc&.compute_percentage

@@ -3,44 +3,31 @@
 # A specialized version of FundAssistant that is locked to a single fund.
 # It ensures all queries and tools are focused exclusively on that fund.
 #
-class SpecificFundAssistant < FundAssistant
+class SpecificFundAssistant < BaseAssistant
   DESCRIPTION = "I can help you with details, capital calls, commitments, and performance of a specific fund.".freeze
   AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
 
-  # A set of queries to generate a monthly update/report for a fund.
-  # Scoped to available tools:
-  # - `GetSpecificFundDetails`
-  # - `ListSpecificFundCapitalCalls`
-  # - `ListSpecificFundCapitalCommitments`
-  # - `ListSpecificFundCapitalRemittances`
-  # - `ListSpecificFundCapitalDistributions`
-  # - `ListSpecificFundPortfolioInvestments`
-  # - `ListSpecificFundRatios`
-  # - `PlotChart`
-  MONTHLY_REPORT_QUERIES = [
-    # 1. Summary & Profile
+  STRATEGIC_QUERIES = [
     "Provide a concise summary of this fund's profile and current status.",
-
-    # 2. Performance Analysis (Trends & Outliers)
-    "Analyze the trend of performance ratios (XIRR, TVPI, DPI) over the last few reporting periods. Identify any significant improvements or declines.",
+    "Analyze the trend of performance ratios (XIRR, TVPI, DPI) for the last 12 months only. Use the 'query' parameter to filter by date (e.g., 'end_date_gteq') and 'sort' by date. Identify any significant improvements or declines.",
     "Plot a line chart showing the historical trend of TVPI and DPI for this fund.",
-
-    # 3. Capital Activity & Cash Flow Risk
-    "Examine the capital call and distribution history. Are there any unusual spikes or outliers in the last 12 months? Analyze the 'Called vs Distributed' ratio trend.",
-    "Plot a dual-axis chart showing cumulative capital called vs cumulative capital distributed over the fund's lifetime.",
-
-    # 4. Portfolio Concentration & Risk
-    "Analyze the portfolio for concentration risk. Identify the top 3 investments by FMV and calculate their percentage of the total portfolio. Are there any specific tags that are over-indexed?",
+    "Examine the capital call and distribution history. Are there any unusual spikes or outliers in the last 12 months? Use the 'query' parameter to filter capital calls and distributions by date (e.g., 'due_date_gteq') to retrieve only relevant records. Analyze the 'Called vs Distributed' ratio trend.",
+    "Plot a chart showing cumulative capital called vs cumulative capital distributed over the fund's lifetime.",
+    "Analyze the portfolio for concentration risk. Identify the top 3 investments by FMV (use 'sort' and 'limit: 3') and calculate their percentage of the total portfolio. Are there any specific tags that are over-indexed?",
     "Plot a bar chart of the top 10 portfolio companies by FMV, highlighting any investment that represents more than 15% of the total FMV.",
-
-    # 5. Investment Performance Outliers
-    "Identify 'star' performers and 'underperformers' in the portfolio by comparing investment cost vs current FMV. List the top 3 and bottom 3 investments by gain/loss multiple.",
-
-    # 6. LP Commitment & Remittance Health
-    "Review the capital commitments. Identify any LPs with significant outstanding (unpaid) capital calls or delayed remittances. Is there a risk to the fund's liquidity?",
-
-    # 7. Strategic Insights & Forward Look
+    "Identify 'star' performers and 'underperformers' in the portfolio by comparing investment cost vs current FMV. List the top 3 and bottom 3 investments by gain/loss multiple. Execute two efficient queries: one sorted descending with 'limit: 3', and one sorted ascending with 'limit: 3'.",
+    "Review the capital commitments. Identify any LPs with significant outstanding (pending) capital remittances. Use the 'scope' parameter (e.g., 'pending' or 'unpaid') and 'sort' by amount to find them efficiently. Is there a risk to the fund's liquidity?",
     "Based on the current cash flow trends and portfolio valuation, provide a brief analysis of the fund's trajectory towards its target returns."
+  ].freeze
+
+  OPERATIONAL_QUERIES = [
+    "Identify all 'unpaid' capital remittances where the due date is in the past. Calculate the total overdue amount and group by LP. Plot a bar chart showing the overdue amount per LP.",
+    "Review capital remittances created in the last 90 days. Compare the count of 'verified' vs 'unverified' records using the `aggregate: 'count'` parameter. Plot a pie chart showing the proportion of verified vs unverified remittances to assess reconciliation progress.",
+    "Audit recent remittance payments (last 90 days). Identify any payments where the notification has not been sent (use `query: { payment_notification_sent_eq: false }`). Are there any unusual delays in notifying LPs of received funds?",
+    "Review capital distribution payments with scope 'incomplete'. Summarize the total 'net_payable' that is yet to be paid. Plot a bar chart of the top 10 incomplete distribution payments by amount.",
+    "Calculate the fund's remaining dry powder (Total Committed - Total Called). Summarize this by LP for the top 10 investors. Plot a bar chart showing 'Called Amount' vs 'Remaining Commitment' for these top investors.",
+    "Examine 'verified' capital remittances from the last 6 months. Compare the 'remittance_date' (call date) vs 'payment_date' (actual receipt) to calculate the average collection lag in days. Plot a line chart showing this lag trend over time.",
+    "Identify the top 5 LPs by commitment size and check if any have 'unpaid' remittances or 'incomplete' distribution payments. Provide a status table for these key stakeholders."
   ].freeze
 
   # Initializes the SpecificFundAssistant.
@@ -51,58 +38,10 @@ class SpecificFundAssistant < FundAssistant
   def initialize(user:, fund:, chat: nil)
     raise ArgumentError, "Fund is mandatory for SpecificFundAssistant" unless fund
 
-    @user = user
+    super(user: user, chat: chat)
     @fund = fund
-    @chat = chat
     @data_manager = SpecificFundAssistantDataManager.new(user: user, fund: fund)
-  end
-
-  # Convenience helper to run a full report pass.
-  # @return [Array<Hash>] Array of { prompt:, response: } pairs.
-  def run_monthly_report(
-    queries: MONTHLY_REPORT_QUERIES,
-    sleep_seconds: ENV.fetch('AI_MONTHLY_REPORT_SLEEP_SECONDS', '1').to_f,
-    max_retries: ENV.fetch('AI_MONTHLY_REPORT_MAX_RETRIES', '5').to_i,
-    base_backoff_seconds: ENV.fetch('AI_MONTHLY_REPORT_BACKOFF_SECONDS', '1.0').to_f,
-    on_error: :collect
-  )
-    total_input_tokens = 0
-    total_output_tokens = 0
-
-    queries.map do |q|
-      tries = 0
-
-      begin
-        result = ask_ephemeral(q)
-
-        result = { content: result.to_s, input_tokens: 0, output_tokens: 0 } unless result.is_a?(Hash)
-
-        response_text = result[:content]
-
-        total_input_tokens += result[:input_tokens].to_i
-        total_output_tokens += result[:output_tokens].to_i
-
-        sleep(sleep_seconds) if sleep_seconds.positive?
-
-        Rails.logger.debug "\n\n#############################################"
-        Rails.logger.debug { "Cumulative Tokens - Input: #{total_input_tokens}, Output: #{total_output_tokens}, Total: #{total_input_tokens + total_output_tokens}" }
-        Rails.logger.debug "#############################################\n\n"
-
-        { prompt: q, response: response_text, input_tokens: result[:input_tokens], output_tokens: result[:output_tokens] }
-      rescue RubyLLM::RateLimitError => e
-        tries += 1
-        raise e if tries > max_retries && on_error == :raise
-
-        if tries > max_retries
-          { prompt: q, error: e.class.name, message: e.message }
-        else
-          backoff = base_backoff_seconds * (2**(tries - 1))
-          jitter = rand * 0.25
-          sleep(backoff + jitter)
-          retry
-        end
-      end
-    end
+    @data_manager.assistant = self
   end
 
   # Returns the list of tools, specialized for the specific fund context.
@@ -117,7 +56,9 @@ class SpecificFundAssistant < FundAssistant
       SpecificFundAssistantTools::ListSpecificFundRatios.new(@data_manager),
       SpecificFundAssistantTools::ListSpecificFundCapitalRemittancePayments.new(@data_manager),
       SpecificFundAssistantTools::ListSpecificFundCapitalDistributionPayments.new(@data_manager),
-      SpecificFundAssistantTools::PlotChart.new(@data_manager)
+      # SpecificFundAssistantTools::ListSpecificFundAccountEntries.new(@data_manager),
+      SpecificFundAssistantTools::PlotChart.new(self),
+      SpecificFundAssistantTools::PlotChartFromQuery.new(self)
     ]
   end
 
@@ -135,12 +76,28 @@ class SpecificFundAssistant < FundAssistant
       - ALWAYS use this `view_link` to hyperlink the primary identifier.
       - DO NOT create a separate column for "view_link" or "Link". Instead, embed the link into the specific column it refers to.
       - Use an HTML anchor tag with `target="_blank"`.
+      - **CRITICAL**: Table headers MUST NEVER be hyperlinked.
 
       Tool Usage Rules:
       - All data you retrieve MUST be for **#{@fund.name}** (ID: #{@fund.id}).
       - You MUST provide the `fund_id: "#{@fund.id}"` to ALL tools when calling them.
-      - To create a visualization, first retrieve the data using a `list_` tool, then pass that data to the `PlotChart` tool.
-      - When calling `PlotChart`, you MUST provide both the `data` (as a JSON string) and a `prompt` (describing the chart). Example: `plot_chart(data: '[...]', prompt: 'Monthly cash flow for #{@fund.name}')`.
+      - Efficiency Rule: For any request involving totals, sums, or breakdowns (e.g., "total amount", "breakdown by investor", "sum of collected"), you MUST use the `aggregate` parameter (`sum` or `group_by`). Fetching individual records to perform math is STRICTLY FORBIDDEN.
+      - Fees & Expenses: For any request involving "Setup Fees", "Management Fees", "Expenses", or other accounting entries, you MUST use the `list_account_entries` tool.
+      - Mandatory Parameters for Aggregation:
+        - When `aggregate` is `'sum'`, you MUST provide `aggregate_field` (the numeric field to sum).
+        - When `aggregate` is `'group_by'`, you MUST provide both `aggregate_field` and `group_by_field`.
+      - NEVER call `list_capital_remittances` or `list_capital_distribution_payments` without additional filters (folio_ids, or a specific query/scope) unless using `aggregate`. These datasets for this fund are too large to retrieve unfiltered.
+      - Valid Scopes:
+        - For Capital Remittances: `paid`, `unpaid`, `pending`, `verified`, `unverified`.
+        - For Capital Remittance Payments: Use `query` parameters like `payment_notification_sent_eq: true/false`.
+        - For Capital Distribution Payments: `completed`, `incomplete`.
+        - DO NOT hallucinate scopes like "unapproved". If a scope is not listed here, use `query` parameters instead.
+      - **Optimized Charting**: To create a chart efficiently (without fetching large datasets into the chat history), you MUST use the `plot_chart_from_query` tool.
+        - Provide the `resource` name (e.g., `'capital_remittances'`), any `query` filters, and a `prompt` for the chart.
+        - Use this tool whenever the user asks for a chart based on a large collection of data.
+      - Fallback Charting: If you already have the data in the conversation history, you can use `plot_chart(data: '...', prompt: '...')`. However, `plot_chart_from_query` is preferred for efficiency.
+      - **IMPORTANT**: When the user asks for a chart, you MUST use either the `plot_chart_from_query` or `plot_chart` tool. In your FINAL response, you MUST summarize the chart's findings.
+      - **CRITICAL**: To ensure the user sees the chart, you MUST include the literal string returned by the chart tools in your response. The chart tool returns an HTML snippet (e.g., `<div class="chart-wrap">...</div>`); you must output this snippet EXACTLY as received from the tool.
       - Never guess IDs.
 
       Current User ID: #{@user.id}
@@ -149,34 +106,19 @@ class SpecificFundAssistant < FundAssistant
     SYSTEM
   end
 
-  # Executes the AI assistant.
+  def default_report_queries
+    STRATEGIC_QUERIES
+  end
+
+  # Overriding run to handle specific chart logic that was present in the original
   def run(prompt)
-    Rails.logger.debug { "User (Specific Fund: #{@fund.name}): #{prompt}" }
+    response = super
 
-    # If no chat is provided, find or create one for today, scoped to this fund.
-    @chat ||= Chat.where(
-      user: @user,
-      entity_id: @user.entity_id,
-      assistant_type: 'SpecificFundAssistant',
-      model_id: AI_MODEL
-      # Assuming we might want to store the fund context in metadata or similar if available
-    ).first_or_create!(
-      owner: @user,
-      enable_broadcast: false,
-      name: "#{@fund.name} Assistant Chat #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
-    )
-
-    @chat.with_instructions(system_prompt)
-    @chat.with_tools(*tools)
-
-    response = @chat.ask(prompt)
-
-    # Clean up internal monologue
-    content = response.content
-    if content.is_a?(String) && content.include?("thought")
-      response.content = content.split("thought").last.to_s.strip
-    elsif content.respond_to?(:text) && content.text.to_s.include?("thought")
-      content.text = content.text.to_s.split("thought").last.to_s.strip
+    # If the response is empty but we have tool calls, it's likely a chart generation
+    # where the LLM didn't provide a final summary. We'll try to find the last chart tool output.
+    if (response.content.blank? || (response.content.respond_to?(:text) && response.content.text.blank?)) && @chat.messages.last&.role == "tool"
+      last_tool_msg = @chat.messages.where(role: "tool").order(created_at: :desc).first
+      response.content = last_tool_msg.content if last_tool_msg&.content&.include?("chart-renderer")
     end
 
     response
@@ -184,33 +126,16 @@ class SpecificFundAssistant < FundAssistant
 
   private
 
-  # Runs a single prompt using a fresh, in-memory RubyLLM chat.
-  def ask_ephemeral(prompt)
-    Rails.logger.debug "\n\n#############################################"
-    Rails.logger.debug { "🤖 Asking ephemeral prompt: #{prompt.inspect}" }
-
-    begin
-      response = run(prompt)
-    rescue StandardError => e
-      Rails.logger.debug { "⚠️ Caught BadRequestError: #{e.message}" }
-      Rails.logger.debug e.backtrace.join("\n")
-      if e.message.include?("Repeated map key")
-        Rails.logger.debug "⚠️ Caught repeated map key error, retrying without some tools or instructions..."
-        return "Error: The AI encountered a technical issue with the data query (repeated parameters). Please try rephrasing your question."
-      end
-      raise e
-    end
-
-    content = response.content
-
-    if content.is_a?(String) && content.include?("thought")
-      content = content.split("thought").last.to_s.strip
-    elsif content.respond_to?(:text) && content.text.to_s.include?("thought")
-      content.text = content.text.to_s.split("thought").last.to_s.strip
-      content = content.text
-    end
-
-    Rails.logger.debug { "🤖 Ephemeral response: #{content.inspect}" }
-    { content: content, input_tokens: response.input_tokens, output_tokens: response.output_tokens }
+  def find_or_create_chat
+    Chat.where(
+      user: @user,
+      entity_id: @user.entity_id,
+      owner: @fund,
+      assistant_type: 'SpecificFundAssistant'
+    ).first_or_create!(
+      model: AI_MODEL,
+      enable_broadcast: false,
+      name: "#{@fund.name} #{Time.zone.now.strftime('%Y-%m-%d %H:%M')}"
+    )
   end
 end

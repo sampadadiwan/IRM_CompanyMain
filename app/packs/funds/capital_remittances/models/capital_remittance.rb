@@ -57,7 +57,10 @@ class CapitalRemittance < ApplicationRecord
   has_many :commitment_adjustments, as: :owner, dependent: :destroy
 
   scope :paid, -> { where(status: "Paid") }
+  # rubocop:disable Rails/DuplicateScope
+  scope :unpaid, -> { where(status: "Pending") }
   scope :pending, -> { where(status: "Pending") }
+  # rubocop:enable Rails/DuplicateScope
   scope :verified, -> { where(verified: true) }
   scope :unverified, -> { where(verified: false) }
 

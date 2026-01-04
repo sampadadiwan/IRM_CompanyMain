@@ -78,7 +78,7 @@
                 <i class="ti ti-robot"></i> Run Portfolio Company Agent
               <% end %>
 
-              <%= link_to assistant_path('assistant', assistant_type: 'portfolio_company', owner_id: @investor.id, owner_type: "Investor"),
+              <%= link_to assistant_path('assistant', assistant_type: 'PortfolioCompanyAssistant', owner_id: @investor.id, owner_type: "Investor"),
                           class: "dropdown-item d-flex align-items-center",
                           data: { turbo: false, bs_toggle: "tooltip", bs_title: "Launch AI Assistant for this Portfolio Company" } do %>
                 <i class="ti ti-brand-github-copilot"></i> AI Assistant

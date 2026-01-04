@@ -18,7 +18,6 @@ class GenerateCrisilReport < Trailblazer::Operation
 
   # Can generate excel report for all funds of the entity or for a single fund
   # Can generate UI reports for a single fund
-  # rubocop:disable Metrics/ParameterLists
   def generate_report(ctx, fund_id:, report_name:, start_date:, end_date:, excel:, single:, **)
     # Generate excel report if excel is true
     if excel

@@ -57,7 +57,7 @@ class PortfolioScenarioJob < ApplicationJob
 
   # Adds tracking currency metrics to calculations hash.
   # Returns portfolio company IRR hash in tracking currency.
-  def add_tracking_currency_data(adjustment_cash:, return_cash_flows:, cashflows_currency:, calculations:, fpc:, fund:, synthetic_investments:) # rubocop:disable Metrics/ParameterLists
+  def add_tracking_currency_data(adjustment_cash:, return_cash_flows:, cashflows_currency:, calculations:, fpc:, fund:, synthetic_investments:)
     tracking_currency = fund.tracking_currency
     xirr_tracking_curr, xirr_cash_flows_tracking_curr = fpc.xirr(adjustment_cash:, return_cash_flows:, use_tracking_currency: true)
     moic_tracking_curr, moic_cash_flows_tracking_curr = fpc.moic(synthetic_investments:, return_cash_flows:, use_tracking_currency: true)

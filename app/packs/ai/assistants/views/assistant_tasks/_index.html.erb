@@ -1,0 +1,33 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <% header = defined?(title) ? title : "Assistant Tasks" %>
+  <h1 class="h3 mb-0 text-gray-800"><%= header %></h1>
+  <%= link_to "New Assistant Task", new_assistant_task_path, {class: "btn btn-outline-primary ti ti-plus"} %>
+</div>
+
+<div class="table-responsive">
+  <table id="assistant_tasks" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>Assistant Type</th>
+        <th>User</th>
+        <th>Period</th>
+        <th>Tags</th>
+        <th>Instructions</th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% assistant_tasks.each do |assistant_task| %>
+        <%= render partial: "assistant_task", locals: {assistant_task: assistant_task} %>
+      <% end %>
+    </tbody>
+  </table>
+
+  <% if defined?(@pagy) && assistant_tasks.present? %>
+    <div class="d-flex justify-content-between align-items-center">
+      <%= raw pagy_info(@pagy) %>
+      <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="assistant_tasks_frame" data-remote="true")) %>
+    </div>
+  <% end %>
+</div>

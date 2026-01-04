@@ -95,7 +95,7 @@ class FundRatioCalcs
   # MOIC is the ratio of total returns (from sales and FMV) to total invested capital.
   # Optionally includes synthetic investments and supports tracking currency conversion.
   # Returns the MOIC value rounded to 2 decimals, and optionally the cash flows.
-  def moic(model:, synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false) # rubocop:disable Metrics/MethodLength
+  def moic(model:, synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false)
     @model = model
     cf = XirrCashflow.new
 

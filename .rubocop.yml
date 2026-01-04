@@ -233,26 +233,12 @@ Metrics/ModuleLength:
 Metrics/ParameterLists:
   Description: "Pass no more than four parameters into a method."
   Max: 6
-  Enabled: true
-  Exclude:
-    - "app/packs/funds/capital_commitments/services/account_entry_pivot.rb"
-    - "app/packs/funds/funds/jobs/fund_ratios_scenario_job.rb"
-    - "app/packs/funds/capital_commitments/jobs/account_entry_allocation_job.rb"
-    - "app/packs/funds/capital_commitments/services/account_entry_allocation_engine.rb"
-    - "app/packs/funds/funds/services/fund_unit_transfer_service.rb"
-    - "app/packs/core/components/ransack_table_header.rb"
-    - "app/packs/core/documents/helpers/document_generator_base.rb"
-    - "app/packs/core/folders/jobs/folder_llm_report_job.rb"
-    - "app/packs/funds/funds/jobs/fund_llm_report_job.rb"
-    - "app/services/account_entry_allocation/engine.rb"
-    - "app/services/account_entry_allocation/create_account_entry.rb"
-    - "app/services/account_entry_allocation/allocate_master_fund_account_entries.rb"
-    - "app/services/account_entry_allocation/run_formulas.rb"
+  Enabled: false
 
 Metrics/MethodLength:
   Description: "Avoid methods longer than 5 lines of code."
   StyleGuide: "<https://github.com/bbatsov/ruby-style-guide#short-methods>"
-  Max: 35
+  Max: 40
   Enabled: true
   Exclude:
     - "app/packs/funds/capital_commitments/services/account_entry_pivot.rb"

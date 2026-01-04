@@ -16,6 +16,44 @@ class AssistantsController < ApplicationController
     @chats = Chat.where(user: current_user, entity_id: current_user.entity_id, assistant_type: assistant_class).order(created_at: :desc)
   end
 
+  def efficiency_report
+    authorize :assistant, :show?
+
+    @chat = Chat.find_by(id: params[:chat_id], entity_id: current_user.entity_id)
+    @all_messages = @chat.messages.includes(:tool_calls).order(created_at: :asc)
+    @tool_calls = ToolCall.joins(message: :chat)
+                          .where(chats: { entity_id: current_user.entity_id, id: @chat.id })
+
+    # Calculate some stats for the report
+    @stats = {
+      total_calls: @tool_calls.length,
+      missing_limit: @tool_calls.count { |tc| tc.name.start_with?('list_') && tc.arguments['limit'].blank? },
+      total_input_tokens: @all_messages.sum(:input_tokens),
+      total_output_tokens: @all_messages.sum(:output_tokens)
+    }
+
+    # Gemini Pricing (default as fallback)
+    # Input: $0.50 / 1M tokens
+    # Output: $3.00 / 1M tokens
+    input_rate = 0.50
+    output_rate = 3.00
+
+    if @chat.model&.pricing.present?
+      pricing = @chat.model.pricing["text_tokens"]&.fetch("standard", {})
+      input_rate = pricing["input_per_million"] || input_rate
+      output_rate = pricing["output_per_million"] || output_rate
+    end
+
+    @input_rate = input_rate
+    @output_rate = output_rate
+
+    input_cost = (@stats[:total_input_tokens] / 1_000_000.0) * input_rate
+    output_cost = (@stats[:total_output_tokens] / 1_000_000.0) * output_rate
+    @stats[:total_cost_usd] = input_cost + output_cost
+
+    render "efficiency_report"
+  end
+
   def ask
     authorize :assistant, :ask?
     query = params.require(:query).to_s
@@ -118,8 +156,8 @@ class AssistantsController < ApplicationController
       if chat.new_record?
         chat.assign_attributes(
           enable_broadcast: false,
-          model_id: PortfolioCompanyAssistant::AI_MODEL,
-          name: "#{assistant_initials} Chat #{I18n.l(Time.zone.now, format: :default)}"
+          model: PortfolioCompanyAssistant::AI_MODEL,
+          name: "#{owner} Chat #{I18n.l(Time.zone.now, format: :default)}"
         )
         chat.save!
       end
@@ -137,11 +175,6 @@ class AssistantsController < ApplicationController
   end
 
   def assistant_class
-    @assistant_class ||= case params[:assistant_type]
-                         when 'portfolio_company' then 'PortfolioCompanyAssistant'
-                         when 'capital_commitment' then 'CapitalCommitmentAssistant'
-                         when 'specific_fund' then 'SpecificFundAssistant'
-                         else 'FundAssistant'
-                         end
+    @assistant_class ||= params[:assistant_type]
   end
 end

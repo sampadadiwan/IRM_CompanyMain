@@ -1,0 +1,45 @@
+<%= render FormCard.new(title: "Assistant Task") do %>
+  <%= form_with(model: assistant_task, validate: true) do |form| %>
+    <% if assistant_task.errors.any? %>
+      <div class="alert alert-danger">
+        <h2><%= pluralize(assistant_task.errors.count, "error") %> prohibited this task from being saved:</h2>
+        <ul>
+          <% assistant_task.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :assistant_type %>
+      <%= form.select :assistant_type, AssistantTask::TYPES, {include_blank: true}, class: "form-control select2" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :period %>
+      <%= form.select :period, %w[Week Month Quarter Year], {include_blank: true}, class: "form-control select2" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :assistant_metadata %>
+      <%= form.text_area :assistant_metadata, class: "form-control", placeholder: 'e.g. {"fund_id": 1} or {"portfolio_company_id": 123}' %>
+      <small class="text-muted">Enter context IDs as a JSON object (e.g. {"fund_id": 1} or {"portfolio_company_id": 123}').</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :tag_list %>
+      <%= form.text_field :tag_list, class: "form-control" %>
+      <span class="text-muted">Comma separated tags</span>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :instructions %>
+      <%= form.text_area :instructions, class: "form-control", rows: 5 %>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+    </div>
+  <% end %>
+<% end %>

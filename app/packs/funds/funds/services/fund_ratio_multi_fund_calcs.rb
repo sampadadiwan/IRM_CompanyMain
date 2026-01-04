@@ -1,5 +1,5 @@
 class FundRatioMultiFundCalcs < FundRatioCalcs
-  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, currency: nil) # rubocop:disable Metrics/ParameterLists
+  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, currency: nil)
     @scenario = scenario
     # All funds must be in the same entity
     @funds = funds
@@ -255,7 +255,6 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
   end
 
   # Compute the XIRR for each API
-  # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/BlockLength
   def api_irr(return_cash_flows: false, scenarios: nil)
     @api_irr_map ||= {}
@@ -318,9 +317,8 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
     Rails.logger.debug @api_irr_map
     @api_irr_map
   end
-  # rubocop:enable Metrics/BlockLength
-  # rubocop:enable Metrics/MethodLength
 
+  # rubocop:enable Metrics/BlockLength
   def api_cost_to_value
     @api_cost_map ||= {}
 

@@ -10,7 +10,7 @@ class CrisilReportJob < ApplicationJob
                       "CashFlow" => "Cash flow",
                       "HalfYearlyValuation" => "Half-yearly valuation" }.freeze
 
-  def perform(entity_id, fund_id, report_name, start_date, end_date, user_id, excel: false, single: false) # rubocop:disable Metrics/ParameterLists
+  def perform(entity_id, fund_id, report_name, start_date, end_date, user_id, excel: false, single: false)
     Chewy.strategy(:sidekiq) do
       fund_ids = fund_id.present? ? [fund_id] : Entity.find(entity_id).fund_ids
       fund_ids.each do |fid|

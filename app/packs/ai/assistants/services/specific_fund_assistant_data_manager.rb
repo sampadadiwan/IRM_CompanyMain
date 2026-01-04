@@ -16,52 +16,67 @@ class SpecificFundAssistantDataManager < FundAssistantDataManager
   end
 
   # Overrides list_funds to only return the current fund.
-  def list_funds(*)
-    super(query: { id_eq: @fund.id })
+  def list_funds(aggregate: nil, **)
+    super(query: { id_eq: @fund.id }, aggregate: aggregate)
   end
 
-  # Overrides get_fund_details to prefer the provided fund_id, falling back to @fund.id.
-  def get_fund_details(fund_id: nil)
-    super(fund_id: fund_id || @fund.id)
+  # Overrides get_fund_details to force the use of @fund.id.
+  def get_fund_details(*)
+    details = super(fund_id: @fund.id)
+    return details if details.is_a?(String) # Error message
+
+    details.merge!(
+      collected_amount: @fund.collected_amount.format,
+      committed_amount: @fund.committed_amount.format,
+      distribution_amount: @fund.distribution_amount.format,
+      call_amount: @fund.call_amount.format
+    )
+
+    details
   end
 
-  # Overrides list_capital_calls to prefer the provided fund_id, falling back to @fund.id.
-  def list_capital_calls(fund_id: nil, query: {}, sort: nil)
-    super(fund_id: fund_id || @fund.id, query: query, sort: sort)
+  # Overrides list_capital_calls to force the use of @fund.id.
+  def list_capital_calls(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
-  # Overrides list_capital_commitments to prefer the provided fund_id, falling back to @fund.id.
-  def list_capital_commitments(fund_id: nil, folio_id: nil, scope: nil, query: {}, sort: nil)
-    super(fund_id: fund_id || @fund.id, folio_id: folio_id, scope: scope, query: query, sort: sort)
+  # Overrides list_capital_commitments to force the use of @fund.id.
+  def list_capital_commitments(folio_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, folio_ids: folio_ids, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
-  # Overrides list_capital_remittances to prefer the provided fund_id, falling back to @fund.id.
-  def list_capital_remittances(fund_id: nil, folio_id: nil, scope: nil, query: {}, sort: nil)
-    super(fund_id: fund_id || @fund.id, folio_id: folio_id, scope: scope, query: query, sort: sort)
+  # Overrides list_capital_remittances to force the use of @fund.id.
+  def list_capital_remittances(folio_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, folio_ids: folio_ids, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
-  # Overrides list_capital_distributions to prefer the provided fund_id, falling back to @fund.id.
-  def list_capital_distributions(fund_id: nil, query: {}, sort: nil)
-    super(fund_id: fund_id || @fund.id, query: query, sort: sort)
+  # Overrides list_capital_distributions to force the use of @fund.id.
+  def list_capital_distributions(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
-  # Overrides list_capital_remittance_payments to prefer the provided fund_id, falling back to @fund.id.
-  def list_capital_remittance_payments(fund_id: nil, folio_id: nil, query: {}, sort: nil)
-    super(fund_id: fund_id || @fund.id, folio_id: folio_id, query: query, sort: sort)
+  # Overrides list_capital_remittance_payments to force the use of @fund.id.
+  def list_capital_remittance_payments(folio_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, folio_ids: folio_ids, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
-  # Overrides list_capital_distribution_payments to prefer the provided fund_id, falling back to @fund.id.
-  def list_capital_distribution_payments(fund_id: nil, folio_id: nil, scope: nil, sort: nil)
-    super(fund_id: fund_id || @fund.id, folio_id: folio_id, scope: scope, sort: sort)
+  # Overrides list_capital_distribution_payments to force the use of @fund.id.
+  def list_capital_distribution_payments(folio_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, folio_ids: folio_ids, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
-  # Overrides list_portfolio_investments to prefer the provided fund_id, falling back to @fund.id.
-  def list_portfolio_investments(fund_id: nil, scope: nil, query: {}, sort: nil)
-    super(fund_id: fund_id || @fund.id, scope: scope, query: query, sort: sort)
+  # Overrides list_portfolio_investments to force the use of @fund.id.
+  def list_portfolio_investments(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
-  # Overrides list_fund_ratios to prefer the provided fund_id, falling back to @fund.id.
-  def list_fund_ratios(fund_id: nil, query: {}, sort: nil)
-    super(fund_id: fund_id || @fund.id, query: query, sort: sort)
+  # Overrides list_fund_ratios to force the use of @fund.id.
+  def list_fund_ratios(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
+  end
+
+  # Overrides list_account_entries to force the use of @fund.id.
+  def list_account_entries(folio_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(fund_ids: @fund.id, folio_ids: folio_ids, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 end

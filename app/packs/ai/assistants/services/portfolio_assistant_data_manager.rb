@@ -4,6 +4,8 @@
 # Focused on portfolio company specific data: valuations, investments, KPIs, and documents.
 #
 class PortfolioAssistantDataManager
+  include WithFilterParams
+
   # Query object for filtering Valuations.
   class ValuationQuery
     include HasScope
@@ -56,15 +58,20 @@ class PortfolioAssistantDataManager
   end
 
   # Lists portfolio companies (Investors with category 'Portfolio Company').
-  def list_portfolio_companies(scope: nil, query: {}, sort: nil)
+  def list_portfolio_companies(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_companies called with scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
 
     relation = Pundit.policy_scope(@user, Investor).portfolio_companies
     relation = relation.send(scope) if scope.present? && Investor.respond_to?(scope)
-    companies = relation.ransack(ransack_query).result
+    results = relation.ransack(ransack_query).result
 
-    companies.map do |c|
+    return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
+
+    results = results.limit(limit) if limit.present?
+
+    results.map do |c|
       {
         id: c.id,
         name: c.investor_name,
@@ -78,6 +85,7 @@ class PortfolioAssistantDataManager
 
   # Gets basic details for a specific portfolio company.
   def get_portfolio_company_details(portfolio_company_id:)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] get_portfolio_company_details called with portfolio_company_id: #{portfolio_company_id.inspect}" }
     company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
     return "Portfolio Company not found or access denied" unless company
 
@@ -95,7 +103,8 @@ class PortfolioAssistantDataManager
   end
 
   # Lists valuations for a portfolio company.
-  def list_valuations(portfolio_company_id:, scope: nil, query: {}, sort: nil)
+  def list_valuations(portfolio_company_id:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] list_valuations called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
     return [] unless company
 
@@ -104,8 +113,13 @@ class PortfolioAssistantDataManager
 
     relation = Pundit.policy_scope(@user, Valuation).includes(:portfolio_company, :entity, :investment_instrument).where(owner: company)
     relation = relation.send(scope) if scope.present? && Valuation.respond_to?(scope)
-    valuations = relation.ransack(ransack_query).result
-    valuations.map do |v|
+    results = relation.ransack(ransack_query).result
+
+    return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
+
+    results = results.limit(limit) if limit.present?
+
+    results.map do |v|
       {
         id: v.id,
         entity: v.entity.name,
@@ -120,9 +134,10 @@ class PortfolioAssistantDataManager
     end
   end
 
-  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
+  # rubocop:disable Metrics/PerceivedComplexity, Metrics/MethodLength
   # Lists portfolio investments for a portfolio company.
-  def list_portfolio_investments(portfolio_company_id:, scope: nil, query: {}, sort: nil)
+  def list_portfolio_investments(portfolio_company_id:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_investments called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
     return [] unless company
 
@@ -133,8 +148,13 @@ class PortfolioAssistantDataManager
 
     relation = relation.send(scope) if scope.present? && PortfolioInvestment.respond_to?(scope)
 
-    investments = relation.ransack(ransack_query).result
-    investments.map do |i|
+    results = relation.ransack(ransack_query).result
+
+    return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
+
+    results = results.limit(limit) if limit.present?
+
+    results.map do |i|
       {
         id: i.id,
         fund: i.fund&.name,
@@ -166,18 +186,25 @@ class PortfolioAssistantDataManager
       }
     end
   end
-  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/MethodLength
+  # rubocop:enable Metrics/PerceivedComplexity, Metrics/MethodLength
 
   # Lists KPIs for portfolio companies.
-  def list_portfolio_kpis(portfolio_company_ids:, scope: nil, query: {}, sort: nil)
+  def list_portfolio_kpis(portfolio_company_ids:, scope: :actuals, query: {}, sort: nil, limit: nil, aggregate: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_kpis called with portfolio_company_ids: #{portfolio_company_ids.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     companies = Pundit.policy_scope(@user, Investor).portfolio_companies.where(id: portfolio_company_ids)
     return [] if companies.empty?
 
-    ransack_query = query || {}
+    ransack_query = (query || {}).with_indifferent_access
     ransack_query[:s] ||= sort if sort.present?
 
+    # Default period to 'Month' if not provided in ransack query
+    ransack_query[:kpi_report_period_eq] = 'Month' unless ransack_has_attr?(ransack_query, :period)
+
+    # Default kpi_report_as_of to 12 months ago if not provided
+    ransack_query[:kpi_report_as_of_gteq] = 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of)
+
     Rails.logger.debug { "[KpiQuery Debug] Incoming scope: #{scope.inspect}" }
-    relation = Kpi.where(portfolio_company_id: companies.pluck(:id)).includes(:kpi_report, :portfolio_company)
+    relation = Kpi.where(portfolio_company_id: companies.pluck(:id)).includes(:portfolio_company)
     if scope.present?
       # If scope is a comma-separated string, convert to hash for KpiQuery
       scope_params = if scope.is_a?(String)
@@ -191,9 +218,14 @@ class PortfolioAssistantDataManager
       Rails.logger.debug { "[KpiQuery Debug] Applying scopes with params: #{scope_params.inspect}" }
       relation = KpiQuery.new.perform(collection: relation, params: scope_params)
     end
-    kpis = relation.ransack(ransack_query).result
-    Rails.logger.debug { "[KpiQuery Debug] SQL after ransack: #{kpis.to_sql}" }
-    kpis.map do |k|
+    results = relation.joins(:kpi_report).ransack(ransack_query).result
+
+    return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
+
+    results = results.limit(limit) if limit.present?
+
+    Rails.logger.debug { "[KpiQuery Debug] SQL after ransack: #{results.to_sql}" }
+    results.map do |k|
       {
         id: k.id,
         portfolio_company: k.portfolio_company&.investor_name,
@@ -216,15 +248,24 @@ class PortfolioAssistantDataManager
   # @param portfolio_company_id [Integer, nil] Filter by portfolio company ID.
   # @param query [Hash] Ransack query parameters.
   # @param sort [String, nil] Sort string.
+  # @param limit [Integer, nil] Maximum number of records to return.
+  # @param aggregate [String, nil] Type of aggregation to perform.
   # @return [Array<Hash>] List of fund ratios.
-  def list_fund_ratios(portfolio_company_id: nil, query: {}, sort: nil)
+  def list_fund_ratios(portfolio_company_id: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] list_fund_ratios called with portfolio_company_id: #{portfolio_company_id.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
     ransack_query[:owner_id_eq] = portfolio_company_id if portfolio_company_id.present?
     ransack_query[:owner_type_eq] = 'Investor' if portfolio_company_id.present?
 
-    ratios = Pundit.policy_scope(@user, FundRatio).includes(:fund, :portfolio_scenario).ransack(ransack_query).result
-    ratios.map do |r|
+    relation = Pundit.policy_scope(@user, FundRatio).includes(:fund, :portfolio_scenario)
+    results = relation.ransack(ransack_query).result
+
+    return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
+
+    results = results.limit(limit) if limit.present?
+
+    results.map do |r|
       {
         id: r.id,
         fund_id: r.fund_id,
@@ -244,7 +285,8 @@ class PortfolioAssistantDataManager
   end
 
   # Lists documents associated with the portfolio company.
-  def list_documents(portfolio_company_id:, scope: nil, query: {}, sort: nil)
+  def list_documents(portfolio_company_id:, scope: nil, query: {}, sort: nil, limit: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] list_documents called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}" }
     company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
     return [] unless company
 
@@ -258,6 +300,7 @@ class PortfolioAssistantDataManager
     )
     relation = relation.send(scope) if scope.present? && Document.respond_to?(scope)
     documents = relation.ransack(ransack_query).result
+    documents = documents.limit(limit) if limit.present?
 
     documents.map do |d|
       {
@@ -280,6 +323,7 @@ class PortfolioAssistantDataManager
 
   # Gets details and text for a specific document.
   def get_document(document_id: nil, name: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] get_document called with document_id: #{document_id.inspect}, name: #{name.inspect}" }
     scope = Pundit.policy_scope(@user, Document)
     document = if document_id.present?
                  scope.find_by(id: document_id)
@@ -306,6 +350,7 @@ class PortfolioAssistantDataManager
 
   # Analyzes documents using RubyLLM and their file_urls.
   def analyze_documents(prompt:, document_ids: [], document_names: [])
+    Rails.logger.debug { "[PortfolioAssistantDataManager] analyze_documents called with prompt: #{prompt.inspect}, document_ids: #{document_ids.inspect}, document_names: #{document_names.inspect}" }
     scope = Pundit.policy_scope(@user, Document)
     documents = []
 
@@ -337,6 +382,7 @@ class PortfolioAssistantDataManager
   # @param group_by_field [String, Symbol] Field to group the cap table by.
   # @return [Array<Hash>] The cap table data.
   def get_cap_table(portfolio_company_id:, funding_rounds: nil, group_by_field: :investor_name)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] get_cap_table called with portfolio_company_id: #{portfolio_company_id.inspect}, funding_rounds: #{funding_rounds.inspect}, group_by_field: #{group_by_field.inspect}" }
     company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
     return "Portfolio Company not found or access denied" unless company
 
@@ -354,8 +400,10 @@ class PortfolioAssistantDataManager
   # @param portfolio_company_ids [Array<Integer>] List of portfolio company IDs.
   # @param query [Hash] Optional Ransack query hash.
   # @param sort [String] Optional sort string.
+  # @param limit [Integer, nil] Maximum number of records to return.
   # @return [Array<Hash>] List of investments.
-  def get_investments_in_cap_table(portfolio_company_ids:, query: {}, sort: nil)
+  def get_investments_in_cap_table(portfolio_company_ids:, query: {}, sort: nil, limit: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] get_investments_in_cap_table called with portfolio_company_ids: #{portfolio_company_ids.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}" }
     companies = Pundit.policy_scope(@user, Investor).portfolio_companies.where(id: portfolio_company_ids)
     return [] if companies.empty?
 
@@ -363,6 +411,8 @@ class PortfolioAssistantDataManager
     ransack_query[:s] ||= sort if sort.present?
 
     investments = Investment.where(portfolio_company_id: companies.pluck(:id)).ransack(ransack_query).result
+    investments = investments.limit(limit) if limit.present?
+
     investments.map do |i|
       {
         id: i.id,

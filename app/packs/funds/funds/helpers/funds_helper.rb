@@ -10,11 +10,11 @@ module FundsHelper
                                      .order(commitment_date: :asc)
                                      .group_by { |v| v.fund.name }
                                      .map do |fname, vals|
-      [fname,
-       vals.inject(0) { |sum, com| sum + com.committed_amount.to_f },
-       vals.inject(0) { |sum, com| sum + com.call_amount.to_f },
-       vals.inject(0) { |sum, com| sum + com.collected_amount.to_f },
-       vals.inject(0) { |sum, com| sum + com.distribution_amount.to_f }]
+                                       [fname,
+                                        vals.inject(0) { |sum, com| sum + com.committed_amount.to_f },
+                                        vals.inject(0) { |sum, com| sum + com.call_amount.to_f },
+                                        vals.inject(0) { |sum, com| sum + com.collected_amount.to_f },
+                                        vals.inject(0) { |sum, com| sum + com.distribution_amount.to_f }]
     end
 
     # column_chart cumulative(commitments), library: {

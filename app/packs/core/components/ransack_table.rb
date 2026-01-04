@@ -3,7 +3,6 @@ class RansackTable < ViewComponent::Base
   include Pagy::Frontend
   include ApplicationHelper
 
-  # rubocop:disable Metrics/ParameterLists
   # rubocop:disable Naming/MethodParameterName
   def initialize(model, q:, turbo_frame:, pagy:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil, snapshot: nil, actions_column: true)
     super()
