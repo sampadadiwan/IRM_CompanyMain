@@ -244,7 +244,7 @@ class CapitalCommitmentAssistantDataManager
 
     return "No documents found to analyze." if documents.empty?
 
-    attachments = documents.map { |d| { d.extension.to_sym => d.file.url } }
+    attachments = documents.group_by { |d| d.extension.to_sym }.transform_values { |docs| docs.map { |d| d.file.url } }
 
     chat = RubyLLM.chat
     response = chat.ask prompt, with: attachments
