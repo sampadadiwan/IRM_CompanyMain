@@ -1,3 +1,5 @@
+# rubocop:disable Metrics/ClassLength
+
 class GenerateSectionContentJob < ApplicationJob
   queue_as :default
 
@@ -7,6 +9,9 @@ class GenerateSectionContentJob < ApplicationJob
     report = AiPortfolioReport.find(report_id)
 
     Rails.logger.info "=== Starting generation for report #{report_id} ==="
+
+    # Downloaded documents to local folder
+    download_folder_documents(report.folder)
 
     @document_paths = collect_document_paths(DOCUMENT_FOLDER_PATH)
     # OPTIMIZATION: Load documents ONCE at the start, cache for all sections
@@ -53,6 +58,39 @@ class GenerateSectionContentJob < ApplicationJob
   end
 
   private
+
+  def download_folder_documents(folder)
+    FileUtils.rm_rf(DOCUMENT_FOLDER_PATH)
+    FileUtils.mkdir_p(DOCUMENT_FOLDER_PATH)
+
+    return if folder.nil?
+
+    Rails.logger.info "[GenerateSectionContentJob] Downloading documents for folder ID: #{folder.name}"
+
+    supported_extensions = %w[.pdf .txt .md .docx .xlsx .xls .pptx .ppt .csv]
+
+    folder.documents.includes(file_attachment: :blob).each do |doc|
+      next if doc.file.blank?
+
+      begin
+        #filename = doc.file.original_filename
+        filename = File.basename(doc.file.original_filename).gsub(/[^0-9A-Za-z.\-_]/, '_')
+
+        extension = File.extname(filename).downcase
+        next unless supported_extensions.include?(extension)
+
+        file_path = File.join(DOCUMENT_FOLDER_PATH, filename)
+
+        doc.file.open do |io|
+          File.binwrite(file_path, io.read)
+        end
+
+        Rails.logger.info "[GenerateSectionContentJob] Downloaded: #{filename}"
+      rescue StandardError => e
+        Rails.logger.error "[GenerateSectionContentJob] Failed to download #{doc.name}: #{e.message}"
+      end
+    end
+  end
 
   # Auto-generate charts for a section if chartable data exists in documents
   def generate_section_charts_if_data_exists(report, section)
@@ -355,3 +393,4 @@ class GenerateSectionContentJob < ApplicationJob
     end
   end
 end
+# rubocop:enable Metrics/ClassLength

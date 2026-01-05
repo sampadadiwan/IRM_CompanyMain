@@ -1,3 +1,5 @@
+require 'open3'
+
 class AiPortfolioReportsController < ApplicationController
   before_action :set_report, only: %i[show edit update destroy collated_report save_collated_report export_pdf export_docx toggle_master_web_search]
 
@@ -67,8 +69,14 @@ class AiPortfolioReportsController < ApplicationController
   def export_pdf
     authorize @report
 
-    @sections = @report.ai_report_sections.where(reviewed: true).order(:order_index)
     company_name = @report.portfolio_company&.name&.parameterize || "portfolio-company"
+
+    # Use collated report content if available, otherwise use section contents
+    if @report.collated_report_html.present?
+      @collated_content = @report.collated_report_html
+    else
+      @sections = @report.ai_report_sections.where(reviewed: true).order(:order_index)
+    end
 
     render pdf: "#{company_name}-report-#{Time.zone.today}",
            template: 'ai_portfolio_reports/export_pdf',
@@ -107,8 +115,17 @@ class AiPortfolioReportsController < ApplicationController
   def export_docx
     authorize @report
 
-    @sections = @report.ai_report_sections.where(reviewed: true).order(:order_index)
     company_name = @report.portfolio_company&.name&.parameterize || "portfolio-company"
+
+    # Use collated report content if available, otherwise use section contents
+
+    Rails.logger.info "=== Exporting DOCX ==="
+    Rails.logger.info "Report ID: #{@report.id}"
+    Rails.logger.info "Collated report present: #{@report.collated_report_html.present?}"
+
+    @sections = @report.ai_report_sections.where(reviewed: true).order(:order_index)
+
+    @collated_content = @report.collated_report_html if @report.collated_report_html.present?
 
     # Render the Word template to get properly formatted HTML
     html_content = render_to_string(
@@ -124,7 +141,15 @@ class AiPortfolioReportsController < ApplicationController
       temp_html.write(html_content)
       temp_html.close
 
-      system("pandoc #{temp_html.path} -o #{temp_docx.path}")
+      stdout, stderr, status = Open3.capture3('pandoc', temp_html.path, '-o', temp_docx.path)
+      Rails.logger.info "Pandoc stdout: #{stdout}" if stdout.present?
+      Rails.logger.error "Pandoc stderr: #{stderr}" if stderr.present?
+
+      if !status.success? || !File.exist?(temp_docx.path) || File.empty?(temp_docx.path)
+        Rails.logger.error "Pandoc failed: status=#{status.exitstatus}, output_size=#{File.exist?(temp_docx.path) ? File.size(temp_docx.path) : 'missing'}"
+        render json: { error: 'DOCX export failed. Please try again later.' }, status: :unprocessable_entity
+        return
+      end
 
       send_file temp_docx.path,
                 filename: "#{company_name}-report-#{Time.zone.today}.docx",
@@ -133,6 +158,29 @@ class AiPortfolioReportsController < ApplicationController
     ensure
       temp_html.unlink
       # NOTE: temp_docx will be cleaned up after send_file completes
+    end
+  end
+
+  def create_from_folder
+    folder = Folder.find(params[:folder_id])
+    authorize folder, :show?  # ← Pundit checks if user can access this folder
+
+    portfolio_company = folder.owner
+
+    @report = AiPortfolioReport.new(
+      portfolio_company: portfolio_company,
+      folder_id: folder.id,
+      report_date: Time.zone.today,
+      analyst_id: current_user.id
+    )
+    authorize @report, :create?
+
+    if @report.save
+      @report.ai_chat_sessions.create!(analyst_id: current_user.id)
+      GenerateSectionContentJob.perform_later(@report.id)
+      redirect_to @report, flash: { ai_notice: 'Report created! AI is generating content for all sections (this may take a minute)...' }
+    else
+      redirect_back_or_to(folder_documents_path(folder_id: folder.id), alert: @report.errors.full_messages.join(', '))
     end
   end
 

@@ -18,6 +18,11 @@ resources :ai_rules
 
 # AI Portfolio Report Builder
 resources :ai_portfolio_reports do
+
+  collection do
+    post :create_from_folder
+  end
+  
   member do
     get :collated_report           # View the collated report page
     patch :save_collated_report    # Save edits to collated report

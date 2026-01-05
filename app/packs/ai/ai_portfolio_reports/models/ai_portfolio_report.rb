@@ -1,6 +1,7 @@
 class AiPortfolioReport < ApplicationRecord
   belongs_to :portfolio_company, class_name: "Investor"
   belongs_to :analyst, class_name: "User"
+  belongs_to :folder, optional: true
   has_many :ai_report_sections, dependent: :destroy
   has_many :ai_chat_sessions, dependent: :destroy
 
