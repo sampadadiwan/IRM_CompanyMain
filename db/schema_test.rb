@@ -281,6 +281,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_03_082050) do
     t.datetime "updated_at", null: false
     t.text "collated_report_html"
     t.boolean "web_search_enabled", default: false
+    t.bigint "folder_id"
+    t.index ["folder_id"], name: "index_ai_portfolio_reports_on_folder_id"
   end
 
   create_table "ai_presentations", charset: "utf8mb4",  force: :cascade do |t|

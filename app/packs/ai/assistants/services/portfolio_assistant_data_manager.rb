@@ -217,7 +217,7 @@ class PortfolioAssistantDataManager
       Rails.logger.debug { "[KpiQuery Debug] Applying scopes with params: #{scope_params.inspect}" }
       relation = KpiQuery.new.perform(collection: relation, params: scope_params)
     end
-    results = relation.joins(:kpi_report).includes(:kpi_report, :investor_kpi_mappings).ransack(ransack_query).result
+    results = relation.joins(:kpi_report).includes(:kpi_report).ransack(ransack_query).result
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 

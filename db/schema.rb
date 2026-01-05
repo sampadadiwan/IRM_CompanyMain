@@ -328,6 +328,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_03_082050) do
     t.datetime "updated_at", null: false
     t.text "collated_report_html", size: :medium
     t.boolean "web_search_enabled", default: false
+    psc
   end
 
   create_table "ai_presentations", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3604,6 +3605,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_03_082050) do
   add_foreign_key "ai_chat_sessions", "ai_portfolio_reports"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
+  add_foreign_key "ai_portfolio_reports", "folders"
   add_foreign_key "ai_presentations", "entities"
   add_foreign_key "ai_report_sections", "ai_portfolio_reports"
   add_foreign_key "ai_reports", "entities"
