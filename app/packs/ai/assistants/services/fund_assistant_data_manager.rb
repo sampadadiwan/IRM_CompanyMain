@@ -618,9 +618,7 @@ class FundAssistantDataManager
       sum_field = field.to_s
 
       # Handle mapping for joined tables (e.g., investor details)
-      if group_field == 'investor_category' && results.model.column_names.exclude?('investor_category')
-        group_field = 'investors.category'
-      end
+      group_field = 'investors.category' if group_field == 'investor_category' && results.model.column_names.exclude?('investor_category')
 
       # Unscope order to avoid SQL grouping errors
       base_relation = results.unscope(:order).group(group_field)

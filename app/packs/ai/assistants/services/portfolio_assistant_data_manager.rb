@@ -197,14 +197,13 @@ class PortfolioAssistantDataManager
     ransack_query = (query || {}).with_indifferent_access
     ransack_query[:s] ||= sort if sort.present?
 
-    # Default period to 'Month' if not provided in ransack query
-    ransack_query[:kpi_report_period_eq] = 'Month' unless ransack_has_attr?(ransack_query, :period)
-
     # Default kpi_report_as_of to 12 months ago if not provided
     ransack_query[:kpi_report_as_of_gteq] = 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of)
 
     Rails.logger.debug { "[KpiQuery Debug] Incoming scope: #{scope.inspect}" }
     relation = Kpi.where(portfolio_company_id: companies.pluck(:id)).includes(:portfolio_company)
+
+    scope ||= "monthly,actuals"
     if scope.present?
       # If scope is a comma-separated string, convert to hash for KpiQuery
       scope_params = if scope.is_a?(String)
@@ -218,7 +217,7 @@ class PortfolioAssistantDataManager
       Rails.logger.debug { "[KpiQuery Debug] Applying scopes with params: #{scope_params.inspect}" }
       relation = KpiQuery.new.perform(collection: relation, params: scope_params)
     end
-    results = relation.joins(:kpi_report).ransack(ransack_query).result
+    results = relation.joins(:kpi_report).includes(:kpi_report, :investor_kpi_mappings).ransack(ransack_query).result
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
@@ -233,10 +232,10 @@ class PortfolioAssistantDataManager
         name: k.name,
         period: k.kpi_report&.period,
         value: k.value,
-        display_value: k.display_value,
+        # display_value: k.display_value,
         percentage_change: "#{k.percentage_change}%",
-        notes: k.notes,
-        source: k.source,
+        # notes: k.notes,
+        # source: k.source,
         tag_list: k.kpi_report&.tag_list,
         view_link: "/kpis/#{k.id}"
       }

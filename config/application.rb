@@ -102,7 +102,7 @@ module CapHive
 
       if RubyLLM.config.use_new_acts_as
         require 'ruby_llm/active_record/acts_as'
-        ::ActiveRecord::Base.include RubyLLM::ActiveRecord::ActsAs unless ::ActiveRecord::Base.include?(RubyLLM::ActiveRecord::ActsAs)
+        ActiveSupport.on_load(:active_record) { include RubyLLM::ActiveRecord::ActsAs } unless ::ActiveRecord::Base.include?(RubyLLM::ActiveRecord::ActsAs)
       end
     end
 

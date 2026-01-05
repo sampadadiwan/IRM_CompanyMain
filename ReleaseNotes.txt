@@ -1,3 +1,13 @@
+V9.1.69
+#####################################
+b3f782abd Fixed loading of RubyLLM
+abdb187d8 Removed failing migrations
+c9a675e8d Check if models exists before creating it
+62f5a6f32 Sync schema
+30ea8e39c Assistants3 (#1183)
+f3a83eca8 Kyc download fix (#1182)
+605ca5b64 Fixed tests for investor
+
 V9.1.68
 #####################################
 35b79f4d7 Captable cleanup (#1181)
