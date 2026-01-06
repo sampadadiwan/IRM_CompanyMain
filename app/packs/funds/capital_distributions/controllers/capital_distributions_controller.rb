@@ -3,10 +3,10 @@ class CapitalDistributionsController < ApplicationController
 
   # GET /capital_distributions or /capital_distributions.json
   def index
-    @q = CapitalDistribution.ransack(params[:q])
-    @capital_distributions = policy_scope(@q.result).includes(:fund, :entity)
-    @capital_distributions = @capital_distributions.where(fund_id: params[:fund_id]) if params[:fund_id].present?
-    @capital_distributions = @capital_distributions.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    service = CapitalDistributionList.call(current_user, params) { |relation| policy_scope(relation) }
+    @q = service.q
+    @capital_distributions = service.capital_distributions
+    @report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
   end
 
   # This action is used only to update the form for CD with dynamic Income (Gain from PIs) and Face Value For Redemption (Cost of PIs), and is triggered when a user selected a PI to be included in the distribution

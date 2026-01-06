@@ -13,7 +13,7 @@
       <% end %>
     <% end %>
 
-    <%= link_to fund_units_path(params: params.to_enum.to_h,
+    <%= link_to fund_units_path(params: params.to_unsafe_h,
                   format: "xlsx", all: true),
                 class: "btn btn-outline-success d-inline-flex align-items-center",
                 data: { turbo: false } do %>

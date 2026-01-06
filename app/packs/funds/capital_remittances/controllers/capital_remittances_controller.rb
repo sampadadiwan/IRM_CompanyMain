@@ -5,6 +5,7 @@ class CapitalRemittancesController < ApplicationController
   def index
     fetch_rows
     @pagy, @capital_remittances = pagy(@capital_remittances, limit: params[:per_page]) if params[:all].blank?
+    @report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
 
     respond_to do |format|
       format.html
@@ -14,43 +15,13 @@ class CapitalRemittancesController < ApplicationController
   end
 
   def fetch_rows
-    @q = CapitalRemittance.ransack(params[:q])
-
-    @capital_remittances = policy_scope(@q.result).includes(:fund, :investor, :capital_call, :entity, capital_commitment: :fund)
-
-    @capital_remittances = @capital_remittances.where(id: search_ids) if params[:search] && params[:search][:value].present?
-
-    @capital_remittances = filter_params(
-      @capital_remittances,
-      :fund_id,
-      :capital_call_id,
-      :capital_commitment_id,
-      :import_upload_id
-    )
-    @capital_remittances = @capital_remittances.where(status: params[:status].split(",")) if params[:status].present?
-    @capital_remittances = @capital_remittances.where(verified: params[:verified] == "true") if params[:verified].present?
-    @capital_call = CapitalCall.find(params[:capital_call_id]) if params[:capital_call_id].present?
-    @capital_commitment = CapitalCommitment.find(params[:capital_commitment_id]) if params[:capital_commitment_id].present?
+    result = CapitalRemittanceList.call(current_user, params) { |relation| policy_scope(relation) }
+    @q = result.q
+    @capital_remittances = result.capital_remittances
+    @capital_call = result.capital_call
+    @capital_commitment = result.capital_commitment
 
     @capital_remittances
-  end
-
-  def search_ids
-    # This is only when the datatable sends a search query
-    query = "#{params[:search][:value]}*"
-    term = { entity_id: current_user.entity_id }
-
-    # Here we search for all the CapitalCommitments that belong to the entity of the current user
-    # Only return first 100 results
-    index_search = CapitalRemittanceIndex.filter(term:)
-                                         .query(simple_query_string: { fields: CapitalRemittanceIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' }).per(100)
-
-    # Filter by fund, capital_distribution and capital_commitment
-    index_search = index_search.filter(term: { fund_id: params[:fund_id] }) if params[:fund_id].present?
-    index_search = index_search.filter(term: { capital_call_id: params[:capital_call_id] }) if params[:capital_call_id].present?
-    index_search = index_search.filter(term: { capital_commitment_id: params[:capital_commitment_id] }) if params[:capital_commitment_id].present?
-    index_search.map(&:id)
   end
 
   def allocate_units
@@ -140,11 +111,11 @@ class CapitalRemittancesController < ApplicationController
         ActionController::Base.helpers.link_to(payment.to_s, capital_remittance_payment_path(payment), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
       end.join(", ")
 
-      redirect_to capital_call_path(@capital_remittance.capital_call), alert: "Cannot delete this remittance as units have already been allocated for payments #{links_html}.<br> Please adjust the units before deleting the remittance."
+      redirect_to capital_remittance_path(@capital_remittance), alert: "Cannot delete this remittance as units have already been allocated for payments #{links_html}.<br> Please adjust the units before deleting the remittance."
     else
       @capital_remittance.destroy
       respond_to do |format|
-        format.html { redirect_to capital_call_path(@capital_remittance.capital_call), notice: "Capital remittance was successfully destroyed." }
+        format.html { redirect_to capital_remittances_url, notice: "Capital remittance was successfully destroyed." }
         format.json { head :no_content }
       end
     end

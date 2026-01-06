@@ -5,20 +5,9 @@ class FundUnitsController < ApplicationController
 
   # GET /fund_units or /fund_units.json
   def index
-    # Step 1: Base query with Ransack and policy scope
-    @q = FundUnit.ransack(params[:q])
-    @fund_units = policy_scope(@q.result).includes(:fund, :capital_commitment)
-
-    # Step 2: Apply basic filters using helper
-    @fund_units = filter_params(
-      @fund_units,
-      :capital_commitment_id,
-      :fund_id,
-      :investor_id,
-      :import_upload_id,
-      :owner_id,
-      :owner_type
-    )
+    service = FundUnitList.call(current_user, params) { |relation| policy_scope(relation) }
+    @q = service.q
+    @fund_units = service.fund_units
 
     # Step 3: Set breadcrumbs for navigation
     fund_bread_crumbs("Fund Units")

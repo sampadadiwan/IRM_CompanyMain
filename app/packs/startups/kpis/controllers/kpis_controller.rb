@@ -3,10 +3,10 @@ class KpisController < ApplicationController
 
   # GET /kpis or /kpis.json
   def index
-    @q = Kpi.ransack(params[:q])
-    @kpis = policy_scope(@q.result).includes(kpi_report: :portfolio_company)
-    @kpis = @kpis.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     authorize(Kpi)
+    service = KpiList.call(current_user, params) { |relation| policy_scope(relation) }
+    @q = service.q
+    @kpis = service.kpis
   end
 
   # GET /kpis/1 or /kpis/1.json
