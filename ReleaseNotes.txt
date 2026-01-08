@@ -1,3 +1,9 @@
+V9.1.71
+c94272cfe Feature/add sources web links (#1190)
+b29b31ec7 New valuation button shows when owner is present (#1192)
+e9814a3ab Now AR uses the standard search (#1191)
+7c3ab7d2b Kpi name limit inc (#1193)
+
 V9.1.69
 b8eef770a Minor fix to doc analysis in the Assistant
 ea071500a Fixed tool call for portfolio KPI
