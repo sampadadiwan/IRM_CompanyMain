@@ -17,6 +17,8 @@ class InvestorKpiMapping < ApplicationRecord
 
   scope :show_in_report, -> { where(show_in_report: true) }
 
+  validates :reported_kpi_name, :standard_kpi_name, length: { maximum: 100 }
+
   enum :data_type, { money: 'money', numeric: 'numeric', percentage: 'percentage' }
 
   before_create :setup_standard_kpi_name

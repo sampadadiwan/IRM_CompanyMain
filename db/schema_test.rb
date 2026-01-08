@@ -2179,8 +2179,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_03_082050) do
   create_table "investor_kpi_mappings", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "investor_id", null: false
-    t.string "reported_kpi_name", limit: 50
-    t.string "standard_kpi_name", limit: 50
+    t.string "reported_kpi_name", limit: 100
+    t.string "standard_kpi_name", limit: 100
     t.decimal "lower_threshold", precision: 20, scale: 2, default: "0.0"
     t.decimal "upper_threshold", precision: 20, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
