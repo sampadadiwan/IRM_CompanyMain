@@ -7,11 +7,9 @@ class AccessRightsController < ApplicationController
   def index
     # Step 1: Apply policy scope and eager load associations
     @access_rights = policy_scope(AccessRight).includes(:investor, :user)
-
+    @access_rights = AccessRightSearch.search(@access_rights, params, current_user)
     # Step 2: Apply filters if specific deal or investor access is requested
-    @access_rights = filter_params(@access_rights, :access_to_investor_id)
-    # access_rights.deals returns the rights that have access_type deals, thus filtering out all other ones, so calling it conditionally
-    @access_rights = filter_params(@access_rights.deals, :deal_id) if params[:deal_id].present?
+    @access_rights = filter_params(@access_rights, :owner_type, :owner_id, :user_id, :access_to_investor_id)
 
     # Step 3: Investor-specific logic
     if params[:investor_id].present?
@@ -29,39 +27,6 @@ class AccessRightsController < ApplicationController
 
     # Step 5: Apply pagination
     @pagy, @access_rights = pagy(@access_rights)
-  end
-
-  def search
-    @entity = current_user.entity
-    @owner = nil
-    query = params[:query]
-    if params[:owner_type].present? && params[:owner_id].present?
-      # Search in fund provided user is authorized
-      @owner = params[:owner_type].constantize.find(params[:owner_id])
-      authorize(@owner, :show?)
-      term = { owner_id: @owner.id, owner_type: params[:owner_type] }
-    else
-      # Search in users entity only
-      term = { entity_id: current_user.entity_id }
-    end
-
-    if query.present?
-      @access_rights = if @owner
-                         AccessRightIndex.filter(term: { owner_id: @owner.id })
-                                         .query(match: { owner_type: params[:owner_type] })
-                                         .query(simple_query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' })
-                       else
-                         AccessRightIndex.filter(term:)
-                                         .query(simple_query_string: { fields: AccessRightIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' })
-                       end
-
-      @pagy, @access_rights = pagy(@access_rights.page(params[:page]).objects)
-      render "index"
-    else
-      redirect_to access_rights_path(params.to_enum.to_h)
-    end
   end
 
   # GET /access_rights/1 or /access_rights/1.json

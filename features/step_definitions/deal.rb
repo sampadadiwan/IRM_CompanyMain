@@ -675,6 +675,7 @@ Given('I give deal access to {string}') do |investor_name|
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   puts "\n####Granting Deal Access to #{investor_name}####\n"
   #sleep(2)
+  expect(page).to have_content("Grant Access", wait: 10)
   click_on("Grant Access")
   find('.select2-selection--multiple').click
   find('.select2-search__field').set(investor_name)

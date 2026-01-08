@@ -1,7 +1,15 @@
+<% frame ||= params[:frame] || "access_rights_frame"
+  import_upload_id ||= params[:import_upload_id]
+  owner_id ||= params[:owner_id]
+  owner_type ||= params[:owner_type]
+  access_type ||= params[:access_type]
+  entity_id ||= params[:entity_id]
+%>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800 col-6">Access Rights</h1>
   <%
-    access_right ||= params[:entity_id].present? ? AccessRight.new(access_to_investor_id: params[:access_to_investor_id], owner_id: params[:owner_id], owner_type: params[:owner_type], entity_id: params[:entity_id], access_type: params[:access_type]) : nil
+    access_right ||= entity_id.present? ? AccessRight.new(access_to_investor_id: params[:access_to_investor_id], owner_id: owner_id, owner_type: owner_type, entity_id: entity_id, access_type: access_type) : nil
   %>
   <span>
     <%= link_to "Grant Access",
@@ -15,7 +23,6 @@
                       { data: { turbo_frame: 'new_access_right' },
                       method: :get, class: "btn btn-outline-primary mt-0" } if access_right && policy(access_right.owner).update? && params[:form_type] != "none" %>
 
-    <%= render "/funds/search_bar", model_name: "access_right" if access_right && access_right.owner_type == "Fund"%>
   </span>
 </div>
 
@@ -24,13 +31,15 @@
   <% end %>
 <% end %>
 
+<%=render SearchComponent.new(data_source: access_rights_path( params: params.to_unsafe_h, import_upload_id: ), turbo_frame: frame) %>
+
 <%
   show_metadata ||= "Yes"
   show_for ||= "Yes"
 %>
 <div class="table-responsive">
 
-  <table id="access_rights_table" class="table table-bordered  dataTable jqDataTable">
+  <table id="access_rights_table" class="table table-bordered dataTable">
     <thead>
       <tr>
         <th>
@@ -72,3 +81,7 @@
   Access rights work at the level of the stakeholder firm. To permission individuals from the stakeholder firms
   please setup Stakeholder Users under a Stakeholder
 </div>
+<% if @pagy.present? %>
+  <%= raw pagy_info(@pagy) %>
+  <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{frame}" data-remote="true")) %>
+<% end %>
