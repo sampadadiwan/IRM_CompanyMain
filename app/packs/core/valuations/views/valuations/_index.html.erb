@@ -14,7 +14,7 @@
     <span>
     <%= link_to "New Valuation",
         new_valuation_path("valuation[owner_id]": owner_id, "valuation[owner_type]": owner_type),
-        {class: "btn btn-outline-primary ti ti-plus", data: {bs_toggle: "tooltip", bs_title: "Opens form to create a new Valuation"} }  %>
+        {class: "btn btn-outline-primary ti ti-plus", data: {bs_toggle: "tooltip", bs_title: "Opens form to create a new Valuation"} }  if owner_id.present? && owner_type.present? %>
 
 
     <%= link_to "Value Bridge",
