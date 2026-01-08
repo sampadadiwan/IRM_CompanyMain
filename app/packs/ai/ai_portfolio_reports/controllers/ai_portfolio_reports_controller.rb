@@ -1,17 +1,27 @@
 require 'open3'
 
+# Controller for AI portfolio report lifecycle and exports.
 class AiPortfolioReportsController < ApplicationController
   before_action :set_report, only: %i[show edit update destroy collated_report save_collated_report export_pdf export_docx toggle_master_web_search]
 
+  # List portfolio reports.
+  #
+  # @return [void]
   def index
     @reports = policy_scope(AiPortfolioReport).order(created_at: :desc)
   end
 
+  # Render the new report form.
+  #
+  # @return [void]
   def new
     @report = AiPortfolioReport.new
     authorize @report
   end
 
+  # Create a new portfolio report and enqueue generation.
+  #
+  # @return [void]
   def create
     @report = AiPortfolioReport.new(report_params)
     @report.analyst_id = current_user.id
@@ -26,6 +36,9 @@ class AiPortfolioReportsController < ApplicationController
     end
   end
 
+  # Show a portfolio report and current section.
+  #
+  # @return [void]
   def show
     authorize @report
     @current_section = @report.ai_report_sections.find_by(id: params[:section_id]) ||
@@ -37,12 +50,18 @@ class AiPortfolioReportsController < ApplicationController
     @show_web_search_version = @current_section.show_web_search_version? && @current_section.web_search_content_exists?
   end
 
+  # Redirect to show page (editing happens in show).
+  #
+  # @return [void]
   def edit
     authorize @report
     # Redirect to show page - the show page IS the editing interface
     redirect_to @report
   end
 
+  # Show collated report content.
+  #
+  # @return [void]
   def collated_report
     authorize @report
 
@@ -51,6 +70,9 @@ class AiPortfolioReportsController < ApplicationController
     @sections = @report.ai_report_sections.where(reviewed: true).order(:order_index)
   end
 
+  # Save collated report content.
+  #
+  # @return [void]
   def save_collated_report
     authorize @report
 
@@ -66,6 +88,9 @@ class AiPortfolioReportsController < ApplicationController
     render json: { success: false, error: e.message }, status: :internal_server_error
   end
 
+  # Export report content to PDF.
+  #
+  # @return [void]
   def export_pdf
     authorize @report
 
@@ -112,6 +137,9 @@ class AiPortfolioReportsController < ApplicationController
   #             disposition: 'attachment'
   # end
 
+  # Export report content to DOCX using Pandoc.
+  #
+  # @return [void]
   def export_docx
     authorize @report
 
@@ -161,9 +189,12 @@ class AiPortfolioReportsController < ApplicationController
     end
   end
 
+  # Create a report from a document folder.
+  #
+  # @return [void]
   def create_from_folder
     folder = Folder.find(params[:folder_id])
-    authorize folder, :show?  # ← Pundit checks if user can access this folder
+    authorize folder, :show? # ← Pundit checks if user can access this folder
 
     portfolio_company = folder.owner
 
@@ -184,12 +215,18 @@ class AiPortfolioReportsController < ApplicationController
     end
   end
 
+  # Delete a report.
+  #
+  # @return [void]
   def destroy
     authorize @report
     @report.destroy
     redirect_to ai_portfolio_reports_path, notice: 'Report deleted.'
   end
 
+  # Toggle report-level web search setting.
+  #
+  # @return [void]
   def toggle_master_web_search
     authorize @report
 
@@ -224,14 +261,23 @@ class AiPortfolioReportsController < ApplicationController
 
   private
 
+  # Load report for actions.
+  #
+  # @return [void]
   def set_report
     @report = AiPortfolioReport.find(params[:id])
   end
 
+  # Strong parameters for report.
+  #
+  # @return [ActionController::Parameters] permitted params
   def report_params
     params.require(:ai_portfolio_report).permit(:portfolio_company_id, :report_date)
   end
 
+  # Build collated report content from reviewed sections.
+  #
+  # @return [String] HTML content
   def generate_collated_content
     company_name = @report.portfolio_company&.name || "Portfolio Company"
     content = ""

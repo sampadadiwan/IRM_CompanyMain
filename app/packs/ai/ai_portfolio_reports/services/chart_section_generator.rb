@@ -1,6 +1,10 @@
 # app/packs/ai/ai_portfolio_reports/services/chart_section_generator.rb
 # rubocop:disable Metrics/ClassLength
+# Generates charts for a report section using document data.
 class ChartSectionGenerator
+  # @param report [AiPortfolioReport] report context
+  # @param section [AiReportSection] section to populate
+  # @param cached_document_paths [Array<String>, nil] optional document paths
   def initialize(report:, section:, cached_document_paths: nil)
     @report = report
     @section = section
@@ -12,7 +16,10 @@ class ChartSectionGenerator
     @temp_files_to_keep = [] # Keep Tempfile objects alive
   end
 
-  # Main method: Generate charts and return HTML
+  # Generate charts and return HTML.
+  #
+  # @param chart_prompts [Array<String>, nil] optional chart prompts
+  # @return [String] rendered chart HTML
   def generate_charts_html(chart_prompts: nil)
     # Clear any existing charts
     @section.agent_chart_ids = []
@@ -57,7 +64,10 @@ class ChartSectionGenerator
     charts_html
   end
 
-  # Add chart from user prompt
+  # Add a single chart from a user prompt.
+  #
+  # @param user_prompt [String] user prompt
+  # @return [String] rendered chart HTML
   def add_chart_from_prompt(user_prompt:)
     document_paths = @cached_document_paths || find_csv_documents
 
@@ -81,9 +91,9 @@ class ChartSectionGenerator
     end
   end
 
-  # Find CSV documents for this portfolio company
-  # Find relevant documents (CSV, TXT, MD, PDF, DOCX, XLSX, PPTX) for this portfolio company
-  # Find relevant documents from demo_documents folder (like Python backend)
+  # Find relevant documents for chart generation.
+  #
+  # @return [Array<String>] document paths
   def find_csv_documents
     document_paths = []
 
@@ -114,6 +124,10 @@ class ChartSectionGenerator
     document_paths
   end
 
+  # Convert documents to CSV or text and cache results.
+  #
+  # @param document_paths [Array<String>] document paths
+  # @return [Array<String>] converted file paths
   def get_or_create_converted_files(document_paths)
     return @converted_files_cache[:paths] if @converted_files_cache[:paths].present?
 
@@ -157,7 +171,10 @@ class ChartSectionGenerator
     temp_csv_paths
   end
 
-  # Extract a preview of data from documents for LLM analysis
+  # Extract a preview of data from documents for LLM analysis.
+  #
+  # @param document_paths [Array<String>] document paths
+  # @return [String] combined data preview
   def extract_data_preview(document_paths)
     preview_parts = []
 
@@ -186,7 +203,10 @@ class ChartSectionGenerator
     preview_parts.compact.join("\n\n")
   end
 
-  # Extract a short title from the prompt
+  # Extract a short title from the prompt.
+  #
+  # @param prompt [String, Hash] chart prompt
+  # @return [String] title
   def extract_title(prompt)
     # Take first part before dash or hyphen
     # Handle if prompt is a Hash (from Gemini response)
@@ -199,7 +219,12 @@ class ChartSectionGenerator
 
   private
 
-  # Create a single chart using AgentChart + ChartAgentService
+  # Create a single chart using AgentChart + ChartAgentService.
+  #
+  # @param prompt [String, Hash] chart prompt
+  # @param document_paths [Array<String>] document paths
+  # @param chart_number [Integer] chart index
+  # @return [AgentChart] created chart
   def create_chart(prompt, document_paths, chart_number)
     # Normalize prompt if it's a Hash (from Gemini response)
     prompt = prompt.is_a?(Hash) ? (prompt['prompt'] || prompt[:prompt] || prompt.to_s) : prompt.to_s
@@ -270,6 +295,10 @@ class ChartSectionGenerator
   end
 
   # Convert Excel file to CSV
+  # Convert Excel to CSV format for the chart service.
+  #
+  # @param excel_path [String] Excel path
+  # @return [String, nil] CSV path
   def convert_excel_to_csv(excel_path)
     require 'roo'
     require 'csv'
@@ -296,6 +325,10 @@ class ChartSectionGenerator
   end
 
   # Extract chart data from PPTX and convert to CSV
+  # Convert PowerPoint to text/CSV format for the chart service.
+  #
+  # @param pptx_path [String] PowerPoint path
+  # @return [String, nil] CSV path
   def convert_pptx_to_csv(pptx_path)
     require 'zip'
     require 'nokogiri'
@@ -348,6 +381,10 @@ class ChartSectionGenerator
   end
 
   # Convert PDF to text file
+  # Convert PDF to text for chart analysis.
+  #
+  # @param pdf_path [String] PDF path
+  # @return [Array(Tempfile, String), Array(nil, nil)] temp file and text path
   def convert_pdf_to_text(pdf_path)
     require 'pdf-reader'
 
@@ -368,6 +405,10 @@ class ChartSectionGenerator
   end
 
   # Convert DOCX to text file
+  # Convert DOCX to text for chart analysis.
+  #
+  # @param docx_path [String] DOCX path
+  # @return [Array(Tempfile, String), Array(nil, nil)] temp file and text path
   def convert_docx_to_text(docx_path)
     require 'docx'
 
@@ -388,15 +429,17 @@ class ChartSectionGenerator
   end
 
   # Convert chart to HTML in YOUR Python format (so frontend doesn't change!)
+  # Render chart HTML for a chart record.
+  #
+  # @param chart [AgentChart] chart record
+  # @return [String] HTML
   def chart_to_html(chart)
     spec = chart.spec
-
-    # Extract chart type and data
     chart_type = spec['type'] || 'bar'
     chart_data = spec['data'] || {}
 
     <<~HTML
-      <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px; background: #f8f9fa;">
+      <div class="ai-chart-container" data-chart-id="#{chart.id}" style="margin-bottom: 30px; padding: 20px; border: 1px solid #dee2e6; border-radius: 8px; background: #f8f9fa;">
         <h4>#{chart.title}</h4>
         <p><em>#{chart.prompt}</em></p>
         <div class="chart-placeholder"#{' '}
@@ -409,6 +452,11 @@ class ChartSectionGenerator
   end
 
   # Error fallback HTML
+  # Render error HTML for a failed chart.
+  #
+  # @param prompt [String] chart prompt
+  # @param error_message [String] error message
+  # @return [String] HTML
   def error_chart_html(prompt, error_message)
     <<~HTML
       <div style="margin-bottom: 30px; padding: 20px; border: 1px solid #dc3545; border-radius: 8px; background: #f8d7da;">
@@ -420,6 +468,11 @@ class ChartSectionGenerator
   end
 
   # Extract preview from Excel file
+  # Extract a preview from an Excel file.
+  #
+  # @param file_path [String] Excel path
+  # @param filename [String] file name
+  # @return [String] preview content
   def extract_excel_preview(file_path, filename)
     require 'roo'
 
@@ -443,6 +496,11 @@ class ChartSectionGenerator
   end
 
   # Extract preview from PPTX charts
+  # Extract a preview from a PowerPoint file.
+  #
+  # @param file_path [String] PowerPoint path
+  # @param filename [String] file name
+  # @return [String] preview content
   def extract_pptx_preview(file_path, filename)
     require 'zip'
     require 'nokogiri'
@@ -480,6 +538,11 @@ class ChartSectionGenerator
   end
 
   # Extract preview from CSV file
+  # Extract a preview from a CSV file.
+  #
+  # @param file_path [String] CSV path
+  # @param filename [String] file name
+  # @return [String] preview content
   def extract_csv_preview(file_path, filename)
     require 'csv'
 
@@ -494,6 +557,11 @@ class ChartSectionGenerator
     "=== Data from: #{filename} ===\nError reading CSV: #{e.message}"
   end
 
+  # Extract a preview from a PDF file.
+  #
+  # @param file_path [String] PDF path
+  # @param filename [String] file name
+  # @return [String] preview content
   def extract_pdf_preview(file_path, filename)
     require 'pdf-reader'
 
@@ -508,6 +576,11 @@ class ChartSectionGenerator
   end
 
   # Extract preview from DOCX file
+  # Extract a preview from a DOCX file.
+  #
+  # @param file_path [String] DOCX path
+  # @param filename [String] file name
+  # @return [String] preview content
   def extract_docx_preview(file_path, filename)
     require 'docx'
 
@@ -522,6 +595,10 @@ class ChartSectionGenerator
   end
 
   # Generate chart prompts dynamically based on actual data
+  # Generate chart prompts from a data preview.
+  #
+  # @param data_preview [String] extracted data preview
+  # @return [Array<String>] prompts
   def generate_chart_prompts_from_data(data_preview)
     return default_chart_prompts if data_preview.blank?
 
@@ -562,6 +639,9 @@ class ChartSectionGenerator
   end
 
   # Fallback default prompts
+  # Provide fallback chart prompts when data parsing fails.
+  #
+  # @return [Array<String>] prompts
   def default_chart_prompts
     [
       "Show key metrics trend over time as a line chart",
@@ -571,6 +651,11 @@ class ChartSectionGenerator
   end
 
   # Extract text content from different document types
+  # Extract text from a document by extension.
+  #
+  # @param doc [String] document path
+  # @param extension [String] file extension
+  # @return [String] extracted text
   def extract_text_from_document(doc, extension)
     case extension
     when '.pdf'

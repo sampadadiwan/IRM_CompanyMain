@@ -1,10 +1,14 @@
 # rubocop:disable Metrics/ClassLength
-
+# Background job to generate AI report section content from documents.
 class GenerateSectionContentJob < ApplicationJob
   queue_as :default
 
   DOCUMENT_FOLDER_PATH = "/tmp/test_documents".freeze
 
+  # Generate content for each report section.
+  #
+  # @param report_id [Integer] report ID
+  # @return [void]
   def perform(report_id)
     report = AiPortfolioReport.find(report_id)
 
@@ -31,6 +35,8 @@ class GenerateSectionContentJob < ApplicationJob
 
         # next unless section.section_type == "Custom Charts"
         # next unless section.section_type == "Company Overview"
+
+        # next unless section.section_type == "Market Size & Target"
 
         # next unless ["Company Overview", "Competition Analysis"].include?(section.section_type) # Skip this section as per requirements
 
@@ -59,6 +65,10 @@ class GenerateSectionContentJob < ApplicationJob
 
   private
 
+  # Download folder documents to local disk for processing.
+  #
+  # @param folder [Folder, nil] document folder
+  # @return [void]
   def download_folder_documents(folder)
     FileUtils.rm_rf(DOCUMENT_FOLDER_PATH)
     FileUtils.mkdir_p(DOCUMENT_FOLDER_PATH)
@@ -69,11 +79,11 @@ class GenerateSectionContentJob < ApplicationJob
 
     supported_extensions = %w[.pdf .txt .md .docx .xlsx .xls .pptx .ppt .csv]
 
-    folder.documents.includes(file_attachment: :blob).each do |doc|
+    folder.documents.each do |doc|
       next if doc.file.blank?
 
       begin
-        #filename = doc.file.original_filename
+        # filename = doc.file.original_filename
         filename = File.basename(doc.file.original_filename).gsub(/[^0-9A-Za-z.\-_]/, '_')
 
         extension = File.extname(filename).downcase
@@ -92,7 +102,11 @@ class GenerateSectionContentJob < ApplicationJob
     end
   end
 
-  # Auto-generate charts for a section if chartable data exists in documents
+  # Auto-generate charts for a section if chartable data exists.
+  #
+  # @param report [AiPortfolioReport] report context
+  # @param section [AiReportSection] section to update
+  # @return [void]
   def generate_section_charts_if_data_exists(report, section)
     Rails.logger.info "  → Checking for chartable data: #{section.section_type}"
 
@@ -123,7 +137,11 @@ class GenerateSectionContentJob < ApplicationJob
     Rails.logger.error "  ✗ Chart generation failed for #{section.section_type}: #{e.message}"
   end
 
-  # Check if document data has chartable information for this section
+  # Check if document data has chartable information for this section.
+  #
+  # @param section_type [String] section type name
+  # @param data_preview [String] document data preview
+  # @return [Array<String>] chart prompts
   def check_and_generate_chart_prompts(section_type, data_preview)
     chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
 
@@ -157,7 +175,10 @@ class GenerateSectionContentJob < ApplicationJob
     []
   end
 
-  # Load documents ONCE and return the formatted context string
+  # Load documents once and return the formatted context string.
+  #
+  # @param folder_path [String] folder path
+  # @return [String] formatted document context
   def load_documents_once(folder_path)
     return "" unless folder_path.present? && Dir.exist?(folder_path)
 
@@ -190,7 +211,11 @@ class GenerateSectionContentJob < ApplicationJob
     format_documents_for_llm(documents)
   end
 
-  # Extract text from file based on extension
+  # Extract text from file based on extension.
+  #
+  # @param file_path [String] file path
+  # @param extension [String] file extension
+  # @return [String] extracted text
   def extract_text_from_file(file_path, extension)
     case extension
     when '.txt', '.md'
@@ -206,6 +231,10 @@ class GenerateSectionContentJob < ApplicationJob
     end
   end
 
+  # Extract text from a PDF file.
+  #
+  # @param file_path [String] PDF path
+  # @return [String] extracted text
   def extract_pdf_text(file_path)
     require 'pdf-reader'
     reader = PDF::Reader.new(file_path)
@@ -214,6 +243,10 @@ class GenerateSectionContentJob < ApplicationJob
     "Error extracting PDF: #{e.message}"
   end
 
+  # Extract text from an Excel file.
+  #
+  # @param file_path [String] Excel path
+  # @return [String] extracted text
   def extract_excel_text(file_path)
     require 'roo'
     spreadsheet = Roo::Spreadsheet.open(file_path)
@@ -237,6 +270,10 @@ class GenerateSectionContentJob < ApplicationJob
     "Error extracting Excel: #{e.message}"
   end
 
+  # Extract text from a PowerPoint file.
+  #
+  # @param file_path [String] PowerPoint path
+  # @return [String] extracted text
   def extract_pptx_text(file_path)
     require 'zip'
     require 'nokogiri'
@@ -283,6 +320,10 @@ class GenerateSectionContentJob < ApplicationJob
     "Error extracting PPTX: #{e.message}"
   end
 
+  # Extract chart data from a document snippet.
+  #
+  # @param chart_doc [String] document snippet
+  # @return [String] extracted chart data
   def extract_chart_data(chart_doc)
     data_parts = []
 
@@ -308,6 +349,10 @@ class GenerateSectionContentJob < ApplicationJob
     data_parts.join("\n")
   end
 
+  # Format documents for LLM consumption.
+  #
+  # @param documents [Array<Hash>] document entries
+  # @return [String] formatted context
   def format_documents_for_llm(documents)
     return "No documents available." if documents.empty?
 
@@ -319,6 +364,11 @@ class GenerateSectionContentJob < ApplicationJob
   end
 
   # Generate charts using Rails ChartSectionGenerator
+  # Generate charts for a section.
+  #
+  # @param report [AiPortfolioReport] report context
+  # @param section [AiReportSection] section to update
+  # @return [void]
   def generate_charts_section(report, section)
     Rails.logger.info "  → Using Rails ChartSectionGenerator"
 
@@ -332,6 +382,11 @@ class GenerateSectionContentJob < ApplicationJob
     Rails.logger.info "  ✓ Generated #{section.agent_chart_ids.count} charts"
   end
 
+  # Save extracted text to disk for inspection.
+  #
+  # @param text [String] extracted text
+  # @param report_id [Integer] report ID
+  # @return [void]
   def save_extracted_text_for_inspection(text, report_id)
     file_path = "/tmp/generated_txt.txt"
 
@@ -350,6 +405,12 @@ class GenerateSectionContentJob < ApplicationJob
   end
 
   # Generate text using PortfolioReportAgent with cached documents
+  # Generate text for a section using cached documents.
+  #
+  # @param report [AiPortfolioReport] report context
+  # @param section [AiReportSection] section to update
+  # @param cached_documents_context [String] cached document context
+  # @return [void]
   def generate_text_section(report, section, cached_documents_context)
     Rails.logger.info "  → Using PortfolioReportAgent (with cached documents)"
 
@@ -384,6 +445,10 @@ class GenerateSectionContentJob < ApplicationJob
     end
   end
 
+  # Collect document paths from the local folder.
+  #
+  # @param folder_path [String] folder path
+  # @return [Array<String>] document paths
   def collect_document_paths(folder_path)
     return [] unless folder_path.present? && Dir.exist?(folder_path)
 

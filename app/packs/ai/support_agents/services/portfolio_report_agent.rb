@@ -1,4 +1,5 @@
 # rubocop:disable Metrics/ClassLength
+# Generates or refines AI portfolio report sections using document and web context.
 class PortfolioReportAgent < SupportAgentService
   step :initialize_agent
   step :load_document_context
@@ -10,13 +11,19 @@ class PortfolioReportAgent < SupportAgentService
 
   private
 
-  # Initialize agent
+  # Initialize agent context and support agent.
+  #
+  # @param ctx [Hash] execution context
+  # @return [void]
   def initialize_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
     ctx[:support_agent] = @support_agent
   end
 
-  # Clean markdown artifacts from LLM output
+  # Clean markdown artifacts from LLM output.
+  #
+  # @param content [String] raw LLM output
+  # @return [String] cleaned content
   def clean_llm_output(content)
     return "" if content.blank?
 
@@ -35,6 +42,10 @@ class PortfolioReportAgent < SupportAgentService
     content
   end
 
+  # Load document context for this run, optionally from cached content.
+  #
+  # @param ctx [Hash] execution context
+  # @return [Boolean] true for step continuation
   def load_document_context(ctx, **)
     # Check if cached documents context was passed (optimization: load once, use many times)
     cached_context = ctx[:cached_documents_context]
@@ -70,6 +81,13 @@ class PortfolioReportAgent < SupportAgentService
     true
   end
 
+  # Load web search context for a section when enabled.
+  #
+  # @param ctx [Hash] execution context
+  # @param target [AiReportSection] section to search for
+  # @param web_search_enabled [Boolean] whether web search is enabled
+  # @param user_prompt [String, nil] optional user prompt to refine queries
+  # @return [Boolean] true for step continuation
   def load_web_search_context(ctx, target:, web_search_enabled: false, user_prompt: nil, **)
     ctx[:web_search_enabled] = web_search_enabled
     ctx[:web_search_context] = ""
@@ -125,7 +143,10 @@ class PortfolioReportAgent < SupportAgentService
     end
   end
 
-  # Determine which search method to use based on section type
+  # Determine which search method to use based on section type.
+  #
+  # @param section_type [String] section type name
+  # @return [Symbol] search method key
   def determine_search_method(section_type)
     case section_type
     when "Recent Updates & Developments", "Negative News"
@@ -137,7 +158,11 @@ class PortfolioReportAgent < SupportAgentService
     end
   end
 
-  # Execute search using the appropriate method
+  # Execute search using the appropriate method.
+  #
+  # @param query [String] search query
+  # @param method [Symbol] method key for the search tool
+  # @return [Hash] search result
   def execute_search(query, method)
     case method
     when :news_search
@@ -149,7 +174,11 @@ class PortfolioReportAgent < SupportAgentService
     end
   end
 
-  # Load section-specific template
+  # Load section-specific template.
+  #
+  # @param ctx [Hash] execution context
+  # @param target [AiReportSection] section to load
+  # @return [Boolean] true for step continuation
   def load_section_template(ctx, target:, **)
     section = target
 
@@ -165,6 +194,12 @@ class PortfolioReportAgent < SupportAgentService
     true
   end
 
+  # Determine agent action and normalize inputs.
+  #
+  # @param ctx [Hash] execution context
+  # @param action [String] "generate" or "refine"
+  # @param web_search_enabled [Boolean] whether web search is enabled
+  # @return [Boolean] true for step continuation
   def determine_action(ctx, action: 'generate', web_search_enabled: false, **)
     ctx[:action] = action
     ctx[:user_prompt] = ctx[:user_prompt] || ""
@@ -177,7 +212,10 @@ class PortfolioReportAgent < SupportAgentService
     true
   end
 
-  # Generate OR refine based on action
+  # Dispatch to generate or refine based on action.
+  #
+  # @param ctx [Hash] execution context
+  # @return [Boolean] true for step continuation
   def generate_or_refine(ctx, **)
     if ctx[:action] == 'refine' && ctx[:current_content].present?
       refine_section_content(ctx)
@@ -187,13 +225,18 @@ class PortfolioReportAgent < SupportAgentService
     true
   end
 
-  # Generate section content using LLM
+  # Generate section content using LLM.
+  #
+  # @param ctx [Hash] execution context
+  # @return [void]
+  # rubocop:disable Metrics/MethodLength
   def generate_section_content(ctx, **)
     section_type = ctx[:section_type]
     template = ctx[:template]
     documents = ctx[:documents_context]
     web_search = ctx[:web_search_context]
     section = ctx[:section]
+    web_search_enabled = ctx[:web_search_enabled]
 
     # Clear refinement history on fresh generation
     clear_refinement_history(section)
@@ -209,42 +252,57 @@ class PortfolioReportAgent < SupportAgentService
     report = section.ai_portfolio_report
     company = report.portfolio_company
 
-    # Build prompt
-    prompt = build_generation_prompt(
-      section_type: section_type,
-      template: template,
-      documents: documents,
-      web_search: web_search,
-      company_name: company.name,
-      report_date: report.report_date
-    )
+    # If web search is enabled AND we already have document-only content , use augmentation approach
+
+    existing_document_content = section.content_html
+
+    # # Strip chart HTMl before sending to LLM
+    # existing_document_content_without_charts = strip_chart_html(existing_document_content)
+
+    use_augmentation = web_search_enabled && web_search.present? && existing_document_content.present?
+
+    Rails.logger.info "[PortfolioReportAgent] Existing document content present: #{existing_document_content.present?}"
+    Rails.logger.info "[PortfolioReportAgent] Using augmentation approach: #{use_augmentation}"
+
+    # Build prompt - use augmentation prompt if we have existing content to enhance
+
+    prompt = if use_augmentation
+               # Generate content ONLY from web search - don't use document content as context
+               build_web_only_prompt(
+                 section_type: section_type,
+                 template: template,
+                 web_search: web_search,
+                 company_name: company.name,
+                 report_date: report.report_date
+               )
+             else
+               build_generation_prompt(
+                 section_type: section_type,
+                 template: template,
+                 documents: documents,
+                 web_search: web_search,
+                 company_name: company.name,
+                 report_date: report.report_date
+               )
+             end
 
     Rails.logger.info "[PortfolioReportAgent] Full prompt length: #{prompt.length}"
     Rails.logger.info "[PortfolioReportAgent] Full prompt (first 2000 chars): #{prompt[0..2000].inspect}"
-
-    # # Call LLM
-    # api_key = ENV.fetch('OPENAI_API_KEY', nil)
-    # raise "OpenAI API key not found" unless api_key
-
-    # llm = Langchain::LLM::OpenAI.new(
-    #   api_key: api_key,
-    #   default_options: {
-    #     chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
-    #     temperature: 0.3
-    #   }
-    # )
-
-    # Rails.logger.info "[PortfolioReportAgent] Calling LLM to generate content..."
-
-    # response = llm.complete(prompt: prompt)
-    # content = clean_llm_output(response.completion)
-
-    # Call LLM using RubyLLM
     Rails.logger.info "[PortfolioReportAgent] Calling LLM to generate content..."
 
     chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
     response = chat.ask(prompt)
     content = clean_llm_output(response.content)
+
+    # If augmentation mode, APPEND web content to existing content ( Including Charts)
+    if use_augmentation
+      web_section_html = <<~HTML
+        <hr class="web-search-divider" style="margin: 2rem 0; border-top: 2px solid #e0e0e0;">
+        <h3>Additional Insights from Web Search</h3>
+        #{content}
+      HTML
+      content = existing_document_content + web_section_html
+    end
 
     ctx[:generated_content] = content
 
@@ -252,149 +310,14 @@ class PortfolioReportAgent < SupportAgentService
 
     true
   end
+  # rubocop:enable Metrics/MethodLength
 
-  # Refine existing content
-  # def refine_section_content(ctx, **)
-  #   section_type = ctx[:section_type]
-  #   documents = ctx[:documents_context]
-  #   web_search = ctx[:web_search_context]
-  #   current_content = ctx[:current_content]
-  #   user_prompt = ctx[:user_prompt]
-  #   web_search_enabled = ctx[:web_search_enabled]
-  #   section = ctx[:section]
-
-  #   report = section.ai_portfolio_report
-  #   company = report.portfolio_company
-
-  #   Rails.logger.info "[PortfolioReportAgent] ===== REFINE SECTION CONTENT ====="
-  #   Rails.logger.info "[PortfolioReportAgent] Web Search Enabled: #{web_search_enabled}"
-  #   Rails.logger.info "[PortfolioReportAgent] Web Search Context Present: #{web_search.present?}"
-
-  #   # Build refinement prompt
-  #   prompt = build_refinement_prompt(
-  #     section_type: section_type,
-  #     current_content: current_content,
-  #     user_prompt: user_prompt,
-  #     documents: documents,
-  #     web_search: web_search,
-  #     company_name: company.name,
-  #     web_search_enabled: web_search_enabled
-  #   )
-
-  #   # # Call LLM
-  #   # api_key = ENV.fetch('OPENAI_API_KEY', nil)
-  #   # raise "OpenAI API key not found" unless api_key
-
-  #   # llm = Langchain::LLM::OpenAI.new(
-  #   #   api_key: api_key,
-  #   #   default_options: {
-  #   #     chat_completion_model_name: ENV['REPORT_AGENT_MODEL'] || 'gpt-4o',
-  #   #     temperature: 0.7
-  #   #   }
-  #   # )
-
-  #   # Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
-
-  #   # response = llm.complete(prompt: prompt)
-  #   # content = clean_llm_output(response.completion)
-  #   #
-  #   # Call LLM using RubyLLM
-  #   Rails.logger.info "[PortfolioReportAgent] Calling LLM to refine content..."
-
-  #   chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
-  #   response = chat.ask(prompt)
-  #   content = clean_llm_output(response.content)
-
-  #   ctx[:generated_content] = content
-
-  #   Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
-  #   true
-  # end
-
-  # def refine_section_content(ctx, **)
-  #   section = ctx[:section]
-  #   section_type = ctx[:section_type]
-  #   documents = ctx[:documents_context]
-  #   web_search = ctx[:web_search_context]
-  #   current_content = ctx[:current_content]
-  #   user_prompt = ctx[:user_prompt]
-  #   web_search_enabled = ctx[:web_search_enabled]
-
-  #   report = section.ai_portfolio_report
-  #   company = report.portfolio_company
-
-  #   Rails.logger.info "[PortfolioReportAgent] ===== REFINE SECTION CONTENT (Langchain) ====="
-
-  #   # Initialize Gemini LLM
-  #   llm = Langchain::LLM::GoogleGemini.new(
-  #     api_key: Rails.application.credentials[:GOOGLE_GEMINI_API_KEY],
-  #     default_options: {
-  #       chat_model: 'gemini-2.5-pro',
-  #       temperature: 0.3
-  #     }
-  #   )
-
-  #   # Create assistant with system instructions
-  #   assistant = Langchain::Assistant.new(
-  #     llm: llm,
-  #     instructions: build_refinement_system_prompt(
-  #       section_type: section_type,
-  #       documents: documents,
-  #       web_search: web_search,
-  #       company_name: company.name,
-  #       current_content: current_content
-  #     )
-  #   )
-
-  #   # Load refinement history from section
-  #   load_refinement_history(section, assistant)
-
-  #   # Add new user message
-  #   assistant.add_message(content: user_prompt)
-
-  #   # Run assistant
-  #   assistant.run
-
-  #   # Get response
-  #   #content = clean_llm_output(assistant.messages.last.content)
-  #     # Get response - handle different response formats
-  #   last_message = assistant.messages.last
-  #   raw_content = last_message.content
-
-  #   # Debug: log the response type
-  #   Rails.logger.info "[PortfolioReportAgent] Response type: #{raw_content.class}"
-  #   Rails.logger.info "[PortfolioReportAgent] Response: #{raw_content.inspect[0..500]}"
-
-  #   # Handle Hash response from Gemini
-  #   if raw_content.is_a?(Hash)
-  #     content = raw_content[:text] || raw_content['text'] || raw_content.to_s
-  #   elsif raw_content.is_a?(Array)
-  #     content = raw_content.map { |p| p[:text] || p['text'] }.join("\n")
-  #   else
-  #     content = raw_content.to_s
-  #   end
-
-  #   content = clean_llm_output(content)
-  #   ctx[:generated_content] = content
-
-  #   # Save to refinement history
-  #   save_refinement_exchange(section, user_prompt, content, web_search_enabled)
-
-  #   Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
-  #   true
-  # end
-
-  # # Load previous refinements into assistant
-  # def load_refinement_history(section, assistant)
-  #   history = section.refinement_history || []
-  #   history = JSON.parse(history) if history.is_a?(String)
-  #   history ||= []
-  #   history.each do |exchange|
-  #     assistant.add_message(role: 'user', content: exchange['user_prompt'])
-  #     assistant.add_message(role: 'model', content: exchange['response'])  # Gemini uses 'model' not 'assistant'
-  #   end
-  # end
-
+  # Refine section content using LLM
+  # rubocop:disable Metrics/MethodLength
+  # Refine section content using user confirmation and optional web context.
+  #
+  # @param ctx [Hash] execution context
+  # @return [void]
   def refine_section_content(ctx, **)
     section = ctx[:section]
     section_type = ctx[:section_type]
@@ -464,7 +387,14 @@ class PortfolioReportAgent < SupportAgentService
     true
   end
 
+  # rubocop:enable Metrics/MethodLength
+
   # Load previous refinements into assistant (OpenAI uses 'assistant' role)
+  # Load prior refinement history into the assistant.
+  #
+  # @param section [AiReportSection] section with refinement history
+  # @param assistant [Langchain::Assistant] assistant to seed
+  # @return [void]
   def load_refinement_history_openai(section, assistant)
     history = section.refinement_history || []
     history = JSON.parse(history) if history.is_a?(String)
@@ -476,6 +406,13 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Save new exchange to history
+  # Persist a refinement exchange to section history.
+  #
+  # @param section [AiReportSection] section to update
+  # @param user_prompt [String] user prompt text
+  # @param response [String] LLM response
+  # @param web_search_enabled [Boolean] whether web search was enabled
+  # @return [void]
   def save_refinement_exchange(section, user_prompt, response, web_search_enabled)
     history = section.refinement_history
 
@@ -494,15 +431,25 @@ class PortfolioReportAgent < SupportAgentService
     history = history.last(10)
 
     # Convert to JSON string for MySQL
-    section.update_column(:refinement_history, history.to_json)
+    section.update!(refinement_history: history.to_json)
   end
 
   # Clear history when section is regenerated (not refined)
+  # Clear refinement history for a section.
+  #
+  # @param section [AiReportSection] section to clear
+  # @return [void]
   def clear_refinement_history(section)
-    section.update_column(:refinement_history, '[]')
+    section.update!(refinement_history: '[]')
   end
 
   # Save section to database
+  # Save section content and updates.
+  #
+  # @param ctx [Hash] execution context
+  # @param section [AiReportSection] section to save
+  # @param generated_content [String] new content
+  # @return [Boolean] true for step continuation
   def save_section(ctx, section:, generated_content:, **)
     web_search_enabled = ctx[:web_search_enabled] || false
 
@@ -538,6 +485,10 @@ class PortfolioReportAgent < SupportAgentService
 
   # Get section-specific template
   # rubocop:disable Metrics/MethodLength
+  # Fetch the section template by section type.
+  #
+  # @param section_type [String] section type name
+  # @return [String] template body
   def get_section_template(section_type)
     templates = {
       "Company Overview" => {
@@ -716,6 +667,15 @@ class PortfolioReportAgent < SupportAgentService
 
   # rubocop:disable Lint/UnusedMethodArgument
 
+  # Build generation prompt for new content.
+  #
+  # @param section_type [String] section type name
+  # @param template [String] section template
+  # @param documents [String] formatted document context
+  # @param company_name [String] company name
+  # @param report_date [Date] report date
+  # @param web_search [String] optional web search context
+  # @return [String] prompt text
   def build_generation_prompt(section_type:, template:, documents:, company_name:, report_date:, web_search: "")
     <<~PROMPT
       You are a professional investment analyst creating a #{section_type} section for a portfolio company report.
@@ -767,10 +727,59 @@ class PortfolioReportAgent < SupportAgentService
     PROMPT
   end
 
+  # Build prompt for augmenting existing document content with web search results
+  # Build prompt when only web search context is used.
+  #
+  # @param section_type [String] section type name
+  # @param template [String] section template
+  # @param web_search [String] formatted web search context
+  # @param company_name [String] company name
+  # @param report_date [Date] report date
+  # @return [String] prompt text
+  def build_web_only_prompt(section_type:, template:, web_search:, company_name:, report_date:)
+    <<~PROMPT
+      You are a professional investment analyst creating additional insights for a #{section_type} section based on recent web search results.
+
+      Company: #{company_name}
+      Report Date: #{report_date}
+
+      WEB SEARCH RESULTS:
+      #{web_search}
+
+      TASK:
+      Generate additional insights, updates, and information based ONLY on the web search results above.
+      This content will be APPENDED to an existing section that already covers document-based analysis.
+
+      INSTRUCTIONS:
+      1. Focus on NEW information from web search (recent news, market updates, etc.)
+      2. Do NOT repeat general company information - focus on web-specific findings
+      3. Keep it concise - this is supplementary content
+      4. Add a "Sources" section at the end with web links:
+         <p><strong>Sources:</strong></p><ul><li><a href="URL" target="_blank">Title</a></li></ul>
+
+      CRITICAL - OUTPUT FORMAT:
+      - Return ONLY HTML content (no markdown)
+      - DO NOT wrap output in code blocks or backticks
+      - Use proper HTML tags: <p>, <ul>, <li>, <strong>, <em>
+      - Do NOT include <h2> section header (it will be added separately)
+
+      Generate the web-based insights now in pure HTML format:
+    PROMPT
+  end
+
   # rubocop:enable Lint/UnusedMethodArgument
 
   # Refinement prompt
-  # rubocop:disable Lint/UnusedMethodArgument
+  # rubocop:disable Lint/UnusedMethodArgument,Metrics/MethodLength
+
+  # Build system prompt used during refinement.
+  #
+  # @param section_type [String] section type name
+  # @param documents [String] formatted document context
+  # @param web_search [String] formatted web search context
+  # @param company_name [String] company name
+  # @param current_content [String] current section content
+  # @return [String] prompt text
   def build_refinement_system_prompt(section_type:, documents:, web_search:, company_name:, current_content:)
     template = get_section_template(section_type)
 
@@ -823,15 +832,22 @@ class PortfolioReportAgent < SupportAgentService
             - If no company name is mentioned, use "Company (name not specified in documents)"
           DOC_RULES
         end}
-      #{'- You may incorporate facts from web search results' if web_search.present?}
 
+      #{if web_search.present?
+          '- You may incorporate facts from the web search results provided above
+      - IMPORTANT: When using information from web search, add a "Sources" section at the end with links in format: <p><strong>Sources:</strong></p><ul><li><a href="URL" target="_blank">Title</a></li></ul>'
+        end}
       Generate the refined #{section_type} section now in pure HTML format:
     PROMPT
   end
 
-  # rubocop:enable Lint/UnusedMethodArgument
+  # rubocop:enable Lint/UnusedMethodArgument,Metrics/MethodLength
 
   # Load documents from folder
+  # Load documents from a local folder path.
+  #
+  # @param folder_path [String] folder path
+  # @return [String] formatted document context
   def load_documents_from_folder(folder_path)
     return "" unless folder_path.present? && Dir.exist?(folder_path)
 
@@ -862,6 +878,11 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Extract text from file
+  # Extract text from a file based on its extension.
+  #
+  # @param file_path [String] file path
+  # @param extension [String] file extension
+  # @return [String] extracted text
   def extract_text_from_file(file_path, extension)
     case extension
     when '.txt', '.md'
@@ -878,6 +899,10 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Extract PDF text
+  # Extract text from a PDF file.
+  #
+  # @param file_path [String] PDF path
+  # @return [String] extracted text
   def extract_pdf_text(file_path)
     require 'pdf-reader'
 
@@ -890,6 +915,10 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Extract Excel text using roo gem
+  # Extract text from an Excel file.
+  #
+  # @param file_path [String] Excel path
+  # @return [String] extracted text
   def extract_excel_text(file_path)
     require 'roo'
 
@@ -918,6 +947,10 @@ class PortfolioReportAgent < SupportAgentService
 
   # Extract PowerPoint text using zip and XML parsing
   # rubocop:disable Metrics/MethodLength
+  # Extract text from a PowerPoint file.
+  #
+  # @param file_path [String] PowerPoint path
+  # @return [String] extracted text
   def extract_pptx_text(file_path)
     require 'zip'
     require 'nokogiri'
@@ -991,6 +1024,10 @@ class PortfolioReportAgent < SupportAgentService
   # rubocop:enable Metrics/MethodLength
 
   # Extract data from chart XML
+  # Extract chart-relevant data from a document.
+  #
+  # @param chart_doc [String] document content
+  # @return [String] extracted chart data
   def extract_chart_data(chart_doc)
     data_parts = []
 
@@ -1020,6 +1057,10 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Format documents for LLM
+  # Format documents for LLM consumption.
+  #
+  # @param documents [Array<Hash>] document entries
+  # @return [String] formatted context
   def format_documents_for_llm(documents)
     return "No documents available." if documents.empty?
 
@@ -1032,6 +1073,13 @@ class PortfolioReportAgent < SupportAgentService
 
   # NEW: Build search queries based on section type
 
+  # rubocop:disable Metrics/MethodLength
+  # Build web search queries for a section type.
+  #
+  # @param section_type [String] section type name
+  # @param company_name [String] company name
+  # @param user_prompt [String, nil] optional user prompt
+  # @return [Array<String>] search queries
   def build_search_queries(section_type, company_name, user_prompt: nil)
     quoted_name = "\"#{company_name}\""
     current_year = Date.current.year
@@ -1080,7 +1128,12 @@ class PortfolioReportAgent < SupportAgentService
 
     section_queries.first(2)
   end
+  # rubocop:enable Metrics/MethodLength
 
+  # Extract company name from document context using the LLM.
+  #
+  # @param documents_context [String] formatted document context
+  # @return [String, nil] extracted company name
   def extract_company_name_via_llm(documents_context)
     return nil if documents_context.blank?
 
@@ -1115,6 +1168,11 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # NEW: Format search result for prompt
+  # Format web search result for LLM consumption.
+  #
+  # @param query [String] search query
+  # @param result [Hash] raw search result
+  # @return [String] formatted search content
   def format_search_result(query, result)
     return "" if result[:error]
 
@@ -1137,6 +1195,13 @@ class PortfolioReportAgent < SupportAgentService
       formatted += "\nRelated Information:\n"
       result[:related_topics].first(3).each do |topic|
         formatted += "- #{topic}\n"
+      end
+    end
+
+    if result[:sources].present?
+      formatted += "\nSources:\n"
+      result[:sources].first(5).each do |src|
+        formatted += "- #{src[:title]}: #{src[:url]}\n"
       end
     end
 

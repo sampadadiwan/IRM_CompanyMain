@@ -184,10 +184,19 @@
                <div class="ai-message-avatar">AI</div>
                <% end %>
                <div class="ai-message-bubble">
-                  <%= simple_format(message.content) %>
+                  <%= simple_format(message.content.gsub(/(https?:\/\/[^\s<]+)/, '<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>').html_safe) %>
                   <% if message.role == 'assistant' && message.sources&.any? %>
                   <div class="ai-message-sources">
-                     Sources: <%= message.sources.join(', ') %>
+                     <strong>Sources:</strong>
+                     <ul class="ai-sources-list">
+                        <% message.sources.each do |source| %>
+                           <% if source.is_a?(Hash) && source['url'].present? %>
+                              <li><a href="<%= source['url'] %>" target="_blank" rel="noopener noreferrer"><%= source['title'] || source['url'] %></a></li>
+                           <% elsif source.is_a?(String) %>
+                              <li><%= source %></li>
+                           <% end %>
+                        <% end %>
+                     </ul>
                   </div>
                   <% end %>
                </div>
@@ -693,6 +702,25 @@
          });
        }
      });
+
+          // Make links clickable inside contenteditable
+      document.getElementById('report-content').addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (link && link.href) {
+          e.preventDefault();
+          window.open(link.href, '_blank');
+        }
+      });
+
+      // Make links clickable inside chat messages
+      document.getElementById('chat-messages').addEventListener('click', function(e) {
+        const link = e.target.closest('a');
+        if (link && link.href) {
+          e.preventDefault();
+          window.open(link.href, '_blank');
+        }
+      });
+
    
      // Remove flash after 5 seconds
      var flash = document.querySelector('.ai-flash');
@@ -909,20 +937,35 @@
        if (welcome) welcome.remove();
    
        const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-       const sourcesHtml = (sources && sources.length > 0)
-         ? '<div class="ai-message-sources">Sources: ' + sources.join(', ') + '</div>'
-         : '';
+       let sourcesHtml = '';
+       if (sources && sources.length > 0) {
+         const sourceItems = sources.map(function(source) {
+           if (typeof source === 'object' && source.url) {
+             const title = source.title || source.url;
+             return '<li><a href="' + source.url + '" target="_blank" rel="noopener noreferrer">' + title + '</a></li>';
+           } else if (typeof source === 'string') {
+             return '<li>' + source + '</li>';
+           }
+           return '';
+         }).join('');
+         sourcesHtml = '<div class="ai-message-sources"><strong>Sources:</strong><ul class="ai-sources-list">' + sourceItems + '</ul></div>';
+       }
    
        const loadClass = isLoading ? 'loading-message' : '';
        const avatarHtml = (role === 'assistant')
          ? '<div class="ai-message-avatar">AI</div>'
          : '';
    
+       // Convert URLs in content to clickable links
+       const formattedContent = content
+         .replace(/\n/g, '<br>')
+         .replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+
        const html =
          '<div class="ai-message ' + role + ' ' + loadClass + '">' +
            avatarHtml +
            '<div class="ai-message-bubble">' +
-             content.replace(/\n/g, '<br>') +
+             formattedContent +
              sourcesHtml +
            '</div>' +
            '<div class="ai-message-time">' + time + '</div>' +
@@ -1199,33 +1242,34 @@
      })();
    
    
-     async function deleteChart(button) {
-     if (!confirm('Are you sure you want to delete this chart?')) {
-       return;
-     }
-   
-     const placeholder = button.closest('.chart-placeholder');
-     const chartId = placeholder.getAttribute('data-chart-id');
-   
-     // Remove from DOM
-     placeholder.remove();
-   
-     // Optionally: Remove from database
-     if (chartId) {
-       try {
-         await fetch(`/ai_portfolio_reports/${reportId}/ai_report_sections/${sectionId}/remove_chart`, {
-           method: 'POST',
-           headers: {
-             'Content-Type': 'application/json',
-             'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
-           },
-           body: JSON.stringify({ chart_id: chartId })
-         });
-       } catch (error) {
-         console.error('Error removing chart from database:', error);
-       }
-     }
-     }
+async function deleteChart(button) {
+  if (!confirm('Are you sure you want to delete this chart?')) {
+    return;
+  }
+
+  const chartContainer = button.closest('[data-chart-id]');
+  const chartId = chartContainer.getAttribute('data-chart-id');
+
+  // Remove entire chart container from DOM (includes label)
+  chartContainer.remove();
+
+  // Optionally: Remove from database
+  if (chartId) {
+    try {
+      await fetch(`/ai_portfolio_reports/${reportId}/ai_report_sections/${sectionId}/remove_chart`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ chart_id: chartId })
+      });
+    } catch (error) {
+      console.error('Error removing chart from database:', error);
+    }
+  }
+}
+
    
    
      // ============================================
@@ -2069,6 +2113,44 @@
    font-size: 12px;
    color: var(--ai-text-muted);
    }
+
+     .ai-sources-list {
+  margin: 6px 0 0 0;
+  padding-left: 18px;
+  list-style-type: disc;
+  }
+  .ai-sources-list li {
+  margin: 4px 0;
+  }
+  .ai-sources-list a {
+  color: var(--ai-primary);
+  text-decoration: none;
+  word-break: break-word;
+  cursor: pointer;
+  }
+  .ai-sources-list a:hover {
+  text-decoration: underline;
+  color: var(--ai-primary-light);
+  }
+  .ai-message-bubble a {
+  color: var(--ai-primary);
+  text-decoration: none;
+  word-break: break-all;
+  cursor: pointer;
+  }
+  .ai-message-bubble a:hover {
+  text-decoration: underline;
+  }
+  #report-content a {
+  color: var(--ai-primary);
+  text-decoration: underline;
+  cursor: pointer;
+  }
+  #report-content a:hover {
+  color: var(--ai-primary-light);
+  }
+
+
    .ai-message-time {
    font-size: 11px;
    color: var(--ai-text-muted);

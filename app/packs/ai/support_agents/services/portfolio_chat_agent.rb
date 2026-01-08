@@ -1,3 +1,13 @@
+# PortfolioChatAgent provides conversational AI assistance for portfolio reports
+# with conversation memory, tool execution, and document context.
+#
+# @example Basic usage
+#   result = PortfolioChatAgent.call(
+#     support_agent_id: agent.id,
+#     target: ai_chat_session,
+#     user_message: "What's the company's revenue?",
+#     document_folder_path: "/path/to/documents" # Optional
+#   )
 class PortfolioChatAgent < SupportAgentService
   require_relative '../tools/langchain_web_search_tool'
 
@@ -33,7 +43,8 @@ class PortfolioChatAgent < SupportAgentService
   # == Tool Methods ==
   # These methods can be called by the Langchain Assistant during execution
 
-  # Searches the web using DuckDuckGo
+  # Searches the web using DuckDuckGo.
+  #
   # @param query [String] search query
   # @return [Hash] search results with abstract and sources
   def web_search(query:)
@@ -42,23 +53,31 @@ class PortfolioChatAgent < SupportAgentService
     require_relative '../../../../lib/agent_tools/web_search_tool'
     results = AgentTools::WebSearchTool.search(query)
 
+    # Store sources for later inclusion in message metadata
+    if results[:sources].present?
+      @collected_sources ||= []
+      @collected_sources.concat(results[:sources])
+    end
+
     format_search_results_for_llm(results)
   end
 
   private
 
-  # Initialize chat agent - simpler than parent's initialize_agent
-  # We don't need RubyLLM since we use Langchain
+  # Initialize chat agent without RubyLLM.
+  #
+  # @param ctx [Hash] execution context
+  # @return [void]
   def initialize_chat_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
     ctx[:support_agent] = @support_agent
     # No LLM initialization here - handled in setup_langchain_assistant
   end
 
-  # Load document context from folder
-  # Extracts text from all documents in the specified folder
+  # Load document context from a folder path.
   #
   # @param ctx [Hash] execution context
+  # @return [void]
   def load_document_context(ctx, **)
     folder_path = ctx[:document_folder_path]
 
@@ -82,11 +101,11 @@ class PortfolioChatAgent < SupportAgentService
     end
   end
 
-  # Sets up the Langchain Assistant with conversation history and document context
-  # This is where the magic happens - assistant manages memory automatically!
+  # Sets up the Langchain Assistant with conversation history and document context.
   #
   # @param ctx [Hash] execution context
   # @param target [AiChatSession] the chat session to work with
+  # @return [void]
   def setup_langchain_assistant(ctx, target:, **)
     chat_session = target
     documents_context = ctx[:documents_context] || ""
@@ -114,11 +133,11 @@ class PortfolioChatAgent < SupportAgentService
     Rails.logger.info "[PortfolioChatAgent] Loaded #{chat_session.ai_chat_messages.count} previous messages"
   end
 
-  # Executes the chat interaction
-  # The assistant automatically manages context and calls tools as needed
+  # Executes the chat interaction.
   #
   # @param ctx [Hash] execution context
   # @param assistant [Langchain::Assistant] the assistant instance
+  # @return [void]
   def execute_chat(ctx, assistant:, **)
     user_message = ctx[:user_message]
 
@@ -136,12 +155,12 @@ class PortfolioChatAgent < SupportAgentService
     Rails.logger.info "[PortfolioChatAgent] Generated response (#{ctx[:ai_response].length} chars)"
   end
 
-  # Persists new messages to database
-  # Only saves the messages that aren't already in the database
+  # Persists new messages to database.
   #
   # @param ctx [Hash] execution context
   # @param chat_session [AiChatSession] the chat session
   # @param assistant [Langchain::Assistant] the assistant with new messages
+  # @return [void]
   def persist_conversation(_ctx, chat_session:, assistant:, **)
     # Get last 2 messages (user message + assistant response)
     new_messages = assistant.messages.last(2)
@@ -166,8 +185,7 @@ class PortfolioChatAgent < SupportAgentService
 
   # == Helper Methods ==
 
-  # Loads documents from a local folder path
-  # Later this will be updated to load from S3 using folder_id
+  # Loads documents from a local folder path.
   #
   # @param folder_path [String] path to folder containing documents
   # @return [String] formatted document context for LLM
@@ -322,6 +340,8 @@ class PortfolioChatAgent < SupportAgentService
       - When referencing report sections, be specific
       - You have access to web_search and news_search tools to find current information
       - Use tools judiciously to enhance responses
+      - IMPORTANT: When using web search results, always include a "Sources:" section at the end listing the URLs you referenced
+
     GUIDELINES
 
     instructions
@@ -359,6 +379,12 @@ class PortfolioChatAgent < SupportAgentService
 
     # Extract tool calls if any
     metadata[:tool_calls] = message.tool_calls if message.respond_to?(:tool_calls) && message.tool_calls.present?
+
+    # Include collected sources for assistant messages
+    if message.role.to_s == 'assistant' && @collected_sources.present?
+      metadata[:sources] = @collected_sources.uniq { |s| s[:url] }
+      @collected_sources = [] # Clear after extracting
+    end
 
     metadata
   end

@@ -1,4 +1,8 @@
+# Controller for editing and toggling AI report sections.
 class AiReportSectionsController < ApplicationController
+  # Update section content and mark reviewed.
+  #
+  # @return [void]
   def update
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -26,6 +30,9 @@ class AiReportSectionsController < ApplicationController
     end
   end
 
+  # Toggle web search content for a section.
+  #
+  # @return [void]
   def toggle_web_search
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -76,6 +83,9 @@ class AiReportSectionsController < ApplicationController
     render json: { success: false, error: e.message }, status: :internal_server_error
   end
 
+  # Append content to a section with attribution.
+  #
+  # @return [void]
   def add_content
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -96,6 +106,9 @@ class AiReportSectionsController < ApplicationController
     render json: { success: true, content: @section.content_html }
   end
 
+  # Toggle reviewed flag for a section.
+  #
+  # @return [void]
   def toggle_reviewed
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -114,6 +127,9 @@ class AiReportSectionsController < ApplicationController
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
 
+  # Generate a chart preview from a prompt.
+  #
+  # @return [void]
   def generate_chart_preview
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -139,6 +155,9 @@ class AiReportSectionsController < ApplicationController
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
 
+  # Insert a generated chart into a section.
+  #
+  # @return [void]
   def insert_chart
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -167,6 +186,9 @@ class AiReportSectionsController < ApplicationController
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
 
+  # Remove a chart from a section.
+  #
+  # @return [void]
   def remove_chart
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])
@@ -177,6 +199,21 @@ class AiReportSectionsController < ApplicationController
     # Remove from section's agent_chart_ids
     if @section.agent_chart_ids&.include?(chart_id)
       @section.agent_chart_ids.delete(chart_id)
+
+      # Also remove the chart HTML from content using Nokogiri
+      if @section.content_html.present?
+        doc = Nokogiri::HTML.fragment(@section.content_html)
+        doc.css("[data-chart-id='#{chart_id}']").remove
+        @section.content_html = doc.to_html
+      end
+
+      # Also remove from content_html_with_web if it exists
+      if @section.content_html_with_web.present?
+        doc = Nokogiri::HTML.fragment(@section.content_html_with_web)
+        doc.css("[data-chart-id='#{chart_id}']").remove
+        @section.content_html_with_web = doc.to_html
+      end
+
       @section.save!
     end
 
@@ -185,6 +222,9 @@ class AiReportSectionsController < ApplicationController
     render json: { success: false, error: e.message }, status: :unprocessable_entity
   end
 
+  # Regenerate a section's content using the agent.
+  #
+  # @return [void]
   # rubocop:disable Metrics/MethodLength
   def regenerate
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
