@@ -2190,14 +2190,16 @@ Then('adjustments are create upon fund unit transfer') do
   # from_adjustment.amount_cents.should == -(@from_cc_committed_amount_cents * transfer_ratio).round
   from_adjustment.folio_amount_cents.should == -(@from_cc_folio_committed_amount_cents * transfer_ratio).round
   from_adjustment.adjustment_type.should == "Transfer"
-  from_adjustment.as_of.should == Date.today
+  from_adjustment.as_of.should == @from_cc.commitment_date
+  from_adjustment.transfer_date.should == Date.today
 
   puts "Checking commitment adjustment for #{to_adjustment.id} for #{@to_cc.folio_id}"
   to_adjustment.reason.include?("Transfer from #{@from_cc.folio_id} to #{@to_cc.folio_id}").should == true
   # to_adjustment.amount_cents.should == (@from_cc_committed_amount_cents * transfer_ratio).round
   to_adjustment.folio_amount_cents.should == (@from_cc_folio_committed_amount_cents * transfer_ratio).round
   to_adjustment.adjustment_type.should == "Transfer"
-  to_adjustment.as_of.should == Date.today
+  to_adjustment.as_of.should == @from_cc.commitment_date
+  to_adjustment.transfer_date.should == Date.today
 end
 
 

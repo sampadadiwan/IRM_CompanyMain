@@ -444,7 +444,8 @@ class FundUnitTransferService < Trailblazer::Operation
       folio_amount_cents: orig_folio_amount * transfer_ratio,
       adjustment_type: "Transfer",
       reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, transfer_id: #{ctx[:transfer_token]}",
-      as_of: ctx[:transfer_date]
+      transfer_date: ctx[:transfer_date],
+      as_of: from_commitment.commitment_date
     )
 
     AdjustmentCreate.call(commitment_adjustment: to_ca)
@@ -457,7 +458,8 @@ class FundUnitTransferService < Trailblazer::Operation
       folio_amount_cents: -orig_folio_amount * transfer_ratio,
       adjustment_type: "Transfer",
       reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, transfer_id: #{ctx[:transfer_token]}",
-      as_of: ctx[:transfer_date]
+      transfer_date: ctx[:transfer_date],
+      as_of: from_commitment.commitment_date
     )
 
     result = AdjustmentCreate.call(commitment_adjustment: from_ca)

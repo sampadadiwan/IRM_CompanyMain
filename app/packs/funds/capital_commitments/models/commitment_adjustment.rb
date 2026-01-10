@@ -12,6 +12,7 @@ class CommitmentAdjustment < ApplicationRecord
   scope :arrear, -> { where(adjustment_type: "Arrear") }
   scope :transfer, -> { where(adjustment_type: "Transfer") }
   scope :exchange_rate, -> { where(adjustment_type: "Exchange Rate") }
+  scope :for_type, ->(type) { where(adjustment_type: type) }
 
   belongs_to :entity
   belongs_to :fund
