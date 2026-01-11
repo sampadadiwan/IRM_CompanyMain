@@ -109,3 +109,4 @@ dev-debug.log
 *.sln
 *.sw?
 # OS specific.vscode/mcp.json
+public/assets/*

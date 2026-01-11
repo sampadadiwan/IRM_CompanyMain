@@ -57,7 +57,6 @@ Before do |scenario|
   puts "Capybara.app_host: #{Capybara.app_host}"
   puts "Capybara.server_host: #{Capybara.server_host}"
   puts "Capybara.server_port: #{Capybara.server_port}"
-  Capybara.current_session.current_window.resize_to(1580, 900)
 end
 
 # After do |scenario|
@@ -100,6 +99,70 @@ end
 
 
 
+# frozen_string_literal: true
+
+# require "fileutils"
+
+# Before do
+#   next unless Capybara.current_driver.to_s.include?("playwright")
+
+#   FileUtils.mkdir_p("tmp/playwright")
+
+#   # Access the underlying Playwright page from Capybara (works on capybara-playwright-driver)
+#   page.driver.with_playwright_page do |pw_page|
+#     @pw_pending = {}
+
+#     pw_page.on("console", ->(msg) {
+#       puts "BROWSER CONSOLE [#{msg.type}]: #{msg.text}"
+#     })
+
+#     pw_page.on("pageerror", ->(err) {
+#       puts "BROWSER PAGEERROR: #{err.message}"
+#     })
+
+#     pw_page.on("request", ->(req) {
+#       # ignore the main document; we care about assets/xhr/etc.
+#       next if req.resource_type == "document"
+#       @pw_pending[req.url] = Time.now
+#     })
+
+#     pw_page.on("requestfinished", ->(req) {
+#       @pw_pending.delete(req.url)
+#     })
+
+#     pw_page.on("requestfailed", ->(req) {
+#       @pw_pending.delete(req.url)
+#       puts "REQUEST FAILED: #{req.url} (#{req.failure})"
+#     })
+#   end
+# end
+
+# After do |scenario|
+#   next unless scenario.failed?
+#   next unless Capybara.current_driver.to_s.include?("playwright")
+
+#   ts = Time.now.strftime("%Y%m%d-%H%M%S")
+#   out_dir = "tmp/playwright/#{ts}"
+#   FileUtils.mkdir_p(out_dir)
+
+#   # Capybara-level artifacts (always helpful)
+#   save_screenshot("#{out_dir}/failure.png", full: true) rescue nil
+#   File.write("#{out_dir}/failure.html", page.html) rescue nil
+
+#   # Dump whatever is still pending in the browser
+#   if defined?(@pw_pending) && @pw_pending&.any?
+#     File.open("#{out_dir}/pending_requests.txt", "w") do |f|
+#       @pw_pending.each do |url, started|
+#         f.puts "#{(Time.now - started).round(1)}s  #{url}"
+#       end
+#     end
+#     puts "Pending requests dumped to #{out_dir}/pending_requests.txt"
+#   end
+# end
+
+
+
+
 # Cucumber::Rails::Database.javascript_strategy = :truncation
 
 Capybara.run_server = true
@@ -120,9 +183,14 @@ Capybara.default_max_wait_time = 10 # or more
 
 
 Capybara.register_driver(:playwright) do |app|
-  driver = Capybara::Playwright::Driver.new(app, browser_type: :chromium, headless: ENV["BROWSER"].blank?, playwright_cli_executable_path: 'node_modules/.bin/playwright'
-)
-  driver
+  Capybara::Playwright::Driver.new(app,
+    browser_type: :chromium,
+    headless: ENV["BROWSER"].blank?,
+    playwright_cli_executable_path: 'node_modules/.bin/playwright',
+    screen_size: { width: 1580, height: 900 },
+    viewport: { width: 1580, height: 900 },
+    default_wait_for_load_state: "domcontentloaded"
+  )
 end
 
 Capybara.default_max_wait_time = 15

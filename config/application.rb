@@ -14,6 +14,8 @@ module CapHive
 
     config.active_support.key_generator_hash_digest_class = OpenSSL::Digest::SHA1
 
+    config.autoload_lib(ignore: %w[assets tasks])
+
     config.autoload_paths += Rails.root.glob('app/packs/**/')
     config.autoload_paths += %w[app/packs/core/base/controllers/concerns]
     config.autoload_paths << Rails.root.join('lib')

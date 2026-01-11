@@ -32,16 +32,16 @@ pin "@hotwired/turbo-rails", to: "turbo.min.js"
 pin "@popperjs/core", to: "https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/+esm", preload: true
 pin "bootstrap", to: "/modernize/libs/bootstrap/dist/js/bootstrap.esm.min.js", preload: true
 
-pin "highcharts",                         to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/highcharts.src.js"
-pin "highcharts-more",                    to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/highcharts-more.src.js"
-pin "highcharts/modules/exporting",       to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/modules/exporting.src.js"
-pin "highcharts/modules/offline-exporting", to: "https://cdn.jsdelivr.net/npm/highcharts@12.3.0/es-modules/masters/modules/offline-exporting.src.js"
+pin "highcharts", to: "highcharts.js"
+pin "highcharts-more", to: "highcharts-more.js"
+pin "highcharts/modules/exporting", to: "highcharts-exporting.js"
+pin "highcharts/modules/offline-exporting", to: "highcharts-offline-exporting.js"
 
 # config/importmap.rb
 # Remove ANY pins for "chart.js/auto"
-pin "chart.js", to: "https://cdn.jsdelivr.net/npm/chart.js@4.4.4/+esm", preload: true
-pin "xlsx", to: "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"
-pin "pptxgenjs", to: "https://cdn.jsdelivr.net/npm/pptxgenjs@4.0.0/+esm"
+pin "chart.js", to: "chart.js", preload: true
+pin "xlsx", to: "xlsx.js"
+pin "pptxgenjs", to: "pptxgenjs.js"
 pin "reveal.js" # @5.2.1
 pin "reveal.js/plugin/highlight/highlight.esm.js", to: "reveal.js--plugin--highlight--highlight.esm.js.js" # @5.2.1
 pin "reveal.js/plugin/markdown/markdown.esm.js", to: "reveal.js--plugin--markdown--markdown.esm.js.js" # @5.2.1
