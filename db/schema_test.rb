@@ -2444,7 +2444,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_133624) do
   create_table "kpis", force: :cascade do |t|
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
-    t.string "name", limit: 50
+    t.string "name", limit: 100
     t.decimal "value", precision: 20, scale: 6
     t.string "display_value", limit: 30
     t.string "notes"

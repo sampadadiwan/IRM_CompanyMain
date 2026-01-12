@@ -2523,7 +2523,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_133624) do
     t.bigint "investor_kpi_mapping_id"
     t.json "json_fields"
     t.bigint "kpi_report_id", null: false
-    t.string "name", limit: 50
+    t.string "name", limit: 100
     t.string "notes"
     t.bigint "owner_id"
     t.decimal "percentage_change", precision: 5, scale: 2, default: "0.0"

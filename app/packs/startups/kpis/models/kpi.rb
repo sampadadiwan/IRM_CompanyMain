@@ -25,7 +25,7 @@ class Kpi < ApplicationRecord
 
   validates :name, :value, presence: true
 
-  validates :name, length: { maximum: 50 }
+  validates :name, length: { maximum: 100 }
   validates :notes, length: { maximum: 255 }
   validates :display_value, length: { maximum: 30 }
 
