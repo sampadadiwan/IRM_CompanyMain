@@ -21,6 +21,19 @@ class KpiReportSearch
         delta = (no_of_periods * 6).months
       end
       date = Time.zone.today - delta
+
+      # Determine the latest available KPI report to anchored the date window.
+      # This ensures we display the relevant period ending with the latest data point,
+      # rather than a fixed window from today.
+      latest_kpi_report = kpi_reports.order(as_of: :desc).first
+
+      if latest_kpi_report.present? && latest_kpi_report.as_of.present? && (latest_kpi_report.as_of > date)
+        # Shift the start date to be 'delta' time before the latest report's date.
+        # Adding 1.day ensures the range is inclusive of the requested number of periods,
+        # but exclusive of the (N+1)th past period.
+        # Example: For 12 months ending Dec 31, start date becomes Jan 1 (Dec 31 - 1 year + 1 day).
+        date = (latest_kpi_report.as_of - delta) + 1.day
+      end
       kpi_reports = kpi_reports.where(as_of: date..)
     end
 

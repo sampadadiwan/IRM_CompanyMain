@@ -30,8 +30,8 @@ class KpiReportsController < ApplicationController
                    end
 
     @kpi_reports = sort_field == "entity_name" ? @kpi_reports.order("entities.name #{sort_direction}") : @kpi_reports
+    @kpi_reports = filter_params(@kpi_reports, :period, :owner_type, :entity_id, :import_upload_id)
     @kpi_reports = KpiReportSearch.perform(@kpi_reports, params)
-    @kpi_reports = filter_params(@kpi_reports, :period, :owner_type, :entity_id)
     @entity = Entity.find(params[:entity_id]) if params[:entity_id].present?
 
     @pagy, @kpi_reports = pagy(@kpi_reports, limit: params[:per_page]) if params[:all].blank? && !request.format.xlsx?

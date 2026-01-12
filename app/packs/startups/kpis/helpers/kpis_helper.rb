@@ -39,8 +39,9 @@ module KpisHelper
     return if kpi.value.blank?
 
     decimals = params[:decimals]&.to_i || 2
-
-    result = number_with_delimiter(kpi.value.round(decimals))
+    # number_with_precision returns the value rounded to specified decimals - needed for kpi widget.
+    # We add a delimiter (e.g., 1,000.00) to improve readability for large figures.
+    result = number_with_precision(kpi.value, precision: decimals, delimiter: ',')
     percentage_value = (kpi.value * 100).round(decimals)
 
     if investor_kpi_mapping.present?
