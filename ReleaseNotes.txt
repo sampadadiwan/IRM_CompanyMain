@@ -1,3 +1,8 @@
+V9.1.73
+93e056f17 Kpis period and decimal fix (#1197)
+9cbce61d2 Fixed bug with cap table self numbers
+5456ffcba Increased Kpi name limit to 100 to match standard_kpi_name (#1195)
+
 V9.1.71
 c94272cfe Feature/add sources web links (#1190)
 b29b31ec7 New valuation button shows when owner is present (#1192)
