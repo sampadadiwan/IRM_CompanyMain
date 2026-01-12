@@ -53,11 +53,8 @@ class GenerateCapTable < Trailblazer::Operation
       # Find one investment to get the category
       investment = investments.find { |i| i.send(group_by_field) == grouping_field }
 
-      display_name = if investment&.category == "Self"
-                       investment.portfolio_company.entity.name
-                     else
-                       grouping_field
-                     end
+      is_self = investment&.category == "Self"
+      display_name = is_self ? investment.portfolio_company.entity.name : grouping_field
 
       equity_quantity = current_holdings[grouping_field] || 0
       convertible_quantity = convertibles[grouping_field] || 0
@@ -68,6 +65,7 @@ class GenerateCapTable < Trailblazer::Operation
 
       {
         grouping_field: display_name,
+        is_self: is_self,
         quantity: equity_quantity,
         percentage: "#{percentage}%",
         fully_diluted: diluted_quantity,

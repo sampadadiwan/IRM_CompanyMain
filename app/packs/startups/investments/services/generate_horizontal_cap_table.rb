@@ -14,10 +14,19 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
     options[:all_investments] = investments.to_a # Fetch everything once to avoid N+1
     options[:all_funding_rounds] = investments.order(investment_date: :asc).pluck(:funding_round).uniq
     options[:all_investors] = investments.select(:investor_name, :category).distinct.to_a
+
+    portfolio_company = Investor.find(portfolio_company_id)
+    options[:portfolio_company_name] = portfolio_company.entity.name
   end
 
-  def initialize_table_data(options, all_investors:, **)
-    options[:investors_by_category] = all_investors.group_by(&:category)
+  def initialize_table_data(options, all_investors:, portfolio_company_name:, **)
+    # Replace investor_name with portfolio_company_name for "Self" records in the grouping
+    investors = all_investors.map do |i|
+      name = i.category == "Self" ? portfolio_company_name : i.investor_name
+      OpenStruct.new(investor_name: name, category: i.category)
+    end
+
+    options[:investors_by_category] = investors.group_by(&:category)
     options[:table_data] = {}
     options[:round_data] = {}
   end
@@ -47,22 +56,19 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
       cap_round.each do |row|
         next if row[:grouping_field] == "Total"
 
-        # Find investor to get category
-        investor = all_investors.find { |i| i.investor_name == row[:grouping_field] }
-
         # Special handling for "Self"
-        if investor.nil?
-          # Check if it's the portfolio company (Self)
-          portfolio_company = Investor.find(portfolio_company_id)
-          if row[:grouping_field] == portfolio_company.entity.name
-            category = "Self"
-            investor_name = "Self"
+        if row[:is_self] || row[:grouping_field] == _options[:portfolio_company_name]
+          category = "Self"
+          investor_name = _options[:portfolio_company_name]
+        else
+          # Find investor to get category
+          investor = all_investors.find { |i| i.investor_name == row[:grouping_field] }
+          if investor
+            category = investor.category
+            investor_name = investor.investor_name
           else
             next
           end
-        else
-          category = investor.category
-          investor_name = investor.investor_name
         end
 
         table_data[category] ||= {}

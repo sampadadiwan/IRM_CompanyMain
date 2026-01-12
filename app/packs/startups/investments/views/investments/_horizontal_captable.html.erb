@@ -4,6 +4,7 @@
     h_data = result[:model]
     funding_rounds = h_data[:funding_rounds]
     latest_round = funding_rounds.last
+
 %>
 
 <%= render ToggleCard.new(title: "Cap Table", css_class: "show_horizontal_cap_table", state: "show") do %>
@@ -30,7 +31,7 @@
                         <td colspan="<%= funding_rounds.size + 3 %>">
                             <strong>
                                 <% if category == "Self" %>
-                                    <%= Investor.find(portfolio_company_id).entity.name %>
+                                    <%= @portfolio_company.entity.name %>
                                 <% else %>
                                     <%= category.pluralize %>
                                 <% end %>
