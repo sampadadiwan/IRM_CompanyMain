@@ -14,6 +14,30 @@ class User < ApplicationRecord
   # The session is setup in users_controller#no_password_login when support user logs in as another user
   attr_accessor :support_user_id
 
+  scope :with_tag, lambda { |tag|
+    where("tag_list LIKE ?", "%#{tag}%")
+  }
+
+  before_validation :normalize_tag_list
+
+  # Normalize the tag list to be a comma separated string with no duplicates or blanks
+  def normalize_tag_list
+    normalized = tag_list
+                 .to_s
+                 .split(",")
+                 .map(&:strip)
+                 .compact_blank
+                 .uniq
+                 .join(",")
+
+    self.tag_list = normalized.presence
+  end
+
+  # Returns an array of tags
+  def tags
+    tag_list.present? ? tag_list.to_s.split(",").map(&:strip).compact_blank : []
+  end
+
   def support_user
     @support_user ||= User.find(support_user_id) if support_user_id.present?
     @support_user

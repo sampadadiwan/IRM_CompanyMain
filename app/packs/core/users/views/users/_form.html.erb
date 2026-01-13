@@ -76,7 +76,14 @@
       </div>
       <% end %>
 
-          
+      <div class="form-group">
+        <%= form.label :tag_list, "Tags" %>
+        <i class="ti ti-info-circle ms-1" data-bs-toggle="tooltip" title="Tags help group users for sending notifications"></i>
+        <%= form.text_field :tag_list, class: "form-control" %>
+        <small class="form-text text-muted">Comma separated list of tags</small>
+      </div>
+
+
       <% unless user.has_cached_role?(:company_admin) %>
         <div class="associated_entity row">
         <% User.extended_permissions.pairs.each do |key, val| %>
@@ -84,7 +91,7 @@
               <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
               <%= form.check_box :extended_permissions, {name: "user[extended_permissions][]",
                   val: val, id: "extended_permissions#{val}", class: "form-check-input"}, val, nil   %>
-          </div>      
+          </div>
         <% end %>
         </div>
       <% end %>
@@ -107,7 +114,7 @@
     <%= form.text_field :entity_id, class: "form-control", hidden: true %>
 
     <% if current_user.has_cached_role?(:company_admin) %>
-    
+
       <div class="associated_entity row">
 
         <% User.permissions.pairs.each do |key, val| %>

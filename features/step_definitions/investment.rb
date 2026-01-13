@@ -281,6 +281,10 @@ Given('I have been granted access {string} to the investments') do |arg|
 
 end
 
+Given('I go to the portfolio company page') do
+  @portfolio_company ||= Investor.all.portfolio_company.last
+  visit(investor_path(@portfolio_company))
+end
 
 Then('I should be able to see the investments for each entity') do
   Entity.for_investor(@user).each do |entity|

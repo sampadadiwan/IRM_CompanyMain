@@ -126,6 +126,15 @@
           </td>
         </tr>
 
+        <tr>
+          <td>
+            Tags
+          </td>
+          <td>
+            <%= @user.tag_list %>
+          </td>
+        </tr>
+
         <%= display_custom_fields(@user) %>
 
 
@@ -150,7 +159,7 @@
       </table>
 
       <div>
-        <%= link_to  t_common(:edit) , edit_user_path(@user), {class: "btn btn-outline-primary" } if policy(@user).update? %>
+        <%= link_to  t_common(:edit) , edit_user_path(@user), {class: "btn btn-outline-primary ti ti-pencil" } if policy(@user).update? %>
       </div>
 
 
