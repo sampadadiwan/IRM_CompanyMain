@@ -149,6 +149,7 @@ gem "bootsnap", require: false
 gem "image_processing"
 # gem 'rmagick'
 gem "combine_pdf"
+gem "hexapdf"
 
 gem "blazer"
 gem "net-pop", github: "ruby/net-pop"

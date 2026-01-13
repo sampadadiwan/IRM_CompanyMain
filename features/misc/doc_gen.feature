@@ -153,6 +153,37 @@ Scenario Outline: Footer error in Generating Commitment Agreement
     |user	    |entity                         |role       |given  |should	|access | crud |email|footer_error|header_error|
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |Approved document already exists for|Error adding Footer:|Error adding Header:|
 
+Scenario Outline: Check header footer and append documents merging in Generating Commitment Agreement
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "entity_type=Family Office"
+  Given there is an existing investor entity "entity_type=Investor Advisor" with employee "first_name=Advisor"
+  Given there is a fund "name=Test fund" for the entity
+  And another user is "<given>" fund advisor access to the fund
+  And the access right has access "<crud>"
+  Given the user has role "<role>"
+  Given the fund has capital commitments from each investor
+  And each Investor has an approved Investor Kyc
+  Given the fund has "2" capital call
+  Given the capital calls are approved
+  Given the fund has "2" capital distribution
+  Given the capital distributions are approved
+  Given the fund has a template "Commitment Agreement Template2" of type "Commitment Template"
+  Given the template "Commitment Agreement Template2" has attrs "template_docs_to_append=image doc"
+  Given the KYC associated with the commitment has the document "image doc" with file "merge test image.jpeg"
+  Given the commitment has document "Commitment Agreement Template2 Header" with file "CapHive - CERTIFICATE OF INCORPORATION.PDF"
+  And the commitment has document "Commitment Agreement Template2 Header" with file "CapHive - GST Certificate.pdf"
+  And the commitment has document "Commitment Agreement Template2 Footer" with file "TEST DOC 3 - 24 Oct 25 - 2.pdf"
+  And the commitment has document "Commitment Agreement Template2 Footer" with file "pdf sample with images.pdf"
+  And we Generate Commitment Agreement for the first capital commitment
+  Then the "Commitment Agreement Template2" is successfully generated
+  And the document has "19" pages
+
+
+  Examples:
+    |user	    |entity                         |role       |given  |should	|access | crud |email|
+    |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |Approved document already exists for|
+
 Scenario Outline: Unapproved Investor Statement is replaced for a Capital Commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

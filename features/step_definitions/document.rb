@@ -439,3 +439,31 @@ end
 Given('folders access right is deleted') do
   AccessRight.where(owner: @folder).destroy_all
 end
+
+Given('the template {string} has attrs {string}') do |template_name, template_attrs|
+  @template ||= Document.templates.where(name: template_name).last
+  key_values(@template, template_attrs)
+  @template.save!
+end
+
+Given('the KYC associated with the commitment has the document {string} with file {string}') do |document_name, file_name|
+  @capital_commitment = CapitalCommitment.last
+
+  @investor_kyc = InvestorKyc.last
+  Document.create!(entity: @investor_kyc.entity, name: document_name, owner: @investor_kyc, folder: @investor_kyc.document_folder,
+  user: @user, file: File.new("public/sample_uploads/merge_test/#{file_name}", "r"))
+  expect(@investor_kyc.documents.where(name: document_name).count).to eq(1)
+end
+
+Given('the commitment has document {string} with file {string}') do |document_name, file_name|
+  Document.create!(entity: @capital_commitment.entity, name: document_name, owner: @capital_commitment, folder: @capital_commitment.document_folder,
+  user: @user, file: File.new("public/sample_uploads/merge_test/#{file_name}", "r"))
+end
+
+Then('the document has {string} pages') do |expected_page_count|
+  @generated_document = Document.generated.last
+  file = @generated_document.file.download
+  reader = PDF::Reader.new(file.path)
+  puts "Pages: #{reader.page_count}"
+  expect(reader.page_count).to eq(expected_page_count.to_i)
+end
