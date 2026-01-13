@@ -729,7 +729,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_133624) do
     t.string "slug"
     t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "total_fund_units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_fund_units_quantity", precision: 26, scale: 8, default: "0.0"
     t.decimal "total_units_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_adjustment_amount_cents", precision: 20, scale: 4, default: "0.0"
@@ -789,7 +789,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_133624) do
     t.decimal "tracking_gross_payable_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_net_payable_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
-    t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
     t.datetime "updated_at", null: false
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"
     t.index ["capital_distribution_id"], name: "index_capital_distribution_payments_on_capital_distribution_id"
@@ -915,7 +915,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_133624) do
     t.string "status", limit: 10
     t.decimal "tracking_call_amount_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_collected_amount_cents", precision: 20, scale: 4, default: "0.0"
-    t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false
     t.index ["capital_call_id"], name: "index_capital_remittances_on_capital_call_id"

@@ -637,7 +637,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_133624) do
     t.string "investor_name"
     t.bigint "document_folder_id"
     t.string "unit_type", limit: 40
-    t.decimal "total_fund_units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "total_fund_units_quantity", precision: 26, scale: 8, default: "0.0"
     t.decimal "total_allocated_income_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_allocated_expense_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "total_units_premium_cents", precision: 20, scale: 2, default: "0.0"
@@ -701,7 +701,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_133624) do
     t.bigint "capital_commitment_id"
     t.datetime "deleted_at"
     t.string "investor_name"
-    t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
     t.bigint "document_folder_id"
     t.decimal "cost_of_investment_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -824,7 +824,7 @@ ActiveRecord::Schema[8.0].define(version: 2026_01_10_133624) do
     t.datetime "deleted_at"
     t.string "investor_name"
     t.bigint "document_folder_id"
-    t.decimal "units_quantity", precision: 20, scale: 2, default: "0.0"
+    t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
     t.boolean "notification_sent", default: false
     t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_call_amount_cents", precision: 20, scale: 2, default: "0.0"

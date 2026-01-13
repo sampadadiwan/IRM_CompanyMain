@@ -129,6 +129,7 @@ class KycDocGenerator
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
       capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
+      remittance_fund_units_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.fund_units.for_remittances.where(issue_date: ..end_date, owner_id: remittances.pluck(:id)).order(issue_date: :asc)),
 
       capital_remittance_payments: TemplateDecorator.decorate_collection(capital_remittance_payments),
       capital_remittance_payments_between_dates: TemplateDecorator.decorate_collection(capital_remittance_payments.where(payment_date: start_date..).where(payment_date: ..end_date)),
