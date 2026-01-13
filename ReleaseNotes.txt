@@ -1,3 +1,9 @@
+V9.1.74
+e298f0de2 Fixed kpi reports no_of_periods issue - added better comment (#1198)
+63f1d4051 Update units quantity precision (#1189)
+3e3547fa2 Used hexapdf for combining pdfs - added spec (#1171)
+8e996a398 Employees with tag list (#1186)
+
 V9.1.73
 93e056f17 Kpis period and decimal fix (#1197)
 9cbce61d2 Fixed bug with cap table self numbers
