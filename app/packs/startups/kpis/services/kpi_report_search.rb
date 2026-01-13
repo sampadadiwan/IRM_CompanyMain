@@ -2,6 +2,8 @@ class KpiReportSearch
   def self.perform(kpi_reports, params)
     kpi_reports = kpi_reports.where(id: search_ids(kpi_reports, params)) if params[:search] && params[:search][:value].present?
 
+    kpi_reports = filter_by_portfolio_company(kpi_reports, params)
+
     if params[:budget_view].blank?
       # Test cases have static data, hence we load all the kpi_reports, but in production we filter by months
       no_of_periods = params[:no_of_periods].present? ? params[:no_of_periods].to_i : 12
@@ -27,25 +29,29 @@ class KpiReportSearch
       # rather than a fixed window from today.
       latest_kpi_report = kpi_reports.order(as_of: :desc).first
 
-      if latest_kpi_report.present? && latest_kpi_report.as_of.present? && (latest_kpi_report.as_of > date)
+      if latest_kpi_report.present? && latest_kpi_report.as_of.present?
         # Shift the start date to be 'delta' time before the latest report's date.
-        # Adding 1.day ensures the range is inclusive of the requested number of periods,
-        # but exclusive of the (N+1)th past period.
-        # Example: For 12 months ending Dec 31, start date becomes Jan 1 (Dec 31 - 1 year + 1 day).
-        date = (latest_kpi_report.as_of - delta) + 1.day
+        # We take the last day of the month as thats when the KPIs are usually reported
+        # and add one day to start from the next month
+        # Eg. If latest report is for 30 Nov 2025, and delta is 6 months, as_of - 6 months = 30 May 2025
+        # We want to include June 2025 onwards, so we do end_of_month + 1.day to get 1 June 2025
+        date = (latest_kpi_report.as_of - delta).end_of_month + 1.day
       end
       kpi_reports = kpi_reports.where(as_of: date..)
     end
 
-    if params[:portfolio_company_id].present?
-      @portfolio_company = Investor.find(params[:portfolio_company_id])
-      # Now either the portfolio_company has uploaded and given access to the kpi_reports
-      # Or the fund company has uploaded the kpi_reports for the portfolio_company
-      kpi_reports = kpi_reports.where("portfolio_company_id=? or kpi_reports.entity_id=?", @portfolio_company.id, @portfolio_company.investor_entity_id) if @portfolio_company.present?
-    end
-
     kpi_reports = kpi_reports.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id]
 
+    kpi_reports.distinct
+  end
+
+  def self.filter_by_portfolio_company(kpi_reports, params)
+    if params[:portfolio_company_id].present?
+      portfolio_company = Investor.find_by(id: params[:portfolio_company_id])
+      # Now either the portfolio_company has uploaded and given access to the kpi_reports
+      # Or the fund company has uploaded the kpi_reports for the portfolio_company
+      kpi_reports = kpi_reports.where("portfolio_company_id=? or kpi_reports.entity_id=?", portfolio_company.id, portfolio_company.investor_entity_id) if portfolio_company.present?
+    end
     kpi_reports.distinct
   end
 
