@@ -99,26 +99,32 @@
     <div id="access-rights-tab" class="tab-pane fade in">
         <div id="access_rights" class="associated_entity">
 
-          <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
+          <% if current_user.has_cached_role?(:company_admin) %>
+            <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
 
-            <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_to_investors_tab">
-              <%= t('investor_details_nav.employee_access') %>
-            </a>
 
-            <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_for_investors_tab">
-              <%= t('investor_details_nav.investor_access') %>
-            </a>
+              <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_to_investors_tab">
+                <%= t('investor_details_nav.employee_access') %>
+              </a>
 
-          </nav>
+
+              <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access_rights_for_investors_tab">
+                <%= t('investor_details_nav.investor_access') %>
+              </a>
+
+            </nav>
+          <% end %>
           <div class="tab-content">
 
-            <div id="access_rights_to_investors_tab" class="tab-pane show active">
-              <%= turbo_frame_tag "investor_access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form", frame: "investor_access_rights_frame") do %>
+            <% if current_user.has_cached_role?(:company_admin) %>
+              <div id="access_rights_to_investors_tab" class="tab-pane show active">
+                <%= turbo_frame_tag "investor_access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(owner_id: investor.id, owner_type: "Investor", entity_id: investor.entity_id, form_type: "investor_form", frame: "investor_access_rights_frame") do %>
 
-              <% end %>
-            </div>
+                <% end %>
+              </div>
+            <% end %>
 
-            <div id="access_rights_for_investors_tab" class="tab-pane fade">
+            <div id="access_rights_for_investors_tab" class="tab-pane <%= current_user.has_cached_role?(:company_admin) ? 'fade' : 'show active' %>">
               <%= turbo_frame_tag "access_rights_frame", target: "_top", loading: :lazy,  src: access_rights_path(investor_id: investor.id , entity_id: current_user.entity_id, form_type: "none", owner_id: investor.id, owner_type: "Investor", with_deleted: true)  do %>
 
               <% end %>

@@ -86,6 +86,7 @@
 
       <% unless user.has_cached_role?(:company_admin) %>
         <div class="associated_entity row">
+        <%= hidden_field_tag "user[extended_permissions][]", "" %>
         <% User.extended_permissions.pairs.each do |key, val| %>
           <div class="form-group col">
               <%= form.label :extended_permissions, key.titleize, class: "no-wrap" %>
@@ -116,7 +117,7 @@
     <% if current_user.has_cached_role?(:company_admin) %>
 
       <div class="associated_entity row">
-
+        <%= hidden_field_tag "user[permissions][]", "" %>
         <% User.permissions.pairs.each do |key, val| %>
           <% if user.entity.permissions.send("#{val}?") %>
             <div class="form-group col-6">

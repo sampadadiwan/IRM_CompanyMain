@@ -108,6 +108,7 @@ class Investor < ApplicationRecord
     )
   }
 
+  # This is used to limit which employee can see which investors
   scope :for_employee, lambda { |user|
     joins(:investor_access_rights).where(investor_access_rights: { user_id: user.id })
   }
