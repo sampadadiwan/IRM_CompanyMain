@@ -50,21 +50,20 @@ class CapitalCommitmentsController < ApplicationController
       else
         # Check if the user is authorized to transfer fund units
         authorize to_commitment, :transfer_fund_units?
-
-        transfer = FundUnitTransfer.create(entity_id: @capital_commitment.entity_id,
-                                           fund_id: @capital_commitment.fund_id,
-                                           from_commitment_id: @capital_commitment.id,
-                                           to_commitment_id: to_commitment.id,
-                                           transfer_ratio: params[:transfer_ratio].to_f,
-                                           transfer_date: Date.local_parse(params[:transfer_date]),
-                                           price: params[:price].to_f,
-                                           premium: params[:premium].to_f,
-                                           transfer_account_entries: params[:transfer_account_entries] == "1",
-                                           account_entries_excluded: params[:account_entries_excluded])
-
         # Transfer fund units using the TB
         result = nil
         from_commitment.transaction do
+          transfer = FundUnitTransfer.new(entity_id: @capital_commitment.entity_id,
+                                          fund_id: @capital_commitment.fund_id,
+                                          from_commitment_id: @capital_commitment.id,
+                                          to_commitment_id: to_commitment.id,
+                                          transfer_ratio: params[:transfer_ratio].to_f,
+                                          transfer_date: Date.local_parse(params[:transfer_date]),
+                                          price: params[:price].to_f,
+                                          premium: params[:premium].to_f,
+                                          transfer_account_entries: params[:transfer_account_entries] == "1",
+                                          account_entries_excluded: params[:account_entries_excluded])
+
           result = FundUnitTransferService.call(transfer:)
           # If there was an error, rollback the transaction
           raise ActiveRecord::Rollback if result.failure?

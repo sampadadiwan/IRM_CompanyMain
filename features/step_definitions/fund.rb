@@ -2049,6 +2049,44 @@ When('fund units are transferred {string}') do |transfer|
   @transfer_token = result[:transfer_token]
 end
 
+When('fund units are transferred {string} and from_commitment has attrs {string} and to_commitment has attrs {string}') do |transfer, from_comm_attrs, to_comm_attrs|
+  @fund = Fund.first
+  @fund.reload
+  @price, @premium, @transfer_ratio, @transfer_account_entries, @account_entries_excluded = transfer.split(",").map{|x| x.split("=")[1]}
+  @price = @price.to_f
+  @premium = @premium.to_f
+  @transfer_ratio = @transfer_ratio.to_f
+  @transfer_account_entries = @transfer_account_entries == "true"
+
+  @from_cc = @fund.capital_commitments.first
+  key_values(@from_cc, from_comm_attrs)
+  @from_cc.save(validate: false)
+  @from_cc_committed_amount_cents = @from_cc.committed_amount_cents
+  @from_cc_folio_committed_amount_cents = @from_cc.folio_committed_amount_cents
+
+  @to_cc = @fund.capital_commitments.last
+  key_values(@to_cc, to_comm_attrs)
+  @to_cc.save(validate: false)
+  @to_cc_committed_amount_cents = @to_cc.committed_amount_cents
+  @to_cc_folio_committed_amount_cents = @to_cc.folio_committed_amount_cents
+  @transfer_quantity = (@transfer_ratio * @from_cc.total_fund_units_quantity).to_f
+
+  @transfer = FundUnitTransfer.create(entity_id: @from_cc.entity_id, from_commitment: @from_cc, to_commitment: @to_cc, fund: @fund, price: @price, premium: @premium, transfer_ratio: @transfer_ratio * 100, transfer_date: Date.today, transfer_account_entries: @transfer_account_entries, account_entries_excluded: @account_entries_excluded)
+
+  @result = FundUnitTransferService.wtf?(transfer: @transfer)
+
+  puts @result[:error]
+end
+
+Then('I should get the error {string}') do |message|
+  if message.present? && message != "nil"
+    @result.success?.should == false
+    @result[:error].should == message
+  else
+    @result.success?.should == true
+  end
+end
+
 Then('the units should be transferred') do
 
   from_fu = @from_cc.fund_units.last

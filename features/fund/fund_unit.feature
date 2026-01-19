@@ -129,6 +129,42 @@ Examples:
   	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil|
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil |
 
+Scenario Outline: Transfer Fund Units Validations
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  And Given import file "fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
+  Given the units are generated
+  Given there is a fund "name=Demo Fund 3;currency=INR;unit_types=A1,A2" for the entity
+  When fund units are transferred "<transfer>" and from_commitment has attrs "<from_commitment>" and to_commitment has attrs "<to_commitment>"
+  Then I should get the error "<message>"
+
+Examples:
+    # to commitment has a later date
+  	|fund                 | call                 | transfer | from_commitment | to_commitment | message |
+  	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil| commitment_date=2020-01-01 | commitment_date=2020-01-02 | The `To-Commitment` commitment_date should be on or before the `From-Commitment`. |
+    # to commitment has the same date
+    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01 | commitment_date=2020-01-01 | nil |
+    # to commitment has the earlier date
+    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-02 | commitment_date=2020-01-01 | nil |
+    # different funds
+    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;fund_id=1 | commitment_date=2020-01-01;fund_id=2 | Commitments are not from the same fund. |
+    # different unit types
+    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2 | commitment_date=2020-01-01;unit_type=A1| Commitments are not the same unit type. |
+    # to commitment has a later date, different fund, different unit type
+    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2;fund_id=1  | commitment_date=2020-01-02;unit_type=A1;fund_id=2 | The `To-Commitment` commitment_date should be on or before the `From-Commitment`.Commitments are not from the same fund.Commitments are not the same unit type. |
+
+
+
 @import
 Scenario Outline: Import fund units that are same except issue date
   Given Im logged in as a user "" for an entity "<entity>"

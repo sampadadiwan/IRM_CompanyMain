@@ -33,20 +33,31 @@ class FundUnitTransferService < Trailblazer::Operation
   def validate_transfer(ctx, transfer_ratio:, from_commitment:, to_commitment:, fund:, **)
     quantity = (from_commitment.total_fund_units_quantity * transfer_ratio).to_f
     valid = true
+    msg = ""
+    if from_commitment.commitment_date < to_commitment.commitment_date
+      # Adjustments are created for the from_commitment and to_commitment
+      # Both have the as_of date as the from_commitment.commitment_date
+      # Adjustment validated that the as_of date is on or after the commitment_date
+      # If the from_commitment.commitment_date is before the to_commitment.commitment_date, then the to_commitment will fail validation as its commitment_date is after the as_of date
+      msg += "The `To-Commitment` commitment_date should be on or before the `From-Commitment`."
+      Rails.logger.error(msg)
+      ctx[:error] = msg
+      valid = false
+    end
     if from_commitment.fund_id != fund.id || to_commitment.fund_id != fund.id
-      msg = "Commitments are not from the same fund"
+      msg += "Commitments are not from the same fund."
       Rails.logger.error(msg)
       ctx[:error] = msg
       valid = false
     end
     if from_commitment.unit_type != to_commitment.unit_type
-      msg = "Commitments are not the same unit type"
+      msg += "Commitments are not the same unit type."
       Rails.logger.error(msg)
       ctx[:error] = msg
       valid = false
     end
     if from_commitment.total_fund_units_quantity < quantity
-      msg = "From commitment does not have enough units"
+      msg += "From commitment does not have enough units."
       Rails.logger.error(msg)
       ctx[:error] = msg
       valid = false
