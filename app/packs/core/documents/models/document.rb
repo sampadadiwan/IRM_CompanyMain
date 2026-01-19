@@ -64,13 +64,19 @@ class Document < ApplicationRecord
 
   has_rich_text :text
 
-  validates :name, :file, presence: true
+  validates :name, presence: true
+  validates :file, presence: true, on: :create
   normalizes :name, with: ->(name) { name.strip }
   validates :owner_tag, length: { maximum: 40 }
   validates :tag_list, length: { maximum: 120 }
 
   delegate :full_path, to: :folder, prefix: :folder
   before_validation :setup_folder, :setup_entity
+  before_validation :validate_file_presence_on_update, on: :update
+
+  def validate_file_presence_on_update
+    errors.add(:file, "can't be blank") if file.blank? && file_data.blank?
+  end
 
   after_destroy :update_owner
   after_initialize :init

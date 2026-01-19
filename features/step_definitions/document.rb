@@ -467,3 +467,61 @@ Then('the document has {string} pages') do |expected_page_count|
   puts "Pages: #{reader.page_count}"
   expect(reader.page_count).to eq(expected_page_count.to_i)
 end
+
+When('I create a new document {string} with no file') do |args|
+  @folder = Folder.last || Folder.create!(name: "Test Folder", parent: Folder.first, folder_type: :regular, entity_id: Folder.first.entity_id)
+  @temp_document = Document.new
+  key_values(@temp_document, args)
+
+  find("#doc_actions").click
+  click_on("New Document")
+  if page.has_css?("#document_name")
+    fill_in("document_name", with: @temp_document.name)
+  elsif page.has_css?("#other_name")
+    fill_in("other_name", with: @temp_document.name)
+  end
+
+  fill_in("document_tag_list", with: @temp_document.tag_list.join(",")) if @temp_document.tag_list.present?
+  # attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
+  sleep(3)
+  check('document_download') if @temp_document.download
+  check('document_printing') if @temp_document.printing
+  check('Send email', allow_label_click: true) if @temp_document.send_email
+
+  puts "Selecting #{@temp_document.folder.name}" if @temp_document.folder_id
+  select(@temp_document.folder.name, from: "document_folder_id") if @temp_document.folder_id
+
+  click_on("Save")
+end
+
+Then('I should see the document file validation error on creation') do
+  # check below error in a popup
+  expect(page).to have_text("Please correct the errors on the form before proceeding.")
+end
+
+Then('I should see the document file validation error on update') do
+  expect(page).to have_text("File can't be blank")
+end
+
+Given('I upload a valid file for the document') do
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
+end
+
+Given('I go to edit the document') do
+  @document ||= Document.order(:created_at).last
+  visit edit_document_path(@document)
+end
+
+Given('I fill the document form') do
+  fill_in("document_name", with: @document.name)
+  fill_in("document_tag_list", with: @document.tag_list.join(",")) if @document.tag_list.present?
+  check('document_download') if @document.download
+  check('document_printing') if @document.printing
+  check('Send email', allow_label_click: true) if @document.send_email
+  select(@document.folder.name, from: "document_folder_id") if @document.folder_id
+end
+
+Given('I remove the file from the document') do
+  @document.file = nil
+  @document.save(validate: false)
+end

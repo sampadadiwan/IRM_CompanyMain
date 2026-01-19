@@ -17,6 +17,36 @@ Scenario Outline: Create new document
   	|  	        |entity_type=Company  |name=Q1 Summary;download=true;printing=false |
     |  	        |entity_type=Company  |name=Strategy;download=true;printing=true    |
 
+Scenario Outline: Check Document File validation
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given the entity has a folder "name=Test Folder"
+  And I am at the documents page
+  When I create a new document "<document>" with no file
+  Then I should see the document file validation error on creation
+  Given I click on "Close"
+  Given I upload a valid file for the document
+  And I click on "Save"
+  Then I should see the "Document was successfully saved"
+  Given I go to edit the document
+  And I fill the document form
+  And I click on "Save"
+  Then I should see the "Document was successfully saved"
+  Given I remove the file from the document
+  Given I go to edit the document
+  And I fill the document form
+  And I click on "Save"
+  Then I should see the document file validation error on update
+  Given I upload a valid file for the document
+  And I click on "Save"
+  Then I should see the "Document was successfully saved"
+  And I should see the document details on the details page
+  And I should see the document in all documents page
+
+  Examples:
+  	|user	    |entity               |document                                     |
+    |  	        |entity_type=Company  |name=Strategy;download=true;printing=true    |
+
 
 Scenario Outline: Create new document with folder access
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -142,7 +172,7 @@ Scenario Outline: Add Interest documents
   Given the user has role "company_admin"
   Given there is a sale "<sale>"
   Given there is an existing investor "" with "1" users
-  Given the investors are added to the sale  
+  Given the investors are added to the sale
   Given there are offers "quantity=50;approved=true" for the sale
   Given there are "1" interests "quantity=50;short_listed_status=short_listed" for the sale
   When I visit the interest details page

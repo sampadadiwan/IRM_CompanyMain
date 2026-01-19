@@ -512,8 +512,9 @@ Given('I add preview documents for the aggregate portfolio investment') do
   # Click the documents tab
   within(".api_details") do
     click_tab("Documents")
-    sleep(2)
     # Click the new document button
+    page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+    expect(page).to have_selector("#doc_actions", wait: 5)
     find("#doc_actions").click
     click_on("New Document")
   end

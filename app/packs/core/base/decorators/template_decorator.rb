@@ -142,9 +142,23 @@ class TemplateDecorator < ApplicationDecorator
       return sum(attr_name.to_sym)
 
     elsif method_name.to_s.starts_with?("format_")
-      attr_name = method_name.to_s.gsub("format_", "")
-      # return the attribute formatted with 2 decimal places
-      return h.number_with_precision(send(attr_name).to_d, precision: 2, delimiter: ",")
+      # Check if specific precision is requested (e.g., format_2_amount)
+      # Regex checks - starts with "format_"
+      # then has one or more digits (captured in group 1) - this is the precision
+      # then has an underscore _
+      # then has one or more of any characters (captured in group 2) - this is the attribute name
+      if (match_data = method_name.to_s.match(/^format_(\d+)_(.+)/))
+        precision = match_data[1].to_i
+        attr_name = match_data[2]
+      else
+        # Default to precision 2 (e.g., format_amount)
+        attr_name = method_name.to_s.delete_prefix("format_")
+        precision = 2
+      end
+
+      # Return the attribute formatted with the specified number of decimal places
+      # using .to_d to handle nil values gracefully (nil becomes 0.0)
+      return h.number_with_precision(send(attr_name).to_d, precision: precision, delimiter: ",")
 
     elsif method_name.to_s.starts_with?("rupees_")
       attr_name = method_name.to_s.gsub("rupees_", "")
