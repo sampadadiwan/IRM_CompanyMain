@@ -1,3 +1,4 @@
+<% report_analysis_agent_enabled ||= false%>
 <% type = ["note-social", "note-important", "note-business"].sample %>
 <div class="col-md-3 single-note-item all-category <%= type %>">
   <div class="card card-body">
@@ -11,6 +12,16 @@
     </h6>
     <p class="note-date fs-2">
         <%= l report.updated_at %>
+        <% if report_analysis_agent_enabled %>
+          <% if report.ai_prompt.present?%>
+            <span class="badge bg-success">
+              <%= link_to "AI Analysis", report_insights_path(report_id: report.id) %>
+            </span>
+          <% else %>
+            <!-- placeholder to preserve height -->
+            <span class="badge invisible">AI Analysis</span>
+          <% end %>
+        <% end %>
     </p>
     <span class="note-date fs-1"><%= report.category.presence || "N/A" %></span>
     <div class="note-content">

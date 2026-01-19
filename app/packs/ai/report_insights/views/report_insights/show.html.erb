@@ -1,0 +1,5 @@
+<% if params[:details].present? %>
+  <%= render "/report_insights/show", report_insight: @report_insight %>
+<% else %>
+  <%= render "/report_insights/overview", report_insight: @report_insight %>
+<% end %>

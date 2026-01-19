@@ -20,7 +20,14 @@ module MarkdownHelper
     # Use an explicit permit scrubber so attributes like img[src] are not stripped.
     # Also allow specific tags/attributes needed for safe client-side chart rendering.
     scrubber = Rails::Html::PermitScrubber.new
-    scrubber.tags = %w[p a strong em br table thead tbody tr th td pre code img div canvas]
+    scrubber.tags = %w[
+      h1 h2 h3 h4 h5 h6
+      p a strong em br
+      ul ol li
+      table thead tbody tr th td
+      pre code blockquote
+      img div canvas
+    ]
     scrubber.attributes = %w[
       href title src alt
       class id width height
@@ -29,7 +36,42 @@ module MarkdownHelper
       data-chart-renderer-target
     ]
 
-    sanitize(rendered_html, scrubber: scrubber).html_safe
+    ActionController::Base.helpers.sanitize(rendered_html, scrubber: scrubber).html_safe
   end
+
+  def markdown_with_charts_and_unused(md, charts)
+    return { html: "", unused_charts: [] } if md.blank?
+
+    # Render markdown first (so underscores don’t get mangled inside placeholders)
+    html = markdown_to_html(md).to_s
+
+    used_ids = []
+
+    Array(charts).each do |chart|
+      id = chart["id"]
+      next if id.blank?
+
+      placeholder = "{{chart:#{id}}}"
+
+      # If placeholder is present in the rendered HTML, replace it with a canvas wrapper
+      next unless html.include?(placeholder)
+
+      type  = chart.dig("config", "type").to_s
+      klass = "ai-chart"
+      klass += " ai-chart--#{type}" if type.present?
+
+      html = html.gsub(
+        placeholder,
+        %(<div class="#{klass}"><canvas id="chart-#{id}"></canvas></div>)
+      )
+
+      used_ids << id
+    end
+
+    unused = Array(charts).reject { |c| used_ids.include?(c["id"]) }
+
+    { html: html.html_safe, unused_charts: unused }
+  end
+
   # rubocop:enable Rails/OutputSafety
 end

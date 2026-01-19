@@ -1,0 +1,7 @@
+
+
+<%= turbo_frame_tag "report_insights_frame", target: "_top" do %>
+    <div data-controller="datatable">
+    <%= render "/report_insights/index", report_insights: @report_insights %>
+    </div>
+<% end %>

@@ -1459,3 +1459,48 @@ button:disabled {
   }
 }
 
+/* Default charts (bar/line/scatter etc.) */
+.ai-chart {
+  position: relative;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.ai-chart canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+}
+
+/* Circular charts: force a square using padding-top */
+.ai-chart.ai-chart--pie,
+.ai-chart.ai-chart--doughnut,
+.ai-chart.ai-chart--polarArea {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: 1rem auto;
+  height: auto !important; /* override the default height */
+}
+
+/* Create the square */
+.ai-chart.ai-chart--pie::before,
+.ai-chart.ai-chart--doughnut::before,
+.ai-chart.ai-chart--polarArea::before {
+  content: "";
+  display: block;
+  padding-top: 100%; /* 1:1 square */
+}
+
+/* Make canvas fill the square */
+.ai-chart.ai-chart--pie canvas,
+.ai-chart.ai-chart--doughnut canvas,
+.ai-chart.ai-chart--polarArea canvas {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+
+

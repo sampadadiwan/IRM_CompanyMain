@@ -1,0 +1,85 @@
+<table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f6f8fb;padding:24px 0;">
+  <tr>
+    <td align="center">
+      <table width="620" cellpadding="0" cellspacing="0" border="0" style="width:620px;max-width:620px;background:#ffffff;border:1px solid #e6eaf0;border-radius:12px;overflow:hidden;">
+        <!-- Header -->
+        <tr>
+          <td style="padding:20px 24px;background: #5d87ff;">
+            <div style="font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:16px;font-weight:600;">
+              Report Analysis
+            </div>
+            <div style="font-family:Arial,Helvetica,sans-serif;color:#dbe8ff;font-size:13px;margin-top:6px;">
+              <%= @report_insight.report.name %>
+              <% if @report_insight.report.notify_last_run_at.present? %>
+                • Generated <%= l @report_insight.report.notify_last_run_at %>
+              <% end %>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Greeting -->
+        <tr>
+          <td style="padding:18px 24px 6px 24px;">
+            <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;font-size:14px;line-height:20px;">
+              Dear User,
+            </div>
+          </td>
+        </tr>
+
+        <!-- Body -->
+        <tr>
+          <td style="padding:6px 24px 18px 24px;">
+            <div style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px;line-height:22px;">
+              Your latest analysis has been generated. Here are the key takeaways:
+            </div>
+          </td>
+        </tr>
+
+        <!-- Summary Card -->
+        <tr>
+          <td style="padding:0 24px 18px 24px;">
+            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e6eaf0;border-radius:12px;">
+              <tr>
+                <td style="padding:12px 14px;background:#f9fafb;border-bottom:1px solid #e6eaf0;">
+                  <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;font-size:14px;font-weight:700;">
+                    Summary
+                  </div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:14px;">
+                  <% if @summary_html.present? %>
+                    <div style="font-family:Arial,Helvetica,sans-serif;color:#111827;font-size:14px;line-height:22px;">
+                      <%= @summary_html.html_safe %>
+                    </div>
+                  <% else %>
+                    <div style="font-family:Arial,Helvetica,sans-serif;color:#374151;font-size:14px;line-height:22px;">
+                      We’ve prepared your report insight. Click below to view the detailed analysis and charts.
+                    </div>
+                  <% end %>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- CTA Button -->
+        <tr>
+          <td align="center" style="padding:0 24px 18px 24px;">
+            <table cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" style="background: #5d87ff;border-radius:10px;">
+                  <a href="<%= report_insight_url(@report_insight) %>"
+                     style="display:inline-block;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;color:#ffffff;font-size:14px;font-weight:700;text-decoration:none;">
+                    View Detailed Analysis →
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>

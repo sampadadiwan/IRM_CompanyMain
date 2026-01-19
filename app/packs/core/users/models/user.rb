@@ -1,4 +1,4 @@
-class User < ApplicationRecord
+class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
   include UserEnabled
   include WithCustomField
   include Memoized
@@ -16,6 +16,18 @@ class User < ApplicationRecord
 
   scope :with_tag, lambda { |tag|
     where("tag_list LIKE ?", "%#{tag}%")
+  }
+
+  scope :with_any_tags, lambda { |tags|
+    return none if tags.blank?
+
+    tag_list = tags.split(",").map(&:strip).compact_blank
+    return none if tag_list.empty?
+
+    patterns = tag_list.map { |t| "%#{ActiveRecord::Base.sanitize_sql_like(t)}%" }
+    clauses  = Array.new(patterns.length, "tag_list LIKE ?").join(" OR ")
+
+    where(clauses, *patterns)
   }
 
   before_validation :normalize_tag_list

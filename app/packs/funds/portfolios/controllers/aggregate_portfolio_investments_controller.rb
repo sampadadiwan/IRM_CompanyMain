@@ -10,7 +10,6 @@ class AggregatePortfolioInvestmentsController < ApplicationController
     @time_series = result.time_series
     @fields = result.fields
     @show_fund_name = result.show_fund_name
-    @report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
 
     @pagy, @aggregate_portfolio_investments = pagy(@aggregate_portfolio_investments, limit: params[:per_page]) if params[:time_series].blank? && params[:all].blank?
 

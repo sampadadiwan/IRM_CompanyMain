@@ -1,19 +1,14 @@
+<% report_analysis_agent_enabled = @report.entity.support_agents.report_analysis_agent? %>
+
+<%= render ToggleCard.new(title: "#{@report.name}", css_class: "show_report", state: "show") do %>
 
 <table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      Entity
-    </td>
-    <td>
-      <%= @report.entity_id %>
-    </td>
-  </tr>
   <tr>
     <td>
       User
     </td>
     <td>
-      <%= @report.user_id %>
+      <%= link_to @report.user %>
     </td>
   </tr>
   <tr>
@@ -58,11 +53,11 @@
     <td>
       Url
     </td>
-    <td>
+    <td style="overflow-wrap: anywhere;">
       <!-- Check if its a dynamic report ie has {some_param} in the url -->
-      <% if @report.is_dynamic? %>        
+      <% if @report.is_dynamic? %>
         <%= @report.url %>
-      <% else %>        
+      <% else %>
         <%= link_to @report.url, @report.url %>
       <% end %>
     </td>
@@ -75,6 +70,56 @@
     </td>
     <td>
       <%= @report.metadata %>
+    </td>
+  </tr>
+  <% end %>
+
+  <% if report_analysis_agent_enabled %>
+  <tr>
+    <td>
+      AI Prompt
+    </td>
+    <td>
+      <%= @report.ai_prompt %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Notification
+    </td>
+
+    <td>
+      <span class="badge <%= @report.send_notification ? 'bg-success' : 'bg-warning' %>">
+          <%=@report.send_notification ? "Enabled" : "Disabled" %>
+      </span>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Recipients
+    </td>
+    <td>
+      <%= @report.notification_recipients %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Next Run At
+    </td>
+    <td>
+      <%= l @report.notify_next_run_at if @report.notify_next_run_at %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Repeat Every
+    </td>
+    <td>
+      <%= @report.notification_repeat_interval %> <%= @report.notification_repeat_unit %>
     </td>
   </tr>
   <% end %>
@@ -102,14 +147,39 @@
   <% end %>
 
 </table>
+<% end %>
 <div>
   <% if policy(@report).edit? %>
-    <%= link_to  t_common(:edit), edit_report_path(@report), {class: "btn btn-outline-primary ti ti-eye"} %>
+    <%= link_to  t_common(:edit), edit_report_path(@report), {class: "btn btn-outline-primary ti ti-pencil"} %>
     <%= button_to t_common(:delete), @report, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 
 
     <%= link_to configure_grids_grid_view_preferences_path(owner_type: 'Report', owner_id: @report.id), method: :get, class: "btn btn-outline-secondary" do %>
       <i class="ti ti-settings"></i> Configure Grids
     <% end %>
+
+    <% if report_analysis_agent_enabled %>
+      <div class="btn-group">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="ti ti-robot"></i> AI Analyses
+          </button>
+          <ul class="dropdown-menu">
+              <li>
+              <%= link_to report_insights_path(report_id: @report.id), method: :get, class: "dropdown-item ti ti-eye" do %>
+                View Report Analyses
+              <% end %>
+              </li>
+              <li>
+
+              <% msg = "This will generate a report analysis. Proceed?" %>
+              <%= button_to "Generate Analysis",
+              generate_report_insight_report_path(id: @report.id),
+              class: "dropdown-item ti ti-robot", form_class: "w-100",
+              data: {msg:, action: "click->confirm#popup", method: :post}  %>
+              </li>
+          </ul>
+      </div>
+    <% end %>
+
   <% end %>
 </div>

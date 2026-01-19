@@ -5,7 +5,6 @@ class CapitalRemittancesController < ApplicationController
   def index
     fetch_rows
     @pagy, @capital_remittances = pagy(@capital_remittances, limit: params[:per_page]) if params[:all].blank?
-    @report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
 
     respond_to do |format|
       format.html

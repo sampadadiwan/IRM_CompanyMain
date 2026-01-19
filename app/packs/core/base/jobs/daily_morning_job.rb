@@ -32,6 +32,14 @@ class DailyMorningJob < ApplicationJob
       # Auto lock the Allocation runs which are a week old
       Rails.logger.debug "Auto lock the Allocation runs which are a week old"
       AllocationRun.where('locked = ? and created_at < ?', false, Time.zone.today - 1.week).update(locked: true)
+
+      # Generate Report Insights for any reports scheduled for generation today
+      Rails.logger.debug "Generate Report Insights for any reports scheduled for generation today"
+      index = 0
+      Report.where(notify_next_run_at: Time.zone.now.all_day).order(:notify_next_run_at).find_each do |report|
+        GenerateReportInsightJob.set(wait: index * 10.seconds).perform_later(report.id, user_id: nil)
+        index += 1
+      end
     rescue StandardError => e
       message = "Error in DailyMorningJob: #{e.message}"
       Rails.logger.error message

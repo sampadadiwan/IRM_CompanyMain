@@ -3,6 +3,7 @@ class Report < ApplicationRecord
 
   belongs_to :entity, optional: true
   belongs_to :user
+  has_many :report_insights, dependent: :destroy
 
   attribute :template, :json
 
@@ -13,6 +14,26 @@ class Report < ApplicationRecord
 
   validates :name, :curr_role, presence: true
   validates :category, length: { maximum: 30 }
+  validate :validate_notification_recipients
+
+  def validate_notification_recipients
+    return if notification_recipients.blank?
+
+    parts = notification_recipients.split(",").map(&:strip).compact_blank
+
+    emails = parts.select { |p| p.include?("@") }
+    tags   = parts.reject { |p| p.include?("@") }
+
+    if emails.any? && tags.any?
+      errors.add(:notification_recipients, "Cannot mix email addresses and user tags.")
+      return
+    end
+
+    if emails.any?
+      invalid = emails.grep_v(URI::MailTo::EMAIL_REGEXP)
+      errors.add(:notification_recipients, "Invalid email format: #{invalid.join(', ')}") if invalid.any?
+    end
+  end
 
   def self.reports_for
     { 'Account Entries': "/account_entries?filter=true",
@@ -27,6 +48,45 @@ class Report < ApplicationRecord
       Distributions: "/capital_distributions?filter=true",
       'Distribution Payments': "/capital_distribution_payments?filter=true",
       Valuations: "/valuations?filter=true" }.sort.to_h
+  end
+
+  before_save :update_notify_next_run_at
+  def update_notify_next_run_at
+    unless send_notification?
+      self.notify_next_run_at = nil
+      return
+    end
+
+    repeat_interval = (notification_repeat_interval.presence || 1).to_i
+    repeat_unit     = (notification_repeat_unit.presence || "days").to_s.downcase
+
+    if notify_last_run_at.present?
+      self.notify_next_run_at = calculate_next_run(from: notify_last_run_at, interval: repeat_interval, unit: repeat_unit)
+      return
+    end
+
+    start_after_value = (notification_start_after.presence || 0).to_i
+    start_after_unit  = (notification_start_unit.presence || "days").to_s.downcase
+
+    offset =
+      case start_after_unit
+      when "weeks"  then start_after_value.weeks
+      when "months" then start_after_value.months
+      else               start_after_value.days
+      end
+
+    self.notify_next_run_at = Time.zone.now + offset
+  end
+
+  def calculate_next_run(from:, interval:, unit:)
+    step =
+      case unit
+      when "weeks"  then interval.weeks
+      when "months" then interval.months
+      else               interval.days
+      end
+
+    from + step
   end
 
   # rubocop:disable Rails/SkipsModelValidations
@@ -158,5 +218,34 @@ class Report < ApplicationRecord
     else
       raise "Template XLS or template or metadata is not set for this report."
     end
+  end
+
+  def fetch_recipient_emails
+    return "" if notification_recipients.blank?
+
+    parts = notification_recipients.split(",").map(&:strip).compact_blank
+
+    emails = parts.select { |p| p.include?("@") }
+    tags   = parts.reject { |p| p.include?("@") }
+
+    raise "Cannot mix email addresses and user tags in notification recipients." if emails.any? && tags.any?
+
+    if emails.any?
+      invalid = emails.grep_v(URI::MailTo::EMAIL_REGEXP)
+      if invalid.any?
+        invalid.each { |e| Rails.logger.warn { "Invalid email format: #{e}" } }
+        raise "Invalid email format: #{invalid.join(', ')}"
+      end
+
+      return emails.uniq.join(",")
+    end
+
+    tags_string = tags.join(",")
+
+    entity.employees
+          .with_any_tags(tags_string)
+          .pluck(:email)
+          .uniq
+          .join(",")
   end
 end

@@ -44,4 +44,8 @@ class ReportPolicy < ApplicationPolicy
   def configure_grids?
     update?
   end
+
+  def generate_report_insight?
+    update? && user.entity.support_agents.report_analysis_agent?
+  end
 end

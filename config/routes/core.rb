@@ -5,8 +5,10 @@ resources :custom_notifications
 resources :reports do
   post 'prompt', on: :collection
   get 'dynamic', on: :member
+  post 'generate_report_insight', on: :member
 end
 
+resources :report_insights
 resources :audits
 resources :reminders
 resources :favorites

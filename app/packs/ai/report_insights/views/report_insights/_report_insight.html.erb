@@ -1,0 +1,30 @@
+<tr id="<%= dom_id report_insight %>">
+  <% if params[:report_id].blank? %>
+    <td>
+      <%= link_to report_insight.report, report_insight.report.name %>
+    </td>
+  <% end %>
+  <td>
+    <span class="badge <%= report_insight.trigger_type&.downcase == "system" ? 'bg-success' : 'bg-info' %>">
+        <%= report_insight.trigger_type&.titleize %>
+    </span>
+    <br>
+    <small><strong>By: </strong></small><%= link_to report_insight.triggered_by_user if report_insight.triggered_by_user %>
+  </td>
+    <td>
+      <%= l report_insight.triggered_at if report_insight.triggered_at %>
+    </td>
+  <td>
+    <span>
+        <span class="badge bg-<%=report_insight.status_badge%>" type="button" data-bs-toggle="collapse" data-bs-target=".report_insight_status_message_<%=report_insight.id%>"><%= report_insight.status&.titleize %>
+        </span>
+        <small class="text-muted collapse report_insight_status_message_<%=report_insight.id%>">
+            <%= report_insight.status_message if current_user  %>
+        </small>
+    </span>
+  </td>
+  <td>
+    <%= link_to  t_common(:show), report_insight, {class: "btn btn-outline-primary ti ti-eye"} %>
+    <%= link_to  "Details", report_insight_path(report_insight, details: true), {class: "btn btn-outline-secondary ti ti-menu-2"} %>
+  </td>
+</tr>

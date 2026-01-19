@@ -16,7 +16,7 @@
       <span class="d-none d-md-block font-weight-medium">All Reports</span>
     </a>
   </li>
-  
+
   <li class="nav-item ms-auto">
     <%= render "/reports/new_report" %>
   </li>
@@ -25,8 +25,9 @@
 
 <div class="tab-content">
   <div id="note-full-container" class="note-has-grid row">
+    <% report_analysis_agent_enabled = current_user.entity.support_agents.report_analysis_agent? %>
     <% @reports.each do |report| %>
-        <%= render "/reports/card", report: report %>
+        <%= render "/reports/card", report: report, report_analysis_agent_enabled: report_analysis_agent_enabled %>
     <% end %>
   </div>
 </div>

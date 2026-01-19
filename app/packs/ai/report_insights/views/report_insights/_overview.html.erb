@@ -1,0 +1,98 @@
+<% report = @report_insight.report %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <!-- Left side: title + meta -->
+  <div>
+    <h3 class="h3 mb-0 text-gray-800">
+      Report Analyst Note
+    </h3>
+
+    <small class="text-muted">
+      Generated <%= time_ago_in_words(@report_insight.triggered_at) %> ago
+      (<%= @report_insight.record_count %> records)
+    </small>
+  </div>
+
+  <!-- Right side: actions -->
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= link_to "View Report Data",
+        report.url,
+        class: "btn btn-outline-primary ti ti-external-link",
+        target: "_blank",
+        rel: "noopener" %>
+
+    <%= button_to "Regenerate",
+        generate_report_insight_report_path(report),
+        method: :post,
+        form_class: "deleteButton d-inline",
+        class: "btn btn-outline-secondary ti ti-refresh",
+        data: {
+            action: "click->confirm#popup",
+            msg: "Are you sure you want to regenerate the Report Analysis? This will enqueue a new analysis generation job.",
+            method: :post,
+            turbo: false
+        } if policy(report).generate_report_insight? %>
+  </div>
+</div>
+
+<hr/>
+
+
+<% result = markdown_with_charts_and_unused(@report_insight.ai_response, @report_insight.charts_spec) %>
+
+<div class="card mb-3">
+  <div class="card-body">
+    <div class="ai-md">
+      <%= result[:html] %>
+    </div>
+  </div>
+</div>
+
+<% if current_user.present? && result[:unused_charts].present? %>
+  <h5 class="mb-2">Charts</h5>
+
+  <% result[:unused_charts].each do |chart| %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <% type = chart.dig("config","type").to_s %>
+        <% klass = "ai-chart" + (type.present? ? " ai-chart--#{type}" : "") %>
+        <div class="<%= klass %>">
+          <canvas id="chart-<%= chart["id"] %>"></canvas>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>
+
+<%= render ToggleCard.new(title: "Report Data", css_class: "show_report_data", state: "collapsed") do %>
+    <%= turbo_frame_tag with_frame("#{report.model.pluralize.underscore}_frame"),
+      loading: :lazy,
+      target: "_top",
+      src: report.url do %>
+      <%= render "layouts/loading" %>
+    <% end %>
+<% end %>
+
+<script>
+  function renderAiReportCharts() {
+    const charts = <%= raw(@report_insight.charts_spec.to_json) %>;
+    if (!charts) return;
+
+    charts.forEach((chart) => {
+      if (!chart || chart.library !== "chartjs") return;
+
+      const canvas = document.getElementById(`chart-${chart.id}`);
+      if (!canvas) return;
+
+      // Avoid double-render if Turbo caches the page
+      if (canvas.dataset.rendered === "1") return;
+      canvas.dataset.rendered = "1";
+
+      const ctx = canvas.getContext("2d");
+      new Chart(ctx, chart.config);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", renderAiReportCharts);
+  document.addEventListener("turbo:load", renderAiReportCharts);
+</script>

@@ -8,7 +8,6 @@ class CapitalDistributionPaymentsController < ApplicationController
     @capital_distribution_payments = result.capital_distribution_payments
 
     @pagy, @capital_distribution_payments = pagy(@capital_distribution_payments, limit: params[:per_page] || 10) if params[:all].blank? && !request.format.xlsx?
-    @report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
 
     respond_to do |format|
       format.html

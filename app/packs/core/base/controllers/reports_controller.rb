@@ -1,5 +1,5 @@
 class ReportsController < ApplicationController
-  before_action :set_report, only: %i[show dynamic edit update destroy configure_grids]
+  before_action :set_report, only: %i[show dynamic edit update destroy configure_grids generate_report_insight]
 
   # GET /reports or /reports.json
   def index
@@ -101,6 +101,17 @@ class ReportsController < ApplicationController
     @field_options = (@field_options.map { |name, value| [name, value] } + Array(@custom_field_names).map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
   end
 
+  def generate_report_insight
+    if @report.ai_prompt.blank?
+      redirect_to edit_report_path(@report), alert: "Please set an AI Prompt for this report before generating Report Analysis."
+      nil
+    else
+      GenerateReportInsightJob.perform_later(@report.id, user_id: current_user.id, triggered_by_id: current_user.id)
+      redirect_path = request.referer || report_path(@report)
+      redirect_to redirect_path, notice: "Report Analysis generation enqueued"
+    end
+  end
+
   private
 
   # Use callbacks to share common setup or constraints between actions.
@@ -112,6 +123,6 @@ class ReportsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def report_params
-    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category, :tag_list, :curr_role, :metadata, :template_xls)
+    params.require(:report).permit(:entity_id, :user_id, :name, :description, :url, :category, :tag_list, :curr_role, :metadata, :template_xls, :ai_prompt, :send_notification, :notification_recipients, :notification_ccs, :notification_start_after, :notification_start_unit, :notification_repeat_interval, :notification_repeat_unit)
   end
 end

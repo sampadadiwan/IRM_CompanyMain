@@ -11,7 +11,6 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs or /investor_kycs.json
   def index
-    params[:q] = JSON.parse(params[:q]) if params[:q].is_a?(String)
     fetch_rows
 
     respond_to do |format|
@@ -24,14 +23,12 @@ class InvestorKycsController < ApplicationController
 
   def fetch_rows
     authorize(InvestorKyc)
-    @q = InvestorKyc.ransack(params[:q])
-    @investor_kycs = policy_scope(@q.result).includes(:entity, :investor)
-    @investor_kycs = @investor_kycs.includes(:support_agent_report) if params[:support_agent_report].present?
-    @investor_kycs = apply_scopes(@investor_kycs)
+
+    result = InvestorKycList.call(current_user, params) { |relation| policy_scope(relation) }
+    @q = result.q
+    @investor_kycs = result.investor_kycs
 
     @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
-
-    @investor_kycs = KycSearch.perform(@investor_kycs, current_user, params)
 
     @pagy, @investor_kycs = pagy(@investor_kycs, limit: params[:per_page]) if params[:all].blank? && !request.format.xlsx?
 

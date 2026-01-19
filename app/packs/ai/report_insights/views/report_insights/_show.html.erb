@@ -1,0 +1,119 @@
+<%= render ToggleCard.new(title: "Report Analysis", css_class: "show_report_insight", state: "show") do %>
+
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Belongs to
+    </td>
+    <td class="d-flex align-items-center gap-2">
+
+            <%= link_to @report_insight.report.to_s, @report_insight.report %>
+
+            <%= link_to @report_insight.report.url do %>
+                <i class="ti ti-external-link"></i>
+            <% end %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Status
+    </td>
+    <td>
+      <span class="badge bg-<%=report_insight.status_badge%>" type="button"><%= report_insight.status&.titleize %>
+        </span>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Status Message
+    </td>
+    <td>
+      <%= @report_insight.status_message %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Records Count
+    </td>
+    <td>
+      <%= @report_insight.record_count %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Trigger Type
+    </td>
+    <td>
+      <%= @report_insight.trigger_type&.titleize %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Triggered At
+    </td>
+    <td>
+      <%= l @report_insight.triggered_at if @report_insight.triggered_at %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Triggered By
+    </td>
+    <td>
+      <%= @report_insight.triggered_by_user.name if @report_insight.triggered_by_user %>
+    </td>
+  </tr>
+  <% if params[:debug].present?%>
+   <tr>
+    <td>
+      Prompt Used
+    </td>
+    <td>
+      <%= @report_insight.prompt_used if @report_insight.prompt_used %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      AI Response
+    </td>
+    <td>
+      <%= @report_insight.ai_response if @report_insight.ai_response %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Summary
+    </td>
+    <td>
+      <%= @report_insight.summary if @report_insight.summary %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Charts Spec
+    </td>
+    <td>
+      <%= @report_insight.charts_spec if @report_insight.charts_spec %>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+      Notes
+    </td>
+    <td>
+      <%= @report_insight.notes if @report_insight.notes %>
+    </td>
+  </tr>
+  <% end %>
+
+</table>
+
+
+<% end %>
+<div>
+    <%= link_to  "Overview", @report_insight, {class: "btn btn-outline-primary ti ti-eye"} %>
+</div>

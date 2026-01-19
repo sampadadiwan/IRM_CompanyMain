@@ -1,0 +1,46 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Report Analyses</h1>
+
+  <div class="d-flex flex-wrap align-items-center gap-2">
+
+    <% if params[:report_id].present? %>
+        <% msg = "This will generate a report analysis. Proceed?" %>
+        <%= button_to "Generate Analysis",
+        generate_report_insight_report_path(id: params[:report_id]),
+        class: "btn btn-outline-success d-inline-flex align-items-center",
+        data: {msg:, action: "click->confirm#popup", method: :post}  %>
+    <% end %>
+  </div>
+
+
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="fund_units" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <% if params[:report_id].blank? %>
+        <th>
+          Belongs to Report
+        </th>
+        <% end %>
+        <th>
+          Trigger Type
+        </th>
+        <th>
+          Triggered At
+        </th>
+        <th>
+          Status
+        </th>
+        <th>
+        </th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% report_insights.each do |report_insight| %>
+        <%= render report_insight %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

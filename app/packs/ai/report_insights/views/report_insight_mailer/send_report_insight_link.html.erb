@@ -1,0 +1,13 @@
+Dear User
+
+<p>
+    This is to notify that Analysis for Report: <%= @report_insight.report.name %> has been generated at <%= l @report_insight.report.notify_last_run_at %>.
+
+    <ul>
+        <li>
+            Please click the button below and view the report.
+        </li>
+    </ul>
+</p>
+
+<p class="btn btn-outline-primary"><%= link_to 'View Report', report_insight_url(@report_insight) %></p>

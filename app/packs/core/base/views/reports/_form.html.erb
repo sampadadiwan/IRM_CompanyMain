@@ -1,3 +1,5 @@
+<%= render FormCard.new(title: "Report") do %>
+
 <%= form_with(model: report) do |form| %>
   <% if report.errors.any? %>
     <div class="alert alert-danger">
@@ -66,7 +68,51 @@
     <%= form.text_area :metadata, class: "form-control"  %>
   </div>
 
+  <% if current_user.entity.support_agents.report_analysis_agent? %>
+
+  <div class="form-group">
+    <%= form.label :ai_prompt %>
+    <%= form.text_area :ai_prompt, class: "form-control"  %>
+  </div>
+
+
+  <div class="form-group form-check">
+    <%= form.check_box :send_notification, id: "send-notification-toggle", class: "form-check-input" %>
+    <%= form.label :send_notification, "Enable scheduled notifications", class: "form-check-label" %>
+  </div>
+
+  <div class="form-group">
+    <%= form.label :notification_recipients %>
+    <%= form.text_field :notification_recipients, class: "form-control"  %>
+    <small class="form-text text-muted">User tags or comma separated emails.</small>
+  </div>
+
+  <div id="notification-schedule-fields">
+    <div class="form-group d-flex align-items-center gap-2">
+      <label class="mb-0" style="min-width: 100px;">Start after</label>
+      <%= form.number_field :notification_start_after, class: "form-control", min: 0, style: "max-width: 120px;" %>
+      <%= form.select :notification_start_unit,
+        [["Days", "days"],["Weeks", "weeks"],["Months", "months"]],
+        {},
+        class: "form-control",
+        style: "max-width: 120px;" %>
+    </div>
+
+    <div class="form-group d-flex align-items-center gap-2">
+      <label class="mb-0" style="min-width: 100px;">Repeat every</label>
+      <%= form.number_field :notification_repeat_interval, class: "form-control", min: 1, style: "max-width: 120px;" %>
+      <%= form.select :notification_repeat_unit,
+        [["Days", "days"],["Weeks", "weeks"],["Months", "months"]],
+        {},
+        class: "form-control",
+        style: "max-width: 120px;" %>
+    </div>
+  </div>
+  <% end %>
+
+
   <div class="form-group">
     <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
   </div>
+<% end %>
 <% end %>

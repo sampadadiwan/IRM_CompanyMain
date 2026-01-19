@@ -6,7 +6,6 @@ class CapitalDistributionsController < ApplicationController
     service = CapitalDistributionList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = service.q
     @capital_distributions = service.capital_distributions
-    @report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
   end
 
   # This action is used only to update the form for CD with dynamic Income (Gain from PIs) and Face Value For Redemption (Cost of PIs), and is triggered when a user selected a PI to be included in the distribution
