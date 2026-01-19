@@ -9,6 +9,6 @@ wb.add_worksheet(name: "PortfolioCashflow") do |sheet|
   # Create entries for each item
   @portfolio_cashflows.each do |pc|
     custom_field_values = get_custom_values(pc, form_type, custom_field_names)
-    sheet.add_row [pc.portfolio_company.investor_name, pc.investment_instrument.name, l(pc.payment_date), pc.amount.to_d, pc.tag, pc.notes] + custom_field_values
+    sheet.add_row [pc.portfolio_company.investor_name, pc.investment_instrument&.name, l(pc.payment_date), pc.amount.to_d, pc.tag, pc.notes] + custom_field_values
   end
 end
