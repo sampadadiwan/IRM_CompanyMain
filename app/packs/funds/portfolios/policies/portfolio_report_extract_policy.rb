@@ -34,4 +34,8 @@ class PortfolioReportExtractPolicy < FundBasePolicy
   def destroy?
     create?
   end
+
+  def generate_tear_sheet?
+    show?
+  end
 end

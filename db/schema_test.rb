@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_19_075146) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_20_174500) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3364,7 +3364,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_19_075146) do
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end
 
-  create_table "ticker_feeds", force: :cascade do |t|
+  create_table "tear_sheet_presentations", force: :cascade do |t|
+    t.json "blueprint"
+    t.text "content_html", size: :long
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "portfolio_report_extract_id", null: false
+    t.string "title"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_tear_sheet_presentations_on_entity_id"
+    t.index ["portfolio_report_extract_id"], name: "index_tear_sheet_presentations_on_portfolio_report_extract_id", unique: true
+  end
+
+  create_table "ticker_feeds", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "currency", limit: 3
     t.date "for_date"

@@ -6,4 +6,5 @@ class PortfolioReportExtract < ApplicationRecord
   belongs_to :portfolio_report
   belongs_to :portfolio_report_section, optional: true
   belongs_to :portfolio_company, class_name: 'Investor'
+  has_one :tear_sheet_presentation, dependent: :destroy
 end

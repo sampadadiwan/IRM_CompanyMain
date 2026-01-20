@@ -1,0 +1,53 @@
+<section class="slide-premium slide-risks" style="background-color: var(--palette-bg);">
+  <div class="slide-content" style="align-items: stretch;">
+    <header class="animate-soft-fade">
+      <div style="font-size: 0.75rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Risk Assessment</div>
+      <h2 style="font-size: 3.5rem; font-weight: 800; color: var(--palette-primary);"><%= title %></h2>
+    </header>
+
+    <div class="risks-grid grid grid-cols-12 gap-6 width-full">
+      <% risks.each_with_index do |risk, idx| %>
+        <%
+          # Layout: 1st risk is large, others are standard
+          col_span = idx == 0 ? "col-span-8" : "col-span-4"
+
+          # Impact color mapping
+          impact_color = case risk[:impact]
+                        when "high"   then "#ef4444" # Red 500
+                        when "medium" then "#f59e0b" # Amber 500
+                        else               "#3b82f6" # Blue 500
+                        end
+
+          # Handle icon- prefix from LLM
+          raw_icon = risk[:icon] || 'alert-triangle'
+          icon_name = raw_icon.start_with?('icon-') ? raw_icon.sub('icon-', '') : raw_icon
+        %>
+        <div class="<%= col_span %> glass-card animate-soft-fade stagger-<%= idx + 1 %>" style="padding: 24px 32px; border: 1px solid var(--palette-border); display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="risk-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div style="font-size: 0.875rem; color: var(--palette-text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+              <%= risk[:category] %>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <%# Impact Badge %>
+              <div style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 100px; background: <%= impact_color %>20; color: <%= impact_color %>; border: 1px solid <%= impact_color %>40;">
+                <%= risk[:impact] %> Impact
+              </div>
+
+              <div class="glass-border" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--palette-surface);">
+                <i class="ti ti-<%= icon_name %>" style="color: <%= impact_color %>; font-size: 1.5rem; -webkit-text-stroke: 1px <%= impact_color %>;"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="risk-mitigation">
+            <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--palette-primary); margin-bottom: 12px; line-height: 1.2;">Mitigation Strategy</h3>
+            <p style="font-size: 1.125rem; color: var(--palette-text-muted); font-weight: 300; line-height: 1.5; margin: 0;">
+              <%= risk[:mitigation] %>
+            </p>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

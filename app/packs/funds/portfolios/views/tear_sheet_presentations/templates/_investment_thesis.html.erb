@@ -1,0 +1,37 @@
+<%# locals: (title:, points:, analysis:, palette: nil) %>
+<section class="slide-premium slide-thesis" style="background-color: var(--palette-bg);">
+  <div class="slide-content" style="align-items: stretch;">
+    <header class="animate-soft-fade">
+      <div style="font-size: 0.875rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px;">Investment Case</div>
+      <h2 style="font-size: 4.5rem; font-weight: 800; color: var(--palette-primary);"><%= title %></h2>
+    </header>
+
+    <div class="grid grid-cols-12 gap-16 width-full">
+      <%# Left 66%: Narrative Analysis %>
+      <div class="col-span-8 animate-soft-fade stagger-1">
+        <h3 style="font-size: 1.125rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 30px;">Strategic Outlook</h3>
+        <div style="font-size: 1.75rem; color: var(--palette-text); line-height: 1.6; white-space: pre-line; font-weight: 300; opacity: 0.9;">
+          <%= analysis %>
+        </div>
+      </div>
+
+      <%# Right 33%: Key Takeaways (Glassmorphism) %>
+      <div class="col-span-4 animate-soft-fade stagger-2">
+        <div class="glass-card" style="padding: 40px; height: 100%; display: flex; flex-direction: column; gap: 40px; border: 1px solid var(--palette-border);">
+          <h3 style="font-size: 1rem; font-weight: 700; color: var(--palette-primary); text-transform: uppercase; letter-spacing: 0.1em;">Key Takeaways</h3>
+          <% points.each_with_index do |point, idx| %>
+            <div class="point-item" style="display: flex; gap: 20px; align-items: flex-start;">
+              <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-circle-check-filled" width="36" height="36" viewBox="0 0 24 24" stroke-width="2.5" stroke="var(--palette-accent)" fill="var(--palette-accent)" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;">
+                <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+                <path d="M17 3.34a10 10 0 1 1 -14.995 8.984l-.005 -.324l.005 -.324a10 10 0 0 1 14.995 -8.336zm-1.293 5.953a1 1 0 0 0 -1.32 -.083l-.094 .083l-3.293 3.292l-1.293 -1.292a1 1 0 0 0 -1.414 1.414l2 2a1 1 0 0 0 1.414 0l4 -4a1 1 0 0 0 0 -1.414z" />
+              </svg>
+              <div style="font-size: 1.5rem; font-weight: 600; color: var(--palette-primary); line-height: 1.3;">
+                <%= point %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

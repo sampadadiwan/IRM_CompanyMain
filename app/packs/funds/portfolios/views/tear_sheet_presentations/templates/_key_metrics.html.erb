@@ -1,0 +1,53 @@
+<%# locals: (title:, metrics:, palette: nil) %>
+<section class="slide-premium slide-metrics" style="background-color: var(--palette-bg);">
+  <div class="slide-content" style="align-items: stretch;">
+    <header class="animate-soft-fade">
+      <div style="font-size: 0.75rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Executive Summary</div>
+      <h2 style="font-size: 3.5rem; font-weight: 800; color: var(--palette-primary);"><%= title %></h2>
+    </header>
+
+    <div class="metrics-grid grid grid-cols-12 gap-6 width-full">
+      <% metrics.each_with_index do |metric, idx| %>
+        <%
+          # Bento Box Logic: First metric is large
+          # If many metrics (> 4), we make the hero slightly smaller to accommodate rows
+          is_hero = idx == 0
+          col_span = is_hero ? "col-span-8" : "col-span-4"
+
+          # Handle icon- prefix from LLM
+          raw_icon = metric[:icon] || 'chart-dots'
+          icon_name = raw_icon.start_with?('icon-') ? raw_icon.sub('icon-', '') : raw_icon
+        %>
+        <div class="<%= col_span %> glass-card animate-soft-fade stagger-<%= idx + 1 %>" style="padding: 24px 32px; border: 1px solid var(--palette-border); display: flex; flex-direction: column; justify-content: space-between;">
+          <div class="metric-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+            <div style="font-size: 0.875rem; color: var(--palette-text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+              <%= metric[:label] %>
+            </div>
+            <div class="glass-border" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--palette-surface);">
+              <i class="ti ti-<%= icon_name %>" style="color: var(--palette-accent); font-size: 1.5rem; -webkit-text-stroke: 1px var(--palette-accent);"></i>
+            </div>
+          </div>
+
+          <div>
+            <div class="metric-value" style="font-size: <%= is_hero ? '4.5rem' : '3.25rem' %>; font-weight: 800; color: var(--palette-primary); line-height: 1; margin-bottom: 12px; letter-spacing: -0.02em;">
+              <%= metric[:value] %>
+            </div>
+
+            <% if metric[:trend] %>
+              <div class="metric-trend" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; background: <%= (metric[:trend_direction] == 'up' || metric[:trend_direction].nil?) ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)' %>; border-radius: 100px; color: <%= (metric[:trend_direction] == 'up' || metric[:trend_direction].nil?) ? '#10b981' : '#ef4444' %>; font-weight: 700; font-size: 0.875rem;">
+                <i class="ti ti-arrow-narrow-<%= (metric[:trend_direction] == 'up' || metric[:trend_direction].nil?) ? 'up' : 'down' %>"></i>
+                <%= metric[:trend] %> <span style="opacity: 0.6; font-weight: 400; font-size: 0.75rem; margin-left: 2px;">YoY</span>
+              </div>
+            <% end %>
+          </div>
+
+          <% if metric[:description] %>
+            <div style="margin-top: 15px; border-top: 1px solid var(--palette-border); padding-top: 15px; font-size: 0.9375rem; color: var(--palette-text-muted); font-weight: 300; line-height: 1.3;">
+              <%= metric[:description] %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

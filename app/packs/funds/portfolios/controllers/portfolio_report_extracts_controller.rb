@@ -1,12 +1,43 @@
 # app/controllers/portfolio_report_extracts_controller.rb
 class PortfolioReportExtractsController < ApplicationController
-  before_action :set_portfolio_report_extract, only: %i[edit update]
+  before_action :set_portfolio_report_extract, only: %i[show edit update generate_tear_sheet]
 
   def index
     @portfolio_report_extracts = policy_scope(PortfolioReportExtract).order(id: :desc)
     @portfolio_report_extracts = @portfolio_report_extracts.where(portfolio_report_id: params[:portfolio_report_id]) if params[:portfolio_report_id].present?
     @portfolio_report_extracts = @portfolio_report_extracts.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
     @portfolio_report_extracts = @portfolio_report_extracts.includes(:portfolio_company, :portfolio_report_section)
+  end
+
+  def show
+    @presentation = @portfolio_report_extract.tear_sheet_presentation
+  end
+
+  def generate_tear_sheet
+    @presentation = @portfolio_report_extract.tear_sheet_presentation
+    @palette = params[:palette] || @presentation&.blueprint&.dig("palette") || "serene_blue"
+    @print_pdf = params[:print_pdf] == "true"
+    @slides_user = current_user
+
+    force_generate = params[:generate] == 'true'
+
+    if force_generate || @presentation.nil?
+      GenerateTearSheetJob.perform_later(current_user.id, @portfolio_report_extract.id, force_generate: true, palette: @palette)
+      @slides_html = nil
+    else
+      @slides_html = @presentation.content_html
+    end
+
+    respond_to do |format|
+      format.html { render layout: "presentation", template: "portfolio_report_extracts/generate_tear_sheet" }
+      format.json do
+        if @slides_html
+          render json: { html: @slides_html, status: "ready" }
+        else
+          render json: { status: "queued" }, status: :accepted
+        end
+      end
+    end
   end
 
   # GET /portfolio_report_extracts/:id/edit
@@ -18,7 +49,7 @@ class PortfolioReportExtractsController < ApplicationController
   def update
     @sections = build_sections_from_params(sections_params)
 
-    @portfolio_report_extract.data = @sections.to_json
+    @portfolio_report_extract.data = @sections
 
     if @portfolio_report_extract.save
       redirect_to portfolio_report_path(@portfolio_report_extract.portfolio_report),

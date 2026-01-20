@@ -1,0 +1,76 @@
+<div class="row mb-4">
+  <div class="col-8">
+    <h1>Extract Details: <%= @portfolio_report_extract.portfolio_company&.name %></h1>
+    <p class="text-muted">
+      Report: <%= @portfolio_report_extract.portfolio_report&.name %> |
+      Dates: <%= l @portfolio_report_extract.start_date %> to <%= l @portfolio_report_extract.end_date %>
+    </p>
+  </div>
+  <div class="col-4 text-end">
+    <div class="btn-group mb-2">
+      <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="ti ti-palette"></i> Palette
+      </button>
+      <ul class="dropdown-menu">
+        <li><%= link_to 'Corporate Navy', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'corporate_navy', generate: true), class: "dropdown-item", target: "_blank" %></li>
+        <li><%= link_to 'Executive Emerald', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'executive_emerald', generate: true), class: "dropdown-item", target: "_blank" %></li>
+        <li><%= link_to 'Modern Slate', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'modern_slate', generate: true), class: "dropdown-item", target: "_blank" %></li>
+        <li><%= link_to 'Midnight Onyx', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'midnight_onyx', generate: true), class: "dropdown-item", target: "_blank" %></li>
+      </ul>
+    </div>
+
+    <% if @presentation %>
+      <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, print_pdf: true), class: "btn btn-outline-secondary mb-2", target: "_blank" do %>
+        <i class="ti ti-download"></i> Export PDF
+      <% end %>
+      <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-primary mb-2", target: "_blank" do %>
+        <i class="ti ti-presentation"></i> View Slides
+      <% end %>
+    <% else %>
+      <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-primary btn-lg mb-2", target: "_blank" do %>
+        <i class="ti ti-presentation"></i> Generate Tear Sheet
+      <% end %>
+    <% end %>
+    <br>
+    <%= link_to 'Edit Data', edit_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-link text-muted" %>
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header bg-white">
+    <h5 class="card-title mb-0">Extracted Raw Data</h5>
+  </div>
+  <div class="card-body">
+    <%
+      data = @portfolio_report_extract.data
+      if data.is_a?(String)
+        parsed = parse_json(data)
+        data = parsed if parsed.present?
+      end
+    %>
+    <% if data.is_a?(Hash) || data.is_a?(Array) %>
+      <%= Json2table.get_html_table(data.to_json, JsonTable::TABLE_OPTIONS).html_safe %>
+    <% elsif data.present? %>
+      <%= data %>
+    <% end %>
+  </div>
+</div>
+
+<% if @presentation %>
+<div class="card border-primary">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <h5 class="card-title mb-0">Latest Tear Sheet</h5>
+    <%= link_to 'View Full Presentation', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract),
+                class: "btn btn-sm btn-light", target: "_blank" %>
+  </div>
+  <% palette = @presentation.blueprint&.dig("palette") || "serene_blue" %>
+  <div class="card-body p-0 theme-<%= palette %>" style="height: 400px; overflow: hidden; position: relative; background-color: var(--palette-bg);">
+    <div style="transform: scale(0.5); transform-origin: top left; width: 200%; height: 200%;">
+       <%= @presentation.content_html.html_safe %>
+    </div>
+    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer;"
+         onclick="window.open('<%= generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract) %>', '_blank')">
+    </div>
+  </div>
+</div>
+<% end %>

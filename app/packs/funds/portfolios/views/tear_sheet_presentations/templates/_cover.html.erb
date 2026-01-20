@@ -1,0 +1,52 @@
+<%# locals: (title:, subtitle:, palette: nil, logo_url: nil) %>
+<section class="slide-premium slide-cover" style="background-color: var(--palette-bg); overflow: hidden;">
+  <%# Subtle Background Grid or Accent %>
+  <div style="position: absolute; top: 0; right: 0; width: 40%; height: 100%; background: linear-gradient(135deg, transparent 0%, var(--palette-surface) 100%); opacity: 0.5; z-index: 0;"></div>
+
+  <div class="slide-content grid grid-cols-12 gap-8 relative z-10" style="align-items: center;">
+    <%# Left Side (Main Content) %>
+    <div class="col-span-8 animate-soft-fade">
+      <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 60px;">
+        <div class="glass-border" style="width: 80px; height: 80px; display: flex; align-items: center; justify-content: center; background: var(--palette-surface);">
+          <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-stack-2" width="48" height="48" viewBox="0 0 24 24" stroke-width="2.5" stroke="var(--palette-accent)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+            <path d="M12 4l-8 4l8 4l8 -4l-8 -4" />
+            <path d="M4 12l8 4l8 -4" />
+            <path d="M4 16l8 4l8 -4" />
+          </svg>
+        </div>
+        <div style="font-size: 1.25rem; font-weight: 700; color: var(--palette-primary); letter-spacing: 0.05em; text-transform: uppercase;">
+          CAPHIVE <span style="font-weight: 300; opacity: 0.4;">|</span> IRM
+        </div>
+      </div>
+
+      <h1 style="font-size: 8rem; font-weight: 800; line-height: 0.9; margin-bottom: 40px; color: var(--palette-primary); letter-spacing: -0.05em;">
+        <%= title %>
+      </h1>
+
+      <div style="width: 80px; height: 4px; background: var(--palette-accent); margin-bottom: 40px; border-radius: 2px;"></div>
+
+      <p style="font-size: 2.25rem; color: var(--palette-text-muted); font-weight: 300; max-width: 800px; line-height: 1.2; letter-spacing: -0.02em;">
+        <%= subtitle %>
+      </p>
+    </div>
+
+    <%# Right Side / Bottom (Metadata) %>
+    <div class="col-span-4 self-end animate-soft-fade stagger-1">
+      <div class="glass-card" style="padding: 40px; border: 1px solid var(--palette-border);">
+        <div style="margin-bottom: 40px;">
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Date Prepared</div>
+          <div style="font-size: 1.25rem; font-weight: 600; color: var(--palette-primary);"><%= Time.current.strftime("%B %d, %Y") %></div>
+        </div>
+        <div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Classification</div>
+          <div style="font-size: 1.25rem; font-weight: 600; color: var(--palette-primary);">Confidential Investor Memo</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="position: absolute; bottom: 40px; left: 8%; font-size: 0.875rem; font-weight: 500; color: var(--palette-text-muted); opacity: 0.4;">
+    © <%= Time.current.year %> Caphive IRM • For Qualified Investors Only
+  </div>
+</section>

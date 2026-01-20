@@ -3,6 +3,22 @@
     <td><%= l portfolio_extract.start_date %></td>
     <td><%= l portfolio_extract.end_date %></td>
     <td><%= portfolio_extract.portfolio_report_section&.name %></td>
-    <td><%= Json2table.get_html_table(JSON.parse(portfolio_extract.data), JsonTable::TABLE_OPTIONS).html_safe if portfolio_extract.data %></td>
-    <td><%= link_to 'Edit', edit_portfolio_report_extract_path(portfolio_extract), class: "btn btn-outline-primary" %></td>
+    <td>
+      <%
+        data = portfolio_extract.data
+        if data.is_a?(String)
+          parsed = parse_json(data)
+          data = parsed if parsed.present?
+        end
+      %>
+      <% if data.is_a?(Hash) || data.is_a?(Array) %>
+        <%= Json2table.get_html_table(data.to_json, JsonTable::TABLE_OPTIONS).html_safe %>
+      <% elsif data.present? %>
+        <%= data %>
+      <% end %>
+    </td>
+    <td>
+        <%= link_to 'View Details', portfolio_report_extract_path(portfolio_extract), class: "btn btn-outline-info" %>
+        <%= link_to 'Edit', edit_portfolio_report_extract_path(portfolio_extract), class: "btn btn-outline-primary" %>
+    </td>
 </tr>

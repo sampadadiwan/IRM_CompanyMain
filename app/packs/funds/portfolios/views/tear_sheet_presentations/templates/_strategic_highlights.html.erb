@@ -1,0 +1,36 @@
+<%# locals: (title:, highlights:, palette: nil) %>
+<section class="slide-premium slide-highlights" style="background-color: var(--palette-bg);">
+  <div class="slide-content" style="align-items: stretch;">
+    <header class="animate-soft-fade">
+      <h2 style="font-size: 4.5rem; font-weight: 800; color: var(--palette-primary);"><%= title %></h2>
+    </header>
+
+    <div class="highlights-container relative" style="width: 100%; margin-top: 40px; padding-left: 40px;">
+      <%# Vertical Timeline Line %>
+      <div style="position: absolute; left: 56px; top: 0; bottom: 40px; width: 1px; background: var(--palette-border); opacity: 0.5;"></div>
+
+      <div style="display: flex; flex-direction: column; gap: 60px;">
+        <% highlights.each_with_index do |highlight, idx| %>
+          <%
+            # Handle icon- prefix from LLM
+            raw_icon = highlight[:icon] || 'circle-check'
+            icon_name = raw_icon.start_with?('icon-') ? raw_icon.sub('icon-', '') : raw_icon
+          %>
+          <div class="highlight-item animate-soft-fade stagger-<%= idx + 1 %>" style="display: flex; gap: 40px; align-items: flex-start; position: relative;">
+            <%# Icon with Background Circle %>
+            <div class="glass-border" style="width: 44px; height: 44px; background: var(--palette-bg); display: flex; align-items: center; justify-content: center; z-index: 10; flex-shrink: 0; margin-top: 8px;">
+              <i class="ti ti-<%= icon_name %>" style="font-size: 1.75rem; color: var(--palette-accent); -webkit-text-stroke: 1px var(--palette-accent);"></i>
+            </div>
+
+            <div class="text-content">
+              <h3 style="font-size: 2rem; font-weight: 700; color: var(--palette-primary); margin: 0 0 12px 0;"><%= highlight[:title] %></h3>
+              <p style="font-size: 1.5rem; color: var(--palette-text-muted); line-height: 1.5; margin: 0; font-weight: 300; max-width: 1000px;">
+                <%= highlight[:description] %>
+              </p>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</section>

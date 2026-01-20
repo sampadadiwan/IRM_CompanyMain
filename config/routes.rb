@@ -3,7 +3,9 @@ Rails.application.routes.draw do
   mount Rswag::Api::Engine => '/api-docs'
 
   resources :portfolio_reports
-  resources :portfolio_report_extracts
+  resources :portfolio_report_extracts do
+    get :generate_tear_sheet, on: :member
+  end
 
   resources :excused_investors
 
