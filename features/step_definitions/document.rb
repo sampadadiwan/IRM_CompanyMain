@@ -460,14 +460,6 @@ Given('the commitment has document {string} with file {string}') do |document_na
   user: @user, file: File.new("public/sample_uploads/merge_test/#{file_name}", "r"))
 end
 
-Then('the document has {string} pages') do |expected_page_count|
-  @generated_document = Document.generated.last
-  file = @generated_document.file.download
-  reader = PDF::Reader.new(file.path)
-  puts "Pages: #{reader.page_count}"
-  expect(reader.page_count).to eq(expected_page_count.to_i)
-end
-
 When('I create a new document {string} with no file') do |args|
   @folder = Folder.last || Folder.create!(name: "Test Folder", parent: Folder.first, folder_type: :regular, entity_id: Folder.first.entity_id)
   @temp_document = Document.new
@@ -524,4 +516,48 @@ end
 Given('I remove the file from the document') do
   @document.file = nil
   @document.save(validate: false)
+end
+
+Then('the document should contain the text {string}') do |content|
+  if @reader.nil?
+    @generated_document = Document.generated.last
+    file = @generated_document.file.download
+    @reader = PDF::Reader.new(file.path)
+    @pdf_text = @reader.pages.map(&:text).join(" ")
+  end
+  # Concatenate all pages to search for the text string
+  puts "Checking for text '#{content}'"
+  expect(@pdf_text).to include(content), "Expected PDF to contain '#{content}' but it was missing."
+end
+
+Then('the document should contain an image with dimensions {int}x{int}') do |width, height|
+  if @reader.nil?
+    @generated_document = Document.generated.last
+    file = @generated_document.file.download
+    @reader = PDF::Reader.new(file.path)
+  end
+
+  found_dimensions = []
+  found_match = false
+
+  @reader.pages.each do |page|
+    next unless page.xobjects
+
+    page.xobjects.each do |_name, stream|
+      next unless stream.hash[:Subtype] == :Image
+
+      w = stream.hash[:Width]
+      h = stream.hash[:Height]
+      found_dimensions << "#{w}x#{h}"
+      puts "Found image with dimensions #{w}x#{h}"
+      # Check for exact match
+      if w == width && h == height
+        found_match = true
+        break
+      end
+    end
+    break if found_match
+  end
+
+  expect(found_match).to be(true), "Expected image #{width}x#{height} not found. Found images with dimensions: #{found_dimensions.join(', ')}"
 end

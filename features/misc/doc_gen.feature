@@ -177,8 +177,18 @@ Scenario Outline: Check header footer and append documents merging in Generating
   And the commitment has document "Commitment Agreement Template2 Footer" with file "pdf sample with images.pdf"
   And we Generate Commitment Agreement for the first capital commitment
   Then the "Commitment Agreement Template2" is successfully generated
-  And the document has "19" pages
-
+  # from CapHive - CERTIFICATE OF INCORPORATION.PDF
+  And the document should contain the text "This certificate only evidences incorporation of the company on the basis of documents"
+  # from CapHive - GST Certificate.pdf
+  And the document should contain the text "The registration certificate is required to be prominently displayed at all places of business in the State"
+  # from pdf sample with images text
+  And the document should contain the text "Adobe Acrobat PDF Files"
+  # from TEST DOC 3 - 24 Oct 25 - 2.pdf
+  And the document should contain the text "Total Commitment Amount (In Words)"
+  # from Commitment Agreement Template2
+  And the document should contain the text "THIS CONTRIBUTION AGREEMENT (hereinafter referred to as this “Agreement”)"
+  # from merge test image.jpeg
+  And the document should contain an image with dimensions 1200x800
 
   Examples:
     |user	    |entity                         |role       |given  |should	|access | crud |email|
