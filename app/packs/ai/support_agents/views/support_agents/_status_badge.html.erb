@@ -1,0 +1,28 @@
+<%# Status badge - Locals: report (can be nil) %>
+<%
+  if report.nil?
+    badge_class = "bg-secondary-subtle text-secondary"
+    badge_text = "Not Run"
+  else
+    case report.final_status
+    when "running"
+      badge_class = "bg-primary-subtle text-primary"
+      badge_text = "Running #{report.completed_steps_count}/#{report.steps.size}"
+    when "ready"
+      badge_class = "bg-success-subtle text-success"
+      badge_text = "Ready ✓"
+    when "blocked"
+      badge_class = "bg-danger-subtle text-danger"
+      badge_text = "Blocked ✗"
+    when "cancelled"
+      badge_class = "bg-secondary-subtle text-secondary"
+      badge_text = "Cancelled"
+    else
+      badge_class = "bg-warning-subtle text-warning"
+      badge_text = report.final_status&.humanize || "Unknown"
+    end
+  end
+%>
+<span class="badge rounded-pill <%= badge_class %>">
+  <%= badge_text %>
+</span>

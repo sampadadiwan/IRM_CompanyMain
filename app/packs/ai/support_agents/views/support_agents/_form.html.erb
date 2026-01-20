@@ -30,6 +30,11 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :with_steps, "Run with Step UI" %>
+      <%= form.check_box :with_steps, class: "form-check-input" %>
+    </div>
+
+    <div class="form-group">
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
     </div>
   <% end %>

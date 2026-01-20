@@ -1,4 +1,34 @@
 class SupportAgentService < Trailblazer::Operation
+  # Class-level step labels that can be overridden by subclasses
+  STEP_LABELS = {}.freeze
+
+  # Returns step definitions introspected from the Trailblazer operation
+  def self.step_definitions
+    nodes = Trailblazer::Activity::Introspect.Nodes(self)
+    steps = nodes.values
+                 .map(&:id)
+                 .reject { |id| id.to_s.start_with?("Start.", "End.") }
+
+    steps.map.with_index(1) do |step_id, index|
+      {
+        step: index,
+        id: step_id.to_s,
+        label: step_label(step_id),
+        short_label: short_label(step_id)
+      }
+    end
+  end
+
+  def self.step_label(step_id)
+    const_get(:STEP_LABELS)[step_id.to_sym] || step_id.to_s.humanize
+  rescue NameError
+    step_id.to_s.humanize
+  end
+
+  def self.short_label(step_id)
+    step_label(step_id).truncate(12, omission: '')
+  end
+
   def initialize_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
     ctx[:support_agent] = @support_agent
@@ -67,5 +97,111 @@ class SupportAgentService < Trailblazer::Operation
 
   def enabled?(field)
     %w[true 1 enabled yes].include? @support_agent.json_fields[field]&.downcase
+  end
+
+  # Initializes a SupportAgentReport with step definitions
+  def initialize_report_with_steps(ctx, model:, support_agent:, user_id: nil, **)
+    report = SupportAgentReport.find_or_initialize_by(owner: model, support_agent: support_agent)
+
+    steps = self.class.step_definitions.map do |step_def|
+      {
+        "step" => step_def[:step],
+        "id" => step_def[:id],
+        "label" => step_def[:label],
+        "short_label" => step_def[:short_label],
+        "status" => "pending"
+      }
+    end
+
+    report.json_fields = {
+      "steps" => steps,
+      "final_status" => "running",
+      "triggered_by" => user_id.present? ? "manual" : "scheduled",
+      "triggered_by_user_id" => user_id,
+      "run_at" => Time.current.iso8601
+    }
+    report.status = :pending
+    report.save!
+
+    ctx[:support_agent_report] = report
+    report
+  end
+
+  # Broadcasts a step update via Turbo Streams
+  def broadcast_step(report, step_id, status:, message: nil, count: nil, failed_records: nil)
+    step_data = report.json_fields["steps"]&.find { |s| s["id"] == step_id.to_s }
+    return unless step_data
+
+    step_data["started_at"] = Time.current.iso8601 if status.to_s == "running"
+    step_data["status"] = status.to_s
+    step_data["message"] = message if message
+    step_data["count"] = count if count
+    step_data["failed_records"] = failed_records if failed_records
+
+    if status.to_s.in?(%w[success failed skipped])
+      step_data["completed_at"] = Time.current.iso8601
+      if step_data["started_at"].present?
+        started = Time.zone.parse(step_data["started_at"])
+        step_data["duration_ms"] = ((Time.current - started) * 1000).round
+      end
+    end
+
+    report.save!
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "support_agent_report_#{report.id}",
+      target: "step_#{step_data['step']}",
+      partial: "support_agents/step_circle",
+      locals: { step: step_data }
+    )
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "support_agent_report_#{report.id}",
+      target: "progress_bar_#{report.id}",
+      partial: "support_agents/progress_bar",
+      locals: { report: report }
+    )
+  end
+
+  def mark_step_running(report, step_id)
+    broadcast_step(report, step_id, status: :running)
+  end
+
+  def mark_step_success(report, step_id, message: nil, count: nil)
+    broadcast_step(report, step_id, status: :success, message: message, count: count)
+  end
+
+  def mark_step_failed(report, step_id, message: nil, count: nil, failed_records: nil)
+    broadcast_step(report, step_id, status: :failed, message: message, count: count, failed_records: failed_records)
+  end
+
+  def mark_step_skipped(report, step_id, message: nil)
+    broadcast_step(report, step_id, status: :skipped, message: message)
+  end
+
+  def finalize_report(report, status:, failed_step: nil)
+    report.json_fields["final_status"] = status.to_s
+    report.json_fields["failed_step"] = failed_step if failed_step
+    report.json_fields["completed_at"] = Time.current.iso8601
+
+    if report.json_fields["run_at"].present?
+      run_at = Time.zone.parse(report.json_fields["run_at"])
+      report.json_fields["total_duration_ms"] = ((Time.current - run_at) * 1000).round
+    end
+
+    report.status = status.to_s == "ready" ? :completed : :failed
+    report.save!
+
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "support_agent_report_#{report.id}",
+      target: "progress_panel_#{report.id}",
+      partial: "support_agents/progress_panel",
+      locals: { report: report, support_agent: report.support_agent, target: report.owner, collapsed: false }
+    )
+  end
+
+  def cancelled?(report)
+    report.reload
+    report.json_fields["cancelled_at"].present?
   end
 end

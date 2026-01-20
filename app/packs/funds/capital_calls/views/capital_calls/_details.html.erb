@@ -1,3 +1,15 @@
+<%# Call Notice Agent Panel - collapsible %>
+<% support_agent = SupportAgent.find_by(agent_type: "CallNoticeAgent", entity_id: current_user.entity_id) %>
+<% if support_agent.present? %>
+  <% report = SupportAgentReport.find_by(owner: capital_call, support_agent: support_agent) %>
+  <%= render "support_agents/progress_panel", 
+      report: report, 
+      support_agent: support_agent, 
+      target: capital_call %>
+<% end %>
+
+
+
 <div class="associated_entity" data-controller="tabs tabdetails">
 
 

@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support Agent UI - Design Specification</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #101a33;
+      --text: #e8ecff;
+      --muted: #b9c3ff;
+      --line: rgba(255,255,255,.12);
+      --accent: #8dd6ff;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --error: #ef4444;
+      --pill: #18264a;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f6f7fb;
+        --card: #ffffff;
+        --text: #0b1020;
+        --muted: #4b5563;
+        --line: rgba(0,0,0,.10);
+        --accent: #0ea5e9;
+        --pill: #eef2ff;
+        --shadow: 0 10px 30px rgba(2,6,23,.08);
+      }
+    }
+    @media print {
+      :root {
+        --bg: #ffffff;
+        --card: #ffffff;
+        --text: #0b1020;
+        --muted: #4b5563;
+        --line: rgba(0,0,0,.15);
+        --accent: #0ea5e9;
+        --pill: #f3f4f6;
+        --shadow: none;
+      }
+      body { background: white !important; }
+      .card { box-shadow: none !important; border: 1px solid #e5e7eb !important; }
+      .no-print { display: none !important; }
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 42px 20px 64px;
+    }
+    header {
+      background: linear-gradient(135deg, rgba(141,214,255,.18), rgba(167,139,250,.12));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 26px 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: clamp(28px, 3.2vw, 38px);
+      letter-spacing: -.02em;
+    }
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+      page-break-inside: avoid;
+    }
+    h2 {
+      margin: 0 0 16px;
+      font-size: 22px;
+      letter-spacing: -.01em;
+      color: var(--accent);
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+    }
+    h3 {
+      margin: 20px 0 10px;
+      font-size: 17px;
+      color: var(--text);
+    }
+    h4 {
+      margin: 16px 0 8px;
+      font-size: 14px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    p { margin: 0 0 12px; }
+    ul, ol { margin: 0 0 16px; padding-left: 20px; }
+    li { margin: 6px 0; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9em;
+      background: var(--pill);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    pre {
+      background: #1a1a2e;
+      color: #e8ecff;
+      padding: 16px;
+      border-radius: 12px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.5;
+      margin: 12px 0;
+    }
+    .toc {
+      background: rgba(255,255,255,.04);
+      border: 1px dashed var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 20px;
+    }
+    .toc h3 { margin: 0 0 10px; font-size: 15px; }
+    .toc ol { margin: 0; }
+    .toc li { margin: 4px 0; }
+    .toc a { color: var(--accent); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+    .pill {
+      display: inline-block;
+      background: var(--pill);
+      border: 1px solid var(--line);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin: 2px;
+    }
+    .pill.success { background: rgba(34,197,94,.2); color: var(--success); }
+    .pill.warning { background: rgba(245,158,11,.2); color: var(--warning); }
+    .pill.error { background: rgba(239,68,68,.2); color: var(--error); }
+    .pill.blue { background: rgba(59,130,246,.2); color: #3b82f6; }
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(141,214,255,.10);
+      padding: 14px;
+      border-radius: 0 14px 14px 0;
+      margin: 12px 0;
+    }
+    .callout.warning {
+      border-left-color: var(--warning);
+      background: rgba(245,158,11,.10);
+    }
+    .callout.success {
+      border-left-color: var(--success);
+      background: rgba(34,197,94,.10);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+    }
+    th {
+      background: var(--pill);
+      font-weight: 600;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .file-path {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--pill);
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .step-visual {
+      display: flex;
+      justify-content: space-between;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .step-item {
+      flex: 1;
+      padding: 0 8px;
+    }
+    .step-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 8px;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    .step-circle.pending { background: #e5e7eb; color: #6b7280; }
+    .step-circle.success { background: #dcfce7; color: #166534; }
+    .step-circle.failed { background: #fee2e2; color: #dc2626; }
+    .step-circle.running { background: #dbeafe; color: #1d4ed8; }
+    .step-circle.skipped { background: #f3f4f6; color: #9ca3af; }
+    .step-label { font-size: 12px; color: var(--muted); }
+    .step-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .mockup {
+      background: var(--pill);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 18px;
+      margin: 16px 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 13px;
+      white-space: pre;
+      overflow-x: auto;
+      line-height: 1.4;
+    }
+    .decision-box {
+      background: rgba(34,197,94,.08);
+      border: 1px solid rgba(34,197,94,.3);
+      border-radius: 12px;
+      padding: 14px;
+      margin: 12px 0;
+    }
+    .decision-box h4 {
+      color: var(--success);
+      margin-top: 0;
+    }
+    footer {
+      margin-top: 24px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Support Agent UI - Design Specification</h1>
+      <p class="sub">Generic Real-time Progress Panel for All Trailblazer-based Support Agents</p>
+      <p class="sub">Version 1.0 | January 2026</p>
+    </header>
+
+    <!-- Table of Contents -->
+    <div class="card">
+      <nav class="toc">
+        <h3>Contents</h3>
+        <ol>
+          <li><a href="#overview">Overview & Goals</a></li>
+          <li><a href="#decisions">Design Decisions</a></li>
+          <li><a href="#architecture">Technical Architecture</a></li>
+          <li><a href="#data-flow">Data Flow</a></li>
+          <li><a href="#step-states">Step States & Timing</a></li>
+          <li><a href="#data-structure">Data Structure</a></li>
+          <li><a href="#ui-mockups">UI Mockups</a></li>
+          <li><a href="#api">API Endpoints</a></li>
+          <li><a href="#permissions">Permissions</a></li>
+          <li><a href="#files">Files to Create/Modify</a></li>
+          <li><a href="#implementation">Implementation Order</a></li>
+        </ol>
+      </nav>
+    </div>
+
+    <!-- Section 1: Overview -->
+    <section class="card" id="overview">
+      <h2>1. Overview & Goals</h2>
+
+      <h3>What is this?</h3>
+      <p>
+        A <strong>generic, reusable UI component</strong> that displays real-time progress for any
+        Trailblazer-based support agent. The component dynamically fetches step definitions from
+        the agent class at runtime and broadcasts progress updates via Turbo Streams.
+      </p>
+
+      <h3>Goals</h3>
+      <ul>
+        <li>Single UI component works for ALL support agents</li>
+        <li>Steps are introspected from Trailblazer at runtime (no duplication)</li>
+        <li>Real-time updates via Turbo Streams (existing infrastructure)</li>
+        <li>Click-to-expand step details</li>
+        <li>Support for concurrent agent runs</li>
+        <li>Backward compatible with existing agents</li>
+      </ul>
+
+      <h3>Agents Covered</h3>
+      <table>
+        <tr>
+          <th>Agent</th>
+          <th>Page Location</th>
+          <th>Target Model</th>
+        </tr>
+        <tr>
+          <td>KycOnboardingAgent</td>
+          <td><code>/investor_kycs/:id</code></td>
+          <td>InvestorKyc</td>
+        </tr>
+        <tr>
+          <td>PortfolioCompanyAgent</td>
+          <td><code>/investors/:id</code></td>
+          <td>Investor</td>
+        </tr>
+        <tr>
+          <td>CallNoticeAgent</td>
+          <td><code>/capital_calls/:id</code></td>
+          <td>CapitalCall</td>
+        </tr>
+        <tr>
+          <td>FundStatsAgent</td>
+          <td><code>/entities/:id/fund_stats</code></td>
+          <td>Entity</td>
+        </tr>
+        <tr>
+          <td>PortfolioReportAgent</td>
+          <td><code>/ai_report_sections/:id</code></td>
+          <td>AiReportSection</td>
+        </tr>
+      </table>
+    </section>
+
+    <!-- Section 2: Design Decisions -->
+    <section class="card" id="decisions">
+      <h2>2. Design Decisions</h2>
+
+      <div class="decision-box">
+        <h4>Decision 1: Step Introspection</h4>
+        <p><strong>Approach:</strong> Fetch steps from Trailblazer at runtime using <code>Trailblazer::Activity::Introspect.Nodes()</code></p>
+        <p><strong>Rationale:</strong> Single source of truth, no duplication, works with existing agents automatically</p>
+      </div>
+
+      <div class="decision-box">
+        <h4>Decision 2: Skipped Steps</h4>
+        <p><strong>Approach:</strong> Show skipped steps as gray with "Skipped" label</p>
+        <p><strong>Rationale:</strong> Provides visibility into what was checked vs what was bypassed</p>
+      </div>
+
+      <div class="decision-box">
+        <h4>Decision 3: Step Timing</h4>
+        <p><strong>Approach:</strong> Show duration per step (e.g., "1.2s")</p>
+        <p><strong>Rationale:</strong> Helps identify slow steps, useful for debugging and optimization</p>
+      </div>
+
+      <div class="decision-box">
+        <h4>Decision 4: History</h4>
+        <p><strong>Approach:</strong> No history view (show only latest run)</p>
+        <p><strong>Rationale:</strong> Simplifies UI, can be added later if needed</p>
+      </div>
+
+      <div class="decision-box">
+        <h4>Decision 5: Cancellation</h4>
+        <p><strong>Approach:</strong> Manual "Cancel" button during running state</p>
+        <p><strong>Rationale:</strong> User control for long-running jobs or stuck processes</p>
+      </div>
+
+      <div class="decision-box">
+        <h4>Decision 6: Permissions</h4>
+        <p><strong>Approach:</strong> Role-based access control for run/cancel actions</p>
+        <p><strong>Rationale:</strong> Prevents unauthorized execution, maintains audit trail</p>
+      </div>
+
+      <div class="decision-box">
+        <h4>Decision 7: Real-time Updates</h4>
+        <p><strong>Approach:</strong> Turbo Streams (existing infrastructure)</p>
+        <p><strong>Rationale:</strong> Already configured, consistent with UserAlert pattern</p>
+      </div>
+
+      <div class="decision-box">
+        <h4>Decision 8: Step Details</h4>
+        <p><strong>Approach:</strong> Click-to-expand inline (not modal)</p>
+        <p><strong>Rationale:</strong> Quick access without context switch</p>
+      </div>
+    </section>
+
+    <!-- Section 3: Technical Architecture -->
+    <section class="card" id="architecture">
+      <h2>3. Technical Architecture</h2>
+
+      <h3>Component Overview</h3>
+      <table>
+        <tr>
+          <th>Component</th>
+          <th>Location</th>
+          <th>Responsibility</th>
+        </tr>
+        <tr>
+          <td><code>SupportAgentService.step_definitions</code></td>
+          <td>Base class</td>
+          <td>Returns steps from Trailblazer at runtime</td>
+        </tr>
+        <tr>
+          <td><code>SupportAgentService#broadcast_step</code></td>
+          <td>Base class</td>
+          <td>Broadcasts step progress via Turbo</td>
+        </tr>
+        <tr>
+          <td><code>SupportAgentReport</code></td>
+          <td>Model</td>
+          <td>Stores steps array in json_fields</td>
+        </tr>
+        <tr>
+          <td><code>_progress_panel.html.erb</code></td>
+          <td>Partial</td>
+          <td>Generic UI for any agent</td>
+        </tr>
+        <tr>
+          <td><code>support_agent_progress_controller.js</code></td>
+          <td>Stimulus</td>
+          <td>Handles click interactions</td>
+        </tr>
+      </table>
+
+      <h3>Step Introspection Code</h3>
+      <pre>
+# In SupportAgentService base class
+def self.step_definitions
+  nodes = Trailblazer::Activity::Introspect.Nodes(self)
+  steps = nodes.values
+    .map { |attrs| attrs.id }
+    .reject { |id| id.to_s.start_with?("Start.", "End.") }
+
+  steps.map.with_index(1) do |step_id, index|
+    {
+      step: index,
+      id: step_id,
+      label: step_label(step_id),
+      short_label: short_label(step_id)
+    }
+  end
+end
+
+# Default: humanize the step name
+def self.step_label(step_id)
+  step_id.to_s.humanize
+end
+
+def self.short_label(step_id)
+  step_id.to_s.humanize.truncate(12, omission: '')
+end</pre>
+
+      <h3>Optional Label Override (per agent)</h3>
+      <pre>
+# In CallNoticeAgent (optional customization)
+STEP_LABELS = {
+  verify_investor_kyc: "KYC Pre-Check",
+  check_documents_generated: "Documents Generated",
+  check_documents_approved: "Documents Approved",
+  check_notification_configured: "Notification Configured",
+  mark_ready_to_send: "Ready to Send"
+}.freeze
+
+def self.step_label(step_id)
+  STEP_LABELS[step_id] || super
+end</pre>
+    </section>
+
+    <!-- Section 4: Data Flow -->
+    <section class="card" id="data-flow">
+      <h2>4. Data Flow</h2>
+
+      <pre>
++---------------------------------------------------------------------+
+|                           USER CLICKS                                |
+|                        "Run Agent" Button                            |
++---------------------------------------------------------------------+
+                                   |
+                                   v
++---------------------------------------------------------------------+
+|                         CONTROLLER                                   |
+|  POST /support_agents/:id/run                                        |
+|  -> Creates SupportAgentReport (status: running)                     |
+|  -> Enqueues SupportAgentJob                                         |
+|  -> Returns report_id                                                |
++---------------------------------------------------------------------+
+                                   |
+                                   v
++---------------------------------------------------------------------+
+|                      BACKGROUND JOB                                  |
+|  SupportAgentJob                                                     |
+|  -> For each step:                                                   |
+|     -> Check if cancelled                                            |
+|     -> Broadcast { step: N, status: 'running' }                      |
+|     -> Execute step logic                                            |
+|     -> Broadcast { step: N, status: 'success'|'failed', ... }        |
+|  -> Broadcast final status                                           |
++---------------------------------------------------------------------+
+                                   |
+                                   v
++---------------------------------------------------------------------+
+|                      TURBO BROADCAST                                 |
+|  Stream: "support_agent_report_#{report.id}"                         |
+|  Actions: replace step_circle, progress_bar, status_badge            |
++---------------------------------------------------------------------+
+                                   |
+                                   v
++---------------------------------------------------------------------+
+|                      BROWSER (Auto-updated)                          |
+|  Turbo Stream receives broadcast                                     |
+|  -> Replaces DOM elements automatically                              |
+|  -> No custom JS needed for updates                                  |
++---------------------------------------------------------------------+</pre>
+
+      <h3>Broadcast Pattern</h3>
+      <pre>
+# In SupportAgentService
+def broadcast_step(report, step_id, status:, message: nil, count: nil, failed_records: nil)
+  step_data = report.json_fields["steps"].find { |s| s["id"] == step_id.to_s }
+  return unless step_data
+
+  step_data["status"] = status.to_s
+  step_data["message"] = message if message
+  step_data["count"] = count if count
+  step_data["failed_records"] = failed_records if failed_records
+
+  if status.to_s.in?(%w[success failed skipped])
+    step_data["completed_at"] = Time.current.iso8601
+    step_data["duration_ms"] = calculate_duration(step_data)
+  end
+
+  report.save!
+
+  Turbo::StreamsChannel.broadcast_replace_to(
+    "support_agent_report_#{report.id}",
+    target: "step_#{step_data['step']}",
+    partial: "support_agents/step_circle",
+    locals: { step: step_data }
+  )
+end</pre>
+    </section>
+
+    <!-- Section 5: Step States -->
+    <section class="card" id="step-states">
+      <h2>5. Step States & Timing</h2>
+
+      <h3>Step States</h3>
+      <table>
+        <tr>
+          <th>State</th>
+          <th>Circle</th>
+          <th>Color</th>
+          <th>Label Example</th>
+        </tr>
+        <tr>
+          <td><code>pending</code></td>
+          <td style="text-align: center;">&#9675;</td>
+          <td><span class="pill">Gray</span></td>
+          <td>Waiting...</td>
+        </tr>
+        <tr>
+          <td><code>running</code></td>
+          <td style="text-align: center;">&#10227; (animated)</td>
+          <td><span class="pill blue">Blue</span></td>
+          <td>Checking...</td>
+        </tr>
+        <tr>
+          <td><code>success</code></td>
+          <td style="text-align: center;">&#10003;</td>
+          <td><span class="pill success">Green</span></td>
+          <td>12/12 verified</td>
+        </tr>
+        <tr>
+          <td><code>failed</code></td>
+          <td style="text-align: center;">&#10007;</td>
+          <td><span class="pill error">Red</span></td>
+          <td>3 failed</td>
+        </tr>
+        <tr>
+          <td><code>skipped</code></td>
+          <td style="text-align: center;">&mdash;</td>
+          <td><span class="pill">Gray</span></td>
+          <td>Skipped</td>
+        </tr>
+      </table>
+
+      <h3>Visual States</h3>
+      <div class="step-visual">
+        <div class="step-item">
+          <div class="step-circle success">&#10003;</div>
+          <div class="step-label">Success</div>
+          <div class="step-time">1.2s</div>
+        </div>
+        <div class="step-item">
+          <div class="step-circle failed">&#10007;</div>
+          <div class="step-label">Failed</div>
+          <div class="step-time">0.5s</div>
+        </div>
+        <div class="step-item">
+          <div class="step-circle running">&#10227;</div>
+          <div class="step-label">Running</div>
+          <div class="step-time">...</div>
+        </div>
+        <div class="step-item">
+          <div class="step-circle pending">&#9675;</div>
+          <div class="step-label">Pending</div>
+          <div class="step-time">-</div>
+        </div>
+        <div class="step-item">
+          <div class="step-circle skipped">&mdash;</div>
+          <div class="step-label">Skipped</div>
+          <div class="step-time">-</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6: Data Structure -->
+    <section class="card" id="data-structure">
+      <h2>6. Data Structure</h2>
+
+      <h3>SupportAgentReport.json_fields</h3>
+      <pre>
+{
+  "steps": [
+    {
+      "step": 1,
+      "id": "verify_investor_kyc",
+      "label": "KYC Pre-Check",
+      "status": "success",
+      "message": "All 12 investors verified",
+      "count": { "passed": 12, "total": 12 },
+      "started_at": "2026-01-14T10:00:01.000Z",
+      "completed_at": "2026-01-14T10:00:03.500Z",
+      "duration_ms": 2500
+    },
+    {
+      "step": 2,
+      "id": "check_documents_generated",
+      "label": "Documents Generated",
+      "status": "skipped",
+      "message": "Document validation disabled",
+      "skipped_reason": "validate_documents = false"
+    },
+    {
+      "step": 3,
+      "id": "check_documents_approved",
+      "label": "Documents Approved",
+      "status": "failed",
+      "message": "3 documents pending approval",
+      "count": { "passed": 9, "total": 12 },
+      "failed_records": [
+        { "id": 101, "name": "Investor A", "reason": "Pending", "link": "/documents/101" },
+        { "id": 102, "name": "Investor B", "reason": "Pending", "link": "/documents/102" },
+        { "id": 103, "name": "Investor C", "reason": "Pending", "link": "/documents/103" }
+      ],
+      "started_at": "2026-01-14T10:00:03.500Z",
+      "completed_at": "2026-01-14T10:00:04.200Z",
+      "duration_ms": 700
+    },
+    {
+      "step": 4,
+      "id": "check_notification_configured",
+      "label": "Notification Configured",
+      "status": "pending"
+    },
+    {
+      "step": 5,
+      "id": "mark_ready_to_send",
+      "label": "Ready to Send",
+      "status": "pending"
+    }
+  ],
+  "final_status": "blocked",
+  "failed_step": 3,
+  "triggered_by": "manual",
+  "triggered_by_user_id": 123,
+  "run_at": "2026-01-14T10:00:00Z",
+  "completed_at": "2026-01-14T10:00:04.200Z",
+  "total_duration_ms": 4200,
+  "cancelled_at": null,
+  "cancelled_by_user_id": null
+}</pre>
+
+      <h3>Model Helper Methods</h3>
+      <pre>
+# In SupportAgentReport
+def steps
+  json_fields["steps"] || []
+end
+
+def current_step
+  steps.find { |s| s["status"] == "running" }
+end
+
+def failed_step
+  steps.find { |s| s["status"] == "failed" }
+end
+
+def progress_percentage
+  return 0 if steps.empty?
+  completed = steps.count { |s| s["status"].in?(%w[success failed skipped]) }
+  (completed.to_f / steps.size * 100).round
+end
+
+def total_duration
+  json_fields["total_duration_ms"]&.then { |ms| "#{(ms / 1000.0).round(1)}s" }
+end
+
+def running?
+  json_fields["final_status"] == "running"
+end
+
+def ready?
+  json_fields["final_status"] == "ready"
+end
+
+def blocked?
+  json_fields["final_status"] == "blocked"
+end
+
+def cancelled?
+  json_fields["cancelled_at"].present?
+end</pre>
+    </section>
+
+    <!-- Section 7: UI Mockups -->
+    <section class="card" id="ui-mockups">
+      <h2>7. UI Mockups</h2>
+
+      <h3>Initial State (Never Run)</h3>
+      <div class="mockup">+---------------------------------------------------------------------+
+|  KYC Onboarding Check                                               |
+|  Validates investor KYC completeness                                |
+|                                                         [Run Agent] |
++---------------------------------------------------------------------+</div>
+
+      <h3>Running State</h3>
+      <div class="mockup">+---------------------------------------------------------------------+
+|  KYC Onboarding Check                              [Running]        |
+|  Validates investor KYC completeness                    [Cancel]    |
++---------------------------------------------------------------------+
+|  2 of 5 steps completed                                             |
+|  [========------------] 40%                                         |
+|                                                                     |
+|    (ok)       (ok)       (~~)       ( )        ( )                  |
+|   Fields     Docs      Validity   Consist.    Report                |
+|   1.2s       0.8s      Running    Pending     Pending               |
++---------------------------------------------------------------------+</div>
+
+      <h3>Completed - All Passed</h3>
+      <div class="mockup">+---------------------------------------------------------------------+
+|  KYC Onboarding Check                              [Ready]          |
+|  Validates investor KYC completeness               [Run Again]      |
++---------------------------------------------------------------------+
+|  5 of 5 steps completed - Run at 10:30 AM - Total: 4.8s             |
+|  [====================] 100%                                        |
+|                                                                     |
+|    (ok)       (ok)       (ok)       (ok)       (ok)                 |
+|   Fields     Docs      Validity   Consist.    Report                |
+|   1.2s       0.8s       2.1s       0.5s        0.2s                 |
++---------------------------------------------------------------------+</div>
+
+      <h3>Completed - With Failure (Collapsed)</h3>
+      <div class="mockup">+---------------------------------------------------------------------+
+|  KYC Onboarding Check                              [Blocked]        |
+|  Validates investor KYC completeness               [Run Again]      |
++---------------------------------------------------------------------+
+|  3 of 5 steps completed - Run at 10:30 AM                           |
+|  [==============------] 60%                                         |
+|                                                                     |
+|    (ok)       (--)       (ok)       (X)        ( )                  |
+|   Fields     Docs      Validity   Consist.    Report                |
+|   1.2s      Skipped     2.1s       0.5s       Pending               |
++---------------------------------------------------------------------+</div>
+
+      <h3>Completed - With Failure (Step Expanded)</h3>
+      <div class="mockup">+---------------------------------------------------------------------+
+|  KYC Onboarding Check                              [Blocked]        |
+|  Validates investor KYC completeness               [Run Again]      |
++---------------------------------------------------------------------+
+|  3 of 5 steps completed - Run at 10:30 AM                           |
+|  [==============------] 60%                                         |
+|                                                                     |
+|    (ok)       (--)       (ok)       (X)        ( )                  |
+|   Fields     Docs      Validity   Consist.    Report                |
+|   1.2s      Skipped     2.1s       0.5s       Pending               |
+|                                     |                               |
+|                                     v                               |
+|  +---------------------------------------------------------------+  |
+|  | X Field-Document Consistency Failed                           |  |
+|  |                                                               |  |
+|  | 2 mismatches found:                                           |  |
+|  |  - First Name: "John" vs Document shows "Jonathan" [View]     |  |
+|  |  - DOB: "1990-01-01" vs Document shows "1989-12-31" [View]    |  |
+|  |                                                               |  |
+|  | Completed in 0.5s                                             |  |
+|  +---------------------------------------------------------------+  |
++---------------------------------------------------------------------+</div>
+
+      <h3>Success Step Expanded</h3>
+      <div class="mockup">  +---------------------------------------------------------------+
+  | ok All Fields Validated                                       |
+  |                                                               |
+  | 15 of 15 required fields checked                              |
+  |  - All database attributes valid                              |
+  |  - All custom fields valid                                    |
+  |                                                               |
+  | Completed in 1.2s                                             |
+  +---------------------------------------------------------------+</div>
+
+      <h3>Skipped Step Expanded</h3>
+      <div class="mockup">  +---------------------------------------------------------------+
+  | -- Document Check Skipped                                     |
+  |                                                               |
+  | Reason: validate_documents setting is disabled                |
+  |                                                               |
+  | Enable this check in agent configuration to validate          |
+  | uploaded documents.                                           |
+  +---------------------------------------------------------------+</div>
+    </section>
+
+    <!-- Section 8: API Endpoints -->
+    <section class="card" id="api">
+      <h2>8. API Endpoints</h2>
+
+      <h3>POST /support_agents/:id/run</h3>
+      <p>Triggers the support agent for a specific target.</p>
+      <h4>Request</h4>
+      <pre>
+POST /support_agents/42/run
+Content-Type: application/json
+
+{
+  "target_type": "CapitalCall",
+  "target_id": 123
+}</pre>
+      <h4>Response (Success - 202 Accepted)</h4>
+      <pre>
+{
+  "status": "started",
+  "report_id": 456,
+  "stream": "support_agent_report_456",
+  "steps": [
+    { "step": 1, "id": "verify_investor_kyc", "label": "KYC Pre-Check", "status": "pending" },
+    { "step": 2, "id": "check_documents_generated", "label": "Documents Generated", "status": "pending" },
+    ...
+  ]
+}</pre>
+      <h4>Response (Error - 422)</h4>
+      <pre>
+{
+  "status": "error",
+  "message": "Agent already running for this target"
+}</pre>
+
+      <h3>POST /support_agents/:id/cancel</h3>
+      <p>Cancels a running agent.</p>
+      <h4>Request</h4>
+      <pre>
+POST /support_agents/42/cancel
+Content-Type: application/json
+
+{
+  "report_id": 456
+}</pre>
+      <h4>Response</h4>
+      <pre>
+{
+  "status": "cancelled",
+  "cancelled_at": "2026-01-14T10:05:00Z"
+}</pre>
+
+      <h3>GET /support_agents/:id/status</h3>
+      <p>Gets current status for a target (for initial page load).</p>
+      <h4>Request</h4>
+      <pre>
+GET /support_agents/42/status?target_type=CapitalCall&target_id=123</pre>
+      <h4>Response</h4>
+      <pre>
+{
+  "report_id": 456,
+  "final_status": "blocked",
+  "run_at": "2026-01-14T10:00:00Z",
+  "steps": [...],
+  "failed_step": 3
+}</pre>
+      <h4>Response (Never Run)</h4>
+      <pre>
+{
+  "report_id": null,
+  "final_status": "never_run"
+}</pre>
+    </section>
+
+    <!-- Section 9: Permissions -->
+    <section class="card" id="permissions">
+      <h2>9. Permissions</h2>
+
+      <h3>Permission Matrix</h3>
+      <table>
+        <tr>
+          <th>Role</th>
+          <th>Can Run</th>
+          <th>Can Cancel</th>
+        </tr>
+        <tr>
+          <td>Admin</td>
+          <td>All agents</td>
+          <td>All agents</td>
+        </tr>
+        <tr>
+          <td>Ops Manager</td>
+          <td>All agents</td>
+          <td>Own runs only</td>
+        </tr>
+        <tr>
+          <td>Ops User</td>
+          <td>Assigned agents</td>
+          <td>Own runs only</td>
+        </tr>
+        <tr>
+          <td>Viewer</td>
+          <td>None</td>
+          <td>None</td>
+        </tr>
+      </table>
+
+      <h3>Controller Authorization</h3>
+      <pre>
+# In SupportAgentsController
+before_action :authorize_agent_run, only: [:run]
+before_action :authorize_agent_cancel, only: [:cancel]
+
+def authorize_agent_run
+  unless current_user.can?(:run_support_agent, @support_agent)
+    render json: { error: "Not authorized" }, status: 403
+  end
+end
+
+def authorize_agent_cancel
+  report = SupportAgentReport.find(params[:report_id])
+  unless current_user.can?(:cancel_support_agent, report)
+    render json: { error: "Not authorized" }, status: 403
+  end
+end</pre>
+    </section>
+
+    <!-- Section 10: Files -->
+    <section class="card" id="files">
+      <h2>10. Files to Create/Modify</h2>
+
+      <h3>New Files</h3>
+      <table>
+        <tr>
+          <th>File</th>
+          <th>Purpose</th>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/views/support_agents/_progress_panel.html.erb</span></td>
+          <td>Main UI container partial</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/views/support_agents/_step_circle.html.erb</span></td>
+          <td>Individual step circle partial</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/views/support_agents/_step_details.html.erb</span></td>
+          <td>Expanded step details partial</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/views/support_agents/_progress_bar.html.erb</span></td>
+          <td>Progress bar partial</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/views/support_agents/_status_badge.html.erb</span></td>
+          <td>Status badge partial</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/javascript/controllers/support_agent_progress_controller.js</span></td>
+          <td>Stimulus controller for click interactions</td>
+        </tr>
+      </table>
+
+      <h3>Files to Modify</h3>
+      <table>
+        <tr>
+          <th>File</th>
+          <th>Changes</th>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/packs/ai/support_agents/services/support_agent_service.rb</span></td>
+          <td>Add <code>step_definitions</code>, <code>broadcast_step</code>, <code>cancelled?</code></td>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/packs/ai/support_agents/models/support_agent_report.rb</span></td>
+          <td>Add helper methods: <code>steps</code>, <code>progress_percentage</code>, etc.</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/packs/ai/support_agents/models/support_agent.rb</span></td>
+          <td>Add <code>CallNoticeAgent</code> to AGENT_TYPES</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">app/packs/ai/support_agents/controllers/support_agents_controller.rb</span></td>
+          <td>Add <code>run</code>, <code>cancel</code>, <code>status</code> actions</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">config/routes.rb</span></td>
+          <td>Add routes for run/cancel/status</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">Each agent class (KycOnboardingAgent, etc.)</span></td>
+          <td>Add optional <code>STEP_LABELS</code>, broadcast calls in steps</td>
+        </tr>
+        <tr>
+          <td><span class="file-path">Each agent's view page</span></td>
+          <td>Embed <code>_progress_panel</code> partial</td>
+        </tr>
+      </table>
+
+      <h3>Partial Usage</h3>
+      <pre>
+&lt;%# In any agent's view page (e.g., capital_calls/show.html.erb) %&gt;
+&lt;%= render "support_agents/progress_panel",
+    agent_class: CallNoticeAgent,
+    support_agent: @support_agent,
+    target: @capital_call,
+    report: @capital_call.support_agent_report %&gt;</pre>
+    </section>
+
+    <!-- Section 11: Implementation Order -->
+    <section class="card" id="implementation">
+      <h2>11. Implementation Order</h2>
+
+      <ol>
+        <li>
+          <strong>Backend Base</strong>
+          <ul>
+            <li>Modify <code>SupportAgentService</code> with <code>step_definitions</code> class method</li>
+            <li>Add <code>broadcast_step</code> helper method</li>
+            <li>Add <code>cancelled?</code> check method</li>
+            <li>Add <code>initialize_report_with_steps</code> method</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Model Helpers</strong>
+          <ul>
+            <li>Update <code>SupportAgentReport</code> with new json structure helpers</li>
+            <li>Add <code>steps</code>, <code>progress_percentage</code>, <code>duration</code> methods</li>
+            <li>Add status enum for <code>:running</code>, <code>:cancelled</code></li>
+          </ul>
+        </li>
+        <li>
+          <strong>Routes + Controller</strong>
+          <ul>
+            <li>Add <code>run</code>, <code>cancel</code>, <code>status</code> endpoints</li>
+            <li>Add permission checks</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Partials</strong>
+          <ul>
+            <li>Create <code>_progress_panel.html.erb</code></li>
+            <li>Create <code>_step_circle.html.erb</code></li>
+            <li>Create <code>_step_details.html.erb</code></li>
+            <li>Create <code>_progress_bar.html.erb</code></li>
+            <li>Create <code>_status_badge.html.erb</code></li>
+          </ul>
+        </li>
+        <li>
+          <strong>Stimulus Controller</strong>
+          <ul>
+            <li>Create <code>support_agent_progress_controller.js</code></li>
+            <li>Handle click-to-expand</li>
+            <li>Handle run/cancel button actions</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Pilot Agent</strong>
+          <ul>
+            <li>Migrate <code>KycOnboardingAgent</code> as first implementation</li>
+            <li>Add broadcast calls to each step</li>
+            <li>Embed partial in investor_kyc show page</li>
+            <li>Test end-to-end</li>
+          </ul>
+        </li>
+        <li>
+          <strong>Migrate Remaining Agents</strong>
+          <ul>
+            <li>PortfolioCompanyAgent</li>
+            <li>CallNoticeAgent (new)</li>
+            <li>FundStatsAgent</li>
+            <li>PortfolioReportAgent</li>
+          </ul>
+        </li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>Support Agent UI Design Specification | Generated January 2026</p>
+      <p class="no-print">Open in browser and use Print &rarr; "Save as PDF" to download</p>
+    </footer>
+  </div>
+</body>
+</html>

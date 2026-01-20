@@ -1,0 +1,130 @@
+<%# Generic progress panel for all support agents %>
+<%# Locals: report (SupportAgentReport or nil), support_agent (SupportAgent), target (polymorphic owner) %>
+<% report ||= nil %>
+<% is_running = report&.running? %>
+<% is_collapsed = !is_running && local_assigns.fetch(:collapsed, false) %>
+
+<div id="progress_panel_<%= report&.id || 'new' %>"
+     class="card mb-3 mt-3 border"
+     style="min-height: 52px;"
+     data-controller="support-agent-progress"
+     data-support-agent-progress-report-id-value="<%= report&.id %>"
+     data-support-agent-progress-support-agent-id-value="<%= support_agent&.id %>"
+     data-support-agent-progress-collapsed-value="<%= is_collapsed %>">
+
+  <%# Clickable Header - always visible %>
+  <div class="card-header bg-light d-flex justify-content-between align-items-center py-2"
+       style="cursor: pointer;"
+       data-action="click->support-agent-progress#togglePanel">
+    
+    <div class="d-flex align-items-center gap-2">
+      <%# Collapse indicator %>
+      <i data-support-agent-progress-target="collapseIcon"
+         class="ti <%= is_collapsed ? 'ti-chevron-right' : 'ti-chevron-down' %>"></i>
+      
+      <%# Spinner if running %>
+      <% if is_running %>
+        <span class="spinner-border spinner-border-sm text-primary"></span>
+      <% end %>
+      
+      <strong><%= support_agent&.name || "Support Agent" %></strong>
+    </div>
+
+    <div class="d-flex align-items-center gap-2">
+      <%# Status badge %>
+      <span id="status_badge_<%= report&.id || 'new' %>">
+        <%= render "support_agents/status_badge", report: report %>
+      </span>
+
+      <%# Run/Cancel button %>
+      <% if report.nil? || !report.running? %>
+        <%= button_to "Run Agent",
+            run_with_steps_support_agent_path(support_agent, target_type: target.class.name, target_id: target.id),
+            method: :post,
+            class: "btn btn-primary btn-sm",
+            data: { 
+              action: "click->support-agent-progress#run",
+              
+            } %>
+      <% else %>
+        <%= button_to "Cancel",
+            cancel_support_agent_path(support_agent, report_id: report.id),
+            method: :post,
+            class: "btn btn-outline-danger btn-sm",
+            data: { 
+              action: "click->support-agent-progress#cancel",
+              turbo: false
+            } %>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Mini progress bar - visible when running even if collapsed %>
+  <% if is_running %>
+    <div class="px-3 py-1 bg-light border-bottom">
+      <%= render "support_agents/progress_bar", report: report %>
+    </div>
+  <% end %>
+
+  <%# Collapsible body %>
+  <div id="panel_body_<%= report&.id || 'new' %>"
+       class="<%= is_collapsed ? 'd-none' : '' %>"
+       data-support-agent-progress-target="panelBody">
+    
+    <div class="card-body">
+      <% if report.present? && report.json_fields["run_at"].present? %>
+                <%# Progress bar and step circles container %>
+                <%# Progress bar and step circles container %>
+                <div>
+          <%# Step circles first, then position bar relative to them %>
+          <% step_count = report.steps.size %>
+          <% padding_percent = (100.0 / (step_count * 2)).round(1) %>
+          
+          <%# Progress bar with calculated padding %>
+          <% unless is_running %>
+            <div style="padding-left: <%= padding_percent %>%; padding-right: <%= padding_percent %>%;">
+              <%= render "support_agents/progress_bar", report: report %>
+            </div>
+          <% end %>
+
+          <%# Step circles %>
+          <div class="d-flex mt-3">
+            <% report.steps.each do |step| %>
+              <div class="flex-fill text-center">
+                <%= render "support_agents/step_circle", step: step %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+
+
+        
+
+
+        <%# Run info %>
+        <div class="text-muted small mt-3 pt-2 border-top">
+          <% if report.running? %>
+            <i class="ti ti-clock"></i> Started <%= time_ago_in_words(report.run_at) %> ago
+          <% else %>
+            <i class="ti ti-calendar"></i> Last run: <%= report.run_at&.strftime("%b %d, %Y at %I:%M %p") %>
+            <% if report.total_duration %>
+              &middot; <i class="ti ti-hourglass"></i> Duration: <%= report.total_duration %>
+            <% end %>
+          <% end %>
+        </div>
+
+        <%# Step details container (populated on click) %>
+        <div id="step_details_container_<%= report.id %>" class="mt-3">
+        </div>
+
+      <% else %>
+        <p class="text-muted mb-0">
+          <i class="ti ti-info-circle"></i> 
+          Click "Run Agent" to validate this capital call before sending notices.
+        </p>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%= turbo_stream_from "support_agent_report_#{report.id}" if report.present? %>

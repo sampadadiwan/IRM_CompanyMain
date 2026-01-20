@@ -1,0 +1,52 @@
+<%# Step circle - Locals: step (Hash from json_fields["steps"]) %>
+<%
+  status = step["status"]
+  step_num = step["step"]
+
+  icon = case status
+         when "success" then "ti-check"
+         when "failed" then "ti-x"
+         when "running" then "ti-loader"
+         when "skipped" then "ti-minus"
+         else "ti-circle"
+         end
+
+  color_class = case status
+                when "success" then "bg-success-subtle text-success border-success"
+                when "failed" then "bg-danger-subtle text-danger border-danger"
+                when "running" then "bg-primary-subtle text-primary border-primary"
+                when "skipped" then "bg-secondary-subtle text-secondary border-secondary"
+                else "bg-light text-muted border-secondary"
+                end
+%>
+<div id="step_<%= step_num %>"
+     class="text-center"
+     style="cursor: pointer; min-width: 60px;"
+     data-action="click->support-agent-progress#toggleStepDetails"
+     data-step-id="<%= step['id'] %>"
+     data-step-num="<%= step_num %>">
+
+  <div class="rounded-circle d-inline-flex align-items-center justify-content-center border <%= color_class %>"
+       style="width: 36px; height: 36px;">
+    <i class="ti <%= icon %> <%= 'spin-animation' if status == 'running' %>"></i>
+  </div>
+
+  <div class="small text-muted mt-1" style="font-size: 10px; line-height: 1.2;">
+    <%= step["short_label"] || step["label"]&.truncate(10) %>
+  </div>
+
+  <div style="font-size: 9px;">
+    <% if status == "running" %>
+      <span class="text-primary">...</span>
+    <% elsif step["duration_ms"].present? %>
+      <span class="text-muted"><%= (step["duration_ms"] / 1000.0).round(1) %>s</span>
+    <% else %>
+      <span class="text-muted">—</span>
+    <% end %>
+  </div>
+</div>
+
+<style>
+  .spin-animation { animation: spin 1s linear infinite; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+</style>

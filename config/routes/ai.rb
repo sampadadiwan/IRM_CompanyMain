@@ -2,8 +2,17 @@ resources :faq_threads do
   post :create_message, on: :member
 end
 resources :support_agents do
-  post 'run', on: :collection
+  collection do
+    post 'run'
+  end
+  member do
+    post 'run_with_steps'
+    post 'cancel'
+    get 'status'
+    get 'step_details'
+  end
 end
+
 resources :agent_charts do
   post 'regenerate', on: :member
 end

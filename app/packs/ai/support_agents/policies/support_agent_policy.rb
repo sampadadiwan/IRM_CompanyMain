@@ -40,4 +40,20 @@ class SupportAgentPolicy < ApplicationPolicy
   def run?
     update?
   end
+
+  def run_with_steps?
+    run?
+  end
+
+  def cancel?
+    run?
+  end
+
+  def status?
+    show?
+  end
+
+  def step_details?
+    show?
+  end
 end
