@@ -3366,7 +3366,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_20_174500) do
 
   create_table "tear_sheet_presentations", force: :cascade do |t|
     t.json "blueprint"
-    t.text "content_html", size: :long
+    t.text "content_html"
     t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "portfolio_report_extract_id", null: false
