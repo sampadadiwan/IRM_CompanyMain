@@ -27,6 +27,7 @@ module ExchangeRateShared
     "#{entity}/Exchange Rates/#{to_s.delete('->')}"
   end
 
+  # rubocop:disable Metrics/BlockLength
   class_methods do
     def latest_rates_before(end_date, entity_id)
       rates =
@@ -76,4 +77,5 @@ module ExchangeRateShared
       end
     end
   end
+  # rubocop:enable Metrics/BlockLength
 end

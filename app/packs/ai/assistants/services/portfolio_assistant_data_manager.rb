@@ -189,6 +189,7 @@ class PortfolioAssistantDataManager
   # rubocop:enable Metrics/PerceivedComplexity, Metrics/MethodLength
 
   # Lists KPIs for portfolio companies.
+  # rubocop:disable Metrics/PerceivedComplexity
   def list_portfolio_kpis(portfolio_company_ids:, scope: :actuals, query: {}, sort: nil, limit: nil, aggregate: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_kpis called with portfolio_company_ids: #{portfolio_company_ids.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     companies = Pundit.policy_scope(@user, Investor).portfolio_companies.where(id: portfolio_company_ids)
@@ -241,6 +242,7 @@ class PortfolioAssistantDataManager
       }
     end
   end
+  # rubocop:enable Metrics/PerceivedComplexity
 
   # Lists fund ratios.
   #

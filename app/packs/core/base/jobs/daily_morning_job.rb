@@ -1,4 +1,5 @@
 class DailyMorningJob < ApplicationJob
+  # rubocop:disable Metrics/BlockLength
   def perform
     Chewy.strategy(:atomic) do
       # DocumentEsignUpdateJob.perform_now
@@ -47,4 +48,5 @@ class DailyMorningJob < ApplicationJob
       ExceptionNotifier.notify_exception(e, data: { message: })
     end
   end
+  # rubocop:enable Metrics/BlockLength
 end

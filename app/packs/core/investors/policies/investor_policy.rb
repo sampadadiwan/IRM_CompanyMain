@@ -11,11 +11,8 @@ class InvestorPolicy < ApplicationPolicy
   # Scope defines which Investor records a user can view in lists/searches.
   class Scope < Scope
     def resolve
-      if user.has_cached_role?(:company_admin)
-        # Company admins can see all investors belonging to their entity.
-        scope.where(entity_id: user.entity_id)
-      elsif user.enable_investors && user.get_extended_permissions.set?(:investor_read)
-        # Employees with the :investor_read permission can see all investors in the entity.
+      if user.has_cached_role?(:company_admin) || (user.enable_investors && user.get_extended_permissions.set?(:investor_read))
+        # Company admins can see all investors belonging to their entity. Employees with the :investor_read permission can see all investors in the entity.
         scope.where(entity_id: user.entity_id)
       else
         # Other users only see investors they have been explicitly granted access to.

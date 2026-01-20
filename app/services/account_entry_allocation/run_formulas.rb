@@ -263,7 +263,7 @@ module AccountEntryAllocation
       end
     end
 
-    # rubocop:disable Metrics/BlockLength
+    # rubocop:disable Metrics/BlockLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
     def migrate_entries_to_primary(ctx, fund_formula_id: nil, final_check: false)
       sqlite_path = ctx[:sqlite_path]
       return false unless sqlite_path && File.exist?(sqlite_path)
@@ -349,7 +349,7 @@ module AccountEntryAllocation
       ctx[:allocation_run]&.update_column(:status, "Success") if final_check
       true
     end
-    # rubocop:enable Metrics/BlockLength
+    # rubocop:enable Metrics/BlockLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
 
     def relink_account_entry_parents(ctx)
       allocation_run_id = ctx[:allocation_run_id]

@@ -32,7 +32,7 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
   end
 
   # rubocop:disable Metrics/BlockLength
-  def process_rounds(_options, all_funding_rounds:, portfolio_company_id:, all_investors:, table_data:, round_data:, **)
+  def process_rounds(options, all_funding_rounds:, portfolio_company_id:, all_investors:, table_data:, round_data:, **)
     cumulative_rounds = []
 
     all_funding_rounds.each do |round|
@@ -58,9 +58,9 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
         next if row[:grouping_field] == "Total"
 
         # Special handling for "Self"
-        if row[:is_self] || row[:grouping_field] == _options[:portfolio_company_name]
+        if row[:is_self] || row[:grouping_field] == options[:portfolio_company_name]
           category = "Self"
-          investor_name = _options[:portfolio_company_name]
+          investor_name = options[:portfolio_company_name]
         else
           # Find investor to get category
           investor = all_investors.find { |i| i.investor_name == row[:grouping_field] }
