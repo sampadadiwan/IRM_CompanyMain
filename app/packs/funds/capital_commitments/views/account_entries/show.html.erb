@@ -116,6 +116,13 @@
             </span>
           </li>
 
+          <% if @account_entry.respond_to?(:folio_amount) && @account_entry.folio_amount > 0 %>
+            <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+              <span class="text-muted">Amount (Folio)</span>
+              <span class="fw-bold"><%= money_to_currency @account_entry.folio_amount, params %></span>
+            </li>
+          <% end %>
+
           <% if @account_entry.fund.has_tracking_currency? %>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
               <span class="text-muted">Tracking Currency</span>
