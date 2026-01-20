@@ -18,12 +18,12 @@ Scenario Outline: Place an offer
   And when the offer sale is finalized
   And I edit the offer "<offer>"
   Then I should see the offer details
-  When I click "Documents"
+  When I click the tab "Documents"
   When I create a new document "name=TestDoc"
   And an document should be created
   And the offer document details must be setup right
   When I visit the offer details page
-  When I click "Documents"
+  When I click the tab "Documents"
   And I should see the document details on the details page
 
 Examples:
@@ -70,7 +70,7 @@ Scenario Outline: Offer PAN verification
   Given there is a sale "<sale>"
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Investor;pan=1234567"
   Given my firm is an investor in the company
-  And the investor has "Seller" access rights to the sale    
+  And the investor has "Seller" access rights to the sale
   And I am at the sales details page
   Then when I place an offer "<offer>" from the offers tab
   Then I should see the offer details

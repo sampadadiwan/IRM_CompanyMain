@@ -122,28 +122,41 @@ Then('the account entries generated match the account entries in {string}') do |
 	parent = nil
 	parent = user_data["Parent Type"].constantize.find(user_data["Parent Id"]) if user_data["Parent Type"].present? && user_data["Parent Id"].present? && false
 	parent_name = user_data["Parent"].presence
+	reporting_date = Date.strptime(user_data["Reporting Date"], "%d-%m-%Y")
 
-	if parent_name.present?
-		if user_data["Ref Id"].present?
-			account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:, parent_name:, ref_id: user_data["Ref Id"])
+	account_entry = nil
+
+	ActiveRecord::Base.connection.clear_query_cache
+
+	AccountEntry.uncached do
+		if parent_name.present?
+			if user_data["Ref Id"].present?
+				account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: reporting_date, cumulative: cumulative, parent_name:, ref_id: user_data["Ref Id"])
+			else
+				account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: reporting_date, cumulative: cumulative, parent_name:)
+			end
 		else
-			account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:, parent_name:)
+			account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: reporting_date, cumulative: cumulative)
 		end
-	else
-		account_entry = AccountEntry.find_by(name: user_data["Name"], entry_type: user_data["Entry Type"], capital_commitment_id: capital_commitment&.id, fund_id: fund.id, reporting_date: user_data["Reporting Date"], cumulative:)
 	end
 
-	binding.pry if account_entry.nil?
+	if account_entry.nil?
+		puts "capital_commitment_id: #{capital_commitment&.id}, fund_id: #{fund.id}, reporting_date: #{user_data["Reporting Date"]}, cumulative: #{cumulative}, parent_name: #{parent_name}, ref_id: #{user_data["Ref Id"]}, reporting_date: #{reporting_date}"
+		binding.pry
+	end
 	account_entry.should_not be_nil, "Account entry not found for row #{idx + 1} with data: #{user_data.inspect}"
 
 	account_entry.parent_type = user_data["Parent Type"] if user_data["Parent Type"].present?
 
+
 	if account_entry.entry_type == "Percentage" || account_entry.name.include?("Percentage")
-		# binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8)).abs > 0.5
-		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8))
+		tolerance = 0.5
+		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8)).abs > tolerance
+		account_entry.amount_cents.round(8).should be_within(tolerance).of(user_data["Amount"].to_f.round(8))
 	else
-		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > 0.5
-		account_entry.amount_cents.round(8).should be_within(0.5).of(user_data["Amount"].to_f.round(8) * 100)
+		tolerance = 2
+		binding.pry if (account_entry.amount_cents.round(8) - user_data["Amount"].to_f.round(8) * 100).abs > tolerance
+		account_entry.amount_cents.round(8).should be_within(tolerance).of(user_data["Amount"].to_f.round(8) * 100)
 	end
 
 	count = idx

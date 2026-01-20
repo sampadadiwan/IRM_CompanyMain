@@ -30,36 +30,37 @@ module AccountEntryAllocation
 
     def generate_fund_rollup(ctx, name, fund, fund_formula, start_date, end_date)
       # Destroy old fund-level entries
-      fund.fund_account_entries.where(
+      AccountEntrySqlite.fund_entries.where(
+        fund_id: fund.id,
         name: name,
         entity_id: fund.entity_id,
-        fund: fund,
         reporting_date: end_date,
         entry_type: fund_formula.entry_type,
         generated: true,
         capital_commitment_id: nil
       ).find_each(&:destroy)
 
-      account_entries = fund.account_entries
-                            .where(
-                              name: name,
-                              entity_id: fund.entity_id,
-                              fund: fund,
-                              entry_type: fund_formula.entry_type,
-                              generated: true,
-                              cumulative: false
-                            ).where(reporting_date: start_date..end_date)
+      account_entries = AccountEntrySqlite
+                        .where(
+                          fund_id: fund.id,
+                          name: name,
+                          entity_id: fund.entity_id,
+                          entry_type: fund_formula.entry_type,
+                          generated: true,
+                          cumulative: false
+                        ).where(reporting_date: start_date..end_date)
 
       sum_cents = account_entries.sum(:amount_cents)
-      fund.fund_account_entries.create!(
+
+      AccountEntrySqlite.fund_entries.create!(
         name: name,
         entity_id: fund.entity_id,
-        fund: fund,
+        fund_id: fund.id,
         reporting_date: end_date,
         entry_type: fund_formula.entry_type,
         generated: true,
         cumulative: true,
-        fund_formula: fund_formula,
+        fund_formula_id: fund_formula.id,
         # Since this is a rollup, the rule_for is reporting
         rule_for: :reporting,
         amount_cents: sum_cents,

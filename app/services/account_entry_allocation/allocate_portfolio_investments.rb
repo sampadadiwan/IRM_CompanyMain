@@ -17,7 +17,7 @@ module AccountEntryAllocation
       Rails.logger.debug { "allocate_portfolios_investment(#{fund_formula.name})" }
 
       target_fund = if ctx[:master_fund_investments]
-                      raise "Error in #{fund_formula.name}: Master fund for #{fund} is not set" if fund.master_fund.nil?
+                      raise "Error in #{fund_formula.name}:#{fund_formula.id} Master fund for #{fund} is not set" if fund.master_fund.nil?
 
                       fund.master_fund
                     else
@@ -43,37 +43,39 @@ module AccountEntryAllocation
       # in some cases we want to use the investment date as the reporting date
       use_investment_date = fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["reporting_date"]&.strip == "investment_date"
 
-      # Pre-load portfolio investments to avoid repeated queries in the loop
-      portfolio_investments_array = portfolio_investments.includes(:fund, :investment_instrument).to_a
+      portfolio_investments = portfolio_investments.joins(:portfolio_company).where(fund_formula.meta_data_hash["where"]) if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["where"].present?
 
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).find_each.with_index do |capital_commitment, idx|
+      # Pre-load portfolio investments to avoid repeated queries in the loop
+      portfolio_investments_array = portfolio_investments.includes(:fund, :investment_instrument, :portfolio_company).to_a
+
+      ctx[:commitments].each.with_index do |capital_commitment, idx|
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         portfolio_investments_array.each do |portfolio_investment|
           # result = RubyProf.profile do
-
           reporting_date = if use_investment_date
                              portfolio_investment.investment_date
                            else
                              end_date
                            end
-          ae = AccountEntry.new(
+          ae = AccountEntrySqlite.new(
             name: fund_formula.name,
             entry_type: fund_formula.entry_type,
             entity_id: fund.entity_id,
-            fund: fund,
+            fund_id: fund.id,
             parent: portfolio_investment,
+            parent_name: portfolio_investment.to_s[0..254],
             reporting_date: reporting_date,
             period: "As of #{reporting_date}",
             generated: true,
-            fund_formula: fund_formula
+            fund_formula_id: fund_formula.id
           )
 
           begin
             create_instance_variables(ctx)
             AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: portfolio_investment, bdg: binding))
           rescue StandardError => e
-            raise "Error in #{fund_formula.name} for #{capital_commitment} #{portfolio_investment}: #{e.message}"
+            raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment} #{portfolio_investment}: #{e.message}"
           end
         end
 

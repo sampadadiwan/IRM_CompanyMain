@@ -31,28 +31,26 @@ module AccountEntryAllocation
     # rubocop:disable Security/Eval
     # rubocop:disable Lint/RescueException
     def safe_eval(eval_string, bdg)
-      AccountEntry.transaction(requires_new: true) do
-        Rails.logger.debug { "AllocationBaseOperation: eval_string = #{eval_string}" }
-        eval(eval_string, bdg, __FILE__, __LINE__)
-      rescue SkipRule => e
-        msg = "AllocationBaseOperation: SkipRule in eval #{eval_string}: #{e.message}"
-        Rails.logger.error msg
-        raise e
-      rescue Exception => e
-        # We should try and print out the variables used in the eval_string
-        variables_used = ""
-        begin
-          FundFormula.new.interpolate_formula(eval_string:).each do |var|
-            variables_used += " #{var} = #{bdg.eval(var)}, "
-          end
-        rescue Exception => e
-          variables_used = "Error in getting variables used: #{e.message}"
+      Rails.logger.debug { "AllocationBaseOperation: eval_string = #{eval_string}" }
+      eval(eval_string, bdg, __FILE__, __LINE__)
+    rescue SkipRule => e
+      msg = "AllocationBaseOperation: SkipRule in eval #{eval_string}: #{e.message}"
+      Rails.logger.error msg
+      raise e
+    rescue Exception => e
+      # We should try and print out the variables used in the eval_string
+      variables_used = ""
+      begin
+        FundFormula.new.interpolate_formula(eval_string:).each do |var|
+          variables_used += " #{var} = #{bdg.eval(var)}, "
         end
-
-        msg = "AllocationBaseOperation: Error in eval #{eval_string}: #{e.message}. Variables used: #{variables_used}"
-        Rails.logger.error msg
-        raise msg
+      rescue Exception => e
+        variables_used = "Error in getting variables used: #{e.message}"
       end
+
+      msg = "AllocationBaseOperation: Error in eval #{eval_string}: #{e.message}. Variables used: #{variables_used}"
+      Rails.logger.error msg
+      raise msg
     end
     # rubocop:enable Lint/RescueException
     # rubocop:enable Security/Eval

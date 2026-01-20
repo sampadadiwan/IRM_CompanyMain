@@ -7,7 +7,7 @@ class ImportFundFormula < ImportUtil
   step nil, delete: :create_custom_fields
 
   # Defines the standard headers expected in the import file.
-  STANDARD_HEADERS = ["Sequence", "Name", "Description", "Rule Type", "Rule For", "Formula", "Entry Type", "Rollup", "Enabled", "Tag List", "Generate Ytd, Quarterly, Since Inception Numbers", "Metadata"].freeze
+  STANDARD_HEADERS = ["Sequence", "Name", "Description", "Rule Type", "Rule For", "Formula", "Entry Type", "Rollup", "Enabled", "Tag List", "Generate Ytd, Quarterly, Since Inception Numbers", "Metadata", "Cache"].freeze
 
   # Returns the standard headers for the import file.
   # @return [Array<String>]
@@ -23,7 +23,7 @@ class ImportFundFormula < ImportUtil
     fund = import_upload.owner
     raise "Fund not found" unless fund
 
-    name, description, entry_type, formula, rule_type, rule_for, tag_list, roll_up, meta_data, generate_ytd_qtly, enabled, sequence = read_row_data(row_data)
+    name, description, entry_type, formula, rule_type, rule_for, tag_list, roll_up, meta_data, generate_ytd_qtly, enabled, sequence, cache = read_row_data(row_data)
     update_only = row_data["Update Only"]&.downcase == "yes"
 
     if update_only
@@ -33,7 +33,7 @@ class ImportFundFormula < ImportUtil
       fund_formula = fund.fund_formulas.find_by(id:)
       raise "FundFormula with id #{id} not found for Fund #{fund.id}" unless fund_formula
 
-      attrs = { name:, description:, rule_type:, rule_for:, formula:, entry_type:, roll_up:, enabled:, tag_list:, generate_ytd_qtly:, meta_data:, import_upload_id: import_upload.id }
+      attrs = { name:, description:, rule_type:, rule_for:, formula:, entry_type:, roll_up:, enabled:, tag_list:, generate_ytd_qtly:, meta_data:, import_upload_id: import_upload.id, add_to_commitment_cache: cache }
       attrs[:sequence] = sequence.presence&.to_i if sequence.present?
       fund_formula.update!(attrs)
 
@@ -44,7 +44,7 @@ class ImportFundFormula < ImportUtil
       if fund_formula.id.present?
         raise "FundFormula #{fund_formula.id} already exists"
       else
-        attrs = { entity_id: fund.entity_id, fund_id: fund.id, name:, description:, rule_type:, rule_for:, formula:, entry_type:, roll_up:, enabled:, import_upload_id: import_upload.id, tag_list:, generate_ytd_qtly:, meta_data: }
+        attrs = { entity_id: fund.entity_id, fund_id: fund.id, name:, description:, rule_type:, rule_for:, formula:, entry_type:, roll_up:, enabled:, import_upload_id: import_upload.id, tag_list:, generate_ytd_qtly:, meta_data:, add_to_commitment_cache: cache }
         attrs[:sequence] = sequence.presence&.to_i if sequence.present?
         fund.fund_formulas.create!(attrs)
       end
@@ -70,7 +70,8 @@ class ImportFundFormula < ImportUtil
     generate_ytd_qtly = row_data["Generate Ytd, Quarterly, Since Inception Numbers"]&.downcase == "yes"
     enabled = row_data["Enabled"]&.downcase == "yes"
     sequence = row_data["Sequence"]&.strip
+    cache = row_data["Cache"]&.downcase == "yes"
 
-    [name, description, entry_type, formula, rule_type, rule_for, tag_list, roll_up, meta_data, generate_ytd_qtly, enabled, sequence]
+    [name, description, entry_type, formula, rule_type, rule_for, tag_list, roll_up, meta_data, generate_ytd_qtly, enabled, sequence, cache]
   end
 end

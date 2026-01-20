@@ -3,7 +3,7 @@ class AccountEntriesController < ApplicationController
 
   after_action :verify_authorized, except: %i[index delete_all]
   before_action :set_account_entry, only: %i[show edit update destroy]
-  around_action :log_memory_delta if Rails.env.development?
+  # around_action :log_memory_delta if Rails.env.development?
 
   def adhoc
     authorize AccountEntry

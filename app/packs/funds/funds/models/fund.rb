@@ -7,6 +7,7 @@ class Fund < ApplicationRecord
   include WithApprovals
   include WithExchangeRate
   include WithIncomingEmail
+  include FundShared
 
   acts_as_favoritable
   include ForInvestor
@@ -27,9 +28,6 @@ class Fund < ApplicationRecord
   belongs_to :master_fund, class_name: "Fund", optional: true
   # If this is a master fund, it may have many feeder funds
   has_many :feeder_funds, class_name: "Fund", foreign_key: :master_fund_id
-
-  scope :feeder_funds, -> { where.not(master_fund_id: nil) }
-  scope :master_funds, -> { where(master_fund_id: nil) }
 
   has_many :fund_ratios, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
@@ -301,5 +299,15 @@ class Fund < ApplicationRecord
       incorrect_percentage << cc if cc.percentage.round(4) != (100 * cc.committed_amount_cents / cc.fund.committed_amount_cents).round(4)
     end
     incorrect_percentage
+  end
+
+  # Used only in the AccountEntryAllocationJob, which uses Sqlite for performance reasons
+  def account_entries_sqlite
+    AccountEntrySqlite.where(fund_id: id)
+  end
+
+  def portfolio_investment_ids
+    @portfolio_investment_ids ||= portfolio_investments.pluck(:id)
+    @portfolio_investment_ids
   end
 end

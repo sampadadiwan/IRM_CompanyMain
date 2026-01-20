@@ -68,12 +68,12 @@ module AccountEntryAllocation
         instance_variables: @instance_variables,
         timing: @timing
       }
-      Rails.logger.info { "Engine: ctx = #{ctx}" }
+      Rails.logger.debug { "Engine: ctx = #{ctx}" }
 
       # Start tracing just your Fund query:
       # SqlTracer.start(pattern: /FROM `investor_kycs`/)
       # Now call the RunFormulas operation (which in turn calls sub-operations).
-      AccountEntryAllocation::RunFormulas.call(ctx)
+      AccountEntryAllocation::RunFormulas.wtf?(ctx)
       # SqlTracer.stop
 
       # Return the final context or the result object for further inspection.

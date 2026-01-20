@@ -9,6 +9,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
   include ForInvestor
   include WithCustomField
   include WithDocQuestions
+  include AggregatePortfolioInvestmentShared
 
   # Adds dynamic search capabilities for monetary fields
   include RansackerAmounts.new(fields: %w[sold_amount bought_amount fmv avg_cost])

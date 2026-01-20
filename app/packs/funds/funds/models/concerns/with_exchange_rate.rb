@@ -24,7 +24,10 @@ module WithExchangeRate
   end
 
   def get_exchange_rate(from, to, as_of)
-    exchange_rates = entity.exchange_rates.where(from:, to:).order(as_of: :asc)
+    # We sometimes need to use the sqlite exchange rate table specially during allocations.See run_formulas.rb
+    model = self.class.name.include?("Sqlite") ? ExchangeRateSqlite : ExchangeRate
+
+    exchange_rates = model.where(entity_id: entity_id, from:, to:).order(as_of: :asc)
     @exchange_rate = as_of ? exchange_rates.where(as_of: ..as_of).last : exchange_rates.latest.last
     @exchange_rate
   end

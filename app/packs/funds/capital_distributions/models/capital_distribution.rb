@@ -7,9 +7,9 @@ class CapitalDistribution < ApplicationRecord
 
   include ForInvestor
   include WithCustomNotifications
+  include CapitalDistributionShared
 
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees"].freeze
-  enum :distribution_on, ["Commitment Percentage", "Investable Capital Percentage", "Upload"]
 
   belongs_to :fund, touch: true
   belongs_to :entity

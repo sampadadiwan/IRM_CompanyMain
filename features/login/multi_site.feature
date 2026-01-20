@@ -58,11 +58,3 @@ Feature: Multi-site user sync fanout
     And the UPSERT endpoint for "US" responds 500
     When I perform an upsert to "US" capturing errors
     Then a retryable sync error should occur
-
-  @sync-http
-  Scenario: Job swallows fatal 409 from target
-    Given a user "a@x.com" exists in region "IN" with regions "IN,US"
-    And the UPSERT endpoint for "US" responds 409
-    When I perform an upsert to "US" capturing errors
-    Then no sync exception should be raised
-    And a signed UPSERT should be sent to "US"

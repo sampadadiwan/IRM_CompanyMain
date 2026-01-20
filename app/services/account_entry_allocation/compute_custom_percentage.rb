@@ -19,11 +19,10 @@ module AccountEntryAllocation
       cc_map = {}
 
       # First pass, gather sums
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund).find_each do |capital_commitment|
+      ctx[:commitments].each do |capital_commitment|
         # Get the last entry for the field_name before the end_date
         # This example might break if there's no record. Check for nil in a real app.
-        last_ae = capital_commitment.account_entries
-                                    .where(name: field_name, reporting_date: ..end_date)
+        last_ae = AccountEntrySqlite.where(capital_commitment_id: capital_commitment.id, name: field_name, reporting_date: ..end_date)
                                     .order(reporting_date: :asc).last
         amount_cents = last_ae&.amount_cents.to_i
 
@@ -36,40 +35,40 @@ module AccountEntryAllocation
       end
 
       # Delete all previously generated percentages
-      AccountEntry.where(
+      AccountEntrySqlite.where(
         name: "#{field_name} Percentage",
         entity_id: fund.entity_id,
-        fund: fund,
+        fund_id: fund.id,
         reporting_date: end_date,
         generated: true
       ).find_each(&:destroy)
 
       # Second pass, create new entries
       bulk_records = []
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund).each_with_index do |capital_commitment, idx|
+      ctx[:commitments].each_with_index do |capital_commitment, idx|
         Rails.logger.debug { "ComputeCustomPercentage: #{field_name} Percentage, #{capital_commitment.id}, #{cc_map[capital_commitment.id]['amount_cents']} / #{total} = #{(100.0 * cc_map[capital_commitment.id]['amount_cents'] / total).round(2)}" } if total.positive?
 
         percentage = total.positive? ? (100.0 * cc_map[capital_commitment.id]["amount_cents"] / total) : 0
-        account_entry = AccountEntry.new(
+        account_entry = AccountEntrySqlite.new(
           name: "#{field_name} Percentage",
           entry_type: cc_map[capital_commitment.id]["entry_type"],
           entity_id: fund.entity_id,
-          fund: fund,
+          fund_id: fund.id,
           reporting_date: end_date,
           period: "As of #{end_date}",
-          capital_commitment: capital_commitment,
+          capital_commitment_id: capital_commitment.id,
           folio_id: capital_commitment.folio_id,
           generated: true,
           amount_cents: percentage,
           cumulative: false,
-          fund_formula: fund_formula
+          fund_formula_id: fund_formula.id
         )
 
         begin
           create_instance_variables(ctx)
           AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry:, capital_commitment: capital_commitment, parent: nil, bdg: binding))
         rescue StandardError => e
-          raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+          raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment}: #{e.message}"
         end
 
         # end

@@ -22,6 +22,7 @@ class CapitalDistributionPayment < ApplicationRecord
                                 "Completed" => "completed" }.freeze
 
   include ForInvestor
+  include CapitalDistributionPaymentShared
 
   update_index('capital_distribution_payment') { self if index_record? }
 
@@ -91,7 +92,6 @@ class CapitalDistributionPayment < ApplicationRecord
   scope :has_cost_of_investment, -> { where("cost_of_investment_cents > 0") }
   scope :has_income, -> { where("income_cents > 0") }
 
-  scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
   scope :notification_sent, -> { where(notification_sent: true) }
   scope :notification_not_sent, -> { where(notification_sent: false) }

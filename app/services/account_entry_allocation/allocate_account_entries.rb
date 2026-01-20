@@ -15,7 +15,7 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "allocate_account_entries #{fund_formula.name}" }
 
-      account_entries = fund.fund_account_entries.where(reporting_date: start_date..end_date).includes(:fund, :entity, :capital_commitment)
+      account_entries = AccountEntrySqlite.fund_entries.where(fund_id: fund.id, reporting_date: start_date..end_date)
 
       account_entries = if name_or_entry_type == "name"
                           account_entries.where(name: fund_formula.name)
@@ -32,7 +32,7 @@ module AccountEntryAllocation
               fund_account_entry = parent
             else
               fund_account_entry = parent.dup
-              fund_account_entry.amount = individual_account_entries.sum(&:amount)
+              fund_account_entry.amount_cents = individual_account_entries.sum(&:amount_cents)
             end
 
             Rails.logger.debug { "allocate_account_entries: Allocating id: #{fund_account_entry.id}, #{fund_account_entry}" }

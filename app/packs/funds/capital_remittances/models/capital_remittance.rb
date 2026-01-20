@@ -6,6 +6,7 @@ class CapitalRemittance < ApplicationRecord
   include WithExchangeRate
   include CapitalRemittanceFees
   include CapitalRemittanceCallBasis
+  include CapitalRemittanceShared
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
   STANDARD_COLUMNS = {
@@ -55,14 +56,6 @@ class CapitalRemittance < ApplicationRecord
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   has_many :commitment_adjustments, as: :owner, dependent: :destroy
-
-  scope :paid, -> { where(status: "Paid") }
-  # rubocop:disable Rails/DuplicateScope
-  scope :unpaid, -> { where(status: "Pending") }
-  scope :pending, -> { where(status: "Pending") }
-  # rubocop:enable Rails/DuplicateScope
-  scope :verified, -> { where(verified: true) }
-  scope :unverified, -> { where(verified: false) }
 
   monetize :tracking_collected_amount_cents, :tracking_call_amount_cents,
            with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }

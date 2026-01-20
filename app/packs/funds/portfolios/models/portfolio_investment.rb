@@ -13,6 +13,7 @@ class PortfolioInvestment < ApplicationRecord
   include WithCustomField              # JSON-based custom field support
   include ForInvestor                  # Scopes for investor filtering
   include RansackerAmounts.new(fields: %w[amount cost_of_sold fmv gain])
+  include PortfolioInvestmentShared
 
   ##########################################################
   ####################### ATTRIBUTES #######################
@@ -39,6 +40,8 @@ class PortfolioInvestment < ApplicationRecord
   has_many :portfolio_attributions, foreign_key: :sold_pi_id, dependent: :destroy
   has_many :buys_portfolio_attributions, class_name: "PortfolioAttribution", foreign_key: :bought_pi_id, dependent: :destroy
   has_many :stock_conversions, foreign_key: :from_portfolio_investment_id, dependent: :destroy
+
+  has_many :account_entries, -> { where(parent_type: "PortfolioInvestment") }, foreign_key: :parent_id
 
   ##########################################################
   ######################## VALIDATIONS #####################
@@ -78,42 +81,10 @@ class PortfolioInvestment < ApplicationRecord
   ########################## SCOPES ########################
   ##########################################################
 
-  scope :buys, -> { where("portfolio_investments.quantity > 0") }
-
   # Returns buys that are eligible to be matched to sells
   scope :allocatable_buys, lambda { |pc_id, inst_id|
     where("portfolio_company_id = ? AND investment_instrument_id = ? AND quantity > 0 AND net_quantity > 0", pc_id, inst_id)
       .order(investment_date: :asc)
-  }
-
-  scope :sells, -> { where("portfolio_investments.quantity < 0") }
-
-  scope :conversions, -> { where.not(conversion_date: nil) }
-  scope :distributed, -> { where.not(capital_distribution_id: nil) }
-  scope :not_distributed, -> { where(capital_distribution_id: nil) }
-
-  # Returns all portfolio investments for a given fund
-  scope :for_fund, ->(fund_id) { where(fund_id:) }
-
-  # Returns all portfolio investments for a given portfolio company
-  scope :for_portfolio_company, ->(pc_id) { where(portfolio_company_id: pc_id) }
-
-  # Returns all portfolio investments for a given investment instrument
-  scope :for_investment_instrument, ->(inst_id) { where(investment_instrument_id: inst_id) }
-
-  # Returns all portfolio investments for a given entity
-  scope :for_entity, ->(entity_id) { where(entity_id:) }
-
-  # Returns all portfolio investments as of a specific date
-  scope :as_of, lambda { |date|
-    where(investment_date: ..date)
-      .where("conversion_date IS NULL OR conversion_date <= ?", date)
-      .order(investment_date: :asc)
-  }
-  # Ensures conversion_date doesn't affect snapshots as_of past date
-  scope :before, lambda { |date|
-    where(investment_date: ..date)
-      .where("conversion_date IS NULL OR conversion_date <= ?", date)
   }
 
   # Scope: contains **all** of the given folio IDs simultaneously (AND behavior)
@@ -128,7 +99,6 @@ class PortfolioInvestment < ApplicationRecord
     unscope(where: :proforma)
   }
   scope :proforma, -> { include_proforma.where(proforma: true) }
-  scope :non_proforma, -> { where(proforma: false) }
 
   ##########################################################
   ###################### CONSTANTS #########################

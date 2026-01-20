@@ -31,6 +31,7 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
     options[:round_data] = {}
   end
 
+  # rubocop:disable Metrics/BlockLength
   def process_rounds(_options, all_funding_rounds:, portfolio_company_id:, all_investors:, table_data:, round_data:, **)
     cumulative_rounds = []
 
@@ -81,6 +82,7 @@ class GenerateHorizontalCapTable < Trailblazer::Operation
       end
     end
   end
+  # rubocop:enable Metrics/BlockLength
 
   def format_result(options, all_funding_rounds:, investors_by_category:, table_data:, round_data:, **)
     options[:model] = {

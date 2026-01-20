@@ -8,13 +8,13 @@ module AccountEntryAllocation
     def cumulate_account_entries(ctx, **)
       fund_formula = ctx[:fund_formula]
       commitment_cache = ctx[:commitment_cache]
-      end_date     = ctx[:end_date]
-      sample       = ctx[:sample]
+      end_date = ctx[:end_date]
+      ctx[:sample]
       start_date   = ctx[:start_date]
 
       bulk_records = []
 
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).find_each do |capital_commitment|
+      ctx[:commitments].each do |capital_commitment|
         Rails.logger.debug { "Cumulating #{fund_formula} to #{capital_commitment}" }
         next unless fund_formula.roll_up
 
@@ -22,7 +22,8 @@ module AccountEntryAllocation
           fund_formula.name,
           fund_formula.entry_type,
           start_date,
-          end_date
+          end_date,
+          sqlite: true
         )
 
         # Since this is a rollup, we set the rule_for to reporting
@@ -33,7 +34,7 @@ module AccountEntryAllocation
       end
 
       if bulk_records.present?
-        count = AccountEntry.insert_all(bulk_records)
+        count = AccountEntrySqlite.insert_all(bulk_records)
         Rails.logger.debug { "#{fund_formula.name}: Inserted #{count} roll_up records" }
       end
 

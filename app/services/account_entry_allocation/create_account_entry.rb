@@ -48,22 +48,27 @@ module AccountEntryAllocation
       # This skips the with_custom_fields before_save callback, which is used to compute custom fields
       account_entry.skip_cf_before_save = true
       account_entry.form_type_id = ctx[:form_type_id]
-
-      account_entry.capital_commitment = capital_commitment
+      account_entry.capital_commitment_id = capital_commitment&.id
+      account_entry.commitment_name = capital_commitment.to_s[0..254] if capital_commitment
       account_entry.folio_id = capital_commitment&.folio_id
-      account_entry.fund = ctx[:fund]
-
-      account_entry.parent = parent if account_entry.parent_id.nil? && account_entry.parent_id != parent&.id
-      account_entry.generated       = true
-      account_entry.fund_formula    = fund_formula
+      account_entry.fund_id = ctx[:fund].id
+      account_entry.generated = true
+      account_entry.fund_formula_id = fund_formula.id
       account_entry.allocation_run_id = ctx[:allocation_run_id]
+
+      if account_entry.parent_id.nil? && account_entry.parent_id != parent&.id && parent.present?
+        account_entry.parent_id = parent.id
+        account_entry.parent_type = parent.class.name
+        account_entry.parent_name = parent.to_s[0..254] if account_entry.parent_name.blank?
+      end
+
       # Evaluate the formula, but not for Percentage rules, as thats precomputed See ComputeCustomPercentage
       unless fund_formula.rule_type == "Percentage"
         account_entry.amount_cents = safe_eval(formula, bdg)
         # Explanation data
         account_entry.explanation = []
         account_entry.explanation << formula
-        account_entry.explanation << fund_formula.description
+        account_entry.explanation << fund_formula.description if fund_formula.description.present?
         account_entry.explanation << fund_formula.parse_statement(bdg, external_formula: formula).to_json if explain && fund_formula.explain
       end
 
@@ -77,7 +82,7 @@ module AccountEntryAllocation
       ae_attributes[:updated_at] = Time.zone.now
       bulk_records << ae_attributes
 
-      commitment_cache.add_to_computed_fields_cache(ctx, capital_commitment, account_entry) if capital_commitment
+      commitment_cache.add_to_computed_fields_cache(ctx, capital_commitment, account_entry) if capital_commitment && fund_formula.add_to_commitment_cache
       # ctx[:instance_variables][@variable_name] = account_entry.amount_cents
 
       ctx[:bulk_insert_records] = bulk_records
@@ -86,6 +91,9 @@ module AccountEntryAllocation
     def create_quarterly_account_entry(ctx, fund_formula:, account_entry:, capital_commitment:, bdg:, parent:, **)
       # This is a placeholder for a quarterly account entry
       if fund_formula.generate_ytd_qtly && !@skip_rule
+
+        Rails.logger.debug { "Fund Formula: #{fund_formula.name}, Account Entry: #{account_entry.name}" }
+
         ae = account_entry.dup
         ae.skip_cf_before_save = true
         ae.name = "Quarterly #{ae.name}"

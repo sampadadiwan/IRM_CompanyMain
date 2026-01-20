@@ -3,6 +3,10 @@ class FundFormulaDecorator < ApplicationDecorator
     h.link_to object.name, h.fund_formula_path(object)
   end
 
+  def formula
+    h.simple_format(object.formula)
+  end
+
   def roll_up
     display_boolean(object.roll_up)
   end

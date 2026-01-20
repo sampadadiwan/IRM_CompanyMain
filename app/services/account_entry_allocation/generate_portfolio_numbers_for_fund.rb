@@ -46,23 +46,26 @@ module AccountEntryAllocation
             fund_formula.name = name
             fund_formula.formula = "aggregate_portfolio_investment.#{field}"
 
-            ae = AccountEntry.new(
+            ae = AccountEntrySqlite.new(
               name: fund_formula.name,
               entry_type: fund_formula.entry_type,
               entity_id: fund.entity_id,
-              fund: fund,
+              fund_id: fund.id,
+              parent_type: portfolio_company.class.name,
+              parent_id: portfolio_company.id,
+              parent_name: portfolio_company.to_s[0..254],
               parent: portfolio_company,
               reporting_date: end_date,
               period: "As of #{end_date}",
               generated: true,
               cumulative: true,
-              fund_formula: fund_formula
+              fund_formula_id: fund_formula.id
             )
 
             AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: nil, parent: portfolio_company, bdg: binding))
           end
         rescue StandardError => e
-          raise "Error in #{fund_formula.name} for #{fund}: #{e.message}"
+          raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{fund}: #{e.message}"
         end
 
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?

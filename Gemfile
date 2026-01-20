@@ -23,6 +23,7 @@ gem "json2table"
 gem 'mail-logger'
 gem "mysql2"
 gem "noticed"
+gem 'sqlite3'
 gem 'trailblazer'
 gem 'yajl-ruby', require: 'yajl'
 # To convert Doc into PDF
@@ -232,7 +233,6 @@ group :test do
   gem 'database_cleaner-active_record'
 
   gem 'simplecov', require: false, group: :test
-  gem 'sqlite3'
   gem "webdrivers"
   # gem "selenium-webdriver"
   gem 'capybara-playwright-driver'

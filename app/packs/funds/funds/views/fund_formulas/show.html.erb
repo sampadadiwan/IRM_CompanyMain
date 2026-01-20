@@ -108,7 +108,7 @@
       Formula
     </td>
     <td>
-      <%= @fund_formula.formula.html_safe %>
+      <%= simple_format(@fund_formula.formula.html_safe) %>
     </td>
   </tr>
   <tr>
@@ -126,6 +126,14 @@
     </td>
     <td>
       <%= display_boolean @fund_formula.generate_ytd_qtly %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Add To Commitment Cache
+    </td>
+    <td>
+      <%= display_boolean @fund_formula.add_to_commitment_cache %>
     </td>
   </tr>
 </table>

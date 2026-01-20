@@ -18,7 +18,7 @@ module AccountEntryAllocation
       start_date         = ctx[:start_date]
       fund_unit_settings = FundUnitSetting.where(fund_id: ctx[:fund].id).index_by(&:name)
 
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).each_with_index do |capital_commitment, idx|
+      ctx[:commitments].each_with_index do |capital_commitment, idx|
         Rails.logger.debug { "Allocating #{fund_account_entry} to #{capital_commitment}" }
 
         # Possibly retrieve the relevant FundUnitSetting for each commitment
@@ -35,7 +35,7 @@ module AccountEntryAllocation
           AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: parent, bdg: binding))
           commitment_cache.computed_fields_cache(capital_commitment, start_date)
         rescue StandardError => e
-          raise "Error in #{fund_formula.name} for #{capital_commitment} #{fund_account_entry}: #{e.message}"
+          raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment} #{fund_account_entry}: #{e.message}"
         end
 
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?

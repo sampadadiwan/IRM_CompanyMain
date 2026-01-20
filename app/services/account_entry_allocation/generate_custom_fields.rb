@@ -16,15 +16,15 @@ module AccountEntryAllocation
 
       Rails.logger.debug { "generate_custom_fields #{fund_formula.name}" }
 
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).each_with_index do |capital_commitment, idx|
+      ctx[:commitments].each_with_index do |capital_commitment, idx|
         # Possibly retrieve the relevant FundUnitSetting for each commitment
         fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 
         Rails.logger.debug { "Generating using formula #{fund_formula} for #{capital_commitment}, #{start_date}, #{end_date}, #{fund_unit_setting}" }
 
-        ae = AccountEntry.new(
+        ae = AccountEntrySqlite.new(
           name: fund_formula.name,
-          fund_formula: fund_formula,
+          fund_formula_id: fund_formula.id,
           amount_cents: safe_eval(fund_formula.formula, binding)
         )
 

@@ -96,8 +96,8 @@ Then('an document should be created') do
   puts @created_doc.to_json
 
   @created_doc.name.should == @document.name
-  @created_doc.download.should == @document.download
-  @created_doc.printing.should == @document.printing
+  @created_doc.download.should == (@document.download.nil? ? false : @document.download)
+  @created_doc.printing.should == (@document.printing.nil? ? false : @document.printing)
   @created_doc.tag_list.should == @document.tag_list if @document.tag_list
   @created_doc.user_id.should == @user.id
   if @created_doc.owner != nil

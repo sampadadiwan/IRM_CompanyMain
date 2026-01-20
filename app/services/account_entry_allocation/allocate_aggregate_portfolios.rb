@@ -35,19 +35,23 @@ module AccountEntryAllocation
         # We setup the as_of api here from the cache of apis
         api = as_of_apis[orig_api.id]
 
-        fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).find_each do |capital_commitment|
+        ctx[:commitments].each do |capital_commitment|
           # This is used to generate instance variables from the cached computed values
           commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
-          ae = AccountEntry.new(
+          ae = AccountEntrySqlite.new(
             name: fund_formula.name,
             entry_type: fund_formula.entry_type,
             entity_id: fund.entity_id,
-            fund: fund,
+            fund_id: fund.id,
             reporting_date: end_date,
             period: "As of #{end_date}",
+            parent_id: orig_api.id,
+            parent_type: orig_api.class.name,
+            parent_name: orig_api.to_s[0..254],
+            parent: orig_api,
             generated: true,
-            fund_formula: fund_formula
+            fund_formula_id: fund_formula.id
           )
 
           begin
@@ -56,7 +60,7 @@ module AccountEntryAllocation
             commitment_cache.computed_fields_cache(capital_commitment, start_date)
           rescue StandardError => e
             Rails.logger.debug e.backtrace
-            raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+            raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment}: #{e.message}"
           end
         end
 

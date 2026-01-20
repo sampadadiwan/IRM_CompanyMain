@@ -28,6 +28,12 @@ When('I click {string}') do |button_text|
   click_on button_text
 end
 
+When('I click {string} within {string}') do |button_text, container|
+  within(container) do
+    click_on button_text
+  end
+end
+
 Then('an AI portfolio report should be created for {string}') do |company_name|
   @report = AiPortfolioReport.last
   expect(@report).to be_present

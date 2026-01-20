@@ -3,6 +3,7 @@ class CapitalRemittancePayment < ApplicationRecord
   include WithExchangeRate
   include ForInvestor
   include Trackable.new
+  include CapitalRemittancePaymentShared
   include RansackerAmounts.new(fields: %w[amount folio_amount tracking_amount])
 
   belongs_to :fund

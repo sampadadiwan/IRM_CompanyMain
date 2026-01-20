@@ -1,3 +1,9 @@
+<<<<<<< HEAD
+V9.1.72
+7ad5180a1 Rails upgrade (#1196)
+2417a466d Added changes for transfer_date for CommitmentAdjustment
+ba7b6290c Changed prod ip address for deployment"
+=======
 V9.1.74
 e298f0de2 Fixed kpi reports no_of_periods issue - added better comment (#1198)
 63f1d4051 Update units quantity precision (#1189)
@@ -8,6 +14,7 @@ V9.1.73
 93e056f17 Kpis period and decimal fix (#1197)
 9cbce61d2 Fixed bug with cap table self numbers
 5456ffcba Increased Kpi name limit to 100 to match standard_kpi_name (#1195)
+>>>>>>> main
 
 V9.1.71
 c94272cfe Feature/add sources web links (#1190)

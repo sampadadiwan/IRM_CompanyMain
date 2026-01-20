@@ -20,8 +20,9 @@ module AccountEntryAllocation
       # Sometimes the same fund formula is used to generate for multiple account entry names
       account_entry_names = fund_formula.meta_data_hash["account_entry_names"]&.split(",")&.map(&:strip) if fund_formula.meta_data_hash.present?
 
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).each_with_index do |capital_commitment, idx|
+      ctx[:commitments].each_with_index do |capital_commitment, idx|
         fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
+
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         # Determine the list of account entry names to process
@@ -57,14 +58,41 @@ module AccountEntryAllocation
       # example account_entry_names: "Management Fee, Performance Fee", name_prefix: "Quarterly"
       name_prefix = fund_formula.meta_data_hash ? (fund_formula.meta_data_hash["name_prefix"] || "") : ""
 
-      ae = AccountEntry.new(name: name_prefix + account_entry_name, entity_id: fund.entity_id, fund: fund, reporting_date: end_date, period: "As of #{end_date}", entry_type: fund_formula.entry_type, generated: true, cumulative: false, fund_formula: fund_formula, rule_for: fund_formula.rule_for)
+      # Initialize a new isolated SQLite record for processing.
+      # We use AccountEntrySqlite to ensure high-performance processing without primary DB overhead.
+      ae = AccountEntrySqlite.new(
+        name: name_prefix + account_entry_name,
+        entity_id: fund.entity_id,
+        fund_id: fund.id,
+        reporting_date: end_date,
+        period: "As of #{end_date}",
+        entry_type: fund_formula.entry_type,
+        generated: true,
+        cumulative: false,
+        fund_formula_id: fund_formula.id,
+        rule_for: fund_formula.rule_for
+      )
 
       begin
+        # Setup the dynamic variables required for formula evaluation
         create_instance_variables(ctx)
-        AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: nil, bdg:))
+
+        # Call the sub-operation to finalize the account entry creation.
+        # This will evaluate the formula and save the 'ae' record to the isolated SQLite DB.
+        AccountEntryAllocation::CreateAccountEntry.call(
+          ctx.merge(
+            account_entry: ae,
+            capital_commitment: capital_commitment,
+            parent: nil,
+            bdg:
+          )
+        )
       rescue StandardError => e
         Rails.logger.debug e.backtrace
-        raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+        # Provide detailed error context, handling cases where capital_commitment might be nil
+        msg = "Error in #{fund_formula.name}:#{fund_formula.id}"
+        msg += " for #{capital_commitment}" if capital_commitment.present?
+        raise "#{msg}: #{e.message}"
       end
     end
   end

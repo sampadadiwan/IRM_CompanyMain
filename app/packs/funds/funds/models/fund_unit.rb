@@ -1,6 +1,7 @@
 class FundUnit < ApplicationRecord
   include ForInvestor
   include Trackable.new
+  include FundUnitShared
 
   belongs_to :entity
   belongs_to :fund

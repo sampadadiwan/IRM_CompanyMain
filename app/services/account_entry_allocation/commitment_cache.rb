@@ -27,9 +27,9 @@ module AccountEntryAllocation
         cached_commitment_fields["distributions"] = capital_commitment.capital_distribution_payments.where(payment_date: ..@end_date).sum(:net_payable_cents)
 
         # Income and Expense
-        cached_commitment_fields["income_before_start_date"] = AccountEntry.total_amount(capital_commitment.account_entries, entry_type: 'Income', end_date: @start_date)
+        cached_commitment_fields["income_before_start_date"] = AccountEntrySqlite.total_amount(AccountEntrySqlite.where(capital_commitment_id: capital_commitment.id), entry_type: 'Income', end_date: @start_date)
 
-        cached_commitment_fields["expense_before_start_date"] = AccountEntry.total_amount(capital_commitment.account_entries, entry_type: 'Expense', end_date: @start_date)
+        cached_commitment_fields["expense_before_start_date"] = AccountEntrySqlite.total_amount(AccountEntrySqlite.where(capital_commitment_id: capital_commitment.id), entry_type: 'Expense', end_date: @start_date)
 
         # Portfolio fields
         cached_commitment_fields["units"] = capital_commitment.fund_units.where(issue_date: ..@end_date).sum(:quantity)

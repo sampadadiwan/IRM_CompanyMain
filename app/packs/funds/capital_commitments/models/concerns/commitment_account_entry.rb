@@ -21,25 +21,31 @@ module CommitmentAccountEntry
   # Account Entry Stuff
   ###########################################################
 
+  def account_entries_sqlite
+    AccountEntrySqlite.where(capital_commitment_id: id)
+  end
+
   # In some cases name is nil - Ex Cumulative for portfolio FMV or costs @see AccountEntryAllocationEngine.allocate_portfolio_investments()
   #
-  def rollup_account_entries(name, entry_type, start_date, end_date, save_now: false)
+  def rollup_account_entries(name, entry_type, start_date, end_date, save_now: false, sqlite: true)
     Rails.logger.debug { "rollup_account_entries(#{name}, #{entry_type}, #{start_date}, #{end_date})" }
 
+    account_entries_to_rollup = sqlite ? account_entries_sqlite : account_entries
+
     # Remove the prev computed cumulative rollups
-    deletable = account_entries.where(entry_type:, reporting_date: start_date..end_date, cumulative: true)
+    deletable = account_entries_to_rollup.where(entry_type:, reporting_date: start_date..end_date, cumulative: true)
     deletable = deletable.where(name:) if name
     deletable.delete_all
 
     # Find the cum_amount_cents
-    addable = account_entries.where(entry_type:, cumulative: false, reporting_date: ..end_date)
+    addable = account_entries_to_rollup.where(entry_type:, cumulative: false, reporting_date: ..end_date)
     addable = addable.where(name:) if name
     cum_amount_cents = addable.sum(:amount_cents)
 
     # Create a new Cumulative entry
     new_name = name || entry_type
-    ae = account_entries.new(name: new_name, entry_type:, amount_cents: cum_amount_cents, entity_id:, fund_id:, investor_id:, folio_id:, reporting_date: end_date, period: "As of #{end_date}",
-                             cumulative: true, generated: true)
+    ae = account_entries_to_rollup.new(name: new_name, entry_type:, amount_cents: cum_amount_cents, entity_id:, fund_id:, investor_id:, folio_id:, reporting_date: end_date, period: "As of #{end_date}",
+                                       cumulative: true, generated: true)
 
     if save_now
       ae.save!
@@ -49,21 +55,25 @@ module CommitmentAccountEntry
     ae
   end
 
-  def cumulative_account_entry(name, entry_type, start_date, end_date, cumulative: true)
-    cae = account_entries.where(cumulative:).order(reporting_date: :asc)
+  def cumulative_account_entry(name, entry_type, start_date, end_date, cumulative: true, sqlite: true)
+    account_entries_to_rollup = sqlite ? account_entries_sqlite : account_entries
+
+    cae = account_entries_to_rollup.where(cumulative:).order(reporting_date: :asc)
     cae = cae.where(reporting_date: start_date..) if start_date
     cae = cae.where(reporting_date: ..end_date) if end_date
     cae = cae.where(name:) if name
     cae = cae.where(entry_type:) if entry_type
 
-    cae.last || AccountEntry.new(name:, fund_id:, amount_cents: 0)
+    cae.last || account_entries_to_rollup.build(name:, fund_id:, amount_cents: 0)
   end
 
-  def get_account_entry(name, date, parent: nil, raise_error: true)
+  def get_account_entry(name, date, parent: nil, raise_error: true, sqlite: true)
+    account_entries_source = sqlite ? account_entries_sqlite : account_entries
+
     ae = if parent
-           account_entries.where(name:, reporting_date: ..date, parent:).order(reporting_date: :desc).first
+           account_entries_source.where(name:, reporting_date: ..date, parent_id: parent.id, parent_type: parent.class.name).order(reporting_date: :desc).first
          else
-           account_entries.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
+           account_entries_source.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
          end
 
     raise "No Account Entry found for name: #{name}, id: #{id}, parent: #{parent&.id} on date: #{date}" if ae.nil? && raise_error
@@ -71,27 +81,27 @@ module CommitmentAccountEntry
     ae
   end
 
-  def get_account_entry_or_zero(name, date, parent: nil)
+  def get_account_entry_or_zero(name, date, parent: nil, sqlite: true)
     ae = if parent
-           get_account_entry(name, date, parent:, raise_error: false)
+           get_account_entry(name, date, parent:, raise_error: false, sqlite: sqlite)
          else
-           get_account_entry(name, date, raise_error: false)
+           get_account_entry(name, date, raise_error: false, sqlite: sqlite)
          end
-    ae ||= AccountEntry.new(name:, entity_id:, fund_id:, amount_cents: 0)
+    ae ||= sqlite ? AccountEntrySqlite.new(name:, entity_id:, fund_id:, amount_cents: 0) : AccountEntry.new(name:, entity_id:, fund_id:, amount_cents: 0)
     ae
   end
 
-  def get_ic_account_entry(name, date, parent: nil, raise_error: true)
+  def get_ic_account_entry(name, date, parent: nil, raise_error: true, sqlite: true)
     if parent.respond_to?(:excused_folio_ids) && parent.excused_folio_ids.present?
-      get_account_entry("#{name} Folio PI", date, parent:, raise_error:)
+      get_account_entry("#{name} Folio PI", date, parent:, raise_error:, sqlite: sqlite)
     else
-      get_account_entry(name, date, parent: nil, raise_error:)
+      get_account_entry(name, date, parent: nil, raise_error:, sqlite: sqlite)
     end
   end
 
   def start_of_financial_year_date(end_date)
     # Some funds want to set the start of the financial year to Jan some to April, this allows for that.
-    month_offset_for_fy = fund.custom_fields.month_offset_for_fy.present? ? fund.custom_fields.month_offset_for_fy.to_i : 3
+    month_offset_for_fy = fund.json_fields[:month_offset_for_fy].present? ? fund.json_fields[:month_offset_for_fy].to_i : 3
     date = end_date.month > month_offset_for_fy ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
     (date + month_offset_for_fy.months)
   end
@@ -100,8 +110,8 @@ module CommitmentAccountEntry
     get_account_entry(name, start_of_financial_year_date(end_date), raise_error: false)
   end
 
-  def on_date(name, entry_type, end_date)
-    entries = account_entries
+  def on_date(name, entry_type, end_date, sqlite: true)
+    entries = sqlite ? account_entries_sqlite : account_entries
     entries = entries.not_cumulative.where(name:) if name.present?
     entries = entries.where(entry_type:) if entry_type.present?
 
@@ -109,8 +119,8 @@ module CommitmentAccountEntry
   end
   alias as_on_date on_date
 
-  def quarterly(name, entry_type, _start_date, end_date)
-    entries = account_entries
+  def quarterly(name, entry_type, _start_date, end_date, sqlite: true)
+    entries = sqlite ? account_entries_sqlite : account_entries
     entries = entries.not_cumulative.where(name:) if name.present?
     entries = entries.where(entry_type:) if entry_type.present?
 
@@ -118,16 +128,16 @@ module CommitmentAccountEntry
   end
   alias period quarterly
 
-  def since_inception(name, entry_type, _start_date, end_date)
-    entries = account_entries
+  def since_inception(name, entry_type, _start_date, end_date, sqlite: true)
+    entries = sqlite ? account_entries_sqlite : account_entries
     entries = entries.not_cumulative.where(name:) if name.present?
     entries = entries.where(entry_type:) if entry_type.present?
 
     entries.not_cumulative.where(reporting_date: ..end_date).sum(:amount_cents)
   end
 
-  def year_to_date(name, entry_type, _start_date, end_date)
-    entries = account_entries
+  def year_to_date(name, entry_type, _start_date, end_date, sqlite: true)
+    entries = sqlite ? account_entries_sqlite : account_entries
     entries = entries.not_cumulative.where(name:) if name.present?
     entries = entries.where(entry_type:) if entry_type.present?
 

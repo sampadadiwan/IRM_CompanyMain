@@ -24,17 +24,26 @@ module AccountEntryAllocation
 
     def get_exchange_rate(ctx, fund:, end_date:, **)
       if fund.master_fund.currency != fund.currency
-        # Possibly exchange rate conversions, etc.
-        exchange_rate = fund.entity.exchange_rates.where(
-          from: fund.master_fund.currency,
-          to: fund.currency
-        ).where(as_of: ..end_date).order(as_of: :asc).last
+        ctx[:exchange_rates_cache] ||= {}
+        cache_key = "#{fund.master_fund.currency}_#{fund.currency}_#{end_date}"
 
-        if exchange_rate.blank?
-          msg = "No exchange rate found for #{fund.master_fund.currency} to #{fund.currency}"
-          ctx[:error] = msg
-          Rails.logger.error { msg }
-          raise msg
+        exchange_rate = ctx[:exchange_rates_cache][cache_key]
+
+        if exchange_rate.nil?
+          # Possibly exchange rate conversions, etc.
+          exchange_rate = fund.entity.exchange_rates.where(
+            from: fund.master_fund.currency,
+            to: fund.currency
+          ).where(as_of: ..end_date).order(as_of: :asc).last
+
+          if exchange_rate.blank?
+            msg = "No exchange rate found for #{fund.master_fund.currency} to #{fund.currency}"
+            ctx[:error] = msg
+            Rails.logger.error { msg }
+            raise msg
+          end
+
+          ctx[:exchange_rates_cache][cache_key] = exchange_rate
         end
 
         ctx[:exchange_rate] = exchange_rate
@@ -47,13 +56,14 @@ module AccountEntryAllocation
       sample        = ctx[:sample]
       user_id       = ctx[:user_id]
 
-      Rails.logger.debug { "allocate_master_fund_account_entries #{fund_formula.name}" }
+      Rails.logger.debug { "allocate_master_fund_account_entries #{fund_formula.name}" } unless Rails.env.production?
 
       # We need only the master_fund account entries of the commitments associated with the feeder fund, so inner join
-      master_fund_account_entries = fund.master_fund.account_entries.not_cumulative.joins(capital_commitment: :feeder_fund)
-                                        .where(capital_commitments: { feeder_fund_id: fund.id })
-                                        .where(reporting_date: start_date..end_date)
-                                        .includes(:fund, :entity, :parent)
+      feeder_fund_commitments_ids = CapitalCommitmentSqlite.where(fund_id: fund.master_fund_id, feeder_fund_id: fund.id).pluck(:id)
+
+      ctx[:master_fund_account_entries] ||= AccountEntrySqlite.not_cumulative.where(fund_id: fund.master_fund_id, capital_commitment_id: feeder_fund_commitments_ids).where(reporting_date: start_date..end_date)
+
+      master_fund_account_entries = ctx[:master_fund_account_entries]
 
       if name_or_entry_type == "name"
         # Filter by name if name_or_entry_type is "name"
@@ -74,13 +84,13 @@ module AccountEntryAllocation
       master_fund_account_entries_by_folio = master_fund_account_entries.group_by(&:folio_id).transform_values { |entries| entries.sum(&:amount_cents) }
       exchange_rate = ctx[:exchange_rate]
 
-      Rails.logger.debug { "master_fund_account_entries_by_folio has #{master_fund_account_entries_by_folio.length} entries" }
+      Rails.logger.debug { "master_fund_account_entries_by_folio has #{master_fund_account_entries_by_folio.length} entries" } unless Rails.env.production?
 
       # Pre-load master fund account entries to avoid repeated queries in the loop
       master_fund_account_entries_array = master_fund_account_entries.to_a
 
-      fund_formula.commitments(end_date, sample).includes(:entity, :fund, :investor_kyc).find_each.with_index do |capital_commitment, idx|
-        Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" }
+      ctx[:commitments].each.with_index do |capital_commitment, idx|
+        Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" } unless Rails.env.production?
         commitment_cache.computed_fields_cache(capital_commitment, start_date)
 
         if grouped
@@ -94,7 +104,7 @@ module AccountEntryAllocation
             create_instance_variables(ctx)
             AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_aggregate_entry, capital_commitment: capital_commitment, parent: nil, bdg: binding))
           rescue StandardError => e
-            raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+            raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment}: #{e.message}"
           end
         else
           # This is the case where we need to allocate the master fund & feeder account entries to the commitments of the feeder fund
@@ -116,15 +126,18 @@ module AccountEntryAllocation
             )
 
             begin
-              Rails.logger.debug { "Processing account entry #{account_entry.id} #{account_entry} for commitment #{capital_commitment.id} in formula #{fund_formula.name}" }
+              Rails.logger.debug { "Processing account entry #{account_entry.id} #{account_entry} for commitment #{capital_commitment.id} in formula #{fund_formula.name}" } unless Rails.env.production?
 
               create_instance_variables(ctx)
-              AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_account_entry, capital_commitment: capital_commitment, parent: nil, bdg: binding))
+              AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: feeder_account_entry, capital_commitment: capital_commitment, parent: parent, bdg: binding))
             rescue StandardError => e
-              raise "Error in #{fund_formula.name} for #{capital_commitment}: #{e.message}"
+              raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment}: #{e.message}"
             end
 
-            notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments, #{aidx + 1} master account entries", :success, user_id) if ((aidx + 1) % 500).zero? && (aidx + 1) > 500
+            notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments, #{aidx + 1} master account entries", :success, user_id) if ((aidx + 1) % 1000).zero? && (aidx + 1) > 1000
+
+            # Push to queue for background loading into the primary DB
+            # ctx[:queue] << fund_formula.id
           end
         end
 
@@ -150,13 +163,12 @@ module AccountEntryAllocation
       master_fund = fund.master_fund
 
       # Fetch all account entries in the master fund allocated to commitments of the feeder fund
-      master_fund_account_entries = master_fund.account_entries.not_cumulative
-                                               .includes(:fund, :entity, capital_commitment: :feeder_fund)
-                                               .where(account_entries: { name: fund_formula.name })
-                                               .where(reporting_date: start_date..end_date)
+      master_fund_account_entries = AccountEntrySqlite.not_cumulative
+                                                      .where(fund_id: master_fund.id, account_entries: { name: fund_formula.name })
+                                                      .where(reporting_date: start_date..end_date)
 
       # Create a new AccountEntry object to aggregate the master fund account entries
-      master_aggregate_entry = AccountEntry.new(
+      master_aggregate_entry = AccountEntrySqlite.new(
         name: fund_formula.name,
         entry_type: fund_formula.entry_type,
         reporting_date: end_date,

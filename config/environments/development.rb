@@ -80,7 +80,6 @@ Rails.application.configure do
   # Bullet.rails_logger = true
   # Bullet.add_footer = true
   config.log_level = :debug
-  config.active_record.verbose_query_logs = true
 
   config.silence_healthcheck_path = "/health_check/*"
 end

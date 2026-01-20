@@ -3018,52 +3018,51 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_10_133624) do
   end
 
   create_table "report_insights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "report_id", null: false
-    t.bigint "entity_id", null: false
-    t.string "status"
     t.text "ai_response"
-    t.text "status_message"
-    t.text "prompt_used"
-    t.text "notes"
     t.json "charts_spec"
-    t.integer "record_count"
-    t.datetime "triggered_at"
-    t.string "trigger_type"
-    t.bigint "triggered_by_id"
     t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "notes"
+    t.text "prompt_used"
+    t.integer "record_count"
+    t.bigint "report_id", null: false
+    t.string "status"
+    t.text "status_message"
     t.text "summary"
+    t.string "trigger_type"
+    t.datetime "triggered_at"
+    t.bigint "triggered_by_id"
+    t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_report_insights_on_entity_id"
     t.index ["report_id"], name: "index_report_insights_on_report_id"
   end
 
-   create_table "reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "entity_id"
-    t.bigint "user_id", null: false
-    t.string "name"
-    t.string "category", limit: 30
-    t.text "description"
-    t.text "url"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "tag_list"
-    t.string "curr_role", limit: 10, default: "employee"
-    t.string "model"
-    t.text "metadata"
-    t.json "template"
-    t.text "template_xls_data"
+  create_table "reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "ai_prompt"
-    t.boolean "send_notification", default: false
-    t.string "notification_recipients"
+    t.string "category", limit: 30
+    t.datetime "created_at", null: false
+    t.string "curr_role", limit: 10, default: "employee"
+    t.text "description"
+    t.bigint "entity_id"
+    t.text "metadata"
+    t.string "model"
+    t.string "name"
     t.string "notification_ccs"
-    t.integer "notification_start_after", default: 0
-    t.string "notification_start_unit", default: "days"
+    t.string "notification_recipients"
     t.integer "notification_repeat_interval", default: 1
     t.string "notification_repeat_unit", default: "days"
-    t.datetime "notify_next_run_at"
+    t.integer "notification_start_after", default: 0
+    t.string "notification_start_unit", default: "days"
     t.datetime "notify_last_run_at"
+    t.datetime "notify_next_run_at"
+    t.boolean "send_notification", default: false
+    t.string "tag_list"
+    t.json "template"
+    t.text "template_xls_data"
+    t.datetime "updated_at", null: false
+    t.text "url"
+    t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_reports_on_entity_id"
-    t.index ["notify_next_run_at"], name: "index_reports_on_notify_next_run_at"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
 

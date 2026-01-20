@@ -10,12 +10,6 @@ module AccountEntryAllocation
 
     # Main entry point: cumulates account entries for each portfolio company
 
-    # Typical formula used would be like
-
-    # fund.account_entries.for_aggregate_portfolio_investments.for_api_portfolio_company(portfolio_company.id).where(name: fund_formula.name).not_cumulative.where(reporting_date: @start_date..@end_date).sum(:amount_cents)
-
-    # fund.account_entries.for_portfolio_investments.for_pi_portfolio_company(portfolio_company.id).where(name: fund_formula.name).not_cumulative.where(reporting_date: @start_date..@end_date).sum(:amount_cents)
-
     def cumulate_account_entries(ctx, for_folios:, **)
       fund_formula   = ctx[:fund_formula]
       end_date       = ctx[:end_date]
@@ -32,17 +26,22 @@ module AccountEntryAllocation
                  else
                    [fund.id]
                  end
-      portfolio_companies = fund.entity.investors.joins(:portfolio_investments)
-                                .where(portfolio_investments: { fund_id: fund_ids })
-                                .where(portfolio_investments: { investment_date: ..end_date })
-                                .distinct
+
+      # Cache portfolio companies in context to avoid repeated DB queries
+      ctx[:portfolio_companies] ||= fund.entity.investors.joins(:portfolio_investments)
+                                        .where(portfolio_investments: { fund_id: fund_ids })
+                                        .where(portfolio_investments: { investment_date: ..end_date })
+                                        .distinct
+
+      portfolio_companies = ctx[:portfolio_companies]
+      portfolio_companies = portfolio_companies.where(fund_formula.meta_data_hash["where"]) if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["where"].present?
 
       account_entry_names = fund_formula.meta_data_hash["account_entry_names"]&.split(",")&.map(&:strip) if fund_formula.meta_data_hash.present?
 
       # Determine the set of capital commitments to iterate over
       # If `for_folios` is true, use all commitments of the fund
       # Otherwise, treat as a single nil commitment (used in build_account_entry to signify no commitment)
-      capital_commitments_collection = for_folios ? fund.capital_commitments.includes(:entity, :fund, :investor_kyc) : [nil]
+      capital_commitments_collection = for_folios ? ctx[:commitments] : [nil]
 
       # For each portfolio company, generate cumulative entries
       portfolio_companies.find_each do |portfolio_company|
@@ -80,12 +79,14 @@ module AccountEntryAllocation
       end_date = ctx[:end_date]
       allocation_run_id = ctx[:allocation_run_id]
 
-      ae = AccountEntry.new(
+      ae = AccountEntrySqlite.new(
         fund_id: fund.id,
         entity_id: fund.entity_id,
+        parent_id: portfolio_company.id,
+        parent_type: "Investor",
+        parent_name: portfolio_company.to_s[0..254],
         parent: portfolio_company,
-        parent_name: portfolio_company.name,
-        fund_formula: fund_formula,
+        fund_formula_id: fund_formula.id,
         name: account_entry_name,
         entry_type: fund_formula.entry_type,
         reporting_date: end_date,
@@ -99,7 +100,7 @@ module AccountEntryAllocation
         create_instance_variables(ctx)
         AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: portfolio_company, bdg:))
       rescue StandardError => e
-        raise "Error in #{fund_formula.name} for #{portfolio_company}: #{e.message}"
+        raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{portfolio_company}: #{e.message}"
       end
     end
   end

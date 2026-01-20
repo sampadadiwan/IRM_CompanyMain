@@ -142,7 +142,7 @@ class FundFormula < ApplicationRecord
   end
 
   def meta_data_hash
-    @mdh ||= meta_data.split(";").to_h { |pair| pair.split("=") } if meta_data
+    @mdh ||= meta_data.split(";").to_h { |pair| pair.split("=", 2) } if meta_data
     @mdh
   end
 
@@ -153,4 +153,60 @@ class FundFormula < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     %w[fund].sort
   end
+
+  # rubocop:disable Rails/SkipsModelValidations
+  def self.update_formulas_to_json_fields(fund_id)
+    FundFormula.where(fund_id: fund_id).find_each do |ff|
+      next if ff.formula.blank?
+
+      new_formula = ff.formula
+                      .gsub(/custom_fields\.(?!send\()([a-zA-Z0-9_]+)/, "json_fields['\\1']")
+                      .gsub(/custom_fields\.send\((.+?)\)/, 'json_fields[\1]')
+                      .gsub(".properties[", ".json_fields[")
+                      .gsub("fund.account_entries_sqlite_sqlite.", "fund.account_entries_sqlite.")
+                      .gsub("last.amount_cents", "last&.amount_cents || 0")
+                      .gsub("last_amount_cents", "last&.amount_cents")
+                      .gsub("amount_cents || 0))", "amount_cents || 0)")
+                      .gsub("where(name: (fund_formula.name,parent_type", "where(name: fund_formula.name,parent_type")
+                      .gsub('+ fund.account_entries_sqlite.fund_entries.cumulative.where(name: fund_formula.name,parent_type: "Investor", parent_id: portfolio_company.id, reporting_date: ..@end_date).order(:reporting_date).last&.amount_cents || 0)', '+ (fund.account_entries_sqlite.fund_entries.cumulative.where(name: fund_formula.name,parent_type: "Investor", parent_id: portfolio_company.id, reporting_date: ..@end_date).order(:reporting_date).last&.amount_cents || 0)')
+                      # .gsub('capital_commitment.account_entries.cumulative.where(name: fund_formula.name,parent_type: "Investor", parent_id: portfolio_company.id, reporting_date: ..@end_date).order(:reporting_date).last&.amount_cents || 0', '(capital_commitment.account_entries.cumulative.where(name: fund_formula.name,parent_type: "Investor", parent_id: portfolio_company.id, reporting_date: ..@end_date).order(:reporting_date).last&.amount_cents || 0)')
+                      # .gsub('fund_formula.name,parent_type: "Investor", parent_id: portfolio_company.id, reporting_date: ..@end_date).order(:reporting_date).last&.amount_cents || 0', '(fund_formula.name,parent_type: "Investor", parent_id: portfolio_company.id, reporting_date: ..@end_date).order(:reporting_date).last&.amount_cents || 0)')
+                      # .gsub("capital_commitment.account_entries", "capital_commitment.account_entries_sqlite")
+                      .gsub("fund.account_entries.", "fund.account_entries_sqlite.")
+                      .gsub("AccountEntry.total_amount", "AccountEntrySqlite.total_amount")
+                      .gsub("where(parent: portfolio_investment)", "where(parent_id: portfolio_investment.id, parent_type: 'PortfolioInvestment')")
+                      .gsub("for_portfolio_investments.where(portfolio_investments: { fund_id: fund.id })", "for_portfolio_investments.where(parent_id: fund.portfolio_investment_ids).")
+                      .gsub("for_pi_portfolio_company(portfolio_company.id).where(portfolio_investments: { portfolio_company_id: include_portfolio_company_ids, fund_id: fund.id })", "for_pi_portfolio_company(portfolio_company.id).where(parent_id: fund.portfolio_investment_ids)")
+
+      ff.update_column(:formula, new_formula) if new_formula != ff.formula
+    end
+  end
+
+  def self.update_skip_portfolio_company(fund_id)
+    FundFormula.where(fund_id:).where("formula like '%skip_portfolio_company_ids = [7700,7704,7705,7706];%'").find_each do |ff|
+      ff.meta_data ||= ""
+      ff.meta_data += ";where='investors.id not in (7700,7704,7705,7706)'"
+      ff.save
+    end
+
+    FundFormula.where(fund_id:).where("formula like '%include_portfolio_company_ids = [7700,7704,7705,7706];%'").find_each do |ff|
+      ff.meta_data ||= ""
+      ff.meta_data += ";where='investors.id not in (7700,7704,7705,7706)'"
+      ff.save
+    end
+
+    FundFormula.where(fund_id: fund_id).find_each do |ff|
+      next if ff.formula.blank?
+
+      new_formula = ff.formula
+                      .gsub("skip_portfolio_company_ids = [7700,7704,7705,7706];", "")
+                      .gsub('raise SkipRule.new("Not our intended Portfolio company") if skip_portfolio_company_ids.include?(portfolio_company.id);', "")
+                      .gsub("include_portfolio_company_ids = [7700,7704,7705,7706];", "")
+                      .gsub('raise SkipRule.new("Not our intended Portfolio company") unless include_portfolio_company_ids.include?(portfolio_company.id);', "")
+
+      ff.update_column(:formula, new_formula) if new_formula != ff.formula
+    end
+  end
+
+  # rubocop:enable Rails/SkipsModelValidations
 end
