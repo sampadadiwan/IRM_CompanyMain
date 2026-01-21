@@ -6,7 +6,7 @@
     </header>
 
     <div class="animate-soft-fade-up" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%;">
-      <div style="width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--palette-border-light); background: #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+      <div style="width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--palette-border-light); background: rgba(255,255,255,0.01); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
         <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
           <thead>
             <tr style="border-bottom: 1px solid var(--palette-border);">
@@ -27,7 +27,7 @@
           </thead>
           <tbody style="font-size: 1rem; color: var(--palette-text);">
             <% rows.each_with_index do |row, idx| %>
-              <tr style="<%= idx.even? ? 'background: #fff;' : 'background: #F8FAFC;' %> border-bottom: 1px solid var(--palette-border-light);">
+              <tr style="border-bottom: 1px solid var(--palette-border-light); transition: background 0.3s ease;">
                 <td style="padding: 1.25rem 1.5rem; font-weight: 600; color: var(--palette-primary);">
                   <%= row[:kpi] %>
                 </td>

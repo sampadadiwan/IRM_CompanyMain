@@ -43,7 +43,7 @@ class TearSheetGeneratorService
     5. `risks`: Identify and categorize potential threats.
        - Schema: { "template": "risks", "title": string, "risks": [ { "category": string, "impact": "low"|"medium"|"high", "mitigation": string, "icon": string (optional) } ] }
     6. `portfolio_investments`: A detailed list of investments held by the company.
-       - Schema: { "template": "portfolio_investments", "title": "Portfolio Investments", "investments": [ { "date": string, "amount": string, "instrument": string, "category": string, "notes": string } ] }
+       - Schema: { "template": "portfolio_investments", "title": "Portfolio Investments", "investments": [ { "date": string, "fmv": string, "instrument": string, "category": string, "notes": string } ] }
 
     ### 5. Final Output
     RETURN ONLY A VALID JSON ARRAY OF SLIDE OBJECTS. No commentary.
