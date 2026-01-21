@@ -4,7 +4,10 @@ Rails.application.routes.draw do
 
   resources :portfolio_reports
   resources :portfolio_report_extracts do
-    get :generate_tear_sheet, on: :member
+    member do
+      get :generate_tear_sheet
+      patch :update_slides_content
+    end
   end
 
   resources :excused_investors

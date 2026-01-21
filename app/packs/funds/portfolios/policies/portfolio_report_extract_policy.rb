@@ -38,4 +38,8 @@ class PortfolioReportExtractPolicy < FundBasePolicy
   def generate_tear_sheet?
     show?
   end
+
+  def update_slides_content?
+    update?
+  end
 end

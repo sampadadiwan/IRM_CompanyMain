@@ -1,6 +1,6 @@
 # app/controllers/portfolio_report_extracts_controller.rb
 class PortfolioReportExtractsController < ApplicationController
-  before_action :set_portfolio_report_extract, only: %i[show edit update generate_tear_sheet]
+  before_action :set_portfolio_report_extract, only: %i[show edit update generate_tear_sheet update_slides_content]
 
   def index
     @portfolio_report_extracts = policy_scope(PortfolioReportExtract).order(id: :desc)
@@ -37,6 +37,21 @@ class PortfolioReportExtractsController < ApplicationController
           render json: { status: "queued" }, status: :accepted
         end
       end
+    end
+  end
+
+  def update_slides_content
+    @presentation = @portfolio_report_extract.tear_sheet_presentation
+
+    if @presentation.nil?
+      render json: { error: "Presentation not found" }, status: :not_found
+      return
+    end
+
+    if @presentation.update(content_html: params[:content_html])
+      render json: { status: "success" }
+    else
+      render json: { error: @presentation.errors.full_messages.join(", ") }, status: :unprocessable_entity
     end
   end
 

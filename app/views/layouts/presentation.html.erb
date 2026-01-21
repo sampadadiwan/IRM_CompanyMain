@@ -202,6 +202,13 @@
           background: rgba(30, 41, 59, 0.8) !important;
         }
       }
+      /* Editable Slide Styles */
+      [contenteditable="true"]:focus {
+        outline: none;
+      }
+      .reveal .slides section[contenteditable="true"] {
+        cursor: text;
+      }
     </style>
 
     <%= yield :head %>
@@ -249,8 +256,19 @@
 
     <%= yield :turbo_streams %>
 
-    <div class="reveal">
-      <div class="slides" id="slides_container">
+    <div class="reveal"
+         data-controller="slides-editor"
+         data-slides-editor-url-value="<%= update_slides_content_portfolio_report_extract_path(params[:id]) %>">
+
+      <!-- Saving Indicator -->
+      <div data-slides-editor-target="indicator"
+           class="fixed top-4 right-4 z-[9999] bg-slate-900/80 text-white px-4 py-2 rounded-full text-xs font-semibold opacity-0 transition-opacity duration-300 pointer-events-none">
+        Saving...
+      </div>
+
+      <div class="slides" id="slides_container"
+           data-slides-editor-target="container"
+           data-action="input->slides-editor#handleInput">
         <%= yield %>
       </div>
     </div>
