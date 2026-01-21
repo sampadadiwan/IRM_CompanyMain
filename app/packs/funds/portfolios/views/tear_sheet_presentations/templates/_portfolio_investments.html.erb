@@ -1,0 +1,44 @@
+<%# locals: (title:, investments:, palette: nil) %>
+<section class="slide-premium slide-portfolio-investments" style="background-color: var(--palette-bg);">
+  <div class="slide-content" style="display: flex; flex-direction: column; justify-content: center; padding: 4% 10%;">
+    <header class="animate-soft-fade" style="margin-bottom: 3rem;">
+      <div style="font-size: 0.875rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 0.5rem;">Capital Deployment</div>
+      <h2 style="font-size: 4rem; font-weight: 800; color: var(--palette-primary); line-height: 1; letter-spacing: -0.02em;"><%= title %></h2>
+    </header>
+
+    <div class="animate-soft-fade-up" style="display: flex; flex-direction: column;">
+      <div style="overflow: hidden; border-radius: 12px; border: 1px solid var(--palette-border-light); background: rgba(255,255,255,0.01);">
+        <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--palette-border);">
+              <th style="width: 20%; padding: 1.5rem 2rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--palette-text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Date</th>
+              <th style="width: 35%; padding: 1.5rem 2rem; text-align: left; font-size: 0.75rem; font-weight: 700; color: var(--palette-text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Instrument</th>
+              <th style="width: 25%; padding: 1.5rem 2rem; text-align: right; font-size: 0.75rem; font-weight: 700; color: var(--palette-text-muted); text-transform: uppercase; letter-spacing: 0.1em;">FMV</th>
+              <th style="width: 20%; padding: 1.5rem 2rem; text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--palette-text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Category</th>
+            </tr>
+          </thead>
+          <tbody style="font-size: 1rem; color: var(--palette-text);">
+            <% investments.each_with_index do |inv, idx| %>
+              <tr style="<%= idx == investments.size - 1 ? '' : 'border-bottom: 1px solid var(--palette-border-light);' %> transition: background 0.3s ease;">
+                <td style="padding: 1.25rem 2rem; font-family: monospace; color: var(--palette-text-muted); opacity: 0.8;"><%= inv[:date] %></td>
+                <td style="padding: 1.25rem 2rem; font-weight: 600; color: var(--palette-primary);"><%= inv[:instrument] %></td>
+                <td style="padding: 1.25rem 2rem; text-align: right; font-weight: 700; font-size: 1.125rem; color: var(--palette-accent);"><%= inv[:fmv] %></td>
+                <td style="padding: 1.25rem 2rem; text-align: center;">
+                  <span style="display: inline-block; padding: 0.25rem 0.75rem; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; border-radius: 4px; border: 1px solid var(--palette-border); color: var(--palette-text-muted);">
+                    <%= inv[:category] || 'General' %>
+                  </span>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+
+      <% if investments.empty? %>
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: var(--palette-text-muted); font-style: italic; opacity: 0.5;">
+          No investment data available for this period
+        </div>
+      <% end %>
+    </div>
+  </div>
+</section>

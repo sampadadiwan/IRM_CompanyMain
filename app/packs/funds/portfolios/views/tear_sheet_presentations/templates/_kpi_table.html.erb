@@ -1,0 +1,75 @@
+<%# locals: (title:, columns:, rows:, palette: nil) %>
+<section class="slide-premium slide-kpi-table" style="background-color: var(--palette-bg);">
+  <div class="slide-content" style="display: flex; flex-direction: column; justify-content: flex-start; padding: 3% 4%;">
+    <header class="animate-soft-fade" style="margin-bottom: 2rem;">
+      <h2 style="font-size: 2.5rem; font-weight: 800; color: var(--palette-primary); line-height: 1.1; letter-spacing: -0.02em; margin: 0;"><%= title %></h2>
+    </header>
+
+    <div class="animate-soft-fade-up" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; width: 100%;">
+      <div style="width: 100%; overflow-x: auto; border-radius: 12px; border: 1px solid var(--palette-border-light); background: #fff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+        <table style="width: 100%; border-collapse: separate; border-spacing: 0;">
+          <thead>
+            <tr style="border-bottom: 1px solid var(--palette-border);">
+              <th style="padding: 1.5rem 1.5rem; text-align: left; font-size: 0.8rem; font-weight: 700; color: var(--palette-text-muted); text-transform: uppercase;">KPI</th>
+              <th style="padding: 1.5rem 1.5rem; text-align: left; font-size: 0.8rem; font-weight: 700; color: var(--palette-text-muted); text-transform: uppercase;">Category</th>
+              <% columns.each do |col| %>
+                <th style="padding: 1.5rem 1.5rem; text-align: left; vertical-align: top; min-width: 140px;">
+                  <div style="font-size: 0.8rem; font-weight: 700; color: var(--palette-text-muted); text-transform: uppercase;"><%= col[:label] %></div>
+                  <% if col[:sub_label].present? %>
+                    <div style="font-size: 0.7rem; font-weight: 600; color: var(--palette-text-muted); opacity: 0.7; margin-top: 4px;">
+                      <%= col[:sub_label] %>
+                    </div>
+                  <% end %>
+                </th>
+              <% end %>
+              <th style="width: 5%;"></th>
+            </tr>
+          </thead>
+          <tbody style="font-size: 1rem; color: var(--palette-text);">
+            <% rows.each_with_index do |row, idx| %>
+              <tr style="<%= idx.even? ? 'background: #fff;' : 'background: #F8FAFC;' %> border-bottom: 1px solid var(--palette-border-light);">
+                <td style="padding: 1.25rem 1.5rem; font-weight: 600; color: var(--palette-primary);">
+                  <%= row[:kpi] %>
+                </td>
+                <td style="padding: 1.25rem 1.5rem; color: var(--palette-text-muted); font-size: 0.9rem;">
+                  <%= row[:category] || 'General' %>
+                </td>
+                <% columns.each do |col| %>
+                  <%
+                     # Case-insensitive lookup for robust data matching
+                     params_data = row[:data] || {}
+                     key_match = params_data.keys.find { |k| k.to_s.casecmp?(col[:key].to_s) }
+                     cell_data = key_match ? params_data[key_match] : nil
+                  %>
+                  <td style="padding: 1.25rem 1.5rem; vertical-align: top;">
+                    <% if cell_data %>
+                      <div style="font-weight: 700; font-size: 1.125rem; color: var(--palette-accent); margin-bottom: 4px;">
+                        <%= cell_data[:value] %>
+                      </div>
+                      <% if cell_data[:change].present? %>
+                        <%
+                           is_positive = !cell_data[:change].to_s.start_with?('-')
+                           color = is_positive ? "#10b981" : "#ef4444"
+                        %>
+                        <div style="font-size: 0.75rem; color: <%= color %>; font-weight: 600;">
+                          <%= cell_data[:change] %>
+                        </div>
+                      <% end %>
+                    <% else %>
+                      <span style="color: var(--palette-text-muted); opacity: 0.3;">-</span>
+                    <% end %>
+                  </td>
+                <% end %>
+                <td style="padding: 1.25rem 1.5rem; text-align: center;">
+                  <% if row[:notes].present? %>
+                     <div style="color: var(--palette-primary); opacity: 0.4; cursor: help;" title="<%= row[:notes] %>">ⓘ</div>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

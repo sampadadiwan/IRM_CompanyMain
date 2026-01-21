@@ -34,16 +34,56 @@ class TearSheetGeneratorService
     AVAILABLE TEMPLATES:
     1. `cover`: The title slide.
        - Schema: { "template": "cover", "title": string, "subtitle": string, "logo_url": string (optional) }
-    2. `key_metrics`: Highlight 4-6 critical KPIs.
-       - Schema: { "template": "key_metrics", "title": string, "metrics": [ { "label": string, "value": string, "trend": string (optional), "trend_direction": "up"|"down" (optional), "icon": string (optional, e.g. "trending-up"), "description": string (optional) } ] }
+    2. `key_metrics`: Highlight 4-6 critical KPIs in a Bento Grid.
+       - Schema: { "template": "key_metrics", "title": string, "metrics": [ { "label": string, "value": string, "trend": string (optional), "trend_direction": "up"|"down" (optional), "icon": string (optional), "description": string (optional) } ] }
     3. `strategic_highlights`: 3-4 major developments or operational wins.
        - Schema: { "template": "strategic_highlights", "title": string, "highlights": [ { "title": string, "description": string, "icon": string (optional) } ] }
     4. `investment_thesis`: The core value proposition and analytical outlook.
        - Schema: { "template": "investment_thesis", "title": string, "analysis": string (narrative), "points": [ string (key takeaways) ] }
     5. `risks`: Identify and categorize potential threats.
        - Schema: { "template": "risks", "title": string, "risks": [ { "category": string, "impact": "low"|"medium"|"high", "mitigation": string, "icon": string (optional) } ] }
+    6. `portfolio_investments`: A detailed list of investments held by the company.
+       - Schema: { "template": "portfolio_investments", "title": "Portfolio Investments", "investments": [ { "date": string, "amount": string, "instrument": string, "category": string, "notes": string } ] }
 
+    ### 5. Final Output
     RETURN ONLY A VALID JSON ARRAY OF SLIDE OBJECTS. No commentary.
+  PROMPT
+
+  KPI_SYSTEM_PROMPT = <<~PROMPT
+    Role: You are an expert Financial Data Analyst and Presentation Designer.
+    Task: Generate a detailed `kpi_table` slide for a Portfolio Company Tear Sheet, formatted as a matrix/table.
+
+    AESTHETIC: "2026 Modern Minimalist". Professional, clean, and high-contrast.
+
+    ### Slide Schema
+    `kpi_table`: A matrix view of performance indicators over time.
+    - Schema:
+      {
+        "template": "kpi_table",
+        "title": string,
+        "columns": [ { "key": string, "label": string, "sub_label": string (optional) } ],
+        "rows": [
+          {
+            "kpi_id": integer,
+            "kpi": string,
+            "category": string,
+            "data": {
+              "column_key": { "value": string, "change": string (optional), "trend_direction": "up"|"down"|"neutral" }
+            },
+            "notes": string (optional)
+          }
+        ]
+      }
+
+    ### Strict Directives
+    1. Data Structure: pivot the provided flat data into columns (Periods like "2024", "2023" or "Mar 2024", "Mar 2023") and rows (KPIs).
+    2. Columns: Identify the distinct periods from the data and create columns for them. Sort columns chronologically descending (newest first).
+    3. Rows: Group data by KPI. Each row represents one KPI.
+    4. Data Mapping: Map the values to the correct column key for that row.
+    5. Formatting: Format large numbers (Cr, L) consistently.
+    6. Trends: Calculate or use provided percentage changes for the `change` field.
+
+    RETURN ONLY A VALID JSON OBJECT FOR THE SLIDE. No commentary. The output must be a single JSON object.
   PROMPT
 
   def initialize(extract_id:)
@@ -57,8 +97,9 @@ class TearSheetGeneratorService
     end
 
     blueprint = generate_blueprint
-    # Add palette to blueprint metadata if needed, but for now we'll just use it in store
-    html = render_slides(blueprint, palette: palette)
+    # Ensure we use a deep copy for rendering because partials/logic might mutate the hashes
+    rendering_blueprint = JSON.parse(blueprint.to_json)
+    html = render_slides(rendering_blueprint, palette: palette)
 
     store_presentation(html, blueprint, palette: palette)
     html
@@ -67,25 +108,106 @@ class TearSheetGeneratorService
   private
 
   def generate_blueprint
-    data_transcript = begin
-      JSON.pretty_generate(JSON.parse(@extract.data))
-    rescue StandardError
-      @extract.data.to_s
+    main_blueprint = Array(generate_main_blueprint)
+    kpi_blueprint = generate_kpi_blueprint
+
+    Rails.logger.debug { "[TearSheetGeneratorService] Main Blueprint Size: #{main_blueprint.size}" }
+    Rails.logger.debug { "[TearSheetGeneratorService] KPI Blueprint Present: #{!kpi_blueprint.nil?}" }
+
+    combined = main_blueprint
+    if kpi_blueprint.is_a?(Hash)
+      combined << kpi_blueprint
+    elsif kpi_blueprint.is_a?(Array)
+      combined += kpi_blueprint
     end
 
-    prompt = "#{SYSTEM_PROMPT}\n\nEXTRACTED DATA:\n#{data_transcript}"
+    combined.select! { |s| s.is_a?(Hash) }
 
+    # Final check before return
+    combined.each_with_index do |s, i|
+      Rails.logger.debug "[TearSheetGeneratorService] Blueprint Slide #{i} Template: #{s['template'] || s[:template] || 'MISSING'}"
+    end
+
+    combined
+  end
+
+  def generate_main_blueprint
+    report = @extract.portfolio_report
+    pc = @extract.portfolio_company
+
+    transcript_data = begin
+      JSON.parse(@extract.data)
+    rescue StandardError
+      { raw_data: @extract.data.to_s }
+    end
+
+    # Purge KPIs from main call to reduce noise
+    transcript_data.delete("portfolio_kpis")
+    transcript_data.delete(:portfolio_kpis)
+
+    if report&.include_portfolio_investments && pc
+      inv_data = pc.portfolio_investments.as_json(
+        only: %i[investment_date quantity fmv_cents folio_id notes category],
+        include: { investment_instrument: { only: [:name] } }
+      )
+      Rails.logger.debug { "[TearSheetGeneratorService] Adding #{inv_data.size} investments to transcript" }
+      transcript_data[:portfolio_investments] = inv_data
+    end
+
+    prompt_data = JSON.pretty_generate(transcript_data)
+    Rails.logger.debug { "[TearSheetGeneratorService] Main Transcript Keys: #{transcript_data.keys}" }
+    prompt = "#{SYSTEM_PROMPT}\n\nEXTRACTED DATA:\n#{prompt_data}"
+
+    content = ask_llm(prompt)
+    JSON.parse(extract_json(content))
+  rescue StandardError => e
+    Rails.logger.error "[TearSheetGeneratorService] Main Blueprint Error: #{e.message}"
+    []
+  end
+
+  def generate_kpi_blueprint
+    report = @extract.portfolio_report
+    pc = @extract.portfolio_company
+    Rails.logger.debug { "[TearSheetGeneratorService] Generating KPI Blueprint. Report: #{report&.id}, Include KPI: #{report&.include_kpi}, PC: #{pc&.id}" }
+    return nil unless report&.include_kpi && pc
+
+    kpi_data = pc.portfolio_kpis.show_in_report.yearly.actuals
+                 .select("kpis.*, kpi_reports.as_of as as_of_date")
+                 .order("kpi_reports.as_of DESC")
+                 .as_json(
+                   only: %i[id name value display_value percentage_change notes],
+                   methods: [:as_of_date]
+                 ).map { |k| k.transform_keys { |key| key == "id" ? "kpi_id" : key } }
+
+    # Grouping logic can be handled by LLM, but let's ensure it has enough info
+    # The existing query `yearly.actuals` and order `as_of DESC` is good.
+
+    Rails.logger.debug { "[TearSheetGeneratorService] KPI Data Count: #{kpi_data.size}" }
+    Rails.logger.debug { "[TearSheetGeneratorService] KPI Data Sample: #{kpi_data.first.inspect}" } if kpi_data.any?
+    return nil if kpi_data.empty?
+
+    transcript_data = { portfolio_kpis: kpi_data }
+    prompt = "#{KPI_SYSTEM_PROMPT}\n\nEXTRACTED DATA:\n#{JSON.pretty_generate(transcript_data)}"
+    Rails.logger.debug { "[TearSheetGeneratorService] KPI Prompt Length: #{prompt.length}" }
+
+    content = ask_llm(prompt)
+    Rails.logger.debug { "[TearSheetGeneratorService] KPI LLM Response: #{content}" }
+
+    parsed = JSON.parse(extract_json(content))
+    Rails.logger.debug { "[TearSheetGeneratorService] KPI Parsed: #{parsed.inspect}" }
+    parsed
+  rescue StandardError => e
+    Rails.logger.error "[TearSheetGeneratorService] KPI Blueprint Error: #{e.message}"
+    Rails.logger.error e.backtrace.join("\n")
+    nil
+  end
+
+  def ask_llm(prompt)
     llm_chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
     response = llm_chat.ask(prompt)
 
     content = response.respond_to?(:content) ? response.content : response.to_s
-    content = content.text if content.respond_to?(:text)
-
-    json_str = extract_json(content)
-    JSON.parse(json_str)
-  rescue StandardError => e
-    Rails.logger.error "[TearSheetGeneratorService] LLM Error: #{e.message}"
-    []
+    content.respond_to?(:text) ? content.text : content
   end
 
   def extract_json(content)
@@ -104,11 +226,14 @@ class TearSheetGeneratorService
     # To handle live updates via Turbo Stream, we might need to broadcast the class too.
 
     slides_html = blueprint.filter_map do |slide_data|
-      template = slide_data.delete("template")
-      next unless %w[cover key_metrics strategic_highlights investment_thesis risks].include?(template)
+      # Defensive duplicate to prevent any downstream mutation
+      data = slide_data.dup
+      template = data.delete("template") || data.delete(:template)
+
+      next unless %w[cover key_metrics strategic_highlights investment_thesis risks kpi_table portfolio_investments].include?(template)
 
       # Ensure data is clean for partials (recursive transformation)
-      content_data = slide_data.deep_symbolize_keys
+      content_data = data.deep_symbolize_keys
       content_data[:palette] = palette
 
       renderer.render(
@@ -125,6 +250,8 @@ class TearSheetGeneratorService
       portfolio_report_extract_id: @extract.id,
       entity_id: @extract.entity_id
     )
+
+    Rails.logger.debug { "[TearSheetGeneratorService] Storing Blueprint. First Slide Template: #{blueprint.first ? (blueprint.first['template'] || blueprint.first[:template]) : 'N/A'}" }
 
     presentation.update!(
       title: "Tear Sheet: #{@extract.portfolio_company&.name || 'Company'}",

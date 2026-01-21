@@ -1,46 +1,54 @@
-<div class="row mb-4">
-  <div class="col-8">
-    <h1>Extract Details: <%= @portfolio_report_extract.portfolio_company&.name %></h1>
-    <p class="text-muted">
-      Report: <%= @portfolio_report_extract.portfolio_report&.name %> |
-      Dates: <%= l @portfolio_report_extract.start_date %> to <%= l @portfolio_report_extract.end_date %>
-    </p>
+
+<div class="d-flex justify-content-between align-items-end mb-4 border-bottom pb-4">
+  <div>
+    <h2 class="fw-bold mb-1"><%= link_to @portfolio_report_extract.portfolio_company %></h2>
+    <div class="text-muted small d-flex align-items-center gap-3">
+      <span><i class="ti ti-report"></i> <%= link_to @portfolio_report_extract.portfolio_report&.name, portfolio_report_path(@portfolio_report_extract.portfolio_report), class: "text-decoration-none text-muted" %></span>
+      <span><i class="ti ti-calendar-event"></i> <%= l @portfolio_report_extract.start_date %> - <%= l @portfolio_report_extract.end_date %></span>
+    </div>
   </div>
-  <div class="col-4 text-end">
-    <div class="btn-group mb-2">
-      <button type="button" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-        <i class="ti ti-palette"></i> Palette
-      </button>
-      <ul class="dropdown-menu">
-        <li><%= link_to 'Corporate Navy', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'corporate_navy', generate: true), class: "dropdown-item", target: "_blank" %></li>
-        <li><%= link_to 'Executive Emerald', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'executive_emerald', generate: true), class: "dropdown-item", target: "_blank" %></li>
-        <li><%= link_to 'Modern Slate', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'modern_slate', generate: true), class: "dropdown-item", target: "_blank" %></li>
-        <li><%= link_to 'Midnight Onyx', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'midnight_onyx', generate: true), class: "dropdown-item", target: "_blank" %></li>
-      </ul>
+
+  <div class="text-end">
+    <div class="d-flex gap-2 align-items-center justify-content-end">
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
+          <i class="ti ti-palette"></i> Palette
+        </button>
+        <ul class="dropdown-menu shadow-sm">
+          <li><%= link_to 'Corporate Navy', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'corporate_navy', generate: true), class: "dropdown-item small", target: "_blank" %></li>
+          <li><%= link_to 'Executive Emerald', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'executive_emerald', generate: true), class: "dropdown-item small", target: "_blank" %></li>
+          <li><%= link_to 'Modern Slate', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'modern_slate', generate: true), class: "dropdown-item small", target: "_blank" %></li>
+          <li><%= link_to 'Midnight Onyx', generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, palette: 'midnight_onyx', generate: true), class: "dropdown-item small", target: "_blank" %></li>
+        </ul>
+      </div>
+
+      <% if @presentation %>
+        <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, print_pdf: true), class: "btn btn-outline-secondary btn-sm", target: "_blank" do %>
+          <i class="ti ti-file-download"></i> PDF
+        <% end %>
+        <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-primary btn-sm", target: "_blank" do %>
+          <i class="ti ti-presentation-analytics"></i> View Slides
+        <% end %>
+      <% else %>
+        <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-primary btn-sm", target: "_blank" do %>
+           Generate Tear Sheet
+        <% end %>
+      <% end %>
+
+
+      <%= link_to edit_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-outline-secondary btn-sm" do %>
+        <i class="ti ti-edit"></i> Edit Data
+      <% end %>
     </div>
 
-    <% if @presentation %>
-      <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract, print_pdf: true), class: "btn btn-outline-secondary mb-2", target: "_blank" do %>
-        <i class="ti ti-download"></i> Export PDF
-      <% end %>
-      <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-primary mb-2", target: "_blank" do %>
-        <i class="ti ti-presentation"></i> View Slides
-      <% end %>
-    <% else %>
-      <%= link_to generate_tear_sheet_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-primary btn-lg mb-2", target: "_blank" do %>
-        <i class="ti ti-presentation"></i> Generate Tear Sheet
-      <% end %>
-    <% end %>
-    <br>
-    <%= link_to 'Edit Data', edit_portfolio_report_extract_path(@portfolio_report_extract), class: "btn btn-link text-muted" %>
   </div>
 </div>
 
-<div class="card mb-4">
-  <div class="card-header bg-white">
-    <h5 class="card-title mb-0">Extracted Raw Data</h5>
+<div class="card border-0 shadow-sm overflow-hidden">
+  <div class="card-header bg-white border-bottom-0 pt-4 px-4 pb-0">
+    <h6 class="fw-bold mb-0 text-uppercase tracking-wider small">Extracted Data</h6>
   </div>
-  <div class="card-body">
+  <div class="card-body p-4">
     <%
       data = @portfolio_report_extract.data
       if data.is_a?(String)
@@ -48,11 +56,23 @@
         data = parsed if parsed.present?
       end
     %>
-    <% if data.is_a?(Hash) || data.is_a?(Array) %>
-      <%= Json2table.get_html_table(data.to_json, JsonTable::TABLE_OPTIONS).html_safe %>
-    <% elsif data.present? %>
-      <%= data %>
-    <% end %>
+    <div class="">
+      <% if data.is_a?(Hash) || data.is_a?(Array) %>
+        <%# Assuming Json2table returns a table with Bootstrap classes if configured correctly, otherwise we might need to wrap it %>
+        <div class="">
+          <%= Json2table.get_html_table(data.to_json, JsonTable::TABLE_OPTIONS).html_safe %>
+        </div>
+      <% elsif data.present? %>
+        <div class="p-4 bg-light rounded text-monospace small">
+          <%= data %>
+        </div>
+      <% else %>
+        <div class="text-center py-5 text-muted">
+          <i class="ti ti-database-off opacity-50 display-6 d-block mb-3"></i>
+          No data extracted yet.
+        </div>
+      <% end %>
+    </div>
   </div>
 </div>
 
