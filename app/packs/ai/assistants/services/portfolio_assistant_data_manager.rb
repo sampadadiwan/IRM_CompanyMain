@@ -393,7 +393,13 @@ class PortfolioAssistantDataManager
 
     return [] if rounds.blank?
 
-    Investment.generate_cap_table(rounds, company.id, group_by_field: group_by_field.to_sym)
+    result = GenerateCapTable.call(params: {
+                                     funding_rounds: rounds,
+                                     portfolio_company_id: company.id,
+                                     group_by_field: group_by_field.to_sym
+                                   })
+
+    result[:model]
   end
 
   # Gets investments in cap table across portfolio companies.

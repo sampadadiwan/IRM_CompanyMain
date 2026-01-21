@@ -87,8 +87,13 @@ class PortfolioReportDocGenerator
                                       .order(investment_date: :asc)
                                       .pluck(:funding_round).uniq
 
-    investments = Investment.generate_cap_table(funding_rounds, portfolio_company.id, group_by_field: :category)
-    investments.map { |investment| OpenStruct.new(investment) }
+    result = GenerateCapTable.call(params: {
+                                     funding_rounds: funding_rounds,
+                                     portfolio_company_id: portfolio_company.id,
+                                     group_by_field: :category
+                                   })
+
+    result[:model].map { |investment| OpenStruct.new(investment) }
   end
 
   include ActionView::Helpers::NumberHelper
