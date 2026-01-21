@@ -137,7 +137,8 @@ class DocumentDownloadJob < ApplicationJob
             make_directory(doc_dir, tmp, file_name)
 
             # Add the local file to the ZIP archive using its virtual path (relative to @tmp_dir)
-            entry_name = file_name.delete_prefix("#{@tmp_dir}/")
+            # Ensure no leading slash is present in the zip entry name to avoid Zip::EntryNameError
+            entry_name = file_name.delete_prefix("#{@tmp_dir}/").delete_prefix("/")
             zipfile.add(entry_name, file_name)
 
             # Register the filename as used to prevent future collisions in this ZIP
