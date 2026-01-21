@@ -1,7 +1,7 @@
 class DocumentDownloadJob < ApplicationJob
   queue_as :low
   sidekiq_options retry: 0
-  attr_accessor :tmp_dir
+  attr_accessor :tmp_dir, :missing_files
 
   # Executes the document download job.
   # Creates a ZIP file containing the requested documents and/or folder contents,
@@ -16,6 +16,7 @@ class DocumentDownloadJob < ApplicationJob
     # Create a unique temporary directory for this job execution.
     # Appending a hex suffix prevents collisions between concurrent jobs for the same folder.
     @tmp_dir = "tmp/#{folder_id}_#{SecureRandom.hex(4)}"
+    @missing_files = []
     FileUtils.mkdir_p @tmp_dir
 
     # The outer begin-ensure block guarantees that the @tmp_dir is removed even if
@@ -50,6 +51,9 @@ class DocumentDownloadJob < ApplicationJob
         # Prepare notification with a 5-day expiry link for the user.
         download_link = "<a href='#{uploaded_document.file.url(expires_in: 60 * 60 * 24 * 5)}'><b>Download</b></a>"
         msg = "#{download_link} the ZIP file. A download link has also been sent to your email. Please note that the link will expire in 5 days."
+        if @missing_files.any?
+          msg += "<br/><br/>The following files could not be included because they were missing from storage: <ul><li>#{@missing_files.join('</li><li>')}</li></ul>"
+        end
         DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg:).deliver(user)
         send_notification(msg, user_id)
       end
@@ -107,37 +111,42 @@ class DocumentDownloadJob < ApplicationJob
     docs.find_each do |doc|
       # Access Control: Verify user permissions unless bypass is enabled (e.g., Company Admin)
       if no_check_individual_docs_access || Pundit.policy(user, doc).show?
-        # Stream the file from storage to a local temporary file
-        doc.file.download do |tmp|
-          # Determine the target directory and initial filename within the ZIP structure
-          doc_dir, file_name = get_file_name(doc, tmp)
+        begin
+          # Stream the file from storage to a local temporary file
+          doc.file.download do |tmp|
+            # Determine the target directory and initial filename within the ZIP structure
+            doc_dir, file_name = get_file_name(doc, tmp)
 
-          # Collision Resolution: Handle duplicate filenames by appending a counter
-          unless document_list[file_name].nil?
-            og_file_name = file_name
-            Rails.logger.debug { "File #{og_file_name} already exists" }
-            counter = 1
-            # Extract name without extension for suffixing
-            file_name_no_ext = og_file_name[0...og_file_name.rindex('.')]
-            file_name = "#{file_name_no_ext} (#{counter})#{File.extname(og_file_name)}"
-
-            # Increment counter until a unique filename in the current ZIP session is found
-            while document_list[file_name].present?
-              counter += 1
+            # Collision Resolution: Handle duplicate filenames by appending a counter
+            unless document_list[file_name].nil?
+              og_file_name = file_name
+              Rails.logger.debug { "File #{og_file_name} already exists" }
+              counter = 1
+              # Extract name without extension for suffixing
+              file_name_no_ext = og_file_name[0...og_file_name.rindex('.')]
               file_name = "#{file_name_no_ext} (#{counter})#{File.extname(og_file_name)}"
+
+              # Increment counter until a unique filename in the current ZIP session is found
+              while document_list[file_name].present?
+                counter += 1
+                file_name = "#{file_name_no_ext} (#{counter})#{File.extname(og_file_name)}"
+              end
             end
+
+            # Physically create the directory and place the file in the local workspace (@tmp_dir)
+            make_directory(doc_dir, tmp, file_name)
+
+            # Add the local file to the ZIP archive using its virtual path (relative to @tmp_dir)
+            entry_name = file_name.delete_prefix("#{@tmp_dir}/")
+            zipfile.add(entry_name, file_name)
+
+            # Register the filename as used to prevent future collisions in this ZIP
+            document_list[file_name] = "Added"
+            Rails.logger.debug { "Added file #{file_name}" }
           end
-
-          # Physically create the directory and place the file in the local workspace (@tmp_dir)
-          make_directory(doc_dir, tmp, file_name)
-
-          # Add the local file to the ZIP archive using its virtual path (relative to @tmp_dir)
-          entry_name = file_name.delete_prefix("#{@tmp_dir}/")
-          zipfile.add(entry_name, file_name)
-
-          # Register the filename as used to prevent future collisions in this ZIP
-          document_list[file_name] = "Added"
-          Rails.logger.debug { "Added file #{file_name}" }
+        rescue Shrine::FileNotFound => e
+          Rails.logger.error { "File not found for document #{doc.id}: #{e.message}" }
+          @missing_files << doc.name
         end
       else
         # Log skipped files for audit/debugging purposes
