@@ -6,7 +6,9 @@ class FileUploader < Shrine
   Attacher.validate do
     # validate_mime_type ALLOWED_TYPES
     validate_mime_type MIME_TYPES, message: "upload with this extension '#{file.mime_type}' is not allowed"
-    validate_max_size 2048 * 1024 * 1024, message: "is too large (max is 2GB)"
+    unless record.instance_of?(Document) && record.owner_tag == "Generated"
+      validate_max_size 2048 * 1024 * 1024, message: "is too large (max is 2GB)"
+    end
   end
 
   def generate_location(io, record: nil, derivative: nil, **)
