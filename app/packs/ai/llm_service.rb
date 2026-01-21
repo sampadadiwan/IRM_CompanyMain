@@ -39,4 +39,9 @@ class LlmService
     # Extract the main text content from the provider's response object.
     response.chat_completion
   end
+
+
+  def self.ruby_llm_chat()
+    RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+  end
 end
