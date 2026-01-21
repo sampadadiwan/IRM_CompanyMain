@@ -17,6 +17,9 @@ module AccountEntryAllocation
     step :display_generated_links
 
     def load_sqlite_db(ctx, fund:, **)
+      # We need to load the SQLite DB only if we are running allocations
+      return true unless ctx[:run_allocations]
+
       notify("Loading data for fund #{fund.name}. Could take a few minutes...", :info, ctx[:user_id])
 
       entity_id = fund.entity_id
@@ -156,6 +159,9 @@ module AccountEntryAllocation
     end
 
     def delete_existing_entries(ctx, **)
+      # We need to delete the existing entries only if we are running allocations
+      return true unless ctx[:run_allocations]
+
       # This is the very first step - record the start time
       ctx[:run_start_time] = Time.zone.now
       # In this step, we only soft-delete from the primary DB.
