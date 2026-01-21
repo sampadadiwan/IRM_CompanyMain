@@ -94,8 +94,11 @@ class DocumentDownloadJob < ApplicationJob
     docs = docs.where(folder_id: folder_ids).includes(:folder).order(created_at: :asc) if folder_ids.present?
     docs = docs.where(id: document_ids) if document_ids.present?
 
-    # Filter out documents in folders named 'tmp' or 'temp'
-    docs = docs.joins(:folder).where.not(folders: { name: %w[tmp temp] })
+    # Filter out documents in folders named 'tmp' or 'temp' or their subfolders
+    # We use full_path to identify subfolders. Subfolders of 'tmp' will have full_path starting with '/tmp/' or being '/tmp'
+    # However, since the root folder name is '/', the full_path of a 'tmp' folder at root is '/tmp'
+    # and its subfolder is '/tmp/subfolder'
+    docs = docs.joins(:folder).where.not("folders.full_path LIKE '%/tmp/%' OR folders.full_path LIKE '%/temp/%'")
 
     add_docs_to_zip(zipfile, user, docs, document_list, no_check_individual_docs_access)
     Rails.logger.debug "Done with all docs"

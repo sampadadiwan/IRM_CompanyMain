@@ -30,3 +30,24 @@ Feature: Document Download Job
     Then the download job should complete successfully
     And the ZIP file should contain "HugeFile.zip" with Zip64 support
     And the temporary directory should be cleaned up
+
+  Scenario: Ensure 'tmp', 'temp' folders and their subfolders are filtered out
+    Given Im logged in as a user "" for an entity "entity_type=Company"
+    And the user has role "company_admin"
+    And the entity has a folder "name=Export"
+    And the entity has a child folder "name=RealFolder"
+    And the entity has a child folder "name=tmp"
+    And the entity has a child folder "name=temp"
+    And folder "tmp" has sub-folders "SubTmp"
+    And folder "temp" has sub-folders "SubTemp"
+    And there is a document "name=RealDoc" in folder "RealFolder"
+    And there is a document "name=TmpDoc" in folder "tmp"
+    And there is a document "name=SubTmpDoc" in folder "SubTmp"
+    And there is a document "name=TempDoc" in folder "temp"
+    And there is a document "name=SubTempDoc" in folder "SubTemp"
+    When I trigger the download for "Export"
+    Then the download job should complete successfully
+    And the ZIP file should have the following structure:
+      | path                      |
+      | RealFolder/RealDoc.docx   |
+    And the temporary directory should be cleaned up
