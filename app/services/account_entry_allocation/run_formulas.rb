@@ -7,6 +7,7 @@ module AccountEntryAllocation
     include ApplicationHelper
     include WithScratchSqlite
 
+    step :setup_start_time
     step :delete_existing_entries
     step :load_sqlite_db
     step :get_commitments
@@ -15,6 +16,12 @@ module AccountEntryAllocation
     step :generate_soa
     left :cleanup_sqlite
     step :display_generated_links
+
+    def setup_start_time(ctx, **)
+      # This is the very first step - record the start time
+      ctx[:run_start_time] = Time.zone.now
+      true
+    end
 
     def load_sqlite_db(ctx, fund:, **)
       # We need to load the SQLite DB only if we are running allocations
@@ -97,6 +104,10 @@ module AccountEntryAllocation
 
     # Now we have all commitments loaded into the SQLite DB, so load it from there
     def get_commitments(ctx, fund:, end_date:, sample:, **)
+
+      # We need to load the commitments only if we are running allocations
+      return true unless ctx[:run_allocations]
+
       # Load commitments once for all formulas
       with_scratch_sqlite(ctx[:sqlite_path]) do
         commitments = if fund.custom_fields[:sample_commitment_ids_for_allocation].present?
@@ -162,8 +173,6 @@ module AccountEntryAllocation
       # We need to delete the existing entries only if we are running allocations
       return true unless ctx[:run_allocations]
 
-      # This is the very first step - record the start time
-      ctx[:run_start_time] = Time.zone.now
       # In this step, we only soft-delete from the primary DB.
       # This ensures the migration script (load_sqlite3_from_mysql.sh) sees them as deleted
       # but the physical rows still exist with the correct number of columns during the export.
@@ -172,6 +181,10 @@ module AccountEntryAllocation
     end
 
     def display_generated_links(ctx, fund:, start_date:, end_date:, user_id:, **)
+
+      # We need to display the generated links only if we are running allocations
+      return true unless ctx[:run_allocations]
+
       run_start_time = ctx[:run_start_time]
       time_taken = (Time.zone.now - run_start_time).to_i
 
