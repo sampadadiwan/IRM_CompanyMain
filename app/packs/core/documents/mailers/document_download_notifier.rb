@@ -16,7 +16,8 @@ class DocumentDownloadNotifier < BaseNotifier
       notification_id: notification.id,
       user_id: notification.recipient_id,
       document_id: params[:document].id,
-      entity_id: params[:entity_id]
+      entity_id: params[:entity_id],
+      msg: params[:msg]
     }
   end
 

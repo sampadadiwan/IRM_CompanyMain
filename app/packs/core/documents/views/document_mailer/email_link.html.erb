@@ -10,7 +10,13 @@ Dear User
 
 <p class="btn btn-outline-primary"><%= link_to 'Download Zip', @link %></p>
 
+<% if @msg.present? %>
+    <div>
+        <%= @msg.html_safe %>
+    </div>
+<% end %>
+
 <p>
-    If the link has expired, please use this <%= link_to 'Download Link', document_url(@document, subdomain: @document.entity.sub_domain) %>    
+    If the link has expired, please use this <%= link_to 'Download Link', document_url(@document, subdomain: @document.entity.sub_domain) %>
 </p>
 
