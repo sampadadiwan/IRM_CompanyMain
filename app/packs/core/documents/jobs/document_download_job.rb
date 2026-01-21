@@ -94,6 +94,9 @@ class DocumentDownloadJob < ApplicationJob
     docs = docs.where(folder_id: folder_ids).includes(:folder).order(created_at: :asc) if folder_ids.present?
     docs = docs.where(id: document_ids) if document_ids.present?
 
+    # Filter out documents in folders named 'tmp' or 'temp'
+    docs = docs.joins(:folder).where.not(folders: { name: %w[tmp temp] })
+
     add_docs_to_zip(zipfile, user, docs, document_list, no_check_individual_docs_access)
     Rails.logger.debug "Done with all docs"
   end
@@ -147,7 +150,7 @@ class DocumentDownloadJob < ApplicationJob
           end
         rescue Shrine::FileNotFound => e
           Rails.logger.error { "File not found for document #{doc.id}: #{e.message}" }
-          @missing_files << doc.name
+          @missing_files << "#{doc.folder_full_path}/#{doc.name}".delete_prefix("/")
         end
       else
         # Log skipped files for audit/debugging purposes
