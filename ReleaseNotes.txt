@@ -1,4 +1,5 @@
-V9.1.77
+V9.1.78
+263ea2d64 Updated generate_cap_table call to use GenerateCapTable operation (#1214)
 a504c38ff Added better skipping of temp dirs for download
 a4d828645 Added better error msgs for files that cannot be downloaded
 be21863eb Download folder now displays missing files with folders, skips tmp folders
@@ -8,6 +9,7 @@ eb7ba155f Now run_formulas skips steps when run_allocations is false
 70e6c62e1 Now AllocationEngine does not delete data unless we are running formulas
 db3648878 Fixed the FMV of the Portfolio investments in slides
 f230c68ea Tear sheet (#1211)
+
 
 
 V9.1.75
