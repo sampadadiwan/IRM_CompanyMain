@@ -20,6 +20,7 @@ Scenario Outline: Allocate account entries
   And Given import file "allocate_account_entries_2/fund_formulas.xlsx" for "FundFormula"
   And the Allocation Run "<allocation_run>" is created for the "Comprehensive Test Fund Aug 2025"
   Then the account entries generated match the account entries in "allocate_account_entries_2/generated_account_entries.xlsx"
+  And the AllocationRun status is set to "Success"
 
   Examples:
     | allocation_run |

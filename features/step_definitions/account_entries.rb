@@ -165,3 +165,10 @@ Then('the account entries generated match the account entries in {string}') do |
   count.should == 810
 
 end
+
+
+Then('the AllocationRun status is set to {string}') do |status|
+	allocation_run = AllocationRun.last
+	expect(allocation_run.status).to(eq(status))
+end
+

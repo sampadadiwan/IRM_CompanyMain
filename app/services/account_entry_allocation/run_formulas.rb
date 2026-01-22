@@ -174,6 +174,10 @@ module AccountEntryAllocation
         # Mark all as migrated to avoid double processing in final catch-all
         # migrate_entries_to_primary(ctx) will now only pick up leftovers
         migrate_entries_to_primary(ctx, final_check: true)
+
+        # Update status only in the final run (when final_check is true)
+        ctx[:allocation_run]&.update_column(:status, "Success")
+
       end
 
       true
@@ -373,8 +377,6 @@ module AccountEntryAllocation
       # Update parent_id for AccountEntry parents to their new primary IDs in MySQL
       relink_account_entry_parents(ctx) if final_check
 
-      # Update status only in the final run (when final_check is true)
-      ctx[:allocation_run]&.update_column(:status, "Success") if final_check
       true
     end
     # rubocop:enable Metrics/BlockLength, Metrics/PerceivedComplexity, Metrics/CyclomaticComplexity
