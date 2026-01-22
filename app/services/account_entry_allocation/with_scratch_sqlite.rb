@@ -53,6 +53,13 @@ module AccountEntryAllocation
         @@sqlite_pools.clear
       end
     end
+
+    def self.disconnect_pool(path)
+      @@sqlite_pools_mutex.synchronize do
+        pool = @@sqlite_pools.delete(path)
+        pool&.disconnect!
+      end
+    end
   end
 end
 # rubocop:enable Style/ClassVars

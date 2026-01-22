@@ -14,7 +14,8 @@ module AccountEntryAllocation
     step :run_formulas
     step :generate_fund_ratios
     step :generate_soa
-    left :cleanup_sqlite
+    step :cleanup_sqlite
+    left :cleanup_sqlite, id: :ensure_cleanup_sqlite
     step :display_generated_links
 
     def setup_start_time(ctx, **)
@@ -92,10 +93,20 @@ module AccountEntryAllocation
       sqlite_path = ctx[:sqlite_path]
       tsv_path = ctx[:tsv_path]
 
+      # First, disconnect the pool to close all file handles
+      AccountEntryAllocation::WithScratchSqlite.disconnect_pool(sqlite_path) if sqlite_path
+
       [sqlite_path, tsv_path].compact.each do |path|
         if File.exist?(path)
           Rails.logger.debug { "Cleaning up isolated temporary file: #{path}" }
           File.delete(path) unless Rails.env.development?
+        end
+
+        # Also cleanup WAL files if they exist
+        wal_path = "#{path}-wal"
+        shm_path = "#{path}-shm"
+        [wal_path, shm_path].each do |extra_path|
+          File.delete(extra_path) if File.exist?(extra_path) && !Rails.env.development?
         end
       end
 
@@ -104,7 +115,6 @@ module AccountEntryAllocation
 
     # Now we have all commitments loaded into the SQLite DB, so load it from there
     def get_commitments(ctx, fund:, end_date:, sample:, **)
-
       # We need to load the commitments only if we are running allocations
       return true unless ctx[:run_allocations]
 
@@ -181,7 +191,6 @@ module AccountEntryAllocation
     end
 
     def display_generated_links(ctx, fund:, start_date:, end_date:, user_id:, **)
-
       # We need to display the generated links only if we are running allocations
       return true unless ctx[:run_allocations]
 

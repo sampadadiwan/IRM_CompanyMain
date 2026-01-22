@@ -40,8 +40,7 @@ class LlmService
     response.chat_completion
   end
 
-
-  def self.ruby_llm_chat()
+  def self.ruby_llm_chat
     RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
   end
 end

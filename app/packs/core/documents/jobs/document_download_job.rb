@@ -11,8 +11,6 @@ class DocumentDownloadJob < ApplicationJob
   # @param user_id [Integer] The ID of the user requesting the download.
   # @param document_ids [Array<Integer>, nil] Specific document IDs to download; if nil, downloads all in folder.
   def perform(folder_id, user_id, document_ids = nil)
-    # rubocop:disable Metrics/BlockLength
-
     # Create a unique temporary directory for this job execution.
     # Appending a hex suffix prevents collisions between concurrent jobs for the same folder.
     @tmp_dir = "tmp/#{folder_id}_#{SecureRandom.hex(4)}"
@@ -51,9 +49,7 @@ class DocumentDownloadJob < ApplicationJob
         # Prepare notification with a 5-day expiry link for the user.
         download_link = "<a href='#{uploaded_document.file.url(expires_in: 60 * 60 * 24 * 5)}'><b>Download</b></a>"
         msg = "#{download_link} the ZIP file. A download link has also been sent to your email. Please note that the link will expire in 5 days."
-        if @missing_files.any?
-          msg += "<br/><br/>The following files could not be included because they were missing from storage: <ul><li>#{@missing_files.join('</li><li>')}</li></ul>"
-        end
+        msg += "<br/><br/>The following files could not be included because they were missing from storage: <ul><li>#{@missing_files.join('</li><li>')}</li></ul>" if @missing_files.any?
         DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg:).deliver(user)
         send_notification(msg, user_id)
       end
@@ -70,7 +66,6 @@ class DocumentDownloadJob < ApplicationJob
         FileUtils.rm_rf(@tmp_dir)
       end
     end
-    # rubocop:enable Metrics/BlockLength
   end
 
   # Prepares the list of documents to be added to the ZIP file based on permissions.
