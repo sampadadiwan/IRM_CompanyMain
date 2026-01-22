@@ -30,12 +30,15 @@ class DocumentDownloadJob < ApplicationJob
         # We also set the temporary directory to our @tmp_dir to avoid filling up /tmp
         Zip.setup do |c|
           c.default_compression = Zlib::DEFAULT_COMPRESSION
+          # Enable Zip64 support to handle archives larger than 4GB or with > 65k files.
+          # Modern Windows (XP and later) supports Zip64. Disabling it causes corruption for large files.
           c.write_zip64_support = true
           c.unicode_names = true
         end
 
         # This setting is sometimes needed outside Zip.setup for some versions of rubyzip
         Zip.unicode_names = true
+        Zip.continue_on_exists_proc = true
         # Ensure RubyZip uses our custom temporary directory instead of the system /tmp
         # Zip.options[:temp_file_base_directory] = @tmp_dir
 
@@ -47,14 +50,26 @@ class DocumentDownloadJob < ApplicationJob
           add_documents(zipfile, user, folder_ids:, entity_id:, document_ids:, same_entity:)
         end
 
+        # Log the size of the generated ZIP for troubleshooting
+        if File.exist?(zip_filename)
+          size_mb = File.size(zip_filename) / 1024.0 / 1024.0
+          Rails.logger.info { "Created ZIP file: #{zip_filename}, Size: #{size_mb.round(2)} MB" }
+        else
+          Rails.logger.error { "ZIP file was not created: #{zip_filename}" }
+        end
+
         # After zip creation, upload it as a Document record so it can be served via a secure URL.
         uploaded_document = upload(user, zip_filename, folder:)
 
         # Prepare notification with a 5-day expiry link for the user.
         download_link = "<a href='#{uploaded_document.file.url(expires_in: 60 * 60 * 24 * 5)}'><b>Download</b></a>"
-        msg = "#{download_link} the ZIP file. A download link has also been sent to your email. Please note that the link will expire in 5 days."
+
+        msg = "#{download_link} the ZIP file. (If Windows can't open it, use 7-Zip / WinRAR.) A download link has also been sent to your email. Please note that the link will expire in 5 days."
+
         msg += "<br/><br/>The following files could not be included because they were missing from storage: <ul><li>#{@missing_files.join('</li><li>')}</li></ul>" if @missing_files.any?
+
         msg += "<br/><br/>The following files were skipped due to errors: <ul><li>#{@skipped_files.join('</li><li>')}</li></ul>" if @skipped_files.any?
+
         DocumentDownloadNotifier.with(entity_id: folder.entity_id, document: uploaded_document, msg:).deliver(user)
         send_notification(msg, user_id)
       end
@@ -137,20 +152,42 @@ class DocumentDownloadJob < ApplicationJob
         # Define the entry name within the ZIP (relative path)
         # We replace slashes in document names to prevent directory traversal issues.
         # We use doc.name and append extension from metadata
-        max_name_length = 200
+        # Windows has a MAX_PATH limit (260 chars). To be safe, we limit the filename length significantly
+        # to leave room for the folder path and the user's extraction directory.
+        max_name_length = 100
         extension = ".#{doc.uploaded_file_extension}"
+
         # Windows illegal characters: < > : " / \ | ? *
         # We replace them with underscores to ensure compatibility.
-        doc_name = doc.name.tr('<>:"/\\|?*', '_').slice(0, max_name_length)
-        # ZipEntry names must not start with a slash.
-        # We also ensure the folder path is sanitized for Windows
-        safe_folder_path = doc.folder_full_path.tr('<>:"\\|?*', '_').sub(%r{^/+}, '')
-        entry_name = safe_folder_path.present? ? "#{safe_folder_path}/#{doc_name}#{extension}" : "#{doc_name}#{extension}"
+        safe_doc_name = doc.name.to_s.tr('<>:"/\\|?*', '_').slice(0, max_name_length)
+
+        # Remove trailing dots and spaces (Windows ignores them, which can cause confusion or errors)
+        safe_doc_name = safe_doc_name.strip.gsub(/[\.\s]+$/, '')
+
+        # Handle Windows reserved filenames (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
+        # If the name is reserved, prepend an underscore.
+        reserved_names = %w[CON PRN AUX NUL COM1 COM2 COM3 COM4 COM5 COM6 COM7 COM8 COM9 LPT1 LPT2 LPT3 LPT4 LPT5 LPT6 LPT7 LPT8 LPT9]
+        if reserved_names.include?(safe_doc_name.upcase)
+          safe_doc_name = "_#{safe_doc_name}"
+        end
+
+        # Sanitize folder path: allow forward slash / but replace other illegal characters.
+        # Also collapse multiple slashes and remove leading/trailing slashes from the entire path.
+        # Crucially, we also remove trailing dots/spaces from EACH path component for Windows compatibility.
+        safe_folder_path = doc.folder_full_path.to_s.tr('<>:"\\|?*', '_').gsub(/\/+/, '/')
+        safe_folder_path = safe_folder_path.split('/').map { |comp| comp.strip.gsub(/[\.\s]+$/, '') }.join('/')
+        safe_folder_path = safe_folder_path.gsub(/^\/+|\/+$/, '')
+
+        # Construct entry name
+        entry_name = if safe_folder_path.present?
+                       "#{safe_folder_path}/#{safe_doc_name}#{extension}"
+                     else
+                       "#{safe_doc_name}#{extension}"
+                     end
 
         # Collision Resolution: Handle duplicate filenames in the ZIP by appending a counter
         unless document_list[entry_name].nil?
           og_entry_name = entry_name
-          Rails.logger.debug { "ZIP entry #{og_entry_name} already exists" }
           counter = 1
           ext = File.extname(og_entry_name)
           base = og_entry_name.delete_suffix(ext)
@@ -160,13 +197,22 @@ class DocumentDownloadJob < ApplicationJob
             counter += 1
             entry_name = "#{base} (#{counter})#{ext}"
           end
+
+          Rails.logger.debug { "ZIP entry #{og_entry_name} already exists. Adding suffix to avoid collision #{entry_name}." }
+
         end
 
+        # Create a Zip Entry explicitly to set permissions and attributes for Windows compatibility.
+        # Unix 0644 permissions (rw-r--r--) are widely compatible and ensure Windows doesn't see "000" permissions.
+        entry = Zip::Entry.new(zipfile, entry_name)
+        entry.unix_perms = 0644
+
         # Stream the file from storage directly into the ZIP archive to save disk space
-        zipfile.get_output_stream(entry_name) do |os|
+        zipfile.get_output_stream(entry) do |os|
           # We use to_io to get the stream and ensure it is closed after copying
           io = doc.file.to_io
           begin
+            io.binmode if io.respond_to?(:binmode)
             IO.copy_stream(io, os)
           ensure
             io.close if io.respond_to?(:close)
