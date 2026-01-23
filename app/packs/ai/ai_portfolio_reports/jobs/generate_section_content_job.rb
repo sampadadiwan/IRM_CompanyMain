@@ -33,26 +33,15 @@ class GenerateSectionContentJob < ApplicationJob
       begin
         Rails.logger.info "Generating: #{section.section_type}"
 
-        # next unless section.section_type == "Custom Charts"
-        # next unless section.section_type == "Company Overview"
-
-        # next unless section.section_type == "Market Size & Target"
-
-        # next unless ["Company Overview", "Competition Analysis"].include?(section.section_type) # Skip this section as per requirements
-
-        # REMOVED CUSTOM CHARTS AS OF NOW. WE WILL IMPLEMENT IN SECTION CHARTS LATER.
-
-        # # SPECIAL HANDLING: Custom Charts section uses Rails service
-        # if section.section_type == "Custom Charts"
-        #   generate_charts_section(report, section)
-        #   next
-        # else
-        #   # All other sections use PortfolioReportAgent with cached documents
-        #   generate_text_section(report, section, cached_documents_context)
-        # end
         next if section.section_type == "Custom Charts"
 
-        generate_text_section(report, section, cached_documents_context)
+        # SPECIAL HANDLING: Investment Fit section
+        if section.section_type == "Investment Fit Evaluation"
+          generate_investment_fit_section(report, section, cached_documents_context)
+        else
+          # All other sections use PortfolioReportAgent with cached documents
+          generate_text_section(report, section, cached_documents_context)
+        end
       rescue StandardError => e
         Rails.logger.error "Error: #{section.section_type}: #{e.message}"
       end
@@ -70,6 +59,8 @@ class GenerateSectionContentJob < ApplicationJob
   # @param folder [Folder, nil] document folder
   # @return [void]
   def download_folder_documents(folder)
+    return if folder.nil?
+
     FileUtils.rm_rf(DOCUMENT_FOLDER_PATH)
     FileUtils.mkdir_p(DOCUMENT_FOLDER_PATH)
 
@@ -456,6 +447,50 @@ class GenerateSectionContentJob < ApplicationJob
     Dir.glob(File.join(folder_path, "*")).select do |file_path|
       File.file?(file_path) && supported_extensions.include?(File.extname(file_path).downcase)
     end
+  end
+
+  def generate_investment_fit_section(report, section, cached_documents_context)
+    template = report.investment_criteria_template
+
+    # If no template selected, mark section as skipped
+    if template.nil?
+      section.update(
+        content_html: investment_fit_not_configured_html,
+        status: 'skipped'
+      )
+      Rails.logger.info "  → Investment Fit skipped (no template)"
+      return
+    end
+
+    Rails.logger.info "  → Generating Investment Fit with template: #{template.name}"
+
+    # Use InvestmentFitSectionGenerator (new service)
+    generator = InvestmentFitSectionGenerator.new(
+      report: report,
+      section: section,
+      template: template,
+      pitch_deck_content: cached_documents_context
+    )
+
+    html_content = generator.generate
+    section.update(content_html: html_content)
+
+    # Increment template usage
+    template.update!(usage_count: template.usage_count + 1)
+
+    Rails.logger.info "  ✓ Generated Investment Fit section"
+  end
+
+  def investment_fit_not_configured_html
+    <<~HTML
+      <div class="investment-fit-not-configured" style="padding: 2rem; background: #f8f9fa; border-radius: 8px; text-align: center;">
+        <h3 style="color: #6b7280;">Investment Fit Evaluation Not Configured</h3>
+        <p style="color: #9ca3af;">
+          No investment criteria template was selected for this report.
+          To generate an Investment Fit evaluation, edit the report and select a template.
+        </p>
+      </div>
+    HTML
   end
 end
 # rubocop:enable Metrics/ClassLength

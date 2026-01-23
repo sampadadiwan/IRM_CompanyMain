@@ -54,6 +54,12 @@ resources :ai_portfolio_reports do
   resources :ai_chat_messages, only: [:create]
 end
 
+resources :investment_criteria_templates do
+  member do
+    get :preview # For AJAX preview in report creation form
+  end
+end
+
 resources :assistants, only: [:show] do
   collection do
     post :ask

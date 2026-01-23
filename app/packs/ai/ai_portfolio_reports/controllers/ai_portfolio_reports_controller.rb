@@ -17,6 +17,9 @@ class AiPortfolioReportsController < ApplicationController
   def new
     @report = AiPortfolioReport.new
     authorize @report
+
+    # Load user's templates for selection
+    @templates = current_user.investment_criteria_templates.order(usage_count: :desc)
   end
 
   # Create a new portfolio report and enqueue generation.
@@ -27,11 +30,22 @@ class AiPortfolioReportsController < ApplicationController
     @report.analyst_id = current_user.id
     authorize @report
 
+    # Handle template creation if "create new" was selected
+    if params[:template_action] == 'create_new' && params[:new_template].present?
+      template = create_template_from_params(params[:new_template])
+      @report.investment_criteria_template = template
+    elsif params[:template_action] == 'use_existing' && params[:investment_criteria_template_id].present?
+      @report.investment_criteria_template_id = params[:investment_criteria_template_id]
+    end
+
+    # If 'skip' or no action, template remains nil
+
     if @report.save
       @report.ai_chat_sessions.create!(analyst_id: current_user.id)
       GenerateSectionContentJob.perform_later(@report.id)
       redirect_to @report, flash: { ai_notice: 'Report created! AI is generating content for all sections (this may take a minute)...' }
     else
+      @templates = current_user.investment_criteria_templates.order(usage_count: :desc)
       render :new, status: :unprocessable_entity
     end
   end
@@ -272,7 +286,17 @@ class AiPortfolioReportsController < ApplicationController
   #
   # @return [ActionController::Parameters] permitted params
   def report_params
-    params.require(:ai_portfolio_report).permit(:portfolio_company_id, :report_date)
+    params.require(:ai_portfolio_report).permit(:portfolio_company_id, :report_date, :investment_criteria_template_id)
+  end
+
+  def create_template_from_params(template_params)
+    service = InvestmentCriteriaTemplateService.new(current_user)
+    criteria = template_params[:criteria]&.values&.reject { |c| c[:name].blank? } || []
+
+    service.create(
+      name: template_params[:name],
+      criteria: criteria
+    )
   end
 
   # Build collated report content from reviewed sections.

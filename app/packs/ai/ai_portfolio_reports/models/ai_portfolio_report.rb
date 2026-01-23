@@ -4,6 +4,7 @@ class AiPortfolioReport < ApplicationRecord
   belongs_to :folder, optional: true
   has_many :ai_report_sections, dependent: :destroy
   has_many :ai_chat_sessions, dependent: :destroy
+  belongs_to :investment_criteria_template, optional: true
 
   enum :status, {
     draft: 'draft',
@@ -35,7 +36,8 @@ class AiPortfolioReport < ApplicationRecord
     "Operational Red Flags",
     "Negative News",
     "AML/KYB Check",
-    "Investment Ask"
+    "Investment Ask",
+    "Investment Fit Evaluation"
   ].freeze
 
   # Sections that benefit from web search (current external information)

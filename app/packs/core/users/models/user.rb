@@ -82,6 +82,7 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
   has_many :investor_accesses, dependent: :destroy
+  has_many :investment_criteria_templates, foreign_key: :created_by_user_id, dependent: :destroy
 
   # Noticed gem
   has_many :notifications, as: :recipient, dependent: :destroy, class_name: "Noticed::Notification"
