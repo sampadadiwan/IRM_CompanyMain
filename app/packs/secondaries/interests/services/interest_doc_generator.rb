@@ -7,24 +7,22 @@ class InterestDocGenerator
   def initialize(interest, template, start_date, end_date, user_id, options: nil)
     Rails.logger.debug { "InterestDocGenerator #{interest.id}, #{template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
 
-    create_working_dir(interest)
-    template_path ||= download_template(template)
-    generate(interest, template, template_path)
-    generated_document_name = "#{template.name} #{interest.buyer_entity_name}"
-    upload(template, interest, nil, nil, nil, generated_document_name, user_id: user_id)
-  ensure
-    cleanup
+    template.file.download do |tempfile|
+      template_path = tempfile.path
+
+      create_working_dir(interest)
+      generate(interest, template, template_path)
+      generated_document_name = "#{template.name} #{interest.buyer_entity_name}"
+      upload(template, interest, nil, nil, nil, generated_document_name, user_id: user_id)
+    ensure
+      cleanup
+    end
   end
 
   private
 
   def working_dir_path(interest)
     "tmp/interest_spa_generator/#{rand(1_000_000)}/#{interest.id}"
-  end
-
-  def download_template(template)
-    file = template.file.download
-    file.path
   end
 
   # template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"

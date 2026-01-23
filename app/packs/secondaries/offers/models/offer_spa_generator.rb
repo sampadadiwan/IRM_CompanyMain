@@ -7,24 +7,22 @@ class OfferSpaGenerator
   def initialize(offer, template, start_date, end_date, user_id, options: nil)
     Rails.logger.debug { "OfferSpaGenerator #{offer.id}, #{template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
 
-    create_working_dir(offer)
-    template_path ||= download_template(template)
-    generate(offer, template, template_path)
-    generated_document_name = "#{template.name} #{offer.full_name}"
-    upload(template, offer, nil, nil, nil, generated_document_name, user_id: user_id)
-  ensure
-    cleanup
+    template.file.download do |tempfile|
+      template_path = tempfile.path
+
+      create_working_dir(offer)
+      generate(offer, template, template_path)
+      generated_document_name = "#{template.name} #{offer.full_name}"
+      upload(template, offer, nil, nil, nil, generated_document_name, user_id: user_id)
+    ensure
+      cleanup
+    end
   end
 
   private
 
   def working_dir_path(offer)
     "tmp/offer_spa_generator/#{rand(1_000_000)}/#{offer.id}"
-  end
-
-  def download_template(template)
-    file = template.file.download
-    file.path
   end
 
   # template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"

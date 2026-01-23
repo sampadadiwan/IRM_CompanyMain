@@ -19,30 +19,29 @@ class PortfolioReportDocGenerator
 
     portfolio_report_extract = PortfolioReportExtract.find(@options[:portfolio_report_extract_id])
 
-    create_working_dir(@portfolio_company)
-    template_path = download_template(@template)
-    generate(@portfolio_company, portfolio_report_extract, @template, template_path, @start_date, @end_date)
-    generated_document_name = "#{@template.name} #{@portfolio_company.investor_name} #{@start_date} to #{@end_date}"
+    # Download the template file - block keeps temp file available throughout
+    @template.file.download do |tempfile|
+      template_path = tempfile.path
 
-    # Folder to upload the generated document
-    folder = Folder.find(@options[:folder_id]) if @options[:folder_id].present?
-    folder ||= @portfolio_company.document_folder.children.find_or_create_by(name: 'Portfolio Reports', entity_id: @portfolio_company.entity_id)
+      create_working_dir(@portfolio_company)
+      generate(@portfolio_company, portfolio_report_extract, @template, template_path, @start_date, @end_date)
+      generated_document_name = "#{@template.name} #{@portfolio_company.investor_name} #{@start_date} to #{@end_date}"
 
-    # Upload the generated document
-    upload(@template, @portfolio_company, @start_date, @end_date, folder, generated_document_name, file_extension: 'docx', user_id: @user_id)
-  ensure
-    cleanup
+      # Folder to upload the generated document
+      folder = Folder.find(@options[:folder_id]) if @options[:folder_id].present?
+      folder ||= @portfolio_company.document_folder.children.find_or_create_by(name: 'Portfolio Reports', entity_id: @portfolio_company.entity_id)
+
+      # Upload the generated document
+      upload(@template, @portfolio_company, @start_date, @end_date, folder, generated_document_name, file_extension: 'docx', user_id: @user_id)
+    ensure
+      cleanup
+    end
   end
 
   private
 
   def working_dir_path(portfolio_company)
     "tmp/portfolio_company/#{rand(1_000_000)}/#{portfolio_company.id}"
-  end
-
-  def download_template(template)
-    file = template.file.download
-    file.path
   end
 
   def generate(portfolio_company, portfolio_report_extract, _template_document, template_path, _start_date, end_date)
@@ -93,7 +92,9 @@ class PortfolioReportDocGenerator
                                      group_by_field: :category
                                    })
 
-    result[:model].map { |investment| OpenStruct.new(investment) }
+    # Ensure we always return an array (result[:model] might be nil)
+    model_data = result[:model] || []
+    model_data.map { |investment| OpenStruct.new(investment) }
   end
 
   include ActionView::Helpers::NumberHelper

@@ -4,25 +4,23 @@ class SecondarySaleDocGenerator
 
   attr_accessor :working_dir
 
-  def initialize(secondary_sale, template, _start_date, _end_date, _user_id)
-    create_working_dir(secondary_sale)
-    template_path ||= download_template(template)
-    generate(secondary_sale, template, template_path)
-    generated_document_name = "#{template.name} #{secondary_sale.name}"
-    upload(template, secondary_sale, nil, nil, nil, generated_document_name, user_id: user_id)
-  ensure
-    cleanup
+  def initialize(secondary_sale, template, _start_date, _end_date, user_id)
+    template.file.download do |tempfile|
+      template_path = tempfile.path
+
+      create_working_dir(secondary_sale)
+      generate(secondary_sale, template, template_path)
+      generated_document_name = "#{template.name} #{secondary_sale.name}"
+      upload(template, secondary_sale, nil, nil, nil, generated_document_name, user_id: user_id)
+    ensure
+      cleanup
+    end
   end
 
   private
 
   def working_dir_path(secondary_sale)
     "tmp/secondary_sale_spa_generator/#{rand(1_000_000)}/#{secondary_sale.id}"
-  end
-
-  def download_template(template)
-    file = template.file.download
-    file.path
   end
 
   # template_path sample at "public/sample_uploads/Purchase-Agreement-1.odt"
