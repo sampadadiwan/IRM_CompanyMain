@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_20_174500) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_22_121304) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2056,7 +2056,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_20_174500) do
     t.index ["user_id"], name: "index_interests_on_user_id"
   end
 
-  create_table "investment_instruments", force: :cascade do |t|
+  create_table "investment_criteria_templates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_user_id", null: false
+    t.json "criteria", null: false
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.integer "usage_count", default: 0, null: false
+    t.index ["created_by_user_id", "usage_count"], name: "index_investment_criteria_templates_on_user_and_usage"
+    t.index ["created_by_user_id"], name: "index_investment_criteria_templates_on_created_by_user_id"
+  end
+
+  create_table "investment_instruments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "category", limit: 15
     t.datetime "created_at", null: false
     t.string "currency", limit: 5
