@@ -3570,8 +3570,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_20_174500) do
   add_foreign_key "ai_portfolio_reports", "folders"
   add_foreign_key "ai_presentations", "entities"
   add_foreign_key "ai_report_sections", "ai_portfolio_reports"
-  add_foreign_key "ai_reports", "entities"
-  add_foreign_key "ai_reports", "reports"
   add_foreign_key "ai_rules", "entities"
   add_foreign_key "allocation_runs", "entities"
   add_foreign_key "allocation_runs", "funds"
