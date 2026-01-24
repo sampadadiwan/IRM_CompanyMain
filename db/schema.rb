@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_23_125928) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_24_062627) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -25,6 +25,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_23_125928) do
     t.boolean "notify", default: false
     t.bigint "owner_id", null: false
     t.string "owner_type", null: false
+    t.integer "parent_access_right_id"
     t.bigint "permissions", default: 0, null: false
     t.datetime "updated_at", null: false
     t.bigint "user_id"

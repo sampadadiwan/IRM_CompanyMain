@@ -46,11 +46,7 @@ class Folder < ApplicationRecord
 
   def set_parent_permissions
     parent.access_rights.each do |parent_ar|
-      folder_ar = parent_ar.dup
-      folder_ar.owner = self
-      folder_ar.access_type = 'Folder'
-      folder_ar.notify = false
-      folder_ar.save
+      parent_ar.replicate_to(self)
     end
 
     # If we have an owner for the parent and none for the child

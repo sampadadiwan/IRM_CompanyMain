@@ -61,7 +61,7 @@ Given('each folder has a document') do
 end
 
 When('the root folder is given access rights') do
-  AccessRight.create!(owner: @folder, user_id: @user.id, cascade: true, entity_id: @folder.entity_id)
+  @root_folder_ar = AccessRight.create!(owner: @folder, user_id: @user.id, cascade: true, entity_id: @folder.entity_id)
 end
 
 Then('the child folders should have the same access rights') do
@@ -71,6 +71,7 @@ Then('the child folders should have the same access rights') do
     folder.access_rights.first.user_id.should == @user.id
     folder.access_rights.first.cascade.should == true
     folder.access_rights.first.entity_id.should == @folder.entity_id
+    folder.access_rights.first.parent_access_right_id.should == @root_folder_ar.id
   end
 end
 
@@ -80,6 +81,7 @@ Then('the documents should have the same access rights') do
     doc.access_rights.length.should == 1
     doc.access_rights.first.user_id.should == @user.id
     doc.access_rights.first.entity_id.should == @folder.entity_id
+    # doc.access_rights.first.parent_id.should == @root_folder_ar.id
   end
 end
 
@@ -99,6 +101,9 @@ Then('the documents access_rights should be deleted') do
     puts "Checking post delete document #{doc.name} access rights #{doc.access_rights.first}"
     doc.access_rights.length.should == 0
   end
+
+  # Ensure that when the parent is deleted, no access rights remain with parent_id set
+  AccessRight.where(parent_access_right_id: @root_folder_ar.id).length.should == 0
 end
 
 Then("I update the folder's name") do

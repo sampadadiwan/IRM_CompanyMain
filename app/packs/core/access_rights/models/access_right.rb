@@ -151,6 +151,16 @@ class AccessRight < ApplicationRecord
     self.access_type ||= owner_type
   end
 
+  def replicate_to(new_owner, validate: true)
+    new_ar = dup
+    new_ar.owner = new_owner
+    new_ar.access_type = new_owner.class.name
+    new_ar.notify = false
+    new_ar.parent_access_right_id = parent_access_right_id || id
+    new_ar.save(validate: validate)
+    new_ar
+  end
+
   after_create_commit :send_notification
   def send_notification
     if notify && (%w[Document Folder].exclude?(owner_type) || (owner.respond_to?(:send_email) && owner.send_email))
