@@ -1,3 +1,26 @@
+V9.1.79
+d5530af60 (fund_email_ids) feat: Refactor category and investor sorting in horizontal cap table for improved clarity and performance
+056c90dc9 feat: Add `without_investor_accesses` scope and enhance the notification trigger UI with a confirmation popup that includes a recipient list link, updating the workflow documentation.
+c71843a50 Added Fund Notification to send to all commitments
+5a3244572 Reverted precompile for cucumber tests
+d4ff7d9f5 Remove stakeholder display from account entry view for cleaner layout
+0452bc418 Update counter_culture references from net_payable_cents to gross_payable_cents for CDP
+cc63b991e Confirmation form bug fix: Add turbo: false to form submission
+8d870043e Add aggregate_portfolio_investments.dataTable to styles for improved dropdown visibility
+2d8ebe44a Rubocop fixes
+7b2c4e314 Fix call_basis reference in convert_fees method for accurate fee conversion
+470aab27e Add call_basis to CapitalRemittance and update related logic for uploads
+b054b00fc Allow delete of Access Rights from child folders when deleted from Parent (#1220)
+0d68f4fdb Added from_email for EOI Notifier
+318399cbc Fix/create template entity level (#1218)
+5a88e3b72 Portfolio report fix (#1216)
+abea03c70 Feature/investment fit template (#1215)
+28ddf3ae2 MAde fixes to download all files of an entity
+ec9998378 Added windows compat for zip downloads
+9840b910e Add status update for AllocationRun and corresponding test step
+4c8c9ccab Added better cleanup of tmp db after allocation runs
+22587e6e6 Added release notes
+
 V9.1.78
 263ea2d64 Updated generate_cap_table call to use GenerateCapTable operation (#1214)
 a504c38ff Added better skipping of temp dirs for download
