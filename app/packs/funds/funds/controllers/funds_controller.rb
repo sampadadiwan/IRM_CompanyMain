@@ -1,5 +1,5 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers show_email_list]
+  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers show_email_list trigger_adhoc_notification]
 
   # GET /funds or /funds.json
   def index
@@ -212,6 +212,12 @@ class FundsController < ApplicationController
     @capital_call = CapitalCall.find(params[:capital_call_id]) if params[:capital_call_id].present?
     @capital_distribution = CapitalDistribution.find(params[:capital_distribution_id]) if params[:capital_distribution_id].present?
     @capital_distribution_payment = CapitalDistributionPayment.find(params[:capital_distribution_payment_id]) if params[:capital_distribution_payment_id].present?
+  end
+
+  def trigger_adhoc_notification
+    @custom_notification = CustomNotification.find(params[:custom_notification_id])
+    @fund.adhoc_notification(@custom_notification.id)
+    redirect_back_or_to(fund_path(@fund), notice: "Notification trigger started for #{@fund.name}.")
   end
 
   private

@@ -15,6 +15,10 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  def trigger_adhoc_notification?
+    update?
+  end
+
   def copy_formulas?
     update? && support?
   end

@@ -130,6 +130,7 @@ resources :funds do
   get 'dashboard', on: :member
   post 'generate_tracking_numbers', on: :member
   get 'show_email_list', on: :member
+  patch 'trigger_adhoc_notification', on: :member
 end
 
 resources :fund_snapshots, controller: "funds", defaults: { snapshot: true }
@@ -151,6 +152,7 @@ resources :investment_opportunities do
   get 'finalize_allocation', on: :member
   get 'no_password_show', on: :collection
   get 'show_email_list', on: :member
+  patch 'trigger_adhoc_notification', on: :member
 end
 
 resources :allocation_runs do

@@ -66,7 +66,7 @@ class CapitalDistributionPayment < ApplicationRecord
 
   counter_culture :fund,
                   column_name: 'distribution_amount_cents',
-                  delta_column: 'net_payable_cents'
+                  delta_column: 'gross_payable_cents'
 
   counter_culture :fund,
                   column_name: proc { |r| r.completed ? 'tracking_distribution_amount_cents' : nil },

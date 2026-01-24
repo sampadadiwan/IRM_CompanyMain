@@ -4,7 +4,7 @@ module CapitalRemittanceFees
 
   # Converts fees between folio_currency and fund_currency based on the call_basis
   def convert_fees
-    if capital_call.call_basis == "Upload"
+    if call_basis == "Upload"
 
       # For uploads, convert fees from folio_currency to fund_currency
       if capital_fee_cents.zero?

@@ -87,19 +87,20 @@ class CapitalRemittance < ApplicationRecord
   def calc_call_amount_cents(recompute_call_amount: false)
     # Convert between folio and fund currencies
     convert_fees
+    # The call_basis should be set from the capital_call if not already set, only in case of uploads where we may have set it already
+    self.call_basis ||= capital_call.call_basis
 
     # Case where we allocate based on percentage of commitment
-    if capital_call.call_basis == "Percentage of Commitment" && (call_amount_cents.zero? || recompute_call_amount)
+    if self.call_basis == "Percentage of Commitment" && (call_amount_cents.zero? || recompute_call_amount)
       call_basis_percentage_commitment
 
     # Case where the capital remittances will be uploaded manually
-    elsif capital_call.call_basis == "Upload"
+    elsif self.call_basis == "Upload"
       call_basis_upload
 
     # Special case where the call_basis is Investable Capital Percentage or Foreign Investable Capital Percentage
     elsif call_amount_cents.zero? || recompute_call_amount
-      call_basis_account_entry(capital_call.call_basis) && (call_amount_cents.zero? || recompute_call_amount)
-
+      call_basis_account_entry(self.call_basis) && (call_amount_cents.zero? || recompute_call_amount)
     end
   end
 

@@ -38,6 +38,10 @@
         <%= t('funds.fund_details.access') %>
       </a>
 
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">
+        Notifications
+      </a>
+
     </nav>
 
 
@@ -146,6 +150,15 @@
 
             </div>
 
+        </div>
+
+        <div id="notifications-tab" class="tab-pane fade in">
+          <div id="notifications" class="associated_entity">
+            <% src = custom_notifications_path(q: {owner_id_eq: fund.id, owner_type_eq: "Fund"}) %>
+            <%= turbo_frame_tag "custom_notifications_frame", target: "_top", loading: :lazy, src: src do %>
+              <%= render "/layouts/loading" %>
+            <% end %>
+          </div>
         </div>
 
     </div>

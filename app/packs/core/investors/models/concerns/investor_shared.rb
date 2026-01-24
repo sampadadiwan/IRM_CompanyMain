@@ -8,6 +8,7 @@ module InvestorShared
     scope :not_portfolio_companies, -> { where.not(category: "Portfolio Company") }
     scope :not_advisors, -> { where.not(category: "Investor Advisor") }
     scope :not_rms, -> { where.not(category: "RM") }
+    scope :without_investor_accesses, -> { where(investor_access_count: 0) }
 
     scope :with_tag_list, lambda { |tags|
       tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)

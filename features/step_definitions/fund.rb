@@ -756,7 +756,7 @@ end
 Then('the capital distribution must reflect the payments') do
   @capital_distribution.reload
   @capital_distribution.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
-  @capital_distribution.fund.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
+  @capital_distribution.fund.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:gross_payable_cents)
 end
 
 Then('the investors must receive email with subject {string} with the document {string} attached') do |subject, document_name|

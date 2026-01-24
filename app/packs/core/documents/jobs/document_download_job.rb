@@ -162,21 +162,19 @@ class DocumentDownloadJob < ApplicationJob
         safe_doc_name = doc.name.to_s.tr('<>:"/\\|?*', '_').slice(0, max_name_length)
 
         # Remove trailing dots and spaces (Windows ignores them, which can cause confusion or errors)
-        safe_doc_name = safe_doc_name.strip.gsub(/[\.\s]+$/, '')
+        safe_doc_name = safe_doc_name.strip.gsub(/[.\s]+$/, '')
 
         # Handle Windows reserved filenames (CON, PRN, AUX, NUL, COM1-9, LPT1-9)
         # If the name is reserved, prepend an underscore.
         reserved_names = %w[CON PRN AUX NUL COM1 COM2 COM3 COM4 COM5 COM6 COM7 COM8 COM9 LPT1 LPT2 LPT3 LPT4 LPT5 LPT6 LPT7 LPT8 LPT9]
-        if reserved_names.include?(safe_doc_name.upcase)
-          safe_doc_name = "_#{safe_doc_name}"
-        end
+        safe_doc_name = "_#{safe_doc_name}" if reserved_names.include?(safe_doc_name.upcase)
 
         # Sanitize folder path: allow forward slash / but replace other illegal characters.
         # Also collapse multiple slashes and remove leading/trailing slashes from the entire path.
         # Crucially, we also remove trailing dots/spaces from EACH path component for Windows compatibility.
-        safe_folder_path = doc.folder_full_path.to_s.tr('<>:"\\|?*', '_').gsub(/\/+/, '/')
-        safe_folder_path = safe_folder_path.split('/').map { |comp| comp.strip.gsub(/[\.\s]+$/, '') }.join('/')
-        safe_folder_path = safe_folder_path.gsub(/^\/+|\/+$/, '')
+        safe_folder_path = doc.folder_full_path.to_s.tr('<>:"\\|?*', '_').squeeze('/')
+        safe_folder_path = safe_folder_path.split('/').map { |comp| comp.strip.gsub(/[.\s]+$/, '') }.join('/')
+        safe_folder_path = safe_folder_path.gsub(%r{^/+|/+$}, '')
 
         # Construct entry name
         entry_name = if safe_folder_path.present?
@@ -205,7 +203,7 @@ class DocumentDownloadJob < ApplicationJob
         # Create a Zip Entry explicitly to set permissions and attributes for Windows compatibility.
         # Unix 0644 permissions (rw-r--r--) are widely compatible and ensure Windows doesn't see "000" permissions.
         entry = Zip::Entry.new(zipfile, entry_name)
-        entry.unix_perms = 0644
+        entry.unix_perms = 0o644
 
         # Stream the file from storage directly into the ZIP archive to save disk space
         zipfile.get_output_stream(entry) do |os|
