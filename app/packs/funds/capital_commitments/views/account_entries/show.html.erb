@@ -17,11 +17,6 @@
               <div class="fs-4"><%= link_to @account_entry.fund.name, @account_entry.fund, class: "text-decoration-none fw-bold text-primary" %></div>
             </div>
 
-            <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Stakeholder</label>
-              <div class="fs-4"><%= link_to @account_entry.investor, @account_entry.investor, class: "text-decoration-none fw-bold text-primary" if @account_entry.investor %></div>
-            </div>
-
             <% if @account_entry.capital_commitment %>
               <div class="col-md-6">
                 <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Capital Commitment</label>
