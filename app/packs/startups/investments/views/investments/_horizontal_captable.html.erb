@@ -26,7 +26,20 @@
                 </tr>
             </thead>
             <tbody>
-                <% h_data[:categories].each do |category| %>
+                <%
+                  # Calculate totals per category first for sorting
+                  category_summaries = h_data[:categories].map do |category|
+                    investors = h_data[:investors_by_category][category]
+                    latest_fully_diluted_total = investors.sum do |investor|
+                      h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0
+                    end
+                    { category: category, total_fully_diluted: latest_fully_diluted_total }
+                  end
+
+                  # Sort categories by total fully diluted quantity in descending order
+                  sorted_categories = category_summaries.sort_by { |s| -s[:total_fully_diluted] }.map { |s| s[:category] }
+                %>
+                <% sorted_categories.each do |category| %>
                     <%
                         category_name = (category == "Self") ? @portfolio_company.entity.name : category.pluralize
 
@@ -41,7 +54,12 @@
                           category_totals[:funding_rounds][round] = 0.0
                         end
 
-                        h_data[:investors_by_category][category].each do |investor|
+                        # Sort investors within the category by their fully diluted quantity in descending order
+                        sorted_investors = h_data[:investors_by_category][category].sort_by do |investor|
+                          -(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0)
+                        end
+
+                        sorted_investors.each do |investor|
                           funding_rounds.each do |round|
                             val = h_data.dig(:table_data, category, investor.investor_name, round)&.fetch(:fully_diluted_percentage, "0.0%") || "0.0%"
                             category_totals[:funding_rounds][round] += val.to_f
@@ -67,7 +85,7 @@
                             <%= number_with_precision(category_totals[:latest_fully_diluted], precision: 2, delimiter: ',') %>
                         </td>
                     </tr>
-                    <% h_data[:investors_by_category][category].each do |investor| %>
+                    <% sorted_investors.each do |investor| %>
                         <tr class="child">
                             <td style="padding-left: 3rem !important;">
                                 <% if category == "Self" %>
