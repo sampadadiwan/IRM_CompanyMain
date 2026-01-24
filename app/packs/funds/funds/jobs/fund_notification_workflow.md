@@ -9,6 +9,8 @@ The process is initiated from the UI, processed in the background, and results i
 ## Workflow Steps
 
 1.  **UI Trigger**: A user navigates to a `CustomNotification` associated with a `Fund` and clicks the "Send Notification" button.
+    - A confirmation popup appears, containing a "View Who Gets Notified" link.
+    - The "View Who Gets Notified" link opens the `show_email_list_fund_path` in a new tab.
 2.  **Controller Action**: The `FundsController#trigger_adhoc_notification` action find the fund, finds the notification and calls `fund.adhoc_notification(notification_id)`.
 3.  **Model Concern**: `Fund#adhoc_notification` (via `FundNotifiers` concern) enqueues the `FundNotificationJob`.
 4.  **Background Job**: `FundNotificationJob` performs the following:
@@ -57,3 +59,8 @@ sequenceDiagram
 - **Concern**: `app/packs/funds/funds/models/concerns/fund_notifiers.rb`
 - **Notifier**: `app/packs/funds/capital_commitments/mailers/fund_commitment_notifier.rb`
 - **Mailer**: `app/packs/funds/capital_commitments/mailers/capital_commitment_mailer.rb`
+
+## Customizations
+
+- **Dynamic From Email**: The system uses the fund's custom field `from_email` (if present) to set the sender address. This is passed from the `FundCommitmentNotifier` params to the mailer.
+- **Template Support**: Custom notifications support ERB, allowing for dynamic content like `<%= @capital_commitment %>` which is evaluated within the mailer context.
