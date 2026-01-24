@@ -151,6 +151,24 @@ class AccessRight < ApplicationRecord
     self.access_type ||= owner_type
   end
 
+  # Replicates the current access right to a new owner (e.g., a child folder or document).
+  # This is used for inheriting permissions down the hierarchy.
+  # @param new_owner [ApplicationRecord] The model instance to which the access right is being copied.
+  # @param validate [Boolean] Whether to run validations on the new access right.
+  # @return [AccessRight] The newly created access right.
+  def replicate_to(new_owner, validate: true)
+    new_ar = dup
+    new_ar.owner = new_owner
+    # Inherit access type from the owner's class name if not explicitly set
+    new_ar.access_type = new_owner.class.name
+    # Don't send notifications for replicated access rights to avoid spamming users
+    new_ar.notify = false
+    # Maintain link to the original access right for cascading deletions/updates
+    new_ar.parent_access_right_id = parent_access_right_id || id
+    new_ar.save(validate: validate)
+    new_ar
+  end
+
   after_create_commit :send_notification
   def send_notification
     if notify && (%w[Document Folder].exclude?(owner_type) || (owner.respond_to?(:send_email) && owner.send_email))
