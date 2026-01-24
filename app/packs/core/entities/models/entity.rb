@@ -105,6 +105,7 @@ class Entity < ApplicationRecord
 
   has_many :ai_rules, dependent: :destroy
   has_many :ai_checks, dependent: :destroy
+  has_many :investment_criteria_templates, dependent: :destroy
 
   # Noticed gem
   has_many :noticed_events, class_name: "Noticed::Event", dependent: :destroy

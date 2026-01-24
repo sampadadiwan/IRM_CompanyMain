@@ -1,0 +1,13 @@
+class RemoveOldUserIndexFromInvestmentCriteriaTemplates < ActiveRecord::Migration[8.1]
+  def up
+    remove_index :investment_criteria_templates,
+                 name: 'index_investment_criteria_templates_on_user_and_usage',
+                 if_exists: true
+  end
+
+  def down
+    add_index :investment_criteria_templates,
+              [:created_by_user_id, :usage_count],
+              name: 'index_investment_criteria_templates_on_user_and_usage'
+  end
+end

@@ -19,7 +19,7 @@ class AiPortfolioReportsController < ApplicationController
     authorize @report
 
     # Load user's templates for selection
-    @templates = current_user.investment_criteria_templates.order(usage_count: :desc)
+    @templates = current_user.entity.investment_criteria_templates.order(usage_count: :desc)
   end
 
   # Create a new portfolio report and enqueue generation.
@@ -45,7 +45,7 @@ class AiPortfolioReportsController < ApplicationController
       GenerateSectionContentJob.perform_later(@report.id)
       redirect_to @report, flash: { ai_notice: 'Report created! AI is generating content for all sections (this may take a minute)...' }
     else
-      @templates = current_user.investment_criteria_templates.order(usage_count: :desc)
+      @templates = current_user.entity.investment_criteria_templates.order(usage_count: :desc)
       render :new, status: :unprocessable_entity
     end
   end

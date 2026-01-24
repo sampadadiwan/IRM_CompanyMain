@@ -1,15 +1,15 @@
 # Service class for managing InvestmentCriteriaTemplate records.
 #
 # Encapsulates business logic for creating, updating, and querying investment
-# criteria templates. All operations are scoped to the user provided at initialization.
-#
+# criteria templates. All operations are scoped to the user's entity.
+
 # @example Creating a new template
 #   service = InvestmentCriteriaTemplateService.new(current_user)
 #   template = service.create(name: "Tech Criteria", criteria: [{name: "ARR", value: ">$1M"}])
 #
 # @example Listing templates for a user
 #   service = InvestmentCriteriaTemplateService.new(current_user)
-#   templates = service.list_for_user
+#   templates = service.list_for_entity
 class InvestmentCriteriaTemplateService
   # Initializes the service with a user context.
   #
@@ -28,7 +28,8 @@ class InvestmentCriteriaTemplateService
     InvestmentCriteriaTemplate.create!(
       name: name,
       criteria: criteria,
-      created_by_user: @user
+      created_by_user: @user,
+      entity: @user.entity
     )
   end
 
@@ -44,11 +45,11 @@ class InvestmentCriteriaTemplateService
     template
   end
 
-  # Lists all templates for the current user, ordered by usage.
+  # Lists all templates for the current user's entity, ordered by usage.
   #
   # @return [ActiveRecord::Relation<InvestmentCriteriaTemplate>] templates sorted by usage_count desc
-  def list_for_user
-    InvestmentCriteriaTemplate.where(created_by_user: @user)
+  def list_for_entity
+    InvestmentCriteriaTemplate.where(entity: @user.entity)
                               .order(usage_count: :desc, created_at: :desc)
   end
 

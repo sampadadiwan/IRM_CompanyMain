@@ -1,7 +1,7 @@
 # Stores reusable investment criteria templates for AI portfolio report generation.
 #
 # Each template contains a set of named criteria that can be applied when evaluating
-# investments against user-defined standards. Templates are user-scoped and track
+# investments against user-defined standards. Templates are entity-scoped and track
 # usage frequency for sorting purposes.
 #
 # @!attribute name
@@ -11,9 +11,12 @@
 # @!attribute usage_count
 #   @return [Integer] number of times this template has been applied
 # @!attribute created_by_user_id
-#   @return [Integer] foreign key to the owning User
+#   @return [Integer] foreign key to the creating User
+# @!attribute entity_id
+#   @return [Integer] foreign key to the owning Entity
 class InvestmentCriteriaTemplate < ApplicationRecord
   belongs_to :created_by_user, class_name: 'User'
+  belongs_to :entity
 
   validates :name, presence: true
   validates :criteria, presence: true

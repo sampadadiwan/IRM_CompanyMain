@@ -1,7 +1,7 @@
 # Pundit policy for InvestmentCriteriaTemplate authorization.
 #
-# Enforces owner-based access control where users can only view, edit, and delete
-# their own templates. All authenticated users can create new templates.
+# Enforces entity-based access control where users can view, edit, and delete
+# templates belonging to their entity. All authenticated users can create new templates.
 #
 # @see InvestmentCriteriaTemplate
 # @see InvestmentCriteriaTemplatesController
@@ -13,16 +13,16 @@ class InvestmentCriteriaTemplatePolicy < ApplicationPolicy
     true
   end
 
-  # Allows viewing only if the user owns the template.
+  # Allows viewing only if the user belongs to the same entity.
   #
-  # @return [Boolean] true if user is the template owner
+  # @return [Boolean] true if user belongs to the same entity
   def show?
-    record.created_by_user_id == user.id
+    record.entity_id == user.entity_id
   end
 
-  # Allows preview only if the user owns the template.
+  # Allows preview only if the user belongs to the same entity.
   #
-  # @return [Boolean] true if user is the template owner
+  # @return [Boolean] true if user belongs to the same entity
   def preview?
     show?
   end
@@ -41,34 +41,34 @@ class InvestmentCriteriaTemplatePolicy < ApplicationPolicy
     true
   end
 
-  # Allows editing only if the user owns the template.
+  # Allows editing only if the user belongs to same entity.
   #
-  # @return [Boolean] true if user is the template owner
+  # @return [Boolean] true if user belongs to the same entity
   def edit?
-    record.created_by_user_id == user.id
+    record.entity_id == user.entity_id
   end
 
-  # Allows updating only if the user owns the template.
+  # Allows updating only if the user belongs to same entity.
   #
-  # @return [Boolean] true if user is the template owner
+  # @return [Boolean] true if user belongs to the same entity
   def update?
-    record.created_by_user_id == user.id
+    record.entity_id == user.entity_id
   end
 
-  # Allows deletion only if the user owns the template.
+  # Allows deletion only if the user belongs to same entity.
   #
-  # @return [Boolean] true if user is the template owner
+  # @return [Boolean] true if user belongs to the same entity
   def destroy?
-    record.created_by_user_id == user.id
+    record.entity_id == user.entity_id
   end
 
-  # Scope class for filtering templates to those owned by the current user.
+  # Scope class for filtering templates to those belonging to the user's entity.
   class Scope < Scope
-    # Resolves the scope to only include templates created by the current user.
+    # Resolves the scope to only include templates belonging to the user's entity.
     #
-    # @return [ActiveRecord::Relation<InvestmentCriteriaTemplate>] user-owned templates
+    # @return [ActiveRecord::Relation<InvestmentCriteriaTemplate>] entity templates
     def resolve
-      scope.where(created_by_user_id: user.id)
+      scope.where(entity_id: user.entity_id)
     end
   end
 end

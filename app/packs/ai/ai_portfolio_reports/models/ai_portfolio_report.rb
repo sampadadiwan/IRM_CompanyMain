@@ -22,6 +22,7 @@ class AiPortfolioReport < ApplicationRecord
   after_create :create_default_sections
 
   SECTION_TYPES = [
+    "Investment Fit Evaluation",
     "Company Overview",
     "Key Products & Services",
     "Financial Snapshot",
@@ -36,8 +37,7 @@ class AiPortfolioReport < ApplicationRecord
     "Operational Red Flags",
     "Negative News",
     "AML/KYB Check",
-    "Investment Ask",
-    "Investment Fit Evaluation"
+    "Investment Ask"
   ].freeze
 
   # Sections that benefit from web search (current external information)

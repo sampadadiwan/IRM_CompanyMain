@@ -2,8 +2,7 @@
 #
 # Provides CRUD operations for InvestmentCriteriaTemplate records, allowing users
 # to create reusable sets of investment evaluation criteria. All actions are
-# scoped to the current user via Pundit authorization.
-#
+# scoped to the current user's entity via Pundit authorization.
 # @see InvestmentCriteriaTemplate
 # @see InvestmentCriteriaTemplateService
 # @see InvestmentCriteriaTemplatePolicy
@@ -13,9 +12,11 @@ class InvestmentCriteriaTemplatesController < ApplicationController
   # GET /investment_criteria_templates
   # Lists all templates for the current user, ordered by usage frequency.
   def index
-    authorize InvestmentCriteriaTemplate
-    @templates = current_user.investment_criteria_templates
-                             .order(usage_count: :desc)
+    @templates = policy_scope(InvestmentCriteriaTemplate).order(usage_count: :desc)
+    respond_to do |format|
+      format.html
+      format.json { render json: @templates }
+    end
   end
 
   # GET /investment_criteria_templates/new
@@ -76,12 +77,11 @@ class InvestmentCriteriaTemplatesController < ApplicationController
 
   private
 
-  # Finds and authorizes the template from params[:id], scoped to current user.
-  #
+  # Finds and authorizes the template from params[:id], scoped to current user's entity.
   # @return [void]
   # @raise [ActiveRecord::RecordNotFound] if template not found for user
   def set_template
-    @template = current_user.investment_criteria_templates.find(params[:id])
+    @template = current_user.entity.investment_criteria_templates.find(params[:id])
     authorize @template
   end
 
