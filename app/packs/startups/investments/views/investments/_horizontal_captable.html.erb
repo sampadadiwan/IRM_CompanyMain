@@ -8,7 +8,7 @@
 %>
 
 <%= render ToggleCard.new(title: "Cap Table", css_class: "show_horizontal_cap_table", state: "show") do %>
-    <div class="table-responsive">
+    <div class="table-responsive" data-controller="row-toggle">
         <table class="table table-bordered">
             <thead>
                 <tr>
@@ -27,20 +27,49 @@
             </thead>
             <tbody>
                 <% h_data[:categories].each do |category| %>
-                    <tr class="bg-light">
-                        <td colspan="<%= funding_rounds.size + 3 %>">
-                            <strong>
-                                <% if category == "Self" %>
-                                    <%= @portfolio_company.entity.name %>
-                                <% else %>
-                                    <%= category.pluralize %>
-                                <% end %>
-                            </strong>
+                    <%
+                        category_name = (category == "Self") ? @portfolio_company.entity.name : category.pluralize
+
+                        # Calculate totals for this category
+                        category_totals = {
+                          funding_rounds: {},
+                          latest_quantity: 0,
+                          latest_fully_diluted: 0
+                        }
+
+                        funding_rounds.each do |round|
+                          category_totals[:funding_rounds][round] = 0.0
+                        end
+
+                        h_data[:investors_by_category][category].each do |investor|
+                          funding_rounds.each do |round|
+                            val = h_data.dig(:table_data, category, investor.investor_name, round)&.fetch(:fully_diluted_percentage, "0.0%") || "0.0%"
+                            category_totals[:funding_rounds][round] += val.to_f
+                          end
+                          category_totals[:latest_quantity] += h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:quantity, 0) || 0
+                          category_totals[:latest_fully_diluted] += h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0
+                        end
+                    %>
+                    <tr class="bg-light parent cursor-pointer" data-action="click->row-toggle#toggle" data-row-toggle-target="control">
+                        <td>
+                            <span class="expand mr-2">></span>
+                            <strong><%= category_name %></strong>
+                        </td>
+                        <% funding_rounds.each do |round| %>
+                            <td class="text-center font-weight-bold">
+                                <%= number_to_percentage(category_totals[:funding_rounds][round], precision: 1) %>
+                            </td>
+                        <% end %>
+                        <td class="text-right font-weight-bold">
+                            <%= number_with_precision(category_totals[:latest_quantity], precision: 2, delimiter: ',') %>
+                        </td>
+                        <td class="text-right font-weight-bold">
+                            <%= number_with_precision(category_totals[:latest_fully_diluted], precision: 2, delimiter: ',') %>
                         </td>
                     </tr>
                     <% h_data[:investors_by_category][category].each do |investor| %>
-                        <tr>
-                            <td>
+                        <tr class="child">
+                            <td style="padding-left: 3rem !important;">
                                 <% if category == "Self" %>
                                     <%= @portfolio_company.entity.name %>
                                 <% else %>
