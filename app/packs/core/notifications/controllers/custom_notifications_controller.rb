@@ -6,6 +6,9 @@ class CustomNotificationsController < ApplicationController
     @q = CustomNotification.ransack(params[:q])
     @custom_notifications = policy_scope(@q.result)
     @custom_notifications = with_owner_access(@custom_notifications)
+
+    @owner = params[:q][:owner_type_eq].constantize.find(params[:q][:owner_id_eq]) if params[:q] && params[:q][:owner_id_eq] && params[:q][:owner_type_eq]
+
     @pagy, @custom_notifications = pagy(@custom_notifications)
   end
 

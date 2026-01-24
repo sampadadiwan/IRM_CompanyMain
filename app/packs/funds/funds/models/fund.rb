@@ -8,6 +8,7 @@ class Fund < ApplicationRecord
   include WithExchangeRate
   include WithIncomingEmail
   include FundShared
+  include FundNotifiers
 
   acts_as_favoritable
   include ForInvestor

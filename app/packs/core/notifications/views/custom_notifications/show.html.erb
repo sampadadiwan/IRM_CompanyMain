@@ -149,6 +149,10 @@
   <div>
     <%= link_to  t_common(:edit), edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} if policy(@custom_notification).update? %>
 
+    <% if @custom_notification.enabled && @custom_notification.owner_type == "Fund" && policy(@custom_notification.owner).trigger_adhoc_notification? %>
+      <%= button_to "Send Notification", trigger_adhoc_notification_fund_path(@custom_notification.owner, custom_notification_id: @custom_notification.id), method: :patch, class: "btn btn-primary", data: { turbo: false } %>
+    <% end %>
+
     <%= button_to t_common(:delete), @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@custom_notification).destroy? %>
   </div>
 <% end %>
