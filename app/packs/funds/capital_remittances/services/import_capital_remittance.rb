@@ -27,7 +27,8 @@ class ImportCapitalRemittance < ImportUtil
         import_upload_id: import_upload.id,
         payment_date: user_data["Payment Date"],
         created_by: "Upload",
-        remittance_date: user_data["Remittance Date"]
+        remittance_date: user_data["Remittance Date"],
+        call_basis: "Upload"
       )
 
       setup_amounts(user_data, capital_remittance, fund)

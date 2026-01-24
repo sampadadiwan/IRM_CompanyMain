@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_24_062627) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -809,6 +809,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_062627) do
     t.decimal "arrear_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "arrear_folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.string "call_basis", limit: 40
     t.bigint "capital_call_id", null: false
     t.bigint "capital_commitment_id"
     t.decimal "capital_fee_cents", precision: 20, scale: 2, default: "0.0"

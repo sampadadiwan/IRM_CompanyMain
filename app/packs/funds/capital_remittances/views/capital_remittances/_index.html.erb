@@ -46,8 +46,8 @@
                 <i class="ti ti-download"></i> <%= t_common(:download) %>
               <% end %>
 
-              <!-- For now we enable uploads for all calls. # Disable upload if call basis is not Upload -->
-              <% disabled = capital_call.call_basis != "Upload" ? "disabled" : nil %>
+              <!-- Disable upload if call basis is not Upload or if some remittances have been deleted (so people can upload them) -->
+              <% disabled = capital_call.call_basis != "Upload" && capital_call.capital_remittances.count == capital_call.fund.capital_commitments.count ? "disabled" : nil %>
 
               <% if policy(capital_call).update? %>
                 <%= link_to new_import_upload_path(
