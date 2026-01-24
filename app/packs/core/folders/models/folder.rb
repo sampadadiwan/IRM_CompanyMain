@@ -44,9 +44,15 @@ class Folder < ApplicationRecord
     name
   end
 
+  # Inherits access rights from the parent folder upon creation.
   def set_parent_permissions
     parent.access_rights.each do |parent_ar|
       parent_ar.replicate_to(self)
+
+      # Ensure any documents in this folder also get the same access rights
+      documents.find_each do |doc|
+        parent_ar.replicate_to(doc)
+      end
     end
 
     # If we have an owner for the parent and none for the child

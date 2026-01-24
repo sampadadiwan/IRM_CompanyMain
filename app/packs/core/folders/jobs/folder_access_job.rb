@@ -1,6 +1,7 @@
 class FolderAccessJob < ApplicationJob
   queue_as :serial
 
+  # Cascaes a specific access right change down to all child documents and descendant folders.
   def perform(folder_id, access_right_id)
     Chewy.strategy(:sidekiq) do
       ar = AccessRight.find(access_right_id)
