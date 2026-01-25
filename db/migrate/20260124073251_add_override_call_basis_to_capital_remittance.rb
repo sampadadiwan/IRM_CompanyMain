@@ -1,6 +1,6 @@
 class AddOverrideCallBasisToCapitalRemittance < ActiveRecord::Migration[8.1]
   def change
-    # add_column :capital_remittances, :call_basis, :string, limit: 40
+    add_column :capital_remittances, :call_basis, :string, limit: 40
 
     # # Backfill existing records with call_basis from associated capital calls
     # CapitalRemittance.includes(:capital_call).update_all(
