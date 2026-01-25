@@ -32,18 +32,21 @@ Scenario Outline: Add and delete cascading access rights to folder
   Then the folder should have no owner
   Then the folder should have no access_rights
   Given the folder has children "<child_folders>"
-  Given each folder has a document
+  Given each folder has "2" documents
+  And there is an independent access_right for another user on folder "<independent_folder>"
   When the root folder is given access rights
   Then the child folders should have the same access rights
   And the documents should have the same access rights
+  And folder "<independent_folder>" should still have the independent access_right
   When the root folder access right is deleted
   Then the child folders access_rights should be deleted
   And the documents access_rights should be deleted
+  And folder "<independent_folder>" should still have the independent access_right
 
   Examples:
-  	|user	    |entity               | child_folders |
-  	|  	        |entity_type=Company  | A/B/C/D |
-    |  	        |entity_type=Company  | X/Y/Z   |
+  	|user	    |entity               | child_folders | independent_folder |
+  	|  	        |entity_type=Company  | A/B/C/D       | A                  |
+    |  	        |entity_type=Company  | X/Y/Z         | X                  |
 
 Scenario Outline: Cannot Update a folder's name
   Given Im logged in as a user "<user>" for an entity "<entity>"

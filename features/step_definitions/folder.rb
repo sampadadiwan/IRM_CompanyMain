@@ -54,10 +54,18 @@ Given('folder {string} has sub-folders {string}') do |parent_folder_name, sub_fo
   end
 end
 
-Given('each folder has a document') do
+Given('each folder has {string} documents') do |count|
   @folder.reload.descendants.each do |folder|
-    Document.create!(entity: @folder.entity, name: "Doc #{folder.name}", text: Faker::Company.catch_phrase, user: @user, folder:, file: File.new("public/sample_uploads/GrantLetter.docx", "r"))
+    count.to_i.times do |i|
+      Document.create!(entity: @folder.entity, name: "Doc #{folder.name} #{i}", text: Faker::Company.catch_phrase, user: @user, folder:, file: File.new("public/sample_uploads/GrantLetter.docx", "r"))
+    end
   end
+end
+
+Given('there is an independent access_right for another user on folder {string}') do |folder_name|
+  folder = Folder.find_by!(name: folder_name, entity: @folder.entity)
+  other_user = FactoryBot.create(:user)
+  @independent_ar = AccessRight.create!(owner: folder, user_id: other_user.id, cascade: false, entity_id: folder.entity_id)
 end
 
 When('the root folder is given access rights') do
@@ -66,23 +74,28 @@ end
 
 Then('the child folders should have the same access rights') do
   @folder.reload.descendants.each do |folder|
-    puts "Checking folder #{folder.name} access rights #{folder.access_rights.first}"
-    folder.access_rights.length.should == 1
-    folder.access_rights.first.user_id.should == @user.id
-    folder.access_rights.first.cascade.should == true
-    folder.access_rights.first.entity_id.should == @folder.entity_id
-    folder.access_rights.first.parent_access_right_id.should == @root_folder_ar.id
+    puts "Checking folder #{folder.name} access rights"
+    ar = folder.access_rights.find_by(user_id: @user.id)
+    ar.should_not be_nil
+    ar.cascade.should == true
+    ar.entity_id.should == @folder.entity_id
+    ar.parent_access_right_id.should == @root_folder_ar.id
   end
 end
 
 Then('the documents should have the same access rights') do
   Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
-    puts "Checking document #{doc.name} access rights #{doc.access_rights.first}"
-    doc.access_rights.length.should == 1
-    doc.access_rights.first.user_id.should == @user.id
-    doc.access_rights.first.entity_id.should == @folder.entity_id
-    # doc.access_rights.first.parent_id.should == @root_folder_ar.id
+    puts "Checking document #{doc.name} access rights"
+    ar = doc.access_rights.find_by(user_id: @user.id)
+    ar.should_not be_nil
+    ar.entity_id.should == @folder.entity_id
+    ar.parent_access_right_id.should == @root_folder_ar.id
   end
+end
+
+Then('folder {string} should still have the independent access_right') do |folder_name|
+  folder = Folder.find_by!(name: folder_name, entity: @folder.entity)
+  folder.access_rights.where(id: @independent_ar.id).should be_present
 end
 
 When('the root folder access right is deleted') do
@@ -91,15 +104,15 @@ end
 
 Then('the child folders access_rights should be deleted') do
   @folder.reload.descendants.each do |folder|
-    puts "Checking post delete folder #{folder.name} access rights #{folder.access_rights.first}"
-    folder.access_rights.length.should == 0
+    puts "Checking post delete folder #{folder.name} access rights"
+    folder.access_rights.where(user_id: @user.id).length.should == 0
   end
 end
 
 Then('the documents access_rights should be deleted') do
   Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
-    puts "Checking post delete document #{doc.name} access rights #{doc.access_rights.first}"
-    doc.access_rights.length.should == 0
+    puts "Checking post delete document #{doc.name} access rights"
+    doc.access_rights.where(user_id: @user.id).length.should == 0
   end
 
   # Ensure that when the parent is deleted, no access rights remain with parent_id set
