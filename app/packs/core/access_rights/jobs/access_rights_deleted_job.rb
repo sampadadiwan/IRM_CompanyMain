@@ -44,8 +44,14 @@ class AccessRightsDeletedJob < ApplicationJob
         # Step 2: Remove explicit AccessRights for the identified folders
         # These are child access rights that were specifically tied to the deleted parent
         Rails.logger.info "[AccessRightsDeletedJob] Destroying Folder AccessRights for entity_id: #{access_right.entity_id}, folder_ids: #{folder_ids}, parent_access_right_id: #{access_right.id}"
+
+        to_delete = AccessRight.where(entity_id: access_right.entity_id, owner_type: "Folder", owner_id: folder_ids, parent_access_right_id: [access_right.id, access_right.parent_access_right_id].compact)
+
+        # Because we are not running callbacks on delete_all, we need to manually clear caches
+        to_delete.each(&:remove_from_user_access_rights_cache)
+
         # Find and destroy all AccessRights for the folders that were inherited from the deleted access right
-        AccessRight.where(entity_id: access_right.entity_id, owner_type: "Folder", owner_id: folder_ids, parent_access_right_id: [access_right.id, access_right.parent_access_right_id].compact).delete_all
+        to_delete.delete_all
 
         # Step 3: Remove explicit AccessRights for all documents within those folders
         document_ids = Document.where(entity_id: access_right.entity_id, folder_id: folder_ids).pluck(:id)
@@ -53,7 +59,13 @@ class AccessRightsDeletedJob < ApplicationJob
 
         Rails.logger.info "[AccessRightsDeletedJob] Destroying Document AccessRights for entity_id: #{access_right.entity_id}, document_ids: #{document_ids}, parent_access_right_id: #{access_right.id}"
         # Find and destroy all AccessRights for the documents that were inherited from the deleted access right
-        AccessRight.where(entity_id: access_right.entity_id, owner_type: "Document", owner_id: document_ids, parent_access_right_id: [access_right.id, access_right.parent_access_right_id].compact).delete_all
+        doc_access_rights_to_delete = AccessRight.where(entity_id: access_right.entity_id, owner_type: "Document", owner_id: document_ids,
+                                                        parent_access_right_id: [access_right.id, access_right.parent_access_right_id].compact)
+
+        # Because we are not running callbacks on delete_all, we need to manually clear caches
+        doc_access_rights_to_delete.each(&:remove_from_user_access_rights_cache)
+
+        doc_access_rights_to_delete.delete_all
       else
         Rails.logger.info "[AccessRightsDeletedJob] Conditions not met for deletion. access_right.deleted?: #{access_right&.deleted?}, owner.respond_to?(:document_folder): #{owner.respond_to?(:document_folder)}, owner_type: #{owner_type}"
       end

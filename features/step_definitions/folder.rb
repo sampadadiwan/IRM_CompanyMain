@@ -93,6 +93,16 @@ Then('the documents should have the same access rights') do
   end
 end
 
+Then('the user should have the access_rights in their cache') do
+  @user.reload
+  # Note: Folder access rights are NOT cached (see AccessRight model line 182 and 202)
+  # But Document access rights ARE cached.
+  Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
+    # Structure: {entity_id: {owner_type: {owner_id: "permissions, metadata"}}}
+    @user.access_rights_cache[@user.entity_id]["Document"][doc.id].should_not be_nil
+  end
+end
+
 Then('folder {string} should still have the independent access_right') do |folder_name|
   folder = Folder.find_by!(name: folder_name, entity: @folder.entity)
   folder.access_rights.where(id: @independent_ar.id).should be_present
@@ -117,6 +127,16 @@ Then('the documents access_rights should be deleted') do
 
   # Ensure that when the parent is deleted, no access rights remain with parent_id set
   AccessRight.where(parent_access_right_id: @root_folder_ar.id).length.should == 0
+end
+
+Then('the user should have no cascading access_rights in their cache') do
+  @user.reload
+  # Documents should be removed from cache
+  Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
+    # If the hash or the ID is missing, it's considered deleted from cache
+    next if @user.access_rights_cache.dig(@user.entity_id, "Document").nil?
+    @user.access_rights_cache[@user.entity_id]["Document"][doc.id].should be_nil
+  end
 end
 
 Then("I update the folder's name") do

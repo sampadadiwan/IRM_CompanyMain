@@ -38,10 +38,12 @@ Scenario Outline: Add and delete cascading access rights to folder
   Then the child folders should have the same access rights
   And the documents should have the same access rights
   And folder "<independent_folder>" should still have the independent access_right
+  And the user should have the access_rights in their cache
   When the root folder access right is deleted
   Then the child folders access_rights should be deleted
   And the documents access_rights should be deleted
   And folder "<independent_folder>" should still have the independent access_right
+  And the user should have no cascading access_rights in their cache
 
   Examples:
   	|user	    |entity               | child_folders | independent_folder |
