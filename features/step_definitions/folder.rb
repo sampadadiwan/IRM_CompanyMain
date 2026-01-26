@@ -64,8 +64,10 @@ end
 
 Given('there is an independent access_right for another user on folder {string}') do |folder_name|
   folder = Folder.find_by!(name: folder_name, entity: @folder.entity)
-  other_user = FactoryBot.create(:user)
-  @independent_ar = AccessRight.create!(owner: folder, user_id: other_user.id, cascade: false, entity_id: folder.entity_id)
+  @other_user = FactoryBot.create(:user)
+  # Use an investor to ensure it doesn't match the root access right's filters
+  @independent_investor = FactoryBot.create(:investor, entity: folder.entity)
+  @independent_ar = AccessRight.create!(owner: folder, access_to_investor_id: @independent_investor.id, cascade: false, entity_id: folder.entity_id)
 end
 
 When('the root folder is given access rights') do
@@ -117,6 +119,9 @@ Then('the child folders access_rights should be deleted') do
     puts "Checking post delete folder #{folder.name} access rights"
     folder.access_rights.where(user_id: @user.id).length.should == 0
   end
+
+  # Trigger the background job manually to simulate cascading deletion
+  AccessRightsDeletedJob.perform_now(@folder.id, @folder.class.name, @root_folder_ar.id)
 end
 
 Then('the documents access_rights should be deleted') do
