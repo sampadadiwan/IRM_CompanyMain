@@ -154,7 +154,7 @@
         email_list_link = link_to('View Who Gets Notified', show_email_list_fund_path(@custom_notification.owner), class: 'mb-1 badge bg-primary-subtle text-primary', target: "_blank")
         msg = "This will trigger a notification to all investors of this fund. <br> #{email_list_link} <br> Proceed?"
       %>
-      <%= button_to "Send Notification", trigger_adhoc_notification_fund_path(@custom_notification.owner, custom_notification_id: @custom_notification.id), method: :patch, class: "btn btn-primary", form_class: "d-inline", data: { action: "click->confirm#popup", msg: msg, turbo: false } %>
+      <%= button_to "Send Notification", trigger_adhoc_notification_fund_path(@custom_notification.owner, custom_notification_id: @custom_notification.id), method: :patch, class: "btn btn-primary", form_class: "d-inline", data: { action: "click->confirm#popup", msg: msg, turbo: false, method: :patch } %>
     <% end %>
 
     <%= button_to t_common(:delete), @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@custom_notification).destroy? %>
