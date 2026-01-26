@@ -2,7 +2,7 @@ class AssistantQueryJob < ApplicationJob
   queue_as :default
 
   # The maximum time the job is allowed to run before being interrupted.
-  TIMEOUT = 120.seconds
+  TIMEOUT = 180.seconds
 
   # Runs the assistant in the background and replaces the placeholder turbo-frame in the UI.
   #

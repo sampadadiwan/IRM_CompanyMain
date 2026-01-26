@@ -198,8 +198,8 @@ class PortfolioAssistantDataManager
     ransack_query = (query || {}).with_indifferent_access
     ransack_query[:s] ||= sort if sort.present?
 
-    # Default kpi_report_as_of to 12 months ago if not provided
-    ransack_query[:kpi_report_as_of_gteq] = 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of)
+    # Default kpi_report_as_of to 12 months ago if not provided, but allow user to override
+    ransack_query[:kpi_report_as_of_gteq] ||= 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of) || ransack_query[:all_time_eq] == 'true'
 
     Rails.logger.debug { "[KpiQuery Debug] Incoming scope: #{scope.inspect}" }
     relation = Kpi.where(portfolio_company_id: companies.pluck(:id)).includes(:portfolio_company)
@@ -436,5 +436,28 @@ class PortfolioAssistantDataManager
         view_link: "/investments/#{i.id}"
       }
     end
+  end
+
+  # Gets a high-level snapshot for a specific portfolio company.
+  def get_portfolio_company_snapshot(portfolio_company_id:)
+    company = Pundit.policy_scope(@user, Investor).portfolio_companies.find_by(id: portfolio_company_id)
+    return "Portfolio Company not found or access denied" unless company
+
+    latest_valuation = list_valuations(portfolio_company_id: portfolio_company_id, sort: 'valuation_date desc', limit: 1).first
+    tvpi = list_fund_ratios(portfolio_company_id: portfolio_company_id, query: { name_eq: 'TVPI', latest_eq: true }, limit: 1).first
+    rvpi = list_fund_ratios(portfolio_company_id: portfolio_company_id, query: { name_eq: 'RVPI', latest_eq: true }, limit: 1).first
+
+    {
+      id: company.id,
+      name: company.investor_name,
+      total_invested: company.amount_invested.format,
+      current_fmv: Money.new(company.portfolio_investments.sum(:fmv_cents), company.portfolio_investments.first&.instrument_currency || 'USD').format,
+      latest_valuation: latest_valuation&.slice(:valuation_date, :per_share_value, :currency),
+      multiples: {
+        tvpi: tvpi&.dig(:display_value) || tvpi&.dig(:value),
+        rvpi: rvpi&.dig(:display_value) || rvpi&.dig(:value)
+      },
+      view_link: "/investors/#{company.id}"
+    }
   end
 end

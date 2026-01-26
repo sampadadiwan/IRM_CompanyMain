@@ -58,7 +58,6 @@ class Kpi < ApplicationRecord
     with_report.where(kpi_reports: { as_of: range })
   }
 
-  scope :monthly, -> { where(kpi_reports: { period: 'month' }) }
 
   def custom_form_field
     field = nil

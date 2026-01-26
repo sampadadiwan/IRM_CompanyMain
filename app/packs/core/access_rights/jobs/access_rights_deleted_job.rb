@@ -110,8 +110,12 @@ class AccessRightsDeletedJob < ApplicationJob
   # 2. It matches the same investor access (access_to_investor_id)
   # 3. It matches the same user access (user_id)
   def common_access_rights_filters
-    AccessRight.where(parent_access_right_id: [access_right.id, access_right.parent_access_right_id].compact)
-               .or(AccessRight.where(access_to_investor_id: access_right.access_to_investor_id))
-               .or(AccessRight.where(user_id: access_right.user_id))
+    parent_ids = [access_right.id, access_right.parent_access_right_id].compact
+
+    scope = AccessRight.none
+    scope = scope.or(AccessRight.where(parent_access_right_id: parent_ids)) if parent_ids.any?
+    scope = scope.or(AccessRight.where(access_to_investor_id: access_right.access_to_investor_id)) if access_right.access_to_investor_id.present?
+    scope = scope.or(AccessRight.where(user_id: access_right.user_id)) if access_right.user_id.present?
+    scope
   end
 end

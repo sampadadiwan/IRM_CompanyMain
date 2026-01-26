@@ -305,4 +305,12 @@ module PortfolioAssistantTools
     param :data, type: :string, desc: "A JSON string of the data to be plotted.", required: true
     param :prompt, type: :string, desc: "A natural language prompt describing what the chart should represent.", required: true
   end
+
+  # PlotChartFromQuery for PortfolioAssistant.
+  class PlotChartFromQuery < BaseAssistantTools::PlotChartFromQuery
+    def name = "plot_chart_from_query"
+
+    param :resource, type: :string, desc: "The resource to fetch data from (e.g. 'valuations', 'kpis', 'investments').", required: true
+    param :prompt, type: :string, desc: "A natural language prompt describing what data to fetch and how to plot it.", required: true
+  end
 end

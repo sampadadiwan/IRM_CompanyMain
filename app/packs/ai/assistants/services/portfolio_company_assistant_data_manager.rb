@@ -44,6 +44,11 @@ class PortfolioCompanyAssistantDataManager < PortfolioAssistantDataManager
     super(portfolio_company_ids: [@portfolio_company.id], query: query, sort: sort, limit: limit)
   end
 
+  # Gets a high-level snapshot for the mandatory portfolio company.
+  def get_portfolio_company_snapshot
+    super(portfolio_company_id: @portfolio_company.id)
+  end
+
   # Gets details for the mandatory portfolio company.
   def get_portfolio_company_details
     super(portfolio_company_id: @portfolio_company.id)

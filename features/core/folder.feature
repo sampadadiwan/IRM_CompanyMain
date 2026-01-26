@@ -34,6 +34,7 @@ Scenario Outline: Add and delete cascading access rights to folder
   Given the folder has children "<child_folders>"
   Given each folder has "2" documents
   And there is an independent access_right for another user on folder "<independent_folder>"
+  And there is an independent access_right for the same user on folder "<child_folders>"
   When the root folder is given access rights
   Then the child folders should have the same access rights
   And the documents should have the same access rights
@@ -43,6 +44,7 @@ Scenario Outline: Add and delete cascading access rights to folder
   Then the child folders access_rights should be deleted
   And the documents access_rights should be deleted
   And folder "<independent_folder>" should still have the independent access_right
+  And folder "<child_folders>" should not have the same user independent access_right
   And the user should have no cascading access_rights in their cache
 
   Examples:

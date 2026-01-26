@@ -4,6 +4,22 @@
 # These tools use the @data_manager which is pre-configured with the portfolio_company.
 #
 module PortfolioCompanyAssistantTools
+  # Tool to get a high-level snapshot of the portfolio company.
+  class GetPortfolioCompanySnapshot < RubyLLM::Tool
+    def name = "get_portfolio_company_snapshot"
+
+    description "Get a high-level summary of the company including total invested, FMV, multiples (TVPI, RVPI), and latest valuation."
+
+    def initialize(data_manager)
+      super()
+      @data_manager = data_manager
+    end
+
+    def execute
+      @data_manager.get_portfolio_company_snapshot.to_json
+    end
+  end
+
   # Tool to get details for the portfolio company.
   class GetPortfolioCompanyDetails < RubyLLM::Tool
     def name = "get_portfolio_company_details"
@@ -193,7 +209,9 @@ module PortfolioCompanyAssistantTools
   class AnalyzeDocument < RubyLLM::Tool
     def name = "analyze_document"
 
-    description "Use this only to analyze documents and nothing else. Analyze one or more documents to answer specific questions or perform extraction. Requires document IDs or names and a natural language prompt."
+    description "Analyze one or more documents to answer specific questions, perform extraction, or summarize content. " \
+                "Pass a list of document IDs or names and a clear natural language prompt. " \
+                "If the document is large, be specific about what information you are looking for."
     param :document_ids, type: "array", desc: "List of document IDs to analyze", required: false
     param :document_names, type: "array", desc: "List of document names (can be partial) to analyze", required: false
     param :prompt, type: "string", desc: "Natural language instructions or question for the analysis", required: true

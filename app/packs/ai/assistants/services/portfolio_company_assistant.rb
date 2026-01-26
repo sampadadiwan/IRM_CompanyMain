@@ -8,7 +8,7 @@ class PortfolioCompanyAssistant < BaseAssistant
   AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
 
   MONTHLY_REPORT_QUERIES = [
-    "Provide a one-page summary of this company. Include its name, current stage, sector, and a brief profile. No Documents or KPIs required.",
+    "Provide a detailed snapshot and one-page summary of this company. Include its name, current stage, sector, profile, total invested, current FMV, and performance multiples.",
     "List the valuation history for this company. Include date, per-share value, and currency. Highlight the most recent valuation.",
     "Plot a line chart of the company's valuation vs time using all available valuation data.",
     "List all our investment transactions in this company. Include dates, amounts, quantity, and whether it was a buy or sell.",
@@ -29,6 +29,7 @@ class PortfolioCompanyAssistant < BaseAssistant
 
   def tools
     [
+      PortfolioCompanyAssistantTools::GetPortfolioCompanySnapshot.new(@data_manager),
       PortfolioCompanyAssistantTools::GetPortfolioCompanyDetails.new(@data_manager),
       PortfolioCompanyAssistantTools::ListValuations.new(@data_manager),
       PortfolioCompanyAssistantTools::ListPortfolioInvestments.new(@data_manager),
@@ -62,16 +63,27 @@ class PortfolioCompanyAssistant < BaseAssistant
 
       Guidelines:
       - You are already scoped to the portfolio company: #{@portfolio_company.investor_name} (ID: #{@portfolio_company.id}).
+      - Negative Constraints:
+        - NEVER fabricate data. If a tool returns no data or an error, report it accurately.
+        - NEVER guess valuations or ownership percentages if not explicitly provided by tools.
+        - DO NOT include internal IDs or view_links in the visible text of your response unless as a hyperlink.
       - Efficiency Rule: For any request involving totals, sums, or breakdowns (e.g., "total value", "breakdown by fund", "sum of investment"), you MUST use the `aggregate` parameter (`sum` or `group_by`). Fetching individual records to perform math is STRICTLY FORBIDDEN.
       - Mandatory Parameters for Aggregation:
         - When `aggregate` is `'sum'`, you MUST provide `aggregate_field` (the numeric field to sum).
         - When `aggregate` is `'group_by'`, you MUST provide both `aggregate_field` and `group_by_field`.
+      - Use `GetPortfolioCompanySnapshot` for a high-level overview of the company's financial standing and performance.
       - Use `GetPortfolioCompanyDetails` to get basic info about this company.
       - Use `ListValuations` to see how the company's value has changed.
       - NEVER call `list_portfolio_kpis`, `list_fund_ratios`, or `list_portfolio_investments` without additional filters (scope, or a specific query). These datasets for this company are too large to retrieve unfiltered.
       - Use `ListPortfolioInvestments` to see investment transactions.
       - Use `GetCapTable` for the current ownership structure.
       - Use `ListPortfolioKpis` for financial and operational metrics.
+      - **KPI Scopes & Filters**:
+        - Default scope is `monthly,actuals`.
+        - If the user asks for data that might be reported less frequently (like Runway, Valuations, or Year-end metrics), you MUST try other scopes if the default one returns no results.
+        - Available scopes: `monthly`, `quarterly`, `yearly`, `actuals`, `budgets`.
+        - If one scope fails, BROADEN your search. For example, if `monthly` Runway data is missing, check `quarterly` and `yearly`.
+        - Use `all_time_eq: 'true'` in the query if you need to fetch historical data beyond the last 12 months.
       - **Optimized Charting**: To create a chart efficiently (without fetching large datasets into the chat history), you MUST use the `plot_chart_from_query` tool.
         - Provide the `resource` name (e.g., `'valuations'`), any `query` filters, and a `prompt` for the chart.
         - Use this tool whenever the user asks for a chart based on a large collection of data.

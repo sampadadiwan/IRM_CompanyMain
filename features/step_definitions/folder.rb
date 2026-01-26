@@ -70,6 +70,15 @@ Given('there is an independent access_right for another user on folder {string}'
   @independent_ar = AccessRight.create!(owner: folder, access_to_investor_id: @independent_investor.id, cascade: false, entity_id: folder.entity_id)
 end
 
+Given('there is an independent access_right for the same user on folder {string}') do |folder_names|
+  # We add independent access rights for the SAME user who will get cascading access later.
+  # These should be deleted because the user_id matches.
+  folder_names.split("/").each do |name|
+    folder = Folder.find_by!(name: name, entity: @folder.entity)
+    AccessRight.create!(owner: folder, user_id: @user.id, cascade: false, entity_id: folder.entity_id)
+  end
+end
+
 When('the root folder is given access rights') do
   @root_folder_ar = AccessRight.create!(owner: @folder, user_id: @user.id, cascade: true, entity_id: @folder.entity_id)
 end
@@ -77,11 +86,11 @@ end
 Then('the child folders should have the same access rights') do
   @folder.reload.descendants.each do |folder|
     puts "Checking folder #{folder.name} access rights"
-    ar = folder.access_rights.find_by(user_id: @user.id)
+    # Filter by parent_access_right_id to ensure we are checking the CASCADING one
+    ar = folder.access_rights.find_by(user_id: @user.id, parent_access_right_id: @root_folder_ar.id)
     ar.should_not be_nil
     ar.cascade.should == true
     ar.entity_id.should == @folder.entity_id
-    ar.parent_access_right_id.should == @root_folder_ar.id
   end
 end
 
@@ -108,6 +117,15 @@ end
 Then('folder {string} should still have the independent access_right') do |folder_name|
   folder = Folder.find_by!(name: folder_name, entity: @folder.entity)
   folder.access_rights.where(id: @independent_ar.id).should be_present
+end
+
+Then('folder {string} should not have the same user independent access_right') do |folder_names|
+  folder_names.split("/").each do |name|
+    folder = Folder.find_by!(name: name, entity: @folder.entity)
+    # The cascading one is deleted by destroyer, but the independent one should also be deleted by the Job
+    # because user_id matches.
+    folder.access_rights.where(user_id: @user.id).should_not be_present
+  end
 end
 
 When('the root folder access right is deleted') do

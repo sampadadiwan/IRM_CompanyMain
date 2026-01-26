@@ -1,9 +1,14 @@
+require 'timeout'
+require 'ostruct'
+
 # BaseAssistant
 #
 # Common base class for all AI assistants to share core logic for running queries and reports.
 #
 class BaseAssistant
   attr_reader :data_manager
+
+  AI_TIMEOUT = ENV.fetch('AI_ASSISTANT_TIMEOUT', '180').to_i.seconds
 
   def initialize(user:, chat: nil)
     @user = user
@@ -23,10 +28,19 @@ class BaseAssistant
 
     @chat.with_instructions(system_prompt)
     @chat.with_tools(*tools)
+    @chat.with_messages { |msgs| message_filter(msgs) }
 
     # RubyLLM handles the tool execution loop automatically
-    begin
-      response = @chat.ask(prompt)
+    response = begin
+      Timeout.timeout(AI_TIMEOUT) do
+        @chat.ask(prompt)
+      end
+    rescue Timeout::Error
+      OpenStruct.new(
+        content: "Error: The request timed out after #{AI_TIMEOUT} seconds. Please try a simpler query.",
+        input_tokens: 0,
+        output_tokens: 0
+      )
     rescue StandardError => e
       handle_tool_call_error(e, prompt)
       retry
@@ -54,28 +68,18 @@ class BaseAssistant
     sleep_seconds: ENV.fetch('AI_MONTHLY_REPORT_SLEEP_SECONDS', '1').to_f,
     max_retries: ENV.fetch('AI_MONTHLY_REPORT_MAX_RETRIES', '5').to_i,
     base_backoff_seconds: ENV.fetch('AI_MONTHLY_REPORT_BACKOFF_SECONDS', '1.0').to_f,
+    parallel: ENV.fetch('AI_MONTHLY_REPORT_PARALLEL', 'true') == 'true',
     on_error: :collect
   )
     total_input_tokens = 0
     total_output_tokens = 0
 
-    queries.map do |q|
+    process_query = lambda do |q|
       tries = 0
-
       begin
         result = ask_ephemeral(q)
         result = { content: result.to_s, input_tokens: 0, output_tokens: 0 } unless result.is_a?(Hash)
-
-        response_text = result[:content]
-
-        total_input_tokens += result[:input_tokens].to_i
-        total_output_tokens += result[:output_tokens].to_i
-
-        sleep(sleep_seconds) if sleep_seconds.positive?
-
-        log_cumulative_tokens(total_input_tokens, total_output_tokens)
-
-        { prompt: q, response: response_text, input_tokens: result[:input_tokens], output_tokens: result[:output_tokens] }
+        { prompt: q, response: result[:content], input_tokens: result[:input_tokens], output_tokens: result[:output_tokens] }
       rescue RubyLLM::RateLimitError => e
         tries += 1
         raise e if tries > max_retries && on_error == :raise
@@ -88,8 +92,28 @@ class BaseAssistant
           sleep(backoff + jitter)
           retry
         end
+      rescue StandardError => e
+        { prompt: q, error: e.class.name, message: e.message }
       end
     end
+
+    results = if parallel
+                queries.map { |q| Concurrent::Promises.future { process_query.call(q) } }.map(&:value!)
+              else
+                queries.map do |q|
+                  res = process_query.call(q)
+                  sleep(sleep_seconds) if sleep_seconds.positive?
+                  res
+                end
+              end
+
+    results.each do |res|
+      total_input_tokens += res[:input_tokens].to_i
+      total_output_tokens += res[:output_tokens].to_i
+    end
+
+    log_cumulative_tokens(total_input_tokens, total_output_tokens)
+    results
   end
 
   # --- Methods to be overridden by subclasses ---
@@ -125,6 +149,38 @@ class BaseAssistant
 
     Rails.logger.debug { "🤖 Ephemeral response: #{content.inspect}" }
     { content: content, input_tokens: response.input_tokens, output_tokens: response.output_tokens }
+  end
+
+  # Scopes messages to manage context window.
+  # Always keeps system messages and the current turn (last user message to end).
+  # Also keeps a sliding window of previous history.
+  def message_filter(messages, window_size: 10)
+    # Deduplicate system messages by content, keeping only the most recent one if duplicates exist
+    system_messages = messages.select { |m| m.role == :system }.reverse.uniq(&:content).reverse
+    other_messages = messages.reject { |m| m.role == :system }
+
+    # Keep a running summary of facts to prevent data loss when window slides
+    # (Simplified for now: ensure at least one early context-setting message is kept)
+    context_setting_messages = other_messages.first(2)
+
+    # Find the index of the start of the current turn (last user message)
+    last_user_index = other_messages.rindex { |m| m.role == :user }
+
+    if last_user_index.nil?
+      # If no user message found (e.g. just system messages), return everything
+      messages
+    else
+      # Current turn: from last user message to the end
+      current_turn = other_messages[last_user_index..]
+
+      # Previous history: everything before the last user message
+      previous_history = other_messages[0...last_user_index]
+
+      # Apply sliding window to previous history, but don't duplicate context messages
+      recent_history = (previous_history - context_setting_messages).last(window_size)
+
+      (system_messages + context_setting_messages + recent_history + current_turn).uniq
+    end
   end
 
   def find_or_create_chat
