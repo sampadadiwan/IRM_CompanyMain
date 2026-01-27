@@ -5,7 +5,7 @@
           Task
       </h6>
   </div>
-  <div class="card-body">        
+  <div class="card-body">
     <table class="table table-bordered dataTable">
 
         <tr>
@@ -13,7 +13,7 @@
             Details
           </td>
           <td>
-            <%=raw task.details.html_safe if task.details %>
+            <%= task.details %>
           </td>
         </tr>
 
@@ -33,10 +33,10 @@
             Response
           </td>
           <td>
-            <%= task.response.html_safe if task.response %>
+            <%= task.response %>
           </td>
         </tr>
-        
+
         <tr>
           <td>
             Entity

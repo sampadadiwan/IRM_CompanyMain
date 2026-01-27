@@ -58,7 +58,6 @@ class Kpi < ApplicationRecord
     with_report.where(kpi_reports: { as_of: range })
   }
 
-
   def custom_form_field
     field = nil
     if kpi_report.form_type

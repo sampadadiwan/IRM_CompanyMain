@@ -5,16 +5,14 @@ class TasksController < ApplicationController
 
   # GET /tasks or /tasks.json
   def index
-    authorize(Task)
-    @tasks = policy_scope(Task)
-    @for_entity = params[:for_entity_id].present? ? Entity.find(params[:for_entity_id]) : current_user.entity
+    result = TaskList.call(current_user, params) { |relation| policy_scope(relation) }
+    @q = result.q
+    @tasks = result.tasks
 
+    @for_entity = params[:for_entity_id].present? ? Entity.find(params[:for_entity_id]) : current_user.entity
     @tasks = with_owner_access(@tasks, raise_error: false)
 
-    @tasks = filter_params(@tasks, :for_support, :entity_id, :for_entity_id, :assigned_to_id, :owner_id, :owner_type)
-    @tasks = @tasks.incomplete if params[:completed] != "all"
-
-    @pagy, @tasks = pagy(@tasks.includes(:for_entity, :user, :task_template))
+    @pagy, @tasks = pagy(@tasks)
   end
 
   def search

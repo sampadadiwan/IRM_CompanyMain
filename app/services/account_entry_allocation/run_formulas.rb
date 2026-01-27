@@ -72,6 +72,10 @@ module AccountEntryAllocation
 
       if success
         Rails.logger.debug { "Successfully loaded isolated SQLite DB for Entity ID: #{entity_id}" }
+
+        # Clear any existing connection pool for this path to ensure we see the fresh file
+        AccountEntryAllocation::WithScratchSqlite.disconnect_pool(ctx[:sqlite_path])
+
         with_scratch_sqlite(ctx[:sqlite_path]) do
           AccountEntrySqlite.where(allocation_run_id: ctx[:allocation_run_id]).delete_all
           count = AccountEntrySqlite.where(fund_id: fund.id).count
@@ -348,6 +352,11 @@ module AccountEntryAllocation
               end
               attrs["json_fields"] ||= {}
               attrs["json_fields"]["sqlite_id"] = sqlite_entry.id.to_s
+              if attrs["notes"].present? && attrs["notes"].length > 65_000
+                # log this to a file for review
+                Rails.logger.warn { "Truncating notes for AccountEntry SQLite ID #{sqlite_entry.id} during migration to primary DB" }
+                attrs["notes"] = attrs["notes"].to_s.truncate(65_000)
+              end
               attrs
             end
 

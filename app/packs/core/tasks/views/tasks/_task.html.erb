@@ -1,6 +1,6 @@
 <tr id="<%= dom_id task %>">
   <td>
-    <%= link_to task.details.html_safe, task %>
+    <%= link_to task.details, task %>
     <div>
     <% task.tags&.split(",")&.each do |tag| %>
       <small><%= link_to tag, search_tasks_path(query: tag) %></small>
@@ -38,7 +38,7 @@
 
       <%= link_to  t_common(:edit), edit_task_path(task), class: "btn btn-outline-success ti ti-edit", data: { turbo_frame: 'new_task' }%>
     <% end %>
-    
+
     <%= link_to  t_common(:show) , task , {class: "btn btn-outline-primary ti ti-eye" } if policy(task).show? %>
   </td>
 </tr>

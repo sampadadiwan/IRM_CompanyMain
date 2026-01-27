@@ -14,15 +14,19 @@ class TaskNotifier < BaseNotifier
     {
       notification_id: notification.id,
       user_id: notification.recipient_id,
-      task_id: record.id,
-      entity_id: params[:entity_id]
+      task_id: record&.id,
+      entity_id: params[:entity_id] || record&.entity_id
     }
   end
 
   notification_methods do
     def message
       @task ||= record
-      @task&.details
+      if @task.details.present?
+        @task.details.body.to_plain_text.truncate(100)
+      else
+        "Task Notification"
+      end
     end
 
     def custom_notification

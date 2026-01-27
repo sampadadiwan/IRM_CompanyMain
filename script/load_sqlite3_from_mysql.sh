@@ -890,7 +890,8 @@ for table in "${TABLES[@]}"; do
     if [[ $is_text -eq 1 ]]; then
       # Escape newlines as literal \n so TSV stays on one line
       # We use a unique marker for newlines/tabs to avoid collision with literal \n in data
-      SELECT_LIST+="REPLACE(REPLACE(REPLACE(IFNULL(\`${c}\`,''), CHAR(10), '###NL###'), CHAR(13), '###CR###'), CHAR(9), '###TAB###'),"
+      # Replace double quotes with a marker, then escape newlines/tabs
+      SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`${c}\`,''), '\"', '###DQ###'), CHAR(10), '###NL###'), CHAR(13), '###CR###'), CHAR(9), '###TAB###'),"
     elif [[ "$table" == "account_entries" && "$c" == "migrated" ]]; then
       # migrated field is not in source, default to 0
       SELECT_LIST+="0,"
@@ -965,7 +966,6 @@ SQL
     echo "  Step 3: Importing $table TSV into SQLite"
     pv -s "$FILE_SIZE" "$EXPORT_TSV" | sqlite3 "$SQLITE_DB" \
       -cmd ".mode tabs" \
-      -cmd ".separator \"\t\"" \
       -cmd ".nullvalue \\N" \
       -cmd "BEGIN;" \
       ".import /dev/stdin $table" \
@@ -996,9 +996,8 @@ SQL
     done
 
     if [[ $is_text -eq 1 ]]; then
-      # Restore newlines, carriage returns and tabs from markers, THEN check for empty string
-      # We combine REPLACE and NULLIF in one assignment to avoid overwriting changes
-      UPDATE_SET+="\`$c\` = NULLIF(REPLACE(REPLACE(REPLACE(IFNULL(\`$c\`, ''), '###NL###', CHAR(10)), '###CR###', CHAR(13)), '###TAB###', CHAR(9)), ''), "
+      # Restore double quotes, newlines, carriage returns and tabs from markers, THEN check for empty string
+      UPDATE_SET+="\`$c\` = NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`$c\`, ''), '###DQ###', '\"'), '###NL###', CHAR(10)), '###CR###', CHAR(13)), '###TAB###', CHAR(9)), ''), "
     else
       # Standard NULL cleanup for non-text columns
       UPDATE_SET+="\`$c\` = NULLIF(\`$c\`, ''), "

@@ -2,14 +2,14 @@ class TasksMailer < ApplicationMailer
   helper CurrencyHelper
   helper ApplicationHelper
 
-  def send_notification
+  before_action :set_task
+  def set_task
     @task = Task.find params[:task_id]
+  end
 
-    if @task.assigned_to
-
-      status = @task.completed ? "Closed" : "Open"
-
-      send_mail(subject: "Task: #{@task.id}, Status: #{status} ") if @to.present?
-    end
+  def send_notification
+    status = @task.completed ? "Closed" : "Open"
+    subject = @task.details.present? ? @task.details.body.to_plain_text.truncate(100) : "Task: #{@task.id}"
+    send_mail(subject: subject + ", Status: #{status}")
   end
 end
