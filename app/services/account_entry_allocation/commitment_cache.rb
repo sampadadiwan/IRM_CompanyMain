@@ -10,7 +10,7 @@ module AccountEntryAllocation
 
     # This is used to cache the computed values during allocation.
     # Each commitment has its own set of cached values
-    def computed_fields_cache(capital_commitment, start_date)
+    def computed_fields_cache(capital_commitment, _start_date)
       cached_commitment_fields ||= {}
       # Check if we already have some cached fields for this commitment
       if @cached_generated_fields[capital_commitment.id]
