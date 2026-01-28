@@ -24,7 +24,7 @@ module AccountEntryAllocation
         # Possibly retrieve the relevant FundUnitSetting for each commitment
         fund_unit_setting = fund_unit_settings[capital_commitment.unit_type]
 
-        commitment_cache.computed_fields_cache(capital_commitment, start_date)
+        commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
         ae = fund_account_entry.dup
         ae.entry_type = fund_formula.entry_type
 
@@ -33,7 +33,7 @@ module AccountEntryAllocation
         begin
           create_instance_variables(ctx)
           AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: parent, bdg: binding))
-          commitment_cache.computed_fields_cache(capital_commitment, start_date)
+          commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
         rescue StandardError => e
           raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment} #{fund_account_entry}: #{e.message}"
         end

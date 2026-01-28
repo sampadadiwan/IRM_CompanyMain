@@ -37,7 +37,7 @@ module AccountEntryAllocation
 
         ctx[:commitments].each do |capital_commitment|
           # This is used to generate instance variables from the cached computed values
-          commitment_cache.computed_fields_cache(capital_commitment, start_date)
+          commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
 
           ae = AccountEntrySqlite.new(
             name: fund_formula.name,
@@ -57,7 +57,7 @@ module AccountEntryAllocation
           begin
             create_instance_variables(ctx)
             AccountEntryAllocation::CreateAccountEntry.call(ctx.merge(account_entry: ae, capital_commitment: capital_commitment, parent: orig_api, bdg: binding))
-            commitment_cache.computed_fields_cache(capital_commitment, start_date)
+            commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
           rescue StandardError => e
             Rails.logger.debug e.backtrace
             raise "Error in #{fund_formula.name}:#{fund_formula.id} for #{capital_commitment}: #{e.message}"

@@ -49,7 +49,7 @@ module AccountEntryAllocation
       portfolio_investments_array = portfolio_investments.includes(:fund, :investment_instrument, :portfolio_company).to_a
 
       ctx[:commitments].each.with_index do |capital_commitment, idx|
-        commitment_cache.computed_fields_cache(capital_commitment, start_date)
+        commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
 
         portfolio_investments_array.each do |portfolio_investment|
           # result = RubyProf.profile do
@@ -81,7 +81,7 @@ module AccountEntryAllocation
 
         # Move cache refresh outside the inner loop as it's redundant to refresh it for every portfolio investment
         # if the capital_commitment hasn't changed. CreateAccountEntry updates the cache internally.
-        commitment_cache.computed_fields_cache(capital_commitment, start_date)
+        commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
 
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 5).zero?
       end

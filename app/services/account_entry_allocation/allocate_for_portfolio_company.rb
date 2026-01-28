@@ -49,7 +49,7 @@ module AccountEntryAllocation
 
         # Iterate through each capital commitment
         capital_commitments_collection.each do |capital_commitment|
-          commitment_cache.computed_fields_cache(capital_commitment, start_date) if capital_commitment
+          commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date) if capital_commitment
           if account_entry_names.present?
             # If specific account entry names are provided,
             # build an account entry for each name (though `name` is not used in the method call)
@@ -63,7 +63,7 @@ module AccountEntryAllocation
           end
 
           # CreateAccountEntry updates the cache internally. No need to call it twice in the inner loop.
-          commitment_cache.computed_fields_cache(capital_commitment, start_date) if capital_commitment
+          commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date) if capital_commitment
         end
       end
 

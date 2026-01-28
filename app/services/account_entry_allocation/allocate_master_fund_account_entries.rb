@@ -91,7 +91,7 @@ module AccountEntryAllocation
 
       ctx[:commitments].each.with_index do |capital_commitment, idx|
         Rails.logger.debug { "Processing commitment #{capital_commitment.id} for #{fund_formula.name}" } unless Rails.env.production?
-        commitment_cache.computed_fields_cache(capital_commitment, start_date)
+        commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
 
         if grouped
           # In some formulas we need both the master fund and the feeder fund account entries to allocate to the commitments
@@ -142,7 +142,7 @@ module AccountEntryAllocation
         end
 
         # Move cache refresh outside the inner loop. CreateAccountEntry updates the cache internally.
-        commitment_cache.computed_fields_cache(capital_commitment, start_date)
+        commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
 
         notify("Completed #{ctx[:formula_index] + 1} of #{ctx[:formula_count]}: #{fund_formula.name} : #{idx + 1} commitments", :success, user_id) if ((idx + 1) % 10).zero?
       end
