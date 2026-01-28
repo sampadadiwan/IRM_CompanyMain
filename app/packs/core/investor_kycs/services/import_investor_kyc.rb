@@ -55,7 +55,13 @@ class ImportInvestorKyc < ImportUtil
   end
 
   def save_kyc(import_upload, investor_kyc, investor, user_data, custom_field_headers)
+    # Default to Individual if not specified
     kyc_type = user_data["Kyc Type"].presence || "Individual"
+    # Ignore the case
+    kyc_type = kyc_type.split.map(&:capitalize).join(" ")
+    # Check for valid kyc type
+    raise "Invalid Kyc Type" unless ["Individual", "Non Individual"].include?(kyc_type)
+
     # Determine the form type for the row being processed
     form_type = get_form_type(import_upload, user_data, form_type_name: "#{kyc_type.delete(' ').strip}Kyc")
 
