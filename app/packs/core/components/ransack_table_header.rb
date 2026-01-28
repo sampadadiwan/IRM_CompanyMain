@@ -34,6 +34,26 @@ class RansackTableHeader < ViewComponent::Base
     columns = form_type&.ag_selected_columns if columns.blank?
     columns = @default_columns_map if columns.blank? && @default_columns_map.present?
     columns = @model.ag_grids_default_columns if columns.blank?
+    # Makes ag grid col link works correctly
+    # enforce data types from default columns
+    # this is to ensure that even if the user has saved the column as a string,
+    # if the code says it should be html, we render it as html
+    if @model.respond_to?(:ag_grids_default_columns)
+      default_columns = @model.ag_grids_default_columns
+      default_columns_map = default_columns.index_by { |col| col[:key] }
+      columns = columns.map do |col|
+        col_key = col[:key] || col["key"]
+        if default_columns_map[col_key]
+          default_type = default_columns_map[col_key][:data_type]
+          # If the default type involves special rendering (not String), prefer it
+          if default_type != "String"
+            col[:data_type] = default_type
+            col["data_type"] = default_type if col.key?("data_type")
+          end
+        end
+        col
+      end
+    end
 
     columns
   end

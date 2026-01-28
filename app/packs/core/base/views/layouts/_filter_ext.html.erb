@@ -25,6 +25,21 @@
 
 <% end %>
 
+<% if  params[:action] == "index" && params[:controller] == "investors" && params[:multi_portfolio_dashboard].present? %>
+<div class="row form-group">
+    <input class="form-control col" type="text" value="Category" disabled>
+    <select class="form-control col"><option>equals</option></select>
+    <%= select_tag :category, "Portfolio Company" , prompt: "Portfolio Company", class: "form-control col", value: "Portfolio Company" %>
+
+    <span class="col-2 pt-2">
+        <%= link_to "#", class: "remove_fields btn btn-outline-danger", "data-bs-toggle": "tooltip", "data-bs-placement": "top", title: "Delete Condition" do %>
+            <i class="ti ti-trash fs-4"></i>
+        <% end %>
+    </span>
+</div>
+
+<% end %>
+
 
 <% if secondary_related_conts.include?(params[:controller]) %>
 

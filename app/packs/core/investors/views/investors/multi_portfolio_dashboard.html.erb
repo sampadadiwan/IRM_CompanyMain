@@ -1,0 +1,45 @@
+<%= turbo_frame_tag "#{@name.downcase.underscore}_#{@dashboard_name.downcase.underscore}_frame", target: "_top" do %>
+
+  <% hidden_fields ||= {} %>
+  <% hidden_fields[:multi_portfolio_dashboard] = params[:multi_portfolio_dashboard] if params[:multi_portfolio_dashboard].present? %>
+
+  <%= render "/layouts/multi_portfolio_dashboard_filter",
+             associations: [],
+             hidden_fields: hidden_fields,
+             tag_options: @tag_options,
+             fund_tag_lookup: @fund_tag_lookup,
+             sector_options: @sector_options,
+             fund_sector_lookup: @fund_sector_lookup %>
+
+  <% if @alert.present? %>
+    <!-- Display the message -->
+    <div class="alert alert-warning text-center">
+      <%= @alert %>
+    </div>
+  <% end %>
+
+  <% if @investors.present? %>
+    <div class="multi-portfolio-dashboard">
+    <!-- Display the dashboard -->
+      <nav class="multi-portfolio-dashboard__tabs nav sticky-top nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  style="top:70px; z-index: 1; width: 100%;">
+      <% dashboard_widgets(@dashboard_name, current_user.entity_id, name: @name, show_menu: true).each do |name, dashboard_widget| %>
+        <a class="nav-link" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
+          <% label =  dashboard_widget.metadata_args[:title] || dashboard_widget.widget_name || dashboard_widget.tags.presence%>
+          <%= label %>
+        </a>
+      <% end %>
+
+  </nav>
+
+  <div class="row portfolio-dashboard__widgets">
+
+      <%  dashboard_widgets(@dashboard_name, current_user.entity_id, name: @name).each do |name, dashboard_widget| %>
+        <div id="<%="#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
+
+          <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, investors: @investors, uri_params: params, funds: @funds %>
+        </div>
+      <% end %>
+    </div>
+    </div>
+  <% end %>
+<% end %>

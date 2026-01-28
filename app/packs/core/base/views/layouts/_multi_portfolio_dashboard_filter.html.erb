@@ -1,0 +1,95 @@
+<%
+  state ||= "show" # State of the filter toggle card
+  css_class ||= "show_pc_dashboard_filter" # CSS class for the toggle card
+
+  selected_fund_ids = Array(params[:fund_ids]).presence || Array(params[:fund_id])
+  selected_tags = if params[:tag_list].is_a?(Array)
+                    params[:tag_list]
+                  else
+                    params[:tag_list].to_s.split(',').map(&:strip).reject(&:blank?)
+                  end
+  selected_sectors = if params[:sector].is_a?(Array)
+                        params[:sector]
+                      else
+                        params[:sector].to_s.split(',').map(&:strip).reject(&:blank?)
+                      end
+%>
+
+<%= render ToggleCard.new(title: "Multi-Portfolio Filter", css_class: css_class, controller: "filter", state: state) do %>
+  <div>
+    <%= form_with(url: investors_path, method: :get, local: true) do |form| %>
+      <%= hidden_field_tag "multi_portfolio_dashboard", true %>
+
+      <div class="row align-items-end">
+        <!-- Fund Multi-select -->
+        <div class="col">
+          <div class="form-group">
+            <%= form.label :fund_ids, "Funds" %>
+            <%= form.select(
+              :fund_ids,
+              @funds.map { |f| [f.name, f.id] },
+              { include_hidden: false, selected: selected_fund_ids },
+              {
+                class: "form-control select2",
+                multiple: true
+              }
+            ) %>
+          </div>
+        </div>
+
+        <!-- Tags Multi-select -->
+        <div class="col">
+          <div class="form-group">
+            <%= form.label :tag_list, "Tags" %>
+            <%= form.select(
+              :tag_list,
+              @tags_for_select,
+              { include_hidden: false, selected: selected_tags },
+              {
+                class: "form-control select2",
+                multiple: true
+              }
+            ) %>
+          </div>
+        </div>
+
+        <!-- Sectors Multi-select -->
+        <div class="col">
+          <div class="form-group">
+            <%= form.label :sector, "Sectors" %>
+            <%= form.select(
+              :sector,
+              @sectors_for_select,
+              { include_hidden: false, selected: selected_sectors },
+              {
+                class: "form-control select2",
+                multiple: true
+              }
+            ) %>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="col-auto ms-auto">
+          <div class="form-group">
+            <button type="submit" class="btn btn-outline-primary" title="Search">
+              <i class="ti ti-search"></i>
+            </button>
+            <% if params[:debug].present? %>
+              <button class="btn btn-outline-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#advanced-filters" aria-expanded="false" aria-controls="advanced-filters" title="Advanced Filters">
+                <i class="ti ti-filter"></i>
+              </button>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if params[:debug].present? %>
+    <!-- Collapsible Advanced Filters Section -->
+    <div class="collapse mt-3" id="advanced-filters">
+      <%= render "/layouts/filter", associations: [] %>
+    </div>
+    <% end %>
+  </div>
+<% end %>

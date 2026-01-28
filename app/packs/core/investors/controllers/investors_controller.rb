@@ -4,13 +4,37 @@ class InvestorsController < ApplicationController
 
   # GET /investors or /investors.json
   def index
+    template = "investors/index"
+    authorize(Investor)
+
+    if params[:multi_portfolio_dashboard].present?
+      setup_portfolio_dashboard
+      template = "investors/multi_portfolio_dashboard"
+    end
+
     @q = Investor.ransack(params[:q])
     @investors = policy_scope(@q.result)
-    authorize(Investor)
+
+    if params[:multi_portfolio_dashboard].present?
+      # Get portfolio companies first
+      base_investors = @investors.portfolio_companies
+
+      # Build tags and sectors options from ALL portfolio companies (before filtering)
+      @tags_for_select = base_investors.pluck(:tag_list).map { |tag_list| tag_list&.split(",")&.map(&:strip) }.flatten.uniq.compact_blank.sort
+      @sectors_for_select = base_investors.pluck(:sector).map { |sectors| sectors&.split(",")&.map(&:strip) }.flatten.uniq.compact_blank.sort
+
+      # Now apply filters
+      @investors = base_investors
+      @investors = @investors.with_tag_list(params[:tag_list]) if params[:tag_list].present?
+      @investors = @investors.in_sector(params[:sector]) if params[:sector].present?
+    end
+
     @investors = InvestorSearch.search(@investors, params, current_user)
-    @pagy, @investors = pagy(@investors, limit: params[:per_page]) if params[:all].blank?
+
+    @pagy, @investors = pagy(@investors, limit: params[:per_page]) if params[:multi_portfolio_dashboard].blank? && params[:all].blank?
+
     respond_to do |format|
-      format.html
+      format.html { render template }
       format.turbo_stream
       format.xlsx
       format.json
@@ -64,6 +88,19 @@ class InvestorsController < ApplicationController
     @dashboard_name = params[:dashboard_name]
     @dashboard_name ||= @investor.category == "Portfolio Company" ? "Portfolio Company Dashboard" : "Investor Dashboard"
     @name = params[:name] || "Default"
+  end
+
+  def setup_portfolio_dashboard
+    @dashboard_name = "Aggregated Portfolio Dashboard"
+    @name = params[:name] || "Default"
+    params[:filter] = true
+
+    # Fetch funds
+    @funds = Pundit.policy_scope(current_user, Fund)
+
+    # Initialize empty arrays - will be populated in index method
+    @tags_for_select = []
+    @sectors_for_select = []
   end
 
   def merge

@@ -115,14 +115,16 @@ class PortfolioInvestment < ApplicationRecord
     "Unrealized Gain" => "unrealized_gain",
     "Realized Gain" => "gain",
     "FIFO Cost" => "cost_of_sold",
-    "Notes" => "notes"
+    "Notes" => "notes",
+    "Stage" => "stage"
   }.freeze
 
   ADDITIONAL_COLUMNS = {
     "Tracking Amount" => "tracking_amount",
     "Tracking FMV" => "tracking_fmv",
     "Cost Of Sold Per Share" => "cost_of_sold_per_share",
-    "Sale Price Per Share" => "sale_price_per_share"
+    "Sale Price Per Share" => "sale_price_per_share",
+    "Sector" => "sector"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = %w[fund aggregate_portfolio_investment portfolio_company valuation].freeze
@@ -130,6 +132,16 @@ class PortfolioInvestment < ApplicationRecord
   ##########################################################
   ####################### HELPERS ##########################
   ##########################################################
+
+  def self.ag_grids_default_columns
+    super.map do |col|
+      if col[:key] == "portfolio_company_name"
+        col.merge(data_type: "html")
+      else
+        col
+      end
+    end
+  end
 
   def normalize_excused_folio_ids
     # ensures array of unique integers

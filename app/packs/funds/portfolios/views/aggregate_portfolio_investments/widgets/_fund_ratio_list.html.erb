@@ -1,0 +1,29 @@
+<% fund_ratios ||= [] %>
+
+<%= tag.div class: "fund-ratio-list w-100" do
+      if fund_ratios.any?
+        tag.div class: "list-group list-group-flush" do
+          safe_join(
+            fund_ratios.map do |fund_ratio|
+              tag.div class: "list-group-item border-0 px-0 py-2 d-flex align-items-center justify-content-between" do
+                safe_join([
+                  tag.div(class: "me-3") do
+                    safe_join([
+                      tag.div(class: "fw-semibold text-dark") do
+                        fund_ratio.owner.respond_to?(:investor_name) ? fund_ratio.owner.investor_name : fund_ratio.owner_type
+                      end,
+                      tag.div(fund_ratio.name, class: "text-muted small")
+                    ])
+                  end,
+                  tag.div(class: "fw-bold") do
+                    fund_ratio.display_value.presence || number_with_precision(fund_ratio.value, precision: 2)
+                  end
+                ])
+              end
+            end
+          )
+        end
+      else
+        tag.p("No data available.", class: "text-muted small mb-0")
+      end
+    end %>

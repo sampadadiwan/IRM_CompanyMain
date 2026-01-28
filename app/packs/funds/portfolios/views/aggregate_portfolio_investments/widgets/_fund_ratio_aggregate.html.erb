@@ -1,0 +1,55 @@
+<%
+  args ||= {}
+  show_chart = args[:show_chart].presence || true
+  show_table = args[:show_table].presence || true
+  ratio_names = args[:ratio_names].presence || ["IRR", "MOIC"]
+  chart_color = args[:chart_color].presence || "#00c49a"
+
+  fund_ids ||= @funds.pluck(:id)
+
+  # This is not the final way need to discuss the storage of Fund Ratios for multiple funds and portfolio companies
+  ratios_by_name = {}
+  fund_ratios = fund_ratio_list(fund_ids, owner_types: ["Fund"], ratio_names: ratio_names)
+  ratio_names.each do |ratio_name|
+    ratios_by_name[ratio_name] = fund_ratios.where(name: ratio_name).map do |fr|
+      [fr.owner.name, fr.display_value]
+    end
+  end
+%>
+
+<div class="row g-3">
+  <% ratios_by_name.each do |ratio_name, ratios_data| %>
+    <div class="col-12 col-lg-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body d-flex flex-column gap-3">
+          <h3 class="mb-0 fw-bold"><%= ratio_name %></h3>
+
+          <div class="irr-detail-block d-flex flex-column">
+            <% if show_chart %>
+              <div>
+                <%= column_chart ratios_data, colors: [chart_color], library: {
+                  chart: { height: 260 },
+                  plotOptions: {
+                    column: {
+                      dataLabels: {
+                        enabled: true
+                      }
+                    }
+                  },
+                  legend: { enabled: false },
+                  **chart_theme_color
+                } %>
+              </div>
+            <% end %>
+
+            <% if show_table %>
+              <div>
+                <%= render "fund_ratio_list", fund_ratios: fund_ratios.where(name: ratio_name) %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+</div>

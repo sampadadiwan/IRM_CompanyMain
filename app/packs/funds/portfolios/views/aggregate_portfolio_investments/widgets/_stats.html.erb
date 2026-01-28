@@ -2,13 +2,16 @@
   uri_params ||= {}
   fund ||= uri_params[:fund]
   portfolio_company ||= @investor
+
   # Which fields to display?
   fields = args[:fields].split(",").map(&:strip) if args && args[:fields].present?
   tracking_currency = args[:tracking_currency] if args && args[:tracking_currency].present?
+  currency = args[:currency] if args && args[:currency].present?
   decimals = args[:decimals]&.to_i || 2
   fields ||= []
 
   force_units = args[:force_units]
+
 %>
 
 
@@ -23,8 +26,9 @@
   <!-- This block becomes the `content` inside the component -->
   <% if fund %>
     <%= render "aggregate_portfolio_investments/stats",  fund: fund, fields: fields, force_units: force_units, decimals: decimals %>
-  <% elsif portfolio_company%>
+  <% elsif portfolio_company %>
     <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: portfolio_company, fields: fields, force_units: force_units, tracking_currency: tracking_currency, decimals: decimals %>
+  <% elsif params[:multi_portfolio_dashboard].present? && @investors.present? %>
+    <%= render "aggregate_portfolio_investments/stats_for_multiple_portfolio_companies", portfolio_companies: @investors, fields: fields, force_units: force_units, currency: currency, decimals: decimals %>
   <% end %>
-
 <% end %>

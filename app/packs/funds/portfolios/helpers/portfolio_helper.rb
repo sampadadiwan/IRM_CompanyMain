@@ -66,10 +66,34 @@ module PortfolioHelper
     }
   end
 
+  def fetch_ratios_by_name(fund, ratio_names, owners = nil)
+    return [] if ratio_names.blank?
+
+    pc_frs = FundRatio.latest.includes(:owner).where(entity_id: fund.entity_id, fund_id: fund.id, name: ratio_names).order(end_date: :desc)
+    pc_frs = pc_frs.where(owner: owners) if owners.present?
+
+    return [] if pc_frs.blank?
+
+    # Map the ratios to [portfolio_company_name, ratio_value]
+    filtered_frs.map { |fr| { name: fr.owner.name, value: fr.display_value } }
+  end
+
+  def fund_ratio_list(owner_ids, owner_types: ["Fund"], ratio_names: %w[IRR])
+    return FundRatio.none if owner_ids.blank?
+
+    scope = FundRatio.where(owner_id: owner_ids, owner_type: owner_types)
+                     .latest
+                     .includes(:owner)
+                     .order(end_date: :desc)
+
+    scope = scope.where(name: ratio_names) if ratio_names.present?
+    scope
+  end
+
   def portfolio_last_xirr(fund)
     pc_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "Investor")
     if pc_frs.present?
-      portfolio_irr_ratios = pc_frs.map { |fr| [fr.owner.investor_name, fr.value] }
+      portfolio_irr_ratios = pc_frs.map { |fr| [fr.owner.name, fr.value] }
 
       column_chart portfolio_irr_ratios, library: {
         plotOptions: { column: {

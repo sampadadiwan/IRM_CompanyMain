@@ -3,6 +3,11 @@ class PortfolioInvestmentsController < ApplicationController
 
   # GET /portfolio_investments or /portfolio_investments.json
   def index
+    if params[:show_grouped].present? && params[:show_grouped] == "true"
+      params[:agg_type] ||= "sum"
+      params[:group_by_column] ||= "portfolio_company_name"
+    end
+
     result = PortfolioInvestmentList.call(current_user, params) { |relation| policy_scope(relation) }
 
     @q = result.q

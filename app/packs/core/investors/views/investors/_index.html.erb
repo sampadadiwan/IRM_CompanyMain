@@ -70,6 +70,13 @@
             <i class="ti ti-file-text"></i> Portfolio Investment Report
           <% end %>
 
+          <%= link_to investors_path(multi_portfolio_dashboard: true, q: ransack_query_params("category", :eq, "Portfolio Company")),
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-layout-dashboard"></i> Portfolio Dashboard
+          <% end %>
+
+
           <%= link_to new_investor_notice_path(
                         "investor_notice[owner_id]": current_user.entity_id,
                         "investor_notice[owner_type]": "Entity"),

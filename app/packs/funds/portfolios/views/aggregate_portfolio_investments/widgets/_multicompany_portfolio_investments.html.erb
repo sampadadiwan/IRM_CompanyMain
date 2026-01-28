@@ -1,0 +1,22 @@
+<%
+  args ||= {}
+
+  show_grouped = args[:show_grouped].nil? ? false : args[:show_grouped]
+  src = portfolio_investments_path(grid_only: false, fund_ids: @selected_fund_ids, portfolio_company_ids: @investors.map(&:id), template: "index_group", ag: true, show_grouped: show_grouped, report_id: args[:report_id], decimals: args[:decimals] )
+  params[:report_id] ||= args[:report_id]
+
+%>
+
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  <!-- This block becomes the `content` inside the component -->
+  <%= turbo_frame_tag with_frame("portfolio_investments_frame"), target: "_top", src: src, lazy: true do %>
+    <!-- Fallback content while loading -->
+        <%= render "/layouts/loading" %>
+  <% end %>
+<% end %>

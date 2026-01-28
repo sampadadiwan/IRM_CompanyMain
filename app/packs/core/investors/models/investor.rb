@@ -101,6 +101,8 @@ class Investor < ApplicationRecord
 
   validates :tag_list, length: { maximum: 120 }
 
+  validates :sector, length: { maximum: 200 }
+
   scope :with_tag_list, lambda { |tags|
     tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)
     where(
@@ -119,6 +121,14 @@ class Investor < ApplicationRecord
                       investor_entity_id: user.entity_id)
               }
 
+  scope :in_sector, ->(sector) {
+    next none if sector.blank?
+
+    sectors = Array(sector).flat_map { |s| s.to_s.split(",") }.map(&:downcase).compact_blank
+    next none if sectors.blank?
+
+    where(sectors.map { "LOWER(sector) LIKE ?" }.join(" OR "), *sectors.map { |s| "%#{s}%" })
+  }
   scope :for_vc, ->(vc_user) { where(investor_entity_id: vc_user.entity_id) }
   scope :not_interacted, ->(no_of_days) { where(last_interaction_date: ...(Time.zone.today - no_of_days.days)) }
 

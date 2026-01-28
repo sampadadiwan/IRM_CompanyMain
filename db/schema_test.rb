@@ -2365,6 +2365,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.integer "unapproved_investor_access_count", default: 0
     t.datetime "updated_at", null: false
     t.integer "will_receive_email", default: 0, null: false
+    t.string "sector"
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
@@ -2883,6 +2884,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.boolean "snapshot", default: false
     t.date "snapshot_date"
     t.decimal "sold_quantity", precision: 24, scale: 8, default: "0.0"
+    t.string "stage"
     t.boolean "startup", default: true
     t.string "sub_category", limit: 100
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"

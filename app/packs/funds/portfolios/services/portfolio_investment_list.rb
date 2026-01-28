@@ -25,7 +25,9 @@ class PortfolioInvestmentList
     initialize_query
     apply_scope { |relation| block_given? ? yield(relation) : relation }
     filter_by_fund
+    filter_by_fund_ids
     filter_additional_params
+    filter_by_portfolio_company_ids
     refine_search
 
     Result.new(build_result_attributes)
@@ -33,9 +35,18 @@ class PortfolioInvestmentList
 
   private
 
+  def filter_by_portfolio_company_ids
+    return if @params[:portfolio_company_ids].blank?
+
+    portfolio_company_ids = @params[:portfolio_company_ids]
+
+    @portfolio_investments = @portfolio_investments.where(portfolio_company_id: portfolio_company_ids).includes(:portfolio_company)
+  end
+
   def initialize_query
     model_class = PortfolioInvestment
     model_class = model_class.with_snapshots if @params[:snapshot].present?
+
     @q = model_class.ransack(@params[:q])
   end
 
@@ -61,6 +72,12 @@ class PortfolioInvestmentList
     else
       @portfolio_investments = @portfolio_investments.where(fund_id: @params[:fund_id])
     end
+  end
+
+  def filter_by_fund_ids
+    return if @params[:fund_ids].blank?
+
+    @portfolio_investments = @portfolio_investments.where(fund_id: @params[:fund_ids])
   end
 
   def filter_additional_params

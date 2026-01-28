@@ -90,12 +90,33 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio IRR", path: "aggregate_portfolio_investments/widgets/irr", size: "XL")
   ].freeze
 
+  AGGREGATED_WIDGETS = [
+
+    DashboardWidget.new(
+      dashboard_name: "Aggregated Portfolio Dashboard",
+      widget_name: "Aggre. Portfolio Investments",
+      path: "aggregate_portfolio_investments/widgets/multicompany_portfolio_investments",
+      size: "XL",
+      metadata_help: "{show_grouped: true, group_by_column:'portfolio_company_name', decimals:2, report_id:88}",
+      position: 1
+    ),
+    DashboardWidget.new(
+      dashboard_name: "Aggregated Portfolio Dashboard",
+      widget_name: "Stats",
+      path: "aggregate_portfolio_investments/widgets/stats",
+      size: "XL",
+      position: 2,
+      metadata_help: "{title: 'Stats', decimals: 2, currency: 'INR/USD'}"
+    ),
+    DashboardWidget.new(dashboard_name: "Aggregated Portfolio Dashboard", widget_name: "Company Charts", path: "aggregate_portfolio_investments/widgets/portfolio_company_charts", size: "XL", metadata_help: "{show_sector_wise: false, show_portfolio_company_wise: true , show_table: true, plot: 'fmv'/'bought_amount'}", position: 4)
+  ].freeze
   WIDGETS = {
     "Fund Dashboard" => FUND_WIDGETS,
     "Ops Dashboard" => OPS_WIDGETS,
     "Investor Dashboard" => INVESTOR_WIDGETS,
     "Portfolio Company Dashboard" => PORTFOLIO_COMPANY_WIDGETS,
-    "Portfolio Dashboard" => PORTFOLIO_WIDGETS
+    "Portfolio Dashboard" => PORTFOLIO_WIDGETS,
+    "Aggregated Portfolio Dashboard" => AGGREGATED_WIDGETS
   }.freeze
 
   def to_s

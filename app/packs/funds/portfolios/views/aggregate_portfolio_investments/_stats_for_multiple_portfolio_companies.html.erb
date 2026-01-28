@@ -1,0 +1,104 @@
+
+<%if @investors.blank? %>
+  <div class="alert alert-info" role="alert">
+    No investors selected to display aggregated stats.
+  </div>
+<% else %>
+
+    <%
+      error = nil
+
+      begin
+        # How many decimals to show in the stats
+        decimals ||= 2
+        fields ||= []
+        # Determine target currency
+
+        if currency.present? && current_user.entity.currency_list.include?(currency)
+          target_currency = currency
+        else
+          target_currency = current_user.entity.currency
+        end
+        # Fetch relevant portfolio investments and cashflows for the selected investors
+        portfolio_company_investments= Pundit.policy_scope(current_user, PortfolioInvestment).where(portfolio_company_id: @investors.map(&:id))
+        portfolio_investments_fund_details = portfolio_company_investments.includes(:fund)
+        portfolio_company_cashflows = Pundit.policy_scope(current_user, PortfolioCashflow).where(portfolio_company_id: @investors.map(&:id))
+        portfolio_company_cashflows_fund_details = portfolio_company_cashflows.includes(:fund)
+        # Filter by selected funds if any
+        if @selected_fund_ids.present?
+          fund_portfolio_investments = portfolio_investments_fund_details.where(fund_id: @selected_fund_ids)
+          fund_portfolio_cashflows = portfolio_company_cashflows_fund_details.where(fund_id: @selected_fund_ids)
+        else
+          fund_portfolio_investments = portfolio_company_investments
+          fund_portfolio_cashflows = portfolio_company_cashflows_fund_details
+        end
+        # Compute aggregated stats across all investors and funds
+
+        total_bought_amount_cents = fund_portfolio_investments.buys.sum do |pi|
+          # Skip master_fund investments
+          if pi.portfolio_company.json_fields["master_fund"] == "yes" && pi.fund.master_fund_id.present? && selected_fund_ids.include?(pi.fund.master_fund_id)
+            next 0
+          end
+          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity.id)
+        end
+
+        total_sold_amount_cents = fund_portfolio_investments.sells.sum do |pi|
+          if pi.portfolio_company.json_fields["master_fund"] == "yes" && pi.fund.master_fund_id.present? && selected_fund_ids.include?(pi.fund.master_fund_id)
+            next 0
+          end
+          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity.id)
+        end
+
+        total_fmv_cents = fund_portfolio_investments.sum do |pi|
+          if pi.portfolio_company.json_fields["master_fund"] == "yes" && pi.fund.master_fund_id.present? && selected_fund_ids.include?(pi.fund.master_fund_id)
+            next 0
+          end
+          conversion_date = pi.valuation.present? ? pi.valuation.valuation_date : pi.investment_date
+          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, conversion_date, pi.portfolio_company.entity.id)
+        end
+
+
+        total_income_cents = fund_portfolio_cashflows.sum do |pc|
+          if pc.portfolio_company.json_fields["master_fund"] == "yes" && pc.fund.master_fund_id.present? && selected_fund_ids.include?(pc.fund.master_fund_id)
+            next 0
+          end
+          ExchangeRate.convert(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, pc.portfolio_company.entity.id)
+        end
+
+        all_cards_data = [
+          { path: nil, stat: money_to_currency(Money.new(total_bought_amount_cents, target_currency), params, decimals: decimals), subtitle: "Total Bought Amount", progress_bar_color: "success", text_info: "plus" },
+          { path: nil, stat: money_to_currency(Money.new(total_sold_amount_cents, target_currency), params, decimals: decimals), subtitle: "Total Sold Amount", progress_bar_color: "danger", text_info: "minus" },
+          { path: nil, stat: money_to_currency(Money.new(total_fmv_cents, target_currency), params, decimals: decimals), subtitle: "Total FMV", progress_bar_color: "info", text_info: "graph" },
+          { path: nil, stat: money_to_currency(Money.new(total_income_cents, target_currency), params, decimals: decimals), subtitle: "Total Income", progress_bar_color: "success", text_info: "cash" }
+        ]
+
+        cards_data = fields.blank? ? all_cards_data : all_cards_data.select { |card| fields.include?(card[:subtitle]) }
+      rescue => e
+        error = "Error fetching stats for multiple investors: #{e.message}"
+        ExceptionNotifier.notify_exception(e, data: { portfolio_company_ids: @investors.map(&:id), user_id: current_user&.id })
+      end
+    %>
+
+    <% if error.present? %>
+      <div class="alert alert-danger" role="alert">
+        <%= error %>
+      </div>
+    <% else %>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4">
+        <% cards_data.each do |card_data| %>
+
+          <%= render(NumberStatsComponent.new(
+                      path: card_data[:path],
+                      amount: card_data[:stat],
+                      subtitle: card_data[:subtitle],
+                      progress_bar_color: card_data[:progress_bar_color],
+                      text_info: card_data[:text_info],
+
+          )) %>
+
+        <% end %>
+
+      </div>
+    <% end %>
+
+<% end %>

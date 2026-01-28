@@ -8,7 +8,10 @@ export default class extends BaseAgGrid {
 
     const controller = this;
     const html_column = this.html_column;
-    const formatNumberWithCommas = this.formatNumberWithCommas;
+    // Determining decimal places for number formatting
+    const decimals = this.decimalPlaces || 2;
+    // Helper function to format numbers with commas
+    const formatNumberWithCommas = (value) => this.formatNumberWithCommas(value, decimals);
     const numberFormatColumn = this.numberFormatColumn;
     const dateFormatColumn = this.dateFormatColumn;
     const textColumn = this.textColumn;

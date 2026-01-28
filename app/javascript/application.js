@@ -40,9 +40,7 @@ function initSelect2(root = document) {
       dropdownParent: $parentModal.length ? $parentModal : $(document.body)
     });
   });
-}
-
-// Initialize on normal Turbo renders
+}// Initialize on normal Turbo renders
 document.addEventListener('turbo:load', () => initSelect2());
 
 // Initialize when a <turbo-frame> finishes loading
@@ -100,8 +98,41 @@ $( document ).on('turbo:load', function() {
     }
 
     $('.select2').select2();
-    $(document).on('select2:open', () => {
-      document.querySelector('.select2-search__field').focus();
+    // When any Select2 dropdown opens, only focus the search field inside
+    // the dropdown that was just opened. Previously we always focused the
+    // first `.select2-search__field` on the page which caused focus to jump
+    // to other select inputs when multiple select2 elements existed.
+    $(document).on('select2:open', (e) => {
+      // The opened dropdown is appended to the body (or dropdownParent). Find
+      // a search field inside the visible .select2-container--open instance.
+      const containers = document.querySelectorAll('.select2-container--open');
+      if (containers.length === 0) return;
+
+      // Prefer the container that is associated with the element that triggered
+      // the event. Select2 sets `aria-controls` on the original select which
+      // matches the id of the dropdown. Try to find a matching container first.
+      let targetSearch = null;
+      try {
+        const select = $(e.target);
+        const dropdownId = select.data('select2')?.$dropdown?.attr('id');
+        if (dropdownId) {
+          const container = document.querySelector(`#${dropdownId}`).closest('.select2-container--open');
+          if (container) {
+            targetSearch = container.querySelector('.select2-search__field');
+          }
+        }
+      } catch (err) {
+        // ignore and fallback to other heuristics
+      }
+
+      // Fallback: focus the last opened container's search field (usually the
+      // one most recently opened appears last in the DOM)
+      if (!targetSearch) {
+        const last = containers[containers.length - 1];
+        targetSearch = last.querySelector('.select2-search__field');
+      }
+
+      if (targetSearch) targetSearch.focus();
     });
 
     // data-simplebar
@@ -111,4 +142,3 @@ $( document ).on('turbo:load', function() {
 
     "use strict";
 });
-

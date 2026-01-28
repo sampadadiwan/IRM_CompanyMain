@@ -4,7 +4,8 @@ class PortfolioInvestmentDecorator < ApplicationDecorator
   delegate :category, to: :investment_instrument, prefix: true
 
   def portfolio_company_name
-    h.link_to portfolio_investment.portfolio_company_name, portfolio_investment.aggregate_portfolio_investment
+    h.link_to portfolio_investment.portfolio_company_name,
+              h.dashboard_investor_path(portfolio_investment.portfolio_company_id)
   end
 
   def investment_instrument_name

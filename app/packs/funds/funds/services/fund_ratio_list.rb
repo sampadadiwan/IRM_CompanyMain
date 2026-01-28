@@ -44,7 +44,8 @@ class FundRatioList
       :owner_id,
       :scenario,
       :valuation_id,
-      :fund_id
+      :fund_id,
+      :name
     )
 
     # Step 4: Special filters with more specific logic

@@ -12,7 +12,7 @@ export default class BaseAgGrid extends Controller {
         customFields: String // Custom fields to be added to the grid
     }
 
-    
+
 
     connect() {
         let source = $(this.tableNameValue).data('source')
@@ -38,6 +38,8 @@ export default class BaseAgGrid extends Controller {
         let restoreColumnState = this.restoreColumnState;
         let saveColumnState = this.saveColumnState;
 
+        this.decimalPlaces = this.extractDecimalPlaces();
+
         // let the grid know which columns and what data to use
         this.gridOptions = {
             getRowId: params => params.data.id,
@@ -51,7 +53,7 @@ export default class BaseAgGrid extends Controller {
                 // flex: 1,
                 resizable: true,
                 filter: 'agTextColumnFilter',
-                sortable: true,                
+                sortable: true,
                 minWidth: 120,
             },
             onGridReady: (event) => {
@@ -60,12 +62,12 @@ export default class BaseAgGrid extends Controller {
                 this.restoreColumnVisibilityState(this.gridOptions, this.tableNameValue);
                 this.gridReady();
             },
-              
+
             onColumnVisible: (event) => {
                 this.saveColumnVisibilityState(this.gridOptions, this.tableNameValue);
             },
 
-            autoGroupColumnDef: { 
+            autoGroupColumnDef: {
                 minWidth: 200,
                 cellRendererParams: {
                     footerValueGetter: params =>  {
@@ -88,7 +90,7 @@ export default class BaseAgGrid extends Controller {
             pagination: true,
             paginationPageSizeSelector: [25, 50, 100],
             paginationPageSize: 25,
-            
+
              // adds subtotals
             groupIncludeFooter: this.includeFooter(),
             // includes grand total
@@ -141,23 +143,23 @@ export default class BaseAgGrid extends Controller {
         var api = this.gridOptions.api;
         $(document).on('turbo:before-cache', function () {
             api.destroy();
-        });        
+        });
 
     }
 
     saveColumnVisibilityState(gridOptions, columnStateKey) {
         if (gridOptions.columnApi) {
             console.log('Saving column visibility state');
-    
+
             // Get the column state
             const columnState = gridOptions.columnApi.getColumnState();
-    
+
             // Filter the state to only include visibility (hide) property
             const filteredColumnState = columnState.map(col => ({
                 colId: col.colId,   // The column ID
                 hide: col.hide      // Column visibility (true if hidden)
             }));
-    
+
             // Save the filtered state to localStorage
             localStorage.setItem(columnStateKey, JSON.stringify(filteredColumnState));
             console.log('Column visibility state saved:', filteredColumnState);
@@ -166,15 +168,15 @@ export default class BaseAgGrid extends Controller {
 
     restoreColumnVisibilityState(gridOptions, columnStateKey) {
         const savedColumnState = JSON.parse(localStorage.getItem(columnStateKey));
-    
+
         console.log('Restoring column visibility state:', savedColumnState);
-    
+
         if (savedColumnState && gridOptions.columnApi) {
             const isStateValid = gridOptions.columnApi.applyColumnState({
                 state: savedColumnState,
                 applyOrder: false // Only apply visibility, not the column order
             });
-    
+
             if (!isStateValid) {
                 console.warn('Failed to restore column visibility state. The columns may have changed.');
             }
@@ -211,7 +213,7 @@ export default class BaseAgGrid extends Controller {
                 if (Array.isArray(this.numericColumns) && this.numericColumns.length) {
                     const cleanNumber = (v) =>
                     v == null || v === "" ? null : Number(String(v).replace(/,/g, ""));
-            
+
                     data.forEach(row => {
                         this.numericColumns.forEach(col => {
                             // Only touch it if it’s not already a number
@@ -245,20 +247,24 @@ export default class BaseAgGrid extends Controller {
             cellRenderer: function (params) {
               return controller.renderCell(params, field, field);
             },
-            valueGetter: (params) => { 
+            valueGetter: (params) => {
               if (params.data !== undefined) {
                 return params.data[field]
               }
             }
           }
-        
+
+    }
+    // Helper function to format numbers with commas and specified decimal places
+    // The previous implementation was not working correctly with custom decimal places passed
+    formatNumberWithCommas(value, decimals = 2) {
+        const precision = Number.isFinite(decimals) ? decimals : 2;
+        const rounded = Number(value).toFixed(precision);
+        const [integerPart, fractionalPart] = rounded.split('.');
+        const withCommas = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return fractionalPart !== undefined ? `${withCommas}.${fractionalPart}` : withCommas;
     }
 
-    formatNumberWithCommas(value) {
-        const rounded = Number(value).toFixed(2); // e.g., "1234.57"
-        return rounded.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-    
 
     numberFormatColumn(controller, field, headerName, formatNumberWithCommas, aggFunc = "sum", enableRowGroup = true, enablePivot = true) {
         return {
@@ -267,18 +273,32 @@ export default class BaseAgGrid extends Controller {
             filter: "agNumberColumnFilter",
             enableRowGroup: enableRowGroup,
             enablePivot: enablePivot,
-            chartDataType: 'series',    
-            aggFunc: aggFunc,        
+            chartDataType: 'series',
+            aggFunc: aggFunc,
             valueFormatter: function (params) {
               if (params.value != null) {
                 // Format the number with two decimal places and comma separators
-                return formatNumberWithCommas(params.value);
+                                return formatNumberWithCommas(params.value);
               } else {
                 return params.value;
               }
             }
           };
     }
+        // Extract decimal place value from the data source URL
+        extractDecimalPlaces() {
+                const source = $(this.tableNameValue).data('source');
+                if (!source) { return null; }
+
+                try {
+                        const url = new URL(source, window.location.origin);
+                        const decimalsParam = url.searchParams.get('decimals');
+                        return decimalsParam ? parseInt(decimalsParam, 10) : null;
+                } catch (error) {
+                        console.warn('Unable to parse decimals from source url', error);
+                        return null;
+                }
+        }
 
     /**
      * Creates a date column definition for ag-Grid.
@@ -293,12 +313,12 @@ export default class BaseAgGrid extends Controller {
      * @return {Object} The column definition object for ag-Grid.
      */
     dateFormatColumn(
-        controller, 
-        field, 
-        headerName, 
-        dateFormat = null, 
-        enableRowGroup = true, 
-        enablePivot = true, 
+        controller,
+        field,
+        headerName,
+        dateFormat = null,
+        enableRowGroup = true,
+        enablePivot = true,
         rowGroup = false
       ) {
         return {
@@ -323,7 +343,7 @@ export default class BaseAgGrid extends Controller {
           },
           valueFormatter: (params) => {
             if (!params.value) return '';
-            
+
             // 1. Use the browser's locale
             const userLocale = navigator.language || navigator.userLanguage;
 
@@ -338,16 +358,16 @@ export default class BaseAgGrid extends Controller {
           }
         };
       }
-   
+
 
     textColumn(controller, field, headerName, aggFunc, enableRowGroup = true, enablePivot = true, rowGroup = false) {
-        return { 
+        return {
             field: field,
-            headerName: headerName, 
-            filter: "agSetColumnFilter", 
-            enableRowGroup: enableRowGroup, 
+            headerName: headerName,
+            filter: "agSetColumnFilter",
+            enableRowGroup: enableRowGroup,
             rowGroup: rowGroup,
-            enablePivot: enablePivot, 
+            enablePivot: enablePivot,
             chartDataType: 'category',
             aggFunc: aggFunc}
     }
@@ -412,7 +432,7 @@ export default class BaseAgGrid extends Controller {
         }
     }
 
- 
+
     includeFooter() {
         return true;
     }
@@ -427,5 +447,5 @@ export default class BaseAgGrid extends Controller {
 
     gridReady(params) {
     }
-    
+
 }
