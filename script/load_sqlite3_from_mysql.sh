@@ -471,10 +471,10 @@ INDEX_capital_distributions="
 COLS_investors=(
   id entity_id investor_entity_id investor_name category city primary_email pan
   tag_list created_at updated_at last_interaction_date
-  investor_access_count unapproved_investor_access_count
+  investor_access_count unapproved_investor_access_count json_fields
 )
 
-TEXT_COLS_investors=(investor_name category city primary_email pan tag_list)
+TEXT_COLS_investors=(investor_name category city primary_email pan tag_list json_fields)
 
 SCHEMA_investors="
   id BIGINT PRIMARY KEY,
@@ -490,7 +490,8 @@ SCHEMA_investors="
   updated_at DATETIME NOT NULL,
   last_interaction_date DATE,
   investor_access_count INTEGER DEFAULT 0,
-  unapproved_investor_access_count INTEGER DEFAULT 0
+  unapproved_investor_access_count INTEGER DEFAULT 0,
+  json_fields JSON
 "
 
 INDEX_investors="
