@@ -1,6 +1,9 @@
 require "json"
 require "ruby_llm"
+
 class ReportInsightRunner < Trailblazer::Operation
+  include LlmResponseParser
+
   step :initialize_llm, Output(:failure) => End(:failure)
   step :get_report_data, Output(:failure) => End(:failure)
   step :save_data_as_json
@@ -197,7 +200,7 @@ class ReportInsightRunner < Trailblazer::Operation
   # 2. Extracts markdown body, charts, and notes.
   # 3. Validates chart configurations if present.
   def process_response(ctx, raw_response:, **)
-    parsed = parse_json(raw_response)
+    parsed = parse_llm_json(raw_response)
     Rails.logger.debug { "Report Insight Raw Response:\n #{raw_response}" }
     return false unless parsed.is_a?(Hash)
 
@@ -213,28 +216,6 @@ class ReportInsightRunner < Trailblazer::Operation
     end
 
     true
-  end
-
-  # Helper to parse JSON from the LLM response.
-  # Handles strings (stripping markdown fences), Hashes, and RubyLLM::Message objects.
-  def parse_json(obj)
-    case obj
-    when String
-      begin
-        # strip accidental fences if any
-        cleaned = obj.strip
-        cleaned = cleaned.sub(/\A```(?:json)?\s*/i, "").sub(/\s*```\z/, "")
-        JSON.parse(cleaned)
-      rescue JSON::ParserError
-        nil
-      end
-    when Hash
-      obj
-    when RubyLLM::Message
-      parse_json(obj.content.is_a?(RubyLLM::Content) ? obj.content.text : obj.content) # Recursively call with the text content
-    when nil
-      nil
-    end
   end
 
   # Updates the ReportInsight record with the results.

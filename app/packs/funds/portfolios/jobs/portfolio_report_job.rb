@@ -223,11 +223,11 @@ class PortfolioReportJob < LlmReportJob
     end
   end
 
-  # Filters a collection of documents to include only PDF or CSV types.
+  # Filters a collection of documents to include only PDF, CSV, Excel, or PPT types.
   #
   # @param documents [Array<Document>] The documents to filter.
-  # @return [Array<Document>] A list of filtered documents (PDF or CSV).
+  # @return [Array<Document>] A list of filtered documents (PDF, CSV, Excel, or PPT).
   def filter_by_document_type(documents)
-    documents.select { |doc| doc.pdf? || doc.csv? }
+    documents.select { |doc| doc.pdf? || doc.csv? || doc.excel? || doc.ppt? }
   end
 end

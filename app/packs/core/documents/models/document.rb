@@ -255,6 +255,10 @@ class Document < ApplicationRecord
     file&.mime_type&.include?('spreadsheet')
   end
 
+  def ppt?
+    mime_type_includes?('presentation') || mime_type_includes?('powerpoint') || mime_type_includes?('ms-powerpoint')
+  end
+
   def mime_type_includes?(file_type)
     file&.mime_type&.include?(file_type)
   end

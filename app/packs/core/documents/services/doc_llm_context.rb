@@ -1,5 +1,11 @@
 require 'pragmatic_segmenter'
+require 'zip'
+require 'nokogiri'
+require 'roo'
+require "ruby_llm"
 class DocLlmContext < DocLlmBase
+  include LlmResponseParser
+
   step :init
   step :populate_context_with_data
   step :setup_llm_instructions
@@ -8,33 +14,16 @@ class DocLlmContext < DocLlmBase
   left :handle_errors
 
   def init(ctx, **)
-    super(ctx, provider: ENV.fetch('DOCUMENT_VALIDATION_PROVIDER', nil), llm_model: ENV.fetch('DOCUMENT_VALIDATION_MODEL', nil), temperature: 0.1, **)
+    # Initialize RubyLLM chat with configured model
+    model = ENV.fetch('DOCUMENT_VALIDATION_MODEL', ENV.fetch('DEFAULT_MODEL'))
+    ctx[:chat] = RubyLLM.chat(model: model)
+    true
   end
 
   def populate_context_with_data(ctx, documents:, notes:, **)
     ctx[:context] = ""
-
-    documents.each do |document|
-      # Download the document
-      document.file.download do |file|
-        if document.pdf?
-          # Convert the file to HTML and concat it to the context
-          # `pdftohtml -s -noframes #{file.path} #{file.path}.html`
-          `pdftotext #{file.path} #{file.path}.txt`
-          ctx[:context] += "<#{document.name}>" + File.read("#{file.path}.txt") + "</#{document.name}>"
-        else
-          # For CSV files, we can just read the content and add it to the context
-          text_content = File.read(file.path)
-          ctx[:context] += "<#{document.name}> Content: #{text_content} </#{document.name}>"
-        end
-      end
-    end
-
-    notes.each do |note|
-      # Contact the notes to the context, but only the details, tags and created_at
-      ctx[:context] += "<Note> Content: #{note.details.to_plain_text} Tags: #{note.tags} Created: #{note.created_at} </Note>"
-    end
-
+    ctx[:context] += process_documents(documents)
+    ctx[:context] += process_notes(notes)
     true
   end
 
@@ -43,57 +32,38 @@ class DocLlmContext < DocLlmBase
     ctx[:llm_instructions] ||= "#{ctx[:section].data} Format your output as json array with each point as an item in the array. The key is the index and value is the extracted info. Do not generate nested json, just one level. Do not add any \n (newlines), \t (tabs) within an array item and do not add ```json to the output."
   end
 
-  def extract_data(ctx, llm_client:, **)
-    messages = [
-      { role: "user", parts: [{ text: ctx[:llm_instructions] }] },
-      { role: "user", parts: [{ text: ctx[:context] }] }
-    ]
+  def extract_data(ctx, chat:, **)
+    # Combine instructions and context into a single prompt
+    prompt = "#{ctx[:llm_instructions]}\n\n#{ctx[:context]}"
 
     Rails.logger.debug "########### Sending to LLM #############"
-    Rails.logger.debug messages
+    Rails.logger.debug prompt
     Rails.logger.debug "########################"
 
-    # Ensure the model parameter is set if not already provided
-    model_name = ctx[:llm_model]
+    # Call RubyLLM chat
+    raw_response = chat.ask(prompt)
 
-    # Configure generation parameters
-    generation_config = {
-      response_mime_type: 'application/json'
-    }
-
-    # Call the chat method with the correctly structured messages
-    response = llm_client.chat(
-      messages: messages,
-      model: model_name,
-      generation_config: generation_config
-    )
-
-    Rails.logger.debug response
-
-    # Access the response content directly
-    # Access the raw response and navigate to the content
-    raw_response = response.raw_response
-    parts = raw_response.dig("candidates", 0, "content", "parts")
-
-    if parts.blank?
-      Rails.logger.error { "Unexpected response structure: #{raw_response.inspect}" }
-      return false
-    end
-
-    raw_json = parts.pluck("text").join("\n")
-    ctx[:raw_llm_output] = raw_json # optional, but super helpful for debugging
+    ctx[:raw_llm_output] = raw_response
     Rails.logger.debug "########### LLM Raw Output #############"
-    Rails.logger.debug raw_json
+    Rails.logger.debug raw_response
     Rails.logger.debug "########################"
-    begin
-      parsed = JSON.parse(raw_json)
-      extracted_info = parsed.transform_values { |v| normalize_section_value(v) }
-      ctx[:extracted_info] = extracted_info.to_json # its stored as json and parsed in doc generator
-    rescue JSON::ParserError => e
-      Rails.logger.error "Failed to parse JSON from LLM: #{e.message} | raw: #{raw_json.inspect}"
-      ctx[:extracted_info] = raw_json
+
+    # Parse the response (handles String, Hash, or RubyLLM::Message)
+    parsed = parse_llm_json(raw_response)
+
+    if parsed.blank? || !parsed.is_a?(Hash)
+      Rails.logger.error { "Failed to parse valid JSON from LLM response" }
+      ctx[:extracted_info] = raw_response.to_s
+      return true # Still return true to allow downstream processing
     end
 
+    extracted_info = parsed.transform_values { |v| normalize_section_value(v) }
+    ctx[:extracted_info] = extracted_info.to_json
+
+    true
+  rescue StandardError => e
+    Rails.logger.error "Error in extract_data: #{e.message}"
+    ctx[:extracted_info] = raw_response.to_s if raw_response
     true
   end
 
@@ -133,5 +103,162 @@ class DocLlmContext < DocLlmBase
   def split_into_points(text)
     segmenter = PragmaticSegmenter::Segmenter.new(text: text)
     segmenter.segment.map { |s| clean_point(s) }.compact_blank
+  end
+
+  # Process all documents and return their content
+  def process_documents(documents)
+    content = ""
+    documents.each do |document|
+      document.file.download do |file|
+        document_content = extract_document_content(document, file)
+        content += document_content if document_content.present?
+      end
+    end
+    content
+  end
+
+  # Extract content from a single document based on its type
+  def extract_document_content(document, file)
+    if document.pdf?
+      extract_pdf_content(document, file)
+    elsif document.csv?
+      extract_csv_content(document, file)
+    elsif document.excel?
+      extract_excel_content(document, file)
+    elsif document.ppt?
+      extract_ppt_content(document, file)
+    else
+      extract_text_content(document, file)
+    end
+  rescue StandardError => e
+    Rails.logger.warn "Error processing #{document.name}: #{e.message}"
+    nil
+  end
+
+  # Extract content from PDF files
+  def extract_pdf_content(document, file)
+    `pdftotext #{file.path} #{file.path}.txt`
+    text_content = read_file_with_encoding("#{file.path}.txt")
+    "<#{document.name}>#{text_content}</#{document.name}>"
+  end
+
+  # Extract content from CSV files
+  def extract_csv_content(document, file)
+    text_content = read_file_with_encoding(file.path)
+    "<#{document.name}> Content: #{text_content} </#{document.name}>"
+  end
+
+  # Extract content from Excel files (all sheets)
+  def extract_excel_content(document, file)
+    spreadsheet = Roo::Spreadsheet.open(file.path)
+
+    excel_content = spreadsheet.sheets.map do |sheet_name|
+      sheet = spreadsheet.sheet(sheet_name)
+      "\n--- Sheet: #{sheet_name} ---\n#{sanitize_utf8(sheet.to_csv)}\n"
+    end.join
+
+    "<#{document.name}> Content: #{excel_content} </#{document.name}>"
+  end
+
+  # Extract content from PowerPoint files (PPTX/PPT)
+  def extract_ppt_content(document, file)
+    text_parts = []
+    slide_number = 0
+
+    Zip::File.open(file.path) do |zip_file|
+      # Extract slide text
+      slide_entries = zip_file.glob('ppt/slides/slide*.xml').sort_by do |entry|
+        entry.name.match(/slide(\d+)\.xml/)[1].to_i
+      end
+
+      slide_entries.first(30).each do |entry|
+        slide_number += 1
+        content = entry.get_input_stream.read
+        doc = Nokogiri::XML(content)
+        doc.remove_namespaces!
+
+        texts = doc.xpath('//t').map(&:text).compact_blank
+        if texts.any?
+          text_parts << "--- Slide #{slide_number} ---"
+          text_parts << texts.join("\n")
+        end
+      end
+
+      # Extract chart data if available
+      chart_entries = zip_file.glob('ppt/charts/chart*.xml')
+      chart_entries.first(10).each_with_index do |entry, idx|
+        chart_content = entry.get_input_stream.read
+        chart_doc = Nokogiri::XML(chart_content)
+        chart_doc.remove_namespaces!
+
+        # Extract numeric values from charts
+        values = chart_doc.xpath('//val').map(&:text).compact_blank
+        if values.any?
+          text_parts << "--- Chart #{idx + 1} Data ---"
+          text_parts << values.join(", ")
+        end
+      end
+    end
+
+    ppt_content = text_parts.join("\n\n")
+    ppt_content = "No text content found in PowerPoint" if ppt_content.blank?
+
+    "<#{document.name}> Content: #{sanitize_utf8(ppt_content)} </#{document.name}>"
+  rescue StandardError => e
+    Rails.logger.warn "Error extracting PowerPoint #{document.name}: #{e.message}"
+    "<#{document.name}> Content: Error extracting PowerPoint content </#{document.name}>"
+  end
+
+  # Extract content from other text-based files
+  def extract_text_content(document, file)
+    text_content = read_file_with_encoding(file.path)
+    "<#{document.name}> Content: #{text_content} </#{document.name}>"
+  end
+
+  # Process all notes and return their content
+  def process_notes(notes)
+    notes.map do |note|
+      note_content = sanitize_utf8(note.details.to_plain_text.to_s)
+      "<Note> Content: #{note_content} Tags: #{note.tags} Created: #{note.created_at} </Note>"
+    end.join
+  end
+
+  # Read file with automatic encoding detection and conversion to UTF-8
+  # Handles files in various encodings (UTF-8, ISO-8859-1, Windows-1252, etc.)
+  def read_file_with_encoding(file_path)
+    # First, try reading as binary to detect encoding
+    content = File.binread(file_path)
+
+    # Try to detect the encoding and convert to UTF-8
+    # Common encodings to try in order of likelihood
+    encodings_to_try = %w[UTF-8 ISO-8859-1 Windows-1252 ASCII-8BIT]
+
+    encodings_to_try.each do |encoding|
+      # Try to force encode from the detected encoding to UTF-8
+      decoded = content.force_encoding(encoding)
+      if decoded.valid_encoding?
+        # Successfully detected encoding, now convert to UTF-8 safely
+        return decoded.encode('UTF-8', invalid: :replace, undef: :replace, replace: '').scrub('')
+      end
+    rescue Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError
+      # Try next encoding
+      next
+    end
+
+    # If all encodings fail, force UTF-8 and clean up
+    content.force_encoding('UTF-8').scrub('')
+  rescue StandardError => e
+    Rails.logger.warn "Error reading file #{file_path}: #{e.message}"
+    '' # Return empty string on error
+  end
+
+  # Sanitize UTF-8 encoding to prevent JSON::GeneratorError
+  # Removes invalid UTF-8 characters that can't be serialized
+  def sanitize_utf8(text)
+    return '' if text.nil?
+
+    text.to_s
+        .encode('UTF-8', invalid: :replace, undef: :replace, replace: '')
+        .scrub('') # Additional safety: remove any remaining invalid sequences
   end
 end
