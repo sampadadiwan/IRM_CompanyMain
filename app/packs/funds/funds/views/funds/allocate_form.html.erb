@@ -84,6 +84,9 @@
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Previous Runs</h1>
+    <% if policy(AllocationRun).unlock_all? && @fund.present? %>
+      <%= button_to "Unlock All", unlock_all_allocation_runs_path(fund_id: @fund.id), class: "btn btn-sm btn-outline-warning", method: :patch, form_class: "deleteButton", data: { action: "click->confirm#popup", method: :patch, msg: "Are you sure you want to unlock all AllocationRuns?" } %>
+    <% end %>
   </div>
 
   <table class="table table-bordered dataTable jqDataTable">

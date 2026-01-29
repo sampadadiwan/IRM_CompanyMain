@@ -158,4 +158,5 @@ end
 resources :allocation_runs do
   patch 'lock', on: :member
   patch 'unlock', on: :member
+  patch 'unlock_all', on: :collection
 end
