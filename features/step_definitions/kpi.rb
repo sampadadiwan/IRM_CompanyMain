@@ -175,6 +175,19 @@ Given('I upload an investor kpis mappings file for the company') do
   sleep(4)
 end
 
+Given('I upload an investor kpis mappings file {string} for the company') do |file|
+  visit(new_import_upload_path("import_upload[entity_id]": @entity.id, "import_upload[import_type]": "InvestorKpiMapping"))
+
+  fill_in('import_upload_name', with: "Test Upload")
+  @import_file = file
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+end
+
 Then('There should be {string} Investor Kpi Mappings created') do |count|
   expect(InvestorKpiMapping.count).to eq(count.to_i)
 end
@@ -191,8 +204,8 @@ Then('the Investor Kpi Mappings must have the data in the sheet') do
 
       # create hash from headers and cells
       user_data = [headers, row].transpose.to_h
-      kpi_map = kpi_maps[idx-1]
-      puts "Checking import of #{kpi_map.standard_kpi_name}"
+      kpi_map = InvestorKpiMapping.find_by(standard_kpi_name: user_data["Standard Kpi Name"].strip, reported_kpi_name: user_data["Reported Kpi Name"].strip, entity: @entity)
+      puts "Checking import of #{kpi_map.standard_kpi_name} (ID: #{kpi_map.id})"
 
       kpi_map.standard_kpi_name.should == user_data["Standard Kpi Name"].strip
       kpi_map.reported_kpi_name.should == user_data["Reported Kpi Name"].strip

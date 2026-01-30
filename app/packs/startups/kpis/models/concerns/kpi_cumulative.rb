@@ -70,12 +70,11 @@ module KpiCumulative
     kpi_reports = KpiReport.where(portfolio_company_id: portfolio_company_id, period: %w[Quarter YTD])
 
     kpi_reports.each do |report|
-      # Only compute if value is not already present (i.e., not uploaded)
+      # Only compute if value is not already present
       existing_kpi = Kpi.find_by(kpi_report: report, name: name, entity_id: entity_id)
 
-      # If it's auto-generated or missing, we can compute it.
-      # If it was uploaded (no auto-generated note), we skip.
-      compute_value_for_report(report, mapping.cumulate_formula) if existing_kpi.nil? || existing_kpi.notes&.include?("Auto-generated")
+      # If the KPI is missing or has no value, we compute it.
+      compute_value_for_report(report, mapping.cumulate_formula) if existing_kpi.nil? || existing_kpi.value.nil?
     end
   end
 
@@ -148,7 +147,7 @@ module KpiCumulative
       quarter_end = Date.new(year, ((quarter - 1) * 3) + 1, 1).end_of_quarter
       existing = Kpi.joins(:kpi_report).where(name: name, entity_id: entity_id, kpi_reports: { period: 'Quarter', as_of: quarter_end }).last
 
-      if existing.nil? || existing.notes&.include?("Auto-generated")
+      if existing.nil? || existing.value.nil?
         last_val = kpis_in_quarter.last.value.to_f
         process_cumulative_kpi(nil, last_val, 'Quarter', nil, quarter_end, note: "Auto-generated Forward Fill")
       end
@@ -162,7 +161,7 @@ module KpiCumulative
       last_date = kpis_in_year.last.kpi_report.as_of
       existing = Kpi.joins(:kpi_report).where(name: name, entity_id: entity_id, kpi_reports: { period: 'YTD', as_of: last_date }).last
 
-      if existing.nil? || existing.notes&.include?("Auto-generated")
+      if existing.nil? || existing.value.nil?
         last_val = kpis_in_year.last.value.to_f
         process_cumulative_kpi(nil, last_val, 'YTD', nil, last_date, note: "Auto-generated Forward Fill")
       end
@@ -180,8 +179,8 @@ module KpiCumulative
                         .last
 
     if cumulative_kpi
-      # Only overwrite if it was auto-generated. If it was manual/uploaded, we don't touch it.
-      if cumulative_kpi.notes&.include?("Auto-generated")
+      # Only overwrite if the value is nil.
+      if cumulative_kpi.value.nil?
         cumulative_kpi.value = cumulative_sum
         cumulative_kpi.notes = note
         cumulative_kpi.save if cumulative_kpi.changed?

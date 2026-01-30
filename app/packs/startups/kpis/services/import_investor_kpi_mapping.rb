@@ -3,7 +3,7 @@ class ImportInvestorKpiMapping < ImportUtil
   STANDARD_HEADERS = [
     "Stakeholder", "Reported Kpi Name", "Standard Kpi Name", "Category",
     "Data Type", "Parent Standard Kpi Name", "Position", "Show In Report",
-    "Lower Threshold", "Upper Threshold", "Cumulate"
+    "Lower Threshold", "Upper Threshold", "Cumulate", "Update Only"
   ].freeze
 
   # Returns the standard headers for the import file.
@@ -24,25 +24,32 @@ class ImportInvestorKpiMapping < ImportUtil
     # Find the investor associated with the row data.
     investor = find_investor(user_data, import_upload)
 
-    # Initialize or find an existing InvestorKpiMapping record.
-    investor_kpi_mapping = initialize_investor_kpi_mapping(user_data, import_upload, investor)
-
     # Check if the row is marked for update only.
     update_only = user_data["Update Only"].to_s.downcase == "yes"
+
     if update_only
-      if investor_kpi_mapping.persisted?
-        Rails.logger.debug { "Updating existing investor_kpi_mapping with ID: #{investor_kpi_mapping.id}" }
-        # If the mapping exists, update its attributes.
-        save_investor_kpi_mapping(user_data, investor_kpi_mapping, custom_field_headers, import_upload, investor)
+      id = user_data["Id"]
+      if id.present?
+        investor_kpi_mapping = InvestorKpiMapping.find_by(id: id, entity: import_upload.entity)
+        raise "InvestorKpiMapping with id #{id} not found" unless investor_kpi_mapping
       else
-        # Raise an error if the mapping does not exist for update.
-        raise "InvestorKpiMapping not found for update with Standard Kpi Name '#{user_data['Standard Kpi Name']}' and Investor '#{user_data['Stakeholder']}'"
+        # Fallback to finding by names if ID is not provided but Update Only is "yes"
+        investor_kpi_mapping = initialize_investor_kpi_mapping(user_data, import_upload, investor)
+        raise "InvestorKpiMapping not found for update with Standard Kpi Name '#{user_data['Standard Kpi Name']}' and Investor '#{user_data['Stakeholder']}'" unless investor_kpi_mapping.persisted?
       end
-    elsif investor_kpi_mapping.persisted?
-      Rails.logger.debug { "InvestorKpiMapping already exists with ID: #{investor_kpi_mapping.id}" }
-      raise "InvestorKpiMapping already exists with Standard Kpi Name '#{user_data['Standard Kpi Name']}', Reported Kpi Name '#{user_data['Reported Kpi Name']}' and Investor '#{user_data['Stakeholder']}'"
-    else
+
+      Rails.logger.debug { "Updating existing investor_kpi_mapping with ID: #{investor_kpi_mapping.id}" }
       save_investor_kpi_mapping(user_data, investor_kpi_mapping, custom_field_headers, import_upload, investor)
+    else
+      # Initialize or find an existing InvestorKpiMapping record.
+      investor_kpi_mapping = initialize_investor_kpi_mapping(user_data, import_upload, investor)
+
+      if investor_kpi_mapping.persisted?
+        Rails.logger.debug { "InvestorKpiMapping already exists with ID: #{investor_kpi_mapping.id}" }
+        raise "InvestorKpiMapping already exists with Standard Kpi Name '#{user_data['Standard Kpi Name']}', Reported Kpi Name '#{user_data['Reported Kpi Name']}' and Investor '#{user_data['Stakeholder']}'"
+      else
+        save_investor_kpi_mapping(user_data, investor_kpi_mapping, custom_field_headers, import_upload, investor)
+      end
     end
     # Save the InvestorKpiMapping record and handle any errors.
   end
