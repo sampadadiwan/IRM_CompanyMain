@@ -17,15 +17,21 @@ class KpiBudgetViewService
   end
 
   def call
-    quarterly_reports = filter_reports('Quarter')
-    year_reports = filter_reports('Year')
+    period = @params[:period].presence || 'Quarter'
+    period_reports = filter_reports(period)
+
+    # Maintain existing structure if needed, but primarily use period_reports
+    # Based on original code, it separated Quarter and Year.
+    # If a specific period is selected, we map it to the relevant group.
+    quarterly_reports = period == 'Quarter' ? period_reports : []
+    year_reports = period == 'Year' ? period_reports : []
 
     Result.new(
       investor_kpi_mappings: fetch_investor_kpi_mappings,
       quarterly_reports: quarterly_reports,
       year_reports: year_reports,
-      grouped_quarterly_reports: group_reports(quarterly_reports, @tag_list),
-      grouped_yearly_reports: group_reports(year_reports, @tag_list),
+      grouped_quarterly_reports: group_reports(period_reports, @tag_list),
+      grouped_yearly_reports: group_reports(period_reports, @tag_list),
       show_achievement_column: show_achievement_column?,
       tag_lists_to_display: @tag_list,
       precision: @params[:decimals]&.to_i || 2,
