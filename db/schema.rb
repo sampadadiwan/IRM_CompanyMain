@@ -1387,6 +1387,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_30_132201) do
     t.string "sandbox_numbers"
     t.integer "snapshot_frequency_months"
     t.string "stamp_paper_tags"
+    t.date "start_of_financial_year_date"
     t.boolean "test_account", default: false
     t.boolean "trial"
     t.date "trial_end_date"
