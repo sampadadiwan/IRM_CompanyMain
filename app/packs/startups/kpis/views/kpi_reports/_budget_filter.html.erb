@@ -6,7 +6,7 @@
   categories ||= InvestorKpiMapping::CATEGORIES
   model ||= current_user
 %>
-<%= form_with(model: model, method: :get, url: "/kpi_reports", id: "kpi_reports_filter",  data: {turbo_frame: "kpi_reports_budget"} ) do |form| %>
+<%= form_with(url: "/kpi_reports", method: :get, id: "kpi_reports_filter", data: { turbo_frame: "kpi_reports_budget" }) do |form| %>
 
   <input name="portfolio_company_id" value="<%= portfolio_company_id %>" hidden="hidden">
   <input name="budget_view" value="true" hidden="hidden">

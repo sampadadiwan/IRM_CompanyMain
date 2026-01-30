@@ -35,12 +35,40 @@ function initSelect2(root = document) {
 
     // If used in a Bootstrap modal, ensure the dropdown renders inside it
     const $parentModal = $(this).closest('.modal');
-    $(this).select2({
+    const $el = $(this);
+    $el.select2({
       width: 'resolve',
       dropdownParent: $parentModal.length ? $parentModal : $(document.body)
     });
+
+    // Support for preserving selection order in multi-selects
+    if ($el.attr('multiple')) {
+      $el.on('select2:select', function (e) {
+        const id = e.params.data.id;
+        const option = $el.find(`option[value="${id}"]`);
+        option.detach().appendTo($el);
+        $el.trigger('change');
+      });
+    }
   });
-}// Initialize on normal Turbo renders
+}
+
+$(document).on('select2:select', 'select[multiple]', function (e) {
+  const element = e.params.data.element;
+  if (!element) return;
+
+  const $element = $(element);
+  const $select = $(this);
+
+  // Move selected option to the end to preserve selection order
+  $element.detach();
+  $select.append($element);
+
+  // Notify Select2 of DOM change
+  $select.trigger('change.select2');
+});
+
+// Initialize on normal Turbo renders
 document.addEventListener('turbo:load', () => initSelect2());
 
 // Initialize when a <turbo-frame> finishes loading

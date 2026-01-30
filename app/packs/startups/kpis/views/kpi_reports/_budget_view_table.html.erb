@@ -6,6 +6,8 @@
 
     # If tags are provided in params, they come in the order selected by user or rendered in filter.
     # We want tag_1 / tag_2 based on this order.
+    # BUT: Rails params usually alphabetical for multi-selects unless we forced order in JS.
+    # With the JS fix, we expect the order to be preserved in the URL/params.
     tag_list_to_use = tags_from_params.presence || @tag_list
     service_result = KpiBudgetViewService.call(current_user, params, kpi_reports, tag_list_to_use)
     precision = service_result.precision
@@ -18,6 +20,7 @@
     tag_lists_to_display = service_result.tag_lists_to_display
     achievement_tags = service_result.achievement_tags
 %>
+
 
 <%= turbo_frame_tag "kpi_reports_budget", target: "_top" do %>
 
