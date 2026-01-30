@@ -1,5 +1,13 @@
 <%
-    service_result = KpiBudgetViewService.call(current_user, params, kpi_reports, @tag_list)
+    tags_from_params = params[:tag_list].presence
+    # Handle both array and comma-separated string if applicable, though select2 usually sends array
+    tags_from_params = tags_from_params.is_a?(Array) ? tags_from_params : tags_from_params.to_s.split(",").map(&:strip)
+    tags_from_params = tags_from_params.reject(&:blank?)
+
+    # If tags are provided in params, they come in the order selected by user or rendered in filter.
+    # We want tag_1 / tag_2 based on this order.
+    tag_list_to_use = tags_from_params.presence || @tag_list
+    service_result = KpiBudgetViewService.call(current_user, params, kpi_reports, tag_list_to_use)
     precision = service_result.precision
     investor_kpi_mappings = service_result.investor_kpi_mappings
     quarterly_reports = service_result.quarterly_reports
@@ -8,6 +16,7 @@
     grouped_yearly_reports = service_result.grouped_yearly_reports
     show_achievement_column = service_result.show_achievement_column
     tag_lists_to_display = service_result.tag_lists_to_display
+    achievement_tags = service_result.achievement_tags
 %>
 
 <%= turbo_frame_tag "kpi_reports_budget", target: "_top" do %>
@@ -36,7 +45,7 @@
                             <%= as_of_date.strftime("%b-%y") %>
                         </th>
                         <% if show_achievement_column %>
-                            <th rowspan="2" class="text-center">Actual / Budget</th>
+                            <th rowspan="2" class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %></th>
                         <% end %>
                     <% end %>
                     <% year_reports.map { |r| r.as_of.is_a?(String) ? Date.local_parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
@@ -44,7 +53,7 @@
                             <%= as_of_date.strftime("%b-%y") %>
                         </th>
                         <% if show_achievement_column %>
-                            <th rowspan="2" class="text-center">Actual / Budget</th>
+                            <th rowspan="2" class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %></th>
                         <% end %>
                     <% end %>
                 </tr>
@@ -91,15 +100,15 @@
                                 <!-- Achievement % Column -->
                                 <td>
                                     <%
-                                        actual_kpi_report = grouped_quarterly_reports[as_of_date]['Actual']
-                                        budget_kpi_report = grouped_quarterly_reports[as_of_date]['Budget']
-                                        actual_kpi_value = actual_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
-                                        budget_kpi_value = budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                        tag1_report = grouped_quarterly_reports[as_of_date][achievement_tags.first]
+                                        tag2_report = grouped_quarterly_reports[as_of_date][achievement_tags.last]
+                                        tag1_value = tag1_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                        tag2_value = tag2_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
                                     %>
-                                    <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
-                                        <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision:) %>
-                                    <% elsif actual_kpi_value.present? %>
-                                        <span class="<%= actual_kpi_value.to_f.negative? ? 'text-danger' : nil %>"><%= number_with_precision(actual_kpi_value, precision:, delimiter: ',') %></span>
+                                    <% if tag1_value.present? && tag2_value.present? && tag2_value.to_f != 0 %>
+                                        <%= number_to_percentage((tag1_value.to_f / tag2_value.to_f) * 100, precision:) %>
+                                    <% elsif tag1_value.present? %>
+                                        <span class="<%= tag1_value.to_f.negative? ? 'text-danger' : nil %>"><%= number_with_precision(tag1_value, precision:, delimiter: ',') %></span>
                                     <% else %>
 
                                     <% end %>
@@ -129,15 +138,15 @@
                                 <!-- Achievement % Column -->
                                 <td>
                                     <%
-                                        actual_kpi_report = grouped_yearly_reports[as_of_date]['Actual']
-                                        budget_kpi_report = grouped_yearly_reports[as_of_date]['Budget']
-                                        actual_kpi_value = actual_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
-                                        budget_kpi_value = budget_kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                        tag1_report = grouped_yearly_reports[as_of_date][achievement_tags.first]
+                                        tag2_report = grouped_yearly_reports[as_of_date][achievement_tags.last]
+                                        tag1_value = tag1_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                        tag2_value = tag2_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
                                     %>
-                                    <% if actual_kpi_value.present? && budget_kpi_value.present? && budget_kpi_value != 0 %>
-                                        <%= number_to_percentage((actual_kpi_value.to_f / budget_kpi_value.to_f) * 100, precision:) %>
-                                    <% elsif actual_kpi_value.present? %>
-                                        <span class="<%= actual_kpi_value.to_f.negative? ? 'text-danger' : nil %>"><%= number_with_precision(actual_kpi_value, precision:, delimiter: ',') %></span>
+                                    <% if tag1_value.present? && tag2_value.present? && tag2_value.to_f != 0 %>
+                                        <%= number_to_percentage((tag1_value.to_f / tag2_value.to_f) * 100, precision:) %>
+                                    <% elsif tag1_value.present? %>
+                                        <span class="<%= tag1_value.to_f.negative? ? 'text-danger' : nil %>"><%= number_with_precision(tag1_value, precision:, delimiter: ',') %></span>
                                     <% else %>
 
                                     <% end %>

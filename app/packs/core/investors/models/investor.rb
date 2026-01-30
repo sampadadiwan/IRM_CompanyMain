@@ -121,7 +121,7 @@ class Investor < ApplicationRecord
                       investor_entity_id: user.entity_id)
               }
 
-  scope :in_sector, ->(sector) {
+  scope :in_sector, lambda { |sector|
     next none if sector.blank?
 
     sectors = Array(sector).flat_map { |s| s.to_s.split(",") }.map(&:downcase).compact_blank

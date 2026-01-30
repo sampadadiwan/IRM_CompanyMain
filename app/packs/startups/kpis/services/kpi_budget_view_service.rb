@@ -3,7 +3,7 @@
 # This service encapsulates the logic for retrieving and filtering Investor KPI mappings
 # and organizing KPI reports into quarterly and yearly groups for display in budget views.
 class KpiBudgetViewService
-  Result = Struct.new(:investor_kpi_mappings, :quarterly_reports, :year_reports, :grouped_quarterly_reports, :grouped_yearly_reports, :show_achievement_column, :tag_lists_to_display, :precision, keyword_init: true)
+  Result = Struct.new(:investor_kpi_mappings, :quarterly_reports, :year_reports, :grouped_quarterly_reports, :grouped_yearly_reports, :show_achievement_column, :tag_lists_to_display, :precision, :achievement_tags, keyword_init: true)
 
   def self.call(current_user, params, kpi_reports, tag_list)
     new(current_user, params, kpi_reports, tag_list).call
@@ -28,14 +28,21 @@ class KpiBudgetViewService
       grouped_yearly_reports: group_reports(year_reports, @tag_list),
       show_achievement_column: show_achievement_column?,
       tag_lists_to_display: @tag_list,
-      precision: @params[:decimals]&.to_i || 2
+      precision: @params[:decimals]&.to_i || 2,
+      achievement_tags: achievement_tags(@tag_list)
     )
   end
 
   private
 
   def show_achievement_column?
-    @tag_list.include?('Actual') && @tag_list.include?('Budget')
+    @tag_list.count >= 2
+  end
+
+  def achievement_tags(tags)
+    return [] unless show_achievement_column?
+
+    tags
   end
 
   def primary_tag_for_filtering
@@ -58,6 +65,7 @@ class KpiBudgetViewService
 
   def fetch_investor_kpi_mappings
     investor = Investor.where(id: @params[:portfolio_company_id]).first
+    return [] unless investor
 
     if ["Investment Fund", "Angel Fund"].include? @current_user.entity.entity_type
       # Create dummy mappings for the startup, which has all the kpi names

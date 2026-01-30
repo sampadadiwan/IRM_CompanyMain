@@ -1388,7 +1388,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.string "fi_code"
     t.string "formula_tag_list"
     t.string "from_email", limit: 100
-    t.string "gemini_api_key"
     t.string "individual_kyc_doc_list"
     t.string "investor_presentations_email", limit: 50
     t.json "kanban_steps"
@@ -1401,7 +1400,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.string "mailbox", limit: 30
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
-    t.string "openai_api_key"
     t.boolean "pan_verification"
     t.string "portflio_expense_account_entry_filter"
     t.string "regulatory_env", limit: 20, default: "SEBI"
@@ -2381,8 +2379,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.date "last_interaction_date"
     t.string "pan", limit: 40
     t.string "primary_email"
-    t.string "slug"
     t.string "sector"
+    t.string "slug"
     t.string "tag_list", limit: 120
     t.integer "unapproved_investor_access_count", default: 0
     t.datetime "updated_at", null: false

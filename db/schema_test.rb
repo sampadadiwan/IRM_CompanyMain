@@ -2360,6 +2360,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.date "last_interaction_date"
     t.string "pan", limit: 40
     t.string "primary_email"
+    t.string "sector"
     t.string "slug"
     t.string "tag_list", limit: 120
     t.integer "unapproved_investor_access_count", default: 0
