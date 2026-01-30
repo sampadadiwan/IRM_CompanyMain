@@ -10,6 +10,7 @@ Scenario Outline: Create new portfolio investment
   When I create a new portfolio investment "portfolio_company_name=MyFavStartup;base_amount_cents=1000000;quantity=200"
   Then a portfolio investment should be created
   Then I should see the portfolio investment details on the details page
+  Then The PI should have a valuation attached
 
   Examples:
     |entity                             |fund                           | portfolio_instrument |

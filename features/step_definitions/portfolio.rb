@@ -56,6 +56,10 @@ include CurrencyHelper
     expect(page).to have_content( money_to_currency @portfolio_investment.base_amount ) if @portfolio_investment.investment_instrument.currency != @portfolio_investment.fund.currency
   end
 
+  Then('The PI should have a valuation attached') do
+    puts "Checking valuation for PI #{@portfolio_investment.inspect}"
+    @portfolio_investment.valuation.should_not be_nil
+  end
 
   Given('there are {string} portfolio investments {string}') do |count, args|
     (1..count.to_i).each do |i|

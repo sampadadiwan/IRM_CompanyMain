@@ -73,7 +73,9 @@ class PortfolioInvestmentCreate < PortfolioInvestmentAction
 
       last_valuation.per_share_value_cents = base_cost_cents
       ctx[:valuation] = last_valuation
-      last_valuation.save
+      result = last_valuation.save
+      portfolio_investment.valuation = last_valuation if result && portfolio_investment.valuation.blank?
+      result
     else
       true
     end
