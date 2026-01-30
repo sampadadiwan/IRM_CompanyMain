@@ -1,8 +1,8 @@
-<div class="table-responsive" data-controller="datatable">
-    <table id="kpi_reports_grid" class="table table-bordered table-striped dataTable">
+<div class="sticky-table-wrapper" style="overflow: auto; max-height: 80vh; position: relative;">
+    <table id="kpi_reports_grid" class="table table-bordered table-striped sticky-table">
         <thead>
             <tr>
-                <th>KPI</th>
+                <th class="sticky-col">KPI</th>
                 <th>Category</th>
                 <% kpi_reports.each do |kpi_report| %>
                     <th>
@@ -23,7 +23,7 @@
 
 
             <tr>
-                <td>Period</td>
+                <td class="sticky-col">Period</td>
                 <td></td>
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>
                         <td>
@@ -34,7 +34,7 @@
 
             <% investor_kpi_mappings.each do |ikm| %>
                 <tr>
-                    <td>
+                    <td class="sticky-col">
                         <%= ikm.id ? link_to(ikm.standard_kpi_name, investor_kpi_mapping_path(ikm.id)) : ikm.standard_kpi_name %>
                     </td>
 
@@ -69,7 +69,7 @@
             <% end %>
 
             <tr>
-                <td>Documents</td>
+                <td class="sticky-col">Documents</td>
                 <td></td>
                 <% kpi_reports.each_with_index do |kpi_report, idx| %>
                         <td>
@@ -88,7 +88,7 @@
             </tr>
 
             <tr>
-                <td>Link</td>
+                <td class="sticky-col">Link</td>
                 <td></td>
                 <% kpi_reports.each do |kpi_report| %>
                         <td>

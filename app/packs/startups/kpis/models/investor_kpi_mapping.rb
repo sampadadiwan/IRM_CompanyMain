@@ -20,6 +20,7 @@ class InvestorKpiMapping < ApplicationRecord
   validates :reported_kpi_name, :standard_kpi_name, length: { maximum: 100 }
 
   enum :data_type, { money: 'money', numeric: 'numeric', percentage: 'percentage' }
+  enum :cumulate, { cumulate: 'cumulate', forward_fill: 'forward_fill', compute: 'compute' }, prefix: true
 
   before_create :setup_standard_kpi_name
   def setup_standard_kpi_name

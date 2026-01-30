@@ -20,6 +20,17 @@ class EntitySetting < ApplicationRecord
     self.esign_provider = esign_provider.strip.capitalize
   end
 
+  def start_of_financial_year_date(date = nil, nil_if_not_set: false)
+    if date.nil? && nil_if_not_set
+      nil
+    else
+      date ||= Time.zone.today
+      month_offset_for_fy = self.month_offset_for_fy.present? ? self.month_offset_for_fy.to_i : 3
+      fy_start_date = date.month > month_offset_for_fy ? date.beginning_of_year : (date.beginning_of_year - 1.year)
+      (fy_start_date + month_offset_for_fy.months)
+    end
+  end
+
   def to_s
     "#{entity.name} settings"
   end

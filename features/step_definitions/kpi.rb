@@ -263,22 +263,62 @@ end
 # KPI cumulate test steps
 
 Given('the following Monthly KPI Reports exist with KPIs:') do |table|
-  @entity ||= FactoryBot.create(:entity)
-  @portfolio_company ||= FactoryBot.create(:investor, entity: @entity)
-  @user ||= FactoryBot.create(:user, entity: @entity)
+  @entity ||= Entity.last || FactoryBot.create(:entity)
+  @portfolio_company ||= Investor.last || FactoryBot.create(:investor, entity: @entity)
+  @user ||= User.last || FactoryBot.create(:user, entity: @entity)
+
+  # Ensure mappings exist for these KPIs
+  table.hashes.each do |row|
+    mode = row['cumulate_mode'] || 'cumulate'
+    mapping = InvestorKpiMapping.where(
+      entity_id: @entity.id,
+      investor_id: @portfolio_company.id,
+      standard_kpi_name: row['name']
+    ).first_or_initialize
+    mapping.reported_kpi_name = row['name']
+    mapping.cumulate = mode
+    mapping.save!
+  end
 
   table.hashes.each do |row|
     as_of = Date.parse(row['as_of'])
     period = row['period'] || 'Month'
     tag_list = row['tag_list'] || 'Actual'
-    kpi_report = FactoryBot.create(:kpi_report, entity: @entity, portfolio_company_id: @portfolio_company.id, user: @user, period:, as_of:, tag_list:)
-    FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f)
+    kpi_report = KpiReport.find_or_create_by!(entity: @entity, portfolio_company_id: @portfolio_company.id, period:, as_of:) do |r|
+      r.user = @user
+      r.tag_list = tag_list
+    end
+    mapping = InvestorKpiMapping.find_by(standard_kpi_name: row['name'], entity: @entity, investor: @portfolio_company)
+    FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f, investor_kpi_mapping: mapping)
   end
 end
 
 When('I run the KPI cumulate method for {string}') do |kpi_name|
-  kpi = Kpi.find_by(name: kpi_name)
+  kpi = Kpi.joins(:investor_kpi_mapping).where(name: kpi_name).first
   kpi.cumulate
+end
+
+When('I run the KpiCumulateJob for the portfolio company') do
+  KpiCumulateJob.perform_now(@portfolio_company.id, user_id: @user.id)
+end
+
+Given('an Investor KPI Mapping for {string} with formula {string} and mode {string}') do |name, formula, mode|
+  mapping = InvestorKpiMapping.where(
+    entity_id: @entity.id,
+    investor_id: @portfolio_company.id,
+    standard_kpi_name: name
+  ).first_or_initialize
+  mapping.reported_kpi_name = name
+  mapping.cumulate = mode
+  mapping.cumulate_formula = formula
+  mapping.save!
+end
+
+Then('I should see a {string} KPI {string} for {string} with value {string}') do |period, name, as_of, value|
+  date = Date.parse(as_of)
+  kpi = Kpi.joins(:kpi_report).where(name: name, entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, kpi_reports: { period: period, as_of: date }).last
+  expect(kpi).not_to be_nil
+  expect(kpi.value.to_f).to eq(value.to_f)
 end
 
 Then('Quarterly KPI should be cumulated correctly for {string}') do |kpi_name|
@@ -299,11 +339,11 @@ Then('YTD KPI should be cumulated correctly for {string}') do |kpi_name|
   ytd_kpis = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "YTD")
   ytd_kpis.count.should > 0
   ytd_kpis.each do |kpi|
-    months = (kpi.portfolio_company.json_fields['month_offset_for_financial_year'] || 3).to_i
+    months = (kpi.portfolio_company.json_fields['month_offset_for_fy'] || 3).to_i
     puts "Checking YTD KPI #{kpi.name} for period #{kpi.kpi_report.as_of}"
 
     year = kpi.kpi_report.as_of.year
-    year_start = kpi.fiscal_year_start(kpi.kpi_report.as_of, months)
+    year_start = kpi.start_of_financial_year_date(kpi.kpi_report.as_of)
     year_end = year_start + 12.months - 1.day
     months_in_year = year_start..year_end
 

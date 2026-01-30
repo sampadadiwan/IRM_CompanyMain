@@ -1,0 +1,126 @@
+
+// -----------------------------------------------------------------------------
+// Sticky Table Styles
+// -----------------------------------------------------------------------------
+// This file implements a robust sticky header and sticky first column for tables.
+// It uses `position: sticky` and handles critical stacking contexts (z-index)
+// and overflow properties to ensure the sticky behavior works across browsers.
+// -----------------------------------------------------------------------------
+
+// Wrapper: Defines the scrollable area.
+// - `overflow: auto`: Enables scrolling when content exceeds max-height/width.
+// - `max-height`: Sets the vertical limit before scrolling starts.
+// - `display: block`: Ensures proper container behavior.
+.sticky-table-wrapper {
+  overflow: auto !important;
+  max-height: 80vh !important;
+  position: relative !important;
+  display: block !important;
+  width: 100% !important;
+  z-index: 1; // Establishes a local stacking context
+}
+
+.sticky-table {
+  // Required: `border-collapse: separate` is mandatory for `position: sticky`
+  // to work correctly on table cells in many browsers. `collapse` breaks it.
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  width: 100% !important;
+  margin-bottom: 0 !important;
+
+  // ---------------------------------------------------------------------------
+  // Sticky Header (Vertical Scroll)
+  // ---------------------------------------------------------------------------
+  thead th {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    top: 0 !important; // Sticks to the top of the wrapper
+
+    // z-index hierarchy:
+    // 110: Corner cell (Header + Column intersection)
+    // 100: Header row
+    // 50:  Sticky column body cells
+    // 0:   Normal body cells
+    z-index: 100 !important;
+
+    background-color: #5d87ff !important; // Solid background required to hide body content scrolling behind
+    color: white !important;
+    border-bottom: 1px solid #dee2e6 !important;
+    border-top: 1px solid #dee2e6 !important;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4); // Adds visual depth to header
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sticky Corner Cell (Intersection)
+  // ---------------------------------------------------------------------------
+  // This is the top-left cell. It must stick both vertically (top: 0) and
+  // horizontally (left: 0). It needs the highest z-index to stay on top of
+  // both the scrolling header and the scrolling column.
+  thead th.sticky-col {
+    left: 0 !important;
+    z-index: 110 !important;
+    background-color: #5d87ff !important;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sticky First Column (Horizontal Scroll)
+  // ---------------------------------------------------------------------------
+  .sticky-col {
+    position: -webkit-sticky !important;
+    position: sticky !important;
+    left: 0 !important; // Sticks to the left of the wrapper
+    z-index: 50 !important; // Above normal cells, below header
+    background-color: white !important; // Default background
+    border-right: 1px solid #dee2e6 !important;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Background & Striping Logic
+  // ---------------------------------------------------------------------------
+  // Sticky elements MUST have opaque backgrounds. If they are transparent,
+  // the scrolling content will be visible underneath them.
+
+  tbody td {
+    background-color: white !important;
+  }
+
+  // Handle zebra striping (odd rows)
+  &.table-striped tbody tr:nth-of-type(odd) td {
+    background-color: #fcfcfc !important;
+  }
+
+  // Ensure sticky column cells match the row's stripe color
+  &.table-striped tbody tr:nth-of-type(odd) td.sticky-col {
+    background-color: #fcfcfc !important;
+  }
+
+  // Ensure sticky column cells match the row's default color (even rows)
+  &.table-striped tbody tr:nth-of-type(even) td.sticky-col {
+    background-color: white !important;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Global Overrides for Sticky Support
+// -----------------------------------------------------------------------------
+// CRITICAL: `position: sticky` will fail if ANY ancestor element has
+// `overflow: hidden`, `overflow: scroll`, or `overflow: auto` (unless that
+// ancestor is the intended scroll container).
+// These overrides reset overflow on common layout wrappers to ensure the
+// sticky behavior isn't clipped by a parent container.
+// -----------------------------------------------------------------------------
+body, html {
+  overflow-x: visible !important;
+}
+
+#main-wrapper {
+  overflow: visible !important;
+}
+
+.body-wrapper {
+  overflow: visible !important;
+}
+
+.container-fluid {
+  overflow: visible !important;
+}

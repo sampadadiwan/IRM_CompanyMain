@@ -49,10 +49,16 @@
   </div>
 
 
-  <div class="form-group">
+  <div class="form-group" data-controller="toggle-display" data-toggle-display-value-value="compute" data-toggle-display-selector-value="#cumulate_formula_group">
     <%= form.label :cumulate %>
-    <%= form.check_box :cumulate, class: "form-check-input"  %>
-    <small class="form-text text-muted">Check this if this KPI should be cumulated over time periods. Quarterly and YTD</small>
+    <%= form.select :cumulate, InvestorKpiMapping.cumulates.keys.map { |type| [type.humanize, type] }, { include_blank: "Blank" }, class: "form-control", data: { action: "change->toggle-display#toggle" } %>
+    <small class="form-text text-muted">Select the aggregation/fill method for this KPI over time periods.</small>
+  </div>
+
+  <div class="form-group" id="cumulate_formula_group">
+    <%= form.label :cumulate_formula %>
+    <%= form.text_field :cumulate_formula, class: "form-control"  %>
+    <small class="form-text text-muted">Enter formula for 'Compute' mode. Use KPI names in brackets. Example: `[Revenue] - [Cost]`</small>
   </div>
 
   <div class="form-group">

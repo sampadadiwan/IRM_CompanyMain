@@ -47,7 +47,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     value_bridge_cols: Field::String,
     test_account: Field::BooleanEmoji,
     portflio_expense_account_entry_filter: Field::String,
-    kyc_bank_account_types: Field::String
+    kyc_bank_account_types: Field::String,
+    month_offset_for_fy: Field::Number
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -114,6 +115,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     value_bridge_cols
     portflio_expense_account_entry_filter
     kyc_bank_account_types
+    month_offset_for_fy
     created_at
     updated_at
   ].freeze
@@ -156,6 +158,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     value_bridge_cols
     portflio_expense_account_entry_filter
     kyc_bank_account_types
+    month_offset_for_fy
     custom_flags
   ].freeze
 

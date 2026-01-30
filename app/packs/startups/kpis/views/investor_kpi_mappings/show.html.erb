@@ -77,10 +77,19 @@
 
     <tr>
       <td>
-        Cumulate
+        Cumulate / Aggregation
       </td>
       <td>
-        <%= display_boolean @investor_kpi_mapping.cumulate %>
+        <%= @investor_kpi_mapping.cumulate&.humanize || 'Blank' %>
+      </td>
+    </tr>
+
+    <tr>
+      <td>
+        Cumulate Formula
+      </td>
+      <td>
+        <%= @investor_kpi_mapping.cumulate_formula %>
       </td>
     </tr>
 

@@ -99,12 +99,7 @@ module CommitmentAccountEntry
     end
   end
 
-  def start_of_financial_year_date(end_date)
-    # Some funds want to set the start of the financial year to Jan some to April, this allows for that.
-    month_offset_for_fy = fund.json_fields["month_offset_for_fy"].present? ? fund.json_fields["month_offset_for_fy"].to_i : 3
-    date = end_date.month > month_offset_for_fy ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
-    (date + month_offset_for_fy.months)
-  end
+  delegate :start_of_financial_year_date, to: :fund
 
   def start_of_financial_year(name, _entry_type, end_date)
     get_account_entry(name, start_of_financial_year_date(end_date), raise_error: false)

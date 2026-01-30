@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
+ActiveRecord::Schema[8.1].define(version: 2026_012026_01_30_132201_30_122847) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1376,6 +1376,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.text "kyc_docs_note"
     t.date "last_snapshot_on"
     t.string "mailbox", limit: 30
+    t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
     t.boolean "pan_verification"
@@ -2203,7 +2204,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.string "category", limit: 40
     t.integer "child_count", default: 0
     t.datetime "created_at", null: false
-    t.boolean "cumulate", default: false
+    t.string "cumulate"
+    t.string "cumulate_formula"
     t.string "data_type", limit: 10, default: "numeric"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -2366,7 +2368,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.integer "unapproved_investor_access_count", default: 0
     t.datetime "updated_at", null: false
     t.integer "will_receive_email", default: 0, null: false
-    t.string "sector"
     t.index ["deleted_at"], name: "index_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
