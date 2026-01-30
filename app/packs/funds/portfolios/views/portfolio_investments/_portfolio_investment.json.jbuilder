@@ -22,7 +22,6 @@ json.fund_name portfolio_investment.fund.name
 json.portfolio_company portfolio_investment.portfolio_company, partial: 'investors/investor', as: :investor
 json.valuation portfolio_investment.valuation, partial: 'valuations/valuation', as: :valuation
 json.investment_instrument portfolio_investment.investment_instrument, partial: 'investment_instruments/investment_instrument', as: :investment_instrument
-json.stage portfolio_investment.stage
 
 # Send the custom_fields
 json.custom_fields portfolio_investment.json_fields

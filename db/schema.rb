@@ -2903,7 +2903,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_24_073251) do
     t.boolean "snapshot", default: false
     t.date "snapshot_date"
     t.decimal "sold_quantity", precision: 24, scale: 8, default: "0.0"
-    t.string "stage"
     t.boolean "startup", default: true
     t.string "sub_category", limit: 100
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"

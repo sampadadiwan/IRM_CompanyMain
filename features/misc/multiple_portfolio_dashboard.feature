@@ -56,9 +56,23 @@ Feature: Cross Portfolio Dashboard
     Then I visit the Aggregated Portfolio Dashboard widget page
     Then I fill the new dashboard widget form with data 4
     Then the dashboard widget must be created
+    Then I visit the Aggregated Portfolio Dashboard widget page
+    Then I fill the new dashboard widget form with data 5
+    Then the dashboard widget must be created
+
 
     Given there is a fund "name=Alpha Fund;currency=INR" for the entity
     And I am "yes" employee access to the fund
+
+    Given there is a fund "name=Beta Fund;currency=INR" for the entity
+    And I am "yes" employee access to the fund
+
+    Given fund ratio "Gross Portfolio IRR" for fund "Alpha Fund" exist
+    Given fund ratio "Gross Portfolio MOIC" for fund "Alpha Fund" exist
+
+    Given fund ratio "Gross Portfolio MOIC" for fund "Beta Fund" exist
+    Given fund ratio "Gross Portfolio IRR" for fund "Beta Fund" exist
+
 
     Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
     And portfolio company is added to list of companies
@@ -72,6 +86,8 @@ Feature: Cross Portfolio Dashboard
 
     Then the Bought Amount stat should be correct
 
+    Then the fund ratios for funds with tables and chart are shown
+    Then the fund ratios fetched for funds "Alpha Fund,Beta Fund" should be correct and latest
 
 
 

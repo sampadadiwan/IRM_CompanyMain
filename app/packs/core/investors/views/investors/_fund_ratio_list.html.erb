@@ -19,7 +19,7 @@
                   tag.tr do
                     safe_join([
                       tag.td(class: "fw-semibold text-dark") do
-                        fund_ratio.owner.respond_to?(:investor_name) ? fund_ratio.owner.investor_name : fund_ratio.owner_type
+                        fund_ratio.owner.respond_to?(:name) ? fund_ratio.owner.name : fund_ratio.owner_type
                       end,
                       tag.td(class: "text-end") do
                         fund_ratio.display_value.presence || number_with_precision(fund_ratio.value, precision: 2)

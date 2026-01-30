@@ -90,6 +90,17 @@ When("I fill the new dashboard widget form with data 3") do
   check "dashboard_widget_show_menu"
   click_button "Save"
 end
+When("I fill the new dashboard widget form with data 5") do
+  select "Aggregated Portfolio Dashboard", from: "dashboard_name"
+  select "Fund Ratios", from: "widget_name"
+  fill_in "dashboard_widget_tags", with: "test_fund_ratios"
+  select "XL", from: "dashboard_widget_size"
+  fill_in "dashboard_widget_position", with: 5
+  fill_in "dashboard_widget_metadata", with: "{show_table: true, show_chart: true, ratio_names: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'], chart_colors: ['#00c49a', '#ff8042']}"
+  check "dashboard_widget_enabled"
+  check "dashboard_widget_show_menu"
+  click_button "Save"
+end
 Then("the dashboard widget must be created") do
   expect(page).to have_content("Dashboard widget was successfully created.")
 end
@@ -119,6 +130,42 @@ Given('the portfolio companies belong to sectors {string}') do |sectors|
     company.sector = all_sectors.sample
     company.save!
   end
+end
+
+Given('fund ratio {string} for fund {string} exist') do |ratio_name, fund_name|
+  fund = Fund.includes(:entity).find_by!(name: fund_name)
+
+  # Create some dummy ratios for the fund
+
+    FundRatio.create!(
+      entity: fund.entity,
+      fund: fund,
+      owner: fund,
+      name: ratio_name,
+      end_date: Date.today - (6).months,
+      latest: true,
+      value: rand(5.0..25.0).round(2)
+    )
+end
+
+Then('the fund ratios for funds with tables and chart are shown') do
+  expect(page).to have_content('Gross Portfolio IRR')
+  expect(page).to have_content('Gross Portfolio MOIC')
+end
+
+Then('the fund ratios fetched for funds {string} should be correct and latest') do |funds|
+  fund_names = funds.split(',').map(&:strip)
+  fund_ids = Fund.where(name: fund_names).pluck(:id)
+
+  ratios = FundRatio.latest.where(
+    owner_type: 'Fund',
+    owner_id: fund_ids,
+    name: ['Gross Portfolio IRR', 'Gross Portfolio MOIC']
+  )
+  expect(page).to have_content(ratios[0].display_value)
+  expect(page).to have_content(ratios[1].display_value)
+  expect(page).to have_content(ratios[2].display_value)
+  expect(page).to have_content(ratios[3].display_value)
 end
 Then('I should see the cross portfolio dashboard page') do
   expect(page).to have_content('Multi-Portfolio Filter')

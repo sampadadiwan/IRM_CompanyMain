@@ -115,8 +115,7 @@ class PortfolioInvestment < ApplicationRecord
     "Unrealized Gain" => "unrealized_gain",
     "Realized Gain" => "gain",
     "FIFO Cost" => "cost_of_sold",
-    "Notes" => "notes",
-    "Stage" => "stage"
+    "Notes" => "notes"
   }.freeze
 
   ADDITIONAL_COLUMNS = {
