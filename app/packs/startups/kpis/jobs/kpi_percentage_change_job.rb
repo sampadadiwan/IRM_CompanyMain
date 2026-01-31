@@ -13,7 +13,7 @@ class KpiPercentageChangeJob < ApplicationJob
 
   def recompute_percentage_change(entities, user_id)
     entities.each do |entity|
-      entity.kpis.joins(:kpi_report).order("kpi_report.as_of ASC").group_by { |x| [x.name, x.kpi_report.period, x.owner_id, x.kpi_report.tag_list] }.each do |key, kpis|
+      entity.kpis.approved.joins(:kpi_report).order("kpi_report.as_of ASC").group_by { |x| [x.name, x.kpi_report.period, x.owner_id, x.kpi_report.tag_list] }.each do |key, kpis|
         msg = "Recomputing percentage change for #{key} for #{entity.name} : #{kpis.length} kpis"
         Rails.logger.debug msg
         send_notification(msg, user_id, :info)

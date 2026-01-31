@@ -2,8 +2,12 @@ resources :investor_kpi_mappings do
   post 'generate', on: :collection
 end
 
-resources :kpis
+resources :kpis do
+  patch 'approve', on: :member
+  patch 'approve_all', on: :collection
+end
 resources :kpi_reports do
+  patch 'recompute_cumulative', on: :member
   patch 'recompute_percentage_change', on: :member
   post "analyze", on: :member
   post 'send_portco_notification', on: :member

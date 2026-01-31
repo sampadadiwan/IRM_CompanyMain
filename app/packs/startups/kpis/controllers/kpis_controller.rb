@@ -1,5 +1,5 @@
 class KpisController < ApplicationController
-  before_action :set_kpi, only: %i[show edit update destroy]
+  before_action :set_kpi, only: %i[show edit update destroy approve]
 
   # GET /kpis or /kpis.json
   def index
@@ -59,6 +59,31 @@ class KpisController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to kpis_url, notice: "Kpi was successfully destroyed." }
+      format.json { head :no_content }
+    end
+  end
+
+  def approve
+    @kpi = KpiApproveService.call(@kpi.id, current_user.id)
+    respond_to do |format|
+      format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI was successfully approved.") }
+      format.json { render :show, status: :ok, location: @kpi }
+    end
+  end
+
+  def approve_all
+    portfolio_company_id = params[:portfolio_company_id]
+    entity_id = params[:entity_id] || current_user.entity_id
+
+    unapproved_kpis = Kpi.unapproved.where(portfolio_company_id: portfolio_company_id, entity_id: entity_id)
+
+    unapproved_kpis.find_each do |kpi|
+      authorize kpi, :approve?
+      KpiApproveService.call(kpi.id, current_user.id)
+    end
+
+    respond_to do |format|
+      format.html { redirect_back_or_to(kpi_reports_path, notice: "All pending KPIs were successfully approved.") }
       format.json { head :no_content }
     end
   end

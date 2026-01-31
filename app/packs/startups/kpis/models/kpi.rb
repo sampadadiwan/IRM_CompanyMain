@@ -4,6 +4,8 @@ class Kpi < ApplicationRecord
   include Trackable.new(on: %i[create update], audit_fields: %i[value display_value notes percentage_change])
   include KpiCumulative
 
+  enum :status, { unapproved: 'unapproved', approved: 'approved' }, default: :approved
+
   STANDARD_COLUMNS = {
     "Name" => "name",
     "Value" => "value",
@@ -22,6 +24,7 @@ class Kpi < ApplicationRecord
 
   belongs_to :kpi_report
   belongs_to :investor_kpi_mapping, optional: true
+  belongs_to :approved_by, class_name: "User", foreign_key: :approved_by_user_id, optional: true
 
   validates :name, :value, presence: true
 
@@ -29,10 +32,15 @@ class Kpi < ApplicationRecord
   validates :notes, length: { maximum: 255 }
   validates :display_value, length: { maximum: 30 }
 
+  validates :status, presence: true
+  validates :name, uniqueness: { scope: %i[kpi_report_id portfolio_company_id status deleted_at] }, if: -> { approved? }
+
   scope :no_tag_list, -> { joins(:kpi_report).where('kpi_reports.tag_list': nil) }
   # --- Generic filters -------------------------------------------------
   scope :for_metric,  ->(name)  { where(name:) }
   scope :for_company, ->(pc_id) { where(portfolio_company_id: pc_id) }
+  scope :approved,   -> { where(status: :approved) }
+  scope :unapproved, -> { where(status: :unapproved) }
   scope :actuals,    -> { joins(:kpi_report).where('kpi_reports.tag_list': 'Actual') }
   scope :budgets,    -> { joins(:kpi_report).where('kpi_reports.tag_list': 'Budget') }
   scope :ics,        -> { joins(:kpi_report).where('kpi_reports.tag_list': 'IC') }

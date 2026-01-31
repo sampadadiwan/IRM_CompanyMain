@@ -1,5 +1,5 @@
 class KpiReportsController < ApplicationController
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change analyze send_portco_notification]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze send_portco_notification]
   after_action :verify_authorized, except: %i[index search show_performance]
 
   # GET /kpi_reports or /kpi_reports.json
@@ -120,6 +120,14 @@ class KpiReportsController < ApplicationController
   def recompute_percentage_change
     KpiPercentageChangeJob.perform_later(@kpi_report.entity_id, current_user.id)
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Computation started."
+  end
+
+  def recompute_cumulative
+    # Force recomputation by resetting cumulation_completed if necessary
+    # and ensuring the job picks up all reports for this portfolio company
+    KpiReport.where(portfolio_company_id: @kpi_report.portfolio_company_id).update_all(cumulation_completed: false)
+    KpiCumulateJob.perform_later(@kpi_report.portfolio_company_id, user_id: current_user.id, force: true)
+    redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Recompute cumulative and forward fill started."
   end
 
   def send_portco_notification

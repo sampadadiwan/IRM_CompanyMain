@@ -229,43 +229,47 @@ class KpiWorkbookReader
   end
 
   # Saves a KPI entry into the database
-  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row, row_index, col_index)
+  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, _row, row_index, col_index)
     investor_kpi_mapping = @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)]
 
     # Find or initialize a KPI entry for the given report and KPI name
-    kpi = kpi_report.kpis.where(
-      name: @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)].standard_kpi_name,
+    standard_name = @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)].standard_kpi_name
+
+    # Check if an approved KPI with the same value already exists.
+    # If it does, we don't even need to create an unapproved one.
+    existing_approved = kpi_report.kpis.approved.find_by(
+      name: standard_name,
+      portfolio_company_id: @portfolio_company_id
+    )
+
+    if existing_approved && existing_approved.value.to_d.round(6) == value.to_d.round(6)
+      Rails.logger.debug { "Approved KPI value for #{standard_name} #{kpi_report.as_of} is same, skipping" }
+      return
+    end
+
+    # Find or initialize an unapproved KPI for this report and standard name
+    kpi = kpi_report.kpis.unapproved.where(
+      name: standard_name,
       portfolio_company_id: @portfolio_company_id,
       entity_id: @portfolio_company&.entity_id
     ).first_or_initialize
 
     kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
 
-    Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} KPI: #{kpi.name}, value: #{value}, for period: #{period} #{parsed_period} #{row} #{col_index}" }
+    Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} Unapproved KPI: #{kpi.name}, value: #{value}" }
 
-    save_kpi = true
+    # Assign attributes to the KPI entry
+    kpi.assign_attributes(
+      value: value,
+      display_value: value,
+      notes: "Imported from Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
+    )
 
-    if kpi.persisted?
-      # Only update if the value has changed and update_existing_kpis is true
-      if kpi.value.round(6) != value.to_d.round(6) && @update_existing_kpis
-        msg = "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} changed from #{kpi.value} to #{value} at row #{row_index} col #{col_index}"
-        Rails.logger.debug msg
-        @error_msg << { msg: msg, document: @document.name, document_id: @document.id, portfolio_company: @portfolio_company.name, kpi_name: kpi.name, sheet: sheet, period: period, parsed_period: parsed_period, old_value: kpi.value, new_value: value, row: row_index, col: col_index }
-
-        save_kpi = true
-      else
-        Rails.logger.debug { "KPI value for #{kpi.name} #{kpi.kpi_report.as_of} unchanged, skipping save" }
-        save_kpi = false
+    if kpi.changed?
+      if existing_approved
+        msg = "New KPI value for #{kpi.name} #{kpi.kpi_report.as_of} pending approval (current: #{existing_approved.value}, new: #{value})"
+        @error_msg << { msg: msg, document: @document.name, document_id: @document.id, portfolio_company: @portfolio_company.name, kpi_name: kpi.name, sheet: sheet, period: period, parsed_period: parsed_period, old_value: existing_approved.value, new_value: value, row: row_index, col: col_index }
       end
-    end
-    if save_kpi
-      # Assign attributes to the KPI entry
-      kpi.assign_attributes(
-        value: value,
-        display_value: value,
-        notes: "Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
-      )
-      # Save the KPI entry
       kpi.save
     end
   end

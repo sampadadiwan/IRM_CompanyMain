@@ -31,7 +31,7 @@ class InvestorKpiMapping < ApplicationRecord
 
   validate :formula_kosher?
   def formula_kosher?
-    return if cumulate_formula.blank?
+    return false if cumulate_formula.blank?
 
     errors.add(:cumulate_formula, "You cannot do CRUD operations in a formula") if cumulate_formula.downcase.match?(SAFE_EVAL_REGEX)
   end

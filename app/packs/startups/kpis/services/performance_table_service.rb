@@ -39,7 +39,7 @@ class PerformanceTableService
     @kpi_report = kpi_report
     @metric_names = metric_names
     @as_of = as_of.to_date.end_of_month
-    @scope = Kpi.for_company(portfolio_company_id).with_report
+    @scope = Kpi.approved.for_company(portfolio_company_id).with_report
     @kpis_by_metric_and_date = fetch_kpis_for_all_metrics
   end
 

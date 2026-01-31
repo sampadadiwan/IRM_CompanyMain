@@ -25,6 +25,14 @@ Update the KPI cumulation logic to support different modes of data aggregation a
 - **Execution**: Must run **last**, after all 'Cumulate' and 'Forward Fill' operations are completed, to allow formulas to depend on aggregated values.
 - **Implementation**: Simple arithmetic (+, -, *, /) using `eval`. Formulas may reference other KPIs by name (e.g., `Revenue - Cost`).
 
+## KPI Visibility & Approval Handling
+- **Grid View Table**: In `app/packs/startups/kpis/views/kpi_reports/_grid_view_table.html.erb`, the visibility of KPIs depends on the `view_unapproved` parameter.
+- **Approved vs. Unapproved**:
+  - By default (or when `view_unapproved` is not 'true'), only **approved** KPIs are displayed.
+  - If `view_unapproved=true`, **both** approved and unapproved KPIs for the same date and name are displayed in the same cell.
+  - Unapproved KPIs are marked with a "Pending" badge, yellow text/border, and an "Approve" button (permission permitting).
+  - Multiple KPIs in a cell are separated by a horizontal line.
+
 ## Technical Components
 - **Model**: `InvestorKpiMapping` now has `cumulate` (enum) and `cumulate_formula` (string).
 - **Concern**: `KpiCumulative` needs to implement these 3 distinct logics.

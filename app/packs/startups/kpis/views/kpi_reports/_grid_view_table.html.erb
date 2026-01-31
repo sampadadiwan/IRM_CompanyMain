@@ -45,19 +45,47 @@
                     <% kpi_reports.each do |kpi_report| %>
                         <!-- Create a hash of the kpis with the name as the key -->
                         <%
-                            kpis = kpi_report.kpis
-                            kpis = kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h
+                            view_unapproved = params[:view_unapproved] == 'true'
+                            kpis_scope = view_unapproved ? kpi_report.kpis : kpi_report.kpis.approved
+
+                            # If multiple exist for the same name (e.g. approved & unapproved),
+                            # we want to show both or prioritize one.
+                            # Let's group them by name.
+                            kpis_by_name = kpis_scope.group_by { |k| k.name.downcase }
                         %>
 
-                        <!-- Find the kpi with the name or an alias for the name and show its value-->
-                        <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
-                        <td class="value_<%=kpi&.id%>">
-                            <% if kpi %>
-                                <%= display_kpi(kpi, ikm, params: params) %>
-                                <br>
-                                <%= kpi_percentage_class(kpi, ikm).html_safe %>
-                                <% if kpi.notes.present? %>
-                                    <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                        <!-- Find the kpis with the name -->
+                        <%
+                            report_kpis = kpis_by_name[ikm.standard_kpi_name.downcase] || []
+                            # Sort so approved is first if both exist, but we might want to show both
+                        %>
+                        <td class="value_<%= report_kpis.first&.id %>">
+                            <% if report_kpis.any? %>
+                                <% report_kpis.each do |kpi| %>
+                                    <div class="<%= kpi.unapproved? ? 'text-warning' : '' %>" <%= "style='border-left: 3px solid #ffc107; padding-left: 5px;'".html_safe if kpi.unapproved? %>>
+                                        <% if kpi.unapproved? %>
+                                            <small class="badge bg-warning-subtle text-warning mb-1">Pending</small><br>
+                                        <% end %>
+
+                                        <%= display_kpi(kpi, ikm, params: params) %>
+                                        <br>
+                                        <%= kpi_percentage_class(kpi, ikm).html_safe %>
+
+                                        <% if kpi.notes.present? %>
+                                            <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                                        <% end %>
+
+                                        <% if policy(kpi).approve? && kpi.unapproved? %>
+                                            <%= button_to approve_kpi_path(kpi), method: :patch, class: "btn btn-sm btn-success mt-1 ti ti-check", form_class: "approveButton",
+                                                data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no",
+                                                        msg: "This will overwrite the current approved value for #{kpi.name} with #{kpi.value}. Proceed? <br><br><small class='text-muted'>Tip: Use 'Approve All Staged' in the Actions menu to approve all pending KPIs at once.</small>" } do %>
+                                                Approve
+                                            <% end %>
+                                        <% end %>
+                                    </div>
+                                    <% if report_kpis.length > 1 && kpi != report_kpis.last %>
+                                        <hr class="my-1">
+                                    <% end %>
                                 <% end %>
                             <% else %>
                                 N/A

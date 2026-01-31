@@ -69,16 +69,16 @@
   end
 
   Then('when I view the KPI report for the portfolio company in grid view') do
-    visit(kpi_reports_path(entity_id: @portfolio_company.investor_entity_id, grid_view: true))
+    visit(kpi_reports_path(entity_id: @portfolio_company.investor_entity_id, grid_view: true, view_unapproved: true))
   end
 
 
   Then('when I view the KPI report for the portfolio company in grid view as owner') do
-    visit(kpi_reports_path(portfolio_company_id: @portfolio_company.id, grid_view: true, entity_id: @user.entity_id))
+    visit(kpi_reports_path(portfolio_company_id: @portfolio_company.id, grid_view: true, entity_id: @user.entity_id, view_unapproved: true))
   end
 
   Then('when I view the KPI report in grid view') do
-    visit(kpi_reports_path(grid_view: true, entity_id: @user.entity_id))
+    visit(kpi_reports_path(grid_view: true, entity_id: @user.entity_id, view_unapproved: true))
   end
 
   Then('I should see the KPI Report with all Kpis') do
@@ -297,12 +297,11 @@ Given('the following Monthly KPI Reports exist with KPIs:') do |table|
     as_of = Date.parse(row['as_of'])
     period = row['period'] || 'Month'
     tag_list = row['tag_list'] || 'Actual'
-    kpi_report = KpiReport.find_or_create_by!(entity: @entity, portfolio_company_id: @portfolio_company.id, period:, as_of:) do |r|
+    kpi_report = KpiReport.find_or_create_by!(entity: @entity, portfolio_company_id: @portfolio_company.id, period:, as_of:, tag_list:) do |r|
       r.user = @user
-      r.tag_list = tag_list
     end
     mapping = InvestorKpiMapping.find_by(standard_kpi_name: row['name'], entity: @entity, investor: @portfolio_company)
-    FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f, investor_kpi_mapping: mapping)
+    FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f, investor_kpi_mapping: mapping, status: :approved)
   end
 end
 

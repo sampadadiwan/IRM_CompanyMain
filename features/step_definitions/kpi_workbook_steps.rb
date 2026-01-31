@@ -46,7 +46,7 @@ Then('the extracted KPI data should be valid for the given workbook and targets 
   # This is where you'll compare @extracted_kpis with the expected data
   # for the specific @workbook_file.
   @extracted_kpis.keys.length.should eq(count.to_i)
-  Kpi.count.should eq(count.to_i * @portfolio_company.investor_kpi_mappings.count)
+  Kpi.unapproved.count.should eq(count.to_i * @portfolio_company.investor_kpi_mappings.count)
   @extracted_kpis.each do |date, kpi_report|
     puts "Validating date: #{date} with entries: #{kpi_report.kpis.length}"
     puts "Expected KPIs: #{@portfolio_company.investor_kpi_mappings.pluck(:standard_kpi_name)} got #{kpi_report.kpis.map(&:name)}"

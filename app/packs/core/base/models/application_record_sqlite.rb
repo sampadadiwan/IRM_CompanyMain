@@ -8,7 +8,6 @@ class ApplicationRecordSqlite < ApplicationRecord
     @cached_custom_fields
   end
 
-
   # This is used to calculate the start of financial year based on the month offset set in models json fields
   def start_of_financial_year_date(end_date = nil, nil_if_not_set: false)
     # In some cases we may want to return nil if the end_date is not set and nil_if_not_set is true (See KpiCumulative)

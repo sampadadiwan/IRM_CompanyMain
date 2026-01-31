@@ -31,24 +31,26 @@ class ImportKpi < ImportUtil
     investor_kpi_mapping = InvestorKpiMapping.find_by(reported_kpi_name: name)
     name = investor_kpi_mapping&.standard_kpi_name || name
 
-    kpi = Kpi.where(name:, entity_id:, kpi_report_id: kpi_report.id, portfolio_company:).first
+    # Look for existing approved KPI
+    existing_approved = Kpi.approved.find_by(name:, entity_id:, kpi_report_id: kpi_report.id, portfolio_company:)
 
-    if kpi.present?
-      Rails.logger.debug { "Kpi with name #{name} already exists for entity #{import_upload.entity_id}" }
-      raise "Kpi with already exists."
-    else
-
-      Rails.logger.debug user_data
-      kpi = Kpi.new(name:, notes:, value:, display_value: value, entity_id:, portfolio_company:,
-                    kpi_report_id: kpi_report.id, import_upload_id: import_upload.id, investor_kpi_mapping:)
-
-      kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
-      setup_custom_fields(user_data, kpi, custom_field_headers - ["Tag"])
-
-      Rails.logger.debug { "Saving kpi with name '#{kpi.name}'" }
-      kpi.save!
-
+    # Don't create anything if the value is the same as already approved
+    if existing_approved && existing_approved.value.to_d.round(6) == value.to_d.round(6)
+      Rails.logger.debug { "Kpi with name #{name} already exists and has same value" }
+      return true
     end
+
+    # Find or initialize an unapproved KPI
+    kpi = Kpi.unapproved.where(name:, entity_id:, kpi_report_id: kpi_report.id, portfolio_company:).first_or_initialize
+
+    Rails.logger.debug user_data
+    kpi.assign_attributes(notes:, value:, display_value: value, import_upload_id: import_upload.id, investor_kpi_mapping:)
+
+    kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
+    setup_custom_fields(user_data, kpi, custom_field_headers - ["Tag"])
+
+    Rails.logger.debug { "Saving unapproved kpi with name '#{kpi.name}'" }
+    kpi.save!
 
     true
   end

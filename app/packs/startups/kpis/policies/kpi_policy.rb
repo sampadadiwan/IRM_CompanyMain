@@ -41,4 +41,8 @@ class KpiPolicy < KpiPolicyBase
   def destroy?
     update?
   end
+
+  def approve?
+    user.super? || user.company_admin? || user.has_cached_role?(:approver)
+  end
 end
