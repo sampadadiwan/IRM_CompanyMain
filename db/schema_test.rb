@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_012026_01_30_132201_30_122847) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_30_143623) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1388,7 +1388,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_012026_01_30_132201_30_122847) do
     t.string "sandbox_numbers"
     t.integer "snapshot_frequency_months"
     t.string "stamp_paper_tags"
-    t.integer "month_offset_for_fy"
     t.boolean "test_account", default: false
     t.boolean "trial"
     t.date "trial_end_date"

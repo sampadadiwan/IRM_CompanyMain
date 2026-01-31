@@ -23,6 +23,15 @@ Feature: KPI Extended Aggregation Logic
       | 2023-01-31 | Cost           | 80    | Actual   | cumulate      |
       | 2023-02-28 | Cost           | 90    | Actual   | cumulate      |
       | 2023-03-31 | Cost           | 100   | Actual   | cumulate      |
-    And an Investor KPI Mapping for "Profit" with formula "[Revenue] - [Cost]" and mode "compute"
+    And an Investor KPI Mapping for "Profit" with formula "Revenue - Cost" and mode "compute"
     When I run the KpiCumulateJob for the portfolio company
     Then I should see a "Quarter" KPI "Profit" for "2023-03-31" with value "180.0"
+
+  Scenario: Compute KPI using division formula
+    Given the following Monthly KPI Reports exist with KPIs:
+      | as_of      | name         | value | tag_list | cumulate_mode |
+      | 2023-01-31 | Revenue      | 1000  | Actual   | cumulate      |
+      | 2023-01-31 | Contribution | 200   | Actual   | cumulate      |
+    And an Investor KPI Mapping for "Margin" with formula "Contribution / Revenue" and mode "compute"
+    When I run the KpiCumulateJob for the portfolio company
+    Then I should see a "Quarter" KPI "Margin" for "2023-03-31" with value "0.2"

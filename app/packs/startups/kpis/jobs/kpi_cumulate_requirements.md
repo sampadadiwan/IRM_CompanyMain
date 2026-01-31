@@ -23,7 +23,7 @@ Update the KPI cumulation logic to support different modes of data aggregation a
 - **Logic**: Use a mathematical formula defined in `investor_kpi_mapping.cumulate_formula`.
 - **Condition**: Only compute if the value is not already present on the upload file.
 - **Execution**: Must run **last**, after all 'Cumulate' and 'Forward Fill' operations are completed, to allow formulas to depend on aggregated values.
-- **Implementation**: Simple arithmetic (+, -, *, /) using `eval`. Formulas may reference other KPIs by name (e.g., `[Revenue] - [Cost]`).
+- **Implementation**: Simple arithmetic (+, -, *, /) using `eval`. Formulas may reference other KPIs by name (e.g., `Revenue - Cost`).
 
 ## Technical Components
 - **Model**: `InvestorKpiMapping` now has `cumulate` (enum) and `cumulate_formula` (string).

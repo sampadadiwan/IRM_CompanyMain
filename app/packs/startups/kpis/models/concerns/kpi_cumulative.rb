@@ -80,17 +80,22 @@ module KpiCumulative
 
   def compute_value_for_report(report, formula)
     # Simple eval based computation
-    # Formula example: [Revenue] - [Cost]
-    # Replace [KPI Name] with the value of that KPI in the same report
+    # Formula example: Revenue - Cost
+    # Replace KPI Names with the value of that KPI in the same report
 
     clean_formula = formula.dup
-    kpi_names_in_formula = formula.scan(/\[(.*?)\]/).flatten.uniq
-
     kpis_in_report = Kpi.where(kpi_report: report).index_by(&:name)
 
-    kpi_names_in_formula.each do |kpi_name|
+    # Sort KPI names by length descending to avoid partial matches (e.g., 'Revenue' before 'Rev')
+    kpi_names = kpis_in_report.keys.sort_by(&:length).reverse
+
+    kpi_names.each do |kpi_name|
+      next unless clean_formula.include?(kpi_name)
+
       val = kpis_in_report[kpi_name]&.value.to_f
-      clean_formula.gsub!("[#{kpi_name}]", val.to_s)
+      # Using regex with word boundaries to ensure we don't replace parts of other words
+      # though KPI names might contain spaces, so we handle it carefully.
+      clean_formula.gsub!(/\b#{Regexp.escape(kpi_name)}\b/, val.to_s)
     end
 
     begin
