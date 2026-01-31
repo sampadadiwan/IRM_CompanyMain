@@ -29,6 +29,13 @@ class InvestorKpiMapping < ApplicationRecord
     self.standard_kpi_name = standard_kpi_name.strip
   end
 
+  validate :formula_kosher?
+  def formula_kosher?
+    return if cumulate_formula.blank?
+
+    errors.add(:cumulate_formula, "You cannot do CRUD operations in a formula") if cumulate_formula.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
   after_commit :update_parent_child_count
   def update_parent_child_count
     parent&.update(child_count: parent.children.count)

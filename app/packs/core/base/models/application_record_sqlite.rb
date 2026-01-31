@@ -8,6 +8,21 @@ class ApplicationRecordSqlite < ApplicationRecord
     @cached_custom_fields
   end
 
+
+  # This is used to calculate the start of financial year based on the month offset set in models json fields
+  def start_of_financial_year_date(end_date = nil, nil_if_not_set: false)
+    # In some cases we may want to return nil if the end_date is not set and nil_if_not_set is true (See KpiCumulative)
+    if end_date.nil? && nil_if_not_set
+      nil
+    else
+      end_date ||= Time.zone.today
+      # Some funds/entities/portcos want to set the start of the financial year to Jan some to April, this allows for that.
+      month_offset_for_fy = json_fields && json_fields["month_offset_for_fy"].present? ? json_fields["month_offset_for_fy"].to_i : 3
+      date = end_date.month > month_offset_for_fy ? end_date.beginning_of_year : (end_date.beginning_of_year - 1.year)
+      (date + month_offset_for_fy.months)
+    end
+  end
+
   # 1. Establish a base connection to a dummy in-memory DB.
   # This provides a real ConnectionPool that Rails can use, but isolates us from MySQL.
   establish_connection(adapter: 'sqlite3', database: ':memory:')
