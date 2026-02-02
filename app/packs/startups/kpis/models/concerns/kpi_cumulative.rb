@@ -185,34 +185,55 @@ module KpiCumulative
     note ||= "Auto-generated #{period} cumulative"
     Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{end_date}, value: #{cumulative_sum}" }
 
-    cumulative_kpi = Kpi.approved.joins(:kpi_report)
-                        .where(entity_id: entity_id, name:, portfolio_company_id: portfolio_company_id)
-                        .where(kpi_reports: { period: period })
-                        .where(kpi_reports: { as_of: end_date })
-                        .last
+    report_for_period = KpiReport.find_by(
+      period: period,
+      as_of: end_date,
+      entity_id: entity_id,
+      portfolio_company_id: portfolio_company_id
+    )
+
+    cumulative_kpi = report_for_period&.kpis&.approved&.find_by(
+      entity_id: entity_id,
+      name: name,
+      portfolio_company_id: portfolio_company_id
+    )
 
     if cumulative_kpi
-      # Only overwrite if the value is nil or force is true.
-      if cumulative_kpi.value.nil? || force
-        cumulative_kpi.value = cumulative_sum
-        cumulative_kpi.notes = note
-        cumulative_kpi.save if cumulative_kpi.changed?
-      end
-    else
-      # Fallback to current kpi's report user if user_id not passed
-      user_id ||= respond_to?(:kpi_report) && kpi_report ? kpi_report.user_id : nil
+      existing_value = cumulative_kpi.value
+      same_value = existing_value.to_d.round(6) == cumulative_sum.to_d.round(6)
+      return if same_value && !force
 
-      # We need user_id to create a report. If nil, it might fail validation if user is required.
-      # Assuming user might be optional or handled elsewhere if nil.
-      # But usually report belongs to user.
-
-      kpi_report = KpiReport.find_or_create_by(period: period, as_of: end_date,
-                                               entity_id:, portfolio_company_id:, user_id:)
-
-      kpi = Kpi.approved.find_or_initialize_by(entity_id:, name:, portfolio_company_id:, kpi_report:)
-      kpi.value = cumulative_sum
-      kpi.notes = note
-      kpi.save
+      cumulative_kpi.value = cumulative_sum
+      cumulative_kpi.notes = note
+      cumulative_kpi.save if cumulative_kpi.changed?
+      return
     end
+
+    # Fallback to current kpi's report user if user_id not passed
+    source_report = respond_to?(:kpi_report) ? self.kpi_report : nil
+    user_id ||= source_report&.user_id
+
+    # We need user_id to create a report. If nil, it might fail validation if user is required.
+    # Assuming user might be optional or handled elsewhere if nil.
+    # But usually report belongs to user.
+
+    report_for_period ||= KpiReport.find_or_create_by(
+      period: period,
+      as_of: end_date,
+      entity_id: entity_id,
+      portfolio_company_id: portfolio_company_id,
+      user_id: user_id
+    )
+
+    kpi = Kpi.approved.find_or_initialize_by(
+      entity_id: entity_id,
+      name: name,
+      portfolio_company_id: portfolio_company_id,
+      kpi_report: report_for_period
+    )
+
+    kpi.value = cumulative_sum
+    kpi.notes = note
+    kpi.save
   end
 end
