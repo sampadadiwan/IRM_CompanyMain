@@ -1,3 +1,26 @@
+V9.1.85
+c80ee2168 Pc dashboard funds fix (#1242)
+9c60f1ee1 Enhance KPI import functionality by adding scope for non-compute mappings and updating tests for KPI status handling
+664d85c0c Refactor cumulative KPI processing to improve value assignment and user handling
+b39081551 Update cumulate_formula field help text to remove brackets in example
+e33b4ec89 Approve kpis (#1239)
+b6f890fca Enhance financial year date calculation and add validation for formula integrity in KPI mapping
+ee86c2ddd Cumulate kpis 2 (#1238)
+fa7d461c6 PI create attaches created valuation if blank (#1108)
+475ccef2d Multi portfolio updates (#1235)
+52055d58b Add period selection to budget filter and refactor report filtering logic
+5dfb02512 Enhance multi-select functionality in Select2 and preserve selection order; update budget filter form and rendering logic
+17a34e3c0 Enhance KPI Budget View to support multiple tags for comparison and update related service and view logic
+e08bb26dd Add explanation values to account entries export for enhanced clarity
+203bfd7fe Add COLLATE NOCASE to investor_name columns for case-insensitive comparisons
+e38f021c0 Add json_fields column to investors table for enhanced data storage
+72f37b514 Remove period parameter from KPI category title for cleaner display
+c5ac61281 Update computed_fields_cache to include end_date parameter for accurate calculations
+85bd3f000 Fixed the start_of_financial year in allocation engine
+e30bf5b9c Added check for kyc_type in import
+05bc25ab3 Fix start_of_financial_year calculation to use @end_date
+c491bf811 Bugfixes 280126 (#1232)
+
 V9.1.79
 d5530af60 (fund_email_ids) feat: Refactor category and investor sorting in horizontal cap table for improved clarity and performance
 056c90dc9 feat: Add `without_investor_accesses` scope and enhance the notification trigger UI with a confirmation popup that includes a recipient list link, updating the workflow documentation.
