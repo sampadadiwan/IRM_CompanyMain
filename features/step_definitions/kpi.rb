@@ -294,11 +294,12 @@ Given('the following Monthly KPI Reports exist with KPIs:') do |table|
     as_of = Date.parse(row['as_of'])
     period = row['period'] || 'Month'
     tag_list = row['tag_list'] || 'Actual'
+    status = row['status'] || 'approved'
     kpi_report = KpiReport.find_or_create_by!(entity: @entity, portfolio_company_id: @portfolio_company.id, period:, as_of:, tag_list:) do |r|
       r.user = @user
     end
     mapping = InvestorKpiMapping.find_by(standard_kpi_name: row['name'], entity: @entity, investor: @portfolio_company)
-    FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f, investor_kpi_mapping: mapping, status: :approved)
+    FactoryBot.create(:kpi, kpi_report:, entity: @entity, portfolio_company_id: @portfolio_company.id, name: row['name'], value: row['value'].to_f, investor_kpi_mapping: mapping, status: status.to_sym)
   end
 end
 
@@ -328,6 +329,18 @@ Then('I should see a {string} KPI {string} for {string} with value {string}') do
   kpi = Kpi.joins(:kpi_report).where(name: name, entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, kpi_reports: { period: period, as_of: date }).last
   expect(kpi).not_to be_nil
   expect(kpi.value.to_f).to eq(value.to_f)
+end
+
+Then('I should not see a {string} KPI {string} for {string}') do |period, name, as_of|
+  date = Date.parse(as_of)
+  kpi = Kpi.joins(:kpi_report).where(name: name, entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, kpi_reports: { period: period, as_of: date }).last
+  expect(kpi).to be_nil
+end
+
+Then('the {string} KPI {string} for {string} should have {int} record') do |period, name, as_of, count|
+  date = Date.parse(as_of)
+  kpis = Kpi.joins(:kpi_report).where(name: name, entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, kpi_reports: { period: period, as_of: date })
+  expect(kpis.count).to eq(count)
 end
 
 Then('Quarterly KPI should be cumulated correctly for {string}') do |kpi_name|

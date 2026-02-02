@@ -11,8 +11,8 @@ class ImportKpiWorkbookJob < ApplicationJob
 
       # The portfolio company for which the kpi report is created
       portfolio_company = kpi_report.portfolio_company
-      # The mappings used to identify the kpis to be extracted
-      kpi_mappings = portfolio_company.investor_kpi_mappings
+      # The mappings used to identify the kpis to be extracted, ensure they are not 'compute' type
+      kpi_mappings = portfolio_company.investor_kpi_mappings.not_compute
       # target_kpis = kpi_mappings.pluck(:reported_kpi_name)
 
       # Extract and save the kpis from the workbook

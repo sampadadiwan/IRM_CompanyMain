@@ -22,6 +22,12 @@ class InvestorKpiMapping < ApplicationRecord
   enum :data_type, { money: 'money', numeric: 'numeric', percentage: 'percentage' }
   enum :cumulate, { cumulate: 'cumulate', forward_fill: 'forward_fill', compute: 'compute' }, prefix: true
 
+
+  scope :cumulate, -> { where(cumulate: 'cumulate') }
+  scope :forward_fill, -> { where(cumulate: 'forward_fill') }
+  scope :compute, -> { where(cumulate: 'compute') }
+  scope :not_compute, -> { where.not(cumulate: 'compute') }
+
   before_create :setup_standard_kpi_name
   def setup_standard_kpi_name
     self.reported_kpi_name = reported_kpi_name.strip
