@@ -185,7 +185,7 @@ class KpiReport < ApplicationRecord
     end
   end
 
-  after_commit :compute_common_size_kpi, on: %i[create update]
+  # after_commit :compute_common_size_kpi, on: %i[create update]
 
   # rubocop:disable Rails/SkipsModelValidations
   def compute_common_size_kpi

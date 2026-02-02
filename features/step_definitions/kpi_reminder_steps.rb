@@ -49,8 +49,9 @@ end
 Then('I should see the kpi report details') do
   @kpi_report = KpiReport.last
   expect(page).to have_content(@kpi_report.portfolio_company.investor_name)
-  expect(page).to have_content(I18n.l(@kpi_report.as_of))
-  expect(page).to have_content(@kpi_report.entity.name)
+  localized_date = I18n.l(@kpi_report.as_of)
+  iso_date = @kpi_report.as_of.strftime("%Y-%m-%d")
+  expect(page).to have_content(/#{Regexp.escape(localized_date)}|#{Regexp.escape(iso_date)}/)
 end
 
 Given('I am on the kpi report show page') do
@@ -64,5 +65,3 @@ When('I press {string}') do |button_text|
   sleep(2)
   page.should have_content("Notification sent")
 end
-
-

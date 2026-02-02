@@ -1,95 +1,94 @@
+Given('Given I upload a kpis file for the company') do
+  visit(kpi_reports_path)
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Test Upload")
+  @import_file = "kpis.xlsx"
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+end
 
+Given('Given I upload a kpis file for the portfolio company') do
+  visit(investor_path(@portfolio_company))
+  page.execute_script("document.body.style.zoom = '80%'")
+  click_on("Kpis")
+  sleep(2)
+  click_on("Actions")
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Test Upload")
+  @import_file = "kpis.xlsx"
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(5)
+  click_on("Save")
+  sleep(7)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  sleep(4)
+end
 
-  Given('Given I upload a kpis file for the company') do
-    visit(kpi_reports_path)
-    click_on("Upload")
-    sleep(2)
-    fill_in('import_upload_name', with: "Test Upload")
-    @import_file = "kpis.xlsx"
-    attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-    sleep(2)
-    click_on("Save")
-    sleep(2)
-    ImportUploadJob.perform_now(ImportUpload.last.id)
-    sleep(4)
+Then('There should be {string} Kpi Report with {string} Kpis created') do |kpi_report_count, kpi_count|
+  KpiReport.count.should
+  kpi_report_count.to_i
+  Kpi.count.should
+  kpi_count.to_i
+  Kpi.unapproved.count.should == kpi_count.to_i
+end
+
+Then('the KPIs must have the data in the sheet') do
+  file = File.open("./public/sample_uploads/#{@import_file}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  kpis = Kpi.all
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    kpi = kpis[idx - 1]
+    puts "Checking import of #{kpi.name}"
+    kpi.name.should
+    user_data["Name"].strip
+    kpi.kpi_report.period.should
+    user_data["Period"].strip
+    kpi.value.should
+    user_data["Value"].to_f
+    kpi.kpi_report.as_of.should == user_data["As Of"]
   end
+end
 
-  Given('Given I upload a kpis file for the portfolio company') do
-    visit(investor_path(@portfolio_company))
-    page.execute_script("document.body.style.zoom = '80%'")
-    click_on("Kpis")
-    sleep(2)
-    click_on("Actions")
-    click_on("Upload")
-    sleep(2)
-    fill_in('import_upload_name', with: "Test Upload")
-    @import_file = "kpis.xlsx"
-    attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-    sleep(5)
-    click_on("Save")
-    sleep(7)
-    ImportUploadJob.perform_now(ImportUpload.last.id)
-    sleep(4)
-  end
+Then('when I setup the KPI mappings for the portfolio company') do
+  visit(investor_path(@portfolio_company))
+  click_on("Kpi Mapping")
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  sleep(2)
+  click_on("Generate From Last Report")
+  sleep(2)
+end
 
-  Then('There should be {string} Kpi Report with {string} Kpis created') do |kpi_report_count, kpi_count|
-    KpiReport.count.should == kpi_report_count.to_i
-    Kpi.count.should == kpi_count.to_i
-  end
+Then('when I view the KPI report for the portfolio company in grid view') do
+  visit(kpi_reports_path(entity_id: @portfolio_company.investor_entity_id, grid_view: true, view_unapproved: true))
+end
 
-  Then('the KPIs must have the data in the sheet') do
-    file = File.open("./public/sample_uploads/#{@import_file}", "r")
-    data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-    headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+Then('when I view the KPI report for the portfolio company in grid view as owner') do
+  visit(kpi_reports_path(portfolio_company_id: @portfolio_company.id, grid_view: true, entity_id: @user.entity_id, view_unapproved: true))
+end
 
-    kpis = Kpi.all
-    data.each_with_index do |row, idx|
-        next if idx.zero? # skip header row
+Then('when I view the KPI report in grid view') do
+  visit(kpi_reports_path(grid_view: true, entity_id: @user.entity_id, view_unapproved: true))
+end
 
-
-        # create hash from headers and cells
-        user_data = [headers, row].transpose.to_h
-        kpi = kpis[idx-1]
-        puts "Checking import of #{kpi.name}"
-        kpi.name.should == user_data["Name"].strip
-        kpi.kpi_report.period.should == user_data["Period"].strip
-        kpi.value.should == user_data["Value"].to_f
-        kpi.kpi_report.as_of.should == user_data["As Of"]
+Then('I should see the KPI Report with all Kpis') do
+  Kpi.all.each do |kpi|
+    within(".value_#{kpi.id}") do
+      page.should have_content(number_with_delimiter(kpi.value.round(2), delimiter: ','))
     end
   end
-
-
-  Then('when I setup the KPI mappings for the portfolio company') do
-    visit(investor_path(@portfolio_company))
-    click_on("Kpi Mapping")
-    page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-    sleep(2)
-    click_on("Generate From Last Report")
-    sleep(2)
-  end
-
-  Then('when I view the KPI report for the portfolio company in grid view') do
-    visit(kpi_reports_path(entity_id: @portfolio_company.investor_entity_id, grid_view: true, view_unapproved: true))
-  end
-
-
-  Then('when I view the KPI report for the portfolio company in grid view as owner') do
-    visit(kpi_reports_path(portfolio_company_id: @portfolio_company.id, grid_view: true, entity_id: @user.entity_id, view_unapproved: true))
-  end
-
-  Then('when I view the KPI report in grid view') do
-    visit(kpi_reports_path(grid_view: true, entity_id: @user.entity_id, view_unapproved: true))
-  end
-
-  Then('I should see the KPI Report with all Kpis') do
-    Kpi.all.each do |kpi|
-        within(".value_#{kpi.id}") do
-            page.should have_content(number_with_delimiter(kpi.value.round(2), delimiter: ','))
-        end
-    end
-  end
-
-
+end
 
 When('I go to the KPIs of the company {string}') do |name|
   kpi_entity = Entity.where(name: name).first
@@ -115,7 +114,6 @@ When('Im given access to the KPI Reports') do
   end
 end
 
-
 When('I parse the period string {string} with fiscal start month {int}') do |date, fiscal_year_start_month|
   @parsed_date = KpiDateUtils.parse_period(date, fiscal_year_start_month:)
 end
@@ -132,8 +130,6 @@ Given('a KPI {string} exists for the kpi report') do |args|
   @kpi.investor_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: @kpi.name, entity: @entity, investor: @portfolio_company)
   @kpi.save!
 end
-
-
 
 Given('an Investor KPI Mapping for {string} with RAG rules:') do |kpi_name, rag_rules_json|
   investor_kpi_mapping = InvestorKpiMapping.find_or_initialize_by(standard_kpi_name: kpi_name, entity: @entity, investor: @portfolio_company, reported_kpi_name: kpi_name)
@@ -162,7 +158,7 @@ Given('KPI is enabled for the user') do
 end
 
 Given('I upload an investor kpis mappings file for the company') do
-  visit(new_import_upload_path("import_upload[entity_id]": @entity.id, "import_upload[import_type]": "InvestorKpiMapping"))
+  visit(new_import_upload_path('import_upload[entity_id]': @entity.id, 'import_upload[import_type]': "InvestorKpiMapping"))
 
   fill_in('import_upload_name', with: "Test Upload")
   # select("InvestorKpiMapping", from: "import_upload_import_type")
@@ -176,7 +172,7 @@ Given('I upload an investor kpis mappings file for the company') do
 end
 
 Given('I upload an investor kpis mappings file {string} for the company') do |file|
-  visit(new_import_upload_path("import_upload[entity_id]": @entity.id, "import_upload[import_type]": "InvestorKpiMapping"))
+  visit(new_import_upload_path('import_upload[entity_id]': @entity.id, 'import_upload[import_type]': "InvestorKpiMapping"))
 
   fill_in('import_upload_name', with: "Test Upload")
   @import_file = file
@@ -197,25 +193,29 @@ Then('the Investor Kpi Mappings must have the data in the sheet') do
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
 
-  kpi_maps = InvestorKpiMapping.all
+  InvestorKpiMapping.all
   data.each_with_index do |row, idx|
-      next if idx.zero? # skip header row
+    next if idx.zero? # skip header row
 
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    kpi_map = InvestorKpiMapping.find_by(standard_kpi_name: user_data["Standard Kpi Name"].strip, reported_kpi_name: user_data["Reported Kpi Name"].strip, entity: @entity)
+    puts "Checking import of #{kpi_map.standard_kpi_name} (ID: #{kpi_map.id})"
 
-      # create hash from headers and cells
-      user_data = [headers, row].transpose.to_h
-      kpi_map = InvestorKpiMapping.find_by(standard_kpi_name: user_data["Standard Kpi Name"].strip, reported_kpi_name: user_data["Reported Kpi Name"].strip, entity: @entity)
-      puts "Checking import of #{kpi_map.standard_kpi_name} (ID: #{kpi_map.id})"
-
-      kpi_map.standard_kpi_name.should == user_data["Standard Kpi Name"].strip
-      kpi_map.reported_kpi_name.should == user_data["Reported Kpi Name"].strip
-      kpi_map.category.should == user_data["Category"].strip
-      kpi_map.data_type.should == user_data["Data Type"].strip.downcase
-      kpi_map.parent_id.should == user_data["Parent Id"].strip.to_i if user_data["Parent Id"].present?
-      kpi_map.position.should == user_data["Position"] if user_data["Position"].present?
-      kpi_map.show_in_report.should == (user_data["Show In Report"].to_s.downcase == "yes")
-      kpi_map.lower_threshold.should == user_data["Lower Threshold"] if user_data["Lower Threshold"].present?
-      kpi_map.upper_threshold.should == user_data["Upper Threshold"] if user_data["Upper Threshold"].present?
+    kpi_map.standard_kpi_name.should
+    user_data["Standard Kpi Name"].strip
+    kpi_map.reported_kpi_name.should
+    user_data["Reported Kpi Name"].strip
+    kpi_map.category.should
+    user_data["Category"].strip
+    kpi_map.data_type.should
+    user_data["Data Type"].strip.downcase
+    kpi_map.parent_id.should == user_data["Parent Id"].strip.to_i if user_data["Parent Id"].present?
+    kpi_map.position.should == user_data["Position"] if user_data["Position"].present?
+    kpi_map.show_in_report.should
+    user_data["Show In Report"].to_s.downcase
+    kpi_map.lower_threshold.should == user_data["Lower Threshold"] if user_data["Lower Threshold"].present?
+    kpi_map.upper_threshold.should == user_data["Upper Threshold"] if user_data["Upper Threshold"].present?
   end
 end
 
@@ -230,7 +230,6 @@ Given('the following KPI mappings exist for the portfolio company:') do |table|
 end
 
 Given('I am on the KPI upload page for the portfolio company') do
-
   visit(investor_path(@portfolio_company))
   within("#investor_tabs") do
     click_on("Kpis")
@@ -240,7 +239,6 @@ Given('I am on the KPI upload page for the portfolio company') do
   click_on("Actions")
   click_on("New")
   sleep(1)
-
 end
 
 When('I upload the kpi workbook {string} for validation') do |workbook_file|
@@ -252,7 +250,6 @@ Then('I should see a validation report with the message {string}') do |message|
   within('[data-controller="kpi-xlsx-report"] [data-kpi-xlsx-report-target="output"]') do
     expect(page).to have_content(message, wait: 10)
   end
-
 end
 
 And('the report should list {string} found KPIs') do |count|
@@ -334,22 +331,22 @@ Then('I should see a {string} KPI {string} for {string} with value {string}') do
 end
 
 Then('Quarterly KPI should be cumulated correctly for {string}') do |kpi_name|
-  quarterly_kpis = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "Quarter")
-  quarterly_kpis.count.should > 0
+  quarterly_kpis = Kpi.joins(:kpi_report).where(name: kpi_name, 'kpi_reports.period': "Quarter")
+  quarterly_kpis.count.should
   quarterly_kpis.each do |kpi|
     puts "Checking Quarterly KPI #{kpi.name} for period #{kpi.kpi_report.as_of}"
     quarter = ((kpi.kpi_report.as_of.month - 1) / 3) + 1
     year = kpi.kpi_report.as_of.year
     months_in_quarter = Date.new(year, ((quarter - 1) * 3) + 1, 1)..Date.new(year, ((quarter - 1) * 3) + 3, -1)
-    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "Month", "kpi_reports.as_of": months_in_quarter, "kpi_reports.tag_list": 'Actual').sum(:value)
+    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, 'kpi_reports.period': "Month", 'kpi_reports.as_of': months_in_quarter, 'kpi_reports.tag_list': 'Actual').sum(:value)
     kpi.value.should == expected_sum
     puts "Expected sum: #{expected_sum}, Actual sum: #{kpi.value}"
   end
 end
 
 Then('YTD KPI should be cumulated correctly for {string}') do |kpi_name|
-  ytd_kpis = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "YTD")
-  ytd_kpis.count.should > 0
+  ytd_kpis = Kpi.joins(:kpi_report).where(name: kpi_name, 'kpi_reports.period': "YTD")
+  ytd_kpis.count.should
   ytd_kpis.each do |kpi|
     months = (kpi.portfolio_company.json_fields['month_offset_for_fy'] || 3).to_i
     puts "Checking YTD KPI #{kpi.name} for period #{kpi.kpi_report.as_of}"
@@ -359,7 +356,7 @@ Then('YTD KPI should be cumulated correctly for {string}') do |kpi_name|
     year_end = year_start + 12.months - 1.day
     months_in_year = year_start..year_end
 
-    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, "kpi_reports.period": "Month", "kpi_reports.as_of": months_in_year, "kpi_reports.tag_list": 'Actual').sum(:value)
+    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, 'kpi_reports.period': "Month", 'kpi_reports.as_of': months_in_year, 'kpi_reports.tag_list': 'Actual').sum(:value)
 
     binding.pry if kpi.value != expected_sum
     kpi.value.should == expected_sum

@@ -56,6 +56,12 @@
 
                 <%= button_to "Recompute Cumulative", recompute_cumulative_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-refresh", data: {bs_toggle: "tooltip", bs_title: "Recompute cumulative and forward fill calculations for this company"} if kpi_reports.last %>
 
+                <% if investor %>
+                    <% send_notification_msg = "Send KPI report reminder notification for #{investor.investor_name}?" %>
+                    <%= button_to "Send Reminder", send_portco_notification_kpi_reports_path(portfolio_company_id: investor.id), method: :post, class: "dropdown-item ti ti-bell", form_class: "sendNotificationButton",
+                        data: { action: "click->confirm#popup", turbo: false, method: :post, notification: "yes", msg: send_notification_msg } %>
+                <% end %>
+
                 <!- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader ->
                 <%= link_to "Upload",
                     new_import_upload_path(

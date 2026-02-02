@@ -11,7 +11,7 @@
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#analysis-tab">Analysis</a>
       <% end %>
 
-      <% if policy(kpi_report).update? %>
+      <% if policy(kpi_report).update? && current_user.entity_id == kpi_report.entity_id %>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
           <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
       <% end %>

@@ -10,7 +10,7 @@ resources :kpi_reports do
   patch 'recompute_cumulative', on: :member
   patch 'recompute_percentage_change', on: :member
   post "analyze", on: :member
-  post 'send_portco_notification', on: :member
+  post 'send_portco_notification', on: :collection
   get "show_performance", on: :collection
 end
 

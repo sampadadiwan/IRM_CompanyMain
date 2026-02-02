@@ -22,14 +22,13 @@ class KpiReportPolicy < KpiPolicyBase
 
   def show?
     (user.enable_kpis &&
-      (belongs_to_entity?(user, record) || permissioned_employee?) && record.owner_id.nil?) || permissioned_investor? || record.owner_id == user.entity_id || portfolio_company_user?
+      (belongs_to_entity?(user, record) || permissioned_employee?)) || (portfolio_company_user? && record.tag_list == "Actual")
   end
 
   def create?
     # Original Fund entity user permission
     # Reference: kpi_portco_upload.md
-    ((belongs_to_entity?(user, record) || permissioned_employee?) && record.owner_id.nil?) ||
-      portfolio_company_user?
+    user.enable_kpis && (belongs_to_entity?(user, record) || permissioned_employee? || portfolio_company_user?)
   end
 
   def new?
@@ -43,7 +42,7 @@ class KpiReportPolicy < KpiPolicyBase
   def update?
     # Original Fund entity user permission or owner access
     # Reference: kpi_portco_upload.md
-    create? || record.owner_id == user.entity_id
+    create?
   end
 
   def recompute_percentage_change?
@@ -57,7 +56,9 @@ class KpiReportPolicy < KpiPolicyBase
   # Allow sending notification reminders if the user can index reports
   # and the report has self-reporting (portco upload) enabled.
   def send_portco_notification?
-    update? && record.portfolio_company.investor_accesses.approved.exists?
+    user.enable_kpis &&
+      (portfolio_company_user? || InvestorPolicy.new(user, record.portfolio_company).update?) &&
+      record.portfolio_company.investor_accesses.approved.exists?
   end
 
   def edit?
@@ -65,7 +66,7 @@ class KpiReportPolicy < KpiPolicyBase
   end
 
   def destroy?
-    update?
+    update? && belongs_to_entity?(user, record)
   end
 
   private

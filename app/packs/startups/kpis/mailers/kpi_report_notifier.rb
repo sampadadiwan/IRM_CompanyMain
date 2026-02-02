@@ -25,7 +25,7 @@ class KpiReportNotifier < BaseNotifier
     end
 
     def url
-      kpi_report_path(id: record.id, sub_domain: record.entity.sub_domain)
+      edit_kpi_report_path(id: record.id, sub_domain: record.entity.sub_domain)
     end
   end
 end

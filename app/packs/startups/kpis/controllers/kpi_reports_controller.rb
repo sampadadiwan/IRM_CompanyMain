@@ -1,5 +1,5 @@
 class KpiReportsController < ApplicationController
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze send_portco_notification]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze]
   after_action :verify_authorized, except: %i[index search show_performance]
 
   # GET /kpi_reports or /kpi_reports.json
@@ -131,8 +131,12 @@ class KpiReportsController < ApplicationController
   end
 
   def send_portco_notification
-    SendPortcoNotification.call(model: @kpi_report, entity_id: current_user.entity_id)
-    redirect_to kpi_report_url(@kpi_report), notice: "Notification sent."
+    portfolio_company = Investor.find(params[:portfolio_company_id])
+    kpi_report = find_or_create_kpi_report_shell(portfolio_company)
+    authorize kpi_report, :send_portco_notification?
+
+    SendPortcoNotification.call(model: kpi_report, entity_id: current_user.entity_id)
+    redirect_to investor_url(id: portfolio_company.id, tab: "kpis-tab"), notice: "Notification sent."
   end
 
   def show_performance
@@ -177,5 +181,36 @@ class KpiReportsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def kpi_report_params
     params.require(:kpi_report).permit(:portfolio_company_id, :entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :delete_kpis, :update_existing_kpis, :upload_new_kpis, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy], documents_attributes: Document::NESTED_ATTRIBUTES)
+  end
+
+  def find_or_create_kpi_report_shell(portfolio_company)
+    # Requirement: notifications must target an Actual-tag KPI report shell at quarter end.
+    # If the request is sent more than 15 days after quarter end and the previous quarter
+    # report is still empty (no KPIs), we should reuse that previous quarter shell.
+    current_quarter_end = Time.zone.today.end_of_quarter
+    as_of = current_quarter_end
+    period = "Quarter"
+
+    if Time.zone.today > (current_quarter_end + 15.days)
+      # Create (or reuse) the previous quarter shell so we can check if it has KPIs.
+      previous_quarter_end = (Time.zone.today - 3.months).end_of_quarter
+      previous_report = find_or_create_kpi_report_for(portfolio_company, previous_quarter_end, period)
+      as_of = previous_report.kpis.none? ? previous_quarter_end : current_quarter_end
+
+      # If we are reusing the previous quarter, return that shell directly.
+      return previous_report if as_of == previous_quarter_end
+    end
+
+    # Default to the current quarter shell.
+    KpiReport.find_or_create_by(
+      entity_id: current_user.entity_id,
+      portfolio_company_id: portfolio_company.id,
+      as_of: as_of,
+      period: period,
+      tag_list: "Actual"
+    ) do |report|
+      report.user_id = current_user.id
+      report.enable_portco_upload = true
+    end
   end
 end
