@@ -235,4 +235,11 @@ module FundsHelper
 
     render(partial: "funds/number_stats_cards", locals: { cards_data: cards_data })
   end
+
+  def setup_fund_selection(current_user, params)
+    # Fetch funds
+    funds = Pundit.policy_scope(current_user, Fund)
+    selected_fund_ids = Array(params[:fund_ids]).presence || []
+    [funds, selected_fund_ids]
+  end
 end

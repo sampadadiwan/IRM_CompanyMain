@@ -95,9 +95,6 @@ class InvestorsController < ApplicationController
     @name = params[:name] || "Default"
     params[:filter] = true
 
-    # Fetch funds
-    @funds = Pundit.policy_scope(current_user, Fund)
-
     # Initialize empty arrays - will be populated in index method
     @tags_for_select = []
     @sectors_for_select = []

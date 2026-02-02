@@ -4,7 +4,7 @@
   portfolio_company_ids ||= investors.pluck(:id)
   tags ||= uri_params[:tag_list] || []
   sector ||= uri_params[:sector] || []
-  fund_ids ||= @funds.present? ? @funds.pluck(:id) : []
+  fund_ids ||= @selected_fund_ids.presence || Array(params[:fund_ids]).presence || @funds.pluck(:id).presence || []
   allowed_plot_params = ["fmv", "bought_amount"]
   plot_param ||= args[:plot].present? ? args[:plot] : "fmv"
   title = args[:title] || "Portfolio Company Charts"
@@ -13,7 +13,7 @@
   show_sector_wise = args[:show_sector_wise] == true
   show_portfolio_company_wise = args[:show_portfolio_company_wise] == true || (!show_sector_wise)
   show_table = args[:show_table] == true
-  table_limit = args[:table_limit] || 8
+  table_limit = args[:table_limit] || 10
 %>
 
 <% valid_plot_param = allowed_plot_params.include?(plot_param.downcase) %>
@@ -25,54 +25,47 @@
           <% if show_sector_wise %>
             <div class="<%= (show_sector_wise && show_portfolio_company_wise) ? 'col-12 col-lg-6' : 'col-12' %>">
               <p class="text-muted small mb-2">Sectors</p>
-              <%= investment_chart_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sector, plot_param) %>
+              <%= investment_chart_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sector, plot_param, limit: table_limit) %>
               <% if show_table %>
                 <% grouped = investment_grouped_data_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sector, plot_param) rescue [] %>
-                <% total = grouped.map { |_, v| v.to_f }.sum %>
-                <% if total > 0 && grouped.any? %>
-                  <% sorted = grouped.sort_by { |_, v| -v } %>
-                  <% top = sorted.first(table_limit) %>
-                  <% others = sorted.drop(table_limit) %>
-                  <% other_sum = others.map { |_, v| v }.sum %>
+                <% table_data = process_table_data(grouped, limit: table_limit) %>
+                <% if table_data[:top].any? %>
                   <div style="min-height: 280.5px; max-height: 500px;  overflow-y: auto;">
                     <table class="table table-sm mt-2 mb-0">
                       <tbody>
-                        <% top.each do |name, value| %>
+                        <% table_data[:top].each do |name, value| %>
                           <tr>
                             <td class="p-1 small"><%= name %></td>
-                            <td class="p-1 small text-end"><%= number_to_percentage((value.to_f / total) * 100.0, precision: 1) %></td>
-
+                            <td class="p-1 small text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                          </tr>
                         <% end %>
-                        <% if other_sum > 0 %>
+                        <% if table_data[:others].any? %>
+                          <% other_sum = table_data[:others].sum { |_, v| v } %>
                           <tr data-role="sector-others-summary-row">
                             <td class="p-1 small">
-                              <% if others.any? %>
-                                <button class="btn btn-link btn-sm p-0 me-2 align-baseline" type="button" data-role="sector-others-toggle" aria-expanded="false">
-                                  <span data-role="sector-others-toggle-icon" aria-hidden="true">▸</span>
-                                  <span class="visually-hidden">Toggle other sectors</span>
-                                </button>
-                              <% end %>
+                              <button class="btn btn-link btn-sm p-0 me-2 align-baseline" type="button" data-role="sector-others-toggle" aria-expanded="false">
+                                <span data-role="sector-others-toggle-icon" aria-hidden="true">▸</span>
+                                <span class="visually-hidden">Toggle other sectors</span>
+                              </button>
                               Other
                             </td>
-                            <td class="p-1 small text-end"><%= number_to_percentage((other_sum.to_f / total) * 100.0, precision: 1) %></td>
+                            <td class="p-1 small text-end"><%= number_to_percentage((other_sum.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
                           </tr>
-                          <% if others.any? %>
-                            <tr class="d-none" data-role="sector-others-list-row">
-                              <td colspan="2" class="p-0">
-                                <div class="border-top px-2 py-2 bg-body-tertiary">
-                                  <div class="small fw-semibold text-muted mb-1">Other sectors</div>
-                                  <ul class="list-unstyled small mb-0">
-                                    <% others.each do |name, value| %>
-                                      <li class="d-flex justify-content-between align-items-center py-1 border-top">
-                                        <span class="text-truncate" title="<%= name %>"><%= name %></span>
-                                        <span class="fw-semibold"><%= number_to_percentage((value.to_f / total) * 100.0, precision: 1) %></span>
-                                      </li>
-                                    <% end %>
-                                  </ul>
-                                </div>
-                              </td>
-                            </tr>
-                          <% end %>
+                          <tr class="d-none" data-role="sector-others-list-row">
+                            <td colspan="2" class="p-0">
+                              <div class="border-top px-2 py-2 bg-body-tertiary">
+                                <div class="small fw-semibold text-muted mb-1">Other sectors</div>
+                                <ul class="list-unstyled small mb-0">
+                                  <% table_data[:others].each do |name, value| %>
+                                    <li class="d-flex justify-content-between align-items-center py-1 border-top">
+                                      <span class="text-truncate" title="<%= name %>"><%= name %></span>
+                                      <span class="fw-semibold"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></span>
+                                    </li>
+                                  <% end %>
+                                </ul>
+                              </div>
+                            </td>
+                          </tr>
                         <% end %>
                       </tbody>
                     </table>
@@ -85,58 +78,50 @@
           <% if show_portfolio_company_wise %>
             <div class="<%= (show_sector_wise && show_portfolio_company_wise) ? 'col-12 col-lg-6' : 'col-12' %>">
               <p class="text-muted small mb-2">Companies</p>
-              <%= investment_chart_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids) %>
+              <%= investment_chart_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids, limit: table_limit) %>
 
               <% grouped = investment_grouped_data_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids) rescue [] %>
-              <% total = grouped.map { |_, v| v.to_f }.sum %>
-              <% if total > 0 && grouped.any? %>
-                <% sorted = grouped.sort_by { |_, v| -v } %>
-                <% top = sorted.first(table_limit) %>
-                <% others = sorted.drop(table_limit) %>
-                <% other_sum = others.map { |_, v| v }.sum %>
+              <% table_data = process_table_data(grouped, limit: table_limit) %>
+              <% if table_data[:top].any? %>
                 <div style="min-height: 280.5px; max-height: 500px; overflow-y: auto;">
                   <table class="table table-sm mt-2 mb-0">
                     <tbody>
-                      <% top.each do |name, value| %>
+                      <% table_data[:top].each do |name, value| %>
                         <tr>
                           <td class="p-1 small"><%= name %></td>
-                          <td class="p-1 small text-end"><%= number_to_percentage((value.to_f / total) * 100.0, precision: 1) %></td>
+                          <td class="p-1 small text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
                         </tr>
-
                       <% end %>
 
-                      <% if other_sum > 0 %>
+                      <% if table_data[:others].any? %>
+                        <% other_sum = table_data[:others].sum { |_, v| v } %>
                         <tr data-role="company-others-summary-row">
                           <td class="p-1 small align-middle">
-                            <% if others.any? %>
-                              <button class="btn btn-link btn-sm p-0 me-2 align-baseline" type="button" data-role="company-others-toggle" aria-expanded="false">
-                                <span data-role="company-others-toggle-icon" aria-hidden="true">▸</span>
-                                <span class="visually-hidden">Toggle other companies</span>
-                              </button>
-                            <% end %>
+                            <button class="btn btn-link btn-sm p-0 me-2 align-baseline" type="button" data-role="company-others-toggle" aria-expanded="false">
+                              <span data-role="company-others-toggle-icon" aria-hidden="true">▸</span>
+                              <span class="visually-hidden">Toggle other companies</span>
+                            </button>
                             Other
                           </td>
                           <td class="p-1 small text-end align-middle">
-                            <%= number_to_percentage((other_sum.to_f / total) * 100.0, precision: 1) %>
+                            <%= number_to_percentage((other_sum.to_f / table_data[:total]) * 100.0, precision: 1) %>
                           </td>
                         </tr>
-                        <% if others.any? %>
-                          <tr class="d-none" data-role="company-others-list-row">
-                            <td colspan="2" class="p-0">
-                              <div class="border-top px-2 py-2 bg-body-tertiary">
-                                <div class="small fw-semibold text-muted mb-1">Other companies</div>
-                                <ul class="list-unstyled small mb-0">
-                                  <% others.each do |name, value| %>
-                                    <li class="d-flex justify-content-between align-items-center py-1 border-top">
-                                      <span class="text-truncate" title="<%= name %>"><%= name %></span>
-                                      <span class="fw-semibold"><%= number_to_percentage((value.to_f / total) * 100.0, precision: 1) %></span>
-                                    </li>
-                                  <% end %>
-                                </ul>
-                              </div>
-                            </td>
-                          </tr>
-                        <% end %>
+                        <tr class="d-none" data-role="company-others-list-row">
+                          <td colspan="2" class="p-0">
+                            <div class="border-top px-2 py-2 bg-body-tertiary">
+                              <div class="small fw-semibold text-muted mb-1">Other companies</div>
+                              <ul class="list-unstyled small mb-0">
+                                <% table_data[:others].each do |name, value| %>
+                                  <li class="d-flex justify-content-between align-items-center py-1 border-top">
+                                    <span class="text-truncate" title="<%= name %>"><%= name %></span>
+                                    <span class="fw-semibold"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></span>
+                                  </li>
+                                <% end %>
+                              </ul>
+                            </div>
+                          </td>
+                        </tr>
                       <% end %>
                     </tbody>
                   </table>

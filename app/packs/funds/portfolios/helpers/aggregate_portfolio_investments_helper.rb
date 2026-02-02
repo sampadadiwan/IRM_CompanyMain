@@ -15,31 +15,39 @@ module AggregatePortfolioInvestmentsHelper
     pie_chart_with_options(chart_data)
   end
 
-  def investment_chart_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr)
-    # Convert FMV from cents to dollars and prepare data for the pie chart
+  # Generate a pie chart for portfolio investments grouped by sector
+  # Filters out zero values and applies smart grouping:
+  # - If ≤ limit non-zero sectors: shows all
+  # - If > limit non-zero sectors: shows (limit-1) + "Others"
+  #
+  # @param entity [Entity] The entity to fetch investments for
+  # @param fund_ids [Array<Integer>] Fund IDs to filter by
+  # @param portfolio_company_ids [Array<Integer>] Portfolio company IDs to filter by
+  # @param sectors_to_include [Array<String>, String] Sectors to include (comma-separated or array)
+  # @param attr [String] Attribute to sum ('fmv' or 'bought_amount')
+  # @param limit [Integer] Maximum number of slices to show (default: 10)
+  # @return [String] HTML for pie chart
+  def investment_chart_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr, limit: 10)
     grouped = investment_grouped_data_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr)
-
-    # Group small sectors into 'Others' for pie chart while leaving table data intact
-    chart_data = group_chart_data_for_pie(grouped, limit: 7)
+    chart_data = group_chart_data_for_pie(grouped, limit: limit)
 
     pie_chart_with_options(chart_data)
   end
 
-  # better name
-  def investment_chart_by_companies(entity, fund_ids, attr, portfolio_company_ids = [])
-    attr = if attr.downcase == "fmv"
-             "fmv_cents"
-           else
-             "amount_cents"
-           end
-
-    portfolio_investments = entity.portfolio_investments.buys.includes(:portfolio_company)
-    portfolio_investments = portfolio_investments.where(fund_id: fund_ids) if fund_ids.present?
-    portfolio_investments = portfolio_investments.where(portfolio_company_id: portfolio_company_ids) if portfolio_company_ids.present?
-
-    portfolio_investments = portfolio_investments.group(:portfolio_company_name).sum(attr.to_sym)
-    grouped = portfolio_investments.map { |name, amount_cents| [name, amount_cents / 100.0] }
-    chart_data = group_chart_data_for_pie(grouped, limit: 10)
+  # Generate a pie chart for portfolio investments grouped by company
+  # Filters out zero values and applies smart grouping:
+  # - If ≤ limit non-zero companies: shows all
+  # - If > limit non-zero companies: shows (limit-1) + "Others"
+  #
+  # @param entity [Entity] The entity to fetch investments for
+  # @param fund_ids [Array<Integer>] Fund IDs to filter by
+  # @param attr [String] Attribute to sum ('fmv' or 'bought_amount')
+  # @param portfolio_company_ids [Array<Integer>] Portfolio company IDs to filter by
+  # @param limit [Integer] Maximum number of slices to show (default: 10)
+  # @return [String] HTML for pie chart
+  def investment_chart_by_companies(entity, fund_ids, attr, portfolio_company_ids = [], limit: 10)
+    grouped = investment_grouped_data_by_companies(entity, fund_ids, attr, portfolio_company_ids)
+    chart_data = group_chart_data_for_pie(grouped, limit: limit)
 
     pie_chart_with_options(chart_data)
   end
@@ -117,7 +125,16 @@ module AggregatePortfolioInvestmentsHelper
   end
 
   # Return grouped data for sectors as array of [sector_name, value_in_dollars]
-  # Returns data so views can render tables alongside charts.
+  # Fetches buy transactions only and groups by sector(s).
+  # Supports filtering by funds, companies, and specific sectors.
+  # Note: A company can have multiple sectors (comma-separated), so totals may exceed 100%.
+  #
+  # @param entity [Entity] The entity to fetch investments for
+  # @param fund_ids [Array<Integer>] Fund IDs to filter by
+  # @param portfolio_company_ids [Array<Integer>] Portfolio company IDs to filter by
+  # @param sectors_to_include [Array<String>, String] Sectors to include (comma-separated or array), empty means all
+  # @param attr [String] Attribute to sum ('fmv' or 'bought_amount')
+  # @return [Array<Array>] Array of [sector_name, value_in_dollars] pairs
   def investment_grouped_data_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr) # rubocop:disable Metrics/CyclomaticComplexity
     attr = if attr.to_s.downcase == "fmv"
              "fmv_cents"
@@ -125,15 +142,15 @@ module AggregatePortfolioInvestmentsHelper
              "amount_cents"
            end
 
-    # Fetch all portfolio investments with their associated portfolio_company
-    portfolio_investments = filter_investments(entity.portfolio_investments.includes(:portfolio_company), fund_ids, portfolio_company_ids)
+    # Fetch all portfolio investments with their associated portfolio_company (buys only, like companies)
+    portfolio_investments = filter_investments(entity.portfolio_investments.buys.includes(:portfolio_company), fund_ids, portfolio_company_ids)
 
     # Normalize sectors_to_include for case-insensitive comparison (support comma-separated input)
     sectors_arr = sectors_to_include.is_a?(Array) ? sectors_to_include : Array(sectors_to_include.to_s.split(','))
     allowed = sectors_arr.map { |s| s.to_s.strip.downcase }.reject(&:empty?)
 
-    # Initialize a hash to store the aggregated FMV for each sector
-    sector_fmv = Hash.new(0)
+    # Initialize a hash to store the aggregated value for each sector
+    sector_data = Hash.new(0)
 
     # Iterate through the portfolio investments and group by sector(s)
     portfolio_investments.each do |investment|
@@ -145,16 +162,16 @@ module AggregatePortfolioInvestmentsHelper
           normalized = sector.downcase
           next if allowed.any? && allowed.exclude?(normalized)
 
-          sector_fmv[sector] += investment.send(attr).to_i
+          sector_data[sector] += investment.send(attr).to_i
         end
       else
         pc.sector.to_s.split(',').map(&:strip).reject(&:empty?).each do |sector|
-          sector_fmv[sector] += investment.send(attr).to_i
+          sector_data[sector] += investment.send(attr).to_i
         end
       end
     end
 
-    sector_fmv.map { |sector, fmv_cents| [sector, fmv_cents / 100.0] }
+    sector_data.map { |sector, cents| [sector, cents / 100.0] }
   end
 
   def filter_investments(investments, fund_ids = [], portfolio_company_ids = [])
@@ -164,6 +181,14 @@ module AggregatePortfolioInvestmentsHelper
   end
 
   # Return grouped data for companies as array of [company_name, value_in_dollars]
+  # Fetches buy transactions only and groups by portfolio company name.
+  # Supports filtering by funds and specific companies.
+  #
+  # @param entity [Entity] The entity to fetch investments for
+  # @param fund_ids [Array<Integer>] Fund IDs to filter by
+  # @param attr [String] Attribute to sum ('fmv' or 'bought_amount')
+  # @param portfolio_company_ids [Array<Integer>] Portfolio company IDs to filter by
+  # @return [Array<Array>] Array of [company_name, value_in_dollars] pairs
   def investment_grouped_data_by_companies(entity, fund_ids, attr, portfolio_company_ids = [])
     attr = if attr.to_s.downcase == "fmv"
              "fmv_cents"
@@ -179,16 +204,46 @@ module AggregatePortfolioInvestmentsHelper
     grouped.map { |name, amount_cents| [name, amount_cents / 100.0] }
   end
 
+  # Process grouped data for table display with smart non-zero filtering
+  # Returns: { top: [[name, value], ...], others: [[name, value], ...], total: float }
+  # When there are more than `limit` items, shows (limit-1) items + "Others" row to match chart behavior
+  def process_table_data(grouped_data, limit: 10)
+    sorted = grouped_data.sort_by { |_, v| -v }
+
+    # Filter out zero values
+    non_zero = sorted.reject { |_, value| value.to_f.zero? }
+
+    total = non_zero.sum { |_, v| v.to_f }
+
+    # If we have limit or fewer non-zero items, show them all without "Others"
+    if non_zero.size <= limit
+      { top: non_zero, others: [], total: total }
+    else
+      # We have more than limit non-zero items, so show (limit-1) + "Others" row to match chart
+      { top: non_zero.first(limit - 1), others: non_zero.drop(limit - 1), total: total }
+    end
+  end
+
   private
 
+  # Smart grouping: show up to `limit` non-zero items
+  # If there are more than `limit` non-zero items, show (limit-1) items plus 'Others'
+  # If there are exactly `limit` or fewer non-zero items, show them all without 'Others'
   def group_chart_data_for_pie(data, limit: 10)
     sorted = Array(data).map { |name, value| [name, value.to_f] }
                         .sort_by { |_, value| -value }
 
-    return sorted if sorted.blank? || sorted.size <= limit
+    return sorted if sorted.blank?
 
-    top = sorted.first(limit)
-    other_sum = sorted.drop(limit).sum { |_, value| value }
+    # Filter out zero values
+    non_zero = sorted.reject { |_, value| value.zero? }
+
+    # If we have limit or fewer non-zero items, return them all
+    return non_zero if non_zero.size <= limit
+
+    # We have more than limit non-zero items, so show (limit-1) + 'Others'
+    top = non_zero.first(limit - 1)
+    other_sum = non_zero.drop(limit - 1).sum { |_, value| value }
 
     top + [["Others", other_sum]]
   end

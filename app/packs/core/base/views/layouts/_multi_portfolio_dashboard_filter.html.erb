@@ -2,7 +2,7 @@
   state ||= "show" # State of the filter toggle card
   css_class ||= "show_pc_dashboard_filter" # CSS class for the toggle card
 
-  selected_fund_ids = Array(params[:fund_ids]).presence || Array(params[:fund_id])
+  selected_fund_ids = @selected_fund_ids.presence || Array(params[:fund_ids]).presence || []
   selected_tags = if params[:tag_list].is_a?(Array)
                     params[:tag_list]
                   else

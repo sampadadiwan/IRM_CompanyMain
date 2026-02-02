@@ -5,7 +5,7 @@
   ratio_names = args[:ratio_names] || ["IRR", "MOIC"]
   chart_colors = args[:chart_colors] || ["#00c49a", "#ff8042"]
   titles = args[:titles] || ["Gross Portfolio IRR", "Gross Portfolio MOIC"]
-  fund_ids ||= @funds.pluck(:id)
+  fund_ids ||= @selected_fund_ids.presence || @funds.pluck(:id).presence || []
 
   # This is not the final way need to discuss the storage of Fund Ratios for multiple funds and portfolio companies
   ratios_by_name = {}

@@ -1,4 +1,5 @@
 <%= turbo_frame_tag "#{@name.downcase.underscore}_#{@dashboard_name.downcase.underscore}_frame", target: "_top" do %>
+  <% @funds, @selected_fund_ids = setup_fund_selection(current_user, params) %>
 
   <% hidden_fields ||= {} %>
   <% hidden_fields[:multi_portfolio_dashboard] = params[:multi_portfolio_dashboard] if params[:multi_portfolio_dashboard].present? %>
@@ -24,7 +25,7 @@
       <nav class="multi-portfolio-dashboard__tabs nav sticky-top nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  style="top:70px; z-index: 1; width: 100%;">
       <% dashboard_widgets(@dashboard_name, current_user.entity_id, name: @name, show_menu: true).each do |name, dashboard_widget| %>
         <a class="nav-link" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
-          <% label =  dashboard_widget.metadata_args[:title] || dashboard_widget.widget_name || dashboard_widget.tags.presence%>
+          <% label =  dashboard_widget.metadata_args[:title] || dashboard_widget.tags.presence || dashboard_widget.widget_name %>
           <%= label %>
         </a>
       <% end %>
