@@ -210,7 +210,7 @@ module KpiCumulative
     end
 
     # Fallback to current kpi's report user if user_id not passed
-    source_report = respond_to?(:kpi_report) ? self.kpi_report : nil
+    source_report = respond_to?(:kpi_report) ? kpi_report : nil
     user_id ||= source_report&.user_id
 
     # We need user_id to create a report. If nil, it might fail validation if user is required.

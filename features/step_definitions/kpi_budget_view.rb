@@ -4,6 +4,12 @@ When('I go to the KPI reports page for {string} with budget view enabled and tag
   visit "/kpi_reports?budget_view=true&portfolio_company_id=#{company.id}&#{tag_params}&entity_id=#{@user.entity_id}"
 end
 
+When('I go to the KPI reports page for {string} with budget view enabled and tags {string} and period {string}') do |company_name, tags, period|
+  company = Investor.find_by(investor_name: company_name)
+  tag_params = tags.split(',').map { |t| "tag_list%5B%5D=#{CGI.escape(t)}" }.join('&')
+  visit "/kpi_reports?budget_view=true&portfolio_company_id=#{company.id}&#{tag_params}&period=#{period}&entity_id=#{@user.entity_id}"
+end
+
 Then('I should see a column header {string}') do |header_text|
   expect(page).to have_css('th', text: header_text)
 end
@@ -16,6 +22,19 @@ Then('I should see {string} in the {string} row under the achievement column') d
   # expect(row).to have_content(value)
   expect(page).to have_content(kpi_name)
   expect(page).to have_content(value)
+end
+
+Then('I should see {string} in the {string} row') do |value, kpi_name|
+  expect(page).to have_content(kpi_name)
+  expect(page).to have_content(value)
+end
+
+When('I fill in the number of periods with {string}') do |value|
+  fill_in 'num_periods', with: value
+end
+
+When('I click the filter button') do
+  click_button 'submit'
 end
 
 Given('a KpiReport {string} exists for the entity {string}') do |args, entity_name|
