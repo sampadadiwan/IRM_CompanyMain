@@ -1,3 +1,11 @@
+V9.1.86
+432b26769 Aggregate data at kyc level for ILPA notice (#1236)
+2e7ae5ec8 Add delayed task scope and new stats partial for task overview
+988bba2d9 Added user guide for budget vs actual
+9edb48528 Fixed tests for Budget/Actual Kpis view
+f76613ddd Enhance KPI budget view to support monthly reports and improve report filtering logic
+75636d63a Added release notes
+
 V9.1.85
 c80ee2168 Pc dashboard funds fix (#1242)
 9c60f1ee1 Enhance KPI import functionality by adding scope for non-compute mappings and updating tests for KPI status handling
