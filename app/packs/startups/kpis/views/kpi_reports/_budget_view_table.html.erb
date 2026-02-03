@@ -33,7 +33,7 @@
                     <th rowspan="3" class="text_col">Particulars</th>
                     <% if quarterly_reports.present? %>
                         <th colspan="<%= quarterly_reports.map(&:as_of).uniq.count * (tag_lists_to_display.count + (show_achievement_column ? 1 : 0)) %>" class="text-center">
-                            Quarter
+                            <%= params[:period].presence || 'Quarter' %>
                         </th>
                     <% end %>
                     <% if year_reports.present? %>
@@ -110,8 +110,6 @@
                                     %>
                                     <% if tag1_value.present? && tag2_value.present? && tag2_value.to_f != 0 %>
                                         <%= number_to_percentage((tag1_value.to_f / tag2_value.to_f) * 100, precision:) %>
-                                    <% elsif tag1_value.present? %>
-                                        <span class="<%= tag1_value.to_f.negative? ? 'text-danger' : nil %>"><%= number_with_precision(tag1_value, precision:, delimiter: ',') %></span>
                                     <% else %>
 
                                     <% end %>
@@ -148,8 +146,6 @@
                                     %>
                                     <% if tag1_value.present? && tag2_value.present? && tag2_value.to_f != 0 %>
                                         <%= number_to_percentage((tag1_value.to_f / tag2_value.to_f) * 100, precision:) %>
-                                    <% elsif tag1_value.present? %>
-                                        <span class="<%= tag1_value.to_f.negative? ? 'text-danger' : nil %>"><%= number_with_precision(tag1_value, precision:, delimiter: ',') %></span>
                                     <% else %>
 
                                     <% end %>

@@ -23,7 +23,8 @@ class KpiBudgetViewService
     # Maintain existing structure if needed, but primarily use period_reports
     # Based on original code, it separated Quarter and Year.
     # If a specific period is selected, we map it to the relevant group.
-    quarterly_reports = period == 'Quarter' ? period_reports : []
+    # If Month is selected, we map it to quarterly_reports for table rendering.
+    quarterly_reports = (period == 'Quarter' || period == 'Month') ? period_reports : []
     year_reports = period == 'Year' ? period_reports : []
 
     Result.new(
@@ -60,11 +61,12 @@ class KpiBudgetViewService
   end
 
   def filter_reports(period)
-    base_reports = @kpi_reports.filter { |r| r.period == period && r.tag_list == primary_tag_for_filtering }
-                               .sort_by(&:as_of)
-                               .last(num_periods_to_display)
+    # Get all reports for the period and any of the selected tags
+    relevant_reports = @kpi_reports.filter { |r| r.period == period && (Array(r.tag_list) & Array(@tag_list)).any? }
+                                   .sort_by(&:as_of)
 
-    as_of_dates = base_reports.map(&:as_of).uniq
+    # Get the last N unique as_of dates across all relevant tags
+    as_of_dates = relevant_reports.map(&:as_of).compact.uniq.last(num_periods_to_display)
 
     @kpi_reports.filter { |r| r.period == period && r.as_of.present? && as_of_dates.include?(r.as_of) }
   end
