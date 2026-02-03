@@ -19,12 +19,17 @@ class FundAsOf
   memoize :capital_commitments
 
   def capital_remittances
-    fund.capital_remittances.where(remittance_date: ..as_of_date).where(capital_call_id: capital_calls.pluck(:id))
+    fund.capital_remittances.where(remittance_date: ..as_of_date).where(capital_call_id: capital_calls.select(:id))
   end
   memoize :capital_remittances
 
+  def capital_remittance_payments
+    fund.capital_remittance_payments.where(payment_date: ..as_of_date).where(capital_remittance_id: capital_remittances.select(:id))
+  end
+  memoize :capital_remittance_payments
+
   def capital_distribution_payments
-    fund.capital_distribution_payments.where(payment_date: ..as_of_date).where(capital_commitment_id: capital_commitments.pluck(:id))
+    fund.capital_distribution_payments.where(payment_date: ..as_of_date).where(capital_commitment_id: capital_commitments.select(:id))
   end
   memoize :capital_distribution_payments
 
