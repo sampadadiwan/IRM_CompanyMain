@@ -1,4 +1,5 @@
 <%= render "/layouts/filter", associations: [:for_entity, :user, :assigned_to] %>
+<%= render "/tasks/stats" %>
 <%= turbo_frame_tag "tasks_frame", target: "_top" do %>
     <% if params[:timeline].present? %>
         <%= render "/tasks/timeline", tasks: @tasks, q: @q, lazy_load_data: false %>

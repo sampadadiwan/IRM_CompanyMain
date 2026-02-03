@@ -24,6 +24,7 @@ class Task < ApplicationRecord
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
+  scope :delayed, -> { incomplete.where('due_date < ?', Date.today) }
   scope :for_support, -> { where(for_support: true) }
   scope :not_for_support, -> { where(for_support: false) }
 
@@ -48,6 +49,6 @@ class Task < ApplicationRecord
   end
 
   def self.ransackable_scopes(_auth_object = nil)
-    %i[completed incomplete for_support not_for_support]
+    %i[completed incomplete delayed for_support not_for_support]
   end
 end

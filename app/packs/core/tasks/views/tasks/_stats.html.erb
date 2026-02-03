@@ -1,0 +1,43 @@
+<% cache_if(current_user != nil, cache_key("task_stats"), expires_in: 5.day) do %>
+  <% task_types = {
+      completed: { path: tasks_path(completed: :all, q: ransack_query_params("completed", :eq, true)), subtitle: "Completed", progress_bar_color: "success", icon: "ti ti-check" },
+      incomplete: { path: tasks_path(q: ransack_query_params("completed", :eq, false)), subtitle: "Incomplete", progress_bar_color: "warning", icon: "ti ti-question-mark" },
+      delayed: { path: tasks_path(q: ransack_query_params("due_date", :lt, Date.today)), subtitle: "Delayed", progress_bar_color: "danger", icon: "ti ti-clock-stop" },
+      due_this_week: { path: tasks_path(q: ransack_query_params_multiple([["due_date", "gteq", Date.today.beginning_of_week], ["due_date", "lteq", Date.today.end_of_week]])), subtitle: "Due this week", progress_bar_color: "info", icon: "ti ti-calendar-event" }
+    }
+  %>
+
+  <div class="row">
+    <% task_types.each do |type, data| %>
+      <div class="col">
+        <a href="<%= data[:path] %>">
+          <div class="card">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-3">
+                <div>
+                  <%
+                    count = if type == :due_this_week
+                              policy_scope(current_user.entity.tasks.where(due_date: Date.today.beginning_of_week..Date.today.end_of_week)).count
+                            else
+                              policy_scope(current_user.entity.tasks.send(type)).count
+                            end
+                  %>
+                  <div data-controller="counters"
+                      data-counters-value-value="<%= count %>">
+                    <h3 class="fs-7" data-counters-target="output">0</h3>
+                  </div>
+                  <h3 class="fs-6"></h3>
+                  <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
+                </div>
+                <div class="ms-auto">
+                  <span class="text-<%= data[:progress_bar_color] %> display-6"><i class="<%= data[:icon] %>"></i></span>
+                </div>
+              </div>
+              <div class="progress-bar text-bg-<%= data[:progress_bar_color] %>" role="progressbar" style="width: 100%; height: 6px;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </a>
+      </div>
+    <% end %>
+  </div>
+<% end %>
