@@ -202,7 +202,6 @@ end
 # ---------- Background / config ----------
 Given(/^the server region is "([^"]+)" and an HMAC secret is configured$/) do |region|
   ENV["REGION"] = region
-  ENV["SYNC_API_HMAC_#{region}"] ||= SecureRandom.hex(32)
 end
 
 
@@ -279,7 +278,11 @@ When(/^I POST the signed request to "([^"]+)"$/) do |path|
   ts   = Time.now.utc.iso8601(3)
   # Use the origin_region from the payload to fetch the correct HMAC secret for signing
   origin_region_for_signing = @payload["origin_region"] || @payload[:origin_region] || "IN"
-  secret = ENV.fetch("SYNC_API_HMAC_#{origin_region_for_signing}")
+
+  secret = Rails.application.credentials.CROSS_INSTANCE_SECRET
+
+  raise "No HMAC secret configured for #{origin_region_for_signing}" if secret.blank?
+
   data = "POST\n#{path}\n#{ts}\n#{Digest::SHA256.hexdigest(body)}"
   sig  = OpenSSL::HMAC.hexdigest("SHA256", secret, data)
 

@@ -234,12 +234,11 @@ class UsersSyncController < ActionController::API
       "US"
   end
 
-  def hmac_secret_for(region)
-    begin
-      Rails.application.credentials.dig(:sync_api, :secrets, region)
-    rescue StandardError
-      nil
-    end ||
-      ENV.fetch("SYNC_API_HMAC_#{region}", nil)
+  def hmac_secret_for(_region)
+    # 1. Try credentials nested
+
+    Rails.application.credentials.CROSS_INSTANCE_SECRET
+  rescue StandardError
+    nil
   end
 end

@@ -24,7 +24,7 @@ class Task < ApplicationRecord
 
   scope :completed, -> { where(completed: true) }
   scope :incomplete, -> { where(completed: false) }
-  scope :delayed, -> { incomplete.where('due_date < ?', Date.today) }
+  scope :delayed, -> { incomplete.where(due_date: ...Time.zone.today) }
   scope :for_support, -> { where(for_support: true) }
   scope :not_for_support, -> { where(for_support: false) }
 

@@ -10,7 +10,7 @@ module SyncApiStub
       ts   = req.headers["X-Timestamp"].to_s
       body = req.body.to_s
       origin_region = req.headers["X-Region"] || "IN"
-      secret = ENV["SYNC_API_HMAC_#{origin_region}"]
+      secret = Rails.application.credentials.CROSS_INSTANCE_SECRET rescue nil
 
       data = "POST\n/internal/sync/users\n#{ts}\n#{Digest::SHA256.hexdigest(body)}"
       expected = OpenSSL::HMAC.hexdigest("SHA256", secret, data)
@@ -30,7 +30,7 @@ module SyncApiStub
       ts   = req.headers["X-Timestamp"].to_s
       body = req.body.to_s
       origin_region = req.headers["X-Region"] || "IN"
-      secret = ENV["SYNC_API_HMAC_#{origin_region}"]
+      secret = Rails.application.credentials.CROSS_INSTANCE_SECRET rescue nil
 
       data = "POST\n/internal/sync/users/disable\n#{ts}\n#{Digest::SHA256.hexdigest(body)}"
       expected = OpenSSL::HMAC.hexdigest("SHA256", secret, data)

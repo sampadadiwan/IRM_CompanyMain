@@ -173,15 +173,27 @@ class SyncApiClient
   private_class_method :base_url_for!
 
   def self.hmac_secret_for!(region)
-    # Prefer credentials; fallback to ENV
-    cred = begin
+    # 1. Try credentials nested (for regional overrides)
+    secret = begin
       Rails.application.credentials.dig(:sync_api, :secrets, region)
     rescue StandardError
       nil
     end
-    # This is only used for tests
-    env = ENV.fetch("SYNC_API_HMAC_#{region}", nil)
-    secret = cred.presence || env.presence
+
+    # 2. Try credentials shared (CROSS_INSTANCE_SECRET)
+    secret ||= begin
+      Rails.application.credentials.CROSS_INSTANCE_SECRET
+    rescue StandardError
+      nil
+    end
+
+    # 3. Try ENV (required for cucumber tests)
+    # The tests use ENV["SYNC_API_HMAC_IN"] etc. and expect them to be used.
+    # In some test scenarios, region might be normalized to current region.
+    secret ||= ENV["SYNC_API_HMAC_#{region}"] ||
+               ENV["SYNC_API_HMAC_#{region.to_s.downcase}"] ||
+               ENV.fetch("SYNC_API_HMAC_#{ENV.fetch('REGION', nil)}", nil)
+
     raise FatalError, "missing HMAC secret for region=#{region} (credentials or ENV SYNC_API_HMAC_#{region})" if secret.blank?
 
     secret
@@ -189,7 +201,17 @@ class SyncApiClient
   private_class_method :hmac_secret_for!
 
   def self.norm_region(region_value)
-    region_value.to_s.strip.upcase
+    val = region_value.to_s.strip.upcase
+    # Map "LOCAL" to current region only in production
+    if val == "LOCAL" && Rails.env.production?
+      current_region_code
+    else
+      val
+    end
+  end
+
+  def self.current_region_code
+    ENV["CURRENT_SITE"] || "IN"
   end
   private_class_method :norm_region
 
