@@ -1,3 +1,12 @@
+V9.1.87
+ff4fb0857 SR issue with emails: Refactor HMAC secret retrieval to prioritize shared credentials and simplify test setup
+45146e21e Issue of AE filters text boxes: Add minimum width to form control in show_filter class
+a03c82433 Add Agreement Unit Type to KYC Excel export headers
+620a3193c Issue of rollup Actual cashflows: Refactor counter_culture configuration for aggregate portfolio investment
+3bdcd9267 Add transfer date display to commitment adjustments view
+aa402bc7f Add technical documentation for Fund Unit Allocation System
+
+
 V9.1.86
 432b26769 Aggregate data at kyc level for ILPA notice (#1236)
 2e7ae5ec8 Add delayed task scope and new stats partial for task overview
