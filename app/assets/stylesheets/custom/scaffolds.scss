@@ -384,6 +384,12 @@ $screen-xs-max: 786px;
   padding-left: 0;
 }
 
+.show_filter {
+  .form-control {
+    min-width: 100px;
+  }
+}
+
 form {
   div.form-divider {
     margin-top: 30px;
