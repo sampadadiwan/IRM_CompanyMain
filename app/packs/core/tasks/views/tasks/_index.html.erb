@@ -1,15 +1,23 @@
 <%
   owner||= nil;
+  base_query = params[:q].to_unsafe_h rescue {}
+  label = "Tasks"
   if params[:owner_type] && params[:owner_id]
     owner ||= params[:owner_type].constantize.find_by(id: params[:owner_id])
+    label = owner.to_s if owner
   end
+
+  if params[:q] && params[:q][:category_eq].present?
+    label += " : #{params[:q][:category_eq].titleize}"
+  end
+
   search ||= false
 %>
 <%= turbo_frame_tag "task_list", target: "_top" do %>
 
 <div id="#task_header" class="d-sm-flex align-items-center justify-content-between mb-4 task_header">
 
-  <h1 class="h3 mb-0 text-gray-800">Tasks</h1>
+  <h1 class="h3 mb-0 text-gray-800"><%= label %></h1>
 
   <div class="d-flex flex-wrap align-items-center gap-2">
     <%= form_with url: tasks_path, method: :get, local: true, data: { turbo_frame: "_top", controller: "autosubmit" }, class: "d-flex align-items-center" do |f| %>
@@ -33,7 +41,7 @@
     <% investor ||= nil %>
 
     <% if investor %>
-      <%= link_to new_task_path("task[investor_id]": investor.id),
+      <%= link_to new_task_path("task[investor_id]": investor.id, "task[category]": params.dig(:q, :category_eq)),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
         <i class="ti ti-plus"></i> New Task
@@ -50,7 +58,8 @@
                       assigned_to_id: params[:assigned_to_id],
                       owner_id: owner&.id,
                       owner_type: owner&.class&.name,
-                      completed: :all),
+                      completed: :all,
+                      q: base_query),
                     class: "btn btn-sm btn-outline-success d-inline-flex align-items-center",
                     data: { turbo_frame: 'task_list' } do %>
           <i class="ti ti-list-check"></i> Show All
@@ -61,7 +70,8 @@
                       entity_id: params[:entity_id],
                       assigned_to_id: params[:assigned_to_id],
                       owner_id: owner&.id,
-                      owner_type: owner&.class&.name),
+                      owner_type: owner&.class&.name,
+                      q: base_query),
                     class: "btn btn-sm btn-outline-warning d-inline-flex align-items-center",
                     data: { turbo_frame: 'task_list' } do %>
           <i class="ti ti-alert-triangle"></i> Incomplete
@@ -71,7 +81,8 @@
                       "task[for_entity_id]": for_entity.id,
                       "task[entity_id]": params[:entity_id],
                       "task[owner_id]": owner&.id || params[:owner_id],
-                      "task[owner_type]": owner&.class&.name || params[:owner_type]),
+                      "task[owner_type]": owner&.class&.name || params[:owner_type],
+                      "task[category]": params.dig(:q, :category_eq)),
                     class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
                     data: { turbo_frame: 'new_task' } do %>
           <i class="ti ti-plus"></i> New Task
