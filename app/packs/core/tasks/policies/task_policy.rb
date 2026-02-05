@@ -51,4 +51,8 @@ class TaskPolicy < ApplicationPolicy
   def destroy?
     update?
   end
+
+  def destroy_series?
+    destroy?
+  end
 end

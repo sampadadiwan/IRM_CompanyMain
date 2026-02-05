@@ -22,6 +22,7 @@ end
 resources :tasks do
   get 'search', on: :collection
   patch 'completed', on: :member
+  delete 'destroy_series', on: :member
 end
 
 resources :form_custom_fields

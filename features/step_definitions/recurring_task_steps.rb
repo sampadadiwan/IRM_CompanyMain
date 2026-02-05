@@ -115,9 +115,16 @@ When('I select {string} from {string}') do |value, field|
 end
 
 When('I click {string} for the task {string}') do |action, task_details|
+
   task = Task.all.find { |t| t.details.body.to_plain_text.include?(task_details) }
-  within("tr#task_#{task.id}") do
-    click_on(action)
+
+  binding.pry
+  if action == "Show"
+    visit task_path(task)
+  else
+    within("tr#task_#{task.id}") do
+      click_on(action)
+    end
   end
   sleep(1)
 end

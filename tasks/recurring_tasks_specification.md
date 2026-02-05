@@ -105,3 +105,25 @@ The core challenge is managing the link between the master rule and generated in
 ### D. Deleting
 - **Just this:** Soft delete the specific `tasks` record.
 - **Series:** Soft delete the `task_recurrence_rule` and all associated `tasks` instances.
+
+---
+
+## 5. Current Implementation Status (as of Feb 2026)
+
+The actual codebase implements the core architecture (Master/Instance schema and Background Generation) but has a simplified UI/Controller logic compared to the proposed specification above.
+
+### A. Edit Implementation
+- **Mechanism:** Editing a recurring task currently updates BOTH the individual `Task` instance AND the `TaskRecurrenceRule`'s template payload simultaneously.
+- **Scope:** There is no modal choice for "Just this" vs "Series". All edits to core fields propagate to the master template (affecting future generated tasks) and update the current instance.
+- **Detaching:** Unchecking "Make Recurring" on an existing task sets `task_recurrence_rule_id` to `nil` and marks `is_exception` as `true`, effectively isolating that task from the series.
+
+### B. Delete Implementation
+- **Scope:** Deletion is strictly "Just this occurrence". Calling `destroy` on a task only removes that specific instance.
+- **Series Deletion:** Added a `destroy_series` action and "Delete Series" button on the task show page. This removes the `TaskRecurrenceRule` and all associated tasks.
+
+### C. Notification Behavior
+- **Recurring Tasks:** To avoid spamming users for automatically generated tasks, notifications are **disabled** for any task linked to a `TaskRecurrenceRule`.
+
+### D. Key Deviations from Spec
+- **No Modal Prompts:** The complex selection logic (Just this / Following / Series) is not yet implemented in the frontend or controller.
+- **Simplified Exception Tracking:** `is_exception` is primarily used for detaching tasks rather than tracking field-level overrides.

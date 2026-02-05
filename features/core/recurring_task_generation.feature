@@ -78,3 +78,23 @@ Feature: Recurring Task Generation
     And I click "Save" within ".task_form"
     Then I should see "Task was successfully updated."
     And the task "Monthly Report" should not be recurring
+
+  @javascript
+  Scenario: Delete entire series of recurring tasks
+    Given Im logged in as a user "" for an entity "name=Acme Corp"
+    Given the user has role "company_admin"
+    And a task recurrence rule exists for entity with:
+      | details               | FREQ=DAILY;INTERVAL=1 |
+      | category              | Ops                   |
+      | start_date            | 2026-02-01            |
+    And the recurring task generator job runs
+    And I am at the tasks page
+
+    When I click "Show" for the task "FREQ=DAILY;INTERVAL=1"
+    Then I should see "Delete Series"
+
+    When I click "Delete Series"
+    # The confirmation popup is handled by click->confirm#popup, which usually needs accept_confirm in capybara
+    # In some cucumber setups, confirmation is auto-accepted or handled by a step
+    Then I should see "Entire task series was successfully destroyed."
+    And there should be 0 tasks created for the recurrence rule

@@ -1,5 +1,5 @@
 class TasksController < ApplicationController
-  before_action :set_task, only: %i[show edit update destroy completed]
+  before_action :set_task, only: %i[show edit update destroy completed destroy_series]
   after_action :verify_authorized, except: %i[index search]
   after_action :verify_policy_scoped, only: []
 
@@ -130,6 +130,22 @@ class TasksController < ApplicationController
 
     respond_to do |format|
       format.html { redirect_to tasks_url, notice: "Task was successfully destroyed." }
+      format.json { head :no_content }
+    end
+  end
+
+  def destroy_series
+    authorize @task
+    if @task.task_recurrence_rule.present?
+      @task.task_recurrence_rule.destroy
+      notice = "Entire task series was successfully destroyed."
+    else
+      @task.destroy
+      notice = "Task was successfully destroyed."
+    end
+
+    respond_to do |format|
+      format.html { redirect_to tasks_url, notice: notice }
       format.json { head :no_content }
     end
   end

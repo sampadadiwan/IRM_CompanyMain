@@ -37,6 +37,8 @@ class Task < ApplicationRecord
 
   after_commit :send_notification, unless: :destroyed?
   def send_notification
+    return if task_recurrence_rule_id.present?
+
     users = []
     users << user if response.blank?
     users << assigned_to if assigned_to
