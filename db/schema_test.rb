@@ -3024,16 +3024,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_055757) do
   end
 
   create_table "report_insights", force: :cascade do |t|
-    t.bigint "report_id", null: false
-    t.bigint "entity_id", null: false
-    t.string "status"
     t.text "ai_response"
+    t.json "charts_spec"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "notes"
+    t.text "prompt_used"
+    t.integer "record_count"
+    t.bigint "report_id", null: false
+    t.string "status"
     t.text "status_message"
     t.text "summary"
     t.string "trigger_type"
     t.datetime "triggered_at"
     t.bigint "triggered_by_id"
-    t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_report_insights_on_entity_id"
     t.index ["report_id"], name: "index_report_insights_on_report_id"
