@@ -93,7 +93,8 @@ Feature: Recurring Task Generation
     When I click "Show" for the task "FREQ=DAILY;INTERVAL=1"
     Then I should see "Delete Series"
 
-    When I click "Delete Series"
+    When I click "Delete Series" within ".tasks-actions"
+    And I click "Proceed" within ".modal"
     # The confirmation popup is handled by click->confirm#popup, which usually needs accept_confirm in capybara
     # In some cucumber setups, confirmation is auto-accepted or handled by a step
     Then I should see "Entire task series was successfully destroyed."

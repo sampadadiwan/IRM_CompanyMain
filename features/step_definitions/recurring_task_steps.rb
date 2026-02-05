@@ -19,13 +19,9 @@ end
 When(/^the recurring task generator job runs$/) do
   # Use travel_to as it is standard in Rails for stubbing Time.current
   target_time = Time.zone.parse("2026-02-05 12:00:00")
-  travel_to(target_time)
-  RecurringTaskGeneratorJob.perform_now
-end
-
-After do
-  # Ensure we always travel back even if it fails
-  travel_back
+  travel_to(target_time) do
+    RecurringTaskGeneratorJob.perform_now
+  end
 end
 
 Then(/^there should be (\d+) tasks created for the recurrence rule$/) do |count|
@@ -118,7 +114,6 @@ When('I click {string} for the task {string}') do |action, task_details|
 
   task = Task.all.find { |t| t.details.body.to_plain_text.include?(task_details) }
 
-  binding.pry
   if action == "Show"
     visit task_path(task)
   else

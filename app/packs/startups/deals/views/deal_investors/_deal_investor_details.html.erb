@@ -39,7 +39,7 @@
 
     <div id="tasks-tab" class="tab-pane fade">
       <div id="tasks" class="associated_entity">
-        <%= turbo_frame_tag "tasks_frame", src: tasks_path(owner: deal_investor, for_entity: deal_investor.entity), target: "_top", loading: :lazy do %>
+        <%= turbo_frame_tag "tasks_frame", src: tasks_path(owner_id: deal_investor.id, owner_type: "DealInvestor", entity_id: deal_investor.entity_id), target: "_top", loading: :lazy do %>
           <%= render "/layouts/loading" %>
         <% end %>
       </div>
