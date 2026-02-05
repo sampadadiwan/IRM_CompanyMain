@@ -1,4 +1,4 @@
-<%= render "/layouts/filter", associations: [:for_entity, :user, :assigned_to] %>
+<%= render "/layouts/filter", associations: [:for_entity, :user, :assigned_to], hidden_fields: {owner_id: params[:owner_id], owner_type: params[:owner_type], assigned_to_id: params[:assigned_to_id]} %>
 <%= render "/tasks/stats" %>
 <%= turbo_frame_tag "tasks_frame", target: "_top" do %>
     <% if params[:timeline].present? %>

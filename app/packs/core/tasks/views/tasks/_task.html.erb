@@ -14,6 +14,9 @@
     <%= task.for_entity&.name %>
   </td>
   <td>
+    <%= task.assigned_to&.first_name %>
+  </td>
+  <td>
     <%= l task.due_date if task.due_date %>
     <% if !task.completed && task.due_date && task.due_date < Time.zone.today %>
       <br>
