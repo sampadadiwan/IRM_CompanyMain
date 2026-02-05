@@ -1,4 +1,3 @@
-<% cache_if(current_user != nil, cache_key("task_stats"), expires_in: 5.day) do %>
   <%
     base_query = params[:q].to_unsafe_h rescue {}
     task_types = {
@@ -64,4 +63,3 @@
       </div>
     <% end %>
   </div>
-<% end %>
