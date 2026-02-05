@@ -150,13 +150,34 @@
 
                     <ul aria-expanded="false" class="collapse first-level">
                         <li class="sidebar-item">
-                            <a class="sidebar-link" href="/tasks">
+                            <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#allTaskMenus">
                                 <div class="round-16 d-flex align-items-center justify-content-center">
                                     <i class="ti ti-chevron-right fs-2"></i>
                                 </div>
                                 <span class="hide-menu"><%= t('sidebar.all_tasks') %></span>
                             </a>
+                            <ul aria-expanded="false" class="collapse two-level">
+                                <li class="sidebar-item">
+                                    <a class="sidebar-link" href="/tasks">
+                                        <div class="round-16 d-flex align-items-center justify-content-center">
+                                            <i class="ti ti-circle fs-2"></i>
+                                        </div>
+                                        <span class="hide-menu"><%= t('sidebar.all_tasks') %></span>
+                                    </a>
+                                </li>
+                                <% Task::CATEGORIES.each do |category| %>
+                                    <li class="sidebar-item">
+                                        <a class="sidebar-link" href="/tasks?q[category_eq]=<%= category %>">
+                                            <div class="round-16 d-flex align-items-center justify-content-center">
+                                                <i class="ti ti-circle fs-2"></i>
+                                            </div>
+                                            <span class="hide-menu"><%= category %> Tasks</span>
+                                        </a>
+                                    </li>
+                                <% end %>
+                            </ul>
                         </li>
+
                         <li class="sidebar-item">
                             <a class="sidebar-link" href="/tasks?assigned_to_id=<%=current_user.id%>">
                                 <div class="round-16 d-flex align-items-center justify-content-center">
@@ -175,19 +196,6 @@
                                 <span class="hide-menu"><%= t('sidebar.support_tasks') %></span>
                             </a>
                         </li>
-                        <% end %>
-
-                        <hr class="sidebar-divider">
-
-                        <% Task::CATEGORIES.each do |category| %>
-                            <li class="sidebar-item">
-                                <a class="sidebar-link" href="/tasks?q[category_eq]=<%= category %>">
-                                    <div class="round-16 d-flex align-items-center justify-content-center">
-                                        <i class="ti ti-chevron-right fs-2"></i>
-                                    </div>
-                                    <span class="hide-menu"><%= category %> Tasks</span>
-                                </a>
-                            </li>
                         <% end %>
 
                     </ul>
