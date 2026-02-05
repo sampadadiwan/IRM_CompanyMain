@@ -1,5 +1,6 @@
 Given('I am at the tasks page') do
   visit("/tasks")
+  sleep(1)
 end
 
 When('I create a new task with details {string} and due date {string}') do |details, due_date|

@@ -64,4 +64,6 @@ Rails.application.configure do
   config.after_initialize do
     Chewy.logger = Rails.logger
   end
+
+  config.assets.unknown_asset_fallback = true if config.respond_to?(:assets)
 end

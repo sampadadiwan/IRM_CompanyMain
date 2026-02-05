@@ -57,6 +57,22 @@ class TasksController < ApplicationController
     @task.user = current_user
 
     authorize @task
+
+    if params[:make_recurring] == "1"
+      # Create the recurrence rule
+      # We extract common fields to the payload
+      payload = task_params.to_h.except("due_date")
+      rule = TaskRecurrenceRule.create!(
+        entity_id: @task.entity_id,
+        task_template_payload: payload,
+        rrule: "FREQ=#{params[:recurrence_pattern].upcase};INTERVAL=#{params[:recurrence_interval]}",
+        start_date: @task.due_date || Time.current,
+        end_date: params[:recurrence_end_date].presence
+      )
+      @task.task_recurrence_rule = rule
+      @task.original_start_date = @task.due_date
+    end
+
     respond_to do |format|
       if @task.save
         format.turbo_stream { render :create }
@@ -71,6 +87,31 @@ class TasksController < ApplicationController
 
   # PATCH/PUT /tasks/1 or /tasks/1.json
   def update
+    if params[:make_recurring] == "1"
+      payload = task_params.to_h.except("due_date")
+      rrule = "FREQ=#{params[:recurrence_pattern].upcase};INTERVAL=#{params[:recurrence_interval]}"
+      if @task.task_recurrence_rule_id.present?
+        @task.task_recurrence_rule.update!(
+          task_template_payload: payload,
+          rrule: rrule,
+          end_date: params[:recurrence_end_date].presence
+        )
+      else
+        rule = TaskRecurrenceRule.create!(
+          entity_id: @task.entity_id,
+          task_template_payload: payload,
+          rrule: rrule,
+          start_date: @task.due_date || Time.current,
+          end_date: params[:recurrence_end_date].presence
+        )
+        @task.task_recurrence_rule = rule
+        @task.original_start_date = @task.due_date
+      end
+    elsif @task.task_recurrence_rule_id.present? && params[:make_recurring] != "1"
+      # If they unchecked "make recurring" on an existing recurring task, we detach it
+      @task.update!(task_recurrence_rule_id: nil, is_exception: true)
+    end
+
     respond_to do |format|
       if @task.update(task_params)
         format.turbo_stream { render :update }
@@ -123,6 +164,6 @@ class TasksController < ApplicationController
   def task_params
     params.require(:task).permit(:details, :response, :entity_id, :for_entity_id, :owner_id, :owner_type,
                                  :due_date, :form_type_id, :completed, :user_id, :tags, :for_support,
-                                 :assigned_to_id, properties: {}, reminders_attributes: Reminder::NESTED_ATTRIBUTES)
+                                 :assigned_to_id, :category, properties: {}, reminders_attributes: Reminder::NESTED_ATTRIBUTES)
   end
 end

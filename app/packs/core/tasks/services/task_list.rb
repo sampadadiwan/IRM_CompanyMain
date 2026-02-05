@@ -23,7 +23,7 @@ class TaskList
               Pundit.policy_scope!(@current_user, scope)
             end
 
-    @tasks = scope.includes(:for_entity, :user, :task_template, :assigned_to)
+    @tasks = scope.includes(:for_entity, :user, :task_template, :assigned_to, :rich_text_details, :rich_text_response)
 
     apply_scopes
 

@@ -172,6 +172,14 @@ When(/^I click "([^"]*)"$/) do |arg1|
   click_on(arg1)
 end
 
+When('I click {string} within {string}') do |button_text, container|
+  within(container) do
+    click_on button_text
+  end
+  sleep(1)
+end
+
+
 Then(/^the user receives an email with "([^"]*)" as the subject$/) do |subject|
   open_email(@user.email)
   expect(current_email.subject).to eq subject

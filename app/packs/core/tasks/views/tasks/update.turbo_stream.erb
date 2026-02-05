@@ -1,3 +1,4 @@
 
     <%= turbo_stream.replace(dom_id(@task), partial: "tasks/task", locals: { task: @task }) %>
     <%= turbo_stream.replace('new_task', partial: "tasks/blank") %>
+    <%= turbo_stream.update('user_alert', partial: 'layouts/alerts', locals: { notice: "Task was successfully updated." }) %>

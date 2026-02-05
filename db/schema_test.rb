@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_31_055757) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_05_131007) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3352,6 +3352,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_055757) do
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
+   create_table "task_recurrence_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "end_date"
+    t.bigint "entity_id", null: false
+    t.datetime "generated_until"
+    t.integer "max_occurrences"
+    t.string "rrule"
+    t.datetime "start_date"
+    t.json "task_template_payload"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_task_recurrence_rules_on_entity_id"
+  end
+
   create_table "task_templates", force: :cascade do |t|
     t.string "action_link"
     t.datetime "created_at", null: false
@@ -3369,6 +3382,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_055757) do
 
   create_table "tasks", force: :cascade do |t|
     t.integer "assigned_to_id"
+    t.string "category", limit: 40
     t.boolean "completed", default: false
     t.datetime "created_at", null: false
     t.text "details"
@@ -3377,10 +3391,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_055757) do
     t.bigint "for_entity_id"
     t.boolean "for_support", default: false
     t.bigint "form_type_id"
+    t.boolean "is_exception", default: false
+    t.datetime "original_start_date"
     t.bigint "owner_id"
     t.string "owner_type"
     t.text "response"
     t.string "tags", limit: 50
+    t.bigint "task_recurrence_rule_id"
     t.bigint "task_template_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
@@ -3388,6 +3405,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_055757) do
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
     t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
+    t.index ["task_recurrence_rule_id"], name: "index_tasks_on_task_recurrence_rule_id"
     t.index ["task_template_id"], name: "index_tasks_on_task_template_id"
     t.index ["user_id"], name: "index_tasks_on_user_id"
   end

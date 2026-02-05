@@ -2,3 +2,4 @@
     <%= turbo_stream.prepend('tasks_body', partial: "tasks/task", locals: { task: @task }) %>
     <% dup_task = @task.dup; dup_task.details=nil; dup_task.completed=false %>
     <%= turbo_stream.replace('new_task', partial: "tasks/blank") %>
+    <%= turbo_stream.update('user_alert', partial: 'layouts/alerts', locals: { notice: "Task was successfully created." }) %>

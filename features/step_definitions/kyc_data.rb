@@ -28,7 +28,7 @@ When('I navigate to the new individual KYC page') do
   click_on("Individual")
 end
 
-When('I fill in {string} with {string}') do |field, data|
+When('I fill in kyc {string} with {string}') do |field, data|
   field = field.strip
   data = Time.zone.parse(data) if field.include?("date") && data.present?
   fill_in("individual_kyc_#{field}", with: data)

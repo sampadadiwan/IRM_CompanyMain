@@ -17,6 +17,17 @@
           </td>
         </tr>
 
+        <% if task.category.present? %>
+        <tr>
+          <td>
+            Category
+          </td>
+          <td>
+            <%= task.category %>
+          </td>
+        </tr>
+        <% end %>
+
         <% if task.tags.present? %>
         <tr>
           <td>

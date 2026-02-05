@@ -177,6 +177,19 @@
                         </li>
                         <% end %>
 
+                        <hr class="sidebar-divider">
+
+                        <% Task::CATEGORIES.each do |category| %>
+                            <li class="sidebar-item">
+                                <a class="sidebar-link" href="/tasks?q[category_eq]=<%= category %>">
+                                    <div class="round-16 d-flex align-items-center justify-content-center">
+                                        <i class="ti ti-chevron-right fs-2"></i>
+                                    </div>
+                                    <span class="hide-menu"><%= category %> Tasks</span>
+                                </a>
+                            </li>
+                        <% end %>
+
                     </ul>
 
                 </li>

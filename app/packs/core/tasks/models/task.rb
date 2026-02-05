@@ -1,4 +1,6 @@
 class Task < ApplicationRecord
+  CATEGORIES = %w[Finance Ops Compliance IR Other].freeze
+
   update_index('task') { self if index_record? }
   include WithCustomField
 
@@ -13,11 +15,13 @@ class Task < ApplicationRecord
   belongs_to :assigned_to, class_name: "User", optional: true
   belongs_to :owner, polymorphic: true, optional: true
   belongs_to :task_template, optional: true
+  belongs_to :task_recurrence_rule, optional: true
 
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
   validates :details, presence: true
   validates :tags, length: { maximum: 50 }
+  # validates :category, inclusion: { in: CATEGORIES, allow_blank: true }
 
   has_many :reminders, as: :owner, dependent: :destroy
   accepts_nested_attributes_for :reminders, allow_destroy: true
@@ -27,6 +31,7 @@ class Task < ApplicationRecord
   scope :delayed, -> { incomplete.where(due_date: ...Time.zone.today) }
   scope :for_support, -> { where(for_support: true) }
   scope :not_for_support, -> { where(for_support: false) }
+  scope :for_category, ->(category) { where(category: category) }
 
   # counter_culture :entity, column_name: proc { |t| t.completed ? nil : 'tasks_count' }
 
@@ -40,15 +45,15 @@ class Task < ApplicationRecord
     end
   end
 
+  def index_record?
+    true
+  end
+
   def self.ransackable_attributes(_auth_object = nil)
-    %w[details response tags completed due_date created_at updated_at for_support owner_type owner_id].sort
+    %w[category completed details due_date tags]
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[assigned_to owner]
-  end
-
-  def self.ransackable_scopes(_auth_object = nil)
-    %i[completed incomplete delayed for_support not_for_support]
+    %w[assigned_to user]
   end
 end

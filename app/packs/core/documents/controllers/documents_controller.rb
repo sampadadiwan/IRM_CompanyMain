@@ -228,7 +228,7 @@ class DocumentsController < ApplicationController
 
   def download
     rows = fetch_rows
-    DocumentDownloadJob.perform_later(params[:folder_id], current_user.id, rows.pluck(:id))
+    DocumentDownloadJob.perform_later(params[:folder_id], current_user.id, document_ids: rows.pluck(:id))
     redirect_to params[:back_to], notice: "You will be sent a download link for the documents in a few minutes."
   end
 

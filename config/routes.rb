@@ -69,6 +69,7 @@ Rails.application.routes.draw do
   if Rails.env.test?
     # This will just return a 200 OK to any GET on /ws/socket.io
     get '/ws/socket.io', to: proc { [200, {}, ['']] }
+    get "/*path", to: proc { [204, {}, [""]] }, constraints: ->(req) { req.path.end_with?(".map") }
   end
 
   get 'ai', to: 'ow#index'

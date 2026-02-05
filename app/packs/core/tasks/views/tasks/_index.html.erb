@@ -7,11 +7,29 @@
 %>
 <%= turbo_frame_tag "task_list", target: "_top" do %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
+<div id="#task_header" class="d-sm-flex align-items-center justify-content-between mb-4 task_header">
 
   <h1 class="h3 mb-0 text-gray-800">Tasks</h1>
 
   <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= form_with url: tasks_path, method: :get, local: true, data: { turbo_frame: "_top", controller: "autosubmit" }, class: "d-flex align-items-center" do |f| %>
+      <%# Preserve other Ransack filters and params except category %>
+      <% params.to_unsafe_h.except(:controller, :action, :q, :authenticity_token).each do |k, v| %>
+        <%= hidden_field_tag k, v %>
+      <% end %>
+      <% if params[:q].is_a?(Hash) %>
+        <% params[:q].to_unsafe_h.except(:category_eq).each do |k, v| %>
+          <%= hidden_field_tag "q[#{k}]", v %>
+        <% end %>
+      <% end %>
+
+      <%= select_tag "q[category_eq]", options_for_select(Task::CATEGORIES, params.dig(:q, :category_eq)),
+                     id: "category_filter",
+                     include_blank: "All Categories",
+                     class: "form-select form-select-sm me-2",
+                     onchange: "this.form.requestSubmit();" %>
+    <% end %>
+
     <% investor ||= nil %>
 
     <% if investor %>
@@ -89,10 +107,7 @@
                         Completed
                     </th>
                     <th>
-                        Created By
-                    </th>
-                    <th>
-                        Created On
+                        Category
                     </th>
                     <th>
                     </th>

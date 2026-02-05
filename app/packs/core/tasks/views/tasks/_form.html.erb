@@ -1,10 +1,10 @@
 <div id="toasts" aria-live="polite" aria-atomic="true" style="position: relative;"></div>
 
-<div data-controller="access">
+<div data-controller="access task-recurrence" data-task-recurrence-advanced-visible-value="false">
 
 <%= render FormCard.new(title: "Task", css_class: "dynamic_form") do %>
 
-    <%= form_with(model: task, id: "task_form", validates: true) do |form| %>
+    <%= form_with(model: task, id: "task_form", class: "task_form", validates: true) do |form| %>
       <% if task.errors.any? %>
         <div class="alert alert-danger">
           <h2><%= pluralize(task.errors.count, "error") %> prohibited this task from being saved:</h2>
@@ -40,6 +40,12 @@
         <%= form.date_field :due_date, class: "form-control"  %>
       </div>
 
+      <div class="form-group" data-controller="otherselect" data-otherselect-select-id-value="#task_category">
+        <%= form.label :category %>
+        <%= form.select :category, Task::CATEGORIES, { include_blank: true }, class: "form-control", "data-action": "change->otherselect#checkOtherName"  %>
+        <%= form.text_field :category, class: "form-control", disabled: true, id: "other_name", hidden: true %>
+      </div>
+
       <% if task.owner == nil || current_user.entity_id == task.owner.entity_id %>
         <div class="form-group">
           <%= form.label :assigned_to %>
@@ -52,13 +58,13 @@
         </div>
 
       <% end %>
-      
+
       <%= custom_form_fields(task, form) %>
 
 
-      <% 
-        show_completed ||= false  
-        if show_completed 
+      <%
+        show_completed ||= false
+        if show_completed
       %>
         <div class="form-group">
           <%= form.label :completed %>
@@ -67,8 +73,8 @@
 
       <% end %>
 
-      <% 
-        if current_user.support? 
+      <%
+        if current_user.support?
       %>
         <div class="form-group">
           <%= form.label :for_support %>
@@ -76,7 +82,37 @@
         </div>
       <% end %>
 
-      <div class="form-group">    
+      <%
+          is_recurring = task.task_recurrence_rule_id.present?
+          rule = task.task_recurrence_rule
+          # Simple parsing of RRULE: FREQ=DAILY;INTERVAL=1
+          pattern = rule&.rrule&.match(/FREQ=([^;]+)/)&.captures&.first&.downcase || 'daily'
+          interval = rule&.rrule&.match(/INTERVAL=(\d+)/)&.captures&.first || 1
+        %>
+
+        <div class="border p-3 mb-3 bg-light">
+          <div class="form-check mb-3">
+            <%= check_box_tag :make_recurring, "1", is_recurring, class: "form-check-input", data: { "task-recurrence-target": "recurrenceToggle", action: "change->task-recurrence#toggleRecurrence" } %>
+            <%= label_tag :make_recurring, "Make Recurring", class: "form-check-label" %>
+          </div>
+
+          <div class="<%= is_recurring ? '' : 'd-none' %>" data-task-recurrence-target="recurrenceFields">
+            <div class="form-group">
+              <%= label_tag :recurrence_pattern, "Pattern" %>
+              <%= select_tag :recurrence_pattern, options_for_select([['Daily', 'daily'], ['Weekly', 'weekly'], ['Monthly', 'monthly'], ['Yearly', 'yearly']], pattern), class: "form-control", name: "recurrence_pattern" %>
+            </div>
+            <div class="form-group">
+              <%= label_tag :recurrence_interval, "Repeat every" %>
+              <%= number_field_tag :recurrence_interval, interval, min: 1, class: "form-control", name: "recurrence_interval" %>
+            </div>
+            <div class="form-group">
+              <%= label_tag :recurrence_end_date, "End Date (Optional)" %>
+              <%= date_field_tag :recurrence_end_date, rule&.end_date&.to_date, class: "form-control", name: "recurrence_end_date" %>
+            </div>
+          </div>
+        </div>
+
+      <div class="form-group">
         <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
         <a class="btn btn-outline-danger", data-action="click->access#close">Close</a>
       </div>

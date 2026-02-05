@@ -11,8 +11,8 @@ Feature: CKYC and KRA Verification
   Scenario: Create KYC with CKYC enabled - Successful verification
     Given CKYC is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "ABCDE1234F"
-    And I fill in "phone" with "1234567890"
+    And I fill in kyc "PAN" with "ABCDE1234F"
+    And I fill in kyc "phone" with "1234567890"
     And I click the "Next" button
     Then I should be on the OTP entry page
     When I enter a valid OTP
@@ -29,7 +29,7 @@ Feature: CKYC and KRA Verification
   Scenario: Create KYC with CKYC enabled - Continue without verification
     Given CKYC is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "ABCDE1234F"
+    And I fill in kyc "PAN" with "ABCDE1234F"
     And I click the "Continue without CKYC/KRA" button
     Then I should be on the Investor KYC edit page
     And the "PAN" field should be pre-filled with the valid PAN
@@ -38,8 +38,8 @@ Feature: CKYC and KRA Verification
   Scenario: Create KYC with KRA enabled - Successful verification
     Given KRA is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "ABCDE1234F"
-    And I fill in "birth_date" with "01/01/1994"
+    And I fill in kyc "PAN" with "ABCDE1234F"
+    And I fill in kyc "birth_date" with "01/01/1994"
     And I click the "Next" button
     Then I should be on the "KRA result" page
     And I should see the message "KRA Data found"
@@ -54,9 +54,9 @@ Feature: CKYC and KRA Verification
   Scenario: Create KYC with CKYC and KRA enabled - All inputs provided
     Given CKYC and KRA are enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "<pan>"
-    And I fill in "birth_date" with "<dob>"
-    And I fill in "phone" with "<phone>"
+    And I fill in kyc "PAN" with "<pan>"
+    And I fill in kyc "birth_date" with "<dob>"
+    And I fill in kyc "phone" with "<phone>"
     And I click the "Next" button
     Then I should be on the "KRA result" page
     And I should see the message "KRA Data found"
@@ -87,8 +87,8 @@ Feature: CKYC and KRA Verification
   Scenario Outline: Create KYC with CKYC enabled - Input validations
     Given CKYC is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "<pan>"
-    And I fill in "phone" with "<phone>"
+    And I fill in kyc "PAN" with "<pan>"
+    And I fill in kyc "phone" with "<phone>"
     And I click the "Next" button
     Then I should be on the Investor KYC edit page
     And I should see the message "<error_message>"
@@ -102,7 +102,7 @@ Feature: CKYC and KRA Verification
   Scenario: Create KYC with CKYC enabled - Continue without verification
     Given CKYC is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "ABCDE1234F"
+    And I fill in kyc "PAN" with "ABCDE1234F"
     And I click the "Continue without CKYC/KRA" button
     Then I should be on the Investor KYC edit page
     And the "PAN" field should be pre-filled with the valid PAN
@@ -111,8 +111,8 @@ Feature: CKYC and KRA Verification
   Scenario: Create KYC with KRA enabled - Successful verification
     Given KRA is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "ABCDE1234F"
-    And I fill in "birth_date" with "01/01/1994"
+    And I fill in kyc "PAN" with "ABCDE1234F"
+    And I fill in kyc "birth_date" with "01/01/1994"
     And I click the "Next" button
     Then I should be on the "KRA result" page
     And I should see the message "KRA Data found"
@@ -127,8 +127,8 @@ Feature: CKYC and KRA Verification
   Scenario Outline: Create KYC with KRA enabled - Input validations
     Given KRA is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "<pan>"
-    And I fill in "birth_date" with "<dob>"
+    And I fill in kyc "PAN" with "<pan>"
+    And I fill in kyc "birth_date" with "<dob>"
     And I click the "Next" button
     Then I should be on the "<page>" page
     And I should see the message "<error_message>"
@@ -142,9 +142,9 @@ Feature: CKYC and KRA Verification
   Scenario: Create KYC with CKYC and KRA enabled - All inputs provided
     Given CKYC and KRA are enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "ABCDE1234F"
-    And I fill in "birth_date" with "01/01/1994"
-    And I fill in "phone" with "1234567890"
+    And I fill in kyc "PAN" with "ABCDE1234F"
+    And I fill in kyc "birth_date" with "01/01/1994"
+    And I fill in kyc "phone" with "1234567890"
     And I click the "Next" button
     Then I should be on the "KRA result" page
     And I should see the message "KRA Data found"
@@ -163,8 +163,8 @@ Feature: CKYC and KRA Verification
   Scenario: Edit and refetch CKYC data with a new phone number
     Given CKYC is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "ABCDE1234F"
-    And I fill in "phone" with "1234567890"
+    And I fill in kyc "PAN" with "ABCDE1234F"
+    And I fill in kyc "phone" with "1234567890"
     And I click the "Next" button
     Then I should be on the OTP entry page
     When I enter a valid OTP
@@ -205,8 +205,8 @@ Feature: CKYC and KRA Verification
   Scenario: Edit and Refetch KRA data with new DOB
     Given KRA is enabled for the entity with a valid FI code
     When I navigate to the new individual KYC page
-    And I fill in "PAN" with "ABCDE1234F"
-    And I fill in "birth_date" with "01/01/1994"
+    And I fill in kyc "PAN" with "ABCDE1234F"
+    And I fill in kyc "birth_date" with "01/01/1994"
     And I click the "Next" button
     Then I should be on the "KRA result" page
     And I should see the message "KRA Data found"
@@ -243,9 +243,9 @@ Feature: CKYC and KRA Verification
     When I log in as the investor user
     And I follow the KYC link from the email
     Then I should be on the KYC edit page for fetching ckyc/kra data
-    When I fill in "PAN" with "ABCDE1234F"
-    And I fill in "birth_date" with "01/01/1994"
-    And I fill in "phone" with "1234567890"
+    When I fill in kyc "PAN" with "ABCDE1234F"
+    And I fill in kyc "birth_date" with "01/01/1994"
+    And I fill in kyc "phone" with "1234567890"
     And I click the "Next" button
     Then I should be on the "KRA result" page
     And I should see the message "KRA Data found"
