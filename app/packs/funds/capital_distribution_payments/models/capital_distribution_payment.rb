@@ -79,7 +79,7 @@ class CapitalDistributionPayment < ApplicationRecord
 
   counter_culture :capital_commitment,
                   column_name: 'distribution_amount_cents',
-                  delta_column: 'net_payable_cents'
+                  delta_column: 'gross_payable_cents'
 
   counter_culture :capital_commitment,
                   column_name: 'tracking_distribution_amount_cents',
@@ -87,7 +87,7 @@ class CapitalDistributionPayment < ApplicationRecord
 
   counter_culture %i[capital_commitment investor_kyc],
                   column_name: 'distribution_amount_cents',
-                  delta_column: 'net_payable_cents'
+                  delta_column: 'gross_payable_cents'
 
   scope :has_cost_of_investment, -> { where("cost_of_investment_cents > 0") }
   scope :has_income, -> { where("income_cents > 0") }
