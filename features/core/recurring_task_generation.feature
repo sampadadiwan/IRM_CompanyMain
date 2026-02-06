@@ -39,6 +39,17 @@ Feature: Recurring Task Generation
     Then there should be exactly 5 tasks created for the recurrence rule
 
   @javascript
+  Scenario: Successfully generating quarterly recurring tasks
+    Given a task recurrence rule exists for entity with:
+      | details               | FREQ=QUARTERLY;INTERVAL=1 |
+      | category              | Finance                   |
+      | start_date            | 2026-02-01                |
+    When the recurring task generator job runs
+    # Horizon is end of next quarter (2026-06-30).
+    # Start: 2026-02-01. Next: 2026-05-01. Total 2 occurrences.
+    Then there should be 2 tasks created for the recurrence rule
+
+  @javascript
   Scenario: Creating and Editing recurring and non-recurring tasks via UI
     Given Im logged in as a user "" for an entity "name=Acme Corp"
     Given the user has role "company_admin"

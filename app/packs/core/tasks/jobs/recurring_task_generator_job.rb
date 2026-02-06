@@ -26,7 +26,13 @@ class RecurringTaskGeneratorJob < ApplicationJob
       rrule_str = rule.rrule
       rrule_str = "FREQ=#{rrule_str}" unless rrule_str.include?("FREQ=")
 
-      ice_cube_rule = IceCube::Rule.from_ical(rrule_str)
+      # Handle Quarterly special case for IceCube
+      if rrule_str.include?("FREQ=QUARTERLY")
+        interval = rrule_str.match(/INTERVAL=(\d+)/)&.captures&.first || 1
+        ice_cube_rule = IceCube::Rule.monthly(interval.to_i * 3)
+      else
+        ice_cube_rule = IceCube::Rule.from_ical(rrule_str)
+      end
       ice_cube_rule.until(rule.end_date) if rule.end_date.present?
       schedule.add_recurrence_rule(ice_cube_rule)
     rescue StandardError => e

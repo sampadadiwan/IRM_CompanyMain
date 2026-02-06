@@ -99,7 +99,7 @@
         <div class="<%= is_recurring ? '' : 'd-none' %>" data-task-recurrence-target="recurrenceFields">
           <div class="form-group">
             <%= label_tag :recurrence_pattern, "Pattern" %>
-            <%= select_tag :recurrence_pattern, options_for_select([['Daily', 'daily'], ['Weekly', 'weekly'], ['Monthly', 'monthly'], ['Yearly', 'yearly']], pattern), class: "form-control", name: "recurrence_pattern" %>
+            <%= select_tag :recurrence_pattern, options_for_select([['Daily', 'daily'], ['Weekly', 'weekly'], ['Monthly', 'monthly'], ['Quarterly', 'quarterly'], ['Yearly', 'yearly']], pattern), class: "form-control", name: "recurrence_pattern" %>
           </div>
           <div class="form-group">
             <%= label_tag :recurrence_interval, "Repeat every" %>
