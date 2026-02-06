@@ -86,7 +86,7 @@
           <div id="tasks" class="associated_entity">
             <% investor = Investor.for(current_user, document.entity).first if !policy(document).update? %>
 
-            <% src = tasks_path( for_entity_id: investor&.investor_entity_id, entity_id: document.entity_id, owner_id: document.id, owner_type: "Document") %>
+            <% src = tasks_path( owner_id: document.id, owner_type: "Document") %>
 
             <%= turbo_frame_tag "task_list", target: "_top", loading: :lazy, src: src do %>
               <%= render "/layouts/loading" %>

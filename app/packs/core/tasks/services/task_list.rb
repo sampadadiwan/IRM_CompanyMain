@@ -25,12 +25,20 @@ class TaskList
 
     @tasks = scope.includes(:for_entity, :user, :task_template, :assigned_to, :rich_text_details, :rich_text_response)
 
+    filter_params(:owner_id, :owner_type, :assigned_to_id)
+
     apply_scopes
 
     Result.new(q: @q, tasks: @tasks)
   end
 
   private
+
+  def filter_params(*keys)
+    keys.each do |key|
+      @tasks = @tasks.where(key => @params[key]) if @params[key].present?
+    end
+  end
 
   def apply_scopes
     @tasks = @tasks.incomplete if @params[:completed] != 'all'

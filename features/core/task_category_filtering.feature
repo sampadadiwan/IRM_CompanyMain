@@ -24,6 +24,7 @@ Feature: Task Category Filtering
   Scenario: Filter tasks by category from the sidebar menu
     When I go to the dashboard page
     And I click on "Tasks" in the sidebar
+    And I click on "All Tasks" in the sidebar
     And I click on "Finance Tasks" in the sidebar
     Then I should see "Finance task 1"
     And I should not see "Ops task 1"

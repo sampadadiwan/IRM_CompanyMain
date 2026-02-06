@@ -90,27 +90,28 @@
           interval = rule&.rrule&.match(/INTERVAL=(\d+)/)&.captures&.first || 1
         %>
 
-        <div class="border p-3 mb-3 bg-light">
-          <div class="form-check mb-3">
-            <%= check_box_tag :make_recurring, "1", is_recurring, class: "form-check-input", data: { "task-recurrence-target": "recurrenceToggle", action: "change->task-recurrence#toggleRecurrence" } %>
-            <%= label_tag :make_recurring, "Make Recurring", class: "form-check-label" %>
-          </div>
+        <div class="form-group">
+          <%= check_box_tag :make_recurring, "1", is_recurring, class: "form-check-input", data: { "task-recurrence-target": "recurrenceToggle", action: "change->task-recurrence#toggleRecurrence" } %>
+          <%= label_tag :make_recurring, "Make Recurring", class: "form-check-label" %>
+        </div>
 
-          <div class="<%= is_recurring ? '' : 'd-none' %>" data-task-recurrence-target="recurrenceFields">
-            <div class="form-group">
-              <%= label_tag :recurrence_pattern, "Pattern" %>
-              <%= select_tag :recurrence_pattern, options_for_select([['Daily', 'daily'], ['Weekly', 'weekly'], ['Monthly', 'monthly'], ['Yearly', 'yearly']], pattern), class: "form-control", name: "recurrence_pattern" %>
-            </div>
-            <div class="form-group">
-              <%= label_tag :recurrence_interval, "Repeat every" %>
-              <%= number_field_tag :recurrence_interval, interval, min: 1, class: "form-control", name: "recurrence_interval" %>
-            </div>
-            <div class="form-group">
-              <%= label_tag :recurrence_end_date, "End Date (Optional)" %>
-              <%= date_field_tag :recurrence_end_date, rule&.end_date&.to_date, class: "form-control", name: "recurrence_end_date" %>
-            </div>
+        <div class="<%= is_recurring ? '' : 'd-none' %>" data-task-recurrence-target="recurrenceFields">
+          <div class="form-group">
+            <%= label_tag :recurrence_pattern, "Pattern" %>
+            <%= select_tag :recurrence_pattern, options_for_select([['Daily', 'daily'], ['Weekly', 'weekly'], ['Monthly', 'monthly'], ['Yearly', 'yearly']], pattern), class: "form-control", name: "recurrence_pattern" %>
+          </div>
+          <div class="form-group">
+            <%= label_tag :recurrence_interval, "Repeat every" %>
+            <%= number_field_tag :recurrence_interval, interval, min: 1, class: "form-control", name: "recurrence_interval" %>
+          </div>
+          <div class="form-group">
+            <%= label_tag :recurrence_end_date, "End Date (Optional)" %>
+            <%= date_field_tag :recurrence_end_date, rule&.end_date&.to_date, class: "form-control", name: "recurrence_end_date" %>
           </div>
         </div>
+
+      <%= render "layouts/multi_upload", form: form, title: "Task Documents",
+                  for_model: "task" %>
 
       <div class="form-group">
         <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>

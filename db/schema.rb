@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_05_131007) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_06_014220) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3403,6 +3403,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_131007) do
     t.boolean "completed", default: false
     t.datetime "created_at", null: false
     t.text "details"
+    t.bigint "document_folder_id"
     t.date "due_date"
     t.bigint "entity_id", null: false
     t.bigint "for_entity_id"
@@ -3418,6 +3419,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_131007) do
     t.bigint "task_template_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
+    t.index ["document_folder_id"], name: "index_tasks_on_document_folder_id"
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
@@ -3970,6 +3972,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_05_131007) do
   add_foreign_key "task_recurrence_rules", "entities"
   add_foreign_key "task_templates", "entities"
   add_foreign_key "tasks", "entities"
+  add_foreign_key "tasks", "folders", column: "document_folder_id"
   add_foreign_key "tasks", "form_types"
   add_foreign_key "tasks", "task_templates"
   add_foreign_key "tasks", "users"

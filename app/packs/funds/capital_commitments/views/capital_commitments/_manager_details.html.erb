@@ -73,7 +73,7 @@
     <div id="tasks-tab" class="tab-pane fade">
       <div id="tasks" class="associated_entity">
         <% investor = Investor.for(current_user, capital_commitment.entity).first %>
-        <%= turbo_frame_tag "task_list", target: "_top", src: tasks_path(entity_id: capital_commitment.entity_id, owner_id: capital_commitment.id, owner_type: "CapitalCommitment"), loading: :lazy do %>
+        <%= turbo_frame_tag "task_list", target: "_top", src: tasks_path(owner_id: capital_commitment.id, owner_type: "CapitalCommitment"), loading: :lazy do %>
           <%= render "/layouts/loading" %>
         <% end %>
       </div>
