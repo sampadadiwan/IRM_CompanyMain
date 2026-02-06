@@ -26,7 +26,7 @@
       <% dashboard_widgets(@dashboard_name, current_user.entity_id, name: @name, show_menu: true).each do |name, dashboard_widget| %>
         <a class="nav-link" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
           <% label =  dashboard_widget.metadata_args[:title] || dashboard_widget.tags.presence || dashboard_widget.widget_name %>
-          <%= label %>
+          <%= label.titleize %>
         </a>
       <% end %>
 
@@ -37,7 +37,7 @@
       <%  dashboard_widgets(@dashboard_name, current_user.entity_id, name: @name).each do |name, dashboard_widget| %>
         <div id="<%="#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
 
-          <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, investors: @investors, uri_params: params, funds: @funds %>
+          <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, tags: dashboard_widget.tags, investors: @investors, uri_params: params, funds: @funds %>
         </div>
       <% end %>
     </div>

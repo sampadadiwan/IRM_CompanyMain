@@ -62,7 +62,16 @@ export default class extends BaseAgGrid {
     // Programmatically restore grouping
     let groupByColumn = document.getElementsByClassName(gridDivName)[0].dataset.groupByColumn;
     if(groupByColumn) {
-      this.gridOptions.columnApi.setRowGroupColumns([groupByColumn]);
+      // Support both single column (backward compatible) and multiple columns (comma-separated)
+      let columnsArray;
+      if (groupByColumn.includes(',')) {
+        // Multiple columns: split by comma and trim whitespace
+        columnsArray = groupByColumn.split(',').map(col => col.trim()).filter(col => col.length > 0);
+      } else {
+        // Single column: use as-is (backward compatible)
+        columnsArray = [groupByColumn];
+      }
+      this.gridOptions.columnApi.setRowGroupColumns(columnsArray);
     }
   }
 
