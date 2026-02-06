@@ -25,7 +25,7 @@
     <div id="tasks-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
       <div id="tasks" class="associated_entity">
         <%= turbo_frame_tag "tasks_frame",
-                            src: tasks_path(owner_type: deal_investor.class, owner_id: deal_investor.id, entity_id: deal_investor.entity_id),
+                            src: tasks_path(owner_type: deal_investor.class, owner_id: deal_investor.id),
                             target: "_top", loading: :lazy do %>
         <% end %>
       </div>

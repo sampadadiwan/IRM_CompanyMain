@@ -9,7 +9,7 @@ class TasksController < ApplicationController
     @q = result.q
     @tasks = result.tasks
 
-    @for_entity = params[:for_entity_id].present? ? Entity.find(params[:for_entity_id]) : current_user.entity
+    @for_entity = current_user.entity
     @tasks = with_owner_access(@tasks, raise_error: false)
 
     @pagy, @tasks = pagy(@tasks)
@@ -37,7 +37,8 @@ class TasksController < ApplicationController
   # GET /tasks/new
   def new
     @task = params[:task] ? Task.new(task_params) : Task.new
-    @task.entity_id ||= @task.owner&.entity_id || current_user.entity_id
+    @task.for_entity_id ||= current_user.entity_id
+    @task.entity_id ||= current_user.entity_id
     @task.due_date = Time.zone.today + 1.week
     @task.user = current_user
     authorize @task
@@ -52,8 +53,8 @@ class TasksController < ApplicationController
   # POST /tasks or /tasks.json
   def create
     @task = Task.new(task_params)
-    @task.entity_id = @task.owner ? @task.owner.entity_id : @task.entity_id || current_user.entity_id
-    @task.for_entity_id ||= @task.owner.entity_id || current_user.entity_id
+    @task.entity_id ||= current_user.entity_id
+    @task.for_entity_id ||= current_user.entity_id
     @task.user = current_user
 
     authorize @task
@@ -178,7 +179,7 @@ class TasksController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def task_params
-    params.require(:task).permit(:details, :response, :entity_id, :for_entity_id, :owner_id, :owner_type,
+    params.require(:task).permit(:details, :response, :owner_id, :owner_type,
                                  :due_date, :form_type_id, :completed, :user_id, :tags, :for_support,
                                  :assigned_to_id, :category, properties: {}, reminders_attributes: Reminder::NESTED_ATTRIBUTES)
   end

@@ -21,7 +21,7 @@
               </div>
             <% end %>
 
-            
+
             <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
 
             <% if investor_notice.owner_id.present? && investor_notice.owner_type.present? %>
@@ -35,10 +35,10 @@
 
               <div class="form-group">
                 <%= form.label :owner_type %>
-                <%= form.select :owner_type, ["Fund", "SecondarySale", "Entity"], {}, class: "form-control" %>  
+                <%= form.select :owner_type, ["Fund", "SecondarySale", "Entity"], {}, class: "form-control" %>
               </div>
             <% end %>
-            
+
             <div class="form-group">
               <%= form.label :start_date %>
               <%= form.date_field :start_date, class: "form-control"  %>
@@ -94,28 +94,28 @@
                 <div class='links'>
                 </div>
               </div>
-                
+
               <div class="form-group">
                 <%= link_to_add_association 'Add Line Item', form, :investor_notice_items, class: "btn btn-outline-primary" %>
                 <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
               </div>
 
             </div>
-            
+
           <% end %>
         </div>
     </div>
   </div>
-  
+
   <div class="col-lg-4 mb-4">
 
     <div class="card shadow mb-4">
         <div class="card-header py-3">
             <h6 class="m-0 font-weight-bold text-primary">
-              Important links for use inside your notices              
+              Important links for use inside your notices
             </h6>
 
-            
+
         </div>
         <div class="card-body">
           <table class="table table-bordered  dataTable">
@@ -132,7 +132,7 @@
             <tr>
               <td>Tasks</td>
               <td>
-                <span id="copy_task_link"><%= tasks_path(entity_id: current_user.entity_id) %></span>
+                <span id="copy_task_link"><%= tasks_path %></span>
               </td>
               <td>
                 <i class="fas fa-lg fa-copy" data-action="click->confirm#copy" data-bs-target="#copy_task_link" data-notify="#imp_links_notice"></i>
@@ -148,5 +148,5 @@
         </div>
     </div>
   </div>
-  
+
 </div>
