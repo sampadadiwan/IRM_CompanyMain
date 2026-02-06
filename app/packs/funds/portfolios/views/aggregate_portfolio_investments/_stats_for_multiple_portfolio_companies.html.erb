@@ -1,4 +1,4 @@
-
+<%params[:force_units] = force_units || current_user.entity.default_currency_units %>
 <%if @investors.blank? %>
   <div class="alert alert-info" role="alert">
     No investors selected to display aggregated stats.
@@ -99,6 +99,7 @@
         <% end %>
 
       </div>
+      <% params[:force_units] = nil %>
     <% end %>
 
 <% end %>

@@ -2,7 +2,7 @@
   args ||= {}
 
   show_grouped = args[:show_grouped].nil? ? false : args[:show_grouped]
-  src = portfolio_investments_path(grid_only: false, fund_ids: @selected_fund_ids, portfolio_company_ids: @investors.map(&:id), template: "index_group", ag: true, show_grouped: show_grouped, report_id: args[:report_id], decimals: args[:decimals] )
+  src = portfolio_investments_path(grid_only: false, fund_ids: @selected_fund_ids, portfolio_company_ids: @investors.map(&:id), template: "index_group", ag: true, show_grouped: show_grouped, report_id: args[:report_id], decimals: args[:decimals], group_by_column: args[:group_by_column], title: args[:title] )
   params[:report_id] ||= args[:report_id]
 
 %>
