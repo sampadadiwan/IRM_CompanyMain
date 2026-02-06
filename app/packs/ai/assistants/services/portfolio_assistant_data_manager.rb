@@ -190,7 +190,7 @@ class PortfolioAssistantDataManager
 
   # Lists KPIs for portfolio companies.
   # rubocop:disable Metrics/PerceivedComplexity
-  def list_portfolio_kpis(portfolio_company_ids:, scope: :actuals, query: {}, sort: nil, limit: nil, aggregate: nil)
+  def list_portfolio_kpis(portfolio_company_ids:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_kpis called with portfolio_company_ids: #{portfolio_company_ids.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     companies = Pundit.policy_scope(@user, Investor).portfolio_companies.where(id: portfolio_company_ids)
     return [] if companies.empty?
@@ -202,23 +202,38 @@ class PortfolioAssistantDataManager
     ransack_query[:kpi_report_as_of_gteq] ||= 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of) || ransack_query[:all_time_eq] == 'true'
 
     Rails.logger.debug { "[KpiQuery Debug] Incoming scope: #{scope.inspect}" }
-    relation = Kpi.where(portfolio_company_id: companies.pluck(:id)).includes(:portfolio_company)
 
-    scope ||= "monthly,actuals"
-    if scope.present?
-      # If scope is a comma-separated string, convert to hash for KpiQuery
-      scope_params = if scope.is_a?(String)
-                       scope.split(',').each_with_object({}) { |s, h| h[s.strip.to_sym] = "true" }
-                     elsif scope.is_a?(Symbol)
-                       { scope => "true" }
-                     else
-                       scope # Assume it's already a hash or compatible
-                     end
+    # Helper lambda to build and execute the query
+    execute_query = lambda do |current_scope|
+      relation = Kpi.where(portfolio_company_id: companies.pluck(:id)).includes(:portfolio_company)
 
-      Rails.logger.debug { "[KpiQuery Debug] Applying scopes with params: #{scope_params.inspect}" }
-      relation = KpiQuery.new.perform(collection: relation, params: scope_params)
+      if current_scope.present?
+        # If scope is a comma-separated string, convert to hash for KpiQuery
+        scope_params = if current_scope.is_a?(String)
+                         current_scope.split(',').each_with_object({}) { |s, h| h[s.strip.to_sym] = "true" }
+                       elsif current_scope.is_a?(Symbol)
+                         { current_scope => "true" }
+                       else
+                         current_scope # Assume it's already a hash or compatible
+                       end
+
+        Rails.logger.debug { "[KpiQuery Debug] Applying scopes with params: #{scope_params.inspect}" }
+        relation = KpiQuery.new.perform(collection: relation, params: scope_params)
+      end
+      relation.joins(:kpi_report).includes(:kpi_report).ransack(ransack_query).result
     end
-    results = relation.joins(:kpi_report).includes(:kpi_report).ransack(ransack_query).result
+
+    # 1. Determine initial scope to use
+    scope_to_use = scope || "monthly,actuals"
+    results = execute_query.call(scope_to_use)
+
+    # 2. Smart Fallback Logic
+    # If no results found, scope was NOT explicitly provided by user (it was defaulted),
+    # then try falling back to a broader search (no scope).
+    if results.empty? && scope.nil?
+      Rails.logger.info "[PortfolioAssistant] No results found with default 'monthly,actuals' scope. Falling back to unfiltered search."
+      results = execute_query.call(nil)
+    end
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
 
