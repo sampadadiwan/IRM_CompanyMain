@@ -128,8 +128,10 @@
   </div>
 </div>
 
-<div id="docs" class="associated_entity">
-  <% documents = task.documents %>
-  <%= render "/documents/index", documents:,
-          owner: task, entity: task.entity %>
-</div>
+<% if current_user %>
+  <div id="docs" class="associated_entity">
+    <% documents = task.documents %>
+    <%= render "/documents/index", documents:,
+            owner: task, entity: task.entity %>
+  </div>
+<% end %>
