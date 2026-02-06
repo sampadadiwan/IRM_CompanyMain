@@ -3,25 +3,25 @@
     owner_params = params.slice(:owner_id, :owner_type, :assigned_to_id).to_unsafe_h
     task_types = {
       completed: {
-        path: tasks_path(owner_params.merge(completed: :all, q: base_query.merge(ransack_query_params("completed", :eq, true)[:q] || {}))),
+        path: tasks_path(owner_params.merge(completed: :all, q: base_query.merge(ransack_query_params("completed", :eq, true)).to_json)),
         subtitle: "Completed",
         progress_bar_color: "success",
         icon: "ti ti-check"
       },
       incomplete: {
-        path: tasks_path(owner_params.merge(q: base_query.merge(ransack_query_params("completed", :eq, false)[:q] || {}))),
+        path: tasks_path(owner_params.merge(completed: :incomplete, q: base_query.merge(ransack_query_params("completed", :eq, false)).to_json)),
         subtitle: "Incomplete",
         progress_bar_color: "warning",
         icon: "ti ti-question-mark"
       },
       delayed: {
-        path: tasks_path(owner_params.merge(q: base_query.merge(ransack_query_params("due_date", :lt, Date.today)[:q] || {}))),
+        path: tasks_path(owner_params.merge(q: base_query.merge(ransack_query_params("due_date", :lt, Date.today)).to_json)),
         subtitle: "Delayed",
         progress_bar_color: "danger",
         icon: "ti ti-clock-stop"
       },
       due_this_week: {
-        path: tasks_path(owner_params.merge(q: base_query.merge(ransack_query_params_multiple([["due_date", "gteq", Date.today.beginning_of_week], ["due_date", "lteq", Date.today.end_of_week]])[:q] || {}))),
+        path: tasks_path(owner_params.merge(q: base_query.merge(ransack_query_params_multiple([["due_date", "gteq", Date.today.beginning_of_week], ["due_date", "lteq", Date.today.end_of_week]])).to_json)),
         subtitle: "Due this week",
         progress_bar_color: "info",
         icon: "ti ti-calendar-event"
@@ -40,7 +40,13 @@
                   <%
                     tasks = policy_scope(current_user.entity.tasks)
                     tasks = tasks.where(owner_params) if owner_params.present?
-                    tasks = tasks.ransack(base_query).result
+                    # Clean the base query from any existing 'completed' filters for accurate counting
+                    clean_query = base_query.dup
+                    if clean_query["c"].is_a?(Hash)
+                      clean_query["c"] = clean_query["c"].reject { |_k, v| v["a"]&.any? { |_ak, av| av["name"] == "completed" } }
+                    end
+
+                    tasks = tasks.ransack(clean_query).result
                     count = if type == :due_this_week
                               tasks.where(due_date: Date.today.beginning_of_week..Date.today.end_of_week).count
                             else
