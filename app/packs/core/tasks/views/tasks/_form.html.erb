@@ -91,8 +91,9 @@
         %>
 
         <div class="form-group">
-            <%= form.label :make_recurring %>
-            <%= form.check_box :make_recurring, class: "form-check-input", data: { "task-recurrence-target": "recurrenceToggle", action: "change->task-recurrence#toggleRecurrence" }  %>
+          <%= label_tag :make_recurring, "Make Recurring", class: "form-check-label" %>
+
+          <%= check_box_tag :make_recurring, "1", is_recurring, class: "form-check-input", data: { "task-recurrence-target": "recurrenceToggle", action: "change->task-recurrence#toggleRecurrence" } %>
         </div>
 
         <div class="<%= is_recurring ? '' : 'd-none' %>" data-task-recurrence-target="recurrenceFields">
