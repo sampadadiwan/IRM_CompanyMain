@@ -1,3 +1,27 @@
+V9.1.88
+863114fb5 feat: Add task import functionality with support for recurring tasks
+bcf0a35bb (origin/multi_portfolio_dashboard_fix) Made the title same as Investments title
+75d7186aa Updates to Multi Company Portfolio Dashboard
+acd3c08a6 Rollup gross instead of net for commitment and kyc
+5b2a21e8e feat: Enhance KPI query scope handling with a smart fallback mechanism and correct capital distribution payment counter culture delta column.
+b0119372d feat: Add support for quarterly recurring tasks by introducing a new recurrence pattern, UI option, and job handling.
+fcb0f83ad Add warning message to delete series button for clarity
+fed95b899 Refactor task path generation to improve query handling and ensure accurate task counts
+ef2d962db Refactor document_folder_id migration for improved clarity and efficiency
+f425eaa8a Refactor recurring task checkbox to use label and check_box_tag for improved accessibility
+b6a15c07f Refactor recurring task checkbox to use form helper for consistency
+c4ff0a559 Merge pull request #1244 from ausangshukla:tasks_improvements3
+0cef97dc6 Refactor document_folder_id migration to clean invalid values and ensure foreign key integrity
+06658657a Add document folder reference to tasks and update related migrations, models, and views
+be6fe7133 Refactor task path parameters for consistency across views and simplify task link generation
+31c492d2c Add filtering for owner_id, owner_type, and assigned_to_id in TaskList service
+38c92b43c Add 'Assigned to' column in task index and task details views; update owner_params to include assigned_to_id
+f11e884e8 Enhance sidebar navigation with collapsible task categories and update user guide for new features
+82361c7cd Update task label and enhance query parameters for task links
+0f9a4e168 Refactor task path parameters for consistency across views
+603b4cb23 Remove caching from task stats view for improved performance
+
+
 V9.1.87
 ff4fb0857 SR issue with emails: Refactor HMAC secret retrieval to prioritize shared credentials and simplify test setup
 45146e21e Issue of AE filters text boxes: Add minimum width to form control in show_filter class
