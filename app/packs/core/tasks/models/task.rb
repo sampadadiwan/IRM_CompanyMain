@@ -5,11 +5,11 @@
 # to ensure consistent visibility and simplify link generation.
 class Task < ApplicationRecord
   include WithFolder
-
+  include WithCustomField
   CATEGORIES = %w[Finance Ops Compliance IR Other].freeze
 
   update_index('task') { self if index_record? }
-  include WithCustomField
+  attr_accessor :send_notification_flag
 
   has_rich_text :details
   has_rich_text :response
@@ -44,7 +44,7 @@ class Task < ApplicationRecord
 
   after_commit :send_notification, unless: :destroyed?
   def send_notification
-    return if task_recurrence_rule_id.present?
+    return if task_recurrence_rule_id.present? || send_notification_flag == false
 
     users = []
     users << user if response.blank?

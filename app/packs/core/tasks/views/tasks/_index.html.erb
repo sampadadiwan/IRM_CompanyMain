@@ -1,5 +1,6 @@
 <%
   owner||= nil;
+  for_entity ||= nil
   base_query = params[:q].to_unsafe_h rescue {}
   label = "Tasks"
   if params[:owner_type] && params[:owner_id]
@@ -49,7 +50,7 @@
     <% end %>
 
     <% unless search %>
-      <% show_for = belongs_to_entity_id?(current_user, for_entity.id) ? nil : for_entity %>
+      <% show_for = belongs_to_entity_id?(current_user, for_entity&.id) ? nil : for_entity %>
 
       <% if for_entity || owner %>
         <%= link_to tasks_path(
@@ -80,6 +81,15 @@
                     class: "btn btn-sm btn-outline-primary d-inline-flex align-items-center",
                     data: { turbo_frame: 'new_task' } do %>
           <i class="ti ti-plus"></i> New Task
+        <% end %>
+
+        <%= link_to new_import_upload_path("import_upload[import_type]": "Task",
+                                           "import_upload[owner_id]": owner&.id || params[:owner_id],
+                                           "import_upload[owner_type]": owner&.class&.name || params[:owner_type],
+                                           "sample_upload": "TASK_SAMPLE"),
+                    class: "btn btn-sm btn-outline-info d-inline-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-upload"></i> Import Tasks
         <% end %>
       <% end %>
     <% end %>

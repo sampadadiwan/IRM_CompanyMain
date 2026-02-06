@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_014220) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_06_124614) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3409,6 +3409,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_014220) do
     t.bigint "for_entity_id"
     t.boolean "for_support", default: false
     t.bigint "form_type_id"
+    t.integer "import_upload_id"
     t.boolean "is_exception", default: false
     t.datetime "original_start_date"
     t.bigint "owner_id"
@@ -3423,6 +3424,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_014220) do
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
+    t.index ["import_upload_id"], name: "index_tasks_on_import_upload_id"
     t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
     t.index ["task_recurrence_rule_id"], name: "index_tasks_on_task_recurrence_rule_id"
     t.index ["task_template_id"], name: "index_tasks_on_task_template_id"

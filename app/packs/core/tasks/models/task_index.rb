@@ -8,6 +8,6 @@ class TaskIndex < Chewy::Index
   field :owner_type
   field :for_entity_id
   field :user_full_name, value: ->(h) { h.user&.full_name }
-  field :details
+  field :details, value: ->(h) { h.details&.body&.to_plain_text }
   field :tags
 end
