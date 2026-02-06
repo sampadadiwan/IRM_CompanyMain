@@ -4,6 +4,8 @@
 # However, as per recent changes, both for_entity_id and entity_id default to current_user.entity_id in the controller
 # to ensure consistent visibility and simplify link generation.
 class Task < ApplicationRecord
+  include WithFolder
+
   CATEGORIES = %w[Finance Ops Compliance IR Other].freeze
 
   update_index('task') { self if index_record? }
@@ -54,6 +56,11 @@ class Task < ApplicationRecord
 
   def index_record?
     true
+  end
+
+  def folder_path
+    # Group tasks by category in the folder structure if available, otherwise general Tasks
+    category.present? ? "/Tasks/#{category}" : "/Tasks/General"
   end
 
   def self.ransackable_attributes(_auth_object = nil)

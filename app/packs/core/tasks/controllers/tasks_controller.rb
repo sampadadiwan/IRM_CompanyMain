@@ -59,6 +59,8 @@ class TasksController < ApplicationController
 
     authorize @task
 
+    setup_doc_user(@task)
+
     if params[:make_recurring] == "1"
       # Create the recurrence rule
       # We extract common fields to the payload
@@ -91,7 +93,7 @@ class TasksController < ApplicationController
     if params[:make_recurring] == "1"
       payload = task_params.to_h.except("due_date")
       rrule = "FREQ=#{params[:recurrence_pattern].upcase};INTERVAL=#{params[:recurrence_interval]}"
-      if @task.task_recurrence_rule_id.present?
+      if @task.task_recurrence_rule.present?
         @task.task_recurrence_rule.update!(
           task_template_payload: payload,
           rrule: rrule,
@@ -112,6 +114,8 @@ class TasksController < ApplicationController
       # If they unchecked "make recurring" on an existing recurring task, we detach it
       @task.update!(task_recurrence_rule_id: nil, is_exception: true)
     end
+
+    setup_doc_user(@task)
 
     respond_to do |format|
       if @task.update(task_params)
@@ -181,6 +185,8 @@ class TasksController < ApplicationController
   def task_params
     params.require(:task).permit(:details, :response, :owner_id, :owner_type,
                                  :due_date, :form_type_id, :completed, :user_id, :tags, :for_support,
-                                 :assigned_to_id, :category, properties: {}, reminders_attributes: Reminder::NESTED_ATTRIBUTES)
+                                 :assigned_to_id, :category, properties: {},
+                                                             reminders_attributes: Reminder::NESTED_ATTRIBUTES,
+                                                             documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

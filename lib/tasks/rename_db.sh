@@ -1,9 +1,42 @@
 #!/usr/bin/env bash
-# Fast, same-server schema "rename" using atomic RENAME TABLE (no data copy).
+# ==============================================================================
+# MySQL Fast Database Rename Script
+# ==============================================================================
+# This script performs a fast "rename" of a MySQL database on the same server
+# using the atomic RENAME TABLE statement. This method is much faster than
+# mysqldump/restore because it only updates metadata without copying data.
+#
+# Prerequisites:
+# - MySQL client installed and accessible in the PATH.
+# - Sufficient privileges to CREATE DATABASE, RENAME TABLE, and modify globals.
+# - The target database name must not already exist.
+#
 # Usage:
 #   ./mysql_rename_db_fast.sh <old_db> <new_db> [mysql_user] [mysql_host] [mysql_port]
+#
+# Parameters:
+#   <old_db>    : Name of the existing database to be renamed.
+#   <new_db>    : Name of the new database to be created.
+#   [mysql_user]: (Optional) MySQL username. Defaults to 'root'.
+#   [mysql_host]: (Optional) MySQL host. Defaults to 'localhost'.
+#   [mysql_port]: (Optional) MySQL port. Defaults to '3306'.
+#
 # Example:
 #   ./mysql_rename_db_fast.sh caphive caphive_prod root 127.0.0.1 3306
+#
+# Mechanism:
+# 1. Performs preflight checks (source exists, target doesn't).
+# 2. Captures original global settings (read_only, event_scheduler).
+# 3. Creates the target database with utf8mb4 character set.
+# 4. Sets global read_only=ON and disables event_scheduler to quiesce writes.
+# 5. Extracts DDLs for views, routines, events, and triggers.
+# 6. Neutralizes DEFINER and updates schema references in captured DDLs.
+# 7. Drops triggers in the old database (required for cross-schema rename).
+# 8. Renames base tables in chunks using RENAME TABLE ... TO ...
+# 9. Recreates views, routines, events, and triggers in the new database.
+# 10. Replicates grants from the old database to the new one.
+# 11. Restores global settings.
+# ==============================================================================
 
 set -euo pipefail
 
