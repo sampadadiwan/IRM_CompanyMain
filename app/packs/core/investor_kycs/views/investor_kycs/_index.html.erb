@@ -64,15 +64,16 @@
 
 
               <div class="dropdown-divider"></div>
-
-              <%= button_to "Send KYC to Stakeholder", create_and_send_kyc_to_investor_investor_kycs_path(
-                            "investor_kyc[investor_id]": @investor&.id,
-                            "investor_kyc[entity_id]": entity_id,
-                            "investor_kyc[kyc_type]": "Individual",
-                            "investor_kyc[send_kyc_form_to_user]": true),
-                            method: :post,
-                          class: "dropdown-item d-flex align-items-center ti ti-mail-forward",
-                          form_class: "deleteButton" , data: {msg: "This will send a New KYC to Stakeholder for completion. Proceed?", action: "click->confirm#popup" , method: :post} %>
+              <% if @investor.present? %>
+                <%= button_to "Send KYC to Stakeholder", create_and_send_kyc_to_investor_investor_kycs_path(
+                              "investor_kyc[investor_id]": @investor&.id,
+                              "investor_kyc[entity_id]": entity_id,
+                              "investor_kyc[kyc_type]": "Individual",
+                              "investor_kyc[send_kyc_form_to_user]": true),
+                              method: :post,
+                            class: "dropdown-item d-flex align-items-center ti ti-mail-forward",
+                            form_class: "deleteButton" , data: {msg: "This will send a New KYC to Stakeholder for completion. Proceed?", action: "click->confirm#popup" , method: :post} %>
+              <% end %>
 
               <%= link_to "Report", investor_kycs_path(filter: true),
                           class: "dropdown-item d-flex align-items-center ti ti-report" %>
