@@ -51,7 +51,7 @@ When("I fill the new dashboard widget form with data 1") do
   fill_in "dashboard_widget_tags", with: "test_cross_portfolio_stats"
   select "XL", from: "dashboard_widget_size"
   fill_in "dashboard_widget_position", with: 1
-  fill_in "dashboard_widget_metadata", with: "{title:'Stats', currency: 'INR'}"
+  fill_in "dashboard_widget_metadata", with: "{title:'Stats', currency: 'INR', force_units: 'crores', decimals: 2}"
   check "dashboard_widget_enabled"
   check "dashboard_widget_show_menu"
   click_button "Save"
@@ -96,7 +96,7 @@ When("I fill the new dashboard widget form with data 5") do
   fill_in "dashboard_widget_tags", with: "test_fund_ratios"
   select "XL", from: "dashboard_widget_size"
   fill_in "dashboard_widget_position", with: 5
-  fill_in "dashboard_widget_metadata", with: "{show_table: true, show_chart: true, ratio_names: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'], chart_colors: ['#00c49a', '#ff8042']}"
+  fill_in "dashboard_widget_metadata", with: "{show_table: true, show_chart: true, ratio_names: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'], titles: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'],chart_colors: ['#00c49a', '#ff8042']}"
   check "dashboard_widget_enabled"
   check "dashboard_widget_show_menu"
   click_button "Save"
@@ -297,7 +297,7 @@ Given("portfolio investments are created") do
 end
 Then("All calculations should be correct") do
   expect(page).to have_content(
-    Money.new(@total_bought_cents,"INR").format(format: FORMAT, south_asian_number_formatting: true, precision: 2)
+    money_to_currency(Money.new(@total_bought_cents,"INR"), {force_units: 'crores'}, decimals:2)
   )
 end
 Given("portfolio company is added to list of companies") do
@@ -356,6 +356,6 @@ end
 Then('the Bought Amount stat should be correct') do
 
   expect(page).to have_content(
-    Money.new(@expected_bought_cents,"INR").format(format: FORMAT, south_asian_number_formatting: true, precision: 2)
+    money_to_currency(Money.new(@expected_bought_cents,"INR"),{force_units: 'crores' }, decimals:2)
   )
 end
