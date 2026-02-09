@@ -82,7 +82,7 @@ class TemplateDecorator < ApplicationDecorator
       # for example format_nd_investment_amount
       # It will return the number with no decimal places and with a comma as a delimiter
       attr_name = method_name.to_s.gsub("format_nd_", "")
-      return h.number_with_precision(send(attr_name).to_d, precision: 0, delimiter: ",")
+      return number_doc_format(send(attr_name).to_d, precision: 0, delimiter: ",")
 
     # if method_name starts_with "sum_amt_" && method name contains and or sub
     # then split the method name by _and_ and _sub_ and call sum on each part
@@ -158,7 +158,7 @@ class TemplateDecorator < ApplicationDecorator
 
       # Return the attribute formatted with the specified number of decimal places
       # using .to_d to handle nil values gracefully (nil becomes 0.0)
-      return h.number_with_precision(send(attr_name).to_d, precision: precision, delimiter: ",")
+      return number_doc_format(send(attr_name).to_d, precision: precision, delimiter: ",")
 
     elsif method_name.to_s.starts_with?("rupees_")
       attr_name = method_name.to_s.gsub("rupees_", "")
@@ -198,6 +198,17 @@ class TemplateDecorator < ApplicationDecorator
     msg = "Error in TemplateDecorator #{method_name}: #{e.message}"
     Rails.logger.error { msg }
     raise msg
+  end
+
+  def number_doc_format(number, precision: 2, delimiter: ",")
+    if number.positive?
+      h.number_with_precision(number, precision: precision, delimiter: delimiter)
+    elsif number.negative?
+      abs_number = number.abs
+      "(#{h.number_with_precision(abs_number, precision: precision, delimiter: delimiter)})"
+    else
+      "-"
+    end
   end
 
   def respond_to_missing?(method_name, include_private = false)
