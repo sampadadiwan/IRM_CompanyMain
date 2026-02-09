@@ -45,7 +45,7 @@ When('I visit the AI portfolio report details page') do
 end
 
 When('I open the chart modal') do
-  click_on "Add Chart"
+  click_on "Insert Chart"
 end
 
 When('I enter chart prompt {string}') do |prompt|

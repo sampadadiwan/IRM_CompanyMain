@@ -5,7 +5,8 @@ Given('an investment criteria template {string} exists with criteria:') do |temp
   @template = InvestmentCriteriaTemplate.create!(
     name: template_name,
     criteria: criteria,
-    created_by_user: @user
+    created_by_user: @user,
+    entity: @entity
   )
 end
 

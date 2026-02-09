@@ -18,6 +18,6 @@ Feature: Web Search Source Links
   Scenario: Web search sources include clickable links
     Given an AI portfolio report exists for "AURAA"
     And the report has a section "Market Size & Target" with document content 
-    When I enable web search for the sectionx   
+    When I enable web search for the section  
     Then the section should contain clickable source links    
     And each source link should have a valid URL

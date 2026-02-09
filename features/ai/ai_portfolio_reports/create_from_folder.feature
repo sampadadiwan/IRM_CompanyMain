@@ -8,7 +8,9 @@ Feature: Create AI Portfolio Report from Folder
         And a portfolio company "ACE" exist with category "Portfolio Company"
         And the portfolio company has a folder with a document
         When I visit the documents page for the folder
+        And I click "Actions"
         And I click "Create AI Portfolio Report"
+        And I click "Proceed"
         Then an AI portfolio report should be created for "ACE"
         
         
