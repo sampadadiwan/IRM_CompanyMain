@@ -23,11 +23,11 @@ module UpdateInvestor
       old_investor.approval_responses.update_all(investor_id: new_investor.id)
 
       # Startup
-      old_investor.investments.update_all(investor_id: new_investor.id)
+      old_investor.investments.update_all(portfolio_company_id: new_investor.id)
       old_investor.offers.update_all(investor_id: new_investor.id)
 
       # Other stuff
-      old_investor.messages.update_all(investor_id: new_investor.id)
+      # old_investor.messages.update_all(investor_id: new_investor.id)
       old_investor.notes.update_all(investor_id: new_investor.id)
       old_investor.deal_investors.update_all(investor_name: new_investor.investor_name, investor_id: new_investor.id, investor_entity_id: new_investor.investor_entity_id)
 
@@ -48,7 +48,20 @@ module UpdateInvestor
         end
       end
 
-      old_investor.investor_entity.employees.update_all(entity_id: new_investor.investor_entity_id)
+      users = old_investor.investor_entity&.employees
+      user_ids = users&.pluck(:id) || []
+      Rails.logger.debug { "Found Users to update: #{user_ids} for old investor entity_id: #{old_investor.investor_entity_id}." }
+      if user_ids.present?
+        # Update entity_id for all users
+        users.update_all(entity_id: new_investor.investor_entity_id)
+
+        # Re-fetch users with fresh data (including the updated entity_id) and reset cache
+        User.where(id: user_ids).find_each do |user|
+          Rails.logger.debug { "Resetting access rights cache for user #{user.id} with new entity_id: #{user.entity_id}" }
+          user.reset_access_rights_cache
+        end
+      end
+
       old_investor.update_column(:investor_name, "#{old_investor.investor_name} - Defunct/Inactive")
     end
   end
