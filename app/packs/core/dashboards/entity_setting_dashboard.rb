@@ -48,6 +48,11 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     test_account: Field::BooleanEmoji,
     portflio_expense_account_entry_filter: Field::String,
     kyc_bank_account_types: Field::String,
+    openai_api_key: Field::String,
+    gemini_api_key: Field::String,
+    anthropic_api_key: Field::String,
+    openrouter_api_key: Field::String,
+    default_llm_model: Field::String,
     month_offset_for_fy: Field::Number
   }.freeze
 
@@ -115,6 +120,11 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     value_bridge_cols
     portflio_expense_account_entry_filter
     kyc_bank_account_types
+    openai_api_key
+    gemini_api_key
+    anthropic_api_key
+    openrouter_api_key
+    default_llm_model
     month_offset_for_fy
     created_at
     updated_at
@@ -158,6 +168,11 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     value_bridge_cols
     portflio_expense_account_entry_filter
     kyc_bank_account_types
+    openai_api_key
+    gemini_api_key
+    anthropic_api_key
+    openrouter_api_key
+    default_llm_model
     month_offset_for_fy
     custom_flags
   ].freeze

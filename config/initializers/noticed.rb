@@ -81,7 +81,7 @@ Rails.application.config.after_initialize do
       end
 
       ransacker :user_email, formatter: proc { |v| v.downcase } do |_parent|
-        Arel.sql(<<-SQL.squish)
+        Arel.sql(<<~SQL.squish)
           CASE
             WHEN noticed_notifications.recipient_type = 'User' THEN (
               SELECT LOWER(users.email)

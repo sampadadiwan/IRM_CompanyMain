@@ -122,6 +122,7 @@ class KpiReportsController < ApplicationController
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Computation started."
   end
 
+  # rubocop:disable Rails/SkipsModelValidations
   def recompute_cumulative
     # Force recomputation by resetting cumulation_completed if necessary
     # and ensuring the job picks up all reports for this portfolio company
@@ -129,6 +130,7 @@ class KpiReportsController < ApplicationController
     KpiCumulateJob.perform_later(@kpi_report.portfolio_company_id, user_id: current_user.id, force: true)
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Recompute cumulative and forward fill started."
   end
+  # rubocop:enable Rails/SkipsModelValidations
 
   def send_portco_notification
     portfolio_company = Investor.find(params[:portfolio_company_id])

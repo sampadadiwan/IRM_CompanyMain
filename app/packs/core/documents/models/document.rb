@@ -106,7 +106,7 @@ class Document < ApplicationRecord
 
   # Find the documents for capital_remittances for a given capital_call_id
   ransacker :capital_call_id do
-    Arel.sql <<-SQL.squish
+    Arel.sql <<~SQL.squish
       (SELECT capital_remittances.capital_call_id
       FROM capital_remittances
       WHERE capital_remittances.id = documents.owner_id
@@ -117,7 +117,7 @@ class Document < ApplicationRecord
 
   # Find the documents whose owner is a CapitalCommitment, and that commitment belongs to a given fund_id
   ransacker :commitments_fund_id do
-    Arel.sql(<<-SQL.squish)
+    Arel.sql(<<~SQL.squish)
       (
         SELECT capital_commitments.fund_id
         FROM capital_commitments

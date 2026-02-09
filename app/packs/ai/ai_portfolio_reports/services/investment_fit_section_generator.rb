@@ -104,7 +104,7 @@ class InvestmentFitSectionGenerator
   # rubocop:enable Metrics/MethodLength
 
   def call_llm(prompt)
-    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+    chat = LLMService.ruby_llm_chat(entity: nil) # No entity-specific keys needed for this general evaluation task
     response = chat.ask(prompt)
     response.content.strip
   end

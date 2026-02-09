@@ -134,7 +134,7 @@ class PortfolioAssistantDataManager
     end
   end
 
-  # rubocop:disable Metrics/PerceivedComplexity, Metrics/MethodLength
+  # rubocop:disable Metrics/MethodLength
   # Lists portfolio investments for a portfolio company.
   def list_portfolio_investments(portfolio_company_id:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_investments called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
@@ -186,10 +186,9 @@ class PortfolioAssistantDataManager
       }
     end
   end
-  # rubocop:enable Metrics/PerceivedComplexity, Metrics/MethodLength
+  # rubocop:enable Metrics/MethodLength
 
   # Lists KPIs for portfolio companies.
-  # rubocop:disable Metrics/PerceivedComplexity
   def list_portfolio_kpis(portfolio_company_ids:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_kpis called with portfolio_company_ids: #{portfolio_company_ids.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     companies = Pundit.policy_scope(@user, Investor).portfolio_companies.where(id: portfolio_company_ids)
@@ -200,6 +199,15 @@ class PortfolioAssistantDataManager
 
     # Default kpi_report_as_of to 12 months ago if not provided, but allow user to override
     ransack_query[:kpi_report_as_of_gteq] ||= 12.months.ago.to_date unless ransack_has_attr?(ransack_query, :kpi_report_as_of) || ransack_query[:all_time_eq] == 'true'
+
+    # unless ransack_has_attr?(ransack_query, :period) ||
+    #   # Add monthly to the scope
+    #   scope += ",monthly"
+    # end
+
+    # If scope does not have actuals or budget then add actuals
+    scope ||= ""
+    scope += ",actuals" unless scope.include?("actuals") || scope.include?("budget")
 
     Rails.logger.debug { "[KpiQuery Debug] Incoming scope: #{scope.inspect}" }
 
@@ -257,7 +265,6 @@ class PortfolioAssistantDataManager
       }
     end
   end
-  # rubocop:enable Metrics/PerceivedComplexity
 
   # Lists fund ratios.
   #
@@ -386,7 +393,7 @@ class PortfolioAssistantDataManager
     # Prepare file URLs for RubyLLM
     attachments = documents.group_by { |d| d.extension.to_sym }.transform_values { |docs| docs.map { |d| d.file.url } }
 
-    chat = RubyLLM.chat
+    chat = LlmService.ruby_llm_chat(entity: @user.entity)
     response = chat.ask prompt, with: attachments
     response.content
   end

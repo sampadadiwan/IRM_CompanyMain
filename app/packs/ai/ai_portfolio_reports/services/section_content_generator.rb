@@ -113,8 +113,7 @@ class SectionContentGenerator
 
   def call_ai_for_content(prompt)
     # Use RubyLLM (same as ChartAgentService)
-    # chat = RubyLLM.chat(model: 'gpt-4o-mini')  # Fast model
-    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+    chat = LlmService.ruby_llm_chat
 
     response = chat.ask(prompt)
 

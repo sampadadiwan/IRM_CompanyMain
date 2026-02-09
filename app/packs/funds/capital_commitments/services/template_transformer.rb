@@ -50,7 +50,7 @@ class TemplateTransformer
   end
 
   def map_placeholders_with_ai(placeholders, schema)
-    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+    chat = LLMService.ruby_llm_chat(entity: nil) # No entity-specific keys needed for this general mapping task
     system_msg = build_system_msg(schema)
     user_msg = "PLACEHOLDERS FOUND IN DOCUMENT: #{placeholders.join(', ')}"
 

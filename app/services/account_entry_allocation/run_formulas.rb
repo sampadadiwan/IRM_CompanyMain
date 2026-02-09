@@ -402,7 +402,7 @@ module AccountEntryAllocation
       # with the parent's stored sqlite_id in the json_fields.
       # JSON_EXTRACT(json_fields, '$.sqlite_id') is used to retrieve the SQLite ID in MySQL.
       # We cast it to UNSIGNED to ensure proper comparison with parent_id.
-      sql = <<-SQL.squish
+      sql = <<~SQL.squish
         UPDATE account_entries AS child
         INNER JOIN account_entries AS parent ON
           child.parent_id = CAST(JSON_UNQUOTE(JSON_EXTRACT(parent.json_fields, '$.sqlite_id')) AS UNSIGNED)

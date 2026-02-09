@@ -43,7 +43,7 @@ class Valuation < ApplicationRecord
   # Ransacker to search by investor name
   ransacker :portfolio_company_name do |_parent|
     # Only works when owner_type is 'Investor'
-    Arel.sql <<-SQL.squish
+    Arel.sql <<~SQL.squish
       (
         CASE
           WHEN valuations.owner_type = 'Investor'

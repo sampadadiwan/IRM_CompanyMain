@@ -6,6 +6,7 @@
 class Task < ApplicationRecord
   include WithFolder
   include WithCustomField
+
   CATEGORIES = %w[Finance Ops Compliance IR Other].freeze
 
   update_index('task') { self if index_record? }

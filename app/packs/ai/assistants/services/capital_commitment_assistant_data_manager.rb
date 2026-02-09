@@ -246,7 +246,7 @@ class CapitalCommitmentAssistantDataManager
 
     attachments = documents.group_by { |d| d.extension.to_sym }.transform_values { |docs| docs.map { |d| d.file.url } }
 
-    chat = RubyLLM.chat
+    chat = LlmService.ruby_llm_chat(entity: @user.entity)
     response = chat.ask prompt, with: attachments
     response.content
   end

@@ -40,7 +40,24 @@ class LlmService
     response.chat_completion
   end
 
-  def self.ruby_llm_chat
-    RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+  def self.ruby_llm_chat(entity: nil)
+    if entity
+      custom_context = RubyLLM.context do |config|
+        config.openai_api_key = entity.entity_setting.openai_api_key || Rails.application.credentials["OPENAI_API_KEY"]
+        config.gemini_api_key = entity.entity_setting.gemini_api_key || Rails.application.credentials["GOOGLE_GEMINI_API_KEY"]
+        config.anthropic_api_key = entity.entity_setting.anthropic_api_key || Rails.application.credentials["ANTHROPIC_API_KEY"]
+        config.openrouter_api_key = entity.entity_setting.openrouter_api_key || Rails.application.credentials["OPENROUTER_API_KEY"]
+        config.use_new_acts_as = true
+      end
+
+      RubyLLM.chat(
+        model: entity.entity_setting.default_llm_model || ENV.fetch("DEFAULT_MODEL", nil),
+        context: custom_context
+      )
+    else
+      # Default configuration without entity-specific API keys
+      Rails.logger.debug "LlmService: Warning! Using default RubyLLM configuration"
+      RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+    end
   end
 end

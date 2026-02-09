@@ -134,7 +134,7 @@ class GenerateSectionContentJob < ApplicationJob
   # @param data_preview [String] document data preview
   # @return [Array<String>] chart prompts
   def check_and_generate_chart_prompts(section_type, data_preview)
-    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+    chat = LlmService.ruby_llm_chat
 
     prompt = <<~PROMPT
       Analyze the following document data and determine if there is numerical/chartable data relevant to a "#{section_type}" section.

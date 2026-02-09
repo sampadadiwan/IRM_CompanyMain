@@ -57,7 +57,10 @@ class AiPortfolioReportsController < ApplicationController
     authorize @report
     @current_section = @report.ai_report_sections.find_by(id: params[:section_id]) ||
                        @report.ai_report_sections.order(:order_index).first
-    @chat_session = @report.ai_chat_sessions.first || @report.ai_chat_sessions.create!(analyst_id: current_user.id)
+
+    ActiveRecord::Base.connected_to(role: :writing) do
+      @chat_session = @report.ai_chat_sessions.first || @report.ai_chat_sessions.create!(analyst_id: current_user.id)
+    end
 
     # Checkbox should only be checked if web search content actually exists and is being displayed
     # This ensures the checkbox accurately reflects what the user is seeing

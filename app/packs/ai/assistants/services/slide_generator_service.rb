@@ -89,12 +89,12 @@ class SlideGeneratorService
     Rails.logger.error "[SlideGeneratorService] Failed to store presentation: #{e.message}\n#{e.backtrace.join("\n")}"
   end
 
-  def generate_blueprint
+  def generate_blueprint(entity: nil)
     ts = transcript
     Rails.logger.info "[SlideGeneratorService] Sending transcript to LLM (length: #{ts.length})"
     system_prompt = "#{SYSTEM_PROMPT}\n#{ts}"
 
-    llm_chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL"))
+    llm_chat = LlmService.ruby_llm_chat(entity: entity)
     response = llm_chat.ask(system_prompt)
 
     # Extract response content for logging

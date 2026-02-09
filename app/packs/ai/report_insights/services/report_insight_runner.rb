@@ -19,9 +19,8 @@ class ReportInsightRunner < Trailblazer::Operation
   # Initializes the LLM client using the configured model.
   # Sets up the chat client in the context for later use.
   def initialize_llm(ctx, **)
-    model = ENV.fetch('AI_CHECKS_MODEL', ENV.fetch('DEFAULT_MODEL'))
     # TODO: - set temperature so that the output is more deterministic
-    ctx[:chat] = RubyLLM.chat(model: model)
+    ctx[:chat] = LlmService.ruby_llm_chat(entity: ctx[:report_insight].entity)
   end
 
   # Fetches the report data based on the report configuration.

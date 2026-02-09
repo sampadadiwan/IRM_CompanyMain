@@ -290,7 +290,7 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.info "[PortfolioReportAgent] Full prompt (first 2000 chars): #{prompt[0..2000].inspect}"
     Rails.logger.info "[PortfolioReportAgent] Calling LLM to generate content..."
 
-    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+    chat = LlmService.ruby_llm_chat(entity: @support_agent.entity)
     response = chat.ask(prompt)
     content = clean_llm_output(response.content)
 
@@ -1151,8 +1151,7 @@ class PortfolioReportAgent < SupportAgentService
     PROMPT
 
     # Call LLM using RubyLLM
-    # chat = RubyLLM.chat(model: 'gemini-2.0-flash')
-    chat = RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
+    chat = LlmService.ruby_llm_chat(entity: @support_agent.entity)
 
     response = chat.ask(prompt)
     company_name = response.content.strip

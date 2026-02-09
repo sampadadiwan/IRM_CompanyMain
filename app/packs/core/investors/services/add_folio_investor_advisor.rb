@@ -1,5 +1,6 @@
 class AddFolioInvestorAdvisor < Trailblazer::Operation
-  AdvisorPresent = Class.new(Trailblazer::Activity::Signal)
+  class AdvisorPresent < Trailblazer::Activity::Signal
+  end
   # Step-by-step operation to add an investor advisor for a fund
   # Each step performs a specific task, and errors are handled gracefully.
   step :check_investor_advisor_presence,

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_06_124614) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_08_090154) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1368,6 +1368,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_124614) do
 
   create_table "entity_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.boolean "aml_enabled", default: false
+    t.string "anthropic_api_key"
     t.string "append_to_commitment_agreement"
     t.boolean "bank_verification"
     t.string "call_basis"
@@ -1376,6 +1377,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_124614) do
     t.datetime "created_at", null: false
     t.text "custom_dashboards"
     t.integer "custom_flags", default: 0
+    t.string "default_llm_model"
     t.datetime "deleted_at"
     t.string "digio_client_id"
     t.string "digio_client_secret"
@@ -1388,6 +1390,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_124614) do
     t.string "fi_code"
     t.string "formula_tag_list"
     t.string "from_email", limit: 100
+    t.string "gemini_api_key"
     t.string "individual_kyc_doc_list"
     t.string "investor_presentations_email", limit: 50
     t.json "kanban_steps"
@@ -1401,6 +1404,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_124614) do
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
+    t.string "openai_api_key"
+    t.string "openrouter_api_key"
     t.boolean "pan_verification"
     t.string "portflio_expense_account_entry_filter"
     t.string "regulatory_env", limit: 20, default: "SEBI"
@@ -3420,7 +3425,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_124614) do
     t.bigint "task_template_id"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
-    t.index ["document_folder_id"], name: "index_tasks_on_document_folder_id"
+    t.index ["document_folder_id"], name: "fk_rails_62c414fe83"
     t.index ["entity_id"], name: "index_tasks_on_entity_id"
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
@@ -3976,6 +3981,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_06_124614) do
   add_foreign_key "tasks", "entities"
   add_foreign_key "tasks", "folders", column: "document_folder_id"
   add_foreign_key "tasks", "form_types"
+  add_foreign_key "tasks", "task_recurrence_rules"
   add_foreign_key "tasks", "task_templates"
   add_foreign_key "tasks", "users"
   add_foreign_key "tear_sheet_presentations", "entities"

@@ -79,13 +79,12 @@ class ImportTask < ImportUtil
         assigned_to_id: assignee&.id,
         owner: owner,
         import_upload_id: import_upload.id,
-        user_id: import_upload.user_id,
         send_notification_flag: false # Skip notifications on import, especially for recurring tasks which will create multiple records
       )
     end
   end
 
-  def save_recurring_task(entity, import_upload, description, category, assignee, owner, rrule, start_date, end_date, update_only)
+  def save_recurring_task(entity, _import_upload, description, category, assignee, owner, rrule, start_date, end_date, update_only)
     raise "Rrule and Start Date are required for recurring tasks" if rrule.blank? || start_date.blank?
 
     task_template_payload = {
@@ -99,6 +98,7 @@ class ImportTask < ImportUtil
     if update_only
       rule = entity.task_recurrence_rules.find_by(rrule: rrule, start_date: start_date)
       raise "TaskRecurrenceRule not found for update" unless rule
+
       rule.update!(
         task_template_payload: task_template_payload,
         end_date: end_date
@@ -120,14 +120,10 @@ class ImportTask < ImportUtil
     case owner_type
     when "Fund"
       entity.funds.find_by(name: owner_name)
-    when "Investor"
-      entity.investors.find_by(investor_name: owner_name)
-    when "PortfolioCompany"
+    when "Investor", "PortfolioCompany"
       entity.investors.find_by(investor_name: owner_name)
     when "Entity"
       entity.name == owner_name ? entity : nil
-    else
-      nil
     end
   end
 end
