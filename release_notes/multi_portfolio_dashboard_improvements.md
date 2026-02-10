@@ -56,6 +56,7 @@ Improved table readability below charts by:
 - Centering tables horizontally
 - Reducing excessive whitespace between labels and percentages
 - Better visual alignment
+- **UI Consistency:** Company charts now use standard card layout instead of toggle view for better page consistency
 
 ### How to Test
 1. Navigate to any dashboard with sector/company breakdown charts
@@ -65,6 +66,8 @@ Improved table readability below charts by:
    - Minimal gap between sector/company names and percentage values
    - Clean, professional appearance
    - Easy to read at a glance
+   - Card header with title has proper padding without background color
+   - No toggle button - card always expanded for consistent UI
 
 ### Affected Views
 - Sector-wise breakdown tables
@@ -143,6 +146,12 @@ Enhanced AG Grid grouping functionality to support **multiple column grouping** 
 ### Change Summary
 Added a new widget called **"Company Ratio"** that provides the same IRR and MOIC charting functionality as fund ratios, but for individual portfolio companies.
 
+**Recent Updates:**
+- **Fund Filtering:** Widget now respects `fund_ids` parameter to filter companies by specific funds
+- **Negative Values:** Customizable color for negative ratio values via `negative_color` parameter
+- **Title Handling:** Title from metadata is used as-is without titleization
+- **UI Consistency:** Changed from toggle card to standard card view for better page consistency
+
 ### How to Test
 
 #### Adding the Widget
@@ -150,8 +159,22 @@ Added a new widget called **"Company Ratio"** that provides the same IRR and MOI
 2. Add a new widget with type: `Company Ratios`
 3. Configure similar to fund ratio widgets:
    ```yaml
-    {show_table: true, show_chart: true, ratio_names: ['IRR'], titles: ['IRR'], chart_colors: ['#00c49a']}
+    {show_table: true, show_chart: true, ratio_names: ['IRR'], titles: ['IRR'], chart_colors: ['#00c49a'], negative_color: '#ff0000'}
    ```
+
+#### Test Fund Filtering
+1. Add `fund_ids` parameter to filter by specific funds:
+   ```yaml
+   {show_table: true, show_chart: true, ratio_names: ['IRR', 'MOIC'], fund_ids: [1, 2, 3]}
+   ```
+2. **Expected Result:** Only companies from specified funds are displayed
+
+#### Test Negative Value Coloring
+1. Set a custom color for negative ratios:
+   ```yaml
+   {show_table: true, show_chart: true, ratio_names: ['IRR'], negative_color: '#dc3545'}
+   ```
+2. **Expected Result:** Companies with negative IRR/MOIC values display in the specified color
 
 #### Viewing Company Ratios
 1. Navigate to the dashboard with the company ratio widget
@@ -161,12 +184,15 @@ Added a new widget called **"Company Ratio"** that provides the same IRR and MOI
    - MOIC values show with `x` suffix
    - Table below chart lists companies with their ratios
    - Same formatting rules as fund ratios apply
+   - Card displays without toggle button for consistent UI
 
 #### Test Features
 - **IRR Chart:** Should display company IRR with specified decimal precision
 - **MOIC Chart:** Should display company MOIC in `X.Xx` format
 - **Table Data:** Should match chart data exactly
 - **Decimal Control:** Test with different `decimals` parameter values
+- **Fund Filtering:** Verify only selected fund companies appear
+- **Negative Colors:** Check negative values display in custom color
 
 ---
 
@@ -221,6 +247,34 @@ Added a new widget called **"Company Ratio"** that provides the same IRR and MOI
 **Solution:**
 - Verify no conflicting CSS is being applied
 - Check that widget container has proper width constraints
+
+---
+
+## Recent Updates & Additional Improvements
+
+### Fund-Based Filtering
+- **Company Ratios Widget** now respects `fund_ids` parameter for filtering data
+- When multiple funds are selected, only ratios from those specific funds are included in calculations
+- Ensures accurate company-level metrics when viewing multi-portfolio dashboards
+
+### Customizable Negative Value Colors
+- Added `negative_color` parameter to company ratios widget
+- Allows customization of how negative ratios are displayed
+- Example configuration:
+  ```ruby
+    {show_chart: true, ratio_names: ['IRR', 'MOIC'], titles: ['IRR', 'MOIC'], chart_colors: ['#00c49a', '#ff8042'], negative_colors: ['#ff0000', '#ff0000']}
+  ```
+
+### Title Display Enhancement
+- Widget titles from metadata are now displayed as-is without automatic titleization
+- Preserves custom formatting, capitalization, and abbreviations
+- Provides more control over dashboard presentation
+
+### UI Consistency - Company Charts
+- Removed toggle view functionality from company/sector charts
+- Changed to standard card layout with shadow for consistency
+- Maintains clean padding (`p-3 pb-0`) without background color
+- Improved visual alignment with other dashboard widgets
 
 ---
 

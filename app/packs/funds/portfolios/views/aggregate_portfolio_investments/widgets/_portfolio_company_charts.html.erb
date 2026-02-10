@@ -21,11 +21,15 @@
 <div data-controller="company-sector-toggle">
 <% if valid_plot_param %>
     <% if show_sector_wise || show_portfolio_company_wise %>
-      <%= render ToggleCard.new(title: title, css_class: "show_cap_table", state: "show") do %>
+      <div class="card shadow mb-4">
+        <div class="p-4 pb-0">
+          <h4 class="h4 mb-0 text-gray-800"><%= title %></h4>
+        </div>
+        <div class="card-body">
         <div class="row gx-4 gy-0" >
           <% if show_sector_wise %>
             <div class="<%= (show_sector_wise && show_portfolio_company_wise) ? 'col-12 col-lg-6' : 'col-12' %>">
-              <p class="text-muted small mb-2">Sectors</p>
+
               <%= investment_chart_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sector, plot_param, limit: table_limit) %>
               <% if show_table %>
                 <% grouped = investment_grouped_data_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sector, plot_param) rescue [] %>
@@ -78,7 +82,7 @@
 
           <% if show_portfolio_company_wise %>
             <div class="<%= (show_sector_wise && show_portfolio_company_wise) ? 'col-12 col-lg-6' : 'col-12' %>">
-              <p class="text-muted small mb-2">Companies</p>
+
               <%= investment_chart_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids, limit: table_limit) %>
 
               <% grouped = investment_grouped_data_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids) rescue [] %>
@@ -131,7 +135,8 @@
             </div>
           <% end %>
         </div>
-      <% end %>
+        </div>
+      </div>
     <% end %>
 
 <% end %>

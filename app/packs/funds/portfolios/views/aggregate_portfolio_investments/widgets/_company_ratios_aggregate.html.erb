@@ -4,6 +4,7 @@
   show_table = args[:show_table].nil? ? true : args[:show_table]
   ratio_names = args[:ratio_names] || ["IRR", "MOIC"]
   chart_colors = args[:chart_colors] || ["#00c49a", "#ff8042"]
+  negative_colors = args[:negative_colors] || ["#c4002a", "#41c0ff"]
   titles = args[:titles] || ["Gross Portfolio IRR", "Gross Portfolio MOIC"]
   decimals = args[:decimals] || 2
 
@@ -12,7 +13,8 @@
 
   # This is not the final way need to discuss the storage of Fund Ratios for multiple funds and portfolio companies
   ratios_by_name = {}
-  fund_ratios = fund_ratio_list(investor_ids, owner_types: ["Investor"], ratio_names: ratio_names)
+
+  fund_ratios = fund_ratio_list(investor_ids, fund_ids, owner_types: ["Investor"], ratio_names: ratio_names)
   ratio_names.each do |ratio_name|
     ratios_by_name[ratio_name] = fund_ratios.where(name: ratio_name).map do |fr|
       # For IRR, use fr.value with decimals precision
@@ -58,14 +60,17 @@
                       dataLabels: {
                         enabled: true,
                         format: "{y:.#{chart_decimals}f}#{suffix}"
-                      }
+                      },
+                      negativeColor: negative_colors[idx],
+                      color: chart_colors[idx]
                     }
                   },
                   legend: { enabled: false },
                   **chart_theme_color
                 } %>
               </div>
-            <% end %>            <% if show_table %>
+            <% end %>
+            <% if show_table %>
               <div>
                 <%= render "fund_ratio_list", fund_ratios: fund_ratios.where(name: ratio_name) %>
               </div>

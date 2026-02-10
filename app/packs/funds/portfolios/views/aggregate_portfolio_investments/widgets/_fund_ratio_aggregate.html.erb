@@ -11,7 +11,7 @@
 
   # This is not the final way need to discuss the storage of Fund Ratios for multiple funds and portfolio companies
   ratios_by_name = {}
-  fund_ratios = fund_ratio_list(fund_ids, owner_types: ["Fund"], ratio_names: ratio_names)
+  fund_ratios = fund_ratio_list(fund_ids ,fund_ids, owner_types: ["Fund"], ratio_names: ratio_names)
   ratio_names.each do |ratio_name|
     ratios_by_name[ratio_name] = fund_ratios.where(name: ratio_name).map do |fr|
       # For IRR, use fr.value with decimals precision

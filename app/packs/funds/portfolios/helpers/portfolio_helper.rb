@@ -78,10 +78,10 @@ module PortfolioHelper
     filtered_frs.map { |fr| { name: fr.owner.name, value: fr.display_value } }
   end
 
-  def fund_ratio_list(owner_ids, owner_types: ["Fund"], ratio_names: %w[IRR])
+  def fund_ratio_list(owner_ids, fund_ids, owner_types: ["Fund"], ratio_names: %w[IRR])
     return FundRatio.none if owner_ids.blank?
 
-    scope = FundRatio.where(owner_id: owner_ids, owner_type: owner_types)
+    scope = FundRatio.where(owner_id: owner_ids, owner_type: owner_types, fund_id: fund_ids)
                      .latest
                      .includes(:owner)
                      .order(end_date: :desc)
