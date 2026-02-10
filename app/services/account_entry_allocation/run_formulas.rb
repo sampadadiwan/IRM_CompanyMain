@@ -140,8 +140,7 @@ module AccountEntryAllocation
       return true unless ctx[:run_allocations]
 
       fund = ctx[:fund]
-      ctx[:start_date]
-      ctx[:end_date]
+      ctx[:allocation_run].update_column(:status, "Pending")
 
       # Used to update the created account_entries. See CreateAccountEntry
       ctx[:form_type_id] = fund.entity.form_types.where(name: "AccountEntry").last
@@ -179,8 +178,11 @@ module AccountEntryAllocation
         # migrate_entries_to_primary(ctx) will now only pick up leftovers
         migrate_entries_to_primary(ctx, final_check: true)
 
-        # Update status only in the final run (when final_check is true)
-        ctx[:allocation_run]&.update_column(:status, "Success")
+        # We only set it to Success if it wasn't already set to an error message during formula execution
+        # Reloading to check current DB state of the status
+        if ctx[:allocation_run].reload.status == "Pending"
+          ctx[:allocation_run].update_column(:status, "Success")
+        end
       end
 
       true
