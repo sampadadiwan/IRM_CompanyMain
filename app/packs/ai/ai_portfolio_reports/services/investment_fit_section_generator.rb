@@ -104,7 +104,7 @@ class InvestmentFitSectionGenerator
   # rubocop:enable Metrics/MethodLength
 
   def call_llm(prompt)
-    chat = LlmService.ruby_llm_chat(entity: nil) # No entity-specific keys needed for this general evaluation task
+    chat = LlmService.ruby_llm_chat(entity: @portfolio_company.entity) # Pass entity for potential API key access
     response = chat.ask(prompt)
     response.content.strip
   end

@@ -113,7 +113,7 @@ class SectionContentGenerator
 
   def call_ai_for_content(prompt)
     # Use RubyLLM (same as ChartAgentService)
-    chat = LlmService.ruby_llm_chat
+    chat = LlmService.ruby_llm_chat(entity: @portfolio_company.entity) # Pass entity for potential API key access
 
     response = chat.ask(prompt)
 

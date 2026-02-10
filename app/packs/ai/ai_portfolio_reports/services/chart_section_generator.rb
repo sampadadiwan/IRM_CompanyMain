@@ -604,7 +604,7 @@ class ChartSectionGenerator
 
     Rails.logger.info "[ChartSectionGenerator] Generating chart prompts from data..."
 
-    chat = LlmService.ruby_llm_chat
+    chat = LlmService.ruby_llm_chat(entity: @entity)
 
     prompt = <<~PROMPT
       Analyze the following data and suggest 3 meaningful charts that would visualize key insights.

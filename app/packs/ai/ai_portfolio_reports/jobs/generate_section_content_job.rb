@@ -110,7 +110,7 @@ class GenerateSectionContentJob < ApplicationJob
     return if data_preview.blank?
 
     # Ask LLM if chartable data exists for this section type
-    chart_prompts = check_and_generate_chart_prompts(section.section_type, data_preview)
+    chart_prompts = check_and_generate_chart_prompts(section.section_type, data_preview, report)
 
     if chart_prompts.present?
       Rails.logger.info "  → Generating #{chart_prompts.count} charts for #{section.section_type}"
@@ -133,8 +133,8 @@ class GenerateSectionContentJob < ApplicationJob
   # @param section_type [String] section type name
   # @param data_preview [String] document data preview
   # @return [Array<String>] chart prompts
-  def check_and_generate_chart_prompts(section_type, data_preview)
-    chat = LlmService.ruby_llm_chat
+  def check_and_generate_chart_prompts(section_type, data_preview, report)
+    chat = LlmService.ruby_llm_chat(entity: report.portfolio_company.entity) # Pass entity for potential API key access
 
     prompt = <<~PROMPT
       Analyze the following document data and determine if there is numerical/chartable data relevant to a "#{section_type}" section.
