@@ -1,3 +1,17 @@
+V9.1.90
+cf96eaef7 Update allocation run status handling in run_formulas
+ab0ba632d Multi portfolio dashboard UI changes (#1255)
+072dee7f6 Verified usage of   def self.ruby_llm_chat(entity: nil) (#1257)
+40df5af4f Fix LLMService references to use correct casing in multiple files
+519b9c8a6 Tenant llm keys3 (#1256)
+0910ceffa Now format_nd and format_2,3.. use - for 0 and () for -ve (#1245)
+f9be78b38 Investor merge fix (#1253)
+e6f6d01c0 Fix/ai portfolio reports features (#1252)
+99aaf6c91 Now send kyc to stakeholder button shows when stakeholder is present (#1248)
+c25be6def Merge pull request #1247 from ausangshukla/multi_portfolio_dashboard_fix
+65ebe37f3 Step definition to use the new formatting using force_units
+
+
 V9.1.88
 863114fb5 feat: Add task import functionality with support for recurring tasks
 bcf0a35bb (origin/multi_portfolio_dashboard_fix) Made the title same as Investments title
