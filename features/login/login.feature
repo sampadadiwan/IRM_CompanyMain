@@ -49,5 +49,5 @@ Scenario Outline: Login Incorrectly
 
   Examples:
   	|user		|msg	|
-  	|	      |Invalid Email or password|
-    
+  	|	      |Invalid email or password|
+

@@ -203,7 +203,7 @@ class TearSheetGeneratorService
   end
 
   def ask_llm(prompt)
-    llm_chat = LLMService.ruby_llm_chat(entity: @extract.entity)
+    llm_chat = LlmService.ruby_llm_chat(entity: @extract.entity)
     response = llm_chat.ask(prompt)
 
     content = response.respond_to?(:content) ? response.content : response.to_s

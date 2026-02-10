@@ -16,7 +16,7 @@ class DocLlmContext < DocLlmBase
   def init(ctx, **)
     # Initialize RubyLLM chat with configured model
     model = ENV.fetch('DOCUMENT_VALIDATION_MODEL', ENV.fetch('DEFAULT_MODEL'))
-    ctx[:chat] = LLMService.ruby_llm_chat(entity: model.entity) # Pass the entity to get any custom API keys if needed
+    ctx[:chat] = LlmService.ruby_llm_chat(entity: model.entity) # Pass the entity to get any custom API keys if needed
     true
   end
 
