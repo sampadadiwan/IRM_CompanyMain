@@ -1,14 +1,15 @@
 <%
-  uri_params ||= {}
+
   args ||= {}
 
+
   portfolio_company_ids ||= investors.pluck(:id)
-  tags ||= uri_params[:tag_list] || []
-  sector ||= uri_params[:sector] || []
+  tags ||= nil
+  sectors_to_include = uri_params[:sector] || []
   fund_ids ||= @selected_fund_ids.presence || Array(params[:fund_ids]).presence || @funds.pluck(:id).presence || []
   allowed_plot_params = ["fmv", "bought_amount"]
   plot_param ||= args[:plot].present? ? args[:plot] : "fmv"
-  title = args[:title] || tags.titleize || "Portfolio Company Charts"
+  title = args[:title] || tags&.titleize || "Portfolio Company Charts"
 
   # Default behavior: show_portfolio_company_wise is true if no other parameter is set
   show_sector_wise = args[:show_sector_wise] == true
@@ -30,13 +31,20 @@
           <% if show_sector_wise %>
             <div class="<%= (show_sector_wise && show_portfolio_company_wise) ? 'col-12 col-lg-6' : 'col-12' %>">
 
-              <%= investment_chart_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sector, plot_param, limit: table_limit) %>
+              <%= investment_chart_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sectors_to_include, plot_param, limit: table_limit) %>
               <% if show_table %>
-                <% grouped = investment_grouped_data_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sector, plot_param) rescue [] %>
+                <% grouped = investment_grouped_data_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sectors_to_include, plot_param) rescue [] %>
                 <% table_data = process_table_data(grouped, limit: table_limit) %>
                 <% if table_data[:top].any? %>
+
                   <div style="min-height: 280.5px; max-height: 500px; overflow-y: auto; display: flex; justify-content: center;">
                     <table class="mt-2 mb-0">
+                      <thead>
+                        <tr>
+                          <th class="p-1 pe-4 small">Sector</th>
+                          <th class="p-1 small text-end">Percentage of <%= plot_param == "fmv" ? "FMV" : "Bought Amount" %></th>
+                        </tr>
+                      </thead>
                       <tbody>
                         <% table_data[:top].each do |name, value| %>
                           <tr>
@@ -84,12 +92,19 @@
             <div class="<%= (show_sector_wise && show_portfolio_company_wise) ? 'col-12 col-lg-6' : 'col-12' %>">
 
               <%= investment_chart_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids, limit: table_limit) %>
-
+              <% if show_table %>
               <% grouped = investment_grouped_data_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids) rescue [] %>
               <% table_data = process_table_data(grouped, limit: table_limit) %>
               <% if table_data[:top].any? %>
+
                 <div style="min-height: 280.5px; max-height: 500px; overflow-y: auto; display: flex; justify-content: center;">
                   <table class="mt-2 mb-0">
+                    <thead>
+                      <tr>
+                        <th class="p-1 pe-4 small">Company</th>
+                        <th class="p-1 small text-end">Percentage of <%= plot_param == "fmv" ? "FMV" : "Bought Amount" %></th>
+                      </tr>
+                    </thead>
                     <tbody>
                       <% table_data[:top].each do |name, value| %>
                         <tr>
@@ -131,6 +146,7 @@
                     </tbody>
                   </table>
                 </div>
+              <% end %>
               <% end %>
             </div>
           <% end %>

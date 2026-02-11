@@ -7,9 +7,9 @@
             tag.thead do
               tag.tr do
                 safe_join([
-                  tag.th("Funds", scope: "col", class: " small fw-semibold"),
-                  tag.th("Value", scope: "col", class: " small fw-semibold text-end"),
-                  tag.th("As on", scope: "col", class: " small fw-semibold text-end")
+                  tag.th("Funds", scope: "col", class: " text-white ", style: "font-size: 14px"),
+                  tag.th("Value", scope: "col", class: " text-end text-white", style: "font-size: 14px"),
+                  tag.th("As on", scope: "col", class: " text-end text-white", style: "font-size: 14px")
                 ])
               end
             end,
@@ -18,7 +18,7 @@
                 fund_ratios.map do |fund_ratio|
                   tag.tr do
                     safe_join([
-                      tag.td(class: "fw-semibold text-dark") do
+                      tag.td(class: "text-dark") do
                         fund_ratio.owner.respond_to?(:name) ? fund_ratio.owner.name : fund_ratio.owner_type
                       end,
                       tag.td(class: "text-end") do

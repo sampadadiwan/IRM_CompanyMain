@@ -108,9 +108,9 @@ class DashboardWidget < ApplicationRecord
       position: 2,
       metadata_help: "{title: 'Stats', decimals: 2, currency: 'INR/USD'}"
     ),
-    DashboardWidget.new(dashboard_name: "Aggregated Portfolio Dashboard", widget_name: "Company Charts", path: "aggregate_portfolio_investments/widgets/portfolio_company_charts", size: "XL", metadata_help: "{show_sector_wise: false, show_portfolio_company_wise: true , show_table: true, plot: 'fmv'/'bought_amount', table_limit: 10}", position: 4),
-    DashboardWidget.new(dashboard_name: "Aggregated Portfolio Dashboard", widget_name: "Fund Ratios", path: "aggregate_portfolio_investments/widgets/fund_ratio_aggregate", size: "XL", metadata_help: "{show_table: true, show_chart: true, ratio_names: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'], titles: ['IRR', 'MOIC'], chart_colors: ['#00c49a', '#ff8042']}"),
-    DashboardWidget.new(dashboard_name: "Aggregated Portfolio Dashboard", widget_name: "Company Ratios", path: "aggregate_portfolio_investments/widgets/company_ratios_aggregate", size: "XL", metadata_help: "{show_table: true, show_chart: true, ratio_names: ['IRR', 'MOIC'], titles: ['IRR', 'MOIC'], chart_colors: ['#00c49a', '#ff8042'], negative_colors: ['#ff0000', '#ff0000']}")
+    DashboardWidget.new(dashboard_name: "Aggregated Portfolio Dashboard", widget_name: "Company Charts", path: "aggregate_portfolio_investments/widgets/portfolio_company_charts", size: "XL", metadata_help: "{title: 'Company Chart',show_sector_wise: false, show_portfolio_company_wise: true , show_table: true, plot: 'fmv'/'bought_amount', table_limit: 10}", position: 4),
+    DashboardWidget.new(dashboard_name: "Aggregated Portfolio Dashboard", widget_name: "Fund Ratios", path: "aggregate_portfolio_investments/widgets/fund_ratio_aggregate", size: "XL", metadata_help: "{show_table: true, show_chart: true, ratio_names: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'], titles: ['IRR', 'MOIC'], chart_colors: ['green', 'DarkOrange']}"),
+    DashboardWidget.new(dashboard_name: "Aggregated Portfolio Dashboard", widget_name: "Company Ratios", path: "aggregate_portfolio_investments/widgets/company_ratios_aggregate", size: "XL", metadata_help: "{show_table: true, show_chart: true, ratio_names: ['IRR', 'MOIC'], titles: ['IRR', 'MOIC'], chart_colors: ['green', 'DarkOrange'], negative_colors:['orange', 'red']}")
 
   ].freeze
   WIDGETS = {

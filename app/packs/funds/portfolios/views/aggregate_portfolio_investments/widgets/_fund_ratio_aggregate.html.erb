@@ -3,9 +3,9 @@
   show_chart = args[:show_chart].nil? ? true : args[:show_chart]
   show_table = args[:show_table].nil? ? true : args[:show_table]
   ratio_names = args[:ratio_names] || ["IRR", "MOIC"]
-  chart_colors = args[:chart_colors] || ["#00c49a", "#ff8042"]
+  chart_colors = args[:chart_colors] || ['green', 'DarkOrange']
 
-  titles = args[:titles] || Array.new(ratio_names.size, tags.titleize) || ["Gross Portfolio IRR", "Gross Portfolio MOIC"]
+  titles = args[:titles] || Array.new(ratio_names.size, tags ? tags.titleize : nil) || ["Gross Portfolio IRR", "Gross Portfolio MOIC"]
   decimals = args[:decimals] || 2
   fund_ids ||= @selected_fund_ids.presence || @funds.pluck(:id).presence || []
 
