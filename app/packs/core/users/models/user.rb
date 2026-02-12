@@ -100,6 +100,20 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
   devise :database_authenticatable, :registerable, :trackable,
          :recoverable, :rememberable, :validatable, :confirmable, :lockable, :api
 
+  # Override Devise::Models::Trackable to ensure the sign-in tracking
+  # writes (sign_in_count, current_sign_in_at, etc.) always go to the
+  # primary database. Without this, GET requests routed to the read
+  # replica by the DatabaseSelector middleware raise ReadOnlyError when
+  # Devise re-authenticates a user via the remember-me cookie.
+  def update_tracked_fields!(request)
+    return if new_record?
+
+    update_tracked_fields(request)
+    ActiveRecord::Base.connected_to(role: :writing) do
+      save(validate: false)
+    end
+  end
+
   # Only if this user is an employee of the entity
   belongs_to :entity
   belongs_to :advisor_entity, class_name: "Entity", optional: true
