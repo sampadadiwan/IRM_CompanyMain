@@ -159,6 +159,7 @@ class InvestorsController < ApplicationController
 
     respond_to do |format|
       if @investor.save
+        @investor.document_folder if @investor.category == 'Portfolio Company' && params[:return_to].present?
         redirect_url = params[:back_to].presence || investor_url(@investor)
         format.turbo_stream do
           @frame = params[:turbo_frame] || params[:investor][:turbo_frame] || "new_deal_investor"
@@ -168,7 +169,14 @@ class InvestorsController < ApplicationController
             turbo_stream.replace(@frame, partial:, locals: { frame: @frame })
           ]
         end
-        format.html { redirect_to redirect_url, notice: "Investor was successfully created." }
+        return_to = params[:return_to]
+        # Redirect back to AI Portfolio Reports form with new investor pre-selected
+
+        if return_to.present?
+          return_to = "#{return_to}#{return_to.include?('?') ? '&' : '?'}portfolio_company_id=#{@investor.id}"
+        end
+        format.html { redirect_to (return_to || redirect_url), notice: "Investor was successfully created." }
+
         format.json { render :show, status: :created, location: @investor }
       else
         logger.debug @investor.errors.full_messages

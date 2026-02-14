@@ -1,4 +1,8 @@
-<div class="container mt-4">
+<div class="container mt-4"
+     data-controller="ai-portfolio-report-form"
+     data-ai-portfolio-report-form-investor-folders-value="<%= Investor.where(category: 'Portfolio Company').where.not(document_folder_id: nil).joins(:document_folder).pluck(:id, :document_folder_id, 'folders.documents_count').map { |id, fid, count| [id.to_s, { folder_id: fid, doc_count: count.to_i }] }.to_h.to_json %>"
+     data-ai-portfolio-report-form-new-investor-url-value="<%= new_investor_path(investor: { entity_id: current_user.entity.id }, default_category: 'Portfolio Company', return_to: request.path) %>">
+
   <h1>Create New AI Portfolio Report</h1>
   
   <%= form_with model: @report, class: 'mt-4' do |f| %>
@@ -19,7 +23,19 @@
           Investor.where(category: 'Portfolio Company').order(:name), 
           :id, :name, 
           { prompt: 'Select a portfolio company' }, 
-          class: 'form-control' %>
+          class: 'form-control',
+          data: { ai_portfolio_report_form_target: 'portfolioSelect', action: 'change->ai-portfolio-report-form#portfolioCompanyChanged' } %>
+
+
+          <small>
+            <a href="#" class="text-primary" data-action="click->ai-portfolio-report-form#openNewInvestor">+ Create new portfolio company</a>
+            <span class="mx-2">|</span>
+            <a href="#" class="text-primary" style="display: none;" data-ai-portfolio-report-form-target="manageDocumentsLink" data-action="click->ai-portfolio-report-form#openDocuments">Manage Documents</a>
+          </small>
+
+
+
+
     </div>
     
     <div class="mb-3">
@@ -38,26 +54,33 @@
   
     <% if @templates.any? %>
       <div class="form-check mt-2">
-        <%= radio_button_tag :template_action, 'use_existing', false, class: "form-check-input" %>
+        <%= radio_button_tag :template_action, 'use_existing', false, class: "form-check-input", data: { action: 'change->ai-portfolio-report-form#templateActionChanged' } %>
         <%= label_tag :template_action_use_existing, "Use existing template", class: "form-check-label" %>
       </div>
       
-      <div id="existing-template-select" class="ml-4 mt-2" style="display: none;">
-        <%= select_tag :investment_criteria_template_id, 
+      <div id="existing-template-select" class="ml-4 mt-2" style="display: none;" data-ai-portfolio-report-form-target="existingTemplateSelect">
+
+          <%= select_tag :investment_criteria_template_id, 
             options_from_collection_for_select(@templates, :id, :name_with_usage),
             prompt: "-- Select a Template --",
-            class: "form-control" %>
-        <button type="button" class="btn btn-link" id="preview-template-btn">Preview</button>
-        <div id="template-preview" class="mt-2" style="display: none;"></div>
+            class: "form-control",
+            data: { ai_portfolio_report_form_target: 'templateSelect' } %>
+
+        <button type="button" class="btn btn-link" data-action="click->ai-portfolio-report-form#previewTemplate">Preview</button>
+
+        <div class="mt-2" style="display: none;" data-ai-portfolio-report-form-target="templatePreview"></div>
+
       </div>
     <% end %>
 
     <div class="form-check mt-2">
-      <%= radio_button_tag :template_action, 'create_new', false, class: "form-check-input" %>
+      <%= radio_button_tag :template_action, 'create_new', false, class: "form-check-input", data: { action: 'change->ai-portfolio-report-form#templateActionChanged' } %>
+
       <%= label_tag :template_action_create_new, "Create new template", class: "form-check-label" %>
     </div>
 
-    <div id="new-template-form" class="ml-4 mt-3" style="display: none;">
+        <div id="new-template-form" class="ml-4 mt-3" style="display: none;" data-ai-portfolio-report-form-target="newTemplateForm">
+
       <div class="form-group">
         <%= label_tag "new_template[name]", "Template Name" %>
         <%= text_field_tag "new_template[name]", nil, 
@@ -66,17 +89,20 @@
       </div>
 
       <label>Evaluation Criteria</label>
-      <div id="criteria-container">
+            <div id="criteria-container" data-ai-portfolio-report-form-target="criteriaContainer">
+
         <!-- Dynamic criteria rows added by JS -->
         <div class="criteria-row d-flex mb-2">
           <%= text_field_tag "new_template[criteria][0][name]", nil,
               placeholder: "e.g., Team & Leadership", class: "form-control mr-2", style: "flex: 0.35" %>
           <%= text_field_tag "new_template[criteria][0][value]", nil,
               placeholder: "e.g., Founder experience >10 years", class: "form-control mr-2", style: "flex: 0.6" %>
-          <button type="button" class="btn btn-danger btn-sm remove-criterion">×</button>
+                    <button type="button" class="btn btn-danger btn-sm" data-action="click->ai-portfolio-report-form#removeCriterion">×</button>
+
         </div>
       </div>
-      <button type="button" class="btn btn-link" id="add-criterion-btn">+ Add Another Criterion</button>
+            <button type="button" class="btn btn-link" data-action="click->ai-portfolio-report-form#addCriterion">+ Add Another Criterion</button>
+
       
       <p class="text-muted mt-2">
         <small>This template will be automatically saved for future use.</small>
@@ -91,147 +117,6 @@
       <%= link_to 'Cancel', ai_portfolio_reports_path, class: 'btn btn-secondary' %>
     </div>
   <% end %>
-
-
-<script>
-  // Toggle template selection UI based on radio selection
-  function updateTemplateVisibility() {
-    const existingSelect = document.getElementById('existing-template-select');
-    const newTemplateForm = document.getElementById('new-template-form');
-    const selectedRadio = document.querySelector('input[name="template_action"]:checked');
-    const portfolioCompanySelect = document.querySelector('select[name="ai_portfolio_report[portfolio_company_id]"]');
-    
-    
-    // Only show template options if a portfolio company is selected
-    const hasPortfolioCompany = portfolioCompanySelect && portfolioCompanySelect.value !== '';
-
-    // Get or create the warning message element
-    let warningMsg = document.getElementById('template-company-warning');
-    if (!warningMsg) {
-      warningMsg = document.createElement('div');
-      warningMsg.id = 'template-company-warning';
-      warningMsg.className = 'alert alert-warning mt-2';
-      warningMsg.textContent = 'Please select a Portfolio Company first.';
-      document.querySelector('.template-selection').appendChild(warningMsg);
-    }
-
-    if (selectedRadio) {
-      if (hasPortfolioCompany) {
-        // Hide warning, show appropriate section
-        warningMsg.style.display = 'none';
-        if (existingSelect) {
-          existingSelect.style.display = selectedRadio.value === 'use_existing' ? 'block' : 'none';
-        }
-        if (newTemplateForm) {
-          newTemplateForm.style.display = selectedRadio.value === 'create_new' ? 'block' : 'none';
-        }
-      } else {
-        // Show warning, hide both sections
-        warningMsg.style.display = 'block';
-        if (existingSelect) {
-          existingSelect.style.display = 'none';
-        }
-        if (newTemplateForm) {
-          newTemplateForm.style.display = 'none';
-        }
-      }
-    } else {
-      // No radio selected, hide everything
-      warningMsg.style.display = 'none';
-      if (existingSelect) {
-        existingSelect.style.display = 'none';
-      }
-      if (newTemplateForm) {
-        newTemplateForm.style.display = 'none';
-      }
-    }
-  }
-
-  // Run on page load to handle form re-render after validation errors
-  document.addEventListener('DOMContentLoaded', updateTemplateVisibility);
-
-  document.querySelectorAll('input[name="template_action"]').forEach(radio => {
-    radio.addEventListener('change', function() {
-      updateTemplateVisibility();
-    });
-  });
-
-  // Also update when portfolio company selection changes
-  const portfolioSelect = document.querySelector('select[name="ai_portfolio_report[portfolio_company_id]"]');
-  if (portfolioSelect) {
-    portfolioSelect.addEventListener('change', updateTemplateVisibility);
-  }
-
-  // Preview template button
-// Preview template button
-const previewBtn = document.getElementById('preview-template-btn');
-if (previewBtn) {
-  previewBtn.addEventListener('click', function() {
-    const templateSelect = document.getElementById('investment_criteria_template_id');
-    const templateId = templateSelect ? templateSelect.value : null;
-    const previewDiv = document.getElementById('template-preview');
-    
-    if (!templateId) {
-      alert('Please select a template first');
-      return;
-    }
-    
-    fetch(`/investment_criteria_templates/${templateId}/preview`)
-      .then(response => response.json())
-      .then(data => {
-        let html = '<div class="card mt-2"><div class="card-body p-2">';
-        html += `<h6 class="card-title mb-2">${data.name}</h6>`;
-        html += '<table class="table table-sm table-bordered mb-0">';
-        html += '<thead class="table-light"><tr><th style="width: 30%">Criterion</th><th>Evaluation Criteria</th></tr></thead>';
-        html += '<tbody>';
-        data.criteria.forEach(c => {
-          html += `<tr class="small">
-                    <td class="py-1"><strong>${c.name}</strong></td>
-                    <td class="py-1">${c.value}</td>
-                  </tr>`;
-        });
-
-        html += '</tbody></table>';
-        html += '</div></div>';
-        previewDiv.innerHTML = html;
-        previewDiv.style.display = 'block';
-      })
-      .catch(err => {
-        console.error('Preview failed:', err);
-        alert('Failed to load template preview');
-      });
-  });
-}
-
-
-
-  // Add criterion row
-  let criterionIndex = 1;
-  document.getElementById('add-criterion-btn').addEventListener('click', function() {
-    const container = document.getElementById('criteria-container');
-    const row = document.createElement('div');
-    row.className = 'criteria-row d-flex mb-2';
-    row.innerHTML = `
-      <input type="text" name="new_template[criteria][${criterionIndex}][name]" 
-             placeholder="Criterion name" class="form-control mr-2" style="flex: 0.35">
-      <input type="text" name="new_template[criteria][${criterionIndex}][value]" 
-             placeholder="What to evaluate" class="form-control mr-2" style="flex: 0.6">
-      <button type="button" class="btn btn-danger btn-sm remove-criterion">×</button>
-    `;
-    container.appendChild(row);
-    criterionIndex++;
-  });
-
-  // Remove criterion row
-  document.getElementById('criteria-container').addEventListener('click', function(e) {
-    if (e.target.classList.contains('remove-criterion')) {
-      e.target.closest('.criteria-row').remove();
-    }
-  });
-
-
-
-</script>
 
 
 

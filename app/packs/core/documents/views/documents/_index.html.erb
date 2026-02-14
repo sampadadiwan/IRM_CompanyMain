@@ -89,12 +89,13 @@
                 <i class="ti ti-report"></i> Generate Report
               <% end %>
             <% end %>
-            <% if @folder && @folder.owner.is_a?(Investor) && @folder.owner.category == 'Portfolio Company' %>
+            <%# Show "Create AI Portfolio Report" only if user has LLM access and entity has portfolio company agent enabled %>
+            <% if current_user.enable_user_llm_chat && current_user.entity&.support_agents&.portfolio_company_agent? && @folder && @folder.owner.is_a?(Investor) && @folder.owner.category == 'Portfolio Company' %>
+
               <% if @folder.documents.any? %>
-                <%= button_to create_from_folder_ai_portfolio_reports_path(folder_id: folder_id),
-                  method: :post,
+                <%= link_to new_ai_portfolio_report_path(portfolio_company_id: @folder.owner.id),
                   class: "dropdown-item d-flex align-items-center",
-                  data: { msg: "This will create a new AI Portfolio Report for this portfolio company. Proceed?", action: "click->confirm#popup", method: :post } do %>
+                  data: { turbo: false } do %>
                   <i class="ti ti-robot"></i> Create AI Portfolio Report (<%= @folder.documents.count %> docs)
                 <% end %>
               <% else %>
@@ -103,6 +104,7 @@
                 </span>
               <% end %>
             <% end %>
+
             <div class="dropdown-divider"></div>
             <% if params[:q].present? %>
               <%= render "documents/bulk_actions", folder_id: folder_id %>
