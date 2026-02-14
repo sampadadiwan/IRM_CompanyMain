@@ -6,67 +6,42 @@
 # It ensures that a policy scope is always applied to the query:
 # 1. If a block is given, it yields the relation to the block (allowing controllers to use `policy_scope` helper).
 # 2. If no block is given, it uses `Pundit.policy_scope!` directly.
-class CapitalCommitmentList
+class CapitalCommitmentList < BaseList
   Result = Struct.new(:q, :capital_commitments, :data_frame, :adhoc_json, :template, keyword_init: true)
 
-  # @param current_user [User] The user performing the action.
-  # @param params [Hash] The parameters for filtering and search.
-  # @yield [relation] Optional block for applying policy scope.
-  def self.call(current_user, params, &)
-    new(current_user, params).call(&)
-  end
-
-  def initialize(current_user, params)
-    @current_user = current_user
-    @params = params
-  end
-
-  def call
-    # Step 1: Apply Ransack search and policy scope
+  def call(&)
     @q = CapitalCommitment.ransack(@params[:q])
-    @capital_commitments = if block_given?
-                             yield(@q.result)
-                           else
-                             Pundit.policy_scope!(@current_user, @q.result)
-                           end
+    @capital_commitments = apply_policy_scope(@q.result, &)
     @capital_commitments = @capital_commitments.includes(:entity, :fund, :investor_kyc, :investor)
 
-    # Step 2: Special filter for DataTables search
+    # Special filter for DataTables search
     @capital_commitments = @capital_commitments.where(id: search_ids) if @params.dig(:search, :value).present?
-
     @capital_commitments = @capital_commitments.where(id: @params[:capital_commitment_ids]) if @params[:capital_commitment_ids].present?
 
-    # Step 3: Standard filters
-    filter_params(
-      :fund_id,
-      :investor_id,
-      :import_upload_id,
-      :onboarding_completed
-    )
+    # Apply standard filters
+    @capital_commitments = filter_params(@capital_commitments, :fund_id, :investor_id, :import_upload_id, :onboarding_completed)
 
-    # Step 4: Grouped DataFrame response (adhoc pivot or aggregation)
-    template = "index"
-    if @params[:group_fields].present?
-      @data_frame = CapitalCommitmentDf.new.df(@capital_commitments, @current_user, @params)
-      @adhoc_json = @data_frame.to_a.to_json
-      template = @params[:template].presence || "index"
-    end
+    # Grouped DataFrame response (adhoc pivot or aggregation)
+    build_data_frame_result
 
     Result.new(
       q: @q,
       capital_commitments: @capital_commitments,
       data_frame: @data_frame,
       adhoc_json: @adhoc_json,
-      template: template
+      template: @template
     )
   end
 
   private
 
-  def filter_params(*keys)
-    keys.each do |key|
-      @capital_commitments = @capital_commitments.where(key => @params[key]) if @params[key].present?
-    end
+  def build_data_frame_result
+    @template = "index"
+    return if @params[:group_fields].blank?
+
+    @data_frame = CapitalCommitmentDf.new.df(@capital_commitments, @current_user, @params)
+    @adhoc_json = @data_frame.to_a.to_json
+    @template = @params[:template].presence || "index"
   end
 
   def search_ids

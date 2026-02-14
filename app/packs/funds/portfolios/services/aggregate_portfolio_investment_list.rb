@@ -6,24 +6,14 @@
 # It ensures that a policy scope is always applied to the query:
 # 1. If a block is given, it yields the relation to the block (allowing controllers to use `policy_scope` helper).
 # 2. If no block is given, it uses `Pundit.policy_scope!` directly.
-class AggregatePortfolioInvestmentList
+class AggregatePortfolioInvestmentList < BaseList
   Result = Struct.new(:q, :aggregate_portfolio_investments, :time_series, :fields, :show_fund_name, keyword_init: true)
 
-  # @param current_user [User] The user performing the action.
-  # @param params [Hash] The parameters for filtering and search.
-  # @yield [relation] Optional block for applying policy scope.
-  def self.call(current_user, params, &)
-    new(current_user, params).call(&)
-  end
-
-  def initialize(current_user, params)
-    @current_user = current_user
-    @params = params
-  end
-
-  def call
+  def call(&)
     initialize_query
-    apply_scope { |relation| block_given? ? yield(relation) : relation }
+    @aggregate_portfolio_investments = apply_policy_scope(@q.result, &)
+    @aggregate_portfolio_investments = @aggregate_portfolio_investments.joins(:investment_instrument).includes(:fund, :portfolio_company, :investment_instrument)
+
     filter_by_fund
     filter_additional_params
     refine_search
@@ -37,18 +27,6 @@ class AggregatePortfolioInvestmentList
     model_class = AggregatePortfolioInvestment
     model_class = model_class.with_snapshots if @params[:snapshot].present?
     @q = model_class.ransack(@params[:q])
-  end
-
-  def apply_scope
-    scope = @q.result
-    scope = if block_given?
-              yield(scope)
-            else
-              Pundit.policy_scope!(@current_user, scope)
-            end
-
-    @aggregate_portfolio_investments = scope.joins(:investment_instrument)
-                                            .includes(:fund, :portfolio_company, :investment_instrument)
   end
 
   def filter_by_fund

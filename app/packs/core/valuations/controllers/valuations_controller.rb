@@ -9,6 +9,9 @@ class ValuationsController < ApplicationController
     @q = service.q
     @valuations = service.valuations
 
+    per_page = params[:per_page].to_i.nonzero? || 10
+    @pagy, @valuations = pagy(@valuations, limit: per_page) if params[:all].blank?
+
     authorize(service.owner, :show?) if service.owner
   end
 

@@ -6,29 +6,28 @@
 # It ensures that a policy scope is always applied to the query:
 # 1. If a block is given, it yields the relation to the block (allowing controllers to use `policy_scope` helper).
 # 2. If no block is given, it uses `Pundit.policy_scope!` directly.
-class PortfolioInvestmentList
+class PortfolioInvestmentList < BaseList
   Result = Struct.new(:q, :portfolio_investments, :data_frame, :adhoc_json, :template, :time_series, :fields, keyword_init: true)
 
-  # @param current_user [User] The user performing the action.
-  # @param params [Hash] The parameters for filtering and search.
-  # @yield [relation] Optional block for applying policy scope.
-  def self.call(current_user, params, &)
-    new(current_user, params).call(&)
-  end
-
-  def initialize(current_user, params)
-    @current_user = current_user
-    @params = params
-  end
-
-  def call
+  def call(&)
     initialize_query
-    apply_scope { |relation| block_given? ? yield(relation) : relation }
+    @portfolio_investments = apply_policy_scope(@q.result, &)
+    @portfolio_investments = @portfolio_investments.include_proforma
+                                                   .joins(:investment_instrument)
+                                                   .includes(:aggregate_portfolio_investment, :fund, :investment_instrument)
+
     filter_by_fund
     filter_by_fund_ids
-    filter_additional_params
     filter_by_portfolio_company_ids
-    refine_search
+    @portfolio_investments = filter_params(
+      @portfolio_investments,
+      :portfolio_company_id,
+      :import_upload_id,
+      :investment_instrument_id,
+      :aggregate_portfolio_investment_id,
+      :capital_distribution_id
+    )
+    @portfolio_investments = PortfolioInvestmentSearch.perform(@portfolio_investments, @current_user, @params)
 
     Result.new(build_result_attributes)
   end
@@ -50,19 +49,6 @@ class PortfolioInvestmentList
     @q = model_class.ransack(@params[:q])
   end
 
-  def apply_scope
-    scope = @q.result
-    scope = if block_given?
-              yield(scope)
-            else
-              Pundit.policy_scope!(@current_user, scope)
-            end
-
-    @portfolio_investments = scope.include_proforma
-                                  .joins(:investment_instrument)
-                                  .includes(:aggregate_portfolio_investment, :fund, :investment_instrument)
-  end
-
   def filter_by_fund
     return if @params[:fund_id].blank?
 
@@ -78,20 +64,6 @@ class PortfolioInvestmentList
     return if @params[:fund_ids].blank?
 
     @portfolio_investments = @portfolio_investments.where(fund_id: @params[:fund_ids])
-  end
-
-  def filter_additional_params
-    filter_params(
-      :portfolio_company_id,
-      :import_upload_id,
-      :investment_instrument_id,
-      :aggregate_portfolio_investment_id,
-      :capital_distribution_id
-    )
-  end
-
-  def refine_search
-    @portfolio_investments = PortfolioInvestmentSearch.perform(@portfolio_investments, @current_user, @params)
   end
 
   def build_result_attributes
@@ -119,11 +91,5 @@ class PortfolioInvestmentList
     fields = @params[:fields].presence || %i[fmv quantity gain]
     result_attrs[:time_series] = PortfolioInvestmentTimeSeries.new(@portfolio_investments, fields).call
     result_attrs[:fields] = fields
-  end
-
-  def filter_params(*keys)
-    keys.each do |key|
-      @portfolio_investments = @portfolio_investments.where(key => @params[key]) if @params[key].present?
-    end
   end
 end

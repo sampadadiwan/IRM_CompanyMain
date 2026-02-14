@@ -7,7 +7,7 @@
 # It ensures that a policy scope is always applied to the query:
 # 1. If a block is given, it yields the relation to the block (allowing controllers to use `policy_scope` helper).
 # 2. If no block is given, it uses `Pundit.policy_scope!` directly.
-class AccountEntryList
+class AccountEntryList < BaseList
   Result = Struct.new(:q, :account_entries, :fund, :data_frame, :adhoc_json, :template, :time_series, :pivot, :error, :redirect_url, keyword_init: true)
 
   # @param current_user [User] The user performing the action.
@@ -19,16 +19,16 @@ class AccountEntryList
   end
 
   def initialize(current_user, params, request_referer)
-    @current_user = current_user
-    @params = params
     @request_referer = request_referer
+    super(current_user, params)
   end
 
-  def call
+  def call(&)
     ensure_default_filters
     @q = AccountEntry.ransack(@params[:q])
 
-    resolve_scope { |relation| block_given? ? yield(relation) : relation }
+    @account_entries = apply_policy_scope(@q.result, &)
+    @account_entries = @account_entries.includes(:capital_commitment, :fund)
 
     sort_by_id_then_existing
     filter_index
@@ -46,16 +46,6 @@ class AccountEntryList
     return if ransack_has_attr?(@params[:q], 'reporting_date')
 
     @params[:q][:reporting_date_gt] = I18n.l(Time.zone.today.beginning_of_year)
-  end
-
-  def resolve_scope
-    scope = @q.result
-    scope = if block_given?
-              yield(scope)
-            else
-              Pundit.policy_scope!(@current_user, scope)
-            end
-    @account_entries = scope.includes(:capital_commitment, :fund)
   end
 
   def build_result_attributes
@@ -140,7 +130,8 @@ class AccountEntryList
 
   def filter_index
     # Step 1: Apply basic equality filters
-    filter_params(
+    @account_entries = filter_params(
+      @account_entries,
       :capital_commitment_id,
       :investor_id,
       :import_upload_id,
@@ -162,12 +153,6 @@ class AccountEntryList
       start_date: @params[:reporting_date_start],
       end_date: @params[:reporting_date_end]
     )
-  end
-
-  def filter_params(*keys)
-    keys.each do |key|
-      @account_entries = @account_entries.where(key => @params[key]) if @params[key].present?
-    end
   end
 
   def filter_range(column, start_date:, end_date:)

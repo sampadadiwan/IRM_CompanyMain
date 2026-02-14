@@ -45,8 +45,9 @@
 
     <div id="valuations-tab" class="tab-pane fade in show active">
       <div id="valuations" class="associated_entity">
-        <% params[:owner_id] = investor.id; params[:owner_type]= "Investor" %>
-        <%= render "/valuations/index", valuations: Valuation.with_synthetic.where(owner: investor).includes(:investment_instrument, :entity, :owner) %>
+        <%= turbo_frame_tag "valuations_frame", target: "_top", src: valuations_path(owner_type: "Investor",  owner_id: investor.id), loading: :lazy do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
       </div>
     </div>
 
