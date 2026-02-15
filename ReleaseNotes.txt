@@ -1,3 +1,9 @@
+V9.1.92
+aadff25b0 Ilpa due amounts (#1266)
+e3a7a39a5 Features/portfolio reports minor UI features (#1264)
+bd7c98666 Lists DRY refactor (#1258)
+825f7c322 Refactor QuickLinkPolicy to restrict access for support role in resolve method
+
 V9.1.90
 cf96eaef7 Update allocation run status handling in run_formulas
 ab0ba632d Multi portfolio dashboard UI changes (#1255)
