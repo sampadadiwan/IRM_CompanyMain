@@ -3,6 +3,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   include Memoized
 
   DIST_CASH_SQL = "gross_payable_cents - reinvestment_with_fees_cents".freeze
+  DUE_AMOUNT_SQL = "capital_remittances.call_amount_cents + capital_remittances.other_fee_cents".freeze
 
   attr_reader :as_of_date, :currency, :capital_commitment, :capital_remittance
 
@@ -600,6 +601,78 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   def drawdown_fees_incl_curr_notice_kyc_percent = percentage(drawdown_fees_incl_curr_notice_kyc.cents, drawdown_fees_incl_total.cents)
 
+  # Drawdown Other fees
+
+  # === Drawdown Fees ===
+  # Capital Fees - Prior, Current, Including for LP, GP, Total
+  def other_fees_prior_lp = money_sum(fund_remittances_lp_prior, :other_fee_cents)
+  memoize :other_fees_prior_lp
+
+  def other_fees_prior_gp = money_sum(fund_remittances_gp_prior, :other_fee_cents)
+  memoize :other_fees_prior_gp
+
+  def other_fees_prior_total = other_fees_prior_lp + other_fees_prior_gp
+  memoize :other_fees_prior_total
+
+  def other_fees_prior_notice_investor
+    money_sum(investor_remittances_prior, :other_fee_cents)
+  end
+  memoize :other_fees_prior_notice_investor
+
+  def other_fees_prior_notice_investor_percent = percentage(other_fees_prior_notice_investor.cents, other_fees_prior_total.cents)
+
+  # Other Fees of the KYC prior to notice date
+  def other_fees_prior_notice_kyc = money_sum(kyc_remittances_prior, :other_fee_cents)
+  memoize :other_fees_prior_notice_kyc
+
+  # Percentage of other fees of the KYC prior to notice date
+  def other_fees_prior_notice_kyc_percent = percentage(other_fees_prior_notice_kyc.cents, other_fees_prior_total.cents)
+
+  def other_fees_curr_lp = money_sum(fund_remittances_lp_curr, :other_fee_cents)
+  memoize :other_fees_curr_lp
+
+  def other_fees_curr_gp = money_sum(fund_remittances_gp_curr, :other_fee_cents)
+  memoize :other_fees_curr_gp
+
+  def other_fees_curr_total = other_fees_curr_lp + other_fees_curr_gp
+  memoize :other_fees_curr_total
+
+  def other_fees_curr_notice_investor_percent
+    return 0 unless @capital_remittance
+
+    percentage(@capital_remittance.other_fee_cents, other_fees_curr_total.cents)
+  end
+
+  # Other Fees on the current notice date for the KYC
+  def other_fees_curr_notice_kyc
+    money_sum(kyc_remittances_curr, :other_fee_cents)
+  end
+  memoize :other_fees_curr_notice_kyc
+
+  # Percentage of other fees of the KYC on the current notice date
+  def other_fees_curr_notice_kyc_percent
+    percentage(other_fees_curr_notice_kyc.cents, capital_fees_curr_total.cents)
+  end
+
+  def other_fees_incl_lp = money_sum(fund_remittances_lp, :other_fee_cents)
+  memoize :other_fees_incl_lp
+
+  def other_fees_incl_gp = money_sum(fund_remittances_gp, :other_fee_cents)
+  memoize :other_fees_incl_gp
+
+  def other_fees_incl_total = other_fees_incl_lp + other_fees_incl_gp
+  memoize :other_fees_incl_total
+
+  def other_fees_incl_curr_notice_investor = money_sum(investor_remittances_incl, :other_fee_cents)
+  memoize :other_fees_incl_curr_notice_investor
+
+  def other_fees_incl_curr_notice_investor_percent = percentage(other_fees_incl_curr_notice_investor.cents, other_fees_incl_total.cents)
+
+  def other_fees_incl_curr_notice_kyc = money_sum(kyc_remittances, :other_fee_cents)
+  memoize :other_fees_incl_curr_notice_kyc
+
+  def other_fees_incl_curr_notice_kyc_percent = percentage(other_fees_incl_curr_notice_kyc.cents, other_fees_incl_total.cents)
+
   # === Aggregate Drawdowns ===
   # Aggregate Drawdown (Call Amount) - Prior, Current, Including for LP, GP, Total
   # Aggregate Drawdown is the sum of drawdown cash and drawdown fees
@@ -667,6 +740,76 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   memoize :agg_drawdown_incl_curr_notice_kyc
 
   def agg_drawdown_incl_curr_notice_kyc_percent = percentage(agg_drawdown_incl_curr_notice_kyc.cents, agg_drawdown_incl_total.cents)
+
+  # === Aggregate Drawdowns Total Due Amounts ===
+  # Summation of call amount and other fees
+  def agg_due_prior_notice_lp = Money.new(fund_remittances_lp_prior.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_prior_notice_lp
+
+  def agg_due_prior_notice_gp = Money.new(fund_remittances_gp_prior.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_prior_notice_gp
+
+  def agg_due_prior_notice_total = agg_due_prior_notice_lp + agg_due_prior_notice_gp
+  memoize :agg_due_prior_notice_total
+
+  def agg_due_prior_notice_investor = Money.new(investor_remittances_prior.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_prior_notice_investor
+
+  # Percentage of Aggregate Drawdown of the investor prior to notice date
+  def agg_due_prior_notice_investor_percent
+    percentage(agg_due_prior_notice_investor.cents, agg_due_prior_notice_total.cents)
+  end
+
+  # Aggregate Drawdown of the KYC prior to notice date
+  def agg_due_prior_notice_kyc = Money.new(kyc_remittances_prior.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_prior_notice_kyc
+
+  # Percentage of Aggregate Drawdown of the KYC prior to notice date
+  def agg_due_prior_notice_kyc_percent = percentage(agg_due_prior_notice_kyc.cents, agg_due_prior_notice_total.cents)
+
+  def agg_due_curr_notice_lp = Money.new(fund_remittances_lp_curr.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_curr_notice_lp
+
+  def agg_due_curr_notice_gp = Money.new(fund_remittances_gp_curr.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_curr_notice_gp
+
+  def agg_due_curr_notice_total = agg_due_curr_notice_lp + agg_due_curr_notice_gp
+  memoize :agg_due_curr_notice_total
+
+  def agg_due_curr_notice_investor = Money.new(investor_remittances_curr.sum(DUE_AMOUNT_SQL), @currency)
+
+  def agg_due_curr_notice_investor_percent
+    return 0 unless @capital_remittance
+
+    percentage(@capital_remittance.call_amount_cents + @capital_remittance.other_fee_cents, agg_due_curr_notice_total.cents)
+  end
+
+  def agg_due_curr_notice_kyc = Money.new(kyc_remittances_curr.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_curr_notice_kyc
+
+  def agg_due_curr_notice_kyc_percent
+    percentage(agg_due_curr_notice_kyc.cents, agg_due_curr_notice_total.cents)
+  end
+
+  # Aggregate Due amounts including current notice date
+  def agg_due_incl_curr_notice_lp = Money.new(fund_remittances_lp.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_incl_curr_notice_lp
+
+  def agg_due_incl_curr_notice_gp = Money.new(fund_remittances_gp.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_incl_curr_notice_gp
+
+  def agg_due_incl_curr_notice_total = agg_due_incl_curr_notice_lp + agg_due_incl_curr_notice_gp
+  memoize :agg_due_incl_curr_notice_total
+
+  def agg_due_incl_curr_notice_investor = Money.new(investor_remittances.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_incl_curr_notice_investor
+
+  def agg_due_incl_curr_notice_investor_percent = percentage(agg_due_incl_curr_notice_investor.cents, agg_due_incl_curr_notice_total.cents)
+
+  def agg_due_incl_curr_notice_kyc = Money.new(kyc_remittances.sum(DUE_AMOUNT_SQL), @currency)
+  memoize :agg_due_incl_curr_notice_kyc
+
+  def agg_due_incl_curr_notice_kyc_percent = percentage(agg_due_incl_curr_notice_kyc.cents, agg_due_incl_curr_notice_total.cents)
 
   # === Aggregated Distribution & Reinvestment Prior / Current / Incl Notice Date ===
   def agg_dist_prior_lp = Money.new(fund_dist_payments_lp_prior.sum(DIST_CASH_SQL), @currency)
@@ -906,6 +1049,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   memoize :kyc_remittances_curr
 
   # Investor (commitment-specific) remittance scopes
+  # investor_ prefix here is filtering using commitment_id, and one commitment will have only one remittance per call, so investor_remittances will return @capital_remittance
   def investor_remittances = fund_as_of.capital_remittances.where(capital_commitment_id: @capital_commitment.id)
   memoize :investor_remittances
 
@@ -930,14 +1074,14 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   memoize :unpaid_prior_notice_total
 
   def unpaid_prior_notice_investor
-    money_sum(investor_remittances_prior, :call_amount_cents) - collected_prior_notice_investor
+    agg_drawdown_prior_notice_investor - collected_prior_notice_investor
   end
   memoize :unpaid_prior_notice_investor
 
   def unpaid_prior_notice_investor_percent = percentage(unpaid_prior_notice_investor, unpaid_prior_notice_total)
 
   def unpaid_prior_notice_kyc
-    money_sum(kyc_remittances_prior, :call_amount_cents) - collected_prior_notice_kyc
+    agg_drawdown_prior_notice_kyc - collected_prior_notice_kyc
   end
   memoize :unpaid_prior_notice_kyc
 
@@ -961,7 +1105,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   def unpaid_curr_notice_investor_percent = percentage(unpaid_curr_notice_investor, unpaid_curr_notice_total)
 
   def unpaid_curr_notice_kyc
-    money_sum(kyc_remittances_curr, :call_amount_cents) - collected_curr_notice_kyc
+    agg_drawdown_curr_notice_kyc - collected_curr_notice_kyc
   end
   memoize :unpaid_curr_notice_kyc
 
@@ -969,12 +1113,12 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   # Unpaid including current notice
   def unpaid_incl_curr_notice_lp
-    money_sum(fund_remittances_lp.where(remittance_date: ..@as_of_date), :call_amount_cents) - collected_incl_curr_notice_lp
+    agg_drawdown_incl_lp - collected_incl_curr_notice_lp
   end
   memoize :unpaid_incl_curr_notice_lp
 
   def unpaid_incl_curr_notice_gp
-    money_sum(fund_remittances_gp.where(remittance_date: ..@as_of_date), :call_amount_cents) - collected_incl_curr_notice_gp
+    agg_drawdown_incl_gp - collected_incl_curr_notice_gp
   end
   memoize :unpaid_incl_curr_notice_gp
 
@@ -994,6 +1138,83 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   memoize :unpaid_incl_curr_notice_kyc
 
   def unpaid_incl_curr_notice_kyc_percent = percentage(unpaid_incl_curr_notice_kyc, unpaid_incl_curr_notice_total)
+
+  # ===== Unpaid from due amounts =====
+  #  Unpaid prior to current notice
+  def unpaid_due_prior_notice_lp = agg_due_prior_notice_lp - collected_prior_notice_lp
+  memoize :unpaid_due_prior_notice_lp
+
+  def unpaid_due_prior_notice_gp = agg_due_prior_notice_gp - collected_prior_notice_gp
+  memoize :unpaid_due_prior_notice_gp
+
+  def unpaid_due_prior_notice_total = unpaid_due_prior_notice_lp + unpaid_due_prior_notice_gp
+  memoize :unpaid_due_prior_notice_total
+
+  def unpaid_due_prior_notice_investor
+    agg_due_prior_notice_investor - collected_prior_notice_investor
+  end
+  memoize :unpaid_due_prior_notice_investor
+
+  def unpaid_due_prior_notice_investor_percent = percentage(unpaid_due_prior_notice_investor, unpaid_due_prior_notice_total)
+
+  def unpaid_due_prior_notice_kyc
+    agg_due_prior_notice_kyc - collected_prior_notice_kyc
+  end
+  memoize :unpaid_due_prior_notice_kyc
+
+  def unpaid_due_prior_notice_kyc_percent = percentage(unpaid_due_prior_notice_kyc, unpaid_due_prior_notice_total)
+
+  # Unpaid for current notice
+  def unpaid_due_curr_notice_lp = agg_due_curr_notice_lp - collected_curr_notice_lp
+  memoize :unpaid_due_curr_notice_lp
+
+  def unpaid_due_curr_notice_gp = agg_due_curr_notice_gp - collected_curr_notice_gp
+  memoize :unpaid_due_curr_notice_gp
+
+  def unpaid_due_curr_notice_total = unpaid_due_curr_notice_lp + unpaid_due_curr_notice_gp
+  memoize :unpaid_due_curr_notice_total
+
+  def unpaid_due_curr_notice_investor
+    agg_due_curr_notice_investor - collected_curr_notice_investor
+  end
+  memoize :unpaid_due_curr_notice_investor
+
+  def unpaid_due_curr_notice_investor_percent = percentage(unpaid_due_curr_notice_investor, unpaid_due_curr_notice_total)
+
+  def unpaid_due_curr_notice_kyc
+    agg_due_curr_notice_kyc - collected_curr_notice_kyc
+  end
+  memoize :unpaid_due_curr_notice_kyc
+
+  def unpaid_due_curr_notice_kyc_percent = percentage(unpaid_due_curr_notice_kyc, unpaid_due_curr_notice_total)
+
+  # Unpaid including current notice
+  def unpaid_due_incl_curr_notice_lp
+    agg_due_incl_curr_notice_lp - collected_incl_curr_notice_lp
+  end
+  memoize :unpaid_due_incl_curr_notice_lp
+
+  def unpaid_due_incl_curr_notice_gp
+    agg_due_incl_curr_notice_gp - collected_incl_curr_notice_gp
+  end
+  memoize :unpaid_due_incl_curr_notice_gp
+
+  def unpaid_due_incl_curr_notice_total = unpaid_due_incl_curr_notice_lp + unpaid_due_incl_curr_notice_gp
+  memoize :unpaid_due_incl_curr_notice_total
+
+  def unpaid_due_incl_curr_notice_investor
+    agg_due_incl_curr_notice_investor - collected_incl_curr_notice_investor
+  end
+  memoize :unpaid_due_incl_curr_notice_investor
+
+  def unpaid_due_incl_curr_notice_investor_percent = percentage(unpaid_due_incl_curr_notice_investor, unpaid_due_incl_curr_notice_total)
+
+  def unpaid_due_incl_curr_notice_kyc
+    agg_due_incl_curr_notice_kyc - collected_incl_curr_notice_kyc
+  end
+  memoize :unpaid_due_incl_curr_notice_kyc
+
+  def unpaid_due_incl_curr_notice_kyc_percent = percentage(unpaid_due_incl_curr_notice_kyc, unpaid_due_incl_curr_notice_total)
 
   # === Aggregate Collected Amount ===
   # Aggregate Collected prior to current notice
