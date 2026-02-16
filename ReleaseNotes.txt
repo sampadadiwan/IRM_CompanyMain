@@ -1,3 +1,11 @@
+V9.1.93
+0e1bf92f3 Added kyc to sqlite load to fix AE generate commitment_name bug
+6e01bd35f (origin/main, origin/HEAD) Removed residency column from kyc import file (#1249)
+2d1f82e92 Adjust logo dimensions for improved responsiveness on login page
+37f6afbc3 Fixed other_fees_curr_notice_kyc_percent (#1267)
+ee0e1f543 Sector in investors (#1268)
+cac13155c Update ReleaseNotes for version 9.1.92 with recent changes
+
 V9.1.92
 aadff25b0 Ilpa due amounts (#1266)
 e3a7a39a5 Features/portfolio reports minor UI features (#1264)
