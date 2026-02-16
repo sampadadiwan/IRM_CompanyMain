@@ -46,7 +46,8 @@
     transition: transform 0.3s ease;
 
     .devise-logo {
-      max-height: 120px;
+      min-height: 100px;
+      max-height: 200px;
       width: auto;
       object-fit: contain;
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
