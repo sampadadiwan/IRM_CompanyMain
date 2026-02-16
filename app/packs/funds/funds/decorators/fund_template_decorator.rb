@@ -651,7 +651,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
 
   # Percentage of other fees of the KYC on the current notice date
   def other_fees_curr_notice_kyc_percent
-    percentage(other_fees_curr_notice_kyc.cents, capital_fees_curr_total.cents)
+    percentage(other_fees_curr_notice_kyc.cents, other_fees_curr_total.cents)
   end
 
   def other_fees_incl_lp = money_sum(fund_remittances_lp, :other_fee_cents)
