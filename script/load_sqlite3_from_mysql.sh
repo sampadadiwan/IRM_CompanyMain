@@ -49,7 +49,7 @@ mysql_cmd() {
 # TABLE DEFINITIONS
 ############################################
 
-TABLES=("funds" "account_entries" "capital_commitments" "portfolio_investments" "aggregate_portfolio_investments" "investors" "exchange_rates" "capital_remittances" "capital_distributions" "capital_distribution_payments" "fund_units" "capital_remittance_payments" "fund_unit_settings" "commitment_adjustments")
+TABLES=("funds" "account_entries" "capital_commitments" "portfolio_investments" "aggregate_portfolio_investments" "investors" "exchange_rates" "capital_remittances" "capital_distributions" "capital_distribution_payments" "fund_units" "capital_remittance_payments" "fund_unit_settings" "commitment_adjustments" "investor_kycs")
 
 # Define columns for each table
 COLS_funds=(
@@ -530,6 +530,98 @@ INDEX_exchange_rates="
   CREATE INDEX idx_exchange_rates_entity_from_to_as_of ON exchange_rates(entity_id, \`from\`, \`to\`, as_of);
 "
 
+COLS_investor_kycs=(
+  id PAN address agreement_committed_amount_cents agreement_unit_type
+  all_docs_valid aml_status bank_account_number bank_account_type
+  bank_branch bank_name bank_verification_response bank_verification_status
+  bank_verified birth_date call_amount_cents collected_amount_cents
+  comments committed_amount_cents completed_by_investor compliant
+  corr_address created_at deleted_at distribution_amount_cents
+  doc_question_answers docs_completed document_folder_id due_amount_cents
+  entity_id esign_emails expiry_date form_type_id full_name ifsc_code
+  import_upload_id investor_id investor_name investor_user_id
+  investor_user_updated_at json_fields kyc_type notification_msg
+  other_fee_cents pan_card_data pan_verification_response
+  pan_verification_status pan_verified reminder_sent reminder_sent_date
+  residency send_kyc_form_to_user signature_data slug type
+  uncalled_amount_cents updated_at verified verified_by_id
+)
+
+TEXT_COLS_investor_kycs=(PAN address agreement_unit_type aml_status bank_account_number bank_account_type bank_branch bank_name bank_verification_response bank_verification_status birth_date comments completed_by_investor compliant corr_address doc_question_answers esign_emails full_name ifsc_code investor_name json_fields kyc_type notification_msg pan_card_data pan_verification_response pan_verification_status residency signature_data slug type)
+
+SCHEMA_investor_kycs="
+  id BIGINT PRIMARY KEY,
+  PAN VARCHAR(15),
+  address TEXT,
+  agreement_committed_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  agreement_unit_type VARCHAR(20),
+  all_docs_valid BOOLEAN DEFAULT 0,
+  aml_status VARCHAR(255),
+  bank_account_number VARCHAR(40),
+  bank_account_type VARCHAR(40),
+  bank_branch VARCHAR(255),
+  bank_name VARCHAR(100),
+  bank_verification_response TEXT,
+  bank_verification_status VARCHAR(255),
+  bank_verified BOOLEAN DEFAULT 0,
+  birth_date DATETIME,
+  call_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  collected_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  comments TEXT,
+  committed_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  completed_by_investor BOOLEAN DEFAULT 0,
+  compliant BOOLEAN DEFAULT 0,
+  corr_address TEXT,
+  created_at DATETIME NOT NULL,
+  deleted_at DATETIME,
+  distribution_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  doc_question_answers JSON,
+  docs_completed BOOLEAN DEFAULT 0,
+  document_folder_id BIGINT,
+  due_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  entity_id BIGINT NOT NULL,
+  esign_emails VARCHAR(255),
+  expiry_date DATE,
+  form_type_id BIGINT,
+  full_name VARCHAR(255),
+  ifsc_code VARCHAR(20),
+  import_upload_id BIGINT,
+  investor_id BIGINT NOT NULL,
+  investor_name VARCHAR(255),
+  investor_user_id BIGINT,
+  investor_user_updated_at DATETIME,
+  json_fields JSON,
+  kyc_type VARCHAR(15) DEFAULT 'Individual',
+  notification_msg TEXT,
+  other_fee_cents DECIMAL(12,2) DEFAULT 0.0,
+  pan_card_data TEXT,
+  pan_verification_response TEXT,
+  pan_verification_status VARCHAR(255),
+  pan_verified BOOLEAN DEFAULT 0,
+  reminder_sent BOOLEAN DEFAULT 0,
+  reminder_sent_date DATETIME,
+  residency VARCHAR(10),
+  send_kyc_form_to_user BOOLEAN DEFAULT 0,
+  signature_data TEXT,
+  slug VARCHAR(255),
+  type VARCHAR(20),
+  uncalled_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  updated_at DATETIME NOT NULL,
+  verified BOOLEAN DEFAULT 0,
+  verified_by_id BIGINT
+"
+
+INDEX_investor_kycs="
+  CREATE INDEX index_investor_kycs_on_deleted_at ON investor_kycs(deleted_at);
+  CREATE INDEX index_investor_kycs_on_document_folder_id ON investor_kycs(document_folder_id);
+  CREATE INDEX index_investor_kycs_on_entity_id ON investor_kycs(entity_id);
+  CREATE INDEX index_investor_kycs_on_form_type_id ON investor_kycs(form_type_id);
+  CREATE INDEX index_investor_kycs_on_investor_id ON investor_kycs(investor_id);
+  CREATE INDEX index_investor_kycs_on_investor_user_id ON investor_kycs(investor_user_id);
+  CREATE UNIQUE INDEX index_investor_kycs_on_slug ON investor_kycs(slug);
+  CREATE INDEX index_investor_kycs_on_verified_by_id ON investor_kycs(verified_by_id);
+"
+
 COLS_account_entries=(
   id capital_commitment_id entity_id fund_id investor_id form_type_id folio_id
   reporting_date entry_type name amount_cents notes created_at updated_at
@@ -591,6 +683,7 @@ TEXT_COLS_account_entries=(notes explanation json_fields name parent_name commit
 TEXT_COLS_capital_commitments=(notes folio_id esign_provider esign_link investor_name unit_type fund_close virtual_bank_account folio_currency json_fields esign_emails slug)
 TEXT_COLS_portfolio_investments=(portfolio_company_name notes folio_id category sub_category sector investment_domicile json_fields excused_folio_ids)
 TEXT_COLS_aggregate_portfolio_investments=(portfolio_company_name investment_type investment_domicile)
+TEXT_COLS_investor_kycs=(PAN address agreement_unit_type aml_status bank_account_number bank_account_type bank_branch bank_name bank_verification_response bank_verification_status birth_date comments completed_by_investor compliant corr_address doc_question_answers esign_emails full_name ifsc_code investor_name json_fields kyc_type notification_msg pan_card_data pan_verification_response pan_verification_status residency signature_data slug type)
 TEXT_COLS_investors=(investor_name category city primary_email pan tag_list)
 TEXT_COLS_exchange_rates=("from" "to" notes)
 TEXT_COLS_capital_remittances=(status notes payment_proof_data folio_id investor_name created_by json_fields)
@@ -909,7 +1002,7 @@ for table in "${TABLES[@]}"; do
   fi
 
   if [ -n "$FUND_IDS" ]; then
-    if [[ "$table" == "investors" || "$table" == "exchange_rates" ]]; then
+    if [[ "$table" == "investors" || "$table" == "exchange_rates" || "$table" == "investor_kycs" ]]; then
       # Investors and exchange_rates don't have fund_id, filter by entity_id of the first fund
       FIRST_FUND_ID=$(echo "$FUND_IDS" | cut -d',' -f1)
       if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
