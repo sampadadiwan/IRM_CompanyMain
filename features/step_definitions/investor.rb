@@ -305,6 +305,7 @@ Then('the investors must have the data in the sheet') do
     inv.investor_name.should == user_data["Name"].strip
     inv.tag_list.should == user_data["Tags"]
     inv.category.should == user_data["Category"]
+    inv.sector.should == user_data["Sector"]
     inv.city.should == user_data["City"]
     inv.primary_email.should == user_data["Primary Email"]
     inv.import_upload_id.should == ImportUpload.last.id

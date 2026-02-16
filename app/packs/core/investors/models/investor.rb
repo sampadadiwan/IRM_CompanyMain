@@ -192,6 +192,12 @@ class Investor < ApplicationRecord
     # self.pan ||= investor_entity.pan
   end
 
+  before_validation :check_and_update_sector, if: -> { sector.present? }
+  def check_and_update_sector
+    # Sector is only relevant for Portfolio Companies, so if the category is changed to something else, we should clear the sector
+    self.sector = "" if category != "Portfolio Company"
+  end
+
   def setup_permissions(investor_entity)
     # We need to enable features if the entity creating the investor has them turned on
     # Ex. an Investment Fund creates and investor, who should have funds enabled

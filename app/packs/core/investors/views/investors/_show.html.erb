@@ -66,6 +66,17 @@
       </td>
     </tr>
 
+    <% if @investor.category == "Portfolio Company" %>
+    <tr>
+      <td>
+        Sector
+      </td>
+      <td>
+        <%= @investor.sector %>
+      </td>
+    </tr>
+    <% end %>
+
 
     <tr>
       <td>

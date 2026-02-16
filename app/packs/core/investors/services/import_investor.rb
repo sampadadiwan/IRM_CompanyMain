@@ -1,5 +1,5 @@
 class ImportInvestor < ImportUtil
-  STANDARD_HEADERS = ["Name", "Primary Email", "Category", "Tags", "City"].freeze
+  STANDARD_HEADERS = ["Name", "Primary Email", "Category", "Tags", "City", "Sector"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -14,7 +14,7 @@ class ImportInvestor < ImportUtil
   end
 
   def save_row(user_data, import_upload, custom_field_headers, _ctx)
-    investor_name, primary_email, category, update_only, force_different_name = get_data(user_data, custom_field_headers)
+    investor_name, primary_email, category, sector, update_only, force_different_name = get_data(user_data, custom_field_headers)
 
     investor = Investor.where(investor_name:, primary_email:, entity_id: import_upload.entity_id).first
 
@@ -26,6 +26,7 @@ class ImportInvestor < ImportUtil
         # Update the existing investor
         investor.assign_attributes(tag_list: user_data["Tags"],
                                    category:, city: user_data["City"], primary_email:,
+                                   sector: sector,
                                    import_upload_id: import_upload.id,
                                    entity_id: import_upload.entity_id, imported: true, force_different_name:)
       end
@@ -37,6 +38,7 @@ class ImportInvestor < ImportUtil
       Rails.logger.debug user_data
       investor = Investor.new(investor_name:, tag_list: user_data["Tags"],
                               category:, city: user_data["City"], primary_email:,
+                              sector: sector,
                               import_upload_id: import_upload.id,
                               entity_id: import_upload.entity_id, imported: true, force_different_name:)
     end
@@ -57,12 +59,13 @@ class ImportInvestor < ImportUtil
     investor_name = user_data['Name']
     primary_email = user_data['Primary Email']
     category = user_data['Category']
+    sector = user_data['Sector']
     update_only = user_data['Update Only'] == "Yes"
     # Ensure Update Only is not part of custom fields
     force_different_name = user_data['Force Different Name'] == "Yes"
     # Ensure Force Different Name is not part of custom fields
 
-    [investor_name, primary_email, category, update_only, force_different_name]
+    [investor_name, primary_email, category, sector, update_only, force_different_name]
   end
 
   def add_to_fund(user_data, import_upload, investor)
