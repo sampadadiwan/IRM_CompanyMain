@@ -25,7 +25,7 @@ class InvestorKpiMapping < ApplicationRecord
   scope :cumulate, -> { where(cumulate: 'cumulate') }
   scope :forward_fill, -> { where(cumulate: 'forward_fill') }
   scope :compute, -> { where(cumulate: 'compute') }
-  scope :not_compute, -> { where.not(cumulate: 'compute') }
+  scope :not_compute, -> { where(cumulate: [nil, 'cumulate', 'forward_fill']) }
 
   before_create :setup_standard_kpi_name
   def setup_standard_kpi_name
