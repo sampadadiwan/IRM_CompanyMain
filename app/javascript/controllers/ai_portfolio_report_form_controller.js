@@ -2,19 +2,33 @@ import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
   static values = {
-    investorFolders: Object,
     newInvestorUrl: String
   }
 
   static targets = [
     "portfolioSelect",
-    "manageDocumentsLink",
+    "addDocumentsLink",
     "existingTemplateSelect",
     "newTemplateForm",
     "templatePreview",
     "criteriaContainer",
-    "templateSelect"
+    "templateSelect",
+    "documentsModal",
+    "documentsTable",
+    "documentsTableBody",
+    "documentsEmpty",
+    "uploadArea",
+    "uploadBtn",
+    "uploadStatus"
   ]
+
+
+  // Escape HTML to prevent XSS when inserting user-provided content
+  escapeHTML(str) {
+    const div = document.createElement('div')
+    div.textContent = str
+    return div.innerHTML
+  }
 
   connect() {
     this.criterionIndex = 1
@@ -44,7 +58,7 @@ export default class extends Controller {
   // Called when portfolio company dropdown changes
   portfolioCompanyChanged() {
     this.updateTemplateVisibility()
-    this.updateManageDocumentsLink()
+    this.updateAddDocumentsLink()
   }
 
   // Called when template_action radio changes
@@ -58,11 +72,6 @@ export default class extends Controller {
     window.open(this.newInvestorUrlValue)
   }
 
-  // Open manage documents in a new tab
-  openDocuments(event) {
-    event.preventDefault()
-    window.open(this.manageDocumentsLinkTarget.dataset.href)
-  }
 
   // Preview template via AJAX
   previewTemplate() {
@@ -113,21 +122,116 @@ export default class extends Controller {
     event.target.closest('.criteria-row').remove()
   }
 
-  // --- Private methods ---
 
-  updateManageDocumentsLink() {
-    if (!this.hasManageDocumentsLinkTarget) return
+    // Open documents modal and fetch existing documents
+  openDocumentsModal(event) {
+    event.preventDefault()
     const investorId = this.portfolioSelectTarget.value
-    const folders = this.investorFoldersValue
+    if (!investorId) return
 
-    if (investorId && folders[investorId]) {
-      const info = folders[investorId]
-      this.manageDocumentsLinkTarget.dataset.href = '/documents/folder?folder_id=' + info.folder_id
-      this.manageDocumentsLinkTarget.style.display = 'inline'
+    // Show modal
+    this.modal = new bootstrap.Modal(this.documentsModalTarget)
+    this.modal.show()
+
+    // Fetch documents
+    this.fetchDocuments(investorId)
+  }
+
+  fetchDocuments(investorId) {
+    fetch(`/ai_portfolio_reports/evaluation_folder_documents?portfolio_company_id=${investorId}`)
+      .then(r => r.json())
+      .then(data => {
+        this.folderId = data.folder_id
+        this.entityId = data.entity_id
+        this.refreshDocumentList(data.documents)
+      })
+      .catch(err => console.error('Failed to fetch documents:', err))
+  }
+
+  refreshDocumentList(documents) {
+    if (documents.length === 0) {
+      this.documentsEmptyTarget.style.display = 'block'
+      this.documentsTableTarget.style.display = 'none'
     } else {
-      this.manageDocumentsLinkTarget.style.display = 'none'
+      this.documentsEmptyTarget.style.display = 'none'
+      this.documentsTableTarget.style.display = 'table'
+      this.documentsTableBodyTarget.innerHTML = documents.map(doc => `
+        <tr>
+          <td>${this.escapeHTML(doc.name)}</td>
+          <td>${this.escapeHTML(doc.created_at)}</td>
+          <td>
+            ${doc.file_url ? `<a href="${this.escapeHTML(doc.file_url)}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>` : '-'}
+          </td>
+        </tr>
+      `).join('')
     }
   }
+
+  uploadDocuments() {
+    const investorId = this.portfolioSelectTarget.value
+    if (!investorId) return
+
+    // Collect all hidden fields created by the multiple-upload controller
+    const fileInputs = this.uploadAreaTarget.querySelectorAll('input[type="hidden"][name*="[file]"]')
+    const nameInputs = this.uploadAreaTarget.querySelectorAll('input[type="hidden"][name*="[name]"]')
+
+    if (fileInputs.length === 0) {
+      this.uploadStatusTarget.textContent = 'Please select files first.'
+      return
+    }
+
+    const documents = []
+    for (let i = 0; i < fileInputs.length; i++) {
+      documents.push({
+        name: nameInputs[i] ? nameInputs[i].value : `Document ${i + 1}`,
+        file: fileInputs[i].value
+      })
+    }
+
+    this.uploadBtnTarget.disabled = true
+    this.uploadStatusTarget.textContent = 'Uploading...'
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').content
+
+    fetch('/ai_portfolio_reports/upload_evaluation_documents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify({
+        portfolio_company_id: investorId,
+        documents: documents
+      })
+    })
+      .then(r => r.json())
+      .then(data => {
+        this.refreshDocumentList(data.documents)
+        this.uploadStatusTarget.textContent = 'Documents uploaded successfully!'
+        this.uploadBtnTarget.disabled = false
+
+        // Clear the hidden fields from the upload area
+        this.uploadAreaTarget.querySelectorAll('input[type="hidden"]').forEach(el => el.remove())
+      })
+      .catch(err => {
+        console.error('Upload failed:', err)
+        this.uploadStatusTarget.textContent = 'Upload failed. Please try again.'
+        this.uploadBtnTarget.disabled = false
+      })
+  }
+
+
+  // --- Private methods ---
+
+  updateAddDocumentsLink() {
+    if (!this.hasAddDocumentsLinkTarget) return
+    const investorId = this.portfolioSelectTarget.value
+    this.addDocumentsLinkTarget.style.display = investorId ? 'inline' : 'none'
+  }
+
+
+
+
 
   updateTemplateVisibility() {
     const selectedRadio = document.querySelector('input[name="template_action"]:checked')
@@ -165,6 +269,8 @@ export default class extends Controller {
   handleVisibilityChange() {
     if (document.visibilityState !== 'visible') return
 
+    const previousValue = this.portfolioSelectTarget.value
+
     fetch(window.location.href)
       .then(r => r.text())
       .then(html => {
@@ -174,22 +280,21 @@ export default class extends Controller {
 
         this.portfolioSelectTarget.innerHTML = freshSelect.innerHTML
 
-        // Update investorFolders from re-fetched page data attribute
-        const freshController = doc.querySelector('[data-ai-portfolio-report-form-investor-folders-value]')
-        if (freshController) {
-          try {
-            this.investorFoldersValue = JSON.parse(freshController.dataset.aiPortfolioReportFormInvestorFoldersValue)
-          } catch(e) {}
-        }
-
-        // Auto-select newly created company
+        // Auto-select newly created company, or restore previous selection
+        let newCompanyFound = false
         Array.from(this.portfolioSelectTarget.options).forEach(opt => {
           if (opt.value && !this.existingIds.has(opt.value)) {
             this.portfolioSelectTarget.value = opt.value
+            newCompanyFound = true
           }
         })
+
+        if (!newCompanyFound && previousValue) {
+          this.portfolioSelectTarget.value = previousValue
+        }
 
         this.portfolioSelectTarget.dispatchEvent(new Event('change'))
       })
   }
+
 }

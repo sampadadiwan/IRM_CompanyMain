@@ -12,11 +12,17 @@ class InvestmentFitSectionGenerator
   end
 
   def generate
+    Rails.logger.info "[InvestmentFitSectionGenerator] === STARTING GENERATION ==="
+    Rails.logger.info "[InvestmentFitSectionGenerator] Portfolio Company: #{@portfolio_company.name}, Entity: #{@portfolio_company.entity.name}"
+    Rails.logger.info "[InvestmentFitSectionGenerator] Template: #{@template.name} (ID: #{@template.id})"
+
     # 1. Snapshot the criteria
     criteria_snapshot = @template.criteria.deep_dup
+    Rails.logger.debug { "[InvestmentFitSectionGenerator] Criteria snapshot: #{criteria_snapshot.inspect}" }
 
     # 2. Build prompt and call LLM
     prompt = build_prompt(criteria_snapshot)
+    Rails.logger.debug { "[InvestmentFitSectionGenerator] === FULL PROMPT SENT TO LLM ===\n#{prompt}" }
     llm_response = call_llm(prompt)
 
     # 3. Parse response and build HTML
@@ -26,8 +32,7 @@ class InvestmentFitSectionGenerator
 
     # 5. Build and return HTML content
     html_content = build_html_content(parsed, criteria_snapshot)
-    Rails.logger.info "[InvestmentFitSectionGenerator] === FINAL HTML OUTPUT ==="
-    Rails.logger.info html_content
+    Rails.logger.debug { "[InvestmentFitSectionGenerator] === FINAL HTML OUTPUT ===\n#{html_content}" }
     html_content
   end
 
@@ -38,6 +43,9 @@ class InvestmentFitSectionGenerator
     criteria_text = criteria.map do |c|
       "- **#{c['name']}:** #{c['value']}"
     end.join("\n")
+
+    exchange_rates_text = fetch_live_exchange_rates
+    Rails.logger.debug { "[InvestmentFitSectionGenerator] Exchange rates: #{exchange_rates_text}" }
 
     <<~PROMPT
       You are an investment analyst evaluating a company for potential investment at an internal IC/partner discussion.
@@ -63,6 +71,7 @@ class InvestmentFitSectionGenerator
 
       ## Guidelines
       - Be factual and evidence-driven; cite specific numbers/metrics from the pitch deck
+      - **Currency Conversion:** If the investment criteria specify a threshold in one currency (e.g., USD) but the pitch deck/document reports values in a different currency (e.g., INR, EUR), you MUST convert the document values to the criteria's currency before comparing. #{exchange_rates_text}Clearly state the conversion and the rate used in your reasoning (e.g., "ARR of ₹50 Cr ≈ $6M USD at 1 USD = 83 INR, which exceeds the $1M threshold").
       - Categorize criteria with "Strong" rating under Strong Points
       - Categorize criteria with "Low" rating under Weak Points
       - Categorize criteria with "Medium" rating under Areas of Moderate Fit
@@ -103,6 +112,28 @@ class InvestmentFitSectionGenerator
 
   # rubocop:enable Metrics/MethodLength
 
+  def fetch_live_exchange_rates
+    url = "https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR,EUR,GBP,JPY,SGD,AED"
+    Rails.logger.debug { "[InvestmentFitSectionGenerator] Fetching live exchange rates from #{url}" }
+
+    response = Net::HTTP.get_response(URI(url))
+
+    if response.is_a?(Net::HTTPSuccess)
+      data = JSON.parse(response.body)
+      rates = data["rates"]
+      date = data["date"]
+      rate_lines = rates.map { |currency, rate| "1 USD = #{rate} #{currency}" }.join(", ")
+      Rails.logger.debug { "[InvestmentFitSectionGenerator] Live rates (#{date}): #{rate_lines}" }
+      "Use these live exchange rates (as of #{date}): #{rate_lines}. "
+    else
+      Rails.logger.warn "[InvestmentFitSectionGenerator] Failed to fetch live rates: HTTP #{response.code}"
+      "Use approximate current market exchange rates. "
+    end
+  rescue StandardError => e
+    Rails.logger.error "[InvestmentFitSectionGenerator] Error fetching live rates: #{e.message}"
+    "Use approximate current market exchange rates. "
+  end
+
   def call_llm(prompt)
     chat = LlmService.ruby_llm_chat(entity: @portfolio_company.entity) # Pass entity for potential API key access
     response = chat.ask(prompt)
@@ -111,14 +142,10 @@ class InvestmentFitSectionGenerator
 
   def parse_llm_response(response)
     cleaned = response.sub(/\A```(?:json)?\s*/i, "").sub(/\s*```\z/, "")
-
-    Rails.logger.info "[InvestmentFitSectionGenerator] === CLEANED JSON ==="
-    Rails.logger.info cleaned
+    Rails.logger.debug { "[InvestmentFitSectionGenerator] Cleaned JSON: #{cleaned}" }
 
     parsed = JSON.parse(cleaned)
-
-    Rails.logger.info "[InvestmentFitSectionGenerator] === PARSED CLEAN JSON ==="
-    Rails.logger.info parsed
+    Rails.logger.debug { "[InvestmentFitSectionGenerator] Parsed JSON: #{parsed}" }
 
     {
       strong_points: parsed['strong_points'] || [],
@@ -176,7 +203,7 @@ class InvestmentFitSectionGenerator
   end
 
   def build_section_table(title, criteria_list, title_color, header_bg)
-    Rails.logger.info "[InvestmentFitSectionGenerator] build_section_table called with title: #{title}, criteria_list: #{criteria_list.inspect}"
+    Rails.logger.debug { "[InvestmentFitSectionGenerator] build_section_table: #{title}, criteria_list: #{criteria_list.inspect}" }
 
     return "" if criteria_list.empty?
 
@@ -198,7 +225,7 @@ class InvestmentFitSectionGenerator
       ROW
     end.join("\n")
 
-    html_content = <<~HTML
+    <<~HTML
       <div class="criteria-section" style="margin-bottom: 1.5rem;">
         <h3 style="color: #{title_color}; margin-bottom: 0.75rem; padding: 0.5rem; background: #{header_bg}; border-radius: 4px;">
           #{title}
@@ -218,11 +245,6 @@ class InvestmentFitSectionGenerator
         </table>
       </div>
     HTML
-
-    Rails.logger.info "[InvestmentFitSectionGenerator] === FINAL HTML OUTPUT ==="
-    Rails.logger.info html_content
-
-    html_content
   end
 
   def build_recommendation_html(parsed)

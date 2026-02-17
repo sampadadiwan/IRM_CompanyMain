@@ -29,6 +29,8 @@ resources :ai_rules
 resources :ai_portfolio_reports do
   collection do
     post :create_from_folder
+    get :evaluation_folder_documents
+    post :upload_evaluation_documents
   end
 
   member do

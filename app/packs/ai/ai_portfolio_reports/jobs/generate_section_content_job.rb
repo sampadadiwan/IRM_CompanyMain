@@ -13,6 +13,9 @@ class GenerateSectionContentJob < ApplicationJob
     report = AiPortfolioReport.find(report_id)
 
     Rails.logger.info "=== Starting generation for report #{report_id} ==="
+    Rails.logger.info "=== Report folder_id: #{report.folder_id} ==="
+    Rails.logger.info "=== Report folder: #{report.folder&.name} ==="
+    Rails.logger.info "=== Folder documents count: #{report.folder&.documents&.count} ==="
 
     # Downloaded documents to local folder
     download_folder_documents(report.folder)
@@ -41,6 +44,7 @@ class GenerateSectionContentJob < ApplicationJob
         else
           # All other sections use PortfolioReportAgent with cached documents
           generate_text_section(report, section, cached_documents_context)
+          Rails.logger.info "  → Generating text content for #{section.section_type}"
         end
       rescue StandardError => e
         Rails.logger.error "Error: #{section.section_type}: #{e.message}"

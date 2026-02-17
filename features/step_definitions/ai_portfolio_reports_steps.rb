@@ -9,8 +9,9 @@ end
 
 Given('a portfolio company {string} exists') do |name|
   @investor_entity = FactoryBot.create(:entity, entity_type: "Company")
-  @portfolio_company = FactoryBot.create(:investor, 
-    name: name, 
+  @portfolio_company = FactoryBot.create(:investor,
+    name: name,
+    category: 'Portfolio Company',
     entity: @entity,
     investor_entity: @investor_entity
   )

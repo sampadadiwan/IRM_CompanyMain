@@ -40,6 +40,14 @@ class AiPortfolioReportsController < ApplicationController
 
     # If 'skip' or no action, template remains nil
 
+    # Link report to the Company Evaluation Agent folder
+    if @report.portfolio_company_id.present?
+      pc = Investor.find(@report.portfolio_company_id)
+      eval_folder = find_or_create_evaluation_folder(pc)
+      @report.folder_id = eval_folder.id
+      Rails.logger.debug { "=== REPORT FOLDER SET: folder_id=#{eval_folder.id}, name=#{eval_folder.name}, docs=#{eval_folder.documents.count} ===" }
+    end
+
     if @report.save
       @report.ai_chat_sessions.create!(analyst_id: current_user.id)
       GenerateSectionContentJob.perform_later(@report.id)
@@ -276,6 +284,47 @@ class AiPortfolioReportsController < ApplicationController
     end
   end
 
+  # GET /ai_portfolio_reports/evaluation_folder_documents
+  # Returns JSON list of documents in the Company Evaluation Agent folder for a given portfolio company.
+  # Creates the folder if it doesn't exist. Called via AJAX from the documents modal.
+  #
+  # @param portfolio_company_id [Integer] the investor ID
+  # @return [JSON] { folder_id, entity_id, documents: [{ id, name, file_url, created_at }] }
+  def evaluation_folder_documents
+    portfolio_company = Investor.find(params[:portfolio_company_id])
+    authorize AiPortfolioReport.new, :new?
+
+    folder = find_or_create_evaluation_folder(portfolio_company)
+    render json: { folder_id: folder.id, entity_id: portfolio_company.entity_id, documents: serialize_documents(folder) }
+  end
+
+  # POST /ai_portfolio_reports/upload_evaluation_documents
+  # Creates multiple documents in the Company Evaluation Agent folder from Uppy-uploaded file data.
+  # Called via AJAX from the documents modal after files are uploaded to cache.
+  #
+  # @param portfolio_company_id [Integer] the investor ID
+  # @param documents [Array<Hash>] array of { name, file } where file is Shrine cached file JSON
+  # @return [JSON] { folder_id, documents: [{ id, name, file_url, created_at }] }
+  def upload_evaluation_documents
+    portfolio_company = Investor.find(params[:portfolio_company_id])
+    authorize AiPortfolioReport.new, :create?
+
+    folder = find_or_create_evaluation_folder(portfolio_company)
+
+    ActiveRecord::Base.connected_to(role: :writing) do
+      params[:documents].each do |doc_params|
+        folder.documents.create!(
+          name: doc_params[:name],
+          file: doc_params[:file],
+          entity_id: portfolio_company.entity_id,
+          user_id: current_user.id
+        )
+      end
+    end
+
+    render json: { folder_id: folder.id, documents: serialize_documents(folder) }
+  end
+
   private
 
   # Load report for actions.
@@ -290,6 +339,34 @@ class AiPortfolioReportsController < ApplicationController
   # @return [ActionController::Parameters] permitted params
   def report_params
     params.require(:ai_portfolio_report).permit(:portfolio_company_id, :report_date, :investment_criteria_template_id)
+  end
+
+  # Find or create the Company Evaluation Agent folder for a portfolio company.
+  #
+  # @param portfolio_company [Investor] the portfolio company investor
+  # @return [Folder] the evaluation folder
+  def find_or_create_evaluation_folder(portfolio_company)
+    ActiveRecord::Base.connected_to(role: :writing) do
+      unless portfolio_company.document_folder
+        portfolio_company.setup_document_folder
+        portfolio_company.reload
+      end
+
+      portfolio_company.document_folder.children.find_or_create_by(
+        name: 'Company Evaluation Agent',
+        entity_id: portfolio_company.entity_id
+      )
+    end
+  end
+
+  # Serialize a folder's documents to JSON-ready hashes.
+  #
+  # @param folder [Folder] the folder containing documents
+  # @return [Array<Hash>] serialized documents
+  def serialize_documents(folder)
+    folder.documents.order(created_at: :desc).map do |doc|
+      { id: doc.id, name: doc.name, file_url: doc.file_url, created_at: doc.created_at.strftime('%b %d, %Y') }
+    end
   end
 
   def create_template_from_params(template_params)
