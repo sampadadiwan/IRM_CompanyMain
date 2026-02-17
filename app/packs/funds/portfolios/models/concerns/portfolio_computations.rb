@@ -235,6 +235,51 @@ module PortfolioComputations
     total
   end
 
+  # percentage_head is the custom field in BUY PI which has the percentage to be used for allocation instead of the account entry amount.
+  # custom_field_key is the custom field in BUY PI which has the key to fetch the percentage from capital commitment json fields.
+  # Instead of using an AccountEntry to determine the allocation percentage, this method uses a custom field in the Buy PI to get the percentage directly - in one case this is the fx_rate
+  # We multiply it by the udr percent that is stored in the commitment that is from the feeder fund to the master fund
+  # eg - BUY PI - json fields - { exchange_rate: 0.15, fund_level_udr_code: "UDR-1"}
+  # capital commitment - json fields - { udr_1: 0.2 }
+  # We do - allocated_amount = attribute_value * exchange_rate * udr_percent
+  def allocated_amount_with_percent(attribute_name:, percentage_head:, custom_field_key:, end_date:, capital_commitment:)
+    total = 0
+
+    # Step 1: Filter portfolio attributions up to the end_date
+    scope = portfolio_attributions
+            .joins(:bought_pi)
+            .where(portfolio_investments: { investment_date: ..end_date })
+
+    # Step 2: Iterate through each attribution and compute allocation
+    scope.includes(:bought_pi).find_each do |pa|
+      bought_pi = pa.bought_pi
+      reporting_date = bought_pi.investment_date
+
+      # Get the percentage from the Buy PI custom field if the percentage_head is present, otherwise default to 1 (100%)
+      percentage = percentage_head.present? ? bought_pi.custom_fields.send(percentage_head).to_d : 1
+
+      udr_code = nil
+      udr_percent = 1
+      if custom_field_key.present?
+        udr_code = bought_pi.custom_fields.send(custom_field_key)&.downcase&.delete("-")&.parameterize(separator: "_")
+        udr_percent = capital_commitment.json_fields[udr_code.to_s].to_d
+      end
+
+      # Fetch the attribute value (e.g., gain, cost_of_sold) in cents from the attribution
+      value_cents = pa.public_send(attribute_name).cents
+
+      # Debug log for troubleshooting and auditing
+      Rails.logger.debug do
+        "pa.id=#{pa.id}, #{attribute_name}=#{value_cents}, percentage=#{percentage}, udr_percent=#{udr_percent}, udr_code=#{udr_code}, reporting_date=#{reporting_date}"
+      end
+
+      # Proportional allocation: attribute value * allocation percentage * udr percent
+      total += (value_cents / 100) * percentage * udr_percent
+    end
+
+    total
+  end
+
   ##########################################################
   ######### Validation for Sell Quantity ###################
   ##########################################################
