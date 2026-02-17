@@ -166,7 +166,7 @@ class InvestorsController < ApplicationController
           partial = params[:back_to].presence || "investors/board_form"
           UserAlert.new(user_id: current_user.id, message: "Investor was successfully created!", level: "success").broadcast
           render turbo_stream: [
-            turbo_stream.replace(@frame, partial:, locals: { frame: @frame })
+            turbo_stream.replace(@frame, partial:, locals: { frame: @frame, investor: @investor })
           ]
         end
         return_to = params[:return_to]
