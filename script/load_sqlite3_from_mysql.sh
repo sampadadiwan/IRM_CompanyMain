@@ -531,84 +531,83 @@ INDEX_exchange_rates="
 "
 
 COLS_investor_kycs=(
-  id PAN address agreement_committed_amount_cents agreement_unit_type
-  all_docs_valid aml_status bank_account_number bank_account_type
-  bank_branch bank_name bank_verification_response bank_verification_status
-  bank_verified birth_date call_amount_cents collected_amount_cents
-  comments committed_amount_cents completed_by_investor compliant
-  corr_address created_at deleted_at distribution_amount_cents
-  doc_question_answers docs_completed document_folder_id due_amount_cents
-  entity_id esign_emails expiry_date form_type_id full_name ifsc_code
-  import_upload_id investor_id investor_name investor_user_id
-  investor_user_updated_at json_fields kyc_type notification_msg
-  other_fee_cents pan_card_data pan_verification_response
-  pan_verification_status pan_verified reminder_sent reminder_sent_date
-  residency send_kyc_form_to_user signature_data slug type
-  uncalled_amount_cents updated_at verified verified_by_id
+  id investor_id entity_id form_type_id PAN address bank_account_number
+  ifsc_code bank_verified bank_verification_response bank_verification_status
+  signature_data pan_verified pan_verification_response pan_verification_status
+  comments created_at updated_at verified full_name verified_by_id
+  deleted_at investor_name document_folder_id expiry_date kyc_type
+  residency birth_date corr_address committed_amount_cents
+  call_amount_cents collected_amount_cents distribution_amount_cents
+  docs_completed send_kyc_form_to_user notification_msg bank_name
+  bank_branch bank_account_type type json_fields esign_emails
+  due_amount_cents uncalled_amount_cents agreement_committed_amount_cents
+  import_upload_id investor_user_id investor_user_updated_at
+  other_fee_cents agreement_unit_type slug doc_question_answers
+  all_docs_valid compliant aml_status completed_by_investor
+  reminder_sent reminder_sent_date
 )
 
-TEXT_COLS_investor_kycs=(PAN address agreement_unit_type aml_status bank_account_number bank_account_type bank_branch bank_name bank_verification_response bank_verification_status birth_date comments completed_by_investor compliant corr_address doc_question_answers esign_emails full_name ifsc_code investor_name json_fields kyc_type notification_msg pan_card_data pan_verification_response pan_verification_status residency signature_data slug type)
+TEXT_COLS_investor_kycs=(PAN address bank_account_number bank_verification_response bank_verification_status signature_data pan_verification_response pan_verification_status comments full_name investor_name kyc_type residency corr_address notification_msg bank_name bank_branch bank_account_type type json_fields esign_emails agreement_unit_type slug doc_question_answers aml_status)
 
 SCHEMA_investor_kycs="
   id BIGINT PRIMARY KEY,
+  investor_id BIGINT NOT NULL,
+  entity_id BIGINT NOT NULL,
+  form_type_id BIGINT,
   PAN VARCHAR(15),
   address TEXT,
-  agreement_committed_amount_cents DECIMAL(20,2) DEFAULT 0.0,
-  agreement_unit_type VARCHAR(20),
-  all_docs_valid BOOLEAN DEFAULT 0,
-  aml_status VARCHAR(255),
   bank_account_number VARCHAR(40),
-  bank_account_type VARCHAR(40),
-  bank_branch VARCHAR(255),
-  bank_name VARCHAR(100),
+  ifsc_code VARCHAR(20),
+  bank_verified BOOLEAN DEFAULT 0,
   bank_verification_response TEXT,
   bank_verification_status VARCHAR(255),
-  bank_verified BOOLEAN DEFAULT 0,
-  birth_date DATETIME,
-  call_amount_cents DECIMAL(20,2) DEFAULT 0.0,
-  collected_amount_cents DECIMAL(20,2) DEFAULT 0.0,
-  comments TEXT,
-  committed_amount_cents DECIMAL(20,2) DEFAULT 0.0,
-  completed_by_investor BOOLEAN DEFAULT 0,
-  compliant BOOLEAN DEFAULT 0,
-  corr_address TEXT,
-  created_at DATETIME NOT NULL,
-  deleted_at DATETIME,
-  distribution_amount_cents DECIMAL(20,2) DEFAULT 0.0,
-  doc_question_answers JSON,
-  docs_completed BOOLEAN DEFAULT 0,
-  document_folder_id BIGINT,
-  due_amount_cents DECIMAL(20,2) DEFAULT 0.0,
-  entity_id BIGINT NOT NULL,
-  esign_emails VARCHAR(255),
-  expiry_date DATE,
-  form_type_id BIGINT,
-  full_name VARCHAR(255),
-  ifsc_code VARCHAR(20),
-  import_upload_id BIGINT,
-  investor_id BIGINT NOT NULL,
-  investor_name VARCHAR(255),
-  investor_user_id BIGINT,
-  investor_user_updated_at DATETIME,
-  json_fields JSON,
-  kyc_type VARCHAR(15) DEFAULT 'Individual',
-  notification_msg TEXT,
-  other_fee_cents DECIMAL(12,2) DEFAULT 0.0,
-  pan_card_data TEXT,
+  signature_data TEXT,
+  pan_verified BOOLEAN DEFAULT 0,
   pan_verification_response TEXT,
   pan_verification_status VARCHAR(255),
-  pan_verified BOOLEAN DEFAULT 0,
-  reminder_sent BOOLEAN DEFAULT 0,
-  reminder_sent_date DATETIME,
-  residency VARCHAR(10),
-  send_kyc_form_to_user BOOLEAN DEFAULT 0,
-  signature_data TEXT,
-  slug VARCHAR(255),
-  type VARCHAR(20),
-  uncalled_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  comments TEXT,
+  created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   verified BOOLEAN DEFAULT 0,
-  verified_by_id BIGINT
+  full_name VARCHAR(255),
+  verified_by_id BIGINT,
+  deleted_at DATETIME,
+  investor_name VARCHAR(255),
+  document_folder_id BIGINT,
+  expiry_date DATE,
+  kyc_type VARCHAR(15) DEFAULT 'Individual',
+  residency VARCHAR(10),
+  birth_date DATETIME,
+  corr_address TEXT,
+  committed_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  call_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  collected_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  distribution_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  docs_completed BOOLEAN DEFAULT 0,
+  send_kyc_form_to_user BOOLEAN DEFAULT 0,
+  notification_msg TEXT,
+  bank_name VARCHAR(100),
+  bank_branch VARCHAR(255),
+  bank_account_type VARCHAR(40),
+  type VARCHAR(20),
+  json_fields JSON,
+  esign_emails VARCHAR(255),
+  due_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  uncalled_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  agreement_committed_amount_cents DECIMAL(20,2) DEFAULT 0.0,
+  import_upload_id BIGINT,
+  investor_user_id BIGINT,
+  investor_user_updated_at DATETIME,
+  other_fee_cents DECIMAL(12,2) DEFAULT 0.0,
+  agreement_unit_type VARCHAR(20),
+  slug VARCHAR(255),
+  doc_question_answers JSON,
+  all_docs_valid BOOLEAN DEFAULT 0,
+  compliant BOOLEAN DEFAULT 0,
+  aml_status VARCHAR(255),
+  completed_by_investor BOOLEAN DEFAULT 0,
+  reminder_sent BOOLEAN DEFAULT 0,
+  reminder_sent_date DATETIME
 "
 
 INDEX_investor_kycs="
