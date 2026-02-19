@@ -7,6 +7,14 @@ class DefaultUnitAllocationEngine
 
     # Check if the fund has unit types
     if capital_call.fund.unit_types.present?
+      # Check for unverified remittances and add warning
+      unverified_remittances = capital_call.capital_remittances.where(verified: false)
+      if unverified_remittances.any?
+        unverified_remittances.each do |cr|
+          @error_msg << { folio: cr.folio_id, errors: "Remittance not verified - units not allocated" }
+        end
+      end
+
       # Process each verified capital remittance
       capital_call.capital_remittances.verified.each do |cr|
         _, error_msg = allocate_remittance(cr, reason)
@@ -48,12 +56,11 @@ class DefaultUnitAllocationEngine
     # Determine the amount to allocate based on collected or call amount
     # We also need to check if units have already been allocated, and if so only allocate remaining amount
     amount_cents, re = capital_remittance.pending_amount_for_units_allocation
-    reason += re
-
+    # Proper space between reason and re
+    reason += " #{re}"
     # Validate remittance and required data
     if  capital_remittance.verified && capital_remittance.collected_amount_cents.positive? &&
         capital_call.unit_prices.present? && capital_commitment.unit_type.present? && unit_price_cents.present? && unit_premium_cents.present? && amount_cents.positive?
-
       # Calculate price and premium in cents
       price_cents = unit_price_cents.to_d * 100
       premium_cents = unit_premium_cents.to_d * 100
@@ -98,12 +105,9 @@ class DefaultUnitAllocationEngine
     fund_unit.total_premium_cents = (premium_cents * quantity)
     fund_unit.reason = reason
 
-    # Set issue date based on payment or due date
-    fund_unit.issue_date = if capital_remittance.payment_date
-                             [capital_remittance.payment_date, capital_remittance.capital_call.due_date].max
-                           else
-                             capital_remittance.capital_call.due_date
-                           end
+    # Set issue date based on payment date of remittance
+    # This would always be available
+    fund_unit.issue_date = capital_remittance.payment_date
 
     # Save fund unit and return result
     if fund_unit.save

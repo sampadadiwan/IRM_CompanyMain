@@ -45,6 +45,7 @@ class CapitalCall < ApplicationRecord
   # validates percentage_called is less than or equal to 100
   validates :percentage_called, numericality: { less_than_or_equal_to: 100 }
   validates :name, :fund_closes, length: { maximum: 255 }
+  validate :validate_unit_prices
 
   monetize :call_amount_cents, :amount_to_be_called_cents, :capital_fee_cents, :other_fee_cents, :collected_amount_cents, with_currency: ->(i) { i.fund.currency }
 
@@ -154,5 +155,34 @@ class CapitalCall < ApplicationRecord
 
   def all_call_fees
     call_fees + fee_formulas
+  end
+
+  private
+
+  def validate_unit_prices
+    return unless fund&.unit_types.present?
+
+    fund.unit_types.split(",").each do |unit_type|
+      unit_type = unit_type.strip
+
+      # Check if unit_prices hash exists for this unit type
+      if unit_prices.blank? || unit_prices[unit_type].blank?
+        errors.add(:base, "Unit price and premium for '#{unit_type}' cannot be empty")
+        next
+      end
+
+      price = unit_prices[unit_type]["price"]
+      premium = unit_prices[unit_type]["premium"]
+
+      # Validate price is present and not zero
+      if price.blank? || price.to_f.zero?
+        errors.add(:base, "Unit price for '#{unit_type}' cannot be empty or zero")
+      end
+
+      # Validate premium is present (can be zero, but not blank)
+      if premium.blank?
+        errors.add(:base, "Premium for '#{unit_type}' cannot be empty")
+      end
+    end
   end
 end

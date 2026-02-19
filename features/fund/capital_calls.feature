@@ -224,3 +224,25 @@ Scenario Outline: Delete Remittance with payment units alocated
 Examples:
   | commitment                     | call                 | paid_percentage1         | paid_percentage2         | user |entity |
   | orig_folio_committed_amount_cents=100000000 | percentage_called=20 | 50 | 50 | first_name=Test |name=Urban;entity_type=Investment Fund |
+
+
+Scenario Outline: Copy unit prices to all using Copy to All feature
+  Given Im logged in as a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  When I navigate to create a new capital call "<call>"
+  And I fill in the first unit type price with "100"
+  And I fill in the first unit type premium with "10"
+  And I click on Copy To All link
+  Then all unit type prices should be "100"
+  And all unit type premiums should be "10"
+  When I save the capital call
+  Then the capital call should be saved with the copied prices
+
+  Examples:
+    |entity                                         |fund                                           | call |
+    |entity_type=Investment Fund;enable_funds=true  |name=Test Fund;currency=INR;unit_types=Series A,Series B,Series C | name=Call 1;call_basis=Upload |

@@ -17,7 +17,5 @@ class FundUnitsJob < ApplicationJob
         raise "Cannot generate fund units for #{owner}"
       end
     end
-
-    UserAlert.new(user_id:, message: "Units calculation is now complete.", level: "success").broadcast
   end
 end
