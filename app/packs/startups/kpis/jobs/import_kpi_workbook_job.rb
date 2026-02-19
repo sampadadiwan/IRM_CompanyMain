@@ -43,7 +43,7 @@ class ImportKpiWorkbookJob < ApplicationJob
       end
 
       # Kick of percentage change job
-      KpiPercentageChangeJob.perform_later(portfolio_company.entity_id, user.id)
+      KpiPercentageChangeJob.perform_later(portfolio_company.id, user.id)
     end
   end
 end

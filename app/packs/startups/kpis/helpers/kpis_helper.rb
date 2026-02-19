@@ -63,8 +63,9 @@ module KpisHelper
                       kpi.percentage_change > investor_kpi_mapping.upper_threshold
                   "text-success"
                 end
+    percentage_change_display_val = kpi.percentage_change.nil? ? "-" : "#{kpi.percentage_change} %"
 
-    "<small class='fs-1 #{css_class}'> #{kpi.percentage_change} %</small>"
+    "<small class='fs-1 #{css_class}'> #{percentage_change_display_val}</small>"
   end
 
   def get_invester_kpi_mapping(investor_kpi_mappings, kpi)

@@ -8,7 +8,7 @@ class ImportKpi < ImportUtil
   def post_process(ctx, import_upload:, **)
     super
     # This recomputes the KPI percentage change for all KPIs of this entity
-    KpiPercentageChangeJob.perform_later(import_upload.entity_id, import_upload.user_id)
+    KpiPercentageChangeJob.perform_later(import_upload.entity.investors.portfolio_companies.pluck(:id), import_upload.user_id)
     true
   end
 

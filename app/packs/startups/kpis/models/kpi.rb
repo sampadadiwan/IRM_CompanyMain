@@ -100,11 +100,18 @@ class Kpi < ApplicationRecord
     entity.kpis.joins(:kpi_report).where(name:).where("kpi_reports.period=?", kpi_report.period).order("kpi_reports.as_of asc")
   end
 
-  def self.recompute_percentage_change(kpis)
-    # Get all the kpis for the entity with same name and period
-    kpis.each_cons(2) do |current_kpi, next_kpi|
-      if next_kpi.percentage_change.nil? || next_kpi.percentage_change.zero?
-        next_kpi.percentage_change = ((next_kpi.value - current_kpi.value) / current_kpi.value) * 100
+  def self.recompute_percentage_change(kpis, force: false)
+    # Group KPIs by period, name, and tag_list to ensure percentage is only computed between comparable KPIs
+    kpis.group_by { |kpi| [kpi.kpi_report.period, kpi.name, kpi.kpi_report.tag_list] }.each_value do |grouped_kpis|
+      grouped_kpis.sort_by { |kpi| kpi.kpi_report.as_of }.each_cons(2) do |current_kpi, next_kpi|
+        next unless force || next_kpi.percentage_change.nil? || next_kpi.percentage_change.zero?
+
+        next_kpi.percentage_change = if current_kpi.value.zero?
+                                       # if the divisor (the current) is 0, the percentage is infinity but we cant store that so keeping it nil
+                                       nil
+                                     else
+                                       ((next_kpi.value - current_kpi.value) / current_kpi.value) * 100
+                                     end
         next_kpi.save
       end
     end

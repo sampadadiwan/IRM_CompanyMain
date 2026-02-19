@@ -64,7 +64,7 @@ class KpisController < ApplicationController
   end
 
   def approve
-    @kpi = KpiApproveService.call(@kpi.id, current_user.id)
+    @kpi = KpiApproveService.call([@kpi.id], current_user.id)
     respond_to do |format|
       format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI was successfully approved.") }
       format.json { render :show, status: :ok, location: @kpi }
@@ -77,10 +77,13 @@ class KpisController < ApplicationController
 
     unapproved_kpis = Kpi.unapproved.where(portfolio_company_id: portfolio_company_id, entity_id: entity_id)
 
+    kpi_ids = []
     unapproved_kpis.find_each do |kpi|
       authorize kpi, :approve?
-      KpiApproveService.call(kpi.id, current_user.id)
+      kpi_ids << kpi.id
     end
+
+    KpiApproveService.call(kpi_ids, current_user.id)
 
     respond_to do |format|
       format.html { redirect_back_or_to(kpi_reports_path, notice: "All pending KPIs were successfully approved.") }

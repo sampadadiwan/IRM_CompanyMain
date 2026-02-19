@@ -118,7 +118,7 @@ class KpiReportsController < ApplicationController
   end
 
   def recompute_percentage_change
-    KpiPercentageChangeJob.perform_later(@kpi_report.entity_id, current_user.id)
+    KpiPercentageChangeJob.perform_later(@kpi_report.portfolio_company_id, current_user.id)
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Computation started."
   end
 

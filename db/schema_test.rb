@@ -2485,7 +2485,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_08_090154) do
     t.string "name", limit: 100
     t.string "notes"
     t.bigint "owner_id"
-    t.decimal "percentage_change", precision: 5, scale: 2, default: "0.0"
+    t.decimal "percentage_change", precision: 6, scale: 2, default: "0.0"
     t.bigint "portfolio_company_id"
     t.json "rag_status"
     t.string "source", limit: 100
