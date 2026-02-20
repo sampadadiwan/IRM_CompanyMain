@@ -45,6 +45,7 @@
     <div class="form-group">
         <%= file_fields("KPIs", @kpi_report, form, required: false, meta_data: "KPIs") %>
         <small class="form-text text-muted">Please upload the KPIs.</small>
+        <small class="form-text text-danger">Please ensure the first row indicates the period (eg: January 2025, Q12025,FY2025 etc) and the first column contains the name of the relevant metric.</small>
     </div>
 
     <% unless @kpi_report.new_record? %>
@@ -69,6 +70,7 @@
       <%= form.label :notes %>
       <%= form.text_area :notes, class: "form-control"  %>
     </div>
+
 
     <div class="form-group">
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>

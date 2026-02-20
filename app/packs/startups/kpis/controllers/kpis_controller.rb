@@ -1,5 +1,5 @@
 class KpisController < ApplicationController
-  before_action :set_kpi, only: %i[show edit update destroy approve]
+  before_action :set_kpi, only: %i[show edit update destroy approve reject]
 
   # GET /kpis or /kpis.json
   def index
@@ -71,6 +71,14 @@ class KpisController < ApplicationController
     end
   end
 
+  def reject
+    @kpi.destroy
+    respond_to do |format|
+      format.html { redirect_back_or_to(kpi_reports_path, notice: "KPI was successfully rejected.") }
+      format.json { head :no_content }
+    end
+  end
+
   def approve_all
     portfolio_company_id = params[:portfolio_company_id]
     entity_id = params[:entity_id] || current_user.entity_id
@@ -101,6 +109,6 @@ class KpisController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def kpi_params
-    params.require(:kpi).permit(:entity_id, :name, :value, :display_value, :notes, :kpi_report_id, :form_type_id, properties: {})
+    params.require(:kpi).permit(:entity_id, :name, :value, :status, :display_value, :notes, :kpi_report_id, :form_type_id, properties: {})
   end
 end

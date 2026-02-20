@@ -31,3 +31,10 @@ Feature: KPI Approval Workflow
       | Revenue | 2,000.0 |
       | EBITDA  | 500.0   |
     And all KPIs for "MyStartup" should have "approved" status in the database
+
+  Scenario: Rejecting an individual KPI
+    Given there is an unapproved KPI "name=Revenue;value=1000" for the company
+    And I am on the KPI reports page for the portfolio company in grid view with staged data
+    When I reject the KPI "Revenue"
+    Then I should not see the KPI "Revenue" with value "1,000.0"
+    And the KPI "Revenue" should not exist in the database

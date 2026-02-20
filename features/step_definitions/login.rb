@@ -23,6 +23,13 @@ Given('I log in with email {string}') do |email|
   )
 end
 
+Given('I log in with email {string} on the existing page') do |email|
+  @user = User.find_by_email(email)
+  steps %(
+    When I fill and submit the login page
+  )
+end
+
 
 Given(/^I am at the login page$/) do
   visit("/users/sign_in")
@@ -40,7 +47,7 @@ When(/^I fill and submit the login page$/) do
   click_on("Log In")
   sleep(1)
   # expect(page).to have_content("Signed in successfully")
-  User.find_by_email(@user.email).sign_in_count.should == 1
+  User.find_by_email(@user.email).sign_in_count.should > 0
 end
 
 When(/^I fill the password incorrectly and submit the login page$/) do

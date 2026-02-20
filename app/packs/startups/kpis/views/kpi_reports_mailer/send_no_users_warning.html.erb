@@ -1,0 +1,10 @@
+<p>The KPI report generation process attempted to notify users for <strong><%= @portfolio_company.investor_name %></strong>, but no eligible notification users were found.</p>
+
+<p>
+  <strong>Portfolio Company:</strong> <%= @portfolio_company.investor_name %><br>
+  <strong>Entity:</strong> <%= @kpi_report.entity.name %><br>
+  <strong>Report Date:</strong> <%= @kpi_report.as_of %><br>
+  <strong>Report ID:</strong> <%= @kpi_report.id %>
+</p>
+
+<p>Please check the user setup for this portfolio company.</p>

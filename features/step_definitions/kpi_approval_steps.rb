@@ -33,6 +33,20 @@ When('I approve the KPI {string}') do |kpi_name|
   sleep 1
 end
 
+When('I reject the KPI {string}') do |kpi_name|
+  kpi = Kpi.unapproved.find_by(name: kpi_name)
+  within(".value_#{kpi.id}") do
+    click_on "Reject"
+  end
+  # Handle the custom popup
+  if page.has_css?("#confirmModal", wait: 5)
+    within("#confirmModal") do
+      click_on I18n.t("common.proceed")
+    end
+  end
+  sleep 1
+end
+
 When('I approve all staged KPIs') do
   find(".ti-settings").click # Open Actions dropdown
   click_on "Approve All Staged"
@@ -61,6 +75,14 @@ end
 
 And('the KPI {string} should have {string} status in the database') do |name, status|
   expect(Kpi.find_by(name: name).status).to eq(status)
+end
+
+Then('I should not see the KPI {string} with value {string}') do |name, value|
+  expect(page).not_to have_content(value)
+end
+
+And('the KPI {string} should not exist in the database') do |name|
+  expect(Kpi.find_by(name: name)).to be_nil
 end
 
 And('all KPIs for {string} should have {string} status in the database') do |company_name, status|

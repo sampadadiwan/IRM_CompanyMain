@@ -141,6 +141,12 @@ class KpiReportsController < ApplicationController
     redirect_to investor_url(id: portfolio_company.id, tab: "kpis-tab"), notice: "Notification sent."
   end
 
+  def trigger_periodic_reports
+    authorize KpiReport, :trigger_periodic_reports?
+    GeneratePeriodicKpiReportsJob.perform_later(params[:portfolio_company_id], params[:id])
+    redirect_to request.referer || kpi_reports_path, notice: "Periodic KPI reports generation triggered."
+  end
+
   def show_performance
     @as_of = params[:as_of].present? ? Date.local_parse(params[:as_of]) : (Time.zone.today.end_of_month - 1.month)
     @kpi_report = KpiReport.find_by(portfolio_company_id: params[:portfolio_company_id], as_of: @as_of)

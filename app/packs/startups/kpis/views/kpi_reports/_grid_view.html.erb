@@ -77,6 +77,22 @@
 
 
                 <%= link_to "Actuals/Budget", kpi_reports_path(portfolio_company_id: params[:portfolio_company_id], budget_view: true, tag_list: ["Actual","Budget"], all: true, num_periods: 2), class: "dropdown-item ti ti-presentation-analytics", data: {bs_toggle: "tooltip", bs_title: "Opens the analytical view showing actual vs budget"} %>
+
+                <% if policy(KpiReport).trigger_periodic_reports? %>
+                    <%
+                        has_users = investor&.notification_users&.any?
+                        msg = if has_users
+                                "Manually trigger the generation of notification to upload KPIs for this company?"
+                              else
+                                "No notification users found for this company."
+                              end
+                    %>
+                    <%= button_to "Trigger Upload Notification", trigger_periodic_reports_kpi_reports_path(portfolio_company_id: params[:portfolio_company_id]),
+                        method: :post,
+                        class: "dropdown-item ti ti-rocket #{'disabled' unless has_users}",
+                        disabled: !has_users,
+                        data: {bs_toggle: "tooltip", bs_title: msg, action: "click->confirm#popup", turbo: false, method: :post, notification: "yes", msg: msg} %>
+                <% end %>
             </div>
         </div>
         </div>

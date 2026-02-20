@@ -3,28 +3,70 @@
 class GeneratePeriodicKpiReportsJob < ApplicationJob
   queue_as :default
 
-  def perform
-    Entity.joins(:entity_setting).where_permissions(:enable_kpis).find_each do |entity|
-      settings = entity.entity_setting
-      next if settings.kpi_reminder_frequency.blank?
-
-      # Logic to determine if we should create a report today
-      # based on kpi_reminder_frequency and kpi_reminder_before
-      # This is a simplified version of the trigger logic
-      target_date = calculate_target_date(settings.kpi_reminder_frequency)
-      trigger_date = target_date - (settings.kpi_reminder_before || 0).days
-
-      # Reference: kpi_portco_upload.md
-      # For testing, we might want to bypass this check
-      next unless Time.zone.today >= trigger_date
-
-      entity.investors.portfolio_companies.find_each do |portco|
-        KpiReportCreateShell.wtf?(entity: entity, portco: portco, as_of: target_date, period: settings.kpi_reminder_frequency)
+  def perform(portfolio_company_id = nil, kpi_report_id = nil)
+    if kpi_report_id
+      report = KpiReport.find(kpi_report_id)
+      send_notification(report)
+    elsif portfolio_company_id
+      portco = Investor.find(portfolio_company_id)
+      process_entity(portco.entity, portco)
+    else
+      Entity.joins(:entity_setting).where_permissions(:enable_kpis).find_each do |entity|
+        process_entity(entity)
       end
     end
   end
 
   private
+
+  def process_entity(entity, manual_portco = nil)
+    settings = entity.entity_setting
+    # We allow manual trigger even if frequency is blank, defaulting to Monthly target date
+    frequency = settings&.kpi_reminder_frequency || "Monthly"
+    target_date = calculate_target_date(frequency)
+
+    unless manual_portco # If scheduled run, check frequency and trigger date
+      return if settings&.kpi_reminder_frequency.blank?
+
+      trigger_date = target_date - (settings.kpi_reminder_before || 0).days
+      return unless Time.zone.today >= trigger_date
+    end
+
+    portcos = manual_portco ? [manual_portco] : entity.investors.portfolio_companies
+
+    portcos.each do |portco|
+      if manual_portco
+        # Ensure email goes out even if clicked more than once
+        report = KpiReport.unscoped.find_by(
+          entity_id: entity.id,
+          portfolio_company_id: portco.id,
+          as_of: target_date,
+          period: frequency,
+          enable_portco_upload: true,
+          tag_list: "Actual"
+        )
+
+        report ||= KpiReportCreateShell.wtf?(entity: entity, portco: portco, as_of: target_date, period: frequency)[:model]
+
+        send_notification(report) if report
+      else
+        KpiReportCreateShell.wtf?(entity: entity, portco: portco, as_of: target_date, period: settings.kpi_reminder_frequency)
+      end
+    end
+  end
+
+  def send_notification(report)
+    portco = report.portfolio_company
+    entity = report.entity
+    users = portco.notification_users(report)
+    if users.any?
+      users.each do |user|
+        KpiReportNotifier.with(record: report, entity_id: entity.id).deliver_later(user)
+      end
+    else
+      KpiReportsMailer.with(portfolio_company_id: portco.id, kpi_report_id: report.id).send_no_users_warning.deliver_later
+    end
+  end
 
   def calculate_target_date(frequency)
     case frequency

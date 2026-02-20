@@ -61,6 +61,10 @@ class KpiReportPolicy < KpiPolicyBase
       record.portfolio_company.investor_accesses.approved.exists?
   end
 
+  def trigger_periodic_reports?
+    user.enable_kpis
+  end
+
   def edit?
     update?
   end

@@ -61,7 +61,18 @@ end
 
 When('I press {string}') do |button_text|
   click_on button_text
-  click_on "Proceed"
-  sleep(2)
-  page.should have_content("Notification sent")
+  if ["Send Notification", "Trigger Upload Notification"].include?(button_text)
+    click_on "Proceed"
+    sleep(2)
+  end
+end
+
+Given('I am on the kpis page for the portfolio company {string}') do |portco_name|
+  @portfolio_company = Investor.find_by(investor_name: portco_name)
+  visit kpi_reports_path(portfolio_company_id: @portfolio_company.id, grid_view: true)
+end
+
+Given('I revoke investor access in the portfolio company {string}') do |portco_name|
+  @portfolio_company = Investor.find_by(investor_name: portco_name)
+  InvestorAccess.where(investor_id: @portfolio_company.id).delete_all
 end

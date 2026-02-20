@@ -4,6 +4,7 @@ end
 
 resources :kpis do
   patch 'approve', on: :member
+  delete 'reject', on: :member
   patch 'approve_all', on: :collection
 end
 resources :kpi_reports do
@@ -11,6 +12,8 @@ resources :kpi_reports do
   patch 'recompute_percentage_change', on: :member
   post "analyze", on: :member
   post 'send_portco_notification', on: :collection
+  post 'trigger_periodic_reports', on: :collection
+  post 'trigger_periodic_reports', on: :member
   get "show_performance", on: :collection
 end
 

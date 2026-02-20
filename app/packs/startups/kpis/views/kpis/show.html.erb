@@ -44,6 +44,15 @@
     </td>
   </tr>
 
+  <tr>
+    <td>
+      Status
+    </td>
+    <td>
+      <%= @kpi.status&.titleize %>
+    </td>
+  </tr>
+
   <% if @kpi.common_size_value %>
   <tr>
     <td>
