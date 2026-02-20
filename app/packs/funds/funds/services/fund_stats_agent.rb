@@ -1,5 +1,6 @@
 # See SupportAgentJob for context on how this class is used.
 class FundStatsAgent < SupportAgentService
+  DESCRIPTION = "Compiles and emails periodic fund statistics, including commitments, stakeholder activity, and portfolio investment updates.".freeze
   step :initialize_agent
   # == Core Functions ==
   step :commitment_stats

@@ -1,4 +1,5 @@
 class PortfolioCompanyAgent < SupportAgentService
+  DESCRIPTION = "Monitors portfolio companies for KPI submissions, document presence, and valuation accuracy.".freeze
   step :initialize_agent
   # == Core Functions ==
   step :check_kpi_submission

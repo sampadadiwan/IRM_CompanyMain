@@ -11,30 +11,8 @@
     </ul>
   </div>
 </div>
-<div class="table-responsive" data-controller="datatable">
-  <table id="support_agents" class="table table-bordered dataTable">
-    <thead>
-      <tr>
-        <th>
-          Name
-        </th>
-        <th>
-          Description
-        </th>
-        <th>
-          Agent Type
-        </th>
-        <th>
-          Enabled
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @support_agents.each do |support_agent| %>
-        <%= render support_agent %>
-      <% end %>
-    </tbody>
-  </table>
+<div class="row g-4" style="align-items: flex-start;">
+  <% @support_agents.each do |support_agent| %>
+    <%= render "support_agent_card", support_agent: support_agent %>
+  <% end %>
 </div>

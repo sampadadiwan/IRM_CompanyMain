@@ -1,4 +1,5 @@
 class KycOnboardingAgent < SupportAgentService
+  DESCRIPTION = "Orchestrates a multi-step verification pipeline for InvestorKYC records, validating fields and documents.".freeze
   # KycOnboardingAgent orchestrates a multi-step verification pipeline
   # for InvestorKYC records. It checks fields, validates documents
   # against expected content/labels, ensures consistency, creates reports,

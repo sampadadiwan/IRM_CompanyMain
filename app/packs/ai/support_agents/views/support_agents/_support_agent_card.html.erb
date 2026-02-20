@@ -1,0 +1,69 @@
+<% col_class ||= "col-md-4 mb-4" %>
+<div class="<%= col_class %>">
+  <div class="support-agent-card" id="<%= dom_id support_agent %>">
+    <div class="card-header-custom">
+      <div class="agent-info">
+        <h3 class="agent-title">
+          <%= link_to support_agent.name, support_agent %>
+        </h3>
+        <span class="agent-type-badge">
+          <%= support_agent.agent_type %>
+        </span>
+      </div>
+    </div>
+
+    <div class="card-body-custom">
+      <p class="description">
+        <%
+          agent_class = support_agent.agent_type.constantize rescue nil
+          description = (agent_class.const_get(:DESCRIPTION) if agent_class&.const_defined?(:DESCRIPTION)) || support_agent.description
+        %>
+        <%= description %>
+      </p>
+
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="status-section">
+          <span class="status-indicator <%= support_agent.enabled ? 'enabled' : 'disabled' %>"></span>
+          <%= support_agent.enabled ? 'Active' : 'Disabled' %>
+        </div>
+        <div class="text-muted small">
+          <i class="ti ti-clock"></i> <%= l support_agent.updated_at, format: :short %>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-footer">
+      <%= link_to support_agent, class: "btn-view-agent" do %>
+        <span>View Details</span>
+        <i class="ti ti-arrow-right"></i>
+      <% end %>
+
+      <% if policy(support_agent).edit? %>
+        <%= link_to edit_support_agent_path(support_agent), class: "btn-edit-agent", title: "Edit Agent" do %>
+          <i class="ti ti-edit"></i>
+        <% end %>
+      <% end %>
+
+      <div class="btn-expand-agent"
+           data-bs-toggle="collapse"
+           data-bs-target="#collapse-<%= dom_id support_agent %>"
+           aria-expanded="false"
+           aria-controls="collapse-<%= dom_id support_agent %>"
+           title="Expand Details">
+        <i class="ti ti-chevron-down"></i>
+      </div>
+    </div>
+
+    <div class="collapse" id="collapse-<%= dom_id support_agent %>">
+      <div class="expandable-details">
+        <table class="details-table">
+          <tr>
+            <td>Agent Type</td>
+            <td><%= support_agent.agent_type %></td>
+          </tr>
+          <%= display_custom_fields(support_agent) %>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

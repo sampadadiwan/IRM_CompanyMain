@@ -180,9 +180,7 @@ module AccountEntryAllocation
 
         # We only set it to Success if it wasn't already set to an error message during formula execution
         # Reloading to check current DB state of the status
-        if ctx[:allocation_run].reload.status == "Pending"
-          ctx[:allocation_run].update_column(:status, "Success")
-        end
+        ctx[:allocation_run].update_column(:status, "Success") if ctx[:allocation_run].reload.status == "Pending"
       end
 
       true

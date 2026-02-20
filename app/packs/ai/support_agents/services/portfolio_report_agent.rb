@@ -1,6 +1,7 @@
 # rubocop:disable Metrics/ClassLength
 # Generates or refines AI portfolio report sections using document and web context.
 class PortfolioReportAgent < SupportAgentService
+  DESCRIPTION = "Generates or refines AI portfolio report sections using document and web context.".freeze
   step :initialize_agent
   step :load_document_context
   step :load_web_search_context # NEW: Load web search results

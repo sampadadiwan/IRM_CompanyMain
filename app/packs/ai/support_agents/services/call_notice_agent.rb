@@ -12,6 +12,7 @@
 # @see SupportAgentService
 # @see SupportAgentReport
 class CallNoticeAgent < SupportAgentService
+  DESCRIPTION = "Validates capital call readiness by checking KYC status, document generation, and approval workflow."
   # @return [Hash{Symbol => String}] human-readable labels for each step
   STEP_LABELS = {
     initialize_agent: "Initialize",

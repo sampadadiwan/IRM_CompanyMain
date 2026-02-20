@@ -9,6 +9,7 @@
 #     document_folder_path: "/path/to/documents" # Optional
 #   )
 class PortfolioChatAgent < SupportAgentService
+  DESCRIPTION = "Provides conversational AI assistance for portfolio reports with full conversation memory, tool execution, and document context capabilities.".freeze
   require_relative '../tools/langchain_web_search_tool'
 
   # PortfolioChatAgent provides conversational AI assistance for portfolio reports
