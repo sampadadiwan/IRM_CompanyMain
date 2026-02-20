@@ -1818,18 +1818,11 @@ Then('There should be {string} fund units created with data in the sheet') do |c
     row_data = [headers, row].transpose.to_h
     capital_commitment = CapitalCommitment.where(folio_id: row_data["Folio No"]).first
 
-    # Determine quantity from either Call Quantity or Distribution Quantity column
-    quantity = if row_data["Call Quantity"].present? && row_data["Call Quantity"].to_s.strip != ""
-                 row_data["Call Quantity"].to_f
-               else
-                 row_data["Distribution Quantity"].to_f
-               end
+    fund_unit = FundUnit.where(capital_commitment_id: capital_commitment.id, quantity: row_data["Quantity"].to_f).first
 
-    fund_unit = FundUnit.where(capital_commitment_id: capital_commitment.id, quantity: quantity).first
+    puts "Checking import of #{fund_unit.to_json}"
 
-    raise "Fund unit not found for folio #{row_data['Folio No']} with quantity #{quantity}" if fund_unit.nil?
-
-    fund_unit.quantity.should == quantity
+    fund_unit.quantity.should == row_data["Quantity"].to_f
     fund_unit.unit_type.should == row_data["Unit Type"]
     fund_unit.price_cents.should == row_data["Price"].to_f * 100.0
     fund_unit.premium_cents.should == row_data["Premium"].to_f * 100.0
@@ -1837,8 +1830,7 @@ Then('There should be {string} fund units created with data in the sheet') do |c
     fund_unit.reason.should == row_data["Reason"]
     fund_unit.owner.folio_id.should == row_data["Folio No"].to_s
 
-    # Verify owner type based on which column was filled
-    if row_data["Call Quantity"].present? && row_data["Call Quantity"].to_s.strip != ""
+    if fund_unit.quantity.positive?
       fund_unit.owner_type.should == "CapitalRemittance"
     else
       fund_unit.owner_type.should == "CapitalDistributionPayment"
@@ -2725,18 +2717,11 @@ Then('There should be {string} fund units created with data in the {string} shee
     row_data = [headers, row].transpose.to_h
     capital_commitment = CapitalCommitment.where(folio_id: row_data["Folio No"]).first
 
-    # Determine quantity from either Call Quantity or Distribution Quantity column
-    quantity = if row_data["Call Quantity"].present? && row_data["Call Quantity"].to_s.strip != ""
-                 row_data["Call Quantity"].to_f
-               else
-                 row_data["Distribution Quantity"].to_f
-               end
+    fund_unit = FundUnit.where(capital_commitment_id: capital_commitment.id, quantity: row_data["Quantity"].to_f).first
 
-    fund_unit = FundUnit.where(capital_commitment_id: capital_commitment.id, quantity: quantity).first
+    puts "Checking import of #{fund_unit.to_json}"
 
-    raise "Fund unit not found for folio #{row_data['Folio No']} with quantity #{quantity}" if fund_unit.nil?
-
-    fund_unit.quantity.should == quantity
+    fund_unit.quantity.should == row_data["Quantity"].to_f
     fund_unit.unit_type.should == row_data["Unit Type"]
     fund_unit.price_cents.should == row_data["Price"].to_f * 100.0
     fund_unit.premium_cents.should == row_data["Premium"].to_f * 100.0
@@ -2744,50 +2729,7 @@ Then('There should be {string} fund units created with data in the {string} shee
     fund_unit.reason.should == row_data["Reason"]
     fund_unit.owner.folio_id.should == row_data["Folio No"].to_s
 
-    # Verify owner type based on which column was filled
-    if row_data["Call Quantity"].present? && row_data["Call Quantity"].to_s.strip != ""
-      fund_unit.owner_type.should == "CapitalRemittance"
-    else
-      fund_unit.owner_type.should == "CapitalDistributionPayment"
-    end
-  end
-end
-
-
-Then('There should be {string} fund units created with new format data in the {string} sheet') do |count, file_name|
-  file = File.open("./public/sample_uploads/#{file_name}", "r")
-  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
-  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
-
-  data.each_with_index do |row, idx|
-    next if idx.zero? # skip header row
-
-    # create hash from headers and cells
-    row_data = [headers, row].transpose.to_h
-    capital_commitment = CapitalCommitment.where(folio_id: row_data["Folio No"]).first
-
-    # Determine quantity from either Call Quantity or Distribution Quantity column
-    quantity = if row_data["Call Quantity"].present? && row_data["Call Quantity"].to_s.strip != ""
-                 row_data["Call Quantity"].to_f
-               else
-                 row_data["Distribution Quantity"].to_f
-               end
-
-    fund_unit = FundUnit.where(capital_commitment_id: capital_commitment.id, quantity: quantity).first
-
-    raise "Fund unit not found for folio #{row_data['Folio No']} with quantity #{quantity}" if fund_unit.nil?
-
-
-    fund_unit.quantity.should == quantity
-    fund_unit.unit_type.should == row_data["Unit Type"]
-    fund_unit.price_cents.should == row_data["Price"].to_f * 100.0
-    fund_unit.premium_cents.should == row_data["Premium"].to_f * 100.0
-    fund_unit.issue_date.should == Date.local_parse(row_data["Issue Date"])
-    fund_unit.reason.should == row_data["Reason"]
-    fund_unit.owner.folio_id.should == row_data["Folio No"].to_s
-
-    # Verify owner type based on which column was filled
-    if row_data["Call Quantity"].present? && row_data["Call Quantity"].to_s.strip != ""
+    if fund_unit.quantity.positive?
       fund_unit.owner_type.should == "CapitalRemittance"
     else
       fund_unit.owner_type.should == "CapitalDistributionPayment"
@@ -3089,90 +3031,4 @@ Then('remittance notice must be generated for the latest remittance for each kyc
       cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
     end
   end
-end
-
-# Copy to All feature step definitions
-When('I navigate to create a new capital call {string}') do |args|
-  @capital_call = FactoryBot.build(:capital_call, fund: @fund)
-  key_values(@capital_call, args)
-  @capital_call.setup_defaults
-
-  visit(fund_url(@fund))
-  click_on "Calls"
-  click_on "New Call"
-
-  # Fill in basic required fields but don't fill unit prices yet
-  fill_in('capital_call_name', with: @capital_call.name)
-  fill_in('capital_call_due_date', with: @capital_call.due_date)
-  select(@capital_call.call_basis, from: 'capital_call_call_basis')
-
-  # Wait for the form to be ready
-  expect(page).to have_selector('.price', visible: true)
-end
-
-When('I fill in the first unit type price with {string}') do |price_value|
-  # Find the first price input field with class 'price'
-  first_price_field = page.find('.price', match: :first, visible: true)
-  first_price_field.set(price_value)
-end
-
-When('I fill in the first unit type premium with {string}') do |premium_value|
-  # Find the first premium input field with class 'premium'
-  first_premium_field = page.find('.premium', match: :first, visible: true)
-  first_premium_field.set(premium_value)
-end
-
-When('I click on Copy To All link') do
-  # Use JavaScript click to avoid timing issues
-  link = page.find('a', text: 'Copy To All', visible: true)
-  link.click
-  sleep(0.5) # Give JavaScript time to execute
-end
-
-Then('all unit type prices should be {string}') do |expected_price|
-  # Find all price fields and verify they all have the expected value
-  price_fields = page.all('.price', visible: true)
-  expect(price_fields.count).to be > 0, "No price fields found"
-
-  price_fields.each do |field|
-    expect(field.value).to eq(expected_price), "Expected price #{expected_price} but got #{field.value}"
-  end
-end
-
-Then('all unit type premiums should be {string}') do |expected_premium|
-  # Find all premium fields and verify they all have the expected value
-  premium_fields = page.all('.premium', visible: true)
-  expect(premium_fields.count).to be > 0, "No premium fields found"
-
-  premium_fields.each do |field|
-    expect(field.value).to eq(expected_premium), "Expected premium #{expected_premium} but got #{field.value}"
-  end
-end
-
-When('I save the capital call') do
-  allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
-  click_button('Save')
-  # Wait for the save operation to complete
-  expect(page).to have_content('Capital call was successfully')
-end
-
-Then('the capital call should be saved with the copied prices') do
-  # Find the capital call that was just created
-  @capital_call = @fund.capital_calls.last
-
-  # Verify unit_prices hash contains the copied values
-  expect(@capital_call.unit_prices).to be_present
-
-  # Check that all unit types have the same price and premium
-  prices = @capital_call.unit_prices.values.map { |v| v['price'] || v[:price] }.compact.uniq
-  premiums = @capital_call.unit_prices.values.map { |v| v['premium'] || v[:premium] }.compact.uniq
-
-  # All prices should be the same (only one unique value)
-  expect(prices.size).to eq(1), "Expected all prices to be the same, but got: #{prices.inspect}"
-  # All premiums should be the same (only one unique value)
-  expect(premiums.size).to eq(1), "Expected all premiums to be the same, but got: #{premiums.inspect}"
-
-  # Verify the actual values
-  expect(prices.first.to_s).to eq('100')
-  expect(premiums.first.to_s).to eq('10')
 end
