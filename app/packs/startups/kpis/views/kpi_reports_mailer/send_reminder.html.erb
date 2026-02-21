@@ -4,7 +4,7 @@
 
 <p>You can fill out the report by clicking the link below:</p>
 
-<p><%= link_to 'Fill KPI Report', edit_kpi_report_url(@kpi_report, host: @entity.sub_domain + '.' + ENV.fetch('DOMAIN', 'localhost')) %></p>
+<p><%= link_to 'Fill KPI Report', edit_kpi_report_url(id: :shared, signed_id: KpiReport.signed_id_for_user(@kpi_report, @user), host: @entity.sub_domain + '.' + ENV.fetch('DOMAIN', 'localhost')) %></p>
 
 <p>Thank you,<br>
 <%= @entity.name %> Team</p>

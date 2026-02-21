@@ -21,11 +21,15 @@ class KpiReportPolicy < KpiPolicyBase
   end
 
   def show?
+    return true if signed_id_access?
+
     (user.enable_kpis &&
       (belongs_to_entity?(user, record) || permissioned_employee?)) || (portfolio_company_user? && record.tag_list == "Actual")
   end
 
   def create?
+    return true if signed_id_access?
+
     # Original Fund entity user permission
     # Reference: kpi_portco_upload.md
     user.enable_kpis && (belongs_to_entity?(user, record) || permissioned_employee? || portfolio_company_user?)

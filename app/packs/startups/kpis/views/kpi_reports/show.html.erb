@@ -115,7 +115,7 @@
           data: {bs_toggle: "tooltip", bs_title: msg, action: "click->confirm#popup", turbo: false, method: :post, notification: "yes", msg: msg} %>
     <% end %>
 
-    <%= link_to  t_common(:edit), edit_kpi_report_path(@kpi_report), {class: "btn btn-outline-primary"} %>
+    <%= link_to  t_common(:edit), edit_kpi_report_path(@kpi_report, signed_id: params[:signed_id]), {class: "btn btn-outline-primary"} %>
     <%= button_to t_common(:delete), @kpi_report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  if policy(@kpi_report).destroy? %>
 
   <% end %>

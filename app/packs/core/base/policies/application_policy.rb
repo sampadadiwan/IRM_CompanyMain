@@ -92,6 +92,15 @@ class ApplicationPolicy
     Pundit.policy_scope!(user, record.class)
   end
 
+  # Checks if the user was granted access via a signed ID shared link.
+  # This is used for public/shared links where a user might not be logged in.
+  # The controller marks the user object with this method via `define_singleton_method`.
+  #
+  # @return [Boolean] True if the user has signed ID access.
+  def signed_id_access?
+    user.respond_to?(:signed_id_access?) && user.signed_id_access?
+  end
+
   def get_model_with_access_rights(owner: nil)
     # Get the model_with_access_rights from the record
     model_with_access_rights = record.model_with_access_rights if record.respond_to?(:model_with_access_rights)

@@ -75,4 +75,31 @@ class ApplicationRecord < ActiveRecord::Base
     invalid = emails.grep_v(URI::MailTo::EMAIL_REGEXP)
     errors.add(:esign_emails, "contains invalid email(s): #{invalid.join(', ')}") if invalid.any?
   end
+
+  def self.signed_id_for_user(record, user, expires_in: 15.days)
+    # We use a custom verifier to embed both the record ID and the user email
+    # for the purpose of a specific action (e.g., uploading KPIs).
+    verifier = ActiveSupport::MessageVerifier.new(Rails.application.secret_key_base)
+    verifier.generate({ record_id: record.id, email: user.email, model: name }, expires_in: expires_in, purpose: :shared_access)
+  end
+
+  # Verifies a signed ID and returns the associated record and user.
+  # The signed ID is expected to contain :model, :record_id, and :email.
+  #
+  # @param signed_id [String] The signed token to verify.
+  # @return [Array<Object, User>, nil] An array containing [record, user], or nil if invalid.
+  #
+  # @raise [ActiveSupport::MessageVerifier::InvalidSignature] Handled internally to return nil.
+  def self.find_by_signed_id_for_user(signed_id)
+    verifier = ActiveSupport::MessageVerifier.new(Rails.application.secret_key_base)
+    data = verifier.verify(signed_id, purpose: :shared_access)
+    return nil unless data
+
+    model_class = data[:model].constantize
+    record = model_class.find_by(id: data[:record_id])
+    user = User.find_by(email: data[:email])
+    [record, user]
+  rescue ActiveSupport::MessageVerifier::InvalidSignature
+    nil
+  end
 end

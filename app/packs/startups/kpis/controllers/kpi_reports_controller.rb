@@ -1,4 +1,5 @@
 class KpiReportsController < ApplicationController
+  skip_before_action :authenticate_user!, only: %i[show edit update], if: -> { params[:signed_id].present? }
   before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze]
   after_action :verify_authorized, except: %i[index search show_performance]
 
@@ -84,7 +85,7 @@ class KpiReportsController < ApplicationController
 
     respond_to do |format|
       if @kpi_report.save
-        format.html { redirect_to kpi_report_url(@kpi_report), notice: "Kpi report was successfully created." }
+        format.html { redirect_to kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: "Kpi report was successfully created." }
         format.json { render :show, status: :created, location: @kpi_report }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -98,7 +99,7 @@ class KpiReportsController < ApplicationController
     setup_doc_user(@kpi_report)
     respond_to do |format|
       if @kpi_report.update(kpi_report_params.merge(user_id: current_user.id))
-        format.html { redirect_to kpi_report_url(@kpi_report), notice: "Kpi report was successfully updated." }
+        format.html { redirect_to kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: "Kpi report was successfully updated." }
         format.json { render :show, status: :ok, location: @kpi_report }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -181,7 +182,9 @@ class KpiReportsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_kpi_report
-    @kpi_report = KpiReport.find(params[:id])
+    find_by_signed_id_for_user(params[:signed_id]) if params[:signed_id].present?
+    @kpi_report ||= KpiReport.find(params[:id]) if params[:id].present? && params[:id] != 'shared'
+
     authorize @kpi_report
     @bread_crumbs = { Kpis: kpi_reports_path, "#{@kpi_report.as_of}": kpi_report_path(@kpi_report) }
   end
