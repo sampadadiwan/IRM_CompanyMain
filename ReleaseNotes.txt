@@ -1,3 +1,9 @@
+V9.1.95
+0ff291c72 Portco fixes 2 (#1276)
+ba28bb18c Portco fixes 1 (#1275)
+9b8206bd8 Better agent cards (#1274)
+9d2d84819 Kpi percentage fix (#1272)
+
 V9.1.94
 eabd171ac Refactor investor_kycs table schema and update column definitions for improved clarity and consistency
 f516e42e6 Added allocated_amount_with_percent to compute the total amounts for … (#1271)
