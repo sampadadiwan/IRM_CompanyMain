@@ -104,6 +104,15 @@
               <i class="ti ti-brand-github-copilot"></i> Portfolio Assistant
             <% end %>
           <% end %>
+
+          <div class="dropdown-divider"></div>
+
+          <%= link_to new_notification_kpi_reports_path,
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo_frame: "remote_modal" } do %>
+            <i class="ti ti-bell"></i> Send KPI Reminder
+          <% end %>
+
         </div>
       </div>
     </div>
@@ -125,3 +134,5 @@
 <div class="">
   <%= render RansackTable.new(Investor, q: @q, default_columns_map:, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: @investors, turbo_frame: investors_frame, referrer: request.referrer, pagy: @pagy) %>
 </div>
+
+<%= turbo_frame_tag "remote_modal" %>

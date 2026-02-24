@@ -182,6 +182,12 @@ class KpiWorkbookReader
 
       period_type = KpiDateUtils.detect_period_type(period)
 
+      # Skip future 'Actual' KPIs
+      if @kpi_report.tag_list.include?('Actual') && parsed_period > Date.current
+        Rails.logger.debug { "Skipping future 'Actual' KPI for period: #{period}, parsed_period: #{parsed_period}" }
+        next
+      end
+
       # Check for duplicate periods in the same row
       if seen_periods[parsed_period.to_s + period_type.to_s].present?
         log_duplicate_period_warning(sheet, period, header)

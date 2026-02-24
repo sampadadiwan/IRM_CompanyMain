@@ -2,6 +2,7 @@
 <% kpi_reports = kpi_reports.order(as_of: :asc) %>
 
 <div data-controller="export-xl">
+  <%= turbo_frame_tag "remote_modal_alerts" %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <% if params[:portfolio_company_id].present? %>
@@ -57,9 +58,9 @@
                 <%= button_to "Recompute Cumulative", recompute_cumulative_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-refresh", data: {bs_toggle: "tooltip", bs_title: "Recompute cumulative and forward fill calculations for this company"} if kpi_reports.last %>
 
                 <% if investor %>
-                    <% send_notification_msg = "Send KPI report reminder notification for #{investor.investor_name}?" %>
-                    <%= button_to "Send Reminder", send_portco_notification_kpi_reports_path(portfolio_company_id: investor.id), method: :post, class: "dropdown-item ti ti-bell", form_class: "sendNotificationButton",
-                        data: { action: "click->confirm#popup", turbo: false, method: :post, notification: "yes", msg: send_notification_msg } %>
+                    <a href="#" class="dropdown-item ti ti-bell" data-bs-toggle="modal" data-bs-target="#sendReminderModal-<%= investor.id %>">
+                      Send Reminder
+                    </a>
                 <% end %>
 
                 <!- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader ->
@@ -78,21 +79,7 @@
 
                 <%= link_to "Actuals/Budget", kpi_reports_path(portfolio_company_id: params[:portfolio_company_id], budget_view: true, tag_list: ["Actual","Budget"], all: true, num_periods: 2), class: "dropdown-item ti ti-presentation-analytics", data: {bs_toggle: "tooltip", bs_title: "Opens the analytical view showing actual vs budget"} %>
 
-                <% if policy(KpiReport).trigger_periodic_reports? %>
-                    <%
-                        has_users = investor&.notification_users&.any?
-                        msg = if has_users
-                                "Manually trigger the generation of notification to upload KPIs for this company?"
-                              else
-                                "No notification users found for this company."
-                              end
-                    %>
-                    <%= button_to "Trigger Upload Notification", trigger_periodic_reports_kpi_reports_path(portfolio_company_id: params[:portfolio_company_id]),
-                        method: :post,
-                        class: "dropdown-item ti ti-rocket #{'disabled' unless has_users}",
-                        disabled: !has_users,
-                        data: {bs_toggle: "tooltip", bs_title: msg, action: "click->confirm#popup", turbo: false, method: :post, notification: "yes", msg: msg} %>
-                <% end %>
+
             </div>
         </div>
         </div>
@@ -100,6 +87,32 @@
     <% end %>
 
 </div>
+
+<% if investor %>
+<div class="modal fade" id="sendReminderModal-<%= investor.id %>" tabindex="-1" aria-labelledby="sendReminderModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <%= form_with url: send_portco_notification_kpi_reports_path(modal_id: "sendReminderModal-#{investor.id}"), method: :post do |f| %>
+        <div class="modal-header">
+          <h5 class="modal-title" id="sendReminderModalLabel">Send KPI Report Reminder</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <%= f.hidden_field :portfolio_company_id, value: investor.id %>
+          <div class="mb-3">
+            <%= f.label :as_of, "Period Ending Date", class: "form-label" %>
+            <%= f.date_field :as_of, class: "form-control", required: true %>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <%= f.submit "Send Reminder", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+<% end %>
 
 <% if kpi_reports.present? %>
 <%

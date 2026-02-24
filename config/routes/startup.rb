@@ -15,6 +15,7 @@ resources :kpi_reports do
   post 'trigger_periodic_reports', on: :collection
   post 'trigger_periodic_reports', on: :member
   get "show_performance", on: :collection
+  get "new_notification", on: :collection
 end
 
 resources :share_transfers

@@ -331,7 +331,7 @@ Then('I should see a {string} KPI {string} for {string} with value {string}') do
   expect(kpi.value.to_f).to eq(value.to_f)
 end
 
-Then('I should not see a {string} KPI {string} for {string}') do |period, name, as_of|
+Then('I should NOT see a {string} KPI {string} for {string}') do |period, name, as_of|
   date = Date.parse(as_of)
   kpi = Kpi.joins(:kpi_report).where(name: name, entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, kpi_reports: { period: period, as_of: date }).last
   expect(kpi).to be_nil
@@ -364,12 +364,11 @@ Then('YTD KPI should be cumulated correctly for {string}') do |kpi_name|
     months = (kpi.portfolio_company.json_fields['month_offset_for_fy'] || 3).to_i
     puts "Checking YTD KPI #{kpi.name} for period #{kpi.kpi_report.as_of}"
 
-    year = kpi.kpi_report.as_of.year
-    year_start = kpi.start_of_financial_year_date(kpi.kpi_report.as_of)
-    year_end = year_start + 12.months - 1.day
-    months_in_year = year_start..year_end
+    year_start = kpi.portfolio_company.start_of_financial_year_date(kpi.kpi_report.as_of)
+    # YTD sum should be from start of FY up to the current report's as_of date
+    months_so_far = year_start..kpi.kpi_report.as_of
 
-    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, 'kpi_reports.period': "Month", 'kpi_reports.as_of': months_in_year, 'kpi_reports.tag_list': 'Actual').sum(:value)
+    expected_sum = Kpi.joins(:kpi_report).where(name: kpi_name, 'kpi_reports.period': "Month", 'kpi_reports.as_of': months_so_far, 'kpi_reports.tag_list': 'Actual', portfolio_company_id: kpi.portfolio_company_id).sum(:value)
 
     binding.pry if kpi.value != expected_sum
     kpi.value.should == expected_sum

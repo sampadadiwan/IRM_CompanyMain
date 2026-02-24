@@ -63,3 +63,19 @@ Feature: KPI Workbook Reading
       | workbook_file                                  | error_message                                                                                                     |
       | kpi_extraction/validation/invalid_header.xlsx  | Invalid or missing header row in sheet 'MIS'. Expected date-like values (e.g., Jan 24, FY24, Q1FY25, H1FY25).|
       | kpi_extraction/validation/empty_sheet.xlsx     | Sheet 'Sheet1' is empty  |
+
+  Scenario: Future 'Actual' KPIs should not be imported
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    Given the KPI workbook file "kpi_extraction/MIS sample.xlsx" for a "Actual" kpi report
+    And the target KPIs are "Revenue"
+    When the KpiWorkbookReader processes the file
+    Then no KPI should be imported for future dates
+
+  Scenario: Future 'Budget' KPIs should be imported
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    Given the KPI workbook file "kpi_extraction/MIS sample.xlsx" for a "Budget" kpi report
+    And the target KPIs are "Revenue"
+    When the KpiWorkbookReader processes the file
+    Then KPIs should be imported for future dates

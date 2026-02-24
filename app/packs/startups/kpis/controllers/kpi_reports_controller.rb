@@ -134,12 +134,41 @@ class KpiReportsController < ApplicationController
   # rubocop:enable Rails/SkipsModelValidations
 
   def send_portco_notification
-    portfolio_company = Investor.find(params[:portfolio_company_id])
-    kpi_report = find_or_create_kpi_report_shell(portfolio_company)
-    authorize kpi_report, :send_portco_notification?
+    # Ensure we handle single or multiple portfolio_company_ids
+    portfolio_company_ids = params[:portfolio_company_ids] || [params[:portfolio_company_id]]
+    portfolio_company_ids = portfolio_company_ids.compact.compact_blank
 
-    SendPortcoNotification.call(model: kpi_report, entity_id: current_user.entity_id)
-    redirect_to investor_url(id: portfolio_company.id, tab: "kpis-tab"), notice: "Notification sent."
+    if portfolio_company_ids.empty?
+      redirect_to request.referer || kpi_reports_path, alert: "No portfolio companies selected."
+      return
+    end
+
+    # Authorization check: user should have update permissions for each portfolio company
+    portfolio_company_ids.each do |pc_id|
+      pc = Investor.find(pc_id)
+      authorize pc, :update?
+    end
+
+    SendPortcoNotificationJob.perform_later(
+      portfolio_company_ids,
+      user_id: current_user.id,
+      as_of: params[:as_of]
+    )
+
+    notice = portfolio_company_ids.size > 1 ? "Notifications are being sent." : "Notification is being sent."
+    respond_to do |format|
+      format.html { redirect_to request.referer || kpi_reports_path, notice: notice }
+      format.turbo_stream do
+        flash.now[:notice] = notice
+        streams = [
+          turbo_stream.update("remote_modal", ""),
+          turbo_stream.append("remote_modal", partial: "kpi_reports/alerts"),
+          turbo_stream.update("remote_modal_alerts", partial: "kpi_reports/alerts")
+        ]
+        streams << turbo_stream.append("remote_modal_alerts", "<script>bootstrap.Modal.getInstance(document.getElementById('#{params[:modal_id]}'))?.hide()</script>".html_safe) if params[:modal_id].present?
+        render turbo_stream: streams
+      end
+    end
   end
 
   def trigger_periodic_reports
@@ -165,6 +194,16 @@ class KpiReportsController < ApplicationController
     end
 
     render :performance_table
+  end
+
+  def new_notification
+    authorize Investor, :index?
+    @portfolio_companies = Investor.where(entity_id: current_user.entity_id)
+                                   .where(category: "Portfolio Company")
+                                   .order(:investor_name)
+    @selected_ids = params[:portfolio_company_ids] || []
+
+    render layout: false
   end
 
   private

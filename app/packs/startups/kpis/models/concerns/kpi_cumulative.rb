@@ -1,13 +1,35 @@
+# This concern provides methods to automatically calculate and store cumulative KPI values
+# (Quarterly and YTD) based on monthly 'Actual' data.
+# It supports different modes of operation:
+# - :cumulate (summing monthly values)
+# - :forward_fill (carrying forward the latest value)
+# - :compute (evaluating a custom formula)
+#
+# NOTE: 'Year' cumulative records are only created when exactly 12 monthly 'Actual'
+# records exist within the SAME fiscal year. The fiscal year boundary is defined
+# by EntitySetting#start_of_financial_year_date (default: April 1st).
 module KpiCumulative
   extend ActiveSupport::Concern
 
   included do
+    # Stores errors encountered during the cumulation process.
     attr_accessor :cumulation_errors
   end
 
-  # Generates a key for grouping dates by their fiscal year.
+  # Generates a key or label for grouping dates by their fiscal year.
+  #
+  # @param date [Date] The date to get the fiscal year key for.
+  # @param style [Symbol] The style of the key:
+  #   - :start_year: Returns the starting year of the FY (Integer).
+  #   - :label: Returns a string representation like "FY2024-25".
+  #   - :range: Returns a Date range for the entire fiscal year.
+  # @return [Integer, String, Range<Date>]
   def fiscal_year_key(date, style: :start_year)
-    fy_start = start_of_financial_year_date(date, nil_if_not_set: true) || entity.entity_settings.start_of_financial_year_date(date)
+    # The fiscal year is determined by EntitySetting#start_of_financial_year_date.
+    # By default, month_offset_for_fy is 3 (April).
+    # Dates from Jan to March (month <= 3) belong to the previous year's fiscal year.
+    # Dates from April to Dec (month > 3) belong to the current year's fiscal year.
+    fy_start = (respond_to?(:start_of_financial_year_date) && start_of_financial_year_date(date, nil_if_not_set: true)) || (respond_to?(:entity) && entity&.entity_settings&.start_of_financial_year_date(date)) || (respond_to?(:entity_id) && entity_id && EntitySetting.find_by(entity_id: entity_id)&.start_of_financial_year_date(date))
     case style
     when :start_year
       fy_start.year # Returns integer, e.g., 2024 for FY 2024–25
@@ -20,7 +42,10 @@ module KpiCumulative
     end
   end
 
-  # This is used to cumulate/fill/compute the KPI values over time periods like Quarterly and YTD.
+  # Entry point for the cumulation process. Determines the mode of operation from the
+  # KPI's mapping and executes the appropriate logic to fill Quarterly and YTD reports.
+  #
+  # @param force [Boolean] If true, overwrites existing cumulative KPI values even if they haven't changed.
   def cumulate(force: false)
     @cumulation_errors = []
     # Fetch mapping to determine the mode
@@ -47,6 +72,7 @@ module KpiCumulative
 
   private
 
+  # Performs cumulation by summing monthly 'Actual' KPI values into Quarterly and YTD reports.
   def perform_cumulation(force: false)
     related_kpis = fetch_related_monthly_kpis
     return if related_kpis.empty?
@@ -55,6 +81,8 @@ module KpiCumulative
     process_yearly_cumulatives(related_kpis, force: force)
   end
 
+  # Performs forward fill by taking the latest monthly 'Actual' KPI value and applying it to
+  # Quarterly and YTD reports.
   def perform_forward_fill(force: false)
     related_kpis = fetch_related_monthly_kpis
     return if related_kpis.empty?
@@ -63,6 +91,8 @@ module KpiCumulative
     process_yearly_forward_fill(related_kpis, force: force)
   end
 
+  # Performs computation based on a custom formula defined in the KPI mapping.
+  # Evaluates the formula using values of other KPIs in the same report.
   def perform_computation(force: false)
     # This should be called last by the job, but we'll implement the logic here
     # Computation logic typically applies to the current period (Quarter/YTD)
@@ -83,6 +113,12 @@ module KpiCumulative
     end
   end
 
+  # Computes a value for a specific KpiReport using a formula string.
+  # Replaces KPI names in the formula with their actual values from the report.
+  #
+  # @param report [KpiReport] The report context for the computation.
+  # @param formula [String] The formula to evaluate (e.g., "Revenue - Cost").
+  # @param force [Boolean] Whether to overwrite existing values.
   def compute_value_for_report(report, formula, force: false)
     # Simple eval based computation
     # Formula example: Revenue - Cost
@@ -119,7 +155,10 @@ module KpiCumulative
     end
   end
 
-  # Fetches monthly KPIs tagged 'Actual', ordered chronologically
+  # Fetches all monthly KPIs with the 'Actual' tag for this specific KPI name and portfolio company.
+  # Results are ordered chronologically by the report's as_of date.
+  #
+  # @return [ActiveRecord::Relation]
   def fetch_related_monthly_kpis
     entity.kpis.approved.joins(:kpi_report).includes(:kpi_report)
           .where(name: name, portfolio_company_id: portfolio_company_id)
@@ -127,6 +166,7 @@ module KpiCumulative
           .order("kpi_reports.as_of ASC")
   end
 
+  # Groups monthly KPIs by quarter and calculates the sum for each quarter.
   def process_quarterly_cumulatives(related_kpis, force: false)
     kpis_by_quarter = related_kpis.group_by do |kpi|
       [kpi.kpi_report.as_of.year, ((kpi.kpi_report.as_of.month - 1) / 3) + 1]
@@ -139,18 +179,27 @@ module KpiCumulative
     end
   end
 
+  # Groups monthly KPIs by fiscal year and calculates the YTD sum up to each month.
+  # Also creates a 'Year' period KPI if all 12 months of the fiscal year are present.
   def process_yearly_cumulatives(related_kpis, force: false)
     kpis_by_year = related_kpis.group_by { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
     kpis_by_year.each_value do |kpis_in_year|
-      ytd_sum = kpis_in_year.sum { |kpi| kpi.value.to_f }
-      # We use the date of the last monthly report in that FY as the end date for YTD
-      # but typically YTD reports are end of month.
-      last_date = kpis_in_year.last.kpi_report.as_of
-      process_cumulative_kpi(nil, ytd_sum, 'YTD', nil, last_date, force: force)
+      kpis_in_year.sum { |kpi| kpi.value.to_f }
+      # We should use the date of each specific report for YTD to show progress
+      # But for 'Year' we want the end of the year.
+      kpis_in_year.each_with_index do |kpi, index|
+        current_ytd_sum = kpis_in_year[0..index].sum { |k| k.value.to_f }
+        as_of = kpi.kpi_report.as_of
+        process_cumulative_kpi(nil, current_ytd_sum, 'YTD', nil, as_of, force: force)
+
+        # If it's the 12th month, also create/update the 'Year' record
+        process_cumulative_kpi(nil, current_ytd_sum, 'Year', nil, as_of, force: force) if kpis_in_year.size == 12 && index == 11
+      end
     end
   end
 
+  # Takes the last monthly value in each quarter and applies it as the Quarterly KPI value.
   def process_quarterly_forward_fill(related_kpis, force: false)
     kpis_by_quarter = related_kpis.group_by do |kpi|
       [kpi.kpi_report.as_of.year, ((kpi.kpi_report.as_of.month - 1) / 3) + 1]
@@ -167,6 +216,7 @@ module KpiCumulative
     end
   end
 
+  # Takes the last monthly value available in the fiscal year and applies it as the YTD KPI value.
   def process_yearly_forward_fill(related_kpis, force: false)
     kpis_by_year = related_kpis.group_by { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
@@ -181,6 +231,16 @@ module KpiCumulative
     end
   end
 
+  # Core helper that finds or creates the cumulative KPI record for a given period and date.
+  #
+  # @param _curr_kpi [Kpi] Unused parameter (kept for signature compatibility if needed).
+  # @param cumulative_sum [BigDecimal, Float] The calculated value to store.
+  # @param period [String] 'Quarter' or 'YTD'.
+  # @param _start_date [Date] Unused parameter.
+  # @param end_date [Date] The as_of date for the report.
+  # @param note [String, nil] Optional note to attach to the KPI.
+  # @param user_id [Integer, nil] The user to associate with the report if it needs to be created.
+  # @param force [Boolean] If true, updates the value even if it matches the current value.
   def process_cumulative_kpi(_curr_kpi, cumulative_sum, period, _start_date, end_date, note: nil, user_id: nil, force: false)
     note ||= "Auto-generated #{period} cumulative"
     Rails.logger.debug { "Kpi:  [#{name}] Processing #{period} KPI for #{end_date}, value: #{cumulative_sum}" }

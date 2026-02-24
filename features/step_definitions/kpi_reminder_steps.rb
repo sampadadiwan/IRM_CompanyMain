@@ -10,7 +10,11 @@ Given('the entity setting for {string} has kpi_reminder_frequency {string} and k
     kpi_reminder_before: 0 # Force trigger today
   )
   @entity.permissions.set(:enable_kpis)
+  @entity.permissions.set(:enable_investors)
   @entity.save!
+  @user.permissions.set(:enable_kpis)
+  @user.permissions.set(:enable_investors)
+  @user.save!
 
   # Stub calculate_target_date to return today
   allow_any_instance_of(GeneratePeriodicKpiReportsJob).to receive(:calculate_target_date).and_return(Time.zone.today)
@@ -63,8 +67,8 @@ When('I press {string}') do |button_text|
   click_on button_text
   if ["Send Notification", "Trigger Upload Notification"].include?(button_text)
     click_on "Proceed"
-    sleep(2)
   end
+  sleep(2)
 end
 
 Given('I am on the kpis page for the portfolio company {string}') do |portco_name|
@@ -75,4 +79,24 @@ end
 Given('I revoke investor access in the portfolio company {string}') do |portco_name|
   @portfolio_company = Investor.find_by(investor_name: portco_name)
   InvestorAccess.where(investor_id: @portfolio_company.id).delete_all
+end
+
+When('I click the dropdown item {string}') do |dropdown_name|
+  click_on dropdown_name
+end
+
+Then('I should see a modal with title {string}') do |title|
+  expect(page).to have_css(".modal", visible: true)
+  expect(page).to have_content(title)
+end
+
+When('I fill in {string} with {string}') do |label, value|
+  fill_in label, with: value
+end
+
+Then('a KpiReport {string} should exist for the portfolio company {string}') do |args, portco_name|
+  portfolio_company = Investor.find_by(investor_name: portco_name)
+  kpi_report = KpiReport.where(portfolio_company_id: portfolio_company.id).last
+  expect(kpi_report).not_to be_nil
+  key_values(kpi_report, args)
 end

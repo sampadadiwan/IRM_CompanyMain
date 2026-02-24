@@ -1,7 +1,17 @@
 Given('the KPI workbook file {string} for a kpi report') do |workbook_file| # Store the workbook file path for later use
   @workbook_file = "public/sample_uploads/#{workbook_file}"
   expect(File.exist?(@workbook_file)).to be(true), "Test file not found: #{@workbook_file}"
-  @kpi_report = KpiReport.create(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today)
+  @kpi_report = KpiReport.create(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: ['Actual'])
+
+  @document = @kpi_report.documents.build(entity_id: @entity.id, name: "KPI", user_id: @user.id, file: File.open(@workbook_file), owner: @kpi_report)
+
+  @document.save!
+end
+
+Given('the KPI workbook file {string} for a {string} kpi report') do |workbook_file, tag|
+  @workbook_file = "public/sample_uploads/#{workbook_file}"
+  expect(File.exist?(@workbook_file)).to be(true), "Test file not found: #{@workbook_file}"
+  @kpi_report = KpiReport.create(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: [tag])
 
   @document = @kpi_report.documents.build(entity_id: @entity.id, name: "KPI", user_id: @user.id, file: File.open(@workbook_file), owner: @kpi_report)
 
@@ -12,7 +22,8 @@ And('the target KPIs are {string}') do |target_kpis_string|
   # Split the comma-separated string into an array and store it
   target_kpis_string.split(',').map(&:strip).each do |kpi_name|
     # Create a new InvestorKpiMapping for each KPI name
-    @portfolio_company.investor_kpi_mappings.create!(entity_id: @portfolio_company.entity_id, reported_kpi_name: kpi_name, standard_kpi_name: kpi_name + " Standard")
+    mapping = @portfolio_company.investor_kpi_mappings.create!(entity_id: @portfolio_company.entity_id, reported_kpi_name: kpi_name, standard_kpi_name: kpi_name)
+    puts "Created mapping: #{mapping.reported_kpi_name} -> #{mapping.standard_kpi_name}"
   end
   @portfolio_company.reload
 end
@@ -21,7 +32,6 @@ When('the KpiWorkbookReader processes the file') do
   # Ensure previous steps have set the necessary variables
   expect(@workbook_file).not_to be_nil, "Workbook file path not set in Given step"
   expect(@portfolio_company.investor_kpi_mappings).not_to be_nil, "Target KPIs not set in And step"
-  @kpi_report = KpiReport.new(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: "Actual")
   puts "Step Definition Placeholder: Processing workbook file #{@workbook_file} with target KPIs: #{@target_kpis}"
   # Instantiate the reader and extract KPIs
   begin
@@ -99,4 +109,14 @@ end
 # Handle the case where the expected date is nil/empty
 Then('the resulting date should be') do
   expect(@parsed_date).to be_nil, "Expected nil date for input, but got #{@parsed_date.inspect}"
+end
+
+Then('no KPI should be imported for future dates') do
+  future_kpis = Kpi.joins(:kpi_report).where('kpi_reports.as_of > ?', Date.current)
+  expect(future_kpis.count).to eq(0), "Expected no future KPIs, but found #{future_kpis.count}"
+end
+
+Then('KPIs should be imported for future dates') do
+  future_kpis = Kpi.joins(:kpi_report).where('kpi_reports.as_of > ?', Date.current)
+  expect(future_kpis.count).to be > 0, "Expected future KPIs to be imported, but found none"
 end
