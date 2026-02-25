@@ -2205,12 +2205,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_18_113714) do
 
   create_table "investor_kpi_mappings", force: :cascade do |t|
     t.string "ancestry", collation: "NOCASE"
+    t.string "autofill"
     t.boolean "base_for_common_size", default: false, null: false
     t.string "category", limit: 40
     t.integer "child_count", default: 0
+    t.string "compute_formula"
     t.datetime "created_at", null: false
-    t.string "cumulate"
-    t.string "cumulate_formula"
     t.string "data_type", limit: 10, default: "numeric"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -2444,8 +2444,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_18_113714) do
   create_table "kpi_reports", force: :cascade do |t|
     t.text "analysis"
     t.date "as_of"
+    t.boolean "autofill_completed", default: false, null: false
     t.datetime "created_at", null: false
-    t.boolean "cumulation_completed", default: false, null: false
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
     t.boolean "enable_portco_upload", default: false, null: false

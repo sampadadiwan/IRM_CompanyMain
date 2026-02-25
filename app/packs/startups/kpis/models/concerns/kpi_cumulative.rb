@@ -13,7 +13,7 @@ module KpiCumulative
 
   included do
     # Stores errors encountered during the cumulation process.
-    attr_accessor :cumulation_errors
+    attr_accessor :autofill_errors
   end
 
   # Generates a key or label for grouping dates by their fiscal year.
@@ -46,11 +46,11 @@ module KpiCumulative
   # KPI's mapping and executes the appropriate logic to fill Quarterly and YTD reports.
   #
   # @param force [Boolean] If true, overwrites existing cumulative KPI values even if they haven't changed.
-  def cumulate(force: false)
-    @cumulation_errors = []
+  def autofill(force: false)
+    @autofill_errors = []
     # Fetch mapping to determine the mode
     mapping = investor_kpi_mapping
-    mode = mapping&.cumulate || 'blank'
+    mode = mapping&.autofill || 'blank'
 
     mode = 'blank' if mode.blank? # Ensure it's not nil
 
@@ -99,7 +99,7 @@ module KpiCumulative
     # and uses values of other KPIs in the same report.
 
     mapping = investor_kpi_mapping
-    return if mapping&.cumulate_formula.blank?
+    return if mapping&.compute_formula.blank?
 
     # We need to compute for all existing Quarterly and YTD reports for this PC
     kpi_reports = KpiReport.where(portfolio_company_id: portfolio_company_id)
@@ -109,7 +109,7 @@ module KpiCumulative
       existing_kpi = Kpi.approved.find_by(kpi_report: report, name: name, entity_id: entity_id)
 
       # If the KPI is missing or has no value, we compute it.
-      compute_value_for_report(report, mapping.cumulate_formula, force: force) if existing_kpi.nil? || existing_kpi.value.nil? || force
+      compute_value_for_report(report, mapping.compute_formula, force: force) if existing_kpi.nil? || existing_kpi.value.nil? || force
     end
   end
 
@@ -147,11 +147,11 @@ module KpiCumulative
       else
         error_msg = "Invalid formula after replacement for report #{report.id} (#{report.period} #{report.as_of}): #{clean_formula}"
         Rails.logger.error "--- [#{name}] #{error_msg}"
-        @cumulation_errors << { kpi: name, report: report.id, as_of: report.as_of, message: error_msg }
+        @autofill_errors << { kpi: name, report: report.id, as_of: report.as_of, message: error_msg }
       end
     rescue StandardError => e
       Rails.logger.error "--- [#{name}] Error evaluating formula '#{formula}': #{e.message}"
-      @cumulation_errors << { kpi: name, report: report.id, as_of: report.as_of, message: "Error evaluating formula '#{formula}': #{e.message}" }
+      @autofill_errors << { kpi: name, report: report.id, as_of: report.as_of, message: "Error evaluating formula '#{formula}': #{e.message}" }
     end
   end
 

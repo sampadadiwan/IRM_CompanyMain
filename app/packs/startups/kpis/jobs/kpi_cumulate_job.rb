@@ -21,13 +21,13 @@ class KpiCumulateJob < ApplicationJob
         # Run Cumulate and Forward Fill
         # This might create new KPIs for Quarter/YTD reports or update existing ones
         kpi_report.kpis.joins(:investor_kpi_mapping)
-                  .where(investor_kpi_mappings: { cumulate: %w[cumulate forward_fill] })
+                  .where(investor_kpi_mappings: { autofill: %w[cumulate forward_fill] })
                   .find_each do |kpi|
-                    kpi.cumulate(force: force)
-                    @error_msgs.concat(kpi.cumulation_errors) if kpi.respond_to?(:cumulation_errors) && kpi.cumulation_errors.present?
+                    kpi.autofill(force: force)
+                    @error_msgs.concat(kpi.autofill_errors) if kpi.respond_to?(:autofill_errors) && kpi.autofill_errors.present?
                   end
 
-        kpi_report.update_columns(cumulation_completed: true)
+        kpi_report.update_columns(autofill_completed: true)
       rescue StandardError => e
         error_info = "Failed to cumulate KPI data for KpiReport #{kpi_report.id}: #{e.message}"
         Rails.logger.error error_info
@@ -39,7 +39,7 @@ class KpiCumulateJob < ApplicationJob
       # It finds all mappings that require computation and triggers the calculation.
       # The computation logic in KpiCumulative#perform_computation iterates over all relevant Q/YTD reports for the PC.
       begin
-        InvestorKpiMapping.where(investor_id: portfolio_company_id, cumulate: 'compute').find_each do |mapping|
+        InvestorKpiMapping.where(investor_id: portfolio_company_id, autofill: 'compute').find_each do |mapping|
           # We need an instance to call the concern method.
           # Create a temporary KPI object to trigger the logic defined in the Concern.
           kpi = Kpi.new(
@@ -48,8 +48,8 @@ class KpiCumulateJob < ApplicationJob
             name: mapping.standard_kpi_name,
             investor_kpi_mapping: mapping
           )
-          kpi.cumulate(force: force)
-          @error_msgs.concat(kpi.cumulation_errors) if kpi.respond_to?(:cumulation_errors) && kpi.cumulation_errors.present?
+          kpi.autofill(force: force)
+          @error_msgs.concat(kpi.autofill_errors) if kpi.respond_to?(:autofill_errors) && kpi.autofill_errors.present?
         end
       rescue StandardError => e
         error_info = "Failed to compute KPI data for PortfolioCompany #{portfolio_company_id}: #{e.message}"
@@ -92,7 +92,7 @@ class KpiCumulateJob < ApplicationJob
 
     # Process KPI reports that have not yet been cumulated or have been updated since from_date
     kpi_reports_just_updated = kpi_reports.joins(:kpis).where(updated_at: from_date..Time.current)
-    kpi_reports_not_cumulated = kpi_reports.where(cumulation_completed: false)
+    kpi_reports_not_cumulated = kpi_reports.where(autofill_completed: false)
     # Combine both conditions
     kpi_reports = kpi_reports_just_updated.or(kpi_reports_not_cumulated)
     # Ensure associated KPIs and mappings are loaded

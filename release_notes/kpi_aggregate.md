@@ -10,9 +10,9 @@ To provide users with aggregated KPI data over different time periods without re
 
 **3. What Changed**
 
-- **Model:** Added a `cumulate` boolean attribute to the `InvestorKpiMapping` model to flag KPIs that should be aggregated.
+- **Model:** Added a `autofill` strting attribute to the `InvestorKpiMapping` model to flag KPIs that should be aggregated - using cumulate, forward fill or compute - using a compute_formula
 - **Background Job:** Created a new `KpiCumulateJob` to handle the asynchronous aggregation of KPI data.
-- **Core Logic:** Implemented the `cumulate` method in the `Kpi` model, which calculates and stores the quarterly and YTD sums.
+- **Core Logic:** Implemented the `autofill` method in the `Kpi` model, which calculates and stores the quarterly and YTD sums.
 - **Service Integration:** The `KpiWorkbookReader` service now enqueues the `KpiCumulateJob` after successfully importing KPI data.
 - **UI:** Updated the `InvestorKpiMapping` form and views to include the new `cumulate` option.
 - **Testing:** Added a new feature spec (`kpi_cumulate.feature`) to test the end-to-end cumulation functionality.
@@ -29,9 +29,9 @@ To provide users with aggregated KPI data over different time periods without re
 **6. Impact**
 
 - **Performance:** The introduction of a new background job may slightly increase system load during KPI imports.
-- **Database:** A new column (`cumulate`) has been added to the `investor_kpi_mappings` table.
+- **Database:** A new column (`autofill`) has been added to the `investor_kpi_mappings` table.
 
 **7. Review Focus**
 
-- Please review the `cumulate` method in the `Kpi` model for the correctness of the aggregation logic.
+- Please review the `autofill` method in the `Kpi` model for the correctness of the aggregation logic.
 - Please review the `KpiCumulateJob` to ensure it is triggered correctly and handles potential errors.

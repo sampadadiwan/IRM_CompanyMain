@@ -20,12 +20,12 @@ class InvestorKpiMapping < ApplicationRecord
   validates :reported_kpi_name, :standard_kpi_name, length: { maximum: 100 }
 
   enum :data_type, { money: 'money', numeric: 'numeric', percentage: 'percentage' }
-  enum :cumulate, { cumulate: 'cumulate', forward_fill: 'forward_fill', compute: 'compute' }, prefix: true
+  enum :autofill, { cumulate: 'cumulate', forward_fill: 'forward_fill', compute: 'compute' }, prefix: true
 
-  scope :cumulate, -> { where(cumulate: 'cumulate') }
-  scope :forward_fill, -> { where(cumulate: 'forward_fill') }
-  scope :compute, -> { where(cumulate: 'compute') }
-  scope :not_compute, -> { where(cumulate: [nil, 'cumulate', 'forward_fill']) }
+  scope :cumulate, -> { where(autofill: 'cumulate') }
+  scope :forward_fill, -> { where(autofill: 'forward_fill') }
+  scope :compute, -> { where(autofill: 'compute') }
+  scope :not_compute, -> { where(autofill: [nil, 'cumulate', 'forward_fill']) }
 
   before_create :setup_standard_kpi_name
   def setup_standard_kpi_name
@@ -36,9 +36,9 @@ class InvestorKpiMapping < ApplicationRecord
 
   validate :formula_kosher?
   def formula_kosher?
-    return false if cumulate_formula.blank?
+    return false if compute_formula.blank?
 
-    errors.add(:cumulate_formula, "You cannot do CRUD operations in a formula") if cumulate_formula.downcase.match?(SAFE_EVAL_REGEX)
+    errors.add(:compute_formula, "You cannot do CRUD operations in a formula") if compute_formula.downcase.match?(SAFE_EVAL_REGEX)
   end
 
   after_commit :update_parent_child_count

@@ -43,10 +43,10 @@ class KpiPolicy < KpiPolicyBase
   end
 
   def approve?
-    user.super? || user.company_admin? || user.has_cached_role?(:approver)
+    (user.company_admin? || user.has_cached_role?(:approver)) && record.unapproved?
   end
 
   def reject?
-    approve? && record.unapproved?
+    approve?
   end
 end

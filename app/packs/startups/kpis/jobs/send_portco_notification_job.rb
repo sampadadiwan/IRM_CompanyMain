@@ -6,7 +6,8 @@ class SendPortcoNotificationJob < ApplicationJob
   # @param portfolio_company_ids [Array<Integer>, Integer] One or more Portfolio Company (Investor) IDs.
   # @param user_id [Integer] The ID of the user triggering the notification.
   # @param as_of [String, NilClass] Optional ISO date string. If provided, targets a specific report date.
-  def perform(portfolio_company_ids, user_id:, as_of: nil)
+  # @param period [String, NilClass] Optional period string (e.g., 'Month', 'Quarter', 'Year').
+  def perform(portfolio_company_ids, user_id:, as_of: nil, period: nil)
     portfolio_company_ids = Array(portfolio_company_ids)
     user = User.find(user_id)
     @error_msgs = []
@@ -14,7 +15,7 @@ class SendPortcoNotificationJob < ApplicationJob
     # Process each PortCo individually. Rescuing at this level ensures one failure
     # doesn't prevent other PortCos from receiving notifications.
     portfolio_company_ids.each do |pc_id|
-      process_portfolio_company(pc_id, user, as_of)
+      process_portfolio_company(pc_id, user, as_of, period)
     rescue StandardError => e
       error_info = "Critical error processing PortfolioCompany ID #{pc_id}: #{e.message}"
       Rails.logger.error error_info
@@ -28,7 +29,7 @@ class SendPortcoNotificationJob < ApplicationJob
   private
 
   # Finds or creates a KPI report for the PortCo and triggers the notification service.
-  def process_portfolio_company(pc_id, user, as_of_param)
+  def process_portfolio_company(pc_id, user, as_of_param, period_param)
     portfolio_company = Investor.find(pc_id)
     Rails.logger.debug { "--- SendPortcoNotificationJob DEBUG [PC: #{pc_id}] ---" }
 
@@ -40,10 +41,10 @@ class SendPortcoNotificationJob < ApplicationJob
                      entity_id: user.entity_id,
                      portfolio_company_id: portfolio_company.id,
                      as_of: as_of,
+                     period: period_param || "Quarter",
                      tag_list: "Actual"
                    ) do |report|
                      report.user_id = user.id
-                     report.period = "Quarter"
                      report.enable_portco_upload = true
                    end
                  else

@@ -49,15 +49,15 @@
   </div>
 
 
-  <div class="form-group" data-controller="toggle-display" data-toggle-display-value-value="compute" data-toggle-display-selector-value="#cumulate_formula_group">
-    <%= form.label :cumulate %>
-    <%= form.select :cumulate, InvestorKpiMapping.cumulates.keys.map { |type| [type.humanize, type] }, { include_blank: "Blank" }, class: "form-control", data: { action: "change->toggle-display#toggle" } %>
+  <div class="form-group" data-controller="toggle-display" data-toggle-display-value-value="compute" data-toggle-display-selector-value="#compute_formula_group">
+    <%= form.label :autofill, "Auto Fill" %>
+    <%= form.select :autofill, InvestorKpiMapping.autofills.keys.map { |type| [type.humanize, type] }, { include_blank: "NA" }, class: "form-control", data: { action: "change->toggle-display#toggle" } %>
     <small class="form-text text-muted">Select the aggregation/fill method for this KPI over time periods.</small>
   </div>
 
-  <div class="form-group" id="cumulate_formula_group">
-    <%= form.label :cumulate_formula %>
-    <%= form.text_field :cumulate_formula, class: "form-control"  %>
+  <div class="form-group" id="compute_formula_group">
+    <%= form.label :compute_formula, "Compute Formula" %>
+    <%= form.text_field :compute_formula, class: "form-control"  %>
     <small class="form-text text-muted">Enter formula for 'Compute' mode. Use KPI names in brackets. Example: `Revenue - Cost`</small>
   </div>
 

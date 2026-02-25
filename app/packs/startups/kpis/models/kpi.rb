@@ -56,9 +56,9 @@ class Kpi < ApplicationRecord
   # Attach the parent report so date filters hit SQL, not Ruby.
   scope :with_report, -> { joins(:kpi_report) }
 
-  scope :cumulate, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { cumulate: :cumulate }) }
-  scope :forward_fill, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { cumulate: :forward_fill }) }
-  scope :compute, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { cumulate: :compute }) }
+  scope :cumulate, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { autofill: :cumulate }) }
+  scope :forward_fill, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { autofill: :forward_fill }) }
+  scope :compute, -> { joins(:investor_kpi_mapping).where(investor_kpi_mappings: { autofill: :compute }) }
 
   # --- Time helpers ----------------------------------------------------
   scope :for_date, lambda { |date|

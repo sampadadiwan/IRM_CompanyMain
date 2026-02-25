@@ -77,19 +77,19 @@
 
     <tr>
       <td>
-        Cumulate / Aggregation
+        Auto Fill
       </td>
       <td>
-        <%= @investor_kpi_mapping.cumulate&.humanize || 'Blank' %>
+        <%= @investor_kpi_mapping.autofill&.humanize || 'NA' %>
       </td>
     </tr>
 
     <tr>
       <td>
-        Cumulate Formula
+        Compute Formula
       </td>
       <td>
-        <%= @investor_kpi_mapping.cumulate_formula %>
+        <%= @investor_kpi_mapping.compute_formula %>
       </td>
     </tr>
 

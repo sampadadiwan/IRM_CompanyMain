@@ -11,6 +11,7 @@
             <div class="mb-3">
               <%= f.label :portfolio_company_ids, "Portfolio Companies", class: "form-label" %>
               <%= f.select :portfolio_company_ids,
+                           options_for_select([["All Companies", "all"]], @selected_ids.include?("all") ? "all" : nil) +
                            options_from_collection_for_select(@portfolio_companies, :id, :investor_name, @selected_ids),
                            {},
                            { class: "form-select select2", multiple: true, data: { controller: "select2" } } %>
@@ -18,6 +19,10 @@
             <div class="mb-3">
               <%= f.label :as_of, "Period Ending Date", class: "form-label" %>
               <%= f.date_field :as_of, class: "form-control", required: true, value: Date.today.end_of_month %>
+            </div>
+            <div class="mb-3">
+              <%= f.label :period, "Period", class: "form-label" %>
+              <%= f.select :period, KpiReport::PERIODS, { selected: "Month" }, class: "form-control", required: true %>
             </div>
           </div>
           <div class="modal-footer">

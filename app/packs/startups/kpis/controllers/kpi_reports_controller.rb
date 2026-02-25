@@ -125,9 +125,9 @@ class KpiReportsController < ApplicationController
 
   # rubocop:disable Rails/SkipsModelValidations
   def recompute_cumulative
-    # Force recomputation by resetting cumulation_completed if necessary
+    # Force recomputation by resetting autofill_completed if necessary
     # and ensuring the job picks up all reports for this portfolio company
-    KpiReport.where(portfolio_company_id: @kpi_report.portfolio_company_id).update_all(cumulation_completed: false)
+    KpiReport.where(portfolio_company_id: @kpi_report.portfolio_company_id).update_all(autofill_completed: false)
     KpiCumulateJob.perform_later(@kpi_report.portfolio_company_id, user_id: current_user.id, force: true)
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Recompute cumulative and forward fill started."
   end
@@ -137,6 +137,12 @@ class KpiReportsController < ApplicationController
     # Ensure we handle single or multiple portfolio_company_ids
     portfolio_company_ids = params[:portfolio_company_ids] || [params[:portfolio_company_id]]
     portfolio_company_ids = portfolio_company_ids.compact.compact_blank
+
+    if portfolio_company_ids.include?("all")
+      portfolio_company_ids = Investor.where(entity_id: current_user.entity_id)
+                                      .where(category: "Portfolio Company")
+                                      .pluck(:id)
+    end
 
     if portfolio_company_ids.empty?
       redirect_to request.referer || kpi_reports_path, alert: "No portfolio companies selected."
@@ -152,7 +158,8 @@ class KpiReportsController < ApplicationController
     SendPortcoNotificationJob.perform_later(
       portfolio_company_ids,
       user_id: current_user.id,
-      as_of: params[:as_of]
+      as_of: params[:as_of],
+      period: params[:period]
     )
 
     notice = portfolio_company_ids.size > 1 ? "Notifications are being sent." : "Notification is being sent."

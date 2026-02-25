@@ -61,11 +61,15 @@
       <%= form.hidden_field :upload_new_kpis, class: "form-check-input", value: true  %>
     <% end %>
 
+    <% unless is_readonly %>
     <div class="form-group">
       <%= form.label :update_existing_kpis, "Update existing KPIs"%>
       <%= form.check_box :update_existing_kpis, class: "form-check-input", value: false  %>
       <small class="form-text text-danger">Check this box to update existing KPIs with data from the file above. If unchecked only new values will be added.</small>
     </div>
+    <% else %>
+      <%= form.hidden_field :update_existing_kpis, class: "form-check-input", value: true  %>
+    <% end %>
 
     <%= custom_form_fields(@kpi_report, form) %>
 

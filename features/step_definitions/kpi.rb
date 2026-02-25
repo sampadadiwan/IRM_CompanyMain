@@ -286,7 +286,7 @@ Given('the following Monthly KPI Reports exist with KPIs:') do |table|
       standard_kpi_name: row['name']
     ).first_or_initialize
     mapping.reported_kpi_name = row['name']
-    mapping.cumulate = mode
+    mapping.autofill = mode
     mapping.save!
   end
 
@@ -305,7 +305,7 @@ end
 
 When('I run the KPI cumulate method for {string}') do |kpi_name|
   kpi = Kpi.joins(:investor_kpi_mapping).where(name: kpi_name).first
-  kpi.cumulate
+  kpi.autofill
 end
 
 When('I run the KpiCumulateJob for the portfolio company') do
@@ -319,8 +319,8 @@ Given('an Investor KPI Mapping for {string} with formula {string} and mode {stri
     standard_kpi_name: name
   ).first_or_initialize
   mapping.reported_kpi_name = name
-  mapping.cumulate = mode
-  mapping.cumulate_formula = formula
+  mapping.autofill = mode
+  mapping.compute_formula = formula
   mapping.save!
 end
 

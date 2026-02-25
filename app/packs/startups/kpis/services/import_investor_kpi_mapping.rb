@@ -3,7 +3,7 @@ class ImportInvestorKpiMapping < ImportUtil
   STANDARD_HEADERS = [
     "Stakeholder", "Reported Kpi Name", "Standard Kpi Name", "Category",
     "Data Type", "Parent Standard Kpi Name", "Position", "Show In Report",
-    "Lower Threshold", "Upper Threshold", "Cumulate", "Update Only"
+    "Lower Threshold", "Upper Threshold", "Auto Fill", "Compute Formula", "Update Only"
   ].freeze
 
   # Returns the standard headers for the import file.
@@ -97,6 +97,11 @@ class ImportInvestorKpiMapping < ImportUtil
   # @raise [RuntimeError] If the parent KPI mapping is not found.
   def set_investor_kpi_mapping_attributes(user_data, investor_kpi_mapping, import_upload, investor)
     data_type = user_data["Data Type"].present? ? user_data["Data Type"].downcase : "numeric"
+
+    autofill = user_data["Auto Fill"].present? ? user_data["Auto Fill"].to_s.downcase.strip.tr(" ", "_") : nil
+    autofill = nil if autofill == "na"
+    raise "Invalid autofill value '#{autofill}' for InvestorKpiMapping" if autofill.present? && InvestorKpiMapping.autofills.keys.exclude?(autofill)
+
     attributes = {
       category: user_data["Category"].presence,
       data_type: data_type,
@@ -104,7 +109,8 @@ class ImportInvestorKpiMapping < ImportUtil
       lower_threshold: user_data["Lower Threshold"].presence,
       upper_threshold: user_data["Upper Threshold"].presence,
       position: user_data["Position"].presence,
-      cumulate: user_data["Cumulate"].to_s.downcase == "yes",
+      autofill: autofill,
+      compute_formula: user_data["Compute Formula"].presence,
       import_upload_id: import_upload.id
     }
 

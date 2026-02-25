@@ -85,16 +85,25 @@ class KpisController < ApplicationController
 
     unapproved_kpis = Kpi.unapproved.where(portfolio_company_id: portfolio_company_id, entity_id: entity_id)
 
-    kpi_ids = []
-    unapproved_kpis.find_each do |kpi|
-      authorize kpi, :approve?
-      kpi_ids << kpi.id
+    if params[:reject] == 'true'
+      unapproved_kpis.find_each do |kpi|
+        authorize kpi, :reject?
+        kpi.destroy
+      end
+      notice = "All pending KPIs were successfully rejected."
+    else
+      kpi_ids = []
+      unapproved_kpis.find_each do |kpi|
+        authorize kpi, :approve?
+        kpi_ids << kpi.id
+      end
+
+      KpiApproveService.call(kpi_ids, current_user.id)
+      notice = "All pending KPIs were successfully approved."
     end
 
-    KpiApproveService.call(kpi_ids, current_user.id)
-
     respond_to do |format|
-      format.html { redirect_back_or_to(kpi_reports_path, notice: "All pending KPIs were successfully approved.") }
+      format.html { redirect_back_or_to(kpi_reports_path, notice: notice) }
       format.json { head :no_content }
     end
   end

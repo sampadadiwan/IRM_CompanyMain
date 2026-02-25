@@ -14,7 +14,7 @@
     <%= investor_kpi_mapping.category %>
   </td>
   <td>
-    <%= display_boolean investor_kpi_mapping.cumulate %>
+    <%= investor_kpi_mapping.autofill&.humanize %>
   </td>
   <td>
     <%= display_boolean investor_kpi_mapping.base_for_common_size %>
