@@ -2,7 +2,8 @@ require 'sidekiq'
 
 Sidekiq.configure_server do |config|
   # edits the default capsule
-  config.queues = %w[critical high default low chewy]
+  config.queues = %w[critical high default low chewy agents]
+
   config.concurrency = 5
 
   # define a new capsule which processes jobs from the `serial and doc_gen` queue one at a time
@@ -44,6 +45,8 @@ Sidekiq.configure_server do |config|
 
     # Sidekiq::Cron::Job.create(name: 'Weekly Compliance Checks', cron: '59 23 * * 0', class: 'Com')
   end
+
+  
 end
 
 Sidekiq.default_configuration[:max_retries] = 2

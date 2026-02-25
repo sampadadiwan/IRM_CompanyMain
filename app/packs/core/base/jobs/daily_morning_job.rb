@@ -42,6 +42,9 @@ class DailyMorningJob < ApplicationJob
         index += 1
       end
 
+      # Schedule Agent Runs for today
+      Rails.logger.debug "Schedule Agent Runs for today"
+      AgentDailySchedulerService.new.call
       # Schedule Cash Flow staleness reminders
       Rails.logger.debug "Check Cash Flow staleness reminders"
       CashFlowStalenessReminderService.new.call

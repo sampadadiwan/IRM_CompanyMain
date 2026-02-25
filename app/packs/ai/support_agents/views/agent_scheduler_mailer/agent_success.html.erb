@@ -1,0 +1,32 @@
+<p>Dear <%= @user&.full_name || "User" %>,</p>
+
+<p>
+  The scheduled agent <strong>"<%= @agent.name %>"</strong> has completed successfully.
+</p>
+
+<table style="margin: 20px 0; border-collapse: collapse;">
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Entity:</td>
+    <td style="padding: 8px 0;"><%= @entity.name %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Completed at:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.completed_at&.in_time_zone(@schedule&.timezone || 'UTC')&.strftime('%d-%b-%Y %H:%M %Z') %></td>
+  </tr>
+  <% if @execution_log.result_summary.present? %>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Summary:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.result_summary %></td>
+  </tr>
+  <% end %>
+  <% if @schedule %>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Schedule:</td>
+    <td style="padding: 8px 0;"><%= @schedule.frequency.humanize %> at <%= @schedule.run_at_time&.strftime('%H:%M') %></td>
+  </tr>
+  <% end %>
+</table>
+
+<p class="btn btn-outline-primary">
+  <%= link_to "View Details", support_agent_agent_schedule_url(@agent, subdomain: @entity.sub_domain) %>
+</p>

@@ -1,0 +1,314 @@
+<% schedule = agent_schedule || AgentSchedule.new(support_agent: support_agent, entity_id: support_agent.entity_id) %>
+<% running = schedule.persisted? && schedule.last_execution&.status_running? %>
+
+
+<div data-controller="agent-schedule" data-agent-schedule-running-value="<%= running %>">
+  
+  <%= form_with(
+        model: schedule,
+        url: support_agent_agent_schedule_path(support_agent),
+        method: schedule.persisted? ? :patch : :post,
+        local: true,
+        data: { agent_schedule_target: "form" }
+      ) do |form| %>
+
+    <% if schedule.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% schedule.errors.full_messages.each do |error| %>
+            <li><%= error %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%# Enable Schedule %>
+    <div class="form-group mb-3">
+      <div class="form-check">
+        <%= form.check_box :enabled, class: "form-check-input", id: "schedule_enabled", data: { action: "change->agent-schedule#toggleScheduleFields", agent_schedule_target: "enabledCheckbox" } %>
+        <%= form.label :enabled, "Enable scheduled runs for this agent", class: "form-check-label" %>
+      </div>
+    </div>
+
+    <hr class="my-4">
+
+    <div data-agent-schedule-target="scheduleFields">
+      <h6 class="text-muted mb-3 fw-semibold">Schedule Settings</h6>
+
+      <div class="row">
+        <%# Frequency %>
+        <div class="col-md-6 mb-3">
+          <div class="form-group">
+            <%= form.label :frequency, class: "form-label" %>
+            <%= form.select :frequency,
+                  options_for_select([
+                    ['Daily', 'daily'],
+                    ['Weekly', 'weekly'],
+                    ['Monthly', 'monthly'],
+                    ['Bimonthly (Every 2 months)', 'bimonthly'],
+                    ['Quarterly', 'quarterly'],
+                    ['Half-yearly', 'half_yearly']
+                  ], schedule.frequency || 'weekly'),
+                  {},
+                  class: "form-control form-select",
+                  data: { action: "change->agent-schedule#updateRunOnOptions", agent_schedule_target: "frequencySelect" } %>
+          </div>
+        </div>
+
+        <%# Run On Day %>
+        <div class="col-md-6 mb-3">
+          <div class="form-group">
+            <%= form.label :run_on_day, "Run On", class: "form-label" %>
+            
+            <%# Weekly days (0-6) %>
+            <div data-agent-schedule-target="weeklyDays" class="<%= 'd-none' unless schedule.frequency == 'weekly' || schedule.frequency.nil? %>">
+              <%= form.select :run_on_day,
+                    options_for_select([
+                      ['Sunday', 0],
+                      ['Monday', 1],
+                      ['Tuesday', 2],
+                      ['Wednesday', 3],
+                      ['Thursday', 4],
+                      ['Friday', 5],
+                      ['Saturday', 6]
+                    ], schedule.run_on_day || 1),
+                    {},
+                    class: "form-control form-select",
+                    id: "run_on_day_weekly",
+                    disabled: !(schedule.frequency == 'weekly' || schedule.frequency.nil?) %>
+            </div>
+            
+            <%# Monthly days (1-31) %>
+            <div data-agent-schedule-target="monthlyDays" class="<%= 'd-none' unless %w[monthly bimonthly quarterly half_yearly].include?(schedule.frequency) %>">
+              <%= form.select :run_on_day,
+                    options_for_select((1..31).map { |d| ["Day #{d}", d] }, schedule.run_on_day || 1),
+                    {},
+                    class: "form-control form-select",
+                    id: "run_on_day_monthly",
+                    disabled: !%w[monthly bimonthly quarterly half_yearly].include?(schedule.frequency) %>
+            </div>
+            
+            <%# Daily - no run_on_day needed %>
+            <div data-agent-schedule-target="dailyNote" class="<%= 'd-none' unless schedule.frequency == 'daily' %>">
+              <p class="text-muted mb-0 py-2"><em>Runs every day at the specified time</em></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row">
+        <%# Run At Time %>
+        <div class="col-md-6 mb-3">
+          <div class="form-group">
+            <%= form.label :run_at_time, "Run At", class: "form-label" %>
+            <%= form.time_field :run_at_time,
+                  value: schedule.run_at_time&.strftime('%H:%M') || '09:00',
+                  class: "form-control" %>
+          </div>
+        </div>
+
+        <%# Timezone %>
+        <div class="col-md-6 mb-3">
+          <div class="form-group">
+            <%= form.label :timezone, class: "form-label" %>
+            <%= form.select :timezone,
+                  options_for_select(
+                    AgentSchedule::CURATED_TIMEZONES.map { |tz, label| ["#{label} (#{tz})", tz] },
+                    schedule.timezone || 'Asia/Kolkata'
+                  ),
+                  {},
+                  class: "form-control form-select" %>
+          </div>
+        </div>
+      </div>
+
+
+      <hr class="my-4">
+      <!--
+
+      <h6 class="text-muted mb-3">Retry Settings</h6>
+
+
+      <div class="row">
+        <%# Retry Count %>
+        <div class="col-md-6 mb-3">
+          <div class="form-group">
+            <%= form.label :retry_count, "Retry on Failure", class: "form-label" %>
+            <div class="input-group">
+              <%= form.select :retry_count,
+                    options_for_select((0..5).map { |n| [n, n] }, schedule.retry_count || 0),
+                    {},
+                    class: "form-control form-select" %>
+              <span class="input-group-text">times</span>
+            </div>
+          </div>
+        </div>
+
+        <%# Retry Interval %>
+        <div class="col-md-6 mb-3">
+          <div class="form-group">
+            <%= form.label :retry_interval_minutes, "Retry Interval", class: "form-label" %>
+            <div class="input-group">
+              <%= form.select :retry_interval_minutes,
+                    options_for_select([
+                      ['0', 0], ['5', 5], ['10', 10], ['15', 15], ['30', 30], ['60', 60]
+                    ], schedule.retry_interval_minutes || 0),
+                    {},
+                    class: "form-control form-select" %>
+              <span class="input-group-text">minutes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    <hr class="my-4">
+-->
+    <h6 class="text-muted mb-3 fw-semibold">Notification Settings</h6>
+
+    <%# Notification Triggers %>
+    <div class="card mb-3">
+      <div class="card-body">
+        <label class="form-label fw-semibold">Notify When:</label>
+        
+                <div class="d-flex">
+          <div class="form-check me-3">
+            <%= form.check_box :notify_on_success, 
+                class: "form-check-input", 
+                id: "notify_on_success",
+                data: { action: "change->agent-schedule#toggleNotifyUsers", agent_schedule_target: "notifyTrigger" } %>
+            <%= form.label :notify_on_success, class: "form-check-label" do %>
+              <strong>On Success</strong>
+              <br><small class="text-muted">Agent completes all targets without errors</small>
+            <% end %>
+          </div>
+
+          <div class="form-check me-3">
+            <%= form.check_box :notify_on_failure, 
+                class: "form-check-input", 
+                id: "notify_on_failure",
+                checked: !schedule.persisted? || schedule.try(:notify_on_failure) != false,
+                data: { action: "change->agent-schedule#toggleNotifyUsers", agent_schedule_target: "notifyTrigger" } %>
+            <%= form.label :notify_on_failure, class: "form-check-label" do %>
+              <strong>On Failure</strong>
+              <br><small class="text-muted">Agent fails after all retry attempts exhausted</small>
+            <% end %>
+          </div>
+
+          <div class="form-check me-3">
+            <%= form.check_box :notify_on_partial_success, 
+                class: "form-check-input", 
+                id: "notify_on_partial_success",
+                checked: !schedule.persisted? || schedule.try(:notify_on_partial_success) != false,
+                data: { action: "change->agent-schedule#toggleNotifyUsers", agent_schedule_target: "notifyTrigger" } %>
+            <%= form.label :notify_on_partial_success, class: "form-check-label" do %>
+              <strong>On Partial Success</strong>
+              <br><small class="text-muted">Some targets succeed, some fail</small>
+            <% end %>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <%# Notification Recipients %>
+    <div class="mb-3" data-agent-schedule-target="notifyUsersContainer">
+      <div class="form-group">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <%= form.label :failure_notification_user_ids, "Notification Recipients", class: "form-label mb-0" %>
+          <div class="d-flex align-items-center gap-2">
+            <label class="form-label small text-muted mb-0">Filter:</label>
+            <select class="form-select form-select-sm" style="width: auto;"
+                    data-agent-schedule-target="tagFilter"
+                    data-action="change->agent-schedule#filterUsersByTag">
+              <option value="">All</option>
+              <option value="Finance">Finance</option>
+              <option value="Operations">Operations</option>
+              <option value="CFO">CFO</option>
+              <option value="CEO">CEO</option>
+            </select>
+          </div>
+        </div>
+        <% users = support_agent.entity&.employees || [] %>
+        <%= form.select :failure_notification_user_ids,
+              options_for_select(
+                users.map { |u| ["#{u.full_name} (#{u.email})", u.id, { 'data-tags': u.tags.join(',') }] },
+                schedule.failure_notification_user_ids || []
+              ),
+              {},
+              class: "form-control select2-multiple",
+              multiple: true,
+              data: { placeholder: "Select users to notify...", agent_schedule_target: "recipientSelect" } %>
+        <small class="text-muted">Select users who will receive email notifications</small>
+      </div>
+    </div>
+    </div>
+
+    <hr class="my-4">
+
+    <%# Status Section %>
+<% if schedule.persisted? %>
+  <h6 class="text-muted mb-3 fw-semibold">Status</h6>
+  <% last_exec = schedule.last_execution %>
+
+  <% if last_exec&.status_queued? %>
+    <div class="alert alert-info d-flex align-items-center" data-agent-schedule-target="runningStatus">
+      <span class="me-2">🕐</span>
+
+      <div>
+        <strong>Scheduled...</strong>
+        <% if last_exec.agent_schedule&.next_run_at %>
+          <br><small>Scheduled for: <%= last_exec.agent_schedule.next_run_at.in_time_zone(schedule.timezone).strftime('%d-%b-%Y %H:%M %Z') %></small>
+        <% end %>
+      </div>
+    </div>
+
+  <% elsif last_exec&.status_running? %>
+    <div class="alert alert-info d-flex align-items-center" data-agent-schedule-target="runningStatus">
+      <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+      <div>
+        <strong>Running...</strong>
+        <% if last_exec.started_at %>
+          <br><small>Started: <%= last_exec.started_at.in_time_zone(schedule.timezone).strftime('%d-%b-%Y %H:%M %Z') %></small>
+          <% if last_exec.triggered_by %>
+            <br><small>Triggered by: <%= last_exec.triggered_by.full_name %> (Manual)</small>
+          <% end %>
+        <% end %>
+      </div>
+    </div>
+      <% else %>
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <p class="mb-1">
+              <strong>Next scheduled run:</strong><br>
+              <% if schedule.enabled? && schedule.next_run_at %>
+                <%= schedule.next_run_at.in_time_zone(schedule.timezone).strftime('%a, %d-%b-%Y %H:%M %Z') %>
+              <% else %>
+                <span class="text-muted">Not scheduled</span>
+              <% end %>
+            </p>
+          </div>
+          <div class="col-md-6">
+            <p class="mb-1">
+              <strong>Last run:</strong><br>
+              <% if schedule.last_run_at %>
+                <%= schedule.last_run_at.in_time_zone(schedule.timezone).strftime('%a, %d-%b-%Y %H:%M %Z') %>
+                <% if (last_exec = schedule.last_execution) %>
+                  (<span class="<%= { 'completed' => 'text-success', 'partial_success' => 'text-warning' }.fetch(last_exec.status, 'text-danger') %>"><%= last_exec.status.humanize %></span>)
+
+                <% end %>
+              <% else %>
+                <span class="text-muted">Never run</span>
+              <% end %>
+            </p>
+          </div>
+        </div>
+      <% end %>
+
+      <hr class="my-4">
+    <% end %>
+
+    <%# Action Buttons %>
+    <div class="d-flex gap-2">
+      <%= form.submit "Save Schedule", class: "btn btn-primary", disabled: running, data: { agent_schedule_target: "saveButton" } %>
+    </div>
+  <% end %>
+</div>

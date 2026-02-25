@@ -56,4 +56,12 @@ class SupportAgentPolicy < ApplicationPolicy
   def step_details?
     show?
   end
+
+  def executions?
+    show?
+  end
+
+  def execution?
+    show?
+  end
 end

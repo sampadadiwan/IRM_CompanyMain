@@ -1,0 +1,34 @@
+<p>Dear <%= @user&.full_name || "User" %>,</p>
+
+<p>
+  The scheduled agent <strong>"<%= @agent.name %>"</strong> completed with <span style="color: #ffc107;">partial success</span>.
+</p>
+
+<p>
+  Some targets were processed successfully, but others encountered errors.
+</p>
+
+<table style="margin: 20px 0; border-collapse: collapse;">
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Entity:</td>
+    <td style="padding: 8px 0;"><%= @entity.name %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Completed at:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.completed_at&.in_time_zone(@schedule&.timezone || 'UTC')&.strftime('%d-%b-%Y %H:%M %Z') %></td>
+  </tr>
+  <% if @execution_log.result_summary.present? %>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Summary:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.result_summary %></td>
+  </tr>
+  <% end %>
+</table>
+
+<p style="color: #666; font-size: 14px;">
+  Our technical team has been notified about the errors.
+</p>
+
+<p class="btn btn-outline-primary">
+  <%= link_to "View Details", support_agent_agent_schedule_url(@agent, subdomain: @entity.sub_domain) %>
+</p>

@@ -1,0 +1,117 @@
+<% logs = execution_logs || [] %>
+
+<div data-controller="execution-history">
+  <h6 class="text-muted mb-3">Execution History</h6>
+
+  <% if logs.empty? %>
+    <div class="alert alert-secondary">
+      <p class="mb-0">No execution history yet. Schedule the agent or click "Run Now" to start.</p>
+    </div>
+  <% else %>
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover">
+        <thead class="table-light">
+          <tr>
+            <th>Date/Time</th>
+            <th>Trigger</th>
+            <th>Status</th>
+            <th>Duration</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.each do |log| %>
+            <tr class="<%= 'table-danger' if log.status_failed? %>" data-execution-id="<%= log.id %>">
+              <td>
+                <%= log.created_at.in_time_zone(agent_schedule&.timezone || support_agent.entity&.timezone || 'UTC').strftime('%d-%b-%Y %H:%M') %>
+                <% if log.attempt_number > 1 %>
+                  <br><small class="text-muted">(Attempt <%= log.attempt_number %>)</small>
+                <% end %>
+              </td>
+              <td>
+                <% if log.trigger_type_scheduled? %>
+                  <span class="badge bg-secondary">Scheduled</span>
+                <% else %>
+                  <span class="badge bg-info">Manual</span>
+                  <% if log.triggered_by %>
+                    <br><small class="text-muted"><%= log.triggered_by.full_name %></small>
+                  <% end %>
+                <% end %>
+              </td>
+              <td>
+                <% case log.status %>
+                <% when 'queued' %>
+                  <span class="badge bg-secondary">
+                    <i class="ti ti-clock me-1"></i>Queued
+                  </span>
+                <% when 'running' %>
+                  <span class="badge bg-primary">
+                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>Running
+                  </span>
+                <% when 'completed' %>
+                  <span class="badge bg-success">
+                    <i class="ti ti-check me-1"></i>Completed
+                  </span>
+                <% when 'failed' %>
+                  <span class="badge bg-danger">
+                    <i class="ti ti-x me-1"></i>Failed
+                  </span>
+                <% when 'partial_success' %>
+                  <span class="badge bg-warning text-dark">
+                    <i class="ti ti-alert-triangle me-1"></i>Partial
+                  </span>
+
+                <% end %>
+              </td>
+              <td>
+                <%= log.duration_formatted || '-' %>
+              </td>
+              <td>
+                <button type="button" 
+                        class="btn btn-sm btn-outline-secondary"
+                        data-action="click->execution-history#showDetails"
+                        data-execution-id="<%= log.id %>"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#execution-details-<%= log.id %>">
+                  <i class="ti ti-chevron-down"></i>
+                </button>
+              </td>
+            </tr>
+            <tr class="collapse" id="execution-details-<%= log.id %>">
+              <td colspan="5" class="bg-light">
+                <div class="p-2">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <p class="mb-1"><strong>Started:</strong> <%= log.started_at&.in_time_zone(agent_schedule&.timezone || 'UTC')&.strftime('%d-%b-%Y %H:%M:%S %Z') || 'Not started' %></p>
+                      <p class="mb-1"><strong>Completed:</strong> <%= log.completed_at&.in_time_zone(agent_schedule&.timezone || 'UTC')&.strftime('%d-%b-%Y %H:%M:%S %Z') || 'Not completed' %></p>
+                      <p class="mb-1"><strong>Attempt:</strong> <%= log.attempt_number %></p>
+                    </div>
+                    <div class="col-md-6">
+                      <% if log.status_failed? && log.error_message.present? %>
+                        <p class="mb-1"><strong>Error:</strong></p>
+                        <div class="alert alert-danger py-1 px-2 mb-1">
+                          <small><%= log.error_message %></small>
+                        </div>
+                      <% end %>
+                      <% if log.result_summary.present? %>
+                        <p class="mb-1"><strong>Result Summary:</strong></p>
+                        <pre class="bg-white p-2 border rounded mb-0" style="font-size: 0.8em; max-height: 150px; overflow-y: auto;"><%= JSON.pretty_generate(log.result_summary) rescue log.result_summary %></pre>
+                      <% end %>
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+    <%# Pagination - if using Kaminari or similar %>
+    <% if logs.respond_to?(:total_pages) && logs.total_pages > 1 %>
+      <div class="d-flex justify-content-center mt-3">
+        <%= paginate logs %>
+      </div>
+    <% end %>
+  <% end %>
+</div>

@@ -1,0 +1,48 @@
+<h2 style="color: #dc3545;">Agent Execution Failed</h2>
+
+<table style="margin: 20px 0; border-collapse: collapse; width: 100%;">
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666; width: 150px;">Agent:</td>
+    <td style="padding: 8px 0;"><strong><%= @agent.name %></strong></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Entity:</td>
+    <td style="padding: 8px 0;"><%= @entity.name %> (ID: <%= @entity.id %>)</td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Schedule ID:</td>
+    <td style="padding: 8px 0;"><%= @schedule&.id || 'N/A' %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Execution Log ID:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.id %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Trigger Type:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.trigger_type %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Attempt:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.attempt_number %> of <%= (@schedule&.retry_count || 0) + 1 %></td>
+  </tr>
+</table>
+
+<h3>Error Details</h3>
+<pre style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;"><%= @execution_log.error_message %></pre>
+
+<h3>Timeline</h3>
+<table style="margin: 20px 0; border-collapse: collapse;">
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Started at:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.started_at&.iso8601 %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px 16px 8px 0; color: #666;">Failed at:</td>
+    <td style="padding: 8px 0;"><%= @execution_log.completed_at&.iso8601 %></td>
+  </tr>
+</table>
+
+<% if @execution_log.result_summary.present? %>
+<h3>Result Summary</h3>
+<pre style="background: #f8f9fa; padding: 15px; border-radius: 4px; overflow-x: auto;"><%= @execution_log.result_summary %></pre>
+<% end %>
