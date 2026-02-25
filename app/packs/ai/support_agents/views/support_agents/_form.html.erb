@@ -24,14 +24,30 @@
 
     <%= custom_form_fields(@support_agent, form) %>
 
+    <% if support_agent.agent_type == "CashFlowAssistantAgent" %>
+      <%= render "support_agents/cash_flow_config", support_agent: support_agent, form: form %>
+    <% end %>
+    
+
+
     <div class="form-group">
       <%= form.label :enabled %>
       <%= form.check_box :enabled, class: "form-check-input" %>
     </div>
 
     <div class="form-group">
-      <%= form.label :with_steps, "Run with Step UI" %>
+      <%= form.label :with_steps, "Enable on Demand Run" %>
       <%= form.check_box :with_steps, class: "form-check-input" %>
+    </div>
+
+    <div class="form-group">
+      <%= label_tag "chat_enabled", "Enable Chat Assistant" %>
+      <%= check_box_tag "chat_config[enabled]", "true", support_agent.chat_enabled?, class: "form-check-input", id: "chat_enabled" %>
+    </div>
+
+    <div class="form-group">
+      <%= label_tag "chat_config_model", "Chat Model" %>
+      <%= text_field_tag "chat_config[model]", support_agent.chat_config["model"], class: "form-control", placeholder: "e.g. gemini-2.5-flash, gpt-4o-mini, claude-sonnet-4-5-20250929" %>
     </div>
 
     <div class="form-group">

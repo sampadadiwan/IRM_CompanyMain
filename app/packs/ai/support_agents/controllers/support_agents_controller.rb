@@ -20,7 +20,30 @@ class SupportAgentsController < ApplicationController
   # Displays a single support agent.
   #
   # @return [void]
-  def show; end
+  def show
+    # @support_agent is already set and authorized by set_support_agent before_action
+
+    # Load schedule for the Schedule tab
+    @agent_schedule = AgentSchedule.find_by(
+      support_agent: @support_agent,
+      entity_id: @support_agent.entity_id
+    )
+
+    # Load execution logs for the Execution History tab
+    @execution_logs = AgentExecutionLog
+                      .for_agent_entity(@support_agent.id, @support_agent.entity_id)
+                      .recent
+                      .limit(20)
+
+    @fund_reports = if @support_agent.agent_type == "CashFlowAssistantAgent"
+                      SupportAgentReport
+                        .where(support_agent: @support_agent, owner_type: "Fund")
+                        .includes(:owner)
+                        .order(updated_at: :desc)
+                    else
+                      SupportAgentReport.none
+                    end
+  end
 
   # Initializes a new support agent for creation.
   #
@@ -42,6 +65,7 @@ class SupportAgentsController < ApplicationController
   def create
     @support_agent = SupportAgent.new(support_agent_params)
     @support_agent.entity_id = current_user.entity_id
+    merge_chat_config
     authorize @support_agent
     if @support_agent.save
       redirect_to @support_agent, notice: "Support agent was successfully created."
@@ -54,7 +78,9 @@ class SupportAgentsController < ApplicationController
   #
   # @return [void]
   def update
-    if @support_agent.update(support_agent_params)
+    @support_agent.assign_attributes(support_agent_params)
+    merge_chat_config
+    if @support_agent.save
       redirect_to @support_agent, notice: "Support agent was successfully updated.", status: :see_other
     else
       render :edit, status: :unprocessable_entity
@@ -88,7 +114,6 @@ class SupportAgentsController < ApplicationController
   # for real-time UI feedback.
   #
   # @return [void]
-
   # rubocop:disable Metrics/MethodLength
   def run_with_steps
     @support_agent = SupportAgent.find(params[:id])
@@ -225,6 +250,22 @@ class SupportAgentsController < ApplicationController
 
   private
 
+  # Merges chat configuration params into the support agent's json_fields.
+  # Chat config fields (enabled, model, provider_type, system_prompt) are submitted
+  # as top-level params under `chat_config[...]` and need to be merged into
+  # json_fields["chat_config"] without overwriting other existing json_fields keys.
+  def merge_chat_config
+    return if params[:chat_config].blank?
+
+    chat_cfg = params[:chat_config].permit(:enabled, :model).to_h
+    chat_cfg["enabled"] = chat_cfg["enabled"] == "true"
+    chat_cfg.reject! { |k, v| k != "enabled" && v.blank? } # keep enabled even when false
+
+    existing = (@support_agent.json_fields || {}).deep_dup # deep_dup so Rails detects the change
+    existing["chat_config"] = (existing["chat_config"] || {}).merge(chat_cfg)
+    @support_agent.json_fields = existing
+  end
+
   # Finds a target record by type and ID.
   #
   # @param target_type [String] the class name of the target
@@ -251,6 +292,17 @@ class SupportAgentsController < ApplicationController
   #
   # @return [ActionController::Parameters] permitted parameters
   def support_agent_params
-    params.require(:support_agent).permit(:name, :description, :entity_id, :form_type_id, :agent_type, :json_fields, :document_folder_id, :with_steps, properties: {})
+    permitted = params.require(:support_agent).permit(:name, :description, :entity_id, :form_type_id, :agent_type, :json_fields, :document_folder_id, :with_steps, :enabled, properties: {})
+
+    if permitted[:json_fields].is_a?(String) && permitted[:json_fields].start_with?("{")
+      begin
+        config = JSON.parse(permitted[:json_fields])
+        config.merge!(permitted.delete(:properties).to_h) if permitted[:properties].present?
+        permitted[:json_fields] = config
+      rescue JSON::ParserError => e
+        Rails.logger.warn "[SupportAgentsController] Invalid json_fields JSON: #{e.message}"
+      end
+    end
+    permitted
   end
 end

@@ -1,37 +1,57 @@
 <%= render FormCard.new(title: "#{@support_agent}") do %>
-  <table class="table table-bordered dataTable">
-    <tr>
-      <td>
-        Name
-      </td>
-      <td>
-        <%= @support_agent.name %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Description
-      </td>
-      <td>
-        <%= @support_agent.description %>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        Agent Type
-      </td>
-      <td>
-        <%= @support_agent.agent_type %>
-      </td>
-    </tr>
+<% active_tab = params[:tab].presence || 'general' %>
+  
+  <div class="associated_entity" data-controller="tabs">
+    <%# Tab Navigation %>
+    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+      <a class="nav-link <%= 'active' if active_tab == 'general' %>"  data-bs-toggle="pill" href="#general-tab">
+        General
+      </a>
+      <a class="nav-link <%= 'active' if active_tab == 'schedule' %>" data-bs-toggle="pill" href="#schedule-tab">
+        Schedule
+      </a>
+      <a class="nav-link <%= 'active' if active_tab == 'execution_history' %>" data-bs-toggle="pill" href="#execution-history-tab">
+        Execution History
+      </a>
+      <% if @support_agent.agent_type == "CashFlowAssistantAgent" %>
+        <a class="nav-link <%= 'active' if active_tab == 'fund_reports' %>" data-bs-toggle="pill" href="#fund-reports-tab">
+          Fund Reports
+        </a>
+      <% end %>
 
-    <%= display_custom_fields(@support_agent) %>
 
-  </table>
-  <div class="associated_entity">
-    <% if policy(@support_agent).update? %>
-      <%= link_to "Edit", edit_support_agent_path(@support_agent), {class: "btn btn-outline-primary"} %>
-      <%= button_to "Delete", @support_agent, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
-    <% end %>
+    </nav>
+
+    <%# Tab Content %>
+    <div class="tab-content">
+      <%# General Tab %>
+      <div id="general-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'general' %>">
+        <%= render 'general_tab', support_agent: @support_agent %>
+      </div>
+
+      <%# Schedule Tab %>
+      <div id="schedule-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'schedule' %>">
+        <%= render 'schedule_tab', support_agent: @support_agent, agent_schedule: @agent_schedule %>
+      </div>
+
+      <%# Execution History Tab %>
+      <div id="execution-history-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'execution_history' %>">
+        <%= render 'execution_history_tab', support_agent: @support_agent, execution_logs: @execution_logs, agent_schedule: @agent_schedule %>
+      </div>
+
+      <% if @support_agent.agent_type == "CashFlowAssistantAgent" %>
+        <%# Fund Reports Tab %>
+        <div id="fund-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'fund_reports' %>">
+          <%= render 'fund_reports_tab', support_agent: @support_agent, fund_reports: @fund_reports %>
+        </div>
+      <% end %>
+
+
+    </div>
   </div>
+
 <% end %>
+
+
+<%= render "support_agents/chat_panel", support_agent: @support_agent, chattable: @support_agent %>
+

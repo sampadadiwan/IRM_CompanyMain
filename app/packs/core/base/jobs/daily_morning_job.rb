@@ -1,6 +1,6 @@
 class DailyMorningJob < ApplicationJob
-  # rubocop:disable Metrics/BlockLength
   def perform
+    # rubocop:disable Metrics/BlockLength
     Chewy.strategy(:atomic) do
       # DocumentEsignUpdateJob.perform_now
 
@@ -41,12 +41,16 @@ class DailyMorningJob < ApplicationJob
         GenerateReportInsightJob.set(wait: index * 10.seconds).perform_later(report.id, user_id: nil)
         index += 1
       end
+
+      # Schedule Cash Flow staleness reminders
+      Rails.logger.debug "Check Cash Flow staleness reminders"
+      CashFlowStalenessReminderService.new.call
     rescue StandardError => e
       message = "Error in DailyMorningJob: #{e.message}"
       Rails.logger.error message
       Rails.logger.error e.backtrace.join("\n")
       ExceptionNotifier.notify_exception(e, data: { message: })
     end
+    # rubocop:enable Metrics/BlockLength
   end
-  # rubocop:enable Metrics/BlockLength
 end

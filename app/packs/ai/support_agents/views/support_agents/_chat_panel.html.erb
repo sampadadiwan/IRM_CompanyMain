@@ -1,0 +1,85 @@
+<% if support_agent.chat_enabled? %>
+  <div data-controller="agent-chat"
+       data-agent-chat-support-agent-id-value="<%= support_agent.id %>"
+       data-agent-chat-chattable-type-value="<%= chattable.class.name %>"
+       data-agent-chat-chattable-id-value="<%= chattable.id %>"
+       data-agent-chat-session-id-value="0"
+       data-agent-chat-expanded-value="false"
+       style="z-index: 1050;">
+
+    <!-- Toggle Button (floating) -->
+    <button data-agent-chat-target="toggleBtn"
+            data-action="click->agent-chat#toggle"
+            class="btn btn-primary rounded-circle shadow-lg position-fixed"
+            style="bottom: 24px; right: 24px; width: 56px; height: 56px; z-index: 1051;"
+            title="Chat with AI">
+      <i class="bi bi-chat-dots-fill fs-5"></i>
+    </button>
+
+    <!-- Chat Panel (floating window) -->
+        <div data-agent-chat-target="panel"
+         class="d-none position-fixed bg-white shadow-lg d-flex flex-column rounded-3"
+         data-action="mousedown->agent-chat#startResize mousemove->agent-chat#updateCursor"
+         style="bottom: 90px; right: 24px; width: 420px; height: 70vh; max-height: 700px; z-index: 1052; border: 1px solid #dee2e6;">
+
+
+      <!-- Header -->
+      <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom bg-primary text-white rounded-top-3" data-action="mousedown->agent-chat#startDrag"
+        style="cursor: grab;">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-chat-dots-fill"></i>
+          <strong><%= support_agent.name %> Chat</strong>
+        </div>
+        <div class="d-flex gap-1">
+          <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-1"
+                  data-action="click->agent-chat#clearChat" title="Clear chat">
+            <i class="bi bi-trash"></i>
+            <span class="small">Clear</span>
+          </button>
+          <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-1"
+                  data-action="click->agent-chat#close" title="Close">
+            <i class="bi bi-x-lg"></i>
+            <span class="small">Close</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Messages -->
+      <div data-agent-chat-target="messages"
+           class="flex-grow-1 overflow-auto p-3"
+           style="background: #f8f9fa;">
+        <div data-agent-chat-target="welcome" class="text-center text-muted mt-5">
+          <i class="bi bi-chat-dots fs-1 mb-3 d-block"></i>
+          <p class="fw-semibold">Chat with <%= support_agent.name %></p>
+          <p class="small">Ask questions or get help from the AI assistant.</p>
+        </div>
+        <div data-agent-chat-target="spinner" class="d-none text-center my-3">
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Thinking...</span>
+          </div>
+          <span class="small text-muted ms-2">Thinking...</span>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="border-top p-3 bg-white">
+        <div class="input-group">
+          <textarea data-agent-chat-target="input"
+                    data-action="keydown->agent-chat#handleEnter"
+                    class="form-control"
+                    placeholder="Type a message..."
+                    rows="1"
+                    style="resize: none; max-height: 100px;"></textarea>
+          <button data-agent-chat-target="sendBtn"
+                  data-action="click->agent-chat#sendMessage"
+                  class="btn btn-primary">
+            <i class="bi bi-send-fill"></i>
+          </button>
+        </div>
+      </div>
+
+      
+    </div><!-- closes panel -->
+  </div><!-- closes controller -->
+<% end %>

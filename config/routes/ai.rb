@@ -1,6 +1,7 @@
 resources :faq_threads do
   post :create_message, on: :member
 end
+
 resources :support_agents do
   collection do
     post 'run'
@@ -11,6 +12,15 @@ resources :support_agents do
     get 'status'
     get 'step_details'
   end
+
+  # Agent Schedule routes
+  resource :agent_schedule, only: %i[show create update destroy] do
+    get :executions, on: :collection
+    get 'executions/:execution_id', action: :execution, as: :execution, on: :collection
+  end
+
+  # Generic chat routes
+  resources :chats, controller: 'support_agent_chats', only: %i[index create destroy]
 end
 
 resources :agent_charts do
@@ -29,8 +39,6 @@ resources :ai_rules
 resources :ai_portfolio_reports do
   collection do
     post :create_from_folder
-    get :evaluation_folder_documents
-    post :upload_evaluation_documents
   end
 
   member do

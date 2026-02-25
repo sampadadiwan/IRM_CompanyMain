@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioChatAgent PortfolioReportAgent CallNoticeAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioChatAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent].freeze
 
   belongs_to :entity
 
@@ -35,5 +35,18 @@ class SupportAgent < ApplicationRecord
 
   def agent
     agent_type.constantize
+  end
+
+  # --- Generic Chat Config ---
+  def chat_config
+    (json_fields || {}).fetch("chat_config", {})
+  end
+
+  def chat_enabled?
+    [true, "true"].include?(chat_config["enabled"])
+  end
+
+  def chat_model
+    chat_config["model"] || entity&.entity_setting&.default_llm_model || ENV.fetch('DEFAULT_MODEL', 'gpt-4o-mini')
   end
 end
