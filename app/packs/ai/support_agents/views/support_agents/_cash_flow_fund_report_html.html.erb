@@ -1,0 +1,128 @@
+<%
+  format_amount = ->(cents, curr) {
+    cents.present? ? Money.new(cents.to_i, curr).format : "--"
+  }
+  status_label = { "surplus" => "Surplus", "watch" => "Watch",
+                   "shortfall" => "SHORTFALL", "blocked" => "BLOCKED" }
+  status_color = { "surplus" => "green", "watch" => "#cc8800",
+                   "shortfall" => "red", "blocked" => "#888" }
+  fund_status = fund_result[:fund_status] || fund_result["fund_status"]
+  fund_name = fund_result[:name] || fund_result["name"]
+%>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Cash Flow Report - <%= fund_name %></title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+
+  <h2>Cash Flow Report — <%= fund_name %></h2>
+  <p style="color:#888;">Generated: <%= generated_at.strftime("%d-%b-%Y, %I:%M %p") %> |
+     Agent: <%= support_agent.name %></p>
+
+  <% if fund_status == "shortfall" %>
+    <div style="background:#fff3f3; border:1px solid #fcc; padding:12px; margin:16px 0; border-radius:4px;">
+      <strong style="color:red;">ACTION REQUIRED:</strong>
+      Capital call of <%= format_amount.call(fund_result[:recommended_call], currency) %> recommended
+    </div>
+  <% end %>
+
+  <h3>Summary</h3>
+  <table style="width:100%; border-collapse:collapse; margin:8px 0;">
+    <tr style="background:#f0f0f0;">
+      <td style="padding:8px; border:1px solid #ddd; font-weight:bold;">Status</td>
+      <td style="padding:8px; border:1px solid #ddd; color:<%= status_color[fund_status] %>; font-weight:bold;">
+        <%= status_label[fund_status] || fund_status&.titleize %>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Cash Available</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right;"><%= format_amount.call(fund_result[:cash_available], currency) %></td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Upcoming Investments</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right;"><%= format_amount.call(fund_result[:upcoming_investments], currency) %></td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Estimated Expenses (90 days)</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right;"><%= format_amount.call(fund_result[:estimated_expenses], currency) %></td>
+    </tr>
+    <tr>
+      <td colspan="2" style="padding:4px 8px; border:1px solid #ddd; color:#888; font-size:12px;">
+        <%
+          method_label = { "linear_regression" => "Linear Regression",
+                           "weighted_average" => "Weighted Average",
+                           "last_snapshot" => "Last Snapshot",
+                           "no_data" => "No Data" }
+        %>
+        Estimated via <%= method_label[fund_result[:expense_estimation_method]] || fund_result[:expense_estimation_method] %>
+        (<%= fund_result[:expense_data_points] || 0 %> months of data)
+      </td>
+    </tr>
+
+      <td style="padding:8px; border:1px solid #ddd;">Buffer Required</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right;"><%= format_amount.call(fund_result[:buffer_required], currency) %></td>
+    </tr>
+    <tr style="font-weight:bold; border-top:2px solid #333;">
+      <td style="padding:8px; border:1px solid #ddd;">Net Position</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right; color:<%= status_color[fund_status] %>;">
+        <%= format_amount.call(fund_result[:net_position], currency) %>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Runway</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right;">
+        <%= fund_result[:runway_days].to_i >= 999 ? "180+ days" : "#{fund_result[:runway_days]} days" %>
+      </td>
+    </tr>
+  </table>
+
+  <% cash_breakdown = fund_result[:cash_breakdown] || fund_result["cash_breakdown"] %>
+  <% if cash_breakdown.present? && cash_breakdown.any? %>
+    <h3 style="margin-top:24px;">Cash by Entity</h3>
+    <table style="width:100%; border-collapse:collapse;">
+      <tr style="background:#f0f0f0;">
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Entity</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:right;">Amount</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Freshness</th>
+      </tr>
+      <% cash_breakdown.each do |entry| %>
+        <% entry = entry.is_a?(Hash) ? entry.with_indifferent_access : entry %>
+        <tr>
+          <td style="padding:8px; border:1px solid #ddd;"><%= entry[:entity_name] %></td>
+          <td style="padding:8px; border:1px solid #ddd; text-align:right;"><%= format_amount.call(entry[:amount_cents], currency) %></td>
+          <td style="padding:8px; border:1px solid #ddd; color:#888;">
+            <% if entry[:last_updated].present? %>
+              <%= (Time.zone.today - entry[:last_updated].to_date).to_i %> days ago
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  <% end %>
+
+  <% investment_list = fund_result[:investment_list] || fund_result["investment_list"] %>
+  <% if investment_list.present? && investment_list.any? %>
+    <h3 style="margin-top:24px;">Investment Pipeline</h3>
+    <table style="width:100%; border-collapse:collapse;">
+      <tr style="background:#f0f0f0;">
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Company</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Entity</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:right;">Amount</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Expected Date</th>
+      </tr>
+      <% investment_list.each do |inv| %>
+        <% inv = inv.is_a?(Hash) ? inv.with_indifferent_access : inv %>
+        <tr>
+          <td style="padding:8px; border:1px solid #ddd;"><%= inv[:name] %></td>
+          <td style="padding:8px; border:1px solid #ddd;"><%= inv[:entity_name] %></td>
+          <td style="padding:8px; border:1px solid #ddd; text-align:right;"><%= format_amount.call(inv[:amount_cents], currency) %></td>
+          <td style="padding:8px; border:1px solid #ddd;"><%= inv[:expected_date] %></td>
+        </tr>
+      <% end %>
+    </table>
+  <% end %>
+
+</body>
+</html>

@@ -1,0 +1,82 @@
+<%
+  format_amount = ->(cents, curr) {
+    cents.present? ? Money.new(cents.to_i, curr).format : "--"
+  }
+  status_icon = { "surplus" => "Surplus", "watch" => "Watch",
+                  "shortfall" => "SHORTFALL", "blocked" => "BLOCKED" }
+  status_color = { "surplus" => "green", "watch" => "#cc8800",
+                   "shortfall" => "red", "blocked" => "#888" }
+%>
+
+<% if fund_reports.empty? %>
+  <div class="alert alert-secondary">
+    <i class="ti ti-info-circle"></i> No fund reports yet. Run the agent to generate reports.
+  </div>
+<% else %>
+
+  <%# Portfolio Summary Table %>
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Fund</th>
+          <th>Status</th>
+          <th class="text-end">Net Position</th>
+          <th class="text-end">Runway</th>
+          <th>Action</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% fund_reports.each do |report| %>
+          <% data = report.json_fields.with_indifferent_access %>
+          <% fs = data[:fund_status] || data[:status] %>
+          <% curr = data[:currency] || "INR" %>
+          <tr>
+            <td><%= data[:name] %></td>
+            <td style="color:<%= status_color[fs] %>; font-weight:bold;">
+              <%= status_icon[fs] || fs&.titleize %>
+            </td>
+            <% if fs == "blocked" %>
+              <td class="text-end">--</td>
+              <td class="text-end">--</td>
+              <td>Update stale data</td>
+            <% else %>
+              <td class="text-end"><%= format_amount.call(data[:net_position], curr) %></td>
+              <td class="text-end">
+                <%= data[:runway_days].to_i >= 999 ? "180+ days" : "#{data[:runway_days]} days" %>
+              </td>
+              <td>
+                <% if fs == "shortfall" %>
+                  Call <%= format_amount.call(data[:recommended_call], curr) %>
+                <% elsif fs == "watch" %>
+                  Monitor
+                <% else %>
+                  None
+                <% end %>
+              </td>
+            <% end %>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#fund-detail-<%= report.id %>">
+                <i class="ti ti-chevron-down"></i> Details
+              </button>
+            </td>
+          </tr>
+          <%# Expandable detail row %>
+          <tr class="collapse" id="fund-detail-<%= report.id %>">
+            <td colspan="6" class="bg-light p-0">
+              <%= render 'fund_report_detail', report: report, data: data, currency: curr %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small">
+    <i class="ti ti-calendar"></i>
+    Last updated: <%= fund_reports.first&.updated_at&.strftime("%b %d, %Y at %I:%M %p") %>
+  </p>
+<% end %>

@@ -1,0 +1,50 @@
+<h3>Cash Flow Report - Data Status</h3>
+<p>
+  The cash flow report for <strong><%= @support_agent.entity.name %></strong>
+  is scheduled to run on <strong><%= @next_run_at.strftime("%d-%b-%Y") %></strong>
+  (<%= @days_until_run %> day<%= @days_until_run == 1 ? '' : 's' %> from now).
+</p>
+
+<table style="width:100%; border-collapse:collapse; margin:20px 0;">
+  <tr style="background:#f0f0f0;">
+    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Fund</th>
+    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Status</th>
+    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Details</th>
+  </tr>
+  <% @fund_statuses.each do |fund| %>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;"><%= fund[:name] %></td>
+      <td style="padding:8px; border:1px solid #ddd;">
+        <% if fund[:status] == "ready" %>
+          <span style="color:green;">Fresh</span>
+        <% else %>
+          <span style="color:red; font-weight:bold;">STALE</span>
+        <% end %>
+      </td>
+      <td style="padding:8px; border:1px solid #ddd;">
+        <% if fund[:status] == "ready" %>
+          No action needed
+          <% if fund[:last_cash_update] %>
+            (last updated <%= (Time.zone.today - fund[:last_cash_update]).to_i %> days ago)
+          <% end %>
+        <% else %>
+          <ul style="margin:0; padding-left:16px;">
+            <% fund[:block_reasons]&.each do |reason| %>
+              <li><%= reason %></li>
+            <% end %>
+          </ul>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+</table>
+
+<% if @fund_statuses.any? { |f| f[:status] == "blocked" } %>
+  <p style="color:#c00; font-weight:bold;">
+    Please update the stale data before the report date.
+  </p>
+<% else %>
+  <p style="color:green;">
+    All fund data is current. Report will generate on schedule.
+  </p>
+<% end %>

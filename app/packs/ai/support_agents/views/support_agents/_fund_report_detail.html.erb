@@ -1,0 +1,109 @@
+<%
+  format_amount = ->(cents, curr) {
+    cents.present? ? Money.new(cents.to_i, curr).format : "--"
+  }
+  status_css = { "surplus" => "text-success", "watch" => "text-warning",
+                 "shortfall" => "text-danger", "blocked" => "text-muted" }
+  fs = data[:fund_status] || data["fund_status"]
+%>
+
+<div class="p-3">
+  <div class="row">
+    <%# Left column: Summary %>
+    <div class="col-md-6">
+      <h6 class="fw-bold"><%= data[:name] %> — Detail</h6>
+      <table class="table table-sm mb-3">
+        <tr>
+          <td>Cash Available</td>
+          <td class="text-end"><%= format_amount.call(data[:cash_available], currency) %></td>
+        </tr>
+        <tr>
+          <td>Upcoming Investments</td>
+          <td class="text-end"><%= format_amount.call(data[:upcoming_investments], currency) %></td>
+        </tr>
+        <tr>
+          <td>Estimated Expenses</td>
+          <td class="text-end"><%= format_amount.call(data[:estimated_expenses], currency) %></td>
+        </tr>
+                <tr>
+          <td colspan="2" class="text-muted small" style="border-top:0; padding-top:0;">
+            <% method_label = { "linear_regression" => "Linear Regression",
+                                "weighted_average" => "Weighted Average",
+                                "last_snapshot" => "Last Snapshot",
+                                "no_data" => "No Data" } %>
+            <i class="ti ti-chart-line"></i>
+            via <%= method_label[data[:expense_estimation_method]] || data[:expense_estimation_method] %>
+            (<%= data[:expense_data_points] || 0 %> months of data)
+          </td>
+        </tr>
+        <tr>
+          <td>Buffer Required</td>
+          <td class="text-end"><%= format_amount.call(data[:buffer_required], currency) %></td>
+        </tr>
+        <tr class="fw-bold border-top">
+          <td>Net Position</td>
+          <td class="text-end <%= status_css[fs] %>">
+            <%= format_amount.call(data[:net_position], currency) %>
+          </td>
+        </tr>
+        <tr>
+          <td>Runway</td>
+          <td class="text-end">
+            <%= data[:runway_days].to_i >= 999 ? "180+ days" : "#{data[:runway_days]} days" %>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <%# Right column: Breakdowns %>
+    <div class="col-md-6">
+      <% cash_breakdown = data[:cash_breakdown] || data["cash_breakdown"] %>
+      <% if cash_breakdown.present? && cash_breakdown.any? %>
+        <h6 class="fw-bold">Cash by Entity</h6>
+        <table class="table table-sm">
+          <% cash_breakdown.each do |entry| %>
+            <% entry = entry.is_a?(Hash) ? entry.with_indifferent_access : entry %>
+            <tr>
+              <td><%= entry[:entity_name] %></td>
+              <td class="text-end"><%= format_amount.call(entry[:amount_cents], currency) %></td>
+              <td class="text-muted small">
+                <% if entry[:last_updated].present? %>
+                  <%= (Time.zone.today - entry[:last_updated].to_date).to_i %> days ago
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </table>
+      <% end %>
+
+      <% investment_list = data[:investment_list] || data["investment_list"] %>
+      <% if investment_list.present? && investment_list.any? %>
+        <h6 class="fw-bold mt-3">Investment Pipeline</h6>
+        <table class="table table-sm">
+          <% investment_list.each do |inv| %>
+            <% inv = inv.is_a?(Hash) ? inv.with_indifferent_access : inv %>
+            <tr>
+              <td><%= inv[:name] %></td>
+              <td class="text-end"><%= format_amount.call(inv[:amount_cents], currency) %></td>
+              <td class="text-muted small"><%= inv[:expected_date] %></td>
+            </tr>
+          <% end %>
+        </table>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Download link for stored document %>
+  <% fund = Fund.find_by(id: data[:fund_id]) %>
+  <% if fund&.document_folder %>
+    <% reports_folder = fund.document_folder.children.find_by(name: "Reports", private: true) %>
+    <% doc = reports_folder&.documents&.find_by(name: "Cash Flow Analysis") %>
+    <% if doc %>
+      <div class="mt-2 border-top pt-2">
+        <a href="<%= doc.file&.url %>" target="_blank" class="btn btn-sm btn-outline-primary">
+          <i class="ti ti-download me-1"></i> Download Report
+        </a>
+      </div>
+    <% end %>
+  <% end %>
+</div>

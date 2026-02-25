@@ -1,0 +1,97 @@
+<%
+  config = support_agent.json_fields || {}
+  available_funds = Fund.where(entity_id: current_user.entity_id)
+
+  funds_config = if config["funds"].present?
+                   config["funds"]
+                 else
+                   available_funds.map do |fund|
+                     { "fund_id" => fund.id.to_s, "name" => fund.name,
+                       "staleness_thresholds" => { "cash_accounts_max_days" => 30, "proforma_max_days" => 90 } }
+                   end
+                 end
+%>
+
+<div data-controller="cash-flow-config">
+
+  <%= form.hidden_field :json_fields, value: { "funds" => funds_config }.to_json,
+      data: { "cash-flow-config-target": "jsonField" } %>
+
+  <hr class="my-4">
+  <h5>Cash Flow Assistant Configuration</h5>
+
+  <%# ── FUNDS & STALENESS THRESHOLDS ── %>
+  <div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <strong>Funds & Staleness Thresholds</strong>
+      <button type="button" class="btn btn-sm btn-outline-primary"
+              data-action="cash-flow-config#addFund">
+        + Add Fund
+      </button>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-bordered mb-0">
+        <thead>
+          <tr>
+            <th>Fund</th>
+            <th style="width:140px;">Cash Max Days</th>
+            <th style="width:140px;">Proforma Max Days</th>
+            <th style="width:60px;"></th>
+          </tr>
+        </thead>
+        <tbody data-cash-flow-config-target="fundsBody">
+          <% funds_config.each_with_index do |fc, idx| %>
+            <tr data-index="<%= idx %>">
+              <td>
+                <select class="form-control form-control-sm" data-field="fund_id"
+                        data-action="change->cash-flow-config#updateConfig">
+                  <option value="">-- Select Fund --</option>
+                  <% available_funds.each do |fund| %>
+                    <option value="<%= fund.id %>" <%= "selected" if fund.id.to_s == fc["fund_id"].to_s %>><%= fund.name %></option>
+                  <% end %>
+                </select>
+              </td>
+              <td>
+                <input type="number" class="form-control form-control-sm" value="<%= fc.dig("staleness_thresholds", "cash_accounts_max_days") || 30 %>"
+                       data-field="cash_accounts_max_days" data-action="change->cash-flow-config#updateConfig">
+              </td>
+              <td>
+                <input type="number" class="form-control form-control-sm" value="<%= fc.dig("staleness_thresholds", "proforma_max_days") || 90 %>"
+                       data-field="proforma_max_days" data-action="change->cash-flow-config#updateConfig">
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn btn-sm btn-outline-danger"
+                        data-action="cash-flow-config#removeFund">
+                  <i class="ti ti-x"></i>
+                </button>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <%# ── AVAILABLE FUNDS DATA (for JS) ── %>
+  <template data-cash-flow-config-target="fundTemplate">
+    <tr>
+      <td>
+        <select class="form-control form-control-sm" data-field="fund_id"
+                data-action="change->cash-flow-config#updateConfig">
+          <option value="">-- Select Fund --</option>
+          <% available_funds.each do |fund| %>
+            <option value="<%= fund.id %>"><%= fund.name %></option>
+          <% end %>
+        </select>
+      </td>
+      <td><input type="number" class="form-control form-control-sm" value="30"
+                 data-field="cash_accounts_max_days" data-action="change->cash-flow-config#updateConfig"></td>
+      <td><input type="number" class="form-control form-control-sm" value="90"
+                 data-field="proforma_max_days" data-action="change->cash-flow-config#updateConfig"></td>
+      <td class="text-center">
+        <button type="button" class="btn btn-sm btn-outline-danger"
+                data-action="cash-flow-config#removeFund"><i class="ti ti-x"></i></button>
+      </td>
+    </tr>
+  </template>
+</div>

@@ -1,0 +1,124 @@
+<%
+  format_amount = ->(cents, currency) {
+    cents.present? ? Money.new(cents.to_i, currency).format : "--"
+  }
+
+  status_icon = { "surplus" => "Surplus", "watch" => "Watch", "shortfall" => "SHORTFALL", "blocked" => "BLOCKED" }
+  status_color = { "surplus" => "green", "watch" => "#cc8800", "shortfall" => "red", "blocked" => "#888" }
+%>
+
+
+<h3>Cash Flow Update - <%= Time.zone.today.strftime("%B %Y") %></h3>
+<p>Report for <strong><%= @support_agent.entity.name %></strong></p>
+
+<% shortfall_funds = @fund_results.select { |f| f[:fund_status] == "shortfall" } %>
+<% if shortfall_funds.any? %>
+  <div style="background:#fff3f3; border:1px solid #fcc; padding:12px; margin:16px 0; border-radius:4px;">
+    <strong style="color:red;">ACTION REQUIRED:</strong>
+    <ul style="margin:8px 0 0 0; padding-left:16px;">
+      <% shortfall_funds.each do |f| %>
+        <li>
+          <%= f[:name] %>: Capital call of
+          <%= format_amount.call(f[:recommended_call], @currency) %> recommended
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>
+
+<h4>Portfolio Summary</h4>
+<table style="width:100%; border-collapse:collapse; margin:12px 0;">
+  <tr style="background:#f0f0f0;">
+    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Fund</th>
+    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Status</th>
+    <th style="padding:8px; border:1px solid #ddd; text-align:right;">Net Position</th>
+    <th style="padding:8px; border:1px solid #ddd; text-align:right;">Runway</th>
+    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Action</th>
+  </tr>
+  <% @fund_results.each do |fund| %>
+    <% fund_status = fund[:fund_status] || fund[:status] %>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;"><%= fund[:name] %></td>
+      <td style="padding:8px; border:1px solid #ddd; color:<%= status_color[fund_status] %>; font-weight:bold;">
+        <%= status_icon[fund_status] || fund_status&.titleize %>
+      </td>
+      <% if fund_status == "blocked" %>
+        <td style="padding:8px; border:1px solid #ddd; text-align:right;">--</td>
+        <td style="padding:8px; border:1px solid #ddd; text-align:right;">--</td>
+        <td style="padding:8px; border:1px solid #ddd;">Update stale data</td>
+      <% else %>
+        <td style="padding:8px; border:1px solid #ddd; text-align:right;">
+          <%= format_amount.call(fund[:net_position], @currency) %>
+        </td>
+        <td style="padding:8px; border:1px solid #ddd; text-align:right;">
+          <%= fund[:runway_days] >= 999 ? "180+ days" : "#{fund[:runway_days]} days" %>
+        </td>
+        <td style="padding:8px; border:1px solid #ddd;">
+          <% if fund_status == "shortfall" %>
+            Call <%= format_amount.call(fund[:recommended_call], @currency) %>
+          <% elsif fund_status == "watch" %>
+            Monitor
+          <% else %>
+            None
+          <% end %>
+        </td>
+      <% end %>
+    </tr>
+  <% end %>
+</table>
+
+<% ready_funds = @fund_results.select { |f| f[:fund_status] && f[:fund_status] != "blocked" } %>
+<% ready_funds.each do |fund| %>
+  <hr style="margin:24px 0;">
+  <h4><%= fund[:name] %> — Detail</h4>
+
+  <table style="width:100%; margin:8px 0;">
+    <tr>
+      <td style="padding:4px 8px;">Cash Available</td>
+      <td style="padding:4px 8px; text-align:right;"><%= format_amount.call(fund[:cash_available], @currency) %></td>
+    </tr>
+    <tr>
+      <td style="padding:4px 8px;">Upcoming Investments</td>
+      <td style="padding:4px 8px; text-align:right;"><%= format_amount.call(fund[:upcoming_investments], @currency) %></td>
+    </tr>
+    <tr>
+      <td style="padding:4px 8px;">Estimated Expenses</td>
+      <td style="padding:4px 8px; text-align:right;"><%= format_amount.call(fund[:estimated_expenses], @currency) %></td>
+    </tr>
+    <tr>
+      <td style="padding:4px 8px;">Buffer Required</td>
+      <td style="padding:4px 8px; text-align:right;"><%= format_amount.call(fund[:buffer_required], @currency) %></td>
+    </tr>
+    <tr style="font-weight:bold; border-top:2px solid #333;">
+      <td style="padding:4px 8px;">Net Position</td>
+      <td style="padding:4px 8px; text-align:right; color:<%= status_color[fund[:fund_status]] %>;">
+        <%= format_amount.call(fund[:net_position], @currency) %>
+      </td>
+    </tr>
+  </table>
+
+  <% if fund[:cash_breakdown]&.any? %>
+    <p style="margin-top:12px;"><strong>Cash by Entity:</strong></p>
+    <table style="width:100%; border-collapse:collapse;">
+      <% fund[:cash_breakdown].each do |entry| %>
+        <tr>
+          <td style="padding:4px 8px; border-bottom:1px solid #eee;"><%= entry[:entity_name] %></td>
+          <td style="padding:4px 8px; border-bottom:1px solid #eee; text-align:right;">
+            <%= format_amount.call(entry[:amount_cents], @currency) %>
+          </td>
+          <td style="padding:4px 8px; border-bottom:1px solid #eee; color:#888;">
+            <% if entry[:last_updated] %>
+              <%= (Time.zone.today - entry[:last_updated]).to_i %> days ago
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  <% end %>
+<% end %>
+
+<hr style="margin:24px 0;">
+<p style="color:#888; font-size:12px;">
+  Report generated: <%= Time.zone.now.strftime("%d-%b-%Y, %I:%M %p") %> |
+  Data freshness: <%= @fund_results.count { |f| f[:fund_status] != "blocked" } %> of <%= @fund_results.size %> funds current
+</p>

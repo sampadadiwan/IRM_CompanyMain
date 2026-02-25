@@ -152,7 +152,6 @@ class SupportAgentsController < ApplicationController
       end
     end
   end
-
   # rubocop:enable Metrics/MethodLength
 
   # Cancels a running agent execution.
