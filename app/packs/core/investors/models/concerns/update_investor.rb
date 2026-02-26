@@ -83,7 +83,7 @@ module UpdateInvestor
       # Check if investor entity has only one investor, and we changed its name
       if sole_investor?
         # If so also update the entity name
-        investor_entity.update(name: investor_name)
+        # investor_entity.update(name: investor_name)
       end
     end
 
