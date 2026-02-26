@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Orchestrates a multi-turn chat conversation for a SupportAgent using LangChain.
+# Orchestrates a multi-turn chat conversation for a SupportAgent using RubyLLM.
 # Resolves the appropriate chat provider, builds context, and persists messages.
 #
 # @see BaseChatProvider
@@ -10,14 +10,14 @@ class GenericChatAgent < SupportAgentService
   STEP_LABELS = {
     initialize_chat: "Initialize",
     resolve_provider: "Load Provider",
-    setup_langchain_assistant: "Setup LLM",
+    setup_ruby_llm_chat: "Setup LLM",
     execute_chat: "Execute Chat",
     persist_conversation: "Save Messages"
   }.freeze
 
   step :initialize_chat
   step :resolve_provider
-  step :setup_langchain_assistant
+  step :setup_ruby_llm_chat
   step :execute_chat
   step :persist_conversation
 
@@ -47,39 +47,35 @@ class GenericChatAgent < SupportAgentService
     ctx[:context] = ctx[:provider].build_context
   end
 
-  def setup_langchain_assistant(ctx, **)
-    llm = LlmService.langchain_llm(
-      entity: @support_agent.entity,
-      model: @support_agent.chat_model
-    )
+  def setup_ruby_llm_chat(ctx, **)
     provider = ctx[:provider]
 
     instructions = provider.system_prompt
     instructions += "\n\nCONTEXT:\n#{ctx[:context]}" if ctx[:context].present?
 
-    assistant = Langchain::Assistant.new(
-      llm: llm,
-      instructions: instructions,
-      tools: provider.tools
+    chat = LlmService.ruby_llm_chat(
+      entity: @support_agent.entity,
+      model: @support_agent.chat_model
     )
+    chat.with_instructions(instructions)
+    chat.with_tools(*provider.tools) if provider.tools.any?
 
-    load_conversation_history(ctx[:chat_session], assistant)
-    ctx[:assistant] = assistant
+    load_conversation_history(ctx[:chat_session], chat)
+    ctx[:chat] = chat
   end
 
   def execute_chat(ctx, **)
-    assistant = ctx[:assistant]
+    chat = ctx[:chat]
 
-    # Prepend context to user message if this is a fresh conversation (no history)
-    user_msg = if ctx[:context].present? && ctx[:chat_session].agent_chat_messages.empty?
-                 "Here is the data you should use to answer my questions:\n\n#{ctx[:context]}\n\nMy question: #{ctx[:user_message]}"
-               else
-                 ctx[:user_message]
-               end
-
-    assistant.add_message(content: user_msg)
-    assistant.run(auto_tool_execution: true)
-    ctx[:ai_response] = assistant.messages.last.content
+    # Context is already embedded in the system instructions via setup_ruby_llm_chat.
+    # Do NOT duplicate it in the user message — Gemini interprets "use this data to answer"
+    # as a signal to compute from context, which prevents it from calling tools like
+    # the stress scenario tool for "what if" questions.
+    response = chat.ask(ctx[:user_message])
+    ctx[:ai_response] = response.content.to_s.presence || "(no response)"
+  rescue StandardError => e
+    Rails.logger.error "[GenericChatAgent] chat.ask failed: #{e.class} — #{e.message}"
+    ctx[:ai_response] = "I'm sorry, I encountered an error processing your request. Please try again."
   end
 
   def persist_conversation(ctx, **)
@@ -92,14 +88,9 @@ class GenericChatAgent < SupportAgentService
     session.agent_chat_messages.create!(role: "assistant", content: ctx[:ai_response])
   end
 
-  def load_conversation_history(chat_session, assistant)
+  def load_conversation_history(chat_session, chat)
     chat_session.agent_chat_messages.order(:created_at).each do |msg|
-      role = if msg.role == "assistant"
-               assistant.llm.is_a?(Langchain::LLM::GoogleGemini) ? "model" : "assistant"
-             else
-               msg.role
-             end
-      assistant.add_message(role: role, content: msg.content)
+      chat.add_message(role: msg.role, content: msg.content)
     end
   end
 end

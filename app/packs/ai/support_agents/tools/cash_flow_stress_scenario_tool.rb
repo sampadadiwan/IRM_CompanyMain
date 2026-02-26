@@ -1,70 +1,67 @@
 # frozen_string_literal: true
 
-class CashFlowStressScenarioTool
-  extend Langchain::ToolDefinition
+# RubyLLM tool for simulating what-if cash flow scenarios.
+# Applies hypothetical adjustments (extra deployments, delays, expense changes,
+# capital calls) to the latest completed SupportAgentReport baseline and returns
+# a formatted comparison of baseline vs. adjusted figures.
+#
+# @see CashFlowChatProvider
+# @see SupportAgentReport
 
-  # rubocop:disable Metrics/BlockLength
-  define_function :simulate_scenario,
-                  description: "Simulates a what-if cash flow scenario by applying adjustments " \
-                               "to the latest agent run results. Use this whenever the analyst " \
-                               "asks 'what if', 'what happens if', 'suppose we deploy', or any " \
-                               "hypothetical question about investments, expenses, or capital " \
-                               "calls. Do NOT use for questions about actual/current data; " \
-                               "answer those from the provided context." do
-    property :fund_name,
-             type: "string",
-             description: "Name of the fund to simulate. Omit if agent has only one fund.",
-             required: false
+class CashFlowStressScenarioTool < RubyLLM::Tool
+  description "Simulates a what-if cash flow scenario by applying adjustments " \
+              "to the latest agent run results. Use this whenever the analyst " \
+              "asks 'what if', 'what happens if', 'suppose we deploy', or any " \
+              "hypothetical question about investments, expenses, or capital " \
+              "calls. Do NOT use for questions about actual/current data; " \
+              "answer those from the provided context."
 
-    property :extra_investment_cents,
-             type: "integer",
-             description: "Additional unplanned investment in cents not yet in the system. " \
-                          "E.g. 50Cr = 5000000000. For 'what if we deploy more' questions.",
-             required: false
-
-    property :delay_investment_name,
-             type: "string",
-             description: "Partial or full name of an existing planned investment to delay. " \
-                          "Use together with delay_days.",
-             required: false
-
-    property :delay_days,
-             type: "integer",
-             description: "Number of days to delay the investment in delay_investment_name. " \
-                          "If this pushes it beyond 90 days it exits the current window.",
-             required: false
-
-    property :remove_investment_name,
-             type: "string",
-             description: "Partial or full name of a planned investment to cancel entirely. " \
-                          "For 'what if deal falls through' questions.",
-             required: false
-
-    property :capital_call_inflow_cents,
-             type: "integer",
-             description: "Cash inflow in cents from calling capital from investors. " \
-                          "E.g. calling 100Cr = 10000000000.",
-             required: false
-
-    property :expense_multiplier,
-             type: "number",
-             description: "Multiply estimated expenses by this factor. " \
-                          "1.2 = 20% increase, 0.8 = 20% decrease. Default 1.0.",
-             required: false
-
-    property :extra_expense_cents,
-             type: "integer",
-             description: "Additional one-off flat expense in cents on top of current estimate.",
-             required: false
-  end
-  # rubocop:enable Metrics/BlockLength
+  param :fund_name,
+        type: :string,
+        desc: "Name of the fund to simulate. Omit if agent has only one fund.",
+        required: false
+  param :extra_investment_cents,
+        type: :integer,
+        desc: "Additional unplanned investment in cents not yet in the system. " \
+              "E.g. 50Cr = 5000000000. For 'what if we deploy more' questions.",
+        required: false
+  param :delay_investment_name,
+        type: :string,
+        desc: "Partial or full name of an existing planned investment to delay. " \
+              "Use together with delay_days.",
+        required: false
+  param :delay_days,
+        type: :integer,
+        desc: "Number of days to delay the investment in delay_investment_name. " \
+              "If this pushes it beyond 90 days it exits the current window.",
+        required: false
+  param :remove_investment_name,
+        type: :string,
+        desc: "Partial or full name of a planned investment to cancel entirely. " \
+              "For 'what if deal falls through' questions.",
+        required: false
+  param :capital_call_inflow_cents,
+        type: :integer,
+        desc: "Cash inflow in cents from calling capital from investors. " \
+              "E.g. calling 100Cr = 10000000000.",
+        required: false
+  param :expense_multiplier,
+        type: :number,
+        desc: "Multiply estimated expenses by this factor. " \
+              "1.2 = 20% increase, 0.8 = 20% decrease. Default 1.0.",
+        required: false
+  param :extra_expense_cents,
+        type: :integer,
+        desc: "Additional one-off flat expense in cents on top of current estimate.",
+        required: false
 
   def initialize(support_agent:)
+    super()
     @support_agent = support_agent
   end
 
   # rubocop:disable Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
-  def simulate_scenario(
+  def execute(
     fund_name: nil,
     extra_investment_cents: 0,
     delay_investment_name: nil,

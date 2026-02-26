@@ -25,6 +25,11 @@ class CashFlowChatProvider < BaseChatProvider
       - If the data is stale or a fund was blocked, mention it
       - If you don't have data to answer a question, say so honestly
 
+      TOOL USE — CRITICAL:
+      For ANY hypothetical or "what if" question (e.g. "what if we deploy more", "what if a deal falls through",
+      "what happens if we call capital"), you MUST call the cash_flow_stress_scenario tool.
+      Do NOT attempt to compute scenario results manually from the context data above.
+
       #{strict_scope_prompt}
 
       #{table_rendering_prompt}
@@ -61,7 +66,7 @@ class CashFlowChatProvider < BaseChatProvider
     context
   end
 
-  # @return [Array] no tools for now
+  # @return [Array<CashFlowStressScenarioTool>] tools available to the chat assistant
   def tools
     [CashFlowStressScenarioTool.new(support_agent: support_agent)]
   end

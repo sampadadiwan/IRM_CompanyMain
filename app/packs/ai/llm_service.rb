@@ -40,7 +40,7 @@ class LlmService
     response.chat_completion
   end
 
-  def self.ruby_llm_chat(entity: nil)
+  def self.ruby_llm_chat(entity: nil, model: nil)
     if entity
       custom_context = RubyLLM.context do |config|
         config.openai_api_key = entity.entity_setting.openai_api_key || Rails.application.credentials["OPENAI_API_KEY"]
@@ -51,83 +51,13 @@ class LlmService
       end
 
       RubyLLM.chat(
-        model: entity.entity_setting.default_llm_model || ENV.fetch("DEFAULT_MODEL", nil),
+        model: model || entity.entity_setting.default_llm_model || ENV.fetch("DEFAULT_MODEL", nil),
         context: custom_context
       )
     else
       # Default configuration without entity-specific API keys
       Rails.logger.debug "LlmService: Warning! Using default RubyLLM configuration"
-      RubyLLM.chat(model: ENV.fetch("DEFAULT_MODEL", nil))
-    end
-  end
-
-  # Returns a Langchain LLM instance with entity-specific API keys
-  # Supports OpenAI, Anthropic, and Gemini — mirrors ruby_llm_chat's key resolution
-  def self.langchain_llm(entity: nil, model: nil, temperature: 0.7, provider: nil)
-    setting = entity&.entity_setting
-    model ||= setting&.default_llm_model || ENV.fetch('DEFAULT_MODEL', 'gpt-4o-mini')
-    provider ||= detect_provider(model)
-    model = normalize_model(provider, model)
-
-    case provider.to_sym
-    when :openai
-      api_key = setting&.openai_api_key.presence ||
-                Rails.application.credentials["OPENAI_API_KEY"] ||
-                ENV.fetch('OPENAI_API_KEY', nil)
-      raise "OpenAI API key not configured" unless api_key
-
-      Langchain::LLM::OpenAI.new(
-        api_key: api_key,
-        default_options: { model: model, temperature: temperature }
-      )
-    when :anthropic
-      api_key = setting&.anthropic_api_key.presence ||
-                Rails.application.credentials["ANTHROPIC_API_KEY"] ||
-                ENV.fetch('ANTHROPIC_API_KEY', nil)
-      raise "Anthropic API key not configured" unless api_key
-
-      Langchain::LLM::Anthropic.new(
-        api_key: api_key,
-        default_options: { model: model, temperature: temperature }
-      )
-    when :gemini
-      api_key = setting&.gemini_api_key.presence ||
-                Rails.application.credentials["GOOGLE_GEMINI_API_KEY"] ||
-                ENV.fetch('GOOGLE_GEMINI_API_KEY', nil)
-      raise "Gemini API key not configured" unless api_key
-
-      Langchain::LLM::GoogleGemini.new(
-        api_key: api_key,
-        default_options: { chat_model: model, temperature: temperature }
-      )
-    else
-      raise ArgumentError, "Unsupported provider: #{provider}"
-    end
-  end
-
-  # Detects provider from model name
-  def self.detect_provider(model)
-    case model.to_s
-    when /^gpt|^o1|^o3/i then :openai
-    when /^claude/i then :anthropic
-    when /^gemini/i then :gemini
-    else :openai
-    end
-  end
-
-  # Some older Gemini aliases were sunset; map them to a supported fallback.
-  def self.normalize_model(provider, model)
-    return model if model.blank?
-    return model unless provider.to_sym == :gemini
-
-    fallback = ENV.fetch("GEMINI_FALLBACK_MODEL", "gemini-2.5-flash")
-
-    case model
-    when "gemini-1.5-pro-latest", "gemini-1.5-pro", "gemini-1.5-flash-latest", "gemini-1.5-flash"
-      Rails.logger.warn("LlmService: '#{model}' is deprecated, falling back to '#{fallback}'")
-      fallback
-    else
-      model
+      RubyLLM.chat(model: model || ENV.fetch("DEFAULT_MODEL", nil))
     end
   end
 end
