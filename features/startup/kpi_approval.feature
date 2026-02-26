@@ -38,3 +38,20 @@ Feature: KPI Approval Workflow
     When I reject the KPI "Revenue"
     Then I should not see the KPI "Revenue" with value "1,000.0"
     And the KPI "Revenue" should not exist in the database
+
+  Scenario: Verifying unapproved KPI statistics cards
+    Given the following unapproved KPIs exist for the company:
+      | name    | value | period_relative |
+      | Revenue | 1000  | last year       |
+      | Revenue | 2000  | this month      |
+      | EBITDA  | 500   | this quarter    |
+      | Revenue | 3000  | this year       |
+    And I am on the KPI reports page for the portfolio company in grid view with staged data
+    Then I should see the following unapproved KPI stats:
+      | subtitle              | count |
+      | Total Unapproved      | 4     |
+      | Unapproved Prev Year  | 1     |
+      | Unapproved This Month | 1     |
+      | Unapproved This Qtr   | 3     |
+      | Unapproved This Year  | 3     |
+    And the "Total Unapproved" card should link to the unapproved KPIs
