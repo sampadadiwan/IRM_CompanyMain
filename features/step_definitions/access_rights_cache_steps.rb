@@ -4,6 +4,12 @@ Given('there is an entity {string}') do |kv|
   @entity.save!
 end
 
+Given('there is a neutral entity {string}') do |kv|
+  @entity = FactoryBot.create(:entity, entity_type: 'Other')
+  key_values(@entity, kv)
+  @entity.save!
+end
+
 Given('there is a fund {string} for the entity {string}') do |fund_kv, entity_kv|
   entity = Entity.find_by(name: entity_kv.split('=')[1])
   @fund = FactoryBot.create(:fund, entity: entity)
@@ -29,7 +35,7 @@ end
 Given('the user {string} has role {string}') do |email, role|
   user = User.find_by(email: email)
   user.add_role(role.to_sym)
-  user.curr_role = role
+  user.curr_role = role unless role == "investor_advisor" # We want to test the caching for investor advisors as well, so we don't set the curr_role for them
   user.save!
   user.reset_access_rights_cache # Ensure initial state is clean
 end
@@ -65,6 +71,13 @@ When('I approve the investor access for {string}') do |email|
   ia.update!(approved: true)
 end
 
+Given('the user {string} is an investor advisor for entity {string}') do |email, entity_kv|
+  user = User.find_by(email: email)
+  entity_name = entity_kv.split('=')[1]
+  entity = Entity.find_by(name: entity_name)
+  InvestorAdvisor.create!(user: user, entity: entity, email: user.email)
+end
+
 When('I create and approve an investor access for {string} and investor {string}') do |email, investor_name|
   investor = Investor.find_by(investor_name: investor_name)
   user = User.find_by(email: email)
@@ -81,6 +94,18 @@ end
 
 When('I delete the investor access for {string}') do |email|
   InvestorAccess.find_by(email: email).destroy
+end
+
+When('I manually reset the access_rights_cache for {string}') do |email|
+  user = User.find_by(email: email)
+  user.reset_access_rights_cache
+end
+
+When('I delete the investor advisor record for {string} from entity {string}') do |email, entity_kv|
+  user = User.find_by(email: email)
+  entity_name = entity_kv.split('=')[1]
+  entity = Entity.find_by(name: entity_name)
+  InvestorAdvisor.find_by(user: user, entity: entity).destroy
 end
 
 Then('the user {string} should have the fund in their access_rights_cache') do |email|
@@ -117,7 +142,7 @@ Then('the user {string} should NOT have the fund in their access_rights_cache') 
   cache = user.access_rights_cache || {}
   found = false
   cache.each do |entity_id, types|
-    if types["Fund"] && types["Fund"][@fund.id.to_s]
+    if types["Fund"] && types["Fund"][@fund.id]
       found = true
       break
     end

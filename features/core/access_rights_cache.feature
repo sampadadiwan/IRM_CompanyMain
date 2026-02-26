@@ -49,3 +49,39 @@ Feature: Access Rights Cache Logic
     And the user "employee@example.com" has role "employee"
     When I grant "read,update" access to the fund for user "employee@example.com"
     Then the user "employee@example.com" should have the fund in their access_rights_cache with permissions "read,update"
+
+  Scenario: Granting AccessRight to an existing InvestorAdvisor
+    Given there is a user "email=advisor@example.com" for the entity "name=Investor Firm"
+    And the user "advisor@example.com" has role "investor_advisor"
+    And the user "advisor@example.com" is an investor advisor for entity "name=Fund Entity"
+    When I grant "read" access to the fund for user "advisor@example.com"
+    Then the user "advisor@example.com" should have the fund in their access_rights_cache
+
+  Scenario: Creating InvestorAdvisor record after AccessRight is already granted
+    Given there is a neutral entity "name=Neutral Firm"
+    And there is a user "email=advisor@example.com" for the entity "name=Neutral Firm"
+    And I grant "read" access to the fund for user "advisor@example.com"
+    Then the user "advisor@example.com" should NOT have the fund in their access_rights_cache
+    When the user "advisor@example.com" has role "investor_advisor"
+    And the user "advisor@example.com" is an investor advisor for entity "name=Fund Entity"
+    # This should fail if InvestorAdvisor creation doesn't trigger cache refresh
+    Then the user "advisor@example.com" should have the fund in their access_rights_cache
+
+  Scenario: reset_access_rights_cache for InvestorAdvisor with direct AccessRight
+    Given there is a user "email=advisor@example.com" for the entity "name=Investor Firm"
+    And the user "advisor@example.com" has role "investor_advisor"
+    And the user "advisor@example.com" is an investor advisor for entity "name=Fund Entity"
+    When I grant "read" access to the fund for user "advisor@example.com"
+    Then the user "advisor@example.com" should have the fund in their access_rights_cache
+    When I manually reset the access_rights_cache for "advisor@example.com"
+    # This might fail if reset_access_rights_cache doesn't pick up direct AccessRights for advisors
+    Then the user "advisor@example.com" should have the fund in their access_rights_cache
+
+  Scenario: Deleting InvestorAdvisor record updates the cache
+    Given there is a user "email=advisor@example.com" for the entity "name=Investor Firm"
+    And the user "advisor@example.com" has role "investor_advisor"
+    And the user "advisor@example.com" is an investor advisor for entity "name=Fund Entity"
+    When I grant "read" access to the fund for user "advisor@example.com"
+    Then the user "advisor@example.com" should have the fund in their access_rights_cache
+    When I delete the investor advisor record for "advisor@example.com" from entity "name=Fund Entity"
+    Then the user "advisor@example.com" should NOT have the fund in their access_rights_cache

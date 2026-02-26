@@ -152,6 +152,16 @@ module AccessRightsCache
       InvestorAccess.approved.where(user_id: id).find_each do |investor_access|
         refresh_access_rights_cache(investor_access, add: investor_access.approved)
       end
+
+      # Add direct access rights for investor advisors
+      if has_cached_role?(:investor_advisor)
+        investor_advisors.each do |ia|
+          AccessRight.where(user_id: id, entity_id: ia.entity_id).find_each do |ar|
+            cache_access_rights(ar, save_by_default: false, for_entity_id: ia.entity_id)
+          end
+        end
+      end
+      save
     end
   end
 end
