@@ -25,7 +25,16 @@
 <div class="mt-3">
   <% if policy(support_agent).update? %>
     <%= link_to "Edit", edit_support_agent_path(support_agent), class: "btn btn-outline-primary" %>
+    <%= button_to "Run Now", run_with_steps_support_agent_path(support_agent),
+    method: :post,
+    params: { target_type: "Entity", target_id: support_agent.entity_id },
+    class: "btn btn-primary",
+    data: { confirm: "Run #{support_agent.name} now?" } %>
+
     <%= button_to "Delete", support_agent, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: { action: "click->confirm#popup", turbo: false } %>
   <% end %>
 </div>
+
+<div id="progress_panel_new"></div>
+
 
