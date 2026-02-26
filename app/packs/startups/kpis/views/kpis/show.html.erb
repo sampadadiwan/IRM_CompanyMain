@@ -125,7 +125,15 @@
 
 </table>
 <% end %>
-<div>
+<div data-controller="confirm">
+  <%= button_to t_common(:approve), approve_kpi_path(@kpi), method: :patch, class: "btn btn-outline-success",
+      data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no",
+              msg: "This will overwrite the current approved value for #{@kpi.name} with #{@kpi.value}. Proceed? <br><br><small class='text-muted'>Tip: Use 'Approve All Staged' in the Actions menu to approve all pending KPIs at once.</small>" } if policy(@kpi).approve? %>
+
+  <%= button_to t_common(:reject), reject_kpi_path(@kpi), method: :patch, class: "btn btn-outline-warning",
+      data: { action: "click->confirm#popup", turbo: false, method: :delete, notification: "no",
+              msg: "Are you sure you want to reject and delete the unapproved value for #{@kpi.name}? This action cannot be undone." } if policy(@kpi).reject? %>
+
   <%= button_to t_common(:delete), @kpi, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@kpi).destroy? %>
 
   <%= link_to t_common(:edit), edit_kpi_path(@kpi), class: "btn btn-outline-success" if policy(@kpi).update? %>

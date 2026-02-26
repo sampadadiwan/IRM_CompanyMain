@@ -94,6 +94,9 @@
 
 </div>
 
+<%= render "kpi_reports/unapproved_stats" if params[:view_unapproved] == 'true' %>
+
+
 <% if investor %>
 <div class="modal fade" id="sendReminderModal-<%= investor.id %>" tabindex="-1" aria-labelledby="sendReminderModalLabel" aria-hidden="true">
   <div class="modal-dialog">

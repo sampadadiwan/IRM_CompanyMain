@@ -1,0 +1,84 @@
+<%
+  base_query = params.to_unsafe_h.slice(:portfolio_company_id)
+
+  # Base unapproved KPIs for the specific portfolio company if present
+  unapproved_kpis = Kpi.unapproved
+  unapproved_kpis = unapproved_kpis.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
+
+  today = Date.today
+
+  # Base params for links - only include essential params
+  clean_link_params = { }
+
+  # Base unapproved filter that is shared by all
+  unapproved_filter = ['status', 'eq', 'unapproved']
+
+  # Add portfolio company filter to the Ransack query if present
+  base_filters = [unapproved_filter]
+  base_filters << ['portfolio_company_id', 'eq', params[:portfolio_company_id]] if params[:portfolio_company_id].present?
+
+  stats_types = {
+    total: {
+      count: unapproved_kpis.count,
+      subtitle: "Total Unapproved",
+      color: "primary",
+      icon: "ti ti-list-details",
+      filters: base_filters
+    },
+    historical: {
+      count: unapproved_kpis.joins(:kpi_report).where('kpi_reports.as_of < ?', (today).beginning_of_year).count,
+      subtitle: "Unapproved Prev Year",
+      color: "danger",
+      icon: "ti ti-history",
+      filters: base_filters + [['kpi_report_as_of', 'lt', (today).beginning_of_year.to_s]]
+    },
+    this_month: {
+      count: unapproved_kpis.joins(:kpi_report).where(kpi_reports: { as_of: today.beginning_of_month..today.end_of_month }).count,
+      subtitle: "Unapproved This Month",
+      color: "info",
+      icon: "ti ti-calendar",
+      filters: base_filters + [['kpi_report_as_of', 'gteq', today.beginning_of_month.to_s], ['kpi_report_as_of', 'lteq', today.end_of_month.to_s]]
+    },
+    this_quarter: {
+      count: unapproved_kpis.joins(:kpi_report).where(kpi_reports: { as_of: today.beginning_of_quarter..today.end_of_quarter }).count,
+      subtitle: "Unapproved This Qtr",
+      color: "warning",
+      icon: "ti ti-calendar-stats",
+      filters: base_filters + [['kpi_report_as_of', 'gteq', today.beginning_of_quarter.to_s], ['kpi_report_as_of', 'lteq', today.end_of_quarter.to_s]]
+    },
+    this_year: {
+      count: unapproved_kpis.joins(:kpi_report).where(kpi_reports: { as_of: today.beginning_of_year..today.end_of_year }).count,
+      subtitle: "Unapproved This Year",
+      color: "success",
+      icon: "ti ti-calendar-event",
+      filters: base_filters + [['kpi_report_as_of', 'gteq', today.beginning_of_year.to_s], ['kpi_report_as_of', 'lteq', today.end_of_year.to_s]]
+    }
+  }
+%>
+
+<div class="row mb-4">
+  <% stats_types.each do |_type, data| %>
+    <div class="col">
+      <a href="<%= kpis_path(clean_link_params.merge(q: ransack_query_params_multiple(data[:filters]).to_json)) %>" class="text-decoration-none">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center mb-3">
+              <div>
+                <div data-controller="counters" data-counters-value-value="<%= data[:count] %>">
+                  <h3 class="fs-7" data-counters-target="output">0</h3>
+                </div>
+                <h6 class="card-subtitle mb-1 text-muted"><%= data[:subtitle] %></h6>
+              </div>
+              <div class="ms-auto">
+                <span class="text-<%= data[:color] %> display-6"><i class="<%= data[:icon] %>"></i></span>
+              </div>
+            </div>
+            <div class="progress" style="height: 6px;">
+              <div class="progress-bar bg-<%= data[:color] %>" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+          </div>
+        </div>
+      </a>
+    </div>
+  <% end %>
+</div>

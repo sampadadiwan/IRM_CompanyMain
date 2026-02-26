@@ -185,6 +185,85 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_070807) do
     t.index ["owner_type", "owner_id"], name: "index_agent_charts_on_owner"
   end
 
+  create_table "agent_chat_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "agent_chat_session_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.json "metadata"
+    t.string "role", limit: 20, null: false
+    t.datetime "updated_at", null: false
+    t.index ["agent_chat_session_id"], name: "index_agent_chat_messages_on_agent_chat_session_id"
+  end
+
+  create_table "agent_chat_sessions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "analyst_id", null: false
+    t.bigint "chattable_id"
+    t.string "chattable_type", limit: 50
+    t.datetime "created_at", null: false
+    t.bigint "support_agent_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["analyst_id"], name: "index_agent_chat_sessions_on_analyst_id"
+    t.index ["chattable_type", "chattable_id"], name: "index_agent_chat_sessions_on_chattable"
+    t.index ["support_agent_id", "chattable_type", "chattable_id", "analyst_id"], name: "index_agent_chat_sessions_uniqueness", unique: true
+    t.index ["support_agent_id"], name: "index_agent_chat_sessions_on_support_agent_id"
+  end
+
+  create_table "agent_execution_logs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "agent_schedule_id"
+    t.integer "attempt_number", default: 1, null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "error_message"
+    t.json "result_summary"
+    t.datetime "started_at"
+    t.string "status", limit: 20, default: "queued", null: false
+    t.bigint "support_agent_id", null: false
+    t.string "trigger_type", limit: 20, null: false
+    t.bigint "triggered_by_id"
+    t.index ["agent_schedule_id", "created_at"], name: "idx_execution_logs_schedule", order: { created_at: :desc }
+    t.index ["agent_schedule_id"], name: "index_agent_execution_logs_on_agent_schedule_id"
+    t.index ["entity_id"], name: "index_agent_execution_logs_on_entity_id"
+    t.index ["status"], name: "idx_execution_logs_status"
+    t.index ["support_agent_id", "entity_id", "created_at"], name: "idx_execution_logs_history", order: { created_at: :desc }
+    t.index ["support_agent_id"], name: "index_agent_execution_logs_on_support_agent_id"
+    t.index ["triggered_by_id"], name: "index_agent_execution_logs_on_triggered_by_id"
+    t.check_constraint "`attempt_number` >= 1", name: "valid_attempt_number"
+    t.check_constraint "`status` in (_utf8mb4'queued',_utf8mb4'running',_utf8mb4'completed',_utf8mb4'failed',_utf8mb4'partial_success')", name: "valid_status"
+    t.check_constraint "`trigger_type` in (_utf8mb4'scheduled',_utf8mb4'manual')", name: "valid_trigger_type"
+  end
+
+  create_table "agent_schedules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.boolean "enabled", default: false, null: false
+    t.bigint "entity_id", null: false
+    t.json "failure_notification_user_ids"
+    t.string "frequency", limit: 20, null: false
+    t.datetime "last_run_at"
+    t.datetime "next_run_at"
+    t.boolean "notify_caphive_on_error", default: true, null: false
+    t.boolean "notify_on_failure", default: true, null: false
+    t.boolean "notify_on_partial_success", default: true, null: false
+    t.boolean "notify_on_success", default: false, null: false
+    t.integer "retry_count", default: 0, null: false
+    t.integer "retry_interval_minutes", default: 0, null: false
+    t.time "run_at_time", null: false
+    t.integer "run_on_day"
+    t.bigint "support_agent_id", null: false
+    t.string "timezone", limit: 50, null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_agent_schedules_on_created_by_id"
+    t.index ["entity_id"], name: "index_agent_schedules_on_entity_id"
+    t.index ["next_run_at", "enabled"], name: "idx_agent_schedules_polling"
+    t.index ["support_agent_id", "entity_id"], name: "idx_unique_agent_entity", unique: true
+    t.index ["support_agent_id"], name: "index_agent_schedules_on_support_agent_id"
+    t.check_constraint "(`run_on_day` is null) or ((`run_on_day` >= 0) and (`run_on_day` <= 31))", name: "valid_run_on_day"
+    t.check_constraint "`frequency` in (_utf8mb4'daily',_utf8mb4'weekly',_utf8mb4'monthly',_utf8mb4'bimonthly',_utf8mb4'quarterly',_utf8mb4'half_yearly')", name: "valid_frequency"
+    t.check_constraint "`retry_count` >= 0", name: "valid_retry_count"
+    t.check_constraint "`retry_interval_minutes` >= 0", name: "valid_retry_interval"
+  end
+
   create_table "aggregate_portfolio_investments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.decimal "avg_cost_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "bought_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -3628,6 +3707,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_070807) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
+  add_foreign_key "agent_chat_messages", "agent_chat_sessions"
+  add_foreign_key "agent_chat_sessions", "support_agents"
+  add_foreign_key "agent_chat_sessions", "users", column: "analyst_id"
+  add_foreign_key "agent_execution_logs", "agent_schedules"
+  add_foreign_key "agent_execution_logs", "entities"
+  add_foreign_key "agent_execution_logs", "support_agents"
+  add_foreign_key "agent_execution_logs", "users", column: "triggered_by_id"
+  add_foreign_key "agent_schedules", "entities"
+  add_foreign_key "agent_schedules", "support_agents"
+  add_foreign_key "agent_schedules", "users", column: "created_by_id"
   add_foreign_key "aggregate_portfolio_investments", "entities"
   add_foreign_key "aggregate_portfolio_investments", "folders", column: "document_folder_id"
   add_foreign_key "aggregate_portfolio_investments", "form_types"

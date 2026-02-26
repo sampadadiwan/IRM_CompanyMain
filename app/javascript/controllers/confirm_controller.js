@@ -34,24 +34,24 @@ export default class extends Controller {
      * @param {Event} event - The click event
      */
     popup(event) {
-        let btn = $(event.target);
+        let btn = $(event.currentTarget);
 
         // Extract basic modal content from data attributes
-        let title = event.target.dataset.title || "Are you sure?";
-        let method = event.target.dataset.method || "delete";
-        let msg = event.target.dataset.msg || "This will permanently delete this item. Proceed?" ;
-        let submitForm = event.target.dataset.submitForm;
+        let title = event.currentTarget.dataset.title || "Are you sure?";
+        let method = event.currentTarget.dataset.method || "delete";
+        let msg = event.currentTarget.dataset.msg || "This will permanently delete this item. Proceed?" ;
+        let submitForm = event.currentTarget.dataset.submitForm;
 
         // Extract optional additional details
-        let notification = event.target.dataset.notification;
-        let reversible = event.target.dataset.reversible;
-        let docs = event.target.dataset.docs;
-        let otherInfo = event.target.dataset.otherInfo;
+        let notification = event.currentTarget.dataset.notification;
+        let reversible = event.currentTarget.dataset.reversible;
+        let docs = event.currentTarget.dataset.docs;
+        let otherInfo = event.currentTarget.dataset.otherInfo;
 
-        console.log(`btn.dataset.modalId: ${event.target.dataset.modalId}`);
+        console.log(`btn.dataset.modalId: ${event.currentTarget.dataset.modalId}`);
 
         // Find the form containing the clicked button to replicate its action/token
-        this.deleteForm = event.target.closest("form");
+        this.deleteForm = event.currentTarget.closest("form");
 
         // Update basic modal content
         $('#confirmModal #msg').html(msg);

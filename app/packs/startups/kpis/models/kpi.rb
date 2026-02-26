@@ -89,7 +89,7 @@ class Kpi < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name value notes percentage_change portfolio_company_id]
+    %w[name value notes percentage_change portfolio_company_id status updated_at].sort.freeze
   end
 
   def self.ransackable_associations(_auth_object = nil)

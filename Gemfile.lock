@@ -951,6 +951,8 @@ GEM
       nokogiri (>= 1.10.8)
       rubyzip (>= 1.3.0)
     ruby_http_client (3.6.0)
+    ruby_linear_regression (0.1.7)
+      matrix
     ruby_llm (1.11.0)
       base64
       event_stream_parser (~> 1)
@@ -1291,6 +1293,7 @@ DEPENDENCIES
   ruby-openai!
   ruby-prof
   rubyXL (= 3.4.33)
+  ruby_linear_regression
   ruby_llm
   rubyzip (= 2.4.1)
   rupees!

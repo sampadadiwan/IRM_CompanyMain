@@ -6,6 +6,15 @@ class KpiReportsController < ApplicationController
   # GET /kpi_reports or /kpi_reports.json
   def index
     authorize(KpiReport)
+
+    if params[:q].is_a?(String)
+      begin
+        params[:q] = JSON.parse(params[:q]).with_indifferent_access
+      rescue JSON::ParserError
+        params[:q] = nil
+      end
+    end
+
     # Extract sort_field and sort_direction
     sort_field, sort_direction, sort_query = extract_sorting_params
 
@@ -216,7 +225,9 @@ class KpiReportsController < ApplicationController
   private
 
   def extract_sorting_params
-    return [nil, nil, nil] unless params[:q]&.dig(:s)
+    q_param = params[:q]
+
+    return [nil, nil, nil] unless q_param&.is_a?(Hash) && q_param[:s]
 
     sort_field, sort_direction = params[:q][:s].split
     sort_field = nil unless sort_field == "entity_name"
