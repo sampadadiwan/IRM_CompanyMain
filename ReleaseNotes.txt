@@ -1,3 +1,19 @@
+V9.1.97
+cfb322bd8 Refactor access rights caching logic to support dual-role users and improve cache management
+049ff9f21 Add cache refresh for investor advisors and update feature tests
+a9f3876e2 Added access_rights_cache tests
+9ff39745d Added better approvals tests for KPIs
+93d387058 Now we save investor entity level investor statement in the investor statement folder of commitment (#1277)
+56b9e25b8 Handle nil step on UI (#1278)
+dc42a35a7 Added support for Run Now button to run agent in general tab itself. (#1287)
+8aa1f23df Add unapproved KPI stats and enhance KPI management features
+944905f44 Fix/move generic chat langchain to ruby llm (#1286)
+688ec8c1f Cumulate upload update 1 (#1284)
+302d28770 Feature/agent scheduler framework (#1231)
+ced146c03 Feature/generic chat 25feb (#1283)
+f4584429b Feature/cash flow assistant agent 25 feb (#1282)
+651be2e05 (tag: V9.1.96) Portco fixes 3 (#1280)
+
 V9.1.95
 0ff291c72 Portco fixes 2 (#1276)
 ba28bb18c Portco fixes 1 (#1275)
