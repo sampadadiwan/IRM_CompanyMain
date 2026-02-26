@@ -28,6 +28,15 @@ class ImportFormCustomField < ImportUtil
       end
     end
 
+    step_value = row_data["Step"].to_s.strip
+
+    step =
+      if FormCustomField.steps.key?(step_value)
+        step_value
+      else
+        "end"
+      end
+
     form_custom_field.assign_attributes(
       name: row_data["Name"]&.strip,
       label: row_data["Label"]&.strip,
@@ -38,7 +47,7 @@ class ImportFormCustomField < ImportUtil
       help_text: row_data["Help Text"],
       read_only: row_data["Read Only"]&.downcase&.strip == "true",
       show_user_ids: row_data["Show User IDs"],
-      step: row_data["Step"],
+      step: step,
       condition_on: row_data["Condition On"],
       condition_criteria: row_data["Condition Criteria"],
       condition_params: row_data["Condition Params"],

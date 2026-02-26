@@ -25,8 +25,8 @@
         <% span_id = "fcf_#{f.id}_template_text" %>
         <% notice_id = "fcf_#{f.id}_notice" %>
 
-        Template Field:  
-        <span id="<%= span_id %>" class="text-muted"><%= template_field_text %></span> 
+        Template Field:
+        <span id="<%= span_id %>" class="text-muted"><%= template_field_text %></span>
         <i class="far fa-copy text-muted"
             data-action="click->confirm#copy"
             data-target="#<%= span_id %>"
@@ -45,7 +45,7 @@
         <% end %>
     </td>
     <td>
-        <%= f.step.humanize %>
+        <%= f.step&.humanize %>
     </td>
 
 </tr>
