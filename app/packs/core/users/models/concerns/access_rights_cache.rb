@@ -77,12 +77,16 @@ module AccessRightsCache
     self.access_rights_cache[for_entity_id] ||= {}
     self.access_rights_cache[for_entity_id][access_right.owner_type] ||= {}
     self.access_rights_cache[for_entity_id][access_right.owner_type][access_right.owner_id] ||= {}
-    # Cache only if the user is an employee or has investor access
-    if curr_role == "employee" || investor_access.present? || has_cached_role?(:investor_advisor)
+    
+    # LOGIC FIX: Check has_cached_role? instead of curr_role.
+    # curr_role represents the current UI persona which changes frequently.
+    # has_cached_role? represents the underlying permission, ensuring background syncs 
+    # work regardless of which persona the user has currently switched to.
+    if has_cached_role?(:employee) || investor_access.present? || has_cached_role?(:investor_advisor)
       self.access_rights_cache[for_entity_id][access_right.owner_type][access_right.owner_id] = "#{access_right[:permissions]}, #{access_right.metadata}"
       save_by_default ? save : false
     else
-      # If the user is not an employee or investor, then do not cache
+      # If the user is not an employee or investor, then do not cache to keep hash lean
       Rails.logger.debug { "Not caching access_right, investor access not found for user_id: #{id} and entity_id: #{for_entity_id}" }
       false
     end
@@ -139,21 +143,44 @@ module AccessRightsCache
 
   def reset_access_rights_cache
     self.access_rights_cache = {}
-    if has_cached_role?(:company_admin)
-      # Nothing to do as company_admin has access to everything
-    elsif has_cached_role?(:employee) && !has_cached_role?(:investor) && !has_cached_role?(:investor_advisor)
-      # Add all the access rights for this user
+    # Admins have absolute visibility in policies, so we save an empty cache and exit early.
+    return save if has_cached_role?(:company_admin)
+
+    # LOGIC FIX: Additive Reset.
+    # Previously used 'elsif', which caused users with dual roles (e.g. Employee + Investor)
+    # to lose their employee rights if they were processed in the investor branch.
+    # We now process each role independently and accumulate rights into the cache hash.
+
+    # 1. Add all the direct access rights for this user (Employee or Specific User)
+    if has_cached_role?(:employee) || has_cached_role?(:investor_advisor)
       AccessRight.where(user_id: id).find_each do |ar|
         cache_access_rights(ar, save_by_default: false)
       end
-      save
-    elsif has_cached_role?(:investor) || has_cached_role?(:investor_advisor)
-      # Add all the investor_access
+    end
+
+    # 2. Add all rights from investor mappings
+    if has_cached_role?(:investor) || has_cached_role?(:investor_advisor)
       InvestorAccess.approved.where(user_id: id).find_each do |investor_access|
-        refresh_access_rights_cache(investor_access, add: investor_access.approved)
+        # Refresh rights discovered through the investor category or specific investor ID.
+        ars = AccessRight.where(user_id: id)
+        ars = ars.where(entity_id: investor_access.entity_id).or(ars.where(entity_id: investor_access.investor_entity_id))
+        ars.each do |ar|
+          cache_access_rights(ar, save_by_default: false, for_entity_id: investor_access.investor_entity_id, investor_access: investor_access)
+        end
+
+        category = investor_access.investor.category
+        access_rights_investor = AccessRight.where(entity_id: investor_access.entity_id, access_to_investor_id: investor_access.investor_id)
+        access_rights_category = AccessRight.where(entity_id: investor_access.entity_id, access_to_category: category)
+        access_rights_to_add = access_rights_investor.or(access_rights_category)
+
+        access_rights_to_add.each do |ar|
+          cache_access_rights(ar, save_by_default: false, for_entity_id: investor_access.investor_entity_id, investor_access: investor_access)
+        end
       end
 
-      # Add direct access rights for investor advisors
+      # 3. Add direct access rights for investor advisors across their authorized entities.
+      # This ensures that rights granted specifically to an advisor's user ID for a firm 
+      # they advise are correctly cached.
       if has_cached_role?(:investor_advisor)
         investor_advisors.each do |ia|
           AccessRight.where(user_id: id, entity_id: ia.entity_id).find_each do |ar|
@@ -161,7 +188,8 @@ module AccessRightsCache
           end
         end
       end
-      save
     end
+
+    save
   end
 end
