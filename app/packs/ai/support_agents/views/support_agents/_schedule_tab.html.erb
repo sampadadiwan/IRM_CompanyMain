@@ -3,7 +3,7 @@
 
 
 <div data-controller="agent-schedule" data-agent-schedule-running-value="<%= running %>">
-  
+
   <%= form_with(
         model: schedule,
         url: support_agent_agent_schedule_path(support_agent),
@@ -59,7 +59,7 @@
         <div class="col-md-6 mb-3">
           <div class="form-group">
             <%= form.label :run_on_day, "Run On", class: "form-label" %>
-            
+
             <%# Weekly days (0-6) %>
             <div data-agent-schedule-target="weeklyDays" class="<%= 'd-none' unless schedule.frequency == 'weekly' || schedule.frequency.nil? %>">
               <%= form.select :run_on_day,
@@ -77,7 +77,7 @@
                     id: "run_on_day_weekly",
                     disabled: !(schedule.frequency == 'weekly' || schedule.frequency.nil?) %>
             </div>
-            
+
             <%# Monthly days (1-31) %>
             <div data-agent-schedule-target="monthlyDays" class="<%= 'd-none' unless %w[monthly bimonthly quarterly half_yearly].include?(schedule.frequency) %>">
               <%= form.select :run_on_day,
@@ -87,7 +87,7 @@
                     id: "run_on_day_monthly",
                     disabled: !%w[monthly bimonthly quarterly half_yearly].include?(schedule.frequency) %>
             </div>
-            
+
             <%# Daily - no run_on_day needed %>
             <div data-agent-schedule-target="dailyNote" class="<%= 'd-none' unless schedule.frequency == 'daily' %>">
               <p class="text-muted mb-0 py-2"><em>Runs every day at the specified time</em></p>
@@ -162,17 +162,90 @@
       </div>
     <hr class="my-4">
 -->
+
+    <%# Portfolio Company Filter Settings - Only for PortfolioCompanyAgent %>
+    <% if support_agent.agent_type == "PortfolioCompanyAgent" %>
+      <h6 class="text-muted mb-3 fw-semibold">Target Filter Settings</h6>
+      <p class="text-muted small mb-3">Filter which portfolio companies this agent should process. Leave empty to process all.</p>
+
+      <%= fields_for :json_fields, OpenStruct.new(support_agent.json_fields || {}) do |jf| %>
+        <div class="row">
+          <%# Target Tags Filter %>
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <%= jf.label :target_tags, "Filter by Tags", class: "form-label" %>
+              <%= jf.select :target_tags,
+                    options_for_select(
+                      [
+                        ["Fintech", "Fintech"],
+                        ["SaaS", "Saas"],
+                        ["D2C", "D2C"],
+                        ["Healthcare", "Healthcare"],
+                        ["Healthtech", "Healthtech"],
+                        ["Tech", "Tech"],
+                        ["Consumer", "Consumer"],
+                        ["Beauty", "Beauty"],
+                        ["Skincare", "Skincare"],
+                        ["E-commerce", "Ecommerce"],
+                        ["FMCG", "FMCG"],
+                        ["Growth", "Growth"],
+                        ["Startup", "Startup"],
+                        ["Fund II", "Fund II"],
+                        ["SPV", "SPV"],
+                        ["Secondary", "Secondary"]
+                      ],
+                      (support_agent.json_fields&.dig("target_tags") || [])
+                    ),
+                    { include_blank: "All portfolio companies" },
+                    class: "form-control form-select select2-multiple",
+                    multiple: true,
+                    data: { placeholder: "Select tags to filter..." } %>
+              <small class="text-muted">Agent will only process companies with ANY of these tags</small>
+            </div>
+          </div>
+
+          <%# Target Sectors Filter %>
+          <div class="col-md-6 mb-3">
+            <div class="form-group">
+              <%= jf.label :target_sectors, "Filter by Sectors", class: "form-label" %>
+              <%= jf.select :target_sectors,
+                    options_for_select(
+                      [
+                        ["AI/ML", "AI/ML"],
+                        ["Clean Energy", "Clean Energy"],
+                        ["E-commerce", "E-commerce"],
+                        ["EdTech", "EdTech"],
+                        ["FinTech", "FinTech"],
+                        ["HealthTech", "HealthTech"],
+                        ["Logistics", "Logistics"],
+                        ["SaaS", "SaaS"]
+                      ],
+                      (support_agent.json_fields&.dig("target_sectors") || [])
+                    ),
+                    { include_blank: "All sectors" },
+                    class: "form-control form-select select2-multiple",
+                    multiple: true,
+                    data: { placeholder: "Select sectors to filter..." } %>
+              <small class="text-muted">Agent will only process companies in ANY of these sectors</small>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <hr class="my-4">
+    <% end %>
+
     <h6 class="text-muted mb-3 fw-semibold">Notification Settings</h6>
 
     <%# Notification Triggers %>
     <div class="card mb-3">
       <div class="card-body">
         <label class="form-label fw-semibold">Notify When:</label>
-        
+
                 <div class="d-flex">
           <div class="form-check me-3">
-            <%= form.check_box :notify_on_success, 
-                class: "form-check-input", 
+            <%= form.check_box :notify_on_success,
+                class: "form-check-input",
                 id: "notify_on_success",
                 data: { action: "change->agent-schedule#toggleNotifyUsers", agent_schedule_target: "notifyTrigger" } %>
             <%= form.label :notify_on_success, class: "form-check-label" do %>
@@ -182,8 +255,8 @@
           </div>
 
           <div class="form-check me-3">
-            <%= form.check_box :notify_on_failure, 
-                class: "form-check-input", 
+            <%= form.check_box :notify_on_failure,
+                class: "form-check-input",
                 id: "notify_on_failure",
                 checked: !schedule.persisted? || schedule.try(:notify_on_failure) != false,
                 data: { action: "change->agent-schedule#toggleNotifyUsers", agent_schedule_target: "notifyTrigger" } %>
@@ -194,8 +267,8 @@
           </div>
 
           <div class="form-check me-3">
-            <%= form.check_box :notify_on_partial_success, 
-                class: "form-check-input", 
+            <%= form.check_box :notify_on_partial_success,
+                class: "form-check-input",
                 id: "notify_on_partial_success",
                 checked: !schedule.persisted? || schedule.try(:notify_on_partial_success) != false,
                 data: { action: "change->agent-schedule#toggleNotifyUsers", agent_schedule_target: "notifyTrigger" } %>
