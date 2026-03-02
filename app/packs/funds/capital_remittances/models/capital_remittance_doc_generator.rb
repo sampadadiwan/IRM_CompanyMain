@@ -82,6 +82,7 @@ class CapitalRemittanceDocGenerator
       fund_as_of_commitments: TemplateDecorator.decorate(fund_as_of.capital_commitments)
     }
 
+    call_notice_folio_level_fees_context(fund_as_of, capital_remittance, context)
     call_notice_per_kyc_context(fund_as_of, capital_remittance, capital_commitment, context) if options.present? && options[:call_notice_per_kyc]
     # This is only for dumping keys for debugging inside the template
     context.store :context, DocGenContext.new(context)
@@ -94,6 +95,7 @@ class CapitalRemittanceDocGenerator
     call_capital_remittances = fund_as_of.capital_remittances.includes(:capital_commitment).where(capital_call_id: capital_remittance.capital_call_id)
     kyc_capital_remittances = call_capital_remittances.where(capital_commitment: { investor_kyc_id: capital_commitment.investor_kyc_id })
 
+    # TODO: remove the below line if not used - its not saved to a var
     call_capital_remittances.sum(:capital_fee_cents)
     kyc_capital_fee = kyc_capital_remittances.sum(:capital_fee_cents)
 
@@ -167,6 +169,54 @@ class CapitalRemittanceDocGenerator
     context.store :kyc_amounts, TemplateDecorator.decorate(kyc_amounts)
   end
   # rubocop:enable Metrics/MethodLength
+
+  def call_notice_folio_level_fees_context(fund_as_of, capital_remittance, context)
+    call_remittances = fund_as_of.capital_remittances.where(capital_call_id: capital_remittance.capital_call_id)
+    # capital_remittances will only be a single object as we find using id but its kept like this to keep it in line with the other aggregations (see above)
+    capital_remittances = call_remittances.where(id: capital_remittance.id)
+
+    remittance_capital_fees_breakdown = capital_remittances.flat_map { |remittance| remittance.build_fee_structs("capital_fees_audit") }
+    remittance_capital_fees_breakdown = capital_remittance.consolidate_fees(remittance_capital_fees_breakdown)
+
+    call_remittances_capital_fees_breakdown = call_remittances.flat_map { |remittance| remittance.build_fee_structs("capital_fees_audit") }
+    call_remittances_capital_fees_breakdown = capital_remittance.consolidate_fees(call_remittances_capital_fees_breakdown)
+
+    call_remittances_capital_fees_breakdown_map = call_remittances_capital_fees_breakdown.index_by(&:name)
+
+    remittance_capital_fees_breakdown.each do |fee|
+      fee.total_amount_across_folios = call_remittances_capital_fees_breakdown_map[fee.name].amount if call_remittances_capital_fees_breakdown_map.key?(fee.name)
+    end
+
+    context.store :remittance_capital_fees_breakdown, TemplateDecorator.decorate_collection(remittance_capital_fees_breakdown)
+
+    remittance_other_fees_breakdown = capital_remittances.flat_map { |remittance| remittance.build_fee_structs("other_fees_audit") }
+    remittance_other_fees_breakdown = capital_remittance.consolidate_fees(remittance_other_fees_breakdown)
+
+    call_remittances_other_fees_breakdown = call_remittances.flat_map { |remittance| remittance.build_fee_structs("other_fees_audit") }
+    call_remittances_other_fees_breakdown = capital_remittance.consolidate_fees(call_remittances_other_fees_breakdown)
+
+    call_remittance_other_fees_breakdown_map = call_remittances_other_fees_breakdown.index_by(&:name)
+
+    remittance_other_fees_breakdown.each do |fee|
+      fee.total_amount_across_folios = call_remittance_other_fees_breakdown_map[fee.name].amount if call_remittance_other_fees_breakdown_map.key?(fee.name)
+    end
+
+    context.store :remittance_other_fees_breakdown, TemplateDecorator.decorate_collection(remittance_other_fees_breakdown)
+
+    remittance_investment_amount_breakdown = capital_remittances.flat_map { |remittance| remittance.build_fee_structs("investment_amount_audit") }
+    remittance_investment_amount_breakdown = capital_remittance.consolidate_fees(remittance_investment_amount_breakdown)
+
+    call_remittances_investment_amount_breakdown = call_remittances.flat_map { |remittance| remittance.build_fee_structs("investment_amount_audit") }
+    call_remittances_investment_amount_breakdown = capital_remittance.consolidate_fees(call_remittances_investment_amount_breakdown)
+
+    call_remittance_investment_amount_breakdown_map = call_remittances_investment_amount_breakdown.index_by(&:name)
+
+    remittance_investment_amount_breakdown.each do |fee|
+      fee.total_amount_across_folios = call_remittance_investment_amount_breakdown_map[fee.name].amount if call_remittance_investment_amount_breakdown_map.key?(fee.name)
+    end
+
+    context.store :remittance_investment_amount_breakdown, TemplateDecorator.decorate_collection(remittance_investment_amount_breakdown)
+  end
 
   # Add remittance breakdowns by LP/GP and current/prior to context
   def remittance_context(remittance, fund_as_of, lp_commitments, gp_commitments)
