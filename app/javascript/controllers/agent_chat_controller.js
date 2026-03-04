@@ -7,7 +7,9 @@ export default class extends Controller {
     chattableType: String,
     chattableId: Number,
     sessionId: Number,
-    expanded: { type: Boolean, default: false }
+    expanded: { type: Boolean, default: false },
+    contentContainer: { type: String, default: "" }
+
   }
 
   connect() {
@@ -26,14 +28,18 @@ export default class extends Controller {
 
 
   toggle() {
-    this.expandedValue = !this.expandedValue
-    this.panelTarget.classList.toggle("d-none", !this.expandedValue)
-    this.toggleBtnTarget.classList.toggle("d-none", this.expandedValue)
+  this.expandedValue = !this.expandedValue
+  this.panelTarget.classList.toggle("d-none", !this.expandedValue)
+  this.toggleBtnTarget.classList.toggle("d-none", this.expandedValue)
 
-    if (this.expandedValue && !this.historyLoaded) {
-      this.loadHistory()
-    }
+  const container = this.contentContainerValue ? document.querySelector(this.contentContainerValue) : null
+  if (container) container.classList.toggle("chat-open", this.expandedValue)
+
+  if (this.expandedValue && !this.historyLoaded) {
+    this.loadHistory()
   }
+}
+
 
     // Called on mousedown on the panel itself
   startResize(e) {
@@ -145,11 +151,15 @@ export default class extends Controller {
 
 
 
-  close() {
-    this.expandedValue = false
-    this.panelTarget.classList.add("d-none")
-    this.toggleBtnTarget.classList.remove("d-none")
-  }
+close() {
+  this.expandedValue = false
+  this.panelTarget.classList.add("d-none")
+  this.toggleBtnTarget.classList.remove("d-none")
+
+  const container = this.contentContainerValue ? document.querySelector(this.contentContainerValue) : null
+  if (container) container.classList.remove("chat-open")
+}
+
 
   handleEnter(e) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -297,6 +307,13 @@ formatMarkdown(text) {
     .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
     .replace(/\*(.*?)\*/g, "<em>$1</em>")
     .replace(/`([^`]+)`/g, "<code>$1</code>")
+
+        // Markdown links [text](url)
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+
+    // Bare URLs not already inside an href
+  html = html.replace(/(?<!href=")(https?:\/\/[^\s<"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+
 
   // Remove formatting whitespace between HTML tags
   html = html.replace(/>\s+</g, '><')

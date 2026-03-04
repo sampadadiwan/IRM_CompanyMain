@@ -49,7 +49,6 @@ class AiPortfolioReportsController < ApplicationController
     end
 
     if @report.save
-      @report.ai_chat_sessions.create!(analyst_id: current_user.id)
       GenerateSectionContentJob.perform_later(@report.id)
       redirect_to @report, flash: { ai_notice: 'Report created! AI is generating content for all sections (this may take a minute)...' }
     else
@@ -66,13 +65,12 @@ class AiPortfolioReportsController < ApplicationController
     @current_section = @report.ai_report_sections.find_by(id: params[:section_id]) ||
                        @report.ai_report_sections.order(:order_index).first
 
-    ActiveRecord::Base.connected_to(role: :writing) do
-      @chat_session = @report.ai_chat_sessions.first || @report.ai_chat_sessions.create!(analyst_id: current_user.id)
-    end
+    @portfolio_chat_agent = SupportAgent.find_by(agent_type: 'PortfolioReportAgent', entity_id: current_user.entity_id)
 
     # Checkbox should only be checked if web search content actually exists and is being displayed
     # This ensures the checkbox accurately reflects what the user is seeing
-    @show_web_search_version = @current_section.show_web_search_version? && @current_section.web_search_content_exists?
+    @show_web_search_version = @current_section.show_web_search_version? &&
+                               @current_section.web_search_content_exists?
   end
 
   # Redirect to show page (editing happens in show).
@@ -232,7 +230,6 @@ class AiPortfolioReportsController < ApplicationController
     authorize @report, :create?
 
     if @report.save
-      @report.ai_chat_sessions.create!(analyst_id: current_user.id)
       GenerateSectionContentJob.perform_later(@report.id)
       redirect_to @report, flash: { ai_notice: 'Report created! AI is generating content for all sections (this may take a minute)...' }
     else

@@ -3,7 +3,6 @@ class AiPortfolioReport < ApplicationRecord
   belongs_to :analyst, class_name: "User"
   belongs_to :folder, optional: true
   has_many :ai_report_sections, dependent: :destroy
-  has_many :ai_chat_sessions, dependent: :destroy
   belongs_to :investment_criteria_template, optional: true
 
   enum :status, {

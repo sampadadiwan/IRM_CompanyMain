@@ -42,7 +42,8 @@
          <% end %>
       </div>
    </div>
-   <!-- Main Content Area -->
+
+      <!-- Main Content Area -->
    <div class="ai-report-workspace">
       <!-- LEFT: Sections Navigation -->
       <div class="ai-sections-panel">
@@ -57,12 +58,7 @@
                class: "ai-section-item #{'active' if is_active} #{'reviewed' if is_reviewed}" do %>
             <div class="ai-section-indicator"></div>
             <span class="ai-section-name"><%= section.section_type %></span>
-            <!--<% if is_reviewed %>
-               <svg class="ai-section-check" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                 <polyline points="20 6 9 17 4 12"></polyline>
-               </svg>
-               <% end %>-->
-            <span class="ai-section-toggle <%= 'checked' if section.reviewed %>" 
+            <span class="ai-section-toggle <%= 'checked' if section.reviewed %>"
                data-section-id="<%= section.id %>"
                data-report-id="<%= @report.id %>"
                onclick="event.preventDefault(); event.stopPropagation(); toggleReviewed(this);"
@@ -148,104 +144,15 @@
             <% end %>
          </div>
       </div>
-      <!-- RIGHT: AI Assistant Panel -->
-      <div class="ai-assistant-panel" id="ai-assistant-column">
-         <!-- Resize Handle -->
-         <div class="ai-resize-handle" id="ai-resize-handle" title="Drag to resize">
-            <div class="ai-resize-grip"></div>
-         </div>
-         <div class="ai-assistant-header">
-            <div class="ai-assistant-info">
-               <div class="ai-assistant-avatar">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                     <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
-                     <circle cx="7.5" cy="14.5" r="1.5"></circle>
-                     <circle cx="16.5" cy="14.5" r="1.5"></circle>
-                  </svg>
-               </div>
-               <div>
-                  <h3 class="ai-assistant-title">AI Assistant</h3>
-                  <span class="ai-assistant-context">Context: <%= @current_section.section_type %></span>
-               </div>
-            </div>
-            <button class="ai-hide-btn" onclick="toggleAIAssistant()" id="ai-toggle-btn" title="Hide AI Assistant">
-               Hide
-               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-               </svg>
-            </button>
-         </div>
-         <!-- Chat Messages -->
-         <div id="chat-messages" class="ai-chat-messages">
-            <% if @chat_session.ai_chat_messages.any? %>
-            <% @chat_session.ai_chat_messages.order(:created_at).each do |message| %>
-            <div class="ai-message <%= message.role %>">
-               <% if message.role == 'assistant' %>
-               <div class="ai-message-avatar">AI</div>
-               <% end %>
-               <div class="ai-message-bubble">
-                  <%= simple_format(message.content.gsub(/(https?:\/\/[^\s<]+)/, '<a href="\1" target="_blank" rel="noopener noreferrer">\1</a>').html_safe) %>
-                  <% if message.role == 'assistant' && message.sources&.any? %>
-                  <div class="ai-message-sources">
-                     <strong>Sources:</strong>
-                     <ul class="ai-sources-list">
-                        <% message.sources.each do |source| %>
-                           <% if source.is_a?(Hash) && source['url'].present? %>
-                              <li><a href="<%= source['url'] %>" target="_blank" rel="noopener noreferrer"><%= source['title'] || source['url'] %></a></li>
-                           <% elsif source.is_a?(String) %>
-                              <li><%= source %></li>
-                           <% end %>
-                        <% end %>
-                     </ul>
-                  </div>
-                  <% end %>
-               </div>
-               <div class="ai-message-time"><%= message.created_at.strftime('%H:%M') %></div>
-            </div>
-            <% end %>
-            <% else %>
-            <div class="ai-chat-welcome">
-               <div class="ai-welcome-avatar">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                     <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
-                     <circle cx="7.5" cy="14.5" r="1.5"></circle>
-                     <circle cx="16.5" cy="14.5" r="1.5"></circle>
-                  </svg>
-               </div>
-               <p class="ai-welcome-text">Hello! I can help you build this report.</p>
-               <p class="ai-welcome-subtext">Ask me anything about the portfolio company!</p>
-            </div>
-            <% end %>
-         </div>
-         <!-- Chat Input -->
-         <div class="ai-chat-input-section">
-            <div class="ai-quick-actions">
-               <button class="ai-quick-btn" onclick="sendMessage('What was Q3 revenue?')">
-               Q3 revenue?
-               </button>
-               <button class="ai-quick-btn" onclick="sendMessage('Show key risks')">
-               Key risks
-               </button>
-            </div>
-            <div class="ai-input-wrapper">
-               <input type="text" id="chat-input" class="ai-chat-input" placeholder="Ask about the portfolio...">
-               <button class="ai-send-btn" onclick="sendMessage()">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                     <line x1="22" y1="2" x2="11" y2="13"></line>
-                     <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                  </svg>
-               </button>
-            </div>
-         </div>
-      </div>
    </div>
-   <!-- Expand Button (when AI panel is collapsed) -->
-   <button class="ai-expand-btn" onclick="toggleAIAssistant()" id="ai-expand-btn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-         <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"></path>
-      </svg>
-      <span>AI Assistant</span>
-   </button>
+
+
+   <% if @portfolio_chat_agent %>
+      <%= render "support_agents/chat_panel", support_agent: @portfolio_chat_agent, chattable: @report,      content_container_selector: ".ai-report-container" %>
+   <% end %>
+
+
+   
    <!-- Insert Chart Modal -->
    <div id="insert-chart-modal" class="ai-modal-overlay" style="display: none;">
       <div class="ai-modal">
@@ -309,7 +216,7 @@
    
      const reportId      = <%= @report.id %>;
      const sectionId     = <%= @current_section.id %>;
-     const chatSessionId = <%= @chat_session.id %>;
+     
    
      // Add this inside your existing <script> tag
      document.addEventListener('DOMContentLoaded', function() {
@@ -908,8 +815,8 @@
            headers: { 'Content-Type': 'application/json' },
            body: JSON.stringify({
              message:        message,
-             section_id:     sectionId,
-             chat_session_id: chatSessionId
+             section_id:     sectionId
+             
            })
          });
    
@@ -2572,4 +2479,12 @@ async function deleteChart(button) {
    width: 200px;
    }
    }
+
+   .ai-report-container {
+     transition: margin-right 0.3s ease;
+    }
+   .ai-report-container.chat-open {
+      margin-right: 440px;
+    }
+
 </style>
