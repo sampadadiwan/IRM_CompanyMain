@@ -1,6 +1,6 @@
-Create a skill to ---
+---
 name: cucumber-tests
-description: Guidelines and workflows for writing Cucumber tests in the IRM project. Includes both UI-based testing (Capybara) and logic-based (unit) testing using common steps, proper tagging, and scenario outlines.
+description: 'Guidelines and workflows for writing Cucumber tests in the IRM project.'
 ---
 
 # Cucumber Tests Skill
