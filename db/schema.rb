@@ -9,7 +9,8 @@
 # migrations use external dependencies or application code.
 #
 # It's strongly recommended that you check this file into your version control system.
-ActiveRecord::Schema[8.1].define(version: 2026_02_25_070807) do
+
+ActiveRecord::Schema[8.1].define(version: 2026_03_04_010212) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -311,24 +312,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_070807) do
     t.index ["investment_instrument_id"], name: "idx_on_investment_instrument_id_9bc45b0212"
     t.index ["portfolio_company_id"], name: "index_aggregate_portfolio_investments_on_portfolio_company_id"
     t.index ["snapshot_date"], name: "index_aggregate_portfolio_investments_on_snapshot_date"
-  end
-
-  create_table "ai_chat_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "ai_chat_session_id", null: false
-    t.text "content"
-    t.datetime "created_at", null: false
-    t.json "metadata"
-    t.string "role"
-    t.datetime "updated_at", null: false
-    t.index ["ai_chat_session_id"], name: "index_ai_chat_messages_on_ai_chat_session_id"
-  end
-
-  create_table "ai_chat_sessions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "ai_portfolio_report_id", null: false
-    t.integer "analyst_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["ai_portfolio_report_id"], name: "index_ai_chat_sessions_on_ai_portfolio_report_id"
   end
 
   create_table "ai_checks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -3723,8 +3706,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_070807) do
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investment_instruments"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
-  add_foreign_key "ai_chat_messages", "ai_chat_sessions"
-  add_foreign_key "ai_chat_sessions", "ai_portfolio_reports"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
   add_foreign_key "ai_portfolio_reports", "folders"

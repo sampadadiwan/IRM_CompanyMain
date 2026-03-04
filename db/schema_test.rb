@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_25_070807) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_04_010212) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -235,23 +235,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_25_070807) do
     t.index ["snapshot_date"], name: "index_aggregate_portfolio_investments_on_snapshot_date"
   end
 
-  create_table "ai_chat_messages", force: :cascade do |t|
-    t.bigint "ai_chat_session_id", null: false
-    t.text "content"
-    t.datetime "created_at", null: false
-    t.json "metadata"
-    t.string "role"
-    t.datetime "updated_at", null: false
-    t.index ["ai_chat_session_id"], name: "index_ai_chat_messages_on_ai_chat_session_id"
-  end
 
-  create_table "ai_chat_sessions", force: :cascade do |t|
-    t.bigint "ai_portfolio_report_id", null: false
-    t.integer "analyst_id"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["ai_portfolio_report_id"], name: "index_ai_chat_sessions_on_ai_portfolio_report_id"
-  end
 
   create_table "ai_checks", force: :cascade do |t|
     t.bigint "ai_rule_id"
