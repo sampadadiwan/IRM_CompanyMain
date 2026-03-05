@@ -1,3 +1,7 @@
+V9.1.98
+fb5dce3e3 Fix/migrate portfolio chat agent to generic chat (#1291)
+e83d2868e Remittance fees breakdown (#1288)
+
 V9.1.97
 cfb322bd8 Refactor access rights caching logic to support dual-role users and improve cache management
 049ff9f21 Add cache refresh for investor advisors and update feature tests

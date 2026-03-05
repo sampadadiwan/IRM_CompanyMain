@@ -1,4 +1,19 @@
 <div class="row">
+    <% if params[:self_ownership_trend].blank? || params[:self_ownership_trend] == "true" %>
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Ownership Trend</h5>
+            </div>
+            <div class="card-body">
+                <div id=""><%= self_ownership_trend(investments) %></div>
+            </div>
+        </div>
+    </div>
+    <% end %>
+</div>
+
+<div class="row">
     <% if params[:amount_by_funding_round].blank? || params[:amount_by_funding_round] == "true" %>
     <div class="col">
         <div class="card">
