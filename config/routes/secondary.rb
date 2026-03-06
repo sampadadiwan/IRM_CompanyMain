@@ -7,6 +7,8 @@ resources :offers do
   patch 'generate_esign_link', on: :member
   post 'bulk_actions', on: :collection
   patch 'generate_docs', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :interests do
@@ -16,6 +18,8 @@ resources :interests do
   patch 'allocate', on: :member
   get   'allocation_form', on: :member
   patch 'generate_docs', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :secondary_sales do
@@ -34,10 +38,14 @@ resources :secondary_sales do
   get 'interests', on: :member
   get 'payments', on: :member
   get 'report', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :allocations do
   patch 'generate_docs', on: :member
   patch 'verify', on: :member
   post 'bulk_actions', on: :collection
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end

@@ -1,6 +1,12 @@
 resources :quick_link_steps
-resources :quick_links
-resources :custom_notifications
+resources :quick_links do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
+resources :custom_notifications do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
 
 resources :reports do
   post 'prompt', on: :collection
@@ -10,8 +16,14 @@ end
 
 resources :report_insights
 resources :audits
-resources :reminders
-resources :favorites
+resources :reminders do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
+resources :favorites do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
 
 resources :permissions
 
@@ -25,7 +37,10 @@ resources :tasks do
   delete 'destroy_series', on: :member
 end
 
-resources :form_custom_fields
+resources :form_custom_fields do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
 
 resources :form_types do
   get 'clone', on: :member
@@ -78,9 +93,14 @@ resources :investor_kycs do
   get 'esign_emails', on: :collection
   get 'edit_reporting_fields', on: :member
   put 'update_reporting_fields', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
-resources :aml_reports
+resources :aml_reports do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
 
 resources :kyc_datas do
   get 'search', on: :collection
@@ -91,8 +111,14 @@ resources :kyc_datas do
   get 'compare_ckyc_kra', on: :collection
 end
 
-resources :payments
-resources :nudges
+resources :payments do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
+resources :nudges do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
 resources :import_uploads do
   delete 'delete_data', on: :member
 end
@@ -102,6 +128,8 @@ resources :folders do
   post 'generate_report', on: :member
   get 'generate_report', on: :member
   get 'data_rooms', on: :collection
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :investor_accesses do
@@ -137,6 +165,8 @@ resources :investors do
   post 'portfolio_investments_report', on: :member
   get 'portfolio_investments_report_all', on: :collection
   post 'portfolio_investments_report_all', on: :collection
+  put 'restore_deleted', on: :member
+  get 'show_deleted', on: :collection
 end
 
 resources :investor_notice_entries
@@ -163,6 +193,8 @@ resources :documents do
   post 'share_by_email', on: :member # New route for sharing documents by email
   get 'show_file', on: :member
   get 'show_email_list', on: :member # New route for showing email list
+  put 'restore_deleted', on: :member
+  get 'show_deleted', on: :collection
 end
 
 # Top-level route for viewing shared documents
@@ -184,11 +216,20 @@ resources :entities do
   post 'merge', on: :collection
 end
 
-resources :viewed_bies
+resources :viewed_bies do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
 
 resources :dashboard_widgets do
   get 'dashboard', on: :collection
   get 'metadata_help', on: :collection
 end
-resources :incoming_emails
-resources :doc_questions
+resources :incoming_emails do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end
+resources :doc_questions do
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
+end

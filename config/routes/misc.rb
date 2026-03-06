@@ -40,12 +40,16 @@ resources :kanban_cards do
   patch 'move_kanban_card', on: :member
   get 'search', on: :collection
   patch 'update_sequence', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :kanban_columns do
   patch 'update_sequence', on: :member
   delete 'delete_column', on: :member
   patch 'restore_column', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :kanban_boards, controller: "boards"

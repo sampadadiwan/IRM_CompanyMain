@@ -19,6 +19,33 @@ class ApplicationController < ActionController::Base
     super
   end
 
+
+   def restore_deleted
+    model_class = controller_name.classify.constantize
+    record = model_class.only_deleted.find(params[:id])
+    authorize record, :destroy?
+
+    # Check for associated folders that might also be deleted
+    %w[document_folder_id data_room_folder_id].each do |folder_attr|
+      if record.respond_to?(folder_attr) && record.send(folder_attr).present?
+        folder = Folder.only_deleted.find_by(id: record.send(folder_attr))
+        folder.restore(recursive: true) if folder
+      end
+    end
+
+    record.restore(recursive: true)
+    redirect_to record, notice: "#{model_class.model_name.human} was successfully restored."
+  end
+
+  def show_deleted
+    authorize controller_name.classify.constantize, :index?
+    model_class = controller_name.classify.constantize
+    @q = model_class.only_deleted.ransack(params[:q])
+    @pagy, @records = pagy(policy_scope(@q.result))
+
+    render "layouts/deleted_index"
+  end
+
   private
 
   def rss_kb
@@ -62,4 +89,6 @@ class ApplicationController < ActionController::Base
     @signed_id_user = user
   end
   # rubocop:enable Rails/DynamicFindBy
+
+
 end

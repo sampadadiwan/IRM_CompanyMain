@@ -6,6 +6,8 @@ resources :kpis do
   patch 'approve', on: :member
   delete 'reject', on: :member
   patch 'approve_all', on: :collection
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 resources :kpi_reports do
   patch 'recompute_cumulative', on: :member
@@ -16,6 +18,8 @@ resources :kpi_reports do
   post 'trigger_periodic_reports', on: :member
   get "show_performance", on: :collection
   get "new_notification", on: :collection
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :share_transfers
@@ -31,6 +35,8 @@ resources :deal_activities do
   post 'update_sequences', on: :collection
   post 'toggle_completed', on: :member
   post 'perform_activity_action', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 resources :deal_investors do
   get 'search', on: :collection
@@ -41,4 +47,6 @@ resources :deals do
   get 'overview', on: :member
   get 'investor_deals', on: :collection
   get 'consolidated_access_rights', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end

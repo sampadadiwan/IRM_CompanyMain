@@ -85,6 +85,6 @@ class CapitalRemittancePaymentsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def capital_remittance_payment_params
-    params.require(:capital_remittance_payment).permit(:fund_id, :capital_remittance_id, :entity_id, :folio_amount, :payment_date, :notes, :payment_proof, :reference_no)
+    params.require(:capital_remittance_payment).permit(:fund_id, :capital_remittance_id, :entity_id, :folio_amount, :payment_date, :notes, :payment_proof, :reference_no, :payment_notification_sent)
   end
 end

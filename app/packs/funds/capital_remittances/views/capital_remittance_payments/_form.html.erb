@@ -37,9 +37,9 @@
       <%= custom_form_fields(capital_remittance_payment, form) %>
 
       <div class="form-group">
-        
-        <%= render "layouts/single_upload", form: form, field_label: "Upload payment proof", 
-                                for_model: "capital_remittance_payment", field_name: "payment_proof", 
+
+        <%= render "layouts/single_upload", form: form, field_label: "Upload payment proof",
+                                for_model: "capital_remittance_payment", field_name: "payment_proof",
                                 model: capital_remittance_payment %>
         <small class="text-muted"> Upload proof of payment as per the instructions. </small>
       </div>
@@ -51,9 +51,18 @@
       </div>
 
       <div class="form-group">
+        <%= form.label :payment_notification_sent %>
+        <%= form.check_box :payment_notification_sent, class: "form-check-input" %>
+        <small class="text-muted"> Check this box if the payment notification has already been sent to the investor.<br>Only unchecked ones will receive a notification. </small>
+      </div>
+
+
+      <div class="form-group">
         <%= form.label :notes %>
         <%= form.text_area :notes, class: "form-control"  %>
       </div>
+
+
 
       <div class="form-group">
         <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>

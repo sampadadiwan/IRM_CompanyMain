@@ -3,6 +3,8 @@ resources :portfolio_cashflows
 resources :stock_adjustments
 resources :stock_conversions do
   post :reverse, on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :scenario_investments
@@ -30,6 +32,8 @@ end
 
 resources :aggregate_portfolio_investments do
   patch 'toggle_show_portfolio', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :aggregate_portfolio_investment_snapshots, controller: "aggregate_portfolio_investments", defaults: { snapshot: true }
@@ -50,6 +54,8 @@ resources :portfolio_investment_snapshots, controller: "portfolio_investments", 
 
 resources :investment_instruments do
   get 'sub_categories', on: :collection
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :account_entries do
@@ -73,6 +79,8 @@ resources :capital_distribution_payments do
   patch 'generate_docs', on: :member
   patch 'payments_completed', on: :member
   patch 'send_notification', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :capital_distributions do
@@ -83,6 +91,8 @@ resources :capital_distributions do
   patch 'generate_docs', on: :member
   patch 'send_payment_notifications', on: :member
   patch 'recompute_fees', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :capital_remittances do
@@ -93,6 +103,8 @@ resources :capital_remittances do
   post 'bulk_actions', on: :collection
   get "preview", on: :member
   post 'allocate_units', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 resources :capital_calls do
   get 'search', on: :collection
@@ -101,6 +113,8 @@ resources :capital_calls do
   patch 'generate_docs', on: :member
   patch 'allocate_units', on: :member
   patch 'recompute_fees', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :capital_commitments do
@@ -113,6 +127,8 @@ resources :capital_commitments do
   get 'documents', on: :collection
   get 'transfer_fund_units', on: :member
   post 'transfer_fund_units', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :funds do
@@ -131,6 +147,8 @@ resources :funds do
   post 'generate_tracking_numbers', on: :member
   get 'show_email_list', on: :member
   patch 'trigger_adhoc_notification', on: :member
+  put :restore_deleted, on: :member
+  get :show_deleted, on: :collection
 end
 
 resources :fund_snapshots, controller: "funds", defaults: { snapshot: true }
