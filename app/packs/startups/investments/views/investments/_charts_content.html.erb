@@ -1,3 +1,4 @@
+<%# Define the list of potential charts to be displayed based on request parameters %>
 <% charts = [
   { visible: (params[:self_ownership_trend].blank? || params[:self_ownership_trend] == "true"), title: "Ownership Trend", content_method: :self_ownership_trend, args: [investments] },
   { visible: (params[:amount_by_funding_round].blank? || params[:amount_by_funding_round] == "true"), title: "Amount By Funding Round", content_method: :investment_amount_by_funding_round, args: [investments], kwargs: {} },
@@ -7,9 +8,12 @@
 ].select { |c| c[:visible] } %>
 
 <div class="row">
+  <%# Iterate through visible charts and calculate column sizing dynamically %>
   <% charts.each_with_index do |chart, index| %>
     <% is_last = (index == charts.length - 1) %>
     <% is_odd_total = charts.length.odd? %>
+    <%# If there is an odd number of charts, the last one takes the full width (col).
+        Otherwise, they are displayed in two columns (col-md-6). %>
     <% col_class = (is_last && is_odd_total) ? "col" : "col-md-6" %>
 
     <div class="<%= col_class %>">
@@ -18,10 +22,10 @@
           <h5 class="card-title"><%= chart[:title] %></h5>
         </div>
         <div class="card-body">
+          <%# Dynamically call the helper method with positional and keyword arguments %>
           <div id=""><%= send(chart[:content_method], *chart[:args], **(chart[:kwargs] || {})) %></div>
         </div>
       </div>
     </div>
   <% end %>
 </div>
-
