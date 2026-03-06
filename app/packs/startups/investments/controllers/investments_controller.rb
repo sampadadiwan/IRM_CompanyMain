@@ -18,6 +18,7 @@ class InvestmentsController < ApplicationController
     if params[:portfolio_company_id].present?
       @portfolio_company_id = params[:portfolio_company_id]
       @portfolio_company = Investor.find(@portfolio_company_id)
+      authorize @portfolio_company, :show?
     end
 
     # We want to disable pagination when using the ag grid or filtering by portfolio company. For portfolio_company specially the cap table grpahs and charts depend on having all investments loaded.
