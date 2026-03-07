@@ -1,3 +1,13 @@
+V9.1.99
+b052c0e05 Reset ar cache (#1293)
+e7da886e3 Add comments to clarify chart rendering logic and layout handling
+82d41450a Refactor charts rendering logic to improve visibility handling and reduce code duplication
+1bd54380a Archived migrations
+a7481bb99 Authorize portfolio company access in InvestmentsController
+9d69ec5b1 Tenant styles (#1292)
+f4d33a9d9 Add Ownership Trend card to charts content view
+ab755b51e Refactor tracking currency job methods to remove force parameter and update documentation for tracking currency calculations
+
 V9.1.98
 fb5dce3e3 Fix/migrate portfolio chat agent to generic chat (#1291)
 e83d2868e Remittance fees breakdown (#1288)
