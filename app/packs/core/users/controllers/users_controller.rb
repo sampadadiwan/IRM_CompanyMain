@@ -5,7 +5,7 @@ class UsersController < ApplicationController
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress whatsapp_webhook]
   skip_before_action :set_current_entity, only: %i[whatsapp_webhook]
 
-  before_action :set_user, only: %w[show update destroy edit]
+  before_action :set_user, only: %w[show update destroy edit reset_access_rights_cache]
   after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook cross_site_login]
 
   def welcome; end
@@ -199,6 +199,12 @@ class UsersController < ApplicationController
     sign_out current_user
 
     redirect_to edit_user_password_path(reset_password_token: raw)
+  end
+
+  def reset_access_rights_cache
+    authorize @user
+    ResetAccessRightsCacheJob.perform_later(@user.id, current_user.id)
+    redirect_to user_path(@user), notice: "Access rights cache reset has been enqueued. You will receive a notification when it's done."
   end
 
   private

@@ -160,6 +160,7 @@
 
       <div>
         <%= link_to  t_common(:edit) , edit_user_path(@user), {class: "btn btn-outline-primary ti ti-pencil" } if policy(@user).update? %>
+        <%= button_to "Reset Access Rights Cache", reset_access_rights_cache_user_path(@user), { method: :patch, class: "btn btn-outline-danger ti ti-refresh", data: { confirm: "Are you sure you want to reset the access rights cache for this user?" } } if policy(@user).reset_access_rights_cache? && params[:debug].present? %>
       </div>
 
 

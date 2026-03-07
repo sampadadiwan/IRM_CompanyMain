@@ -52,6 +52,7 @@ Rails.application.routes.draw do
     get 'chat', on: :collection
     post 'chat', on: :collection
     get 'cross_site_link', on: :member
+    patch 'reset_access_rights_cache', on: :member
     get 'cross_site_login', on: :collection
   end
 
