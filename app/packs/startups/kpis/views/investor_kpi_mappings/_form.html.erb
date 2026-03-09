@@ -38,6 +38,12 @@
   </div>
 
   <div class="form-group">
+    <%= form.label :denomination %>
+    <%= form.select :denomination, InvestorKpiMapping.denominations.keys.map { |type| [type.humanize, type] }, { include_blank: "NA" }, class: "form-control" %>
+    <small class="form-text text-muted">Select the denomination for this KPI. This is used in importing the data from the input kpi sheets.</small>
+  </div>
+
+  <div class="form-group">
     <%= form.label :parent_id %>
     <%= form.select :parent_id, InvestorKpiMapping.where(investor_id: investor_kpi_mapping.investor_id).map { |kpi| [kpi.reported_kpi_name, kpi.id] }, { include_blank: true }, class: "form-control select2" %>
     <small class="form-text text-muted">Select a parent KPI if this KPI is a sub-KPI of another. This will create a hierarchy.</small>

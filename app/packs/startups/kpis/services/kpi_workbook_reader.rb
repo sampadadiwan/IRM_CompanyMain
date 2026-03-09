@@ -262,6 +262,17 @@ class KpiWorkbookReader
 
     kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
 
+    if investor_kpi_mapping.present? && investor_kpi_mapping.denomination.present?
+      multiplier = case investor_kpi_mapping.denomination
+                   when 'millions' then 1_000_000
+                   when 'crores' then 10_000_000
+                   when 'lakhs' then 100_000
+                   when 'thousands' then 1_000
+                   else 1
+                   end
+      value = value.to_d * multiplier
+    end
+
     Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} Unapproved KPI: #{kpi.name}, value: #{value}" }
 
     # Assign attributes to the KPI entry

@@ -20,6 +20,7 @@ class InvestorKpiMapping < ApplicationRecord
   validates :reported_kpi_name, :standard_kpi_name, length: { maximum: 100 }
 
   enum :data_type, { money: 'money', numeric: 'numeric', percentage: 'percentage' }
+  enum :denomination, { millions: 'millions', crores: 'crores', lakhs: 'lakhs', thousands: 'thousands' }
   enum :autofill, { cumulate: 'cumulate', forward_fill: 'forward_fill', compute: 'compute' }, prefix: true
 
   scope :cumulate, -> { where(autofill: 'cumulate') }

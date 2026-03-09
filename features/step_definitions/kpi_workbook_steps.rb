@@ -28,6 +28,24 @@ And('the target KPIs are {string}') do |target_kpis_string|
   @portfolio_company.reload
 end
 
+And('the following KPI mappings with denominations exist for the portfolio company:') do |table|
+  table.hashes.each do |row|
+    @portfolio_company.investor_kpi_mappings.create!(
+      entity_id: @portfolio_company.entity_id,
+      reported_kpi_name: row['reported_kpi_name'],
+      standard_kpi_name: row['reported_kpi_name'],
+      denomination: row['denomination'].downcase
+    )
+  end
+  @portfolio_company.reload
+end
+
+Then('the KPI {string} should have a value of {float}') do |kpi_name, expected_value|
+  kpi = Kpi.find_by(name: kpi_name, portfolio_company_id: @portfolio_company.id)
+  expect(kpi).not_to be_nil, "KPI #{kpi_name} not found"
+  expect(kpi.value.to_f).to eq(expected_value)
+end
+
 When('the KpiWorkbookReader processes the file') do
   # Ensure previous steps have set the necessary variables
   expect(@workbook_file).not_to be_nil, "Workbook file path not set in Given step"

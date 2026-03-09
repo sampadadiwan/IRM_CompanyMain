@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_04_010212) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_09_135620) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2196,6 +2196,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_010212) do
     t.string "compute_formula"
     t.datetime "created_at", null: false
     t.string "data_type", limit: 10, default: "numeric"
+    t.string "denomination", limit: 20
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.bigint "import_upload_id"
@@ -3602,8 +3603,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_010212) do
   add_foreign_key "aggregate_portfolio_investments", "funds"
   add_foreign_key "aggregate_portfolio_investments", "investment_instruments"
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
-  add_foreign_key "ai_chat_messages", "ai_chat_sessions"
-  add_foreign_key "ai_chat_sessions", "ai_portfolio_reports"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
   add_foreign_key "ai_portfolio_reports", "folders"

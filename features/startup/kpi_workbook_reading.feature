@@ -79,3 +79,19 @@ Feature: KPI Workbook Reading
     And the target KPIs are "Revenue"
     When the KpiWorkbookReader processes the file
     Then KPIs should be imported for future dates
+
+  Scenario: KPI import with denominations
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And the following KPI mappings with denominations exist for the portfolio company:
+      | reported_kpi_name | denomination |
+      | Revenue           | Millions     |
+      | Net Profit        | Crores       |
+      | Expenses          | Lakhs        |
+      | Customers         | Thousands    |
+    And the KPI workbook file "kpi_extraction/denomination_test.xlsx" for a kpi report
+    When the KpiWorkbookReader processes the file
+    Then the KPI "Revenue" should have a value of 10000000.0
+    And the KPI "Net Profit" should have a value of 50000000.0
+    And the KPI "Expenses" should have a value of 200000.0
+    And the KPI "Customers" should have a value of 5000.0

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_04_010212) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_09_135620) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2292,6 +2292,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_04_010212) do
     t.string "compute_formula"
     t.datetime "created_at", null: false
     t.string "data_type", limit: 10, default: "numeric"
+    t.string "denomination", limit: 20
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.bigint "import_upload_id"
