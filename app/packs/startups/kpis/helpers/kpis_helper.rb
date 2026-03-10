@@ -47,7 +47,11 @@ module KpisHelper
     if investor_kpi_mapping.present?
       case investor_kpi_mapping.data_type
       when "money"
-        result = kpi.common_size_value if params[:units].present? && params[:units] == "Common"
+        if params[:units].present?
+          result = money_to_currency(kpi.value, params)
+        else
+          result = money_to_currency(kpi.value, params, true)
+        end
       when "percentage"
         result = "#{percentage_value} %"
       end

@@ -10,9 +10,9 @@ eagerLoadControllersFrom("controllers", application)
 // import { lazyLoadControllersFrom } from "@hotwired/stimulus-loading"
 // lazyLoadControllersFrom("controllers", application)
 
-//This is required to ensure that forms loaded via turbo have the ClientSideValidations turned on. 
+//This is required to ensure that forms loaded via turbo have the ClientSideValidations turned on.
 document.documentElement.addEventListener('turbo:frame-load', function (e) {
-    console.log($(e.target).find('form'));
+    // console.log($(e.target).find('form'));
     if($(e.target).find('form').length > 0) {
         $(e.target).find('form').enableClientSideValidations();
     }
@@ -27,4 +27,4 @@ document.documentElement.addEventListener('turbo:frame-load', function (e) {
 //       }
 //     }
 // })
-  
+

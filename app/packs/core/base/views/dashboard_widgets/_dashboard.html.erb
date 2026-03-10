@@ -3,13 +3,14 @@
     name ||= "Default"
     admin_settings = JSON.parse(cookies[:adminSettings]) rescue {}
     theme = admin_settings["Theme"] == "dark" ? "bg-dark" : "bg-light"
+    owner ||= uri_params[:owner_type].constantize.find(uri_params[:owner_id]) if uri_params[:owner_id].present? && uri_params[:owner_type].present?
 %>
 
 <% unless dashboard_name == "Portfolio Dashboard" %>
 <nav class="dashboard-nav sticky-top <%= theme %> shadow-sm d-none d-md-block" style="top:70px; z-index: 1020;">
     <ul class="nav nav-pills">
         <!-- Add a link to the dashboard widgets -->
-        <% dashboard_widgets(dashboard_name, current_user.entity_id, name:, show_menu: true).each do |name, dashboard_widget| %>
+        <% dashboard_widgets(dashboard_name, current_user.entity_id, name:, owner:, show_menu: true).each do |name, dashboard_widget| %>
             <li class="nav-item">
                 <a class="nav-link btn btn-sm" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
                     <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
@@ -41,7 +42,7 @@
 
 <div class="row">
 
-    <% dashboard_widgets(dashboard_name, current_user.entity_id, name:).each do |name, dashboard_widget| %>
+    <% dashboard_widgets(dashboard_name, current_user.entity_id, name:, owner:).each do |name, dashboard_widget| %>
         <div id="<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
             <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:  %>
         </div>

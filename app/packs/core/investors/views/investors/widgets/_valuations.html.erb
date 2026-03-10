@@ -1,6 +1,6 @@
-<% 
-  widget_size ||= "col-md-6" 
-  name ||= nil 
+<%
+  widget_size ||= "col-md-6"
+  name ||= nil
   args ||= {}
   uri_params ||= {}
   uri = URI("/valuations?owner_id=#{@investor.id}&owner_type=Investor")
@@ -12,11 +12,11 @@
         args: args,
         widget_size: widget.widget_size
       )
-    ) do 
+    ) do
 %>
-      <%= turbo_frame_tag "valuations_charts_frame", target: "_top", src: "#{uri.to_s}" do %>            
+      <%= turbo_frame_tag "valuations_charts_frame", target: "_top", src: "#{uri.to_s}" do %>
       <%end%>
-        
-  
+
+
 <% end %>
 

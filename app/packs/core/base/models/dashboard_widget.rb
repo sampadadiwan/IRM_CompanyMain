@@ -123,7 +123,7 @@ class DashboardWidget < ApplicationRecord
   }.freeze
 
   def to_s
-    "#{dashboard_name} #{widget_name} #{tags}"
+    "#{dashboard_name} #{widget_name} #{tags} #{tag_list}"
   end
 
   # rubocop:disable Security/Eval
@@ -151,7 +151,7 @@ class DashboardWidget < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[enabled dashboard_name widget_name owner_type position tags]
+    %w[enabled dashboard_name widget_name owner_type position tags tag_list]
   end
 
   def self.add_all(entity, owner: nil)

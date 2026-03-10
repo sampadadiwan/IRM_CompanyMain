@@ -2,7 +2,7 @@ class ImportInvestorKpiMapping < ImportUtil
   # Defines the standard headers expected in the import file.
   STANDARD_HEADERS = [
     "Stakeholder", "Reported Kpi Name", "Standard Kpi Name", "Category",
-    "Data Type", "Parent Standard Kpi Name", "Position", "Show In Report",
+    "Data Type", "Denomination", "Parent Standard Kpi Name", "Position", "Show In Report",
     "Lower Threshold", "Upper Threshold", "Auto Fill", "Compute Formula", "Update Only"
   ].freeze
 
@@ -105,6 +105,7 @@ class ImportInvestorKpiMapping < ImportUtil
     attributes = {
       category: user_data["Category"].presence,
       data_type: data_type,
+      denomination: user_data["Denomination"].presence,
       show_in_report: user_data["Show In Report"].to_s.downcase == "yes",
       lower_threshold: user_data["Lower Threshold"].presence,
       upper_threshold: user_data["Upper Threshold"].presence,
