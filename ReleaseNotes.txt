@@ -1,3 +1,9 @@
+V9.2.00
+1a6210f21 Fixed Tracking Currency Job
+a631c000c Notice fees breakdown fix (#1296)
+aaf93eaa5 Widget autohide (#1295)
+508a786d4 Kpi denomination (#1294)
+
 V9.1.99
 b052c0e05 Reset ar cache (#1293)
 e7da886e3 Add comments to clarify chart rendering logic and layout handling
