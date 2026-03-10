@@ -5,6 +5,7 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   DIST_CASH_SQL = "gross_payable_cents - reinvestment_with_fees_cents".freeze
   DUE_AMOUNT_SQL = "capital_remittances.call_amount_cents + capital_remittances.other_fee_cents".freeze
 
+  METHODS_START_WITH = %w[money_].freeze
   attr_reader :as_of_date, :currency, :capital_commitment, :capital_remittance
 
   def initialize(object)
@@ -20,6 +21,26 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
                           elsif @capital_distribution_payment
                             @capital_distribution_payment.capital_commitment
                           end
+  end
+
+  def method_missing(method_name, *args, &)
+    if method_name.to_s.starts_with?("money_")
+      # please refer to the comment in the TemplateDecorator for core  working
+      # In  cases where the resultant attribute is not a Money object but a numeric value, we convert it to Money using the currency of the fund before formatting it.
+      # This is to handle cases where we might be summing up cents values directly from the database which would return a numeric value instead of a Money object.
+      attr_name = method_name.to_s.gsub("money_", "")
+
+      res = send(attr_name)
+      res = Money.new(res, @currency) if !res.is_a?(Money) && res.is_a?(Numeric)
+      money_to_currency(res)
+    else
+      # for any other method, we just call super to handle it as usual
+      super
+    end
+  end
+
+  def respond_to_missing?(method_name, include_private = false)
+    METHODS_START_WITH.any? { |prefix| method_name.to_s.starts_with?(prefix) } || super
   end
 
   # === Helpers ===

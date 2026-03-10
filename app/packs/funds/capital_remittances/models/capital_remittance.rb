@@ -263,7 +263,7 @@ class CapitalRemittance < ApplicationRecord
       OpenStruct.new(
         name: name,
         date: Date.parse(date),
-        amount: amount.to_f / 100.0 # converting cents to amount as fees is stored in cents in the audit trail
+        amount: amount.to_f
       )
     end.sort_by(&:name)
   end
@@ -274,7 +274,7 @@ class CapitalRemittance < ApplicationRecord
     grouped.sort.map do |name, rows|
       OpenStruct.new(
         name: name,
-        amount: rows.sum(&:amount),
+        amount: Money.new(rows.sum(&:amount)),
         date: nil # or pick earliest/latest (see below)
       )
     end
