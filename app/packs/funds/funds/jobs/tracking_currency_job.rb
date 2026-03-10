@@ -91,9 +91,10 @@ class TrackingCurrencyJob < ApplicationJob
     { "#{fund.name}: Account Entries" => e.message }
   end
 
-  def convert_remittance_payments(fund, user_id)
+  def convert_remittance_payments(fund, user_id, force: false)
     send_notification("Updating tracking currency for remittance payments", user_id)
     scope = fund.capital_remittance_payments
+    scope = scope.where(tracking_amount_cents: 0) unless force
 
     # Conversion is based on the date the payment was actually received
     scope.pluck(:payment_date).compact.uniq.each do |date|
@@ -112,10 +113,11 @@ class TrackingCurrencyJob < ApplicationJob
     { "#{fund.name}: Remittance Payments" => e.message }
   end
 
-  def convert_remittances(fund, user_id)
+  def convert_remittances(fund, user_id, force: false)
     send_notification("Updating tracking currency for remittances", user_id)
     # We convert both verified and unverified remittances to provide a complete tracking view
     scope = fund.capital_remittances
+    scope = scope.where(tracking_call_amount_cents: 0) unless force
 
     # Remittance conversion is based on the original call date
     scope.pluck(:remittance_date).compact.uniq.each do |date|
@@ -136,9 +138,10 @@ class TrackingCurrencyJob < ApplicationJob
     { "#{fund.name}: Remittances" => e.message }
   end
 
-  def convert_distributions(fund, user_id)
+  def convert_distributions(fund, user_id, force: false)
     send_notification("Updating tracking currency for distribution payments", user_id)
     scope = fund.capital_distribution_payments
+    scope = scope.where(tracking_net_payable_cents: 0) unless force
 
     # Distribution payments are converted based on their specific payment date
     scope.pluck(:payment_date).compact.uniq.each do |date|
@@ -157,9 +160,10 @@ class TrackingCurrencyJob < ApplicationJob
     { "#{fund.name}: Distributions" => e.message }
   end
 
-  def convert_commitment_adjustments(fund, user_id)
+  def convert_commitment_adjustments(fund, user_id, force: false)
     send_notification("Updating tracking currency for commitment adjustments", user_id)
     scope = fund.commitment_adjustments
+    scope = scope.where(tracking_amount_cents: 0) unless force
 
     # Commitment adjustments use the 'as_of' date for currency conversion
     scope.pluck(:as_of).compact.uniq.each do |date|
@@ -175,9 +179,10 @@ class TrackingCurrencyJob < ApplicationJob
     { "#{fund.name}: Commitment Adjustments" => e.message }
   end
 
-  def convert_capital_commitments(fund, user_id)
+  def convert_capital_commitments(fund, user_id, force: false)
     send_notification("Updating tracking currency for capital commitments", user_id)
     scope = fund.capital_commitments
+    scope = scope.where(tracking_committed_amount_cents: 0) unless force
 
     # Capital commitments are converted based on the date the commitment was signed/effective
     scope.pluck(:commitment_date).compact.uniq.each do |date|
