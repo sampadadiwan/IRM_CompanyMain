@@ -152,6 +152,9 @@ mapfile -t TABLES < <(mysqlq "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES W
 if [[ "${#TABLES[@]}" -eq 0 ]]; then
   echo "WARN: No base tables found in ${OLD_DB}."
 else
+  # Temporarily disable foreign key checks for the rename process
+  mysql_exec "SET GLOBAL foreign_key_checks=0;"
+
   total=${#TABLES[@]}
   i=0
   while [[ $i -lt $total ]]; do
@@ -166,6 +169,47 @@ else
     mysql_exec "$SQL"
     i=$chunk_end
   done
+
+  # After renaming tables, update any foreign key constraints that still reference the old database name.
+  # MySQL's RENAME TABLE ... TO ... sometimes preserves the old schema name in the foreign key definition
+  # if it was explicitly qualified.
+  echo "[*] Updating foreign key constraints to reference \`${NEW_DB}\` instead of \`${OLD_DB}\`…"
+
+  # Find all foreign keys in the NEW_DB that still point to OLD_DB
+  mapfile -t FK_INFOS < <(mysqlq "
+    SELECT TABLE_NAME, CONSTRAINT_NAME
+    FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+    WHERE TABLE_SCHEMA = '${NEW_DB}'
+      AND REFERENCED_TABLE_SCHEMA = '${OLD_DB}';
+  ")
+
+  if [[ "${#FK_INFOS[@]}" -gt 0 ]]; then
+    for fk_info in "${FK_INFOS[@]}"; do
+      read -r table_name constraint_name <<< "$fk_info"
+
+      echo "    - Fixing FK \`${constraint_name}\` on table \`${table_name}\`…"
+
+      # Get the full definition to recreate it
+      # This is tricky in a shell script, but we can try to drop and recreate it
+      # by fetching the information from INFORMATION_SCHEMA.
+
+      FK_DATA=$(mysqlq "
+        SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME
+        FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
+        WHERE TABLE_SCHEMA = '${NEW_DB}'
+          AND TABLE_NAME = '${table_name}'
+          AND CONSTRAINT_NAME = '${constraint_name}';
+      ")
+
+      read -r col_name ref_table ref_col <<< "$FK_DATA"
+
+      # Drop and recreate the FK
+      mysql_exec "ALTER TABLE \`${NEW_DB}\`.\`${table_name}\` DROP FOREIGN KEY \`${constraint_name}\`;"
+      mysql_exec "ALTER TABLE \`${NEW_DB}\`.\`${table_name}\` ADD CONSTRAINT \`${constraint_name}\` FOREIGN KEY (\`${col_name}\`) REFERENCES \`${NEW_DB}\`.\`${ref_table}\` (\`${ref_col}\`);"
+    done
+  fi
+
+  mysql_exec "SET GLOBAL foreign_key_checks=1;"
 fi
 
 # --- Recreate views/routines/events/triggers in new_db ------------------------
