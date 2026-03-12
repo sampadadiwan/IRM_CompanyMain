@@ -111,7 +111,8 @@
         <div class="form-group">
             <%= form.label :add_to_commitment_cache %>
             <%= form.check_box :add_to_commitment_cache, class: "form-check-input"  %>
-            <small>Cache the result in commitment cache for faster access</small>
+            <small>Cache the result in commitment cache for faster access.</small>
+            <small class="text-danger d-block">Note if you are using @this_account_entry in any other formula, you need to check this box.</small>
         </div>
 
         <div class="form-group">
