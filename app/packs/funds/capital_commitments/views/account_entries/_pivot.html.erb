@@ -3,12 +3,27 @@
     <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
 
     <span>
-      <button class="btn btn-outline-success" data-controller="export-xl"
-        data-action="click->export-xl#export"
-        data-tableid="account_entries"
-        data-filename="Account Entries">
-        Export to Excel
-      </button>
+      <div class="btn-group">
+        <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+          <i class="ti ti-download"></i> Download
+        </button>
+        <ul class="dropdown-menu">
+          <li>
+            <%= link_to account_entries_path(params.to_unsafe_h.merge(format: :xlsx)), class: "dropdown-item",
+            title: "Exports all rows across all pages as an XLSX file. You will receive a notification when it's ready.", data: { turbo: false } do %>
+              <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
+            <% end %>
+          </li>
+          <li>
+            <button class="dropdown-item" data-controller="export-xl"
+                    data-action="click->export-xl#export"
+                    data-tableid="account_entries"
+                    data-filename="Account Entries">
+              <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
+            </button>
+          </li>
+        </ul>
+      </div>
     </span>
 </div>
 
@@ -67,8 +82,13 @@
               display_value = number_with_precision(value.amount.to_d, precision: 2, delimiter: ',') if value&.amount.present?
             %>
             <td>
-              <%= display_value || "-" if value.is_a?(OpenStruct) %>
-              <%= link_to display_value, value || "-" if !value.is_a?(OpenStruct) %>
+              <% if value.is_a?(OpenStruct) %>
+                <%= display_value || "-" %>
+              <% elsif display_value.present? %>
+                <%= link_to display_value, value %>
+              <% else %>
+                -
+              <% end %>
             </td>
           <% end %>
         <% end %>

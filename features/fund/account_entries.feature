@@ -97,3 +97,27 @@ Scenario Outline: Edit Account Entry parent
   Examples:
       |user     |entity                                 |fund                 |
       |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
+
+
+Scenario Outline: AE download in a job
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the user can receive emails
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  Then I should see the "Import in progress"
+  Then There should be "8" capital commitments created
+  And Given I upload "account_entries.xlsx" file for Account Entries
+  Given I filter the AEs
+  And I download all the AEs
+  Then a new file is generated for the download
+  And I get an email with the file attached
+  Given I filter and pivot the AEs
+  And I download all the pivoted AEs
+  Then a new file is generated for the download
+  And I get an email with the file attached
+
+  Examples:
+      |user     |entity                                 |fund                 |
+      |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |

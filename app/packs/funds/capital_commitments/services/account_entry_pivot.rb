@@ -1,5 +1,14 @@
 class AccountEntryPivot
-  attr_reader :rows, :groups, :dates_by_group, :structured_data, :pagy
+  attr_reader :rows, :groups, :dates_by_group, :structured_data, :pagy, :row_limit_exceeded
+
+  # Strip characters that XML 1.0 forbids (axlsx/libxml raises "out of char range"
+  # if a string cell contains them).  Safe for nil/non-string values.
+  def self.sanitize_str(val)
+    return val unless val.is_a?(String)
+
+    val.encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+       .gsub(/[^\u0009\u000A\u000D\u0020-\uD7FF\uE000-\uFFFD]/u, "")
+  end
 
   def initialize(account_entries, group_by:, show_breakdown: true, page: nil, per_page: 20)
     # We strip out order and includes to prevent the database from doing unnecessary work
@@ -9,6 +18,7 @@ class AccountEntryPivot
     @show_breakdown = show_breakdown
     @page = page
     @per_page = per_page
+    @row_limit_exceeded = false
   end
 
   def call
@@ -17,13 +27,15 @@ class AccountEntryPivot
     all_rows = if @show_breakdown
                  @account_entries.distinct
                                  .pluck(:commitment_name, :capital_commitment_id, :parent_name, :parent_type, :parent_id)
+                                 .map { |c, id, p, pt, pi| [self.class.sanitize_str(c), id, self.class.sanitize_str(p), self.class.sanitize_str(pt), pi] }
                else
                  @account_entries.distinct
                                  .pluck(:commitment_name, :capital_commitment_id)
-                                 .map { |name, id| [name, id, nil, nil, nil] }
+                                 .map { |name, id| [self.class.sanitize_str(name), id, nil, nil, nil] }
                end
 
     # 2. Apply Pagination to Rows
+    # Pass page: 0 (or any non-positive value) to disable pagination and return all rows.
     page_num = (@page.presence || 1).to_i
     per_page_num = (@per_page.presence || 20).to_i
 
@@ -32,7 +44,16 @@ class AccountEntryPivot
       limit = @pagy.respond_to?(:limit) ? @pagy.limit : @pagy.vars[:items]
       @rows = all_rows[@pagy.offset, limit] || []
     else
-      @rows = all_rows
+      # page=0 means "no pagination – return all rows" (used by background XLSX export)
+      @pagy = nil
+      max_rows_without_pagination = 50_000
+      if all_rows.size > max_rows_without_pagination
+        Rails.logger.warn("[AccountEntryPivot] Truncating rows for unpaginated export: #{all_rows.size} rows exceeds max of #{max_rows_without_pagination}")
+        @rows = all_rows.first(max_rows_without_pagination)
+        @row_limit_exceeded = true
+      else
+        @rows = all_rows
+      end
     end
 
     # 3. Fetch ONLY the specific columns needed for the current page
@@ -55,6 +76,11 @@ class AccountEntryPivot
 
       # We use pluck to get raw data instead of ActiveRecord objects
       paginated_query.pluck(*selection).each do |c_name, c_id, p_name, p_type, p_id, group_val, date, amount_cents|
+        c_name    = self.class.sanitize_str(c_name)
+        p_name    = self.class.sanitize_str(p_name)
+        p_type    = self.class.sanitize_str(p_type)
+        group_val = self.class.sanitize_str(group_val)
+
         key = if @show_breakdown
                 [c_name, c_id, p_name, p_type, p_id]
               else
@@ -76,6 +102,7 @@ class AccountEntryPivot
 
     # 4. Consistent Columns (Groups/Dates) - Minimal memory footprint
     group_dates = @account_entries.distinct.pluck(@group_by_field, :reporting_date)
+                                  .map { |g, d| [self.class.sanitize_str(g), d] }
     @groups = group_dates.map(&:first).uniq
     @dates_by_group = {}
     @groups.each do |group|

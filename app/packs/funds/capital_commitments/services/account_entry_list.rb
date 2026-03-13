@@ -8,7 +8,7 @@
 # 1. If a block is given, it yields the relation to the block (allowing controllers to use `policy_scope` helper).
 # 2. If no block is given, it uses `Pundit.policy_scope!` directly.
 class AccountEntryList < BaseList
-  Result = Struct.new(:q, :account_entries, :fund, :data_frame, :adhoc_json, :template, :time_series, :pivot, :error, :redirect_url, keyword_init: true)
+  Result = Struct.new(:q, :account_entries, :fund, :data_frame, :adhoc_json, :template, :time_series, :pivot, :row_limit_exceeded, :error, :redirect_url, keyword_init: true)
 
   # @param current_user [User] The user performing the action.
   # @param params [Hash] The parameters for filtering and search.
@@ -56,7 +56,9 @@ class AccountEntryList < BaseList
     elsif @params[:time_series].present?
       build_time_series_result(result_attrs)
     elsif @params[:pivot] == "true"
-      result_attrs[:pivot] = build_pivot_table
+      pivot = build_pivot_table
+      result_attrs[:pivot] = pivot
+      result_attrs[:row_limit_exceeded] = pivot.row_limit_exceeded
     else
       result_attrs[:account_entries] = AccountEntrySearch.perform(@account_entries, @current_user, @params)
       result_attrs[:template] = "index"

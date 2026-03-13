@@ -1,0 +1,65 @@
+wb = xlsx_package.workbook
+
+# Match the HTML view logic: column is shown when the param equals "false"
+hide_commitment = params[:hide_commitment] != "false"
+hide_parent     = params[:hide_parent]     != "false"
+
+wb.add_worksheet(name: "Pivot") do |sheet|
+  # ── Header row 1: group names spanning their date columns ──────────────────
+  header1 = []
+  header1 << "Capital Commitment" unless hide_commitment
+  header1 << "Parent"             unless hide_parent
+
+  @pivot.groups.each do |group|
+    span = @pivot.dates_by_group[group].size
+    header1 << AccountEntryPivot.sanitize_str(group.to_s)
+    (span - 1).times { header1 << nil }  # placeholder cells for the merge
+  end
+  sheet.add_row header1
+
+  # Apply merge cells for each group span
+  col_offset = (hide_commitment ? 0 : 1) + (hide_parent ? 0 : 1)
+  @pivot.groups.each do |group|
+    span = @pivot.dates_by_group[group].size
+    if span > 1
+      start_col = col_offset
+      end_col   = col_offset + span - 1
+      # Use Axlsx.col_ref which correctly handles columns beyond Z (AA, AB, ...)
+      start_ref = "#{Axlsx.col_ref(start_col)}1"
+      end_ref   = "#{Axlsx.col_ref(end_col)}1"
+      sheet.merge_cells("#{start_ref}:#{end_ref}")
+    end
+    col_offset += span
+  end
+
+  # ── Header row 2: individual date columns ──────────────────────────────────
+  header2 = []
+  header2 << nil unless hide_commitment
+  header2 << nil unless hide_parent
+
+  @pivot.groups.each do |group|
+    @pivot.dates_by_group[group].each do |date|
+      header2 << date.strftime("%b %Y")
+    end
+  end
+  sheet.add_row header2
+
+  # ── Data rows ──────────────────────────────────────────────────────────────
+  @pivot.rows.each do |commitment_name, capital_commitment_id, parent_name, parent_type, parent_id|
+    row_key = [commitment_name, capital_commitment_id, parent_name, parent_type, parent_id]
+    row_data = []
+
+    row_data << AccountEntryPivot.sanitize_str(commitment_name.to_s) unless hide_commitment
+    row_data << AccountEntryPivot.sanitize_str(parent_name.to_s)     unless hide_parent
+
+    @pivot.groups.each do |group|
+      @pivot.dates_by_group[group].each do |date|
+        value = @pivot.structured_data[row_key].dig(group, date)
+        amount = value&.amount.present? ? value.amount.to_f.round(2) : nil
+        row_data << amount
+      end
+    end
+
+    sheet.add_row row_data
+  end
+end

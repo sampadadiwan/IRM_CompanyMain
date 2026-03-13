@@ -39,8 +39,41 @@ class AccountEntriesController < ApplicationController
   end
 
   # GET /account_entries or /account_entries.json
-  def index
+  def index # rubocop:disable Metrics/MethodLength
     authorize AccountEntry
+
+    # For XLSX format, skip expensive queries and process in background job
+    if request.format.xlsx?
+      skip_policy_scope # Policy scope will be applied in the background job
+
+      if params[:pivot] == "true"
+        # Pivot export: override page to 0 so the job fetches ALL rows (no pagination)
+        export_params = params.to_unsafe_h.merge("page" => "0")
+        ModelDownloadJob.set(wait: 2.seconds).perform_later(
+          model_class: 'AccountEntry',
+          params: export_params,
+          user_id: current_user.id,
+          template: "account_entries/pivot",
+          filename: "account_entries_pivot.xlsx",
+          url: URI(request.referer).request_uri
+        )
+      else
+        ModelDownloadJob.set(wait: 2.seconds).perform_later(
+          model_class: 'AccountEntry',
+          params: params.to_unsafe_h,
+          user_id: current_user.id,
+          template: "account_entries/index",
+          filename: "account_entries.xlsx",
+          url: URI(request.referer).request_uri
+        )
+      end
+
+      # Remove format and 'all' params from redirect to ensure pagination is applied on the redirected page
+      redirect_params = params.to_unsafe_h.except(:format, :all)
+      redirect_to account_entries_path(params: redirect_params),
+                  notice: "Your download is being prepared. You will receive a notification with a download link and an email when it's ready."
+      return
+    end
 
     result = AccountEntryList.call(current_user, params, request.referer) { |relation| policy_scope(relation) }
 
@@ -66,10 +99,6 @@ class AccountEntriesController < ApplicationController
     respond_to do |format|
       format.html do
         render @template
-      end
-      format.xlsx do
-        template = params[:template].presence || "index"
-        render xlsx: template, filename: "account_entries.xlsx"
       end
       format.json
     end
