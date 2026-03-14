@@ -1,71 +1,146 @@
-# Kanban Board Functionality
+# Kanban Board Architecture & Workflow
 
-## Boards Working
-
-The Kanban board can function as a standalone feature or be associated with an underlying model (currently, deals).
+This document provides a detailed technical overview of the Kanban board implementation, its data models, interaction patterns, and real-time update mechanisms.
 
 ---
 
-## Kanban Board Working Independently
+## 1. System Architecture
 
-- Users can create a new board from the boards index page by providing a name.
-- Example columns are automatically created using default ones stored in the entity settings.
-- Users can add new columns using the "Add Column" button, requiring a name.
-- Columns can be rearranged in any order using a JavaScript request to update their sequence.
-- Users can add new cards using the "Add Item" button in each column.
-  - Cards require a name and can also include notes, info, and tags.
-- Cards can be moved between columns, updating the column ID of the card.
-- Cards can be reordered within the same column, updating their sequence via a JavaScript request.
-- Clicking a card opens an off-canvas panel displaying its complete details, allowing users to edit it.
-- The edit card form contains the same fields as the create card form.
+The Kanban system is designed to be flexible, supporting both standalone usage and association with domain-specific models like **Deals**.
 
----
+### Data Model Diagram (ERD)
 
-## Kanban Board Working with Deals
+```mermaid
+erDiagram
+    KANBAN-BOARD ||--o{ KANBAN-COLUMN : contains
+    KANBAN-COLUMN ||--o{ KANBAN-CARD : contains
+    KANBAN-BOARD }o--|| ENTITY : belongs_to
+    KANBAN-BOARD |o--|| OWNER : polymorphic_belongs_to
+    KANBAN-CARD |o--|| DATA-SOURCE : polymorphic_belongs_to
 
-- **Deal** is the underlying model for the Kanban board (as the owner).
-- **Deal Investor** is the underlying model for the Kanban card (as the data source).
-- Kanban columns currently do not have an underlying model (ideally, it would be deal activities).
+    OWNER {
+        string type "e.g., Deal, KanbanBoard"
+        integer id
+    }
 
-### Deal-Kanban Interactions
+    DATA-SOURCE {
+        string type "e.g., DealInvestor, KanbanCard"
+        integer id
+    }
+```
 
-- A Kanban board is automatically created when a deal is created.
-- The board view is the default view of the deal.
-- Clicking the "Edit" button in the three-dot dropdown on the right side of the header allows users to edit the deal.
-- Clicking "Add Item" triggers the form for the underlying model (in this case, the Deal Investor form).
-- Creating a Deal Investor results in a new card in the selected column.
-- Clicking a card opens an off-canvas panel displaying the full details of the Deal Investor, allowing edits.
+### Core Components
 
----
-
-## Movement of Columns and Cards
-
-- The movement of columns and cards is managed by a JavaScript controller.
-- When a card is dragged and dropped:
-  - It checks for the closest card and is added after it.
-  - The sequence of the subsequent cards is updated.
-  - If dropped on an empty area, it is added at the end of the column.
-- When a column is dragged and dropped:
-  - It checks for the closest column and is added after it.
+| Component | Responsibility |
+| :--- | :--- |
+| **KanbanBoard** | Manages the overall board state, ownership, and initial column creation. |
+| **KanbanColumn** | Represents a stage in the workflow. Uses `acts_as_list` for sequencing. |
+| **KanbanCard** | The individual work item. Can be a simple card or a proxy for another model (e.g., `DealInvestor`). |
+| **KanbanManager** | A concern for owner models (like `Deal`) to auto-create and sync boards. |
+| **KanbanCardManager** | A concern for data source models (like `DealInvestor`) to sync data with `KanbanCard`. |
 
 ---
 
-## Dynamic Updates of Cards and Columns
+## 2. Operational Workflows
 
-### Broadcasting Mechanism
+### 2.1. Standalone vs. Associated Boards
 
-- The **Kanban board, columns, and cards** each have their own Turbo broadcasts.
-- When a card is **created or updated**, it broadcasts itself with the updated data.
-- When the underlying model of a card (e.g., a Deal Investor) is updated:
-  - The card data is rederived and triggers a Turbo broadcast.
-- When a card’s **sequence or column is updated** (e.g., moving to a different column):
-  - A simple card broadcast is insufficient.
-  - The entire board is broadcasted to reflect the updated UI.
-- A **board broadcast** only updates the board name, but the JavaScript controller automatically triggers a search request to fetch and refresh board data.
-- When a **column’s name is updated**, it broadcasts itself.
-- When a **column’s sequence is updated** or it is **deleted/undeleted (archived)**:
-  - The entire board is broadcasted to reflect the changes.
+#### Standalone Board
+- **Owner:** The `KanbanBoard` instance itself (`self_owned?`).
+- **Data Source:** The `KanbanCard` instance itself.
+- **Creation:** Manual creation via `BoardsController#create`.
+- **Columns:** Default columns are fetched from `EntitySetting#kanban_steps['KanbanBoard']`.
+
+#### Associated Board (e.g., Deals)
+- **Owner:** A `Deal` instance.
+- **Data Source:** A `DealInvestor` instance.
+- **Creation:** Automatic via `KanbanManager` concern after a `Deal` is created.
+- **Columns:** Fetched from `EntitySetting#kanban_steps['Deal']`.
 
 ---
 
-This ensures real-time updates and seamless interaction within the Kanban board.
+## 3. Deep Dive: Deal-Kanban Integration
+
+The **Deal** module is the primary consumer of the Kanban system. The relationship between Deal models and Kanban models is structured to maintain a "UI Proxy" relationship.
+
+### 3.1. Ownership & Hierarchy
+- **Board Owner:** Each `Deal` has one `KanbanBoard`.
+- **Card Data Source:** Each `DealInvestor` (which represents an investor's participation in a deal) is represented by a `KanbanCard`.
+- **Board Visualization:** The Kanban board provides a visual pipeline of all investors in a specific deal, organized by their current stage (represented by `KanbanColumn`).
+
+### 3.2. Lifecycle of a Deal Board
+
+```mermaid
+sequenceDiagram
+    participant D as Deal
+    participant KM as KanbanManager
+    participant KB as KanbanBoard
+    participant KC as KanbanColumn
+
+    D->>D: Create Deal
+    D->>KM: after_create callback
+    KM->>KB: KanbanBoard.create(owner: Deal)
+    KB->>KB: after_create: post_create_ops
+    KB->>KC: Create default columns from EntitySetting
+```
+
+### 3.3. Deal Investor to Card Synchronization
+
+When an investor is added to a deal (`DealInvestor` record), a `KanbanCard` is automatically generated via the `KanbanCardManager` concern.
+
+| Feature | Deal Implementation Detail |
+| :--- | :--- |
+| **Card Title** | Set to the Investor's name. |
+| **Card Info** | Derived from `DealInvestor` attributes (Amount, Currency, etc.). |
+| **Dynamic Fields** | If `deal.card_view_attrs` is set, the card's `info_field` dynamically displays those specific attributes from the `DealInvestor`. |
+| **Default Column** | New `DealInvestor` cards are placed in the first column of the Deal's board. |
+
+### 3.4. Interactions on a Deal Board
+- **Add Item:** Clicking "Add Item" on a Deal board column opens the `DealInvestor` form instead of a generic card form.
+- **Edit Item:** Clicking a card opens an off-canvas panel with the full `DealInvestor` details.
+- **Drag & Drop:** Moving a card between columns updates the `kanban_column_id` on the `KanbanCard`, which in turn can be used to track the investor's progress through the deal pipeline.
+
+---
+
+## 4. Data Synchronization (The "Proxy" Pattern)
+
+```mermaid
+sequenceDiagram
+    participant DI as DealInvestor (Data Source)
+    participant KC as KanbanCard (Proxy)
+    participant KB as KanbanBoard
+    participant UI as Browser (Turbo Stream)
+
+    DI->>DI: after_commit (create/update)
+    DI->>KC: KanbanCardManager#create_or_update_kanban_card
+    KC->>KC: Sync title, info_field, tags, notes
+    KC->>KC: after_commit :broadcast_card
+    KC-->>UI: broadcast_update (Card partial)
+    KC-->>UI: broadcast_update (Board event if sequence/column changed)
+```
+
+---
+
+## 5. Real-time Updates (Turbo Broadcasts)
+
+| Trigger Event | Broadcast Scope | Target UI Element |
+| :--- | :--- | :--- |
+| **Card Data Update** | `KanbanCard` | Updates the specific card content. |
+| **Card Move/Reorder** | `KanbanBoard` | Triggers a full board refresh (via JS search request). |
+| **Column Rename** | `KanbanColumn` | Updates the column header title. |
+| **Column Move/Archive** | `KanbanBoard` | Triggers a full board refresh. |
+| **Board Rename** | `KanbanBoard` | Updates the board header name. |
+
+---
+
+## 6. Key Configuration
+
+### Entity Settings
+Default columns (steps) are defined per `owner_type` in the `EntitySetting` model:
+```ruby
+# Example structure in entity_setting.kanban_steps
+{
+  "KanbanBoard" => ["To Do", "In Progress", "Done"],
+  "Deal" => ["Prospecting", "Due Diligence", "Investment Committee", "Closing"]
+}
+```

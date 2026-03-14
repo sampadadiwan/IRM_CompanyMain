@@ -1,5 +1,6 @@
 class DealsController < ApplicationController
   include DealsHelper
+  include AgGridHelper
 
   require 'pagy/extras/array'
 
@@ -74,6 +75,19 @@ class DealsController < ApplicationController
   def show
     if params[:chart].present?
       render "deal_charts"
+    elsif params[:list_view].present?
+      @investor_label = @deal.entity.is_fund? ? "Company" : "Investor"
+      @deal_investors = policy_scope(@deal.deal_investors).includes(:investor, :deal, :deal_activities)
+      @deal_investors = @deal_investors.not_declined if params[:all].blank?
+      @deal_investors = @deal_investors.order("deal_investors.investor_name asc")
+      respond_to do |format|
+        format.html { render "list_view" }
+        format.xlsx do
+          @activity_names = [@investor_label, "Tags", "Health", "Status", "Primary (#{@deal.currency})", "Secondary (#{@deal.currency})", "Pre Money (#{@deal.currency})"] + DealActivity.templates(@deal).map(&:title) + ["Advisor", "Deal Lead", "Source"]
+          response.headers['Content-Disposition'] = "attachment; filename=#{@deal.name}_list.xlsx"
+          render "list_view"
+        end
+      end
     else
       respond_to do |format|
         format.xlsx do

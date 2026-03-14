@@ -1,0 +1,61 @@
+<%
+  active_total_cents = deal.deal_investors.where(status: 'Active').sum(:total_amount_cents)
+  total_investors = deal.deal_investors.count
+  active_investors = deal.deal_investors.where(status: 'Active').count
+  conversion = total_investors > 0 ? (active_investors.to_f / total_investors * 100).round : 0
+  stagnant_count = deal.deal_investors.select(&:stagnant?).count
+
+  # Determine units for better readability (Millions or Crores)
+  currency_units = deal.currency == "INR" ? "Crores" : "Millions"
+
+  target_display = money_to_currency(deal.amount, { units: currency_units, decimals: 1 })
+  committed_display = money_to_currency(Money.new(active_total_cents, deal.currency), { units: currency_units, decimals: 1 })
+
+  stats_cards = [
+    { title: target_display, subtitle: "Total Target", color: "primary", icon: "ti ti-currency-dollar" },
+    { title: committed_display, subtitle: "Committed (Active)", color: "success", icon: "ti ti-chart-pie-2" },
+    { title: "#{conversion}%", subtitle: "Conversion Rate", color: "info", icon: "ti ti-users-group" },
+    { title: stagnant_count, subtitle: "Stagnant Leads (>7d)", color: "warning", icon: "ti ti-alert-triangle" }
+  ]
+%>
+
+<div class="row mb-4">
+  <% stats_cards.each do |card| %>
+    <div class="col-lg-3 col-md-6 mb-4">
+      <div class="card shadow-none border h-100 analytics-card">
+        <div class="card-body p-4">
+          <div class="d-flex align-items-center">
+            <div>
+              <h3 class="fw-bold mb-1" style="font-size: 1.25rem; color: #2A3547;"><%= card[:title] %></h3>
+              <p class="mb-0 fw-medium" style="color: <%=
+                case card[:color]
+                when 'primary' then '#5D87FF'
+                when 'success' then '#13DEB9'
+                when 'info' then '#00A5FF'
+                when 'warning' then '#FFAE1F'
+                end %>; font-size: 0.875rem;"><%= card[:subtitle] %></p>
+            </div>
+            <div class="ms-auto">
+              <span style="color: <%=
+                case card[:color]
+                when 'primary' then '#5D87FF'
+                when 'success' then '#13DEB9'
+                when 'info' then '#00A5FF'
+                when 'warning' then '#FFAE1F'
+                end %>; font-size: 2.5rem; opacity: 0.8;">
+                <i class="<%= card[:icon] %>"></i>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div style="height: 4px; width: 100%; background-color: <%=
+          case card[:color]
+          when 'primary' then '#5D87FF'
+          when 'success' then '#13DEB9'
+          when 'info' then '#00A5FF'
+          when 'warning' then '#FFAE1F'
+          end %>; border-bottom-left-radius: 7px; border-bottom-right-radius: 7px;"></div>
+      </div>
+    </div>
+  <% end %>
+</div>

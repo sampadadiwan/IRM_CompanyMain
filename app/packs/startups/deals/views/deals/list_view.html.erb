@@ -1,0 +1,15 @@
+<div class="deals-list-view">
+
+  <%= render "list_view_header", deal: @deal, investor_label: @investor_label %>
+
+  <%= render "list_view_analytics", deal: @deal %>
+
+  <%= render "list_view_bulk_actions" %>
+
+  <%= render "list_view_grid", deal: @deal, investor_label: @investor_label %>
+
+  <%= render "list_view_sidepanel" %>
+
+  <%= render "list_view_charts", deal: @deal %>
+
+</div>

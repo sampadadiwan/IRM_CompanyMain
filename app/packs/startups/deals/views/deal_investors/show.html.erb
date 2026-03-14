@@ -1,18 +1,19 @@
 
+<%= turbo_frame_tag "deal_investor_frame", target: "_top" do %>
+  <div class="p-4">
+    <%= render "deal_investors/show", deal_investor: @deal_investor %>
 
-<%= render "deal_investors/show", deal_investor: @deal_investor %>
+    <div class="mb-4 d-flex gap-2">
+      <% if current_user.entity_id == @deal_investor.entity_id %>
+        <%= link_to "Add Investor", new_deal_investor_path("deal_investor[deal_id]": @deal_investor.deal_id, "deal_investor[entity_id]": @deal_investor.entity_id) , {class: "btn btn-outline-success", target: "_blank"}%>
+      <% end %>
+      <%= link_to  t_common(:edit), edit_deal_investor_path(@deal_investor, turbo_frame: "deal_investor_frame"), {class: "btn btn-outline-primary", target: "_blank"} if policy(@deal_investor).update? %>
+      <%= button_to t_common(:delete), @deal_investor, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@deal_investor).destroy?  %>
+    </div>
 
-<div>
-
-  <% if current_user.entity_id == @deal_investor.entity_id %>
-    <%= link_to "Add Investor", new_deal_investor_path("deal_investor[deal_id]": @deal_investor.deal_id, "deal_investor[entity_id]": @deal_investor.entity_id) , {class: "btn btn-outline-success"}%> 
-  <% end %>  
-  <%= link_to  t_common(:edit), edit_deal_investor_path(@deal_investor), {class: "btn btn-outline-primary"} if policy(@deal_investor).update? %> 
-  <%= button_to t_common(:delete), @deal_investor, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@deal_investor).destroy?  %>
-</div>
-
-<%= render "/layouts/steps", steps: ["Setup Investor Details", "Upload Deal Docs", 
-            "View Deal Steps", "Chat / Manage Tasks"].freeze if current_user.has_cached_role?(:employee) %>
-
-<%= render "deal_investors/deal_investor_details", 
-  deal_investor: @deal_investor, deal: @deal_investor.deal, show_tranch: false %>
+    <div class="mt-4">
+      <%= render "deal_investors/deal_investor_details",
+        deal_investor: @deal_investor, deal: @deal_investor.deal, show_tranch: false %>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,95 @@
+wb = xlsx_package.workbook
+
+wb.styles do |style|
+  header_style = style.add_style(bg_color: "4472C4", fg_color: "FFFFFF", b: true, alignment: { horizontal: :center, vertical: :center })
+  money_style = style.add_style(format_code: '#,##0.00', alignment: { horizontal: :right })
+  percent_style = style.add_style(format_code: '0%', alignment: { horizontal: :center })
+  centered_style = style.add_style(alignment: { horizontal: :center })
+
+  # Status Styles
+  status_styles = {
+    'Active' => style.add_style(fg_color: "008000", b: true),     # Green
+    'Pending' => style.add_style(fg_color: "FFA500", b: true),    # Orange
+    'Stagnant' => style.add_style(fg_color: "FF0000", b: true),   # Red
+    'Closed' => style.add_style(fg_color: "808080", b: true),     # Grey
+    'Completed' => style.add_style(fg_color: "008000", b: true),  # Green
+    'Complete' => style.add_style(fg_color: "008000", b: true),   # Green
+    'Incomplete' => style.add_style(fg_color: "FF0000", b: true), # Red
+    'Skip' => style.add_style(fg_color: "808080", b: true)        # Grey
+  }
+
+  wb.add_worksheet(name: "Deals List") do |sheet|
+    # Create the header row
+    sheet.add_row @activity_names, style: header_style
+
+    # Create entries for each item
+    @deal_investors.each do |deal_investor|
+      activities = DealActivity.templates(@deal).map do |template|
+        activity = deal_investor.deal_activities.find { |a| a.template_id == template.id }
+        activity&.status || '-'
+      end
+
+      # Determine status icon
+      status_icon = case deal_investor.status
+                    when 'Active' then '🟢 '
+                    when 'Complete' then '🟢 '
+                    when 'In Progress' then '🟡 '
+                    when 'Declined' then '🔴 '
+                    else ''
+                    end
+
+      health_score = deal_investor.health_score ? deal_investor.health_score / 100.0 : nil
+      health_icon = if health_score
+                      if health_score >= 0.7 then '✅ '
+                      elsif health_score >= 0.4 then '⚠️ '
+                      else '🚨 '
+                      end
+                    else
+                      ''
+                    end
+
+      row_data = [
+        deal_investor.investor_name,
+        deal_investor.tags,
+        "#{health_icon}#{health_score ? (health_score * 100).to_i : 0}%",
+        "#{status_icon}#{deal_investor.status}",
+        deal_investor.primary_amount,
+        deal_investor.secondary_investment,
+        deal_investor.pre_money_valuation
+      ] + activities + [
+        deal_investor.investor_advisor,
+        deal_investor.deal_lead,
+        deal_investor.source
+      ]
+
+      # Map styles for activities
+      activity_styles = activities.map do |status|
+        status_styles[status] || nil
+      end
+
+      row_styles = [
+        nil,           # Name
+        nil,           # Tags (2nd col)
+        centered_style, # Health Score
+        status_styles[deal_investor.status], # Status
+        money_style,   # Primary
+        money_style,   # Secondary
+        money_style    # Pre-money
+      ] + activity_styles + [
+        nil,           # Advisor
+        nil,           # Deal Lead
+        nil            # Source
+      ]
+
+      sheet.add_row(row_data, style: row_styles)
+    end
+
+    # Auto-filter and freeze header
+    sheet.auto_filter = "A1:#{('A'.ord + @activity_names.size - 1).chr}1"
+    sheet.sheet_view.pane do |pane|
+      pane.top_left_cell = 'A2'
+      pane.state = :frozen
+      pane.y_split = 1
+    end
+  end
+end

@@ -150,6 +150,26 @@ class DealInvestor < ApplicationRecord
     :regular
   end
 
+  def health_score
+    return 0 if deal_activities.blank?
+
+    total_count = deal_activities.size
+    completed_count = deal_activities.count { |a| a.status == "Complete" }
+    ((completed_count.to_f / total_count) * 100).round
+  end
+
+  def stagnant?
+    return false if %w[Declined Complete].include?(status)
+
+    updated_at < 7.days.ago
+  end
+
+  def stagnant_reason
+    return nil unless stagnant?
+
+    "No activity for more than 7 days"
+  end
+
   def access_rights_changed(access_right)
     # Add the advisor name for easy access
     self.investor_advisor = Investor.owner_access_rights(self, "Advisor").pluck(:investor_name).join(",")

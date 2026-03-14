@@ -1,0 +1,235 @@
+.deals-list-view {
+  .analytics-card {
+    border-radius: 7px !important;
+    transition: transform 0.2s ease-in-out;
+  }
+  .analytics-card:hover {
+    transform: translateY(-5px);
+  }
+
+  /* Airtable-like styling for AG Grid */
+  .ag-theme-alpine, .ag-theme-quartz {
+    --ag-header-background-color: #5d87ff; /* Brand primary color */
+    --ag-header-foreground-color: #ffffff;
+    --ag-header-cell-hover-background-color: #4573f8;
+    --ag-header-cell-moving-background-color: #4573f8;
+    --ag-row-hover-color: #f6f9ff;
+    --ag-selected-row-background-color: #eef2ff;
+    --ag-odd-row-background-color: #ffffff;
+    --ag-font-size: 14px;
+    --ag-font-family: inherit;
+    --ag-border-color: #ebf1f6;
+    --ag-secondary-border-color: #ebf1f6;
+    --ag-grid-size: 6px;
+    --ag-row-height: 60px;
+    --ag-header-height: 60px !important;
+  }
+
+  /* Quartz Dark Theme Customizations */
+  .ag-theme-quartz-dark {
+    --ag-header-background-color: #5d87ff; /* Keep primary brand color for header */
+    --ag-header-foreground-color: #ffffff;
+    --ag-header-cell-hover-background-color: #4573f8;
+    --ag-header-cell-moving-background-color: #4573f8;
+    --ag-font-size: 14px;
+    --ag-font-family: inherit;
+    --ag-grid-size: 6px;
+    --ag-row-height: 60px;
+    --ag-header-height: 60px !important;
+  }
+
+  .ag-header, .ag-header-viewport, .ag-header-container, .ag-header-row, .ag-header-cell, .ag-header-group-cell {
+    height: 60px !important;
+    min-height: 60px !important;
+    max-height: 60px !important;
+    line-height: 60px !important;
+  }
+
+  .ag-header-cell-label {
+    height: 100%;
+    padding: 0 12px;
+  }
+
+  /* Increase padding and size of the top header area */
+  .d-sm-flex.align-items-center.justify-content-between.mb-4.pt-4 {
+    padding-top: 2.5rem !important;
+    padding-bottom: 1.5rem !important;
+
+    h1 {
+      font-weight: 700 !important;
+      font-size: 2rem !important;
+    }
+  }
+
+  /* Fix transparent menus and popups */
+  .ag-popup, .ag-menu, .ag-filter-wrapper, .ag-column-drop-panel {
+    background-color: #ffffff !important;
+    border: 1px solid #ebf1f6 !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    z-index: 9999 !important;
+  }
+
+  [data-bs-theme="dark"] & {
+    .ag-popup, .ag-menu, .ag-filter-wrapper, .ag-column-drop-panel, .ag-menu-option, .ag-filter-item, .ag-column-drop-wrapper, .ag-column-drop-empty-message {
+      background-color: #2a3447 !important;
+      color: #7c8fac !important;
+      border-color: #333f55 !important;
+    }
+    .ag-menu-option:hover, .ag-filter-item:hover {
+      background-color: #333f55 !important;
+    }
+  }
+
+  .ag-menu-option, .ag-filter-item {
+    background-color: #ffffff !important;
+  }
+
+  .ag-menu-option:hover, .ag-filter-item:hover {
+    background-color: #f6f9ff !important;
+  }
+
+  /* Header labels */
+  .ag-header-cell-label {
+    font-weight: 700;
+    text-transform: capitalize;
+    font-size: 0.95rem;
+    letter-spacing: 0.02em;
+  }
+
+  /* Sticky first column styling */
+  .ag-pinned-left-header, .ag-pinned-left-cols-container {
+    border-right: 1px solid #ebf1f6 !important;
+  }
+
+  [data-bs-theme="dark"] & {
+    .ag-pinned-left-header, .ag-pinned-left-cols-container {
+      border-right: 1px solid #333f55 !important;
+    }
+  }
+
+  /* Cell content alignment and styling */
+  .ag-cell {
+    display: flex;
+    align-items: center;
+    color: #5a6a85;
+    font-size: 0.85rem !important;
+  }
+
+  [data-bs-theme="dark"] & {
+    .ag-cell {
+      color: #7c8fac;
+    }
+  }
+
+  .ag-cell a {
+    color: #5d87ff;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .ag-cell a:hover {
+    text-decoration: underline;
+  }
+
+  /* Badge styling to match provided screenshot */
+  .badge {
+    padding: 6px 12px;
+    font-weight: 500;
+    border-radius: 4px;
+    font-size: 0.85rem !important;
+  }
+
+  /* Status/Category Badges - Force colors with !important to override potential AG Grid interference */
+  .bg-success-light { background-color: rgba(0, 176, 144, 0.08) !important; color: #00b090 !important; }
+  .bg-warning-light { background-color: rgba(255, 160, 0, 0.08) !important; color: #ffa000 !important; }
+  .bg-danger-light { background-color: rgba(239, 68, 68, 0.08) !important; color: #ef4444 !important; }
+  .bg-info-light { background-color: rgba(14, 165, 233, 0.08) !important; color: #0ea5e9 !important; }
+  .bg-secondary-light { background-color: rgba(100, 116, 139, 0.08) !important; color: #64748b !important; }
+
+  /* Row grouping panel - Forced White Background */
+  .ag-column-drop-wrapper,
+  .ag-column-drop-list,
+  .ag-column-drop-vertical,
+  .ag-column-drop-horizontal,
+  .ag-column-drop-cell,
+  .ag-side-bar,
+  .ag-side-buttons {
+    background-color: #ffffff !important;
+  }
+
+  [data-bs-theme="dark"] & {
+    .ag-column-drop-wrapper,
+    .ag-column-drop-list,
+    .ag-column-drop-vertical,
+    .ag-column-drop-horizontal,
+    .ag-column-drop-cell,
+    .ag-side-bar,
+    .ag-side-buttons {
+      background-color: #2a3447 !important;
+    }
+  }
+
+  /* Force icon color in sidebar to be visible */
+  .ag-side-button button {
+    color: #5a6a85 !important;
+  }
+
+  [data-bs-theme="dark"] & {
+    .ag-side-button button {
+      color: #7c8fac !important;
+    }
+  }
+
+  .ag-side-button.ag-selected button {
+    color: #5d87ff !important;
+  }
+
+  .ag-column-drop-wrapper {
+    background-color: #ffffff !important;
+    padding: 12px !important;
+    border-bottom: 1px solid #ebf1f6;
+  }
+
+  [data-bs-theme="dark"] & {
+    .ag-column-drop-wrapper {
+      background-color: #2a3447 !important;
+      border-bottom: 1px solid #333f55;
+    }
+  }
+
+  .ag-column-drop-panel {
+    background-color: #ffffff !important;
+    color: #5a6a85 !important;
+  }
+
+  [data-bs-theme="dark"] & {
+    .ag-column-drop-panel {
+      background-color: #2a3447 !important;
+      color: #7c8fac !important;
+    }
+  }
+
+  /* Specific fix for the 'Drag here to set row groups' text container */
+  .ag-column-drop-empty-message {
+    color: #5a6a85 !important;
+    background-color: #ffffff !important;
+  }
+
+  [data-bs-theme="dark"] & {
+    .ag-column-drop-empty-message {
+      color: #7c8fac !important;
+      background-color: #2a3447 !important;
+    }
+  }
+
+  /* Custom columns divider look */
+  .ag-header-cell::after {
+    content: "";
+    position: absolute;
+    right: 0;
+    top: 25%;
+    height: 50%;
+    width: 1px;
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+}

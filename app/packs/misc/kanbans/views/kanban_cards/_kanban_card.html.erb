@@ -4,9 +4,8 @@
     <%= turbo_stream_from kanban_card %>
     <% offcanvas_turbo_tag= "card_offcanvas_turbo_frame" %>
     <% show_path = "/" %>
-    <% if kanban_card.data_source.present? && kanban_card.data_source_type != "KanbanCard"%>
-        <% card_class = kanban_card.data_source_type.constantize %>
-        <% object = card_class.find(kanban_card.data_source_id) %>
+    <% if kanban_card.data_source_id.present? && kanban_card.data_source_type != "KanbanCard"%>
+        <% object = kanban_card.data_source %>
         <% show_path_helper = "#{kanban_card.data_source_type.underscore}_path" %>
         <% show_path = send(show_path_helper, object, turbo: true, turbo_frame: offcanvas_turbo_tag, format: :turbo_stream) %>
     <% else %>

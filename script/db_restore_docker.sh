@@ -4,6 +4,7 @@ IFS=$'\n\t'
 
 # Description: Restore MySQL XtraBackup from S3 into a Docker container.
 # This script handles version mismatches by allowing you to specify the MySQL version.
+
 # Configuration (Inherited from environment or defaults)
 : "${BUCKET:=docs.caphive.us.production.us-east-1-backup-xtra}"
 : "${AWS_REGION:=us-east-1}"
@@ -117,7 +118,8 @@ run_docker_mysql() {
     -e MYSQL_ROOT_PASSWORD="$MYSQL_PASSWORD" \
     -v "$(realpath "$data_dir")":/var/lib/mysql \
     -p "${PORT}":3306 \
-    "mysql:${MYSQL_VERSION}"
+    "mysql:${MYSQL_VERSION}" \
+    --mysql-native-password=ON
 
   echo "→ Waiting for MySQL to start..."
   local max_wait=60

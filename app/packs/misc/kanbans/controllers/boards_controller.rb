@@ -23,6 +23,17 @@ class BoardsController < ApplicationController
     records = Pundit.policy_scope(current_user, data_source.constantize)
     @q = records.ransack(params[:q])
     @kanban_cards = KanbanCard.where(data_source_type: data_source, data_source_id: @q.result.pluck(:id))
+    @searched_kanban_cards = @kanban_cards if params[:q].present?
+
+    # Eager load columns and their cards with data_source, entity, and kanban_board to avoid N+1 in views
+    # Pre-load owner for policy checks and deal data
+    @kanban_columns = @kanban_board.kanban_columns
+                                   .includes(:entity, :kanban_board, kanban_cards: [:data_source, :entity, :kanban_board])
+
+    # If the owner is a Deal, pre-load deal_investors on the owner to avoid individual loads for policy checks
+    if @kanban_board.owner_type == "Deal"
+      @kanban_board.owner = Deal.where(id: @kanban_board.owner_id).includes(:deal_investors).first
+    end
   end
 
   def index

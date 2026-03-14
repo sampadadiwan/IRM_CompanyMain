@@ -3,10 +3,19 @@ class DealInvestorsController < ApplicationController
   after_action :verify_authorized, except: %i[kanban_search index]
   # GET /deal_investors or /deal_investors.json
   def index
-    @q = DealInvestor.ransack(params[:q])
-    @deal_investors = policy_scope(@q.result).includes(:investor, :deal)
+    if params[:deal_id].present?
+      @deal = Deal.find(params[:deal_id])
+      authorize @deal, :show?
+      skip_policy_scope
+      @q = @deal.deal_investors.ransack(params[:q])
+      @deal_investors = @q.result
+    else
+      @q = DealInvestor.ransack(params[:q])
+      @deal_investors = policy_scope(@q.result)
+    end
 
-    @deal_investors = @deal_investors.where(deal_id: params[:deal_id]) if params[:deal_id].present?
+    @deal_investors = @deal_investors.includes(:investor, :deal, :rich_text_notes, deal_activities: :rich_text_details)
+    @deal_investors = @deal_investors.not_declined if [nil, "", "false", false].include?(params[:all])
     @deal_investors = @deal_investors.where(entity_id: params[:entity_id]) if params[:entity_id].present?
 
     if params[:turbo] && params[:boards] && params[:board_id].present?
@@ -67,7 +76,17 @@ class DealInvestorsController < ApplicationController
           turbo_stream.replace(frame, partial: "deal_investors/deal_show", locals: { deal_investor: @deal_investor, update_allowed: policy(@deal_investor).update?, belongs_to_entity: current_user.entity_id == @deal_investor.entity_id, turbo_tag: frame })
         ]
       end
-      format.html
+      format.html do
+        if params[:turbo_frame] == "deal_investor_frame"
+          render partial: "deal_investors/deal_show", locals: {
+            deal_investor: @deal_investor,
+            update_allowed: policy(@deal_investor).update?,
+            belongs_to_entity: current_user.entity_id == @deal_investor.entity_id,
+            turbo_tag: "deal_investor_frame"
+          }
+        end
+      end
+      format.json { render :show, status: :ok, location: @deal_investor }
     end
   end
 
