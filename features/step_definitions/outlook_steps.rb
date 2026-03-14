@@ -36,17 +36,17 @@ Given('an approved investor access exists for {string} for that other investor')
 end
 
 When('I match an email from {string}') do |email|
-  @matcher = InvestorEmailMatcher.new(from_email: email)
+  @matcher = InvestorEmailMatcher.new(from_email: email, policy_scope: InvestorAccess.all)
   @result = @matcher.match
 end
 
 When('I match an email from {string} with to {string}') do |from, to|
-  @matcher = InvestorEmailMatcher.new(from_email: from, to_emails: [to])
+  @matcher = InvestorEmailMatcher.new(from_email: from, to_emails: [to], policy_scope: InvestorAccess.all)
   @result = @matcher.match
 end
 
 When('I call the match API with from {string}') do |email|
-  @api_response = InvestorEmailMatcher.new(from_email: email).match
+  @api_response = InvestorEmailMatcher.new(from_email: email, policy_scope: InvestorAccess.all).match
 end
 
 Then('the API response should indicate {string} match') do |type|

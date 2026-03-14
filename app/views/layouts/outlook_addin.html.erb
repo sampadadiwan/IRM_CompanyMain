@@ -4,42 +4,170 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>CapHive Outlook Add-in</title>
+    <title>CapHive Filing</title>
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
     <!-- Office.js library -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
 
-    <!-- CSS (Tailwind if available, or custom) -->
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- CSS -->
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 10px; margin: 0; }
-        .header { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
-        .header img { height: 30px; margin-right: 10px; }
-        .content { font-size: 14px; }
-        .section { margin-bottom: 20px; }
-        .label { font-weight: bold; color: #666; font-size: 12px; text-transform: uppercase; }
-        .value { margin-top: 4px; font-size: 16px; }
-        .btn {
-            display: block; width: 100%; padding: 10px; background: #0078d4; color: white; border: none;
-            border-radius: 4px; text-align: center; cursor: pointer; font-size: 14px; font-weight: bold;
-            margin-bottom: 10px;
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
         }
-        .btn-secondary { background: #f3f2f1; color: #323130; border: 1px solid #8a8886; }
-        .btn:disabled { background: #c8c6c4; cursor: not-allowed; }
-        .loading { text-align: center; padding: 20px; }
-        .error { color: #a4262c; padding: 10px; background: #fed9cc; border-radius: 4px; margin-bottom: 10px; }
-        .success { color: #107c10; padding: 10px; background: #dff6dd; border-radius: 4px; margin-bottom: 10px; }
-        .investor-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 0;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            background: white;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .header img { height: 24px; margin-right: 12px; }
+        .header strong { font-size: 18px; font-weight: 700; color: var(--primary); letter-spacing: -0.025em; }
+
+        .container { padding: 16px; }
+
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            padding: 16px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+
+        .value-large {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            margin-bottom: 12px;
+        }
+
+        .btn:hover { background: var(--primary-hover); transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-secondary { background: white; color: var(--text-main); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: #f1f5f9; }
+
+        .btn:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid rgba(37, 99, 235, 0.2);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s ease-in-out infinite;
+            margin: 0 auto 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-warning { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+
+        .investor-select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: white;
+            margin-top: 8px;
+            outline: none;
+        }
+        .investor-select:focus { border-color: var(--primary); ring: 2px var(--primary); }
+
+        .simulator-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            background: #e2e8f0;
+            color: #475569;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: auto;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <img src="/img/logo-without-tagline.jpg" alt="CapHive Logo">
+        <img src="/img/logo-without-tagline.jpg" alt="CapHive">
         <strong>CapHive</strong>
+        <% if Rails.env.development? %>
+            <span id="sim-status" class="simulator-badge" style="display:none">SIMULATOR</span>
+        <% end %>
     </div>
 
-    <%= yield %>
+    <div class="container">
+        <%= yield %>
+    </div>
 
     <script type="text/javascript" src="/assets/outlook_addin.js"></script>
 </body>
