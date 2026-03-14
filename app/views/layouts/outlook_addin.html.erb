@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CapHive Outlook Add-in</title>
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <!-- Office.js library -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+
+    <!-- CSS (Tailwind if available, or custom) -->
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 10px; margin: 0; }
+        .header { display: flex; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .header img { height: 30px; margin-right: 10px; }
+        .content { font-size: 14px; }
+        .section { margin-bottom: 20px; }
+        .label { font-weight: bold; color: #666; font-size: 12px; text-transform: uppercase; }
+        .value { margin-top: 4px; font-size: 16px; }
+        .btn {
+            display: block; width: 100%; padding: 10px; background: #0078d4; color: white; border: none;
+            border-radius: 4px; text-align: center; cursor: pointer; font-size: 14px; font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .btn-secondary { background: #f3f2f1; color: #323130; border: 1px solid #8a8886; }
+        .btn:disabled { background: #c8c6c4; cursor: not-allowed; }
+        .loading { text-align: center; padding: 20px; }
+        .error { color: #a4262c; padding: 10px; background: #fed9cc; border-radius: 4px; margin-bottom: 10px; }
+        .success { color: #107c10; padding: 10px; background: #dff6dd; border-radius: 4px; margin-bottom: 10px; }
+        .investor-select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <img src="/img/logo-without-tagline.jpg" alt="CapHive Logo">
+        <strong>CapHive</strong>
+    </div>
+
+    <%= yield %>
+
+    <script type="text/javascript" src="/assets/outlook_addin.js"></script>
+</body>
+</html>

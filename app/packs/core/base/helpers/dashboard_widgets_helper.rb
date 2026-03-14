@@ -1,5 +1,4 @@
 module DashboardWidgetsHelper
-
   # Returns a hash of widgets for a given dashboard and entity.
   #
   # Criteria for returning a widget:
@@ -29,7 +28,6 @@ module DashboardWidgetsHelper
     # Step 4: Handle tag_list filtering. Fall back to owner's tag_list if none is provided.
     tag_list ||= owner.tag_list if owner.respond_to?(:tag_list)
     Rails.logger.debug { "Filtering widgets for dashboard '#{dashboard_name}' with tags: #{tag_list} for owner #{owner}" }
-
 
     if widgets.empty?
       # Step 5a: If no custom widgets are configured for this dashboard/entity/owner, return the default set.
@@ -68,11 +66,11 @@ module DashboardWidgetsHelper
   def include_widget_by_tag?(widget, tag_list)
     # If tag_list is provided
     if tag_list.present?
-      requested_tags = tag_list.split(",").map(&:strip).reject(&:blank?).map(&:downcase)
-      widget_tags = widget.tag_list.to_s.split(",").map(&:strip).reject(&:blank?).map(&:downcase)
+      requested_tags = tag_list.split(",").map(&:strip).compact_blank.map(&:downcase)
+      widget_tags = widget.tag_list.to_s.split(",").map(&:strip).compact_blank.map(&:downcase)
       # Always include widgets with an empty tag_list.
       # Otherwise, return true if at least one of their tags matches a tag in the requested tag_list.
-      widget_tags.blank? || (requested_tags & widget_tags).any?
+      widget_tags.blank? || requested_tags.intersect?(widget_tags)
     else
       # If tag_list is blank but the widget has a tag_list, then it should not be returned.
       widget.tag_list.blank?

@@ -11,6 +11,7 @@ class IncomingEmail < ApplicationRecord
 
   belongs_to :owner, polymorphic: true, optional: true
   belongs_to :entity
+  belongs_to :filed_by_user, class_name: 'User', optional: true
 
   def to_s
     "From: #{from}, Subj: #{subject}"

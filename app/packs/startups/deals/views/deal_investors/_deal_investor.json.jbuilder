@@ -1,7 +1,7 @@
 json.extract! deal_investor, :id, :deal_id, :investor_id, :status, :entity_id, :created_at, :updated_at, :investor_name, :tier, :investor_advisor, :health_score, :tags, :deal_lead, :source
 json.properties deal_investor.json_fields
-json.investor_logo_url deal_investor.investor&.investor_entity&.logo_url if deal_investor.investor&.investor_entity&.logo&.present?
-json.investor_initials deal_investor.investor&.investor_name&.split&.map(&:first)&.join&.upcase if deal_investor.investor&.investor_name&.present?
+json.investor_logo_url deal_investor.investor&.investor_entity&.logo_url if deal_investor.investor&.investor_entity&.logo.present?
+json.investor_initials deal_investor.investor&.investor_name&.split&.map(&:first)&.join&.upcase if deal_investor.investor&.investor_name.present?
 json.stagnant deal_investor.stagnant?
 json.stagnant_reason deal_investor.stagnant_reason
 json.notes deal_investor.notes.to_plain_text if deal_investor.notes.present?

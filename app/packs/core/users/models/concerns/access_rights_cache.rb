@@ -77,10 +77,10 @@ module AccessRightsCache
     self.access_rights_cache[for_entity_id] ||= {}
     self.access_rights_cache[for_entity_id][access_right.owner_type] ||= {}
     self.access_rights_cache[for_entity_id][access_right.owner_type][access_right.owner_id] ||= {}
-    
+
     # LOGIC FIX: Check has_cached_role? instead of curr_role.
     # curr_role represents the current UI persona which changes frequently.
-    # has_cached_role? represents the underlying permission, ensuring background syncs 
+    # has_cached_role? represents the underlying permission, ensuring background syncs
     # work regardless of which persona the user has currently switched to.
     if has_cached_role?(:employee) || investor_access.present? || has_cached_role?(:investor_advisor)
       self.access_rights_cache[for_entity_id][access_right.owner_type][access_right.owner_id] = "#{access_right[:permissions]}, #{access_right.metadata}"
@@ -179,7 +179,7 @@ module AccessRightsCache
       end
 
       # 3. Add direct access rights for investor advisors across their authorized entities.
-      # This ensures that rights granted specifically to an advisor's user ID for a firm 
+      # This ensures that rights granted specifically to an advisor's user ID for a firm
       # they advise are correctly cached.
       if has_cached_role?(:investor_advisor)
         investor_advisors.each do |ia|

@@ -19,8 +19,7 @@ class ApplicationController < ActionController::Base
     super
   end
 
-
-   def restore_deleted
+  def restore_deleted
     model_class = controller_name.classify.constantize
     record = model_class.only_deleted.find(params[:id])
     authorize record, :destroy?
@@ -29,7 +28,7 @@ class ApplicationController < ActionController::Base
     %w[document_folder_id data_room_folder_id].each do |folder_attr|
       if record.respond_to?(folder_attr) && record.send(folder_attr).present?
         folder = Folder.only_deleted.find_by(id: record.send(folder_attr))
-        folder.restore(recursive: true) if folder
+        folder&.restore(recursive: true)
       end
     end
 
@@ -89,6 +88,4 @@ class ApplicationController < ActionController::Base
     @signed_id_user = user
   end
   # rubocop:enable Rails/DynamicFindBy
-
-
 end

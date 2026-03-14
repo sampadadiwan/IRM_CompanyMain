@@ -80,7 +80,7 @@ class InvestorAdvisor < ApplicationRecord
   after_commit :refresh_user_cache, on: :create
 
   def refresh_user_cache
-    # When an advisor record is created, we need to refresh the user's cache 
+    # When an advisor record is created, we need to refresh the user's cache
     # for this entity so any pre-existing AccessRights are picked up.
     user.reset_access_rights_cache
   end

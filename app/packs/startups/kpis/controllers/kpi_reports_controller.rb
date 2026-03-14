@@ -181,8 +181,10 @@ class KpiReportsController < ApplicationController
           turbo_stream.append("remote_modal", partial: "kpi_reports/alerts"),
           turbo_stream.update("remote_modal_alerts", partial: "kpi_reports/alerts")
         ]
+        # rubocop:disable Rails/OutputSafety
         streams << turbo_stream.append("remote_modal_alerts", "<script>bootstrap.Modal.getInstance(document.getElementById('#{params[:modal_id]}'))?.hide()</script>".html_safe) if params[:modal_id].present?
         render turbo_stream: streams
+        # rubocop:enable Rails/OutputSafety
       end
     end
   end
@@ -227,7 +229,7 @@ class KpiReportsController < ApplicationController
   def extract_sorting_params
     q_param = params[:q]
 
-    return [nil, nil, nil] unless q_param&.is_a?(Hash) && q_param[:s]
+    return [nil, nil, nil] unless q_param.is_a?(Hash) && q_param[:s]
 
     sort_field, sort_direction = params[:q][:s].split
     sort_field = nil unless sort_field == "entity_name"

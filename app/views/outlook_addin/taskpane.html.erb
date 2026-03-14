@@ -1,0 +1,51 @@
+<div id="main-content" class="content">
+    <div id="simulator-controls" style="display: none; background: #eee; padding: 10px; margin-bottom: 10px; border-radius: 4px; border: 1px dashed #666;">
+        <div class="label">Simulator Input</div>
+        <input type="text" id="sim-from" placeholder="From Email" value="john@example.com" class="investor-select">
+        <button id="sim-reload" class="btn btn-secondary" style="margin-top:5px; padding: 5px; font-size: 12px;">Update Sim Data</button>
+    </div>
+
+    <div id="loading" class="loading">
+        <p>Analyzing email...</p>
+    </div>
+
+    <div id="app-body" style="display: none;">
+        <div id="message-container"></div>
+
+        <div class="section">
+            <div class="label">Matched Investor</div>
+            <div id="investor-name" class="value">-</div>
+            <div id="investor-selector-container" style="display: none;">
+                <select id="investor-select" class="investor-select">
+                    <option value="">Select Investor...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="label">Subject</div>
+            <div id="email-subject" class="value">-</div>
+        </div>
+
+        <div class="section">
+            <button id="file-button" class="btn" disabled>Confirm Filing</button>
+            <button id="change-investor-button" class="btn btn-secondary" style="display: none;">Change Investor</button>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    // Data extracted from Outlook
+    window.emailData = {
+        subject: '',
+        from: '',
+        to: [],
+        cc: [],
+        body: '',
+        messageId: '',
+        internetMessageId: '',
+        receivedAt: null
+    };
+
+    window.matchedInvestors = [];
+</script>

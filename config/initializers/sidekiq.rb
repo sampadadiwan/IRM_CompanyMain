@@ -45,8 +45,6 @@ Sidekiq.configure_server do |config|
 
     # Sidekiq::Cron::Job.create(name: 'Weekly Compliance Checks', cron: '59 23 * * 0', class: 'Com')
   end
-
-  
 end
 
 Sidekiq.default_configuration[:max_retries] = 2

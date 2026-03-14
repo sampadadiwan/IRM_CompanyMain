@@ -13,7 +13,7 @@ wb.add_worksheet(name: "Pivot") do |sheet|
   @pivot.groups.each do |group|
     span = @pivot.dates_by_group[group].size
     header1 << AccountEntryPivot.sanitize_str(group.to_s)
-    (span - 1).times { header1 << nil }  # placeholder cells for the merge
+    (span - 1).times { header1 << nil } # placeholder cells for the merge
   end
   sheet.add_row header1
 

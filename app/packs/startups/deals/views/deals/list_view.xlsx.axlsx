@@ -3,7 +3,7 @@ wb = xlsx_package.workbook
 wb.styles do |style|
   header_style = style.add_style(bg_color: "4472C4", fg_color: "FFFFFF", b: true, alignment: { horizontal: :center, vertical: :center })
   money_style = style.add_style(format_code: '#,##0.00', alignment: { horizontal: :right })
-  percent_style = style.add_style(format_code: '0%', alignment: { horizontal: :center })
+  style.add_style(format_code: '0%', alignment: { horizontal: :center })
   centered_style = style.add_style(alignment: { horizontal: :center })
 
   # Status Styles
@@ -31,8 +31,7 @@ wb.styles do |style|
 
       # Determine status icon
       status_icon = case deal_investor.status
-                    when 'Active' then '🟢 '
-                    when 'Complete' then '🟢 '
+                    when 'Active', 'Complete' then '🟢 '
                     when 'In Progress' then '🟡 '
                     when 'Declined' then '🔴 '
                     else ''

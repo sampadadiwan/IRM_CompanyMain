@@ -28,12 +28,10 @@ class BoardsController < ApplicationController
     # Eager load columns and their cards with data_source, entity, and kanban_board to avoid N+1 in views
     # Pre-load owner for policy checks and deal data
     @kanban_columns = @kanban_board.kanban_columns
-                                   .includes(:entity, :kanban_board, kanban_cards: [:data_source, :entity, :kanban_board])
+                                   .includes(:entity, :kanban_board, kanban_cards: %i[data_source entity kanban_board])
 
     # If the owner is a Deal, pre-load deal_investors on the owner to avoid individual loads for policy checks
-    if @kanban_board.owner_type == "Deal"
-      @kanban_board.owner = Deal.where(id: @kanban_board.owner_id).includes(:deal_investors).first
-    end
+    @kanban_board.owner = Deal.where(id: @kanban_board.owner_id).includes(:deal_investors).first if @kanban_board.owner_type == "Deal"
   end
 
   def index

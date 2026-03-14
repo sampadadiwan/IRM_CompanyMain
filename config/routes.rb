@@ -65,6 +65,15 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "entities#dashboard"
 
+  get 'outlook_addin/taskpane', to: 'outlook_addin#taskpane'
+  get 'outlook_addin/investors', to: 'outlook_addin#investors'
+  namespace :api do
+    namespace :outlook do
+      resources :email_matches, only: [:create]
+    end
+    resources :incoming_emails, only: [:create]
+  end
+
   post 'incoming_emails/sendgrid', to: 'incoming_emails#sendgrid'
 
   if Rails.env.test?
