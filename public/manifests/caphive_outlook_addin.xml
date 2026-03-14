@@ -11,11 +11,11 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="CapHive Filing" />
   <Description DefaultValue="File emails to CapHive investor records." />
-  <IconUrl DefaultValue="https://dev.altconnects.com/favicon.ico" />
-  <HighResolutionIconUrl DefaultValue="https://dev.altconnects.com/favicon.ico" />
+  <IconUrl DefaultValue="https://app.caphive.com/favicon.ico" />
+  <HighResolutionIconUrl DefaultValue="https://app.caphive.com/favicon.ico" />
   <SupportUrl DefaultValue="https://caphive.com/support" />
   <AppDomains>
-    <AppDomain>https://dev.altconnects.com</AppDomain>
+    <AppDomain>https://app.caphive.com</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Mailbox" />
@@ -28,7 +28,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://dev.altconnects.com/outlook_addin/taskpane" />
+        <SourceLocation DefaultValue="https://app.caphive.com/outlook_addin/taskpane" />
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -75,13 +75,13 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="icon16" DefaultValue="https://dev.altconnects.com/favicon.ico" />
-        <bt:Image id="icon32" DefaultValue="https://dev.altconnects.com/favicon.ico" />
-        <bt:Image id="icon80" DefaultValue="https://dev.altconnects.com/favicon.ico" />
+        <bt:Image id="icon16" DefaultValue="https://app.caphive.com/favicon.ico" />
+        <bt:Image id="icon32" DefaultValue="https://app.caphive.com/favicon.ico" />
+        <bt:Image id="icon80" DefaultValue="https://app.caphive.com/favicon.ico" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="functionFile" DefaultValue="https://dev.altconnects.com/outlook_addin/taskpane" />
-        <bt:Url id="taskpaneUrl" DefaultValue="https://dev.altconnects.com/outlook_addin/taskpane" />
+        <bt:Url id="functionFile" DefaultValue="https://app.caphive.com/outlook_addin/taskpane" />
+        <bt:Url id="taskpaneUrl" DefaultValue="https://app.caphive.com/outlook_addin/taskpane" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="groupLabel" DefaultValue="CapHive" />
