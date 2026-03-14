@@ -1,3 +1,9 @@
+V9.2.02
+87098a742 Added better help text to Formulas form
+895851db5 Add foreign key constraint handling during database rename process
+2803cd81d Now download all pages of AEs on pivot (#1298)
+85763173c Better prod restore docs
+
 V9.2.00
 1a6210f21 Fixed Tracking Currency Job
 a631c000c Notice fees breakdown fix (#1296)

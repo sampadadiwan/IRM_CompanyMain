@@ -18,8 +18,9 @@ export default class extends Controller {
       })
 
       let hasLoadingFrames = frames.some(frame => frame.hasAttribute('src'))
+      let hasLazyFrames = frames.some(frame => frame.getAttribute('loading') === 'lazy')
 
-      if (!hasAnyContent && hasLoadingFrames) {
+      if (!hasAnyContent && hasLoadingFrames && !hasLazyFrames) {
         this.element.classList.add("d-none")
       }
 
@@ -50,8 +51,19 @@ export default class extends Controller {
       }
 
       // Turbo sets the 'busy' attribute while loading.
-      if (frame.hasAttribute('src') && frame.hasAttribute('busy')) {
-        allFinished = false
+      // For lazy frames, if they haven't loaded yet (no content and not busy), we don't consider them finished.
+      if (frame.hasAttribute('src')) {
+        const isLazy = frame.getAttribute('loading') === 'lazy'
+        const isBusy = frame.hasAttribute('busy')
+        const isLoaded = frame.dataset.loaded === 'true'
+
+        if (isBusy) {
+          allFinished = false
+        } else if (isLazy && !frameHasContent && !isLoaded) {
+          // If it's lazy and has no content, we need to check if it's actually loaded or still waiting to be scrolled into view.
+          // Turbo frames that are lazy and haven't started loading won't have 'busy'.
+          allFinished = false
+        }
       }
     })
 
@@ -63,10 +75,16 @@ export default class extends Controller {
       // We only do this if there was at least one frame that was supposed to load.
       let hasLoadingFrames = frames.some(frame => frame.hasAttribute('src'))
       if (hasLoadingFrames) {
-        const widgetId = this.element.dataset.widgetId
         this.element.classList.add("d-none")
-        console.warn(`Turbo Frame Visibility Controller: No content found in any frames after loading. Hiding widget ID: ${widgetId}. Frames checked:`, frames)
       }
     }
+  }
+
+  /**
+   * Specifically marks a frame as loaded when the event fires.
+   */
+  markAsLoaded(event) {
+    event.target.dataset.loaded = 'true'
+    this.toggleVisibility()
   }
 }

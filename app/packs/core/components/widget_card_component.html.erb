@@ -6,7 +6,7 @@
   # Always add the visibility controller
   wrapper_options[:data] ||= {}
   wrapper_options[:data][:controller] = "#{wrapper_options[:data][:controller]} turbo-frame-visibility".strip
-  wrapper_options[:data][:action] = "#{wrapper_options[:data][:action]} turbo:frame-load->turbo-frame-visibility#toggleVisibility".strip
+  wrapper_options[:data][:action] = "#{wrapper_options[:data][:action]} turbo:frame-load->turbo-frame-visibility#markAsLoaded".strip
   wrapper_options[:data][:widget_id] = @widget.id
 %>
 <div <%= tag.attributes(wrapper_options) %>>
