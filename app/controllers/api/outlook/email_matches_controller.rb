@@ -12,7 +12,7 @@ module Api
           from_email: params[:from_email],
           to_emails: params[:to_emails],
           cc_emails: params[:cc_emails],
-          policy_scope: policy_scope(InvestorAccess)
+          user: current_user
         )
         result = matcher.match
 

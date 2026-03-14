@@ -1,17 +1,41 @@
 class InvestorEmailMatcher
-  def initialize(from_email:, policy_scope:, to_emails: [], cc_emails: [])
-    @emails = ([from_email] + Array(to_emails) + Array(cc_emails)).map(&:downcase).uniq.compact_blank
-    @policy_scope = policy_scope
+  include Pundit::Authorization
+
+  def initialize(from_email:, user:, to_emails: [], cc_emails: [])
+    @from_email = from_email.downcase
+    @to_emails = Array(to_emails).map(&:downcase).uniq.compact_blank
+    @cc_emails = Array(cc_emails).map(&:downcase).uniq.compact_blank
+    @user = user
   end
 
   def match
-    matches = @policy_scope.approved.where(email: @emails).includes(:investor)
+    # 1. First try matching the from_email domain with the investor's primary_email domain
+    from_domain = @from_email.split("@").last
+    matches = investor_scope.where("primary_email LIKE ?", "%@#{from_domain}")
+
+    # 2. If still no match, try matching cc emails domain
+    if matches.none?
+      cc_domains = @cc_emails.map { |email| email.split("@").last }.uniq
+      if cc_domains.any?
+        domain_queries = cc_domains.map { |domain| "primary_email LIKE '%@#{domain}'" }.join(" OR ")
+        matches = investor_scope.where(domain_queries)
+      end
+    end
+
+    # 3. If still no match, try matching by InvestorAccess email (the original logic)
+    if matches.none?
+      all_emails = ([@from_email] + @to_emails + @cc_emails).uniq.compact_blank
+      matches = investor_access_scope.approved.where(email: all_emails).includes(:investor)
+    end
 
     if matches.one?
-      { match_type: "single", investors: [matches.first.investor] }
+      # If matches are from InvestorAccess, we need to return the investor
+      result = matches.first
+      investor = result.is_a?(Investor) ? result : result.investor
+      { match_type: "single", investors: [investor] }
     elsif matches.many?
       # Group by investor to avoid duplicate investors if multiple emails match same investor
-      investors = matches.filter_map(&:investor).uniq
+      investors = matches.map { |m| m.is_a?(Investor) ? m : m.investor }.uniq
       if investors.one?
         { match_type: "single", investors: [investors.first] }
       else
@@ -20,5 +44,15 @@ class InvestorEmailMatcher
     else
       { match_type: "none", investors: [] }
     end
+  end
+
+  private
+
+  def investor_scope
+    Pundit.policy_scope!(@user, Investor)
+  end
+
+  def investor_access_scope
+    Pundit.policy_scope!(@user, InvestorAccess)
   end
 end

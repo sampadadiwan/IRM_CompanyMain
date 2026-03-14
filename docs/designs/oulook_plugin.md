@@ -16,7 +16,7 @@ Fund managers frequently communicate with investors through email. Important dis
 
 This feature introduces an **Outlook Add-in that allows users to file emails under investors directly from Outlook**.
 
-Emails will be matched to investors based on **email addresses stored in `InvestorAccess.email`**, and the email will be stored using the existing **`IncomingEmail` model**.
+Emails will be matched to investors based on **email addresses stored in `InvestorAccess.email`** and **investor domains stored in `Investor.primary_email`**, and the email will be stored using the existing **`IncomingEmail` model**.
 
 ---
 
@@ -25,7 +25,7 @@ Emails will be matched to investors based on **email addresses stored in `Invest
 ### Primary Goals
 
 1. Allow Outlook users to **file emails into CapHive under investors**.
-2. Automatically match emails using **`InvestorAccess.email`**.
+2. Automatically match emails using **investor domains (`Investor.primary_email`)** and **contact emails (`InvestorAccess.email`)**.
 3. Store the email inside the **existing `IncomingEmail` model**.
 4. Provide a **central communication history for investors**.
 
@@ -92,33 +92,22 @@ Create an **Outlook Add-in** that allows users to:
 
 # 7. Key Matching Logic
 
-Investor matching will use the **InvestorAccess table**.
+Investor matching uses a multi-tiered domain and email approach.
 
 Relationship:
 
 ```
 Investor
+  primary_email (used for domain matching)
   has_many InvestorAccess
-       email
+       email (used for contact matching)
 ```
 
-Example:
+### Matching Algorithm (Priority Order)
 
-Investor: **ABC Family Office**
-
-InvestorAccess emails:
-
-```
-john@abcfo.com
-assistant@abcfo.com
-legal@abcfo.com
-```
-
-Matching occurs if the email appears in:
-
-* sender
-* to
-* cc
+1.  **From Email Domain Match**: Extracts domain from the sender's email and matches it against `Investor.primary_email` domain.
+2.  **CC Email Domain Match**: Extracts domains from any CC'd emails and matches them against `Investor.primary_email` domain.
+3.  **Direct Email Match (Fallback)**: Matches sender, to, and cc emails against `InvestorAccess.email`.
 
 ---
 
@@ -165,13 +154,12 @@ The Outlook add-in extracts:
 
 Add-in sends metadata to CapHive API.
 
-Matching rule:
+Matching logic (implemented in `InvestorEmailMatcher`):
 
-```
-emails = [from_email] + to_emails + cc_emails
-
-# Filter by approved accesses only
-InvestorAccess.approved.where(email: emails)
+```ruby
+# 1. Match from_email domain to investor primary_email domain
+# 2. Match cc_emails domains to investor primary_email domain
+# 3. Match all emails to InvestorAccess.email
 ```
 
 ---
@@ -188,7 +176,7 @@ Response:
 
 ```
 Matched Investor: ABC Family Office
-Reason: sender email matched InvestorAccess.email
+Reason: domain matched investor primary_email
 Confidence: High
 ```
 
@@ -204,7 +192,7 @@ Example:
 legal@lawfirm.com
 ```
 
-Used by multiple investors.
+Used by multiple investors or domains shared across entities.
 
 System response:
 
@@ -263,20 +251,23 @@ Attachments can be stored using the existing file storage mechanism used by `Inc
 
 Pseudocode:
 
-```
-emails = [from_email] + to_emails + cc_emails
+```ruby
+def match
+  # 1. Match from_email domain
+  matches = Investor.where("primary_email LIKE ?", "%@#{from_domain}")
 
-# Filter by approved accesses only
-matches = InvestorAccess.approved.where(email: emails)
+  # 2. Match cc_emails domains
+  if matches.none?
+    matches = Investor.where(cc_domain_queries)
+  end
 
-if matches.count == 1
-  return matches.first.investor
+  # 3. Fallback to InvestorAccess
+  if matches.none?
+    matches = InvestorAccess.approved.where(email: all_emails)
+  end
 
-if matches.count > 1
-  return multiple_matches
-
-else
-  return no_match
+  return matches
+end
 ```
 
 ---
@@ -286,7 +277,7 @@ else
 ### Match Investor
 
 ```
-POST /api/email_match
+POST /api/outlook/email_matches
 ```
 
 Input:
@@ -304,7 +295,9 @@ Response:
 ```
 {
   match_type: "single | multiple | none",
-  investors: []
+  investors: [
+    { id, name }
+  ]
 }
 ```
 
@@ -347,7 +340,7 @@ Matched Investor
 ABC Family Office
 
 Reason
-Sender email matched investor contact
+Sender domain matched investor record
 
 Subject
 Capital call clarification
@@ -365,11 +358,7 @@ Capital call clarification
 
 Before filing an email:
 
-```
-current_user.can_view?(investor)
-```
-
-Users must have access to the investor within CapHive.
+The system uses `Pundit.policy_scope!` to ensure the current user can only match investors they have access to.
 
 ---
 
@@ -453,12 +442,6 @@ Success criteria:
 * AI summarization of investor communication
 * Task extraction
 
-### Phase 4
-
-* Investor communication timeline
-* Sentiment detection
-* Compliance alerts
-
 ---
 
 # 19. Estimated Timeline
@@ -478,6 +461,30 @@ Estimated MVP:
 
 ---
 
+# 20. Technical Implementation Detail
+
+The investor matching logic is encapsulated in the `InvestorEmailMatcher` service.
+
+```ruby
+# app/services/investor_email_matcher.rb
+class InvestorEmailMatcher
+  include Pundit::Authorization
+
+  def initialize(from_email:, user:, to_emails: [], cc_emails: [])
+    # ...
+  end
+
+  def match
+    # Tiered matching logic:
+    # 1. From domain -> Investor.primary_email domain
+    # 2. CC domains -> Investor.primary_email domain
+    # 3. Fallback to InvestorAccess.email
+  end
+end
+```
+
+---
+
 ## Important Strategic Note
 
 This feature is more powerful than it looks.
@@ -490,480 +497,3 @@ Once emails are stored in `IncomingEmail`, you unlock:
 * **meeting prep generation for fund managers**
 
 In other words, this can become the **central communication layer of CapHive**.
-
----
-
-If you'd like, I can also show you **how the Rails service object for investor matching should be written** (it’s about a 30-line clean service that will make this feature extremely robust).
-
-
-
-Below is a **clean PRD focused specifically on the technical architecture and implementation**, aligned with:
-
-* **Rails backend**
-* **ERB templates**
-* **Devise authentication (`/users/sign_in`)**
-* **Existing `IncomingEmail` model**
-* **Investor → InvestorAccess.email matching**
-* **No React**
-
----
-
-# Product Requirements Document (PRD)
-
-## Feature
-
-**Outlook Add-in for Filing Emails to Investors**
-
----
-
-# 1. Overview
-
-Fund managers and investor relations teams communicate with investors primarily through email. Important investor communication often remains inside personal inboxes and is not systematically stored within CapHive.
-
-This feature introduces an **Outlook Add-in that allows users to file emails from Outlook into CapHive under the appropriate investor**.
-
-The system will:
-
-1. Extract email metadata from the currently opened Outlook email
-2. Match the email to an investor using **InvestorAccess.email**
-3. Allow the user to confirm or override the match
-4. Store the email in the **existing `IncomingEmail` model**
-
-The add-in will use **CapHive’s existing Rails backend, ERB templates, and Devise authentication**.
-
----
-
-# 2. Goals
-
-## Primary Goals
-
-* Enable users to **file emails into CapHive directly from Outlook**
-* Automatically **match investors via `InvestorAccess.email`**
-* Store emails using the **existing `IncomingEmail` model**
-* Use **existing Devise authentication**
-
-## Secondary Goals
-
-* Create a **central investor communication history**
-* Improve **team collaboration**
-* Provide **auditability of investor communication**
-
----
-
-# 3. Non-Goals (MVP)
-
-The first version will **not include**:
-
-* Automatic mailbox ingestion
-* AI-based investor matching
-* Email thread reconstruction
-* Sending emails from CapHive
-* Automatic filing without user confirmation
-
----
-
-# 4. Users
-
-Primary users:
-
-* Fund managers
-* Investor relations teams
-* Fund operations teams
-
-Secondary users:
-
-* Compliance teams
-* Fund administrators
-
----
-
-# 5. High-Level Architecture
-
-The Outlook add-in consists of:
-
-1. **Outlook Add-in Manifest (XML)**
-2. **Rails-hosted Web UI (ERB)**
-3. **Office.js JavaScript integration**
-4. **Rails APIs for matching and storing emails**
-
-```
-Outlook Client
-     │
-     │ opens
-     ▼
-Rails ERB Task Pane
-     │
-     │ Office.js extracts email metadata
-     ▼
-Rails API
-     │
-     ├─ Match Investor (InvestorAccess.email)
-     │
-     └─ Store Email (IncomingEmail)
-```
-
----
-
-# 6. Technology Stack
-
-## Backend
-
-* Ruby on Rails
-* PostgreSQL
-* Devise authentication
-
-## Frontend
-
-* ERB templates
-* Vanilla JavaScript
-* Office.js library
-
-## Outlook Integration
-
-* Outlook Add-in XML manifest
-* Office.js APIs
-
-No frontend frameworks (React/Vue) will be used.
-
----
-
-# 7. Authentication
-
-Authentication will reuse **CapHive's existing Devise login system**.
-
-### Login Flow
-
-1. Outlook opens the add-in task pane.
-2. Task pane loads:
-
-```
-/outlook_addin/taskpane
-```
-
-3. If the user is **not authenticated**, they are redirected to:
-
-```
-/users/sign_in
-```
-
-4. User logs in via Devise.
-5. After login, user returns to the Outlook add-in page.
-
-### Session Handling
-
-The add-in will rely on the **standard Rails session cookie** created by Devise.
-
-No long-lived API tokens will be stored in the add-in.
-
----
-
-# 8. Outlook Add-in Manifest
-
-The Outlook add-in requires an **XML manifest file** that defines:
-
-* Add-in metadata
-* Ribbon button
-* Task pane URL
-* Permissions
-
-Example:
-
-```
-public/manifests/caphive_outlook_addin.xml
-```
-
-Key configuration:
-
-```
-Task Pane URL:
-https://app.caphive.com/outlook_addin/taskpane
-```
-
-Ribbon button:
-
-```
-File to CapHive
-```
-
----
-
-# 9. Rails Application Structure
-
-### Controllers
-
-```
-app/controllers/outlook_addin_controller.rb
-```
-
-Actions:
-
-```
-taskpane
-```
-
-API controllers:
-
-```
-app/controllers/api/outlook/email_matches_controller.rb
-app/controllers/api/incoming_emails_controller.rb
-```
-
----
-
-### Views
-
-```
-app/views/outlook_addin/taskpane.html.erb
-```
-
----
-
-### JavaScript
-
-```
-app/assets/javascripts/outlook_addin.js
-```
-
-Handles Office.js integration.
-
----
-
-### Services
-
-```
-app/services/investor_email_matcher.rb
-```
-
-Responsible for investor matching.
-
----
-
-# 10. Email Extraction (Office.js)
-
-The Outlook add-in will use **Office.js** to extract the current email metadata.
-
-Data extracted:
-
-* subject
-* sender email
-* recipient emails
-* cc emails
-* body
-* message id
-* timestamp
-
-Example data payload:
-
-```
-{
-  subject,
-  from_email,
-  to_emails[],
-  cc_emails[],
-  body_html
-}
-```
-
----
-
-# 11. Investor Matching Logic
-
-Investors are matched through the **InvestorAccess model**.
-
-Relationship:
-
-```
-Investor
-  has_many InvestorAccess
-      email
-```
-
-Matching rule:
-
-```
-emails = [from_email] + to_emails + cc_emails
-matches = InvestorAccess.where(email: emails)
-```
-
-Possible outcomes:
-
-| Outcome          | Description                       |
-| ---------------- | --------------------------------- |
-| Single Match     | Investor identified automatically |
-| Multiple Matches | User must select investor         |
-| No Match         | User selects investor manually    |
-
----
-
-# 12. API Endpoints
-
-## Match Investor
-
-```
-POST /api/outlook/email_matches
-```
-
-Input:
-
-```
-{
-  from_email,
-  to_emails[],
-  cc_emails[]
-}
-```
-
-Response:
-
-```
-{
-  match_type: "single | multiple | none",
-  investors: []
-}
-```
-
----
-
-## Create Incoming Email
-
-```
-POST /api/incoming_emails
-```
-
-Payload:
-
-```
-{
-  investor_id,
-  subject,
-  body_html,
-  from_email,
-  to_emails[],
-  cc_emails[],
-  message_id
-}
-```
-
-Creates an `IncomingEmail`.
-
----
-
-# 13. Data Storage
-
-Emails will be stored using the existing **IncomingEmail model**.
-
-Fields used:
-
-```
-IncomingEmail
----------------------
-id
-entity_id
-investor_id
-subject
-body_html
-from_email
-to_emails
-cc_emails
-message_id
-received_at
-created_at
-```
-
-Attachments will use the existing CapHive attachment mechanism.
-
----
-
-# 14. Outlook Add-in UI
-
-Task pane layout:
-
-```
----------------------------------
-CapHive
-
-Matched Investor
-ABC Family Office
-
-Reason
-Sender email matched investor contact
-
-Subject
-Distribution clarification
-
-[ Confirm Filing ]
-
-[ Change Investor ]
-
----------------------------------
-```
-
-States supported:
-
-* Loading
-* Match found
-* Multiple matches
-* No match
-* Filing success
-* Error
-
----
-
-# 15. Duplicate Protection
-
-To avoid duplicate filings:
-
-```
-IncomingEmail.find_by(message_id)
-```
-
-If a record exists, the system will notify the user.
-
----
-
-# 16. Permissions
-
-Before filing the email:
-
-```
-current_user.can_view?(investor)
-```
-
-The user must have permission to access the investor.
-
----
-
-# 17. Edge Cases
-
-### Shared Email Addresses
-
-Multiple investors may share an email.
-
-User must select manually.
-
----
-
-### Forwarded Emails
-
-Matching may fail due to internal forwarding.
-
-User may manually choose investor.
-
----
-
-### Multiple Investors in Thread
-
-User selects the correct investor.
-
----
-
-# 18. Success Metrics
-
-Success criteria:
-
-* > 90% automatic investor match rate
-* Filing email within **2 clicks**
-* > 50% of investor communication recorded within 3 months
-
----
-
