@@ -16,6 +16,26 @@
         <%= @incoming_email.to %>
       </td>
     </tr>
+    <% if @incoming_email.cc_emails.present? %>
+      <tr>
+        <td>
+          CC
+        </td>
+        <td>
+          <%= @incoming_email.cc_emails %>
+        </td>
+      </tr>
+    <% end %>
+    <% if @incoming_email.received_at.present? %>
+      <tr>
+        <td>
+          Received At
+        </td>
+        <td>
+          <%= l @incoming_email.received_at, format: :long %>
+        </td>
+      </tr>
+    <% end %>
     <tr>
       <td>
         Subject
@@ -48,6 +68,16 @@
         <%= @incoming_email.entity %>
       </td>
     </tr>
+    <% if @incoming_email.filed_by_user.present? %>
+      <tr>
+        <td>
+          Filed By
+        </td>
+        <td>
+          <%= @incoming_email.filed_by_user %>
+        </td>
+      </tr>
+    <% end %>
   </table>
   <div class="associated_entity">
     <% if policy(@incoming_email).update? %>
