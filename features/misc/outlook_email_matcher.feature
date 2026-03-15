@@ -16,12 +16,12 @@ Feature: Outlook Email Matcher
   Scenario: Matching multiple investors by CC domain
     Given another investor exists in that fund
     And that other investor has primary_email "contact@jane.com"
-    When I match an email from "external@example.com" with cc "info@jane.com"
+    When I match an email from "external@example.org" with cc "info@jane.com"
     Then the match result should be "single"
     And the matched investor should be that other investor
 
   Scenario: No match found
-    When I match an email from "unknown@example.com"
+    When I match an email from "unknown@example.org"
     Then the match result should be "none"
 
   Scenario: API - Match investor

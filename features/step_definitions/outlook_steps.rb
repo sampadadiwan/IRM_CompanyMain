@@ -19,6 +19,7 @@ Given('an approved investor access exists for {string} for that investor') do |e
     email: email,
     approved: true
   )
+  @investor.update!(primary_email: email)
 end
 
 Given('another investor exists in that fund') do

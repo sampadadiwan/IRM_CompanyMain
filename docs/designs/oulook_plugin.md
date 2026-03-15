@@ -277,7 +277,7 @@ end
 ### Match Investor
 
 ```
-POST /api/outlook/email_matches
+POST /email_matches
 ```
 
 Input:
@@ -306,7 +306,7 @@ Response:
 ### File Email
 
 ```
-POST /api/incoming_emails
+POST /incoming_emails
 ```
 
 Payload:

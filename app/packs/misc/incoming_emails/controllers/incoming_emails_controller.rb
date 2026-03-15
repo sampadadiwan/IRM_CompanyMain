@@ -1,8 +1,8 @@
 class IncomingEmailsController < ApplicationController
   before_action :set_incoming_email, only: %i[show edit update destroy]
+  before_action :authenticate_user!, except: [:sendgrid]
   skip_before_action :verify_authenticity_token, only: [:sendgrid]
   skip_before_action :set_current_entity, only: [:sendgrid]
-  skip_before_action :authenticate_user!, only: [:sendgrid]
   skip_after_action :verify_authorized, only: [:sendgrid]
 
   def sendgrid
@@ -47,12 +47,33 @@ class IncomingEmailsController < ApplicationController
 
   # POST /incoming_emails
   def create
-    @incoming_email = IncomingEmail.new(incoming_email_params)
-    authorize @incoming_email
-    if @incoming_email.save
-      redirect_to @incoming_email, notice: "Incoming email was successfully created."
+    if params[:investor_id].present?
+      investor = Investor.find(params[:investor_id])
+      authorize investor, :update?
+
+      @incoming_email = IncomingEmail.new(incoming_email_params)
+      authorize @incoming_email
+      @incoming_email.owner = investor
+      @incoming_email.entity = investor.entity
+      @incoming_email.filed_by_user = current_user
+      @incoming_email.received_at ||= Time.current
+
+      respond_to do |format|
+        if @incoming_email.save
+          format.json { render json: { success: true, id: @incoming_email.id } }
+        else
+          format.json { render json: { success: false, errors: @incoming_email.errors.full_messages }, status: :unprocessable_content }
+        end
+      end
     else
-      render :new, status: :unprocessable_entity
+      @incoming_email = IncomingEmail.new(incoming_email_params)
+      authorize @incoming_email
+      if @incoming_email.save
+        redirect_to @incoming_email, notice: "Incoming email was successfully created."
+      else
+        puts @incoming_email.errors.full_messages
+        render :new, status: :unprocessable_entity
+      end
     end
   end
 
@@ -81,6 +102,6 @@ class IncomingEmailsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def incoming_email_params
-    params.require(:incoming_email).permit(:from, :to, :subject, :body, :owner_id, :owner_type, :entity_id)
+    params.require(:incoming_email).permit(:from, :to, :subject, :body, :owner_id, :owner_type, :entity_id, :cc_emails, :message_id, :internet_message_id, :received_at)
   end
 end

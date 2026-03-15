@@ -20,6 +20,8 @@ class IncomingEmail < ApplicationRecord
   # This is used to check if the incoming email is sent to an entities mailbox
   before_validation :match_mailbox
   def match_mailbox
+    return if entity.present?
+
     self.entity ||= Entity.joins(:entity_setting).where('entity_settings.mailbox': to).first
     if self.entity.present?
       # Find the investor in this entity that matches the subject
