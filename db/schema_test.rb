@@ -1002,6 +1002,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_14_163118) do
     t.integer "position"
     t.boolean "show_menu", default: true, null: false
     t.string "size", limit: 10
+    t.string "tag_list", limit: 20
     t.string "tags", limit: 100
     t.datetime "updated_at", null: false
     t.string "widget_name", limit: 30
