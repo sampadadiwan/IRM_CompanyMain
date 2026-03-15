@@ -1,6 +1,8 @@
 Given('a fund exists') do
   @entity = FactoryBot.create(:entity, name: 'Fund Entity', persona: 'fund')
   @fund = FactoryBot.create(:fund, entity: @entity)
+  @user = FactoryBot.create(:user, entity: @entity)
+  @user.add_role(:company_admin)
 end
 
 Given('an investor exists in that fund') do
@@ -36,17 +38,24 @@ Given('an approved investor access exists for {string} for that other investor')
 end
 
 When('I match an email from {string}') do |email|
-  @matcher = InvestorEmailMatcher.new(from_email: email, policy_scope: InvestorAccess.all)
+  @matcher = InvestorEmailMatcher.new(from_email: email, user: @user)
   @result = @matcher.match
 end
 
-When('I match an email from {string} with to {string}') do |from, to|
-  @matcher = InvestorEmailMatcher.new(from_email: from, to_emails: [to], policy_scope: InvestorAccess.all)
+When('I match an email from {string} with cc {string}') do |from, cc|
+  @matcher = InvestorEmailMatcher.new(from_email: from, cc_emails: [cc], user: @user)
   @result = @matcher.match
+  # puts "DEBUG: matches = #{@result[:investors].map(&:primary_email)}"
+end
+
+Given('that other investor has primary_email {string}') do |email|
+  @investor2.update!(primary_email: email)
+  # Ransack or Elasticsearch might need indexing, but for direct AR where it should be fine.
+  # However, let's ensure the investor2 is actually the one we expect.
 end
 
 When('I call the match API with from {string}') do |email|
-  @api_response = InvestorEmailMatcher.new(from_email: email, policy_scope: InvestorAccess.all).match
+  @api_response = InvestorEmailMatcher.new(from_email: email, user: @user).match
 end
 
 Then('the API response should indicate {string} match') do |type|
@@ -87,6 +96,6 @@ Then('the matched investor should be that investor') do
   expect(@result[:investors]).to include(@investor)
 end
 
-Then('the matched investors should include both investors') do
-  expect(@result[:investors]).to include(@investor, @investor2)
+Then('the matched investor should be that other investor') do
+  expect(@result[:investors]).to include(@investor2)
 end

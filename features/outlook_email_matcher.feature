@@ -13,12 +13,12 @@ Feature: Outlook Email Matcher
     Then the match result should be "single"
     And the matched investor should be that investor
 
-  Scenario: Matching multiple investors
+  Scenario: Matching multiple investors by CC domain
     Given another investor exists in that fund
-    And an approved investor access exists for "jane@example.com" for that other investor
-    When I match an email from "john@example.com" with to "jane@example.com"
-    Then the match result should be "multiple"
-    And the matched investors should include both investors
+    And that other investor has primary_email "contact@jane.com"
+    When I match an email from "external@example.com" with cc "info@jane.com"
+    Then the match result should be "single"
+    And the matched investor should be that other investor
 
   Scenario: No match found
     When I match an email from "unknown@example.com"
