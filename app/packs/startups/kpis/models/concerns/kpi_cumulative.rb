@@ -175,6 +175,11 @@ module KpiCumulative
     kpis_by_quarter.each do |(year, quarter), kpis_in_quarter|
       quarterly_sum = kpis_in_quarter.sum { |kpi| kpi.value.to_f }
       quarter_end = Date.new(year, ((quarter - 1) * 3) + 1, 1).end_of_quarter
+
+      # If the quarter end is in the future and the source monthly KPIs are tagged as 'Actual',
+      # skip creating/updating the Quarterly cumulative to avoid generating future-dated Actual records.
+      next if quarter_end > Date.current
+
       process_cumulative_kpi(nil, quarterly_sum, 'Quarter', nil, quarter_end, force: force)
     end
   end
@@ -208,6 +213,10 @@ module KpiCumulative
     kpis_by_quarter.each do |(year, quarter), kpis_in_quarter|
       quarter_end = Date.new(year, ((quarter - 1) * 3) + 1, 1).end_of_quarter
       existing = Kpi.approved.joins(:kpi_report).where(name: name, entity_id: entity_id, kpi_reports: { period: 'Quarter', as_of: quarter_end }).last
+
+      # If the quarter end is in the future and the source monthly KPIs are tagged as 'Actual',
+      # skip creating/updating the Quarterly forward_fill to avoid generating future-dated Actual records.
+      next if quarter_end > Date.current
 
       if existing.nil? || existing.value.nil? || force
         last_val = kpis_in_quarter.last.value.to_f
