@@ -27,7 +27,6 @@ class AgentSchedulesController < ApplicationController
 
   # Creates a new schedule or updates an existing one for the support agent.
   # Uses find_or_initialize_by to allow idempotent schedule creation.
-  # Also handles json_fields updates for PortfolioCompanyAgent filters.
   #
   # @return [void]
   # @response_format html, json
@@ -38,9 +37,6 @@ class AgentSchedulesController < ApplicationController
     )
     @agent_schedule.assign_attributes(agent_schedule_params)
     @agent_schedule.created_by ||= current_user
-
-    # Update SupportAgent json_fields if provided (for PortfolioCompanyAgent filters)
-    update_agent_json_fields if params[:json_fields].present?
 
     if @agent_schedule.save
       respond_to do |format|
@@ -56,14 +52,10 @@ class AgentSchedulesController < ApplicationController
   end
 
   # Updates an existing schedule for a support agent.
-  # Also handles json_fields updates for PortfolioCompanyAgent filters.
   #
   # @return [void]
   # @response_format html, json
   def update
-    # Update SupportAgent json_fields if provided (for PortfolioCompanyAgent filters)
-    update_agent_json_fields if params[:json_fields].present?
-
     if @agent_schedule.update(agent_schedule_params)
       respond_to do |format|
         format.html { redirect_to support_agent_path(@support_agent, tab: 'schedule'), notice: "Schedule updated successfully." }
@@ -122,24 +114,6 @@ class AgentSchedulesController < ApplicationController
   end
 
   private
-
-  # Updates the SupportAgent's json_fields with target filters for PortfolioCompanyAgent.
-  # Merges the new filter values while preserving existing json_fields keys.
-  #
-  # @return [void]
-  def update_agent_json_fields
-    return unless @support_agent.agent_type == "PortfolioCompanyAgent"
-
-    json_fields_params = params.require(:json_fields).permit(target_tags: [], target_sectors: [])
-
-    existing = (@support_agent.json_fields || {}).deep_dup
-    existing["target_tags"] = json_fields_params[:target_tags]&.reject(&:blank?) || []
-    existing["target_sectors"] = json_fields_params[:target_sectors]&.reject(&:blank?) || []
-
-    @support_agent.json_fields = existing
-    @support_agent.json_fields_will_change! # Force MySQL JSON dirty tracking
-    @support_agent.save!
-  end
 
   # Loads and authorizes the support agent from the URL parameter.
   #

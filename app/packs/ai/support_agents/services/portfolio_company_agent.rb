@@ -7,32 +7,8 @@ class PortfolioCompanyAgent < SupportAgentService
   step :check_valuations
   step :generate_progress_reports
 
-  # Returns portfolio companies filtered by tags and sectors from support_agent configuration
-  #
-  # @param entity_id [Integer] the entity ID
-  # @param support_agent [SupportAgent] optional, used to get filters from json_fields
-  # @return [ActiveRecord::Relation] filtered portfolio companies
-  def targets(entity_id, support_agent = nil)
-    scope = Investor.where(entity_id: entity_id, category: "Portfolio Company")
-
-    # Get filters from support_agent json_fields if available
-    if support_agent&.json_fields.present?
-      filters = support_agent.json_fields
-
-      # Apply tag filter if specified
-      if filters["target_tags"].present?
-        tags = filters["target_tags"].is_a?(Array) ? filters["target_tags"] : filters["target_tags"].split(",").map(&:strip)
-        scope = scope.with_tag_list(tags) if tags.any?
-      end
-
-      # Apply sector filter if specified
-      if filters["target_sectors"].present?
-        sectors = filters["target_sectors"].is_a?(Array) ? filters["target_sectors"] : filters["target_sectors"].split(",").map(&:strip)
-        scope = scope.in_sector(sectors) if sectors.any?
-      end
-    end
-
-    scope.includes(:kpi_reports, :valuations)
+  def targets(entity_id)
+    Investor.where(entity_id: entity_id, category: "Portfolio Company").includes(:kpi_reports, :valuations)
   end
 
   private
