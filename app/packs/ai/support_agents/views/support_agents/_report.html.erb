@@ -1,6 +1,4 @@
 <% display_type ||= "card" %>
-<% use_enhanced_view ||= true %>  <%# Set to true to use the new enhanced view by default %>
-<% collapse_target_id = "support_agent_reports_#{owner.id}" %>
 <div class="row g-3 mb-3 justify-content-center">
   <% cards.each do |card| %>
     <% color_class =
@@ -13,7 +11,7 @@
 
     <% if display_type == "card" %>
       <div class="col-xxl-2 col-md-4 col-sm-6">
-        <div class="card shadow-sm border-0 h-100 hover-lift" style="cursor:pointer; transition: transform 0.2s;" data-bs-toggle="collapse" data-bs-target="#<%= collapse_target_id %>" aria-expanded="false" aria-controls="<%= collapse_target_id %>">
+        <div class="card shadow-sm border-0 h-100 hover-lift" style="cursor:pointer; transition: transform 0.2s;" data-bs-toggle="collapse" data-bs-target="#support_agent_reports" aria-expanded="false" aria-controls="support_agent_reports">
           <div class="card-body d-flex align-items-center p-3">
             <div class="rounded-3 bg-<%= color_class %>-subtle d-flex align-items-center justify-content-center me-3" style="width: 48px; height: 48px; min-width: 48px;">
               <i class="<%= card[:icon] %> text-<%= color_class %> fs-4"></i>
@@ -33,7 +31,7 @@
       </div>
     <% else %>
       <div class="col-auto">
-        <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm hover-shadow-md" style="cursor:pointer; transition: box-shadow 0.2s;" data-bs-toggle="collapse" data-bs-target="#<%= collapse_target_id %>" aria-expanded="false" aria-controls="<%= collapse_target_id %>">
+        <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm hover-shadow-md" style="cursor:pointer; transition: box-shadow 0.2s;" data-bs-toggle="collapse" data-bs-target="#support_agent_reports" aria-expanded="false" aria-controls="support_agent_reports">
           <i class="<%= card[:icon] %> text-<%= color_class %> me-2"></i>
           <span class="fw-medium text-secondary me-2">
             <% if card[:type] == :numeric %>
@@ -51,4 +49,4 @@
   <% end %>
 </div>
 
-<%= render partial: "/support_agent_reports/index", locals: { support_agent_reports: SupportAgentReport.where(owner:), hidden: true, use_enhanced_view: use_enhanced_view, collapse_target_id: collapse_target_id }  %>
+<%= render partial: "/support_agent_reports/index", locals: { support_agent_reports: SupportAgentReport.where(owner:), hidden: true }  %>

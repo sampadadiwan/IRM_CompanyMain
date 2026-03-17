@@ -1,12 +1,5 @@
-<% use_enhanced_view ||= params[:enhanced_view].present? || false %>
-<% collapse_target_id ||= "support_agent_reports" %>
-
-<div id="<%= collapse_target_id %>" class="collapse">
-  <% support_agent_reports.each do |report| %>
-    <% if use_enhanced_view %>
-      <%= render "/support_agent_reports/support_agent_report_enhanced", support_agent_report: report %>
-    <% else %>
-      <%= render "/support_agent_reports/support_agent_report", support_agent_report: report %>
-    <% end %>
-  <% end %>
+<div id="support_agent_reports" class="collapse">
+<% support_agent_reports.each do |report| %>
+  <%= render "/support_agent_reports/support_agent_report", support_agent_report: report %>
+<% end %>
 </div>
