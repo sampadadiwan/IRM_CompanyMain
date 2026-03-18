@@ -106,7 +106,7 @@ class Investor < ApplicationRecord
   scope :with_tag_list, lambda { |tags|
     tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)
     where(
-      tags.map { "tag_list LIKE ?" }.join(" OR "),
+      tags.map { "investors.tag_list LIKE ?" }.join(" OR "),
       *tags.map { |t| "%#{t}%" }
     )
   }

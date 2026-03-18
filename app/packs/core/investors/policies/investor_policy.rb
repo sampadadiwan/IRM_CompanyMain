@@ -50,6 +50,11 @@ class InvestorPolicy < ApplicationPolicy
     show?
   end
 
+  # Permission to view agent report details. Same as show.
+  def report_detail?
+    show?
+  end
+
   # Permission to generate reports. Requires update permissions.
   def generate_reports?
     update?
@@ -63,6 +68,10 @@ class InvestorPolicy < ApplicationPolicy
   # Permission to view all portfolio investment reports. Restricted to Company Admins.
   def portfolio_investments_report_all?
     index? && user.has_cached_role?(:company_admin)
+  end
+
+  def refresh_portfolio_table?
+    index? # Any user who can view the index can refresh the portfolio table
   end
 
   # Permission to create new investors. Requires :investor_create (or custom) permission.

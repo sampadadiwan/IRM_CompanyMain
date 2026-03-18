@@ -43,6 +43,19 @@ class SupportAgentsController < ApplicationController
                     else
                       SupportAgentReport.none
                     end
+
+    @portfolio_reports = if @support_agent.agent_type == "PortfolioCompanyAgent"
+                           reports = SupportAgentReport
+                             .where(support_agent: @support_agent, owner_type: "Investor")
+                             .includes(:owner)
+
+                           # Filter by specific owner if owner_id param is provided
+                           reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+
+                           reports.order(updated_at: :desc)
+                         else
+                           SupportAgentReport.none
+                         end
   end
 
   # Initializes a new support agent for creation.
@@ -102,7 +115,12 @@ class SupportAgentsController < ApplicationController
     @support_agent = SupportAgent.find_by(agent_type: params[:agent_type], entity_id: current_user.entity_id)
     authorize @support_agent
     # Enqueue the job to run the support agent
-    SupportAgentJob.perform_later(support_agent_id: @support_agent.id, target_id: params[:target_id], user_id: current_user.id)
+    SupportAgentJob.perform_later(
+      support_agent_id: @support_agent.id,
+      target_id: params[:target_id],
+      target_type: params[:target_type],
+      user_id: current_user.id
+    )
     # Redirect to referrer or support_agents_path if no referrer
     redirect_to(request.referer || support_agents_path, notice: "Support agent job has been queued.")
   end
@@ -122,9 +140,11 @@ class SupportAgentsController < ApplicationController
     target = find_target(params[:target_type], params[:target_id])
     return render json: { status: "error", message: "Target not found" }, status: :not_found unless target
 
-    # Check if already running
-    existing_report = SupportAgentReport.find_by(owner: target, support_agent: @support_agent)
-    return render json: { status: "error", message: "Agent already running for this target" }, status: :unprocessable_entity if existing_report&.running?
+    # Check if already running (skip this check for Entity targets with Portfolio Company Agent)
+    unless params[:target_type] == "Entity" && @support_agent.agent_type == "PortfolioCompanyAgent"
+      existing_report = SupportAgentReport.find_by(owner: target, support_agent: @support_agent)
+      return render json: { status: "error", message: "Agent already running for this target" }, status: :unprocessable_entity if existing_report&.running?
+    end
 
     # Enqueue the job
     SupportAgentJob.perform_later(
@@ -178,6 +198,85 @@ class SupportAgentsController < ApplicationController
     end
   end
   # rubocop:enable Metrics/MethodLength
+
+  # Runs the support agent on multiple portfolio companies in batch.
+  #
+  # Queues a single job that will process all specified companies and send
+  # a summarized notification when complete.
+  #
+  # @return [void]
+  def run_batch
+    @support_agent = SupportAgent.find(params[:id])
+    authorize @support_agent
+
+    # Generic batch processing - get target IDs and type
+    target_ids = params[:target_ids]&.reject(&:blank?) || []
+    target_type = params[:target_type] || infer_target_type_from_agent(@support_agent)
+
+    if target_ids.empty?
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = "No targets selected"
+          render turbo_stream: turbo_stream.replace(
+            "page_alerts",
+            partial: "layouts/alerts"
+          )
+        end
+        format.html do
+          redirect_to(request.referer || support_agents_path, alert: "No targets selected")
+        end
+      end
+      return
+    end
+
+    # Validate target type is supported
+    unless valid_target_type?(target_type)
+      respond_to do |format|
+        format.turbo_stream do
+          flash.now[:alert] = "Invalid target type: #{target_type}"
+          render turbo_stream: turbo_stream.replace(
+            "page_alerts",
+            partial: "layouts/alerts"
+          )
+        end
+        format.html do
+          redirect_to(request.referer || support_agents_path, alert: "Invalid target type")
+        end
+      end
+      return
+    end
+
+    # Queue the batch job - it will process all targets and send one summary notification
+    SupportAgentJob.perform_later(
+      support_agent_id: @support_agent.id,
+      target_type: target_type,
+      target_id: target_ids.first, # First ID for context
+      user_id: current_user.id,
+      with_steps: @support_agent.with_steps,
+      batch_ids: target_ids,
+      batch_ids_type: target_type
+    )
+
+    # Determine friendly name for the target type
+    target_name = target_type_display_name(target_type)
+
+    respond_to do |format|
+      format.html do
+        redirect_to(
+          request.referer || support_agents_path,
+          notice: "Agent queued for #{target_ids.count} #{target_name.pluralize(target_ids.count)}. You'll receive a summary notification when complete."
+        )
+      end
+
+      format.turbo_stream do
+        flash.now[:notice] = "Agent queued for #{target_ids.count} #{target_name.pluralize(target_ids.count)}. You'll receive a summary notification when complete."
+        render turbo_stream: turbo_stream.replace(
+          "page_alerts",
+          partial: "layouts/alerts"
+        )
+      end
+    end
+  end
 
   # Cancels a running agent execution.
   #
@@ -268,13 +367,27 @@ class SupportAgentsController < ApplicationController
 
   # Finds a target record by type and ID.
   #
+  # Special handling for Portfolio Company Agent:
+  # - If target_type is "Entity", returns the first portfolio company (for UI display)
+  #   but the job will process all portfolio companies matching filters
+  # - If target_type is "Investor", returns that specific investor
+  #
   # @param target_type [String] the class name of the target
   # @param target_id [Integer, String] the ID of the target record
   # @return [ApplicationRecord, nil] the target record or nil if not found
   def find_target(target_type, target_id)
     return nil unless target_type.present? && target_id.present?
 
-    target_type.constantize.find_by(id: target_id)
+    if target_type == "Entity" && @support_agent&.agent_type == "PortfolioCompanyAgent"
+      # For Portfolio Company Agent with Entity target, return first portfolio company
+      # This is used to display the progress panel UI for the batch run
+      # The job will handle fetching all portfolio companies based on filters
+      targets = @support_agent.agent.new.targets(target_id, @support_agent)
+      targets.first # Return first portfolio company for UI purposes
+    else
+      # Standard case: return the exact target
+      target_type.constantize.find_by(id: target_id)
+    end
   rescue NameError
     nil
   end
@@ -304,5 +417,63 @@ class SupportAgentsController < ApplicationController
       end
     end
     permitted
+  end
+
+  # Infers the target type from the agent's targets method.
+  # Calls the agent's targets method and extracts the model class name.
+  #
+  # @param support_agent [SupportAgent] the agent to check
+  # @return [String] the target model class name (e.g., "Investor", "CapitalCall")
+  def infer_target_type_from_agent(support_agent)
+    begin
+      # Get the agent service class
+      agent_service = support_agent.agent_service
+      return nil unless agent_service.respond_to?(:targets)
+
+      # Call targets with entity_id to get the relation
+      # Use a safe call with current user's entity
+      target_relation = if agent_service.method(:targets).arity == 1
+                          agent_service.targets(current_user.entity_id)
+                        elsif agent_service.method(:targets).arity == 2
+                          agent_service.targets(current_user.entity_id, support_agent)
+                        else
+                          agent_service.targets
+                        end
+
+      # Extract the model class name from the relation
+      target_relation.model.name if target_relation.respond_to?(:model)
+    rescue => e
+      Rails.logger.error "[SupportAgentsController] Failed to infer target type: #{e.message}"
+      nil
+    end
+  end
+
+  # Validates that the target type is in the allowed whitelist.
+  #
+  # @param target_type [String] the target model class name
+  # @return [Boolean] true if valid
+  def valid_target_type?(target_type)
+    # Must match the whitelist in SupportAgentJob
+    allowed_types = %w[Investor InvestorKyc CapitalCall Fund]
+    allowed_types.include?(target_type)
+  end
+
+  # Returns a human-friendly display name for the target type.
+  #
+  # @param target_type [String] the target model class name
+  # @return [String] display name
+  def target_type_display_name(target_type)
+    case target_type
+    when "Investor"
+      "company"
+    when "InvestorKyc"
+      "KYC record"
+    when "CapitalCall"
+      "capital call"
+    when "Fund"
+      "fund"
+    else
+      target_type.underscore.humanize.downcase
+    end
   end
 end

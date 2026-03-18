@@ -32,7 +32,8 @@ class SupportAgentService < Trailblazer::Operation
   def initialize_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
     ctx[:support_agent] = @support_agent
-    ctx[:llm] = LlmService.ruby_llm_chat(entity: @support_agent.entity)
+    model = ctx[:llm] || ENV["SUPPORT_AGENT_MODEL"] || ENV.fetch('DEFAULT_MODEL', nil) # || "gpt-5"
+    ctx[:llm] = RubyLLM.chat(model: model)
   end
 
   # Verifies all required documents (from form fields and support_agent config)
@@ -85,7 +86,10 @@ class SupportAgentService < Trailblazer::Operation
       issues.reject! { |issue| issue[:message].blank? }
     end
 
-    report.json_fields = ctx[:issues]
+    # Preserve existing metadata (triggered_by, triggered_by_user_id, run_at, etc.) by merging instead of replacing
+    report.json_fields = (report.json_fields || {}).merge(ctx[:issues])
+    # MySQL doesn't auto-detect JSON field changes, must explicitly mark as changed
+    report.json_fields_will_change!
     report.status = ctx[:issues].values.flatten.any? { |issue| issue[:severity] == :blocking } ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
     report.save
 
@@ -202,5 +206,17 @@ class SupportAgentService < Trailblazer::Operation
   def cancelled?(report)
     report.reload
     report.json_fields["cancelled_at"].present?
+  end
+
+  # Broadcasts a table refresh for batch portfolio company agent runs
+  # This allows the UI to update the "Last Run" times after batch completion
+  def broadcast_portfolio_table_refresh(user_id)
+    # Broadcast a custom event to trigger table refresh via Stimulus
+    # We use a script tag to dispatch a custom event that the Stimulus controller will catch
+    Turbo::StreamsChannel.broadcast_append_to(
+      "portfolio_agent_batch_#{user_id}",
+      target: "portfolio_agent_events",
+      html: "<script>document.getElementById('portfolio_companies_table').dispatchEvent(new CustomEvent('portfolio-table-refresh'));</script>"
+    )
   end
 end

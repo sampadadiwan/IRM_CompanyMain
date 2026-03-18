@@ -56,7 +56,7 @@ class AgentRunnerJob
   #
   # @return [Hash] result hash with :status, :successes, :errors, :summary
   def execute_agent
-    targets = @support_agent.agent.new.targets(@entity.id)
+    targets = @support_agent.agent.new.targets(@entity.id, @support_agent)
 
     successes = []
     errors = []
