@@ -28,7 +28,7 @@
                         <th class="no-sort">Tags</th>
                         <th class="no-sort">KPI</th>
                         <% dates.each do |as_of| %>
-                            <th><%= l as_of %></th>
+                            <th><%= date_with_ordinal(as_of, format: params[:date_format]&.to_sym) %></th>
                         <% end %>
                     </tr>
                 </thead>
