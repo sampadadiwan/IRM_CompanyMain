@@ -5,7 +5,7 @@
   <%= render "valuations/value_bridge_form" %>
 <% else %>
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h3 class="h5 mb-0 text-gray-800">Value Bridge for <%= link_to @initial_valuation.investment_instrument %> : <%= l @initial_valuation.valuation_date %> - <%= l @final_valuation.valuation_date %></h3>
+        <h3 class="h5 mb-0 text-gray-800">Value Bridge for <%= link_to @initial_valuation.investment_instrument %> : <%= date_with_ordinal(@initial_valuation.valuation_date, format: params[:date_format]&.to_sym) %> - <%= date_with_ordinal(@final_valuation.valuation_date, format: params[:date_format]&.to_sym) %></h3>
     </div>
 <% end %>
 
@@ -30,7 +30,7 @@
                 </th>
                 <%
                     # The label should be the valuation date for Entry and Exit, otherwise the field name
-                    name = bridge_field == "Entry" ? l(@bridge[bridge_field].valuation_date) : bridge_field
+                    name = bridge_field == "Entry" ? date_with_ordinal(@bridge[bridge_field].valuation_date, format: params[:date_format]&.to_sym) : bridge_field
                     value = idx == 0 ? @bridge[bridge_field].json_fields["enterprise_value"]  : @bridge[bridge_field].json_fields["enterprise_value_change"]
 
                     if idx == 0
@@ -43,7 +43,7 @@
                 %>
             <% end %>
 
-            <% waterfall_chart_data << { name: l(@bridge["Exit"].valuation_date), y: @bridge["Exit"].json_fields["enterprise_value"], isSum: true, color: "#212529" } %>
+            <% waterfall_chart_data << { name: date_with_ordinal(@bridge["Exit"].valuation_date, format: params[:date_format]&.to_sym), y: @bridge["Exit"].json_fields["enterprise_value"], isSum: true, color: "#212529" } %>
         </tr>
         </thead>
 
