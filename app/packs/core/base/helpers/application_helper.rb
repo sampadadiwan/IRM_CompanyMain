@@ -119,4 +119,25 @@ module ApplicationHelper
     end
   end
   # rubocop:enable Naming/MethodParameterName
+
+  # This method is used to display the ordinal suffix for a given day
+  def ordinal(day)
+    return "#{day}th" if (11..13).include?(day % 100)
+
+    case day % 10
+    when 1 then "#{day}st"
+    when 2 then "#{day}nd"
+    when 3 then "#{day}rd"
+    else "#{day}th"
+    end
+  end
+
+
+  def date_with_ordinal(date, format: :default)
+    if format == :ordinal
+      "#{ordinal(date.day)} #{date.strftime('%b %Y')}"
+    else
+      l(date, format: format)
+    end
+  end
 end

@@ -1,7 +1,7 @@
 <%
   precision = params[:decimals]&.to_i || 2
   # valuations is passed in from the controller, get unique days and instruments
-  ordered_days = valuations.map(&:valuation_date).uniq.sort
+  ordered_valuation_dates = valuations.map(&:valuation_date).uniq.sort
   instruments = valuations.map(&:investment_instrument).uniq
   # attributes can be passed in as a comma separated list, default to per_share_value
   attributes ||= params[:attributes]&.split(",")&.map(&:strip) || [:per_share_value]
@@ -22,8 +22,8 @@
     <tr>
       <th>Instrument</th>
       <th>Attribute</th>
-      <% ordered_days.each do |day| %>
-        <th><%= l day %></th>
+      <% ordered_valuation_dates.each do |date| %>
+        <th><%= date_with_ordinal(date, format: params[:date_format]&.to_sym) %></th>
       <% end %>
     </tr>
   </thead>
@@ -45,7 +45,7 @@
               <%= first_valuation.custom_field_label(attr_key) %>
             <% end %>
           </td>
-          <% ordered_days.each do |day| %>
+          <% ordered_valuation_dates.each do |day| %>
             <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>
             <td class="text-end">
               <% if valuation.present? %>

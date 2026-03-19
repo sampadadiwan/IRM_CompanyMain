@@ -3,6 +3,8 @@ en:
   date:
     formats:
       default: "%d/%m/%Y"
+      long: "%B %d, %Y"
+      short: "%b %d"
   investor_kyc:
     tax_id: "PAN / Tax ID"
     bank_routing_number: "IFSC Code"
