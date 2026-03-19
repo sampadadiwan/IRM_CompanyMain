@@ -1,3 +1,8 @@
+V9.2.03
+6c69798ed Outlook plugin (#1302)
+f80428bfb Deal table (#1301)
+42405e089 Enhance widget visibility control for lazy loading frames and update documentation
+
 V9.2.02
 87098a742 Added better help text to Formulas form
 895851db5 Add foreign key constraint handling during database rename process

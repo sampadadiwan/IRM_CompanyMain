@@ -24,13 +24,20 @@
         <% section_data = JSON.parse(portfolio_report_extract.data) %>
 
         <!-- Create tabs for each section -->
-        <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-            <% section_data.each_with_index do |(name, list_of_points), idx| %>
-                <a class="nav-link <%= idx == 0 ? 'active' : ''%>" data-bs-toggle="pill" data-bs-toggle="tab" href="#<%= name.gsub(" ", "").underscore %>-tab">
-                    <%= name %>
-                </a>
-            <% end %>
-        </nav>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <nav class="nav nav-pills nav-justified p-3 rounded card flex-row flex-grow-1 mb-0"  role="tablist">
+                <% section_data.each_with_index do |(name, list_of_points), idx| %>
+                    <a class="nav-link <%= idx == 0 ? 'active' : ''%>" data-bs-toggle="pill" data-bs-toggle="tab" href="#<%= name.gsub(" ", "").underscore %>-tab">
+                        <%= name %>
+                    </a>
+                <% end %>
+            </nav>
+            <div class="ms-3">
+                <%= link_to edit_portfolio_report_extract_path(portfolio_report_extract), class: "btn btn-sm btn-outline-success", title: "Edit Portfolio Report", data: { turbo_frame: "_top" } do %>
+                    <i class="ti ti-edit fs-4"></i>
+                <% end %>
+            </div>
+        </div>
 
         <!-- Tab content -->
         <div class="tab-content" id="portfolioReportTabs">
