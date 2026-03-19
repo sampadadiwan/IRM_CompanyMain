@@ -1,5 +1,5 @@
 module KpisHelper
-  def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil)
+  def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil, date_format: :short)
     dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
     grouped_kpis = kpis.includes(:kpi_report, :entity, :owner, :portfolio_company).group_by { |k| [k.portfolio_company, k.entity, k.kpi_report.tag_list] }
     single_portfolio_company = grouped_kpis.keys.filter_map(&:first).uniq.one?
@@ -12,7 +12,7 @@ module KpisHelper
         data = []
         dates.each do |date|
           kpi = kpis_by_name.find { |k| k.kpi_report.as_of == date }
-          data << [date.strftime("%m/%y"), kpi&.value]
+          data << [date_with_ordinal(date, format: date_format), kpi&.value]
         end
 
         label = if single_portfolio_company
@@ -24,7 +24,7 @@ module KpisHelper
         label += tags if tags.present?
 
         full_name = label.present? ? "#{label} - #{standard_kpi}" : standard_kpi
-        data_map << { name: full_name, data: }
+        data_map << { name: full_name, data: data }
       end
     end
 

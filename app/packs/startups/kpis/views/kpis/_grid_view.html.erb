@@ -90,7 +90,7 @@
                     </div>
                     <div class="card-body">
                         <% id = params[:report_id] %>
-                        <%= multiple_entity_kpi_lines_by_date(kpis, id:, investor_kpi_mappings:) %>
+                        <%= multiple_entity_kpi_lines_by_date(kpis, id:, investor_kpi_mappings:, date_format: (params[:date_format].presence&.to_sym || :short)) %>
                     </div>
                 </div>
             </div>
