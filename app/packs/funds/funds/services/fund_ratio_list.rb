@@ -31,6 +31,12 @@ class FundRatioList < BaseList
                                  :fund_id,
                                  :name)
 
+    # Step 3.5: Filter by scenarios if provided (can be comma-separated list of names)
+    if @params[:scenarios].present? && @params[:scenarios] != "true"
+      scenario_names = @params[:scenarios].split(",").map(&:strip)
+      @fund_ratios = @fund_ratios.where(scenario: scenario_names)
+    end
+
     # Step 4: Special filters with more specific logic
     @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if @params[:fund_ratios_only].present?
     @fund_ratios = @fund_ratios.where(latest: true) if @params[:latest] == "true"

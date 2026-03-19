@@ -1,0 +1,67 @@
+<% fund ||= nil %>
+<%
+  # Group fund ratios by name (Metric) and then by scenario
+  # We want latest from each scenario
+
+  metrics = fund_ratios.map(&:name).uniq
+
+  # If scenarios are passed in params, use those for the order and filter
+  if params[:scenarios].present? && params[:scenarios] != "true"
+    scenarios = params[:scenarios].split(",").map(&:strip)
+  else
+    scenarios = fund_ratios.map(&:scenario).uniq
+
+    # Ensure "Default" (Actual) is always present and first if it exists
+    if scenarios.include?("Default")
+      scenarios.delete("Default")
+      scenarios.unshift("Default")
+    end
+  end
+
+  # Build the data structure for the table
+  grouped_ratios = {}
+  metrics.each do |metric|
+    grouped_ratios[metric] = {}
+    scenarios.each do |scenario|
+      grouped_ratios[metric][scenario] = fund_ratios.select { |fr| fr.name == metric && fr.scenario == scenario }.max_by(&:end_date)
+    end
+  end
+%>
+
+<div class="">
+  <table class="table datatable">
+    <thead>
+      <tr class="">
+        <th class="">Metric</th>
+        <% scenarios.each do |scenario| %>
+          <th class="text-center">
+            <div>
+              <%= scenario == 'Default' ? 'Actual' : scenario %>
+              <%
+                # Find a date to display under the header (latest date for this scenario across any metric)
+                latest_date = fund_ratios.select { |fr| fr.scenario == scenario }.map(&:end_date).compact.max
+              %>
+              <% if latest_date %>
+                <div class=""><%= date_with_ordinal(latest_date, format: params[:date_format]) %></div>
+              <% end %>
+            </div>
+          </th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody class="">
+      <% grouped_ratios.each_with_index do |(metric_name, scenario_map), index| %>
+        <tr class="">
+          <td class="">
+            <%= link_to metric_name %>
+          </td>
+          <% scenarios.each do |scenario| %>
+            <td class="text-center">
+              <%= scenario_map[scenario] ? link_to(scenario_map[scenario].display_value, scenario_map[scenario]) : "XX" %>
+            </td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
