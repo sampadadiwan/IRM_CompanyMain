@@ -68,9 +68,10 @@ Rails.application.routes.draw do
   get 'outlook_addin/taskpane', to: 'outlook_addin#taskpane'
   get 'outlook_addin/investors', to: 'outlook_addin#investors'
   resources :email_matches, only: [:create]
-  resources :incoming_emails
+  resources :incoming_emails do
+    post :sendgrid, on: :collection
+  end
 
-  post 'incoming_emails/sendgrid', to: 'misc/incoming_emails/incoming_emails#sendgrid'
 
   if Rails.env.test?
     # This will just return a 200 OK to any GET on /ws/socket.io
