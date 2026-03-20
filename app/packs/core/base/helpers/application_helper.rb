@@ -134,6 +134,7 @@ module ApplicationHelper
 
 
   def date_with_ordinal(date, format: :default)
+    format = format.to_sym
     if format == :ordinal
       "#{ordinal(date.day)} #{date.strftime('%b %Y')}"
     else
