@@ -113,8 +113,16 @@ class ValueBridgeService
 
       # Perform all calculations
       valuation.perform_all_calculations
-      # Calculate the enterprise value change
-      valuation.json_fields["enterprise_value_change"] = (valuation.json_fields["enterprise_value"] - prev_valuation.json_fields["enterprise_value"]).round(2) if valuation.json_fields["enterprise_value"].present? && prev_valuation.json_fields["enterprise_value"].present?
+
+      current_enterprise_value = fetch_numeric_field(valuation, "enterprise_value")
+      prev_enterprise_value = fetch_numeric_field(prev_valuation, "enterprise_value")
+
+      if !current_enterprise_value.nil? && !prev_enterprise_value.nil?
+        valuation.json_fields["enterprise_value_change"] =
+          (current_enterprise_value - prev_enterprise_value).round(2)
+      else
+        valuation.json_fields.delete("enterprise_value_change")
+      end
       # Add the valuation to the bridge
       bridge[bridge_field] = valuation
       # Set the prev valuation to the current valuation
@@ -135,5 +143,14 @@ class ValueBridgeService
     end
 
     bridge
+  end
+
+  private
+
+  def fetch_numeric_field(valuation, field_name)
+    raw_value = valuation.json_fields[field_name]
+    Float(raw_value) if raw_value.present?
+  rescue ArgumentError, TypeError, RangeError
+    nil
   end
 end
