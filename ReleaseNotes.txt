@@ -1,3 +1,15 @@
+V9.2.04
+ca36cfc92 Now value bridge svc converts strings to numbers before computation (#1306)
+0ae3774a5 Add sendgrid action to incoming_emails resource for handling email processing
+51a3d7a81 Conversion to date_format sym
+c769d6589 Remove link from metric name display in fund ratios index scenarios view
+13aeb696d Add scenario filtering to fund ratios and enhance index view rendering
+529030c73 Add date format option to multiple_entity_kpi_lines_by_date method for enhanced flexibility
+1ed629561 Enhance KPI display by adding single portfolio company check and updating date format with ordinal in grid view
+34bfc3485 Enhance date display in value bridge view with ordinal formatting
+fca325b5d Add ordinal date formatting and enhance date display in valuations view
+063582f81 Enhance portfolio report widget layout; add edit button and improve tab navigation styling
+
 V9.2.03
 6c69798ed Outlook plugin (#1302)
 f80428bfb Deal table (#1301)
