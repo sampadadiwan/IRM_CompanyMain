@@ -1,4 +1,4 @@
-V9.2.04
+V9.2.05
 ca36cfc92 Now value bridge svc converts strings to numbers before computation (#1306)
 0ae3774a5 Add sendgrid action to incoming_emails resource for handling email processing
 51a3d7a81 Conversion to date_format sym

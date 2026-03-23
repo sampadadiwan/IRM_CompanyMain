@@ -47,6 +47,10 @@ module CapitalCommitmentShared
     committed_amount_cents.positive? ? 100 * (collected_amount_cents / committed_amount_cents).round(2) : 0
   end
 
+  def unfunded_commitment_as_of(end_date)
+    committed_amount_cents_before(end_date) - capital_remittance_payments.where(payment_date: ..end_date).sum(:amount_cents)
+  end
+
   def committed_amount_cents_before(date)
     date = Date.local_parse(date) if date.is_a?(String)
 
