@@ -1,3 +1,4 @@
+# AccountEntryAllocationJob.perform_now 320, Date.parse("Thu, 01 Jan 2026"), Date.parse("Tue, 31 Mar 2026"), rule_for: "Accounting", tag_list: nil, run_allocations: true, explain: true, user_id: 24, generate_soa: false, template_id: nil, fund_ratios: false, sample: false, allocation_run_id: 1500
 module AccountEntryAllocation
   ############################################################
   # 1. RunFormulas Operation
@@ -33,7 +34,13 @@ module AccountEntryAllocation
       entity_id = fund.entity_id
       fund_id = fund.id
       master_fund_id = fund.master_fund_id
-      fund_ids = [fund_id, master_fund_id].compact.uniq
+
+      # In rare cases in Master fund formulas we need the feeder fund data
+      fund_ids = if fund.json_fields["use_feeder_fund_data_in_formulas"].present? && fund.feeder_fund_ids.present?
+                   ([fund_id] + fund.feeder_fund_ids).compact.uniq
+                 else
+                   [fund_id, master_fund_id].compact.uniq
+                 end
 
       script_path = Rails.root.join("script/load_sqlite3_from_mysql.sh")
 

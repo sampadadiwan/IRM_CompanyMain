@@ -18,9 +18,7 @@ class InvestorEmailMatcher
     # 2. If no match, try matching the from_email domain with the investor's primary_email domain
     if matches.none?
       from_domain = @from_email.split("@").last
-      unless generic_domain?(from_domain)
-        matches = investor_scope.where("primary_email LIKE ?", "%@#{from_domain}")
-      end
+      matches = investor_scope.where("primary_email LIKE ?", "%@#{from_domain}") unless generic_domain?(from_domain)
     end
 
     # 3. If still no match, try matching cc emails domain

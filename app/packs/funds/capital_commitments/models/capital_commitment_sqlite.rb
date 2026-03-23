@@ -5,6 +5,8 @@ class CapitalCommitmentSqlite < ApplicationRecordSqlite
   include CapitalCommitmentShared
 
   belongs_to :investor, optional: true, class_name: 'InvestorSqlite'
+  belongs_to :fund, optional: true, class_name: 'FundSqlite'
+  belongs_to :feeder_fund, optional: true, class_name: 'FundSqlite'
 
   has_many :account_entries, class_name: 'AccountEntrySqlite', foreign_key: 'capital_commitment_id', dependent: :destroy
   has_many :capital_remittances, class_name: 'CapitalRemittanceSqlite', foreign_key: 'capital_commitment_id', dependent: :destroy

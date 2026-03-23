@@ -71,7 +71,7 @@ class IncomingEmailsController < ApplicationController
       if @incoming_email.save
         redirect_to @incoming_email, notice: "Incoming email was successfully created."
       else
-        puts @incoming_email.errors.full_messages
+        Rails.logger.debug @incoming_email.errors.full_messages
         render :new, status: :unprocessable_entity
       end
     end

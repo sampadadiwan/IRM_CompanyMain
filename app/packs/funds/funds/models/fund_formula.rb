@@ -112,10 +112,18 @@ class FundFormula < ApplicationRecord
     find_expressions(ast, expressions)
     expression_map = {}
     expressions.each do |exp|
-      unless exp.include?("SkipRule")
+      next if exp.include?("SkipRule")
+
+      # rubocop:disable Style/RescueStandardError
+      begin
         val = eval(exp, binding)
-        expression_map[exp] = val unless skip_statement(exp, val)
+      rescue
+        logger.error "Error evaluating expression '#{exp}'"
+        val = "Unable to evaluate"
       end
+      # rubocop:enable Style/RescueStandardError
+
+      expression_map[exp] = val unless skip_statement(exp, val)
     end
     expression_map
   end

@@ -122,7 +122,7 @@ module ApplicationHelper
 
   # This method is used to display the ordinal suffix for a given day
   def ordinal(day)
-    return "#{day}th" if (11..13).include?(day % 100)
+    return "#{day}th" if (11..13).cover?(day % 100)
 
     case day % 10
     when 1 then "#{day}st"
@@ -131,7 +131,6 @@ module ApplicationHelper
     else "#{day}th"
     end
   end
-
 
   def date_with_ordinal(date, format: :default)
     format = format.to_sym

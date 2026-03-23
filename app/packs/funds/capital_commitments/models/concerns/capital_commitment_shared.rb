@@ -104,4 +104,5 @@ module CapitalCommitmentShared
       capital_remittance_payments.where(payment_date: ..end_date).sum { |crp| crp.amount_cents * (fund_unit_setting.json_fields['hurdle_rate'].to_d * ((end_date.to_date - crp.payment_date.to_date).to_i + 1) / 365) }
     end
   end
+
 end

@@ -72,7 +72,6 @@ Rails.application.routes.draw do
     post :sendgrid, on: :collection
   end
 
-
   if Rails.env.test?
     # This will just return a 200 OK to any GET on /ws/socket.io
     get '/ws/socket.io', to: proc { [200, {}, ['']] }
