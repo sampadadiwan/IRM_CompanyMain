@@ -7,6 +7,8 @@ class KpisController < ApplicationController
     service = KpiList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = service.q
     @kpis = service.kpis
+
+    @pagy, @kpis = pagy(@kpis, limit: params[:per_page] || 10) if params[:grid_view].blank? && params[:all].blank?
   end
 
   # GET /kpis/1 or /kpis/1.json

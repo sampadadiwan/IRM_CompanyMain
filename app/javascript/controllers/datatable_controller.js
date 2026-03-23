@@ -14,20 +14,20 @@ export default class extends Controller {
     console.log(`responsive = ${this.responsiveValue}`);
 
       let table = {};
-      
+
       let columnDefs = this.columnDefs();
-      let responsive = this.responsive();      
+      let responsive = this.responsive();
       $.each( $('.jqDataTable'), function( key, value ) {
         // console.log( key + ": " + value );
         if ( $.fn.dataTable.isDataTable( value ) ) {
         }
         else {
-          table[key] = $(value).DataTable({    
-            order: [],     
+          table[key] = $(value).DataTable({
+            order: [],
             stateSave: false,
             retrieve: true,
-            responsive: responsive,  
-            // columnDefs: columnDefs, // https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js      
+            responsive: responsive,
+            // columnDefs: columnDefs, // https://cdn.datatables.net/plug-ins/2.0.2/sorting/formatted-numbers.js
             lengthMenu: [
               [10, 25, 50, -1],
               [10, 25, 50, 'All'],
@@ -36,34 +36,52 @@ export default class extends Controller {
               search: '',
               searchPlaceholder: "Search...",
               paginate: {
-              }          
+              }
             }
           });
-  
+
         }
-        
-      });      
-      
+
+      });
+
       // Ensure DataTable is destroyed, else it gets duplicated
-      $(document).on('turbo:before-cache', function() {    
+      this._turboBeforeCacheHandler = function() {
         $.each( table, function( key, value ) {
-          if ( $.fn.dataTable.isDataTable( value ) ) { 
+          if ( $.fn.dataTable.isDataTable( value ) ) {
             value.destroy();
           }
         });
-      });
-      
+      };
+      $(document).one('turbo:before-cache', this._turboBeforeCacheHandler);
+
       let searchTerm = $("#search_term");
       if (searchTerm.length > 0) {
         table.search(searchTerm.val()).draw();
       }
+
+      this._table = table;
+  }
+
+  disconnect() {
+    if (this._turboBeforeCacheHandler) {
+      $(document).off('turbo:before-cache', this._turboBeforeCacheHandler);
+      this._turboBeforeCacheHandler = null;
+    }
+    if (this._table) {
+      $.each(this._table, function(key, value) {
+        if ($.fn.dataTable.isDataTable(value)) {
+          value.destroy();
+        }
+      });
+      this._table = null;
+    }
   }
 
   responsive() {
     // Sometimes we dont wnat the grid to be responsive e.x. deals screen
     let responsive = null;
     let responsiveDetails = false;
-    if (this.responsiveValue.length == 0 || this.responsiveValue == "true") {          
+    if (this.responsiveValue.length == 0 || this.responsiveValue == "true") {
       // Setup whether the responsive details are shown or not, default to true
       responsiveDetails = true;
       if(this.responsiveDetailsValue.length > 0) {

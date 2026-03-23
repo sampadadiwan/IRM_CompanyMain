@@ -3,7 +3,8 @@
   name ||= nil
   args ||= {}
   uri_params ||= {}
-  uri = URI("/valuations?owner_id=#{@investor.id}&owner_type=Investor")
+  date_format = args[:date_format] if args[:date_format].present?
+  uri = URI("/valuations?owner_id=#{@investor.id}&owner_type=Investor&date_format=#{date_format}")
 %>
 
 <%= render(

@@ -133,7 +133,8 @@ module ApplicationHelper
   end
 
   def date_with_ordinal(date, format: :default)
-    format = format.to_sym
+    format = format.present? ? format.to_s : "default"
+    format = format&.to_sym
     if format == :ordinal
       "#{ordinal(date.day)} #{date.strftime('%b %Y')}"
     else
