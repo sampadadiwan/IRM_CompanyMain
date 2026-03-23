@@ -11,6 +11,19 @@ class ApplicationController < ActionController::Base
   include WithSetupCustomFields
 
   before_action :prepare_exception_notifier
+  before_action :validate_page_limit
+
+  def validate_page_limit
+    return unless params.key?(:per_page)
+
+    per_page = params[:per_page].to_i
+
+    if per_page <= 0
+      params[:per_page] = 10
+    elsif per_page > 1000
+      params[:per_page] = 1000
+    end
+  end
 
   # Override current_user to support signed_id access in policies
   def current_user

@@ -68,7 +68,7 @@ class PortfolioInvestment < ApplicationRecord
   monetize :tracking_amount_cents, :tracking_fmv_cents,
            with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
 
-  monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents,
+  monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents, :instrument_currency_fmv_cents, :instrument_currency_cost_of_remaining_cents, :instrument_currency_unrealized_gain_cents,
            with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
   monetize :net_bought_amount_cents, :net_amount_cents, :ex_expenses_amount_cents,
