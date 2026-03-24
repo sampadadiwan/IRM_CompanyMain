@@ -29,8 +29,9 @@ components:
           type: integer
           nullable: true
         folio_id:
-          type: integer
+          type: string
           nullable: true
+          example: "TP3"
         reporting_date:
           type: string
           format: date
@@ -41,9 +42,6 @@ components:
         name:
           type: string
           example: "YTD Change in Distribution"
-        amount_cents:
-          type: string
-          example: "9000000.0"
         notes:
           type: string
           nullable: true
@@ -55,10 +53,6 @@ components:
           type: string
           format: date-time
           example: "2025-04-27T10:33:01.675+05:30"
-        explanation:
-          type: array
-          items:
-            type: string
         cumulative:
           type: boolean
           example: true
@@ -71,12 +65,15 @@ components:
         parent_id:
           type: integer
           nullable: true
+        parent_name:
+          type: string
+          nullable: true
+        commitment_name:
+          type: string
+          nullable: true
         generated:
           type: boolean
           example: true
-        folio_amount_cents:
-          type: string
-          example: "0.0"
         exchange_rate_id:
           type: integer
           nullable: true
@@ -86,53 +83,70 @@ components:
         rule_for:
           type: string
           example: "reporting"
-        json_fields:
-          type: object
-          additionalProperties: true
-          example: {}
         import_upload_id:
           type: integer
           nullable: true
-        deleted_at:
-          type: string
-          format: date-time
-          nullable: true
-        generated_deleted:
-          type: string
-          format: date-time
-          example: "1900-01-01T00:00:00.000+05:21"
-        tracking_amount_cents:
-          type: string
-          example: "0.0"
         allocation_run_id:
           type: integer
           example: 924
-        parent_name:
+        ref_id:
           type: string
           nullable: true
-        commitment_name:
+          example: null
+        # Computed monetary fields (in fund currency)
+        amount:
+          type: number
+          format: float
+          example: 9000.0
+        folio_amount:
+          type: number
+          format: float
+          example: 9000.0
+        tracking_amount:
+          type: number
+          format: float
+          example: 0.0
+        # Fund details
+        fund_name:
+          type: string
+          example: "Tax Provision Fund"
+        fund_currency:
+          type: string
+          example: "INR"
+        # Folio / commitment details
+        folio_currency:
           type: string
           nullable: true
+          example: "USD"
+        unit_type:
+          type: string
+          nullable: true
+          example: "B"
+        investor_name:
+          type: string
+          nullable: true
+          example: "TPF3"
+        custom_fields:
+          type: object
+          additionalProperties: true
+          example: {}
       required:
         - id
         - entity_id
         - fund_id
-        - form_type_id
         - reporting_date
         - entry_type
         - name
-        - amount_cents
         - created_at
         - updated_at
         - cumulative
         - period
         - generated
-        - folio_amount_cents
         - rule_for
-        - json_fields
-        - generated_deleted
-        - tracking_amount_cents
-        - allocation_run_id
+        - amount
+        - folio_amount
+        - fund_name
+        - fund_currency
     AggregatePortfolioInvestment:
       type: object
       properties:
@@ -148,15 +162,25 @@ components:
         portfolio_company_id:
           type: integer
           example: 1037
+        investment_instrument_id:
+          type: integer
+          example: 241
+        bought_quantity:
+          type: number
+          format: float
+          example: 60000000.0
+        sold_quantity:
+          type: number
+          format: float
+          example: 0.0
+        transfer_quantity:
+          type: number
+          format: float
+          example: 0.0
         quantity:
-          type: string
-          example: "60000000.0"
-        fmv_cents:
-          type: string
-          example: "21654000000.0"
-        avg_cost_cents:
-          type: string
-          example: "129.17"
+          type: number
+          format: float
+          example: 60000000.0
         created_at:
           type: string
           format: date-time
@@ -165,62 +189,99 @@ components:
           type: string
           format: date-time
           example: "2025-04-21T09:02:49.356+05:30"
+        # Computed monetary fields (in fund currency)
+        fund_name:
+          type: string
+          example: "Tax Provision Fund"
+        fund_currency:
+          type: string
+          example: "INR"
         portfolio_company_name:
           type: string
           example: "TPF Port Co. 2"
-        bought_quantity:
+        investment_instrument_name:
           type: string
-          example: "60000000.0"
-        bought_amount_cents:
-          type: string
-          example: "7749999000.0"
-        sold_quantity:
-          type: string
-          example: "0.0"
-        sold_amount_cents:
-          type: string
-          example: "0.0"
-        cost_of_remaining_cents:
-          type: string
-          example: "7749999000.0"
-        investment_type:
+          example: "Equity Shares"
+        category:
           type: string
           nullable: true
-        cost_of_sold_cents:
-          type: string
-          example: "0.0"
-        investment_domicile:
+          example: "Equity"
+        sub_category:
           type: string
           nullable: true
-        deleted_at:
+          example: "Common Stock"
+        sector:
           type: string
-          format: date-time
           nullable: true
-        investment_instrument_id:
-          type: integer
-          example: 241
-        form_type_id:
-          type: integer
-          example: 54
-        transfer_amount_cents:
-          type: string
-          example: "0.0"
-        unrealized_gain_cents:
-          type: string
-          example: "13904001000.0"
-        transfer_quantity:
-          type: string
-          example: "0.0"
-        net_bought_amount_cents:
-          type: string
-          example: "7749999000.0"
-        document_folder_id:
-          type: integer
-          nullable: true
-        show_portfolio:
-          type: boolean
-          example: false
-        portfolio_income_cents:
+          example: "Technology"
+        bought_amount:
+          type: number
+          format: float
+          example: 7749999.0
+        avg_cost:
+          type: number
+          format: float
+          example: 129.17
+        transfer_amount:
+          type: number
+          format: float
+          example: 0.0
+        sold_amount:
+          type: number
+          format: float
+          example: 0.0
+        fifo_cost:
+          type: number
+          format: float
+          example: 7749999.0
+        cost_of_sold:
+          type: number
+          format: float
+          example: 0.0
+        realized_gain:
+          type: number
+          format: float
+          example: 0.0
+        gain:
+          type: number
+          format: float
+          example: 13904001.0
+        cost_of_remaining:
+          type: number
+          format: float
+          example: 7749999.0
+        fmv:
+          type: number
+          format: float
+          example: 21654000.0
+        unrealized_gain:
+          type: number
+          format: float
+          example: 13904001.0
+        custom_fields:
+          type: object
+          additionalProperties: true
+          example: {}
+      required:
+        - id
+        - entity_id
+        - fund_id
+        - portfolio_company_id
+        - investment_instrument_id
+        - bought_quantity
+        - sold_quantity
+        - transfer_quantity
+        - quantity
+        - created_at
+        - updated_at
+        - fund_name
+        - fund_currency
+        - portfolio_company_name
+        - investment_instrument_name
+        - bought_amount
+        - avg_cost
+        - cost_of_remaining
+        - fmv
     CapitalCall:
       type: object
       properties:
@@ -237,18 +298,18 @@ components:
           type: string
           example: "Capital Call 2"
         percentage_called:
-          type: string
-          example: "0.0"
-        collected_amount_cents:
-          type: string
-          example: "18000000000.0"
-        call_amount_cents:
-          type: string
-          example: "18000000000.0"
+          type: number
+          format: float
+          example: 0.0
         due_date:
           type: string
           format: date
           example: "2021-04-15"
+        call_date:
+          type: string
+          format: date
+          nullable: true
+          example: "2021-04-01"
         notes:
           type: string
           nullable: true
@@ -260,67 +321,48 @@ components:
           type: string
           format: date-time
           example: "2025-04-21T07:22:50.766+05:30"
-        form_type_id:
-          type: integer
-          example: 78
-        approved:
-          type: boolean
-          example: true
-        approved_by_user_id:
-          type: integer
-          example: 23
-        manual_generation:
-          type: boolean
-          example: true
-        generate_remittances:
-          type: boolean
-          example: true
-        generate_remittances_verified:
-          type: boolean
-          example: true
-        deleted_at:
+        url:
           type: string
-          format: date-time
+          format: uri
           nullable: true
-        call_date:
+        # Computed monetary fields (in fund currency)
+        fund_name:
           type: string
-          format: date
-          example: "2021-04-01"
-        document_folder_id:
-          type: integer
-          nullable: true
-        unit_prices:
-          type: object
-          additionalProperties:
-            type: object
-            properties:
-              price:
-                type: string
-              premium:
-                type: string
-          example: {"A1": {"price": "100", "premium": "0"}, "A2": {"price": "100", "premium": "0"}, "B": {"price": "100", "premium": "0"}}
+          example: "Tax Provision Fund"
+        call_amount:
+          type: number
+          format: float
+          example: 18000000.0
+        collected_amount:
+          type: number
+          format: float
+          example: 18000000.0
+        due_amount:
+          type: number
+          format: float
+          example: 0.0
         fund_closes:
-          type: array
-          items:
-            type: string
-          example: ["All"]
-        capital_fee_cents:
           type: string
-          example: "0.0"
-        other_fee_cents:
-          type: string
-          example: "0.0"
-        call_basis:
-          type: string
-          example: "Percentage of Commitment"
-        amount_to_be_called_cents:
-          type: string
-          example: "0.0"
-        json_fields:
+          nullable: true
+          example: "All"
+          description: "Comma-separated list of fund closes associated with this call"
+        custom_fields:
           type: object
           additionalProperties: true
           example: {}
-        import_upload_id:
+      required:
+        - id
+        - entity_id
+        - fund_id
+        - name
+        - percentage_called
+        - due_date
+        - created_at
+        - updated_at
+        - fund_name
+        - call_amount
+        - collected_amount
+        - due_amount
     CapitalCommitment:
       type: object
       properties:
@@ -336,13 +378,34 @@ components:
         fund_id:
           type: integer
           example: 219
-        committed_amount_cents:
+        investor_name:
           type: string
-          example: "30000000000.0"
-        collected_amount_cents:
+          example: "TPF3"
+        investor_kyc_id:
+          type: integer
+          nullable: true
+          example: 1289
+        folio_id:
           type: string
-          example: "18000000000.0"
+          nullable: true
+          example: "TP3"
+        unit_type:
+          type: string
+          nullable: true
+          example: "B"
         notes:
+          type: string
+          nullable: true
+        commitment_date:
+          type: string
+          format: date
+          nullable: true
+          example: "2020-04-01"
+        fund_close:
+          type: string
+          nullable: true
+          example: "First Close"
+        virtual_bank_account:
           type: string
           nullable: true
         created_at:
@@ -353,130 +416,103 @@ components:
           type: string
           format: date-time
           example: "2025-04-21T07:18:14.914+05:30"
-        form_type_id:
-          type: integer
-          nullable: true
-        percentage:
-          type: string
-          example: "50.0"
-        ppm_number:
-          type: integer
-          example: 3
-        investor_signature_types:
-          type: string
-          nullable: true
-        folio_id:
-          type: string
-          example: "TP3"
-        investor_signatory_id:
-          type: integer
-          nullable: true
-        esign_required:
-          type: boolean
-          example: false
-        esign_completed:
-          type: boolean
-          example: false
-        esign_provider:
-          type: string
-          nullable: true
-        esign_link:
+        url:
           type: string
           format: uri
           nullable: true
-        call_amount_cents:
+        # Computed monetary fields (in fund currency)
+        fund_name:
           type: string
-          example: "18000000000.0"
-        distribution_amount_cents:
+          example: "Tax Provision Fund"
+        fund_currency:
           type: string
-          example: "0.0"
-        onboarding_completed:
-          type: boolean
-          example: true
-        deleted_at:
-          type: string
-          format: date-time
-          nullable: true
-        investor_kyc_id:
-          type: integer
-          example: 1289
-        investor_name:
-          type: string
-          example: "TPF3"
-        document_folder_id:
-          type: integer
-          nullable: true
-        unit_type:
-          type: string
-          example: "B"
-        total_fund_units_quantity:
-          type: string
-          example: "0.0"
-        total_allocated_income_cents:
-          type: string
-          example: "0.0"
-        total_allocated_expense_cents:
-          type: string
-          example: "0.0"
-        total_units_premium_cents:
-          type: string
-          example: "0.0"
-        fund_close:
-          type: string
-          example: "First Close"
-        virtual_bank_account:
-          type: string
-          nullable: true
+          example: "INR"
         folio_currency:
           type: string
-          example: "USD"
-        folio_committed_amount_cents:
-          type: string
-          example: "30000000000.0"
-        folio_collected_amount_cents:
-          type: string
-          example: "18000000000.0"
-        folio_call_amount_cents:
-          type: string
-          example: "18000000000.0"
-        adjustment_amount_cents:
-          type: string
-          example: "0.0"
-        adjustment_folio_amount_cents:
-          type: string
-          example: "0.0"
-        orig_committed_amount_cents:
-          type: string
-          example: "30000000000.0"
-        orig_folio_committed_amount_cents:
-          type: string
-          example: "30000000000.0"
-        exchange_rate_id:
-          type: integer
           nullable: true
-        is_feeder_fund:
-          type: boolean
-          example: false
-        commitment_date:
+          example: "USD"
+        percentage:
+          type: number
+          format: float
+          example: 50.0
+        folio_committed_amount:
+          type: number
+          format: float
+          example: 30000000.0
+        committed_amount:
+          type: number
+          format: float
+          example: 30000000.0
+        call_amount:
+          type: number
+          format: float
+          example: 18000000.0
+        collected_amount:
+          type: number
+          format: float
+          example: 18000000.0
+        distribution_amount:
+          type: number
+          format: float
+          example: 0.0
+        tracking_committed_amount:
+          type: number
+          format: float
+          example: 0.0
+        tracking_collected_amount:
+          type: number
+          format: float
+          example: 0.0
+        tracking_distribution_amount:
+          type: number
+          format: float
+          example: 0.0
+        # Investor KYC fields
+        full_name:
           type: string
-          format: date
-          example: "2020-04-01"
-        generated_deleted:
+          nullable: true
+          example: "John Doe"
+        pan:
           type: string
-          format: date-time
-          example: "1900-01-01T00:00:00.000+05:21"
-        json_fields:
+          nullable: true
+          example: "ABCDE1234F"
+        address:
+          type: string
+          nullable: true
+        bank_account:
+          type: string
+          nullable: true
+        ifsc_code:
+          type: string
+          nullable: true
+        custom_fields:
           type: object
           additionalProperties: true
           example: {}
-        esign_emails:
-          type: string
-          example: "tpf3@tpf.com"
-        import_upload_id:
-          type: integer
-          example: 1472
-        other_fee_cents:
-          type: string
+        investor_kyc:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: "Full InvestorKyc record (all columns). Provided for backward compatibility."
+        investor:
+          type: object
+          nullable: true
+          additionalProperties: true
+          description: "Full Investor record (all columns). Provided for backward compatibility."
+      required:
+        - id
+        - entity_id
+        - investor_id
+        - fund_id
+        - investor_name
+        - fund_name
+        - fund_currency
+        - committed_amount
+        - call_amount
+        - collected_amount
+        - distribution_amount
+        - created_at
+        - updated_at
     CapitalDistributionPayment:
       type: object
       properties:
@@ -492,19 +528,47 @@ components:
         capital_distribution_id:
           type: integer
           example: 257
+        capital_commitment_id:
+          type: integer
+          example: 1765
         investor_id:
           type: integer
           example: 1030
         form_type_id:
           type: integer
+          nullable: true
           example: 53
-        income_cents:
+        folio_id:
           type: string
-          example: "833333333.34"
+          nullable: true
+          example: "TF1"
+        investor_name:
+          type: string
+          example: "INVA1"
+        investor_kyc_id:
+          type: integer
+          nullable: true
+          example: 1289
+        percentage:
+          type: number
+          format: float
+          example: 16.67
+        units_quantity:
+          type: number
+          format: float
+          example: 0.0
         payment_date:
           type: string
           format: date
+          nullable: true
           example: "2024-06-30"
+        completed:
+          type: boolean
+          example: true
+        properties:
+          type: object
+          additionalProperties: true
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -513,72 +577,111 @@ components:
           type: string
           format: date-time
           example: "2025-04-15T19:30:38.248+05:30"
-        completed:
-          type: boolean
-          example: true
-        percentage:
+        url:
           type: string
-          example: "16.67"
-        folio_id:
-          type: string
-          example: "TF1"
-        capital_commitment_id:
-          type: integer
-          example: 1765
-        deleted_at:
-          type: string
-          format: date-time
+          format: uri
           nullable: true
-        investor_name:
+        # Computed monetary fields
+        fund_name:
           type: string
-          example: "INVA1"
-        units_quantity:
+          example: "Tax Provision Fund"
+        capital_distribution_title:
           type: string
-          example: "0.0"
-        document_folder_id:
-          type: integer
+          example: "Distribution 2"
+        folio_currency:
+          type: string
           nullable: true
-        cost_of_investment_cents:
+          example: "USD"
+        folio_amount:
+          type: number
+          format: float
+          example: 0.0
+        folio_payment_amount:
+          type: number
+          format: float
+          example: 0.0
+        cost_of_investment:
+          type: number
+          format: float
+          example: 833333.33
+        cost_of_investment_with_fees:
+          type: number
+          format: float
+          example: 833333.33
+        income:
+          type: number
+          format: float
+          example: 833333.33
+        reinvestment:
+          type: number
+          format: float
+          example: 833333.33
+        reinvestment_with_fees:
+          type: number
+          format: float
+          example: 833333.33
+        income_with_fees:
+          type: number
+          format: float
+          example: 833333.33
+        gross_payable:
+          type: number
+          format: float
+          example: 833333.33
+        net_payable:
+          type: number
+          format: float
+          example: 833333.33
+        gross_of_account_entries:
+          type: number
+          format: float
+          example: 0.0
+        net_of_account_entries:
+          type: number
+          format: float
+          example: 0.0
+        face_value_for_redemption:
+          type: number
+          format: float
+          example: 0.0
+        face_value_for_redemption_with_fees:
+          type: number
+          format: float
+          example: 0.0
+        tracking_net_payable:
+          type: number
+          format: float
+          example: 0.0
+        # Investor KYC fields
+        bank_account:
           type: string
-          example: "833333333.34"
-        folio_amount_cents:
-          type: string
-          example: "0.0"
-        exchange_rate_id:
-          type: integer
           nullable: true
-        json_fields:
+        ifsc_code:
+          type: string
+          nullable: true
+        investing_entity:
+          type: string
+          nullable: true
+        pan:
+          type: string
+          nullable: true
+        custom_fields:
           type: object
-          properties:
-            ae_audit:
-              type: array
-              items: {}
-          example: {"ae_audit": []}
-        import_upload_id:
-          type: integer
-          nullable: true
-        capital_fee_cents:
-          type: string
-          example: "0.0"
-        other_fee_cents:
-          type: string
-          example: "0.0"
-        net_of_account_entries_cents:
-          type: string
-          example: "0.0"
-        net_payable_cents:
-          type: string
-          example: "833333333.34"
-        income_with_fees_cents:
-          type: string
-          example: "833333333.34"
-        cost_of_investment_with_fees_cents:
-          type: string
-          example: "833333333.34"
-        reinvestment_cents:
-          type: string
-          example: "833333333.34"
-        reinvestment_with_fees_cents:
+          additionalProperties: true
+          example: {}
+      required:
+        - id
+        - fund_id
+        - entity_id
+        - capital_distribution_id
+        - capital_commitment_id
+        - investor_id
+        - investor_name
+        - completed
+        - created_at
+        - updated_at
+        - fund_name
+        - capital_distribution_title
     CapitalDistribution:
       type: object
       properties:
@@ -593,16 +696,15 @@ components:
           example: 18
         form_type_id:
           type: integer
+          nullable: true
           example: 46
-        gross_amount_cents:
+        title:
           type: string
-          example: "1666666666.68"
-        carry_cents:
-          type: string
-          example: "0.0"
+          example: "Distribution 2"
         distribution_date:
           type: string
           format: date
+          nullable: true
           example: "2024-06-30"
         created_at:
           type: string
@@ -612,95 +714,74 @@ components:
           type: string
           format: date-time
           example: "2025-04-15T19:30:38.259+05:30"
-        title:
+        url:
           type: string
-          example: "Distribution 2"
-        completed:
-          type: boolean
-          example: false
-        distribution_amount_cents:
-          type: string
-          example: "833333333.34"
-        approved:
-          type: boolean
-          example: true
-        approved_by_user_id:
-          type: integer
-          example: 23
-        manual_generation:
-          type: boolean
-          example: true
-        generate_payments:
-          type: boolean
-          example: true
-        generate_payments_paid:
-          type: boolean
-          example: true
-        deleted_at:
-          type: string
-          format: date-time
+          format: uri
           nullable: true
-        fee_cents:
+        # Computed monetary fields (in fund currency)
+        fund_name:
           type: string
-          example: "0.0"
+          example: "Tax Provision Fund"
+        gross_amount:
+          type: number
+          format: float
+          example: 1666666.67
+        carry:
+          type: number
+          format: float
+          example: 0.0
+        payments:
+          type: number
+          format: float
+          example: 833333.33
+          description: "Alias for distribution_amount"
+        distribution_amount:
+          type: number
+          format: float
+          example: 833333.33
+        completed_distribution_amount:
+          type: number
+          format: float
+          example: 833333.33
+        cost_of_investment:
+          type: number
+          format: float
+          example: 5000000.0
+        face_value_for_redemption:
+          type: number
+          format: float
+          example: 5000000.0
+          description: "Alias for cost_of_investment"
+        reinvestment:
+          type: number
+          format: float
+          example: 5000000.0
+        income:
+          type: number
+          format: float
+          example: 5000000.0
+        fee:
+          type: number
+          format: float
+          example: 0.0
         unit_prices:
           type: object
           additionalProperties: true
           example: {}
-        reinvestment_cents:
-          type: string
-          example: "5000000000.0"
-        document_folder_id:
-          type: integer
-          nullable: true
-        cost_of_investment_cents:
-          type: string
-          example: "5000000000.0"
-        capital_commitment_id:
-          type: integer
-          nullable: true
-        distribution_on:
-          type: string
-          example: "Commitment Percentage"
-        json_fields:
+        custom_fields:
           type: object
-          properties:
-            as_of:
-              type: string
-              nullable: true
-            to_currency:
-              type: string
-              nullable: true
-            exchange_rate:
-              type: string
-              nullable: true
-            from_currency:
-              type: string
-              nullable: true
-          example: {"as_of": null, "to_currency": null, "exchange_rate": null, "from_currency": null}
-        import_upload_id:
-          type: integer
-          example: 1467
-        notes:
-          type: string
-          nullable: true
-        compliant:
-          type: boolean
-          example: false
-        income_cents:
-          type: string
-          example: "5000000000.0"
-        send_notification_on_complete:
-          type: boolean
-          example: false
-        completed_distribution_amount_cents:
-          type: string
-          example: "833333333.34"
+          additionalProperties: true
+          example: {}
       required:
         - id
         - fund_id
         - entity_id
         - title
+        - created_at
+        - updated_at
+        - fund_name
+        - gross_amount
+        - distribution_amount
     CapitalRemittancePayment:
       type: object
       properties:
@@ -716,17 +797,17 @@ components:
         entity_id:
           type: integer
           example: 18
-        amount_cents:
-          type: string
-          example: "9000000000.0"
         payment_date:
           type: string
           format: date
           example: "2021-04-15"
-        payment_proof_data:
+        payment_notification_sent:
+          type: boolean
+          example: false
+        notes:
           type: string
           nullable: true
-        notes:
+        reference_no:
           type: string
           nullable: true
         created_at:
@@ -737,45 +818,53 @@ components:
           type: string
           format: date-time
           example: "2025-04-21T07:22:15.927+05:30"
-        reference_no:
+        url:
+          type: string
+          format: uri
+          nullable: true
+        # Computed monetary fields
+        fund_name:
+          type: string
+          example: "Tax Provision Fund"
+        amount:
+          type: number
+          format: float
+          example: 9000000.0
+        folio_amount:
+          type: number
+          format: float
+          example: 9000000.0
+        investor_name:
           type: string
           nullable: true
-        folio_amount_cents:
+          example: "TPF3"
+        folio_id:
           type: string
-          example: "9000000000.0"
-        exchange_rate_id:
-          type: integer
           nullable: true
-        json_fields:
+          example: "TP3"
+        folio_currency:
+          type: string
+          nullable: true
+          example: "USD"
+        tracking_amount:
+          type: number
+          format: float
+          example: 0.0
+        custom_fields:
           type: object
           additionalProperties: true
           example: {}
-        import_upload_id:
-          type: integer
-          nullable: true
-        deleted_at:
-          type: string
-          format: date-time
-          nullable: true
-        payment_notification_sent:
-          type: boolean
-          example: false
-        investor_id:
-          type: integer
-          nullable: true
-        tracking_amount_cents:
-          type: string
-          example: "0.0"
-        form_type_id:
-          type: integer
-          nullable: true
       required:
         - id
         - fund_id
         - capital_remittance_id
         - entity_id
         - payment_date
-        - folio_amount_cents
+        - fund_name
+        - amount
+        - folio_amount
+        - created_at
+        - updated_at
     CapitalRemittance:
       type: object
       properties:
@@ -791,18 +880,28 @@ components:
         capital_call_id:
           type: integer
           example: 790
+        capital_commitment_id:
+          type: integer
+          example: 1770
         investor_id:
           type: integer
           example: 1035
         status:
           type: string
           example: "Paid"
-        call_amount_cents:
+        verified:
+          type: boolean
+          example: true
+        payment_date:
           type: string
-          example: "9000000000.0"
-        collected_amount_cents:
+          format: date
+          nullable: true
+          example: "2021-04-15"
+        remittance_date:
           type: string
-          example: "9000000000.0"
+          format: date
+          nullable: true
+          example: "2021-04-01"
         notes:
           type: string
           nullable: true
@@ -814,113 +913,131 @@ components:
           type: string
           format: date-time
           example: "2025-04-21T07:27:24.094+05:30"
-        capital_commitment_id:
-          type: integer
-          example: 1770
-        form_type_id:
-          type: integer
+        url:
+          type: string
+          format: uri
           nullable: true
-        verified:
-          type: boolean
-          example: true
-        payment_proof_data:
+        # Computed monetary and context fields
+        fund_name:
           type: string
-          nullable: true
-        folio_id:
+          example: "Tax Provision Fund"
+        fund_currency:
           type: string
-          example: "TP3"
-        payment_date:
-          type: string
-          format: date
-          example: "2021-04-15"
-        deleted_at:
-          type: string
-          format: date-time
-          nullable: true
+          example: "INR"
         investor_name:
           type: string
           example: "TPF3"
-        document_folder_id:
-          type: integer
+        folio_id:
+          type: string
           nullable: true
+          example: "TP3"
+        investing_entity:
+          type: string
+          nullable: true
+          example: "John Doe HUF"
+        capital_call_name:
+          type: string
+          nullable: true
+          example: "Capital Call 2"
+        percentage_called:
+          type: number
+          format: float
+          example: 30.0
+        # Fund currency amounts
+        call_amount:
+          type: number
+          format: float
+          example: 9000000.0
+        collected_amount:
+          type: number
+          format: float
+          example: 9000000.0
+        committed_amount:
+          type: number
+          format: float
+          example: 30000000.0
+        due_amount:
+          type: number
+          format: float
+          example: 0.0
+        capital_fee:
+          type: number
+          format: float
+          example: 0.0
+        other_fee:
+          type: number
+          format: float
+          example: 0.0
+        investment_amount:
+          type: number
+          format: float
+          example: 9000000.0
+        # Folio currency amounts
+        folio_currency:
+          type: string
+          nullable: true
+          example: "USD"
+        folio_call_amount:
+          type: number
+          format: float
+          example: 9000000.0
+        folio_collected_amount:
+          type: number
+          format: float
+          example: 9000000.0
+        folio_committed_amount:
+          type: number
+          format: float
+          example: 30000000.0
+        folio_due_amount:
+          type: number
+          format: float
+          example: 0.0
+        folio_capital_fee:
+          type: number
+          format: float
+          example: 0.0
+        folio_other_fee:
+          type: number
+          format: float
+          example: 0.0
+        folio_investment_amount:
+          type: number
+          format: float
+          example: 9000000.0
+        # Tracking currency amounts
+        tracking_collected_amount:
+          type: number
+          format: float
+          example: 0.0
+        tracking_call_amount:
+          type: number
+          format: float
+          example: 0.0
         units_quantity:
-          type: string
-          example: "0.0"
-        notification_sent:
-          type: boolean
-          example: false
-        committed_amount_cents:
-          type: string
-          example: "30000000000.0"
-        folio_call_amount_cents:
-          type: string
-          example: "9000000000.0"
-        folio_collected_amount_cents:
-          type: string
-          example: "9000000000.0"
-        folio_committed_amount_cents:
-          type: string
-          example: "30000000000.0"
-        exchange_rate_id:
-          type: integer
-          nullable: true
-        created_by:
-          type: string
-          example: "Call"
-        capital_fee_cents:
-          type: string
-          example: "0.0"
-        other_fee_cents:
-          type: string
-          example: "0.0"
-        folio_capital_fee_cents:
-          type: string
-          example: "0.0"
-        folio_other_fee_cents:
-          type: string
-          example: "0.0"
-        computed_amount_cents:
-          type: string
-          example: "9000000000.0"
-        percentage:
-          type: string
-          example: "30.0"
-        remittance_date:
-          type: string
-          format: date
-          example: "2021-04-01"
-        json_fields:
+          type: number
+          format: float
+          example: 0.0
+        custom_fields:
           type: object
           additionalProperties: true
-          example: {"other_fees_audit": [], "capital_fees_audit": []}
-        import_upload_id:
-          type: integer
-          nullable: true
-        arrear_folio_amount_cents:
-          type: string
-          example: "0.0"
-        arrear_amount_cents:
-          type: string
-          example: "0.0"
-        compliant:
-          type: boolean
-          example: false
-        tracking_collected_amount_cents:
-          type: string
-          example: "0.0"
-        tracking_call_amount_cents:
-          type: string
-          example: "0.0"
+          example: {}
       required:
         - id
         - entity_id
         - fund_id
         - capital_call_id
+        - capital_commitment_id
         - investor_id
         - status
-        - call_amount_cents
-        - collected_amount_cents
-        - capital_commitment_id
+        - fund_name
+        - fund_currency
+        - investor_name
+        - call_amount
+        - collected_amount
+        - committed_amount
+        - created_at
+        - updated_at
     Document:
       type: object
       properties:
@@ -1155,7 +1272,15 @@ components:
         json_fields:
           type: object
           additionalProperties: true
-          example: {"role": "GP", "hurdle": "", "catchup": "", "carry_4x": "", "hurdle_1": "", "hurdle_2": ""}
+          example:
+            {
+              "role": "GP",
+              "hurdle": "",
+              "catchup": "",
+              "carry_4x": "",
+              "hurdle_1": "",
+              "hurdle_2": "",
+            }
         import_upload_id:
           type: integer
           nullable: true
@@ -1459,7 +1584,7 @@ components:
         json_fields:
           type: object
           additionalProperties: true
-          example: {"gst": "", "sector": "", "docmicile": "Domestic"}
+          example: { "gst": "", "sector": "", "docmicile": "Domestic" }
         primary_email:
           type: string
           example: "rm1@demo.com"
@@ -1490,26 +1615,39 @@ components:
         fund_id:
           type: integer
           example: 219
-        portfolio_company_id:
-          type: integer
-          example: 1037
-        portfolio_company_name:
-          type: string
-          example: "TPF Port Co. 2"
         investment_date:
           type: string
           format: date
           example: "2021-04-20"
-        amount_cents:
-          type: string
-          example: "3750000000.0"
         quantity:
+          type: number
+          format: float
+          example: 30000000.0
+        proforma:
+          type: boolean
+          example: false
+        ref_id:
           type: string
-          example: "30000000.0"
+          nullable: true
         notes:
           type: string
           nullable: true
-          example: null
+        sold_quantity:
+          type: number
+          format: float
+          example: 0.0
+        transfer_quantity:
+          type: number
+          format: float
+          example: 0.0
+        net_quantity:
+          type: number
+          format: float
+          example: 30000000.0
+        quantity_as_of_date:
+          type: number
+          format: float
+          example: 60000000.0
         created_at:
           type: string
           format: date-time
@@ -1518,138 +1656,146 @@ components:
           type: string
           format: date-time
           example: "2025-04-21T09:04:45.058+05:30"
-        fmv_cents:
+        url:
           type: string
-          example: "10827000000.0"
-        document_folder_id:
-          type: integer
+          format: uri
           nullable: true
-          example: null
-        aggregate_portfolio_investment_id:
-          type: integer
-          example: 883
-        sold_quantity:
+        # Computed monetary and context fields
+        portfolio_company_name:
           type: string
-          example: "0.0"
-        net_quantity:
+          example: "TPF Port Co. 2"
+        fund_name:
           type: string
-          example: "30000000.0"
-        cost_of_sold_cents:
+          example: "Tax Provision Fund"
+        fund_currency:
           type: string
-          example: "0.0"
-        gain_cents:
+          example: "INR"
+        investment_instrument_name:
           type: string
-          example: "0.0"
-        folio_id:
-          type: integer
-          nullable: true
-          example: null
-        capital_commitment_id:
-          type: integer
-          nullable: true
-          example: null
-        category:
+          example: "Equity Shares"
+        instrument_currency:
           type: string
           nullable: true
-          example: null
-        sub_category:
-          type: string
+          example: "INR"
+        # Fund currency amounts
+        amount_in_instrument_currency:
+          type: number
+          format: float
+          example: 300000000.0
+        ex_expenses_base_amount:
+          type: number
+          format: float
+          example: 300000000.0
+        base_amount:
+          type: number
+          format: float
+          example: 300000000.0
+        ex_expenses_amount:
+          type: number
+          format: float
+          example: 3750000.0
+        amount:
+          type: number
+          format: float
+          example: 3750000.0
+        cost:
+          type: number
+          format: float
+          example: 3750000.0
+        cost_of_sold:
+          type: number
+          format: float
+          example: 0.0
+        cost_of_remaining:
+          type: number
+          format: float
+          example: 3750000.0
+        transfer_amount:
+          type: number
+          format: float
+          example: 0.0
+        fmv:
+          type: number
+          format: float
+          example: 10827000.0
+        gain:
+          type: number
+          format: float
+          example: 7077000.0
+        realized_gain:
+          type: number
+          format: float
+          example: 0.0
+        unrealized_gain:
+          type: number
+          format: float
+          example: 7077000.0
+        # Instrument currency amounts
+        instrument_currency_fmv:
+          type: number
+          format: float
+          example: 900000000.0
+        instrument_currency_cost_of_remaining:
+          type: number
+          format: float
+          example: 300000000.0
+        instrument_currency_unrealized_gain:
+          type: number
+          format: float
+          example: 600000000.0
+        sale_price_per_share:
+          type: number
+          format: float
           nullable: true
           example: null
-        sector:
-          type: string
+        cost_of_sold_per_share:
+          type: number
+          format: float
           nullable: true
           example: null
-        startup:
-          type: boolean
-          example: true
-        investment_domicile:
-          type: string
-          example: "Domestic"
-        deleted_at:
-          type: string
-          format: date-time
-          nullable: true
-          example: null
-        json_fields:
+        # Tracking currency amounts
+        tracking_amount:
+          type: number
+          format: float
+          example: 0.0
+        tracking_fmv:
+          type: number
+          format: float
+          example: 0.0
+        custom_fields:
           type: object
           additionalProperties: true
           example: {}
-        import_upload_id:
-          type: integer
-          example: 1479
-        investment_instrument_id:
-          type: integer
-          example: 241
-        quantity_as_of_date:
-          type: integer
-          example: 60000000
-        base_amount_cents:
-          type: string
-          example: "300000000000.0"
-        exchange_rate_id:
-          type: integer
-          example: 321
-        transfer_quantity:
-          type: string
-          example: "0.0"
-        transfer_amount_cents:
-          type: string
-          example: "0.0"
-        net_amount_cents:
-          type: string
-          example: "3750000000.0"
-        net_bought_amount_cents:
-          type: string
-          example: "3750000000.0"
-        net_bought_quantity:
-          type: string
-          example: "30000000.0"
-        cost_of_remaining_cents:
-          type: string
-          example: "3750000000.0"
-        unrealized_gain_cents:
-          type: string
-          example: "7077000000.0"
-        ex_expenses_amount_cents:
-          type: string
-          example: "3750000000.0"
-        ex_expenses_base_amount_cents:
-          type: string
-          example: "300000000000.0"
-        conversion_date:
-          type: string
-          format: date
+        portfolio_company:
           nullable: true
-          example: null
-        snapshot_date:
-          type: string
-          format: date
+          allOf:
+            - $ref: "#/components/schemas/Investor"
+          description: "Embedded portfolio company (Investor record)"
+        valuation:
           nullable: true
-          example: null
-        snapshot:
-          type: boolean
-          example: false
-        original_id:
-          type: integer
-          example: 1793
-        instrument_currency_fmv_cents:
-          type: string
-          example: "900000000000.0"
-        instrument_currency_cost_of_remaining_cents:
-          type: string
-          example: "300000000000.0"
-        instrument_currency_unrealized_gain_cents:
-          type: string
-          example: "600000000000.0"
+          allOf:
+            - $ref: "#/components/schemas/Valuation"
+          description: "Latest valuation for this investment"
+        investment_instrument:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/InvestmentInstrument"
+          description: "Embedded investment instrument"
       required:
         - id
         - entity_id
         - fund_id
-        - portfolio_company_id
         - investment_date
-        - amount_cents
         - quantity
+        - net_quantity
+        - fund_name
+        - fund_currency
+        - portfolio_company_name
+        - investment_instrument_name
+        - amount
+        - fmv
+        - created_at
+        - updated_at
     Valuation:
       type: object
       properties:
@@ -1659,16 +1805,25 @@ components:
         entity_id:
           type: integer
           example: 18
+        owner_id:
+          type: integer
+          nullable: true
+          example: 1037
+        owner_type:
+          type: string
+          nullable: true
+          example: "InvestmentInstrument"
+        investment_instrument_id:
+          type: integer
+          example: 241
         valuation_date:
           type: string
           format: date
           example: "2023-03-31"
-        valuation_cents:
+        currency:
           type: string
-          example: "0.0"
-        per_share_value_cents:
-          type: string
-          example: "30000.0"
+          nullable: true
+          example: "INR"
         created_at:
           type: string
           format: date-time
@@ -1677,73 +1832,172 @@ components:
           type: string
           format: date-time
           example: "2025-04-21T09:04:44.901+05:30"
-        form_type_id:
-          type: integer
+        url:
+          type: string
+          format: uri
           nullable: true
-        owner_type:
-          type: string
-          example: "Investor"
-        owner_id:
-          type: integer
-          example: 1037
-        report_data:
-          type: string
-          nullable: true
-        net_valuation_cents:
-          type: string
-          example: "0.0"
-        deleted_at:
-          type: string
-          format: date-time
-          nullable: true
-        category:
+        per_share_value:
+          type: number
+          format: float
+          example: 30000.0
+        portfolio_company_name:
           type: string
           nullable: true
-        sub_category:
+          example: "TPF Port Co. 2"
+        investment_instrument_name:
           type: string
           nullable: true
-        json_fields:
+          example: "Equity Shares"
+        custom_fields:
           type: object
           additionalProperties: true
           example: {}
-        import_upload_id:
-          type: integer
-          example: 1480
-        investment_instrument_id:
-          type: integer
-          example: 241
-        base_amount_cents:
-          type: string
-          nullable: true
       required:
         - id
         - entity_id
         - valuation_date
-        - valuation_cents
-        - per_share_value_cents
         - investment_instrument_id
-        
+        - per_share_value
+        - created_at
+        - updated_at
+    InvestmentInstrument:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 241
+        name:
+          type: string
+          example: "Equity Shares"
+        currency:
+          type: string
+          nullable: true
+          example: "INR"
+        category:
+          type: string
+          nullable: true
+          example: "Equity"
+        sub_category:
+          type: string
+          nullable: true
+          example: "Common Stock"
+        sector:
+          type: string
+          nullable: true
+          example: "Technology"
+        investment_domicile:
+          type: string
+          nullable: true
+          example: "Domestic"
+        entity_id:
+          type: integer
+          example: 18
+        portfolio_company_id:
+          type: integer
+          example: 1037
+        deleted_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-04-21T09:02:48.100+05:30"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-04-21T09:02:48.100+05:30"
+        url:
+          type: string
+          format: uri
+          nullable: true
+        portfolio_company_name:
+          type: string
+          nullable: true
+          example: "TPF Port Co. 2"
+        custom_fields:
+          type: object
+          additionalProperties: true
+          example: {}
+      required:
+        - id
+        - name
+        - entity_id
+        - portfolio_company_id
+        - created_at
+        - updated_at
+    ExchangeRate:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 321
+        entity_id:
+          type: integer
+          example: 18
+        from:
+          type: string
+          example: "USD"
+        to:
+          type: string
+          example: "INR"
+        rate:
+          type: number
+          format: float
+          example: 84.5
+        as_of:
+          type: string
+          format: date
+          nullable: true
+          example: "2025-03-31"
+        latest:
+          type: boolean
+          example: true
+        notes:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-04-21T07:00:00.000+05:30"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2025-04-21T07:00:00.000+05:30"
+        url:
+          type: string
+          format: uri
+          nullable: true
+      required:
+        - id
+        - entity_id
+        - from
+        - to
+        - rate
+        - created_at
+        - updated_at
+
 security:
-- BearerAuth: []
+  - BearerAuth: []
 paths:
   "/account_entries/delete_all.json":
     post:
       summary: delete_all account_entry
       responses:
-        '200':
+        "200":
           description: successful
   "/account_entries/adhoc.json":
     get:
       summary: adhoc account_entry
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AccountEntry'
+                  $ref: "#/components/schemas/AccountEntry"
     post:
       summary: adhoc account_entry
       requestBody:
@@ -1751,26 +2005,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AccountEntry'
+              $ref: "#/components/schemas/AccountEntry"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEntry'
+                $ref: "#/components/schemas/AccountEntry"
   "/account_entries.json":
     get:
       summary: list account_entries
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AccountEntry'
+                  $ref: "#/components/schemas/AccountEntry"
     post:
       summary: create account_entry
       requestBody:
@@ -1778,58 +2032,58 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AccountEntry'
+              $ref: "#/components/schemas/AccountEntry"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEntry'
+                $ref: "#/components/schemas/AccountEntry"
   "/account_entries/new.json":
     get:
       summary: new account_entry
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEntry'
+                $ref: "#/components/schemas/AccountEntry"
   "/account_entries/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit account_entry
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEntry'
+                $ref: "#/components/schemas/AccountEntry"
   "/account_entries/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show account_entry
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEntry'
+                $ref: "#/components/schemas/AccountEntry"
     patch:
       summary: update account_entry
       requestBody:
@@ -1837,14 +2091,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AccountEntry'
+              $ref: "#/components/schemas/AccountEntry"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEntry'
+                $ref: "#/components/schemas/AccountEntry"
     put:
       summary: update account_entry
       requestBody:
@@ -1852,27 +2106,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AccountEntry'
+              $ref: "#/components/schemas/AccountEntry"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountEntry'
+                $ref: "#/components/schemas/AccountEntry"
     delete:
       summary: delete account_entry
       responses:
-        '200':
+        "200":
           description: successful
   "/aggregate_portfolio_investments/{id}.json/toggle_show_portfolio":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: toggle_show_portfolio aggregate_portfolio_investment
       requestBody:
@@ -1880,26 +2134,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AggregatePortfolioInvestment'
+              $ref: "#/components/schemas/AggregatePortfolioInvestment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AggregatePortfolioInvestment'
+                $ref: "#/components/schemas/AggregatePortfolioInvestment"
   "/aggregate_portfolio_investments.json":
     get:
       summary: list aggregate_portfolio_investments
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AggregatePortfolioInvestment'
+                  $ref: "#/components/schemas/AggregatePortfolioInvestment"
     post:
       summary: create aggregate_portfolio_investment
       requestBody:
@@ -1907,58 +2161,58 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AggregatePortfolioInvestment'
+              $ref: "#/components/schemas/AggregatePortfolioInvestment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AggregatePortfolioInvestment'
+                $ref: "#/components/schemas/AggregatePortfolioInvestment"
   "/aggregate_portfolio_investments/new.json":
     get:
       summary: new aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AggregatePortfolioInvestment'
+                $ref: "#/components/schemas/AggregatePortfolioInvestment"
   "/aggregate_portfolio_investments/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AggregatePortfolioInvestment'
+                $ref: "#/components/schemas/AggregatePortfolioInvestment"
   "/aggregate_portfolio_investments/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AggregatePortfolioInvestment'
+                $ref: "#/components/schemas/AggregatePortfolioInvestment"
     patch:
       summary: update aggregate_portfolio_investment
       requestBody:
@@ -1966,14 +2220,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AggregatePortfolioInvestment'
+              $ref: "#/components/schemas/AggregatePortfolioInvestment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AggregatePortfolioInvestment'
+                $ref: "#/components/schemas/AggregatePortfolioInvestment"
     put:
       summary: update aggregate_portfolio_investment
       requestBody:
@@ -1981,97 +2235,97 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AggregatePortfolioInvestment'
+              $ref: "#/components/schemas/AggregatePortfolioInvestment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AggregatePortfolioInvestment'
+                $ref: "#/components/schemas/AggregatePortfolioInvestment"
     delete:
       summary: delete aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/aggregate_portfolio_investment_snapshots.json":
     get:
       summary: list aggregate_portfolio_investments
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/aggregate_portfolio_investment_snapshots/new.json":
     get:
       summary: new aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/aggregate_portfolio_investment_snapshots/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/aggregate_portfolio_investment_snapshots/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete aggregate_portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_calls/search.json":
     get:
       summary: search capital_call
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CapitalCall'
+                  $ref: "#/components/schemas/CapitalCall"
   "/capital_calls/{id}.json/reminder":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     post:
       summary: reminder capital_call
       requestBody:
@@ -2079,22 +2333,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCall'
+              $ref: "#/components/schemas/CapitalCall"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
   "/capital_calls/{id}.json/approve":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     post:
       summary: approve capital_call
       requestBody:
@@ -2102,22 +2356,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCall'
+              $ref: "#/components/schemas/CapitalCall"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
   "/capital_calls/{id}.json/generate_docs":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: generate_docs capital_call
       requestBody:
@@ -2125,22 +2379,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCall'
+              $ref: "#/components/schemas/CapitalCall"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
   "/capital_calls/{id}.json/allocate_units":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: allocate_units capital_call
       requestBody:
@@ -2148,22 +2402,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCall'
+              $ref: "#/components/schemas/CapitalCall"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
   "/capital_calls/{id}.json/recompute_fees":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: recompute_fees capital_call
       requestBody:
@@ -2171,26 +2425,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCall'
+              $ref: "#/components/schemas/CapitalCall"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
   "/capital_calls.json":
     get:
       summary: list capital_calls
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CapitalCall'
+                  $ref: "#/components/schemas/CapitalCall"
     post:
       summary: create capital_call
       requestBody:
@@ -2198,58 +2452,58 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCall'
+              $ref: "#/components/schemas/CapitalCall"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
   "/capital_calls/new.json":
     get:
       summary: new capital_call
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
   "/capital_calls/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit capital_call
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
   "/capital_calls/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show capital_call
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
     patch:
       summary: update capital_call
       requestBody:
@@ -2257,14 +2511,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCall'
+              $ref: "#/components/schemas/CapitalCall"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
     put:
       summary: update capital_call
       requestBody:
@@ -2272,27 +2526,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCall'
+              $ref: "#/components/schemas/CapitalCall"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCall'
+                $ref: "#/components/schemas/CapitalCall"
     delete:
       summary: delete capital_call
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_commitments/{id}.json/generate_documentation":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: generate_documentation capital_commitment
       requestBody:
@@ -2300,22 +2554,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCommitment'
+              $ref: "#/components/schemas/CapitalCommitment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/{id}.json/generate_soa":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: generate_soa capital_commitment
       requestBody:
@@ -2323,39 +2577,39 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCommitment'
+              $ref: "#/components/schemas/CapitalCommitment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/{id}.json/generate_soa_form":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: generate_soa_form capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/{id}.json/generate_esign_link":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: generate_esign_link capital_commitment
       requestBody:
@@ -2363,72 +2617,72 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCommitment'
+              $ref: "#/components/schemas/CapitalCommitment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/search.json":
     get:
       summary: search capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CapitalCommitment'
+                  $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/{id}.json/report":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: report capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/documents.json":
     get:
       summary: documents capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CapitalCommitment'
+                  $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/{id}.json/transfer_fund_units":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: transfer_fund_units capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
     post:
       summary: transfer_fund_units capital_commitment
       requestBody:
@@ -2436,31 +2690,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCommitment'
+              $ref: "#/components/schemas/CapitalCommitment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments.json":
     get:
       summary: list capital_commitments
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CapitalCommitment'
+                  $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/new.json":
     get:
       summary: new capital_commitment
@@ -2469,57 +2723,57 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCommitment'
+              $ref: "#/components/schemas/CapitalCommitment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_commitments/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
     patch:
       summary: update capital_commitment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
     put:
       summary: update capital_commitment
       requestBody:
@@ -2527,14 +2781,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCommitment'
+              $ref: "#/components/schemas/CapitalCommitment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
     delete:
       summary: delete capital_commitment
       requestBody:
@@ -2542,38 +2796,38 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalCommitment'
+              $ref: "#/components/schemas/CapitalCommitment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalCommitment'
+                $ref: "#/components/schemas/CapitalCommitment"
   "/capital_distribution_payments/search.json":
     get:
       summary: search capital_distribution_payment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CapitalDistributionPayment'
+                  $ref: "#/components/schemas/CapitalDistributionPayment"
   "/capital_distribution_payments.json":
     get:
       summary: list capital_distribution_payments
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CapitalDistributionPayment'
+                  $ref: "#/components/schemas/CapitalDistributionPayment"
     post:
       summary: create capital_distribution_payment
       requestBody:
@@ -2581,58 +2835,58 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistributionPayment'
+              $ref: "#/components/schemas/CapitalDistributionPayment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistributionPayment'
+                $ref: "#/components/schemas/CapitalDistributionPayment"
   "/capital_distribution_payments/new.json":
     get:
       summary: new capital_distribution_payment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistributionPayment'
+                $ref: "#/components/schemas/CapitalDistributionPayment"
   "/capital_distribution_payments/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit capital_distribution_payment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistributionPayment'
+                $ref: "#/components/schemas/CapitalDistributionPayment"
   "/capital_distribution_payments/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show capital_distribution_payment
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistributionPayment'
+                $ref: "#/components/schemas/CapitalDistributionPayment"
     patch:
       summary: update capital_distribution_payment
       requestBody:
@@ -2640,14 +2894,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistributionPayment'
+              $ref: "#/components/schemas/CapitalDistributionPayment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistributionPayment'
+                $ref: "#/components/schemas/CapitalDistributionPayment"
     put:
       summary: update capital_distribution_payment
       requestBody:
@@ -2655,27 +2909,27 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistributionPayment'
+              $ref: "#/components/schemas/CapitalDistributionPayment"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistributionPayment'
+                $ref: "#/components/schemas/CapitalDistributionPayment"
     delete:
       summary: delete capital_distribution_payment
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_distributions/{id}.json/approve":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     post:
       summary: approve capital_distribution
       requestBody:
@@ -2683,22 +2937,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistribution'
+              $ref: "#/components/schemas/CapitalDistribution"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
   "/capital_distributions/{id}.json/redeem_units":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: redeem_units capital_distribution
       requestBody:
@@ -2706,22 +2960,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistribution'
+              $ref: "#/components/schemas/CapitalDistribution"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
   "/capital_distributions/{id}.json/payments_completed":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: payments_completed capital_distribution
       requestBody:
@@ -2729,26 +2983,26 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistribution'
+              $ref: "#/components/schemas/CapitalDistribution"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
   "/capital_distributions.json":
     get:
       summary: list capital_distributions
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/CapitalDistribution'
+                  $ref: "#/components/schemas/CapitalDistribution"
     post:
       summary: create capital_distribution
       requestBody:
@@ -2756,58 +3010,58 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistribution'
+              $ref: "#/components/schemas/CapitalDistribution"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
   "/capital_distributions/new.json":
     get:
       summary: new capital_distribution
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
   "/capital_distributions/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit capital_distribution
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
   "/capital_distributions/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show capital_distribution
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
     patch:
       summary: update capital_distribution
       requestBody:
@@ -2815,14 +3069,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistribution'
+              $ref: "#/components/schemas/CapitalDistribution"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
     put:
       summary: update capital_distribution
       requestBody:
@@ -2830,1173 +3084,1291 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CapitalDistribution'
+              $ref: "#/components/schemas/CapitalDistribution"
       responses:
-        '200':
+        "200":
           description: successful
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CapitalDistribution'
+                $ref: "#/components/schemas/CapitalDistribution"
     delete:
       summary: delete capital_distribution
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittance_payments.json":
     get:
       summary: list capital_remittance_payments
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create capital_remittance_payment
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittance_payments/new.json":
     get:
       summary: new capital_remittance_payment
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittance_payments/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit capital_remittance_payment
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittance_payments/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show capital_remittance_payment
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update capital_remittance_payment
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update capital_remittance_payment
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete capital_remittance_payment
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances/{id}.json/verify":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: verify capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances/search.json":
     get:
       summary: search capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances/{id}.json/generate_docs":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: generate_docs capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances/{id}.json/send_notification":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: send_notification capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances/bulk_actions.json":
     post:
       summary: bulk_actions capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances.json":
     get:
       summary: list capital_remittances
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances/new.json":
     get:
       summary: new capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/capital_remittances/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete capital_remittance
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/{id}.json/send_for_esign":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: send_for_esign document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/{id}.json/force_send_for_esign":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: force_send_for_esign document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/{id}.json/cancel_esign":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: cancel_esign document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/{id}.json/resend_for_esign":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: resend_for_esign document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/send_all_for_esign.json":
     patch:
       summary: send_all_for_esign document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/signature_progress.json":
     post:
       summary: signature_progress document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/download.json":
     post:
       summary: download document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/{id}.json/fetch_esign_updates":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     post:
       summary: fetch_esign_updates document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/search.json":
     get:
       summary: search document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/investor.json":
     get:
       summary: investor document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/folder.json":
     get:
       summary: folder document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/owner.json":
     get:
       summary: owner document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/approve.json":
     get:
       summary: approve document
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: approve document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/bulk_actions.json":
     post:
       summary: bulk_actions document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/{id}.json/send_document_notification":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: send_document_notification document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents.json":
     get:
       summary: list documents
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/new.json":
     get:
       summary: new document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit document
       responses:
-        '200':
+        "200":
           description: successful
   "/documents/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show document
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update document
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update document
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete document
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_ratios/generate.json":
     get:
       summary: generate fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: generate fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_ratios.json":
     get:
       summary: list fund_ratios
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_ratios/new.json":
     get:
       summary: new fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_ratios/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_ratios/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete fund_ratio
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_unit_settings.json":
     get:
       summary: list fund_unit_settings
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create fund_unit_setting
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_unit_settings/new.json":
     get:
       summary: new fund_unit_setting
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_unit_settings/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit fund_unit_setting
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_unit_settings/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show fund_unit_setting
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update fund_unit_setting
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update fund_unit_setting
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete fund_unit_setting
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_units.json":
     get:
       summary: list fund_units
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create fund_unit
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_units/new.json":
     get:
       summary: new fund_unit
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_units/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit fund_unit
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_units/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show fund_unit
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update fund_unit
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update fund_unit
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete fund_unit
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/last":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: last fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/report":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: report fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/generate_fund_ratios":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     post:
       summary: generate_fund_ratios fund
       responses:
-        '200':
+        "200":
           description: successful
     get:
       summary: generate_fund_ratios fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/allocate":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: allocate fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/generate_documentation":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     patch:
       summary: generate_documentation fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/allocate_form":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: allocate_form fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/copy_formulas":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: copy_formulas fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/export":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: export fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/check_access_rights":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: check_access_rights fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/delete_all":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     delete:
       summary: delete_all fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/dashboard":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: dashboard fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/generate_tracking_numbers":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     post:
       summary: generate_tracking_numbers fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds.json":
     get:
       summary: list funds
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/new.json":
     get:
       summary: new fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit fund
       responses:
-        '200':
+        "200":
           description: successful
   "/funds/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show fund
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update fund
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update fund
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete fund
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_snapshots.json":
     get:
       summary: list funds
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create fund
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_snapshots/new.json":
     get:
       summary: new fund
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_snapshots/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit fund
       responses:
-        '200':
+        "200":
           description: successful
   "/fund_snapshots/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show fund
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update fund
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update fund
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete fund
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/search.json":
     get:
       summary: search investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/merge.json":
     get:
       summary: merge investor
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: merge investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/{id}.json/dashboard":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: dashboard investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/{id}.json/generate_reports":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: generate_reports investor
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: generate_reports investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/{id}.json/portfolio_investments_report":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: portfolio_investments_report investor
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: portfolio_investments_report investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/portfolio_investments_report_all.json":
     get:
       summary: portfolio_investments_report_all investor
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: portfolio_investments_report_all investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors.json":
     get:
       summary: list investors
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/new.json":
     get:
       summary: new investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit investor
       responses:
-        '200':
+        "200":
           description: successful
   "/investors/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show investor
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update investor
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update investor
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete investor
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investments/base_amount_form.json":
     get:
       summary: base_amount_form portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investments.json":
     get:
       summary: list portfolio_investments
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investments/new.json":
     get:
       summary: new portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investments/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investments/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investment_snapshots.json":
     get:
       summary: list portfolio_investments
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investment_snapshots/new.json":
     get:
       summary: new portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investment_snapshots/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/portfolio_investment_snapshots/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete portfolio_investment
       responses:
-        '200':
+        "200":
           description: successful
   "/valuations/value_bridge.json":
     post:
       summary: value_bridge valuation
       responses:
-        '200':
+        "200":
           description: successful
     get:
       summary: value_bridge valuation
       responses:
-        '200':
+        "200":
           description: successful
   "/valuations.json":
     get:
       summary: list valuations
       responses:
-        '200':
+        "200":
           description: successful
     post:
       summary: create valuation
       responses:
-        '200':
+        "200":
           description: successful
   "/valuations/new.json":
     get:
       summary: new valuation
       responses:
-        '200':
+        "200":
           description: successful
   "/valuations/{id}.json/edit":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: edit valuation
       responses:
-        '200':
+        "200":
           description: successful
   "/valuations/{id}.json":
     parameters:
-    - name: id
-      in: path
-      description: id
-      required: true
-      schema:
-        type: string
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
     get:
       summary: show valuation
       responses:
-        '200':
+        "200":
           description: successful
     patch:
       summary: update valuation
       responses:
-        '200':
+        "200":
           description: successful
     put:
       summary: update valuation
       responses:
-        '200':
+        "200":
           description: successful
     delete:
       summary: delete valuation
       responses:
-        '200':
+        "200":
+          description: successful
+  "/investment_instruments.json":
+    get:
+      summary: list investment_instruments
+      responses:
+        "200":
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InvestmentInstrument"
+    post:
+      summary: create investment_instrument
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentInstrument"
+      responses:
+        "200":
+          description: successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentInstrument"
+  "/investment_instruments/{id}.json":
+    parameters:
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
+    get:
+      summary: show investment_instrument
+      responses:
+        "200":
+          description: successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentInstrument"
+    patch:
+      summary: update investment_instrument
+      responses:
+        "200":
+          description: successful
+    put:
+      summary: update investment_instrument
+      responses:
+        "200":
+          description: successful
+    delete:
+      summary: delete investment_instrument
+      responses:
+        "200":
+          description: successful
+  "/exchange_rates.json":
+    get:
+      summary: list exchange_rates
+      responses:
+        "200":
+          description: successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExchangeRate"
+    post:
+      summary: create exchange_rate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeRate"
+      responses:
+        "200":
+          description: successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRate"
+  "/exchange_rates/{id}.json":
+    parameters:
+      - name: id
+        in: path
+        description: id
+        required: true
+        schema:
+          type: string
+    get:
+      summary: show exchange_rate
+      responses:
+        "200":
+          description: successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExchangeRate"
+    patch:
+      summary: update exchange_rate
+      responses:
+        "200":
+          description: successful
+    put:
+      summary: update exchange_rate
+      responses:
+        "200":
+          description: successful
+    delete:
+      summary: delete exchange_rate
+      responses:
+        "200":
           description: successful
 servers:
-- url: https://app.caphive.com
-  description: Production server
-- url: https://dev.altconnects.com
-  description: Staging server
-- url: http://localhost:3001
-  description: Local server
+  - url: https://app.caphive.com
+    description: Production server
+  - url: https://dev.altconnects.com
+    description: Staging server
+  - url: http://localhost:3001
+    description: Local server
