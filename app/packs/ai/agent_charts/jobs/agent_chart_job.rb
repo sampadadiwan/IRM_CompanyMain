@@ -1,22 +1,36 @@
 class AgentChartJob < ApplicationJob
   queue_as :default
 
-  def perform(user_id, agent_chart_id: nil, portfolio_company_id: nil)
+  def perform(user_id, agent_chart_id: nil, portfolio_company_id: nil, portfolio_company_ids: nil, tag_list: nil)
     agent_chart = agent_chart_id ? AgentChart.find(agent_chart_id) : nil
     user = user_id ? User.find(user_id) : nil
-    portfolio_company = portfolio_company_id ? Investor.find(portfolio_company_id) : nil
 
-    # Validate presence of at least one of agent_chart or portfolio_company
-    if agent_chart.nil? && portfolio_company.nil?
-      send_notification("No agent chart or portfolio company specified for chart generation", user_id, :error)
-      return
+    # Resolve portfolio_companies based on new plural option first
+    if portfolio_company_ids.present?
+      portfolio_companies = Investor.where(id: portfolio_company_ids)
+    elsif portfolio_company_id
+      portfolio_companies = Investor.where(id: portfolio_company_id)
+    else
+      portfolio_companies = get_portfolio_companies(user, portfolio_company_id: portfolio_company_id, agent_chart: agent_chart)
     end
 
-    # Get relevant portfolio companies and agent charts
-    portfolio_companies = get_portfolio_companies(user, portfolio_company_id: portfolio_company_id, agent_chart: agent_chart)
-    agent_charts = agent_chart ? [agent_chart] : get_agent_charts(portfolio_company&.tag_list, portfolio_company)
+    # Determine effective tag list:
+    # 1) prefer explicit tag_list param (string or array)
+    # 2) else prefer agent_chart.tag_list if present
+    # 3) else build combined tag list from all portfolio_companies
+    effective_tag_list =
+      if tag_list.present?
+        tag_list.is_a?(String) ? tag_list.split(',').map(&:strip).reject(&:blank?) : Array(tag_list).map(&:to_s).map(&:strip).reject(&:blank?)
+      elsif agent_chart&.tag_list.present?
+        agent_chart.tag_list.is_a?(String) ? agent_chart.tag_list.split(',').map(&:strip).reject(&:blank?) : Array(agent_chart.tag_list).map(&:to_s).map(&:strip).reject(&:blank?)
+      else
+        combined = Array(portfolio_companies).flat_map { |pc| pc.tag_list.to_s.split(',').map(&:strip) }
+        combined = combined.map(&:presence).compact.flatten.uniq
+        combined.empty? ? nil : combined
+      end
 
-    # Generate chart for each portfolio company and each agent chart
+    agent_charts = agent_chart ? [agent_chart] : get_agent_charts(effective_tag_list, portfolio_companies&.first)
+
     portfolio_companies.each do |portfolio_company|
       Rails.logger.debug { "Generating charts for Portfolio Company: #{portfolio_company.investor_name}" }
       agent_charts.each do |chart|
@@ -28,9 +42,7 @@ class AgentChartJob < ApplicationJob
       end
     end
 
-    message = "#{agent_chart.title} chart generation completed for all portfolio_companies with tag #{agent_chart.tag_list}" if agent_chart
-    message ||= "Chart generation completed for #{portfolio_company.investor_name}" if portfolio_company
-
+    message = agent_chart ? "#{agent_chart.title} chart generation completed" : "Chart generation completed"
     send_notification(message, user_id, :success)
   end
 

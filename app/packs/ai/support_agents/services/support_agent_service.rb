@@ -31,6 +31,7 @@ class SupportAgentService < Trailblazer::Operation
 
   def initialize_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
+    ctx[:support_agent]= @support_agent
     ctx[:llm] = LlmService.ruby_llm_chat(entity: @support_agent.entity)
   end
 
@@ -38,7 +39,6 @@ class SupportAgentService < Trailblazer::Operation
   # are uploaded by the investor.
   def check_document_presence(ctx, model:, support_agent:, **)
     if enabled?("validate_documents")
-
       if model.present?
         Rails.logger.debug { "[#{self.class.name}] Starting document presence check for InvestorKyc ID=#{model.id}" }
         # List of required documents from form and support agent json fields

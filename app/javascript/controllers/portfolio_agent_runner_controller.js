@@ -128,7 +128,7 @@ export default class extends Controller {
         },
         body: formData
       })
-      .then(response => response.text())
+      .then(response => {console.log('Response', response);return response.text()})
       .then(html => {
         // Turbo will automatically process the turbo-stream response
         Turbo.renderStreamMessage(html)

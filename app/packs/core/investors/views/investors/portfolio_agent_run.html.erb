@@ -13,8 +13,9 @@
                         params[:sector].to_s.split(',').map(&:strip).reject(&:blank?)
                       end
 
-  # Get all companies for the company selector
-  all_companies = @investors.presence || []
+  # Use controller-provided @investors (already filtered when portfolio_agent_run is present)
+  # Convert to array to keep view logic consistent (supports AR relations or arrays)
+  all_companies = (@investors || []).to_a
   # Handle company_ids which can come as an array or a comma-separated string
   selected_company_ids = if params[:company_ids].is_a?(Array)
                            params[:company_ids].map(&:to_i)
@@ -25,11 +26,13 @@
 %>
 
 <!-- Alert container for Turbo Stream updates -->
-<%= render "/layouts/alerts" %>
+<div id="page_alerts">
+  <%= render "/layouts/alerts" %>
+</div>
 
 <!-- Filter Section at Top -->
 <%= render ToggleCard.new(title: "Portfolio Agent Run - Filter Portfolio Companies", css_class: css_class, controller: "filter", state: state) do %>
-  <div data-turbo="false">
+
     <form action="<%= investors_path %>" method="get" accept-charset="UTF-8" data-remote="false" onsubmit="console.log('Form submitting with method:', this.method, 'and action:', this.action); console.log('All form fields:', Array.from(new FormData(this))); return true;">
       <input type="hidden" name="portfolio_agent_run" value="true" />
 
@@ -90,7 +93,7 @@
         </div>
       </div>
     </form>
-  </div>
+
 <% end %>
 
 <!-- Table showing selected companies -->

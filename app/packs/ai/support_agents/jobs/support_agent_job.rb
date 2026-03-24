@@ -41,6 +41,12 @@ class SupportAgentJob < ApplicationJob
         # Batch processing: validate and fetch targets securely
         targets = fetch_batch_targets(support_agent, batch_ids, batch_ids_type)
         return if targets.empty? # Safety: abort if no valid targets
+        # If the agent class supports a batch entrypoint, delegate the whole batch to it.
+        agent_class = support_agent.agent
+        if agent_class.respond_to?(:process_batch)
+          agent_class.process_batch(support_agent_id: support_agent.id, targets: targets, user_id: user_id, entity_id: support_agent.entity_id, with_steps: with_steps)
+          return
+        end
       elsif target_id.present? && target_type.present?
         if target_type == "Entity"
           # Entity provided: run for all portfolio companies in that entity
@@ -249,7 +255,6 @@ class SupportAgentJob < ApplicationJob
     # Security: Ensure all targets belong to the same entity as the support agent
     # This prevents cross-entity data access
     targets = target_class.where(id: batch_ids, entity_id: support_agent.entity_id)
-
     # Log security event if some IDs were filtered out (potential unauthorized access attempt)
     if targets.count < batch_ids.count
       filtered_count = batch_ids.count - targets.count
