@@ -1,0 +1,52 @@
+<tr id="<%= dom_id investor %>" data-company-id="<%= investor.id %>" data-company-name="<%= strip_tags(investor.investor_name).to_s.strip %>">
+  <td><%= link_to investor.investor_name, investor_path(investor), target: "_blank" %></td>
+  <td><%= investor.sector %></td>
+  <td>
+    <% if investor.tag_list.present? %>
+      <% investor.tag_list.split(",").each do |tag| %>
+        <span class="badge bg-info"><%= strip_tags(tag).to_s.strip %></span>
+      <% end %>
+    <% end %>
+  </td>
+  <td>
+    <% if investor.support_agent_report&.updated_at %>
+      <%= time_ago_in_words(investor.support_agent_report.updated_at) %> ago
+      <%= investor.support_agent_report.updated_at %>
+    <% else %>
+      <span class="text-muted">Never</span>
+    <% end %>
+  </td>
+  <td>
+    <% if investor.support_agent_report.present? %>
+      <% report = investor.support_agent_report %>
+      <% kpi_issues = report.json_fields["kpi_issues"]&.filter { |i| i["severity"] == "blocking" }&.size || 0 %>
+      <% valuation_issues = report.json_fields["valuation_issues"]&.filter { |i| i["severity"] == "blocking" }&.size || 0 %>
+      <% document_issues = report.json_fields["document_issues"]&.count { |d| d["type"] == "missing" } || 0 %>
+
+      <div class="d-flex gap-2 flex-wrap">
+        <%= link_to report_detail_investors_path(investor_id: investor.id, report_type: "kpi"),
+                    data: { turbo_frame: "remote_modal" },
+                    class: "btn btn-sm btn-#{kpi_issues > 0 ? 'danger' : 'success'} d-flex align-items-center gap-1" do %>
+          <i class="ti ti-chart-histogram"></i>
+          <span><%= kpi_issues %> KPI</span>
+        <% end %>
+
+        <%= link_to report_detail_investors_path(investor_id: investor.id, report_type: "valuation"),
+                    data: { turbo_frame: "remote_modal" },
+                    class: "btn btn-sm btn-#{valuation_issues > 0 ? 'danger' : 'success'} d-flex align-items-center gap-1" do %>
+          <i class="ti ti-device-analytics"></i>
+          <span><%= valuation_issues %> Val</span>
+        <% end %>
+
+        <%= link_to report_detail_investors_path(investor_id: investor.id, report_type: "document"),
+                    data: { turbo_frame: "remote_modal" },
+                    class: "btn btn-sm btn-#{document_issues > 0 ? 'danger' : 'success'} d-flex align-items-center gap-1" do %>
+          <i class="ti ti-files"></i>
+          <span><%= document_issues %> Doc</span>
+        <% end %>
+      </div>
+    <% else %>
+      <span class="text-muted">No report</span>
+    <% end %>
+  </td>
+</tr>

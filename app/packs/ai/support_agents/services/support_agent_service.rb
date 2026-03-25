@@ -205,16 +205,4 @@ class SupportAgentService < Trailblazer::Operation
     report.reload
     report.json_fields["cancelled_at"].present?
   end
-
-  # Broadcasts a table refresh for batch portfolio company agent runs
-  # This allows the UI to update the "Last Run" times after batch completion
-  def broadcast_portfolio_table_refresh(user_id)
-    # Broadcast a custom event to trigger table refresh via Stimulus
-    # We use a script tag to dispatch a custom event that the Stimulus controller will catch
-    Turbo::StreamsChannel.broadcast_append_to(
-      "portfolio_agent_batch_#{user_id}",
-      target: "portfolio_agent_events",
-      html: "<script>document.getElementById('portfolio_companies_table').dispatchEvent(new CustomEvent('portfolio-table-refresh'));</script>"
-    )
-  end
 end

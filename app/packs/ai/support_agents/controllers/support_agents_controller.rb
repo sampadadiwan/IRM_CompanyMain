@@ -127,6 +127,12 @@ class SupportAgentsController < ApplicationController
 
   # Runs the agent with step-by-step progress tracking.
   #
+  # EXECUTION MODE: Single Company with Steps (shows progress UI)
+  # - Called for single portfolio company runs (e.g., from investor show page)
+  # - Shows step-by-step progress panel with real-time updates
+  # - Broadcasts progress updates as each step completes
+  # - Renders progress panel partial with Turbo Stream response
+  #
   # Initializes steps from the agent's step definitions and creates/updates
   # a SupportAgentReport to track progress. Responds with Turbo Stream updates
   # for real-time UI feedback.
@@ -140,19 +146,33 @@ class SupportAgentsController < ApplicationController
     target = find_target(params[:target_type], params[:target_id])
     return render json: { status: "error", message: "Target not found" }, status: :not_found unless target
 
-    # Check if already running (skip this check for Entity targets with Portfolio Company Agent)
-    unless params[:target_type] == "Entity" && @support_agent.agent_type == "PortfolioCompanyAgent"
-      existing_report = SupportAgentReport.find_by(owner: target, support_agent: @support_agent)
-      return render json: { status: "error", message: "Agent already running for this target" }, status: :unprocessable_entity if existing_report&.running?
+    # PortfolioCompanyAgent running against an entire Entity has no meaningful step UI
+    # (it processes all portfolio companies as a batch). Delegate straight to process_batch
+    # via SupportAgentJob in :adhoc_batch mode and redirect — no progress panel.
+    if @support_agent.agent_type == "PortfolioCompanyAgent" && params[:target_type] == "Entity"
+      SupportAgentJob.perform_later(
+        support_agent_id: @support_agent.id,
+        target_id:        params[:target_id],
+        target_type:      params[:target_type],
+        user_id:          current_user.id,
+        with_steps:       true,
+        execution_mode:   :adhoc_batch
+      )
+      return redirect_to(request.referer || support_agents_path, notice: "#{@support_agent.name} queued for all portfolio companies.")
     end
 
-    # Enqueue the job
+    # Check if already running for single-target runs
+    existing_report = SupportAgentReport.find_by(owner: target, support_agent: @support_agent)
+    return render json: { status: "error", message: "Agent already running for this target" }, status: :unprocessable_entity if existing_report&.running?
+
+    # Enqueue the job with execution_mode = single_company_with_steps
     SupportAgentJob.perform_later(
       support_agent_id: @support_agent.id,
       target_id: params[:target_id],
       target_type: params[:target_type],
       user_id: current_user.id,
-      with_steps: @support_agent.with_steps
+      with_steps: @support_agent.with_steps,
+      execution_mode: :single_company_with_steps
     )
 
     # Return the report info for Turbo Stream subscription
@@ -167,19 +187,18 @@ class SupportAgentsController < ApplicationController
       }
     end
 
-    report = SupportAgentReport.find_or_create_by(owner: target, support_agent: @support_agent) do |r|
-      r.status = :pending
-      r.json_fields = {
-        "steps" => steps,
-        "final_status" => "running",
-        "run_at" => Time.current.iso8601
-      }
-    end
+    report = SupportAgentReport.find_or_initialize_by(owner: target, support_agent: @support_agent)
+    report.status = :pending
+    report.json_fields = {
+      "steps" => steps,
+      "final_status" => "running",
+      "run_at" => Time.current.iso8601
+    }
+    report.save!
 
     respond_to do |format|
       format.html { redirect_to(request.referer || support_agents_path, notice: "Support agent job has been queued.") }
       format.turbo_stream do
-        target = find_target(params[:target_type], params[:target_id])
         render turbo_stream: turbo_stream.replace(
           "progress_panel_new",
           partial: "support_agents/progress_panel",
@@ -199,7 +218,13 @@ class SupportAgentsController < ApplicationController
   end
   # rubocop:enable Metrics/MethodLength
 
-  # Runs the support agent on multiple portfolio companies in batch.
+  # Runs the support agent on multiple portfolio companies in batch (adhoc run).
+  #
+  # EXECUTION MODE: Batch (no step-by-step UI)
+  # - Called from portfolio_agent_run.html.erb when user clicks "Run Agent on Selected Companies"
+  # - Processes multiple companies sequentially without steps UI
+  # - Shows a batch summary notification when complete
+  # - For PortfolioCompanyAgent: enqueues a single AgentChartJob at the end
   #
   # Queues a single job that will process all specified companies and send
   # a summarized notification when complete.
@@ -208,6 +233,7 @@ class SupportAgentsController < ApplicationController
   def run_batch
     @support_agent = SupportAgent.find(params[:id])
     authorize @support_agent
+
 
     # Generic batch processing - get target IDs and type
     target_ids = params[:target_ids]&.reject(&:blank?) || []
@@ -247,14 +273,16 @@ class SupportAgentsController < ApplicationController
     end
 
     # Queue the batch job - it will process all targets and send one summary notification
+    # NOTE: with_steps is always false for adhoc batch runs (no step UI for multiple companies)
     SupportAgentJob.perform_later(
       support_agent_id: @support_agent.id,
       target_type: target_type,
       target_id: target_ids.first, # First ID for context
       user_id: current_user.id,
-      with_steps: @support_agent.with_steps,
+      with_steps: false,
       batch_ids: target_ids,
-      batch_ids_type: target_type
+      batch_ids_type: target_type,
+      execution_mode: :adhoc_batch
     )
 
     # Determine friendly name for the target type
@@ -382,7 +410,7 @@ class SupportAgentsController < ApplicationController
       # For Portfolio Company Agent with Entity target, return first portfolio company
       # This is used to display the progress panel UI for the batch run
       # The job will handle fetching all portfolio companies based on filters
-      targets = @support_agent.agent.new.targets(target_id, @support_agent)
+      targets = @support_agent.agent.new.targets(target_id)
       targets.first # Return first portfolio company for UI purposes
     else
       # Standard case: return the exact target

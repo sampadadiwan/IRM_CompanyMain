@@ -18,6 +18,7 @@ class InvestorsController < ApplicationController
     @q = Investor.ransack(params[:q])
     @investors = policy_scope(@q.result)
 
+
     if params[:multi_portfolio_dashboard].present? || params[:portfolio_agent_run].present?
       # Get portfolio companies first
       base_investors = @investors.portfolio_companies
@@ -38,11 +39,7 @@ class InvestorsController < ApplicationController
 
     # For portfolio_agent_run, fetch last run times efficiently
     if params[:portfolio_agent_run].present?
-      investor_ids = @investors.pluck(:id)
-      @last_run_times = SupportAgentReport
-        .where(owner_type: 'Investor', owner_id: investor_ids)
-        .group(:owner_id)
-        .maximum(:updated_at)
+      @investors = @investors.includes(:support_agent_report)
     end
 
     respond_to do |format|

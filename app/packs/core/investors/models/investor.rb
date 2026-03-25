@@ -337,4 +337,8 @@ class Investor < ApplicationRecord
     @portfolio_investment_ids ||= portfolio_investments.pluck(:id)
     @portfolio_investment_ids
   end
+
+  def get_row_template
+    "/investors/investor"
+  end
 end
