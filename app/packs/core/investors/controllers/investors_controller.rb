@@ -10,12 +10,16 @@ class InvestorsController < ApplicationController
     if params[:multi_portfolio_dashboard].present?
       setup_portfolio_dashboard
       template = "investors/multi_portfolio_dashboard"
+    elsif params[:portfolio_agent_run].present?
+      setup_portfolio_agent_run
+      template = "investors/portfolio_agent_run"
     end
 
     @q = Investor.ransack(params[:q])
     @investors = policy_scope(@q.result)
 
-    if params[:multi_portfolio_dashboard].present?
+
+    if params[:multi_portfolio_dashboard].present? || params[:portfolio_agent_run].present?
       # Get portfolio companies first
       base_investors = @investors.portfolio_companies
 
@@ -31,7 +35,12 @@ class InvestorsController < ApplicationController
 
     @investors = InvestorSearch.search(@investors, params, current_user)
 
-    @pagy, @investors = pagy(@investors, limit: params[:per_page]) if params[:multi_portfolio_dashboard].blank? && params[:all].blank?
+    @pagy, @investors = pagy(@investors, limit: params[:per_page]) if params[:multi_portfolio_dashboard].blank? && params[:portfolio_agent_run].blank? && params[:all].blank?
+
+    # For portfolio_agent_run, fetch last run times efficiently
+    if params[:portfolio_agent_run].present?
+      @investors = @investors.includes(:support_agent_report)
+    end
 
     respond_to do |format|
       format.html { render template }
@@ -98,6 +107,42 @@ class InvestorsController < ApplicationController
     # Initialize empty arrays - will be populated in index method
     @tags_for_select = []
     @sectors_for_select = []
+  end
+
+  def setup_portfolio_agent_run
+    @page_title = "Portfolio Agent Run"
+    @name = params[:name] || "Default"
+    params[:filter] = true
+
+    # Initialize empty arrays - will be populated in index method
+    @tags_for_select = []
+    @sectors_for_select = []
+
+    # Get available support agents for the current entity
+    @support_agents = SupportAgent.where(entity_id: current_user.entity_id)
+                                   .order(:name)
+
+    # Efficiently get last run time for each company using a LEFT JOIN
+    @last_run_times = {}
+  end
+
+  def report_detail
+    begin
+      @investor = Investor.find(params[:investor_id])
+      authorize @investor
+      @report_type = params[:report_type] # 'kpi', 'valuation', or 'document'
+      @report = SupportAgentReport.find_by(owner: @investor)
+    rescue => e
+      Rails.logger.error "Error in report_detail: #{e.message}"
+      Rails.logger.error e.backtrace.join("\n")
+      @investor = nil
+      @report = nil
+      @error = e.message
+    end
+
+    respond_to do |format|
+      format.html { render "report_detail", layout: false }
+    end
   end
 
   def merge

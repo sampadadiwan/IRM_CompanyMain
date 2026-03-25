@@ -45,6 +45,10 @@ class SupportAgentPolicy < ApplicationPolicy
     run?
   end
 
+  def run_batch?
+    run?
+  end
+
   def cancel?
     run?
   end

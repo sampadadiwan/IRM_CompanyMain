@@ -38,7 +38,7 @@ class PortfolioChatProvider < BaseChatProvider
   # @return [String] formatted document context
   def build_context
     report = target
-    return "No folder linked to this report." if report.folder.blank?
+    return "No folder linked to this report." unless report.folder.present?
 
     FolderDocumentExtractor.extract(report.folder)
   end

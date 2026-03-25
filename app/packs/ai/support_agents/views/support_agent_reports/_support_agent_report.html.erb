@@ -23,8 +23,12 @@
                     <div class="col-2">Severity</div>
                 </div>
 
+                <% issue_keys = %w[kpi_issues document_issues valuation_issues] %>
                 <% json_data.each do |category, issues| %>
+                  <% next unless issue_keys.include?(category.to_s) %>
+                  <% next unless issues.is_a?(Array) %>
                   <% issues.each do |issue| %>
+                    <% next unless issue.is_a?(Hash) %>
                     <div class="row py-2 px-3 border-bottom mx-0">
                         <div class="col-2"><%= category.to_s.humanize %></div>
                         <div class="col-2"><%= issue["type"]&.humanize %></div>

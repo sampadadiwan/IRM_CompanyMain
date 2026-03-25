@@ -8,6 +8,7 @@ resources :support_agents do
   end
   member do
     post 'run_with_steps'
+    post 'run_batch'
     post 'cancel'
     get 'status'
     get 'step_details'

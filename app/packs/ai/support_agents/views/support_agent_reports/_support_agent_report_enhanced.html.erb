@@ -1,0 +1,287 @@
+<div class="container-fluid p-2">
+  <%= render ToggleCard.new(title: "Support Agent: #{support_agent_report.support_agent.name}", css_class: "show_support_agent_report") do %>
+
+  <div class="row g-3">
+    <!-- Left Column: Main Info -->
+    <div class="col-lg-9">
+
+      <% if support_agent_report.json_fields.present? %>
+        <% json_data = support_agent_report.json_fields.with_indifferent_access %>
+
+        <!-- KPI Issues Section -->
+        <% if json_data[:kpi_issues].present? %>
+          <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-light border-0 py-2 px-3">
+              <h6 class="mb-0 fw-bold d-flex align-items-center text-dark">
+                <i class="ti ti-chart-histogram me-2 fs-6"></i>
+                KPI Issues
+                <span class="badge bg-secondary-subtle text-secondary ms-auto px-2 py-1" style="font-size: 0.75rem;">
+                  <%= json_data[:kpi_issues].size %>
+                </span>
+              </h6>
+            </div>
+            <div class="card-body p-3">
+              <% json_data[:kpi_issues].each_with_index do |issue, index| %>
+                <div class="mb-2 py-2">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <div class="fw-semibold mb-1 text-dark" style="font-size: 0.875rem;">
+                        <i class="ti ti-alert-circle me-1 fs-6"></i>
+                        <%= issue['type']&.humanize || 'KPI Issue' %>
+                      </div>
+                      <p class="mb-1 text-dark" style="font-size: 0.8125rem;"><%= issue['message'] %></p>
+                      <% if issue['details'].present? %>
+                        <small class="text-muted" style="font-size: 0.75rem;"><%= issue['details'] %></small>
+                      <% end %>
+                    </div>
+                    <span class="badge <%= issue['severity'] == 'blocking' ? 'bg-danger' : 'bg-warning' %> ms-2 px-2 py-1" style="font-size: 0.7rem;">
+                      <%= issue['severity']&.humanize %>
+                    </span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <!-- Document Issues Section -->
+        <% if json_data[:document_issues].present? %>
+          <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-light border-0 py-2 px-3">
+              <h6 class="mb-0 fw-bold d-flex align-items-center text-dark">
+                <i class="ti ti-files me-2 fs-5"></i>
+                Document Issues
+                <span class="badge bg-secondary-subtle text-secondary ms-auto px-2 py-1" style="font-size: 0.75rem;">
+                  <%= json_data[:document_issues].size %>
+                </span>
+              </h6>
+            </div>
+            <div class="card-body p-3">
+              <% json_data[:document_issues].each_with_index do |issue, index| %>
+                <div class="mb-2 py-2">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <div class="fw-semibold mb-1 text-dark" style="font-size: 0.875rem;">
+                        <i class="ti ti-file-alert me-1 fs-6"></i>
+                        <%= issue['type']&.humanize || 'Document Issue' %>
+                      </div>
+                      <p class="mb-1 text-dark" style="font-size: 0.8125rem;"><%= issue['message'] %></p>
+                      <% if issue['document_name'].present? %>
+                        <small class="text-muted" style="font-size: 0.75rem;"><strong>Document:</strong> <%= issue['document_name'] %></small>
+                      <% end %>
+                    </div>
+                    <span class="badge <%= issue['severity'] == 'blocking' ? 'bg-danger' : 'bg-warning' %> ms-2 px-2 py-1" style="font-size: 0.7rem;">
+                      <%= issue['severity']&.humanize %>
+                    </span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <!-- Valuation Issues Section -->
+        <% if json_data[:valuation_issues].present? %>
+          <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-light border-0 py-2 px-3">
+              <h6 class="mb-0 fw-bold d-flex align-items-center text-dark">
+                <i class="ti ti-device-analytics me-2 fs-5"></i>
+                Valuation Issues
+                <span class="badge bg-secondary-subtle text-secondary ms-auto px-2 py-1" style="font-size: 0.75rem;">
+                  <%= json_data[:valuation_issues].size %>
+                </span>
+              </h6>
+            </div>
+            <div class="card-body p-3">
+              <% json_data[:valuation_issues].each_with_index do |issue, index| %>
+                <div class="mb-2 py-2">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <div class="fw-semibold mb-1 text-dark" style="font-size: 0.875rem;">
+                        <i class="ti ti-trending-up me-1 fs-6"></i>
+                        <%= issue['type']&.humanize || 'Valuation Issue' %>
+                      </div>
+                      <p class="mb-1 text-dark" style="font-size: 0.8125rem;"><%= issue['message'] %></p>
+                      <% if issue['details'].present? %>
+                        <small class="text-muted" style="font-size: 0.75rem;"><%= issue['details'] %></small>
+                      <% end %>
+                    </div>
+                    <span class="badge <%= issue['severity'] == 'blocking' ? 'bg-danger' : 'bg-warning' %> ms-2 px-2 py-1" style="font-size: 0.7rem;">
+                      <%= issue['severity']&.humanize %>
+                    </span>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <!-- Other Issues (Catch-all for any other categories) -->
+        <% json_data.each do |category, issues| %>
+          <% next if [:kpi_issues, :document_issues, :valuation_issues].include?(category.to_sym) %>
+          <% next unless issues.is_a?(Array) && issues.any? %>
+
+          <div class="card shadow-sm border-0 mb-3">
+            <div class="card-header bg-gradient-secondary text-white border-0 py-2 px-3">
+              <h6 class="mb-0 fw-bold d-flex align-items-center">
+                <i class="ti ti-alert-triangle me-2 fs-5"></i>
+                <%= category.to_s.humanize %>
+                <span class="badge bg-white text-secondary ms-auto px-2 py-1" style="font-size: 0.75rem;">
+                  <%= issues.size %>
+                </span>
+              </h6>
+            </div>
+            <div class="card-body p-3">
+              <% issues.each_with_index do |issue, index| %>
+                <div class="mb-2 py-2">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div class="flex-grow-1">
+                      <div class="fw-semibold mb-1" style="font-size: 0.875rem;">
+                        <i class="ti ti-info-circle me-1 fs-6"></i>
+                        <%= issue['type']&.humanize || category.to_s.humanize %>
+                      </div>
+                      <p class="mb-0" style="font-size: 0.8125rem;"><%= issue['message'] %></p>
+                    </div>
+                    <% if issue['severity'].present? %>
+                      <span class="badge <%= issue['severity'] == 'blocking' ? 'bg-danger' : 'bg-warning' %> ms-2 px-2 py-1" style="font-size: 0.7rem;">
+                        <%= issue['severity']&.humanize %>
+                      </span>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+      <% else %>
+        <div class="py-2">
+          <p class="mb-0 text-muted" style="font-size: 0.875rem;">No Report Data Available</p>
+        </div>
+      <% end %>
+
+    </div>
+
+    <!-- Right Column: Metadata Sidebar -->
+    <div class="col-lg-3">
+
+      <!-- Status Card -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-body text-center py-4">
+          <div class="mb-2">
+            <i class="ti ti-<%= support_agent_report.status == 'completed' ? 'circle-check' : (support_agent_report.status == 'failed' ? 'alert-circle' : 'clock') %> text-<%= support_agent_report.status == 'completed' ? 'success' : (support_agent_report.status == 'failed' ? 'danger' : 'warning') %> fs-7"></i>
+          </div>
+          <div class="text-muted text-uppercase mb-1" style="font-size: 0.65rem; letter-spacing: 0.5px;">Status</div>
+          <div class="mb-0">
+            <span class="badge <%= support_agent_report.status == 'failed' ? 'bg-danger' : "bg-#{support_agent_report.status == 'completed' ? 'success' : 'warning'}-subtle text-#{support_agent_report.status == 'completed' ? 'success' : 'warning'}" %> px-3 py-1" style="font-size: 0.8rem;">
+              <%= support_agent_report.status&.humanize %>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Metadata Card -->
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-light border-bottom py-2 px-3">
+          <div class="mb-0 fw-bold d-flex align-items-center" style="font-size: 0.85rem;">
+            <i class="ti ti-info-circle me-2 text-info fs-5"></i>
+            Report Info
+          </div>
+        </div>
+        <div class="card-body p-0 d-flex flex-column">
+          <div class="p-3 border-bottom flex-fill">
+            <div class="text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">
+              Created
+            </div>
+            <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+              <%= support_agent_report.created_at.strftime('%d %b %Y') %>
+            </div>
+            <div class="text-muted" style="font-size: 0.75rem;">
+              <%= support_agent_report.created_at.strftime('%H:%M') %>
+            </div>
+          </div>
+
+          <div class="p-3 border-bottom flex-fill">
+            <div class="text-muted mb-1" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">
+              Last Updated
+            </div>
+            <div class="fw-bold text-dark" style="font-size: 0.85rem;">
+              <%= support_agent_report.updated_at.strftime('%d %b %Y') %>
+            </div>
+            <div class="text-muted" style="font-size: 0.75rem;">
+              <%= support_agent_report.updated_at.strftime('%H:%M') %>
+            </div>
+          </div>
+
+          <% if support_agent_report.owner.present? %>
+            <div class="p-3 flex-fill">
+              <div class="text-muted mb-2" style="font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                Portfolio Company
+              </div>
+              <div class="fw-bold text-dark mb-2" style="font-size: 0.85rem; word-wrap: break-word;">
+                <%= support_agent_report.owner.investor_name %>
+              </div>
+              <% if support_agent_report.owner.category.present? %>
+                <div class="mt-2">
+                  <span class="badge bg-primary-subtle text-primary text-truncate d-inline-block" style="font-size: 0.7rem; max-width: 100%;" title="<%= support_agent_report.owner.category %>">
+                    <%= support_agent_report.owner.category %>
+                  </span>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- Summary Stats Section (Full Width) -->
+  <% if support_agent_report.json_fields.present? %>
+    <% json_data = support_agent_report.json_fields.with_indifferent_access %>
+    <% blocking_count = 0 %>
+    <% total_issues = 0 %>
+    <% json_data.each do |category, issues| %>
+      <% next unless issues.is_a?(Array) %>
+      <% total_issues += issues.size %>
+      <% blocking_count += issues.count { |i| i['severity'] == 'blocking' } %>
+    <% end %>
+
+    <div class="mt-3">
+      <div class="card shadow-sm border-0 mb-3">
+        <div class="card-header bg-light border-0 py-2 px-3">
+          <h6 class="mb-0 fw-bold d-flex align-items-center text-dark">
+            <i class="ti ti-chart-pie me-2 text-warning fs-5"></i>
+            Summary
+          </h6>
+        </div>
+        <div class="card-body p-3">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                <div>
+                  <div class="text-muted mb-1" style="font-size: 0.875rem;">Total Issues</div>
+                  <div class="fs-3 fw-bold text-dark"><%= total_issues %></div>
+                </div>
+                <i class="ti ti-list-numbers text-primary fs-9"></i>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="d-flex justify-content-between align-items-center p-3 border rounded">
+                <div>
+                  <div class="text-muted mb-1" style="font-size: 0.875rem;">Blocking</div>
+                  <div class="fs-3 fw-bold text-danger"><%= blocking_count %></div>
+                </div>
+                <i class="ti ti-alert-octagon text-danger fs-7"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% end %>
+</div>

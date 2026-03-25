@@ -8,7 +8,69 @@ class PortfolioCompanyAgent < SupportAgentService
   step :generate_progress_reports
 
   def targets(entity_id)
-    Investor.where(entity_id: entity_id, category: "Portfolio Company").includes(:kpi_reports, :valuations)
+    # Accept either an Investor instance (single target) or an entity_id (return relation)
+    if entity_id.is_a?(Investor) || entity_id.is_a?(ActiveRecord::Base)
+      [entity_id]
+    else
+      Investor.where(entity_id: entity_id, category: "Portfolio Company").includes(:kpi_reports, :valuations)
+    end
+  end
+
+  # Batch processor for PortfolioCompanyAgent — shared by adhoc and scheduled runs.
+  #
+  # EXECUTION MODES:
+  # - :adhoc_batch  — triggered manually from the portfolio agent run UI
+  # - :scheduled    — triggered by AgentRunnerJob (cron); no per-company chat UI,
+  #                   chart job runs silently, batch summary notification is suppressed
+  #
+  # Processes targets sequentially (one Trailblazer call per company), collects
+  # successes/errors, enqueues a single AgentChartJob for all processed ids,
+  # and emits a batch summary notification (skipped for :scheduled mode).
+  #
+  # @param support_agent_id [Integer]
+  # @param targets [Array, ActiveRecord::Relation] Investor records to process
+  # @param user_id [Integer, nil] nil for scheduled runs
+  # @param entity_id [Integer]
+  # @param execution_mode [Symbol] :adhoc_batch or :scheduled
+  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch) # rubocop:disable Lint/UnusedMethodArgument
+    support_agent = SupportAgent.find(support_agent_id)
+
+    # Preload commonly used associations to avoid N+1 queries
+    targets = targets.includes(:portfolio_kpi_reports, :documents, :valuations) if targets.respond_to?(:includes)
+
+    successes = []
+    errors = []
+
+    # Batch mode always runs with_steps=false (no step-by-step UI for batch)
+    # Sequential processing (no threading) per user requirement
+    targets.to_a.each do |target|
+      begin
+        support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id)
+        successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
+      rescue StandardError => e
+        Rails.logger.error { "PortfolioCompanyAgent.process_batch error for Target ID=#{target.id}: #{e.message}" }
+        Rails.logger.error { e.backtrace.join("\n") }
+        errors << { target_id: target.id, target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}", error: e.message }
+      end
+    end
+
+    # Enqueue a single AgentChartJob for all processed portfolio companies
+    if successes.any?
+      processed_ids = successes.map { |s| s[:id] }
+      AgentChartJob.perform_later(user_id, portfolio_company_ids: processed_ids.uniq, execution_mode: execution_mode)
+    end
+
+    # Send batch summary notification (skip for :scheduled mode, charts will notify separately)
+    if execution_mode != :scheduled
+      begin
+        batch_target_type = targets.first.class.name if targets.any?
+        SupportAgentJob.new.send(:send_batch_summary, support_agent, successes, errors, user_id, batch_target_type) if defined?(SupportAgentJob)
+      rescue StandardError => e
+        Rails.logger.error { "PortfolioCompanyAgent.process_batch: failed to send batch summary: #{e.message}" }
+      end
+    end
+
+    { successes: successes, errors: errors }
   end
 
   private
@@ -18,15 +80,14 @@ class PortfolioCompanyAgent < SupportAgentService
   #
   # @param ctx [Hash] Trailblazer execution context
   # @param target portfolio_company [Investor] record under verification
-  def initialize_agent(ctx, target:, **)
+  def initialize_agent(ctx, target: nil, **)
     super
+
     portfolio_company = target
     ctx[:portfolio_company] = portfolio_company
-    # Initialize execution ctx with a single portfolio_company
-    # Setup history, logging, or state tracking for this run
     Rails.logger.debug { "[#{self.class.name}] Initializing agent for Investor ID=#{portfolio_company.id}" }
     ctx[:issues] = { kpi_issues: [], document_issues: [], valuation_issues: [] }
-    # Only process if completed by investor and agent is enabled
+    # Only process if this is a portfolio company and the agent is enabled
     portfolio_company.category == "Portfolio Company" && @support_agent.enabled?
   end
 
@@ -34,15 +95,12 @@ class PortfolioCompanyAgent < SupportAgentService
   # Adds issues to ctx[:issues][:kpi_issues] if submission is missing, incomplete, or delayed.
   #
   # @param ctx [Hash] Trailblazer execution context
-  def check_kpi_submission(ctx, portfolio_company:, **)
+  def check_kpi_submission(ctx, portfolio_company: nil, **)
     due_period = @support_agent.json_fields["due_period"] || "Quarter"
     days_before_due_period_end = @support_agent.json_fields["days_before_due_period_end"]&.to_i || 15
     due_date = Date.end_of_period(due_period) - days_before_due_period_end.days
     prev_period = Date.previous_end_of_period(due_period, due_date)
 
-    # Fetch last quarter KPIs for the portfolio_company
-    # Validate submission presence, timeliness, and completeness
-    # Append issues to ctx[:issues][:kpi_issues] if problems found
     kpi_report = portfolio_company.portfolio_kpi_reports.where(as_of: prev_period..due_date).order(as_of: :desc).last
     @last_kpi_report = kpi_report
     if kpi_report
@@ -68,7 +126,6 @@ class PortfolioCompanyAgent < SupportAgentService
   # Verifies if mandatory documents are present for compliance and operational checks.
   # Adds issues to ctx[:issues][:document_issues] if any required documents are missing or invalid.
   def check_document_presence(ctx, support_agent:, **)
-    # For document check, consider all documents, not only the mandatory required ones
     ctx[:check_all_docs] = true
     super(ctx, model: @last_kpi_report, support_agent: support_agent)
   end
@@ -77,15 +134,11 @@ class PortfolioCompanyAgent < SupportAgentService
   # Adds issues to ctx[:issues][:valuation_issues] if there are missing valuations, stale entries, or anomalies.
   #
   # @param ctx [Hash] Trailblazer execution context
-  def check_valuations(ctx, portfolio_company:, **)
+  def check_valuations(ctx, portfolio_company: nil, **)
     valuation_period = @support_agent.json_fields["valuation_period"] || "Quarter"
     days_before_valuation_period_end = @support_agent.json_fields["days_before_valuation_period_end"]&.to_i || 15
     valuation_due_date = Date.end_of_period(valuation_period) - days_before_valuation_period_end.days
     prev_valuation_period = Date.previous_end_of_period(valuation_period, valuation_due_date)
-
-    # Retrieve reported valuations
-    # Check for recency, accuracy, and consistency with standards
-    # Append issues to ctx[:issues][:valuation_issues] if problems found
 
     valuation = portfolio_company.valuations.where(valuation_date: prev_valuation_period..valuation_due_date).order(valuation_date: :desc).last
     if valuation
@@ -110,10 +163,17 @@ class PortfolioCompanyAgent < SupportAgentService
 
   # Generates per-investor/fund reports summarizing issues and state.
   # Stores report as persisted SupportAgentReport record.
-  def generate_progress_reports(ctx, portfolio_company:, support_agent:, **)
+  #
+  # Called for both single-company (with steps) and batch (adhoc/scheduled) runs.
+  # Batch coordination (looping, chart job, notifications) is handled by process_batch.
+  def generate_progress_reports(ctx, portfolio_company: nil, support_agent:, **)
     super(ctx, model: portfolio_company, support_agent: support_agent)
-
+    broadcast_portco_row(target: portfolio_company)
     AgentChartJob.perform_later(ctx[:user_id], portfolio_company_id: portfolio_company.id)
     true
+  end
+
+  def broadcast_portco_row(target:)
+    target.broadcast_row(row_template: "investors/portfolio_agent_run_row")
   end
 end

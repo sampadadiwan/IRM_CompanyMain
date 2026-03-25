@@ -106,7 +106,7 @@ class Investor < ApplicationRecord
   scope :with_tag_list, lambda { |tags|
     tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)
     where(
-      tags.map { "tag_list LIKE ?" }.join(" OR "),
+      tags.map { "investors.tag_list LIKE ?" }.join(" OR "),
       *tags.map { |t| "%#{t}%" }
     )
   }
@@ -336,5 +336,9 @@ class Investor < ApplicationRecord
   def portfolio_investment_ids
     @portfolio_investment_ids ||= portfolio_investments.pluck(:id)
     @portfolio_investment_ids
+  end
+
+  def get_row_template
+    "/investors/investor"
   end
 end

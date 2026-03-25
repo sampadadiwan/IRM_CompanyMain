@@ -1,0 +1,40 @@
+<%= turbo_frame_tag "remote_modal" do %>
+  <div class="modal fade show" data-controller="modal" tabindex="-1" style="display: block;">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="ti ti-building"></i>
+            <%= @investor&.investor_name || "Company" %> - Agent Report
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-0">
+          <% if @error.present? %>
+            <div class="alert alert-danger m-3">
+              <strong>Error:</strong> <%= @error %>
+            </div>
+          <% end %>
+
+          <% if @report.present? %>
+            <%= render partial: "/support_agent_reports/support_agent_report_enhanced", locals: { support_agent_report: @report } %>
+          <% else %>
+            <div class="alert alert-warning m-3">
+              <i class="ti ti-alert-triangle"></i>
+              No support agent report available for this company.
+            </div>
+          <% end %>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <% if @investor.present? %>
+            <%= link_to investor_path(@investor), class: "btn btn-primary", target: "_blank" do %>
+              <i class="ti ti-building"></i>
+              View Portfolio Company
+            <% end %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+<% end %>

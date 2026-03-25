@@ -1,0 +1,174 @@
+<%
+  state ||= "show"
+  css_class ||= "show_portfolio_agent_filter"
+
+  selected_tags = if params[:tag_list].is_a?(Array)
+                    params[:tag_list]
+                  else
+                    params[:tag_list].to_s.split(',').map(&:strip).reject(&:blank?)
+                  end
+  selected_sectors = if params[:sector].is_a?(Array)
+                        params[:sector]
+                      else
+                        params[:sector].to_s.split(',').map(&:strip).reject(&:blank?)
+                      end
+
+  # Use controller-provided @investors (already filtered when portfolio_agent_run is present)
+  # Convert to array to keep view logic consistent (supports AR relations or arrays)
+  all_companies = (@investors || []).to_a
+  # Handle company_ids which can come as an array or a comma-separated string
+  selected_company_ids = if params[:company_ids].is_a?(Array)
+                           params[:company_ids].map(&:to_i)
+                         else
+                           params[:company_ids].to_s.split(',').map(&:to_i).reject(&:zero?)
+                         end
+
+%>
+
+<!-- Alert container for Turbo Stream updates -->
+<div id="page_alerts">
+  <%= render "/layouts/alerts" %>
+</div>
+
+
+<!-- Filter Section at Top -->
+<%= render ToggleCard.new(title: "Portfolio Agent Run - Filter Portfolio Companies", css_class: css_class, controller: "filter", state: state) do %>
+
+    <form action="<%= investors_path %>" method="get" accept-charset="UTF-8" data-remote="false" onsubmit="console.log('Form submitting with method:', this.method, 'and action:', this.action); console.log('All form fields:', Array.from(new FormData(this))); return true;">
+      <input type="hidden" name="portfolio_agent_run" value="true" />
+
+      <div class="row align-items-end">
+        <!-- Tags Multi-select -->
+        <div class="col">
+          <div class="form-group">
+            <%= label_tag :tag_list, "Tags" %>
+            <%= select_tag(
+              :tag_list,
+              options_for_select(@tags_for_select, selected_tags),
+              class: "form-control select2",
+              multiple: true,
+              include_hidden: false
+            ) %>
+          </div>
+        </div>
+
+        <!-- Sectors Multi-select -->
+        <div class="col">
+          <div class="form-group">
+            <%= label_tag :sector, "Sectors" %>
+            <%= select_tag(
+              :sector,
+              options_for_select(@sectors_for_select, selected_sectors),
+              class: "form-control select2",
+              multiple: true,
+              include_hidden: false
+            ) %>
+          </div>
+        </div>
+
+        <!-- Companies Multi-select -->
+        <div class="col">
+          <div class="form-group">
+            <%= label_tag :company_ids, "Companies" %>
+            <%= select_tag(
+              :company_ids,
+              options_for_select(all_companies.map { |inv| [inv.investor_name, inv.id] }, selected_company_ids),
+              class: "form-control select2",
+              multiple: true,
+              id: "company_selection",
+              include_hidden: false
+            ) %>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="col-auto ms-auto">
+          <div class="form-group">
+            <button type="submit" class="btn btn-outline-primary" title="Search">
+              <i class="ti ti-search"></i>
+            </button>
+            <%= link_to investors_path(portfolio_agent_run: true), class: "btn btn-outline-secondary", title: "Clear Filters" do %>
+              <i class="ti ti-x"></i>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </form>
+
+<% end %>
+
+<!-- Table showing selected companies -->
+<% if all_companies.present? %>
+  <%
+    # Filter companies based on selection
+    display_companies = if selected_company_ids.present?
+                          all_companies.select { |inv| selected_company_ids.include?(inv.id) }
+                        else
+                          all_companies
+                        end
+  %>
+
+  <% if display_companies.present? %>
+    <%= render ToggleCard.new(
+      title: "Selected Portfolio Companies (#{display_companies.count} of #{all_companies.count})",
+      css_class: "show_selected_companies",
+      controller: "filter",
+      state: "show"
+    ) do %>
+      <div class="d-flex justify-content-end align-items-center mb-3"
+           data-controller="portfolio-agent-runner"
+           data-portfolio-agent-runner-company-ids-value="<%= display_companies.map(&:id).to_json %>"
+           data-portfolio-agent-runner-agent-id-value="2">
+
+        <button type="button"
+                class="btn btn-success"
+                data-action="click->portfolio-agent-runner#showConfirmation">
+          <i class="ti ti-robot"></i> Run Agent on Selected Companies
+        </button>
+      </div>
+
+      <!-- Turbo Stream subscriptions for per-row live updates (must be outside the <table>) -->
+      <% display_companies.each do |investor| %>
+        <%= turbo_stream_from investor %>
+      <% end %>
+
+      <!-- Status message area for Turbo responses -->
+      <turbo-frame id="batch_status">
+        <!-- Status messages will appear here -->
+      </turbo-frame>
+
+
+      <!-- Subscribe to Turbo Stream for batch completion updates -->
+        <div class="table-responsive">
+          <table class="table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th>Company Name</th>
+                <th>Sector</th>
+                <th>Tags</th>
+                <th>Last Run</th>
+                <th>Agent Report</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% display_companies.each do |investor| %>
+                  <%= render "investors/portfolio_agent_run_row", investor: investor %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+    <% end %>
+  <% else %>
+    <div class="alert alert-info">
+      No companies selected. Please select companies from the filter above.
+    </div>
+  <% end %>
+<% else %>
+  <div class="alert alert-info">
+    No portfolio companies found matching the selected tag or sector filters.
+  </div>
+<% end %>
+
+
+<!-- Remote modal frame for loading report details -->
+<%= turbo_frame_tag "remote_modal" %>

@@ -17,6 +17,7 @@ class SupportAgent < ApplicationRecord
   AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent].freeze
 
   belongs_to :entity
+  has_one :agent_schedule, dependent: :destroy
 
   scope :enabled, -> { where(enabled: true) }
 

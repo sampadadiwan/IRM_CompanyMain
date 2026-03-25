@@ -76,6 +76,12 @@
             <i class="ti ti-layout-dashboard"></i> Portfolio Dashboard
           <% end %>
 
+          <%= link_to investors_path(portfolio_agent_run: true, q: ransack_query_params("category", :eq, "Portfolio Company")),
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-robot"></i> Portfolio Agent Run
+          <% end %>
+
 
           <%= link_to new_investor_notice_path(
                         "investor_notice[owner_id]": current_user.entity_id,
