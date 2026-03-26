@@ -40,7 +40,7 @@ class DashboardWidget < ApplicationRecord
 
   INVESTOR_WIDGETS = [
 
-    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Documents", path: "investors/widgets/documents", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Documents", path: "investors/widgets/documents", size: "XL", metadata_help: "{owner_type: 'Investor'/'Valuation', owner_id: 123, folder_id:, include_sub_folders: false, card_view: true, per_page: 6, per_row: 3, show_owner: false, show_tags: false}"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Investor Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium"),
@@ -63,7 +63,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Data Card", path: "investors/widgets/data_card", size: "XL", metadata_help: '{cols: 1, fields: "Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder"}'),
 
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Portfolio Investments", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL", metadata_help: "{ag: true, group_by_column: 'investment_instrument_name', show_fund_name: true}"),
-    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Documents", path: "investors/widgets/documents", size: "XL"),
+    DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Documents", path: "investors/widgets/documents", size: "XL", metadata_help: "{owner_type: 'Investor'/'Valuation', owner_id: 123, folder_id: 123, include_sub_folders: false, card_view: true, per_page: 6, per_row: 3, show_owner: false, show_tags: false}"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "My Tasks", path: "dashboard_widgets/widgets/my_tasks", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Upcoming Events", path: "dashboard_widgets/widgets/events", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Company Dashboard", widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "XL"),

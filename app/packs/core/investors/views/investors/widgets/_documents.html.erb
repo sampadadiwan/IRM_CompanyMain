@@ -1,4 +1,37 @@
-<% uri = URI(folder_documents_path(entity_id: @investor.entity_id, folder_id: @investor.document_folder.id)) %>
+<%# Documents Widget
+  metadata_help: "{owner_type: 'Investor'/'Valuation', owner_id: 123, folder_id: 123, include_sub_folders: false, card_view: true, per_page: 6, per_row: 3, show_owner: false, show_tags: false}"
+
+  when owner type and id is given - we fetch the docs of that owner (eg. Investor or Valuation)
+  when only owner type is given and it is Investor - we fetch the docs of the investor present on the page - so this works for all investor dashboards
+  when only folder_id is given - we fetch the docs of that folder
+  when none is given - we fetch the docs of the default investor document folder
+  when include_sub_folders is false - we only fetch the docs in the folder and not the subfolders
+  when show_owner is true - we show the owner of the document (eg. Investor or Valuation) in the document card
+  when show_tags is true - we show the tags of the document in the document card
+  per page and per_row can be used to control the pagination and layout of the document cards
+  frame_id can be used to set the id of the turbo frame for pagination to work correctly when there are multiple document widgets on the same page
+ %>
+<% args ||= {} %>
+<% frame_id = "documents_tree_frame_#{widget.id}" %>
+<% params = {entity_id: @investor.entity_id}
+  params[:owner_type] = args[:owner_type] if args[:owner_type].present?
+  if args[:owner_id].present?
+    params[:owner_id] = args[:owner_id]
+  elsif args[:owner_type].present? && params[:owner_type] == "Investor"
+    params[:owner_id] = @investor.id
+  end
+  params[:title] = args[:title] if args[:title].present?
+  params[:per_page] = args[:per_page] if args[:per_page].present?
+  params[:card_view] = args[:card_view] unless args[:card_view].nil?
+  params[:folder_id] = args[:folder_id] if args[:folder_id].present?
+  params[:folder_id] ||= @investor.document_folder.id
+  params[:include_sub_folders] = args[:include_sub_folders] unless args[:include_sub_folders].nil?
+  params[:show_owner] = args[:show_owner] unless args[:show_owner].nil?
+  params[:show_tags] = args[:show_tags] unless args[:show_tags].nil?
+  params[:per_row] = args[:per_row] if args[:per_row].present?
+  params[:frame_id] = frame_id
+%>
+<% uri = params[:card_view] ? URI(documents_path(params)) : URI(folder_documents_path(params)) %>
 
 <%= render(
       WidgetCardComponent.new(
@@ -6,10 +39,10 @@
         args: args,
         widget_size: widget.widget_size
       )
-    ) do 
+    ) do
 %>
 
-    <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: "#{uri.to_s}" do %>
+    <%= turbo_frame_tag frame_id, target: "_top", src: "#{uri.to_s}" do %>
     <% end %>
 
 <% end %>

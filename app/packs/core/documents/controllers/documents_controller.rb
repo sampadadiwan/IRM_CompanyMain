@@ -24,6 +24,9 @@ class DocumentsController < ApplicationController
   # GET /documents or /documents.json
   def index
     fetch_rows
+
+    # If card view is requested then we paginate the results
+    @pagy, @documents = pagy(@documents, limit: params[:per_page]) if (params[:card_view].to_s.downcase == "true") && params[:all].blank?
     # Render the template sent via params else index
     render params[:template].presence || "index"
   end
@@ -346,12 +349,16 @@ class DocumentsController < ApplicationController
 
     if params[:folder_id].present?
       @folder = Folder.find(params[:folder_id])
-      @documents = @documents.joins(:folder).merge(Folder.subtree_of(params[:folder_id]))
+      # in widgers card view if we only want to see the docs in the folder and not the subfolders then we send include_sub_folders as false
+      @documents = if params[:include_sub_folders].to_s.downcase == "false"
+                     @documents.where(folder_id: params[:folder_id])
+                   else
+                     @documents.joins(:folder).merge(Folder.subtree_of(params[:folder_id]))
+                   end
     end
 
     # Filter by owner_tag
-    @documents = @documents.where(owner_tag: params[:owner_tag]) if params[:owner_tag].present?
-    @documents = @documents.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
+    @documents = filter_params(@documents, :entity_id, :owner_id, :owner_type, :import_upload_id, :owner_tag)
     # This is specifically for non company_admins
     @documents = @documents.where(user_id: current_user.id) unless current_user.has_cached_role?(:company_admin)
 

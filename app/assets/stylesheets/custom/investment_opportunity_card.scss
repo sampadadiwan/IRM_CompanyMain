@@ -662,7 +662,7 @@
         background: #ffffff;
         border-radius: 16px;
         border: 1px solid #e2e8f0;
-        padding: 20px;
+        padding: 16px 20px 10px 20px;
         height: 100%;
         transition: all 0.3s ease;
         position: relative;
@@ -747,15 +747,30 @@
                       color: #64748b;
                     }
                 }
+
+                .doc-owner-link {
+                    font-size: 0.8rem;
+                    color: #94a3b8;
+                    text-decoration: none;
+
+                    [data-bs-theme=dark] & {
+                      color: #64748b;
+                    }
+
+                    &:hover {
+                      color: var(--bs-primary) !important;
+                    }
+                }
             }
         }
 
         .doc-meta {
             font-size: 0.85rem;
             color: #64748b;
-            padding-top: 12px;
+            padding-top: 6px;
+            padding-bottom: 2px;
             border-top: 1px dashed #e2e8f0;
-            margin-top: auto;
+            margin-top: 8px;
 
             [data-bs-theme=dark] & {
               color: #94a3b8;
