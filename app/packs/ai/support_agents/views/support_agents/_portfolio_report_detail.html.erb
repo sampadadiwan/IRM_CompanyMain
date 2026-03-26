@@ -1,5 +1,7 @@
 <div class="row">
   <div class="col-md-12">
+    <%# Ensure data is always a hash with indifferent access, never nil %>
+    <% data = (data || {}).with_indifferent_access %>
     <h6 class="mb-3 fw-bold">Report Details</h6>
 
     <%# Basic Info %>
@@ -10,7 +12,7 @@
       </div>
       <div class="col-md-2">
         <small class="text-muted">Status:</small><br>
-        <strong><%= data[:final_status]&.titleize || report.status %></strong>
+        <strong><%= (data[:final_status].presence&.titleize) || report.status.to_s.titleize %></strong>
       </div>
       <div class="col-md-3">
         <small class="text-muted">Triggered By:</small><br>
@@ -37,9 +39,9 @@
     </div>
 
     <%# Report Results - KPI, Document, and Valuation Issues %>
-    <% kpi_issues = data[:kpi_issues] || [] %>
-    <% document_issues = data[:document_issues] || [] %>
-    <% valuation_issues = data[:valuation_issues] || [] %>
+    <% kpi_issues = Array(data[:kpi_issues]) %>
+    <% document_issues = Array(data[:document_issues]) %>
+    <% valuation_issues = Array(data[:valuation_issues]) %>
 
     <% if kpi_issues.any? || document_issues.any? || valuation_issues.any? %>
       <h6 class="mb-3 fw-bold mt-4">Compliance Results</h6>
@@ -129,17 +131,17 @@
               <div class="accordion-body">
                 <ul class="list-group list-group-flush">
                   <% kpi_issues.each do |issue| %>
-                    <% severity = issue['severity'] || issue[:severity] %>
-                    <% message = issue['message'] || issue[:message] %>
-                    <% badge_class = case severity.to_s
+                    <% severity = (issue['severity'] || issue[:severity]).to_s %>
+                    <% message  = issue['message']  || issue[:message] %>
+                    <% badge_class = case severity
                          when 'blocking' then 'bg-danger'
-                         when 'success' then 'bg-success'
-                         when 'warning' then 'bg-warning'
+                         when 'success'  then 'bg-success'
+                         when 'warning'  then 'bg-warning'
                          else 'bg-info'
                        end %>
                     <li class="list-group-item">
-                      <span class="badge <%= badge_class %> me-2"><%= severity.to_s.titleize %></span>
-                      <%= message %>
+                      <span class="badge <%= badge_class %> me-2"><%= severity.titleize %></span>
+                      <%= message.presence || "No details available" %>
                     </li>
                   <% end %>
                 </ul>
@@ -160,13 +162,13 @@
               <div class="accordion-body">
                 <ul class="list-group list-group-flush">
                   <% document_issues.each do |issue| %>
-                    <% doc_type = issue['type'] || issue[:type] %>
-                    <% message = issue['message'] || issue[:message] %>
-                    <% doc_name = issue['document_name'] || issue[:document_name] %>
+                    <% doc_type  = (issue['type']     || issue[:type]).to_s %>
+                    <% message   = issue['message']   || issue[:message] %>
+                    <% doc_name  = issue['document_name'] || issue[:document_name] %>
                     <% badge_class = doc_type == 'missing' ? 'bg-danger' : 'bg-warning' %>
                     <li class="list-group-item">
-                      <span class="badge <%= badge_class %> me-2"><%= doc_type.to_s.titleize %></span>
-                      <%= message %>
+                      <span class="badge <%= badge_class %> me-2"><%= doc_type.titleize %></span>
+                      <%= message.presence || "No details available" %>
                       <% if doc_name.present? %>
                         <br><small class="text-muted">Document: <%= doc_name %></small>
                       <% end %>
@@ -190,18 +192,18 @@
               <div class="accordion-body">
                 <ul class="list-group list-group-flush">
                   <% valuation_issues.each do |issue| %>
-                    <% severity = issue['severity'] || issue[:severity] %>
-                    <% message = issue['message'] || issue[:message] %>
-                    <% period = issue['period'] || issue[:period] %>
-                    <% badge_class = case severity.to_s
+                    <% severity = (issue['severity'] || issue[:severity]).to_s %>
+                    <% message  = issue['message']   || issue[:message] %>
+                    <% period   = issue['period']    || issue[:period] %>
+                    <% badge_class = case severity
                          when 'blocking' then 'bg-danger'
-                         when 'success' then 'bg-success'
-                         when 'warning' then 'bg-warning'
+                         when 'success'  then 'bg-success'
+                         when 'warning'  then 'bg-warning'
                          else 'bg-info'
                        end %>
                     <li class="list-group-item">
-                      <span class="badge <%= badge_class %> me-2"><%= severity.to_s.titleize %></span>
-                      <%= message %>
+                      <span class="badge <%= badge_class %> me-2"><%= severity.titleize %></span>
+                      <%= message.presence || "No details available" %>
                       <% if period.present? %>
                         <br><small class="text-muted">Period: <%= period %></small>
                       <% end %>

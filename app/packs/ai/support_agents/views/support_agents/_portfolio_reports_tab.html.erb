@@ -19,12 +19,13 @@
       </thead>
       <tbody>
         <% portfolio_reports.each do |report| %>
-          <% data = report.json_fields.with_indifferent_access %>
-          <% final_status = data[:final_status] || report.status %>
-          <% status_color = case final_status.to_s
+          <% data = (report.json_fields || {}).with_indifferent_access %>
+          <%# Derive display status: prefer json final_status, fall back to AR status (normalised to lowercase) %>
+          <% final_status = (data[:final_status].presence || report.status.to_s).downcase %>
+          <% status_color = case final_status
                when 'ready', 'completed' then 'text-success'
                when 'running', 'pending' then 'text-primary'
-               when 'failed', 'blocked' then 'text-danger'
+               when 'failed', 'blocked'  then 'text-danger'
                else 'text-secondary'
              end %>
           <tr>
@@ -36,7 +37,8 @@
             </td>
             <td>
               <% if data[:run_at].present? %>
-                <%= Time.zone.parse(data[:run_at]).strftime("%b %d, %Y at %I:%M %p") %>
+                <% run_at = Time.zone.parse(data[:run_at]) rescue nil %>
+                <%= run_at ? run_at.strftime("%b %d, %Y at %I:%M %p") : "--" %>
               <% else %>
                 --
               <% end %>
