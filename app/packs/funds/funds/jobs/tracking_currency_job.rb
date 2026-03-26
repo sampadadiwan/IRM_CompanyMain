@@ -72,15 +72,15 @@ class TrackingCurrencyJob < ApplicationJob
       rate = fund.tracking_exchange_rate(exchange_rate_date: date).rate
 
       # Standard amounts are converted using the daily exchange rate
-      fund.account_entries.where(reporting_date: date)
-          .where.not("name LIKE ?", "%Percentage%")
-          .update_all("tracking_amount_cents = amount_cents * #{rate}")
+      scope.where(reporting_date: date)
+           .where.not("name LIKE ?", "%Percentage%")
+           .update_all("tracking_amount_cents = amount_cents * #{rate}")
 
       # Exception: Entries representing a 'Percentage' (e.g., Ownership %) are not currency-dependent
       # and should maintain a 1:1 ratio with the base amount.
-      fund.account_entries.where(reporting_date: date)
-          .where("name LIKE ?", "%Percentage%")
-          .update_all("tracking_amount_cents = amount_cents")
+      scope.where(reporting_date: date)
+           .where("name LIKE ?", "%Percentage%")
+           .update_all("tracking_amount_cents = amount_cents")
     rescue StandardError => e
       @missing_rates << "Account Entries: #{fund.currency}->#{fund.tracking_currency} on #{date}"
       Rails.logger.error "Error updating tracking currency for account entries on #{date}: #{e.message}"

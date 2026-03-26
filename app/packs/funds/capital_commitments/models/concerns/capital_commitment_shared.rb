@@ -47,21 +47,34 @@ module CapitalCommitmentShared
     committed_amount_cents.positive? ? 100 * (collected_amount_cents / committed_amount_cents).round(2) : 0
   end
 
-  def unfunded_commitment_as_of(end_date)
-    committed_amount_cents_before(end_date) - capital_remittance_payments.where(payment_date: ..end_date).sum(:amount_cents)
+  def unfunded_commitment_as_of(end_date, folio_currency: false, tracking_currency: false)
+    crps = capital_remittance_payments.where(payment_date: ..end_date)
+    crp_amount = if folio_currency
+                   crps.sum(:folio_amount_cents)
+                 elsif tracking_currency
+                   crps.sum(:tracking_amount_cents)
+                 else
+                   crps.sum(:amount_cents)
+                 end
+
+    committed_amount_cents_before(end_date, folio_currency: folio_currency, tracking_currency: tracking_currency) - crp_amount
   end
 
-  def committed_amount_cents_before(date)
+  def committed_amount_cents_before(date, folio_currency: false, tracking_currency: false)
     date = Date.local_parse(date) if date.is_a?(String)
 
-    if commitment_date.blank? || commitment_date > date
-      # If the commitment date is after the date, then there is no commitment before the date
-      0
+    # If the commitment date is after the date, then there is no commitment before the date
+    return 0 if commitment_date.blank? || commitment_date > date
+
+    # Get the top up adjustments before the date
+    adjustments = commitment_adjustments.for_type(["Top Up", "Transfer", "Exchange Rate"]).where(as_of: ..date)
+    # Get the committed amount before the date
+    if folio_currency
+      orig_folio_committed_amount_cents + adjustments.sum(:folio_amount_cents)
+    elsif tracking_currency
+      orig_tracking_committed_amount_cents + adjustments.sum(:tracking_amount_cents)
     else
-      # Get the top up adjustments before the date
-      adjustment_amount_cents_before_date = commitment_adjustments.for_type(["Top Up", "Transfer", "Exchange Rate"]).where(as_of: ..date).sum(:amount_cents)
-      # Get the committed amount before the date
-      orig_committed_amount_cents + adjustment_amount_cents_before_date
+      orig_committed_amount_cents + adjustments.sum(:amount_cents)
     end
   end
 
@@ -104,5 +117,4 @@ module CapitalCommitmentShared
       capital_remittance_payments.where(payment_date: ..end_date).sum { |crp| crp.amount_cents * (fund_unit_setting.json_fields['hurdle_rate'].to_d * ((end_date.to_date - crp.payment_date.to_date).to_i + 1) / 365) }
     end
   end
-
 end
