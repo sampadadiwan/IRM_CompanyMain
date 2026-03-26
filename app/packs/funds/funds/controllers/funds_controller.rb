@@ -204,7 +204,8 @@ class FundsController < ApplicationController
   end
 
   def generate_tracking_numbers
-    TrackingCurrencyJob.perform_later(fund_id: @fund.id, user_id: current_user.id)
+    force = params[:force].to_s.downcase == "true"
+    TrackingCurrencyJob.perform_later(fund_id: @fund.id, user_id: current_user.id, force: force)
     redirect_to fund_path(@fund), notice: "Tracking currency update started, please check back in a few mins."
   end
 

@@ -8,7 +8,8 @@ class ExchangeRatesController < ApplicationController
   end
 
   def generate_tracking_numbers
-    TrackingCurrencyJob.perform_later(entity_id: @exchange_rate.entity_id, user_id: current_user.id)
+    force = params[:force].to_s.downcase == "true"
+    TrackingCurrencyJob.perform_later(entity_id: @exchange_rate.entity_id, user_id: current_user.id, force: force)
     redirect_to exchange_rate_path(@exchange_rate), notice: "Tracking currency update started, please check back in a few mins."
   end
 

@@ -3032,3 +3032,13 @@ Then('remittance notice must be generated for the latest remittance for each kyc
     end
   end
 end
+
+Given('I go to fund page') do
+  @fund ||= Fund.last
+  visit(fund_url(@fund))
+end
+
+Given('I go to fund page with debug mode enabled') do
+   @fund ||= Fund.last
+  visit(fund_url(@fund, debug: true))
+end
