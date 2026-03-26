@@ -160,7 +160,6 @@ resources :investors do
   post 'merge', on: :collection
   get 'dashboard', on: :member
   # Route to return a report detail partial/modal for portfolio agent run links
-  get 'report_detail', on: :collection
   get 'generate_reports', on: :member
   post 'generate_reports', on: :member
   get 'portfolio_investments_report', on: :member
