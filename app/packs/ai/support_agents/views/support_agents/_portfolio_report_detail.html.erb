@@ -215,64 +215,6 @@
       </div>
     <% end %>
 
-    <%# Steps Progress (if available) %>
-    <% if data[:steps].present? %>
-      <h6 class="mb-3 fw-bold mt-4">Execution Steps</h6>
-      <div class="table-responsive">
-        <table class="table table-sm table-bordered">
-          <thead>
-            <tr>
-              <th style="width: 40px;">#</th>
-              <th>Step</th>
-              <th style="width: 120px;">Status</th>
-              <th style="width: 100px;">Duration</th>
-              <th>Message</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% data[:steps].each do |step| %>
-              <% step_status = step['status'] || step[:status] %>
-              <% status_badge = case step_status.to_s
-                   when 'success' then 'bg-success'
-                   when 'failed' then 'bg-danger'
-                   when 'running' then 'bg-primary'
-                   when 'skipped' then 'bg-secondary'
-                   when 'pending' then 'bg-warning'
-                   else 'bg-light'
-                 end %>
-              <tr>
-                <td class="text-center"><%= step['step'] || step[:step] %></td>
-                <td><%= step['label'] || step[:label] %></td>
-                <td>
-                  <span class="badge <%= status_badge %> text-white">
-                    <%= step_status.to_s.titleize %>
-                  </span>
-                </td>
-                <td>
-                  <% if step['duration_ms'].present? %>
-                    <%= (step['duration_ms'].to_f / 1000.0).round(2) %>s
-                  <% elsif step[:duration_ms].present? %>
-                    <%= (step[:duration_ms].to_f / 1000.0).round(2) %>s
-                  <% else %>
-                    --
-                  <% end %>
-                </td>
-                <td>
-                  <small><%= step['message'] || step[:message] || '--' %></small>
-                  <% if step['count'].present? || step[:count].present? %>
-                    <% count = step['count'] || step[:count] %>
-                    <br><small class="text-muted">
-                      (<%= count['passed'] || count[:passed] || 0 %> / <%= count['total'] || count[:total] || 0 %> passed)
-                    </small>
-                  <% end %>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    <% end %>
-
     <%# Additional JSON Fields %>
     <% if data[:error_message].present? %>
       <div class="alert alert-danger mt-3">

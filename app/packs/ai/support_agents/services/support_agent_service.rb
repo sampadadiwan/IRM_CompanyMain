@@ -85,10 +85,14 @@ class SupportAgentService < Trailblazer::Operation
     end
 
     # Preserve existing metadata (triggered_by, triggered_by_user_id, run_at, etc.) by merging instead of replacing
-    report.json_fields = (report.json_fields || {}).merge(ctx[:issues])
+    has_blocking = ctx[:issues].values.flatten.any? { |issue| issue[:severity] == :blocking }
+    report.json_fields = (report.json_fields || {}).merge(ctx[:issues]).merge(
+      "final_status" => has_blocking ? "blocked" : "ready",
+      "completed_at" => Time.current.iso8601
+    )
     # MySQL doesn't auto-detect JSON field changes, must explicitly mark as changed
     report.json_fields_will_change!
-    report.status = ctx[:issues].values.flatten.any? { |issue| issue[:severity] == :blocking } ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
+    report.status = has_blocking ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
     report.save
 
     ctx[:support_agent_report] = report

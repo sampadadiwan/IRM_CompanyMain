@@ -117,8 +117,9 @@
         <% end %>
 
         <!-- Other Issues (Catch-all for any other categories) -->
+        <% skip_keys = %i[kpi_issues document_issues valuation_issues steps field_issues] %>
         <% json_data.each do |category, issues| %>
-          <% next if [:kpi_issues, :document_issues, :valuation_issues].include?(category.to_sym) %>
+          <% next if skip_keys.include?(category.to_sym) %>
           <% next unless issues.is_a?(Array) && issues.any? %>
 
           <div class="card shadow-sm border-0 mb-3">
