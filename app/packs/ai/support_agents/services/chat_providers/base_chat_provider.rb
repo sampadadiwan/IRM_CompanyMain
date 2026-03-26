@@ -38,7 +38,9 @@ class BaseChatProvider
     provider_class = case support_agent.agent_type
                      when "CashFlowAssistantAgent" then defined?(CashFlowChatProvider) ? CashFlowChatProvider : DefaultChatProvider
                      when "CallNoticeAgent" then defined?(CallNoticeChatProvider) ? CallNoticeChatProvider : DefaultChatProvider
+                     when "PortfolioReportAgent" then defined?(PortfolioChatProvider) ? PortfolioChatProvider : DefaultChatProvider
                      when "PortfolioCompanyAgent" then defined?(PortfolioCompanyChatProvider) ? PortfolioCompanyChatProvider : DefaultChatProvider
+
                      else DefaultChatProvider
                      end
 
