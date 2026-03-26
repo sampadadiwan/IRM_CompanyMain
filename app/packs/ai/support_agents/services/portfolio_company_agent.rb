@@ -45,7 +45,7 @@ class PortfolioCompanyAgent < SupportAgentService
     # Sequential processing (no threading) per user requirement
     targets.to_a.each do |target|
       begin
-        support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id)
+        support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
         successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
       rescue StandardError => e
         Rails.logger.error { "PortfolioCompanyAgent.process_batch error for Target ID=#{target.id}: #{e.message}" }
@@ -169,7 +169,10 @@ class PortfolioCompanyAgent < SupportAgentService
   def generate_progress_reports(ctx, portfolio_company: nil, support_agent:, **)
     super(ctx, model: portfolio_company, support_agent: support_agent)
     broadcast_portco_row(target: portfolio_company)
-    AgentChartJob.perform_later(ctx[:user_id], portfolio_company_id: portfolio_company.id)
+    # Only enqueue an individual chart job when NOT running inside process_batch.
+    # process_batch enqueues a single bulk AgentChartJob for all companies at the end.
+    # ctx[:batch_mode] is set to true by process_batch to suppress per-company jobs.
+    AgentChartJob.perform_later(ctx[:user_id], portfolio_company_id: portfolio_company.id) unless ctx[:batch_mode]
     true
   end
 

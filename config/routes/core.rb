@@ -170,7 +170,6 @@ resources :investors do
   put 'restore_deleted', on: :member
   get 'show_deleted', on: :collection
   get 'report_detail', on: :collection
-  put 'restore_deleted', on: :member
   get 'show_deleted', on: :collection
 end
 

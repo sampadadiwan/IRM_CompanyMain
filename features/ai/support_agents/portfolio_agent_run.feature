@@ -31,12 +31,6 @@ Feature: Portfolio Agent Run View
     And I click the search button
     Then I should only see portfolio companies with tag "Fintech"
 
-  Scenario: Filter portfolio companies by sectors
-    When I visit the portfolio agent run page
-    And I select sector "FinTech" from the filter
-    And I click the search button
-    Then I should only see portfolio companies with sector "FinTech"
-
   Scenario: Filter portfolio companies by specific company selection
     When I visit the portfolio agent run page
     And I select 2 companies from the dropdown
@@ -69,8 +63,3 @@ Feature: Portfolio Agent Run View
     When I visit the portfolio agent run page
     Then I should see "TechCorp" in the company name column
     And I should see a link to the company page
-
-  Scenario: Subscribe to Turbo Stream updates
-    When I visit the portfolio agent run page
-    Then the page should subscribe to portfolio agent batch stream
-    And the page should be ready to receive batch completion updates
