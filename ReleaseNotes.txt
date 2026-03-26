@@ -1,3 +1,14 @@
+V9.2.06
+742506788 Kpi report chart update (#1315)
+be1ba7768 UI force tracking no (#1317)
+1ebcf55e1 Added docs widget card view (#1314)
+2882c113d Updated swagger with API updates (#1313)
+812098a14 Kpis are now indexed, date_format is passed from widget args (#1312)
+5d8c99c9a Updated jsons for all models under fund (#1311)
+fee14d82d Added use_feeder_fund_data_in_formulas
+ab7522c02 Update release notes for version 9.2.05 and add unfunded_commitment_as_of method to CapitalCommitmentShared module
+
+
 V9.2.05
 ca36cfc92 Now value bridge svc converts strings to numbers before computation (#1306)
 0ae3774a5 Add sendgrid action to incoming_emails resource for handling email processing
