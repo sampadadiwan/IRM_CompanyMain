@@ -1,0 +1,31 @@
+<div class="io-preview-container w-100">
+    <div class="preview-doc-card h-100">
+        <% url = document.orignal && policy(document).not_generated_or_approved ? document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}") : document_path(document) %>
+
+        <div class="doc-header">
+            <div class="icon-wrapper">
+                <i class="ti ti-file-text"></i>
+            </div>
+            <div class="doc-info">
+                <%= link_to document.name, url, target: "_blank", rel: "noopener", class: "h4" %>
+                <div class="date">
+                    <i class="ti ti-calendar fs-2"></i>
+                    <%= l document.created_at.to_date %>
+                </div>
+                <% unless params[:show_owner].to_s.downcase == "false" %>
+                    <%= link_to "For #{document.owner_type}: #{document.owner}", document.owner, class: "doc-owner-link" %>
+                <% end %>
+            </div>
+        </div>
+
+        <% if document.tag_list.present? && params[:show_tags].to_s.downcase == "true" %>
+        <div class="doc-meta">
+            <div class="tags-section d-flex flex-wrap justify-content-center align-items-center gap-1">
+                <% document.tag_list&.split(",")&.each do |tag| %>
+                    <div class="badge rounded-pill font-medium bg-primary-subtle text-primary"><%= tag %></div>
+                <% end %>
+            </div>
+        </div>
+        <% end %>
+    </div>
+</div>

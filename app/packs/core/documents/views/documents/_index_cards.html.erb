@@ -1,0 +1,20 @@
+<% per_row = (params[:per_row] || 3).to_i.clamp(1, 6) %>
+<% frame_id = (params[:frame_id] || "documents_tree_frame").gsub(/[^a-z0-9_-]/i, "") %>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <% header = params[:title].presence || "Documents" %>
+  <h1 class="h3 mb-0 text-gray-800"><%= header %></h1>
+</div>
+<div style="display: grid; grid-template-columns: repeat(<%= per_row %>, minmax(0, 1fr)); gap: 1rem;">
+  <% documents.each do |doc| %>
+      <div class="d-flex">
+          <%= render "/documents/card_view", document: doc %>
+      </div>
+  <% end %>
+</div>
+<% if documents.present? && @pagy %>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <%= raw pagy_info(@pagy) %>
+        <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{frame_id}")) %>
+    </div>
+<% end %>
