@@ -1,7 +1,17 @@
 <% kpi_report ||= nil %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Kpis</h1>
-  <%#= link_to "New Kpi", new_kpi_path, {class: "btn btn-outline-primary"}  %>
+  <%= link_to kpis_path(params: params.to_unsafe_h.merge(format: :xlsx)),
+              class: "btn btn-outline-success ti ti-download",
+              data: { turbo: false } do %>
+    Download
+  <% end %>
+</div>
+<div class="mb-3">
+  <%= render SearchComponent.new(
+          data_source: kpis_path(params: params.to_unsafe_h),
+          turbo_frame: "_top",
+          allow_search: false) %>
 </div>
 <div class="table-responsive">
   <table id="kpis" class="table table-bordered dataTable jqDataTable">

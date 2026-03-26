@@ -1,32 +1,67 @@
 module KpisHelper
-  def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil, date_format: :short)
-    dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
-    grouped_kpis = kpis.includes(:kpi_report, :entity, :owner, :portfolio_company).group_by { |k| [k.portfolio_company, k.entity, k.kpi_report.tag_list] }
-    single_portfolio_company = grouped_kpis.keys.filter_map(&:first).uniq.one?
+  # Builds the Highcharts-compatible data array for the chart switcher.
+  #
+  # Returns an array of series hashes:
+  #   [{ name: "Company - Tag - KPI Name", data: [["01/03/2024", 1.5], ...] }, ...]
+  #
+  # Each series corresponds to one unique (portfolio_company, entity, tag, kpi_name) combination.
+  # Values are cast to Float so JSON serialises them as numbers (not BigDecimal strings).
+  def build_kpi_chart_data(kpis, investor_kpi_mappings: nil, date_format: :short)
+    dates = kpi_chart_dates(kpis)
+    date_labels = dates.index_by { |d| d }.transform_values { |d| date_with_ordinal(d, format: date_format) }
 
-    data_map = []
-    grouped_kpis.each do |key, portfolio_company_kpis|
-      portfolio_company, entity, tags = key
-      portfolio_company_kpis.group_by(&:name).each_value do |kpis_by_name|
+    loaded_kpis = kpis.includes(:kpi_report, :entity, :owner, :portfolio_company)
+    grouped_kpis = loaded_kpis.group_by { |k| [k.portfolio_company_id, k.entity_id, k.kpi_report.tag_list] }
+    single_company = grouped_kpis.keys.filter_map(&:first).uniq.one?
+
+    grouped_kpis.flat_map do |(_portfolio_company_id, _entity_id, tags), group_kpis|
+      portfolio_company = group_kpis.first.portfolio_company
+      entity            = group_kpis.first.entity
+      series_prefix     = kpi_chart_series_prefix(portfolio_company, entity, tags, single_company)
+
+      group_kpis.group_by(&:name).map do |_name, kpis_by_name|
         standard_kpi = get_standard_kpi_name(investor_kpi_mappings, kpis_by_name.first)
-        data = []
-        dates.each do |date|
-          kpi = kpis_by_name.find { |k| k.kpi_report.as_of == date }
-          data << [date_with_ordinal(date, format: date_format), kpi&.value]
-        end
+        full_name    = series_prefix.present? ? "#{series_prefix} - #{standard_kpi}" : standard_kpi
 
-        label = if single_portfolio_company
-                  ""
-                else
-                  portfolio_company&.investor_name || entity.name
-                end
-        label += " - " if label.present? && tags.present?
-        label += tags if tags.present?
-
-        full_name = label.present? ? "#{label} - #{standard_kpi}" : standard_kpi
-        data_map << { name: full_name, data: data }
+        {
+          name: full_name,
+          data: kpi_chart_series_data(kpis_by_name, dates, date_labels)
+        }
       end
     end
+  end
+
+  # ── Private chart-data helpers ───────────────────────────────────────────
+
+  # Returns unique, ascending dates that have KPI data in the given scope.
+  def kpi_chart_dates(kpis)
+    KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
+  end
+
+  # Builds the "[Company] - [Tags]" prefix for a chart series name.
+  # Returns an empty string when there is only one portfolio company (no disambiguation needed).
+  def kpi_chart_series_prefix(portfolio_company, entity, tags, single_company)
+    label = single_company ? "" : (portfolio_company&.investor_name || entity&.name || "")
+    label += " - " if label.present? && tags.present?
+    label += tags  if tags.present?
+    label
+  end
+
+  # Builds the [[date_label, float_value], ...] data array for a single KPI series.
+  # Uses a hash lookup (O(1) per date) instead of Array#find (O(n) per date).
+  def kpi_chart_series_data(kpis_by_name, dates, date_labels)
+    # Index kpis by their report date for fast lookup
+    kpis_by_date = kpis_by_name.index_by { |k| k.kpi_report.as_of }
+    dates.map do |date|
+      kpi = kpis_by_date[date]
+      # Cast to Float: BigDecimal#to_json outputs a quoted string ("0.3e5"),
+      # which Highcharts cannot plot as a numeric data point.
+      [date_labels[date], kpi&.value&.to_f]
+    end
+  end
+
+  def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil, date_format: :short)
+    data_map = build_kpi_chart_data(kpis, investor_kpi_mappings:, date_format:)
 
     line_chart data_map, id:, library: {
       plotOptions: {
@@ -79,7 +114,7 @@ module KpisHelper
     "<small class='fs-1 #{css_class}'> #{percentage_change_display_val}</small>"
   end
 
-  def get_invester_kpi_mapping(investor_kpi_mappings, kpi)
+  def get_investor_kpi_mapping(investor_kpi_mappings, kpi)
     if investor_kpi_mappings
       mapping = investor_kpi_mappings[[kpi.portfolio_company_id, kpi&.name]]
       mapping.present? ? mapping[0] : nil
@@ -120,6 +155,7 @@ module KpisHelper
         row_data["val_#{i + 1}"] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
 
+      # TODO: OpenStruct is soft-deprecated and has known performance issues. This is pre-existing, but if touched again, replace with Data.define or a plain struct.
       OpenStruct.new(row_data)
     end
 

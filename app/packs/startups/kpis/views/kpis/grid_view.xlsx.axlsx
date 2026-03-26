@@ -1,0 +1,51 @@
+wb = xlsx_package.workbook
+
+investor_kpi_mappings = InvestorKpiMapping
+                          .includes(:investor)
+                          .where(entity_id: @current_user.entity_id)
+                          .group_by { |ikm| [ikm.investor_id, ikm.standard_kpi_name] }
+
+# Replicate the HTML grid grouping exactly
+grouped_kpis = @kpis.group_by { |k| [k.entity_id, k.owner_id, k.kpi_report.tag_list] }
+dates = KpiReport.where(id: @kpis.map(&:kpi_report_id).uniq)
+                 .order(as_of: :asc)
+                 .pluck(:as_of)
+                 .uniq
+
+wb.add_worksheet(name: "KPIs Grid") do |sheet|
+  # Header row: fixed columns + one column per date
+  headers = ["Portfolio Company", "Tags", "KPI"] +
+            dates.map { |d| d.strftime("%d %b %Y") }
+  sheet.add_row headers
+
+  grouped_kpis.each do |(_entity_id, owner_id, tag_list), kpis_in_group|
+    kpis_in_group.group_by { |kpi| [kpi.name, kpi.portfolio_company_id] }.each do |(name, _company_id), kpis|
+      kpi_first = kpis.first
+      ikm = investor_kpi_mappings[[kpi_first.portfolio_company_id, kpi_first.name]]&.first
+      standard_name = investor_kpi_mappings[[kpi_first.entity_id, kpi_first.name]]&.first&.standard_kpi_name || kpi_first.name
+
+      row = [
+        kpi_first.portfolio_company&.investor_name,
+        tag_list,
+        standard_name
+      ]
+
+      kpis_by_date = kpis.index_by { |k| k.kpi_report.as_of }
+      dates.each do |as_of|
+        kpi = kpis_by_date[as_of]
+        if kpi&.value.present?
+          # Use raw numeric value so Excel treats it as a number
+          if ikm&.data_type == "percentage"
+            row << (kpi.value * 100).round(4)
+          else
+            row << kpi.value.to_f
+          end
+        else
+          row << nil
+        end
+      end
+
+      sheet.add_row row
+    end
+  end
+end

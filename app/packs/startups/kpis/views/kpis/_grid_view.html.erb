@@ -1,14 +1,43 @@
 
 <div data-controller="export-xl">
 
-    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <div class="d-sm-flex align-items-center justify-content-between mb-2">
         <h1 class="h4 mb-0 text-gray-800">
             <%= params[:title].presence || "KPIs" %>
         </h1>
 
         <span>
-            <button class="btn btn-outline-success ti ti-download", data-action="click->export-xl#export" data-tableid="kpis_grid" data-filename='kpis'>Download</button>
+            <div class="btn-group">
+                <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="ti ti-download"></i> Download
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <%= link_to kpis_path(params: params.to_unsafe_h.merge(format: :xlsx)),
+                                    class: "dropdown-item",
+                                    title: "Exports all rows across all pages. You will receive a notification when it's ready.",
+                                    data: { turbo: false } do %>
+                            <i class="ti ti-file-spreadsheet"></i> Export All
+                        <% end %>
+                    </li>
+                    <li>
+                        <button class="dropdown-item"
+                                data-action="click->export-xl#export"
+                                data-tableid="kpis_grid"
+                                data-filename="kpis">
+                            <i class="ti ti-table-export"></i> Export Visible
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </span>
+    </div>
+
+    <div class="mb-3">
+        <%= render SearchComponent.new(
+                data_source: kpis_path(params: params.to_unsafe_h),
+                turbo_frame: "_top",
+                allow_search: false) %>
     </div>
 
     <%
@@ -20,8 +49,8 @@
     %>
 
     <% unless params[:show_table] == "false" %>
-        <div class="table-responsive" data-controller="<%= params[:title].present? ? '' : 'datatable' %>">
-            <table id="kpis_grid" class="table table-bordered dataTable jqDataTable">
+        <div class="table-responsive">
+            <table id="kpis_grid" class="table table-bordered">
                 <thead>
                     <tr>
                         <th class="no-sort">Portfolio Company</th>
@@ -42,7 +71,7 @@
                                 <td><%= kpis.first.portfolio_company&.investor_name %></td>
                                 <%
                                     kpi = kpis.first
-                                    ikm = get_invester_kpi_mapping(investor_kpi_mappings, kpi)
+                                    ikm = get_investor_kpi_mapping(investor_kpi_mappings, kpi)
                                     standard_kpi_name = get_standard_kpi_name(investor_kpi_mappings, kpi)
                                 %>
                                 <td>
@@ -79,21 +108,60 @@
 </div>
 
 <% unless params[:show_chart] == "false" %>
+    <%
+        chart_data = build_kpi_chart_data(kpis, investor_kpi_mappings:, date_format: :default)
+    %>
     <div class="associated_entity">
         <div class="row">
             <div class="col-lg-12 mb-4">
 
                 <!-- Illustrations -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
+                <div class="card shadow mb-4"
+                     data-controller="chart-switcher"
+                     data-chart-switcher-chart-data-value="<%= chart_data.to_json %>"
+                     data-chart-switcher-storage-key-value="chart_switcher:<%= request.path %>">
+                    <div class="card-header py-3 d-flex align-items-center justify-content-between">
                         <h6 class="m-0 font-weight-bold text-primary"> <%= params[:title].presence || "KPIs" %> </h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <%# Date picker — only visible for pie/donut charts, shown/hidden by the JS controller %>
+                            <div data-chart-switcher-target="dateSelectWrapper" style="display:none;">
+                                <select class="form-select form-select-sm"
+                                        data-action="change->chart-switcher#switchDate"
+                                        data-chart-switcher-target="dateSelect">
+                                </select>
+                            </div>
+                            <select class="form-select form-select-sm w-auto"
+                                    data-action="change->chart-switcher#switch"
+                                    data-chart-switcher-target="typeSelect">
+                                <optgroup label="Trend">
+                                    <option value="LineChart">Line</option>
+                                    <option value="SplineChart">Spline</option>
+                                    <option value="AreaChart">Area</option>
+                                </optgroup>
+                                <optgroup label="Comparison">
+                                    <option value="ColumnChart">Column</option>
+                                    <option value="BarChart">Bar (Horizontal)</option>
+                                </optgroup>
+                                <optgroup label="Distribution">
+                                    <option value="PieChart">Pie</option>
+                                    <option value="DonutChart">Donut</option>
+                                    <option value="HalfDonutChart">Half Donut</option>
+                                </optgroup>
+                            </select>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <% id = params[:report_id] %>
-                        <%= multiple_entity_kpi_lines_by_date(kpis, id:, investor_kpi_mappings:, date_format: (params[:date_format].presence&.to_sym || :short)) %>
+                        <div data-chart-switcher-target="container" style="min-height: 300px;"></div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+<% end %>
+
+<% if @pagy_series %>
+    <div class="d-flex align-items-center justify-content-between mt-2 mb-4">
+        <div class="text-muted small"><%= raw pagy_info(@pagy_series) %></div>
+        <%= raw pagy_bootstrap_nav(@pagy_series) %>
     </div>
 <% end %>
