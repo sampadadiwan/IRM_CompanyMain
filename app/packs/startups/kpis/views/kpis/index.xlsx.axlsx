@@ -1,0 +1,30 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "KPIs") do |sheet|
+  headers = [
+    "Id", "Entity", "Portfolio Company", "KPI Report", "As Of", "Period", "Tag",
+    "Name", "Value", "Display Value", "% Change", "Notes", "Status",
+    "Owner", "Approved By"
+  ]
+  sheet.add_row(headers)
+
+  @kpis.each do |kpi|
+    sheet.add_row [
+      kpi.id,
+      kpi.entity&.name,
+      kpi.portfolio_company&.investor_name,
+      kpi.kpi_report.to_s,
+      kpi.kpi_report.as_of,
+      kpi.kpi_report.period,
+      kpi.kpi_report.tag_list,
+      kpi.name,
+      kpi.value,
+      kpi.display_value,
+      kpi.percentage_change,
+      kpi.notes,
+      kpi.status&.humanize,
+      kpi.owner&.name,
+      kpi.approved_by&.name
+    ]
+  end
+end

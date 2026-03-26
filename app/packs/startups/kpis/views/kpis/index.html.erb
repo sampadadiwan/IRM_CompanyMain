@@ -1,10 +1,10 @@
 
-<%= render "/layouts/filter", associations: [:kpi_report, :entity, :investor_kpi_mappings, :portfolio_company], hidden_fields: {grid_view: params[:grid_view]} %>
+<%= render "/layouts/filter", associations: [:kpi_report, :entity, :investor_kpi_mappings, :portfolio_company], hidden_fields: {per_page: params[:per_page], chart_type: (params[:chart_type] || ""), chart_date: (params[:chart_date] || "")} %>
 
 <%= render ReportingComponent.new do %>
 
-    <% if params[:grid_view].present? %>    
-            <%= render "/kpis/grid_view", kpis: @kpis %>    
+    <% if params[:grid_view].present? %>
+        <%= render "/kpis/grid_view", kpis: @kpis %>
     <% else %>
         <%= render "/kpis/index", kpis: @kpis %>
     <% end %>

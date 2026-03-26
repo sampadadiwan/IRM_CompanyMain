@@ -4,11 +4,47 @@ class KpisController < ApplicationController
   # GET /kpis or /kpis.json
   def index
     authorize(Kpi)
+
+    # For XLSX format, hand off to background job (can be a large dataset)
+    if request.format.xlsx?
+      trigger_model_download
+      return # Ensure we don't continue with the rest of the action after triggering the download
+    end
+
     service = KpiList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = service.q
     @kpis = service.kpis
 
-    @pagy, @kpis = pagy(@kpis, limit: params[:per_page] || 10) if params[:grid_view].blank? && params[:all].blank?
+    if params[:grid_view].present?
+      # Paginate by the exact series the grid groups by:
+      # [name, portfolio_company_id, entity_id, owner_id, tag_list].
+      # Each unique combination = exactly one table row, so the count matches.
+      per_page = (params[:per_page] || 10).to_i
+      @pagy_series, paged_series = pagy(service.kpi_series, limit: per_page)
+
+      # Scope the full kpi records to only those belonging to the current page's series.
+      # unscope(:includes) prevents AR from running includes as a separate preload query
+      # which would conflict with the explicit JOIN on kpi_reports used in the WHERE clause.
+      series_tuples = paged_series.map { |s| [s.name, s.portfolio_company_id, s.entity_id, s.owner_id, s.tag_list] }
+      @kpis = if series_tuples.any?
+                conditions = series_tuples.map do |_|
+                  "( kpis.name = ? AND kpis.portfolio_company_id <=> ? AND kpis.entity_id <=> ? AND kpis.owner_id <=> ? AND kpi_reports.tag_list <=> ? )"
+                end.join(" OR ")
+                @kpis.unscope(:includes)
+                     .includes(kpi_report: :portfolio_company)
+                     .joins(:kpi_report)
+                     .where(conditions, *series_tuples.flatten)
+                     .order("kpis.name ASC, kpi_reports.tag_list ASC, kpis.portfolio_company_id ASC, kpis.owner_id ASC")
+              else
+                @kpis.none
+              end
+    elsif params[:all].blank?
+      @pagy, @kpis = pagy(@kpis, limit: params[:per_page] || 10)
+    end
+
+    respond_to do |format|
+      format.html
+    end
   end
 
   # GET /kpis/1 or /kpis/1.json
@@ -111,6 +147,46 @@ class KpisController < ApplicationController
   end
 
   private
+
+  def trigger_model_download
+    skip_policy_scope # Policy scope is applied inside ModelDownloadJob via KpiList
+
+    url = begin
+      URI(request.referer).request_uri
+    rescue URI::InvalidURIError, ArgumentError
+      nil
+    end
+
+    # Strip Rails-internal keys that are meaningless (and potentially sensitive) inside a job.
+    # All domain/query params (q[], grid_view, per_page, kpi_report_id, etc.) are preserved
+    # intentionally so the job reproduces exactly the same filtered dataset as the index page.
+    job_params = params.to_unsafe_h.except("authenticity_token", "utf8", "_method", "format", "action", "controller")
+
+    if params[:grid_view].present?
+      ModelDownloadJob.set(wait: 2.seconds).perform_later(
+        model_class: "Kpi",
+        params: job_params,
+        user_id: current_user.id,
+        template: "kpis/grid_view",
+        filename: "kpis_grid.xlsx",
+        url: url
+      )
+    else
+      ModelDownloadJob.set(wait: 2.seconds).perform_later(
+        model_class: "Kpi",
+        params: job_params,
+        user_id: current_user.id,
+        template: "kpis/index",
+        filename: "kpis.xlsx",
+        url: url
+      )
+    end
+
+    redirect_params = params.to_unsafe_h.except(:format, :all)
+    redirect_to kpis_path(params: redirect_params),
+                notice: "Your download is being prepared. You will receive a notification with a download link and an email when it's ready."
+    nil
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_kpi
