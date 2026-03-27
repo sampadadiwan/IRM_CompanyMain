@@ -33,7 +33,7 @@ class SupportAgentReport < ApplicationRecord
   end
 
   def running?
-    json_fields["final_status"] == "running"
+    pending? && json_fields["final_status"] == "running"
   end
 
   def ready?

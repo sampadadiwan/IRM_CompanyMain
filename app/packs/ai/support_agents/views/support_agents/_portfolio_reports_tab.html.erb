@@ -1,0 +1,99 @@
+<% if portfolio_reports.empty? %>
+  <div class="alert alert-secondary">
+    <i class="ti ti-info-circle"></i> No portfolio reports yet. Run the agent on schedule to generate reports.
+  </div>
+<% else %>
+
+  <%# Portfolio Agent Reports Table %>
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Portfolio Company</th>
+          <th>Status</th>
+          <th>Run Date</th>
+          <th>Triggered By</th>
+          <th>Duration</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% portfolio_reports.each do |report| %>
+          <% data = (report.json_fields || {}).with_indifferent_access %>
+          <%# Derive display status: prefer json final_status, fall back to AR status (normalised to lowercase) %>
+          <% final_status = (data[:final_status].presence || report.status.to_s).downcase %>
+          <% status_color = case final_status
+               when 'ready', 'completed' then 'text-success'
+               when 'running', 'pending' then 'text-primary'
+               when 'failed', 'blocked'  then 'text-danger'
+               else 'text-secondary'
+             end %>
+          <tr>
+            <td>
+              <strong><%= report.owner&.name || report.owner_name || "N/A" %></strong>
+            </td>
+            <td class="<%= status_color %> fw-bold">
+              <%= final_status.to_s.titleize %>
+            </td>
+            <td>
+              <% if data[:run_at].present? %>
+                <% run_at = Time.zone.parse(data[:run_at]) rescue nil %>
+                <%= run_at ? run_at.strftime("%b %d, %Y at %I:%M %p") : "--" %>
+              <% else %>
+                --
+              <% end %>
+            </td>
+            <td>
+              <% if data[:triggered_by] == 'manual' %>
+                <span class="badge bg-primary">
+                  <i class="ti ti-hand-click"></i> Manual
+                </span>
+                <% if data[:triggered_by_user_id].present? %>
+                  <br><small class="text-muted">
+                    <% user = User.find_by(id: data[:triggered_by_user_id]) %>
+                    <%= user ? user.name : "User ##{data[:triggered_by_user_id]}" %>
+                  </small>
+                <% end %>
+              <% elsif data[:triggered_by] == 'scheduled' %>
+                <span class="badge bg-info">
+                  <i class="ti ti-calendar-event"></i> Scheduled
+                </span>
+                <% if support_agent.agent_schedule.present? %>
+                  <br><small class="text-muted">
+                    <%= support_agent.agent_schedule.frequency.titleize %>
+                    <% if support_agent.agent_schedule.run_at_time.present? %>
+                      at <%= support_agent.agent_schedule.run_at_time.strftime('%H:%M') %>
+                    <% end %>
+                  </small>
+                <% end %>
+              <% else %>
+                --
+              <% end %>
+            </td>
+            <td>
+              <%= report.total_duration || "--" %>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#report-detail-<%= report.id %>">
+                <i class="ti ti-chevron-down"></i> Details
+              </button>
+            </td>
+          </tr>
+          <%# Expandable detail row %>
+          <tr class="collapse" id="report-detail-<%= report.id %>">
+            <td colspan="6" class="bg-light p-3">
+              <%= render 'portfolio_report_detail', report: report, data: data %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small">
+    <i class="ti ti-calendar"></i>
+    Last updated: <%= portfolio_reports.first&.updated_at&.strftime("%b %d, %Y at %I:%M %p") %>
+  </p>
+<% end %>

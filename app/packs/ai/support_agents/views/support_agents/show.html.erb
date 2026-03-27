@@ -1,6 +1,6 @@
 <%= render FormCard.new(title: "#{@support_agent}") do %>
 <% active_tab = params[:tab].presence || 'general' %>
-  
+
   <div class="associated_entity" data-controller="tabs">
     <%# Tab Navigation %>
     <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
@@ -16,6 +16,11 @@
       <% if @support_agent.agent_type == "CashFlowAssistantAgent" %>
         <a class="nav-link <%= 'active' if active_tab == 'fund_reports' %>" data-bs-toggle="pill" href="#fund-reports-tab">
           Fund Reports
+        </a>
+      <% end %>
+      <% if @support_agent.agent_type == "PortfolioCompanyAgent" %>
+        <a class="nav-link <%= 'active' if active_tab == 'portfolio_reports' %>" data-bs-toggle="pill" href="#portfolio-reports-tab">
+          Portfolio Agent Reports
         </a>
       <% end %>
 
@@ -43,6 +48,13 @@
         <%# Fund Reports Tab %>
         <div id="fund-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'fund_reports' %>">
           <%= render 'fund_reports_tab', support_agent: @support_agent, fund_reports: @fund_reports %>
+        </div>
+      <% end %>
+
+      <% if @support_agent.agent_type == "PortfolioCompanyAgent" %>
+        <%# Portfolio Agent Reports Tab %>
+        <div id="portfolio-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'portfolio_reports' %>">
+          <%= render 'portfolio_reports_tab', support_agent: @support_agent, portfolio_reports: @portfolio_reports %>
         </div>
       <% end %>
 

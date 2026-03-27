@@ -159,6 +159,7 @@ resources :investors do
   get 'merge', on: :collection
   post 'merge', on: :collection
   get 'dashboard', on: :member
+  # Route to return a report detail partial/modal for portfolio agent run links
   get 'generate_reports', on: :member
   post 'generate_reports', on: :member
   get 'portfolio_investments_report', on: :member
@@ -167,6 +168,7 @@ resources :investors do
   post 'portfolio_investments_report_all', on: :collection
   put 'restore_deleted', on: :member
   get 'show_deleted', on: :collection
+  get 'report_detail', on: :collection
 end
 
 resources :investor_notice_entries

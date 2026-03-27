@@ -1,6 +1,6 @@
 <% logs = execution_logs || [] %>
 
-<div data-controller="execution-history">
+<div id="execution_history_<%= support_agent.id %>" data-controller="execution-history">
   <h6 class="text-muted mb-3">Execution History</h6>
 
   <% if logs.empty? %>
@@ -67,7 +67,7 @@
                 <%= log.duration_formatted || '-' %>
               </td>
               <td>
-                <button type="button" 
+                <button type="button"
                         class="btn btn-sm btn-outline-secondary"
                         data-action="click->execution-history#showDetails"
                         data-execution-id="<%= log.id %>"

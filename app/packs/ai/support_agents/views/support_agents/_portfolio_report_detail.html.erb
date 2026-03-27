@@ -1,0 +1,237 @@
+<div class="row">
+  <div class="col-md-12">
+    <%# Ensure data is always a hash with indifferent access, never nil %>
+    <% data = (data || {}).with_indifferent_access %>
+    <h6 class="mb-3 fw-bold">Report Details</h6>
+
+    <%# Basic Info %>
+    <div class="row mb-3">
+      <div class="col-md-2">
+        <small class="text-muted">Report ID:</small><br>
+        <strong>#<%= report.id %></strong>
+      </div>
+      <div class="col-md-2">
+        <small class="text-muted">Status:</small><br>
+        <strong><%= (data[:final_status].presence&.titleize) || report.status.to_s.titleize %></strong>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">Triggered By:</small><br>
+        <% if data[:triggered_by] == 'manual' %>
+          <strong><i class="ti ti-hand-click"></i> Manual</strong>
+          <% if data[:triggered_by_user_id].present? %>
+            <% user = User.find_by(id: data[:triggered_by_user_id]) %>
+            <br><small><%= user ? user.name : "User ##{data[:triggered_by_user_id]}" %></small>
+          <% end %>
+        <% elsif data[:triggered_by] == 'scheduled' %>
+          <strong><i class="ti ti-calendar-event"></i> Scheduled</strong>
+        <% else %>
+          <strong>--</strong>
+        <% end %>
+      </div>
+      <div class="col-md-2">
+        <small class="text-muted">Created:</small><br>
+        <strong><%= report.created_at.strftime("%b %d, %Y") %></strong>
+      </div>
+      <div class="col-md-3">
+        <small class="text-muted">Updated:</small><br>
+        <strong><%= report.updated_at.strftime("%b %d, %Y %I:%M %p") %></strong>
+      </div>
+    </div>
+
+    <%# Report Results - KPI, Document, and Valuation Issues %>
+    <% kpi_issues = Array(data[:kpi_issues]) %>
+    <% document_issues = Array(data[:document_issues]) %>
+    <% valuation_issues = Array(data[:valuation_issues]) %>
+
+    <% if kpi_issues.any? || document_issues.any? || valuation_issues.any? %>
+      <h6 class="mb-3 fw-bold mt-4">Compliance Results</h6>
+
+      <div class="row g-3 mb-4">
+        <%# KPI Issues Card %>
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-2">
+                <i class="ti ti-chart-histogram text-primary me-2 fs-4"></i>
+                <h6 class="mb-0">KPI Submissions</h6>
+              </div>
+              <% blocking_kpi = kpi_issues.count { |i| i['severity'] == 'blocking' || i[:severity] == 'blocking' } %>
+              <% success_kpi = kpi_issues.any? { |i| (i['severity'] || i[:severity]) == 'success' } %>
+              <div class="mt-2">
+                <% if blocking_kpi > 0 %>
+                  <span class="badge bg-danger fs-6"><%= blocking_kpi %> Issues</span>
+                <% elsif success_kpi %>
+                  <span class="badge bg-success fs-6">✓ Compliant</span>
+                <% else %>
+                  <span class="badge bg-secondary fs-6"><%= kpi_issues.size %> Items</span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# Document Issues Card %>
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-2">
+                <i class="ti ti-files text-info me-2 fs-4"></i>
+                <h6 class="mb-0">Documents</h6>
+              </div>
+              <% missing_docs = document_issues.count { |i| i['type'] == 'missing' || i[:type] == 'missing' } %>
+              <% blocking_docs = document_issues.count { |i| i['severity'] == 'blocking' || i[:severity] == 'blocking' } %>
+              <div class="mt-2">
+                <% if missing_docs > 0 || blocking_docs > 0 %>
+                  <span class="badge bg-danger fs-6"><%= [missing_docs, blocking_docs].max %> Issues</span>
+                <% elsif document_issues.any? %>
+                  <span class="badge bg-success fs-6">✓ Compliant</span>
+                <% else %>
+                  <span class="badge bg-secondary fs-6">No Data</span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <%# Valuation Issues Card %>
+        <div class="col-md-4">
+          <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+              <div class="d-flex align-items-center mb-2">
+                <i class="ti ti-device-analytics text-warning me-2 fs-4"></i>
+                <h6 class="mb-0">Valuations</h6>
+              </div>
+              <% blocking_val = valuation_issues.count { |i| i['severity'] == 'blocking' || i[:severity] == 'blocking' } %>
+              <% success_val = valuation_issues.any? { |i| (i['severity'] || i[:severity]) == 'success' } %>
+              <div class="mt-2">
+                <% if blocking_val > 0 %>
+                  <span class="badge bg-danger fs-6"><%= blocking_val %> Issues</span>
+                <% elsif success_val %>
+                  <span class="badge bg-success fs-6">✓ Compliant</span>
+                <% else %>
+                  <span class="badge bg-secondary fs-6"><%= valuation_issues.size %> Items</span>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <%# Detailed Issues %>
+      <div class="accordion mb-4" id="issuesAccordion">
+        <%# KPI Issues Detail %>
+        <% if kpi_issues.any? %>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#kpiIssues">
+                <i class="ti ti-chart-histogram me-2"></i> KPI Issues (<%= kpi_issues.size %>)
+              </button>
+            </h2>
+            <div id="kpiIssues" class="accordion-collapse collapse" data-bs-parent="#issuesAccordion">
+              <div class="accordion-body">
+                <ul class="list-group list-group-flush">
+                  <% kpi_issues.each do |issue| %>
+                    <% severity = (issue['severity'] || issue[:severity]).to_s %>
+                    <% message  = issue['message']  || issue[:message] %>
+                    <% badge_class = case severity
+                         when 'blocking' then 'bg-danger'
+                         when 'success'  then 'bg-success'
+                         when 'warning'  then 'bg-warning'
+                         else 'bg-info'
+                       end %>
+                    <li class="list-group-item">
+                      <span class="badge <%= badge_class %> me-2"><%= severity.titleize %></span>
+                      <%= message.presence || "No details available" %>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <%# Document Issues Detail %>
+        <% if document_issues.any? %>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#docIssues">
+                <i class="ti ti-files me-2"></i> Document Issues (<%= document_issues.size %>)
+              </button>
+            </h2>
+            <div id="docIssues" class="accordion-collapse collapse" data-bs-parent="#issuesAccordion">
+              <div class="accordion-body">
+                <ul class="list-group list-group-flush">
+                  <% document_issues.each do |issue| %>
+                    <% doc_type  = (issue['type']     || issue[:type]).to_s %>
+                    <% message   = issue['message']   || issue[:message] %>
+                    <% doc_name  = issue['document_name'] || issue[:document_name] %>
+                    <% badge_class = doc_type == 'missing' ? 'bg-danger' : 'bg-warning' %>
+                    <li class="list-group-item">
+                      <span class="badge <%= badge_class %> me-2"><%= doc_type.titleize %></span>
+                      <%= message.presence || "No details available" %>
+                      <% if doc_name.present? %>
+                        <br><small class="text-muted">Document: <%= doc_name %></small>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+        <%# Valuation Issues Detail %>
+        <% if valuation_issues.any? %>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#valIssues">
+                <i class="ti ti-device-analytics me-2"></i> Valuation Issues (<%= valuation_issues.size %>)
+              </button>
+            </h2>
+            <div id="valIssues" class="accordion-collapse collapse" data-bs-parent="#issuesAccordion">
+              <div class="accordion-body">
+                <ul class="list-group list-group-flush">
+                  <% valuation_issues.each do |issue| %>
+                    <% severity = (issue['severity'] || issue[:severity]).to_s %>
+                    <% message  = issue['message']   || issue[:message] %>
+                    <% period   = issue['period']    || issue[:period] %>
+                    <% badge_class = case severity
+                         when 'blocking' then 'bg-danger'
+                         when 'success'  then 'bg-success'
+                         when 'warning'  then 'bg-warning'
+                         else 'bg-info'
+                       end %>
+                    <li class="list-group-item">
+                      <span class="badge <%= badge_class %> me-2"><%= severity.titleize %></span>
+                      <%= message.presence || "No details available" %>
+                      <% if period.present? %>
+                        <br><small class="text-muted">Period: <%= period %></small>
+                      <% end %>
+                    </li>
+                  <% end %>
+                </ul>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Additional JSON Fields %>
+    <% if data[:error_message].present? %>
+      <div class="alert alert-danger mt-3">
+        <strong><i class="ti ti-alert-triangle"></i> Error:</strong><br>
+        <%= data[:error_message] %>
+      </div>
+    <% end %>
+
+    <%# Additional Details %>
+    <% if data[:triggered_by_user_id].present? %>
+      <div class="mt-3">
+        <small class="text-muted">
+          <i class="ti ti-user"></i> Triggered by user ID: <%= data[:triggered_by_user_id] %>
+        </small>
+      </div>
+    <% end %>
+  </div>
+</div>

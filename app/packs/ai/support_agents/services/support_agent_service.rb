@@ -31,7 +31,7 @@ class SupportAgentService < Trailblazer::Operation
 
   def initialize_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
-    ctx[:support_agent] = @support_agent
+    ctx[:support_agent]= @support_agent
     ctx[:llm] = LlmService.ruby_llm_chat(entity: @support_agent.entity)
   end
 
@@ -39,7 +39,6 @@ class SupportAgentService < Trailblazer::Operation
   # are uploaded by the investor.
   def check_document_presence(ctx, model:, support_agent:, **)
     if enabled?("validate_documents")
-
       if model.present?
         Rails.logger.debug { "[#{self.class.name}] Starting document presence check for InvestorKyc ID=#{model.id}" }
         # List of required documents from form and support agent json fields
@@ -85,8 +84,15 @@ class SupportAgentService < Trailblazer::Operation
       issues.reject! { |issue| issue[:message].blank? }
     end
 
-    report.json_fields = ctx[:issues]
-    report.status = ctx[:issues].values.flatten.any? { |issue| issue[:severity] == :blocking } ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
+    # Preserve existing metadata (triggered_by, triggered_by_user_id, run_at, etc.) by merging instead of replacing
+    has_blocking = ctx[:issues].values.flatten.any? { |issue| issue[:severity] == :blocking }
+    report.json_fields = (report.json_fields || {}).merge(ctx[:issues]).merge(
+      "final_status" => has_blocking ? "blocked" : "ready",
+      "completed_at" => Time.current.iso8601
+    )
+    # MySQL doesn't auto-detect JSON field changes, must explicitly mark as changed
+    report.json_fields_will_change!
+    report.status = has_blocking ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
     report.save
 
     ctx[:support_agent_report] = report

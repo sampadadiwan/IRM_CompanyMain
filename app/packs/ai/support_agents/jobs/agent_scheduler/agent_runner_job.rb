@@ -58,6 +58,12 @@ class AgentRunnerJob
   def execute_agent
     targets = @support_agent.agent.new.targets(@entity.id)
 
+    # Special handling for PortfolioCompanyAgent: process as batch with shared context
+    if @support_agent.agent_type == "PortfolioCompanyAgent" && targets.count > 1
+      return execute_portfolio_company_batch(targets)
+    end
+
+    # Default: process each target individually
     successes = []
     errors = []
 
@@ -69,6 +75,33 @@ class AgentRunnerJob
       else
         errors << result
       end
+    end
+
+    build_execution_result(successes, errors)
+  end
+
+  # Executes PortfolioCompanyAgent as a scheduled batch.
+  # Delegates to PortfolioCompanyAgent.process_batch (same as adhoc path) with
+  # execution_mode: :scheduled so notifications are batched and the chart job
+  # runs silently without per-company chat UI.
+  #
+  # @param targets [Array] portfolio company targets
+  # @return [Hash] execution result
+  def execute_portfolio_company_batch(targets)
+    result = @support_agent.agent.process_batch(
+      support_agent_id: @support_agent.id,
+      targets: targets,
+      user_id: nil,
+      entity_id: @entity.id,
+      execution_mode: :scheduled
+    )
+
+    successes = result[:successes].map do |s|
+      { success: true, target_id: s[:id], target_name: s[:name] }
+    end
+
+    errors = result[:errors].map do |e|
+      { success: false, target_id: e[:target_id], target_name: e[:target_name], error: e[:error] }
     end
 
     build_execution_result(successes, errors)
