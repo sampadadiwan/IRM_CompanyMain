@@ -15,7 +15,7 @@ class FinalizePortfolioScenarioJob < ApplicationJob
       if result.success?
 
         # Build Ransack query params for filtering ratios by owner
-        query_params = RansackQueryBuilder.multiple([[:portfolio_scenario_id, :eq, portfolio_scenario.id]])
+        query_params = RansackQueryBuilder.multiple([[:portfolio_scenario_name, :eq, portfolio_scenario.name]])
 
         # Build a link to the created ratios
         ratios_link = ActionController::Base.helpers.link_to(

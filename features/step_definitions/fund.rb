@@ -1505,6 +1505,7 @@ Given('Given I upload {string} {string} error file for Account Entries') do |fil
   visit(capital_commitment_path(@fund.capital_commitments.first))
   click_tab("Account Entries")
   sleep(1)
+  expect(page).to have_content("Upload", wait:10)
   click_on("Upload")
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)

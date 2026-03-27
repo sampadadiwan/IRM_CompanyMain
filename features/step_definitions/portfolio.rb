@@ -755,6 +755,9 @@ Then('The Portfolio Scenario Should be finalized') do
   per_company_fund_ratios = 2
   fund_ratios_count = 2
   expect(@portfolio_scenario.fund_ratios.count).to eq((portfolio_companies_ids.count * per_company_fund_ratios) + fund_ratios_count)
+  @portfolio_scenario.fund_ratios.each do |fr|
+    expect(fr.end_date).to be_present
+  end
   expect(page).to have_content("Fund Ratios")
 end
 
@@ -772,4 +775,7 @@ Then('The Portfolio Scenario Should be finalized in tracking currency') do
   expect(page).to have_content("Fund Ratios")
   # Half the fund ratios should be in USD
   expect(@portfolio_scenario.fund_ratios.where("name like ?", "%(USD)").count).to eq(@portfolio_scenario.fund_ratios.count / 2)
+  @portfolio_scenario.fund_ratios.each do |fr|
+    expect(fr.end_date).to be_present
+  end
 end

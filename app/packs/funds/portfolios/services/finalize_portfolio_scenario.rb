@@ -16,6 +16,8 @@ class FinalizePortfolioScenario < Trailblazer::Operation
     tracking_currency = portfolio_scenario.calculations[:tracking_currency]
     return true if [xirr_default_val, xirr_tracking_val].compact.blank? # Skip if no IRR value
 
+    ctx[:fund_end_date] ||= portfolio_scenario.scenario_investments.order(:transaction_date).last&.transaction_date
+
     [["IRR", xirr_default_val], ["IRR (#{tracking_currency})", xirr_tracking_val]].each do |xirr_name, xirr_val|
       next if xirr_val.blank?
 
@@ -29,6 +31,9 @@ class FinalizePortfolioScenario < Trailblazer::Operation
 
       ratio.value = xirr_val
       ratio.display_value = "#{xirr_val} %"
+      # Assign the end_date based on the last transaction date in scenario investments
+      ratio.end_date = ctx[:fund_end_date]
+
       if ratio.save
         ctx[:irr_ratio] = ratio
       else
@@ -48,6 +53,8 @@ class FinalizePortfolioScenario < Trailblazer::Operation
 
     return true if [moic_default_val, moic_tracking_val].compact.blank? # Skip if no MOIC value
 
+    ctx[:fund_end_date] ||= portfolio_scenario.scenario_investments.order(:transaction_date).last&.transaction_date
+
     [["MOIC", moic_default_val], ["MOIC (#{tracking_currency})", moic_tracking_val]].each do |moic_name, moic_val|
       next if moic_val.blank?
 
@@ -61,6 +68,9 @@ class FinalizePortfolioScenario < Trailblazer::Operation
 
       ratio.value = moic_val
       ratio.display_value = "#{moic_val} x"
+      # Assign the end_date based on the last transaction date in scenario investments
+      ratio.end_date = ctx[:fund_end_date]
+
       if ratio.save
         ctx[:moic_ratio] = ratio
       else
@@ -71,7 +81,8 @@ class FinalizePortfolioScenario < Trailblazer::Operation
     ctx[:errors].blank?
   end
 
-  def save_portfolio_company_ratios(ctx, portfolio_scenario:, **) # rubocop:disable Metrics/MethodLength
+  # rubocop:disable Metrics/MethodLength
+  def save_portfolio_company_ratios(ctx, portfolio_scenario:, **)
     # Parse the JSON into a hash keyed by company_id -> metrics hash
     portfolio_company_data = JSON.parse(
       portfolio_scenario.calculations[:portfolio_company_metrics] || "{}",
@@ -88,6 +99,7 @@ class FinalizePortfolioScenario < Trailblazer::Operation
       # :moic_EUR    -> ["EUR", value]
       metric_currency_pairs = []
 
+      company_id = company_id.to_s
       company_data.each do |key, value|
         next if value.nil?
 
@@ -102,13 +114,17 @@ class FinalizePortfolioScenario < Trailblazer::Operation
         end
       end
 
+      #  Assign the end_date based on the last transaction date for the company in the scenario investments, or fallback to the last investment date in PortfolioInvestment if no scenario investments exist for that company
+      company_end_date = portfolio_scenario.scenario_investments.where(portfolio_company_id: company_id).maximum(:transaction_date) ||
+                         PortfolioInvestment.where(portfolio_company_id: company_id, fund_id: portfolio_scenario.fund_id, entity_id: portfolio_scenario.entity_id).maximum(:investment_date)
+
       metric_currency_pairs.each do |metric_name, currency, value|
         # Build a readable name including currency if present
         ratio_name = currency.nil? ? metric_name : "#{metric_name} (#{currency})"
 
         ratio = FundRatio.find_or_initialize_by(
           owner_type: "Investor",
-          owner_id: company_id.to_s,
+          owner_id: company_id,
           portfolio_scenario: portfolio_scenario,
           name: ratio_name,
           fund: portfolio_scenario.fund,
@@ -124,17 +140,20 @@ class FinalizePortfolioScenario < Trailblazer::Operation
             "#{value} %"
           end
 
+        ratio.end_date = company_end_date
+
         next if ratio.save
 
         ctx[:errors] ||= []
         # Use company_data[:name] if available; otherwise fallback to company_id
-        label = company_data[:name] || company_id.to_s
+        label = company_data[:name] || company_id
         ctx[:errors] << "Company ##{label}: #{ratio.errors.full_messages.join(', ')}"
       end
     end
 
     ctx[:errors].blank?
   end
+  # rubocop:enable Metrics/MethodLength
 
   # Handles errors by ending the operation with failure.
   def handle_errors(_ctx, **)
