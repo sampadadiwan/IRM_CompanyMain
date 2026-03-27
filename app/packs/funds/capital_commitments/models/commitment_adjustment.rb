@@ -5,6 +5,15 @@ class CommitmentAdjustment < ApplicationRecord
   include RansackerAmounts.new(fields: %w[amount])
   include CommitmentAdjustmentShared
 
+  STANDARD_COLUMNS = {
+    "Adjustment Type" => "adjustment_type",
+    "Pre Adjustment" => "pre_adjustment",
+    "Amount" => "amount",
+    "Post Adjustment" => "post_adjustment",
+    "Reason" => "reason",
+    "As Of" => "as_of"
+  }.freeze
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_commitment
@@ -105,7 +114,7 @@ class CommitmentAdjustment < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[amount as_of adjustment_type created_at updated_at]
+    %w[amount as_of adjustment_type created_at updated_at tracking_amount_cents transfer_date reason]
   end
 
   def self.ransackable_associations(_auth_object = nil)

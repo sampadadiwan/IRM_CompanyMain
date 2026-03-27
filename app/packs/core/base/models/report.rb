@@ -47,7 +47,8 @@ class Report < ApplicationRecord
       'Aggregate Portfolio Investments': "/aggregate_portfolio_investments?filter=true",
       Distributions: "/capital_distributions?filter=true",
       'Distribution Payments': "/capital_distribution_payments?filter=true",
-      Valuations: "/valuations?filter=true" }.sort.to_h
+      Valuations: "/valuations?filter=true",
+      Adjustments: "/commitment_adjustments?filter=true" }.sort.to_h
   end
 
   before_save :update_notify_next_run_at

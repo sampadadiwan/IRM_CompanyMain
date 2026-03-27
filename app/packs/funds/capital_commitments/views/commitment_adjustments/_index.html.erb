@@ -1,39 +1,22 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Adjustments</h1>
-  <%= link_to "New Adjustment", 
-        new_commitment_adjustment_path("commitment_adjustment[capital_commitment_id]": params[:capital_commitment_id]), 
-        {class: "btn btn-outline-primary"} if params[:capital_commitment_id].present? %>
+  <div class="d-flex gap-2">
+    <%= link_to "New Adjustment",
+          new_commitment_adjustment_path("commitment_adjustment[capital_commitment_id]": params[:capital_commitment_id]),
+          {class: "btn btn-outline-primary"} if params[:capital_commitment_id].present? %>
+
+    <%= link_to commitment_adjustments_path(params: params.to_unsafe_h, format: :xlsx, all: true), class: "btn btn-outline-success" do %>
+      <i class="ti ti-download"></i> <%= t_common(:download) %>
+    <% end %>
+  </div>
 </div>
-<div class="table-responsive" data-controller="datatable">
-  <table id="commitment_adjustments" class="table table-bordered dataTable jqDataTable">
-    <thead>
-      <tr>
-        <th>
-          Type
-        </th>
-        <th>
-          Pre Adjustment
-        </th>
-        <th>
-          Amount
-        </th>
-        <th>
-          Post Adjustment
-        </th>
-        <th>
-          Reason
-        </th>
-        <th>
-          As Of
-        </th>
-        <th>
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <% commitment_adjustments.each do |commitment_adjustment| %>
-        <%= render commitment_adjustment %>
-      <% end %>
-    </tbody>
-  </table>
+
+
+<div class="">
+  <% commitment_adjustments_frame = "commitment_adjustments_frame" %>
+
+  <%=render SearchComponent.new(data_source: commitment_adjustments_path( params: params.to_unsafe_h), turbo_frame: commitment_adjustments_frame) %>
+
+  <%= render RansackTable.new(CommitmentAdjustment, q: @q, current_user: current_user, records: commitment_adjustments, report_id: params["report_id"], turbo_frame: commitment_adjustments_frame, referrer: request.referrer, pagy: @pagy) %>
+
 </div>

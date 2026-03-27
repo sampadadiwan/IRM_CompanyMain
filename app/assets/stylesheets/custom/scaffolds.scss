@@ -1240,14 +1240,8 @@ h6 {
 }
 
 #search_spinner {
-  display: none; /* Hide the spinner by default */
-  width: 1.0rem; // Adjust size as needed
-  height: 1.0rem; // Adjust size as needed
-  position: absolute;
-  right: 10px;
-  top: 32%; // Vertically center the spinner - currently centering it in the parent container (maybe)
-  transform: translateY(-50%); // Vertically center the spinner
-  animation: spin 0.75s linear infinite;
+  width: 1.0rem;
+  height: 1.0rem;
 }
 
 .search-form-input{

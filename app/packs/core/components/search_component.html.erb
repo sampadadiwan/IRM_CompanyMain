@@ -8,13 +8,15 @@
     </div>
 
     <% if @allow_search %>
-      <div class="d-flex align-items-center search-form-input">
+      <div class="search-form-input" style="position: relative;">
         <% current_input = params.dig("search", "value").presence || nil %>
-        <%= text_field_tag "search[value]", current_input, id: "search_input", class: "form-control", data: { "search-target": "searchInput", action: "keydown->search#debouncedSearchInput", toggle: "tooltip", title: "Type to search" }, placeholder: "Search..." %>
+        <%= text_field_tag "search[value]", current_input, id: "search_input", class: "form-control", style: "padding-right: 2rem;", data: { "search-target": "searchInput", action: "keydown->search#debouncedSearchInput", toggle: "tooltip", title: "Type to search" }, placeholder: "Search..." %>
 
-        <div id="search_spinner" class="spinner-border spinner-border-sm text-primary search_spinner ms-2" role="status">
-          <span class="sr-only">Loading...</span>
-        </div>
+        <span id="search_spinner_wrapper" class="d-none" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); pointer-events: none;">
+          <div id="search_spinner" class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="sr-only">Loading...</span>
+          </div>
+        </span>
       </div>
     <% end %>
 

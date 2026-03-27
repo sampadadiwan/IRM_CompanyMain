@@ -3,9 +3,19 @@ class CommitmentAdjustmentsController < ApplicationController
 
   # GET /commitment_adjustments or /commitment_adjustments.json
   def index
-    @commitment_adjustments = policy_scope(CommitmentAdjustment).includes(:fund)
-    @commitment_adjustments = @commitment_adjustments.where(capital_commitment_id: params[:capital_commitment_id]) if params[:capital_commitment_id].present?
-    @commitment_adjustments = @commitment_adjustments.where(fund_id: params[:fund_id]) if params[:fund_id].present?
+    result = CommitmentAdjustmentList.call(current_user, params) { |relation| policy_scope(relation) }
+
+    @q = result.q
+    @commitment_adjustments = result.commitment_adjustments
+
+    @commitment_adjustments = @commitment_adjustments.order(as_of: :desc, created_at: :desc) if @commitment_adjustments.arel.orders.blank? && !ransack_has_attr?(params[:q], 's')
+
+    @pagy, @commitment_adjustments = pagy(@commitment_adjustments, limit: params[:per_page]) if params[:all].blank?
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+    end
   end
 
   # GET /commitment_adjustments/1 or /commitment_adjustments/1.json

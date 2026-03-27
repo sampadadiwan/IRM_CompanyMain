@@ -40,7 +40,7 @@ export default class extends Controller {
 
         // Show spinner and disable input
         // only closest to the form
-        form.find("#search_spinner").show();
+        form.find("#search_spinner_wrapper").removeClass("d-none");
         form.find("#search_input").prop("disabled", true);
     }
 }

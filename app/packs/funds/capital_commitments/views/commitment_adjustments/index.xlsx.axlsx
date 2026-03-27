@@ -1,0 +1,41 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "CommitmentAdjustments") do |sheet|
+  headers = [
+    "Fund", "Folio No", "Type",
+    "Fund Currency", "Pre Adjustment", "Amount", "Post Adjustment",
+    "Folio Currency", "Folio Amount",
+    "Reason", "As Of"
+  ]
+
+  has_tracking_currency = false
+  first_ca = @commitment_adjustments.first
+  if first_ca&.fund&.has_tracking_currency?
+    headers << "Tracking Amount"
+    has_tracking_currency = true
+  end
+
+  sheet.add_row(headers)
+
+  @commitment_adjustments.each do |ca|
+    cc = ca.capital_commitment
+
+    row = [
+      ca.fund.name,
+      cc.folio_id,
+      ca.adjustment_type,
+      ca.fund.currency,
+      ca.pre_adjustment.to_f,
+      ca.amount.to_f,
+      ca.post_adjustment.to_f,
+      cc.folio_currency,
+      ca.folio_amount.to_f,
+      ca.reason,
+      ca.as_of
+    ]
+
+    row << ca.tracking_amount.to_f if has_tracking_currency
+
+    sheet.add_row row
+  end
+end

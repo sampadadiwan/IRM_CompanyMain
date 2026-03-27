@@ -27,6 +27,7 @@ class ElasticImporterJob < ApplicationJob
     KpiReportIndex.import
     FundFormulaIndex.import
     FundRatioIndex.import
+    CommitmentAdjustmentIndex.import
   end
 
   def reset
@@ -55,6 +56,7 @@ class ElasticImporterJob < ApplicationJob
     KpiReportIndex.reset!
     FundFormulaIndex.reset!
     FundRatioIndex.reset!
+    CommitmentAdjustmentIndex.reset!
   end
 
   def create
@@ -83,5 +85,6 @@ class ElasticImporterJob < ApplicationJob
     KpiReportIndex.create
     FundFormulaIndex.create
     FundRatioIndex.create
+    CommitmentAdjustmentIndex.create
   end
 end

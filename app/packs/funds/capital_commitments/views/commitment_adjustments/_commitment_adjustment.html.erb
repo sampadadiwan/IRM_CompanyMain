@@ -1,23 +1,7 @@
 
 <tr id="<%= dom_id commitment_adjustment %>">
-  <td>
-    <%= commitment_adjustment.adjustment_type %>
-  </td>
-  <td>
-    <%= money_to_currency commitment_adjustment.pre_adjustment, params %>
-  </td>
-  <td>
-    <%= money_to_currency commitment_adjustment.amount, params %>
-  </td>
-  <td>
-    <%= money_to_currency commitment_adjustment.post_adjustment, params %>
-  </td>
-  <td>
-    <%= commitment_adjustment.reason %>
-  </td>
-  <td>
-    <%= l commitment_adjustment.as_of if commitment_adjustment.as_of %>
-  </td>
+   <%= render RansackTableRow.new(model: commitment_adjustment, columns:) %>
+
   <td>
     <%= link_to  t_common(:show), commitment_adjustment , {class: "btn btn-outline-primary"}%>
   </td>

@@ -106,7 +106,7 @@
 
       <div id="adjustments-tab" class="tab-pane fade">
         <div id="commitment_adjustments" class="associated_entity">
-          <%= turbo_frame_tag "commitment_adjustments_list", target: "_top", src: commitment_adjustments_path(capital_commitment_id: capital_commitment.id), loading: :lazy do %>
+          <%= turbo_frame_tag "commitment_adjustments_frame", target: "_top", src: commitment_adjustments_path(capital_commitment_id: capital_commitment.id), loading: :lazy do %>
             <%= render "/layouts/loading" %>
           <% end %>
         </div>
