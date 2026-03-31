@@ -61,6 +61,9 @@ When('I click on a Kanban Card and edit the form') do
   deal_investor = DealInvestor.first
   find('h3', text: deal_investor.name).click
   ##sleep(0.5)
+  within("#card_offcanvas_turbo_frame") do
+    find('.show_details_link').click
+  end
   click_link('Edit')
   ##sleep(0.25)
   fill_in('Tags', with: "Random, Tag")
@@ -343,24 +346,28 @@ def select_investor_and_save(investor_id, tags)
   input_field.set(tags)
   sleep(0.5)
   click_button('Save')
-  sleep(2)
-  # binding.pry
-  expect(page).to have_content(investor.investor_name, wait: 10)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  expect(page).to have_content("Deal Investor was successfully created", wait: 10)
+  expect(page).to have_content(investor.investor_name, wait: 15)
 end
 
 When('I click on a Kanban Card') do
-  sleep(1)
   @deal_investor = DealInvestor.last
-  find('h3', text: @deal_investor.name).click
+  # Wait for the card to appear in the DOM before clicking
+  find('h3', text: @deal_investor.name, wait: 10).click
 end
 
 Then('The offcanvas opens') do
-  # find('#offcanvas_DealInvestor83Activity1066')
+  # Wait for the offcanvas turbo frame to load its content
+  expect(page).to have_css("#card_offcanvas_turbo_frame .show_details_link", wait: 10)
+  within("#card_offcanvas_turbo_frame") do
+    find('.show_details_link').click
+  end
   expect(page).to have_content(@deal_investor.name)
   # below contents are only on offcanvas
   expect(page).to have_content(@deal_investor.deal.name)
   expect(page).to have_content("Deal")
-  expect(page).to have_content("Status")
+  expect(page).to have_content("Status", wait: 5)
   expect(page).to have_content("Deal Lead")
   expect(page).to have_content("Source")
 end

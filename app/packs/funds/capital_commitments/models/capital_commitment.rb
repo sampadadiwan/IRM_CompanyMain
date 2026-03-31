@@ -39,10 +39,10 @@ class CapitalCommitment < ApplicationRecord
     "Investing Entity" => "investor_kyc_full_name",
     "Folio" => "folio_id"
   }.merge(
-    STANDARD_COLUMNS.slice(*STANDARD_COLUMNS.keys - ["Fund Close", "Investor", "Investing Entity", "Folio"])
+    STANDARD_COLUMNS.slice(*STANDARD_COLUMNS.keys - ["Fund Close", "Stakeholder", "Investing Entity", "Folio"])
   ).freeze
 
-  INVESTOR_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Investor", "Fund Close").freeze
+  INVESTOR_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Stakeholder", "Fund Close").freeze
 
   update_index('capital_commitment') { self if index_record? }
 

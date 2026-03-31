@@ -16,7 +16,7 @@ class FinalizePortfolioScenario < Trailblazer::Operation
     tracking_currency = portfolio_scenario.calculations[:tracking_currency]
     return true if [xirr_default_val, xirr_tracking_val].compact.blank? # Skip if no IRR value
 
-    ctx[:fund_end_date] ||= portfolio_scenario.scenario_investments.order(:transaction_date).last&.transaction_date
+    ctx[:fund_end_date] ||= portfolio_scenario.scenario_investments.maximum(:transaction_date) || PortfolioInvestment.where(fund_id: portfolio_scenario.fund_id, entity_id: portfolio_scenario.entity_id).maximum(:investment_date)
 
     [["IRR", xirr_default_val], ["IRR (#{tracking_currency})", xirr_tracking_val]].each do |xirr_name, xirr_val|
       next if xirr_val.blank?
@@ -53,7 +53,7 @@ class FinalizePortfolioScenario < Trailblazer::Operation
 
     return true if [moic_default_val, moic_tracking_val].compact.blank? # Skip if no MOIC value
 
-    ctx[:fund_end_date] ||= portfolio_scenario.scenario_investments.order(:transaction_date).last&.transaction_date
+    ctx[:fund_end_date] ||= portfolio_scenario.scenario_investments.maximum(:transaction_date) || PortfolioInvestment.where(fund_id: portfolio_scenario.fund_id, entity_id: portfolio_scenario.entity_id).maximum(:investment_date)
 
     [["MOIC", moic_default_val], ["MOIC (#{tracking_currency})", moic_tracking_val]].each do |moic_name, moic_val|
       next if moic_val.blank?

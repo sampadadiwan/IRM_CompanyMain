@@ -52,7 +52,8 @@ end
 Given('I add a new account entry') do
 	# This is to scroll to the Account Entries tab and click it, otherwise the turbo_frame does not lazy load unless you scroll to it
 	click_tab("Account Entries")
-	expect(page).to have_content("New Account Entry", wait: 5)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+	expect(page).to have_content("New Account Entry", wait: 10)
 	click_on("New Account Entry")
 	fill_in("account_entry_period", with: "Q1")
 	fill_in("account_entry_name", with: "Test Account Entry")

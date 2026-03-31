@@ -82,4 +82,5 @@ def create_new_card(title, notes, info_field)
 	fill_in("kanban_card_notes", with: notes)
 	fill_in("kanban_card_info_field", with: info_field)
 	click_on("Save")
+	expect(page).to have_content("Card is successfully created", wait: 5)
 end
