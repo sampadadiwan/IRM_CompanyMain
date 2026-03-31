@@ -35,7 +35,9 @@ class BaseAssistantTools
     # This avoids server-side rendering/screenshot dependencies (e.g., Playwright).
     def generate_chart_html(json_data_string, prompt)
       json_data = JSON.parse(json_data_string)
-      agent = ChartAgentService.new(json_data: json_data)
+      # Pass entity so ChartAgentService uses entity-specific API keys rather than global credentials.
+      # @assistant.entity works because PortfolioAssistant delegates :entity to :@user.
+      agent = ChartAgentService.new(json_data: json_data, entity: @assistant.entity)
       chart_config = agent.generate_chart!(prompt: prompt)
       normalize_chart_config!(chart_config)
 

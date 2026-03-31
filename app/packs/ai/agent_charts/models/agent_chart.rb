@@ -45,7 +45,9 @@ class AgentChart < ApplicationRecord
     raw_data = get_kpis(portfolio_company_id, kpis: kpis) if kpis.present?
 
     if csv_paths.present? || raw_data.present?
-      spec_hash = ChartAgentService.new(json_data: raw_data, csv_paths:).generate_chart!(prompt: prompt)
+      # Pass entity so chart generation uses entity-specific API keys (Gemini, OpenAI, etc.)
+      # rather than falling back to global credentials.
+      spec_hash = ChartAgentService.new(json_data: raw_data, csv_paths:, entity: entity).generate_chart!(prompt: prompt)
       spec ||= {}
       spec[portfolio_company_id] = spec_hash
       update!(spec: spec, status: "ready")

@@ -189,9 +189,19 @@ class PortfolioAssistantDataManager
   # rubocop:enable Metrics/MethodLength
 
   # Lists KPIs for portfolio companies.
-  def list_portfolio_kpis(portfolio_company_ids:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+  def list_portfolio_kpis(portfolio_company_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_kpis called with portfolio_company_ids: #{portfolio_company_ids.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
-    companies = Pundit.policy_scope(@user, Investor).portfolio_companies.where(id: portfolio_company_ids)
+    # When portfolio_company_ids is provided, scope KPIs to those specific companies.
+    # When nil (e.g. LLM calls with only scope/query filters), fall back to all portfolio
+    # companies the user has access to — prevents a silent [] return from WHERE id IS NULL.
+    # NOTE: portfolio_company_ids was previously required, causing two problems:
+    #   1. The LLM could call this with only scope/query filters (no company IDs) — Ruby raised
+    #      ArgumentError before even reaching the guard clause in the tool layer.
+    #   2. Even after making it optional in the tool layer, passing nil here produced
+    #      WHERE id IS NULL in SQL, returning 0 companies and silently returning [] regardless
+    #      of what scope or query filters were provided.
+    companies = Pundit.policy_scope(@user, Investor).portfolio_companies
+    companies = companies.where(id: portfolio_company_ids) if portfolio_company_ids.present?
     return [] if companies.empty?
 
     ransack_query = (query || {}).with_indifferent_access

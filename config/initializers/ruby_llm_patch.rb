@@ -25,8 +25,13 @@ module RubyLLM
       @tool_iteration_count ||= 0
       @tool_iteration_count += 1
 
-      # Tool Loop Protection: Prevent infinite tool call loops
-      limit = @max_tool_iterations || 15 # Default to 15 turns per request
+      # Tool Loop Protection: Prevent infinite tool call loops.
+      # Default raised from 15 → 25 to accommodate the KPI batching flow in PortfolioAssistant
+      # (list_portfolio_companies → list_portfolio_kpis → plot_chart) which legitimately
+      # requires more turns than a simple single-tool query.
+      # Configurable via MAX_TOOL_ITERATIONS env var to allow per-environment tuning.
+      limit = @max_tool_iterations || ENV.fetch('MAX_TOOL_ITERATIONS', '25').to_i
+
       if @tool_iteration_count > limit
         error_msg = "Error: Maximum tool execution limit reached (#{limit} turns). " \
                     "The assistant stopped to prevent an excessively long processing time or infinite loop. " \

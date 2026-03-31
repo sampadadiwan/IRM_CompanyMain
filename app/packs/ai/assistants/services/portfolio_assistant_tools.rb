@@ -140,7 +140,10 @@ module PortfolioAssistantTools
       @assistant = assistant
     end
 
-    def execute(portfolio_company_ids:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
+    # NOTE: portfolio_company_ids is optional here — the LLM may legitimately call this
+    # with only scope or query filters. Making it required caused ArgumentError before the
+    # guard clause could return a clean error message back to the LLM.
+    def execute(portfolio_company_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
       return { error: "At least one filter (portfolio_company_ids, scope, or query) must be provided for list_portfolio_kpis as the dataset is too large." }.to_json if portfolio_company_ids.blank? && scope.blank? && (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
 
       q = (query || {}).with_indifferent_access
@@ -306,11 +309,30 @@ module PortfolioAssistantTools
     param :prompt, type: :string, desc: "A natural language prompt describing what the chart should represent.", required: true
   end
 
-  # PlotChartFromQuery for PortfolioAssistant.
   class PlotChartFromQuery < BaseAssistantTools::PlotChartFromQuery
     def name = "plot_chart_from_query"
 
-    param :resource, type: :string, desc: "The resource to fetch data from (e.g. 'valuations', 'kpis', 'investments').", required: true
+    param :resource, type: :string, desc: "The resource to fetch data from (e.g. 'portfolio_kpis', 'valuations', 'portfolio_investments').", required: true
+    param :portfolio_company_ids, type: :array, desc: "Required when resource is 'portfolio_kpis'. Array of portfolio company IDs.", required: false
     param :prompt, type: :string, desc: "A natural language prompt describing what data to fetch and how to plot it.", required: true
+
+    def execute(resource: nil, portfolio_company_ids: nil, query: {}, scope: nil, sort: nil, limit: nil, prompt: nil, **args)
+      if resource == "portfolio_kpis"
+        return RubyLLM::Content.new("Error: portfolio_company_ids is required when resource is 'portfolio_kpis'.") if portfolio_company_ids.blank?
+
+        data_results = @assistant.data_manager.list_portfolio_kpis(
+          portfolio_company_ids: portfolio_company_ids,
+          query: query, scope: scope, sort: sort, limit: limit
+        )
+
+        return RubyLLM::Content.new("No KPI data found for the given query.") if data_results.blank?
+
+        html = generate_chart_html(data_results.to_json, prompt)
+        summary = "Successfully plotted KPI chart. Data points: #{data_results.size}. Sample: #{data_results.take(3).to_json}..."
+        return RubyLLM::Content.new("#{summary}\n\n#{html}")
+      end
+
+      super(resource: resource, query: query, scope: scope, sort: sort, limit: limit, prompt: prompt, **args)
+    end
   end
 end

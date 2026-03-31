@@ -6,9 +6,12 @@ class ChartAgentService
   # Minimal whitelist to keep outputs valid for Chart.js
   ALLOWED_TYPES = %w[bar line pie doughnut scatter radar polarArea].freeze
 
-  def initialize(csv_paths: [], json_data: nil)
+  def initialize(csv_paths: [], json_data: nil, entity: nil)
     @csv_paths = csv_paths # array of paths to .csv files on disk
     @json_data = json_data
+    # entity is used by LlmService.ruby_llm_chat to pick entity-specific API keys
+    # (Gemini, OpenAI, Anthropic). When nil, falls back to global credentials.
+    @entity = entity
   end
 
   def build_system_msg
@@ -73,7 +76,9 @@ class ChartAgentService
 
   # Returns a Ruby Hash ready to pass to Chart.js on the frontend
   def generate_chart!(prompt:)
-    chat = LlmService.ruby_llm_chat(entity: entity)
+    # NOTE: must use @entity (instance variable), not bare `entity` — this class has no
+    # entity method and calling it bare raises NameError: undefined local variable or method 'entity'.
+    chat = LlmService.ruby_llm_chat(entity: @entity)
 
     # Build the system message with instructions
     system_msg = build_system_msg
