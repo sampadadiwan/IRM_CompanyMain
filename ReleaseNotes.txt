@@ -1,3 +1,13 @@
+V9.2.09
+233a3bfc9 Custom css (#1323)
+467461e24 Remove link to ratio formulas from fund ratios dropdown
+5ee1078dc Refactor code structure for improved readability and maintainability
+f6e3d247d Added better value bridge computation for adhoc fields
+3558744a2 Fix/portfolio assistant tool call (#1322)
+adc4d261c Documents widget fix (#1321)
+6f620cf4f Now portfolio scenario fund ratios end dates also consider PIs invest… (#1320)
+
+
 V9.2.07
 742506788 Kpi report chart update (#1315)
 be1ba7768 UI force tracking no (#1317)
