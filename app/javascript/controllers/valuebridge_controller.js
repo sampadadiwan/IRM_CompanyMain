@@ -35,9 +35,14 @@ export default class extends Controller {
           inside: true,
           backgroundColor: 'transparent', // removes white background
           borderWidth: 0,                 // remove border if any
+          formatter: function() {
+            const fontColor = this.point.options.font_color || themeOptions.labelColor || 'black';
+            const label = this.point.options.label || this.y;
+            return `<span style="color: ${fontColor}">${label}</span>`;
+          },
+          useHTML: true,
           style: {
             textOutline: 'none',          // removes white halo
-            color: themeOptions.labelColor || '#ffffffff', // set text color manually if needed
             fontWeight: 'bold'
           }
       }

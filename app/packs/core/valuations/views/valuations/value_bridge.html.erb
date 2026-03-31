@@ -26,24 +26,41 @@
             </th>
             <% bridge_fields.each_with_index do |bridge_field, idx| %>
                 <th>
-                    <%= bridge_field %>
+                    <% if idx == 0 %>
+                        <%= bridge_field %>
+                    <% else %>
+                        <%= bridge_field %> Impact
+                    <% end %>
                 </th>
                 <%
                     # The label should be the valuation date for Entry and Exit, otherwise the field name
-                    name = bridge_field == "Entry" ? date_with_ordinal(@bridge[bridge_field].valuation_date, format: params[:date_format]&.to_sym) : bridge_field
+                    name = bridge_field == "Entry" ? date_with_ordinal(@bridge[bridge_field].valuation_date, format: params[:date_format]&.to_sym) : "#{bridge_field} Impact"
                     value = idx == 0 ? @bridge[bridge_field].json_fields["enterprise_value"]  : @bridge[bridge_field].json_fields["enterprise_value_change"]
 
                     if idx == 0
                         color = "#212529"
+                        label = @moic ? "#{number_with_precision(value, precision: 2)}x" : number_with_delimiter(number_with_precision(value, precision: 2))
+                        font_color = "white"
                     else
                         color = value && value > 0 ? "#76b264ff" : "#E97451"
+                        prefix = (value && value > 0) ? "+" : ""
+                        label = if @moic
+                                    "#{prefix}#{number_with_precision(value, precision: 2)}x"
+                                else
+                                    "#{prefix}#{number_with_delimiter(number_with_precision(value, precision: 2))}"
+                                end
+                        font_color = nil
                     end
 
-                    waterfall_chart_data << { name: name, y: value, color: color }
+                    waterfall_chart_data << { name: name, y: value, color: color, label: label, font_color: font_color }
                 %>
             <% end %>
 
-            <% waterfall_chart_data << { name: date_with_ordinal(@bridge["Exit"].valuation_date, format: params[:date_format]&.to_sym), y: @bridge["Exit"].json_fields["enterprise_value"], isSum: true, color: "#212529" } %>
+            <%
+                exit_value = @bridge["Exit"].json_fields["enterprise_value"]
+                exit_label = @moic ? "#{number_with_precision(exit_value, precision: 2)}x" : number_with_delimiter(number_with_precision(exit_value, precision: 2))
+                waterfall_chart_data << { name: date_with_ordinal(@bridge["Exit"].valuation_date, format: params[:date_format]&.to_sym), y: exit_value, isSum: true, color: "#212529", label: exit_label, font_color: "white" }
+            %>
         </tr>
         </thead>
 
@@ -59,8 +76,39 @@
                     <td>
                         <%
                             key_name = @value_bridge_service.value_bridge_custom_fields[key]&.name || FormCustomField.to_name(key)
+                            val = @bridge[bridge_field].json_fields[key_name]
+
+                                # Color coding: Green if it's a positive impact or increase from the PREVIOUS column, Red if negative
+                                text_class = ""
+                                val_f = val.to_f
+
+                                if key == "Enterprise Value Change"
+                                    text_class = val_f > 0 ? "text-success" : (val_f < 0 ? "text-danger" : "")
+                                elsif idx > 0
+                                    # Compare with the PREVIOUS column's value for the same key
+                                    prev_bridge_field = bridge_fields[idx - 1]
+                                    prev_val = @bridge[prev_bridge_field].json_fields[key_name]
+
+                                    # Use to_f to ensure we are comparing numeric values correctly
+                                    prev_val_f = prev_val.to_f
+
+                                    if val_f != prev_val_f
+                                        text_class = val_f > prev_val_f ? "text-success" : "text-danger"
+                                    end
+                                end
+
+                            formatted_val = if val.is_a?(Numeric)
+                                                if @moic
+                                                    "#{number_with_precision(val, precision: 2)}x"
+                                                else
+                                                    prefix = (key == "Enterprise Value Change" && val > 0) ? "+" : ""
+                                                    "#{prefix}#{number_with_delimiter(number_with_precision(val, precision: 2))}"
+                                                end
+                                            else
+                                                val
+                                            end
                         %>
-                        <%= @bridge[bridge_field].json_fields[key_name] %>
+                        <span class="<%= text_class %> !important" style="<%= 'color: #28a745 !important;' if text_class == 'text-success' %><%= 'color: #dc3545 !important;' if text_class == 'text-danger' %>"><%= formatted_val %></span>
                         <% if params[:debug] && @bridge[bridge_field].json_fields[key_name].blank? %>
                             key <%= key %>, key_name <%= key_name %>, bridge_field <%= bridge_field %>
                         <% end %>
