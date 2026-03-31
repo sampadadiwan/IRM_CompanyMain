@@ -95,8 +95,126 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
     @fmv_cents ||= fmv_on_date
   end
 
-  def portfolio_value_to_cost
-    total_investment_costs_cents.positive? ? fmv_cents / total_investment_costs_cents : 0
+  def collected_cents
+    total = Money.new(0, @currency)
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      total += convert_to_base_currency(Money.new(fpc.collected_cents, fund.currency))
+    end
+    total.cents
+  end
+
+  def distribution_cents
+    total = Money.new(0, @currency)
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      total += convert_to_base_currency(Money.new(fpc.distribution_cents, fund.currency))
+    end
+    total.cents
+  end
+
+  def committed_cents
+    total = Money.new(0, @currency)
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      total += convert_to_base_currency(Money.new(fpc.committed_cents, fund.currency))
+    end
+    total.cents
+  end
+
+  def dpi
+    collected_cents
+    dc = 0
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      fund_cc = fpc.collected_cents
+      fund_dc = fpc.distribution_cents
+      # Apply this fund's DPI rules to its own components before aggregation
+      fund_dc, = fpc.apply_static_formulas('DPI', fund_dc, fund_cc, false)
+      dc += convert_to_base_currency(Money.new(fund_dc, fund.currency)).cents
+    end
+    # The aggregated CC used as denominator is already converted, but we use the total adjusted CC for consistency?
+    # Actually, if we want to reflect the formulas accurately, we should aggregate the ADJUSTED numerators and denominators.
+    # Recalculating aggregated adjusted denominator:
+    adj_cc = 0
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      fund_cc = fpc.collected_cents
+      fund_dc = fpc.distribution_cents
+      _, fund_cc = fpc.apply_static_formulas('DPI', fund_dc, fund_cc, false)
+      adj_cc += convert_to_base_currency(Money.new(fund_cc, fund.currency)).cents
+    end
+
+    adj_cc.positive? ? (dc / adj_cc.to_f) : 0
+  end
+
+  def rvpi
+    numerator = 0
+    denominator = 0
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      fund_cc = fpc.collected_cents
+      fund_rv = fpc.fmv_cents + fpc.net_current_assets_cents + fpc.cash_in_hand_cents
+
+      fund_rv, fund_cc = fpc.apply_static_formulas('RVPI', fund_rv, fund_cc, false)
+
+      numerator += convert_to_base_currency(Money.new(fund_rv, fund.currency)).cents
+      denominator += convert_to_base_currency(Money.new(fund_cc, fund.currency)).cents
+    end
+    denominator.positive? ? (numerator / denominator.to_f) : 0
+  end
+
+  def tvpi
+    numerator = 0
+    denominator = 0
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      fund_cc = fpc.collected_cents
+      fund_dc = fpc.distribution_cents
+      fund_rv = fpc.fmv_cents + fpc.net_current_assets_cents + fpc.cash_in_hand_cents
+
+      fund_tv = fund_dc + fund_rv
+      fund_tv, fund_cc = fpc.apply_static_formulas('TVPI', fund_tv, fund_cc, false)
+
+      numerator += convert_to_base_currency(Money.new(fund_tv, fund.currency)).cents
+      denominator += convert_to_base_currency(Money.new(fund_cc, fund.currency)).cents
+    end
+    denominator.positive? ? (numerator / denominator.to_f) : 0
+  end
+
+  def paid_in_to_committed_capital
+    numerator = 0
+    denominator = 0
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      fund_clc = fpc.collected_cents
+      fund_ccm = fpc.committed_cents
+
+      fund_clc, fund_ccm = fpc.apply_static_formulas('PIC', fund_clc, fund_ccm, false)
+
+      numerator += convert_to_base_currency(Money.new(fund_clc, fund.currency)).cents
+      denominator += convert_to_base_currency(Money.new(fund_ccm, fund.currency)).cents
+    end
+    denominator.positive? ? (numerator / denominator.to_f) : 0
+  end
+
+  def moic(synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false)
+    # MOIC = (FMV + Total Sold) / Total Bought
+    # For multifund, we aggregate converted adjusted components
+    total_numerator = 0
+    total_denominator = 0
+
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      num, den, = fpc.moic_components(synthetic_investments: synthetic_investments, use_tracking_currency: false, return_cash_flows: false)
+
+      total_numerator += convert_to_base_currency(Money.new(num, fund.currency)).cents
+      total_denominator += convert_to_base_currency(Money.new(den, fund.currency)).cents
+    end
+
+    return 0, nil if total_denominator.zero?
+
+    [(total_numerator / total_denominator.to_f).round(2), nil]
   end
 
   def gross_portfolio_irr
@@ -153,6 +271,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
     if @portfolio_company_irr_map.empty?
       # Get all the Portfolio companies
       all_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id| # rubocop:disable Metrics/BlockLength
+        @portfolio_company_id = portfolio_company_id
         portfolio_company = Investor.find(portfolio_company_id)
         # Get all the portfolio investments for this portfolio company before the end date
         portfolio_investments = all_portfolio_investments.where(portfolio_company_id:).before(@end_date)

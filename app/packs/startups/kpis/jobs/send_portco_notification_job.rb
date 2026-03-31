@@ -135,7 +135,8 @@ class SendPortcoNotificationJob < ApplicationJob
     EntityMailer.with(
       to: user.email,
       error_msg: formatted_errors,
-      subject: msg
+      subject: msg,
+      entity_id: user.entity_id
     ).notify_errors.deliver_now
   end
 end

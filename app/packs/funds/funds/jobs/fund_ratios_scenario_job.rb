@@ -77,6 +77,29 @@ class FundRatiosScenarioJob < ApplicationJob
     xirr, cash_flows = calc.xirr(return_cash_flows: false)
     FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "XIRR", value: xirr, cash_flows:, display_value: "#{xirr} %", scenario: @scenario)
 
+    moic, = calc.moic
+    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "MOIC", value: moic, display_value: "#{moic} x", scenario: @scenario)
+
+    value = calc.rvpi
+    display_value = value ? "#{value.round(2)}x" : nil
+    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "RVPI", value:, display_value:, scenario: @scenario)
+
+    value = calc.dpi
+    display_value = value ? "#{value.round(2)}x" : nil
+    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "DPI", value:, display_value:, scenario: @scenario)
+
+    value = calc.tvpi
+    display_value = value ? "#{value.round(2)}x" : nil
+    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "TVPI", value:, display_value:, scenario: @scenario)
+
+    value = calc.portfolio_value_to_cost
+    display_value = value ? "#{value.round(2)}x" : nil
+    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "Portfolio Value to Cost", value:, display_value:, scenario: @scenario)
+
+    value = calc.paid_in_to_committed_capital
+    display_value = value ? "#{value.round(2)}x" : nil
+    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "Paid In to Committed Capital", value:, display_value:, scenario: @scenario)
+
     value = calc.gross_portfolio_irr
     display_value = "#{value} %"
     FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "Gross Portfolio IRR", value:, display_value:, scenario: @scenario)
@@ -100,7 +123,7 @@ class FundRatiosScenarioJob < ApplicationJob
 
     # Compute the portfolio_company_ratios
     calc.portfolio_company_metrics.each do |portfolio_company_id, values|
-      # FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x")
+      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x", scenario: @scenario)
 
       FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x", scenario: @scenario)
     end

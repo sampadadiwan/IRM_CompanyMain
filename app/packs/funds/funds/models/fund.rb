@@ -31,6 +31,7 @@ class Fund < ApplicationRecord
   has_many :feeder_funds, class_name: "Fund", foreign_key: :master_fund_id
 
   has_many :fund_ratios, dependent: :destroy
+  has_many :ratio_formulas, dependent: :destroy
   has_many :valuations, as: :owner, dependent: :destroy
 
   has_many :account_entries, dependent: :destroy

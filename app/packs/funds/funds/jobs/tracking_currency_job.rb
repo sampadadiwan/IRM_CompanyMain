@@ -32,7 +32,7 @@ class TrackingCurrencyJob < ApplicationJob
 
       send_errors_notification("Errors occurred during Tracking Currency Job", @error_msg, user_id) if @error_msg.present?
 
-      EntityMailer.with(error_msg: @error_msg).notify_errors.deliver_now if @error_msg.present?
+      EntityMailer.with(error_msg: @error_msg, entity_id: entity_id).notify_errors.deliver_now if @error_msg.present?
     end
   end
 

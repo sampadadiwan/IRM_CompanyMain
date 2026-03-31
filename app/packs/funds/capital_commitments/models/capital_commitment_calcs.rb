@@ -1,4 +1,6 @@
 class CapitalCommitmentCalcs < FundRatioCalcs
+  delegate :ratio_formulas, to: :@capital_commitment
+
   def initialize(capital_commitment, end_date)
     @capital_commitment = capital_commitment
     @end_date = end_date
@@ -46,22 +48,28 @@ class CapitalCommitmentCalcs < FundRatioCalcs
       @capital_commitment.capital_distribution_payments.completed.where(payment_date: ..@end_date).sum(:net_payable_cents)
   end
 
-  def dpi
+  def dpi(use_tracking_currency: false)
     cc = collected_cents
-    cc.positive? ? (distribution_cents / cc) : 0
+    dc = distribution_cents
+    dc, cc = apply_static_formulas('DPI', dc, cc, use_tracking_currency)
+    cc.positive? ? (dc / cc.to_f) : 0
   end
 
-  def rvpi
+  def rvpi(use_tracking_currency: false)
     cc = collected_cents
-    if cc.positive?
-      (fmv_cents + cash_in_hand_cents + net_current_assets_cents) / cc
-    else
-      0
-    end
+    total_val = fmv_cents + cash_in_hand_cents + net_current_assets_cents
+    total_val, cc = apply_static_formulas('RVPI', total_val, cc, use_tracking_currency)
+    cc.positive? ? (total_val / cc.to_f) : 0
   end
 
-  def tvpi
-    dpi + rvpi
+  def tvpi(use_tracking_currency: false)
+    cc = collected_cents
+    dc = distribution_cents
+    rv = fmv_cents + cash_in_hand_cents + net_current_assets_cents
+
+    numerator = dc + rv
+    numerator, cc = apply_static_formulas('TVPI', numerator, cc, use_tracking_currency)
+    cc.positive? ? (numerator / cc.to_f) : 0
   end
 
   def fmv_on_date

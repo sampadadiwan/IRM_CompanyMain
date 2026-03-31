@@ -60,6 +60,12 @@ class FundRatiosJob < ApplicationJob
     _create_dpi_ratio(calc, owner, fund, capital_commitment, end_date)
     _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date)
 
+    if fund.has_tracking_currency?
+      _create_rvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: true)
+      _create_dpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: true)
+      _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: true)
+    end
+
     calc_only_fund(calc, fund, capital_commitment, end_date, owner, return_cash_flows:) unless capital_commitment
   end
 
@@ -93,27 +99,35 @@ class FundRatiosJob < ApplicationJob
     end
   end
 
-  def _create_rvpi_ratio(calc, owner, fund, capital_commitment, end_date)
-    value = calc.rvpi
+  def _create_rvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
+    value = calc.rvpi(use_tracking_currency:)
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "RVPI", value:, display_value:)
+    name = use_tracking_currency ? "RVPI (#{fund.tracking_currency})" : "RVPI"
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
   end
 
-  def _create_dpi_ratio(calc, owner, fund, capital_commitment, end_date)
-    value = calc.dpi
+  def _create_dpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
+    value = calc.dpi(use_tracking_currency:)
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "DPI", value:, display_value:)
+    name = use_tracking_currency ? "DPI (#{fund.tracking_currency})" : "DPI"
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
   end
 
-  def _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date)
-    value = calc.tvpi
+  def _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
+    value = calc.tvpi(use_tracking_currency:)
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "TVPI", value:, display_value:)
+    name = use_tracking_currency ? "TVPI (#{fund.tracking_currency})" : "TVPI"
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
   end
 
   def calc_only_fund(calc, fund, capital_commitment, end_date, owner, return_cash_flows:)
     _create_portfolio_value_to_cost_ratio(calc, owner, fund, capital_commitment, end_date)
     _create_paid_in_to_committed_capital_ratio(calc, owner, fund, capital_commitment, end_date)
+
+    if fund.has_tracking_currency?
+      _create_portfolio_value_to_cost_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: true)
+      _create_paid_in_to_committed_capital_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: true)
+    end
     _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
     _create_api_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
     _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
@@ -121,16 +135,18 @@ class FundRatiosJob < ApplicationJob
     _create_gross_portfolio_irr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows:)
   end
 
-  def _create_portfolio_value_to_cost_ratio(calc, owner, fund, capital_commitment, end_date)
-    value = calc.portfolio_value_to_cost
+  def _create_portfolio_value_to_cost_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
+    value = calc.portfolio_value_to_cost(use_tracking_currency:)
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Portfolio Value to Cost", value:, display_value:)
+    name = use_tracking_currency ? "Portfolio Value to Cost (#{fund.tracking_currency})" : "Portfolio Value to Cost"
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
   end
 
-  def _create_paid_in_to_committed_capital_ratio(calc, owner, fund, capital_commitment, end_date)
-    value = calc.paid_in_to_committed_capital
+  def _create_paid_in_to_committed_capital_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
+    value = calc.paid_in_to_committed_capital(use_tracking_currency:)
     display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Paid In to Committed Capital", value:, display_value:)
+    name = use_tracking_currency ? "Paid In to Committed Capital (#{fund.tracking_currency})" : "Paid In to Committed Capital"
+    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
   end
 
   def _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)

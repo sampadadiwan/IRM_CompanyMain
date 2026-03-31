@@ -1,0 +1,67 @@
+<div class="container-fluid">
+<%= render FormCard.new(title: "Ratio Formula Detail") do %>
+
+<table class="table table-bordered dataTable">
+  <tr>
+    <td>
+      Fund
+    </td>
+    <td>
+      <%= @fund.name %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Level
+    </td>
+    <td>
+      <%= @ratio_formula.level_text %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Action
+    </td>
+    <td>
+      <%= @ratio_formula.action_text %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Ratios
+    </td>
+    <td>
+      <% Array(@ratio_formula.ratios).each do |ratio| %>
+        <span class="badge bg-info-subtle text-info"><%= ratio %></span>
+      <% end %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Account Entry Names
+    </td>
+    <td>
+      <% Array(@ratio_formula.account_entry_names).each do |name| %>
+        <span class="badge bg-secondary-subtle text-secondary"><%= name %></span>
+      <% end %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Period
+    </td>
+    <td>
+      <%= @ratio_formula.period_text %>
+    </td>
+  </tr>
+</table>
+
+<div class="associated_entity">
+  <%= link_to t_common(:edit), edit_fund_ratio_formula_path(@fund, @ratio_formula), {class: "btn btn-outline-primary"} if policy(@ratio_formula).update? %>
+  <%= button_to t_common(:delete), fund_ratio_formula_path(@fund, @ratio_formula), method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@ratio_formula).destroy? %>
+  <%= link_to t_common(:back), fund_ratio_formulas_path(@fund), class: "btn btn-outline-secondary" %>
+</div>
+
+<% end %>
+
+</div>

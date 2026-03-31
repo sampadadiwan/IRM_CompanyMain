@@ -41,6 +41,7 @@ class Entity < ApplicationRecord
   has_many :investor_kpi_mappings, dependent: :destroy
 
   has_many :deals, dependent: :destroy
+  has_many :ratio_formulas, dependent: :destroy
   has_many :deal_investors, dependent: :destroy
   has_many :deal_activities, dependent: :destroy
 

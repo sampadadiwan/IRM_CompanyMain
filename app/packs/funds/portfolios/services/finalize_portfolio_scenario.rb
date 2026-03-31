@@ -5,6 +5,12 @@ class FinalizePortfolioScenario < Trailblazer::Operation
   left :handle_errors, id: :handle_fund_irr_errors, Output(:failure) => End(:failure)
   step :save_fund_moic
   left :handle_errors, id: :handle_fund_moic_errors, Output(:failure) => End(:failure)
+  step :save_fund_dpi
+  left :handle_errors, id: :handle_fund_dpi_errors, Output(:failure) => End(:failure)
+  step :save_fund_rvpi
+  left :handle_errors, id: :handle_fund_rvpi_errors, Output(:failure) => End(:failure)
+  step :save_fund_tvpi
+  left :handle_errors, id: :handle_fund_tvpi_errors, Output(:failure) => End(:failure)
   step :save_portfolio_company_ratios
   left :handle_errors, id: :handle_company_ratios_errors, Output(:failure) => End(:failure)
 
@@ -76,6 +82,52 @@ class FinalizePortfolioScenario < Trailblazer::Operation
       else
         ctx[:errors] ||= []
         ctx[:errors] << "#{moic_name}: #{ratio.errors.full_messages.join(', ')}"
+      end
+    end
+    ctx[:errors].blank?
+  end
+
+  def save_fund_dpi(ctx, portfolio_scenario:, **)
+    save_generic_fund_ratio(ctx, portfolio_scenario, 'DPI', 'x')
+  end
+
+  def save_fund_rvpi(ctx, portfolio_scenario:, **)
+    save_generic_fund_ratio(ctx, portfolio_scenario, 'RVPI', 'x')
+  end
+
+  def save_fund_tvpi(ctx, portfolio_scenario:, **)
+    save_generic_fund_ratio(ctx, portfolio_scenario, 'TVPI', 'x')
+  end
+
+  def save_generic_fund_ratio(ctx, portfolio_scenario, ratio_name, unit)
+    key = ratio_name.downcase.to_sym
+    tracking_key = :"#{ratio_name.downcase}_tracking_currency"
+
+    default_val = portfolio_scenario.calculations[key]
+    tracking_val = portfolio_scenario.calculations[tracking_key]
+    tracking_currency = portfolio_scenario.calculations[:tracking_currency]
+
+    return true if [default_val, tracking_val].compact.blank?
+
+    ctx[:fund_end_date] ||= portfolio_scenario.scenario_investments.order(:transaction_date).last&.transaction_date
+
+    [[ratio_name, default_val], ["#{ratio_name} (#{tracking_currency})", tracking_val]].each do |name, val|
+      next if val.blank?
+
+      ratio = FundRatio.find_or_initialize_by(
+        owner: portfolio_scenario.fund,
+        portfolio_scenario: portfolio_scenario,
+        name: name,
+        fund: portfolio_scenario.fund,
+        entity: portfolio_scenario.entity
+      )
+      ratio.value = val
+      ratio.display_value = "#{val} #{unit}"
+      ratio.end_date = ctx[:fund_end_date]
+
+      unless ratio.save
+        ctx[:errors] ||= []
+        ctx[:errors] << "#{name}: #{ratio.errors.full_messages.join(', ')}"
       end
     end
     ctx[:errors].blank?

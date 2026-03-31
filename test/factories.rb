@@ -1,9 +1,9 @@
 FactoryBot.define do
   factory :task_template do
-    for_class { ["CapitalCommitment", "CapitalCall", "CapitalRemittance", "CapitalDistribution", "IndividualKyc", "NonIndividualKyc"].sample }
-    tag_list { ["show", "edit", "delete", "list", "approve"].sample }
+    for_class { %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution IndividualKyc NonIndividualKyc].sample }
+    tag_list { %w[show edit delete list approve].sample }
     details { Faker::Company.catch_phrase }
-    due_in_days { rand(3) + 1 }
+    due_in_days { rand(1..3) }
     action_link { "/tasks" }
     help_link { "/tasks" }
   end
@@ -44,14 +44,14 @@ FactoryBot.define do
   end
 
   factory :investment do
-    entity { Entity.funds.sample}
+    entity { Entity.funds.sample }
     portfolio_company { entity.investors.portfolio_companies.sample }
     category { Investment::CATEGORIES.sample }
     investor_name { Faker::Company.name }
     investment_type { Investment::TYPES.sample }
-    funding_round { ["A", "B", "C"].sample }
+    funding_round { %w[A B C].sample }
     quantity { rand(1..10) * 100 }
-    price_cents { rand(1..10) * 1000000 }
+    price_cents { rand(1..10) * 1_000_000 }
     investment_date { Time.zone.today - rand(130).days }
     notes { Faker::Company.catch_phrase }
     currency { entity.currency }
@@ -163,7 +163,7 @@ FactoryBot.define do
   end
 
   factory :investment_instrument do
-    name { (0...8).map { (65 + rand(26)).chr }.join }
+    name { (0...8).map { rand(65..90).chr }.join }
     category { "Unlisted" }
     sub_category { "Equity" }
     sector { "Tech" }
@@ -201,7 +201,6 @@ FactoryBot.define do
     owner { nil }
   end
 
-
   factory :stock_adjustment do
     entity { nil }
     portfolio_company { nil }
@@ -218,10 +217,9 @@ FactoryBot.define do
     last_name { Faker::Name.last_name }
     email { Faker::Internet.email }
     cc { Faker::Internet.email }
-    phone { rand(10 ** 10) }
+    phone { rand(10**10) }
     send_confirmation { false }
     approved { true }
-
   end
 
   factory :portfolio_cashflow do
@@ -244,7 +242,6 @@ FactoryBot.define do
     capital_call { nil }
   end
 
-
   factory :kpi do
     entity { nil }
     name { Faker::Company.name }
@@ -260,7 +257,6 @@ FactoryBot.define do
     notes { Faker::Company.catch_phrase }
     user { nil }
   end
-
 
   factory :commitment_adjustment do
     entity { nil }
@@ -297,7 +293,7 @@ FactoryBot.define do
     investment_instrument { entity.investment_instruments.sample }
     portfolio_company { entity.investors.portfolio_companies.sample }
     investment_date { Time.zone.today - 1.month - rand(48).months }
-    ex_expenses_base_amount_cents { 10000000 * rand(1..20) }
+    ex_expenses_base_amount_cents { 10_000_000 * rand(1..20) }
     quantity { rand(2) > 0 ? 100 * rand(1..10) : -100 * rand(1..10) }
     sub_category { "Equity" }
     category { "Unlisted" }
@@ -327,7 +323,6 @@ FactoryBot.define do
     reason { Faker::Company.catch_phrase }
   end
 
-
   factory :entity_setting do
     pan_verification { false }
     bank_verification { false }
@@ -338,14 +333,13 @@ FactoryBot.define do
     last_snapshot_on { "2023-01-22" }
     # sandbox { true }
     # sandbox_emails { "thimmaiah@gmail.com,ausang@gmail.com" }
-
   end
 
   factory :fund_ratio do
     entity { nil }
     fund { nil }
     valuation { nil }
-    name { ["XIRR", "TVP", "DVP"].sample }
+    name { %w[XIRR TVP DVP].sample }
     value { "9.99" }
     display_value { Faker::Company.name }
     notes { Faker::Company.catch_phrase }
@@ -420,20 +414,19 @@ FactoryBot.define do
     entity { nil }
   end
 
-
   factory :investor_kyc do
     # entity { Entity.where(enable_kycs: true).sample }
     investor { entity.investors.sample if entity }
     full_name { Faker::Name.name }
-    residency { ["domestic", "foreign"].sample }
-    PAN { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
+    residency { %w[domestic foreign].sample }
+    PAN { [*('A'..'Z'), *('0'..'9')].sample(10).join }
     address { Faker::Address.full_address }
     corr_address { Faker::Address.full_address }
-    bank_account_number  {Faker::Bank.account_number}
-    bank_name {Faker::Bank.name}
-    bank_branch {Faker::Address.city}
-    bank_account_type { ["Savings", "Current"].sample }
-    ifsc_code {Faker::Bank.swift_bic}
+    bank_account_number { Faker::Bank.account_number }
+    bank_name { Faker::Bank.name }
+    bank_branch { Faker::Address.city }
+    bank_account_type { %w[Savings Current].sample }
+    ifsc_code { Faker::Bank.swift_bic }
     birth_date { Time.zone.today - rand(36).years }
     expiry_date { Time.zone.today + rand(36).months }
     comments { Faker::Company.buzzword }
@@ -446,30 +439,29 @@ FactoryBot.define do
     name { Faker::Name.name }
     match_status { "potential_match" }
     approved { true }
-    approved_by_id {FactoryBot.create(:user, entity: entity).id}
-    associates { {Faker::Name.name =>"child", Faker::Name.name =>"spouse"}.to_s }
-    fields  {
-    {"Nationality"=>
-    [{"name"=>"Nationality", "source"=>"hm-treasury-list", "value"=>"Russian Federation"},
-     {"name"=>"Nationality", "source"=>"ofac-sdn-list", "value"=>"Russian Federation"}]}
-    }
-    types  {"pep, pep-class-1, pep-class-2, sanction, fitness-probity, adverse-media, adverse-media-general"}
-    source_notes  {
-    [{"internal-adverse-media"=>
-    {"name"=>"internal Adverse Media",
-     "aml_types"=>
-      ["adverse-media",
-       "adverse-media-financial-crime",
-       "adverse-media-fraud",
-       "adverse-media-general",
-       "adverse-media-narcotics",
-       "adverse-media-terrorism",
-       "adverse-media-violent-crime"],
-     "country_codes"=>["PL", "RU", "UA", "US"]}}]
-    }
-    response{"response json here"}
+    approved_by_id { FactoryBot.create(:user, entity: entity).id }
+    associates { { Faker::Name.name => "child", Faker::Name.name => "spouse" }.to_s }
+    fields do
+      { "Nationality" =>
+      [{ "name" => "Nationality", "source" => "hm-treasury-list", "value" => "Russian Federation" },
+       { "name" => "Nationality", "source" => "ofac-sdn-list", "value" => "Russian Federation" }] }
+    end
+    types { "pep, pep-class-1, pep-class-2, sanction, fitness-probity, adverse-media, adverse-media-general" }
+    source_notes do
+      [{ "internal-adverse-media" =>
+      { "name" => "internal Adverse Media",
+        "aml_types" =>
+        %w[adverse-media
+           adverse-media-financial-crime
+           adverse-media-fraud
+           adverse-media-general
+           adverse-media-narcotics
+           adverse-media-terrorism
+           adverse-media-violent-crime],
+        "country_codes" => %w[PL RU UA US] } }]
+    end
+    response { "response json here" }
   end
-
 
   factory :capital_distribution_payment do
     fund { nil }
@@ -482,18 +474,17 @@ FactoryBot.define do
     properties { Faker::Company.catch_phrase }
   end
 
-
   factory :capital_distribution do
     fund { Fund.all.sample }
     entity { fund.entity }
-    income { 1000000 * rand(1..5) }
+    income { 1_000_000 * rand(1..5) }
     cost_of_investment_cents { gross_amount * 0.8 }
     reinvestment { gross_amount * 0.5 }
     distribution_date { Date.today + rand(5).weeks }
     title { "Capital Dist #{Time.now.to_f}" }
-    unit_prices {
-      fund.unit_types.split(",").map{|ut| [ut.strip, 100 * (rand(2) + 1)]}.to_h if fund.unit_types
-    }
+    unit_prices do
+      fund.unit_types.split(",").map { |ut| [ut.strip, 100 * rand(1..2)] }.to_h if fund.unit_types
+    end
   end
 
   factory :capital_remittance do
@@ -501,9 +492,9 @@ FactoryBot.define do
     fund { capital_call.fund }
     entity { fund.entity }
     investor { fund.investors.sample }
-    status { ["Pending", "Paid"].sample }
-    collected_amount { 10000 * rand(10..20) }
-    notes { Faker::Company.catch_phrase  }
+    status { %w[Pending Paid].sample }
+    collected_amount { 10_000 * rand(10..20) }
+    notes { Faker::Company.catch_phrase }
   end
 
   factory :capital_call do
@@ -515,11 +506,11 @@ FactoryBot.define do
     call_basis { "Percentage of Commitment" }
     percentage_called { rand(1..4) * 10 }
     fund_closes { ["All"] }
-    close_percentages { {"First Close"=> rand(1..4) * 10} }
+    close_percentages { { "First Close" => rand(1..4) * 10 } }
     notes { Faker::Company.catch_phrase }
-    unit_prices {
-      fund.unit_types.split(",").map{|ut| [ut.strip, "price" => 100 * (rand(2) + 1), "premium" => 10 * (rand(2) + 1) ]}.to_h if fund.unit_types
-    }
+    unit_prices do
+      fund.unit_types.split(",").map { |ut| [ut.strip, { "price" => 100 * rand(1..2), "premium" => 10 * rand(1..2) }] }.to_h if fund.unit_types
+    end
   end
 
   factory :capital_commitment do
@@ -527,8 +518,8 @@ FactoryBot.define do
     unit_type { fund.unit_types.split(",").sample }
     entity { fund.entity }
     investor { entity.investors.sample }
-    folio_committed_amount_cents { 10000000 * rand(10..30) }
-    folio_id {rand(100**4)}
+    folio_committed_amount_cents { 10_000_000 * rand(10..30) }
+    folio_id { rand(100**4) }
     folio_currency { fund.currency }
     fund_close { "First Close" }
     notes { Faker::Company.catch_phrase }
@@ -539,12 +530,11 @@ FactoryBot.define do
     name { ["Tech", "Agri", "FinTech", "SaaS", "Macro", "HealthTech", "EdTech", "Biotech", "E-commerce", "AI/ML", "Clean Energy", "PropTech", "IoT", "Cybersecurity", "Cloud Computing", "Digital Payments", "Blockchain", "Mobility", "Smart Cities", "Robotics", "Renewable Energy", "Telecommunications", "Data Analytics", "InsurTech", "AgriTech", "GreenTech", "MedTech", "LegalTech", "Logistics", "RegTech"].sample + " Fund" }
     details { Faker::Company.catch_phrase }
     entity { Entity.funds.sample }
-    tag_list {  }
-    unit_types {"Series A, Series B, Series C"}
+    tag_list {}
+    unit_types { "Series A, Series B, Series C" }
     currency { ["INR"].sample }
-    json_fields { {from_email: "#{name.parameterize}@#{entity.name.parameterize}.com"} if name && entity }
+    json_fields { { from_email: "#{name.parameterize}@#{entity.name.parameterize}.com" } if name && entity }
   end
-
 
   factory :expression_of_interest do
     investment_opportunity { InvestmentOpportunity.all.sample }
@@ -555,7 +545,7 @@ FactoryBot.define do
     amount_cents { 10e6 * rand(50..100) }
     approved { false }
     verified { false }
-    details { Faker::Company.catch_phrase  }
+    details { Faker::Company.catch_phrase }
   end
 
   IO_TAGS = ["Fintech", "Seed", "Pre Series A", "Bridge", "SAAS", "AgriTech", "eCommerce", "Health Tech"]
@@ -568,8 +558,8 @@ FactoryBot.define do
     last_date { Date.today + 1.month }
     currency { entity.currency }
     tag_list { [IO_TAGS.sample, IO_TAGS.sample].join(",") }
-    details { Faker::Company.catch_phrase  }
-    json_fields { {from_email: "#{company_name.parameterize}@#{entity.name.parameterize}.com"} if company_name && entity }
+    details { Faker::Company.catch_phrase }
+    json_fields { { from_email: "#{company_name.parameterize}@#{entity.name.parameterize}.com" } if company_name && entity }
   end
 
   factory :approval do
@@ -579,15 +569,15 @@ FactoryBot.define do
     entity { Entity.startups.sample }
     approved_count { 0 }
     rejected_count { 0 }
-    response_status { "Approved,Rejected,Pending"}
+    response_status { "Approved,Rejected,Pending" }
   end
 
   factory :e_signature do
     entity { Entity.startups.sample }
     document { FactoryBot.create(:document, entity: entity) }
     email { Faker::Internet.email }
-    position { rand(5) + 1 }
-    signature_type { ["Aadhaar", "Electronic"][rand(2)] }
+    position { rand(1..5) }
+    signature_type { %w[Aadhaar Electronic][rand(2)] }
     status { "" }
   end
 
@@ -603,7 +593,7 @@ FactoryBot.define do
     user { User.all.sample }
     owner { Document.all.sample }
     email { user.email }
-    permissions { [:read, :write] }
+    permissions { %i[read write] }
     entity { owner.entity }
     granted_by { owner.entity.employees.sample }
   end
@@ -612,7 +602,7 @@ FactoryBot.define do
     details { Faker::Company.catch_phrase }
     entity { Entity.startups.sample }
     for_entity { entity.all.sample }
-    owner {for_entity}
+    owner { for_entity }
     completed { rand(2) }
     user { entity.employees.all.sample }
   end
@@ -621,8 +611,8 @@ FactoryBot.define do
     category { "Unlisted" }
     sub_category { "Equity" }
     valuation_date { Date.today - rand(48).months }
-    valuation_cents { rand(1..10) * 100000000 }
-    per_share_value_cents { rand(1..10) * 100000 }
+    valuation_cents { rand(1..10) * 100_000_000 }
+    per_share_value_cents { rand(1..10) * 100_000 }
     report { File.new("public/img/whatsappQR.png", "r") }
   end
 
@@ -631,41 +621,37 @@ FactoryBot.define do
     entity { nil }
   end
 
-
   factory :payment do
     entity { Entity.all.sample }
-    amount { rand(100)*10 + rand(100) * 10 }
+    amount { (rand(100) * 10) + (rand(100) * 10) }
     plan { Entity::PLANS[rand(Entity::PLANS.length)] }
     discount { 0 }
-    reference_number { (0...8).map { (65 + rand(26)).chr }.join }
+    reference_number { (0...8).map { rand(65..90).chr }.join }
     user { entity.employees.sample }
   end
 
-
-
   factory :interest do
-    buyer_entity_name {Faker::Company.name}
-    address {Faker::Address.street_address}
-    city {Faker::Address.city.truncate(20)}
-    demat {Faker::Number.number(digits: 10)}
-    contact_name {Faker::Name.name}
-    email {Faker::Internet.email}
-    PAN { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
-    buyer_signatory_emails {Faker::Internet.email}
+    buyer_entity_name { Faker::Company.name }
+    address { Faker::Address.street_address }
+    city { Faker::Address.city.truncate(20) }
+    demat { Faker::Number.number(digits: 10) }
+    contact_name { Faker::Name.name }
+    email { Faker::Internet.email }
+    PAN { [*('A'..'Z'), *('0'..'9')].sample(10).join }
+    buyer_signatory_emails { Faker::Internet.email }
   end
 
-
   factory :offer do
-    PAN { [*('A'..'Z'),*('0'..'9')].shuffle[0,10].join }
+    PAN { [*('A'..'Z'), *('0'..'9')].sample(10).join }
     address { Faker::Address.full_address }
-    city {Faker::Address.city.truncate(20)}
-    demat {Faker::Number.number(digits: 10)}
-    bank_account_number  {Faker::Bank.account_number}
-    bank_name {Faker::Bank.name}
-    bank_routing_info {Faker::Bank.routing_number}
-    full_name {Faker::Name.first_name + " " + Faker::Name.last_name}
-    ifsc_code {Faker::Bank.swift_bic}
-    seller_signatory_emails {Faker::Internet.email}
+    city { Faker::Address.city.truncate(20) }
+    demat { Faker::Number.number(digits: 10) }
+    bank_account_number { Faker::Bank.account_number }
+    bank_name { Faker::Bank.name }
+    bank_routing_info { Faker::Bank.routing_number }
+    full_name { Faker::Name.first_name + " " + Faker::Name.last_name }
+    ifsc_code { Faker::Bank.swift_bic }
+    seller_signatory_emails { Faker::Internet.email }
   end
 
   factory :secondary_sale do
@@ -673,15 +659,13 @@ FactoryBot.define do
     entity { nil }
     start_date { Time.zone.today }
     offer_end_date { start_date + 1.week }
-    end_date { start_date + (2 + rand(10)).days }
-    percent_allowed { (1 + rand(9)) * 10 }
-    min_price { (1 + rand(9)) * 1000 }
-    max_price { min_price + (1 + rand(9)) * 1000 }
+    end_date { start_date + rand(2..11).days }
+    percent_allowed { rand(1..9) * 10 }
+    min_price { rand(1..9) * 1000 }
+    max_price { min_price + (rand(1..9) * 1000) }
     active { true }
-    support_email {"support@nowhere.com"}
+    support_email { "support@nowhere.com" }
   end
-
-
 
   factory :folder do
     name { Faker::File.dir }
@@ -697,9 +681,8 @@ FactoryBot.define do
     folder { Folder.first }
   end
 
-
   factory :message do
-    user {  }
+    user {}
     content { Faker::Company.catch_phrase }
   end
 
@@ -710,7 +693,7 @@ FactoryBot.define do
     deal_investor { deal.deal_investors.sample }
     by_date { Date.today + rand(10).days }
     # status is now an enum
-    status { ["Incomplete", "Completed"][rand(2)] }
+    status { %w[Incomplete Completed][rand(2)] }
     completed { [true, false][rand(2)] }
     entity_id { deal.entity_id }
   end
@@ -725,9 +708,9 @@ FactoryBot.define do
     entity { deal.entity }
     company_advisor { Faker::Company.name }
     investor_advisor { Faker::Company.name }
-    tier { ["1", "2", "3"][rand(3)] }
+    tier { %w[1 2 3][rand(3)] }
     fee { rand(1..10) * 1000 }
-    tags { ["Lead", "Co-Investor", "Follow-on"][rand(3)] }
+    tags { %w[Lead Co-Investor Follow-on][rand(3)] }
     deal_lead { Faker::Name.name }
     source { Faker::Name.name }
     notes { Faker::Company.catch_phrase }
@@ -745,7 +728,7 @@ FactoryBot.define do
 
   factory :note do
     investor { Investor.all.sample }
-    details {
+    details do
       [
         "investor is keen on the space; have invested in peers globally",
         "investment size over $75m",
@@ -760,13 +743,12 @@ FactoryBot.define do
         "Invested in peers; probably fishing for information ",
         "High energy team; have offered to make introductions with the Silicon valley biggies for US roll-out"
       ].sample
-    }
+    end
     entity_id { investor.entity_id }
     user { investor.entity.employees.sample }
     on { Time.now - rand(120).days }
-    created_at {Time.now - rand(120).days}
+    created_at { Time.now - rand(120).days }
   end
-
 
   factory :investor do
     investor_entity_id { Entity.startups.sample.id }
@@ -775,7 +757,7 @@ FactoryBot.define do
     # pan { investor_entity.pan }
     primary_email { investor_entity.primary_email }
     category { ["Lead Investor", "Co-Investor"][rand(2)] }
-    city {Faker::Address.city.truncate(20)}
+    city { Faker::Address.city.truncate(20) }
   end
 
   factory :user do
@@ -784,10 +766,10 @@ FactoryBot.define do
     last_name  { Faker::Name.last_name }
     email { entity ? "#{first_name.downcase}@#{entity.name.parameterize}.com" : Faker::Internet.email }
     password { "password" }
-    phone { rand(10 ** 10) }
+    phone { rand(10**10) }
     confirmed_at { Time.zone.now }
-    accept_terms {true}
-    permissions {User.permissions.keys}
+    accept_terms { true }
+    permissions { User.permissions.keys }
   end
 
   factory :entity do
@@ -797,36 +779,36 @@ FactoryBot.define do
     category { Faker::Company.industry }
     url { "https://#{Faker::Internet.domain_name}" }
     entity_type { Entity::TYPES[rand(Entity::TYPES.length)] }
-    enable_documents {true}
-    enable_deals {true}
-    enable_investments {true}
-    enable_holdings {true}
-    enable_secondary_sale {true}
-    enable_captable {true}
-    enable_funds {true}
-    enable_account_entries {true}
-    enable_units {true}
-    enable_inv_opportunities {true}
-    enable_fund_portfolios {true}
-    enable_kycs {true}
-    enable_kpis {true}
-    enable_approvals {true}
-    enable_investors {true}
+    enable_documents { true }
+    enable_deals { true }
+    enable_investments { true }
+    enable_holdings { true }
+    enable_secondary_sale { true }
+    enable_captable { true }
+    enable_funds { true }
+    enable_account_entries { true }
+    enable_units { true }
+    enable_inv_opportunities { true }
+    enable_fund_portfolios { true }
+    enable_kycs { true }
+    enable_kpis { true }
+    enable_approvals { true }
+    enable_investors { true }
     currency { ENV["CURRENCY"].split(",")[rand(3)] }
     units { ENV["CURRENCY_UNITS"].split(",")[rand(3)] }
 
     trait :with_exchange_rates do
       after(:create) do |entity|
         ExchangeRate.create([
-            {from: "USD", to: "INR", rate: 81.72, entity:},
-            {from: "INR", to: "USD", rate: 0.012, entity:}
-        ])
+                              { from: "USD", to: "INR", rate: 81.72, entity: },
+                              { from: "INR", to: "USD", rate: 0.012, entity: }
+                            ])
       end
     end
   end
 
   factory :doc_share do
-    document {Document.first} # Ensure a document is created and associated
+    document { Document.first } # Ensure a document is created and associated
     email { Faker::Internet.email }
     email_sent { false }
     view_count { 0 }
@@ -839,5 +821,15 @@ FactoryBot.define do
     period { %w[Week Month Quarter Year].sample }
     tag_list { "tag1, tag2" }
     instructions { Faker::Company.catch_phrase }
+  end
+
+  factory :ratio_formula do
+    entity
+    fund
+    level { "Fund" }
+    ratios { ["XIRR"] }
+    action { "add_cashflow" }
+    account_entry_names { ["Custom Entry"] }
+    period { "all" }
   end
 end

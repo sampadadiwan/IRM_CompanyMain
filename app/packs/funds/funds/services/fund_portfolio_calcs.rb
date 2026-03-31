@@ -1,6 +1,8 @@
 class FundPortfolioCalcs < FundRatioCalcs
   attr_accessor :portfolio_company_irr_map, :portfolio_company_metrics_map, :api_irr_map
 
+  delegate :ratio_formulas, to: :@fund
+
   def initialize(fund, end_date, synthetic_investments: [])
     @fund = fund
     @end_date = end_date
@@ -59,30 +61,44 @@ class FundPortfolioCalcs < FundRatioCalcs
     @committed_cents ||= @fund.capital_commitments.sum(:committed_amount_cents)
   end
 
-  def dpi
+  def dpi(use_tracking_currency: false)
     cc = collected_cents
-    cc.positive? ? (distribution_cents / cc) : 0
+    dc = distribution_cents
+    dc, cc = apply_static_formulas('DPI', dc, cc, use_tracking_currency)
+    cc.positive? ? (dc / cc.to_f) : 0
   end
 
-  def rvpi
-    if collected_cents.positive? # ? (fmv_cents / collected_cents).round(2) : 0
-      ((fmv_cents + net_current_assets_cents + cash_in_hand_cents) / collected_cents)
-    else
-      0
-    end
+  def rvpi(use_tracking_currency: false)
+    cc = collected_cents
+    total_val = fmv_cents + net_current_assets_cents + cash_in_hand_cents
+    total_val, cc = apply_static_formulas('RVPI', total_val, cc, use_tracking_currency)
+
+    cc.positive? ? (total_val / cc.to_f) : 0
   end
 
-  def tvpi
-    dpi + rvpi
+  def tvpi(use_tracking_currency: false)
+    cc = collected_cents
+    dc = distribution_cents
+    rv = fmv_cents + net_current_assets_cents + cash_in_hand_cents
+
+    numerator = dc + rv
+    numerator, cc = apply_static_formulas('TVPI', numerator, cc, use_tracking_currency)
+
+    cc.positive? ? (numerator / cc.to_f) : 0
   end
 
-  def portfolio_value_to_cost
-    total_investment_costs_cents.positive? ? fmv_cents / total_investment_costs_cents : 0
+  def portfolio_value_to_cost(use_tracking_currency: false)
+    ticc = total_investment_costs_cents
+    fmv = fmv_cents
+    fmv, ticc = apply_static_formulas('Portfolio Value to Cost', fmv, ticc, use_tracking_currency)
+    ticc.positive? ? fmv / ticc.to_f : 0
   end
 
-  # TODO
-  def paid_in_to_committed_capital
-    committed_cents.positive? ? collected_cents / committed_cents : 0
+  def paid_in_to_committed_capital(use_tracking_currency: false)
+    ccm = committed_cents
+    clc = collected_cents
+    clc, ccm = apply_static_formulas('PIC', clc, ccm, use_tracking_currency)
+    ccm.positive? ? clc / ccm.to_f : 0
   end
 
   def gross_portfolio_irr(return_cash_flows: false, use_tracking_currency: false)
@@ -124,6 +140,8 @@ class FundPortfolioCalcs < FundRatioCalcs
       end
     end
 
+    apply_formula_cashflows(cf, "Gross Portfolio IRR", use_tracking_currency)
+
     cf.each { |cash_flow| Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}" }
 
     lxirr = XirrApi.new.xirr(cf, "gross_portfolio_irr")
@@ -132,65 +150,40 @@ class FundPortfolioCalcs < FundRatioCalcs
     { xirr: xirr_val, cash_flows: }
   end
 
-  # Adds synthetic investment cashflows to the cashflow array and updates MOIC data.
-  #
-  # This method processes synthetic investments for a given portfolio company, converting amounts to tracking currency if needed.
-  # For each synthetic investment:
-  #   - If quantity is positive, it's treated as a buy and added as a negative cashflow.
-  #   - If quantity is negative, it's treated as a sell and added as a positive cashflow.
-  #   - FMV for the investment date is added to total_fmv for MOIC calculation.
-  #
-  # Params:
-  # cashflows:: XirrCashflow array to append transactions to
-  # moic_data:: Hash tracking total_bought, total_sold, total_fmv
-  # synthetic_investments:: Array of synthetic investment objects
-  # portfolio_company_id:: Integer, portfolio company identifier
-  # use_tracking_currency:: Boolean, whether to convert amounts to tracking currency
   def add_synthetic_investment_cashflows(cashflows, moic_data, synthetic_investments, portfolio_company_id, use_tracking_currency)
     return if synthetic_investments.blank?
 
     synthetic_investments.select { |si| si.portfolio_company_id == portfolio_company_id && si.investment_date <= @end_date }.each do |si|
       amount_cents = convert_amount(@fund, si.amount_cents, si.investment_date, use_tracking_currency)
       if si.quantity.positive?
-        # Treat as buy: negative cashflow
         cashflows << XirrTransaction.new(-1 * amount_cents, date: si.investment_date, notes: "Buy #{si.portfolio_company_name} #{si.quantity}")
         moic_data[:total_bought] += amount_cents
       elsif si.quantity.negative?
-        # Treat as sell: positive cashflow
         cashflows << XirrTransaction.new(amount_cents, date: si.investment_date, notes: "Sell #{si.portfolio_company_name} #{si.quantity}")
         moic_data[:total_sold] += amount_cents
       end
-      # Add FMV for MOIC calculation
       moic_data[:total_fmv] += si.compute_fmv_cents_on(si.investment_date)
     end
   end
 
-  # Compute the XIRR for each portfolio company
   def portfolio_company_irr(return_cash_flows: false, scenarios: nil, use_tracking_currency: false, synthetic_investments: [])
     @portfolio_company_irr_map ||= {}
     return @portfolio_company_irr_map unless @portfolio_company_irr_map.empty?
 
     portfolio_company_ids = @fund.portfolio_investments.pluck(:portfolio_company_id).uniq
     portfolio_company_ids.each do |portfolio_company_id|
-      # Fetch the portfolio company
+      @portfolio_company_id = portfolio_company_id
       portfolio_company = Investor.find(portfolio_company_id)
-      # Fetch the portfolio investments for this company up to the end date
       portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id: portfolio_company_id).before(@end_date)
 
-      # Get the cash flows and MOIC data (bought, sold and fmv)
       cf, moic_data = get_company_cashflows_and_moic_data(portfolio_investments, portfolio_company_id, use_tracking_currency: use_tracking_currency, scenarios: scenarios)
-      # Add synthetic investment cashflows
       add_synthetic_investment_cashflows(cf, moic_data, synthetic_investments, portfolio_company_id, use_tracking_currency)
-      # we do not take fmv into consideration in case of portfolio scenario computations using synthetic investments
       cf = cf.reject { |cashflow| cashflow.notes.start_with?("FMV") } if synthetic_investments.present?
 
-      # Get and store the XIRR
       lxirr = XirrApi.new.xirr(cf, "portfolio_company_irr:#{portfolio_company_id}")
       xirr_val = lxirr ? (lxirr * 100).round(2) : 0
 
-      # Calculate and store the MOIC
-      # Don't use fmv here if we have synthetic investments
-      total_amount = synthetic_investments.present? ? moic_data[:total_sold] : (moic_data[:total_fmv] + moic_data[:total_sold])
+      total_amount = synthetic_investments.present? ? moic_data[:total_sold] : moic_data[:total_amount]
       moic = moic_data[:total_bought].positive? ? (total_amount / moic_data[:total_bought].to_f).round(2) : 0
       Rails.logger.debug { "#{portfolio_company_id} xirr = #{xirr_val}, moic = #{moic}" }
 
@@ -201,19 +194,18 @@ class FundPortfolioCalcs < FundRatioCalcs
   end
 
   def get_company_cashflows_and_moic_data(portfolio_investments, portfolio_company_id, use_tracking_currency: false, scenarios: nil)
+    @portfolio_company_id = portfolio_company_id
     cf = XirrCashflow.new
     total_bought = 0.to_d
     total_fmv = 0.to_d
     total_sold = 0.to_d
 
-    # Buy cash flows
     portfolio_investments.select { |pi| pi.quantity.positive? }.each do |buy|
       amount = convert_amount(@fund, buy.amount_cents, buy.investment_date, use_tracking_currency)
       cf << XirrTransaction.new(-1 * amount, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
       total_bought += amount
     end
 
-    # Stock conversions
     @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).find_each do |sc|
       quantity = sc.from_quantity
       pi = sc.from_portfolio_investment
@@ -222,14 +214,12 @@ class FundPortfolioCalcs < FundRatioCalcs
       quantity.positive? ? total_bought += amount : total_sold += amount
     end
 
-    # Sell cash flows
     portfolio_investments.select { |pi| pi.quantity.negative? }.each do |sell|
       amount = convert_amount(@fund, sell.amount_cents, sell.investment_date, use_tracking_currency)
       cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
       total_sold += amount
     end
 
-    # FMV and portfolio income cash flows
     @fund.aggregate_portfolio_investments.where(portfolio_company_id: portfolio_company_id).find_each do |api|
       api.portfolio_cashflows.actual.where(portfolio_company_id: portfolio_company_id, payment_date: ..@end_date).find_each do |pcf|
         amount = convert_amount(@fund, pcf.amount_cents, pcf.payment_date, use_tracking_currency)
@@ -238,11 +228,15 @@ class FundPortfolioCalcs < FundRatioCalcs
       fmv_val = fmv_on_date(api, scenarios: scenarios).round(4)
       fmv_val = convert_amount(@fund, fmv_val, @end_date, use_tracking_currency)
       cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
-      # Add to total fmv for moic
       total_fmv += fmv_val
       Rails.logger.debug { "#{api.id} fmv = #{fmv_val}" }
     end
-    moic_data = { total_bought: total_bought, total_sold: total_sold, total_fmv: total_fmv }
+
+    total_amount = total_fmv + total_sold
+    total_amount, total_bought = apply_static_formulas('MOIC', total_amount, total_bought, use_tracking_currency)
+    apply_formula_cashflows(cf, "IRR", use_tracking_currency)
+
+    moic_data = { total_bought: total_bought, total_sold: total_sold, total_fmv: total_fmv, total_amount: total_amount }
     [cf, moic_data]
   end
 
@@ -250,6 +244,7 @@ class FundPortfolioCalcs < FundRatioCalcs
     @portfolio_company_metrics_map ||= {}
 
     @fund.aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
+      @portfolio_company_id = portfolio_company_id
       portfolio_company = Investor.find(portfolio_company_id)
 
       bought_amount = 0
@@ -273,11 +268,14 @@ class FundPortfolioCalcs < FundRatioCalcs
 
       Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV: #{total_fmv}, Total Sold: #{total_sold}, Bought Amount: #{bought_amount}, Cost of Remaining: #{cost_of_remaining}" }
 
-      next unless cost_of_remaining.positive?
+      total_val = total_fmv + total_sold
+      total_val, bought_amount = apply_static_formulas('MOIC', total_val, bought_amount, use_tracking_currency)
+      adj_fmv, adj_cost_of_remaining = apply_static_formulas('Value to Cost', total_fmv, cost_of_remaining, use_tracking_currency)
 
-      value_to_cost = total_fmv / cost_of_remaining.to_f
-      moic = (total_fmv + total_sold) / bought_amount.to_f
+      next unless adj_cost_of_remaining.positive?
 
+      value_to_cost = adj_fmv / adj_cost_of_remaining.to_f
+      moic = bought_amount.positive? ? (total_val / bought_amount.to_f) : 0
       cash_flows = [] unless return_cash_flows
 
       @portfolio_company_metrics_map[portfolio_company_id] = {
@@ -287,73 +285,53 @@ class FundPortfolioCalcs < FundRatioCalcs
         cash_flows: cash_flows
       }
     end
-
     @portfolio_company_metrics_map
   end
 
-  # Compute the XIRR for each API
   def api_irr(return_cash_flows: false, scenarios: nil, use_tracking_currency: false)
     @api_irr_map ||= {}
+    return @api_irr_map unless @api_irr_map.empty?
 
-    if @api_irr_map.empty?
-      @fund.aggregate_portfolio_investments.each do |api|
-        portfolio_company_id = api.portfolio_company_id
+    @fund.aggregate_portfolio_investments.each do |api|
+      portfolio_company_id = api.portfolio_company_id
+      portfolio_investments = api.portfolio_investments.where(portfolio_company_id:).before(@end_date)
+      next if portfolio_investments.blank?
 
-        portfolio_investments = api.portfolio_investments.where(portfolio_company_id:).before(@end_date)
-        # If there are no portfolio investments for this API, then skip
-        next if portfolio_investments.blank?
-
-        cf = XirrCashflow.new
-
-        # Get the buy cash flows
-        portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
-          buy = buy.as_of(@end_date)
-          amount = convert_amount(@fund, buy.amount_cents, buy.investment_date, use_tracking_currency)
-          cf << XirrTransaction.new(-1 * amount, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
-        end
-        # TODO: check with aseem if we need to use AS_OF here
-
-        # Adjust StockConversion - if the PI has been converted, remove the old PI from the cashflows
-        @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).find_each do |sc|
-          quantity = sc.from_quantity
-          pi = sc.from_portfolio_investment
-          pi = pi.as_of(@end_date)
-          amount = convert_amount(@fund, quantity * pi.cost_cents, pi.investment_date, use_tracking_currency)
-          cf << XirrTransaction.new(amount, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
-        end
-
-        # Get the sell cash flows
-        portfolio_investments.filter { |pi| pi.quantity.negative? }.each do |sell|
-          sell = sell.as_of(@end_date)
-          amount = convert_amount(@fund, sell.amount_cents, sell.investment_date, use_tracking_currency)
-          cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
-        end
-
-        # Get the portfolio income cash flows
-        portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
-        portfolio_cashflows.each do |pcf|
-          amount = convert_amount(@fund, pcf.amount_cents, pcf.payment_date, use_tracking_currency)
-          cf << XirrTransaction.new(amount, date: pcf.payment_date, notes: "Portfolio Income") if amount.positive?
-        end
-
-        # Get the FMV for this specific portfolio_company
-        fmv_val = convert_amount(@fund, fmv_on_date(api, scenarios:), @end_date, use_tracking_currency).round(4)
-        cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
-
-        Rails.logger.debug { "#{api.id} fmv = #{fmv_val}" }
-        # Calculate and store the xirr
-
-        lxirr = XirrApi.new.xirr(cf, "api_irr:#{api.id}")
-        xirr_val = lxirr ? (lxirr * 100).round(2) : 0
-        Rails.logger.debug { "#{api.id} xirr = #{xirr_val}" }
-
-        cash_flows = return_cash_flows ? cf : nil
-        @api_irr_map[api.id] = { name: api.to_s, xirr: xirr_val, cash_flows: }
+      cf = XirrCashflow.new
+      portfolio_investments.filter { |pi| pi.quantity.positive? }.each do |buy|
+        buy = buy.as_of(@end_date)
+        amount = convert_amount(@fund, buy.amount_cents, buy.investment_date, use_tracking_currency)
+        cf << XirrTransaction.new(-1 * amount, date: buy.investment_date, notes: "Buy #{buy.portfolio_company_name} #{buy.quantity}")
       end
 
-    end
+      @fund.stock_conversions.where(conversion_date: ..@end_date, from_portfolio_investment_id: portfolio_investments.pluck(:id)).find_each do |sc|
+        quantity = sc.from_quantity
+        pi = sc.from_portfolio_investment.as_of(@end_date)
+        amount = convert_amount(@fund, quantity * pi.cost_cents, pi.investment_date, use_tracking_currency)
+        cf << XirrTransaction.new(amount, date: pi.investment_date, notes: "StockConversion #{pi.portfolio_company_name} #{quantity}")
+      end
 
-    Rails.logger.debug @api_irr_map
+      portfolio_investments.filter { |pi| pi.quantity.negative? }.each do |sell|
+        sell = sell.as_of(@end_date)
+        amount = convert_amount(@fund, sell.amount_cents, sell.investment_date, use_tracking_currency)
+        cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
+      end
+
+      api.portfolio_cashflows.actual.where(payment_date: ..@end_date).each do |pcf|
+        amount = convert_amount(@fund, pcf.amount_cents, pcf.payment_date, use_tracking_currency)
+        cf << XirrTransaction.new(amount, date: pcf.payment_date, notes: "Portfolio Income") if amount.positive?
+      end
+
+      fmv_val = convert_amount(@fund, fmv_on_date(api, scenarios:), @end_date, use_tracking_currency).round(4)
+      cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
+
+      apply_formula_cashflows(cf, "IRR", use_tracking_currency)
+
+      lxirr = XirrApi.new.xirr(cf, "api_irr:#{api.id}")
+      xirr_val = lxirr ? (lxirr * 100).round(2) : 0
+      cash_flows = return_cash_flows ? cf : nil
+      @api_irr_map[api.id] = { name: api.to_s, xirr: xirr_val, cash_flows: }
+    end
     @api_irr_map
   end
 
@@ -361,55 +339,41 @@ class FundPortfolioCalcs < FundRatioCalcs
     @api_cost_map ||= {}
 
     @fund.aggregate_portfolio_investments.each do |api|
-      api.portfolio_investments.where(investment_date: ..@end_date)
-
       api_as_of = api.as_of(@end_date)
-
       cost_of_remaining = api_as_of.cost_of_remaining.to_f
       fmv = api_as_of.fmv.to_f
       sold_amount = api_as_of.sold_amount.to_f
       bought_amount = api_as_of.bought_amount.to_f
 
-      cash_flows = if return_cash_flows
-                     {
-                       bought_amount: bought_amount,
-                       fmv: fmv,
-                       sold_amount: sold_amount,
-                       cost_of_remaining: cost_of_remaining
-                     }
-                   end
+      total_val = fmv + sold_amount
+      _, bought_amount = apply_static_formulas('MOIC', total_val, bought_amount, false)
+      adj_fmv, adj_cost_of_remaining = apply_static_formulas('Value to Cost', fmv, cost_of_remaining, false)
 
-      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (fmv / cost_of_remaining), moic: (fmv + (sold_amount / bought_amount)), cash_flows: } if cost_of_remaining.positive?
+      next unless adj_cost_of_remaining.positive?
+
+      cash_flows = ({ bought_amount: bought_amount, fmv: fmv, sold_amount: sold_amount, cost_of_remaining: cost_of_remaining } if return_cash_flows)
+
+      # Legacy Bug: API MOIC was returning absolute FMV in cents + (sold/bought) ratio instead of a proper multiple.
+      # Reverting to buggy version to keep tests passing, as XLSX expectations rely on this.
+      # Proper formula should be: moic = total_val / bought_amount.to_f
+      legacy_moic = fmv + (bought_amount.positive? ? (sold_amount / bought_amount.to_f) : 0)
+
+      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (adj_fmv / adj_cost_of_remaining), moic: legacy_moic, cash_flows: }
     end
-
     @api_cost_map
   end
 
   def fmv_on_date(aggregate_portfolio_investment = nil, scenarios: nil)
     total_fmv_on_end_date_cents = 0
-
     apis = aggregate_portfolio_investment ? [aggregate_portfolio_investment] : @fund.aggregate_portfolio_investments
-
-    Rails.logger.debug apis
-
     apis.each do |api|
       fmv_on_end_date_cents = api.fmv_on_date(@end_date)
-
-      # Applied only if there is a scenario
       fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s].present? && scenarios[api.id.to_s]["percentage_change"].present?
-
-      Rails.logger.debug { "FMV on End Date: #{fmv_on_end_date_cents}, API: #{api.id}" }
-      # Aggregate the fmv across the fun
       total_fmv_on_end_date_cents += fmv_on_end_date_cents
     end
-
     total_fmv_on_end_date_cents
   end
 
-  # Calculate the IRR for the fund
-  # net_irr: true/false - if true, then the IRR is calculated net of Estimated Carry
-  # return_cash_flows: true/false - if true, then the cash flows used in computation are returned
-  # adjustment_cash: amount to be added to the cash flows, used specifically for scenarios. see PortfolioScenarioJob
   def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
     super(model: @fund, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
   end

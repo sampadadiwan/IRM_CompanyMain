@@ -48,7 +48,7 @@ mysql_cmd() {
 ############################################
 # TABLE DEFINITIONS
 ############################################
-TABLES=("access_rights" "account_entries" "aggregate_portfolio_investments" "call_fees" "capital_calls" "capital_commitments" "capital_distribution_payments" "capital_distributions" "capital_remittance_payments" "capital_remittances" "commitment_adjustments" "distribution_fees" "documents" "e_signatures" "exchange_rates" "fees" "folders" "fund_ratios" "fund_unit_settings" "fund_unit_transfers" "fund_units" "funds" "interests" "investment_instruments" "investment_opportunities" "investments" "investor_kpi_mappings" "investor_kycs" "investors" "kpi_reports" "kpis" "kyc_data" "notes" "offers" "portfolio_attributions" "portfolio_cashflows" "portfolio_investments" "scenario_investments" "secondary_sales" "stock_adjustments" "stock_conversions" "tasks" "users" "valuations")
+TABLES=("access_rights" "account_entries" "aggregate_portfolio_investments" "call_fees" "capital_calls" "capital_commitments" "capital_distribution_payments" "capital_distributions" "capital_remittance_payments" "capital_remittances" "commitment_adjustments" "distribution_fees" "documents" "e_signatures" "entities" "exchange_rates" "fees" "folders" "fund_ratios" "fund_unit_settings" "fund_unit_transfers" "fund_units" "funds" "interests" "investment_instruments" "investment_opportunities" "investments" "investor_kpi_mappings" "investor_kycs" "investors" "kpi_reports" "kpis" "kyc_data" "notes" "offers" "portfolio_attributions" "portfolio_cashflows" "portfolio_investments" "scenario_investments" "secondary_sales" "stock_adjustments" "stock_conversions" "tasks" "users" "valuations")
 COLS_access_rights=("id" "access_to_category" "access_to_email" "access_to_investor_id" "access_type" "cascade" "created_at" "deleted_at" "entity_id" "granted_by_id" "metadata" "notify" "owner_id" "owner_type" "parent_access_right_id" "permissions" "updated_at" "user_id")
 TEXT_COLS_access_rights=("access_to_category" "access_to_email" "access_type" "metadata" "owner_type")
 SCHEMA_access_rights='
@@ -659,6 +659,65 @@ INDEX_e_signatures='
   CREATE INDEX "idx_e_signatures_document_id" ON "e_signatures"("document_id");
   CREATE INDEX "idx_e_signatures_entity_id" ON "e_signatures"("entity_id");
   CREATE INDEX "idx_e_signatures_user_id" ON "e_signatures"("user_id");
+'
+COLS_entities=("id" "name" "url" "category" "founded" "created_at" "updated_at" "logo_url" "active" "entity_type" "created_by" "investor_categories" "instrument_types" "s3_bucket" "deleted_at" "investors_count" "investments_count" "deals_count" "deal_investors_count" "documents_count" "total_investments" "is_holdings_entity" "parent_entity_id" "currency" "tasks_count" "pending_accesses_count" "active_deal_id" "equity" "preferred" "options" "percentage_in_progress" "per_share_value_cents" "units" "sub_domain" "logo_data" "activity_docs_required_for_completion" "activity_details_required_for_na" "pan" "permissions" "primary_email" "customization_flags" "root_folder_id" "primary_region_id" "tracking_currency" "support_agents" "domain" "white_label")
+TEXT_COLS_entities=("name" "url" "category" "logo_url" "entity_type" "investor_categories" "instrument_types" "s3_bucket" "currency" "sub_domain" "logo_data" "pan" "primary_email" "tracking_currency" "domain")
+SCHEMA_entities='
+  "id" BIGINT PRIMARY KEY,
+  "name" VARCHAR(255),
+  "url" VARCHAR(255),
+  "category" VARCHAR(255),
+  "founded" DATE,
+  "created_at" DATETIME,
+  "updated_at" DATETIME,
+  "logo_url" TEXT,
+  "active" BOOLEAN,
+  "entity_type" VARCHAR(25),
+  "created_by" INTEGER,
+  "investor_categories" VARCHAR(255),
+  "instrument_types" VARCHAR(255),
+  "s3_bucket" VARCHAR(255),
+  "deleted_at" DATETIME,
+  "investors_count" INTEGER,
+  "investments_count" INTEGER,
+  "deals_count" INTEGER,
+  "deal_investors_count" INTEGER,
+  "documents_count" INTEGER,
+  "total_investments" DECIMAL(20,2),
+  "is_holdings_entity" BOOLEAN,
+  "parent_entity_id" INTEGER,
+  "currency" VARCHAR(10),
+  "tasks_count" INTEGER,
+  "pending_accesses_count" INTEGER,
+  "active_deal_id" INTEGER,
+  "equity" INTEGER,
+  "preferred" INTEGER,
+  "options" INTEGER,
+  "percentage_in_progress" BOOLEAN,
+  "per_share_value_cents" DECIMAL(15,2),
+  "units" INTEGER,
+  "sub_domain" VARCHAR(255),
+  "logo_data" TEXT,
+  "activity_docs_required_for_completion" BOOLEAN,
+  "activity_details_required_for_na" BOOLEAN,
+  "pan" VARCHAR(40),
+  "permissions" BIGINT,
+  "primary_email" VARCHAR(255),
+  "customization_flags" INTEGER,
+  "root_folder_id" BIGINT,
+  "primary_region_id" INTEGER,
+  "tracking_currency" VARCHAR(4),
+  "support_agents" INTEGER,
+  "domain" VARCHAR(255),
+  "white_label" BOOLEAN
+'
+INDEX_entities='
+  CREATE INDEX "idx_entities_name" ON "entities"("name");
+  CREATE INDEX "idx_entities_deleted_at" ON "entities"("deleted_at");
+  CREATE INDEX "idx_entities_parent_entity_id" ON "entities"("parent_entity_id");
+  CREATE INDEX "idx_entities_sub_domain" ON "entities"("sub_domain");
+  CREATE INDEX "idx_entities_pan" ON "entities"("pan");
+  CREATE INDEX "idx_entities_root_folder_id" ON "entities"("root_folder_id");
 '
 COLS_exchange_rates=("id" "as_of" "created_at" "decimal" "document_folder_id" "entity_id" "from" "import_upload_id" "latest" "notes" "rate" "to" "updated_at")
 TEXT_COLS_exchange_rates=("from" "notes" "to")
@@ -1904,7 +1963,9 @@ for table in "${TABLES[@]}"; do
     if [[ "$c" == "entity_id" ]]; then HAS_ENTITY_ID=1; break; fi
   done
 
-  if [[ $HAS_ENTITY_ID -eq 1 ]]; then
+  if [[ "$table" == "entities" ]]; then
+    WHERE_CLAUSE="WHERE \`id\` = ${ENTITY_ID}"
+  elif [[ $HAS_ENTITY_ID -eq 1 ]]; then
     WHERE_CLAUSE="WHERE \`entity_id\` = ${ENTITY_ID}"
   else
     WHERE_CLAUSE="WHERE 1=1"

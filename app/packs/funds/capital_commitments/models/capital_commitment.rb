@@ -225,6 +225,7 @@ class CapitalCommitment < ApplicationRecord
   end
 
   delegate :fund_signatories, to: :fund
+  delegate :ratio_formulas, to: :fund
 
   def to_s
     if investor_kyc.present?

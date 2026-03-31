@@ -2,12 +2,13 @@ class FundRatioCalcs
   # rubocop:disable Metrics/CyclomaticComplexity
   # rubocop:disable Metrics/PerceivedComplexity
   # rubocop:disable Metrics/MethodLength
-  attr_accessor :model
+  attr_accessor :model, :portfolio_company_id
 
   delegate :capital_remittance_payments, to: :model
   delegate :capital_distribution_payments, to: :model
   delegate :aggregate_portfolio_investments, to: :model
   delegate :portfolio_investments, to: :model
+  delegate :ratio_formulas, to: :model
 
   def xirr(model:, net_irr: false, return_cash_flows: false,
            adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
@@ -43,6 +44,8 @@ class FundRatioCalcs
         cf << XirrTransaction.new(-1 * cdp.reinvestment_with_fees_cents, date: cdp.payment_date, notes: "Reinvestment from Distribution #{cdp.id}") if cdp.reinvestment_with_fees_cents != 0
       end
     end
+
+    apply_formula_cashflows(cf, "XIRR", use_tracking_currency)
 
     # Additional Financial Metrics
     Rails.logger.debug { "Adding financial metrics for #{model_type}: #{model} on #{@end_date}" }
@@ -97,6 +100,19 @@ class FundRatioCalcs
   # Returns the MOIC value rounded to 2 decimals, and optionally the cash flows.
   def moic(model:, synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false)
     @model = model
+    total_amount, total_bought, cf = moic_components(synthetic_investments:, use_tracking_currency:, return_cash_flows:)
+
+    # Clear cash flows if not requested to return them
+    cf = nil unless return_cash_flows
+
+    # Return 0 if no investments were bought
+    return 0, cf if total_bought.zero?
+
+    # Return MOIC as ratio rounded to 2 decimals, and cash flows if requested
+    [(total_amount / total_bought.to_f).round(2), cf]
+  end
+
+  def moic_components(synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false)
     cf = XirrCashflow.new
 
     total_bought = 0.to_d
@@ -145,14 +161,9 @@ class FundRatioCalcs
     # Only consider FMV if no synthetic investments are provided
     cf << XirrTransaction.new(total_fmv, date: @end_date, notes: "FMV") if synthetic_investments.blank?
 
-    # Clear cash flows if not requested to return them
-    cf = nil unless return_cash_flows
+    total_amount, total_bought = apply_static_formulas('MOIC', total_amount, total_bought, use_tracking_currency)
 
-    # Return 0 if no investments were bought
-    return 0, cf if total_bought.zero?
-
-    # Return MOIC as ratio rounded to 2 decimals, and cash flows if requested
-    [(total_amount / total_bought).round(2), cf]
+    [total_amount, total_bought, cf]
   end
 
   # Helper for currency conversion
@@ -163,5 +174,73 @@ class FundRatioCalcs
     raise "No exchange rate found for #{model.currency} to #{model.tracking_currency} on #{date}" unless tracking_exchange_rate
 
     (amount_cents * tracking_exchange_rate.rate).round
+  end
+
+  private
+
+  def apply_formula_cashflows(cf, ratio_name, use_tracking_currency)
+    formulas = ratio_formulas.where(action: %w[add_cashflow reduce_cashflow])
+    formulas.each do |formula|
+      next unless Array(formula.ratios).include?(ratio_name)
+
+      entries = get_ratio_formula_entries(formula)
+      entries.each do |ae|
+        amount = use_tracking_currency ? ae.tracking_amount_cents : ae.amount_cents
+        multiplier = formula.action == 'add_cashflow' ? 1 : -1
+        cf << XirrTransaction.new(multiplier * amount, date: ae.reporting_date, notes: "#{formula.action_text} #{ae.name}")
+      end
+    end
+  end
+
+  def get_ratio_formula_entries(formula)
+    scope = AccountEntry.where(entity_id: model.entity_id, fund_id: (model.is_a?(Fund) ? model.id : model.fund_id))
+                        .where(name: formula.account_entry_names, reporting_date: ..@end_date, cumulative: false)
+
+    case formula.level
+    when 'Fund'
+      scope = scope.where(capital_commitment_id: nil)
+    when 'Folio'
+      return [] unless model.is_a?(CapitalCommitment)
+
+      scope = scope.where(folio_id: model.folio_id)
+    when 'PortfolioCompany'
+      # This level might need specific logic depending on where it's called
+      # For now, if we have a portfolio_company context, we filter by it
+      if @portfolio_company_id
+        scope = scope.where(parent_type: 'Investor', parent_id: @portfolio_company_id)
+      else
+        return []
+      end
+    end
+
+    if formula.period == 'as_on'
+      entry = scope.order(reporting_date: :desc).first
+      entry ? [entry] : []
+    else
+      scope.to_a
+    end
+  end
+
+  def apply_static_formulas(ratio_name, numerator, denominator, use_tracking_currency)
+    formulas = ratio_formulas.where(action: %w[add_numerator reduce_numerator add_denominator reduce_denominator])
+    formulas.each do |formula|
+      next unless Array(formula.ratios).include?(ratio_name)
+
+      entries = get_ratio_formula_entries(formula)
+      entries.each do |ae|
+        amount = use_tracking_currency ? ae.tracking_amount_cents : ae.amount_cents
+        case formula.action
+        when 'add_numerator'
+          numerator += amount
+        when 'reduce_numerator'
+          numerator -= amount
+        when 'add_denominator'
+          denominator += amount
+        when 'reduce_denominator'
+          denominator -= amount
+        end
+      end
+    end
+    [numerator, denominator]
   end
 end

@@ -1,0 +1,47 @@
+<% title = (@ratio_formula.new_record? ? "New Ratio Formula" : "Edit Ratio Formula") %>
+<%= render FormCard.new(title: title) do %>
+
+  <%= form_with(model: [@fund, @ratio_formula], local: true) do |f| %>
+    <% if @ratio_formula.errors.any? %>
+      <div id="error_explanation" class="alert alert-danger">
+        <h2><%= pluralize(@ratio_formula.errors.count, "error") %> prohibited this formula from being saved:</h2>
+        <ul>
+          <% @ratio_formula.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= f.label :level %>
+      <%= f.select :level, RatioFormula.level.options, {}, class: "form-control" %>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= f.label :action %>
+      <%= f.select :action, RatioFormula.action.options, {}, class: "form-control" %>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= f.label :ratios %>
+      <%= f.select :ratios, %w[XIRR DPI TVPI MOIC RVPI PIC], { selected: @ratio_formula.ratios }, { multiple: true, class: "form-control select2", data: { placeholder: "Select Ratios" }, name: 'ratio_formula[ratios][]' } %>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= f.label :account_entry_names %>
+      <%= f.select :account_entry_names, @fund.entity.account_entries.pluck(:name).uniq.sort, { selected: @ratio_formula.account_entry_names }, { multiple: true, class: "form-control select2", data: { placeholder: "Select Account Entry Names" } } %>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= f.label :period %>
+      <%= f.select :period, RatioFormula.period.options, {}, class: "form-control" %>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= f.submit t_common(:save), class: "btn btn-outline-primary" %>
+      <%= link_to t_common(:cancel), fund_ratio_formulas_path(@fund), class: "btn btn-outline-secondary" %>
+    </div>
+  <% end %>
+
+<% end %>

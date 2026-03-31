@@ -23,7 +23,11 @@ class PortfolioScenarioJob < ApplicationJob
     xirr, xirr_cash_flows = fpc.xirr(adjustment_cash:, return_cash_flows:)
     moic, moic_cash_flows = fpc.moic(synthetic_investments:, return_cash_flows:)
     moic = moic.round(2).to_f
-    calculations = { xirr: xirr, moic: moic }
+    dpi = fpc.dpi.round(2)
+    rvpi = fpc.rvpi.round(2)
+    tvpi = fpc.tvpi.round(2)
+
+    calculations = { xirr: xirr, moic: moic, dpi: dpi, rvpi: rvpi, tvpi: tvpi }
     calculations[:xirr_cash_flows] = xirr_cash_flows&.to_json if return_cash_flows
     calculations[:moic_cash_flows] = moic_cash_flows&.to_json if return_cash_flows
     calculations[:currency] = fund.currency
@@ -65,6 +69,10 @@ class PortfolioScenarioJob < ApplicationJob
 
     calculations[:xirr_tracking_currency] = xirr_tracking_curr
     calculations[:moic_tracking_currency] = moic_tracking_curr
+    calculations[:dpi_tracking_currency] = fpc.dpi(use_tracking_currency: true).round(2)
+    calculations[:rvpi_tracking_currency] = fpc.rvpi(use_tracking_currency: true).round(2)
+    calculations[:tvpi_tracking_currency] = fpc.tvpi(use_tracking_currency: true).round(2)
+
     # Only include tracking currency cash flows if requested.
     calculations[:xirr_cash_flows] = xirr_cash_flows_tracking_curr&.to_json if return_cash_flows && cashflows_currency.downcase == "tracking"
     calculations[:moic_cash_flows] = moic_cash_flows_tracking_curr&.to_json if return_cash_flows && cashflows_currency.downcase == "tracking"

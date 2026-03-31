@@ -1,0 +1,64 @@
+<div class="container-fluid p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Ratio Formulas for <%= @fund.name %></h1>
+    <% if policy(RatioFormula.new(fund: @fund)).create? %>
+      <%= link_to new_fund_ratio_formula_path(@fund), class: "btn btn-primary" do %>
+        <i class="ti ti-plus"></i> New Ratio Formula
+      <% end %>
+    <% end %>
+  </div>
+  <div class="card">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Level</th>
+            <th>Ratios</th>
+            <th>Action</th>
+            <th>Account Entry Names</th>
+            <th>Period</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @ratio_formulas.any? %>
+            <% @ratio_formulas.each do |formula| %>
+              <tr>
+                <td><%= formula.level_text %></td>
+                <td>
+                  <% Array(formula.ratios).each do |ratio| %>
+                    <span class="badge bg-info-subtle text-info"><%= ratio %></span>
+                  <% end %>
+                </td>
+                <td><%= formula.action_text %></td>
+                <td>
+                  <% Array(formula.account_entry_names).each do |name| %>
+                    <span class="badge bg-secondary-subtle text-secondary"><%= name %></span>
+                  <% end %>
+                </td>
+                <td><%= formula.period_text %></td>
+                <td>
+                  <div class="d-flex gap-2">
+                    <%= link_to fund_ratio_formula_path(@fund, formula), class: "btn btn-outline-info btn-sm", title: "View" do %>
+                      <i class="ti ti-eye"></i>
+                    <% end %>
+                    <%= link_to edit_fund_ratio_formula_path(@fund, formula), class: "btn btn-outline-primary btn-sm", title: "Edit" do %>
+                      <i class="ti ti-edit"></i>
+                    <% end %>
+                    <%= button_to fund_ratio_formula_path(@fund, formula), method: :delete, class: "btn btn-outline-danger btn-sm", form_class: "d-inline", data: { action: "click->confirm#popup", turbo: false }, title: "Delete" do %>
+                      <i class="ti ti-trash"></i>
+                    <% end %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td colspan="6" class="text-center py-4">No ratio formulas found for this fund.</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

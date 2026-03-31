@@ -24,13 +24,15 @@ class MultiSiteUserSyncOrchestrator
 
   def self.sync_all
     @errors = []
+    last_entity_id = nil
     User.syncable.each do |user|
+      last_entity_id = user.entity_id
       # Sync every user, but do it in the same job MultiSiteUserSyncAllJob
       call(user: user, perform_now: true)
     rescue SyncApiClient::FatalError => e
       @errors << { user_id: user.id, email: user.email, error: e.message }
     end
-    EntityMailer.with(error_msg: @errors).notify_errors.deliver_now if @errors.present?
+    EntityMailer.with(error_msg: @errors, entity_id: last_entity_id).notify_errors.deliver_now if @errors.present?
   end
 
   # @param user [User]

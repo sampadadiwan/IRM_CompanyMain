@@ -11,7 +11,7 @@ Given("a Bulk Upload is performed for FundRatios with file {string}") do |file_n
   sleep(10)
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.failed_row_count.should
   ImportUpload.last.status.should == "Completed"
 end
 
@@ -23,7 +23,6 @@ Given("there is a CapitalCommitment with {string}") do |arg|
   investor.investor_name = "Portfolio Company 1"
   investor.save!
 end
-
 
 And("I should find Fund Ratios created with correct data for Fund") do
   visit(fund_path(@fund))
@@ -53,14 +52,14 @@ end
 
 Then("the Fund ratios must be updated") do
   fund_ratio = FundRatio.find_by(name: "Fund Utilization")
-  expect(fund_ratio.value).to(eq(-0.4521e0,))
+  expect(fund_ratio.value).to(eq(-0.4521e0))
   expect(fund_ratio.notes).to(eq("Updated"))
   expect(fund_ratio.label).to(eq("Updated"))
 end
 
-
 Given('given the fund_ratios are computed for the date {string}') do |end_date|
-  FundRatiosJob.perform_now(@fund.id, nil, Date.local_parse(end_date), User.first.id, true, return_cash_flows: true)
+  @fund_ratio_date = Date.local_parse(end_date)
+  FundRatiosJob.perform_now(@fund.id, nil, @fund_ratio_date, User.first.id, true, return_cash_flows: true)
 end
 
 Then('the fund ratios computed must match the ratios in {string}') do |file_name|
@@ -78,7 +77,7 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
     investor_name = user_data["Investor"]&.strip
     name = user_data["Name"]
     end_date = user_data["End Date"]
-    end_date = end_date.is_a?(String) ? Date.local_parse(end_date) : end_date
+    end_date = Date.local_parse(end_date) if end_date.is_a?(String)
 
     cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
     owner = user_data["Owner Id"].present? ? user_data["Owner Type"].constantize.find(user_data["Owner Id"]) : nil
@@ -88,23 +87,24 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
       # puts "Found fund ratio for investor #{investor_name} with end date #{end_date}"
       # ap fund_ratio
       match = fund_ratio.value == user_data["Value"].to_d
-      puts "Fund Ratio #{fund_ratio.name}: #{fund_ratio.owner} #{fund_ratio.value}, Expected Value: #{user_data["Value"].to_d}, Display Value: #{user_data["Display Value"]}, #{match}"
-
-      # fund_ratio.value.should == user_data["Value"].to_d
-      # fund_ratio.display_value.should == user_data["Display Value"]
-      count += 1 if match
+      if match
+        count += 1
+      else
+        puts "MISMATCH: Fund Ratio #{fund_ratio.name} for #{fund_ratio.owner.try(:name) || fund_ratio.owner}"
+        puts "  Expected: #{user_data['Value'].to_d} (Display: #{user_data['Display Value']})"
+        puts "  Actual:   #{fund_ratio.value} (Display: #{fund_ratio.display_value})"
+      end
     else
-      puts "No fund ratio found for row #{user_data}"
-      count += 0
+      puts "NOT FOUND: Fund ratio #{name} for investor #{investor_name} with end date #{end_date}"
+      # count += 0
     end
-
   end
 
   puts "Total Fund Ratios matched: #{count}"
   puts "Total Fund Ratios in DB: #{FundRatio.all.count}"
+
   count.should == FundRatio.all.count
 end
-
 
 Given('I have an Excel file {string}') do |file_path|
   @xls_path = file_path
@@ -124,6 +124,7 @@ When('I read all sheets and compute XIRR') do
       type = @workbook.cell(i, 3)
 
       next if amount.nil? || date.nil?
+
       puts "Row #{i}: Amount: #{amount}, Date: #{date}, Type: #{type}"
 
       if type.to_s.downcase == 'output'
@@ -140,7 +141,7 @@ When('I read all sheets and compute XIRR') do
 
     lxirr = XirrApi.new.xirr(cashflows, "xirr_#{sheet}") || 0
     puts "Computed XIRR: #{lxirr}"
-    computed_xirr = (lxirr).round(2)
+    computed_xirr = lxirr.round(2)
 
     @results << { sheet: sheet, expected: @expected_xirr, actual: computed_xirr }
   end
@@ -150,20 +151,19 @@ Then('each computed XIRR should match the expected output') do
   ap @results
   @results.each do |result|
     expect(result[:actual]).to be_within(0.01).of(result[:expected]),
-      "XIRR mismatch on sheet #{result[:sheet]}: expected #{result[:expected]}, got #{result[:actual]}"
+                               "XIRR mismatch on sheet #{result[:sheet]}: expected #{result[:expected]}, got #{result[:actual]}"
   end
 end
-
 
 Then('the fund ratios must be computed in tracking currency also') do
   tracking_currency = @fund.tracking_currency
   @fund.investors.portfolio_companies.each do |pc|
-    expect(FundRatio.where(owner: pc).where("name like ?", "IRR (#{tracking_currency})%").count).to eq(FundRatio.where(owner: pc).where("name like ?", "IRR%").count/2)
-    expect(FundRatio.where(owner: pc).where("name like ?", "MOIC (#{tracking_currency})%").count).to eq(FundRatio.where(owner: pc).where("name like ?", "MOIC%").count/2)
+    expect(FundRatio.where(owner: pc).where("name like ?", "IRR (#{tracking_currency})%").count).to eq(FundRatio.where(owner: pc).where("name like ?", "IRR%").count / 2)
+    expect(FundRatio.where(owner: pc).where("name like ?", "MOIC (#{tracking_currency})%").count).to eq(FundRatio.where(owner: pc).where("name like ?", "MOIC%").count / 2)
   end
-  @fund.fund_ratios.where(owner: @fund).where("name like ?", "IRR (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "IRR%").count/2)
-  @fund.fund_ratios.where(owner: @fund).where("name like ?", "MOIC (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "MOIC%").count/2)
-  @fund.fund_ratios.where(owner: @fund).where("name like ?", "XIRR (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "XIRR%").count/2)
+  @fund.fund_ratios.where(owner: @fund).where("name like ?", "IRR (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "IRR%").count / 2)
+  @fund.fund_ratios.where(owner: @fund).where("name like ?", "MOIC (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "MOIC%").count / 2)
+  @fund.fund_ratios.where(owner: @fund).where("name like ?", "XIRR (#{tracking_currency})%").count.should eq(@fund.fund_ratios.where(owner: @fund).where("name like ?", "XIRR%").count / 2)
 end
 
 Then('The Portfolio company MOIC ratio can be viewed properly') do
@@ -206,33 +206,34 @@ Then('the FundRatios should be linked to the PortfolioScenario {string} from fil
     folio_id = user_data["Folio No"]
     name = user_data["Ratio Name"]
     end_date = user_data["End Date"]
-    end_date = end_date.is_a?(String) ? Date.local_parse(end_date) : end_date
+    end_date = Date.local_parse(end_date) if end_date.is_a?(String)
     portfolio_scenario_name = user_data["Portfolio Scenario"]
     portfolio_scenario = @fund.portfolio_scenarios.find_by(name: portfolio_scenario_name)
 
     cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
     fund_ratio = FundRatio.find_by(name:, capital_commitment: cc, end_date:)
     owner = if cc.present?
-      cc
-    elsif user_data["Portfolio Company"].present?
-      investor = Investor.find_by(investor_name: user_data["Portfolio Company"])
-      if user_data["Instrument"].present?
-        instrument = investor.investment_instruments.find_by(name: user_data["Instrument"])
-        instrument.aggregate_portfolio_investment.find_by(fund_id: @fund.id)
-      else
-        investor
-      end
-    else
-      @fund
-    end
-    fund_ratio.value.should == user_data["Value"].to_d
-    fund_ratio.portfolio_scenario_id.should == portfolio_scenario.id
-    fund_ratio.scenario.should == user_data["Scenario"]&.strip
+              cc
+            elsif user_data["Portfolio Company"].present?
+              investor = Investor.find_by(investor_name: user_data["Portfolio Company"])
+              if user_data["Instrument"].present?
+                instrument = investor.investment_instruments.find_by(name: user_data["Instrument"])
+                instrument.aggregate_portfolio_investment.find_by(fund_id: @fund.id)
+              else
+                investor
+              end
+            else
+              @fund
+            end
+    fund_ratio.value.should
+    user_data["Value"].to_d
+    fund_ratio.portfolio_scenario_id.should
+    portfolio_scenario.id
+    fund_ratio.scenario.should
+    user_data["Scenario"]&.strip
     fund_ratio.owner.should == owner
-
   end
 end
-
 
 Then('the FundRatios should be have owner from file {string}') do |file_name|
   file = File.open("./public/sample_uploads/#{file_name}", "r")
@@ -254,29 +255,31 @@ Then('the FundRatios should be have owner from file {string}') do |file_name|
     cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
     fund_ratio = FundRatio.find_by(name:, capital_commitment: cc, end_date:)
     owner = if folio_id.present?
-      cc
-    elsif user_data["Portfolio Company"].present?
-      investor = Investor.find_by(investor_name: user_data["Portfolio Company"])
-      if user_data["Instrument"].present?
-        instrument = investor.investment_instruments.find_by(name: user_data["Instrument"])
-        instrument.aggregate_portfolio_investment.find_by(fund_id: @fund.id)
-      else
-        investor
-      end
-    else
-      @fund
-    end
+              cc
+            elsif user_data["Portfolio Company"].present?
+              investor = Investor.find_by(investor_name: user_data["Portfolio Company"])
+              if user_data["Instrument"].present?
+                instrument = investor.investment_instruments.find_by(name: user_data["Instrument"])
+                instrument.aggregate_portfolio_investment.find_by(fund_id: @fund.id)
+              else
+                investor
+              end
+            else
+              @fund
+            end
 
-    fund_ratio.value.should == user_data["Value"].to_d
+    fund_ratio.value.should
+    user_data["Value"].to_d
+    fund_ratio.display_value.should
     if fund_ratio.name.include?("IRR") || ["XIRR", "Fund Utilization", "Gross Portfolio IRR"].include?(fund_ratio.name)
-      fund_ratio.display_value.should == "#{user_data['Value'].to_d.to_f.round(2)} %"
+      "#{user_data['Value'].to_d.to_f.round(2)} %"
     else
-      fund_ratio.display_value.should == "#{user_data['Value'].to_d.to_f.round(2)} x"
+      "#{user_data['Value'].to_d.to_f.round(2)} x"
     end
     fund_ratio.portfolio_scenario_id.should == portfolio_scenario.id if portfolio_scenario.present?
-    scenario = user_data["Scenario"].present? ? user_data["Scenario"].strip : "Default"
-    fund_ratio.scenario.should == scenario
-    fund_ratio.end_date.should == end_date
+    user_data["Scenario"].present? ? user_data["Scenario"].strip : "Default"
+    fund_ratio.scenario.should
+    fund_ratio.end_date.should
     fund_ratio.owner.should == owner
   end
 end

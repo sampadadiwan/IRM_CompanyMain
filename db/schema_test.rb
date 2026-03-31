@@ -2992,7 +2992,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_092906) do
     t.index ["entity_id"], name: "index_quick_links_on_entity_id"
   end
 
-  create_table "regulatory_reports", force: :cascade do |t|
+  create_table "ratio_formulas", charset: "utf8mb4",  force: :cascade do |t|
+    t.json "account_entry_names"
+    t.string "action"
+    t.datetime "created_at", null: false
+    t.datetime "deleted_at"
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.string "level"
+    t.string "period"
+    t.json "ratios"
+    t.datetime "updated_at", null: false
+    t.index ["deleted_at"], name: "index_ratio_formulas_on_deleted_at"
+    t.index ["entity_id"], name: "index_ratio_formulas_on_entity_id"
+    t.index ["fund_id"], name: "index_ratio_formulas_on_fund_id"
+  end
+
+  create_table "regulatory_reports", charset: "utf8mb4",  force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
