@@ -25,15 +25,21 @@ class ValueBridgeService
   VALUE_BRIDGE_FIELDS = ["Revenue", "EBITDA Margin", "Valuation Multiple"].freeze
   KEY_FIELDS = ["EBITDA", "Enterprise Value", "Enterprise Value Change"].freeze
 
-  attr_accessor :value_bridge_fields, :key_fields
+  attr_accessor :value_bridge_fields, :key_fields, :value_bridge_custom_fields
 
   def initialize(investment_date_valuation, analysis_date_valuation, value_bridge_fields: VALUE_BRIDGE_FIELDS, moic: false)
     @investment_date_valuation = investment_date_valuation
     @analysis_date_valuation = analysis_date_valuation
     @value_bridge_fields = value_bridge_fields.presence || VALUE_BRIDGE_FIELDS
-    @key_fields = @value_bridge_fields + KEY_FIELDS
+
+    # Fetch custom fields for the value bridge if they exist
+    @value_bridge_custom_fields = FormCustomField.joins(:form_type).where(form_type:{entity_id: @investment_date_valuation.entity_id, name: "Valuation"}).where(form_custom_fields: {label: @value_bridge_fields + KEY_FIELDS}).index_by { |f| f.label }
+
+    @key_fields =  (@value_bridge_fields + KEY_FIELDS).uniq
+
     @moic = moic
     Rails.logger.debug { "ValueBridgeService: value_bridge_fields = #{@value_bridge_fields}" }
+    ap @value_bridge_custom_fields
   end
 
   # Example Input:
@@ -98,13 +104,14 @@ class ValueBridgeService
     bridge = {}
     bridge["Entry"] = @investment_date_valuation
     prev_valuation = @investment_date_valuation.dup
-    @value_bridge_fields.each do |bridge_field|
+    @value_bridge_fields.each_with_index do |bridge_field, index|
       # Start from the prev valuation
       valuation = prev_valuation.dup
-      bridge_field_name = FormCustomField.to_name(bridge_field)
+      bridge_field_name = @value_bridge_custom_fields[bridge_field]&.name || FormCustomField.to_name(bridge_field)
       # Set te value of the bridge field in the current valuation to the value of the analysis date valuation
       valuation.json_fields[bridge_field_name] = @analysis_date_valuation.json_fields[bridge_field_name]
-      Rails.logger.debug { "ValueBridgeService:  bridge_field_name = #{bridge_field_name} value = #{valuation.json_fields[bridge_field_name]}" }
+      Rails.logger.debug { "ValueBridgeService: index = #{index}, valuation_id = #{valuation.id},  bridge_field_name = #{bridge_field_name}, value = #{valuation.json_fields[bridge_field_name]}, all = #{valuation.json_fields}" }
+
       # Hack for fx_rates dependent on valuation date
       if bridge_field_name == "fx_rate"
         # The fx rate is dependent on the valuation_date, so we copy it over

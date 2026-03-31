@@ -58,11 +58,12 @@
                 <% bridge_fields.each_with_index do |bridge_field, idx| %>
                     <td>
                         <%
-                            bridge_field_name = FormCustomField.to_name(bridge_field)
-                            key_name = FormCustomField.to_name(key)
+                            key_name = @value_bridge_service.value_bridge_custom_fields[key]&.name || FormCustomField.to_name(key)
                         %>
                         <%= @bridge[bridge_field].json_fields[key_name] %>
-
+                        <% if params[:debug] && @bridge[bridge_field].json_fields[key_name].blank? %>
+                            key <%= key %>, key_name <%= key_name %>, bridge_field <%= bridge_field %>
+                        <% end %>
                     </td>
                 <% end %>
             </tr>
