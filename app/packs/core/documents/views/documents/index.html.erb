@@ -1,16 +1,17 @@
-<% frame_id = params[:frame_id] || "documents_tree_frame" %>
+<% frame_id = params[:widget_id].present? ? "documents_tree_frame_#{params[:widget_id]}" : "documents_tree_frame" %>
+<% documents_frame_id = params[:widget_id].present? ? "documents_frame_#{params[:widget_id]}" : "documents_frame" %>
 <%= render ReportingComponent.new do %>
     <% if params[:no_folders].present? %>
-        <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+        <%= turbo_frame_tag documents_frame_id, target: "_top" do %>
             <% @pagy, @documents = pagy(@documents) if params[:all].blank? %>
 
-            <%= render "layouts/filter", associations: [:folder], hidden_fields: {no_folders: true, folder_id: params[:folder_id]} %>
+            <%= render "layouts/filter", associations: [:folder], hidden_fields: {no_folders: true, folder_id: params[:folder_id], widget_id: params[:widget_id]} %>
 
             <%= render "/documents/index", documents: @documents, entity: @entity, owner: @owner %>
 
              <div class="d-flex justify-content-between align-items-center">
                 <%= raw pagy_info(@pagy) %>
-                <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="documents_frame" data-remote="true")) %>
+                <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{documents_frame_id}" data-remote="true")) %>
             </div>
         <% end %>
 
@@ -21,9 +22,10 @@
 
     <% else %>
         <% cache_if((current_user.entity_id == @entity&.id && params.blank?), [@entity, current_user]) do %>
-            <%= turbo_frame_tag "documents_tree_frame", target: "_top" do %>
+            <%= turbo_frame_tag frame_id, target: "_top" do %>
                 <%= render "/documents/tree_view", documents: @documents, entity: @entity,
-                    folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders %>
+                    folders: @folders, show_steps: @show_steps, owner: @owner, no_folders: @no_folders,
+                    widget_id: params[:widget_id] %>
             <% end %>
         <% end %>
     <% end %>

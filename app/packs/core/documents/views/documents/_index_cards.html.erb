@@ -1,5 +1,6 @@
 <% per_row = (params[:per_row] || 3).to_i.clamp(1, 6) %>
-<% frame_id = (params[:frame_id] || "documents_tree_frame").gsub(/[^a-z0-9_-]/i, "") %>
+<% frame_id = (params[:widget_id].present? ? "documents_tree_frame_#{params[:widget_id]}" : "documents_tree_frame").gsub(/[^a-z0-9_-]/i, "") %>
+
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <% header = params[:title].presence || "Documents" %>

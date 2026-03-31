@@ -9,10 +9,9 @@
   when show_owner is true - we show the owner of the document (eg. Investor or Valuation) in the document card
   when show_tags is true - we show the tags of the document in the document card
   per page and per_row can be used to control the pagination and layout of the document cards
-  frame_id can be used to set the id of the turbo frame for pagination to work correctly when there are multiple document widgets on the same page
+  widget_id (from widget.id) is used to generate a unique turbo frame id so pagination works correctly when there are multiple document widgets on the same page
  %>
 <% args ||= {} %>
-<% frame_id = "documents_tree_frame_#{widget.id}" %>
 <% params = {entity_id: @investor.entity_id}
   params[:owner_type] = args[:owner_type] if args[:owner_type].present?
   if args[:owner_id].present?
@@ -29,8 +28,9 @@
   params[:show_owner] = args[:show_owner] unless args[:show_owner].nil?
   params[:show_tags] = args[:show_tags] unless args[:show_tags].nil?
   params[:per_row] = args[:per_row] if args[:per_row].present?
-  params[:frame_id] = frame_id
+  params[:widget_id] = widget.id
 %>
+<% outer_frame_id = "documents_tree_frame_#{widget.id}" %>
 <% uri = params[:card_view] ? URI(documents_path(params)) : URI(folder_documents_path(params)) %>
 
 <%= render(
@@ -42,7 +42,7 @@
     ) do
 %>
 
-    <%= turbo_frame_tag frame_id, target: "_top", src: "#{uri.to_s}" do %>
+    <%= turbo_frame_tag outer_frame_id, target: "_top", src: "#{uri.to_s}" do %>
     <% end %>
 
 <% end %>

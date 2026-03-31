@@ -1,4 +1,7 @@
 <% no_folders ||= false; show_steps = true if show_steps.nil? %>
+<% widget_id ||= nil %>
+<% tree_view_id = widget_id.present? ? "tree_view_#{widget_id}" : "tree_view" %>
+<% documents_frame_id = widget_id.present? ? "documents_frame_#{widget_id}" : "documents_frame" %>
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
 
 <div class="row">
@@ -12,10 +15,10 @@
                 <span class="m-0 font-weight-bold text-primary">Folders</span>
             </div>
             <div class="card-body">
-                <div id="tree_view" class="tree_view" data-controller="treeview">
+                <div id="<%= tree_view_id %>" class="tree_view" data-controller="treeview" data-treeview-documents-frame-id-value="<%= documents_frame_id %>">
                     <% if params[:page].blank? %>
                         <% folders = get_tree_view_folders(params, current_user, @entity, @documents) %>
-                        <%= render "folders/tree_view", folders: folders  %>
+                        <%= render "folders/tree_view", folders: folders, widget_id: widget_id  %>
                     <% end %>
                 </div>
             </div>
@@ -41,13 +44,13 @@
                 </div>
             </div>
             <div class="card-body">
-                <%= turbo_frame_tag "documents_frame", target: "_top" do %>
+                <%= turbo_frame_tag documents_frame_id, target: "_top" do %>
                     <%
                         documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
                         @pagy, documents = pagy(documents) if params[:all].blank?
                     %>
                     <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
-                    <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="documents_frame" data-remote="true")) if @pagy %>
+                    <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{documents_frame_id}" data-remote="true")) if @pagy %>
                 <% end %>
             </div>
         </div>
