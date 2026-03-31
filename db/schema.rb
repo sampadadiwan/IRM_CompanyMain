@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_31_092906) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_31_155328) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1395,6 +1395,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_092906) do
     t.datetime "created_at", null: false
     t.integer "created_by"
     t.string "currency", limit: 10
+    t.string "custom_css", limit: 20
     t.integer "customization_flags", default: 0
     t.integer "deal_investors_count", default: 0, null: false
     t.integer "deals_count", default: 0, null: false

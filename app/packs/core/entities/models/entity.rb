@@ -22,6 +22,7 @@ class Entity < ApplicationRecord
   validates :entity_type, length: { maximum: 25 }
   validates :currency, length: { maximum: 10 }
   validates :pan, length: { maximum: 40 }
+  validates :custom_css, length: { maximum: 20 }
   normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
   has_rich_text :details

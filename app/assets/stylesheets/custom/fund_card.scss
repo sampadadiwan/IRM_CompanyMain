@@ -1,23 +1,6 @@
 @import "base_card";
 
-// Note: Variable definitions are handled by base_card's mixin if included here,
-// but since we are likely loading both stylesheets, or they might be independent,
-// we should ensure the variables are available.
-// However, since investment_opportunity_card.scss already includes them at root,
-// and this file previously adapted them, we can rely on the shared variables
-// if they are loaded together. If this file is used independently, we should
-// include the mixin. For safety, we can include the mixin here too or rely on the fact
-// that they use the same variable names now.
-//
-// Assuming standard Rails asset pipeline or Webpack where these might be compiled together
-// or separately. To be safe and follow the pattern, I will not re-declare :root here
-// if I assume they are global. But the previous file had them locally scoped or
-// repeated. The best practice with the mixin is to include it if it's the main file entry point.
-// Since I don't know the exact entry point structure, I will NOT re-emit :root variables
-// if they are already expected to be global from the other file, BUT the safer bet for
-// modularity is that this file should work on its own.
-//
-// Let's just use the variables defined in base_card.
+@include card-theme-variables;
 
 .fund-card {
   @include card-base; // Default hover translate is -4px

@@ -37,7 +37,8 @@ class EntityDashboard < Administrate::BaseDashboard
     permissions: ActiveFlagField,
     customization_flags: ActiveFlagField,
     support_agents: ActiveFlagField,
-    white_label: Field::BooleanEmoji
+    white_label: Field::BooleanEmoji,
+    custom_css: Field::String
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -64,6 +65,7 @@ class EntityDashboard < Administrate::BaseDashboard
     sub_domain
     domain
     white_label
+    custom_css
     url
     category
     permissions
@@ -95,6 +97,7 @@ class EntityDashboard < Administrate::BaseDashboard
     sub_domain
     domain
     white_label
+    custom_css
     url
     currency
     tracking_currency
@@ -133,6 +136,6 @@ class EntityDashboard < Administrate::BaseDashboard
 
   def permitted_attributes(action = nil)
     # This is to enable the custom_flags field to be editable
-    super + [permissions: [], customization_flags: [], support_agents: []] # -- Adding our now removed field to the permitted list
+    super + [{ permissions: [], customization_flags: [], support_agents: [] }] # -- Adding our now removed field to the permitted list
   end
 end

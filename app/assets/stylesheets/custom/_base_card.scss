@@ -3,9 +3,9 @@
 
 @mixin card-theme-variables {
   :root {
-    --card-primary: #5d87ff; // Default (Blue_Theme)
-    --card-secondary: #49beff;
-    --card-primary-rgb: 93, 135, 255;
+    --card-primary: var(--bs-primary, #5d87ff); // Use system primary if available
+    --card-secondary: var(--bs-secondary, #49beff);
+    --card-primary-rgb: var(--bs-primary-rgb, 93, 135, 255);
   }
 
   [data-color-theme="Blue_Theme"] {
