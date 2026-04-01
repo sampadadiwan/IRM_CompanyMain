@@ -5,7 +5,7 @@ This guide explains how to use the **Ratio Formulas** feature to customize finan
 ---
 
 ## 1. Overview
-By default, the system calculates ratios using standard components (Capital Calls, Distributions, FMV, Cash in Hand, and Net Current Assets). The **Ratio Formulas** feature allows you to override or supplement these calculations by defining rules that "Add" or "Reduce" specific **Account Entry** values.
+By default, the system calculates ratios using standard components (Capital Calls, Distributions, FMV, Cash in Hand, and Net Current Assets). The **Ratio Formulas** feature allows you to **supplement** these calculations by defining rules that "Add" or "Reduce" specific **Account Entry** values. These formulas are applied **in addition** to the standard components.
 
 Rules are defined **per Fund** and can target different levels of calculation (Fund, Folio, or Portfolio Company).
 
@@ -44,6 +44,7 @@ When you create a "New Ratio Formula," you define the following attributes:
 ---
 
 ## 4. How the Logic Works
+*   **Sequential Application (Additive)**: Ratio formulas are applied **in addition** to the standard terminal value components (FMV, Cash in Hand, Net Current Assets, and Estimated Carry). Defining a formula does not disable the automatic inclusion of these components.
 *   **Fallback**: If a fund has **no rules** defined for "Cash In Hand" or "Net Current Assets," the system uses the default hardcoded logic. As soon as you define a rule for a specific ratio (e.g., DPI), the system switches to your custom rules for that ratio.
 *   **Filtering**: The system only picks up **non-cumulative** account entries to avoid double-counting.
 *   **Currency**: Amounts are automatically converted to the appropriate currency (Tracking Currency or Base Currency) using the exchange rate on the entry's reporting date.
