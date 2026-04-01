@@ -13,6 +13,17 @@
 
 
 
+   <%# Show card if any of the following conditions are met - if any new condition is added on the page to show any content it must be added to the show_card condition to avoid showing a blank card with no information %>
+   <%
+      show_card = @document.orignal ||
+                  ENV['PDF_TRON'] == 'false' ||
+                  @document.entity_id == current_user&.entity_id ||
+                  @document.text.present? ||
+                  @document.signature_enabled ||
+                  @document.template_docs_to_append.present?
+   %>
+
+   <% if show_card %>
    <div class="row">
 
       <div class="col-lg-12 mb-4">
@@ -211,6 +222,7 @@
          </div>
       </div>
    </div>
+   <% end %>
 
 
    <% if current_user %>

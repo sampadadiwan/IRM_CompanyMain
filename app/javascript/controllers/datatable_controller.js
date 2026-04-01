@@ -45,36 +45,18 @@ export default class extends Controller {
       });
 
       // Ensure DataTable is destroyed, else it gets duplicated
-      this._turboBeforeCacheHandler = function() {
+      $(document).on('turbo:before-cache', function() {
         $.each( table, function( key, value ) {
           if ( $.fn.dataTable.isDataTable( value ) ) {
             value.destroy();
           }
         });
-      };
-      $(document).one('turbo:before-cache', this._turboBeforeCacheHandler);
+      });
 
       let searchTerm = $("#search_term");
       if (searchTerm.length > 0) {
         table.search(searchTerm.val()).draw();
       }
-
-      this._table = table;
-  }
-
-  disconnect() {
-    if (this._turboBeforeCacheHandler) {
-      $(document).off('turbo:before-cache', this._turboBeforeCacheHandler);
-      this._turboBeforeCacheHandler = null;
-    }
-    if (this._table) {
-      $.each(this._table, function(key, value) {
-        if ($.fn.dataTable.isDataTable(value)) {
-          value.destroy();
-        }
-      });
-      this._table = null;
-    }
   }
 
   responsive() {
