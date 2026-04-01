@@ -10,14 +10,48 @@
 
   # Check if report_id is passed to get grid view preferences
   report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
+
   grid_view_preferences = nil
   if report.present?
     grid_view_preferences = report.grid_view_preferences
   end
+
+  # Extract available currencies from attributes
+  available_currencies = []
+  entity_currency = current_user&.entity&.currency || 'USD'
+
+  attributes.each do |attr|
+    attr_key = attr.to_s.split(".")[-1]
+    if attr_key =~ /(.+)_([a-z]{3})$/i
+      currency_code = $2.upcase
+      available_currencies << currency_code if currency_code.length == 3
+    end
+  end
+
+  available_currencies.uniq!
+  # Always include entity currency as the base option
+  available_currencies << entity_currency unless available_currencies.include?(entity_currency)
+  available_currencies.sort!
 %>
 
+<% if available_currencies.length > 1 %>
+  <div class="mb-3" data-controller="valuation-currency-filter" data-valuation-currency-filter-entity-currency-value="<%= entity_currency %>">
+    <div class="d-flex justify-content-end mb-3">
+      <label for="valuation_currency_select" class="me-2 align-self-center mb-0">Show currency:</label>
+      <select
+        id="valuation_currency_select"
+        class="form-select form-select-sm"
+        style="min-width:150px"
+        data-valuation-currency-filter-target="select"
+        data-action="change->valuation-currency-filter#applyFilter">
+        <% available_currencies.each do |currency| %>
+          <option value="<%= currency %>" <%= 'selected' if currency == entity_currency %>><%= currency %></option>
+        <% end %>
+      </select>
+    </div>
+<% end %>
 
-<table class="table table-bordered table-striped datatable">
+<table class="table table-bordered table-striped datatable"<%= ' data-valuation-currency-filter-entity-currency-value="' + entity_currency + '"' if available_currencies.length > 1 %>>
   <thead>
     <tr>
       <th>Instrument</th>
@@ -31,19 +65,41 @@
     <% instruments.each do |instrument| %>
       <% attributes.each do |attr| %>
         <% attr_key = attr.to_s.split(".")[-1] %>
-        <tr>
+        <%
+
+          # Extract currency from attribute key if present (e.g., fmv_usd -> USD)
+          currency_match = attr_key.match(/(.+)_([a-z]{3})$/i)
+          attr_currency = currency_match ? currency_match[2].upcase : nil
+          is_base_attr = attr_currency.nil?
+
+          # Get the attribute label from the latest valuation for this instrument
+          latest_valuation = valuations.select { |v| v.investment_instrument == instrument }
+                                       .max_by(&:valuation_date)
+
+          if grid_view_preferences.present?
+            gvp = grid_view_preferences.find{|gvp|  [attr_key, "custom_fields.#{attr_key}"].include?(gvp.key) }
+            attr_label = gvp&.label || (latest_valuation&.custom_field_label(attr_key) || attr_key.humanize)
+          else
+            attr_label = latest_valuation&.custom_field_label(attr_key) || attr_key.humanize
+          end
+
+          # Determine if field should be filtered by currency
+          # Exclude fields with "multiple" or "holding" in their name (case-insensitive)
+          is_excluded_field = (attr_key =~ /multiple|holding/i) || (attr_label.to_s =~ /multiple|holding/i)
+
+          # Filter fields that have currency suffixes (_usd, _inr, etc.)
+          # OR are FMV/Equity/Co_valuations related (both base and currency versions)
+          has_currency_suffix = !is_base_attr
+          is_value_metric = (attr_key =~ /fmv|fair.*market.*value|equity|book.*value|co_valuation/i) ||
+                           (attr_label.to_s =~ /fmv|fair.*market.*value|equity.*value|book.*value|co.*valuation/i)
+
+          # Apply filter if: (has currency suffix OR is a value metric) AND not excluded AND multiple currencies available
+          should_filter = (has_currency_suffix || is_value_metric) && !is_excluded_field && available_currencies.length > 1
+        %>
+        <tr <%= should_filter ? "data-valuation-currency-filter-target=\"row\" data-row-currency=\"#{attr_currency}\" data-is-base-row=\"#{is_base_attr}\" data-full-attr-label=\"#{h(attr_label)}\"".html_safe : '' %>>
           <td><%= link_to instrument.name, instrument if instrument %></td>
           <td>
-            <!-- Use the first valuation to get the custom field label -->
-            <% first_valuation = valuations[0] %>
-            <% if grid_view_preferences.present? %>
-              <!-- Check for custom label in grid view preferences --->
-              <% gvp = grid_view_preferences.find{|gvp|  [attr_key, "custom_fields.#{attr_key}"].include?(gvp.key) } %>
-              <%= gvp&.label || first_valuation.custom_field_label(attr_key) %>
-            <% else %>
-              <!-- Default to valuation's custom field label --->
-              <%= first_valuation.custom_field_label(attr_key) %>
-            <% end %>
+            <%= attr_label %>
           </td>
           <% ordered_valuation_dates.each do |day| %>
             <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>
@@ -64,3 +120,7 @@
     <% end %>
   </tbody>
 </table>
+
+<% if available_currencies.length > 1 %>
+  </div>
+<% end %>
