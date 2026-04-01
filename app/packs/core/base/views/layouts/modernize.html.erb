@@ -22,8 +22,8 @@
   <link rel="stylesheet" href="/modernize/css/styles.css" />
 
 
-  <% if @current_entity && @current_entity.custom_css.present? %>
-    <link rel="stylesheet" href="/css/<%= @current_entity.custom_css %>" />
+  <% if (@current_entity && @current_entity.custom_css.present?) || params[:custom_css].present? %>
+    <link rel="stylesheet" href="/css/<%= params[:custom_css] || @current_entity&.custom_css %>" />
   <% end %>
 
 
