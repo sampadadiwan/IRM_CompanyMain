@@ -63,7 +63,7 @@
         <%= error %>
       </div>
     <% else %>
-      <div class="row g-4">
+      <div class="row">
         <% cards_data.each do |card_data| %>
           <%= render(NumberStatsComponent.new(
                       path: card_data[:path],

@@ -1,10 +1,10 @@
 <!-- app/components/fund_card_component/fund_card_component.html.erb -->
-<div class="<%=@css_class%> col-sm col-md">
+<div class="<%=@css_class%>">
   <% if @path %>
     <a href="<%= @path %>">
   <% end %>
-    <div class="card">
-      <div class="card-body">
+    <div class="card p-3 m-2 bg-white border shadow-sm rounded-3">
+      <div class="card-body p-4">
         <div class="d-flex align-items-center mb-3">
           <div>
             <% if @raw_amount %>
