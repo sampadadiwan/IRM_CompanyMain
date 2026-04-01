@@ -753,7 +753,8 @@ Then('The Portfolio Scenario Should be finalized') do
   expect(@portfolio_scenario.fund_ratios.count).to be > 0
   portfolio_companies_ids = @portfolio_scenario.fund.portfolio_investments.pluck(:portfolio_company_id).uniq
   per_company_fund_ratios = 2
-  fund_ratios_count = 2
+  # XIRR MOIC DPI RVPI TVPI
+  fund_ratios_count = 5
   expect(@portfolio_scenario.fund_ratios.count).to eq((portfolio_companies_ids.count * per_company_fund_ratios) + fund_ratios_count)
   @portfolio_scenario.fund_ratios.each do |fr|
     expect(fr.end_date).to be_present
@@ -770,7 +771,8 @@ Then('The Portfolio Scenario Should be finalized in tracking currency') do
   expect(@portfolio_scenario.fund_ratios.count).to be > 0
   portfolio_companies_ids = @portfolio_scenario.fund.portfolio_investments.pluck(:portfolio_company_id).uniq
   per_company_fund_ratios = 4
-  fund_ratios_count = 4
+  # XIRR MOIC DPI RVPI TVPI in normal and tracking currency
+  fund_ratios_count = 10
   expect(@portfolio_scenario.fund_ratios.count).to eq((portfolio_companies_ids.count * per_company_fund_ratios) + fund_ratios_count)
   expect(page).to have_content("Fund Ratios")
   # Half the fund ratios should be in USD
