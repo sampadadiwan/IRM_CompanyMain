@@ -6,6 +6,10 @@
       begin
         # How many decimals to show in the stats
         decimals ||= params[:decimals]&.to_i || 2
+        widget_size ||= "col-md-12"
+        if widget_size == "col-md-8"
+          widget_size = "col-md-6"
+        end
 
         if tracking_currency.present? && portfolio_company.entity.tracking_currency.present?
           target_currency = portfolio_company.entity.tracking_currency
@@ -59,14 +63,15 @@
         <%= error %>
       </div>
     <% else %>
-      <div class="row">
+      <div class="row g-4">
         <% cards_data.each do |card_data| %>
           <%= render(NumberStatsComponent.new(
                       path: card_data[:path],
                       amount: card_data[:stat],
                       subtitle: card_data[:subtitle],
                       progress_bar_color: card_data[:progress_bar_color],
-                      text_info: card_data[:text_info]
+                      text_info: card_data[:text_info],
+                      css_class: widget_size,
           )) %>
         <% end %>
       </div>

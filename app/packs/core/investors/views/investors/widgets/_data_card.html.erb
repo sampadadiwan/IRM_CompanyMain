@@ -1,46 +1,50 @@
 <%
-  widget_size ||= "col-md-6"
-  name ||= nil
+  widget_size ||= "col-md-5"
+  name ||= "Company Overview"
   args ||= {}
   investor = @investor
   #  fields have lable and key
   #  Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder
   fields_to_display = args[:fields] ? args[:fields].split(",").map { |field| field.strip.split(":") } : []
   uri_params ||= {}
-  cols = args[:cols] || 2
+  cols = 1
 %>
 
-
-<%= render ToggleCard.new(title: @investor.investor_name, css_class: "show_investors_data_card", state: "show") do %>
-
-<table class="table table-bordered dataTable ">
-  <% logo = investor.documents.where(name: "Logo").first %>
-  <% if logo %>
-    <tr>
-      <td colspan="<%= cols * 2 %>" class="text-left">
-        <%= image_tag logo.file.url, alt: "Investor Logo", class: "img-fluid", style: "max-height: 100px;" %>
-      </td>
-    </tr>
-  <% end %>
-  <% fields_to_display.each_slice(cols) do |row_fields| %>
-    <tr>
-      <% row_fields.each do |label, key| %>
-        <td>
-          <strong><%= label.humanize %></strong>
-        </td>
-        <td>
-          <% value = key.split('.').inject(investor) { |object, method| object&.send(method) } %>
-          <% if  value.is_a?(Date) %>
-            <%= l(value) %>
-          <% elsif value.is_a?(Money) %>
-            <%= money_to_currency value, params %>
-          <% else %>
-            <%= value %>
-          <% end %>
-        </td>
-      <% end %>
-    </tr>
-  <% end %>
-</table>
-
-<% end %>
+<div id="data_card_1">
+  <div class="card mb-4" data-controller="">
+    <div class="card-body">
+      <div class="text-primary"><%= name %></div>
+      <div class="table-responsive">
+        <table class="table table-bordered dataTable ">
+          <tbody>
+            <% logo = investor.documents.where(name: "Logo").first %>
+            <% if logo %>
+              <tr>
+                <td colspan="2" class="text-left">
+                  <%= image_tag logo.file.url, alt: "Investor Logo", class: "img-fluid", style: "max-height: 100px;" %>
+                </td>
+              </tr>
+            <% end %>
+            <% fields_to_display.each do |label, key| %>
+              <tr>
+                <td>
+                  <strong><%= label.humanize %></strong>
+                </td>
+                <td>
+                  <% value = key.split('.').inject(investor) { |object, method| object&.send(method) } %>
+                  <% if  value.is_a?(Date) %>
+                    <%= l(value) %>
+                  <% elsif value.is_a?(Money) %>
+                    <%= money_to_currency value, params %>
+                  <% else %>
+                    <%= value %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

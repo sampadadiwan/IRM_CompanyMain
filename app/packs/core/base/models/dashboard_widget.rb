@@ -142,7 +142,7 @@ class DashboardWidget < ApplicationRecord
     when "Medium"
       "col-md-6"
     when "Large"
-      "col-md-9"
+      "col-md-8"
     when "XL"
       "col-md-12"
     else
