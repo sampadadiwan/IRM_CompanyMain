@@ -32,16 +32,19 @@
   # Always include entity currency as the base option
   available_currencies << entity_currency unless available_currencies.include?(entity_currency)
   available_currencies.sort!
+
+  # Check if currency filter should be shown
+  show_currency_filter = params[:show_currency_filter].to_s == 'true' && available_currencies.length > 1
 %>
 
-<% if available_currencies.length > 1 %>
-  <div class="mb-3" data-controller="valuation-currency-filter" data-valuation-currency-filter-entity-currency-value="<%= entity_currency %>">
+<% if show_currency_filter %>
+  <div class="mb-3" <%= "data-controller=\"valuation-currency-filter\" data-valuation-currency-filter-entity-currency-value=\"#{entity_currency}\"".html_safe %>>
     <div class="d-flex justify-content-end mb-3">
-      <label for="valuation_currency_select" class="me-2 align-self-center mb-0">Show currency:</label>
+      <label for="valuation_currency_select" class="me-2 align-self-center mb-0">Currency:</label>
       <select
         id="valuation_currency_select"
         class="form-select form-select-sm"
-        style="min-width:150px"
+        style="width: 120px;"
         data-valuation-currency-filter-target="select"
         data-action="change->valuation-currency-filter#applyFilter">
         <% available_currencies.each do |currency| %>
@@ -51,7 +54,7 @@
     </div>
 <% end %>
 
-<table class="table table-bordered table-striped datatable"<%= ' data-valuation-currency-filter-entity-currency-value="' + entity_currency + '"' if available_currencies.length > 1 %>>
+<table class="table table-bordered table-striped datatable">
   <thead>
     <tr>
       <th>Instrument</th>
@@ -93,13 +96,14 @@
           is_value_metric = (attr_key =~ /fmv|fair.*market.*value|equity|book.*value|co_valuation/i) ||
                            (attr_label.to_s =~ /fmv|fair.*market.*value|equity.*value|book.*value|co.*valuation/i)
 
-          # Apply filter if: (has currency suffix OR is a value metric) AND not excluded AND multiple currencies available
-          should_filter = (has_currency_suffix || is_value_metric) && !is_excluded_field && available_currencies.length > 1
+          # Apply filter if: show_currency_filter is enabled AND (has currency suffix OR is a value metric) AND not excluded
+          should_filter = show_currency_filter && (has_currency_suffix || is_value_metric) && !is_excluded_field
         %>
         <tr <%= should_filter ? "data-valuation-currency-filter-target=\"row\" data-row-currency=\"#{attr_currency}\" data-is-base-row=\"#{is_base_attr}\" data-full-attr-label=\"#{h(attr_label)}\"".html_safe : '' %>>
           <td><%= link_to instrument.name, instrument if instrument %></td>
           <td>
-            <%= attr_label %>
+            <%= show_currency_filter && attr_label.to_s.match(/\([A-Z]{3}\)$/) ? attr_label.gsub(/\s*\([A-Z]{3}\)$/, '').strip : attr_label %>
+          </td>
           </td>
           <% ordered_valuation_dates.each do |day| %>
             <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>
@@ -121,6 +125,6 @@
   </tbody>
 </table>
 
-<% if available_currencies.length > 1 %>
+<% if show_currency_filter %>
   </div>
 <% end %>

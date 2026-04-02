@@ -1,4 +1,5 @@
 <% fund ||= nil %>
+
 <%
   # Group fund ratios by name (Metric) and then by scenario
   # We want latest from each scenario
@@ -42,22 +43,27 @@
   # Always include entity currency as the base option
   available_currencies << entity_currency unless available_currencies.include?(entity_currency)
   available_currencies.sort!
+
+  # Check if currency filter should be shown
+  show_currency_filter = params[:show_currency_filter].to_s == 'true'
 %>
 
-<div class="" data-controller="fund-ratios-filter" data-fund-ratios-filter-entity-currency-value="<%= entity_currency %>">
-  <div class="d-flex justify-content-end mb-2">
-    <label for="metrics_filter_select" class="me-2 align-self-center mb-0">Show currency:</label>
-    <select
-      id="metrics_filter_select"
-      class="form-select form-select-sm me-2"
-      style="min-width:200px"
-      data-fund-ratios-filter-target="select"
-      data-action="change->fund-ratios-filter#applyFilter">
-      <% available_currencies.each do |currency| %>
-        <option value="<%= currency %>" <%= 'selected' if currency == entity_currency %>><%= currency %></option>
-      <% end %>
-    </select>
-  </div>
+<div class="" <%= "data-controller=\"fund-ratios-filter\" data-fund-ratios-filter-entity-currency-value=\"#{entity_currency}\"".html_safe if show_currency_filter %>>
+  <% if show_currency_filter %>
+    <div class="d-flex justify-content-end mb-3">
+      <label for="metrics_filter_select" class="me-2 align-self-center mb-0">Currency:</label>
+      <select
+        id="metrics_filter_select"
+        class="form-select form-select-sm"
+        style="width: 120px;"
+        data-fund-ratios-filter-target="select"
+        data-action="change->fund-ratios-filter#applyFilter">
+        <% available_currencies.each do |currency| %>
+          <option value="<%= currency %>" <%= 'selected' if currency == entity_currency %>><%= currency %></option>
+        <% end %>
+      </select>
+    </div>
+  <% end %>
 
   <table class="table datatable">
     <thead>
@@ -91,11 +97,11 @@
   <tr class=""
       data-ratio-text="<%= h(row_text) %>"
       data-metric="<%= h(metric_name) %>"
-      data-metric-currency="<%= metric_currency %>"
-      data-is-base="<%= is_base_metric %>"
-      data-fund-ratios-filter-target="row">
+      <%= "data-metric-currency=\"#{metric_currency}\"".html_safe if show_currency_filter && metric_currency %>
+      <%= "data-is-base=\"#{is_base_metric}\"".html_safe if show_currency_filter %>
+      <%= 'data-fund-ratios-filter-target="row"'.html_safe if show_currency_filter %>>
           <td class="">
-            <%= base_metric_name %>
+            <%= show_currency_filter ? base_metric_name : metric_name %>
           </td>
           <% scenarios.each do |scenario| %>
             <td class="text-center">
