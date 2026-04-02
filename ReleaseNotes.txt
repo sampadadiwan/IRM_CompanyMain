@@ -1,3 +1,19 @@
+V9.2.1
+7145da5c6 Updates to drop down UI fix and metadata updated (#1330)
+3f0cce8a1 Kedaara css fix (#1328)
+ff42d7755 Portfolio company dashboard currency filter up (#1327)
+925c23977 Docs fix (#1325)
+ddc8bc8c9 Refactor number stats component layout for improved responsiveness
+db67a5154 Fixed scenario ratios specs (#1326)
+ebb7877df Fix card margin in data card widget for improved layout
+ae7f93c88 Refactor number stats component and adjust layout for portfolio company stats
+8a851bc41 Add design document for parallel loading of account entries with producer-consumer pattern
+45d54f07c Refactor dashboard widget sizes and update stats rendering for improved layout consistency
+8e717918d Enhance custom CSS loading logic to support parameter-based styles
+36a90369e Add link to view ratio formulas in fund ratios dropdown
+88b1ed580 Added release notes
+c8c93c86f Exception notification (#1324)
+
 V9.2.09
 233a3bfc9 Custom css (#1323)
 467461e24 Remove link to ratio formulas from fund ratios dropdown
