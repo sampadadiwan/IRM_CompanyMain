@@ -22,12 +22,17 @@
 
 
         <% section_data = JSON.parse(portfolio_report_extract.data) %>
+        <% section_icons = {}
+           portfolio_report_extract.portfolio_report.portfolio_report_sections.where(name: section_data.keys).map{ |section| section_icons["#{section.name}"] = section.icon } %>
 
         <!-- Create tabs for each section -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <nav class="nav nav-pills nav-justified p-3 rounded card flex-row flex-grow-1 mb-0"  role="tablist">
                 <% section_data.each_with_index do |(name, list_of_points), idx| %>
-                    <a class="nav-link <%= idx == 0 ? 'active' : ''%>" data-bs-toggle="pill" data-bs-toggle="tab" href="#<%= name.gsub(" ", "").underscore %>-tab">
+                    <a class="nav-link d-flex align-items-center justify-content-center gap-1 <%= idx == 0 ? 'active' : ''%>" data-bs-toggle="pill" data-bs-toggle="tab" href="#<%= name.gsub(" ", "").underscore %>-tab">
+                    <% if section_icons.key?(name) %>
+                        <i class="ti ti-<%= section_icons[name] %> fs-9"></i>
+                    <% end %>
                         <%= name %>
                     </a>
                 <% end %>

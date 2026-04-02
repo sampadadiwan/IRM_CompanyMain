@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_31_092906) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_02_114541) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3046,6 +3046,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_31_092906) do
   create_table "portfolio_report_sections", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.text "data"
+    t.string "icon", limit: 50
     t.string "name", limit: 50
     t.bigint "portfolio_report_id", null: false
     t.string "tags", limit: 100

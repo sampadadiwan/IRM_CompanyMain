@@ -3,27 +3,43 @@ module FundStatisticsHelper
     "#5d87ff", "#65C18C", "#9ADCFF", "#364F6B", "#3FC1C9", "#54BAB9", "#FC5185", "#FFBCBC", "#EDF6E5", "#FF964F"
   ].freeze
 
-  def pie_chart_with_options(data)
+  # Only pass custom colors as true if we are sure the css has these colors defined otherwise the chart will have all black color (no color actually but looks black)
+  def pie_chart_with_options(data, chart_type: "pie", custom_colors: false)
+    chart_type = chart_type.to_s.downcase
+    inner_size = chart_type == "pie" ? nil : "50%"
+    semi       = chart_type == "half_donut"
+
+    pie_plot_opts = {
+      dataLabels: {
+        enabled: true,
+        format: '{point.name}:<br>{point.percentage:.1f} %',
+        distance: semi ? -30 : 30
+      }
+    }
+    pie_plot_opts[:innerSize]  = inner_size   if inner_size
+    pie_plot_opts[:startAngle] = -90          if semi
+    pie_plot_opts[:endAngle]   = 90           if semi
+    pie_plot_opts[:center]     = ["50%", "75%"] if semi
+    pie_plot_opts[:size]       = "100%" if semi
+
     options = {
       library: {
         **chart_theme_color,
-        plotOptions: {
-          pie: {
-            dataLabels: {
-              enabled: true,
-              format: '{point.name}:<br>{point.percentage:.1f} %'
-            }
-          }
-        }
+        plotOptions: { pie: pie_plot_opts }
       },
       prefix: ""
     }
 
-    # Add colors only if there are more than 10 data points
-    if data.size > 10
-      extended_colors = PIE_CHART_COLORS.dup
+    # When custom_colors: true (e.g. called from a branded widget), use CSS vars
+    # --pie-color-1..10 defined in the custom stylesheet (e.g. kedaara.css).
+    # Otherwise fall back to PIE_CHART_COLORS for > 8 slices, and let Chartkick's
+    # own 8 global colors handle smaller datasets.
+    chartkick_default_color_count = 8 # can use Chartkick.options[:colors]&.size but avoiding a method call
+    if data.size > chartkick_default_color_count
+      base_colors = custom_colors ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
+      extended_colors = base_colors.dup
       loop do
-        extended_colors += PIE_CHART_COLORS[1..] # Always start from index 1
+        extended_colors += base_colors[1..] # Always start from index 1 to avoid adjacency
         break if extended_colors.size >= data.size
       end
       options[:colors] = extended_colors

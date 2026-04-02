@@ -8,6 +8,7 @@
   --bs-orange: #fd7e14;
   --bs-yellow: #006D74;
   --bs-green: #006D74;
+
   --bs-teal: #20c997;
   --bs-cyan: #006D74;
   --bs-black: #000;
@@ -121,6 +122,17 @@
   --bs-form-valid-border-color: #006D74;
   --bs-form-invalid-color: #fa896b;
   --bs-form-invalid-border-color: #fa896b;
+  /* Pie Chart Colors */
+  --pie-color-1: #006D74;
+  --pie-color-2: #550C18;
+  --pie-color-3: #1F8C92;
+  --pie-color-4: #7A1F2B;
+  --pie-color-5: #4A9DA3;
+  --pie-color-6: #8F3C47;
+  --pie-color-7: #6FBFC5;
+  --pie-color-8: #C76A75;
+  --pie-color-9: #A9D4D7;
+  --pie-color-10: #E6B7BC;
 }
 
 
@@ -248,6 +260,14 @@
 .badge {
     --bs-badge-border-radius: 100px
 }
+
+/* Tag-type badge classes — colours reuse existing values from kpi_reports_filter */
+.badge-tag-actual    { background-color: #E3EEF9 !important; color: #1976D2 !important; }
+.badge-tag-budget    { background-color: #EAF1EB !important; color: #579158 !important; }
+.badge-tag-ic-case   { background-color: #FDEDE0 !important; color: #EF6C00 !important; }
+.badge-tag-audited   { background-color: #FFEBF6 !important; color: #FF0084 !important; }
+.badge-tag-projected { background-color: #F0EAFB !important; color: #6f42c1 !important; }
+.badge-tag-other { background-color: #EAF1EB !important; color: #20c997 !important; }
 
 [data-bs-theme=light][data-color-theme=Blue_Theme]:root .btn-outline-success, [data-bs-theme=dark][data-color-theme=Blue_Theme]:root .btn-outline-success {
     --bs-btn-color: #006D74;
@@ -546,12 +566,15 @@ a:hover {
 
 .nav.nav-pills.nav-justified .nav-link {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 10px;
     border-bottom: 2px solid #D9DBE9;
     border-radius: 0px;
     margin: 0px 0px -2px;
     justify-content: center;
+    padding-bottom: 8px;
+    min-height: 3em;
+    box-sizing: border-box;
 }
 
 .nav.nav-pills.nav-justified .nav-link img {
@@ -755,16 +778,29 @@ table.dataTable td:first-child{
 }
 
 td[data-row-toggle-target="control"] .expand {
-    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
     font-size: 0px;
+    cursor: pointer;
+    margin-left: 4px;
+    vertical-align: middle;
+    position: relative;
 }
 
 td[data-row-toggle-target="control"] .expand:before{
     font-family: "tabler-icons" !important;
     content: "\ea69";
-    position: absolute;
-    font-size: 15px;
-    margin: 0px 0px 0px 2px;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--bs-primary);
+}
+
+/* When open, show minus icon */
+td[data-row-toggle-target="control"] .expand.expanded:before {
+    content: "\ea68";
 }
 
 tbody tr:nth-child(odd) {
@@ -1148,6 +1184,10 @@ tr.child td:first-child i {
     color: #2E7D32;
 }
 
+#kpi_reports_budget table tbody tr td .text-danger {
+    color: #D32F2F !important;
+}
+
 #kpi_reports_budget table tbody tr:last-child td .text-danger{
     color: #D32F2F !important;
 }
@@ -1169,9 +1209,8 @@ form .form-group label {
 }
 
 form#kpi_reports_filter {
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center;
-    justify-content: space-between;
     overflow-x: auto;
     gap: 5px;
 }
@@ -1194,7 +1233,7 @@ form#kpi_reports_filter {
 #kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice__display{
     font-size: 12px;
     padding-left: 5px;
-    padding-right: 5px;
+    padding-right: 20px;
 }
 
 #kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice{
@@ -1275,37 +1314,37 @@ form#kpi_reports_filter {
         color: #579158 !important;
 }
 
-#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="IC Case"] {
+#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title^="IC "] {
     background-color: #FDEDE0;
     border-color: #FDEDE0;
 }
 
-#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="IC Case"]  .select2-selection__choice__display{
+#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title^="IC "]  .select2-selection__choice__display{
     color: #EF6C00;
 }
 
-#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="IC Case"] .select2-selection__choice__remove{
+#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title^="IC "] .select2-selection__choice__remove{
     border: 1px solid #EF6C00 !important;
 }
 
-#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="IC Case"] .select2-selection__choice__remove span{
+#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title^="IC "] .select2-selection__choice__remove span{
         color: #EF6C00 !important;
 }
 
-#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="Audited"] {
+#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title^="Audited"] {
     background-color: #FFEBF6;
     border-color: #FFEBF6;
 }
 
-#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="Audited"]  .select2-selection__choice__display{
+#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title^="Audited"] .select2-selection__choice__display {
     color: #FF0084;
 }
 
-#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="Audited"] .select2-selection__choice__remove{
+#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title^="Audited"] .select2-selection__choice__remove {
     border: 1px solid #FF0084 !important;
 }
 
-#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="Audited"] .select2-selection__choice__remove span{
+#kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title^="Audited"] .select2-selection__choice__remove span {
         color: #FF0084 !important;
 }
 
@@ -1315,6 +1354,7 @@ form#kpi_reports_filter {
 
 thead th small.badge.text-success {
     color: #1976D2 !important;
+    background-color: #E3EEF9 !important;
 }
 
 #report_161 table tbody tr:nth-child(1) td:nth-child(2) .badge.text-success{
@@ -1396,6 +1436,10 @@ i.ti.ti-info-circle.text-primary {
     position: absolute;
     font-size: 15px;
     margin: 0px 0px 0px 2px;
+}
+
+#investments_frame .expand.expanded:before {
+    content: "\ea68";
 }
 
 #investments_frame tfoot tr, #investments_frame tfoot tr td {
@@ -1496,10 +1540,11 @@ ul.pagination {
 } */
 
 .doc-info a {
-    font-size: 14px;
+    font-size: 0.9rem;
     font-weight: 500;
     color: #2A3547;
-    line-height: 18px;
+    line-height: 1.4;
+    margin-bottom: 2px;
 
     display: -webkit-box;           /* IMPORTANT */
     -webkit-line-clamp: 3;          /* number of lines */
@@ -1512,6 +1557,7 @@ ul.pagination {
     font-size: 0.75rem;
     color: #5A6A86;
     font-weight: 400;
+    margin-top: 2px;
 }
 
 .io-preview-container .preview-doc-card .doc-header .doc-info .info {
@@ -1543,15 +1589,13 @@ ul.pagination {
     height: 85px;
 }
 
-.doc-header .ti-file-text:before {
-    content: "";
-    display: inline-block;
-    width: 28px;
-    height: 28px;
-    margin-right: 0px;
+.doc-header .ti-file-text {
+    font-size: 2.2rem;
+    color: #212529;
+}
 
-    background: url('../doc.png') no-repeat center;
-    background-size: contain;
+.doc-header .ti-file-text:before {
+    content: "\f028";
 }
 
 @media(max-width: 768px) and (min-width:573px){
@@ -1584,9 +1628,8 @@ ul.pagination {
     .card-title, .d-sm-flex h1, .card-header h6{
         font-size: 1.05rem !important;
     }
-    .doc-header .ti-file-text:before{
-        width: 22px;
-        height: 22px;
+    .doc-header .ti-file-text{
+        font-size: 1.875rem;
     }
 }
 
@@ -1703,9 +1746,8 @@ ul.pagination {
     .card-title, .d-sm-flex h1, .card-header h6{
         font-size: 1.0rem !important;
     }
-    .doc-header .ti-file-text:before{
-        width: 20px;
-        height: 20px;
+    .doc-header .ti-file-text{
+        font-size: 1.75rem;
     }
 
 }

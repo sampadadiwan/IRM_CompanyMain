@@ -3,7 +3,7 @@
   <td>
     <%= link_to kpi.kpi_report %>
     <% if kpi.kpi_report.tag_list.present? %>
-      <small class="badge bg-success-subtle text-success"><%= kpi.kpi_report.tag_list %></small>
+      <small class="badge <%= tag_badge_class(kpi.kpi_report.tag_list) %>"><%= kpi.kpi_report.tag_list %></small>
     <% end %>
   </td>
   <% end %>

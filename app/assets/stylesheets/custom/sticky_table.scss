@@ -43,7 +43,7 @@
     // 0:   Normal body cells
     z-index: 100 !important;
 
-    background-color: #5d87ff !important; // Solid background required to hide body content scrolling behind
+    background-color: var(--bs-primary) !important; // Solid background required to hide body content scrolling behind
     color: white !important;
     border-bottom: 1px solid #dee2e6 !important;
     border-top: 1px solid #dee2e6 !important;
@@ -59,7 +59,7 @@
   thead th.sticky-col {
     left: 0 !important;
     z-index: 110 !important;
-    background-color: #5d87ff !important;
+    background-color: var(--bs-primary) !important;
   }
 
   // ---------------------------------------------------------------------------

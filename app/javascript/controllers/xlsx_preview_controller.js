@@ -295,7 +295,7 @@ export default class extends Controller {
 
     const data = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "", raw: false });
     if (!data || data.length === 0) {
-      return '<table class="table table-bordered datatable"></table>';
+      return '<table class="table table-bordered table-striped datatable"></table>';
     }
 
     const headers = data[0] || [];
@@ -303,7 +303,7 @@ export default class extends Controller {
 
     const maxCols = Math.max(headers.length, ...rows.map(r => r.length));
 
-    let html = '<table class="table table-bordered datatable">';
+    let html = '<table class="table table-bordered table-striped datatable">';
     html += '<thead><tr>';
     for (let i = 0; i < maxCols; i++) {
       html += `<th>${escapeHtml(headers[i] || "")}</th>`;

@@ -75,7 +75,7 @@
                                     standard_kpi_name = get_standard_kpi_name(investor_kpi_mappings, kpi)
                                 %>
                                 <td>
-                                    <span class="badge badge-pill bg-success-subtle text-success"><%= tag_list %></span>
+                                    <span class="badge badge-pill <%= tag_badge_class(tag_list) %>"><%= tag_list %></span>
                                     <% if kpi.owner %>
                                         <span class="d-block"> <%= kpi.owner %> </span>
                                     <% end %>

@@ -17,7 +17,7 @@
       <div class="table-responsive">
         <table class="table table-bordered dataTable ">
           <tbody>
-            <% logo = investor.documents.where(name: "Logo").first %>
+            <% logo = investor.logo_doc %>
             <% if logo %>
               <tr>
                 <td colspan="2" class="text-left">

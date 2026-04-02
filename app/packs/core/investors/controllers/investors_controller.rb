@@ -18,7 +18,6 @@ class InvestorsController < ApplicationController
     @q = Investor.ransack(params[:q])
     @investors = policy_scope(@q.result)
 
-
     if params[:multi_portfolio_dashboard].present? || params[:portfolio_agent_run].present?
       # Get portfolio companies first
       base_investors = @investors.portfolio_companies
@@ -38,9 +37,7 @@ class InvestorsController < ApplicationController
     @pagy, @investors = pagy(@investors, limit: params[:per_page]) if params[:multi_portfolio_dashboard].blank? && params[:portfolio_agent_run].blank? && params[:all].blank?
 
     # For portfolio_agent_run, fetch last run times efficiently
-    if params[:portfolio_agent_run].present?
-      @investors = @investors.includes(:support_agent_report)
-    end
+    @investors = @investors.includes(:support_agent_report) if params[:portfolio_agent_run].present?
 
     respond_to do |format|
       format.html { render template }
@@ -97,6 +94,7 @@ class InvestorsController < ApplicationController
     @dashboard_name = params[:dashboard_name]
     @dashboard_name ||= @investor.category == "Portfolio Company" ? "Portfolio Company Dashboard" : "Investor Dashboard"
     @name = params[:name] || "Default"
+    @logo = @investor.logo_doc&.file
   end
 
   def setup_portfolio_dashboard
@@ -120,7 +118,7 @@ class InvestorsController < ApplicationController
 
     # Get available support agents for the current entity
     @support_agents = SupportAgent.where(entity_id: current_user.entity_id)
-                                   .order(:name)
+                                  .order(:name)
 
     # Efficiently get last run time for each company using a LEFT JOIN
     @last_run_times = {}
@@ -132,7 +130,7 @@ class InvestorsController < ApplicationController
       authorize @investor
       @report_type = params[:report_type] # 'kpi', 'valuation', or 'document'
       @report = SupportAgentReport.find_by(owner: @investor)
-    rescue => e
+    rescue StandardError => e
       Rails.logger.error "Error in report_detail: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")
       @investor = nil

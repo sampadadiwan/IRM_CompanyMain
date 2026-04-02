@@ -9,7 +9,7 @@
 
 <%= render ToggleCard.new(title: "Cap Table", css_class: "show_horizontal_cap_table", state: "show") do %>
     <div class="table-responsive" data-controller="row-toggle">
-        <table class="table table-bordered">
+        <table class="table table-bordered table-striped table-grey numberTable">
             <thead>
                 <tr>
                     <th rowspan="2">Particulars</th>
@@ -70,8 +70,8 @@
                     %>
                     <tr class="bg-light parent cursor-pointer" data-action="click->row-toggle#toggle" data-row-toggle-target="control">
                         <td>
-                            <span class="expand mr-2">></span>
                             <strong><%= category_name %></strong>
+                            <span class="expand ml-2">></span>
                         </td>
                         <% funding_rounds.each do |round| %>
                             <td class="text-center font-weight-bold">

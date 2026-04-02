@@ -9,7 +9,7 @@
                         <%= kpi_report.as_of.strftime("%b %Y") %>
                         <span class="d-block">
                         <% if kpi_report.tag_list.present? %>
-                            <small class="badge badge-pill bg-success-subtle text-success"><%= kpi_report.tag_list %></small>
+                            <small class="badge badge-pill <%= tag_badge_class(kpi_report.tag_list) %>"><%= kpi_report.tag_list %></small>
                         <% end %>
                         <% if kpi_report.owner.present? %>
                             <small class="badge badge-pill bg-info-subtle text-info"><%= kpi_report.owner %></small>

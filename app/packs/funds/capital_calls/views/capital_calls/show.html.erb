@@ -1,5 +1,7 @@
 
 <%= render "/capital_calls/capital_call_stats", capital_call: @capital_call %>
+
+<div class="container-fluid p-3">
 <%= render "/capital_calls/show", capital_call: @capital_call %>
 
 <div id="capital_call_<%= @capital_call.id %>_actions">
@@ -77,5 +79,7 @@
   </div>
 
 </div>
+</div>
+
 
 <%= render "/capital_calls/details", capital_call: @capital_call %>

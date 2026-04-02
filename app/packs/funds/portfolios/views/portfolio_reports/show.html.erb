@@ -1,6 +1,6 @@
 <%= render FormCard.new(title: "#{@portfolio_report}") do %>
   <table class="table table-bordered dataTable">
-    
+
     <tr>
       <td>
         Name
@@ -38,20 +38,20 @@
         Sections
       </td>
       <td>
-        
+
           <div class="nested-fields">
             <table class="table dataTable">
               <% @portfolio_report.portfolio_report_sections.each_with_index do |prs, idx| %>
                 <tr>
                   <td>Section <%= idx + 1%></td>
-                  <td> <%= prs.name %> </td>
-                  <td> <%= prs.tags %> </td>            
+                  <td> <i class="<%= prs.icon %>"></i> <%= prs.name %> </td>
+                  <td> <%= prs.tags %> </td>
                   <td> <%= prs.data %> </td>
                 </tr>
               <% end %>
             </table>
           </div>
-        
+
       </td>
     </tr>
   </table>

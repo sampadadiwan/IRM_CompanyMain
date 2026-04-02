@@ -341,4 +341,8 @@ class Investor < ApplicationRecord
   def get_row_template
     "/investors/investor"
   end
+
+  def logo_doc
+    documents.where(name: "Logo").first
+  end
 end

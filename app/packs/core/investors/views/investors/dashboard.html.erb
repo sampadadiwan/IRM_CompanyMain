@@ -7,6 +7,6 @@
         <%= render "/investors/show" %>
     <% end %>
 
-    <%= render "/dashboard_widgets/dashboard", dashboard_name: @dashboard_name, name: @name, uri_params: {owner_id: @investor.id, owner_type: "Investor"} %>
+    <%= render "/dashboard_widgets/dashboard", dashboard_name: @dashboard_name, name: @name, uri_params: {owner_id: @investor.id, owner_type: "Investor"}, logo: @logo, header_label: "Sector", header_value: @investor.sector, title: @investor.investor_name %>
 
 <% end %>

@@ -95,6 +95,15 @@
             <% end %>
           </select>
         </div>
+        <%
+          card_col_class = case cards_data.length
+                           when 1 then "col-md-12"
+                           when 2 then "col-md-6"
+                           when 3 then "col-md-4"
+                           when 4 then "col-md-6"
+                           else ""
+                           end
+        %>
         <div id="stats_cards_<%= portfolio_company.id %>" class="row" data-portfolio-stats-currency-target="stats">
           <% cards_data.each do |card_data| %>
             <%= render(NumberStatsComponent.new(
@@ -102,7 +111,8 @@
                         amount: card_data[:stat],
                         subtitle: card_data[:subtitle],
                         progress_bar_color: card_data[:progress_bar_color],
-                        text_info: card_data[:text_info]
+                        text_info: card_data[:text_info],
+                        css_class: card_col_class
             )) %>
           <% end %>
         </div>
