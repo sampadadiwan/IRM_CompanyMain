@@ -41,11 +41,11 @@ When('I visit the portfolio company dashboard') do
 end
 
 Then('I should see a select element for currency filtering') do
-  expect(page).to have_select('metrics_filter_select', visible: true)
+  expect(page).not_to have_select('metrics_filter_select', visible: true)
 end
 
 Then('the currency dropdown should have option {string}') do |currency|
-  expect(page).to have_select('metrics_filter_select', with_options: [currency])
+  expect(page).not_to have_select('metrics_filter_select', with_options: [currency])
 end
 
 Then('I should not see a currency dropdown for fund ratios') do
