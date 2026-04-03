@@ -2,15 +2,17 @@
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" href="#docs-tab"
        data-action="click->offcanvastabs#switchTab"
-       data-offcanvastabs-target="navLink">Documents</a>
+      data-offcanvastabs-target="navLink">Documents</a>
+    <a class="nav-link" data-bs-toggle="pill" href="#timeline-tab"
+       data-action="click->offcanvastabs#switchTab"
+      data-offcanvastabs-target="navLink">Timeline</a>
     <a class="nav-link" data-bs-toggle="pill" href="#tasks-tab"
        data-action="click->offcanvastabs#switchTab"
-       data-offcanvastabs-target="navLink">Tasks</a>
+      data-offcanvastabs-target="navLink">Tasks</a>
     <a class="nav-link" data-bs-toggle="pill" href="#notes-tab"
        data-action="click->offcanvastabs#switchTab"
-       data-offcanvastabs-target="navLink">Notes</a>
+      data-offcanvastabs-target="navLink">Notes</a>
   </nav>
-
   <div class="tab-content">
     <div id="docs-tab" class="tab-pane fade show active" data-offcanvastabs-target="tabPane">
       <div id="docs" class="associated_entity">
@@ -20,8 +22,14 @@
         <% end %>
       </div>
     </div>
-
-
+    <div id="timeline-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
+      <div id="timeline" class="associated_entity">
+        <%= render AuditTrail.new(deal_investor, title: "Step Movements Timeline", only_keys: ["status", "deal_activity_id"], graphical: true) %>
+        <div class="mt-3 text-end">
+          <%= link_to "View Full Audit Trail", deal_investor_path(deal_investor, audit_trail: true), {class: "btn btn-outline-info btn-sm", target: "_top"} %>
+        </div>
+      </div>
+    </div>
     <div id="tasks-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
       <div id="tasks" class="associated_entity">
         <%= turbo_frame_tag "tasks_frame",
@@ -30,7 +38,6 @@
         <% end %>
       </div>
     </div>
-
     <div id="notes-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
       <div id="notes" class="associated_entity">
         <%= turbo_frame_tag "notes_frame",
@@ -39,7 +46,5 @@
         <% end %>
       </div>
     </div>
-
   </div>
 </div>
-

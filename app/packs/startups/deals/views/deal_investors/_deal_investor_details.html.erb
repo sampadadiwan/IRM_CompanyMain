@@ -1,19 +1,14 @@
 <div class="associated_entity" data-controller="tabs tabdetails">
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-
     <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab">Deal Steps</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
-
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#timeline-tab">Timeline</a>
     <% if show_tranch %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tranche-tab">Tranche</a>
     <% end %>
-
   </nav>
-
-
-<div class="tab-content" data-controller="datatable">
-
+  <div class="tab-content" data-controller="datatable">
     <div id="docs-tab" class="tab-pane fade  in show active">
       <div id="docs" class="associated_entity">
         <% da_ids = deal_investor.deal_activities.pluck(:id) %>
@@ -22,21 +17,16 @@
         <%= render "/documents/index", owner: deal_investor, entity: deal_investor.entity, documents: Document.find_by_sql(sql) %>
       </div>
     </div>
-
     <div id="activities-tab" class="tab-pane fade">
       <div id="deal_activities" class="associated_entity">
         <%#= render "/deal_activities/index", deal_investor:deal_investor,
                     template: false, deal_activities: deal_investor.deal_activities.includes(:deal) %>
-
         <% src = deal_activities_path(deal_investor_id: deal_investor.id) %>
-
         <%= turbo_frame_tag "deal_activities_frame", target: "_top", loading: :lazy, src: src do %>
           <%= render "/layouts/loading" %>
         <% end %>
-
       </div>
     </div>
-
     <div id="tasks-tab" class="tab-pane fade">
       <div id="tasks" class="associated_entity">
         <%= turbo_frame_tag "tasks_frame", src: tasks_path(owner_id: deal_investor.id, owner_type: "DealInvestor"), target: "_top", loading: :lazy do %>
@@ -44,13 +34,20 @@
         <% end %>
       </div>
     </div>
-
-    <div id="tranche-tab" class="tab-pane fade">
-      <div id="deal_investors" class="associated_entity">
-        <%= render "/deal_investors/show", deal_investor: deal_investor %>
+    <div id="timeline-tab" class="tab-pane fade">
+      <div id="timeline" class="associated_entity">
+        <%= render AuditTrail.new(deal_investor, title: "Step Movements Timeline", only_keys: ["status", "deal_activity_id"], graphical: true) %>
+        <div class="mt-3 text-end">
+          <%= link_to "View Full Audit Trail", deal_investor_path(deal_investor, audit_trail: true), {class: "btn btn-outline-info btn-sm"} %>
+        </div>
       </div>
     </div>
-
+  </div>
 </div>
-
+<div id="tranche-tab" class="tab-pane fade">
+  <div id="deal_investors" class="associated_entity">
+    <%= render "/deal_investors/show", deal_investor: deal_investor %>
+  </div>
+</div>
+</div>
 </div>

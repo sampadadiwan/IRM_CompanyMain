@@ -1,0 +1,86 @@
+<% 
+  # Filter and humanize audits for graphical view
+  # Ensure model is defined
+  return unless local_assigns[:model].present?
+  
+  audits = model.own_and_associated_audits.includes(:user, :auditable).order(id: :desc)
+  if local_assigns[:only_keys].present?
+      audits = audits.select { |a| a.audited_changes.keys.intersect?(only_keys) }
+  end
+%>
+<div class="card shadow-sm mb-4">
+  <div class="card-header py-3">
+    <h6 class="m-0 font-weight-bold text-primary">Movement History</h6>
+    <p class="mb-0 text-muted fs-2">Chronological history of workflow and status changes</p>
+  </div>
+  <div class="card-body">
+    <% if audits.empty? %>
+      <div class="text-center py-5">
+        <i class="ti ti-history fs-9 text-muted mb-3 d-block"></i>
+        <p class="text-muted">No step movements recorded yet.</p>
+      </div>
+    <% else %>
+      <ul class="timeline-widget mb-0 position-relative">
+        <% 
+          colors = %w[primary success info warning danger secondary]
+          audit_counter = 0
+        %>
+        <% audits.each do |audit| %>
+          <% 
+              # Each audit batch (point in time) gets a distinct color
+              color = colors[audit_counter % colors.length]
+              audit_counter += 1
+
+              # Resolve changes
+              changes = audit.audited_changes
+              if local_assigns[:only_keys].present?
+                  changes = changes.select { |k, _v| only_keys.include?(k) }
+              end
+              
+              changes.each do |k, v|
+                  next unless v.is_a?(Array)
+                  
+                  # Humanize IDs for graphical view too
+                  val_old = v[0]
+                  val_new = v[1]
+                  
+                  if k.end_with?("_id")
+                      begin
+                          model_name = k.chomp("_id").classify
+                          klass = model_name.constantize
+                          val_old = klass.find_by(id: v[0])&.to_s || v[0] if v[0]
+                          val_new = klass.find_by(id: v[1])&.to_s || v[1] if v[1]
+                      rescue
+                      end
+                  end
+          %>
+          <li class="timeline-item d-flex position-relative overflow-hidden mb-4">
+            <div class="timeline-time flex-shrink-0 text-end" style="width: 80px;">
+              <small class="text-muted" title="<%= audit.created_at %>">
+                <%= audit.created_at.strftime("%b %d") %><br>
+                <span class="fs-1"><%= audit.created_at.strftime("%H:%M") %></span>
+              </small>
+            </div>
+            <div class="timeline-badge-wrap d-flex flex-column align-items-center">
+              <span class="timeline-badge border-2 border border-<%= color %> flex-shrink-0 my-8"></span>
+              <span class="timeline-badge-border d-block flex-shrink-0"></span>
+            </div>
+            <div class="timeline-desc fs-3 text-dark mt-n1 ps-3">
+              <span class="fw-semibold text-primary"><%= (audit.user ? audit.user : "System") %></span>
+              <div class="mt-1 d-flex align-items-center flex-wrap gap-2">
+                <% if val_old.present? && val_old != "None" %>
+                  <span class="badge bg-light text-muted border fw-normal"><%= val_old %></span>
+                  <i class="ti ti-arrow-right text-muted fs-2"></i>
+                <% end %>
+                <span class="badge bg-<%= color %>-subtle text-<%= color %> border border-<%= color %> fw-bold"><%= val_new %></span>
+              </div>
+            </div>
+          </li>
+          <% 
+              end # changes.each
+          end # audits.each 
+          %>
+        </ul>
+      <% end %>
+    </div>
+  </div>
