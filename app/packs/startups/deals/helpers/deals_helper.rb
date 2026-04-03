@@ -43,28 +43,164 @@ module DealsHelper
   def deal_investors_status(deal)
     deal_investors = deal.deal_investors.joins(:investor).group(:status).count
 
-    pie_chart deal_investors, library: { plotOptions: { pie: {
-      dataLabels: {
-        enabled: true,
-        format: '<b>{point.name}</b>:<br>{point.percentage:.1f}% <br>Count: {point.y}'
-      }
-    } },
-                                         **chart_theme_color }
+    pie_chart deal_investors, id: "chart-deal-status", library: {
+      plotOptions: {
+        pie: {
+          cursor: 'pointer',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>:<br>{point.percentage:.1f}% <br>Count: {point.y}'
+          }
+        }
+      },
+      **chart_theme_color
+    }
   end
 
   def deal_activities_completion(deal)
     deal_activities = deal.deal_activities.unscoped.joins(:deal_investor)
-                          .merge(DealInvestor.not_declined).group(:completed).count
+                          .merge(DealInvestor.not_declined).group(:status).count
 
-    deal_activities = deal_activities.map { |k, v| k ? ["Completed", v] : ["Incomplete", v] }
+    pie_chart deal_activities, id: "chart-deal-activities", library: {
+      plotOptions: {
+        pie: {
+          cursor: 'pointer',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>:<br>{point.percentage:.1f}% <br>Count: {point.y}'
+          }
+        }
+      },
+      **chart_theme_color
+    }
+  end
 
-    pie_chart deal_activities, library: { plotOptions: { pie: {
-      dataLabels: {
-        enabled: true,
-        format: '<b>{point.name}</b>:<br>{point.percentage:.1f}% <br>Count: {point.y}'
-      }
-    } },
-                                          **chart_theme_color }
+  def deal_conversion_funnel(deal)
+    # Define the stages of the funnel
+    stages = ['New', 'Interested', 'In Progress', 'Committed', 'Complete']
+    counts = deal.deal_investors.group(:status).count
+
+    # Map the counts to the stages, ensuring all stages are represented
+    data = stages.map { |stage| [stage, counts[stage] || 0] }
+
+    # We use a column chart with horizontal orientation or specialized funnel options if available
+    bar_chart data, id: "chart-deal-funnel", library: {
+      plotOptions: {
+        series: {
+          cursor: 'pointer',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.y}'
+          }
+        }
+      },
+      **chart_theme_color
+    }
+  end
+
+  def deal_commitment_velocity(deal)
+    investors = deal.deal_investors.where(status: %w[Active Committed Complete]).order(:created_at)
+
+    # Group by date and calculate running total
+    cumulative_amount = 0
+    data = investors.group_by { |i| i.created_at.to_date }.map do |date, group|
+      cumulative_amount += group.sum(&:total_amount).to_f
+      [date, cumulative_amount]
+    end
+
+    area_chart data, id: "chart-deal-velocity", prefix: deal.currency, library: {
+      xAxis: { type: 'datetime', labels: { format: '{value:%b %d}' } },
+      **chart_theme_color
+    }
+  end
+
+  def deal_weighted_pipeline(deal)
+    probabilities = {
+      'New' => 0.05,
+      'Interested' => 0.25,
+      'In Progress' => 0.50,
+      'Committed' => 1.0,
+      'Complete' => 1.0
+    }
+
+    counts = deal.deal_investors.group(:status).sum(:total_amount_cents)
+    weighted_total = counts.sum { |status, cents| (cents / 100.0) * (probabilities[status] || 0) }
+
+    data = [
+      ["Target", deal.amount.to_f],
+      ["Weighted Pipeline", weighted_total]
+    ]
+
+    column_chart data, id: "chart-deal-weighted", prefix: deal.currency, library: {
+      **chart_theme_color
+    }
+  end
+
+  def deal_activity_efficiency(deal)
+    # Average days to complete each activity template
+    # Since we don't have "completed_at" easily on DealActivity, we'll use updated_at if status is Complete
+    activities = deal.deal_activities.unscoped.where(status: 'Complete').joins(:deal_investor).merge(DealInvestor.not_declined)
+
+    # Group by title and average (updated_at - created_at)
+    # This is a proxy for how long it took to complete
+    diff_sql = if Rails.env.test?
+                 "julianday(deal_activities.updated_at) - julianday(deal_activities.created_at)"
+               else
+                 "DATEDIFF(deal_activities.updated_at, deal_activities.created_at)"
+               end
+    data = activities.group(:title).average(diff_sql)
+    data = data.map { |title, avg| [title, avg.to_f.round(1)] }.sort_by { |_, avg| -avg }
+
+    bar_chart data, id: "chart-deal-efficiency", xtitle: "Avg Days to Complete", library: {
+      **chart_theme_color
+    }
+  end
+
+  def deal_investor_concentration(deal)
+    data = deal.deal_investors.not_declined.group(:source).sum(:total_amount_cents)
+    data = data.map { |source, cents| [source.presence || "Unknown", cents / 100.0] }
+
+    pie_chart data, id: "chart-deal-source", library: {
+      plotOptions: {
+        pie: {
+          cursor: 'pointer',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.percentage:.1f}%'
+          }
+        }
+      },
+      **chart_theme_color
+    }
+  end
+
+  def deal_days_in_stage(deal)
+    # Distribution of days since last status update
+    investors = deal.deal_investors.not_declined.where.not(status: %w[Complete Declined])
+
+    # Categorize into bins
+    bins = { '0-7 days' => 0, '8-14 days' => 0, '15-30 days' => 0, '30+ days' => 0 }
+    investors.each do |i|
+      days = (Time.current - i.updated_at).to_i / 1.day
+      if days <= 7
+        bins['0-7 days'] += 1
+      elsif days <= 14
+        bins['8-14 days'] += 1
+      elsif days <= 30
+        bins['15-30 days'] += 1
+      else
+        bins['30+ days'] += 1
+      end
+    end
+
+    column_chart bins, id: "chart-deal-days", library: {
+      plotOptions: {
+        series: {
+          cursor: 'pointer'
+        }
+      },
+      **chart_theme_color
+    }
   end
 
   def kanban_funnel_data(deal)

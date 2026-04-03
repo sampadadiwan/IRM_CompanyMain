@@ -1,15 +1,21 @@
-<div class="deals-list-view">
-
+<div class="deals-list-view"
+     data-controller="deals-list-ag-grid"
+     data-deals-list-ag-grid-table-name-value="#deals_list_grid"
+     data-deals-list-ag-grid-lazy-load-data-value="false"
+     data-deals-list-ag-grid-grid-columns-value="<%= @deal.entity.form_types.find_by(name: 'DealInvestor')&.ag_selected_columns&.to_json || '[]' %>"
+     data-deals-list-ag-grid-deal-id-value="<%= @deal.id %>"
+     data-deals-list-ag-grid-investor-label-value="<%= @investor_label %>"
+     data-deals-list-ag-grid-currency-value="<%= @deal.currency %>"
+     data-deals-list-ag-grid-activity-templates-value="<%= DealActivity.templates(@deal).map { |t| { id: t.id, title: t.title } }.to_json %>"
+     data-deals-list-ag-grid-custom-fields-value="<%= @deal.entity.form_types.find_by(name: 'DealInvestor')&.form_custom_fields&.visible&.map { |cf| { name: cf.name, label: cf.label, field_type: cf.field_type } }&.to_json || '[]' %>">
   <%= render "list_view_header", deal: @deal, investor_label: @investor_label %>
-
   <%= render "list_view_analytics", deal: @deal %>
-
   <%= render "list_view_bulk_actions" %>
-
   <%= render "list_view_grid", deal: @deal, investor_label: @investor_label %>
-
   <%= render "list_view_sidepanel" %>
-
-  <%= render "list_view_charts", deal: @deal %>
-
+  <% if policy(@deal).show_detail_tabs? %>
+    <%= render "/deals/deal_details", deal: @deal, show_investors: "No"%>
+  <% elsif current_user.curr_role == "investor" %>
+    <%= render "/deals/deal_investor_details",deal: @deal, show_investors: "No" %>
+  <% end %>
 </div>

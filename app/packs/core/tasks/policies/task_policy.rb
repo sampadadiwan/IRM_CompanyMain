@@ -8,7 +8,11 @@ class TaskPolicy < ApplicationPolicy
         # Show tasks which are not for support only
         scope.where("entity_id=? or for_entity_id=?", user.entity_id, user.entity_id).not_for_support
       elsif user.has_cached_role?(:employee)
-        scope.where("assigned_to_id=?", user.id).not_for_support
+        # Employees can see tasks assigned to them OR tasks for deals they have access to
+        # For simplicity in this feature, we allow seeing all deal tasks for their entity
+        scope.where("entity_id=?", user.entity_id).where(owner_type: %w[Deal DealInvestor]).or(
+          scope.where("assigned_to_id=?", user.id)
+        ).not_for_support
       else
         scope.none
       end
@@ -17,6 +21,14 @@ class TaskPolicy < ApplicationPolicy
 
   def index?
     !user.investor_advisor?
+  end
+
+  def deal_tasks?
+    index?
+  end
+
+  def deal_tasks?
+    index?
   end
 
   def show?

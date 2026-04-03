@@ -12,17 +12,18 @@
   committed_display = money_to_currency(Money.new(active_total_cents, deal.currency), { units: currency_units, decimals: 1 })
 
   stats_cards = [
-    { title: target_display, subtitle: "Total Target", color: "primary", icon: "ti ti-currency-dollar" },
-    { title: committed_display, subtitle: "Committed (Active)", color: "success", icon: "ti ti-chart-pie-2" },
-    { title: "#{conversion}%", subtitle: "Conversion Rate", color: "info", icon: "ti ti-users-group" },
-    { title: stagnant_count, subtitle: "Stagnant Leads (>7d)", color: "warning", icon: "ti ti-alert-triangle" }
+    { title: target_display, subtitle: "Total Target", color: "primary", icon: "ti ti-currency-dollar", action: "clearFilters" },
+    { title: committed_display, subtitle: "Committed (Active)", color: "success", icon: "ti ti-chart-pie-2", action: "filterActive" },
+    { title: "#{conversion}%", subtitle: "Conversion Rate", color: "info", icon: "ti ti-users-group", action: "clearFilters" },
+    { title: stagnant_count, subtitle: "Stagnant Leads (>7d)", color: "warning", icon: "ti ti-alert-triangle", action: "filterStagnant" }
   ]
 %>
-
 <div class="row mb-4">
   <% stats_cards.each do |card| %>
     <div class="col-lg-3 col-md-6 mb-4">
-      <div class="card shadow-none border h-100 analytics-card">
+      <div class="card shadow-none border h-100 analytics-card" 
+           style="cursor: pointer; transition: all 0.2s ease-in-out;" 
+           data-action="click->deals-list-ag-grid#<%= card[:action] %>">
         <div class="card-body p-4">
           <div class="d-flex align-items-center">
             <div>

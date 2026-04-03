@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_02_114541) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_03_064619) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1027,6 +1027,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_02_114541) do
     t.integer "sequence"
     t.string "status", default: "incomplete"
     t.string "status_temp", limit: 20
+    t.text "tasks_csv"
     t.integer "template_id"
     t.string "title"
     t.datetime "updated_at", null: false

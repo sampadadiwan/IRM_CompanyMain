@@ -34,6 +34,24 @@ class DealInvestor < ApplicationRecord
   validates :deal_lead, :source, :tags, length: { maximum: 255 }
 
   STATUS = %w[Active Pending Declined].freeze
+  STANDARD_COLUMNS = {
+    "Investor Name" => "investor_name",
+    "Status" => "status",
+    "Primary Amount" => "primary_amount",
+    "Secondary Investment" => "secondary_investment",
+    "Pre Money Valuation" => "pre_money_valuation",
+    "Fee" => "fee",
+    "Total Amount" => "total_amount",
+    "Tier" => "tier",
+    "Deal Lead" => "deal_lead",
+    "Source" => "source",
+    "Investor Advisor" => "investor_advisor",
+    "Company Advisor" => "company_advisor",
+    "Notes" => "notes",
+    "Tags" => "tags",
+    "Health Score" => "health_score"
+  }.freeze
+
   CARD_VIEW_ATTRS = {
     "Pre Money Valuation" => "pre_money_valuation",
     "Primary Amount" => "primary_amount",
@@ -122,10 +140,12 @@ class DealInvestor < ApplicationRecord
 
       existing = DealActivity.where(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id).first
 
+      # When creating or updating the activity for an investor, we copy the tasks_csv from the template.
+      # This allows the automation to know which tasks belong to this investor's current step.
       if existing
-        existing.update(title: template.title, sequence: template.sequence, days: template.days, by_date:, template_id: template.id, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na)
+        existing.update(title: template.title, sequence: template.sequence, days: template.days, by_date:, template_id: template.id, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv)
       else
-        DealActivity.create(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id, title: template.title, sequence: template.sequence, days: template.days, by_date:, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na)
+        DealActivity.create(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id, title: template.title, sequence: template.sequence, days: template.days, by_date:, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv)
       end
 
       seq += 1

@@ -15,6 +15,15 @@ class TasksController < ApplicationController
     @pagy, @tasks = pagy(@tasks)
   end
 
+  # Aggregated view for all Deal and DealInvestor tasks.
+  # This provides a centralized dashboard for tracking deal progress across the pipeline.
+  def deal_tasks
+    authorize Task
+    params[:owner_type_in] = %w[Deal DealInvestor]
+    index
+    render :index
+  end
+
   def search
     @search = true
     query = params[:query]

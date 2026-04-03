@@ -2,22 +2,22 @@
   show_deal ||= "Yes"
 %>
 <div class="associated_entity" data-controller="tabs tabdetails">
-    <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-
-      <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
-
-    </nav>
-
-
-
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
+    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#charts-tab">Charts</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
+  </nav>
   <div class="tab-content">
-      <div id="docs-tab" class="tab-pane fade in show active">
-        <div id="docs" class="associated_entity">
-          <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id), loading: :lazy do %>
-            <%= render "/layouts/loading" %>
-          <% end %>
-        </div>
+    <div id="charts-tab" class="tab-pane fade in show active">
+      <div id="deal_charts" class="associated_entity">
+        <%= render "deals/list_view_charts", deal: deal %>
       </div>
+    </div>
+    <div id="docs-tab" class="tab-pane fade">
+      <div id="docs" class="associated_entity">
+        <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id), loading: :lazy do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
+      </div>
+    </div>
   </div>
-
-  </div>
+</div>

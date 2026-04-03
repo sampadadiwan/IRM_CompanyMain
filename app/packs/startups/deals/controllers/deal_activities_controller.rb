@@ -192,7 +192,7 @@ class DealActivitiesController < ApplicationController
   # Only allow a list of trusted parameters through.
   def deal_activity_params
     params.require(:deal_activity).permit(:deal_id, :deal_investor_id, :by_date, :status,
-                                          :title, :details, :completed, :entity_id, :days,
+                                          :title, :details, :completed, :entity_id, :days, :tasks_csv,
                                           documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end

@@ -1,257 +1,221 @@
 <% cache_if(current_user != nil, cache_key("sidebar"), expires_in: 5.day) do %>
-
-<!-- Sidebar -->
-<nav class="sidebar-nav scroll-sidebar" data-simplebar>
-        <ul id="sidebarnav">
-
-            <!-- Nav Item - Dashboard -->
+  <!-- Sidebar -->
+  <nav class="sidebar-nav scroll-sidebar" data-simplebar>
+    <ul id="sidebarnav">
+      <!-- Nav Item - Dashboard -->
+      <li class="sidebar-item">
+        <a class="sidebar-link" href="/entities/dashboard" >
+          <span><i class="ti ti-layout-dashboard"></i></span>
+          <span class="hide-menu"><%= t('sidebar.dashboard') %></span></a>
+      </li>
+      <% if current_user && current_user.has_cached_role?(:super) %>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="/admin">
+            <span><i class="ti ti-radioactive"></i></span>
+            <span class="hide-menu"><%= t('sidebar.admin') %></span></a>
+        </li>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="/support_client_mappings">
+            <span><i class="ti ti-help"></i></span>
+            <span class="hide-menu"><%= t('sidebar.support_mapping') %></span></a>
+        </li>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="/blazer">
+            <span><i class="ti ti-files"></i></span>
+            <span class="hide-menu"><%= t('sidebar.blazer_reports') %></span></a>
+        </li>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="/key_biz_metrics?card=true&filter=true">
+            <span><i class="ti ti-dashboard"></i></span>
+            <span class="hide-menu"><%= t('sidebar.key_metrics') %></span></a>
+        </li>
+      <% end %>
+      <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+        <%= render "layouts/sidebars/sidebar_investor" %>
+      <% end %>
+      <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && (current_user.entity.is_fund?) %>
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+        <%= render "layouts/sidebars/sidebar_fund" %>
+      <% end %>
+      <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && current_user.entity_type == "Company" %>
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+        <%= render "layouts/sidebars/sidebar_startup" %>
+      <% end %>
+      <hr class="sidebar-divider">
+      <% if current_user && current_user.enable_funds %>
+        <li class="sidebar-item">
+          <a class="sidebar-link has-arrow" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
+            <span><i class="ti ti-currency-dollar"></i></span>
+            <span class="hide-menu"><%= t('sidebar.funds') %></span>
+          </a>
+          <ul aria-expanded="false" class="collapse first-level">
             <li class="sidebar-item">
-                <a class="sidebar-link" href="/entities/dashboard" >
-                    <span><i class="ti ti-layout-dashboard"></i></span>
-                    <span class="hide-menu"><%= t('sidebar.dashboard') %></span></a>
+              <a class="sidebar-link" href="/funds">
+                <div class="round-16 d-flex align-items-center justify-content-center">
+                  <i class="ti ti-chevron-right fs-2"></i>
+                </div>
+                <span class="hide-menu"><%= t('sidebar.funds') %></span>
+              </a>
             </li>
-
-            <% if current_user && current_user.has_cached_role?(:super) %>
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/admin">
-                        <span><i class="ti ti-radioactive"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.admin') %></span></a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/support_client_mappings">
-                        <span><i class="ti ti-help"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.support_mapping') %></span></a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/blazer">
-                        <span><i class="ti ti-files"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.blazer_reports') %></span></a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/key_biz_metrics?card=true&filter=true">
-                        <span><i class="ti ti-dashboard"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.key_metrics') %></span></a>
-                </li>
+            <% if current_user.curr_role == "investor" %>
+              <li class="sidebar-item">
+                <a class="sidebar-link" href="/capital_commitments?my_commitments=true">
+                  <div class="round-16 d-flex align-items-center justify-content-center">
+                    <i class="ti ti-chevron-right fs-2"></i>
+                  </div>
+                  <span class="hide-menu"><%= t('sidebar.commitments') %></span>
+                </a>
+              </li>
+              <li class="sidebar-item">
+                <a class="sidebar-link" href="/capital_commitments/documents">
+                  <div class="round-16 d-flex align-items-center justify-content-center">
+                    <i class="ti ti-chevron-right fs-2"></i>
+                  </div>
+                  <span class="hide-menu"><%= t('sidebar.documents') %></span>
+                </a>
+              </li>
+            <% elsif current_user.enable_reports %>
+              <li class="sidebar-item">
+                <a class="sidebar-link" href="/reports">
+                  <div class="round-16 d-flex align-items-center justify-content-center">
+                    <i class="ti ti-chevron-right fs-2"></i>
+                  </div>
+                  <span class="hide-menu"><%= t('sidebar.reports') %></span>
+                </a>
+              </li>
             <% end %>
-
-
-
-            <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
-                <!-- Divider -->
-                <hr class="sidebar-divider">
-                <%= render "layouts/sidebars/sidebar_investor" %>
-            <% end %>
-
-            <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && (current_user.entity.is_fund?) %>
-                <!-- Divider -->
-                <hr class="sidebar-divider">
-                <%= render "layouts/sidebars/sidebar_fund" %>
-            <% end %>
-
-            <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && current_user.entity_type == "Company" %>
-                <!-- Divider -->
-                <hr class="sidebar-divider">
-                <%= render "layouts/sidebars/sidebar_startup" %>
-            <% end %>
-
-            <hr class="sidebar-divider">
-
-            <% if current_user && current_user.enable_funds %>
-                <li class="sidebar-item">
-                    <a class="sidebar-link has-arrow" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
-                        <span><i class="ti ti-currency-dollar"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.funds') %></span>
-                    </a>
-
-
-                    <ul aria-expanded="false" class="collapse first-level">
-                        <li class="sidebar-item">
-                            <a class="sidebar-link" href="/funds">
-
-                                <div class="round-16 d-flex align-items-center justify-content-center">
-                                    <i class="ti ti-chevron-right fs-2"></i>
-                                </div>
-                                <span class="hide-menu"><%= t('sidebar.funds') %></span>
-                            </a>
-                        </li>
-
-                        <% if current_user.curr_role == "investor" %>
-                            <li class="sidebar-item">
-                                <a class="sidebar-link" href="/capital_commitments?my_commitments=true">
-
-                                    <div class="round-16 d-flex align-items-center justify-content-center">
-                                        <i class="ti ti-chevron-right fs-2"></i>
-                                    </div>
-                                    <span class="hide-menu"><%= t('sidebar.commitments') %></span>
-                                </a>
-                            </li>
-                            <li class="sidebar-item">
-                                <a class="sidebar-link" href="/capital_commitments/documents">
-
-                                    <div class="round-16 d-flex align-items-center justify-content-center">
-                                        <i class="ti ti-chevron-right fs-2"></i>
-                                    </div>
-                                    <span class="hide-menu"><%= t('sidebar.documents') %></span>
-                                </a>
-                            </li>
-                        <% elsif current_user.enable_reports %>
-                            <li class="sidebar-item">
-                                <a class="sidebar-link" href="/reports">
-
-                                    <div class="round-16 d-flex align-items-center justify-content-center">
-                                        <i class="ti ti-chevron-right fs-2"></i>
-                                    </div>
-                                    <span class="hide-menu"><%= t('sidebar.reports') %></span>
-                                </a>
-                            </li>
-                        <% end %>
-
-                        <li class="sidebar-item">
-                            <a class="sidebar-link" href="/investor_kycs">
-
-                                <div class="round-16 d-flex align-items-center justify-content-center">
-                                    <i class="ti ti-chevron-right fs-2"></i>
-                                </div>
-                                <span class="hide-menu"><%= t('sidebar.kycs') %></span>
-                            </a>
-                        </li>
-                    </ul>
-
-                </li>
-            <% end %>
-
-            <% if current_user && current_user.enable_inv_opportunities %>
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/investment_opportunities" >
-                        <span><i class="ti ti-device-analytics"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.opportunities') %></span>
-                    </a>
-                </li>
-            <% end %>
-
-
-
-
-
-            <% if current_user &&
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="/investor_kycs">
+                <div class="round-16 d-flex align-items-center justify-content-center">
+                  <i class="ti ti-chevron-right fs-2"></i>
+                </div>
+                <span class="hide-menu"><%= t('sidebar.kycs') %></span>
+              </a>
+            </li>
+          </ul>
+        </li>
+      <% end %>
+      <% if current_user && current_user.enable_inv_opportunities %>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="/investment_opportunities" >
+            <span><i class="ti ti-device-analytics"></i></span>
+            <span class="hide-menu"><%= t('sidebar.opportunities') %></span>
+          </a>
+        </li>
+      <% end %>
+      <% if current_user &&
                 (current_user.entity.is_fund? || current_user.entity.is_company?) %>
-
-                <!-- Divider -->
-                <hr class="sidebar-divider">
-
+      <!-- Divider -->
+      <hr class="sidebar-divider">
+      <li class="sidebar-item">
+        <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
+          <span><i class="ti ti-checklist"></i></span>
+          <span class="hide-menu"><%= t('sidebar.tasks') %></span>
+        </a>
+        <ul aria-expanded="false" class="collapse first-level">
+          <li class="sidebar-item">
+            <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#allTaskMenus">
+              <div class="round-16 d-flex align-items-center justify-content-center">
+                <i class="ti ti-chevron-right fs-2"></i>
+              </div>
+              <span class="hide-menu"><%= t('sidebar.all_tasks') %></span>
+            </a>
+            <ul aria-expanded="false" class="collapse two-level">
+              <li class="sidebar-item">
+                <a class="sidebar-link" href="/tasks">
+                  <div class="round-16 d-flex align-items-center justify-content-center">
+                    <i class="ti ti-circle fs-2"></i>
+                  </div>
+                  <span class="hide-menu"><%= t('sidebar.all_tasks') %></span>
+                </a>
+              </li>
+              <% Task::CATEGORIES.each do |category| %>
                 <li class="sidebar-item">
-                    <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
-                        <span><i class="ti ti-checklist"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.tasks') %></span>
-                    </a>
-
-                    <ul aria-expanded="false" class="collapse first-level">
-                        <li class="sidebar-item">
-                            <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#allTaskMenus">
-                                <div class="round-16 d-flex align-items-center justify-content-center">
-                                    <i class="ti ti-chevron-right fs-2"></i>
-                                </div>
-                                <span class="hide-menu"><%= t('sidebar.all_tasks') %></span>
-                            </a>
-                            <ul aria-expanded="false" class="collapse two-level">
-                                <li class="sidebar-item">
-                                    <a class="sidebar-link" href="/tasks">
-                                        <div class="round-16 d-flex align-items-center justify-content-center">
-                                            <i class="ti ti-circle fs-2"></i>
-                                        </div>
-                                        <span class="hide-menu"><%= t('sidebar.all_tasks') %></span>
-                                    </a>
-                                </li>
-                                <% Task::CATEGORIES.each do |category| %>
-                                    <li class="sidebar-item">
-                                        <a class="sidebar-link" href="/tasks?q[category_eq]=<%= category %>">
-                                            <div class="round-16 d-flex align-items-center justify-content-center">
-                                                <i class="ti ti-circle fs-2"></i>
-                                            </div>
-                                            <span class="hide-menu"><%= category %> Tasks</span>
-                                        </a>
-                                    </li>
-                                <% end %>
-                            </ul>
-                        </li>
-
-                        <li class="sidebar-item">
-                            <a class="sidebar-link" href="/tasks?assigned_to_id=<%=current_user.id%>">
-                                <div class="round-16 d-flex align-items-center justify-content-center">
-                                    <i class="ti ti-chevron-right fs-2"></i>
-                                </div>
-                                <span class="hide-menu"><%= t('sidebar.my_tasks') %></span>
-                            </a>
-                        </li>
-
-                        <% if current_user.support? %>
-                        <li class="sidebar-item">
-                            <a class="sidebar-link" href="/tasks?for_support=true">
-                                <div class="round-16 d-flex align-items-center justify-content-center">
-                                    <i class="ti ti-chevron-right fs-2"></i>
-                                </div>
-                                <span class="hide-menu"><%= t('sidebar.support_tasks') %></span>
-                            </a>
-                        </li>
-                        <% end %>
-
-                    </ul>
-
+                  <a class="sidebar-link" href="/tasks?q[category_eq]=<%= category %>">
+                    <div class="round-16 d-flex align-items-center justify-content-center">
+                      <i class="ti ti-circle fs-2"></i>
+                    </div>
+                    <span class="hide-menu"><%= category %> Tasks</span>
+                  </a>
                 </li>
-
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/boards">
-                        <span><i class="ti ti-brand-trello"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.boards') %></span>
-                    </a>
-                </li>
-
-                <li class="sidebar-item">
-                    <a class="sidebar-link" href="/events">
-                        <span><i class="ti ti-calendar"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.events') %></span>
-                    </a>
-                </li>
-            <% end %>
-
-
-            <% if current_user %>
-                <li class="sidebar-item">
-                    <a class="sidebar-link has-arrow" href="/quick_links" data-bs-toggle="collapse" data-bs-target="#quickLinksMenus">
-                        <span><i class="ti ti-map-pin"></i></span>
-                        <span class="hide-menu"><%= t('sidebar.quick_links') %></span>
-                    </a>
-
-                    <ul aria-expanded="false" class="collapse first-level">
-                        <% if current_user && current_user.curr_role != "investor" %>
-                        <li class="sidebar-item">
-                            <a class="sidebar-link" href="/quick_links?tags=Fund">
-                                <div class="round-16 d-flex align-items-center justify-content-center">
-                                    <i class="ti ti-chevron-right fs-2"></i>
-                                </div>
-                                <span class="hide-menu"><%= t('sidebar.quick_links_funds') %></span>
-                            </a>
-                        </li>
-                        <% end %>
-
-                        <li class="sidebar-item">
-                            <a class="sidebar-link" href="/quick_links?tags=Investor">
-                                <div class="round-16 d-flex align-items-center justify-content-center">
-                                    <i class="ti ti-chevron-right fs-2"></i>
-                                </div>
-                                <span class="hide-menu"><%= t('sidebar.quick_links_stakeholders') %></span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
-
-            <% end %>
-
+              <% end %>
+              <%# Aggregated Deal Tasks Link %>
+              <li class="sidebar-item">
+                <a class="sidebar-link" href="/tasks/deal_tasks">
+                  <div class="round-16 d-flex align-items-center justify-content-center">
+                    <i class="ti ti-circle fs-2"></i>
+                  </div>
+                  <span class="hide-menu">Deal Tasks</span>
+                </a>
+              </li>
+            </ul>
+          </li>
+          <li class="sidebar-item">
+            <a class="sidebar-link" href="/tasks?assigned_to_id=<%=current_user.id%>">
+              <div class="round-16 d-flex align-items-center justify-content-center">
+                <i class="ti ti-chevron-right fs-2"></i>
+              </div>
+              <span class="hide-menu"><%= t('sidebar.my_tasks') %></span>
+            </a>
+          </li>
+          <% if current_user.support? %>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="/tasks?for_support=true">
+                <div class="round-16 d-flex align-items-center justify-content-center">
+                  <i class="ti ti-chevron-right fs-2"></i>
+                </div>
+                <span class="hide-menu"><%= t('sidebar.support_tasks') %></span>
+              </a>
+            </li>
+          <% end %>
         </ul>
-        <!-- End of Sidebar -->
+      </li>
+      <li class="sidebar-item">
+        <a class="sidebar-link" href="/boards">
+          <span><i class="ti ti-brand-trello"></i></span>
+          <span class="hide-menu"><%= t('sidebar.boards') %></span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a class="sidebar-link" href="/events">
+          <span><i class="ti ti-calendar"></i></span>
+          <span class="hide-menu"><%= t('sidebar.events') %></span>
+        </a>
+      </li>
+    <% end %>
+    <% if current_user %>
+      <li class="sidebar-item">
+        <a class="sidebar-link has-arrow" href="/quick_links" data-bs-toggle="collapse" data-bs-target="#quickLinksMenus">
+          <span><i class="ti ti-map-pin"></i></span>
+          <span class="hide-menu"><%= t('sidebar.quick_links') %></span>
+        </a>
+        <ul aria-expanded="false" class="collapse first-level">
+          <% if current_user && current_user.curr_role != "investor" %>
+            <li class="sidebar-item">
+              <a class="sidebar-link" href="/quick_links?tags=Fund">
+                <div class="round-16 d-flex align-items-center justify-content-center">
+                  <i class="ti ti-chevron-right fs-2"></i>
+                </div>
+                <span class="hide-menu"><%= t('sidebar.quick_links_funds') %></span>
+              </a>
+            </li>
+          <% end %>
+          <li class="sidebar-item">
+            <a class="sidebar-link" href="/quick_links?tags=Investor">
+              <div class="round-16 d-flex align-items-center justify-content-center">
+                <i class="ti ti-chevron-right fs-2"></i>
+              </div>
+              <span class="hide-menu"><%= t('sidebar.quick_links_stakeholders') %></span>
+            </a>
+          </li>
+        </ul>
+      </li>
+    <% end %>
+  </ul>
+  <!-- End of Sidebar -->
 </nav>
-
 <% end %>

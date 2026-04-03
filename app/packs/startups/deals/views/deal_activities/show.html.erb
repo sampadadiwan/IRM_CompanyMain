@@ -1,101 +1,104 @@
-
-
 <table class="table table-bordered dataTable ">
-      </tr>
-          <tr>
-        <td>
-          Sequence No.
-        </td>
-        <td>
-          <%= @deal_activity.sequence %>
-        </td>    
-      </tr>
-      
-      <tr>
-        <td>
-          Title
-        </td>
-        <td>
-          <%= @deal_activity.title %>
-        </td>    
-      </tr>
-      <tr>
-        <td>
-          Details
-        </td>
-        <td>
-          <%= @deal_activity.details %>
-        </td>    
-      </tr>
-      <tr>
-        <td>
-          Deal
-        </td>
-        <td>
-          <%= belongs_to_entity_id?(current_user, @deal_activity.entity_id) ? 
+</tr>
+<tr>
+  <td>
+    Sequence No.
+  </td>
+  <td>
+    <%= @deal_activity.sequence %>
+  </td>
+</tr>
+<tr>
+  <td>
+    Title
+  </td>
+  <td>
+    <%= @deal_activity.title %>
+  </td>
+</tr>
+<tr>
+  <td>
+    Details
+  </td>
+  <td>
+    <%= @deal_activity.details %>
+  </td>
+</tr>
+<tr>
+  <td>
+    Deal
+  </td>
+  <td>
+    <%= belongs_to_entity_id?(current_user, @deal_activity.entity_id) ?
               link_to(@deal_activity.deal_name, deal_path(@deal_activity.deal, grid_view: true)) :
               @deal_activity.deal_name %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Potential Investment
-        </td>
-        <td>
-          <%= link_to @deal_activity.investor_name, @deal_activity.deal_investor %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Days
-        </td>
-        <td>
-          <%= @deal_activity.days %>
-        </td>    
-      </tr>
-      
-      </tr>
-          <tr>
-        <td>
-          By Date
-        </td>
-        <td>
-          <%= @deal_activity.by_date %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Status
-        </td>
-        <td>
-          <%= @deal_activity.status %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Completed
-        </td>
-        <td>
-          <%= @deal_activity.completed_status %>
-        </td>    
-      </tr>
-          <tr>
-        <td>
-          Entity
-        </td>
-        <td>
-          <%= @deal_activity.entity_name %>
-        </td>    
-      </tr>
-    
-  
+  </td>
+</tr>
+<tr>
+  <td>
+    Potential Investment
+  </td>
+  <td>
+    <%= link_to @deal_activity.investor_name, @deal_activity.deal_investor %>
+  </td>
+</tr>
+<tr>
+  <td>
+    Days
+  </td>
+  <td>
+    <%= @deal_activity.days %>
+  </td>
+</tr>
+</tr>
+<tr>
+  <td>
+    By Date
+  </td>
+  <td>
+    <%= @deal_activity.by_date %>
+  </td>
+</tr>
+<tr>
+  <td>
+    Status
+  </td>
+  <td>
+    <%= @deal_activity.status %>
+  </td>
+</tr>
+<tr>
+  <td>
+    Completed
+  </td>
+  <td>
+    <%= @deal_activity.completed_status %>
+  </td>
+</tr>
+<tr>
+  <td>
+    Entity
+  </td>
+  <td>
+    <%= @deal_activity.entity_name %>
+  </td>
+</tr>
+<tr>
+  <td>
+    Tasks
+  </td>
+  <td>
+    <!-- Split by either , or newline -->
+    <ul>
+      <% @deal_activity.tasks_csv&.split(/[,\n]/)&.map(&:strip)&.reject(&:blank?)&.each do |task| %>
+        <li><%= task %></li>
+      <% end %>
+    </ul>
+  </td>
+</tr>
 </table>
-
-
 <div>
-  <%= link_to  t_common(:edit), edit_deal_activity_path(@deal_activity), 
-      {class: "btn btn-outline-primary"} if policy(@deal_activity).update? %> 
+  <%= link_to  t_common(:edit), edit_deal_activity_path(@deal_activity),
+      {class: "btn btn-outline-primary"} if policy(@deal_activity).update? %>
 </div>
-
-
 <%= render  "/deal_activities/details", deal_activity: @deal_activity %>

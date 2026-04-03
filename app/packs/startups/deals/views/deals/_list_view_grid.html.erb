@@ -1,17 +1,18 @@
 <div class="card shadow mb-4">
+  <div class="card-header py-3 d-flex align-items-center justify-content-between">
+    <h6 class="m-0 font-weight-bold text-primary">Investors</h6>
+    <button id="clear-grid-filters" 
+            class="btn btn-sm btn-outline-danger align-items-center gap-1" 
+            style="display: none;" 
+            data-action="click->deals-list-ag-grid#clearFilters">
+      <i class="ti ti-filter-off"></i> Clear Filters
+    </button>
+  </div>
   <div class="card-body p-0">
     <div
       id="deals_list_grid"
       class="<%= get_ag_theme %>"
       style="min-height: 400px; width: 100%;"
-      data-controller="deals-list-ag-grid"
-      data-deals-list-ag-grid-table-name-value="#deals_list_grid"
-      data-deals-list-ag-grid-lazy-load-data-value="false"
-      data-deals-list-ag-grid-deal-id-value="<%= deal.id %>"
-      data-deals-list-ag-grid-investor-label-value="<%= investor_label %>"
-      data-deals-list-ag-grid-currency-value="<%= deal.currency %>"
-      data-deals-list-ag-grid-activity-templates-value="<%= DealActivity.templates(deal).map { |t| { id: t.id, title: t.title } }.to_json %>"
-      data-deals-list-ag-grid-custom-fields-value="<%= deal.entity.form_types.find_by(name: 'DealInvestor')&.form_custom_fields&.visible&.map { |cf| { name: cf.name, label: cf.label, field_type: cf.field_type } }&.to_json %>"
       data-source="<%= deal_investors_path(params.to_unsafe_h.merge(format: :json, deal_id: deal.id, all: params[:all])) %>"
     >
     </div>

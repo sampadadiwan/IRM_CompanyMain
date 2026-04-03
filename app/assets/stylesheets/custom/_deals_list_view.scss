@@ -140,6 +140,7 @@
   }
 
   /* Status/Category Badges - Force colors with !important to override potential AG Grid interference */
+  .bg-primary-light { background-color: rgba(93, 135, 255, 0.08) !important; color: #5d87ff !important; }
   .bg-success-light { background-color: rgba(0, 176, 144, 0.08) !important; color: #00b090 !important; }
   .bg-warning-light { background-color: rgba(255, 160, 0, 0.08) !important; color: #ffa000 !important; }
   .bg-danger-light { background-color: rgba(239, 68, 68, 0.08) !important; color: #ef4444 !important; }

@@ -14,7 +14,7 @@ class DealInvestorsController < ApplicationController
       @deal_investors = policy_scope(@q.result)
     end
 
-    @deal_investors = @deal_investors.includes(:investor, :deal, :rich_text_notes, deal_activities: :rich_text_details)
+    @deal_investors = @deal_investors.includes(:deal, :rich_text_notes, investor: :investor_entity, deal_activities: :rich_text_details)
     @deal_investors = @deal_investors.not_declined if [nil, "", "false", false].include?(params[:all])
     @deal_investors = @deal_investors.where(entity_id: params[:entity_id]) if params[:entity_id].present?
 

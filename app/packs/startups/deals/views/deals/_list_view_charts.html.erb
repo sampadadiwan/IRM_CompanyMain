@@ -1,8 +1,95 @@
 <div class="row mb-4">
+  <!-- Conversion Funnel (Deal Pipeline) -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Conversion Funnel</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_conversion_funnel(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Commitment Velocity (Time-Series) -->
   <div class="col-lg-4">
     <div class="card shadow mb-4">
-      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Commitment Velocity</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_commitment_velocity(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Weighted Pipeline (Expected vs. Target) -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Weighted Pipeline</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_weighted_pipeline(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row mb-4">
+  <!-- Activity Completion Health (Efficiency Analysis) -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Activity Efficiency (Avg Days)</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_activity_efficiency(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Investor Concentration Breakdown -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Concentration (By Source)</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_investor_concentration(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- "Days in Stage" Histogram -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">"Days in Stage" Distribution</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_days_in_stage(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row mb-4">
+  <!-- Investor Status -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
         <h6 class="m-0 font-weight-bold text-primary">Investor Status</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
       </div>
       <div class="card-body">
         <div class="chart-area" style="height: 300px;">
@@ -11,11 +98,12 @@
       </div>
     </div>
   </div>
-
+  <!-- Overall Health -->
   <div class="col-lg-4">
-    <div class="card shadow mb-4">
-      <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">Activity Completion Health</h6>
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Overall Health</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
       </div>
       <div class="card-body">
         <div class="chart-area" style="height: 300px;">
@@ -24,20 +112,20 @@
       </div>
     </div>
   </div>
-
+  <!-- Allocation Breakdown -->
   <div class="col-lg-4">
     <div class="card shadow mb-4">
       <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">Investment Allocation Breakdown</h6>
+        <h6 class="m-0 font-weight-bold text-primary">Allocation Breakdown</h6>
       </div>
       <div class="card-body">
         <div class="chart-pie pt-4 pb-2" style="height: 300px;">
           <%
             investors = deal.deal_investors.not_declined
             breakdown_data = {
-              "Primary" => investors.sum(:primary_amount_cents) / 100.0,
-              "Secondary" => investors.sum(:secondary_investment_cents) / 100.0,
-              "Fees" => investors.sum(:fee_cents) / 100.0
+              "Primary" => (investors.sum(:primary_amount_cents) / 100.0).round(2),
+              "Secondary" => (investors.sum(:secondary_investment_cents) / 100.0).round(2),
+              "Fees" => (investors.sum(:fee_cents) / 100.0).round(2)
             }
           %>
           <%= pie_chart breakdown_data, library: {
