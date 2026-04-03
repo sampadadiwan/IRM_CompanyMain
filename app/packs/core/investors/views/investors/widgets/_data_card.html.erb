@@ -11,9 +11,9 @@
   show_logo = args[:show_logo].to_s.downcase != "false"
 %>
 
-<div id="data_card_1">
-  <div class="card mt-4" data-controller="">
-    <div class="card-body">
+<div id="data_card_1" style="display: flex; flex-direction: column; height: 100%;">
+  <div class="card flex-grow-1" data-controller="">
+    <div class="card-body d-flex flex-column">
       <div class="text-primary"><%= name %></div>
       <div class="table-responsive">
         <table class="table table-bordered dataTable ">
@@ -34,8 +34,9 @@
                   <strong><%= label.humanize %></strong>
                 </td>
                 <td>
-                  <% value = key.split('.').inject(investor) { |object, method| object&.send(method) } %>
-                  <% if  value.is_a?(Date) %>
+                  <%# TODO: Add sanitization %>
+                  <% value = key.split('.').inject(investor) { |object, method| object&.send(method.strip) } %>
+                  <% if value.is_a?(Date) %>
                     <%= l(value) %>
                   <% elsif value.is_a?(Money) %>
                     <%= money_to_currency value, params %>

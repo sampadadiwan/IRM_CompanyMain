@@ -20,8 +20,12 @@
 
 
 %>
-
-    <%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+    <%
+        id = "#{widget.widget_name.strip.parameterize.underscore}"
+        id += "_#{report.model.underscore}" if report.present?
+        id += "_#{widget.id}"
+    %>
+    <%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size, html_options: { id: id})) do %>
         <turbo-frame id="report_<%=report.id%>" src="<%= uri %>" loading="lazy" target="_top">
         </turbo-frame>
     <% end %>

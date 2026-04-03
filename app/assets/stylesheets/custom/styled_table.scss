@@ -83,12 +83,9 @@ table.dataTable {
   vertical-align: top;
 }
 
-[data-bs-theme=light] tbody tr:nth-child(even):hover td{
-  background-color: lighten($color: cornflowerblue, $amount: 30);
-}
-
-[data-bs-theme=light] tbody tr:nth-child(odd):hover td {
-    background-color: lighten($color: cornflowerblue, $amount: 30);
+tbody tr:hover td{
+  background-color: lighten($color: cornflowerblue, $amount: 30) !important;
+  box-shadow: inset 0 0 0 9999px lighten($color: cornflowerblue, $amount: 30) !important;
 }
 
 [data-bs-theme=dark] thead th {

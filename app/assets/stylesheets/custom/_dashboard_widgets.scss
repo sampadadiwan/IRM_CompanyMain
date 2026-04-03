@@ -17,6 +17,8 @@
     /* sticky nav top (70px inline style) + small spacing */
     scroll-margin-top: calc(70px + 5.5rem);
     padding-top: clamp(16px, 2vw, 32px);
+    display: flex;
+    flex-direction: column;
   }
 }
 .widget-column {
@@ -39,6 +41,17 @@
   height: auto; /* expand to fit content */
   overflow: visible;
 }
+
+// Ensure all dashboard widget containers propagate full row height to their children
+.dashboard-widget-container {
+  display: flex;
+  flex-direction: column;
+
+  > * {
+    flex: 1 1 auto;
+  }
+}
+
 .dashboard-nav {
   .nav-pills {
     .nav-item {

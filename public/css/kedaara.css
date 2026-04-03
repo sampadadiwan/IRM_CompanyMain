@@ -8,7 +8,6 @@
   --bs-orange: #fd7e14;
   --bs-yellow: #006D74;
   --bs-green: #006D74;
-
   --bs-teal: #20c997;
   --bs-cyan: #006D74;
   --bs-black: #000;
@@ -125,6 +124,18 @@
   /* Pie Chart Colors */
   --pie-color-1: #006D74;
   --pie-color-2: #550C18;
+  --pie-color-3: #00BFC6;
+  --pie-color-4: #FF6B6B;
+  --pie-color-5: #FFC857;
+  --pie-color-6: #6A5CFF;
+  --pie-color-7: #000088;
+  --pie-color-8: #F4A261;
+  --pie-color-9: #7FB258;
+  --pie-color-10: #DE61F4;
+
+  /* OLD COLORS */
+  /* --pie-color-1: #006D74;
+  --pie-color-2: #550C18;
   --pie-color-3: #1F8C92;
   --pie-color-4: #7A1F2B;
   --pie-color-5: #4A9DA3;
@@ -132,7 +143,7 @@
   --pie-color-7: #6FBFC5;
   --pie-color-8: #C76A75;
   --pie-color-9: #A9D4D7;
-  --pie-color-10: #E6B7BC;
+  --pie-color-10: #E6B7BC; */
 }
 
 
@@ -515,7 +526,7 @@ a:hover {
 }
 
 #data_card_1 .table tbody td{
-    padding: 6.8px 0px;
+    padding: 10.8px 0px;
 }
 
 #data_card_1 .text-primary{
@@ -527,10 +538,10 @@ a:hover {
 }
 
 #data_card_1 .table-responsive {
-    height: 222px;
+    height: 270px;
     overflow-y: auto;
     border: 0px;
-    margin-top: 6px;
+    margin-top: 15px;
 }
 
 #data_card_1 .card-body td strong{
@@ -610,7 +621,7 @@ a:hover {
 }
 
 .card-title, .d-sm-flex h1, .card-header h6{
-    font-size: 1.25rem !important;
+    font-size: 1.20rem !important;
     font-weight: 700;
     color: #2A3547 !important;
     letter-spacing: 0px;
@@ -739,7 +750,11 @@ table.dataTable .text-end{
 }
 
 [data-bs-theme=light] tbody tr:nth-child(odd):hover td {
-    background-color: #F5F9F9;
+    background-color: #edf3fd;
+}
+
+[data-bs-theme=light] tbody tr:nth-child(even):hover td {
+    background-color: #edf3fd;
 }
 
 table.dataTable td {
@@ -762,21 +777,6 @@ table.dataTable td:first-child{
     margin-top: 5px;
 }
 
-#kpis_13 .badge.text-success {
-    color: #1976D2 !important;
-    background-color: #E3EEF9 !important;
-}
-
-#kpis_18 .badge.text-success, #kpis_19 .badge.text-success, #kpis_20 .badge.text-success {
-    color: #FF0084 !important;
-    background-color: #FFEBF6 !important;
-}
-
-#kpis_21 .badge.text-success {
-    color: #EF6C00 !important;
-    background-color: #FDEDE0 !important;
-}
-
 td[data-row-toggle-target="control"] .expand {
     display: inline-flex;
     align-items: center;
@@ -793,7 +793,7 @@ td[data-row-toggle-target="control"] .expand {
 td[data-row-toggle-target="control"] .expand:before{
     font-family: "tabler-icons" !important;
     content: "\ea69";
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1;
     color: var(--bs-primary);
 }
@@ -892,7 +892,7 @@ table.table.dataTable.table-striped>tbody>tr:nth-of-type(2n+1)>* {
 }
 
 .show_horizontal_cap_table {
-    margin-top: 1.0rem;
+    margin-top: 0rem; /*1.0rem*/
 }
 
 .card-header .fa-caret-down:before {
@@ -935,6 +935,7 @@ table.table.table-bordered td.text-right {
 
 #excel_viewer .card-header {
     margin-bottom: 20px;
+    margin-top: 20px;
 }
 
 .associated_entity .card-header {
@@ -1211,6 +1212,7 @@ form .form-group label {
 form#kpi_reports_filter {
     display: inline-flex !important;
     align-items: center;
+    justify-content: space-between;
     overflow-x: auto;
     gap: 5px;
 }
@@ -1598,6 +1600,86 @@ ul.pagination {
     content: "\f028";
 }
 
+.boxborder .card-body {
+    border: 1px solid #DFE5EF;
+    border-radius: 12px;
+    padding: 20px 20px;
+    margin-top: 20px;
+}
+
+.portfolio_stats .card-body{
+    padding: 20px;
+}
+
+.currency-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: start;
+    gap: 10px;
+    margin-top: 3px;
+}
+
+.currency-wrapper span {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.currency-wrapper select {
+    max-width: 120px;
+}
+
+.left-sidebar{
+    z-index: 9999 !important;
+}
+
+div.dt-container div.dt-info {
+    padding-top: 0em !important;
+    font-size: 12px;
+    color: #5A6A86;
+    font-weight: 400;
+}
+
+div.dt-container div.dt-length label {
+    color: #2A3547;
+    font-size: 13px;
+}
+
+.form-check-input:checked {
+    background-color: var(--bs-green);
+    border-color: var(--bs-green);
+}
+
+.form-check-input:focus {
+    outline: 0;
+    box-shadow: 0 0 0 0.25rem rgba(0, 109, 116, 0.25);
+}
+
+#fund_ratios_frame th div div{
+    font-weight: 500;
+    color: #DFDDDD;
+    letter-spacing: 0px;
+    line-height: 16px;
+    font-size: 0.875em;
+}
+
+[id^="embed_document_"] .card-body, [id^="kpis_budget_vs_actual_"] .card-body, [id^="portfolio_company_report_"] .card-body, [id^="valuations_"] .card-body{
+    padding-top: 10px;
+}
+
+[id^="embed_document_"] table.table, [id^="kpis_budget_vs_actual_"] table.table, [id^="portfolio_company_report_"] table.table{
+    margin-bottom: 0rem;
+}
+
+[id^="captable_"] .table thead th.text-center:first-child {
+    text-align: center !important;
+}
+
+#report_144 th:nth-child(2), #report_144 td:nth-child(2){
+    text-align: left !important;
+}
+
+
 @media(max-width: 768px) and (min-width:573px){
     .nav.nav-pills.nav-justified{
         padding: 0px 10px !important;
@@ -1630,6 +1712,9 @@ ul.pagination {
     }
     .doc-header .ti-file-text{
         font-size: 1.875rem;
+    }
+    .card-subtitle {
+    font-size: 13px;
     }
 }
 
@@ -1748,6 +1833,9 @@ ul.pagination {
     }
     .doc-header .ti-file-text{
         font-size: 1.75rem;
+    }
+    .boxborder .card-body{
+        margin-top: 15px;
     }
 
 }
