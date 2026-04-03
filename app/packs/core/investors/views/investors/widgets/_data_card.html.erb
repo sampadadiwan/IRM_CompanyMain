@@ -8,6 +8,7 @@
   fields_to_display = args[:fields] ? args[:fields].split(",").map { |field| field.strip.split(":") } : []
   uri_params ||= {}
   cols = 1
+  show_logo = args[:show_logo].to_s.downcase != "false"
 %>
 
 <div id="data_card_1">
@@ -17,13 +18,15 @@
       <div class="table-responsive">
         <table class="table table-bordered dataTable ">
           <tbody>
-            <% logo = investor.logo_doc %>
-            <% if logo %>
-              <tr>
-                <td colspan="2" class="text-left">
-                  <%= image_tag logo.file.url, alt: "Investor Logo", class: "img-fluid", style: "max-height: 100px;" %>
-                </td>
-              </tr>
+            <% if show_logo %>
+              <% logo = investor.logo_doc %>
+              <% if logo %>
+                <tr>
+                  <td colspan="2" class="text-left">
+                    <%= image_tag logo.file.url, alt: "Investor Logo", class: "img-fluid", style: "max-height: 100px;" %>
+                  </td>
+                </tr>
+              <% end %>
             <% end %>
             <% fields_to_display.each do |label, key| %>
               <tr>
