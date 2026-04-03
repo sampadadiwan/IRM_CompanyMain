@@ -45,6 +45,7 @@ export default class extends BaseAgGrid {
         headerName: col.label,
         enableRowGroup: true,
         editable: true,
+        minWidth: 150,
         filter: isNumeric ? 'agNumberColumnFilter' : (dataType === 'date' ? 'agDateColumnFilter' : 'agTextColumnFilter')
       };
 
@@ -67,6 +68,8 @@ export default class extends BaseAgGrid {
         pinned: 'left',
         lockPinned: true,
         width: 350,
+        minWidth: 350,
+        suppressSizeToFit: true,
         autoHeight: true,
         wrapText: true,
         cellRenderer: (params) => {
@@ -417,9 +420,7 @@ export default class extends BaseAgGrid {
     }
 
     this.gridOptions.onGridSizeChanged = (params) => {
-      if (!isMobile) {
-        params.api.sizeColumnsToFit();
-      }
+      // params.api.sizeColumnsToFit();
     };
 
     this.gridOptions.groupIncludeFooter = this.includeFooter();
