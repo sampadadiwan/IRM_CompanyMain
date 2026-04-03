@@ -233,4 +233,31 @@
     width: 1px;
     background-color: rgba(255, 255, 255, 0.3);
   }
+
+  /* Offcanvas styling */
+  #dealInvestorSidepanel {
+    width: 100% !important;
+
+    @media (min-width: 992px) {
+      width: 50% !important;
+    }
+  }
+
+  /* Responsive Grid Adjustments */
+  @media (max-width: 767px) {
+    #deals_list_grid {
+      height: 500px !important; 
+      min-height: 500px !important;
+      min-width: 1000px !important; // Force minimum width to trigger scroll
+    }
+
+    .card-body.p-0 {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .ag-root-wrapper {
+      min-width: 1000px !important;
+    }
+  }
 }

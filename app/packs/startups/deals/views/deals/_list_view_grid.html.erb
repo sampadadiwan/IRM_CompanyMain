@@ -8,11 +8,11 @@
       <i class="ti ti-filter-off"></i> Clear Filters
     </button>
   </div>
-  <div class="card-body p-0">
+  <div class="card-body p-0" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
     <div
       id="deals_list_grid"
       class="<%= get_ag_theme %>"
-      style="min-height: 400px; width: 100%;"
+      style="min-height: 400px; width: 100%; min-width: 1000px;"
       data-source="<%= deal_investors_path(params.to_unsafe_h.merge(format: :json, deal_id: deal.id, all: params[:all])) %>"
     >
     </div>

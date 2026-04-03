@@ -383,6 +383,8 @@ export default class extends BaseAgGrid {
         this.saveColumnVisibilityState(this.gridOptions, this.tableNameValue);
     };
 
+    const isMobile = window.innerWidth < 768;
+
     this.gridOptions.autoGroupColumnDef = {
         minWidth: 200,
         cellRendererParams: {
@@ -399,12 +401,26 @@ export default class extends BaseAgGrid {
     this.gridOptions.enableRangeSelection = true;
     this.gridOptions.enableCharts = true;
     this.gridOptions.rowGroupPanelShow = 'always';
-    this.gridOptions.domLayout = 'autoHeight';
+    this.gridOptions.domLayout = isMobile ? 'normal' : 'autoHeight';
+    this.gridOptions.suppressHorizontalScroll = false;
     this.gridOptions.suppressDragLeaveHidesColumns = true;
     this.gridOptions.suppressMakeColumnVisibleAfterUnGroup = true;
     this.gridOptions.suppressRowGroupHidesColumns = true;
     this.gridOptions.pagination = true;
     this.gridOptions.paginationPageSize = 30;
+
+    if (isMobile) {
+      this.gridOptions.columnDefs.forEach(col => {
+        if (col.pinned) col.pinned = null;
+        if (col.field === 'investor_name') col.width = 250;
+      });
+    }
+
+    this.gridOptions.onGridSizeChanged = (params) => {
+      if (!isMobile) {
+        params.api.sizeColumnsToFit();
+      }
+    };
 
     this.gridOptions.groupIncludeFooter = this.includeFooter();
     this.gridOptions.groupIncludeTotalFooter = this.includeTotalFooter();
