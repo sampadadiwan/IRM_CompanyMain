@@ -1,6 +1,7 @@
 
 <% if portfolio_company %>
-  <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company, params[:display_currency]]), expires_in: 5.day) do %>
+
+  <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company, params[:display_currency], show_currency_filter]), expires_in: 5.day) do %>
     <%
       error = nil
       begin
@@ -69,32 +70,32 @@
         <%= error %>
       </div>
     <% else %>
-      <div data-controller="portfolio-stats-currency"
-           data-portfolio-stats-currency-portfolio-company-id-value="<%= portfolio_company.id %>"
-           data-portfolio-stats-currency-current-path-value="<%= request.fullpath %>">
-        <div class="d-flex justify-content-end mb-3">
-          <label for="currency_selector_<%= portfolio_company.id %>" class="me-2 align-self-center mb-0">Currency:</label>
-          <select
-            id="currency_selector_<%= portfolio_company.id %>"
-            class="form-select form-select-sm"
-            style="width: 120px;"
-            data-portfolio-stats-currency-target="select"
-            data-action="change->portfolio-stats-currency#changeCurrency">
-            <%
-              # Determine base currency (entity's tracking_currency or currency)
-              base_currency = tracking_currency.present? && portfolio_company.entity.tracking_currency.present? ?
-                              portfolio_company.entity.tracking_currency :
-                              portfolio_company.entity.currency
-            %>
-            <option value="<%= base_currency %>" <%= 'selected' if target_currency == base_currency %>><%=base_currency %></option>
-            <% if base_currency != 'INR' %>
-              <option value="INR" <%= 'selected' if target_currency == 'INR' %>>INR</option>
-            <% end %>
-            <% if base_currency != 'USD' %>
-              <option value="USD" <%= 'selected' if target_currency == 'USD' %>>USD</option>
-            <% end %>
-          </select>
-        </div>
+      <div <%= "data-controller=\"portfolio-stats-currency\" data-portfolio-stats-currency-portfolio-company-id-value=\"#{portfolio_company.id}\" data-portfolio-stats-currency-current-path-value=\"#{request.fullpath}\"".html_safe if show_currency_filter %>>
+        <% if show_currency_filter %>
+          <div class="d-flex justify-content-end mb-3">
+            <label for="currency_selector_<%= portfolio_company.id %>" class="me-2 align-self-center mb-0">Currency:</label>
+            <select
+              id="currency_selector_<%= portfolio_company.id %>"
+              class="form-select form-select-sm"
+              style="width: 120px;"
+              data-portfolio-stats-currency-target="select"
+              data-action="change->portfolio-stats-currency#changeCurrency">
+              <%
+                # Determine base currency (entity's tracking_currency or currency)
+                base_currency = tracking_currency.present? && portfolio_company.entity.tracking_currency.present? ?
+                                portfolio_company.entity.tracking_currency :
+                                portfolio_company.entity.currency
+              %>
+              <option value="<%= base_currency %>" <%= 'selected' if target_currency == base_currency %>><%=base_currency %></option>
+              <% if base_currency != 'INR' %>
+                <option value="INR" <%= 'selected' if target_currency == 'INR' %>>INR</option>
+              <% end %>
+              <% if base_currency != 'USD' %>
+                <option value="USD" <%= 'selected' if target_currency == 'USD' %>>USD</option>
+              <% end %>
+            </select>
+          </div>
+        <% end %>
         <%
           card_col_class = case cards_data.length
                            when 1 then "col-md-12"
@@ -104,7 +105,7 @@
                            else ""
                            end
         %>
-        <div id="stats_cards_<%= portfolio_company.id %>" class="row" data-portfolio-stats-currency-target="stats">
+        <div id="stats_cards_<%= portfolio_company.id %>" class="row" <%= 'data-portfolio-stats-currency-target="stats"'.html_safe if show_currency_filter %>>
           <% cards_data.each do |card_data| %>
             <%= render(NumberStatsComponent.new(
                         path: card_data[:path],

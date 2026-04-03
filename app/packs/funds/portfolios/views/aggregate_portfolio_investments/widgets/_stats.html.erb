@@ -9,9 +9,8 @@
   currency = args[:currency] if args && args[:currency].present?
   decimals = args[:decimals]&.to_i || 2
   fields ||= []
-
+  show_currency_filter = args[:show_currency_filter] if args && args[:show_currency_filter].present?
   force_units = args[:force_units]
-
 %>
 
 
@@ -27,7 +26,7 @@
   <% if fund %>
     <%= render "aggregate_portfolio_investments/stats",  fund: fund, fields: fields, force_units: force_units, decimals: decimals, widget_size: widget.widget_size %>
   <% elsif portfolio_company %>
-    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: portfolio_company, fields: fields, force_units: force_units, tracking_currency: tracking_currency, decimals: decimals, widget_size: widget.widget_size %>
+    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: portfolio_company, fields: fields, force_units: force_units, tracking_currency: tracking_currency, decimals: decimals, widget_size: widget.widget_size, show_currency_filter: show_currency_filter %>
   <% elsif params[:multi_portfolio_dashboard].present? && @investors.present? %>
     <%= render "aggregate_portfolio_investments/stats_for_multiple_portfolio_companies", portfolio_companies: @investors, fields: fields, force_units: force_units, currency: currency, decimals: decimals, widget_size: widget.widget_size %>
   <% end %>

@@ -29,23 +29,38 @@ Given('there is a fund ratio {string} for the fund') do |attributes|
       position: 1,
       size: 'XL',
       tags: 'Fund Ratios',
-      metadata: '{condensed: true, chart: false, scenarios: true}'
+      metadata: '{condensed: true, chart: false, scenarios: true, show_currency_filter: false}'
     )
   end
+end
+
+Given('the Fund Ratios widget has metadata {string}') do |metadata|
+  widget = DashboardWidget.find_or_initialize_by(
+    entity_id: @fund.entity_id,
+    dashboard_name: 'Portfolio Company Dashboard',
+    widget_name: 'Fund Ratios',
+    name: 'Default'
+  )
+
+  widget.assign_attributes(
+    enabled: true,
+    position: 1,
+    size: 'XL',
+    tags: 'Fund Ratios',
+    metadata: metadata
+  )
+  widget.save!
 end
 
 When('I visit the portfolio company dashboard') do
   # Visit the portfolio company dashboard page where all three widgets are shown
   visit "/investors/#{@portfolio_company.id}/dashboard"
-  sleep(1) # Give time for the page to load
+  sleep(2) # Give time for the page to load and turbo frames to render
 end
 
-Then('I should see a select element for currency filtering') do
-  expect(page).not_to have_select('metrics_filter_select', visible: true)
-end
-
-Then('the currency dropdown should have option {string}') do |currency|
-  expect(page).not_to have_select('metrics_filter_select', with_options: [currency])
+Then('I should see a currency dropdown for fund ratios') do
+  # The fund ratios currency dropdown selector
+  expect(page).to have_select('metrics_filter_select', visible: true)
 end
 
 Then('I should not see a currency dropdown for fund ratios') do
@@ -60,7 +75,8 @@ Given('there is a portfolio investment for the fund {string}') do |attributes|
     fund: @fund,
     portfolio_company: @portfolio_company,
     investment_instrument: @investment_instrument,
-    investment_date: Date.current
+    investment_date: Date.current,
+    quantity: 100  # Ensure it's a buy, not a sell
   )
   key_values(pi, attributes)
 
@@ -86,29 +102,47 @@ Given('there is a portfolio investment for the fund {string}') do |attributes|
       position: 2,
       size: 'XL',
       tags: 'Portfolio Stats',
-      metadata: "{tracking_currency: true}"
+      metadata: "{show_currency_filter: false}"
     )
   end
 
   # Create a valuation for the portfolio investment
+  # Valuations use per_share_value_cents or store values in json_fields
   @valuation = FactoryBot.create(
     :valuation,
     entity: @fund.entity,
     owner: @portfolio_investment,
     investment_instrument: @investment_instrument,
-    valuation_date: Date.current,
-    fmv_cents: @portfolio_investment.base_amount_cents
+    valuation_date: Date.current
   )
 end
 
-Then('I should see a select element for portfolio currency') do
+Given('the Portfolio Stats widget has metadata {string}') do |metadata|
+  widget = DashboardWidget.find_or_initialize_by(
+    entity_id: @fund.entity_id,
+    dashboard_name: 'Portfolio Company Dashboard',
+    widget_name: 'Portfolio Stats',
+    name: 'Default'
+  )
+
+  widget.assign_attributes(
+    enabled: true,
+    position: 2,
+    size: 'XL',
+    tags: 'Portfolio Stats',
+    metadata: metadata
+  )
+  widget.save!
+end
+
+Then('I should see a currency dropdown for portfolio stats') do
   # The portfolio stats currency dropdown
   expect(page).to have_css('select[data-portfolio-stats-currency-target="select"]', visible: true)
 end
 
-Then('I should see a select element for valuation currency') do
-  # The valuation time series currency dropdown
-  expect(page).to have_css('select[id^="valuation_currency_select"]', visible: true)
+Then('I should not see a currency dropdown for portfolio stats') do
+  # The portfolio stats currency dropdown should not be visible
+  expect(page).not_to have_css('select[data-portfolio-stats-currency-target="select"]', visible: true)
 end
 
 # Valuation Steps
@@ -133,53 +167,58 @@ Given('there is a valuation with multiple currencies for the investment instrume
   )
 
   # Create a Report to show valuations with time_series
-  @valuation_report = Report.create!(
+  @valuation_report = Report.find_or_create_by!(
     entity: @entity,
-    user: @user,
-    name: 'Portfolio Company Valuations',
+    name: 'Valuation Report',
     curr_role: 'company_admin',
-    category: 'Valuations',
-    url: '/valuations?owner_id={investor_id}&owner_type=Investor&timeseries=true&filter=true'
-  )
+    category: 'Valuation'
+  ) do |report|
+    report.user = @user
+    report.url = "/valuations?q[c][0][a][0][name]=owner_id&q[c][0][p]=eq&q[c][0][v][0][value]=#{@portfolio_company.id}&q[c][1][a][0][name]=owner_type&q[c][1][p]=eq&q[c][1][v][0][value]=Investor&timeseries=true&attributes=custom_fields.co_valuations_usd,custom_fields.fmv,custom_fields.fmv_usd&button="
+  end
+end
 
-  # Ensure Portfolio Company Report widget is configured
-  unless DashboardWidget.exists?(
+
+Given('the Portfolio Company Report widget has metadata with show_currency_filter false') do
+  # Ensure we have a report
+  unless @valuation_report
+    @valuation_report = Report.find_or_create_by!(
+      entity: @entity,
+      name: 'Valuation Report',
+      curr_role: 'company_admin',
+      category: 'Valuation'
+    ) do |report|
+      report.user = @user
+      report.url = "/valuations?q[c][0][a][0][name]=owner_id&q[c][0][p]=eq&q[c][0][v][0][value]=#{@portfolio_company.id}&q[c][1][a][0][name]=owner_type&q[c][1][p]=eq&q[c][1][v][0][value]=Investor&timeseries=true&attributes=custom_fields.co_valuations_usd,custom_fields.fmv,custom_fields.fmv_usd&button="
+    end
+  end
+
+  widget = DashboardWidget.find_or_initialize_by(
     entity_id: @entity.id,
     dashboard_name: 'Portfolio Company Dashboard',
     widget_name: 'Portfolio Company Report',
     name: 'Default'
   )
-    DashboardWidget.create!(
-      entity_id: @entity.id,
-      dashboard_name: 'Portfolio Company Dashboard',
-      widget_name: 'Portfolio Company Report',
-      name: 'Default',
-      enabled: true,
-      position: 3,
-      size: 'XL',
-      tags: 'Portfolio Company Report',
-      metadata: "{report_id: #{@valuation_report.id}}"
-    )
-  end
-end
 
-Given('there is a valuation with only entity currency for the investment instrument') do
-  @valuation = FactoryBot.create(
-    :valuation,
-    entity: @entity,
-    owner: @portfolio_company,
-    investment_instrument: @investment_instrument,
-    valuation_date: Date.current,
-    json_fields: {
-      'fmv' => 1000000.0,
-      'equity' => 500000.0
-    }
+  widget.assign_attributes(
+    enabled: true,
+    position: 3,
+    size: 'XL',
+    tags: 'Valuations',
+    metadata: "{report_id: #{@valuation_report.id}, show_currency_filter: false}"
   )
+  widget.save!
 end
 
-When('I visit the valuations time series page') do
-  # Visit the portfolio company page which contains the time series partial
-  visit portfolio_company_path(@portfolio_company)
-  # Or visit the investment instrument page that shows valuations
-  # visit investment_instrument_path(@investment_instrument)
+Then('I should see a currency dropdown for valuations') do
+  # Wait for the portfolio company report widget to load (it uses turbo frames)
+  sleep(3)
+
+  # The valuation time series currency dropdown
+  expect(page).to have_css('select#valuation_currency_select', visible: true)
+end
+
+Then('I should not see a currency dropdown for valuations') do
+  # The valuation time series currency dropdown should not be visible
+  expect(page).not_to have_css('select#valuation_currency_select', visible: true)
 end
