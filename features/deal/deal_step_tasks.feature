@@ -45,6 +45,17 @@ Feature: Tasks for Deal Steps
       | details          |
       | Draft Term Sheet |
 
+  Scenario: Automatically generate tasks when a previous deal activity is completed
+    Given the deal step "Financial DD" has the following tasks: "Step 1 Task"
+    And the deal step "Legal DD" has the following tasks: "Step 2 Task"
+    And the current activity for investor "the other entity" is "Legal DD"
+    And I visit the deal details page
+    When I mark the activity "Financial DD" as completed for investor "the other entity" in the grid
+    Then the current activity for investor "the other entity" should still be "Legal DD"
+    And the deal investor "the other entity" should have the following tasks:
+      | details     |
+      | Step 2 Task |
+
   Scenario: Automatically generate tasks from comma separated list
     Given the deal step "KYC" has the following tasks: "ID Verification, AML Check, Proof of Funds"
     When I move the deal investor "the other entity" to the step "KYC"

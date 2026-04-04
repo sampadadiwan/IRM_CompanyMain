@@ -120,8 +120,8 @@ When('I mark the activity {string} as completed for investor {string} in the gri
   @deal_activity = @deal_investor.deal_activities.find_by(title: step_title)
   raise "DealActivity #{step_title} not found for investor" unless @deal_activity
 
-  # Ensure the investor is on this step initially so it can advance
-  @deal_investor.update!(deal_activity_id: @deal_activity.template_id)
+  # Only set current step if it's not already set to something specific by another step
+  @deal_investor.update!(deal_activity_id: @deal_activity.template_id) if @deal_investor.deal_activity_id.blank?
 
   # --- START OF COPIED CODE FROM deal_investor.rb ---
 
@@ -218,4 +218,22 @@ Then('the current activity for investor {string} should be the next activity aft
   end
 
   expect(@deal_investor.deal_activity.title).to eq(next_activity.title) if next_activity
+end
+
+Given('the current activity for investor {string} is {string}') do |investor_name, step_title|
+  investor = @investor if @investor && (investor_name == "the other entity")
+  investor ||= Investor.find_by(investor_name: investor_name)
+  @deal_investor = DealInvestor.find_by(investor: investor, deal: @deal)
+
+  activity = @deal_investor.deal_activities.find_by(title: step_title)
+  @deal_investor.update!(deal_activity_id: activity.template_id)
+end
+
+Then('the current activity for investor {string} should still be {string}') do |investor_name, step_title|
+  investor = @investor if @investor && (investor_name == "the other entity")
+  investor ||= Investor.find_by(investor_name: investor_name)
+  @deal_investor = DealInvestor.find_by(investor: investor, deal: @deal)
+
+  @deal_investor.reload
+  expect(@deal_investor.deal_activity.title).to eq(step_title)
 end

@@ -5,17 +5,22 @@ class GenerateDealStepTasksJob < ApplicationJob
 
   # @param deal_investor_id [Integer] ID of the DealInvestor
   # @param user_id [Integer] ID of the user who moved the step (to assign tasks)
-  def perform(deal_investor_id, user_id = nil)
+  # @param deal_activity_id [Integer] Optional ID of the specific activity to generate tasks for
+  def perform(deal_investor_id, user_id = nil, deal_activity_id = nil)
     deal_investor = DealInvestor.find(deal_investor_id)
-    # The tasks are based on the current activity the investor is on
-    current_activity = deal_investor.deal_activity
+    # Use provided activity or fallback to the current activity the investor is on
+    target_activity = if deal_activity_id.present?
+                        DealActivity.find(deal_activity_id)
+                      else
+                        deal_investor.deal_activity
+                      end
 
     # If there is no activity or no tasks defined, we return
-    return if current_activity.blank? || current_activity.tasks_csv.blank?
+    return if target_activity.blank? || target_activity.tasks_csv.blank?
 
     # We split the CSV by both commas and newlines to be flexible
     # and remove any blank segments or surrounding whitespace
-    task_titles = current_activity.tasks_csv.split(/[,\n]/).map(&:strip).reject(&:blank?).uniq
+    task_titles = target_activity.tasks_csv.split(/[,\n]/).map(&:strip).reject(&:blank?).uniq
 
     # We iterate through each task title and create a Task record if it doesn't already exist
     task_titles.each do |title|

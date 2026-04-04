@@ -44,8 +44,9 @@ class PerformActivityAction < Trailblazer::Operation
 
   # Enqueues the job to generate tasks based on the new activity's tasks_csv field.
   # These tasks are assigned to the current user who performed the transition.
-  def generate_step_tasks(ctx, deal_investor:, **)
-    GenerateDealStepTasksJob.perform_later(deal_investor.id, ctx[:current_user_id] || ctx[:user_id])
+  def generate_step_tasks(ctx, deal_investor:, params: {}, target_deal_activity_id: nil, **)
+    target_id = target_deal_activity_id || params[:target_deal_activity_id]
+    GenerateDealStepTasksJob.perform_later(deal_investor.id, ctx[:current_user_id] || ctx[:user_id], target_id)
     true
   end
 

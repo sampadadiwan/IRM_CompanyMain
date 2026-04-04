@@ -1,6 +1,6 @@
 class CompleteDealActivity < Trailblazer::Operation
   step :save_activity!
-  step :check_if_current_step?
+  step :find_next_activity
   step :perform_next_action!
 
   private
@@ -10,38 +10,37 @@ class CompleteDealActivity < Trailblazer::Operation
     deal_activity.save
   end
 
-  # Check if the activity being completed is the one the investor is currently on
-  def check_if_current_step?(ctx, deal_activity:, **)
+  # Find the next sequential activity after the one just completed
+  def find_next_activity(ctx, deal_activity:, **)
     deal_investor = deal_activity.deal_investor
-    return true if deal_investor.nil?
+    return true if deal_investor.nil? || !deal_activity.Complete?
 
-    # Only advance if the activity status was changed to 'Complete'
-    # AND it's currently the investor's active step
-    ctx[:is_current_step] = deal_activity.Complete? &&
-                            deal_investor.deal_activity_id == deal_activity.template_id
+    ctx[:next_activity] = deal_investor.deal_activities
+                                       .where(status: ["incomplete", "template", nil])
+                                       .where("sequence > ?", deal_activity.sequence)
+                                       .first
     true
   end
 
-  def perform_next_action!(ctx, deal_activity:, is_current_step:, **)
-    return true unless is_current_step
-
-    deal_investor = deal_activity.deal_investor
-    # Find the next incomplete activity
-    next_activity = deal_investor.deal_activities
-                                 .where(status: ["incomplete", "template", nil])
-                                 .where("sequence > ?", deal_activity.sequence)
-                                 .first
-
+  def perform_next_action!(ctx, deal_activity:, next_activity: nil, **)
     return true if next_activity.nil?
 
-    # Trigger the transition to the next step
-    # This will handle step update, task generation, and broadcasts
-    PerformActivityAction.call(
-      deal_investor: deal_investor,
-      deal_activity: deal_activity, # The one just marked complete
-      initial_deal_activity_id: deal_investor.deal_activity.id,
-      target_deal_activity_id: next_activity.id,
-      user_id: ctx[:user_id]
-    )
+    deal_investor = deal_activity.deal_investor
+    is_current_step = deal_investor.deal_activity_id == deal_activity.template_id
+
+    if is_current_step
+      # FULL TRANSITION: Move investor + Generate tasks + Broadcast
+      PerformActivityAction.call(
+        deal_investor: deal_investor,
+        deal_activity: deal_activity,
+        initial_deal_activity_id: deal_investor.deal_activity.id,
+        target_deal_activity_id: next_activity.id,
+        user_id: ctx[:user_id]
+      )
+    else
+      # PARTIAL ACTION: Just generate tasks for the next step relative to this one
+      GenerateDealStepTasksJob.perform_later(deal_investor.id, ctx[:user_id], next_activity.id)
+    end
+    true
   end
 end
