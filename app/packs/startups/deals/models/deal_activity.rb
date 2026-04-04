@@ -1,5 +1,5 @@
 class DealActivity < ApplicationRecord
-  include Trackable.new
+  include Trackable.new(associated_with: :deal_investor)
 
   include WithFolder
 
@@ -28,12 +28,25 @@ class DealActivity < ApplicationRecord
   scope :not_templates, ->(deal) { where(deal_id: deal.id).where.not(deal_investor_id: nil).order(:sequence) }
 
   before_save :set_defaults
+  after_update :advance_investor, if: :saved_change_to_status?
   after_commit :recreate_activities, unless: :destroyed?
 
   validate :check_done
 
   def set_defaults
     self.status = "Template" if deal_investor_id.nil?
+  end
+
+  def advance_investor
+    return unless Complete?
+    return if deal_investor.nil?
+
+    # If this activity is the one the investor is currently on
+    if deal_investor.deal_activity_id == template_id
+      # Find the next incomplete activity
+      next_activity = deal_investor.deal_activities.where(status: ["incomplete", "template", nil]).where("sequence > ?", sequence).first
+      deal_investor.update(deal_activity_id: next_activity.template_id) if next_activity
+    end
   end
 
   def check_done

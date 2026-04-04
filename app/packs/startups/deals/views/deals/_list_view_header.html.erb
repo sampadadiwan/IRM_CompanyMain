@@ -7,5 +7,8 @@
       <%= link_to "Not Declined", deal_path(deal, list_view: true), class: "btn btn-outline-primary" %>
     <% end %>
     <%= link_to "Download Excel", deal_path(deal, list_view: true, format: :xlsx), class: "btn btn-outline-primary" %>
+    <% if policy(DealInvestor.new(deal: deal, entity: deal.entity)).new? %>
+      <%= link_to "Add #{investor_label}", new_deal_investor_path(deal_investor: { deal_id: deal.id }, turbo_frame: "deal_investor_frame"), class: "btn btn-primary", data: { action: "click->deals-list-ag-grid#addInvestor" } %>
+    <% end %>
   </span>
 </div>

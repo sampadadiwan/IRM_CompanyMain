@@ -1,1 +1,15 @@
-<%= turbo_stream.replace(@frame, partial: "deal_investors/blank", locals: {frame: @frame} ) %>
+<%= turbo_stream.replace(@frame) do %>
+  <%= render partial: "deal_investors/blank", locals: {frame: @frame} %>
+  <script data-turbo-cache="false">
+    (function() {
+      console.log("Turbo Stream script executing for frame: <%= @frame %>");
+      const grid = window.DealsGrid;
+      if (grid) {
+        const data = <%= render(template: "deal_investors/show", formats: [:json], locals: { deal_investor: @deal_investor }).html_safe %>;
+        grid.appendNewRow(data);
+      } else {
+        console.error("window.DealsGrid not found in stream script");
+      }
+    })();
+  </script>
+<% end %>

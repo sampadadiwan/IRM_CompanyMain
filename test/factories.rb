@@ -701,7 +701,7 @@ FactoryBot.define do
   factory :deal_investor do
     deal { Deal.all.sample }
     investor { deal.entity.investors.sample }
-    status { DealInvestor::STATUS[rand(DealInvestor::STATUS.length)] }
+    status { "Active" }
     primary_amount_cents { rand(3..11) * 100_000_000 }
     pre_money_valuation_cents { rand(3..11) * 100_000_000 }
     secondary_investment_cents { rand(3..11) * 100_000_000 }

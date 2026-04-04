@@ -1,1 +1,2 @@
-<%= turbo_stream.prepend(@frame, partial: "layouts/alerts", locals: { alert: @alert } ) %>
+<%= turbo_stream.replace(@frame, partial: "deal_investors/offcanvas_form", locals: { deal_investor: @deal_investor, turbo_tag: @frame }) %>
+<%= turbo_stream.prepend("deal_investor_frame", partial: "layouts/alerts", locals: { alert: @alert } ) %>

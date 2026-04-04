@@ -339,10 +339,11 @@ export default class extends BaseAgGrid {
               this.updateBulkActionsPanel(selectedRows);
             }
         },
-        onVirtualColumnsChanged: this.initTooltips.bind(this),
-        onBodyScroll: this.initTooltips.bind(this),
+        onVirtualColumnsChanged: () => { this.initTooltips(); this.setRowIds(); },
+        onBodyScroll: () => { this.initTooltips(); this.setRowIds(); },
+        onFirstDataRendered: () => { this.setRowIds(); },
         getRowClass: (params) => {
-            return '';
+            return params.data && params.data.id ? `deal_investor_${params.data.id}` : '';
         }
     };
 
@@ -355,7 +356,12 @@ export default class extends BaseAgGrid {
     this.decimalPlaces = this.extractDecimalPlaces();
 
     // Add common properties from base class to our local gridOptions
-    this.gridOptions.getRowId = params => params.data.id;
+    this.gridOptions.getRowId = params => {
+      if (params.data && params.data.id) {
+        return `deal_investor_${params.data.id}`;
+      }
+      return params.data?.id;
+    };
     this.gridOptions.defaultExcelExportParams = {
         columnKeys: this.getExportColumns(),
     };
@@ -500,12 +506,15 @@ export default class extends BaseAgGrid {
     const formData = new FormData();
     formData.append(`deal_investor[${field}]`, value);
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const headers = {
+      'Accept': 'application/json'
+    };
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
     fetch(`/deal_investors/${id}.json`, {
       method: 'PATCH',
-      headers: {
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-        'Accept': 'application/json'
-      },
+      headers: headers,
       body: formData
     })
     .then(response => response.json())
@@ -523,12 +532,15 @@ export default class extends BaseAgGrid {
     const formData = new FormData();
     formData.append(`deal_activity[status]`, value);
 
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const headers = {
+      'Accept': 'application/json'
+    };
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
     fetch(`/deal_activities/${id}.json`, {
       method: 'PATCH',
-      headers: {
-        'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]').content,
-        'Accept': 'application/json'
-      },
+      headers: headers,
       body: formData
     })
     .then(response => response.json())
@@ -598,6 +610,64 @@ export default class extends BaseAgGrid {
 
     frame.src = `/deal_investors/${id}?turbo_frame=deal_investor_frame`;
     sidepanel.show();
+  }
+
+  addInvestor(event) {
+    event.preventDefault();
+    const url = event.currentTarget.href;
+    const sidepanelElement = document.getElementById('dealInvestorSidepanel');
+    const sidepanel = bootstrap.Offcanvas.getInstance(sidepanelElement) || new bootstrap.Offcanvas(sidepanelElement);
+    const frame = document.getElementById('deal_investor_frame');
+
+    frame.src = url;
+    sidepanel.show();
+  }
+
+  appendNewRow(data) {
+    console.log("DealsListAgGrid#appendNewRow called", data);
+    if (this.gridOptions && this.gridOptions.api) {
+      try {
+        // Ensure data has the correct structure if needed
+        this.gridOptions.api.applyTransaction({ add: [data], addIndex: 0 });
+        console.log("Row appended successfully via applyTransaction");
+      } catch (e) {
+        console.error("applyTransaction failed, trying updateRowData", e);
+        try {
+          this.gridOptions.api.updateRowData({ add: [data], addIndex: 0 });
+        } catch (e2) {
+          console.error("updateRowData also failed", e2);
+        }
+      }
+      
+      // Close sidepanel after successful save
+      const sidepanelElement = document.getElementById('dealInvestorSidepanel');
+      if (sidepanelElement) {
+        // Force hide using multiple methods
+        try {
+          const bsOffcanvas = bootstrap.Offcanvas.getInstance(sidepanelElement) || new bootstrap.Offcanvas(sidepanelElement);
+          bsOffcanvas.hide();
+        } catch (e) {
+          console.error("Bootstrap hide failed", e);
+        }
+        
+        // jQuery fallback if available
+        if (window.jQuery && jQuery.fn.offcanvas) {
+          try {
+            jQuery(sidepanelElement).offcanvas('hide');
+          } catch (e) {}
+        }
+
+        // Final fallback: click the close button
+        setTimeout(() => {
+          if (sidepanelElement.classList.contains('show')) {
+            const closeBtn = sidepanelElement.querySelector('.btn-close');
+            if (closeBtn) closeBtn.click();
+          }
+        }, 100);
+      }
+    } else {
+      console.error("Grid API not found in appendNewRow");
+    }
   }
 
   bulkNudge() {
@@ -759,5 +829,17 @@ export default class extends BaseAgGrid {
     if (gridElement) {
       gridElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+  }
+
+  setRowIds() {
+    if (!this.gridOptions || !this.gridOptions.api) return;
+    this.gridOptions.api.forEachNode(node => {
+      if (node.id) {
+        const element = document.querySelector(`[row-id="${node.id}"]`);
+        if (element && !element.id) {
+          element.id = node.id;
+        }
+      }
+    });
   }
 }

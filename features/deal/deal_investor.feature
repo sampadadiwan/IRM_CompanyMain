@@ -15,8 +15,8 @@ Scenario Outline: Create new deal investor
 
   Examples:
   	|user	      |deal_investor              |entity               |deal                             |msg	|
-  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal investor was successfully created|
-    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal investor was successfully created|
+  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal Investor was successfully created|
+    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal Investor was successfully created|
 
 
 Scenario Outline: View Deal Investors in a deal as company_admin
@@ -30,8 +30,8 @@ Scenario Outline: View Deal Investors in a deal as company_admin
 
   Examples:
   	|user	      |deal_investor              |entity               |deal                             |msg	|
-  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal investor was successfully created|
-    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal investor was successfully created|
+  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal Investor was successfully created|
+    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal Investor was successfully created|
 
 Scenario Outline: View Deal Investors in a deal as employee
   Given Im logged in as a user "" for an entity "<entity>"
@@ -40,7 +40,7 @@ Scenario Outline: View Deal Investors in a deal as employee
   And there exists a deal "<deal>" for my company
   And there are "3" deal_investors for the deal
   And I am "<given>" employee access to the deal_investors
-  And I visit the deal details page  
+  And I visit the deal details page
   Then I "<should>" see the deal investors in the deal details page
 
   Examples:
@@ -66,8 +66,8 @@ Scenario Outline: View Deal Stages in a deal
 
   Examples:
   	|user	      |deal_investor              |entity               |deal                             |msg	|
-  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal investor was successfully created|
-    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal investor was successfully created|
+  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal Investor was successfully created|
+    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal Investor was successfully created|
 
 
 
@@ -86,8 +86,8 @@ Scenario Outline: View Deal Stages in a deal
 
   Examples:
   	|user	      |deal_investor              |entity               |deal                             |msg	|
-  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal investor was successfully created|
-    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal investor was successfully created|
+  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal Investor was successfully created|
+    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal Investor was successfully created|
 
 
 
@@ -103,8 +103,8 @@ Scenario Outline: View Deal Stages in a deal
 
   Examples:
   	|user	      |deal_investor              |entity               |deal                             |msg	|
-  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal investor was successfully created|
-    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal investor was successfully created|
+  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal Investor was successfully created|
+    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal Investor was successfully created|
 
 
 Scenario Outline: Create new deal investor document
@@ -124,5 +124,5 @@ Scenario Outline: Create new deal investor document
 
   Examples:
   	|user	      |deal_investor              |entity               |deal                             |msg	|
-  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal investor was successfully created|
-    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal investor was successfully created|
+  	|  	        |primary_amount_cents=10000 |entity_type=Company  |name=Series A;amount_cents=10000 |Deal Investor was successfully created|
+    |  	        |primary_amount_cents=12000 |entity_type=Company  |name=Series B;amount_cents=12000 |Deal Investor was successfully created|

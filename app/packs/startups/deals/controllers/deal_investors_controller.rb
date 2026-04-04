@@ -92,18 +92,34 @@ class DealInvestorsController < ApplicationController
 
   # GET /deal_investors/new
   def new
-    @deal_investor = DealInvestor.new(deal_investor_params)
+    @deal_investor = DealInvestor.new(params[:deal_investor] ? deal_investor_params : {})
+    @deal_investor.deal_id ||= params[:deal_id]
+
+    # Load deal early for entity and authorization
+    @deal_investor.deal ||= Deal.find_by(id: @deal_investor.deal_id) if @deal_investor.deal_id
+
+    # Set entity_id to the Deal's entity if available, otherwise current user's entity
+    @deal_investor.entity_id = @deal_investor.deal&.entity_id || current_user.entity_id
+
     authorize @deal_investor
     setup_custom_fields(@deal_investor)
 
-    frame = params[:turbo_frame] || "new_deal_investor"
+    @frame = params[:turbo_frame] || "new_deal_investor"
+    @partial = @frame == "deal_investor_frame" ? "deal_investors/offcanvas_form" : "deal_investors/deal_form"
+
     respond_to do |format|
       format.turbo_stream do
         render turbo_stream: [
-          turbo_stream.replace(frame, partial: "deal_investors/deal_form", locals: { deal_investor: @deal_investor, turbo_tag: frame })
+          turbo_stream.replace(@frame, partial: @partial, locals: { deal_investor: @deal_investor, turbo_tag: @frame })
         ]
       end
-      format.html
+      format.html do
+        if @frame == "deal_investor_frame"
+          render partial: @partial, locals: { deal_investor: @deal_investor, turbo_tag: @frame }, layout: false
+        else
+          render :new
+        end
+      end
     end
   end
 

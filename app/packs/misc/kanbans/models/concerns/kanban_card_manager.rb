@@ -24,8 +24,8 @@ module KanbanCardManager
   def get_card_attributes
     data_source_parent_class = PARENT_MAPPING[self.class.name]
     data_source_parent = send(data_source_parent_class.downcase)
-    kanban_board = KanbanBoard.find_by(owner_type: data_source_parent_class, owner_id: data_source_parent.id)
-    return unless kanban_board
+    kanban_board = KanbanBoard.find_by(owner_type: data_source_parent_class, owner_id: data_source_parent&.id)
+    return unless kanban_board && kanban_board.kanban_columns.any?
 
     data = get_data
     {
