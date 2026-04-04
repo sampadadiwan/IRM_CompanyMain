@@ -89,8 +89,9 @@ class DealActivitiesController < ApplicationController
     setup_doc_user(@deal_activity)
     @deal_activity.has_documents_nested_attributes = true if params[:deal_activity] && params[:deal_activity][:documents_attributes].present?
 
+    result = CompleteDealActivity.call(deal_activity: @deal_activity, params: deal_activity_params, user_id: current_user.id)
     respond_to do |format|
-      if @deal_activity.update(deal_activity_params)
+      if result.success?
         @deal_activity.deal.kanban_board.presence&.broadcast_board_event
         format.html do
           redirect_url = params[:back_to].presence || deal_activity_url(@deal_activity)
@@ -122,10 +123,10 @@ class DealActivitiesController < ApplicationController
   end
 
   def toggle_completed
-    success = @deal_activity.update(deal_activity_params)
+    result = CompleteDealActivity.call(deal_activity: @deal_activity, params: deal_activity_params, user_id: current_user.id)
 
     respond_to do |format|
-      if success
+      if result.success?
         format.turbo_stream do
           render turbo_stream: [
             turbo_stream.replace(helpers.dom_id(@deal_activity.deal_investor), partial: "deals/grid_view_row",

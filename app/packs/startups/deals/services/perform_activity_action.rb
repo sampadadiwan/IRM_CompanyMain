@@ -8,9 +8,11 @@ class PerformActivityAction < Trailblazer::Operation
   private
 
   # Validates that the deal investor is currently on the expected step
-  def validate_action_perform!(ctx, params:, **)
-    deal_investor = DealInvestor.find_by(id: params[:deal_investor_id])
-    unless deal_investor.deal_activity.id.to_s == params[:initial_deal_activity_id]
+  def validate_action_perform!(ctx, params: {}, deal_investor: nil, initial_deal_activity_id: nil, **)
+    deal_investor ||= DealInvestor.find_by(id: params[:deal_investor_id])
+    initial_id = initial_deal_activity_id || params[:initial_deal_activity_id]
+
+    unless deal_investor.deal_activity.id.to_s == initial_id.to_s
       # TODO: Abhay - Use en.yml for messages
       ctx[:errors] = "Kanban Board unupdated"
       return false
@@ -24,9 +26,19 @@ class PerformActivityAction < Trailblazer::Operation
   end
 
   # Updates the deal investor to the target activity (step)
-  def update_deal_investor(_ctx, params:, deal_investor:, **)
-    target_deal_activity = DealActivity.find_by(id: params[:target_deal_activity_id])
-    deal_investor.deal_activity = target_deal_activity
+  def update_deal_investor(_ctx, deal_investor:, params: {}, target_deal_activity_id: nil, **)
+    target_id = target_deal_activity_id || params[:target_deal_activity_id]
+    target_deal_activity = DealActivity.find_by(id: target_id)
+
+    # If it's an investor-specific activity, we want to store its template
+    # so that deal_investor.deal_activity always points to the Template record.
+    actual_activity = if target_deal_activity.deal_investor_id.present?
+                        DealActivity.find_by(id: target_deal_activity.template_id)
+                      else
+                        target_deal_activity
+                      end
+
+    deal_investor.deal_activity = actual_activity
     deal_investor.save!
   end
 

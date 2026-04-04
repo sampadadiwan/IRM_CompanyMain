@@ -549,9 +549,7 @@ end
 
 Given('I view the deal details') do
   visit(deal_path(@deal))
-  element = all('.show_details_link').last
-  element.click
-  #sleep(0.5)
+  click_on("#deal_tab")
 end
 
 Given('I add widgets for the deal') do

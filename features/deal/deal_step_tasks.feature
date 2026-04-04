@@ -1,3 +1,4 @@
+@javascript
 Feature: Tasks for Deal Steps
 
   Background:
@@ -9,14 +10,24 @@ Feature: Tasks for Deal Steps
     And another entity is an investor "category=Lead Investor" in entity
     And another entity is a deal_investor "status=Active" in the deal
 
+  Scenario: Automatically generate tasks when a deal activity is completed in Grid View
+    Given the deal step "Legal DD" has the following tasks: "Verify Legal, Financial Audit"
+    And I am on the grid view of the deal "Unicorn Series A"
+    When I mark the activity "Financial DD" as completed for investor "the other entity" in the grid
+    Then the current activity for investor "the other entity" should be the next activity after "Financial DD"
+    And the deal investor "the other entity" should have the following tasks:
+      | details         |
+      | Verify Legal    |
+      | Financial Audit |
+
   Scenario: Automatically generate tasks when a deal investor moves to a new step
-    Given the deal step "Due Diligence" has the following tasks:
+    Given the deal step "Financial DD" has the following tasks:
       """
       Verify Legal Docs
       Financial Audit
       Background Check
       """
-    When I move the deal investor "the other entity" to the step "Due Diligence"
+    When I move the deal investor "the other entity" to the step "Financial DD"
     Then the deal investor "the other entity" should have the following tasks:
       | details           |
       | Verify Legal Docs |
