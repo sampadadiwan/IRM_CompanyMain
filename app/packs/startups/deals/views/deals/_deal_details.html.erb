@@ -18,6 +18,7 @@
     <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#activities-tab">Deal Steps</a>
     <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">Custom Notifications</a>
   </nav>
   <div class="tab-content">
     <div id="charts-tab" class="tab-pane fade in show active">
@@ -79,6 +80,13 @@
     <div id="reminders-tab" class="tab-pane fade">
       <div id="reminders" class="associated_entity">
         <%= turbo_frame_tag "reminders_list", target: "_top", src: reminders_path( owner_id: deal.id, owner_type: "Deal", sent: false), loading: :lazy do %>
+          <%= render "/layouts/loading" %>
+        <% end %>
+      </div>
+    </div>
+    <div id="notifications-tab" class="tab-pane fade">
+      <div id="custom_notifications" class="associated_entity">
+        <%= turbo_frame_tag "custom_notifications_frame", target: "_top", src: custom_notifications_path(q: { owner_id_eq: deal.id, owner_type_eq: "Deal" }), loading: :lazy do %>
           <%= render "/layouts/loading" %>
         <% end %>
       </div>

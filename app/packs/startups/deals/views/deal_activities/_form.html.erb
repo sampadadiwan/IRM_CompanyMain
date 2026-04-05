@@ -46,6 +46,16 @@
           <%= form.label :tasks_csv, "Tasks (one per line or comma-separated)" %>
           <%= form.text_area :tasks_csv, class: "form-control", rows: 5, placeholder: "e.g. Verify ID, Sign NDAs, Review Financials" %>
         </div>
+        <div class="form-group d-flex gap-4 mb-3">
+          <div class="form-check">
+            <%= form.check_box :notify_employees, class: "form-check-input" %>
+            <%= form.label :notify_employees, "Notify Employees on Stage Move", class: "form-check-label" %>
+          </div>
+          <div class="form-check">
+            <%= form.check_box :notify_investor, class: "form-check-input" %>
+            <%= form.label :notify_investor, "Notify Investor on Stage Move", class: "form-check-label" %>
+          </div>
+        </div>
         <div class="form-group">
           <%= form.label :status %>
           <%= form.text_field :status, class: "form-control"  %>

@@ -2,6 +2,7 @@ class PerformActivityAction < Trailblazer::Operation
   step :validate_action_perform!
   step :mark_action_done!
   step :update_deal_investor
+  step :notify_activity_move
   step :generate_step_tasks
   step :broadcast_changes
 
@@ -26,7 +27,7 @@ class PerformActivityAction < Trailblazer::Operation
   end
 
   # Updates the deal investor to the target activity (step)
-  def update_deal_investor(_ctx, deal_investor:, params: {}, target_deal_activity_id: nil, **)
+  def update_deal_investor(ctx, deal_investor:, params: {}, target_deal_activity_id: nil, **)
     target_id = target_deal_activity_id || params[:target_deal_activity_id]
     target_deal_activity = DealActivity.find_by(id: target_id)
 
@@ -40,6 +41,36 @@ class PerformActivityAction < Trailblazer::Operation
 
     deal_investor.deal_activity = actual_activity
     deal_investor.save!
+    ctx[:target_activity] = target_deal_activity
+  end
+
+  # Triggers notifications to employees and/or investors if configured for the new stage.
+  def notify_activity_move(_ctx, deal_investor:, target_activity:, **)
+    return true unless target_activity
+
+    # Use the activity instance's flags to determine recipients
+    if target_activity.notify_employees
+      deal_investor.deal.entity.employees.active.company_admins.each do |admin|
+        DealActivityMoveNotifier.with(
+          record: deal_investor,
+          entity_id: deal_investor.entity_id,
+          activity_title: target_activity.title,
+          email_method: "deal_activity_move"
+        ).deliver_later(admin)
+      end
+    end
+
+    if target_activity.notify_investor
+      deal_investor.investor.notification_users(deal_investor.deal).each do |user|
+        DealActivityMoveNotifier.with(
+          record: deal_investor,
+          entity_id: deal_investor.entity_id,
+          activity_title: target_activity.title,
+          email_method: "deal_activity_move"
+        ).deliver_later(user)
+      end
+    end
+    true
   end
 
   # Enqueues the job to generate tasks based on the new activity's tasks_csv field.

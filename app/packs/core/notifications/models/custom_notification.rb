@@ -64,8 +64,11 @@ class CustomNotification < ApplicationRecord
                        "CapitalDistributionPaymentsMailer".constantize.instance_methods(false).map(&:to_s)
                      elsif owner_type == "Fund"
                        "CapitalCommitmentMailer".constantize.instance_methods(false).map(&:to_s) + ["adhoc_notification"]
+                     elsif owner_type == "Deal"
+                       %w[adhoc_notification deal_activity_move]
                      elsif owner
                        "#{owner.class.name}Mailer".constantize.instance_methods(false).map(&:to_s)
+
                      else
                        []
                      end

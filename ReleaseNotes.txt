@@ -1,4 +1,16 @@
-V9.2.1
+V9.2.11
+78de09740 Refactor task generation logic in deal activity completion and enhance feature tests
+e08d0c457 Implement CompleteDealActivity service and refactor deal activity handling
+b12f753ce Refactor deal investor forms and improve error handling
+26ead0500 Enhance grid responsiveness with minimum width adjustments and size fitting
+0981be3a9 Enhance deals list view with responsive styling and offcanvas adjustments
+7a5cd8d08 Add Deals Management User Guide for investor tracking and fundraising management
+cd839d597 Kedaara update css (#1333)
+af78668e3 Portfolio dashboard kedara update (#1334)
+0a05beff8 Disable data card logo with show_logo false (#1332)
+98ed8d2b4 Updated with the feature for new behaviour for currency dropdown (#1331)
+
+V9.2.10
 7145da5c6 Updates to drop down UI fix and metadata updated (#1330)
 3f0cce8a1 Kedaara css fix (#1328)
 ff42d7755 Portfolio company dashboard currency filter up (#1327)

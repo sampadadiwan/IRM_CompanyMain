@@ -140,12 +140,12 @@ class DealInvestor < ApplicationRecord
 
       existing = DealActivity.where(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id).first
 
-      # When creating or updating the activity for an investor, we copy the tasks_csv from the template.
-      # This allows the automation to know which tasks belong to this investor's current step.
+      # When creating or updating the activity for an investor, we copy the tasks_csv and notification flags from the template.
+      # This allows the automation to know which tasks belong to this investor's current step and when to notify.
       if existing
-        existing.update(title: template.title, sequence: template.sequence, days: template.days, by_date:, template_id: template.id, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv)
+        existing.update(title: template.title, sequence: template.sequence, days: template.days, by_date:, template_id: template.id, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv, notify_employees: template.notify_employees, notify_investor: template.notify_investor)
       else
-        DealActivity.create(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id, title: template.title, sequence: template.sequence, days: template.days, by_date:, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv)
+        DealActivity.create(deal_id:, deal_investor_id: id, entity_id:, template_id: template.id, title: template.title, sequence: template.sequence, days: template.days, by_date:, docs_required_for_completion: entity.activity_docs_required_for_completion, details_required_for_na: entity.activity_details_required_for_na, tasks_csv: template.tasks_csv, notify_employees: template.notify_employees, notify_investor: template.notify_investor)
       end
 
       seq += 1

@@ -8,6 +8,7 @@ class Deal < ApplicationRecord
   include KanbanManager
   include WithFriendlyId
   include WithIncomingEmail
+  include WithCustomNotifications
 
   # encrypts :name
   monetize :amount_cents, with_model_currency: :currency
