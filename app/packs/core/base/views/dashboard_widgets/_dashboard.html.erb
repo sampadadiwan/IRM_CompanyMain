@@ -40,10 +40,14 @@
     <% end %>
 
     <!-- Nav pills row -->
-    <ul class="nav nav-pills px-2 pb-2">
+    <ul class="nav nav-pills px-2 pb-2" data-controller="nav-overflow" data-nav-overflow-target="nav">
         <!-- Add a link to the dashboard widgets -->
-        <% dashboard_widgets(dashboard_name, current_user.entity_id, name:, owner:, show_menu: true).each do |name, dashboard_widget| %>
-            <li class="nav-item">
+        <%
+            all_widgets = dashboard_widgets(dashboard_name, current_user.entity_id, name:, owner:, show_menu: true).to_a
+        %>
+
+        <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
+            <li class="nav-item" data-nav-overflow-target="item">
                 <a class="nav-link btn btn-sm" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
                     <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
                     <%= label != "KYCs" ? label.titleize : label %>
@@ -51,21 +55,46 @@
             </li>
         <% end %>
 
-        <!-- Add a dropdown for reports -->
-        <li class="nav-item dropdown">
-
-            <a class="nav-link btn btn-sm btn-outline-primary dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Reports
+        <li class="nav-item dropdown d-none" data-nav-overflow-target="more">
+            <a class="nav-link btn btn-sm dropdown-toggle" href="#" id="moreWidgetsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                More
             </a>
+            <ul class="dropdown-menu shadow" aria-labelledby="moreWidgetsDropdown" data-nav-overflow-target="moreDropdown">
+                <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
+                    <li data-index="<%= index %>">
+                        <a class="dropdown-item" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
+                            <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
+                            <%= label != "KYCs" ? label.titleize : label %>
+                        </a>
+                    </li>
+                <% end %>
 
-            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                <% Report.where("tag_list LIKE ?", "%#{dashboard_name}%").each do |report| %>
-                    <li><%= link_to report.name, report_url(dashboard_name, report), class: "dropdown-item" %></li>
+                <!-- Move Reports dropdown items here if overflow exists -->
+                <% reports = Report.where("tag_list LIKE ?", "%#{dashboard_name}%") %>
+                <% if reports.any? %>
+                    <li class="d-none" data-nav-overflow-target="moreReportsDivider"><hr class="dropdown-divider"></li>
+                    <li class="dropdown-header d-none" data-nav-overflow-target="moreReportsHeader">Reports</li>
+                    <% reports.each do |report| %>
+                        <li class="report-item d-none"><%= link_to report.name, report_url(dashboard_name, report), class: "dropdown-item" %></li>
+                    <% end %>
                 <% end %>
             </ul>
-
         </li>
 
+        <!-- Standalone dropdown for reports if no overflow exists -->
+        <% reports = Report.where("tag_list LIKE ?", "%#{dashboard_name}%") %>
+        <% if reports.any? %>
+            <li class="nav-item dropdown" data-nav-overflow-target="reportsDropdown">
+                <a class="nav-link btn btn-sm btn-outline-primary dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Reports
+                </a>
+                <ul class="dropdown-menu shadow" aria-labelledby="navbarDropdown">
+                    <% reports.each do |report| %>
+                        <li><%= link_to report.name, report_url(dashboard_name, report), class: "dropdown-item" %></li>
+                    <% end %>
+                </ul>
+            </li>
+        <% end %>
     </ul>
 </nav>
 <% end %>
