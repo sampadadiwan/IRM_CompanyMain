@@ -1,8 +1,9 @@
 <%
   widget_size ||= "col-md-12"
   name ||= nil
-  args ||= {}
   uri_params ||= {}
+  args ||= widget.metadata_args
+  tabs = args[:tabs].split(",").map(&:strip) if args && args[:tabs].present?
 %>
 
 
@@ -22,6 +23,10 @@
 
 
         <% section_data = JSON.parse(portfolio_report_extract.data) %>
+        <%# If 'tabs' argument is provided, filter the sections and maintain the specified order. %>
+        <% if tabs.present? %>
+            <% section_data = tabs.each_with_object({}) { |tab_name, hash| hash[tab_name] = section_data[tab_name] if section_data.key?(tab_name) } %>
+        <% end %>
         <% section_icons = {}
            portfolio_report_extract.portfolio_report.portfolio_report_sections.where(name: section_data.keys).map{ |section| section_icons["#{section.name}"] = section.icon } %>
 
