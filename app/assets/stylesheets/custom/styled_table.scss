@@ -937,3 +937,24 @@ tr.dt-rowReorder-moving td.dtfc-fixed-right:last-child {
   border-right: 2px solid #888 !important;
 }
 
+/* Fade-in animation for toggled rows */
+.row-fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Ensure consistent borders when rows are toggled */
+table.dataTable tbody tr {
+  border-bottom: 1px solid #dee2e6 !important;
+}
+

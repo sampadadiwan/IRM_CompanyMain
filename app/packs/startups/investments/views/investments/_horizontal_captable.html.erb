@@ -6,27 +6,26 @@
     latest_round = funding_rounds.last
 
 %>
-
 <%= render ToggleCard.new(title: "Cap Table", css_class: "show_horizontal_cap_table", state: "show") do %>
-    <div class="table-responsive" data-controller="row-toggle">
-        <table class="table table-bordered table-striped table-grey numberTable">
-            <thead>
-                <tr>
-                    <th rowspan="2">Particulars</th>
-                    <th colspan="<%= funding_rounds.size %>" class="text-center">% stake fully diluted</th>
-                    <th class="text-center">Quantity actual (as on the latest round)</th>
-                    <th class="text-center">Quantity- fully diluted (as on the latest round)</th>
-                </tr>
-                <tr>
-                    <% funding_rounds.each do |round| %>
-                        <th class="text-center"><%= round %></th>
-                    <% end %>
-                    <th class="text-center"><%= latest_round %></th>
-                    <th class="text-center"><%= latest_round %></th>
-                </tr>
-            </thead>
-            <tbody>
-                <%
+  <div class="table-responsive" data-controller="row-toggle">
+    <table class="table table-bordered table-grey numberTable">
+      <thead>
+        <tr>
+          <th rowspan="2">Particulars</th>
+          <th colspan="<%= funding_rounds.size %>" class="text-center">% stake fully diluted</th>
+          <th class="text-center">Quantity actual (as on the latest round)</th>
+          <th class="text-center">Quantity- fully diluted (as on the latest round)</th>
+        </tr>
+        <tr>
+          <% funding_rounds.each do |round| %>
+            <th class="text-center"><%= round %></th>
+          <% end %>
+          <th class="text-center"><%= latest_round %></th>
+          <th class="text-center"><%= latest_round %></th>
+        </tr>
+      </thead>
+      <tbody>
+        <%
                   # Calculate totals per category first for sorting
                   category_summaries = h_data[:categories].map do |category|
                     investors = h_data[:investors_by_category][category]
@@ -39,8 +38,8 @@
                   # Sort categories by total fully diluted quantity in descending order
                   sorted_categories = category_summaries.sort_by { |s| -s[:total_fully_diluted] }.map { |s| s[:category] }
                 %>
-                <% sorted_categories.each do |category| %>
-                    <%
+        <% sorted_categories.each do |category| %>
+          <%
                         category_name = (category == "Self") ? @portfolio_company.entity.name : category.pluralize
 
                         # Calculate totals for this category
@@ -68,61 +67,61 @@
                           category_totals[:latest_fully_diluted] += h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0
                         end
                     %>
-                    <tr class="bg-light parent cursor-pointer" data-action="click->row-toggle#toggle" data-row-toggle-target="control">
-                        <td>
-                            <strong><%= category_name %></strong>
-                            <span class="expand ml-2">></span>
-                        </td>
-                        <% funding_rounds.each do |round| %>
-                            <td class="text-center font-weight-bold">
-                                <%= number_to_percentage(category_totals[:funding_rounds][round], precision: 1) %>
-                            </td>
-                        <% end %>
-                        <td class="text-right font-weight-bold">
-                            <%= number_with_precision(category_totals[:latest_quantity], precision: 2, delimiter: ',') %>
-                        </td>
-                        <td class="text-right font-weight-bold">
-                            <%= number_with_precision(category_totals[:latest_fully_diluted], precision: 2, delimiter: ',') %>
-                        </td>
-                    </tr>
-                    <% sorted_investors.each do |investor| %>
-                        <tr class="child">
-                            <td style="padding-left: 3rem !important;">
-                                <% if category == "Self" %>
-                                    <%= @portfolio_company.entity.name %>
-                                <% else %>
-                                    <%= investor.investor_name %>
-                                <% end %>
-                            </td>
-                            <% funding_rounds.each do |round| %>
-                                <td class="text-center">
-                                    <%= h_data.dig(:table_data, category, investor.investor_name, round)&.fetch(:fully_diluted_percentage, "-") || "-" %>
-                                </td>
-                            <% end %>
-                            <td class="text-right">
-                                <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:quantity, 0) || 0, precision: 2, delimiter: ',') %>
-                            </td>
-                            <td class="text-right">
-                                <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0, precision: 2, delimiter: ',') %>
-                            </td>
-                        </tr>
-                    <% end %>
+          <tr class="bg-light parent cursor-pointer" data-action="click->row-toggle#toggle" data-row-toggle-target="control" aria-expanded="false">
+            <td>
+              <strong><%= category_name %></strong>
+              <span class="expand ml-2">></span>
+            </td>
+            <% funding_rounds.each do |round| %>
+              <td class="text-center font-weight-bold">
+                <%= number_to_percentage(category_totals[:funding_rounds][round], precision: 1) %>
+              </td>
+            <% end %>
+            <td class="text-right font-weight-bold">
+              <%= number_with_precision(category_totals[:latest_quantity], precision: 2, delimiter: ',') %>
+            </td>
+            <td class="text-right font-weight-bold">
+              <%= number_with_precision(category_totals[:latest_fully_diluted], precision: 2, delimiter: ',') %>
+            </td>
+          </tr>
+          <% sorted_investors.each do |investor| %>
+            <tr class="child">
+              <td style="padding-left: 3rem !important;">
+                <% if category == "Self" %>
+                  <%= @portfolio_company.entity.name %>
+                <% else %>
+                  <%= investor.investor_name %>
                 <% end %>
-            </tbody>
-            <tfoot>
-                <tr class="font-weight-bold">
-                    <td>Total</td>
-                    <% funding_rounds.each do |round| %>
-                        <td class="text-center">100.0%</td>
-                    <% end %>
-                    <td class="text-right">
-                        <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_equity) || 0, precision: 2, delimiter: ',') %>
-                    </td>
-                    <td class="text-right">
-                        <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_fully_diluted) || 0, precision: 2, delimiter: ',') %>
-                    </td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+              </td>
+              <% funding_rounds.each do |round| %>
+                <td class="text-center">
+                  <%= h_data.dig(:table_data, category, investor.investor_name, round)&.fetch(:fully_diluted_percentage, "-") || "-" %>
+                </td>
+              <% end %>
+              <td class="text-right">
+                <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:quantity, 0) || 0, precision: 2, delimiter: ',') %>
+              </td>
+              <td class="text-right">
+                <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0, precision: 2, delimiter: ',') %>
+              </td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+      <tfoot>
+        <tr class="font-weight-bold">
+          <td>Total</td>
+          <% funding_rounds.each do |round| %>
+            <td class="text-center">100.0%</td>
+          <% end %>
+          <td class="text-right">
+            <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_equity) || 0, precision: 2, delimiter: ',') %>
+          </td>
+          <td class="text-right">
+            <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_fully_diluted) || 0, precision: 2, delimiter: ',') %>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
 <% end %>

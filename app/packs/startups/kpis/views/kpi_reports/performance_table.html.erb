@@ -12,78 +12,72 @@
     </div>
     <div class="card-body">
       <% if @kpi_report.present? %>
-      <div class="table-responsive">
-        <table class="table table-bordered numberTable" data-controller="row-toggle">
-          <thead class="table-dark">
-            <tr>
-              <th rowspan="2" class="text-start">Metric</th>
-              <th colspan="4">Monthly</th>
-              <th colspan="3">Quarterly</th>
-              <th colspan="3">YTD</th>
-              <th colspan="3">TTM</th>
-            </tr>
-            <tr>
-              <th><%= l @as_of.prev_month.end_of_month %></th>
-              <th><%= l @as_of %></th>
-              <th>Growth MoM</th>
-              <th>Growth 12Mo</th>
-              <th>Previous</th>
-              <th>Current</th>
-              <th>Growth QoQ</th>
-              <th>Previous</th>
-              <th>Current</th>
-              <th>vs&nbsp;PY</th>
-              <th>Previous</th>
-              <th>Current</th>
-              <th>vs&nbsp;PY</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            <% @rows.each do |r| %>
-              <% row_class = r.investor_kpi_mapping.parent_id.blank? ? 'parent' : 'child' %>
-              <tr class="<%= row_class %>">
-                <td class="text-start fw-semibold" data-action="click->row-toggle#toggle" data-row-toggle-target="control">
-                  <div class="d-flex align-items-center">
-                    <% if r.investor_kpi_mapping.parent_id.present? %>
-                        <i class="ti ti-chevron-right me-1"></i>
-                    <% end %>
-                    <%= r.metric %>
-                    <% if r.investor_kpi_mapping.child_count > 0 %>
-                        <span class="expand ms-1">+</span>
-                    <% end %>
-                  </div>
-                </td>
-
-                <td><%= r.monthly_prev_kpi ? link_to(number_with_precision(r.monthly_prev_kpi.value, delimiter: ',', precision:), r.monthly_prev_kpi) : nil %></td>
-                <td><%= r.monthly_curr_kpi ? link_to(number_with_precision(r.monthly_curr_kpi.value, delimiter: ',', precision:), r.monthly_curr_kpi) : nil %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_monthly, precision:), class: (r.growth_monthly.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_monthly_py, precision:), class: (r.growth_monthly_py.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly_py %></td>
-
-                <td><%= r.quarterly_prev_kpi ? number_with_precision(r.quarterly_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
-                <td><%= r.quarterly_curr_kpi ? number_with_precision(r.quarterly_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_quarterly, precision:), class: (r.growth_quarterly.negative? ? 'text-danger' : 'text-success')) if r.growth_quarterly %></td>
-
-                <td><%= r.ytd_prev_kpi ? number_with_precision(r.ytd_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
-                <td><%= r.ytd_curr_kpi ? number_with_precision(r.ytd_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_ytd_py, precision:), class: (r.growth_ytd_py.negative? ? 'text-danger' : 'text-success')) if r.growth_ytd_py %></td>
-
-                <td><%= r.ttm_prev_kpi ? number_with_precision(r.ttm_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
-                <td><%= r.ttm_curr_kpi ? number_with_precision(r.ttm_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
-                <td><%= content_tag(:span, number_to_percentage(r.growth_ttm_py, precision:), class: (r.growth_ttm_py.negative? ? 'text-danger' : 'text-success')) if r.growth_ttm_py %></td>
+        <div class="table-responsive">
+          <table class="table table-bordered numberTable" data-controller="row-toggle">
+            <thead class="table-dark">
+              <tr>
+                <th rowspan="2" class="text-start">Metric</th>
+                <th colspan="4">Monthly</th>
+                <th colspan="3">Quarterly</th>
+                <th colspan="3">YTD</th>
+                <th colspan="3">TTM</th>
               </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
+              <tr>
+                <th><%= l @as_of.prev_month.end_of_month %></th>
+                <th><%= l @as_of %></th>
+                <th>Growth MoM</th>
+                <th>Growth 12Mo</th>
+                <th>Previous</th>
+                <th>Current</th>
+                <th>Growth QoQ</th>
+                <th>Previous</th>
+                <th>Current</th>
+                <th>vs&nbsp;PY</th>
+                <th>Previous</th>
+                <th>Current</th>
+                <th>vs&nbsp;PY</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @rows.each do |r| %>
+                <% row_class = r.investor_kpi_mapping.parent_id.blank? ? 'parent' : 'child' %>
+                <tr class="<%= row_class %>">
+                  <td class="text-start fw-semibold" data-action="click->row-toggle#toggle" data-row-toggle-target="control" aria-expanded="false">
+                    <div class="d-flex align-items-center">
+                      <% if r.investor_kpi_mapping.parent_id.present? %>
+                        <i class="ti ti-chevron-right me-1"></i>
+                      <% end %>
+                      <%= r.metric %>
+                      <% if r.investor_kpi_mapping.child_count > 0 %>
+                        <span class="expand ms-1">+</span>
+                      <% end %>
+                    </div>
+                  </td>
+                  <td><%= r.monthly_prev_kpi ? link_to(number_with_precision(r.monthly_prev_kpi.value, delimiter: ',', precision:), r.monthly_prev_kpi) : nil %></td>
+                  <td><%= r.monthly_curr_kpi ? link_to(number_with_precision(r.monthly_curr_kpi.value, delimiter: ',', precision:), r.monthly_curr_kpi) : nil %></td>
+                  <td><%= content_tag(:span, number_to_percentage(r.growth_monthly, precision:), class: (r.growth_monthly.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly %></td>
+                  <td><%= content_tag(:span, number_to_percentage(r.growth_monthly_py, precision:), class: (r.growth_monthly_py.negative? ? 'text-danger' : 'text-success')) if r.growth_monthly_py %></td>
+                  <td><%= r.quarterly_prev_kpi ? number_with_precision(r.quarterly_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
+                  <td><%= r.quarterly_curr_kpi ? number_with_precision(r.quarterly_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
+                  <td><%= content_tag(:span, number_to_percentage(r.growth_quarterly, precision:), class: (r.growth_quarterly.negative? ? 'text-danger' : 'text-success')) if r.growth_quarterly %></td>
+                  <td><%= r.ytd_prev_kpi ? number_with_precision(r.ytd_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
+                  <td><%= r.ytd_curr_kpi ? number_with_precision(r.ytd_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
+                  <td><%= content_tag(:span, number_to_percentage(r.growth_ytd_py, precision:), class: (r.growth_ytd_py.negative? ? 'text-danger' : 'text-success')) if r.growth_ytd_py %></td>
+                  <td><%= r.ttm_prev_kpi ? number_with_precision(r.ttm_prev_kpi.value, delimiter: ',', precision:) : nil %></td>
+                  <td><%= r.ttm_curr_kpi ? number_with_precision(r.ttm_curr_kpi.value, delimiter: ',', precision:) : nil %></td>
+                  <td><%= content_tag(:span, number_to_percentage(r.growth_ttm_py, precision:), class: (r.growth_ttm_py.negative? ? 'text-danger' : 'text-success')) if r.growth_ttm_py %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
       <% else %>
         <p class="text-muted">No KPI report found for the specified date. Try any of the dates below</p>
         <!-- Optionally, you can add a link to show for prev dates -->
         <% (1..5).each do |i| %>
-
-        <div class="mb-2 d-inline-block">
-          <%= link_to "#{l (@as_of - i.month).end_of_month}", show_performance_kpi_reports_path(as_of: (@as_of - i.month).end_of_month, portfolio_company_id: params[:portfolio_company_id]), class: "mb-1 fs-5 badge rounded-pill  bg-primary-subtle text-primary"  %>
-        </div>
+          <div class="mb-2 d-inline-block">
+            <%= link_to "#{l (@as_of - i.month).end_of_month}", show_performance_kpi_reports_path(as_of: (@as_of - i.month).end_of_month, portfolio_company_id: params[:portfolio_company_id]), class: "mb-1 fs-5 badge rounded-pill  bg-primary-subtle text-primary"  %>
+          </div>
         <% end %>
       <% end %>
     </div>
