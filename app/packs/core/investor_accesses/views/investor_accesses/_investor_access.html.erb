@@ -1,61 +1,53 @@
 <% investor_id ||= params[:investor_id] %>
 <tr id="<%= dom_id investor_access %>">
   <% if investor_id.blank? %>
-    <td>
+    <td class="text-col">
       <%= link_to investor_access.investor_name, investor_access.investor %>
     </td>
   <% end %>
-  <td>
+  <td class="text-col">
     <%= investor_access.user.name if investor_access.user %>
   </td>
-  <td>
+  <td class="text-col">
     <%= investor_access.is_investor_advisor ? "Advisor" : "Employee" %>
   </td>
-  <td>
+  <td class="text-col">
     <%= investor_access.email %>
     <% if investor_access.cc.present? %>
       <br>
       <%= "cc: #{investor_access.cc}" %>
     <% end %>
   </td>
-  <td>
+  <td class="text-col">
     <%= display_boolean investor_access.email_enabled %>
   </td>
-  <td>
-
+  <td class="text-col">
     <%= "(#{investor_access.user.call_code})#{investor_access.user.phone}" %>
   </td>
-  <td>
+  <td class="text-col">
     <%= display_boolean investor_access.whatsapp_enabled %>
   </td>
-  <td>
+  <td class="text-col">
     <%= display_boolean investor_access.user.whatsapp_enabled %>
   </td>
-  <td>
+  <td class="text-col">
     <%= display_boolean investor_access.approved %>
   </td>
-  <td>
+  <td class="text-col">
     <%= investor_access.granter&.name %>
   </td>
-  <td>
-
-
-
+  <td class="action-col">
     <%
       label = investor_access.approved ? "UnApprove" : "Approve"
       icon_class = investor_access.approved ? "ti ti-user-x" : "ti ti-user-check"
       btn_class = investor_access.approved ? "btn btn-outline-warning" : "btn btn-outline-success"
     %>
-
     <% if policy(investor_access).approve? %>
       <%= button_to approve_investor_access_path(investor_access, investor_id: investor_id),
                     method: :patch, class: btn_class, form_class: "deleteButton" do %>
         <i class="<%= icon_class %>"></i><%= label %>
       <% end %>
     <% end %>
-
-
-
     <div class="btn-group">
       <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle" type="button"
@@ -63,21 +55,18 @@
           <i class="ti ti-settings"></i> <%= t_common(:actions) %>
         </button>
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
           <% if policy(investor_access).edit? %>
             <%= link_to edit_investor_access_path(investor_access, investor_id: investor_id),
                         data: { turbo_frame: 'new_investor_access' }, class: "dropdown-item" do %>
               <i class="ti ti-edit"></i> <%= t_common(:edit) %>
             <% end %>
           <% end %>
-
           <% if Pundit.policy(current_user, investor_access).destroy? %>
             <%= button_to investor_access, method: :delete, class: "dropdown-item", form_class: "deleteButton",
                           data: { action: "click->confirm#popup" } do %>
               <i class="ti ti-trash"></i> <%= t_common(:delete) %>
             <% end %>
           <% end %>
-
           <% if policy(investor_access).edit? %>
             <%= link_to notifications_path(all: true, filter: true, entity_id: investor_access.entity_id,
                                             q: ransack_query_params("user_email", :eq, investor_access.email)),
@@ -85,10 +74,8 @@
               <i class="ti ti-bell"></i>Notifications
             <% end %>
           <% end %>
-
         </div>
       </div>
     </div>
-
   </td>
 </tr>

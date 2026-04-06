@@ -12,12 +12,12 @@ class CapitalCall < ApplicationRecord
   FEE_TYPES = ["Fees Part Of Capital", "Other Fees", "Investment Amount"].freeze
   CALL_BASIS = ["Percentage of Commitment", "Upload", "Investable Capital Percentage"].freeze
 
-  STANDARD_COLUMNS = { "Name" => "name",
-                       "Due Date" => "due_date",
-                       "Call Amount" => "call_amount",
-                       "Collected Amount" => "collected_amount",
-                       "Due Amount" => "due_amount",
-                       "Approved" => "approved" }.freeze
+  STANDARD_COLUMNS = { "Name; text-col" => "name; text-col",
+                       "Due Date; date-col" => "due_date; date-col",
+                       "Call Amount; num-col" => "call_amount; num-col",
+                       "Collected Amount; num-col" => "collected_amount; num-col",
+                       "Due Amount; num-col" => "due_amount; num-col",
+                       "Approved; text-col" => "approved; text-col" }.freeze
   belongs_to :entity
   belongs_to :fund, touch: true
 

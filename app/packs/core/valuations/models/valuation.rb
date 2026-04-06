@@ -6,10 +6,10 @@ class Valuation < ApplicationRecord
   include RansackerAmounts.new(fields: %w[per_share_value])
 
   STANDARD_COLUMNS = {
-    "Name" => "name",
-    "Valuation Date" => "valuation_date",
-    "Per Share Value" => "per_share_value",
-    "Currency" => "currency"
+    "Name; text-col" => "name; text-col",
+    "Valuation Date; date-col" => "valuation_date; date-col",
+    "Per Share Value; num-col" => "per_share_value; num-col",
+    "Currency; text-col" => "currency; text-col"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = ["investment_instrument"].freeze

@@ -1,25 +1,20 @@
 <tr id="user_<%= user.id %>">
-  <td>
+  <td class="text-col">
     <%= link_to user.first_name, user_path(user.id) %>
   </td>
-
-  <td>
+  <td class="text-col">
     <%= user.last_name %>
   </td>
-
-  <td>
+  <td class="text-col">
     <%= user.roles.collect(&:name) %>
   </td>
-
-  <td>
+  <td class="text-col">
     <%= user.tag_list %>
   </td>
-
-  <td>
+  <td class="text-col">
     <%= user.entity_name %>
   </td>
-
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), user, {class: "btn btn-outline-primary ti ti-eye" } if policy(user).show? %>
     <%= link_to  t_common(:edit), edit_user_path(user), {class: "btn btn-outline-success ti ti-pencil" } if policy(user).edit? %>
   </td>

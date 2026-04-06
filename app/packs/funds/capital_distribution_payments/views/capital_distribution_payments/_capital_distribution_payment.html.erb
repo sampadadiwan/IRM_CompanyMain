@@ -1,9 +1,6 @@
 <tr id="capital_distribution_payment_<%= capital_distribution_payment.id %>">
-
-    <%= render RansackTableRow.new(model: capital_distribution_payment, columns:) %>
-
-    <td>
-      <%= link_to  t_common(:show), capital_distribution_payment , {class: "btn btn-outline-primary ti ti-eye"}%>  
-    </td>
-
-  </tr>
+  <%= render RansackTableRow.new(model: capital_distribution_payment, columns:) %>
+  <td class="action-col">
+    <%= link_to  t_common(:show), capital_distribution_payment , {class: "btn btn-outline-primary ti ti-eye"}%>
+  </td>
+</tr>

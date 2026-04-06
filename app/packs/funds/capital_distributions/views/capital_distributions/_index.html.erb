@@ -1,69 +1,59 @@
   <% owner = params[:fund_id].present? ? Fund.find(params[:fund_id]) : current_user.entity %>
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Distributions</h1>
-
-    <div class="d-flex flex-wrap align-items-center gap-2">
-
-      <%# New Distribution button (only if fund_id present) %>
-      <% if params[:fund_id].present? %>
-        <%= link_to new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]),
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Distributions</h1>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <%# New Distribution button (only if fund_id present) %>
+    <% if params[:fund_id].present? %>
+      <%= link_to new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]),
                     class: "btn btn-outline-primary d-inline-flex align-items-center",
                     data: { turbo: false } do %>
-          <i class="ti ti-plus"></i> New Distribution
-        <% end %>
+        <i class="ti ti-plus"></i> New Distribution
       <% end %>
-
-      <%# Upload button (always shown) %>
-      <%= link_to new_import_upload_path(
+    <% end %>
+    <%# Upload button (always shown) %>
+    <%= link_to new_import_upload_path(
                     "import_upload[owner_id]": owner.id,
                     "import_upload[owner_type]": owner.class.name,
                     "import_upload[import_type]": "CapitalDistribution",
                     "sample_upload": "CAPITAL_DISTRIBUTION_SAMPLE"),
                   class: "btn btn-outline-primary d-inline-flex align-items-center",
                   data: { turbo: false } do %>
-        <i class="ti ti-upload"></i> <%= t_common(:upload) %>
-      <% end %>
-
-      <%# Download button (only if fund_id present) %>
-      <% if params[:fund_id].present? %>
-        <%= link_to capital_distributions_path(fund_id: params[:fund_id], format: "xlsx"),
+      <i class="ti ti-upload"></i> <%= t_common(:upload) %>
+    <% end %>
+    <%# Download button (only if fund_id present) %>
+    <% if params[:fund_id].present? %>
+      <%= link_to capital_distributions_path(fund_id: params[:fund_id], format: "xlsx"),
                     class: "btn btn-outline-success d-inline-flex align-items-center",
                     data: { turbo: false } do %>
-          <i class="ti ti-download"></i> <%= t_common(:download) %>
-        <% end %>
+        <i class="ti ti-download"></i> <%= t_common(:download) %>
       <% end %>
-
-    </div>
-
+    <% end %>
   </div>
-
-  <div class="table-responsive" data-controller="datatable" data-datatable-money-columns-value="2,3,5" data-datatable-responsive-details-value=true>
-
-    <table id="capital_distributions" class="table table-bordered  dataTable action_table jqDataTable">
-      <thead>
-        <tr>
-          <th>
-            Name
-          </th>
-          <th>
-            Distribution Date
-          </th>
-          <th>
-            Gross Payable
-          </th>
-          <th>
-            Approved
-          </th>
-
-          <th>
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <% capital_distributions.each do |capital_distribution| %>
-          <%= render capital_distribution %>
-        <% end %>
-      </tbody>
-    </table>
-
-  </div>
+</div>
+<div class="table-responsive" data-controller="datatable" data-datatable-money-columns-value="2,3,5" data-datatable-responsive-details-value=true>
+  <table id="capital_distributions" class="table table-bordered  dataTable action_table jqDataTable">
+    <thead>
+      <tr>
+        <th class="text-col">
+          Name
+        </th>
+        <th class="date-col">
+          Distribution Date
+        </th>
+        <th class="num-col">
+          Gross Payable
+        </th>
+        <th class="text-col">
+          Approved
+        </th>
+        <th class="action-col">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% capital_distributions.each do |capital_distribution| %>
+        <%= render capital_distribution %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

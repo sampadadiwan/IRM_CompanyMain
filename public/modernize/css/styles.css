@@ -26296,3 +26296,20 @@ table.footable thead tr.footable-filtering th ul.dropdown-menu li .checkbox labe
   height: 200%;
   margin: 10px 0;
 }
+
+
+.text-col {
+  text-align: left !important;
+}
+
+.num-col {
+  text-align: right !important;
+}
+
+.date-col {
+  text-align: center !important;
+}
+
+.label-col {
+  text-align: center !important;
+}

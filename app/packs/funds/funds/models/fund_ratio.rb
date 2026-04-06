@@ -10,20 +10,20 @@ class FundRatio < ApplicationRecord
   belongs_to :portfolio_scenario, optional: true
 
   STANDARD_COLUMNS = {
-    "For" => "owner_name",
-    "Type" => "owner_type",
-    "Name" => "name",
-    "Display Value;text-end" => "display_value;text-end",
-    "On" => "end_date",
-    "Scenario" => "scenario"
+    "For; text-col" => "owner_name; text-col",
+    "Type; text-col" => "owner_type; text-col",
+    "Name; text-col" => "name; text-col",
+    "Display Value; num-col" => "display_value; num-col",
+    "On; date-col" => "end_date; date-col",
+    "Scenario; text-col" => "scenario; text-col"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = ["fund"].freeze
 
   CONDENSED_COLUMNS = {
-    "Name" => "name",
-    "Display Value;text-end" => "display_value;text-end",
-    "On" => "end_date"
+    "Name; text-col" => "name; text-col",
+    "Display Value; num-col" => "display_value; num-col",
+    "On; date-col" => "end_date; date-col"
   }.freeze
 
   validates :display_value, :label, length: { maximum: 50 }

@@ -9,11 +9,11 @@ class KpiReport < ApplicationRecord
   PERIODS = ["Month", "Quarter", "Half Year", "Year", "YTD"].freeze
 
   STANDARD_COLUMNS = {
-    "As Of" => "as_of",
-    "Period" => "period",
-    "Notes" => "notes",
-    "User" => "user_name",
-    "For" => "entity_name"
+    "As Of; date-col" => "as_of; date-col",
+    "Period; text-col" => "period; text-col",
+    "Notes; text-col" => "notes; text-col",
+    "User; text-col" => "user_name; text-col",
+    "For; text-col" => "entity_name; text-col"
   }.freeze
 
   TAG_LIST = {

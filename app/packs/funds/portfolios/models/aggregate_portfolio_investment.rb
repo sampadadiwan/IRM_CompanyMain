@@ -39,25 +39,25 @@ class AggregatePortfolioInvestment < ApplicationRecord
   validates :investment_domicile, length: { maximum: 10 }
 
   STANDARD_COLUMNS = {
-    "Portfolio Company" => "portfolio_company_name",
-    "Instrument" => "investment_instrument_name",
-    "Current Quantity" => "quantity",
-    "Net Bought Amount" => "bought_amount",
-    "Sold Amount" => "sold_amount",
-    "Fmv" => "fmv",
-    "Unrealized Gain" => "unrealized_gain",
-    "Realized Gain" => "gain",
-    "Avg Cost / Share" => "avg_cost"
+    "Portfolio Company; text-col" => "portfolio_company_name; text-col",
+    "Instrument; text-col" => "investment_instrument_name; text-col",
+    "Current Quantity; num-col" => "quantity; num-col",
+    "Net Bought Amount; num-col" => "bought_amount; num-col",
+    "Sold Amount; num-col" => "sold_amount; num-col",
+    "Fmv; num-col" => "fmv; num-col",
+    "Unrealized Gain; num-col" => "unrealized_gain; num-col",
+    "Realized Gain; num-col" => "gain; num-col",
+    "Avg Cost / Share; num-col" => "avg_cost; num-col"
   }.freeze
 
   ADDITIONAL_COLUMNS = {
-    "Tracking Bought Amount" => "tracking_bought_amount",
-    "Tracking FMV" => "tracking_fmv",
-    "Tracking Sold Amount" => "tracking_sold_amount"
+    "Tracking Bought Amount; num-col" => "tracking_bought_amount; num-col",
+    "Tracking FMV; num-col" => "tracking_fmv; num-col",
+    "Tracking Sold Amount; num-col" => "tracking_sold_amount; num-col"
   }.freeze
 
-  STANDARD_COLUMNS_WITH_FUND = { "Fund Name" => "fund_name" }.merge(STANDARD_COLUMNS).freeze
-  INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS_WITH_FUND.except("Portfolio Company").freeze
+  STANDARD_COLUMNS_WITH_FUND = { "Fund Name; text-col" => "fund_name; text-col" }.merge(STANDARD_COLUMNS).freeze
+  INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS_WITH_FUND.except("Portfolio Company; text-col").freeze
 
   # Callbacks
   before_create :update_name

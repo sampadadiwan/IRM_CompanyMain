@@ -1,40 +1,38 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Remittance Payments</h1>
   <% capital_remittance||= nil %>
-
   <span>
-  <%= link_to "New Payment", new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id), {class: "btn btn-outline-primary ti ti-plus"} if capital_remittance && policy(capital_remittance).update? %>
-  <%
+    <%= link_to "New Payment", new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id), {class: "btn btn-outline-primary ti ti-plus"} if capital_remittance && policy(capital_remittance).update? %>
+    <%
     data_source ||= capital_remittance_payments_path(params: params.to_unsafe_h, format: :json)
     xl_link = download_xl_link(data_source)
   %>
-  <%= link_to "Download", xl_link, { class: "btn btn-outline-success ti ti-download", data: { turbo: false } } %>
+    <%= link_to "Download", xl_link, { class: "btn btn-outline-success ti ti-download", data: { turbo: false } } %>
   </span>
 </div>
-
 <div class="table-responsive" data-controller="datatable">
   <table id="capital_remittance_payments" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
-        <th>
+        <th class="text-col">
           Fund
         </th>
-        <th>
+        <th class="text-col">
           Stakeholder
         </th>
-        <th>
+        <th class="text-col">
           Folio
         </th>
-        <th>
+        <th class="num-col">
           Amount
         </th>
-        <th>
+        <th class="date-col">
           Payment Date
         </th>
-        <th>
+        <th class="text-col">
           Reference No
         </th>
-        <th>
+        <th class="action-col">
         </th>
       </tr>
     </thead>

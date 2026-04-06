@@ -9,14 +9,14 @@ class AccountEntry < ApplicationRecord
   include AccountEntryShared
 
   STANDARD_COLUMNS = {
-    "ID" => "id",
-    "Folio" => "folio_id",
-    "Reporting Date" => "reporting_date",
-    "Period" => "period",
-    "For" => "parent_name",
-    "Entry Type" => "entry_type",
-    "Name" => "name",
-    "Amount" => "amount"
+    "ID; num-col" => "id; num-col",
+    "Folio; text-col" => "folio_id; text-col",
+    "Reporting Date; date-col" => "reporting_date; date-col",
+    "Period; text-col" => "period; text-col",
+    "For; text-col" => "parent_name; text-col",
+    "Entry Type; text-col" => "entry_type; text-col",
+    "Name; text-col" => "name; text-col",
+    "Amount; num-col" => "amount; num-col"
   }.freeze
 
   PARENT_TYPES = %w[PortfolioInvestment AggregatePortfolioInvestment Investor AccountEntry].freeze

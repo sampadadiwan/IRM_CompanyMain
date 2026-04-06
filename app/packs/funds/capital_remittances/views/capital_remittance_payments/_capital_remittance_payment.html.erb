@@ -1,24 +1,23 @@
 <tr id="<%= dom_id capital_remittance_payment %>">
-  <td>
+  <td class="text-col">
     <%= link_to capital_remittance_payment.fund.name, capital_remittance_payment.fund %>
   </td>
-  <td>
+  <td class="text-col">
     <%= link_to capital_remittance_payment.investor.investor_name, capital_remittance_payment.investor %>
   </td>
-  <td>
+  <td class="text-col">
     <%= link_to capital_remittance_payment.capital_commitment.folio_id, capital_remittance_payment.capital_commitment %>
   </td>
-  <td>
+  <td class="num-col">
     <%= money_to_currency capital_remittance_payment.amount, params %>
   </td>
-  <td>
+  <td class="date-col">
     <%= l capital_remittance_payment.payment_date if capital_remittance_payment.payment_date %>
   </td>
-  <td>
+  <td class="text-col">
     <%= capital_remittance_payment.reference_no %>
   </td>
-
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), capital_remittance_payment , {class: "btn btn-outline-primary ti ti-eye"}%>
   </td>
 </tr>

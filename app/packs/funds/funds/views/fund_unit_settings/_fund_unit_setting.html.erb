@@ -1,7 +1,6 @@
 <tr id="fund_unit_setting<%= fund_unit_setting.id %>">
   <%= render RansackTableRow.new(model: fund_unit_setting, columns:) %>
-
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), fund_unit_setting , {class: "btn btn-outline-primary"}%>
   </td>
 </tr>

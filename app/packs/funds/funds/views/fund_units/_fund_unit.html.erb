@@ -1,47 +1,47 @@
 <tr id="<%= dom_id fund_unit %>">
   <% if params[:cols] == "all" %>
-    <td>
+    <td class="text-col">
       <%= link_to fund_unit.fund %>
     </td>
     <% if params[:investor_id].blank? %>
-      <td>
+      <td class="text-col">
         <%= link_to fund_unit.investor %>
       </td>
     <% else %>
-      <td>
+      <td class="text-col">
         <%= link_to fund_unit.capital_commitment&.investor_kyc&.full_name %>
       </td>
     <% end %>
   <% end %>
-  <td>
+  <td class="text-col">
     <%= link_to fund_unit.unit_type, fund_unit %>
   </td>
-  <td>
+  <td class="text-col">
     <%= link_to fund_unit.capital_commitment.folio_id, fund_unit.capital_commitment %>
   </td>
-  <td>
+  <td class="date-col">
     <%= l fund_unit.issue_date if fund_unit.issue_date %>
   </td>
-  <td>
+  <td class="num-col">
     <%= number_with_delimiter(fund_unit.quantity) %>
   </td>
-  <td>
+  <td class="num-col">
     <%= money_to_currency fund_unit.price, params %>
   </td>
-  <td>
+  <td class="num-col">
     <%= money_to_currency fund_unit.premium, params %>
   </td>
-  <td>
+  <td class="num-col">
     <%= money_to_currency fund_unit.amount, params %>
   </td>
-  <td>
+  <td class="text-col">
     <% if fund_unit.owner_type.present? %>
       <%= link_to fund_unit.reason, url_for(controller: fund_unit.owner_type.underscore.pluralize, action: :show, id: fund_unit.owner_id) %>
     <% else %>
       <%= fund_unit.reason %>
     <% end %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), fund_unit, {class: "btn btn-outline-primary ti ti-eye"} %>
   </td>
 </tr>

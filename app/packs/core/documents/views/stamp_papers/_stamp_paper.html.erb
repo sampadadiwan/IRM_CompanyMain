@@ -1,21 +1,20 @@
-
 <tr id="<%= dom_id stamp_paper %>">
-  <td>
+  <td class="text-col">
     <%= stamp_paper.owner %>
   </td>
-  <td>
+  <td class="text-col">
     <%= stamp_paper.tags %>
   </td>
-  <td>
+  <td class="num-col">
     <%= stamp_paper.sign_on_page %>
   </td>
-  <td>
+  <td class="text-col">
     <%= stamp_paper.notes %>
   </td>
-  <td>
+  <td class="num-col">
     <%= stamp_paper.note_on_page %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), stamp_paper , {class: "btn btn-outline-primary"}%>
     <%= link_to  t_common(:edit), edit_stamp_paper_path(stamp_paper) , {class: "btn btn-outline-primary"} if policy(stamp_paper).edit?%>
   </td>

@@ -1,11 +1,6 @@
-
 <tr id="portfolio_investment_<%= portfolio_investment.id %>">
-
   <%= render RansackTableRow.new(model: portfolio_investment, columns:) %>
-
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), portfolio_investment , {class: "btn btn-outline-primary ti ti-eye"}%>
   </td>
-
 </tr>
-

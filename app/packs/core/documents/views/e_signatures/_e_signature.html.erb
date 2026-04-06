@@ -3,29 +3,26 @@
                           else
                             esign_provider_digio
                           end %>
-
 <tr id="<%= dom_id e_signature %>">
-  <td>
+  <td class="text-col">
     <%= e_signature.email %>
   </td>
-  <td>
+  <td class="text-col">
     <%= e_signature.label %>
   </td>
-
   <% if esign_provider_digio %>
-  <td>
-    <%= e_signature.signature_type %>
-  </td>
+    <td class="text-col">
+      <%= e_signature.signature_type %>
+    </td>
   <% end %>
-
-  <td>
+  <td class="text-col">
     <%if e_signature.status.present? %>
       <span class="badge bg-<%=e_signature.status_badge%>">
-      <%= e_signature.status&.titleize %>
+        <%= e_signature.status&.titleize %>
       </span>
     <% end %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), e_signature , {class: "btn btn-outline-primary"}%>
     <%= link_to  t_common(:edit), edit_e_signature_path(e_signature) , {class: "btn btn-outline-primary"} if policy(e_signature).edit?%>
   </td>

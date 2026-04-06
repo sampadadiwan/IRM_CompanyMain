@@ -1,4 +1,3 @@
-
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Exchange Rates</h1>
   <span>
@@ -14,26 +13,25 @@
   <table id="exchange_rates" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
-        <th>
+        <th class="text-col">
           From
         </th>
-        <th>
+        <th class="text-col">
           To
         </th>
-        <th>
+        <th class="num-col">
           Rate
         </th>
-        <th>
+        <th class="date-col">
           As Of
         </th>
-        <th>
+        <th class="text-col">
           Latest
         </th>
-        <th>
+        <th class="action-col">
         </th>
       </tr>
     </thead>
-
     <tbody>
       <% exchange_rates.each do |exchange_rate| %>
         <%= render exchange_rate %>

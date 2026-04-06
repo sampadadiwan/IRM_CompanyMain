@@ -1,29 +1,25 @@
 <tr id="document_<%= document.id %>">
-  <td>
-      <%= link_to document.name, document_path(document.id) %>
-      <% if document.orignal && policy(document).not_generated_or_approved %>
-          <%= link_to document.file_url(response_content_disposition: "inline; filename=#{document.name_with_extension}"), class: "document_download_icon", target: "_blank" do %>
-            <i class="fas fa-download"></i>
-          <% end %>
+  <td class="text-col">
+    <%= link_to document.name, document_path(document.id) %>
+    <% if document.orignal && policy(document).not_generated_or_approved %>
+      <%= link_to document.file_url(response_content_disposition: "inline; filename=#{document.name_with_extension}"), class: "document_download_icon", target: "_blank" do %>
+        <i class="fas fa-download"></i>
       <% end %>
+    <% end %>
   </td>
-  <td>
+  <td class="text-col">
     <%= document.tag_list %>
     <%= document.owner_tag %>
-
     <% if document.subject_to_approval? %>
       <% status = document.approved ? "Approved" : "Pending Approval" %>
       <%= render DisplayBooleanComponent.new(bool: document.approved).
         with_content(status)  %>
     <% end %>
   </td>
-
-  <td data-sort="<%= document.created_at.to_i %>">
+  <td class="date-col" data-sort="<%= document.created_at.to_i %>">
     <%= l document.created_at %>
   </td>
-
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), document, class: "btn btn-outline-primary ti ti-eye" %>
   </td>
-
 </tr>

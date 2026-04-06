@@ -1,22 +1,21 @@
-
 <tr id="<%= dom_id doc_question %>">
-  <td>
+  <td class="text-col">
     <%= doc_question.tags %>
   </td>
-  <td>
+  <td class="text-col">
     <%= doc_question.question %>
     <div class="text-muted"><%= doc_question.response_hint %></div>
   </td>
-  <td>
+  <td class="text-col">
     <%= doc_question.for_class %>
   </td>
-  <td>
+  <td class="text-col">
     <%= doc_question.document_name %>
   </td>
-  <td>
+  <td class="text-col">
     <%= doc_question.qtype %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), doc_question , {class: "btn btn-outline-primary"}%>
     <%= link_to  t_common(:edit), edit_doc_question_path(doc_question), {class: "btn btn-outline-success"}%>
   </td>

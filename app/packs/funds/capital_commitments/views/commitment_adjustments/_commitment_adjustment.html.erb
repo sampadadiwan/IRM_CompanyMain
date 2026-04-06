@@ -1,8 +1,6 @@
-
 <tr id="<%= dom_id commitment_adjustment %>">
-   <%= render RansackTableRow.new(model: commitment_adjustment, columns:) %>
-
-  <td>
+  <%= render RansackTableRow.new(model: commitment_adjustment, columns:) %>
+  <td class="action-col">
     <%= link_to  t_common(:show), commitment_adjustment , {class: "btn btn-outline-primary"}%>
   </td>
 </tr>

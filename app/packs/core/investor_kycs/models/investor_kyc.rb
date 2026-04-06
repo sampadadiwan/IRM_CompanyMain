@@ -1,29 +1,29 @@
 class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
-  STANDARD_COLUMNS = { "Investor" => "investor_name",
-                       "Investing Entity" => "full_name",
-                       "Type" => "kyc_type",
-                       "Completed" => "completed_by_investor",
-                       "Kyc Verified" => "verified",
-                       "Expired" => "expired" }.freeze
+  STANDARD_COLUMNS = { "Investor; text-col" => "investor_name; text-col",
+                       "Investing Entity; text-col" => "full_name; text-col",
+                       "Type; text-col" => "kyc_type; text-col",
+                       "Completed; text-col" => "completed_by_investor; text-col",
+                       "Kyc Verified; text-col" => "verified; text-col",
+                       "Expired; text-col" => "expired; text-col" }.freeze
 
   ONBOARDING_AGENT_REPORT_COLUMNS = {
-    "Investor" => "investor_name",
-    "Investing Entity" => "full_name",
-    "Type" => "kyc_type",
-    "Completed" => "completed_by_investor",
-    "Kyc Verified" => "verified",
-    "Expired" => "expired",
-    "Status" => "onboarding_status"
+    "Investor; text-col" => "investor_name; text-col",
+    "Investing Entity; text-col" => "full_name; text-col",
+    "Type; text-col" => "kyc_type; text-col",
+    "Completed; text-col" => "completed_by_investor; text-col",
+    "Kyc Verified; text-col" => "verified; text-col",
+    "Expired; text-col" => "expired; text-col",
+    "Status; text-col" => "onboarding_status; text-col"
   }.freeze
 
-  INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Investor").freeze
+  INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Investor; text-col").freeze
 
-  INVESTOR_STANDARD_COLUMNS = { "Entity" => "entity_name",
-                                "Investing Entity" => "full_name",
-                                "Type" => "kyc_type",
-                                "Completed" => "completed_by_investor",
-                                "Kyc Verified" => "verified",
-                                "Expired" => "expired" }.freeze
+  INVESTOR_STANDARD_COLUMNS = { "Entity; text-col" => "entity_name; text-col",
+                                "Investing Entity; text-col" => "full_name; text-col",
+                                "Type; text-col" => "kyc_type; text-col",
+                                "Completed; text-col" => "completed_by_investor; text-col",
+                                "Kyc Verified; text-col" => "verified; text-col",
+                                "Expired; text-col" => "expired; text-col" }.freeze
 
   SEBI_INVESTOR_CATEGORIES = %i[Internal Domestic Foreign Other].freeze
 

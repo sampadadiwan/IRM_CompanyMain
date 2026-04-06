@@ -1,17 +1,17 @@
 <tr id="<%= dom_id capital_distribution %>">
-  <td>
+  <td class="text-col">
     <%= link_to capital_distribution.title, capital_distribution %>
   </td>
-  <td>
+  <td class="date-col">
     <%= l capital_distribution.distribution_date if capital_distribution.distribution_date %>
   </td>
-  <td>
+  <td class="num-col">
     <%= money_to_currency capital_distribution.gross_amount, params %>
   </td>
-  <td>
+  <td class="text-col">
     <%= display_boolean capital_distribution.approved %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show) , capital_distribution_path(capital_distribution) , {class: "btn btn-outline-primary ti ti-eye" }%>
     <%= link_to  t_common(:edit) , edit_capital_distribution_path(capital_distribution) , {class: "btn btn-outline-success ti ti-edit" } if policy(capital_distribution).update? %>
   </td>

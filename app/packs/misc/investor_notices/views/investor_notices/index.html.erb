@@ -1,41 +1,33 @@
-
-
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Investor Notices</h1>
-  </div>
-
-  <div class="table-responsive" data-controller="datatable">
-
-    <table id="investor_notices" class="table table-bordered dataTable">
-
-      <thead>
-        <tr>
-          <th>
-            Owner
-          </th>
-          <th>
-            Title
-          </th>
-          <th>
-            Start Date
-          </th>
-          <th>
-            End Date
-          </th>
-          <th>
-            Active
-          </th>
-
-          <th>
-          </th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <% @investor_notices.each do |investor_notice| %>
-          <%= render investor_notice %>
-        <% end %>
-      </tbody>
-    </table>
-
-  </div>
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Investor Notices</h1>
+</div>
+<div class="table-responsive" data-controller="datatable">
+  <table id="investor_notices" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th class="text-col">
+          Owner
+        </th>
+        <th class="text-col">
+          Title
+        </th>
+        <th class="date-col">
+          Start Date
+        </th>
+        <th class="date-col">
+          End Date
+        </th>
+        <th class="text-col">
+          Active
+        </th>
+        <th class="action-col">
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @investor_notices.each do |investor_notice| %>
+        <%= render investor_notice %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

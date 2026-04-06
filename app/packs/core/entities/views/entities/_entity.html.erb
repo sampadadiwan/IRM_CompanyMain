@@ -1,18 +1,17 @@
 <tr id="entity_<%= entity.id %>">
-  <td>
+  <td class="text-col">
     <%= entity.name %>
   </td>
-  <td>
+  <td class="text-col">
     <%= entity.category %>
   </td>
-  <td>
+  <td class="action-col">
     <div class="btn-group">
       <div class="dropdown">
         <button class="btn btn-primary dropdown-toggle" type="button" id="action_<%= entity.id %>"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
           Actions
         </button>
-
         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
           <% if !vc_view %>
             <%= link_to "Documents", documents_path(entity_id: entity.id) , {class: "dropdown-item"}%>

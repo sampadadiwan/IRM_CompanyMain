@@ -1,85 +1,71 @@
 <%= render "/funds/stats" if current_user.curr_role_employee? %>
-
 <% if params[:card].present? %>
   <% title = link_to("Funds", funds_path) %>
   <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
     <%= render "entities/vc_dashboard_menus" %>
-
     <% funds.includes([:capital_commitments]).each do |fund| %>
-        <%= render "/funds/card", fund: fund %>
+      <%= render "/funds/card", fund: fund %>
     <% end %>
-
     <div class="d-flex justify-content-between align-items-center">
-        <%= raw pagy_info(@pagy) %>
-        <%= raw pagy_bootstrap_nav(@pagy) %>
+      <%= raw pagy_info(@pagy) %>
+      <%= raw pagy_bootstrap_nav(@pagy) %>
     </div>
   <% end %>
 <% else %>
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
-      <h1 class="h3 mb-0 text-gray-800">Funds</h1>
-      <span>
-        <% if policy(Fund.new(entity_id: current_user.entity_id)).new? %>
-          <%= link_to "New Fund" , new_fund_path, {class: "btn btn-outline-primary ti ti-plus" } %>
-
-          <%= link_to assistant_path('assistant', assistant_type: 'FundAssistant'), class: "btn btn-outline-success", data: {bs_toggle: "tooltip", bs_title: "Launch Fund Assistant to query across."} do %>
-            <i class="ti ti-brand-github-copilot"></i> Fund Assistant
-          <% end %>
+    <h1 class="h3 mb-0 text-gray-800">Funds</h1>
+    <span>
+      <% if policy(Fund.new(entity_id: current_user.entity_id)).new? %>
+        <%= link_to "New Fund" , new_fund_path, {class: "btn btn-outline-primary ti ti-plus" } %>
+        <%= link_to assistant_path('assistant', assistant_type: 'FundAssistant'), class: "btn btn-outline-success", data: {bs_toggle: "tooltip", bs_title: "Launch Fund Assistant to query across."} do %>
+          <i class="ti ti-brand-github-copilot"></i> Fund Assistant
         <% end %>
-
-
-        <% if current_user.entity.support_agents.set?(:fund_stats_agent) %>
-            <%= button_to run_support_agents_path(agent_type: "FundStatsAgent", target_id: current_user.entity.id, method: :post), class: "btn btn-outline-info" do %>
-              <i class="ti ti-robot"></i> Run Fund Stats Agent
-            <% end %>
+      <% end %>
+      <% if current_user.entity.support_agents.set?(:fund_stats_agent) %>
+        <%= button_to run_support_agents_path(agent_type: "FundStatsAgent", target_id: current_user.entity.id, method: :post), class: "btn btn-outline-info" do %>
+          <i class="ti ti-robot"></i> Run Fund Stats Agent
         <% end %>
-
-
-        <% if current_user.curr_role == "employee" %>
-          <a  class="p-8 bg-primary-subtle rounded-1 me-3 d-inline-flex align-middle align-items-center justify-content-center"
+      <% end %>
+      <% if current_user.curr_role == "employee" %>
+        <a  class="p-8 bg-primary-subtle rounded-1 me-3 d-inline-flex align-middle align-items-center justify-content-center"
               href="<%=funds_path(card: true)%>" >
-            <i class="ti ti-grid-dots text-primary fs-6"></i>
-          </a>
-        <% end %>
-
-
-
-      </span>
+          <i class="ti ti-grid-dots text-primary fs-6"></i>
+        </a>
+      <% end %>
+    </span>
   </div>
   <div class="table-responsive" data-controller="datatable" data-datatable-responsive-details-value=false>
-
     <table id="funds" class="table table-bordered dataTable jqDataTable">
       <thead>
         <tr>
           <% if current_user.curr_role_investor? %>
-            <th>
+            <th class="text-col">
               Entity
             </th>
           <% end %>
-          <th>
+          <th class="text-col">
             Name
           </th>
-          <th>
+          <th class="text-col">
             Category
           </th>
-          <th>
+          <th class="text-col">
             Tag List
           </th>
           <% if params[:snapshot].present? %>
-            <th>
+            <th class="date-col">
               Snapshot Date
             </th>
           <% end %>
-          <th>
+          <th class="action-col">
           </th>
         </tr>
       </thead>
-
       <tbody>
         <% funds.each do |fund| %>
           <%= render "/funds/fund", fund: fund %>
         <% end %>
       </tbody>
     </table>
-
   </div>
 <% end %>

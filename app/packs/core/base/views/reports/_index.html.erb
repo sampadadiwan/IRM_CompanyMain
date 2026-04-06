@@ -2,25 +2,24 @@
   <h1 class="h3 mb-0 text-gray-800">Reports</h1>
   <%#= link_to "New Report", new_report_path, {class: "btn btn-outline-primary"}  %>
   <%= render "/reports/new_report" %>
-
 </div>
 <div class="table-responsive" data-controller="datatable">
   <table id="reports" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
-        <th>
+        <th class="text-col">
           Name
         </th>
-        <th>
+        <th class="text-col">
           Category
         </th>
-        <th>
+        <th class="text-col">
           Tags
         </th>
-        <th>
+        <th class="text-col">
           Description
-        </th>        
-        <th>
+        </th>
+        <th class="action-col">
         </th>
       </tr>
     </thead>

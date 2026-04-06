@@ -5,11 +5,11 @@ class FundReport < ApplicationRecord
   belongs_to :entity
 
   STANDARD_COLUMNS = {
-    "Id" => "id",
-    "Name" => "name",
-    "Name Of Scheme" => "name_of_scheme",
-    "Start Date" => "start_date",
-    "End Date" => "end_date"
+    "Id; num-col" => "id; num-col",
+    "Name; text-col" => "name; text-col",
+    "Name Of Scheme; text-col" => "name_of_scheme; text-col",
+    "Start Date; date-col" => "start_date; date-col",
+    "End Date; date-col" => "end_date; date-col"
   }.freeze
 
   def to_s

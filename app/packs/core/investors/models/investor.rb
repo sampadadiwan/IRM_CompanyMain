@@ -148,9 +148,9 @@ class Investor < ApplicationRecord
   scope :perms, ->(p) { joins(:investor_entity).merge(Entity.perms(p)) }
   scope :no_perms, ->(p) { joins(:investor_entity).merge(Entity.no_perms(p)) }
 
-  STANDARD_COLUMNS = { "Stakeholder" => "investor_name", "Tags" => "tag_list", "Category" => "category", "Access" => "investor_access_count", "City" => "city" }.freeze
+  STANDARD_COLUMNS = { "Stakeholder; text-col" => "investor_name; text-col", "Tags; text-col" => "tag_list; text-col", "Category; text-col" => "category; text-col", "Access; label-col" => "investor_access_count; label-col", "City; text-col" => "city; text-col" }.freeze
 
-  PC_AGENT_REPORT_COLUMNS = { "Stakeholder" => "investor_name", "Tags" => "tag_list", "Category" => "category", "Status" => "kpi_reporting_status" }.freeze
+  PC_AGENT_REPORT_COLUMNS = { "Stakeholder; text-col" => "investor_name; text-col", "Tags; text-col" => "tag_list; text-col", "Category; text-col" => "category; text-col", "Status; text-col" => "kpi_reporting_status; text-col" }.freeze
 
   INVESTOR_CATEGORIES = ENV["INVESTOR_CATEGORIES"].split(",") << "Prospective"
 

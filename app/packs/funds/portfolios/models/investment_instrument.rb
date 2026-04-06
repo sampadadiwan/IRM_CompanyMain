@@ -3,8 +3,8 @@ class InvestmentInstrument < ApplicationRecord
   include WithCustomField
 
   STANDARD_COLUMNS = {
-    "Name" => "name",
-    "Currency" => "currency"
+    "Name; text-col" => "name; text-col",
+    "Currency; text-col" => "currency; text-col"
   }.freeze
 
   # SECTORS = ENV["SECTORS"].split(",").sort

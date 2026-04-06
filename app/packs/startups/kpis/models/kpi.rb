@@ -7,11 +7,11 @@ class Kpi < ApplicationRecord
   enum :status, { unapproved: 'unapproved', approved: 'approved' }, default: :approved
 
   STANDARD_COLUMNS = {
-    "Name" => "name",
-    "Value" => "value",
-    "Display Value" => "display_value",
-    "Percentage Change" => "percentage_change",
-    "Notes" => "notes"
+    "Name; text-col" => "name; text-col",
+    "Value; num-col" => "value; num-col",
+    "Display Value; text-col" => "display_value; text-col",
+    "Percentage Change; num-col" => "percentage_change; num-col",
+    "Notes; text-col" => "notes; text-col"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = %i[kpi_report investor_kpi_mapping].freeze

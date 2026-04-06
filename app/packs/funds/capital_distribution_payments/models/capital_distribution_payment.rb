@@ -7,19 +7,19 @@ class CapitalDistributionPayment < ApplicationRecord
 
   include WithFolder
 
-  STANDARD_COLUMNS = { "Stakeholder" => "investor_name",
-                       "Folio No" => "folio_id",
-                       "Gross Payable" => "gross_payable",
-                       "Net Payable" => "net_payable",
-                       "Payment Date" => "payment_date",
-                       "Completed" => "completed" }.freeze
+  STANDARD_COLUMNS = { "Stakeholder; text-col" => "investor_name; text-col",
+                       "Folio No; text-col" => "folio_id; text-col",
+                       "Gross Payable; num-col" => "gross_payable; num-col",
+                       "Net Payable; num-col" => "net_payable; num-col",
+                       "Payment Date; date-col" => "payment_date; date-col",
+                       "Completed; text-col" => "completed; text-col" }.freeze
 
-  INVESTOR_STANDARD_COLUMNS = { "Distribution Name" => "distribution_name",
-                                "Folio No" => "folio_id",
-                                "Gross Payable" => "gross_payable",
-                                "Net Payable" => "net_payable",
-                                "Payment Date" => "payment_date",
-                                "Completed" => "completed" }.freeze
+  INVESTOR_STANDARD_COLUMNS = { "Distribution Name; text-col" => "distribution_name; text-col",
+                                "Folio No; text-col" => "folio_id; text-col",
+                                "Gross Payable; num-col" => "gross_payable; num-col",
+                                "Net Payable; num-col" => "net_payable; num-col",
+                                "Payment Date; date-col" => "payment_date; date-col",
+                                "Completed; text-col" => "completed; text-col" }.freeze
 
   include ForInvestor
   include CapitalDistributionPaymentShared

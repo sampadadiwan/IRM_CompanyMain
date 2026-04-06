@@ -2,9 +2,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Units</h1>
   <%#= link_to "New Fund Unit", new_fund_unit_path, {class: "btn btn-outline-primary"}  %>
-
   <div class="d-flex flex-wrap align-items-center gap-2">
-
     <% if params[:capital_commitment_id].present? %>
       <%= link_to transfer_fund_units_capital_commitment_path(id: params[:capital_commitment_id]),
                   class: "btn btn-outline-success d-inline-flex align-items-center",
@@ -12,14 +10,12 @@
         <i class="ti ti-transfer"></i> Transfer
       <% end %>
     <% end %>
-
     <%= link_to fund_units_path(params: params.to_unsafe_h,
                   format: "xlsx", all: true),
                 class: "btn btn-outline-success d-inline-flex align-items-center",
                 data: { turbo: false } do %>
       <i class="ti ti-download"></i> <%= t_common(:download) %>
     <% end %>
-
     <% if current_user.curr_role != "investor" %>
       <%= link_to new_import_upload_path(
                     "import_upload[import_type]": "FundUnit",
@@ -29,51 +25,47 @@
         <i class="ti ti-upload"></i> <%= t_common(:upload) %>
       <% end %>
     <% end %>
-
   </div>
-
-
 </div>
 <div class="table-responsive" data-controller="datatable">
   <table id="fund_units" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
         <% if cols == "all" && params[:investor_id].blank? %>
-          <th>Fund</th>
-          <th>Investor</th>
+          <th class="text-col">Fund</th>
+          <th class="text-col">Investor</th>
         <% elsif cols == "all" %>
-          <th>Fund</th>
-          <th>Investing Entity</th>
+          <th class="text-col">Fund</th>
+          <th class="text-col">Investing Entity</th>
         <% end %>
-        <th>
+        <th class="text-col">
           Unit Type
         </th>
-        <th>
+        <th class="text-col">
           Folio Id
         </th>
-        <th>
+        <th class="date-col">
           Issue Date
         </th>
-        <th>
+        <th class="num-col">
           Quantity
         </th>
-        <th>
+        <th class="num-col">
           Price
         </th>
-        <th>
+        <th class="num-col">
           Premium
         </th>
-        <th>
+        <th class="num-col">
           Amount
         </th>
-        <th>
+        <th class="text-col">
           Reason
         </th>
-        <th>
+        <th class="action-col">
         </th>
       </tr>
     </thead>
-
     <tbody>
       <% fund_units.each do |fund_unit| %>
         <%= render fund_unit %>

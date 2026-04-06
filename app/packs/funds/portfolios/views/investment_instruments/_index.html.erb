@@ -2,10 +2,8 @@
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Investment Instruments</h1>
     <span>
-
       <% entity_id = @portfolio_company ? @portfolio_company.entity_id : current_user.entity_id %>
       <% investment_instrument = InvestmentInstrument.new(portfolio_company_id: params[:portfolio_company_id], entity_id: entity_id) %>
-
       <% if policy(investment_instrument).new?%>
         <div class="btn-group">
           <div class="dropdown">
@@ -13,11 +11,8 @@
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <i class="ti ti-plus"></i> New
             </button>
-
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
               <% investment_instrument_form_types = current_user.entity.form_types.where(name: "InvestmentInstrument") %>
-
               <% if investment_instrument_form_types.count > 1 %>
                 <% investment_instrument_form_types.each do |form_type| %>
                   <%= link_to "Investment Instrument (#{form_type.tag.presence || form_type.id})", new_investment_instrument_path(
@@ -27,23 +22,18 @@
                               class: "dropdown-item d-flex align-items-center ti ti-plus" %>
                 <% end %>
               <% else %>
-              <%# Show button to add new investment instrument for each separate customised form %>
+                <%# Show button to add new investment instrument for each separate customised form %>
                 <%= link_to "Investment Instrument", new_investment_instrument_path(
                               "investment_instrument[portfolio_company_id]": params[:portfolio_company_id],
                               "investment_instrument[entity_id]": entity_id),
                             class: "dropdown-item d-flex align-items-center ti ti-user" %>
-
               <% end %>
-
             </div>
           </div>
         </div>
       <% end %>
-
       <% import_upload_id ||=  nil%>
       <%= link_to "Download", investment_instruments_path(params: params.to_unsafe_h, import_upload_id:, format: :xlsx), {class: "btn btn-outline-success ti ti-download", data: {bs_toggle: "tooltip", bs_title: "Download Investment Instruments as Excel"} } %>
-
-
       <% owner_id = if params[:portfolio_company_id].present?
                       params[:portfolio_company_id]
                     else
@@ -69,17 +59,17 @@
       <thead>
         <tr>
           <% if params[:portfolio_company_id].blank? %>
-            <th>
+            <th class="text-col">
               Portfolio Company
             </th>
           <% end %>
-          <th>
+          <th class="text-col">
             Name
           </th>
-          <th>
+          <th class="text-col">
             Currency
           </th>
-          <th>
+          <th class="action-col">
           </th>
         </tr>
       </thead>
@@ -90,5 +80,4 @@
       </tbody>
     </table>
   </div>
-
 <% end %>

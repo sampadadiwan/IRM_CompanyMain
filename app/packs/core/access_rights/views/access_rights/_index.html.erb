@@ -5,7 +5,6 @@
   access_type ||= params[:access_type]
   entity_id ||= params[:entity_id]
 %>
-
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800 col-6">Access Rights</h1>
   <%
@@ -22,61 +21,52 @@
                       form_type: params[:form_type]),
                       { data: { turbo_frame: 'new_access_right' },
                       method: :get, class: "btn btn-outline-primary mt-0" } if access_right && policy(access_right.owner).update? && params[:form_type] != "none" %>
-
   </span>
 </div>
-
 <% if access_right && params[:form_type] != "none" %>
   <%= turbo_frame_tag "new_access_right" do %>
   <% end %>
 <% end %>
-
 <%=render SearchComponent.new(data_source: access_rights_path( params: params.to_unsafe_h, import_upload_id: ), turbo_frame: frame) %>
-
 <%
   show_metadata ||= "Yes"
   show_for ||= "Yes"
 %>
 <div class="table-responsive">
-
   <table id="access_rights_table" class="table table-bordered dataTable">
     <thead>
       <tr>
-        <th>
+        <th class="text-col">
           Access To
         </th>
-        <th>
+        <th class="text-col">
           Access Type
         </th>
         <% if show_metadata == "Yes" %>
-          <th>
+          <th class="text-col">
             Metadata
           </th>
         <% end %>
         <% if show_for == "Yes" %>
-          <th>
+          <th class="text-col">
             For
           </th>
         <% end %>
-        <th>
+        <th class="text-col">
           Granted By
         </th>
-        <th>
+        <th class="action-col">
         </th>
       </tr>
     </thead>
-
     <tbody id="access_rights_table_body">
       <% access_rights = access_rights.includes(:granted_by, :user) if access_rights.respond_to?(:includes) %>
       <% access_rights.each do |access_right| %>
         <%= render access_right, access_right: access_right, show_for: show_for, show_metadata: show_metadata %>
       <% end %>
     </tbody>
-
   </table>
-
 </div>
-
 <div class="alert alert-info text-center associated_entity">
   Access rights work at the level of the stakeholder firm. To permission individuals from the stakeholder firms
   please setup Stakeholder Users under a Stakeholder

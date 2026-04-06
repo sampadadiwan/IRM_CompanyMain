@@ -1,11 +1,8 @@
 <tr id="valuation_<%= valuation.id %>">
-
   <%= render RansackTableRow.new(model: valuation, columns:) %>
-
   <% if actions_column %>
-    <td>
+    <td class="action-col">
       <%= link_to  t_common(:show), valuation , {class: "btn btn-outline-primary ti ti-eye"}%>
     </td>
   <% end %>
-
 </tr>

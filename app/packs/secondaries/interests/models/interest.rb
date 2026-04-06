@@ -8,16 +8,16 @@ class Interest < ApplicationRecord
   include WithAllocations
 
   STANDARD_COLUMNS = {
-    "Buyer Entity" => "buyer_entity_name",
-    "Investor" => "investor_name",
-    "User" => "user",
-    "Quantity" => "quantity",
-    "Price" => "price",
-    "Allocation Quantity" => "allocation_quantity",
-    "Allocation Amount" => "allocation_amount",
-    "Status" => "short_listed_status",
-    "Verified" => "verified",
-    "Created At" => "created_at"
+    "Buyer Entity; text-col" => "buyer_entity_name; text-col",
+    "Investor; text-col" => "investor_name; text-col",
+    "User; text-col" => "user; text-col",
+    "Quantity; num-col" => "quantity; num-col",
+    "Price; num-col" => "price; num-col",
+    "Allocation Quantity; num-col" => "allocation_quantity; num-col",
+    "Allocation Amount; num-col" => "allocation_amount; num-col",
+    "Status; text-col" => "short_listed_status; text-col",
+    "Verified; text-col" => "verified; text-col",
+    "Created At; date-col" => "created_at; date-col"
   }.freeze
 
   belongs_to :user, optional: true

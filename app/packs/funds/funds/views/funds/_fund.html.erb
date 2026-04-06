@@ -1,33 +1,33 @@
 <tr id="<%= dom_id fund %>">
   <% if current_user.curr_role_investor? %>
-    <td>
+    <td class="text-col">
       <%= fund.entity.name %>
     </td>
   <% end %>
-  <td>
+  <td class="text-col">
     <%= link_to fund.name, fund %>
   </td>
-  <td>
+  <td class="text-col">
     <%= fund.category %>
   </td>
-  <td>
-    <% if fund.tag_list.present? %>      
+  <td class="text-col">
+    <% if fund.tag_list.present? %>
       <% fund.tag_list.split(",").each do |tag| %>
         <span class="mb-1 badge rounded-pill font-medium bg-primary text-primary"><%= link_to tag, funds_path(tag:) %></span>
       <% end %>
     <% end %>
   </td>
   <% if params[:snapshot].present? %>
-    <td>
+    <td class="date-col">
       <%= l fund.snapshot_date if fund.snapshot_date %>
     </td>
   <% end %>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show) , fund , {class: "btn btn-outline-primary ti ti-eye" } %>
     <%= link_to "New Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[investor_id]": params[:investor_id]), class: "btn btn-outline-success ti ti-plus" if params[:new_commitment].present? %>
     <% if params[:debug].present? %>
       <%= link_to "Analytics" , fund_path(id: fund.id, charts: true) , {class: "btn btn-outline-success" }%>
-      <%= link_to "Remittances" , last_fund_path(id: fund.id, entry: "CapitalCall") , {class: "btn btn-outline-primary" }%>    
+      <%= link_to "Remittances" , last_fund_path(id: fund.id, entry: "CapitalCall") , {class: "btn btn-outline-primary" }%>
     <% end %>
   </td>
 </tr>

@@ -14,16 +14,16 @@ class Investment < ApplicationRecord
   validates :funding_round, :currency, :investment_date, presence: true
   validates :instrument_name, length: { maximum: 50 }, allow_blank: true
 
-  STANDARD_COLUMNS = { "Portfolio Company" => "portfolio_company_name",
-                       "Category" => "category",
-                       "Investor Name" => "investor_name",
-                       "Investment Type" => "investment_type",
-                       "Funding Round" => "funding_round",
-                       "Currency" => "currency",
-                       "Price" => "price",
-                       "Investment Date" => "investment_date",
-                       "Amount" => "amount",
-                       "Quantity" => "quantity" }.freeze
+  STANDARD_COLUMNS = { "Portfolio Company; text-col" => "portfolio_company_name; text-col",
+                       "Category; text-col" => "category; text-col",
+                       "Investor Name; text-col" => "investor_name; text-col",
+                       "Investment Type; text-col" => "investment_type; text-col",
+                       "Funding Round; text-col" => "funding_round; text-col",
+                       "Currency; text-col" => "currency; text-col",
+                       "Price; num-col" => "price; num-col",
+                       "Investment Date; date-col" => "investment_date; date-col",
+                       "Amount; num-col" => "amount; num-col",
+                       "Quantity; num-col" => "quantity; num-col" }.freeze
 
   def display_category
     category == "Self" ? portfolio_company.entity.name : category

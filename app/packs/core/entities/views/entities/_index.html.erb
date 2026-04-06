@@ -1,20 +1,17 @@
-<%= render "entities/entities_dashboard_menus" if vc_view %>     
-
+<%= render "entities/entities_dashboard_menus" if vc_view %>
 <%= render FormCard.new(title: "Entities") do %>
-
   <div data-controller="datatable">
     <table id="entities" class="table table-bordered  dataTable jqDataTable">
       <thead>
-        <th>
+        <th class="text-col">
           Name
         </th>
-        <th>
+        <th class="text-col">
           Category
         </th>
-        <th>
-        </th>  
+        <th class="action-col">
+        </th>
       </thead>
-
       <tbody>
         <% entities.each do |entity| %>
           <%= render partial: "entities/entity", locals: {entity: entity, vc_view: vc_view} %>
@@ -22,8 +19,4 @@
       </tbody>
     </table>
   </div>
-
 <% end %>
-
-
-

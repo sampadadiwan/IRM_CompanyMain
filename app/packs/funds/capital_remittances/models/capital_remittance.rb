@@ -10,36 +10,36 @@ class CapitalRemittance < ApplicationRecord
   include RansackerAmounts.new(fields: %w[call_amount collected_amount capital_fee other_fee arrear_amount])
 
   STANDARD_COLUMNS = {
-    "Stakeholder" => "investor_name",
-    "Folio No" => "folio_id",
-    "Status" => "status",
-    "Verified" => "verified",
-    "Due Amount" => "due_amount",
-    "Collected Amount" => "collected_amount",
-    "Payment Date" => "payment_date"
+    "Stakeholder; text-col" => "investor_name; text-col",
+    "Folio No; text-col" => "folio_id; text-col",
+    "Status; text-col" => "status; text-col",
+    "Verified; text-col" => "verified; text-col",
+    "Due Amount; num-col" => "due_amount; num-col",
+    "Collected Amount; num-col" => "collected_amount; num-col",
+    "Payment Date; date-col" => "payment_date; date-col"
   }.freeze
 
   ADDITIONAL_COLUMNS = {
-    "Tracking Committed" => "tracking_committed_amount",
-    "Tracking Called" => "tracking_call_amount"
+    "Tracking Committed; num-col" => "tracking_committed_amount; num-col",
+    "Tracking Called; num-col" => "tracking_call_amount; num-col"
   }.freeze
 
   INVESTOR_STANDARD_COLUMNS = {
-    "Capital Call" => "capital_call_name",
-    "Folio Id" => "folio_id",
-    "Status" => "status",
-    "Due Amount" => "due_amount",
-    "Collected Amount" => "collected_amount",
-    "Payment Date" => "payment_date"
+    "Capital Call; text-col" => "capital_call_name; text-col",
+    "Folio Id; text-col" => "folio_id; text-col",
+    "Status; text-col" => "status; text-col",
+    "Due Amount; num-col" => "due_amount; num-col",
+    "Collected Amount; num-col" => "collected_amount; num-col",
+    "Payment Date; date-col" => "payment_date; date-col"
   }.freeze
 
   FOR_COMMITMENT_COLUMNS = {
-    "Capital Call" => "capital_call_name",
-    "Status" => "status",
-    "Verified" => "verified",
-    "Due Amount" => "due_amount",
-    "Collected Amount" => "collected_amount",
-    "Payment Date" => "payment_date"
+    "Capital Call; text-col" => "capital_call_name; text-col",
+    "Status; text-col" => "status; text-col",
+    "Verified; text-col" => "verified; text-col",
+    "Due Amount; num-col" => "due_amount; num-col",
+    "Collected Amount; num-col" => "collected_amount; num-col",
+    "Payment Date; date-col" => "payment_date; date-col"
   }.freeze
 
   update_index('capital_remittance') { self if index_record? }

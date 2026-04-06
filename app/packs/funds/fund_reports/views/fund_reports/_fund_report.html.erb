@@ -1,9 +1,6 @@
 <tr id="fund_report_<%= fund_report.id %>">
-
-    <%= render RansackTableRow.new(model: fund_report, columns:) %>
-
-    <td>
-      <%= link_to  t_common(:show), fund_report , {class: "btn btn-outline-primary ti ti-eye"}%>
-    </td>
-
-  </tr>
+  <%= render RansackTableRow.new(model: fund_report, columns:) %>
+  <td class="action-col">
+    <%= link_to  t_common(:show), fund_report , {class: "btn btn-outline-primary ti ti-eye"}%>
+  </td>
+</tr>

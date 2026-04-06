@@ -105,25 +105,25 @@ class PortfolioInvestment < ApplicationRecord
   ##########################################################
 
   STANDARD_COLUMNS = {
-    "Portfolio Company" => "portfolio_company_name",
-    "Instrument" => "investment_instrument_name",
-    "Investment Date" => "investment_date",
-    "Amount" => "amount",
-    "Quantity" => "quantity",
-    "Cost Per Share" => "cost",
-    "FMV" => "fmv",
-    "Unrealized Gain" => "unrealized_gain",
-    "Realized Gain" => "gain",
-    "FIFO Cost" => "cost_of_sold",
-    "Notes" => "notes"
+    "Portfolio Company; text-col" => "portfolio_company_name; text-col",
+    "Instrument; text-col" => "investment_instrument_name; text-col",
+    "Investment Date; date-col" => "investment_date; date-col",
+    "Amount; num-col" => "amount; num-col",
+    "Quantity; num-col" => "quantity; num-col",
+    "Cost Per Share; num-col" => "cost; num-col",
+    "FMV; num-col" => "fmv; num-col",
+    "Unrealized Gain; num-col" => "unrealized_gain; num-col",
+    "Realized Gain; num-col" => "gain; num-col",
+    "FIFO Cost; num-col" => "cost_of_sold; num-col",
+    "Notes; text-col" => "notes; text-col"
   }.freeze
 
   ADDITIONAL_COLUMNS = {
-    "Tracking Amount" => "tracking_amount",
-    "Tracking FMV" => "tracking_fmv",
-    "Cost Of Sold Per Share" => "cost_of_sold_per_share",
-    "Sale Price Per Share" => "sale_price_per_share",
-    "Sector" => "sector"
+    "Tracking Amount; num-col" => "tracking_amount; num-col",
+    "Tracking FMV; num-col" => "tracking_fmv; num-col",
+    "Cost Of Sold Per Share; num-col" => "cost_of_sold_per_share; num-col",
+    "Sale Price Per Share; num-col" => "sale_price_per_share; num-col",
+    "Sector; text-col" => "sector; text-col"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = %w[fund aggregate_portfolio_investment portfolio_company valuation].freeze

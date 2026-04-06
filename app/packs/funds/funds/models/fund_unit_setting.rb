@@ -11,11 +11,11 @@ class FundUnitSetting < ApplicationRecord
   validate :allowed_unit_type
 
   STANDARD_COLUMNS = {
-    "Class/Series" => "name",
-    "Management Fee %" => "management_fee",
-    "Setup Fee %" => "setup_fee",
-    "Carry %" => "carry",
-    "ISIN" => "isin"
+    "Class/Series; text-col" => "name; text-col",
+    "Management Fee %; num-col" => "management_fee; num-col",
+    "Setup Fee %; num-col" => "setup_fee; num-col",
+    "Carry %; num-col" => "carry; num-col",
+    "ISIN; text-col" => "isin; text-col"
   }.freeze
 
   def to_s

@@ -1,24 +1,22 @@
-
 <tr id="<%= dom_id folder %>">
-<td>
+  <td class="text-col">
     <%= link_to folder.name, folder_documents_path(folder_id: folder.id) %>
     <% if folder.system? %>
-        </br><span class="badge bg-warning">System</span>
-    <% else %>
-        </br><span class="badge bg-success">Regular</span>
-    <% end %>
-</td>  
-<td>
-    <%= folder.parent&.full_path %>
-</td>  
-<td>
-    <%= folder.full_path %>
-</td>  
-<td>
+    </br><span class="badge bg-warning">System</span>
+  <% else %>
+  </br><span class="badge bg-success">Regular</span>
+<% end %>
+</td>
+<td class="text-col">
+  <%= folder.parent&.full_path %>
+</td>
+<td class="text-col">
+  <%= folder.full_path %>
+</td>
+<td class="action-col">
   <%= link_to  t_common(:show), folder , {class: "btn btn-outline-primary"}%>
   <%= link_to  t_common(:edit), edit_folder_path(folder) , {class: "btn btn-outline-primary"} if policy(folder).update? %>
   <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_id]": folder.id), 
         {class: "btn btn-outline-success"}%>
-
 </td>
 </tr>

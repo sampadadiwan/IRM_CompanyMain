@@ -1,33 +1,32 @@
-
 <tr id="<%= dom_id investment %>">
-  <td>
+  <td class="text-col">
     <%= link_to investment.portfolio_company %>
   </td>
-  <td>
+  <td class="text-col">
     <%= investment.display_category %>
   </td>
-  <td>
+  <td class="text-col">
     <%= investment.investor_name %>
   </td>
-  <td>
+  <td class="text-col">
     <%= investment.investment_type %>
   </td>
-  <td>
+  <td class="text-col">
     <%= investment.funding_round %>
   </td>
-  <td>
+  <td class="num-col">
     <%= investment.quantity %>
   </td>
-  <td>
+  <td class="num-col">
     <%= money_to_currency investment.price, params %>
   </td>
-  <td>
+  <td class="num-col">
     <%= money_to_currency investment.amount, params %>
   </td>
-  <td>
+  <td class="date-col">
     <%= l investment.investment_date %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), investment , {class: "btn btn-outline-primary ti ti-eye"}%>
     <%= link_to  t_common(:edit), edit_investment_path(investment) , {class: "btn btn-outline-success ti ti-pencil"} if policy(investment).edit? %>
   </td>

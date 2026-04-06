@@ -35,21 +35,21 @@ class DealInvestor < ApplicationRecord
 
   STATUS = %w[Active Pending Declined].freeze
   STANDARD_COLUMNS = {
-    "Investor Name" => "investor_name",
-    "Status" => "status",
-    "Primary Amount" => "primary_amount",
-    "Secondary Investment" => "secondary_investment",
-    "Pre Money Valuation" => "pre_money_valuation",
-    "Fee" => "fee",
-    "Total Amount" => "total_amount",
-    "Tier" => "tier",
-    "Deal Lead" => "deal_lead",
-    "Source" => "source",
-    "Investor Advisor" => "investor_advisor",
-    "Company Advisor" => "company_advisor",
-    "Notes" => "notes",
-    "Tags" => "tags",
-    "Health Score" => "health_score"
+    "Investor Name; text-col" => "investor_name; text-col",
+    "Status; text-col" => "status; text-col",
+    "Primary Amount; num-col" => "primary_amount; num-col",
+    "Secondary Investment; num-col" => "secondary_investment; num-col",
+    "Pre Money Valuation; num-col" => "pre_money_valuation; num-col",
+    "Fee; num-col" => "fee; num-col",
+    "Total Amount; num-col" => "total_amount; num-col",
+    "Tier; text-col" => "tier; text-col",
+    "Deal Lead; text-col" => "deal_lead; text-col",
+    "Source; text-col" => "source; text-col",
+    "Investor Advisor; text-col" => "investor_advisor; text-col",
+    "Company Advisor; text-col" => "company_advisor; text-col",
+    "Notes; text-col" => "notes; text-col",
+    "Tags; text-col" => "tags; text-col",
+    "Health Score; num-col" => "health_score; num-col"
   }.freeze
 
   CARD_VIEW_ATTRS = {

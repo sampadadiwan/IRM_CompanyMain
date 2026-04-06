@@ -2,48 +2,47 @@
 <% end %>
 <% table_id ||=  "investor_accesses" %>
 <table id="<%=table_id%>" class="table table-bordered  dataTable jqDataTable">
-        <thead>
-            <tr>
-                <% if params[:investor_id].blank? %>
-                    <th>
-                        Stakeholder
-                    </th>
-                <% end %>
-                <th>
-                    User
-                </th>
-                <th>
-                    Type
-                </th>
-                <th>
-                    Email
-                </th>
-                <th>
-                    Email Enabled
-                </th>
-                <th>
-                    Phone
-                </th>
-                <th>
-                    WhatsApp Enabled (Entity)
-                </th>
-                <th>
-                    WhatsApp Enabled (User)
-                </th>
-                <th>
-                    Approved
-                </th>
-                <th>
-                    Granted By
-                </th>
-
-                <th>
-                </tr>
-            </tr>
-        </thead>
-        <tbody id="investor_accesses_table_body">
-            <% investor_accesses.each do |investor_access| %>
-                <%= render "/investor_accesses/investor_access", investor_access: %>
-            <% end %>
-        </tbody>
+  <thead>
+    <tr>
+      <% if params[:investor_id].blank? %>
+        <th class="text-col">
+          Stakeholder
+        </th>
+      <% end %>
+      <th class="text-col">
+        User
+      </th>
+      <th class="text-col">
+        Type
+      </th>
+      <th class="text-col">
+        Email
+      </th>
+      <th class="text-col">
+        Email Enabled
+      </th>
+      <th class="text-col">
+        Phone
+      </th>
+      <th class="text-col">
+        WhatsApp Enabled (Entity)
+      </th>
+      <th class="text-col">
+        WhatsApp Enabled (User)
+      </th>
+      <th class="text-col">
+        Approved
+      </th>
+      <th class="text-col">
+        Granted By
+      </th>
+      <th class="action-col">
+      </th>
+    </tr>
+  </thead>
+  <tbody id="investor_accesses_table_body">
+    <% investor_accesses.each do |investor_access| %>
+      <%= render "/investor_accesses/investor_access", investor_access: %>
+    <% end %>
+  </tbody>
 </table>

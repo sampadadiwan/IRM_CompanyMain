@@ -6,13 +6,13 @@ class TaskTemplate < ApplicationRecord
   validates :due_in_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   FOR_CLASS = %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution IndividualKyc NonIndividualKyc Offer Interest].freeze
 
-  STANDARD_COLUMNS = { "For" => "for_class",
-                       "Tags" => "tag_list",
-                       "Details" => "details",
-                       "#" => "position",
-                       "Due In Days" => "due_in_days",
-                       "Action" => "action_link",
-                       "Help" => "help_link" }.freeze
+  STANDARD_COLUMNS = { "For; text-col" => "for_class; text-col",
+                       "Tags; text-col" => "tag_list; text-col",
+                       "Details; text-col" => "details; text-col",
+                       "#; num-col" => "position; num-col",
+                       "Due In Days; num-col" => "due_in_days; num-col",
+                       "Action; text-col" => "action_link; text-col",
+                       "Help; text-col" => "help_link; text-col" }.freeze
 
   def to_s
     "#{for_class} - #{details&.truncate(20)}"

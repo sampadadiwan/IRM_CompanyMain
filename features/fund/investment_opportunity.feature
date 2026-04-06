@@ -15,8 +15,8 @@ Scenario Outline: Create new investment_opportunity
   When the "notify_open_for_interests" notification is sent
   Then notification should be sent "<notification_sent>" to the IO investors for "<notify_open_for_interests>"
   Given there is a custom notification "<notify_allocation>" in place for the IO
-  When the "notification_sent" notification is sent
-  Then notification should be sent "<notification_sent>" to the IO investors for "<notification_sent>"
+  When the "notify_allocation" notification is sent
+  Then notification should be sent "<notification_sent>" to the IO investors for "<notify_allocation>"
   And I should see the investment_opportunity in all investment_opportunities page
 
   Examples:

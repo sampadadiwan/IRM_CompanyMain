@@ -1,26 +1,22 @@
 <div class="table-responsive" data-controller="datatable">
-
-    <table id="deals" class="table table-bordered dataTable jqDataTable">
-        <thead>
-            <tr>
-                <th>
-                    <strong>Name</strong>
-                </th>
-                <th>
-                    <strong>Amount</strong>
-                </th>
-                <th>
-                    <strong>Status</strong>
-                </th>
-
-            </tr>
-        </thead>
-        <tbody>
-            <% deals.each do |deal| %>
-                <%= render deal %>
-            <% end %>
-        </tbody>
-    </table>
-
+  <table id="deals" class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th class="text-col">
+          <strong>Name</strong>
+        </th>
+        <th class="num-col">
+          <strong>Amount</strong>
+        </th>
+        <th class="text-col">
+          <strong>Status</strong>
+        </th>
+      </tr>
+    </thead>
+    <tbody>
+      <% deals.each do |deal| %>
+        <%= render deal %>
+      <% end %>
+    </tbody>
+  </table>
 </div>
-

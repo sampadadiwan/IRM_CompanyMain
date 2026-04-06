@@ -1,20 +1,20 @@
 <tr id="<%= dom_id investor_notice %>">
-  <td>
+  <td class="text-col">
     <%= investor_notice.owner_type %>
   </td>
-  <td>
+  <td class="text-col">
     <%= investor_notice.title %>
   </td>
-  <td>
+  <td class="date-col">
     <%= investor_notice.start_date %>
   </td>
-  <td>
+  <td class="date-col">
     <%= investor_notice.end_date %>
   </td>
-  <td>
+  <td class="text-col">
     <%= display_boolean investor_notice.active %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show) , investor_notice , {class: "btn btn-outline-primary" }%>
   </td>
 </tr>

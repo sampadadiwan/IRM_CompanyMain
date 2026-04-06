@@ -3,40 +3,31 @@
   <%= link_to "New User" , new_user_path(entity_id: current_user.entity_id),
       {class: "btn btn-outline-primary" } if policy(User).new? %>
 </div>
-
 <table id="users" class="table table-bordered  dataTable jqDataTable">
   <thead>
     <tr>
-      <th>
+      <th class="text-col">
         First name
       </th>
-
-      <th>
+      <th class="text-col">
         Last name
       </th>
-
-      <th>
+      <th class="text-col">
         Roles
       </th>
-
-      <th>
+      <th class="text-col">
         Tags
       </th>
-
-      <th>
+      <th class="text-col">
         Entity
       </th>
-      <th>
-
+      <th class="action-col">
       </th>
-
     </tr>
   </thead>
-
   <tbody>
     <% users.each do |user| %>
       <%= render partial: "users/user", locals: {user: user} %>
     <% end %>
   </tbody>
-
 </table>

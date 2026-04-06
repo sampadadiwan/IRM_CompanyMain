@@ -1,20 +1,20 @@
 <tr id="<%= dom_id exchange_rate %>">
-  <td>
+  <td class="text-col">
     <%= exchange_rate.from %>
   </td>
-  <td>
+  <td class="text-col">
     <%= exchange_rate.to %>
   </td>
-  <td>
+  <td class="num-col">
     <%= exchange_rate.rate %>
   </td>
-  <td data-order="<%= exchange_rate.as_of&.strftime('%Y-%m-%d') %>">
+  <td class="date-col" data-order="<%= exchange_rate.as_of&.strftime('%Y-%m-%d') %>">
     <%= l exchange_rate.as_of if exchange_rate.as_of %>
   </td>
-  <td>
+  <td class="text-col">
     <%= display_boolean exchange_rate.latest %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), exchange_rate , {class: "btn btn-outline-primary ti ti-eye"}%>
     <%= link_to "Reverse", new_exchange_rate_path(to: exchange_rate.from, from: exchange_rate.to) , {class: "btn btn-outline-success ti ti-arrow-back-up-double"}%>
     <% if policy(exchange_rate).generate_tracking_numbers? %>

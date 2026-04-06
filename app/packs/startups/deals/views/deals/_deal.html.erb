@@ -1,33 +1,30 @@
-
 <tr id="<%= dom_id deal %>">
-
-    <td>
-        <% if current_user.entity_id == deal.entity_id %>
-            <%= link_to deal.name, deal_path(deal, grid_view: true) %>
-            <% if deal.kanban_board.present? %>
-                <%= link_to board_path(deal.kanban_board) do%>
-                    <i class="ti ti-brand-trello icon-large"></i>
-                <% end %>
-            <% end %>
-        <% else %>
-            <%= link_to deal.name, deal_path(deal) %>
+  <td class="text-col">
+    <% if current_user.entity_id == deal.entity_id %>
+      <%= link_to deal.name, deal_path(deal, grid_view: true) %>
+      <% if deal.kanban_board.present? %>
+        <%= link_to board_path(deal.kanban_board) do%>
+          <i class="ti ti-brand-trello icon-large"></i>
         <% end %>
-        <div>
-            <% if deal.start_date %>
-                <span class="badge bg-success">Start Date: <%= l deal.start_date %></span>
-            <% else %>
-                <span class="badge bg-warning">Not Started</span>
-            <% end %>
-        </div>
-    </td>
-    <td>
-        <%= money_to_currency deal.amount, params %>
-    </td>
-    <td>
-        <span class="badge bg-info"><%= deal.status %></span>
-        <% if deal.archived %>
-            <span class="badge bg-danger">Archived</span>
-        <% end %>
-    </td>
-
+      <% end %>
+    <% else %>
+      <%= link_to deal.name, deal_path(deal) %>
+    <% end %>
+    <div>
+      <% if deal.start_date %>
+        <span class="badge bg-success">Start Date: <%= l deal.start_date %></span>
+      <% else %>
+        <span class="badge bg-warning">Not Started</span>
+      <% end %>
+    </div>
+  </td>
+  <td class="num-col">
+    <%= money_to_currency deal.amount, params %>
+  </td>
+  <td class="text-col">
+    <span class="badge bg-info"><%= deal.status %></span>
+    <% if deal.archived %>
+      <span class="badge bg-danger">Archived</span>
+    <% end %>
+  </td>
 </tr>

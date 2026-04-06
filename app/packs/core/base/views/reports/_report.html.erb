@@ -1,24 +1,21 @@
-<tr id="<%= dom_id report %>">  
-  <td>
+<tr id="<%= dom_id report %>">
+  <td class="text-col">
     <%= link_to report.name, report.url %>
   </td>
-
-  <td>
+  <td class="text-col">
     <%= report.category %>
   </td>
-
-  <td>
+  <td class="text-col">
     <% report.tag_list&.split(",")&.each do |tag| %>
-        <%= link_to tag, reports_path(tag_list: tag, composite: true), class: "badge bg-primary" %>
+      <%= link_to tag, reports_path(tag_list: tag, composite: true), class: "badge bg-primary" %>
     <% end %>
   </td>
-  
-  <td>
+  <td class="text-col">
     <%= report.description %>
   </td>
-  <td>
+  <td class="action-col">
     <%= link_to  t_common(:show), report , {class: "btn btn-outline-primary"}%>
-    <% if policy(report).edit? %>    
+    <% if policy(report).edit? %>
       <%= link_to  t_common(:edit), edit_report_path(report), {class: "btn btn-outline-success"} %>
     <% end %>
   </td>

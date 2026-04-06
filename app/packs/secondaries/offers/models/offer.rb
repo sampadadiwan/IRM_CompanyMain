@@ -8,23 +8,23 @@ class Offer < ApplicationRecord
   include WithAllocations
 
   STANDARD_COLUMNS = {
-    "Investor" => "investor_name",
-    "User" => "user",
-    "Quantity" => "quantity",
-    "Price" => "price",
-    "Allocation Quantity" => "allocation_quantity",
-    "Allocation Amount" => "allocation_amount",
-    "Approved" => "approved",
-    "Verified" => "verified",
-    "Updated At" => "updated_at"
+    "Investor; text-col" => "investor_name; text-col",
+    "User; text-col" => "user; text-col",
+    "Quantity; num-col" => "quantity; num-col",
+    "Price; num-col" => "price; num-col",
+    "Allocation Quantity; num-col" => "allocation_quantity; num-col",
+    "Allocation Amount; num-col" => "allocation_amount; num-col",
+    "Approved; text-col" => "approved; text-col",
+    "Verified; text-col" => "verified; text-col",
+    "Updated At; date-col" => "updated_at; date-col"
   }.freeze
 
   INVESTOR_STANDARD_COLUMNS = {
-    "User" => "user",
-    "Quantity" => "quantity",
-    "Price" => "price",
-    "Allocation Quantity" => "allocation_quantity",
-    "Allocation Amount" => "allocation_amount"
+    "User; text-col" => "user; text-col",
+    "Quantity; num-col" => "quantity; num-col",
+    "Price; num-col" => "price; num-col",
+    "Allocation Quantity; num-col" => "allocation_quantity; num-col",
+    "Allocation Amount; num-col" => "allocation_amount; num-col"
   }.freeze
 
   # Make all models searchable

@@ -1,7 +1,6 @@
 <tr id="capital_remittance_<%= capital_remittance.id %>">
-
   <%= render RansackTableRow.new(model: capital_remittance, columns:) %>
-  <td>
+  <td class="action-col">
     <%= render "/capital_remittances/dt_actions", capital_remittance: capital_remittance %>
-  <td>
+  </td>
 </tr>

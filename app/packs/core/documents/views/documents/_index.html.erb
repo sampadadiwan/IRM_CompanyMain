@@ -91,7 +91,6 @@
             <% end %>
             <%# Show "Create AI Portfolio Report" only if user has LLM access and entity has portfolio company agent enabled %>
             <% if current_user.enable_user_llm_chat && current_user.entity&.support_agents&.portfolio_company_agent? && @folder && @folder.owner.is_a?(Investor) && @folder.owner.category == 'Portfolio Company' %>
-
               <% if @folder.documents.any? %>
                 <%= link_to new_ai_portfolio_report_path(portfolio_company_id: @folder.owner.id),
                   class: "dropdown-item d-flex align-items-center",
@@ -104,7 +103,6 @@
                 </span>
               <% end %>
             <% end %>
-
             <div class="dropdown-divider"></div>
             <% if params[:q].present? %>
               <%= render "documents/bulk_actions", folder_id: folder_id %>
@@ -145,16 +143,16 @@
   <table id="documents" class="table table-bordered  dataTable jqDataTable">
     <thead>
       <tr>
-        <th>
+        <th class="text-col">
           Name
         </th>
-        <th>
+        <th class="text-col">
           Tags
         </th>
-        <th>
+        <th class="date-col">
           Created
         </th>
-        <th>
+        <th class="action-col">
         </th>
       </tr>
     </thead>

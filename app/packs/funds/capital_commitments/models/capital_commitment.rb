@@ -15,34 +15,34 @@ class CapitalCommitment < ApplicationRecord
   # Set by import upload when importing commitments
   attr_accessor :imported
 
-  STANDARD_COLUMNS = { "Folio" => "folio_id",
-                       "Stakeholder" => "investor_name",
-                       "Investing Entity" => "investor_kyc_full_name",
-                       "Unit Type" => "unit_type",
-                       "Fund Close" => "fund_close",
-                       "Committed" => "committed_amount",
-                       "Called" => "call_amount",
-                       "Collected" => "collected_amount",
-                       "Distributed" => "distribution_amount" }.freeze
+  STANDARD_COLUMNS = { "Folio; text-col" => "folio_id; text-col",
+                       "Stakeholder; text-col" => "investor_name; text-col",
+                       "Investing Entity; text-col" => "investor_kyc_full_name; text-col",
+                       "Unit Type; text-col" => "unit_type; text-col",
+                       "Fund Close; text-col" => "fund_close; text-col",
+                       "Committed; num-col" => "committed_amount; num-col",
+                       "Called; num-col" => "call_amount; num-col",
+                       "Collected; num-col" => "collected_amount; num-col",
+                       "Distributed; num-col" => "distribution_amount; num-col" }.freeze
 
   ADDITIONAL_COLUMNS = {
-    "Tracking Committed" => "tracking_committed_amount",
-    "Tracking Collected" => "tracking_collected_amount",
-    "Tracking Distributed" => "tracking_distribution_amount",
-    "Tracking Adjusted" => "tracking_adjustment_amount"
+    "Tracking Committed; num-col" => "tracking_committed_amount; num-col",
+    "Tracking Collected; num-col" => "tracking_collected_amount; num-col",
+    "Tracking Distributed; num-col" => "tracking_distribution_amount; num-col",
+    "Tracking Adjusted; num-col" => "tracking_adjustment_amount; num-col"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = %w[investor_kyc investor].freeze
 
   INVESTOR_TAB_STANDARD_COLUMNS = {
-    "Fund Name" => "fund_name",
-    "Investing Entity" => "investor_kyc_full_name",
-    "Folio" => "folio_id"
+    "Fund Name; text-col" => "fund_name; text-col",
+    "Investing Entity; text-col" => "investor_kyc_full_name; text-col",
+    "Folio; text-col" => "folio_id; text-col"
   }.merge(
-    STANDARD_COLUMNS.slice(*STANDARD_COLUMNS.keys - ["Fund Close", "Stakeholder", "Investing Entity", "Folio"])
+    STANDARD_COLUMNS.slice(*STANDARD_COLUMNS.keys - ["Fund Close; text-col", "Stakeholder; text-col", "Investing Entity; text-col", "Folio; text-col"])
   ).freeze
 
-  INVESTOR_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Stakeholder", "Fund Close").freeze
+  INVESTOR_STANDARD_COLUMNS = STANDARD_COLUMNS.except("Stakeholder; text-col", "Fund Close; text-col").freeze
 
   update_index('capital_commitment') { self if index_record? }
 
