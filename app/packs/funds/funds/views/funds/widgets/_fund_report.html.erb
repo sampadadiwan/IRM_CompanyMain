@@ -21,6 +21,7 @@
 
 %>
     <%
+      # We need unique div ids to apply custom css to widgets in case of multiple widgets with same name. Hence adding report id and widget id to the id.
         id = "#{widget.widget_name.strip.parameterize.underscore}"
         id += "_#{report.model.underscore}" if report.present?
         id += "_#{widget.id}"

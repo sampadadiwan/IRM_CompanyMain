@@ -278,7 +278,7 @@
 .badge-tag-ic-case   { background-color: #FDEDE0 !important; color: #EF6C00 !important; }
 .badge-tag-audited   { background-color: #FFEBF6 !important; color: #FF0084 !important; }
 .badge-tag-projected { background-color: #F0EAFB !important; color: #6f42c1 !important; }
-.badge-tag-other { background-color: #EAF1EB !important; color: #20c997 !important; }
+.badge-tag-other { background-color: #EAF1EB !important; color: #14ebaa !important; }
 
 [data-bs-theme=light][data-color-theme=Blue_Theme]:root .btn-outline-success, [data-bs-theme=dark][data-color-theme=Blue_Theme]:root .btn-outline-success {
     --bs-btn-color: #006D74;
@@ -525,45 +525,9 @@ a:hover {
     line-height: 24px;
 }
 
-#data_card_1 .table tbody td{
-    padding: 10.8px 0px;
-}
 
-#data_card_1 .text-primary{
-    padding: 0px;
-}
 
-#data_card_1 .card-body{
-    padding: 20px;
-}
 
-#data_card_1 .table-responsive {
-    height: 270px;
-    overflow-y: auto;
-    border: 0px;
-    margin-top: 15px;
-}
-
-#data_card_1 .card-body td strong{
-    color: #5A6A86;
-    font-weight: 300;
-}
-
-#data_card_1 .table tbody td{
-    color:  var(--bs-card-title-color);
-}
-
-#data_card_1 .table tbody tr td:nth-child(even){
-    text-align: right;
-}
-
-#data_card_1 .text-primary{
-    color: var(--bs-nav-link-color) !important;
-}
-
-#data_card_1 table.dataTable td {
-    border: 0px !important;
-}
 
 .nav-pills {
   --bs-nav-pills-link-active-color: var(--bs-primary);
@@ -577,15 +541,16 @@ a:hover {
 
 .nav.nav-pills.nav-justified .nav-link {
     display: flex;
-    align-items: flex-end;
     gap: 10px;
     border-bottom: 2px solid #D9DBE9;
     border-radius: 0px;
     margin: 0px 0px -2px;
     justify-content: center;
-    padding-bottom: 8px;
+    padding-bottom: 18px;
     min-height: 3em;
     box-sizing: border-box;
+    padding-top: 0px;
+    align-items: center;
 }
 
 .nav.nav-pills.nav-justified .nav-link img {
@@ -811,9 +776,9 @@ tbody tr:nth-child(even) {
     background-color: #F5F9F9 !important; /*F5F9F9*/
 }
 
-#data_card_1 tbody tr:nth-child(even) {
+/* #data_card_1 tbody tr:nth-child(even) {
     background-color: transparent !important;
-}
+} */
 
 .table tbody tr:hover {
     background-color: #F5F9F9 !important;
@@ -1067,9 +1032,9 @@ ul.pagination span{
   transform: translateX(24px);
 }
 
-.custom-align .table thead th:nth-child(2), .custom-align .table tbody td:nth-child(2) {
+/* .custom-align .table thead th:nth-child(2), .custom-align .table tbody td:nth-child(2) {
     text-align: left !important;
-}
+} */
 
 .search-form-per-page {
     max-width: 200px;
@@ -1354,40 +1319,15 @@ form#kpi_reports_filter {
     margin-bottom: 12px;
 }
 
-thead th small.badge.text-success {
-    color: #1976D2 !important;
-    background-color: #E3EEF9 !important;
-}
-
-#report_161 table tbody tr:nth-child(1) td:nth-child(2) .badge.text-success{
-    color: #1976D2 !important;
-    background-color: #E3EEF9 !important;
-}
-
-#report_161 table tbody tr:nth-child(2) td:nth-child(2) .badge.text-success{
-    color: #579158 !important;
-    background-color: #EAF1EB !important;
-}
-
-#report_161 table tbody tr:nth-child(3) td:nth-child(2) .badge.text-success{
-    color: #EF6C00 !important;
-    background-color: #FDEDE0 !important;
-}
-
-#report_161 table tbody tr:nth-child(4) td:nth-child(2) .badge.text-success{
-    color: #FF0084 !important;
-    background-color: #FFEBF6 !important;
-}
-
 #kpi_reports_budget_grid thead tr:first-child th:first-child {
     text-align: left !important;
 }
 
-#report_161 .associated_entity h6{
+[id^="portfolio_company_report_kpi_"] .associated_entity h6{
     font-size: 16px !important;
 }
 
-#report_161 .associated_entity{
+[id^="portfolio_company_report_kpi_"] .associated_entity{
     padding: 20px 20px 0px;
     border-radius: 12px;
     border: 1px solid #EBF1F6;
@@ -1395,11 +1335,11 @@ thead th small.badge.text-success {
     margin-bottom: 0px;
 }
 
-#report_161 .associated_entity .card-body {
+[id^="portfolio_company_report_kpi_"] .associated_entity .card-body {
     padding: 20px 20px 0px;
 }
 
-#report_161 .associated_entity .mb-4{
+[id^="portfolio_company_report_kpi_"] .associated_entity .mb-4{
     margin-bottom: 0px !important;
 }
 
@@ -1416,11 +1356,11 @@ i.ti.ti-info-circle.text-primary {
     padding-bottom: 0.438rem;
 }
 
-#report_74 .dropdown-toggle::after {
+[id^="portfolio_company_report_portfolio_investment_"] .dropdown-toggle::after {
     display: none;
 }
 
-#report_74 button.btn.btn-outline-success.dropdown-toggle.d-inline-flex.align-items-center {
+[id^="portfolio_company_report_portfolio_investment_"] button.btn.btn-outline-success.dropdown-toggle.d-inline-flex.align-items-center {
     display: flex;
     flex-direction: row-reverse;
     gap: 5px;
@@ -1449,7 +1389,7 @@ i.ti.ti-info-circle.text-primary {
     color: #fff !important;
 }
 
-#report_161 button.btn.btn-outline-success.ti.ti-download {
+[id^="portfolio_company_report_kpi_"] button.btn.btn-outline-success.ti.ti-download {
     display: flex;
     flex-direction: row-reverse;
     gap: 8px;
@@ -1460,12 +1400,12 @@ i.ti.ti-info-circle.text-primary {
     left: 17px;
 }
 
-#report_161 tbody tr td {
+[id^="portfolio_company_report_kpi_"] tbody tr td {
     text-align: left !important;
     position: relative;
 }
 
-#report_161 i.ti.ti-info-circle.text-primary {
+[id^="portfolio_company_report_kpi_"] i.ti.ti-info-circle.text-primary {
     position: absolute;
     right: 5px;
     bottom: 10px;
@@ -1607,7 +1547,7 @@ ul.pagination {
     margin-top: 20px;
 }
 
-.portfolio_stats .card-body{
+[id^="portfolio_stats_"] .card-body{
     padding: 20px;
 }
 
@@ -1675,8 +1615,25 @@ div.dt-container div.dt-length label {
     text-align: center !important;
 }
 
-#report_144 th:nth-child(2), #report_144 td:nth-child(2){
+[id^="portfolio_company_report_valuation_"] th, [id^="portfolio_company_report_valuation_"] td{
     text-align: left !important;
+}
+
+.table thead .text-left, .table tbody .text-left{
+    text-align: left !important;
+}
+
+#portfolio_stats_2 .fs-5 {
+    font-size: 1.0rem !important;
+}
+
+@media (min-width: 1600px) and (max-width: 3000px) {
+    #portfolio_stats_2 .dashboard-widget-container.col-md-7{
+        width: 60%;
+    }
+    #data_card_1 .dashboard-widget-container.col-md-5{
+        width: 40%;
+    }
 }
 
 
@@ -1734,9 +1691,9 @@ div.dt-container div.dt-length label {
         overflow-y: hidden;
     }
 
-    #data_card_1 .table-responsive {
+    /* #data_card_1 .table-responsive {
         height: auto;
-    }
+    } */
 
     .sector-container{
         margin-bottom: 1.5rem;
@@ -1788,11 +1745,14 @@ div.dt-container div.dt-length label {
     .card-header{
         padding: 30px 15px 0px;
     }
-    #report_74 h1 {
+    [id^="portfolio_company_report_portfolio_investment_"] h1 {
         margin-bottom: 0.7rem !important;
     }
     .card-body .card-body{
         padding: 10px 0px 0px !important;
+    }
+    [id^="portfolio_stats_"] .card-body{
+        padding: 20px !important;
     }
     .task_header h1 {
         padding-bottom: 1rem;
@@ -1812,11 +1772,11 @@ div.dt-container div.dt-length label {
         margin-top: 5px;
     }
 
-    #report_161 #kpis_grid_wrapper .dt-length, #report_161 #kpis_grid_wrapper .dt-search {
+    [id^="portfolio_company_report_kpi_"] #kpis_grid_wrapper .dt-length, [id^="portfolio_company_report_kpi_"] #kpis_grid_wrapper .dt-search {
         text-align: left;
         margin: 5px 0px !important;
     }
-    #report_161 .d-sm-flex.align-items-center.justify-content-between.mb-4 {
+    [id^="portfolio_company_report_kpi_"] .d-sm-flex.align-items-center.justify-content-between.mb-4 {
         display: flex;
     }
     #value_bridge_frame .row.align-items-end.justify-content-between {
@@ -1837,5 +1797,5 @@ div.dt-container div.dt-length label {
     .boxborder .card-body{
         margin-top: 15px;
     }
-
 }
+

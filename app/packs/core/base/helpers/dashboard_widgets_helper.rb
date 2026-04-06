@@ -61,6 +61,26 @@ module DashboardWidgetsHelper
     end
   end
 
+  # Safely traverses a dot-separated field path on +object+ using only public
+  # methods whose names consist of word characters and question/bang suffixes
+  # (e.g. "city", "custom_fields.sector", "active?").  Any segment that does
+  # not match the allowed pattern causes the traversal to stop and return nil,
+  # preventing arbitrary method invocation (including private methods).
+  #
+  # @param object [Object] the root object to traverse (typically an Investor)
+  # @param key_path [String] dot-separated attribute path, e.g. "custom_fields.sector"
+  # @return [Object, nil] the resolved value, or nil if any segment is unsafe/missing
+  SAFE_METHOD_SEGMENT = /\A[a-zA-Z_]\w*[?!]?\z/
+
+  def safe_field_value(object, key_path)
+    key_path.split(".").inject(object) do |obj, segment|
+      method_name = segment.strip
+      break nil unless method_name.match?(SAFE_METHOD_SEGMENT)
+
+      obj&.public_send(method_name)
+    end
+  end
+
   private
 
   def include_widget_by_tag?(widget, tag_list)

@@ -162,16 +162,18 @@ module KpisHelper
     headers + rows
   end
 
-  # Returns Bootstrap badge classes based on the tag/report type label.
-  # Colours match the existing kpi_reports_filter select2 pill colours in kedaara.css.
+  # Returns badge classes for the tag/report type label.
+  # Each entry combines a Bootstrap 5 bg-*-subtle fallback (works on all tenants) with
+  # the kedaara-specific badge-tag-* class (defined in kedaara.css with !important, so it
+  # overrides the Bootstrap colours for Kedaara and keeps the brand palette there).
   def tag_badge_class(tag)
     case tag.to_s.strip.downcase
-    when "actual"        then "badge-tag-actual"
-    when "projected"     then "badge-tag-projected"
-    when /^ic /          then "badge-tag-ic-case"
-    when /^audited/      then "badge-tag-audited"
-    when "budget" then "badge-tag-budget"
-    else "badge-tag-other"
+    when "actual"    then "bg-primary-subtle text-primary badge-tag-actual"
+    when "projected" then "bg-info-subtle text-info badge-tag-projected"
+    when /^ic /      then "bg-warning-subtle text-warning badge-tag-ic-case"
+    when /^audited/  then "bg-danger-subtle text-danger badge-tag-audited"
+    when "budget"    then "bg-success-subtle text-success badge-tag-budget"
+    else                  "bg-secondary-subtle text-secondary badge-tag-other"
     end
   end
 end
