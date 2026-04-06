@@ -10,15 +10,21 @@
   wrapper_options[:data][:widget_id] = @widget.id
 %>
 <div <%= tag.attributes(wrapper_options) %>>
-  <div class="card w-100">
-    <% if @widget.display_name || @widget.display_tag %>
-    <div class="card-header">
-      <h5 class="card-title"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %></h5>
-    </div>
-    <% end %>
-    <div class="card-body">
-      <!-- `content` is whatever the caller provides as a block -->
+  <% if @no_card %>
+    <div class="w-100">
       <%= content %>
     </div>
-  </div>
+  <% else %>
+    <div class="card w-100">
+      <% if @widget.display_name || @widget.display_tag %>
+      <div class="card-header">
+        <h5 class="card-title"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %></h5>
+      </div>
+      <% end %>
+      <div class="card-body">
+        <!-- `content` is whatever the caller provides as a block -->
+        <%= content %>
+      </div>
+    </div>
+  <% end %>
 </div>
