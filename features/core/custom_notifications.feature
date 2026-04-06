@@ -101,7 +101,7 @@ Scenario Outline: Incoming Email for a capital commitment
   Given there is a fund "<fund>" for the entity
   Given the investors are added to the fund
   Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
-  When we receive an incoming email "<email>" for the commitments fom sendgrid
+  When we receive an incoming email "<email>" for the commitments from sendgrid
   Then an incoming email is created for the commitments
   And the documents are attached to the incoming email
 

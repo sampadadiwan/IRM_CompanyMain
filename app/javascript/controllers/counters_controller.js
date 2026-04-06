@@ -22,7 +22,7 @@ export default class extends Controller {
     const element = this.outputTarget;
     const endVal = this.valueValue;
     const formattedVal = this.formattedValueValue;
-    const duration = 2;
+    const duration = document.documentElement.hasAttribute("data-turbo-testing") ? 0 : 2;
 
     if (isNaN(endVal)) {
       if (this.hasFormattedValueValue) element.innerHTML = formattedVal;
