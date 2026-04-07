@@ -24,6 +24,11 @@
 
         <% section_data = JSON.parse(portfolio_report_extract.data) %>
         <%# If 'tabs' argument is provided, filter the sections and maintain the specified order. %>
+        <% if params[:debug].present? %>
+        <%= tabs %>
+        <%= section_data.keys %>
+        <% end %>
+
         <% if tabs.present? %>
             <% section_data = tabs.each_with_object({}) { |tab_name, hash| hash[tab_name] = section_data[tab_name] if section_data.key?(tab_name) } %>
         <% end %>
