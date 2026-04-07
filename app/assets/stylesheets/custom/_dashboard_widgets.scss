@@ -44,11 +44,14 @@
 
 // Ensure all dashboard widget containers propagate full row height to their children
 .dashboard-widget-container {
+  // Use align-self:stretch (default in a flex row) + display:flex so children
+  // can use flex:1 to fill the full column height without needing height:100%.
   display: flex;
   flex-direction: column;
 
   > * {
     flex: 1 1 auto;
+    min-height: 0;
   }
 }
 

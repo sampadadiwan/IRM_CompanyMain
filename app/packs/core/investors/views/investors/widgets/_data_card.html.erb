@@ -11,36 +11,37 @@
   show_logo = args[:show_logo].to_s.downcase != "false"
 %>
 
-<div id="data_card_1" class="data_card w-100">
-  <div class="card mb-4" data-controller="">
-    <div class="card-body">
-      <div class="text-primary"><%= name %></div>
-      <div class="data-card-wrapper">
-        <div class="data-card">
-          <% if show_logo %>
-            <% logo = investor.logo_doc %>
-            <% if logo %>
-              <div class="data-card-logo">
-                <%= image_tag logo.file.url, alt: "Investor Logo", class: "img-fluid", style: "max-height: 100px;" %>
-              </div>
-            <% end %>
-          <% end %>
-          <% fields_to_display.each do |label, key| %>
-            <div>
-              <strong><%= label.humanize %></strong>
-              <%# TODO: Add sanitization %>
-              <% value = key.split('.').inject(investor) { |object, method| object&.send(method.strip) } %>
-              <% if value.is_a?(Date) %>
-                <span><%= l(value) %></span>
-              <% elsif value.is_a?(Money) %>
-                <span><%= money_to_currency value, params %></span>
-              <% else %>
-                <span><%= value %></span>
-              <% end %>
-            </div>
-          <% end %>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size,
+        html_options: { id: "data_card_1" }
+      )
+    ) do %>
+
+  <div class="data-card">
+    <% if show_logo %>
+      <% logo = investor.logo_doc %>
+      <% if logo %>
+        <div class="data-card-logo">
+          <%= image_tag logo.file.url, alt: "Investor Logo", class: "img-fluid", style: "max-height: 100px;" %>
         </div>
+      <% end %>
+    <% end %>
+    <% fields_to_display.each do |label, key| %>
+      <div>
+        <strong><%= label.humanize %></strong>
+        <% value = safe_field_value(investor, key) %>
+        <% if value.is_a?(Date) %>
+          <span><%= l(value) %></span>
+        <% elsif value.is_a?(Money) %>
+          <span><%= money_to_currency value, params %></span>
+        <% else %>
+          <span><%= value %></span>
+        <% end %>
       </div>
-    </div>
+    <% end %>
   </div>
-</div>
+
+<% end %>
