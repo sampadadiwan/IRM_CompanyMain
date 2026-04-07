@@ -22,7 +22,7 @@ class EntityDbDumpJob < ApplicationJob
           # Even for manual/adhoc runs, we respect the frequency settings.
           # This prevents redundant dumps if the user clicks the button multiple times.
           # If the frequency is set to 'adhoc', we always allow the manual trigger.
-          if setting.db_dumps_frequency.adhoc? || should_run_today?(entity)
+          if adhoc || should_run_today?(entity)
             Rails.logger.info "Starting DB dump for entity #{entity.id}"
             process_entity_dump(entity)
           else
