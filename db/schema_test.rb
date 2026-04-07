@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
+ActiveRecord::Schema[8.1].define(version: 20_260_407_093_642) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -33,7 +33,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["deleted_at"], name: "index_access_rights_on_deleted_at"
     t.index ["entity_id"], name: "index_access_rights_on_entity_id"
     t.index ["granted_by_id"], name: "index_access_rights_on_granted_by_id"
-    t.index ["owner_type", "owner_id"], name: "index_access_rights_on_owner"
+    t.index %w[owner_type owner_id], name: "index_access_rights_on_owner"
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
@@ -72,20 +72,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
-    t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
+    t.index %w[capital_commitment_id name reporting_date], name: "idx_ae_cc_name_date"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
     t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
-    t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
-    t.index ["fund_id", "generated", "reporting_date", "fund_formula_id"], name: "idx_ae_fund_gen_date_formula"
-    t.index ["fund_id", "name", "reporting_date"], name: "idx_fund_id_and_name_and_reporting_date"
-    t.index ["fund_id", "reporting_date", "fund_formula_id", "deleted_at"], name: "idx_ae_fund_date_formula_deleted"
+    t.index %w[fund_id entry_type reporting_date], name: "idx_fund_id_and_entry_type_and_reporting_date"
+    t.index %w[fund_id generated reporting_date fund_formula_id], name: "idx_ae_fund_gen_date_formula"
+    t.index %w[fund_id name reporting_date], name: "idx_fund_id_and_name_and_reporting_date"
+    t.index %w[fund_id reporting_date fund_formula_id deleted_at], name: "idx_ae_fund_date_formula_deleted"
     t.index ["fund_id"], name: "index_account_entries_on_fund_id"
     t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
-    t.index ["parent_type", "parent_id", "fund_id", "name", "deleted_at", "cumulative"], name: "idx_ae_parent_fund_name_flags"
+    t.index %w[parent_type parent_id fund_id name deleted_at cumulative], name: "idx_ae_parent_fund_name_flags"
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
   end
 
@@ -95,7 +95,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "message_id", null: false
     t.integer "status", default: 0, null: false
     t.datetime "updated_at", null: false
-    t.index ["message_id", "message_checksum"], name: "index_action_mailbox_inbound_emails_uniqueness", unique: true
+    t.index %w[message_id message_checksum], name: "index_action_mailbox_inbound_emails_uniqueness", unique: true
   end
 
   create_table "action_text_rich_texts", force: :cascade do |t|
@@ -105,7 +105,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "record_id", null: false
     t.string "record_type", null: false
     t.datetime "updated_at", null: false
-    t.index ["record_type", "record_id", "name"], name: "index_action_text_rich_texts_uniqueness", unique: true
+    t.index %w[record_type record_id name], name: "index_action_text_rich_texts_uniqueness", unique: true
   end
 
   create_table "active_admin_comments", force: :cascade do |t|
@@ -117,9 +117,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "resource_id"
     t.string "resource_type"
     t.datetime "updated_at", null: false
-    t.index ["author_type", "author_id"], name: "index_active_admin_comments_on_author"
+    t.index %w[author_type author_id], name: "index_active_admin_comments_on_author"
     t.index ["namespace"], name: "index_active_admin_comments_on_namespace"
-    t.index ["resource_type", "resource_id"], name: "index_active_admin_comments_on_resource"
+    t.index %w[resource_type resource_id], name: "index_active_admin_comments_on_resource"
   end
 
   create_table "active_storage_attachments", force: :cascade do |t|
@@ -129,7 +129,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "record_id", null: false
     t.string "record_type", null: false
     t.index ["blob_id"], name: "index_active_storage_attachments_on_blob_id"
-    t.index ["record_type", "record_id", "name", "blob_id"], name: "index_active_storage_attachments_uniqueness", unique: true
+    t.index %w[record_type record_id name blob_id], name: "index_active_storage_attachments_uniqueness", unique: true
   end
 
   create_table "active_storage_blobs", force: :cascade do |t|
@@ -147,7 +147,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
   create_table "active_storage_variant_records", force: :cascade do |t|
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
-    t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+    t.index %w[blob_id variation_digest], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
   create_table "admin_users", force: :cascade do |t|
@@ -183,7 +183,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_agent_charts_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_agent_charts_on_owner"
+    t.index %w[owner_type owner_id], name: "index_agent_charts_on_owner"
   end
 
   create_table "agent_chat_messages", force: :cascade do |t|
@@ -204,8 +204,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "support_agent_id", null: false
     t.datetime "updated_at", null: false
     t.index ["analyst_id"], name: "index_agent_chat_sessions_on_analyst_id"
-    t.index ["chattable_type", "chattable_id"], name: "index_agent_chat_sessions_on_chattable"
-    t.index ["support_agent_id", "chattable_type", "chattable_id", "analyst_id"], name: "index_agent_chat_sessions_uniqueness", unique: true
+    t.index %w[chattable_type chattable_id], name: "index_agent_chat_sessions_on_chattable"
+    t.index %w[support_agent_id chattable_type chattable_id analyst_id], name: "index_agent_chat_sessions_uniqueness", unique: true
     t.index ["support_agent_id"], name: "index_agent_chat_sessions_on_support_agent_id"
   end
 
@@ -222,11 +222,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "support_agent_id", null: false
     t.string "trigger_type", limit: 20, null: false
     t.bigint "triggered_by_id"
-    t.index ["agent_schedule_id", "created_at"], name: "idx_execution_logs_schedule", order: { created_at: :desc }
+    t.index %w[agent_schedule_id created_at], name: "idx_execution_logs_schedule", order: { created_at: :desc }
     t.index ["agent_schedule_id"], name: "index_agent_execution_logs_on_agent_schedule_id"
     t.index ["entity_id"], name: "index_agent_execution_logs_on_entity_id"
     t.index ["status"], name: "idx_execution_logs_status"
-    t.index ["support_agent_id", "entity_id", "created_at"], name: "idx_execution_logs_history", order: { created_at: :desc }
+    t.index %w[support_agent_id entity_id created_at], name: "idx_execution_logs_history", order: { created_at: :desc }
     t.index ["support_agent_id"], name: "index_agent_execution_logs_on_support_agent_id"
     t.index ["triggered_by_id"], name: "index_agent_execution_logs_on_triggered_by_id"
     t.check_constraint "`attempt_number` >= 1", name: "valid_attempt_number"
@@ -256,8 +256,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_agent_schedules_on_created_by_id"
     t.index ["entity_id"], name: "index_agent_schedules_on_entity_id"
-    t.index ["next_run_at", "enabled"], name: "idx_agent_schedules_polling"
-    t.index ["support_agent_id", "entity_id"], name: "idx_unique_agent_entity", unique: true
+    t.index %w[next_run_at enabled], name: "idx_agent_schedules_polling"
+    t.index %w[support_agent_id entity_id], name: "idx_unique_agent_entity", unique: true
     t.index ["support_agent_id"], name: "index_agent_schedules_on_support_agent_id"
     t.check_constraint "(`run_on_day` is null) or ((`run_on_day` >= 0) and (`run_on_day` <= 31))", name: "valid_run_on_day"
     t.check_constraint "`frequency` in ('daily','weekly','monthly','bimonthly','quarterly','half_yearly')", name: "valid_frequency"
@@ -314,8 +314,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["snapshot_date"], name: "index_aggregate_portfolio_investments_on_snapshot_date"
   end
 
-
-
   create_table "ai_checks", force: :cascade do |t|
     t.bigint "ai_rule_id"
     t.json "audit_log"
@@ -331,8 +329,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.index ["ai_rule_id"], name: "index_ai_checks_on_ai_rule_id"
     t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_ai_checks_on_owner"
-    t.index ["parent_type", "parent_id"], name: "index_ai_checks_on_parent"
+    t.index %w[owner_type owner_id], name: "index_ai_checks_on_owner"
+    t.index %w[parent_type parent_id], name: "index_ai_checks_on_parent"
   end
 
   create_table "ai_portfolio_reports", force: :cascade do |t|
@@ -505,7 +503,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["entity_id"], name: "index_approval_responses_on_entity_id"
     t.index ["form_type_id"], name: "index_approval_responses_on_form_type_id"
     t.index ["investor_id"], name: "index_approval_responses_on_investor_id"
-    t.index ["owner_type", "owner_id"], name: "index_approval_responses_on_owner"
+    t.index %w[owner_type owner_id], name: "index_approval_responses_on_owner"
     t.index ["response_entity_id"], name: "index_approval_responses_on_response_entity_id"
     t.index ["response_user_id"], name: "index_approval_responses_on_response_user_id"
   end
@@ -534,7 +532,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["document_folder_id"], name: "index_approvals_on_document_folder_id"
     t.index ["entity_id"], name: "index_approvals_on_entity_id"
     t.index ["form_type_id"], name: "index_approvals_on_form_type_id"
-    t.index ["owner_type", "owner_id"], name: "index_approvals_on_owner"
+    t.index %w[owner_type owner_id], name: "index_approvals_on_owner"
   end
 
   create_table "assistant_tasks", force: :cascade do |t|
@@ -566,11 +564,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "user_type"
     t.string "username"
     t.integer "version", default: 0
-    t.index ["associated_type", "associated_id"], name: "associated_index"
-    t.index ["auditable_type", "auditable_id", "version"], name: "auditable_index"
+    t.index %w[associated_type associated_id], name: "associated_index"
+    t.index %w[auditable_type auditable_id version], name: "auditable_index"
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
-    t.index ["user_id", "user_type"], name: "user_index"
+    t.index %w[user_id user_type], name: "user_index"
   end
 
   create_table "background_jobs", force: :cascade do |t|
@@ -773,7 +771,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["exchange_rate_id"], name: "index_capital_commitments_on_exchange_rate_id"
     t.index ["feeder_fund_id"], name: "index_capital_commitments_on_feeder_fund_id"
     t.index ["form_type_id"], name: "index_capital_commitments_on_form_type_id"
-    t.index ["fund_id", "folio_id", "generated_deleted"], name: "unique_commitment", unique: true
+    t.index %w[fund_id folio_id generated_deleted], name: "unique_commitment", unique: true
     t.index ["fund_id"], name: "index_capital_commitments_on_fund_id"
     t.index ["investor_id"], name: "index_capital_commitments_on_investor_id"
     t.index ["investor_kyc_id"], name: "index_capital_commitments_on_investor_kyc_id"
@@ -970,7 +968,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "user_id"
     t.index ["entity_id"], name: "index_chats_on_entity_id"
     t.index ["model_id"], name: "index_chats_on_model_id"
-    t.index ["owner_type", "owner_id"], name: "index_chats_on_owner"
+    t.index %w[owner_type owner_id], name: "index_chats_on_owner"
     t.index ["user_id"], name: "index_chats_on_user_id"
   end
 
@@ -1012,7 +1010,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.decimal "value", precision: 20, scale: 4
     t.index ["entity_id"], name: "index_ci_track_records_on_entity_id"
     t.index ["investment_opportunity_id"], name: "index_ci_track_records_on_investment_opportunity_id"
-    t.index ["owner_type", "owner_id"], name: "index_ci_track_records_on_owner"
+    t.index %w[owner_type owner_id], name: "index_ci_track_records_on_owner"
   end
 
   create_table "ci_widgets", force: :cascade do |t|
@@ -1031,7 +1029,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "url"
     t.index ["entity_id"], name: "index_ci_widgets_on_entity_id"
     t.index ["investment_opportunity_id"], name: "index_ci_widgets_on_investment_opportunity_id"
-    t.index ["owner_type", "owner_id"], name: "index_ci_widgets_on_owner"
+    t.index %w[owner_type owner_id], name: "index_ci_widgets_on_owner"
   end
 
   create_table "commitment_adjustments", force: :cascade do |t|
@@ -1058,7 +1056,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["entity_id"], name: "index_commitment_adjustments_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_commitment_adjustments_on_exchange_rate_id"
     t.index ["fund_id"], name: "index_commitment_adjustments_on_fund_id"
-    t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
+    t.index %w[owner_type owner_id], name: "index_commitment_adjustments_on_owner"
   end
 
   create_table "custom_grid_views", force: :cascade do |t|
@@ -1066,7 +1064,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "owner_id", null: false
     t.string "owner_type", null: false
     t.datetime "updated_at", null: false
-    t.index ["owner_id", "owner_type"], name: "index_custom_grid_views_on_owner_id_and_owner_type"
+    t.index %w[owner_id owner_type], name: "index_custom_grid_views_on_owner_id_and_owner_type"
   end
 
   create_table "custom_notifications", force: :cascade do |t|
@@ -1095,7 +1093,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["deleted_at"], name: "index_custom_notifications_on_deleted_at"
     t.index ["document_folder_id"], name: "index_custom_notifications_on_document_folder_id"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
+    t.index %w[owner_type owner_id], name: "index_custom_notifications_on_owner"
   end
 
   create_table "dashboard_widgets", force: :cascade do |t|
@@ -1119,7 +1117,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "widget_name", limit: 30
     t.index ["entity_id"], name: "index_dashboard_widgets_on_entity_id"
     t.index ["import_upload_id"], name: "index_dashboard_widgets_on_import_upload_id"
-    t.index ["owner_type", "owner_id"], name: "index_dashboard_widgets_on_owner"
+    t.index %w[owner_type owner_id], name: "index_dashboard_widgets_on_owner"
   end
 
   create_table "deal_activities", force: :cascade do |t|
@@ -1135,6 +1133,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.boolean "docs_required_for_completion", default: false
     t.bigint "document_folder_id"
     t.integer "entity_id"
+    t.boolean "notify_employees", default: false
+    t.boolean "notify_investor", default: false
     t.integer "sequence"
     t.string "status", default: "incomplete"
     t.string "status_temp", limit: 20
@@ -1210,7 +1210,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["entity_id"], name: "index_deal_investors_on_entity_id"
     t.index ["form_type_id"], name: "index_deal_investors_on_form_type_id"
     t.index ["investor_entity_id"], name: "index_deal_investors_on_investor_entity_id"
-    t.index ["investor_id", "deal_id", "generated_deleted"], name: "unique_deal_investor", unique: true
+    t.index %w[investor_id deal_id generated_deleted], name: "unique_deal_investor", unique: true
     t.index ["investor_id"], name: "index_deal_investors_on_investor_id"
     t.index ["slug"], name: "index_deal_investors_on_slug", unique: true
   end
@@ -1262,7 +1262,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["access_token"], name: "index_devise_api_tokens_on_access_token"
     t.index ["previous_refresh_token"], name: "index_devise_api_tokens_on_previous_refresh_token"
     t.index ["refresh_token"], name: "index_devise_api_tokens_on_refresh_token"
-    t.index ["resource_owner_type", "resource_owner_id"], name: "index_devise_api_tokens_on_resource_owner"
+    t.index %w[resource_owner_type resource_owner_id], name: "index_devise_api_tokens_on_resource_owner"
   end
 
   create_table "distribution_fees", force: :cascade do |t|
@@ -1295,7 +1295,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "tags", limit: 100
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_doc_questions_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_doc_questions_on_owner"
+    t.index %w[owner_type owner_id], name: "index_doc_questions_on_owner"
   end
 
   create_table "doc_shares", force: :cascade do |t|
@@ -1359,7 +1359,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
-    t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
+    t.index %w[owner_type owner_id], name: "index_documents_on_owner"
     t.index ["signed_by_id"], name: "index_documents_on_signed_by_id"
     t.index ["user_id"], name: "index_documents_on_user_id"
   end
@@ -1535,7 +1535,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_events_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_events_on_owner"
+    t.index %w[owner_type owner_id], name: "index_events_on_owner"
     t.index ["user_id"], name: "index_events_on_user_id"
   end
 
@@ -1560,7 +1560,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "to", limit: 5
     t.datetime "updated_at", null: false
     t.index ["document_folder_id"], name: "index_exchange_rates_on_document_folder_id"
-    t.index ["entity_id", "from", "to", "as_of"], name: "idx_exchange_rates_entity_from_to_as_of", order: { as_of: :desc }
+    t.index %w[entity_id from to as_of], name: "idx_exchange_rates_entity_from_to_as_of", order: { as_of: :desc }
     t.index ["entity_id"], name: "index_exchange_rates_on_entity_id"
     t.index ["import_upload_id"], name: "index_exchange_rates_on_import_upload_id"
   end
@@ -1638,11 +1638,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "scope", default: "favorite", null: false
     t.datetime "updated_at", null: false
     t.index ["blocked"], name: "index_favorites_on_blocked"
-    t.index ["favoritable_id", "favoritable_type"], name: "fk_favoritables"
-    t.index ["favoritable_type", "favoritable_id", "favoritor_id", "scope"], name: "uniq_favs_and_favoritables", unique: true
-    t.index ["favoritable_type", "favoritable_id"], name: "index_favorites_on_favoritable"
-    t.index ["favoritor_id", "favoritor_type"], name: "fk_favorites"
-    t.index ["favoritor_type", "favoritor_id"], name: "index_favorites_on_favoritor"
+    t.index %w[favoritable_id favoritable_type], name: "fk_favoritables"
+    t.index %w[favoritable_type favoritable_id favoritor_id scope], name: "uniq_favs_and_favoritables", unique: true
+    t.index %w[favoritable_type favoritable_id], name: "index_favorites_on_favoritable"
+    t.index %w[favoritor_id favoritor_type], name: "fk_favorites"
+    t.index %w[favoritor_type favoritor_id], name: "index_favorites_on_favoritor"
     t.index ["scope"], name: "index_favorites_on_scope"
   end
 
@@ -1658,7 +1658,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "owner_type", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_fees_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_fees_on_owner"
+    t.index %w[owner_type owner_id], name: "index_fees_on_owner"
   end
 
   create_table "folders", force: :cascade do |t|
@@ -1682,8 +1682,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
-    t.index ["full_path", "owner_id", "owner_type", "entity_id", "deleted_at"], name: "index_folders_on_full_path_and_owner_entity_with_deleted_at", unique: true
-    t.index ["owner_type", "owner_id"], name: "index_folders_on_owner"
+    t.index %w[full_path owner_id owner_type entity_id deleted_at], name: "index_folders_on_full_path_and_owner_entity_with_deleted_at", unique: true
+    t.index %w[owner_type owner_id], name: "index_folders_on_owner"
   end
 
   create_table "form_custom_fields", force: :cascade do |t|
@@ -1713,7 +1713,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["import_upload_id"], name: "index_form_custom_fields_on_import_upload_id"
-    t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
+    t.index %w[name form_type_id], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true
   end
 
   create_table "form_types", force: :cascade do |t|
@@ -1731,9 +1731,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
     t.string "sluggable_type", limit: 50
-    t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
-    t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
-    t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
+    t.index %w[slug sluggable_type scope], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
+    t.index %w[slug sluggable_type], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
+    t.index %w[sluggable_type sluggable_id], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
 
   create_table "fund_formulas", force: :cascade do |t|
@@ -1793,7 +1793,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_ratios_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
-    t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
+    t.index %w[owner_type owner_id], name: "index_fund_ratios_on_owner"
     t.index ["portfolio_scenario_id"], name: "index_fund_ratios_on_portfolio_scenario_id"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
@@ -1948,7 +1948,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["entity_id"], name: "index_fund_units_on_entity_id"
     t.index ["fund_id"], name: "index_fund_units_on_fund_id"
     t.index ["investor_id"], name: "index_fund_units_on_investor_id"
-    t.index ["owner_type", "owner_id"], name: "index_fund_units_on_owner"
+    t.index %w[owner_type owner_id], name: "index_fund_units_on_owner"
   end
 
   create_table "funding_rounds", force: :cascade do |t|
@@ -2058,10 +2058,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.boolean "selected"
     t.integer "sequence"
     t.datetime "updated_at", null: false
-    t.index ["custom_grid_view_id", "sequence"], name: "idx_on_custom_grid_view_id_sequence_ef881fc72b"
+    t.index %w[custom_grid_view_id sequence], name: "idx_on_custom_grid_view_id_sequence_ef881fc72b"
     t.index ["custom_grid_view_id"], name: "index_grid_view_preferences_on_custom_grid_view_id"
     t.index ["entity_id"], name: "index_grid_view_preferences_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_grid_view_preferences_on_owner"
+    t.index %w[owner_type owner_id], name: "index_grid_view_preferences_on_owner"
   end
 
   create_table "import_uploads", force: :cascade do |t|
@@ -2082,7 +2082,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_import_uploads_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_import_uploads_on_owner"
+    t.index %w[owner_type owner_id], name: "index_import_uploads_on_owner"
     t.index ["user_id"], name: "index_import_uploads_on_user_id"
   end
 
@@ -2105,7 +2105,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["document_folder_id"], name: "index_incoming_emails_on_document_folder_id"
     t.index ["entity_id"], name: "index_incoming_emails_on_entity_id"
     t.index ["filed_by_user_id"], name: "index_incoming_emails_on_filed_by_user_id"
-    t.index ["owner_type", "owner_id"], name: "index_incoming_emails_on_owner"
+    t.index %w[owner_type owner_id], name: "index_incoming_emails_on_owner"
   end
 
   create_table "interests", force: :cascade do |t|
@@ -2182,9 +2182,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "name", null: false
     t.datetime "updated_at", null: false
     t.integer "usage_count", default: 0, null: false
-    t.index ["created_by_user_id", "usage_count"], name: "index_investment_criteria_templates_on_user_and_usage"
+    t.index %w[created_by_user_id usage_count], name: "index_investment_criteria_templates_on_user_and_usage"
     t.index ["created_by_user_id"], name: "index_investment_criteria_templates_on_created_by_user_id"
-    t.index ["entity_id", "usage_count"], name: "index_investment_criteria_templates_on_entity_and_usage"
+    t.index %w[entity_id usage_count], name: "index_investment_criteria_templates_on_entity_and_usage"
     t.index ["entity_id"], name: "index_investment_criteria_templates_on_entity_id"
   end
 
@@ -2456,7 +2456,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.text "title"
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_investor_notices_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_investor_notices_on_owner"
+    t.index %w[owner_type owner_id], name: "index_investor_notices_on_owner"
   end
 
   create_table "investors", force: :cascade do |t|
@@ -2488,9 +2488,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["document_folder_id"], name: "index_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_investors_on_entity_id"
     t.index ["form_type_id"], name: "index_investors_on_form_type_id"
-    t.index ["investor_entity_id", "entity_id", "deleted_at"], name: "idx_on_investor_entity_id_entity_id_deleted_at_983d7c8e7a", unique: true
+    t.index %w[investor_entity_id entity_id deleted_at], name: "idx_on_investor_entity_id_entity_id_deleted_at_983d7c8e7a", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
-    t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
+    t.index %w[investor_name entity_id], name: "index_investors_on_investor_name_and_entity_id", unique: true
     t.index ["pan"], name: "index_investors_on_pan"
     t.index ["slug"], name: "index_investors_on_slug", unique: true
     t.index ["tag_list"], name: "index_investors_on_tag_list"
@@ -2505,7 +2505,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "owner_type"
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_kanban_boards_on_entity_id"
-    t.index ["owner_id", "owner_type"], name: "index_kanban_boards_on_owner_id_and_owner_type"
+    t.index %w[owner_id owner_type], name: "index_kanban_boards_on_owner_id_and_owner_type"
   end
 
   create_table "kanban_cards", force: :cascade do |t|
@@ -2670,7 +2670,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "provider", null: false
     t.datetime "updated_at", null: false
     t.index ["family"], name: "index_models_on_family"
-    t.index ["provider", "model_id"], name: "index_models_on_provider_and_model_id", unique: true
+    t.index %w[provider model_id], name: "index_models_on_provider_and_model_id", unique: true
     t.index ["provider"], name: "index_models_on_provider"
   end
 
@@ -2700,7 +2700,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "type"
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_noticed_events_on_entity_id"
-    t.index ["record_type", "record_id"], name: "index_noticed_events_on_record"
+    t.index %w[record_type record_id], name: "index_noticed_events_on_record"
   end
 
   create_table "noticed_notifications", force: :cascade do |t|
@@ -2718,7 +2718,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.text "whatsapp"
     t.boolean "whatsapp_sent", default: false
     t.index ["event_id"], name: "index_noticed_notifications_on_event_id"
-    t.index ["recipient_type", "recipient_id"], name: "index_noticed_notifications_on_recipient"
+    t.index %w[recipient_type recipient_id], name: "index_noticed_notifications_on_recipient"
   end
 
   create_table "notifications", force: :cascade do |t|
@@ -2736,7 +2736,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.boolean "whatsapp_sent", default: false
     t.index ["entity_id"], name: "index_notifications_on_entity_id"
     t.index ["read_at"], name: "index_notifications_on_read_at"
-    t.index ["recipient_type", "recipient_id"], name: "index_notifications_on_recipient"
+    t.index %w[recipient_type recipient_id], name: "index_notifications_on_recipient"
   end
 
   create_table "nudges", force: :cascade do |t|
@@ -2752,7 +2752,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.index ["entity_id"], name: "index_nudges_on_entity_id"
-    t.index ["item_type", "item_id"], name: "index_nudges_on_item"
+    t.index %w[item_type item_id], name: "index_nudges_on_item"
     t.index ["user_id"], name: "index_nudges_on_user_id"
   end
 
@@ -2905,7 +2905,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "user_id"
     t.index ["entity_id"], name: "index_permissions_on_entity_id"
     t.index ["granted_by_id"], name: "index_permissions_on_granted_by_id"
-    t.index ["owner_type", "owner_id"], name: "index_permissions_on_owner"
+    t.index %w[owner_type owner_id], name: "index_permissions_on_owner"
     t.index ["user_id"], name: "index_permissions_on_user_id"
   end
 
@@ -2922,8 +2922,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.decimal "sale_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "sold_pi_id", null: false
     t.datetime "updated_at", null: false
-    t.index ["bought_pi_id", "deleted_at", "sold_pi_id", "quantity"], name: "idx_pa_bought_deleted_sold_qty"
-    t.index ["bought_pi_id", "deleted_at", "sold_pi_id"], name: "idx_portfolio_attributions_bought_sold_deleted"
+    t.index %w[bought_pi_id deleted_at sold_pi_id quantity], name: "idx_pa_bought_deleted_sold_qty"
+    t.index %w[bought_pi_id deleted_at sold_pi_id], name: "idx_portfolio_attributions_bought_sold_deleted"
     t.index ["bought_pi_id"], name: "index_portfolio_attributions_on_bought_pi_id"
     t.index ["deleted_at"], name: "index_portfolio_attributions_on_deleted_at"
     t.index ["entity_id"], name: "index_portfolio_attributions_on_entity_id"
@@ -3026,10 +3026,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["exchange_rate_id"], name: "index_portfolio_investments_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_portfolio_investments_on_form_type_id"
     t.index ["fund_id"], name: "index_portfolio_investments_on_fund_id"
-    t.index ["id", "investment_date"], name: "idx_portfolio_investments_id_date"
+    t.index %w[id investment_date], name: "idx_portfolio_investments_id_date"
     t.index ["investment_date"], name: "index_portfolio_investments_on_investment_date"
     t.index ["investment_instrument_id"], name: "index_portfolio_investments_on_investment_instrument_id"
-    t.index ["portfolio_company_id", "id"], name: "idx_pi_company_id_id"
+    t.index %w[portfolio_company_id id], name: "idx_pi_company_id_id"
     t.index ["portfolio_company_id"], name: "index_portfolio_investments_on_portfolio_company_id"
     t.index ["snapshot_date"], name: "index_portfolio_investments_on_snapshot_date"
     t.index ["valuation_id"], name: "index_portfolio_investments_on_valuation_id"
@@ -3112,7 +3112,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["entity_id"], name: "index_quick_links_on_entity_id"
   end
 
-  create_table "ratio_formulas", charset: "utf8mb4",  force: :cascade do |t|
+  create_table "ratio_formulas", charset: "utf8mb4", force: :cascade do |t|
     t.json "account_entry_names"
     t.string "action"
     t.datetime "created_at", null: false
@@ -3128,7 +3128,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["fund_id"], name: "index_ratio_formulas_on_fund_id"
   end
 
-  create_table "regulatory_reports", charset: "utf8mb4",  force: :cascade do |t|
+  create_table "regulatory_reports", charset: "utf8mb4", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
@@ -3139,7 +3139,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_regulatory_reports_on_entity_id"
     t.index ["form_type_id"], name: "index_regulatory_reports_on_form_type_id"
-    t.index ["owner_type", "owner_id"], name: "index_regulatory_reports_on_owner"
+    t.index %w[owner_type owner_id], name: "index_regulatory_reports_on_owner"
   end
 
   create_table "reminders", force: :cascade do |t|
@@ -3153,7 +3153,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.boolean "sent", default: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_reminders_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_reminders_on_owner"
+    t.index %w[owner_type owner_id], name: "index_reminders_on_owner"
   end
 
   create_table "report_insights", force: :cascade do |t|
@@ -3229,9 +3229,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "resource_type"
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_roles_on_deleted_at"
-    t.index ["name", "resource_type", "resource_id"], name: "index_roles_on_name_and_resource_type_and_resource_id"
+    t.index %w[name resource_type resource_id], name: "index_roles_on_name_and_resource_type_and_resource_id"
     t.index ["name"], name: "index_roles_on_name"
-    t.index ["resource_type", "resource_id"], name: "index_roles_on_resource"
+    t.index %w[resource_type resource_id], name: "index_roles_on_resource"
   end
 
   create_table "scenario_investments", force: :cascade do |t|
@@ -3325,7 +3325,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "key_hash", null: false
     t.binary "value", null: false
     t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
-    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
+    t.index %w[key_hash byte_size], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
     t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
   end
 
@@ -3352,7 +3352,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_stamp_papers_on_deleted_at"
     t.index ["entity_id"], name: "index_stamp_papers_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_stamp_papers_on_owner"
+    t.index %w[owner_type owner_id], name: "index_stamp_papers_on_owner"
   end
 
   create_table "stock_adjustments", force: :cascade do |t|
@@ -3390,7 +3390,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["deleted_at"], name: "index_stock_conversions_on_deleted_at"
     t.index ["entity_id"], name: "index_stock_conversions_on_entity_id"
     t.index ["from_instrument_id"], name: "index_stock_conversions_on_from_instrument_id"
-    t.index ["from_portfolio_investment_id", "conversion_date", "deleted_at"], name: "idx_stock_conversions_from_investment_date_deleted"
+    t.index %w[from_portfolio_investment_id conversion_date deleted_at], name: "idx_stock_conversions_from_investment_date_deleted"
     t.index ["from_portfolio_investment_id"], name: "index_stock_conversions_on_from_portfolio_investment_id"
     t.index ["fund_id"], name: "index_stock_conversions_on_fund_id"
     t.index ["to_instrument_id"], name: "index_stock_conversions_on_to_instrument_id"
@@ -3407,7 +3407,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "support_agent_id", null: false
     t.string "support_agent_name", limit: 50
     t.datetime "updated_at", null: false
-    t.index ["owner_type", "owner_id"], name: "index_support_agent_reports_on_owner"
+    t.index %w[owner_type owner_id], name: "index_support_agent_reports_on_owner"
     t.index ["support_agent_id"], name: "index_support_agent_reports_on_support_agent_id"
   end
 
@@ -3451,7 +3451,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "synced_at"
     t.datetime "updated_at", null: false
     t.index ["openwebui_id"], name: "index_sync_records_on_openwebui_id"
-    t.index ["syncable_type", "syncable_id"], name: "index_sync_records_on_syncable"
+    t.index %w[syncable_type syncable_id], name: "index_sync_records_on_syncable"
   end
 
   create_table "taggings", force: :cascade do |t|
@@ -3464,16 +3464,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.string "tagger_type"
     t.string "tenant", limit: 128
     t.index ["context"], name: "index_taggings_on_context"
-    t.index ["tag_id", "taggable_id", "taggable_type", "context", "tagger_id", "tagger_type"], name: "taggings_idx", unique: true
+    t.index %w[tag_id taggable_id taggable_type context tagger_id tagger_type], name: "taggings_idx", unique: true
     t.index ["tag_id"], name: "index_taggings_on_tag_id"
-    t.index ["taggable_id", "taggable_type", "context"], name: "taggings_taggable_context_idx"
-    t.index ["taggable_id", "taggable_type", "tagger_id", "context"], name: "taggings_idy"
+    t.index %w[taggable_id taggable_type context], name: "taggings_taggable_context_idx"
+    t.index %w[taggable_id taggable_type tagger_id context], name: "taggings_idy"
     t.index ["taggable_id"], name: "index_taggings_on_taggable_id"
-    t.index ["taggable_type", "taggable_id"], name: "index_taggings_on_taggable_type_and_taggable_id"
+    t.index %w[taggable_type taggable_id], name: "index_taggings_on_taggable_type_and_taggable_id"
     t.index ["taggable_type"], name: "index_taggings_on_taggable_type"
-    t.index ["tagger_id", "tagger_type"], name: "index_taggings_on_tagger_id_and_tagger_type"
+    t.index %w[tagger_id tagger_type], name: "index_taggings_on_tagger_id_and_tagger_type"
     t.index ["tagger_id"], name: "index_taggings_on_tagger_id"
-    t.index ["tagger_type", "tagger_id"], name: "index_taggings_on_tagger_type_and_tagger_id"
+    t.index %w[tagger_type tagger_id], name: "index_taggings_on_tagger_type_and_tagger_id"
     t.index ["tenant"], name: "index_taggings_on_tenant"
   end
 
@@ -3485,7 +3485,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["name"], name: "index_tags_on_name", unique: true
   end
 
-   create_table "task_recurrence_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+  create_table "task_recurrence_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "end_date"
     t.bigint "entity_id", null: false
@@ -3541,7 +3541,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["for_entity_id"], name: "index_tasks_on_for_entity_id"
     t.index ["form_type_id"], name: "index_tasks_on_form_type_id"
     t.index ["import_upload_id"], name: "index_tasks_on_import_upload_id"
-    t.index ["owner_type", "owner_id"], name: "index_tasks_on_owner"
+    t.index %w[owner_type owner_id], name: "index_tasks_on_owner"
     t.index ["task_recurrence_rule_id"], name: "index_tasks_on_task_recurrence_rule_id"
     t.index ["task_template_id"], name: "index_tasks_on_task_template_id"
     t.index ["user_id"], name: "index_tasks_on_user_id"
@@ -3662,7 +3662,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.bigint "role_id"
     t.bigint "user_id"
     t.index ["role_id"], name: "index_users_roles_on_role_id"
-    t.index ["user_id", "role_id"], name: "index_users_roles_on_user_id_and_role_id"
+    t.index %w[user_id role_id], name: "index_users_roles_on_user_id_and_role_id"
     t.index ["user_id"], name: "index_users_roles_on_user_id"
   end
 
@@ -3690,10 +3690,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.index ["deleted_at"], name: "index_valuations_on_deleted_at"
     t.index ["entity_id"], name: "index_valuations_on_entity_id"
     t.index ["form_type_id"], name: "index_valuations_on_form_type_id"
-    t.index ["investment_instrument_id", "deleted_at", "synthetic", "valuation_date"], name: "idx_latest_valuation"
+    t.index %w[investment_instrument_id deleted_at synthetic valuation_date], name: "idx_latest_valuation"
     t.index ["investment_instrument_id"], name: "index_valuations_on_investment_instrument_id"
-    t.index ["owner_id", "owner_type", "deleted_at"], name: "idx_valuations_full_optimized"
-    t.index ["owner_type", "owner_id"], name: "index_valuations_on_owner"
+    t.index %w[owner_id owner_type deleted_at], name: "idx_valuations_full_optimized"
+    t.index %w[owner_type owner_id], name: "index_valuations_on_owner"
     t.index ["valuation_date"], name: "index_valuations_on_valuation_date"
   end
 
@@ -3706,7 +3706,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.text "object_changes"
     t.string "whodunnit"
     t.string "{:null=>false, :limit=>191}"
-    t.index ["item_type", "item_id"], name: "index_versions_on_item_type_and_item_id"
+    t.index %w[item_type item_id], name: "index_versions_on_item_type_and_item_id"
   end
 
   create_table "video_kycs", force: :cascade do |t|
@@ -3729,7 +3729,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.index ["entity_id"], name: "index_viewed_bies_on_entity_id"
-    t.index ["owner_type", "owner_id"], name: "index_viewed_bies_on_owner"
+    t.index %w[owner_type owner_id], name: "index_viewed_bies_on_owner"
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
   end
 
