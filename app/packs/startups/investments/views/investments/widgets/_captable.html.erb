@@ -1,7 +1,8 @@
-<% 
+<%
   uri_params ||= {}
+  args ||= widget.metadata_args
   uri = URI("/investments")
-  args[:portfolio_company_id] = @investor&.id 
+  args[:portfolio_company_id] = @investor&.id
   # add args as query params to the uri
   uri.query = URI.encode_www_form(args) if args.present?
 
@@ -16,7 +17,7 @@
     ) do %>
 
   <!-- This block becomes the `content` inside the component -->
-  <%= turbo_frame_tag "investments_frame", target: "_top", src: "#{uri.to_s}" do %>            
+  <%= turbo_frame_tag "investments_frame", target: "_top", src: "#{uri.to_s}" do %>
   <%end%>
 
 <% end %>

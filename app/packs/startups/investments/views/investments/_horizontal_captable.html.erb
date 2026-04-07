@@ -5,6 +5,10 @@
     funding_rounds = h_data[:funding_rounds]
     latest_round = funding_rounds.last
 
+    # Check metadata for showing quantity columns individually (default to true - show columns)
+    show_quantity_actual = params[:show_quantity_actual] != "false"
+    show_quantity_diluted = params[:show_quantity_diluted] != "false"
+
 %>
 <%= render ToggleCard.new(title: "Cap Table", css_class: "show_horizontal_cap_table", state: "show") do %>
   <div class="table-responsive" data-controller="row-toggle">
@@ -13,15 +17,15 @@
         <tr>
           <th rowspan="2">Particulars</th>
           <th colspan="<%= funding_rounds.size %>" class="text-center">% stake fully diluted</th>
-          <th class="text-center">Quantity actual (as on the latest round)</th>
-          <th class="text-center">Quantity- fully diluted (as on the latest round)</th>
+          <th class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>Quantity actual (as on the latest round)</th>
+          <th class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>Quantity- fully diluted (as on the latest round)</th>
         </tr>
         <tr>
           <% funding_rounds.each do |round| %>
             <th class="text-center"><%= round %></th>
           <% end %>
-          <th class="text-center"><%= latest_round %></th>
-          <th class="text-center"><%= latest_round %></th>
+          <th class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>><%= latest_round %></th>
+          <th class="text-center" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>><%= latest_round %></th>
         </tr>
       </thead>
       <tbody>
@@ -77,10 +81,10 @@
                 <%= number_to_percentage(category_totals[:funding_rounds][round], precision: 1) %>
               </td>
             <% end %>
-            <td class="text-right font-weight-bold">
+            <td class="text-right font-weight-bold" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
               <%= number_with_precision(category_totals[:latest_quantity], precision: 2, delimiter: ',') %>
             </td>
-            <td class="text-right font-weight-bold">
+            <td class="text-right font-weight-bold" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
               <%= number_with_precision(category_totals[:latest_fully_diluted], precision: 2, delimiter: ',') %>
             </td>
           </tr>
@@ -98,10 +102,10 @@
                   <%= h_data.dig(:table_data, category, investor.investor_name, round)&.fetch(:fully_diluted_percentage, "-") || "-" %>
                 </td>
               <% end %>
-              <td class="text-right">
+              <td class="text-right" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
                 <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:quantity, 0) || 0, precision: 2, delimiter: ',') %>
               </td>
-              <td class="text-right">
+              <td class="text-right" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
                 <%= number_with_precision(h_data.dig(:table_data, category, investor.investor_name, latest_round)&.fetch(:fully_diluted, 0) || 0, precision: 2, delimiter: ',') %>
               </td>
             </tr>
@@ -114,10 +118,10 @@
           <% funding_rounds.each do |round| %>
             <td class="text-center">100.0%</td>
           <% end %>
-          <td class="text-right">
+          <td class="text-right" <%= 'style="display: none;"'.html_safe unless show_quantity_actual %>>
             <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_equity) || 0, precision: 2, delimiter: ',') %>
           </td>
-          <td class="text-right">
+          <td class="text-right" <%= 'style="display: none;"'.html_safe unless show_quantity_diluted %>>
             <%= number_with_precision(h_data.dig(:round_data, latest_round, :total_fully_diluted) || 0, precision: 2, delimiter: ',') %>
           </td>
         </tr>

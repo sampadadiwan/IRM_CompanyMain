@@ -402,3 +402,83 @@ Then('Investments should have the updated data from {string}') do |file_name|
     cc.import_upload_id.should == ImportUpload.last.id
   end
 end
+
+# Cap Table Quantity Columns Visibility Steps
+When('I go to the captable with params {string}') do |params|
+  @portfolio_company ||= Investor.all.portfolio_companies.last
+  url = if params.present?
+          "/investments?portfolio_company_id=#{@portfolio_company.id}&show_captable=true&#{params}"
+        else
+          "/investments?portfolio_company_id=#{@portfolio_company.id}&show_captable=true"
+        end
+  visit(url)
+end
+
+Then('I should see the quantity actual column header') do
+  # Check for the header text and that it's not hidden
+  within('.show_horizontal_cap_table') do
+    # Find all th elements containing "Quantity actual"
+    headers = page.all('th', text: /Quantity actual/)
+    expect(headers).not_to be_empty, "Expected to find 'Quantity actual' header but found none"
+    
+    # Verify at least one is visible (not hidden with display:none)
+    visible_headers = headers.reject { |h| h[:style]&.include?('display: none') }
+    expect(visible_headers).not_to be_empty, "Found 'Quantity actual' headers but all are hidden"
+  end
+end
+
+Then('I should see the quantity diluted column header') do
+  # Check for the header text and that it's not hidden
+  within('.show_horizontal_cap_table') do
+    # Find all th elements containing "Quantity- fully diluted"
+    headers = page.all('th', text: /Quantity.*fully diluted/)
+    expect(headers).not_to be_empty, "Expected to find 'Quantity- fully diluted' header but found none"
+    
+    # Verify at least one is visible (not hidden with display:none)
+    visible_headers = headers.reject { |h| h[:style]&.include?('display: none') }
+    expect(visible_headers).not_to be_empty, "Found 'Quantity- fully diluted' headers but all are hidden"
+  end
+end
+
+Then('I should not see the quantity actual column header') do
+  within('.show_horizontal_cap_table') do
+    # Find all th elements containing "Quantity actual"
+    headers = page.all('th', text: /Quantity actual/)
+    
+    if headers.any?
+      # If headers exist, they should all be hidden
+      visible_headers = headers.reject { |h| h[:style]&.include?('display: none') }
+      expect(visible_headers).to be_empty, "Expected all 'Quantity actual' headers to be hidden but found #{visible_headers.count} visible"
+    end
+    # If no headers found at all, that's also acceptable (they might be removed entirely)
+  end
+end
+
+Then('I should not see the quantity diluted column header') do
+  within('.show_horizontal_cap_table') do
+    # Find all th elements containing "Quantity- fully diluted"
+    headers = page.all('th', text: /Quantity.*fully diluted/)
+    
+    if headers.any?
+      # If headers exist, they should all be hidden
+      visible_headers = headers.reject { |h| h[:style]&.include?('display: none') }
+      expect(visible_headers).to be_empty, "Expected all 'Quantity- fully diluted' headers to be hidden but found #{visible_headers.count} visible"
+    end
+    # If no headers found at all, that's also acceptable (they might be removed entirely)
+  end
+end
+
+Then('I should see quantity values in the table') do
+  within('.show_horizontal_cap_table') do
+    # Check that there are visible td cells with numeric quantity values
+    # Look for cells in the quantity columns that are not hidden
+    quantity_cells = page.all('tbody tr td.text-right').reject { |td| td[:style]&.include?('display: none') }
+    
+    # Should have some visible quantity cells
+    expect(quantity_cells.count).to be > 0, "Expected to find visible quantity value cells"
+    
+    # At least some should contain numeric values (formatted with commas and precision)
+    cells_with_numbers = quantity_cells.select { |td| td.text.match?(/[\d,]+\.?\d*/) }
+    expect(cells_with_numbers).not_to be_empty, "Expected to find cells with numeric quantity values"
+  end
+end
