@@ -3,7 +3,7 @@ class PortfolioReportExtractsController < ApplicationController
   before_action :set_portfolio_report_extract, only: %i[show edit update generate_tear_sheet update_slides_content]
 
   def index
-    @portfolio_report_extracts = policy_scope(PortfolioReportExtract).order(id: :desc)
+    @portfolio_report_extracts = policy_scope(PortfolioReportExtract).order(end_date: :desc, id: :desc)
     @portfolio_report_extracts = @portfolio_report_extracts.where(portfolio_report_id: params[:portfolio_report_id]) if params[:portfolio_report_id].present?
     @portfolio_report_extracts = @portfolio_report_extracts.where(portfolio_company_id: params[:portfolio_company_id]) if params[:portfolio_company_id].present?
     @portfolio_report_extracts = @portfolio_report_extracts.includes(:portfolio_company, :portfolio_report_section)
