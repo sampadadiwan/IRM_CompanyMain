@@ -217,6 +217,7 @@ resources :entities do
   patch 'remove_sebi_fields', on: :member
   get 'merge', on: :collection
   post 'merge', on: :collection
+  post 'db_dump', on: :member
 end
 
 resources :viewed_bies do

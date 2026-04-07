@@ -5,9 +5,15 @@ class EntitySetting < ApplicationRecord
   include Trackable.new(associated_with: :entity)
 
   belongs_to :entity
+  extend Enumerize
+
+  enumerize :db_dumps_frequency, in: %i[daily weekly monthly interval custom_days adhoc], default: :daily
 
   validates :from_email, length: { maximum: 100 }
   validates :mailbox, length: { maximum: 30 }
+  validates :db_dumps_retention_period, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
+  validates :db_dumps_interval, numericality: { only_integer: true, greater_than: 0 }, if: -> { db_dumps_frequency&.interval? }
+  validates :db_dumps_custom_days, presence: true, if: -> { db_dumps_frequency&.custom_days? }
   serialize :kpi_doc_list, type: Array
 
   before_save :check_esign_provider

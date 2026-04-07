@@ -2074,6 +2074,31 @@ done
 # Run global ANALYZE to optimize cross-table join performance
 sqlite3 "$SQLITE_DB" "ANALYZE;"
 
+echo ">>> Validating that only data for ENTITY_ID=${ENTITY_ID} was loaded..."
+for table in "${TABLES[@]}"; do
+  cols_var="COLS_$table[@]"
+  COLS=("${!cols_var}")
+  HAS_ENTITY_ID=0
+  for c in "${COLS[@]}"; do
+    if [[ "$c" == "entity_id" ]]; then HAS_ENTITY_ID=1; break; fi
+  done
+
+  if [[ "$table" == "entities" ]]; then
+    INVALID_COUNT=$(sqlite3 "$SQLITE_DB" "SELECT COUNT(*) FROM \"entities\" WHERE \"id\" != ${ENTITY_ID};")
+    if [[ "$INVALID_COUNT" -gt 0 ]]; then
+      echo "Error: Found ${INVALID_COUNT} rows in 'entities' table with id != ${ENTITY_ID}."
+      exit 1
+    fi
+  elif [[ $HAS_ENTITY_ID -eq 1 ]]; then
+    INVALID_COUNT=$(sqlite3 "$SQLITE_DB" "SELECT COUNT(*) FROM \"$table\" WHERE \"entity_id\" != ${ENTITY_ID};")
+    if [[ "$INVALID_COUNT" -gt 0 ]]; then
+      echo "Error: Found ${INVALID_COUNT} rows in '$table' table with entity_id != ${ENTITY_ID}."
+      exit 1
+    fi
+  fi
+done
+echo ">>> Validation successful: no other entities' data found."
+
 echo "Done."
 echo "SQLite DB: $SQLITE_DB"
 for table in "${TABLES[@]}"; do

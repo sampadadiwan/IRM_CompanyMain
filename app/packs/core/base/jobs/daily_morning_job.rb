@@ -48,6 +48,9 @@ class DailyMorningJob < ApplicationJob
       # Schedule Cash Flow staleness reminders
       Rails.logger.debug "Check Cash Flow staleness reminders"
       CashFlowStalenessReminderService.new.call
+
+      Rails.logger.debug "Entity DB Dump Job"
+      EntityDbDumpJob.perform_later
     rescue StandardError => e
       message = "Error in DailyMorningJob: #{e.message}"
       Rails.logger.error message

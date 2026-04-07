@@ -1,5 +1,5 @@
 class EntitiesController < ApplicationController
-  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder]
+  before_action :set_entity, only: %w[show update destroy edit report kpi_reminder db_dump]
   after_action :verify_authorized, except: %i[dashboard search index investor_entities delete_attachment]
 
   # GET /entities or /entities.json
@@ -104,6 +104,13 @@ class EntitiesController < ApplicationController
     redirect_to redirect_path, notice: "Reminder sent"
   end
 
+  def db_dump
+    # Trigger an adhoc DB dump. The job will still respect frequency settings
+    # (e.g., skip if a daily dump was already taken) unless forced otherwise.
+    EntityDbDumpJob.perform_later(entity_id: @entity.id, user_id: current_user.id, adhoc: true)
+    redirect_to entity_path(@entity), notice: "Database dump generation started. You will be notified when it is ready."
+  end
+
   # Special method to delete attachments for any model
   def delete_attachment
     attachment = ActiveStorage::Attachment.where(id: params[:attachment_id]).first
@@ -129,6 +136,6 @@ class EntitiesController < ApplicationController
     params.require(:entity).permit(:name, :url, :category, :founded, :entity_type, :pan, :custom_css,
                                    :funding_amount, :funding_unit, :details, :logo_url, :primary_email,
                                    :investor_categories, :instrument_types, :sub_domain, :enable_support,
-                                   :currency, :units, :logo, permissions: [], entity_setting_attributes: [:id, :mailbox, :individual_kyc_doc_list, :non_individual_kyc_doc_list, :sandbox, :sandbox_emails, :cc, :sandbox_numbers, :kyc_docs_note, :entity_bcc, :kyc_bank_account_types, { custom_flags: [], kpi_doc_list: [] }])
+                                   :currency, :units, :logo, permissions: [], entity_setting_attributes: [:id, :mailbox, :individual_kyc_doc_list, :non_individual_kyc_doc_list, :sandbox, :sandbox_emails, :cc, :sandbox_numbers, :kyc_docs_note, :entity_bcc, :kyc_bank_account_types, :db_dumps_enable, :db_dumps_retention_period, :db_dumps_email_enabled, :db_dumps_frequency, :db_dumps_interval, :db_dumps_custom_days, { custom_flags: [], kpi_doc_list: [] }])
   end
 end

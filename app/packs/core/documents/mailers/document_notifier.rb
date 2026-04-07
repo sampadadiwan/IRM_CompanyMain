@@ -21,7 +21,9 @@ class DocumentNotifier < BaseNotifier
       document_id: record.id,
       entity_id: params[:entity_id],
       fund_id: fund_id,
-      investor_id: investor_id
+      investor_id: investor_id,
+      msg: params[:msg],
+      email_method: params[:email_method]
     }
   end
 

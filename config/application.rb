@@ -83,7 +83,7 @@ module CapHive
 
     Rails.application.routes.default_url_options[:host] = ENV.fetch('HOST', nil)
 
-    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone, Money, Money::Currency, Money::Bank::VariableExchange, Money::RatesStore::Memory, Monitor]
+    config.active_record.yaml_column_permitted_classes = [BigDecimal, Date, ActiveSupport::HashWithIndifferentAccess, Time, Symbol, Roo::Link, ActiveSupport::TimeWithZone, ActiveSupport::TimeZone, Money, Money::Currency, Money::Bank::VariableExchange, Money::RatesStore::Memory, Monitor, Enumerize::Value]
 
     config.action_mailer.smtp_settings = {
       address: ENV.fetch("SMTP_SERVER"),

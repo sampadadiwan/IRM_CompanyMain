@@ -53,7 +53,13 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     anthropic_api_key: Field::String,
     openrouter_api_key: Field::String,
     default_llm_model: Field::String,
-    month_offset_for_fy: Field::Number
+    month_offset_for_fy: Field::Number,
+    db_dumps_enable: Field::BooleanEmoji,
+    db_dumps_retention_period: Field::Number,
+    db_dumps_email_enabled: Field::BooleanEmoji,
+    db_dumps_frequency: Field::Select.with_options(collection: EntitySetting.db_dumps_frequency.options),
+    db_dumps_interval: Field::Number,
+    db_dumps_custom_days: Field::String
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -126,6 +132,12 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     openrouter_api_key
     default_llm_model
     month_offset_for_fy
+    db_dumps_enable
+    db_dumps_retention_period
+    db_dumps_email_enabled
+    db_dumps_frequency
+    db_dumps_interval
+    db_dumps_custom_days
     created_at
     updated_at
   ].freeze
@@ -174,6 +186,12 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     openrouter_api_key
     default_llm_model
     month_offset_for_fy
+    db_dumps_enable
+    db_dumps_retention_period
+    db_dumps_email_enabled
+    db_dumps_frequency
+    db_dumps_interval
+    db_dumps_custom_days
     custom_flags
   ].freeze
 

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_05_021403) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_07_093642) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -208,6 +208,62 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_05_021403) do
     t.index ["support_agent_id"], name: "index_agent_chat_sessions_on_support_agent_id"
   end
 
+  create_table "agent_execution_logs", force: :cascade do |t|
+    t.bigint "agent_schedule_id"
+    t.integer "attempt_number", default: 1, null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "error_message"
+    t.json "result_summary"
+    t.datetime "started_at"
+    t.string "status", limit: 20, default: "queued", null: false
+    t.bigint "support_agent_id", null: false
+    t.string "trigger_type", limit: 20, null: false
+    t.bigint "triggered_by_id"
+    t.index ["agent_schedule_id", "created_at"], name: "idx_execution_logs_schedule", order: { created_at: :desc }
+    t.index ["agent_schedule_id"], name: "index_agent_execution_logs_on_agent_schedule_id"
+    t.index ["entity_id"], name: "index_agent_execution_logs_on_entity_id"
+    t.index ["status"], name: "idx_execution_logs_status"
+    t.index ["support_agent_id", "entity_id", "created_at"], name: "idx_execution_logs_history", order: { created_at: :desc }
+    t.index ["support_agent_id"], name: "index_agent_execution_logs_on_support_agent_id"
+    t.index ["triggered_by_id"], name: "index_agent_execution_logs_on_triggered_by_id"
+    t.check_constraint "`attempt_number` >= 1", name: "valid_attempt_number"
+    t.check_constraint "`status` in ('queued','running','completed','failed','partial_success')", name: "valid_status"
+    t.check_constraint "`trigger_type` in ('scheduled','manual')", name: "valid_trigger_type"
+  end
+
+  create_table "agent_schedules", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.boolean "enabled", default: false, null: false
+    t.bigint "entity_id", null: false
+    t.json "failure_notification_user_ids"
+    t.string "frequency", limit: 20, null: false
+    t.datetime "last_run_at"
+    t.datetime "next_run_at"
+    t.boolean "notify_caphive_on_error", default: true, null: false
+    t.boolean "notify_on_failure", default: true, null: false
+    t.boolean "notify_on_partial_success", default: true, null: false
+    t.boolean "notify_on_success", default: false, null: false
+    t.integer "retry_count", default: 0, null: false
+    t.integer "retry_interval_minutes", default: 0, null: false
+    t.time "run_at_time", null: false
+    t.integer "run_on_day"
+    t.bigint "support_agent_id", null: false
+    t.string "timezone", limit: 50, null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_agent_schedules_on_created_by_id"
+    t.index ["entity_id"], name: "index_agent_schedules_on_entity_id"
+    t.index ["next_run_at", "enabled"], name: "idx_agent_schedules_polling"
+    t.index ["support_agent_id", "entity_id"], name: "idx_unique_agent_entity", unique: true
+    t.index ["support_agent_id"], name: "index_agent_schedules_on_support_agent_id"
+    t.check_constraint "(`run_on_day` is null) or ((`run_on_day` >= 0) and (`run_on_day` <= 31))", name: "valid_run_on_day"
+    t.check_constraint "`frequency` in ('daily','weekly','monthly','bimonthly','quarterly','half_yearly')", name: "valid_frequency"
+    t.check_constraint "`retry_count` >= 0", name: "valid_retry_count"
+    t.check_constraint "`retry_interval_minutes` >= 0", name: "valid_retry_interval"
+  end
+
   create_table "aggregate_portfolio_investments", force: :cascade do |t|
     t.decimal "avg_cost_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "bought_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -320,6 +376,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_05_021403) do
     t.datetime "updated_at_web_included"
     t.boolean "web_search_enabled", default: false, null: false
     t.index ["ai_portfolio_report_id"], name: "index_ai_report_sections_on_ai_portfolio_report_id"
+  end
+
+  create_table "ai_reports", force: :cascade do |t|
+    t.text "ai_response"
+    t.json "charts_spec"
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.text "notes"
+    t.text "prompt_used"
+    t.integer "record_count"
+    t.bigint "report_id", null: false
+    t.string "status"
+    t.text "status_message"
+    t.string "trigger_type"
+    t.datetime "triggered_at"
+    t.bigint "triggered_by_id"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_ai_reports_on_entity_id"
+    t.index ["report_id"], name: "index_ai_reports_on_report_id"
   end
 
   create_table "ai_rules", force: :cascade do |t|
@@ -493,6 +568,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_05_021403) do
     t.index ["created_at"], name: "index_audits_on_created_at"
     t.index ["request_uuid"], name: "index_audits_on_request_uuid"
     t.index ["user_id", "user_type"], name: "user_index"
+  end
+
+  create_table "background_jobs", force: :cascade do |t|
+    t.integer "attempts", default: 0, null: false
+    t.datetime "created_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.json "data", null: false
+    t.string "job_type", null: false
+    t.text "last_error"
+    t.datetime "run_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.string "status", limit: 50, default: "pending", null: false
+    t.datetime "updated_at", default: -> { "CURRENT_TIMESTAMP" }, null: false
+    t.index ["run_at"], name: "run_at"
+    t.index ["status"], name: "status"
   end
 
   create_table "blazer_audits", force: :cascade do |t|
@@ -1044,8 +1132,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_05_021403) do
     t.boolean "docs_required_for_completion", default: false
     t.bigint "document_folder_id"
     t.integer "entity_id"
-    t.boolean "notify_employees", default: false
-    t.boolean "notify_investor", default: false
     t.integer "sequence"
     t.string "status", default: "incomplete"
     t.string "status_temp", limit: 20
@@ -1270,6 +1356,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_05_021403) do
     t.index ["entity_id"], name: "index_documents_on_entity_id"
     t.index ["folder_id"], name: "index_documents_on_folder_id"
     t.index ["form_type_id"], name: "index_documents_on_form_type_id"
+    t.index ["owner_tag", "created_at"], name: "index_documents_on_owner_tag_and_created_at"
     t.index ["owner_type", "owner_id"], name: "index_documents_on_owner"
     t.index ["signed_by_id"], name: "index_documents_on_signed_by_id"
     t.index ["user_id"], name: "index_documents_on_user_id"
@@ -1364,6 +1451,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_05_021403) do
     t.datetime "created_at", null: false
     t.text "custom_dashboards"
     t.integer "custom_flags", default: 0
+    t.string "db_dumps_custom_days"
+    t.boolean "db_dumps_email_enabled", default: false
+    t.boolean "db_dumps_enable", default: false
+    t.string "db_dumps_frequency", default: "daily"
+    t.integer "db_dumps_interval", default: 1
+    t.integer "db_dumps_retention_period", default: 7
     t.string "default_llm_model"
     t.datetime "deleted_at"
     t.string "digio_client_id"

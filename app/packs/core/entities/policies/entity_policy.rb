@@ -78,6 +78,10 @@ class EntityPolicy < ApplicationPolicy
     Entity.for_investor(user).collect(&:id).include?(record.id)
   end
 
+  def db_dump?
+    update? && record.entity_setting.db_dumps_enable
+  end
+
   def permissioned_employee?(perm = nil)
     if perm.nil? || perm == :read
       user.entity_id == record.id
