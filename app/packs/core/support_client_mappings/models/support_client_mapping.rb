@@ -17,8 +17,10 @@ class SupportClientMapping < ApplicationRecord
     SupportClientMapping.where('enabled = ? and end_date < ?', true, Time.zone.today).find_each(&:disable_support)
   end
 
-  # After any database commit, trigger enable/disable cascade actions.
-  after_commit :enable_disable
+  # After any database commit, trigger enable/disable cascade actions if enabled attribute changed.
+  after_commit :enable_disable, if: -> { saved_change_to_enabled? }
+
+  before_destroy :disable_support
 
   # Ensure the support state of associated entity/users matches this mapping.
   def enable_disable
@@ -48,10 +50,15 @@ class SupportClientMapping < ApplicationRecord
   # - Updates all associated employees to disable support.
   def disable_support
     update_column(:enabled, false)
-    entity.permissions.unset(:enable_support)
-    entity.save
-    entity.employees.each do |user|
-      user.update_column(:enable_support, false)
+
+    # Only disable entity support if no other enabled mappings exist
+    other_active = entity.support_client_mappings.where.not(id: id).where(enabled: true).exists?
+    unless other_active
+      entity.permissions.unset(:enable_support)
+      entity.save
+      entity.employees.each do |user|
+        user.update_column(:enable_support, false)
+      end
     end
   end
 

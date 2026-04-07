@@ -152,11 +152,13 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
     permissions.set(:enable_kanban) if permissions.enable_deals?
   end
 
-  # Ensure that support gets enabled if a mapping is already there.
-  before_save :update_support, if: :enable_support_changed?
+  # Updates the 'enabled' state of all active SupportClientMappings for this user's entity.
+  # This is triggered whenever the user's 'enable_support' attribute changes.
+  # It ensures that all support client mappings that are currently active (not expired)
+  # reflect the user's current support status.
   # rubocop:disable Rails/SkipsModelValidations
   def update_support
-    SupportClientMapping.where(entity_id:).update_all(enabled: enable_support, end_date: Time.zone.today + 1.day)
+    SupportClientMapping.where(entity_id:, end_date: Time.zone.today..).update_all(enabled: enable_support)
   end
   # rubocop:enable Rails/SkipsModelValidations
 

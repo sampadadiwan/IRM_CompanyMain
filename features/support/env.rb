@@ -42,10 +42,9 @@ Cucumber::Rails::Database.autorun_database_cleaner = false
 # Drop emailbutler_messages caphive_agents admin_users impressions
 begin
   # These tables are excluded simply to make truncation faster. If you write tests which include these models then you should remove them from this list.
-  DatabaseCleaner.strategy = [:truncation, except: %w[blazer_audits blazer_checks blazer_dashboard_queries   blazer_dashboards blazer_queries  active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments deal_docs  action_mailbox_inbound_emails admin_users allocation_runs audits caphive_agents devise_api_tokens document_chats emailbutler_messages favorites fees friendly_id_slugs key_biz_metrics permissions quick_link_steps quick_links support_client_mappings whatsapp_logs]]
+  DatabaseCleaner.strategy = [:truncation, { except: %w[blazer_audits blazer_checks blazer_dashboard_queries blazer_dashboards blazer_queries active_admin_comments video_kycs taggings tags admin_users active_storage_attachments active_storage_blobs active_storage_variant_records user_alerts impressions activities exception_tracks impressions investment_snapshots messages nudges reminders payments deal_docs action_mailbox_inbound_emails admin_users allocation_runs audits caphive_agents devise_api_tokens document_chats emailbutler_messages favorites fees friendly_id_slugs key_biz_metrics permissions quick_link_steps quick_links whatsapp_logs] }]
 
   Chewy.strategy :bypass
-
 rescue NameError => e
   puts e.backtrace
   raise "You need to add database_cleaner to your Gemfile (in the :test group) if you wish to use it."
@@ -96,8 +95,6 @@ After do |scenario|
     f.puts
   end
 end
-
-
 
 # frozen_string_literal: true
 
@@ -160,16 +157,13 @@ end
 #   end
 # end
 
-
-
-
 # Cucumber::Rails::Database.javascript_strategy = :truncation
 
 Capybara.run_server = true
-Capybara.server_port =  (3000 + ENV['TEST_ENV_NUMBER'].to_i)
+Capybara.server_port = (3000 + ENV['TEST_ENV_NUMBER'].to_i)
 # Capybara.default_max_wait_time = 5
 
-Capybara.register_server :puma do |app, port, host|
+Capybara.register_server :puma do |app, _port, host|
   require 'puma'
   Puma::Server.new(app).tap do |s|
     s.add_tcp_listener host, (3000 + ENV['TEST_ENV_NUMBER'].to_i)
@@ -181,23 +175,20 @@ Capybara.server_host = "localhost"
 Capybara.app_host = "http://localhost:#{3000 + ENV['TEST_ENV_NUMBER'].to_i}"
 Capybara.default_max_wait_time = 10 # or more
 
-
 Capybara.register_driver(:playwright) do |app|
   Capybara::Playwright::Driver.new(app,
-    browser_type: :chromium,
-    headless: ENV["BROWSER"].blank?,
-    playwright_cli_executable_path: 'node_modules/.bin/playwright',
-    screen_size: { width: 1580, height: 900 },
-    viewport: { width: 1580, height: 900 },
-    default_wait_for_load_state: "domcontentloaded"
-  )
+                                   browser_type: :chromium,
+                                   headless: ENV["BROWSER"].blank?,
+                                   playwright_cli_executable_path: 'node_modules/.bin/playwright',
+                                   screen_size: { width: 1580, height: 900 },
+                                   viewport: { width: 1580, height: 900 },
+                                   default_wait_for_load_state: "domcontentloaded")
 end
 
 Capybara.default_max_wait_time = 15
 Capybara.default_driver = :playwright
 Capybara.javascript_driver = :playwright
 Capybara.save_path = 'tmp/capybara'
-
 
 ENV["REGION"] ||= "US"
 
@@ -206,7 +197,6 @@ ENV["SYNC_API_BASE_URL_US"] ||= "https://dev.altconnects.us"
 ENV["SYNC_API_BASE_URL_IN"] ||= "https://dev.altconnects.in"
 ENV["SYNC_API_BASE_URL_SG"] ||= "https://dev.altconnects.sg"
 
-
 module IRMUtils
   def key_values(model, args)
     puts "Setting #{args} on #{model.class} #{model.id}"
@@ -214,14 +204,14 @@ module IRMUtils
     key_val.each do |k, v|
       # model[k] = v
       puts "Setting #{k} to #{v} on #{model.class} #{model.id}"
-      if k != "properties"
-        model.send("#{k}=", v)
-      else
+      if k == "properties"
         v.split(",").each do |prop|
           prop_key, prop_val = prop.split(":")
           model.properties[prop_key] = prop_val
           puts "Setting properties[#{prop_key}] = #{prop_val} on #{model.class} #{model.id} "
         end
+      else
+        model.send("#{k}=", v)
       end
     end
   end
