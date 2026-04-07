@@ -9,9 +9,10 @@ Given('I am at the entity page for {string}') do |entity_name|
   visit entity_path(entity)
 end
 
-When('I confirm the dialog') do
+When('I confirm the dialog {string}') do |lable|
   # In Playwright, we might need to handle the dialog
   # But for now, let's see if it works without explicit handling or if we need to stub it
+  click_on lable
 end
 
 Then('a database dump job should be enqueued for {string}') do |entity_name|
@@ -37,10 +38,6 @@ When('the database dump job runs for {string}') do |entity_name|
   timestamp = fixed_time.strftime('%Y%m%d_%H%M%S')
   filename = "db_dump_#{entity.id}_#{timestamp}.sqlite3"
   filepath = Rails.root.join("tmp", filename).to_s
-
-  # Create a dummy file for the job to pick up
-  FileUtils.mkdir_p(File.dirname(filepath))
-  File.write(filepath, "dummy sqlite content")
 
   # Run the job
   perform_enqueued_jobs do

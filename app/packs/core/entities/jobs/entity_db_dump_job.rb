@@ -94,13 +94,21 @@ class EntityDbDumpJob < ApplicationJob
     db_config = ActiveRecord::Base.connection_db_config.configuration_hash
     env = {
       'ENTITY_ID' => entity.id.to_s,
-      'SQLITE_DB' => filepath,
-      'MYSQL_HOST' => db_config[:host] || '127.0.0.1',
-      'MYSQL_PORT' => (db_config[:port] || 3306).to_s,
-      'MYSQL_USER' => db_config[:username],
-      'MYSQL_PASS' => db_config[:password].to_s, # Ensure it's a string, even if nil
-      'MYSQL_DB' => db_config[:database]
+      'SQLITE_DB' => filepath
     }
+
+    if Rails.env.test? && db_config[:adapter] == 'sqlite3'
+      env['ADAPTER'] = 'sqlite3'
+      env['SOURCE_SQLITE_DB'] = db_config[:database]
+    else
+      env.merge!({
+        'MYSQL_HOST' => db_config[:host] || '127.0.0.1',
+        'MYSQL_PORT' => (db_config[:port] || 3306).to_s,
+        'MYSQL_USER' => db_config[:username],
+        'MYSQL_PASS' => db_config[:password].to_s, # Ensure it's a string, even if nil
+        'MYSQL_DB' => db_config[:database]
+      })
+    end
 
     script_path = Rails.root.join("script/load_entity_sqlite3.sh").to_s
 

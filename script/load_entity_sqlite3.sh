@@ -11,7 +11,7 @@ MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_USER="${MYSQL_USER:-root}"
 MYSQL_PASS="${MYSQL_PASS:-root}"
 MYSQL_DB="${MYSQL_DB:-IRM_development}"
-SOURCE_SQLITE_DB="${SOURCE_SQLITE_DB:-}"
+SOURCE_SQLITE_DB="${SOURCE_SQLITE_DB:-tmp/test.sqlite3}"
 ENTITY_ID="${ENTITY_ID:-}"
 
 if [ -z "$ENTITY_ID" ]; then
@@ -1950,9 +1950,17 @@ for table in "${TABLES[@]}"; do
     done
 
     if [[ $is_text -eq 1 ]]; then
-      SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`${c}\`,''), '\"', '###DQ###'), CHAR(10), '###NL###'), CHAR(13), '###CR###'), CHAR(9), '###TAB###'),"
+      if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
+        SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\"${c}\",\"\"), \"\"\"\", \"###DQ###\"), CHAR(10), \"###NL###\"), CHAR(13), \"###CR###\"), CHAR(9), \"###TAB###\"),"
+      else
+        SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`${c}\`,''), '\"', '###DQ###'), CHAR(10), '###NL###'), CHAR(13), '###CR###'), CHAR(9), '###TAB###'),"
+      fi
     else
-      SELECT_LIST+="IFNULL(\`${c}\`,''),"
+      if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
+        SELECT_LIST+="IFNULL(\"${c}\",\"\"),"
+      else
+        SELECT_LIST+="IFNULL(\`${c}\`,''),"
+      fi
     fi
   done
   SELECT_LIST="${SELECT_LIST%,}"
@@ -1964,9 +1972,17 @@ for table in "${TABLES[@]}"; do
   done
 
   if [[ "$table" == "entities" ]]; then
-    WHERE_CLAUSE="WHERE \`id\` = ${ENTITY_ID}"
+    if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
+      WHERE_CLAUSE="WHERE \"id\" = ${ENTITY_ID}"
+    else
+      WHERE_CLAUSE="WHERE \`id\` = ${ENTITY_ID}"
+    fi
   elif [[ $HAS_ENTITY_ID -eq 1 ]]; then
-    WHERE_CLAUSE="WHERE \`entity_id\` = ${ENTITY_ID}"
+    if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
+      WHERE_CLAUSE="WHERE \"entity_id\" = ${ENTITY_ID}"
+    else
+      WHERE_CLAUSE="WHERE \`entity_id\` = ${ENTITY_ID}"
+    fi
   else
     WHERE_CLAUSE="WHERE 1=1"
   fi
@@ -1978,13 +1994,17 @@ for table in "${TABLES[@]}"; do
   done
 
   if [[ $HAS_DELETED_AT -eq 1 ]]; then
-    WHERE_CLAUSE="${WHERE_CLAUSE} AND \`deleted_at\` IS NULL"
+    if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
+      WHERE_CLAUSE="${WHERE_CLAUSE} AND \"deleted_at\" IS NULL"
+    else
+      WHERE_CLAUSE="${WHERE_CLAUSE} AND \`deleted_at\` IS NULL"
+    fi
   fi
 
   echo "  Step 1: Exporting $table (entity_id=$ENTITY_ID) → TSV"
   if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
     SQLITE_SOURCE="${SOURCE_SQLITE_DB:-$MYSQL_DB}"
-    QUERY="SELECT ${SELECT_LIST} FROM \`${table}\` ${WHERE_CLAUSE};"
+    QUERY="SELECT ${SELECT_LIST} FROM \"${table}\" ${WHERE_CLAUSE};"
     sqlite3 "$SQLITE_SOURCE" <<SQL | pv -l -t -e -r -a > "$EXPORT_TSV"
 .mode tabs
 .nullvalue \\N
