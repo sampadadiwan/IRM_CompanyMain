@@ -101,7 +101,11 @@ class ApprovalsController < ApplicationController
   def set_approval
     @approval = Approval.find(params[:id])
     authorize @approval
-    @bread_crumbs = { Approvals: approvals_path, "#{@approval.title}": approval_path(@approval) }
+    @bread_crumbs = if @approval.owner.present?
+                      { "#{@approval.owner}": polymorphic_path(@approval.owner), Approvals: approvals_path, "#{@approval.title}": approval_path(@approval) }
+                    else
+                      { Approvals: approvals_path, "#{@approval.title}": approval_path(@approval) }
+                    end
   end
 
   # Only allow a list of trusted parameters through.

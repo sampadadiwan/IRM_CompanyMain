@@ -6,15 +6,11 @@
 
     <h3>Dear <%= @approval_response.investor.investor_name %> </h3>
 
-    <p>
-        This is a reminder that <%= @approval.entity.name %> has requested your approval for <%=@approval.title%>.
-    </p>
-
     <%if @approval.agreements_reference.present?%>
     <p>
         <%= @approval.agreements_reference %>
     </p>
-    <%end%>    
+    <%end%>
 
 <% end %>
 

@@ -6,10 +6,6 @@
 
     <h3>Dear <%= @approval_response.investor.investor_name %> </h3>
 
-    <p>
-        <%= @approval.entity.name %> has requested an approval for <%=@approval.title%>.
-    </p>
-
     <%if @approval.agreements_reference.present?%>
         <p>
             <%= @approval.agreements_reference %>

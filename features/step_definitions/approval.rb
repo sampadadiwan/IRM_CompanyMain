@@ -140,7 +140,7 @@
           expect(current_email.body).to have_content @custom_notification.body
         else
           puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
-          expect(current_email.subject).to have_content "Approval required for #{@approval.entity.name}: #{@approval.title}"
+          expect(current_email.subject).to have_content "Approval required: #{@approval.title}"
         end
     end
 
@@ -160,7 +160,7 @@
         expect(current_email.body).to have_content @custom_notification.body
 
         if @approval.response_enabled_email
-          
+
           statuses = @approval.response_status.split(',') - ["Pending"]
           statuses.each do |status|
             expect(current_email.body).to have_content status
@@ -202,7 +202,7 @@
         investor.emails.each do |email|
           open_email(email)
           puts "current_email = to: #{current_email.to}, subj: #{current_email.subject}"
-          expect(current_email.subject).to eq "#{approval_response.entity.name}: #{approval_response.status} for #{approval_response.approval.title}"
+          expect(current_email.subject).to eq "#{approval_response.status} for #{approval_response.approval.title}"
         end
     end
 
@@ -225,7 +225,7 @@
     @approval_response.status.should == arg
   end
 
-  
+
 Then('the approval response user is correctly captured') do
   @approval_response.response_user_id.should == @approval_response.investor.investor_accesses.approved.first.user_id
 end
@@ -245,11 +245,11 @@ When('I select {string} for the approval response') do |response|
   click_on("Submit")
 end
 
-Given('there is a custom notification in place for the approval with subject {string} with email_method {string}') do |subject, email_method|  
+Given('there is a custom notification in place for the approval with subject {string} with email_method {string}') do |subject, email_method|
   @custom_notification = CustomNotification.create!(entity: @approval.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @approval, email_method:)
 end
 
-Then('I should see the approval response details for each response') do 
+Then('I should see the approval response details for each response') do
   @approval.approval_responses.each do |response|
     within("#approval_response_#{response.id}") do
       click_on("Show")
@@ -260,7 +260,7 @@ Then('I should see the approval response details for each response') do
     expect(page).to have_content(response.status)
 
     visit(approval_path(@approval))
-  
+
   end
 end
 
@@ -284,7 +284,7 @@ Then('the approval should have the right access rights') do
     @approval.owner.access_rights.each do |ar|
       puts "Checking Access Right: #{ar}"
       @approval.access_rights.where(access_to_investor_id: ar.access_to_investor_id).count.should == 1
-    end    
+    end
   else
     puts "No owner access rights copied"
     @approval.access_rights.count.should == 0

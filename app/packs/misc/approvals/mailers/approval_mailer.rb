@@ -31,19 +31,19 @@ class ApprovalMailer < ApplicationMailer
   end
 
   def notify_new_approval
-    subject = "Approval required for #{@approval.entity.name}: #{@approval.title}"
+    subject = "Approval required: #{@approval.title}"
     attach_all_docs
     update_notification_sent(subject)
   end
 
   def approval_reminder
-    subject = "Approval required for #{@approval.entity.name}: #{@approval.title}"
+    subject = "Reminder For Approval required: #{@approval.title}"
     attach_all_docs
     update_notification_sent(subject)
   end
 
   def notify_approval_response
-    subject = "#{@approval_response.entity.name}: #{@approval_response.status} for #{@approval_response.approval.title}"
+    subject = "#{@approval_response.status} for #{@approval_response.approval.title}"
 
     send_mail(subject:)
   end
