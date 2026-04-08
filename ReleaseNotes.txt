@@ -1,3 +1,26 @@
+V9.2.12
+0ab0c8440 Allow manual triggers for DB dumps regardless of frequency settings
+d13f79b85 Metadata add captable quantity show updated main (#1343)
+5f47fe3b7 Sqlite db dumps (#1342)
+40eb2c097 fix: Correctly render PDF documents in the embed view
+633a493ca fix: Add missing dataTable class to horizontal cap table for improved styling
+4add82fd6 feat: Enhance SupportClientMapping logic and add comprehensive edge case tests
+8e892525b fix: Update portfolio report extracts ordering by end date and id
+c72a2a521 feat: Add portfolio report extracts link for portfolio companies and enhance debug information in portfolio report widget
+37c711cbc Added missing scss file (#1339)
+921bea16c fix: Correct typo in feature scenario and enhance email handling in step definitions
+01fc34c32 Merged new kedaara css changes form align (#1336)
+5f05f9de1 Stripted table (#1337)
+65a397ca7 feat: Add no_card option to WidgetCardComponent for conditional rendering
+24c1f1718 feat: Implement navigation overflow controller for dynamic nav item visibility
+9a810a6d2 feat: Enhance Portfolio Report widget with tabs support and metadata help
+ce52f8429 feat: Add Hermes Agent Multi-Tenant Architecture documentation
+583d5e47b Fixed approval tests
+b4d3402bd Added better custom_notifications for Approvals and KYCs
+4804588bc CapitalRemittance custom_notification is used to filter notification_users
+d5404d6d5 feat: Implement Deal Activity Move Notifications
+
+
 V9.2.11
 78de09740 Refactor task generation logic in deal activity completion and enhance feature tests
 e08d0c457 Implement CompleteDealActivity service and refactor deal activity handling

@@ -8,6 +8,16 @@
   wrapper_options[:data][:controller] = "#{wrapper_options[:data][:controller]} turbo-frame-visibility".strip
   wrapper_options[:data][:action] = "#{wrapper_options[:data][:action]} turbo:frame-load->turbo-frame-visibility#markAsLoaded".strip
   wrapper_options[:data][:widget_id] = @widget.id
+  
+  collapse_id = "widget-body-#{@widget.id}"
+
+  card_options = { class: "card w-100 #{'preview-section-card' if @preview}" }
+  if @maximizable
+    card_options[:data] = { 
+      controller: "fullscreen",
+      fullscreen_target: "element"
+    }
+  end
 %>
 <div <%= tag.attributes(wrapper_options) %>>
   <% if @no_card %>
@@ -15,13 +25,39 @@
       <%= content %>
     </div>
   <% else %>
-    <div class="card w-100">
-      <% if @widget.display_name || @widget.display_tag %>
-      <div class="card-header">
-        <h5 class="card-title"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %></h5>
-      </div>
+    <div <%= tag.attributes(card_options) %>>
+      <% if @widget.display_name || @widget.display_tag || @collapsible || @maximizable %>
+        <div class="<%= @preview ? 'card-header-clean' : 'card-header' %> d-flex align-items-center justify-content-between">
+          <% if @preview %>
+            <h4 class="mb-0">
+              <%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %>
+            </h4>
+          <% else %>
+            <h5 class="card-title mb-0"><%= @widget.widget_name if @widget.display_name %> <%= @widget.tags if @widget.display_tag %></h5>
+          <% end %>
+          <% if @collapsible || @maximizable %>
+            <div class="card-actions cursor-pointer ms-auto d-flex button-group">
+              <% if @collapsible %>
+                <a class="link d-flex text-primary align-items-center" 
+                   data-bs-toggle="collapse" 
+                   href="#<%= collapse_id %>"
+                   role="button"
+                   aria-expanded="true"
+                   aria-controls="<%= collapse_id %>">
+                  <i class="ti ti-minus fs-6"></i>
+                </a>
+              <% end %>
+              <% if @maximizable %>
+                <a class="mb-0 text-primary btn-minimize px-2 cursor-pointer link d-flex align-items-center" 
+                   data-action="fullscreen#toggle">
+                  <i class="ti ti-arrows-maximize fs-6"></i>
+                </a>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
       <% end %>
-      <div class="card-body">
+      <div class="<%= @preview ? 'card-body-clean' : 'card-body' %> <%= 'collapse show' if @collapsible %>" id="<%= collapse_id if @collapsible %>">
         <!-- `content` is whatever the caller provides as a block -->
         <%= content %>
       </div>

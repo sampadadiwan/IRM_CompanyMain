@@ -9,5 +9,8 @@ class WidgetCardComponent < ViewComponent::Base
     @args = args
     @html_options = html_options
     @no_card = no_card || args[:no_card] || false
+    @collapsible = args[:collapsible] || false
+    @maximizable = args[:maximizable] || false
+    @preview = args[:preview] || false
   end
 end
