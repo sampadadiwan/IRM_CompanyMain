@@ -9,6 +9,11 @@
     show_quantity_actual = params[:show_quantity_actual] != "false"
     show_quantity_diluted = params[:show_quantity_diluted] != "false"
 
+    # Check metadata for custom category ordering
+    # Format: "Self,Employee,Other,Lead Investor" or "Founders,Employees,Others,Demo Fund"
+    # If not provided, defaults to sorting by total_fully_diluted descending
+    category_order = params[:category_order].presence
+
 %>
 <%= render ToggleCard.new(title: "Cap Table", css_class: "show_horizontal_cap_table", state: "show") do %>
   <div class="table-responsive" data-controller="row-toggle">
@@ -39,8 +44,37 @@
                     { category: category, total_fully_diluted: latest_fully_diluted_total }
                   end
 
-                  # Sort categories by total fully diluted quantity in descending order
-                  sorted_categories = category_summaries.sort_by { |s| -s[:total_fully_diluted] }.map { |s| s[:category] }
+                  # Sort categories based on custom order or default to total_fully_diluted descending
+                  if category_order.present?
+                    # Parse category order: "Self,Employee,Other" or "Founders,Employees,Others,Demo Fund"
+                    order_array = category_order.split(',').map(&:strip)
+
+                    # Create a mapping of category names (handle pluralization and "Self" special case)
+                    category_name_map = h_data[:categories].each_with_object({}) do |cat, hash|
+                      # Map both the original category and its display name
+                      display_name = (cat == "Self") ? @portfolio_company.entity.name : cat.pluralize
+                      hash[cat] = cat
+                      hash[display_name] = cat
+                      hash[cat.pluralize] = cat
+                      hash[cat.singularize] = cat
+                    end
+
+                    # Sort by custom order, with unspecified categories at the end sorted by quantity
+                    sorted_categories = category_summaries.sort_by do |s|
+                      category = s[:category]
+                      # Try to find the category in the order array using various name formats
+                      index = order_array.find_index { |name| category_name_map[name] == category }
+
+                      if index
+                        [0, index] # Custom order categories come first
+                      else
+                        [1, -s[:total_fully_diluted]] # Unspecified categories sorted by quantity
+                      end
+                    end.map { |s| s[:category] }
+                  else
+                    # Default: Sort categories by total fully diluted quantity in descending order
+                    sorted_categories = category_summaries.sort_by { |s| -s[:total_fully_diluted] }.map { |s| s[:category] }
+                  end
                 %>
         <% sorted_categories.each do |category| %>
           <%
