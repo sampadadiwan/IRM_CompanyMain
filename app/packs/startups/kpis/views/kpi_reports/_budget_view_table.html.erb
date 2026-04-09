@@ -30,34 +30,16 @@
         <table id="kpi_reports_budget_grid" class="table table-bordered table-striped dataTable table-grey numberTable">
             <thead>
                 <tr>
-                    <th rowspan="3" class="text_col">Particulars</th>
-                    <% if quarterly_reports.present? %>
-                        <th colspan="<%= quarterly_reports.map(&:as_of).uniq.count * (tag_lists_to_display.count + (show_achievement_column ? 1 : 0)) %>" class="text-center">
-                            <%= params[:period].presence || 'Quarter' %>
-                        </th>
-                    <% end %>
-                    <% if year_reports.present? %>
-                        <th colspan="<%= year_reports.map(&:as_of).uniq.count * (tag_lists_to_display.count + (show_achievement_column ? 1 : 0)) %>" class="text-center">
-                            Year
-                        </th>
-                    <% end %>
-                </tr>
-                <tr>
+                    <th rowspan="2" class="text_col">Particulars</th>
                     <% quarterly_reports.map { |r| r.as_of.is_a?(String) ? Date.local_parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
-                        <th colspan="<%= tag_lists_to_display.count %>" class="text-center">
+                        <th colspan="<%= tag_lists_to_display.count + (show_achievement_column ? 1 : 0) %>" class="text-center">
                             <%= as_of_date.strftime("%b-%y") %>
                         </th>
-                        <% if show_achievement_column %>
-                            <th rowspan="2" class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %></th>
-                        <% end %>
                     <% end %>
                     <% year_reports.map { |r| r.as_of.is_a?(String) ? Date.local_parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
-                        <th colspan="<%= tag_lists_to_display.count %>" class="text-center">
+                        <th colspan="<%= tag_lists_to_display.count + (show_achievement_column ? 1 : 0) %>" class="text-center">
                             <%= as_of_date.strftime("%b-%y") %>
                         </th>
-                        <% if show_achievement_column %>
-                            <th rowspan="2" class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %></th>
-                        <% end %>
                     <% end %>
                 </tr>
                 <tr>
@@ -65,10 +47,16 @@
                         <% tag_lists_to_display.each do |tag| %>
                             <th class="text-center"><%= tag %></th>
                         <% end %>
+                        <% if show_achievement_column %>
+                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %></th>
+                        <% end %>
                     <% end %>
                     <% year_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
                         <% tag_lists_to_display.each do |tag| %>
                             <th class="text-center"><%= tag %></th>
+                        <% end %>
+                        <% if show_achievement_column %>
+                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %></th>
                         <% end %>
                     <% end %>
                 </tr>
