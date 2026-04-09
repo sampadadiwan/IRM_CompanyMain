@@ -1,5 +1,5 @@
 
-<%= render "/layouts/filter", associations: [:kpi_report, :entity, :investor_kpi_mappings, :portfolio_company], hidden_fields: {per_page: params[:per_page], chart_type: (params[:chart_type] || ""), chart_date: (params[:chart_date] || "")} %>
+<%= render "/layouts/filter", associations: [:kpi_report, :entity, :investor_kpi_mapping, :portfolio_company], hidden_fields: {per_page: params[:per_page], chart_type: (params[:chart_type] || ""), chart_date: (params[:chart_date] || "")} %>
 
 <%= render ReportingComponent.new do %>
 

@@ -48,7 +48,7 @@ class InvestorKpiMapping < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[reported_kpi_name standard_kpi_name]
+    %w[reported_kpi_name standard_kpi_name category]
   end
 
   def self.create_from(entity, kpi_report)
