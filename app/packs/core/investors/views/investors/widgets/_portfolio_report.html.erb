@@ -6,8 +6,18 @@
   tabs = args[:tabs].split(",").map(&:strip) if args && args[:tabs].present?
 %>
 
+<%# Portfolio Report Widget %>
+<%# Displays the latest PortfolioReportExtract for the current investor. %>
+<%# Supports optional metadata args: %>
+<%#   - tabs: comma-separated section names to filter and order displayed tabs %>
+<%#   - portfolio_report_id: scopes the widget to show extracts from a specific report template %>
 
-<% portfolio_report_extract = @investor.portfolio_report_extracts.order(end_date: :asc).order(id: :asc).last %>
+
+
+<% scope = @investor.portfolio_report_extracts.order(end_date: :asc).order(id: :asc) %>
+<% scope = scope.where(portfolio_report_id: args[:portfolio_report_id]) if args&.dig(:portfolio_report_id).present? %>
+<% portfolio_report_extract = scope.last %>
+
 
 <% if portfolio_report_extract.present? && portfolio_report_extract.data.present? %>
 

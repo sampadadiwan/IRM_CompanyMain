@@ -13,9 +13,12 @@ class DocLlmContext < DocLlmBase
   step :cleanup
   left :handle_errors
 
-  def init(ctx, **)
+  # Initializes the RubyLLM chat client using the entity's API keys.
+  # @param ctx [Hash] Trailblazer context hash
+  # @param model [ApplicationRecord] the record whose entity provides LLM configuration
+
+  def init(ctx, model:, **)
     # Initialize RubyLLM chat with configured model
-    model = ENV.fetch('DOCUMENT_VALIDATION_MODEL', ENV.fetch('DEFAULT_MODEL'))
     ctx[:chat] = LlmService.ruby_llm_chat(entity: model.entity) # Pass the entity to get any custom API keys if needed
     true
   end
