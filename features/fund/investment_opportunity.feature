@@ -4,8 +4,8 @@ Feature: Investment Opportunity
 Scenario Outline: Create new investment_opportunity
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_inv_opportunities=true;enable_documents=true"
   Given the user has role "company_admin"
-  Given there is an existing investor "" with "1" users and investor_access_tags "IO"
-  Given there is an existing investor "" with "1" users and investor_access_tags ""
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
   And I am at the investment_opportunities page
   When I create a new investment_opportunity "<investment_opportunity>"
   Then I should see the "opportunity was successfully created"
@@ -21,8 +21,8 @@ Scenario Outline: Create new investment_opportunity
 
   Examples:
   	|investment_opportunity |notify_open_for_interests                                          | notify_allocation | notification_sent |
-  	|company_name=IO 1   |subject=IO1 is now open;email_method=notify_open_for_interests;tag=IO | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
-    |company_name=IO 2   |subject=IO2 is now open;email_method=notify_open_for_interests;tag=IO | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
+  	|company_name=IO 1   |subject=IO1 is now open;email_method=notify_open_for_interests | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
+    |company_name=IO 2   |subject=IO2 is now open;email_method=notify_open_for_interests | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
 
 
 Scenario Outline: Create new document for an investment_opportunity

@@ -1777,6 +1777,7 @@ ActiveRecord::Schema[8.1].define(version: 20_260_410_113_954) do
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.bigint "fund_id", null: false
+    t.boolean "gp_units", default: false
     t.bigint "import_upload_id"
     t.string "isin", limit: 15
     t.json "json_fields"
