@@ -26,6 +26,10 @@ class InvestorPolicy < ApplicationPolicy
     user.enable_investors
   end
 
+  def analytics?
+    index?
+  end
+
   # Permission to search investors. Same as index.
   def search?
     index?

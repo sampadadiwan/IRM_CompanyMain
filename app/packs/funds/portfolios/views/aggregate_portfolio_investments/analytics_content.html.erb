@@ -1,0 +1,53 @@
+<%= turbo_frame_tag "portfolio_analytics_frame" do %>
+  <div class="row g-4">
+    <%# Row 1: Allocation and Performance %>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_allocation_by_company_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_performance_by_company_chart(@fund) %>
+      </div>
+    </div>
+    <%# Row 2: Gains and Exposure %>
+    <div class="col-lg-4">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_gain_breakdown_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_instrument_exposure_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-4">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_income_by_company_chart(@fund) %>
+      </div>
+    </div>
+    <%# Row 3: Holding Cost and IRR %>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_holding_cost_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_irr_chart(@fund) %>
+      </div>
+    </div>
+    <%# Row 4: Bought and Sold %>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_bought_amount_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= portfolio_sold_amount_chart(@fund) %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -1,16 +1,18 @@
-
-
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Deals</h1>
-  <span>
+  <div class="d-flex align-items-center gap-2">
+    <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
+            data-bs-toggle="collapse" data-bs-target="#dealsAnalytics" 
+            aria-expanded="false" aria-controls="dealsAnalytics">
+      <i class="ti ti-chart-bar"></i> Analytics
+    </button>
     <%= link_to "New Deal", new_deal_path("deal[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"} if policy(Deal.new(entity_id: current_user.entity_id)).new? %>
     <%= link_to "View Archived Deals", deals_path(include_archived:true), {class: "btn btn-outline-success"}  %>
     <%= render "investments/currency_form" %>
-  </span>
+  </div>
 </div>
-
+<%= render "deals/analytics" %>
 <%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments",
             "Customize Deal Steps", "Setup Access Rights", "Start Deal"].freeze unless @deals.present? %>
-
 <% units ||= params[:units].presence || (cookies && cookies[:currency_units]) %>
 <%= render "/deals/index_cards", deals: @deals, units: units %>

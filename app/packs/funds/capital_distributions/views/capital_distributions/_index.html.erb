@@ -2,6 +2,13 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Distributions</h1>
   <div class="d-flex flex-wrap align-items-center gap-2">
+    <% if params[:fund_id].present? %>
+      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
+              data-bs-toggle="collapse" data-bs-target="#distributionAnalytics" 
+              aria-expanded="false" aria-controls="distributionAnalytics">
+        <i class="ti ti-chart-bar"></i> Analytics
+      </button>
+    <% end %>
     <%# New Distribution button (only if fund_id present) %>
     <% if params[:fund_id].present? %>
       <%= link_to new_capital_distribution_path("capital_distribution[fund_id]": params[:fund_id]),
@@ -30,7 +37,9 @@
     <% end %>
   </div>
 </div>
-<div class="table-responsive" data-controller="datatable" data-datatable-money-columns-value="2,3,5" data-datatable-responsive-details-value=true>
+<%= render "/capital_distributions/analytics", fund: (params[:fund_id].present? ? Fund.find(params[:fund_id]) : nil) %>
+<div class="table-responsive"
+ data-controller="datatable" data-datatable-money-columns-value="2,3,5" data-datatable-responsive-details-value=true>
   <table id="capital_distributions" class="table table-bordered  dataTable action_table jqDataTable">
     <thead>
       <tr>

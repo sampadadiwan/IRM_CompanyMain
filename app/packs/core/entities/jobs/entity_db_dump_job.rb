@@ -18,7 +18,7 @@ class EntityDbDumpJob < ApplicationJob
       if entity_id.present?
         entity = Entity.find(entity_id)
         if entity.entity_setting.db_dumps_enable
-          setting = entity.entity_setting
+          entity.entity_setting
           # Even for manual/adhoc runs, we respect the frequency settings.
           # This prevents redundant dumps if the user clicks the button multiple times.
           # If the frequency is set to 'adhoc', we always allow the manual trigger.
@@ -102,13 +102,19 @@ class EntityDbDumpJob < ApplicationJob
       env['SOURCE_SQLITE_DB'] = db_config[:database]
     else
       env.merge!({
-        'MYSQL_HOST' => db_config[:host] || '127.0.0.1',
-        'MYSQL_PORT' => (db_config[:port] || 3306).to_s,
-        'MYSQL_USER' => db_config[:username],
-        'MYSQL_PASS' => db_config[:password].to_s, # Ensure it's a string, even if nil
-        'MYSQL_DB' => db_config[:database]
-      })
+                   'ADAPTER' => db_config[:adapter] || 'mysql2',
+                   'MYSQL_HOST' => db_config[:host] || '127.0.0.1',
+                   'MYSQL_PORT' => (db_config[:port] || 3306).to_s,
+                   'MYSQL_USER' => db_config[:username],
+                   'MYSQL_PASS' => db_config[:password].to_s, # Ensure it's a string, even if nil
+                   'MYSQL_DB' => db_config[:database]
+                 })
     end
+
+    # Log the environment (excluding password) for debugging
+    debug_env = env.dup
+    debug_env['MYSQL_PASS'] = '[FILTERED]' if debug_env['MYSQL_PASS'].present?
+    Rails.logger.info "Environment for dump script: #{debug_env}"
 
     script_path = Rails.root.join("script/load_entity_sqlite3.sh").to_s
 

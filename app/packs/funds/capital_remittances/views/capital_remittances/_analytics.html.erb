@@ -1,0 +1,29 @@
+<%
+  fund ||= nil
+  capital_call ||= nil
+  owner = capital_call || fund
+  type = "CapitalRemittance"
+  if owner
+    analytics_path = analytics_fund_path(fund || capital_call.fund, type: type)
+    analytics_path += "&capital_call_id=#{capital_call.id}" if capital_call
+  end
+%>
+<% if owner %>
+  <div class="collapse mb-4" id="remittanceAnalytics">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Remittance Analytics</h5>
+        <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#remittanceAnalytics" aria-label="Close"></button>
+      </div>
+      <div class="card-body">
+        <%= turbo_frame_tag "remittance_analytics_frame", src: analytics_path, loading: "lazy" do %>
+          <div class="d-flex justify-content-center p-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

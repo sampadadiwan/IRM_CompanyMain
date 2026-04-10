@@ -1,0 +1,12 @@
+<% 
+  fund ||= owner
+%>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  <%= portfolio_performance_by_company_chart(fund) %>
+<% end %>

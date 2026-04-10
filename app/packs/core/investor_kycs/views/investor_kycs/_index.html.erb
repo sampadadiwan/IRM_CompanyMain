@@ -3,69 +3,63 @@
   import_upload_id ||= params[:import_upload_id]
 %>
 <% data_source ||= investor_kycs_path(params: params.to_unsafe_h, import_upload_id:, format: :json, all: true) %>
-
-
-  <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">KYCs</h1>
-
-    <div class="d-flex flex-wrap align-items-center gap-2">
-
-      <% entity_id = @investor ? @investor.entity_id : current_user.entity_id %>
-      <% investor_kyc = InvestorKyc.new(investor_id: @investor&.id, entity_id: entity_id) %>
-
-      <% if policy(investor_kyc).new? && current_user.curr_role != "investor" %>
-        <div class="btn-group">
-          <div class="dropdown">
-            <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">KYCs</h1>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <% if policy(InvestorKyc).analytics? %>
+      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
+              data-bs-toggle="collapse" data-bs-target="#investorKycAnalytics" 
+              aria-expanded="false" aria-controls="investorKycAnalytics">
+        <i class="ti ti-chart-bar"></i> Analytics
+      </button>
+    <% end %>
+    <% entity_id = @investor ? @investor.entity_id : current_user.entity_id %>
+    <% investor_kyc = InvestorKyc.new(investor_id: @investor&.id, entity_id: entity_id) %>
+    <% if policy(investor_kyc).new? && current_user.curr_role != "investor" %>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-id"></i> New KYC
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-              <% individual_kyc_form_types = current_user.entity.form_types.where(name: "IndividualKyc") %>
-
-              <% if individual_kyc_form_types.count > 1 %>
-                <% individual_kyc_form_types.each do |form_type| %>
-                  <%= link_to "Individual (#{form_type.tag.presence || form_type.id})", new_investor_kyc_path(
+            <i class="ti ti-id"></i> New KYC
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <% individual_kyc_form_types = current_user.entity.form_types.where(name: "IndividualKyc") %>
+            <% if individual_kyc_form_types.count > 1 %>
+              <% individual_kyc_form_types.each do |form_type| %>
+                <%= link_to "Individual (#{form_type.tag.presence || form_type.id})", new_investor_kyc_path(
                                 "investor_kyc[investor_id]": @investor&.id,
                                 "investor_kyc[entity_id]": entity_id,
                                 "investor_kyc[kyc_type]": "Individual",
                                 "investor_kyc[form_type_id]": form_type.id),
                               class: "dropdown-item d-flex align-items-center ti ti-user" %>
-                <% end %>
-              <% else %>
-                <%= link_to "Individual", new_investor_kyc_path(
+              <% end %>
+            <% else %>
+              <%= link_to "Individual", new_investor_kyc_path(
                               "investor_kyc[investor_id]": @investor&.id,
                               "investor_kyc[entity_id]": entity_id,
                               "investor_kyc[kyc_type]": "Individual"),
                             class: "dropdown-item d-flex align-items-center ti ti-user" %>
-
-              <% end %>
-
-
-              <% non_individual_kyc_form_types = current_user.entity.form_types.where(name: "NonIndividualKyc") %>
-
-              <% if non_individual_kyc_form_types.count > 1 %>
-                <% non_individual_kyc_form_types.each do |form_type| %>
-                  <%= link_to "Non Individual (#{form_type.tag.presence || form_type.id})", new_investor_kyc_path(
+            <% end %>
+            <% non_individual_kyc_form_types = current_user.entity.form_types.where(name: "NonIndividualKyc") %>
+            <% if non_individual_kyc_form_types.count > 1 %>
+              <% non_individual_kyc_form_types.each do |form_type| %>
+                <%= link_to "Non Individual (#{form_type.tag.presence || form_type.id})", new_investor_kyc_path(
                                 "investor_kyc[investor_id]": @investor&.id,
                                 "investor_kyc[entity_id]": entity_id,
                                 "investor_kyc[kyc_type]": "Non Individual",
                                 "investor_kyc[form_type_id]": form_type.id),
                               class: "dropdown-item d-flex align-items-center ti ti-building" %>
-                <% end %>
-              <% else %>
-                <%= link_to "Non Individual", new_investor_kyc_path(
+              <% end %>
+            <% else %>
+              <%= link_to "Non Individual", new_investor_kyc_path(
                               "investor_kyc[investor_id]": @investor&.id,
                               "investor_kyc[entity_id]": entity_id,
                               "investor_kyc[kyc_type]": "Non Individual"),
                             class: "dropdown-item d-flex align-items-center ti ti-building" %>
-              <% end %>
-
-
-              <div class="dropdown-divider"></div>
-              <% if @investor.present? %>
-                <%= button_to "Send KYC to Stakeholder", create_and_send_kyc_to_investor_investor_kycs_path(
+            <% end %>
+            <div class="dropdown-divider"></div>
+            <% if @investor.present? %>
+              <%= button_to "Send KYC to Stakeholder", create_and_send_kyc_to_investor_investor_kycs_path(
                               "investor_kyc[investor_id]": @investor&.id,
                               "investor_kyc[entity_id]": entity_id,
                               "investor_kyc[kyc_type]": "Individual",
@@ -73,137 +67,111 @@
                               method: :post,
                             class: "dropdown-item d-flex align-items-center ti ti-mail-forward",
                             form_class: "deleteButton" , data: {msg: "This will send a New KYC to Stakeholder for completion. Proceed?", action: "click->confirm#popup" , method: :post} %>
-              <% end %>
-
-              <%= link_to "Report", investor_kycs_path(filter: true),
+            <% end %>
+            <%= link_to "Report", investor_kycs_path(filter: true),
                           class: "dropdown-item d-flex align-items-center ti ti-report" %>
-
-              <div class="dropdown-divider"></div>
-
-              <%= link_to "View All Custom Notifications",
+            <div class="dropdown-divider"></div>
+            <%= link_to "View All Custom Notifications",
                             custom_notifications_path(q: ransack_query_params("for_type", :eq, "InvestorKyc"), target: "_blank"),
                             class: "dropdown-item d-flex align-items-center ti ti-eye" %>
-
-              <%= link_to "Custom KYC Notification", new_custom_notification_path(
+            <%= link_to "Custom KYC Notification", new_custom_notification_path(
                             "custom_notification[for_type]": "InvestorKyc",
                             "custom_notification[entity_id]": entity_id),
                           class: "dropdown-item d-flex align-items-center ti ti-mail-plus"  %>
-
-              <%= link_to "Custom Agreement Notification", new_custom_notification_path(
+            <%= link_to "Custom Agreement Notification", new_custom_notification_path(
                             "custom_notification[for_type]": "Send Document",
                             "custom_notification[entity_id]": entity_id),
                           class: "dropdown-item d-flex align-items-center ti ti-mail-plus" %>
-
-
-
-              <div class="dropdown-divider"></div>
-              <%= link_to "Onboarding Agent: Completed",
+            <div class="dropdown-divider"></div>
+            <%= link_to "Onboarding Agent: Completed",
                             investor_kycs_path(filter: true, support_agent_report: true, q: ransack_query_params("support_agent_report_status", :eq, "Completed")),
                             class: "dropdown-item d-flex align-items-center ti ti-robot" if current_user.entity.support_agents.set?(:kyc_onboarding_agent) %>
-
-              <%= link_to "Onboarding Agent: Failed",
+            <%= link_to "Onboarding Agent: Failed",
                             investor_kycs_path(filter: true, support_agent_report: true, q: ransack_query_params("support_agent_report_status", :eq, "Failed")),
                             class: "dropdown-item d-flex align-items-center ti ti-robot" if current_user.entity.support_agents.set?(:kyc_onboarding_agent) %>
-
-            </div>
           </div>
         </div>
-      <% end %>
-
-      <% if @investor.blank? %>
-        <div class="btn-group">
-          <div class="dropdown">
-            <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
+      </div>
+    <% end %>
+    <% if @investor.blank? %>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-file-certificate"></i> KYC Documents
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-              <% if policy(ESignature).index? %>
-
-                <%= link_to documents_path(entity_id: entity_id, q: ransack_query_params_multiple([ [:owner_type, :eq, "InvestorKyc"]]), template: "/e_signatures/e_signatures"), class: "dropdown-item" do %>
-                    <i class="ti ti-signature"></i>eSignatures Report
-                <% end %>
+            <i class="ti ti-file-certificate"></i> KYC Documents
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <% if policy(ESignature).index? %>
+              <%= link_to documents_path(entity_id: entity_id, q: ransack_query_params_multiple([ [:owner_type, :eq, "InvestorKyc"]]), template: "/e_signatures/e_signatures"), class: "dropdown-item" do %>
+                <i class="ti ti-signature"></i>eSignatures Report
               <% end %>
-
-              <% if params[:q].present? && policy(investor_kyc).new? %>
-                <%= link_to generate_all_docs_investor_kycs_path(entity_id: entity_id, q: params[:q].to_unsafe_h),
+            <% end %>
+            <% if params[:q].present? && policy(investor_kyc).new? %>
+              <%= link_to generate_all_docs_investor_kycs_path(entity_id: entity_id, q: params[:q].to_unsafe_h),
                             class: "dropdown-item d-flex align-items-center" do %>
-                  <i class="ti ti-file-plus"></i> Generate KYC Docs
-                <% end %>
+                <i class="ti ti-file-plus"></i> Generate KYC Docs
               <% end %>
-
-              <% if current_user.has_cached_role?(:approver) %>
-                <%= link_to approve_documents_path(entity_id: entity_id, owner_type: "InvestorKyc"),
+            <% end %>
+            <% if current_user.has_cached_role?(:approver) %>
+              <%= link_to approve_documents_path(entity_id: entity_id, owner_type: "InvestorKyc"),
                             class: "dropdown-item d-flex align-items-center" do %>
-                  <i class="ti ti-checkbox"></i> Approve KYC Docs
-                <% end %>
+                <i class="ti ti-checkbox"></i> Approve KYC Docs
               <% end %>
-
-            </div>
+            <% end %>
           </div>
         </div>
-      <% end %>
-
-      <% if params[:q].present? %>
-        <%= render "investor_kycs/bulk_actions" %>
-      <% elsif @investor.blank? %>
-        <% if policy(InvestorKyc).send_kyc_reminder_to_all? %>
-          <%= button_to send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id),
+      </div>
+    <% end %>
+    <% if params[:q].present? %>
+      <%= render "investor_kycs/bulk_actions" %>
+    <% elsif @investor.blank? %>
+      <% if policy(InvestorKyc).send_kyc_reminder_to_all? %>
+        <%= button_to send_kyc_reminder_to_all_investor_kycs_path("entity_id": entity_id),
                         method: :post,
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { action: "click->confirm#popup", turbo: false, msg: "This will generate a notification to all investor users whose KYC is unverified", method: :post } do %>
-            <i class="ti ti-bell"></i> Send KYC Reminders
-          <% end %>
+          <i class="ti ti-bell"></i> Send KYC Reminders
         <% end %>
       <% end %>
-
-      <% if current_user && policy(InvestorKyc).import? %>
-        <div class="btn-group">
-          <div class="dropdown">
-            <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
+    <% end %>
+    <% if current_user && policy(InvestorKyc).import? %>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-upload"></i> <%= t_common(:upload) %>/Download
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-              <% FormType.where(entity_id: current_user.entity_id, name: ["IndividualKyc", "NonIndividualKyc"]).each do |form_type| %>
-                <%= link_to investor_kycs_path(params: params.to_unsafe_h.merge("form_type_name": form_type.name, "form_type_id": form_type.id), format: :xlsx),
+            <i class="ti ti-upload"></i> <%= t_common(:upload) %>/Download
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <% FormType.where(entity_id: current_user.entity_id, name: ["IndividualKyc", "NonIndividualKyc"]).each do |form_type| %>
+              <%= link_to investor_kycs_path(params: params.to_unsafe_h.merge("form_type_name": form_type.name, "form_type_id": form_type.id), format: :xlsx),
                             class: "dropdown-item d-flex align-items-center" do %>
-                  <i class="ti ti-file-description"></i> <%= t_common(:download) + ": #{form_type.name} #{form_type.tag}" %>
-                <% end %>
+                <i class="ti ti-file-description"></i> <%= t_common(:download) + ": #{form_type.name} #{form_type.tag}" %>
               <% end %>
-
-
-
-              <div class="dropdown-divider"></div>
-
-              <%= link_to new_import_upload_path(
+            <% end %>
+            <div class="dropdown-divider"></div>
+            <%= link_to new_import_upload_path(
                             "import_upload[import_type]": "InvestorKyc",
                             "sample_upload": "INVESTOR_KYCS_SAMPLE"),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-upload"></i> <%= t_common(:upload) %> KYC Details
-              <% end %>
-
-              <%= link_to new_import_upload_path(
+              <i class="ti ti-upload"></i> <%= t_common(:upload) %> KYC Details
+            <% end %>
+            <%= link_to new_import_upload_path(
                             "import_upload[import_type]": "KycDocs",
                             "sample_upload": "INVESTOR_KYCS_DOCS_SAMPLE"),
                           class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-upload"></i> <%= t_common(:upload) %> KYC Documents
-              <% end %>
-
-            </div>
+              <i class="ti ti-upload"></i> <%= t_common(:upload) %> KYC Documents
+            <% end %>
           </div>
         </div>
-      <% end %>
-
-    </div>
-
+      </div>
+    <% end %>
   </div>
-
-  <div class="">
-        <%
+</div>
+<div class="">
+  <%= render "investor_kycs/analytics" %>
+  <%
           investor_kycs_frame = "investor_kycs_frame"
+
 
           default_columns_map = if current_user.curr_role == "investor"
             InvestorKyc::INVESTOR_STANDARD_COLUMNS
@@ -217,9 +185,6 @@
             end
           end
         %>
-
-        <%=render SearchComponent.new(data_source: investor_kycs_path( params: params.except(:q).to_unsafe_h, import_upload_id:, q: params[:q].to_json), turbo_frame: investor_kycs_frame) %>
-
-
-        <%= render RansackTable.new(InvestorKyc, q: @q, default_columns_map:, current_user: current_user, records: investor_kycs, report_id: params["report_id"], turbo_frame: investor_kycs_frame, referrer: request.referrer, pagy: @pagy) %>
-  </div>
+  <%=render SearchComponent.new(data_source: investor_kycs_path( params: params.except(:q).to_unsafe_h, import_upload_id:, q: params[:q].to_json), turbo_frame: investor_kycs_frame) %>
+  <%= render RansackTable.new(InvestorKyc, q: @q, default_columns_map:, current_user: current_user, records: investor_kycs, report_id: params["report_id"], turbo_frame: investor_kycs_frame, referrer: request.referrer, pagy: @pagy) %>
+</div>

@@ -4,7 +4,7 @@ module InvestmentStatisticsHelper
   ].freeze
 
   # TODO: Identical method exists in FundStatisticsHelper - consider refactoring to a common helper if needed in multiple places
-  def pie_chart_with_options(data, chart_type: "pie", custom_colors: false)
+  def pie_chart_with_options(data, chart_type: "donut", custom_colors: false)
     chart_type = chart_type.to_s.downcase
     inner_size = chart_type == "pie" ? nil : "50%"
     semi       = chart_type == "half_donut"
@@ -127,8 +127,8 @@ module InvestmentStatisticsHelper
   end
 
   # 2. Pie Chart for Fully Diluted Holding Across Investors
-  # chart_type: :pie (default), :donut, or :half_donut
-  def fully_diluted_holdings(investments, chart_type: :pie, custom_colors: false)
+  # chart_type: :pie, :donut (default), or :half_donut
+  def fully_diluted_holdings(investments, chart_type: :donut, custom_colors: false)
     # Calculate total equity holdings
     equity_holdings = investments.reorder(nil).where(investment_type: "Equity").group(:investor_name).sum(:quantity)
 

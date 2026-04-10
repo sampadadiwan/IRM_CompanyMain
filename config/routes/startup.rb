@@ -47,6 +47,7 @@ resources :deals do
   get 'overview', on: :member
   get 'investor_deals', on: :collection
   get 'consolidated_access_rights', on: :member
+  get 'analytics', on: :collection
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
 end

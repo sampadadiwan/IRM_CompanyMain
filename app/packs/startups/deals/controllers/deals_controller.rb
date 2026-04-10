@@ -7,6 +7,16 @@ class DealsController < ApplicationController
   before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
+  # GET /deals/analytics
+  def analytics
+    @deals = policy_scope(Deal)
+    authorize(Deal, :index?)
+    @deals = @deals.where("tags like ?", "%#{params[:tag]}%") if params[:tag].present?
+    @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
+
+    render "analytics_content", layout: false
+  end
+
   # GET /deals or /deals.json
   def index
     @deals = policy_scope(Deal)

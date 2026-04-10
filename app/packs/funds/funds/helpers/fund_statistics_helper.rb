@@ -4,7 +4,7 @@ module FundStatisticsHelper
   ].freeze
 
   # Only pass custom colors as true if we are sure the css has these colors defined otherwise the chart will have all black color (no color actually but looks black)
-  def pie_chart_with_options(data, chart_type: "pie", custom_colors: false)
+  def pie_chart_with_options(data, chart_type: "donut", custom_colors: false, **extra_options)
     chart_type = chart_type.to_s.downcase
     inner_size = chart_type == "pie" ? nil : "50%"
     semi       = chart_type == "half_donut"
@@ -45,7 +45,38 @@ module FundStatisticsHelper
       options[:colors] = extended_colors
     end
 
-    pie_chart data, **options
+    pie_chart data, **options.deep_merge(extra_options)
+  end
+
+  def fund_ratios_donut_charts(fund)
+    ratios = FundRatio.for_fund(fund.id).default
+    latest_date = ratios.latest.any? ? ratios.latest.first.end_date : ratios.maximum(:end_date)
+    return if latest_date.blank?
+
+    latest_ratios = ratios.where(end_date: latest_date).group_by(&:name)
+    return if latest_ratios.blank?
+
+    charts = []
+
+    # Fund Utilization
+    util_ratio = latest_ratios["Fund Utilization"]&.first
+    if util_ratio
+      util = util_ratio.value.to_f
+      data = { "Utilized" => util, "Remaining" => [100.0 - util, 0].max }
+      charts << content_tag(:div, class: "col-md-6 mb-4") do
+        content_tag(:div, class: "card shadow h-100") do
+          content_tag(:div, class: "card-body") do
+            pie_chart_with_options(data, title: "Fund Utilization (%)", id: "fund_utilization_chart_#{fund.id}")
+          end
+        end
+      end
+    end
+
+    return if charts.empty?
+
+    content_tag(:div, class: "row") do
+      charts.join.html_safe
+    end
   end
 
   def fund_commitment_amounts(fund)
@@ -68,7 +99,7 @@ module FundStatisticsHelper
       grouped << ["Others", others_cents / 100]
     end
 
-    pie_chart_with_options grouped
+    pie_chart_with_options grouped, id: "fund_commitment_amounts_chart_#{fund.id}"
   end
 
   def fund_commitments_collected(fund)
@@ -90,7 +121,7 @@ module FundStatisticsHelper
       grouped << ["Others", others_cents / 100]
     end
 
-    pie_chart_with_options grouped
+    pie_chart_with_options grouped, id: "fund_commitments_collected_chart_#{fund.id}"
   end
 
   def quarter(date)
@@ -102,7 +133,7 @@ module FundStatisticsHelper
     capital_calls = capital_calls.group_by { |cc| "Q#{quarter(cc.due_date)}" }
                                  .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.collected_amount_cents / 100) }] }
 
-    column_chart capital_calls, library: {
+    column_chart capital_calls, id: "fund_commitments_collected_by_quarter_chart_#{fund.id}", library: {
       plotOptions: { column: {
         dataLabels: {
           enabled: true,
@@ -118,7 +149,7 @@ module FundStatisticsHelper
     capital_distributions = capital_distributions.group_by { |cc| "Q#{quarter(cc.distribution_date)}" }
                                                  .map { |k, v| [k, v.inject(0) { |sum, e| sum + (e.gross_amount_cents / 100) }] }
 
-    column_chart capital_distributions, library: {
+    column_chart capital_distributions, id: "fund_distributions_by_quarter_chart_#{fund.id}", library: {
       plotOptions: { column: {
         dataLabels: {
           enabled: true,

@@ -3,7 +3,6 @@
   fund_id ||= uri_params[:owner_id]
   fund ||= uri_params[:fund]
 %>
-
 <%= render(
       WidgetCardComponent.new(
         widget: widget,
@@ -12,6 +11,5 @@
       )
     ) do %>
   <!-- This block becomes the `content` inside the component -->
-  <%= investment_sold_by_company(fund) %>
+  <%= portfolio_sold_amount_chart(fund, compact: true) %>
 <% end %>
-

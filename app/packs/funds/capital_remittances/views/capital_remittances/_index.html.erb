@@ -7,21 +7,22 @@
   fund_id ||= params[:fund_id] || fund&.id
   import_upload_id ||= params[:import_upload_id]
 %>
-
 <%
   data_source = capital_remittances_path(params: params.to_unsafe_h, status: "", verified: "", import_upload_id:)
   xl_data_source = capital_remittances_path(params: params.to_unsafe_h, format: :json, all: true, status: "", verified: "", import_upload_id:)
   xl_link = download_xl_link(xl_data_source)
 %>
-
 <div data-controller="remittances tooltip" data-remittances-table-name-value="#capital_remittances">
-
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Capital Remittances</h1>
-
     <div class="d-flex align-items-center gap-2 flex-wrap">
-
-
+      <% if fund || capital_call %>
+        <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#remittanceAnalytics" 
+                aria-expanded="false" aria-controls="remittanceAnalytics">
+          <i class="ti ti-chart-bar"></i> Analytics
+        </button>
+      <% end %>
       <% if capital_call %>
         <% if policy(capital_call).reminder? %>
           <%= button_to reminder_capital_call_path(id: capital_call.id), id: "capital_remittances_capital_call_reminder_btn",
@@ -33,7 +34,6 @@
             <i class="ti ti-bell"></i>Capital Call Reminder
           <% end %>
         <% end %>
-
         <div class="btn-group">
           <div class="dropdown">
             <button class="btn btn-outline-primary dropdown-toggle" type="button"
@@ -41,14 +41,11 @@
               <i class="ti ti-upload"></i> <%= t_common(:upload) %> / Download
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
               <%= link_to xl_link, id: "capital_remittances_download_xl_btn", class: "dropdown-item", data: { bs_toggle: "tooltip", bs_container: "body", bs_title: "Download in excel  the call amount for each folio along with fees" } do %>
                 <i class="ti ti-download"></i> <%= t_common(:download) %>
               <% end %>
-
               <!-- Disable upload if call basis is not Upload or if some remittances have been deleted (so people can upload them) -->
               <% disabled = capital_call.call_basis != "Upload" && capital_call.capital_remittances.count == capital_call.fund.capital_commitments.count ? "disabled" : nil %>
-
               <% if policy(capital_call).update? %>
                 <%= link_to new_import_upload_path(
                     "import_upload[owner_id]": capital_call.id,
@@ -59,7 +56,6 @@
                   class: "dropdown-item #{disabled}", data: {bs_toggle: "tooltip", bs_container: "body", bs_title: "Bulk upload excel file with amount called for each folio"} do %>
                   <i class="ti ti-upload"></i> <%= t_common(:upload) %> Remittances
                 <% end %>
-
                 <%= link_to new_import_upload_path(
                     "import_upload[owner_id]": capital_call.id,
                     "import_upload[owner_type]": "CapitalCall",
@@ -70,32 +66,24 @@
                   <i class="ti ti-cash"></i> <%= t_common(:upload) %> Payments
                 <% end %>
               <% end %>
-
             </div>
           </div>
         </div>
-
         <%= render "capital_remittances/filter", data_source: data_source %>
-
       <% else %>
         <%= link_to xl_link, id: "capital_remittances_download_xl_btn", class: "btn btn-outline-primary" do %>
           <i class="ti ti-download"></i> <%= t_common(:download) %>
         <% end %>
-
         <%= render "/capital_remittances/bulk_actions" %>
       <% end %>
-
     </div>
-
   </div>
-
-
+  <%= render "/capital_remittances/analytics", fund:, capital_call: %>
   <% if params[:card] == "true" %>
     <% capital_remittances.each do |capital_remittance| %>
       <%= render "/capital_remittances/show", capital_remittance:, lazy_load_data: false %>
     <% end %>
   <% else %>
-
     <div class=""  data-source="<%= data_source %>">
       <% capital_remittances_frame ||= "capital_remittances_frame"
           default_columns_map = if current_user.curr_role == "investor"
@@ -108,9 +96,7 @@
 
       %>
       <%=render SearchComponent.new(data_source: , turbo_frame: capital_remittances_frame) %>
-
       <%= render RansackTable.new(CapitalRemittance, q: @q, default_columns_map:, current_user: current_user, records: capital_remittances, report_id: params["report_id"], turbo_frame: capital_remittances_frame, referrer: request.referrer, pagy: @pagy) %>
     </div>
-
   <% end %>
 </div>

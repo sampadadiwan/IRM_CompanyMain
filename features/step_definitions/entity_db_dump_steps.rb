@@ -64,9 +64,6 @@ Then('the user should receive an email with {string} in the subject') do |subjec
   expect(@email.subject).to include(subject)
 end
 
-Then('the email body should contain {string}') do |content|
-  expect(@email.body.encoded).to include(content)
-end
 
 Given('a database dump document exists for {string} created 10 days ago') do |entity_name|
   entity = Entity.find_by(name: entity_name)

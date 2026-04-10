@@ -1,0 +1,39 @@
+<%= turbo_frame_tag "commitment_analytics_frame" do %>
+  <div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= commitment_deployment_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= investor_concentration_chart(@fund, top_n: 5) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= gp_lp_commitment_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= unit_type_distribution_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= onboarding_status_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= fundraising_timeline_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= currency_exposure_chart(@fund) %>
+      </div>
+    </div>
+  </div>
+<% end %>

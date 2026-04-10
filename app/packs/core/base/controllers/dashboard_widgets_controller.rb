@@ -1,4 +1,5 @@
 class DashboardWidgetsController < ApplicationController
+  helper CapitalCommitmentDashboardHelper
   before_action :set_dashboard_widget, only: %i[show edit update destroy]
   after_action :verify_authorized, except: %i[index search bulk_actions metadata_help]
 

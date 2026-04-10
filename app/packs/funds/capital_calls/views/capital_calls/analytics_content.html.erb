@@ -1,0 +1,32 @@
+<%= turbo_frame_tag "call_analytics_frame" do %>
+  <div class="row g-4">
+    <%# Row 1: Status and History %>
+    <div class="col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= call_collection_status_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="p-3 border rounded h-100">
+        <%= call_history_chart(@fund) %>
+      </div>
+    </div>
+    <%# Row 2: Efficiency (Full Width) %>
+    <div class="col-lg-12">
+      <div class="p-3 border rounded h-100">
+        <%= call_collection_efficiency_chart(@fund) %>
+      </div>
+    </div>
+    <%# Row 3: Fee Breakdown and Investor Dues %>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100">
+        <%= call_fee_breakdown_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100">
+        <%= investor_call_dues_chart(@fund, top_n: 5) %>
+      </div>
+    </div>
+  </div>
+<% end %>

@@ -1,0 +1,10 @@
+<% owner = uri_params[:owner_type].constantize.find(uri_params[:owner_id]) %>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  <%= top_delinquent_investors_chart(owner, top_n: args[:top_n]) %>
+<% end %>

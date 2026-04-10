@@ -1,0 +1,10 @@
+<% fund = uri_params[:fund] || Fund.find(uri_params[:owner_id]) %>
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  <%= call_fee_breakdown_chart(fund) %>
+<% end %>

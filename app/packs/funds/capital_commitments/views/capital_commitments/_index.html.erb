@@ -8,18 +8,17 @@
 
   xl_link = download_xl_link(data_source)
 %>
-
 <%= render "/capital_commitments/index_header", fund:, xl_link:, title: %>
-
+<%= render "/capital_commitments/analytics", fund: %>
 <% if params[:card] == "true" %>
   <div id="capital_commitments">
     <% capital_commitments.each do |capital_commitment| %>
-        <%= render "/capital_commitments/card", fund:, capital_commitment:, lazy_load_data: false %>
+      <%= render "/capital_commitments/card", fund:, capital_commitment:, lazy_load_data: false %>
     <% end %>
   </div>
 <% else %>
-    <div class="">
-            <%
+  <div class="">
+    <%
 
               capital_commitments_frame = "capital_commitments_frame"
 
@@ -33,10 +32,7 @@
                 end
               end
             %>
-
-            <%=render SearchComponent.new(data_source: capital_commitments_path( params: params.to_unsafe_h, fund_id:, import_upload_id:), turbo_frame: capital_commitments_frame) %>
-
-            <%= render RansackTable.new(CapitalCommitment, q: @q, default_columns_map:, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame, referrer: request.referrer, pagy: @pagy) %>
-
-    </div>
+    <%=render SearchComponent.new(data_source: capital_commitments_path( params: params.to_unsafe_h, fund_id:, import_upload_id:), turbo_frame: capital_commitments_frame) %>
+    <%= render RansackTable.new(CapitalCommitment, q: @q, default_columns_map:, current_user: current_user, records: capital_commitments, report_id: params["report_id"], turbo_frame: capital_commitments_frame, referrer: request.referrer, pagy: @pagy) %>
+  </div>
 <% end %>

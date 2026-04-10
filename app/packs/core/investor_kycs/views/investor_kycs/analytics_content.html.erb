@@ -1,0 +1,24 @@
+<%= turbo_frame_tag "investor_kyc_analytics_frame" do %>
+  <div class="row g-4">
+    <div class="col-md-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= kyc_verification_status_chart(@all_investor_kycs) %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= kyc_completion_status_chart(@all_investor_kycs) %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= kyc_type_distribution_chart(@all_investor_kycs) %>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= kyc_onboarding_timeline_chart(@all_investor_kycs) %>
+      </div>
+    </div>
+  </div>
+<% end %>

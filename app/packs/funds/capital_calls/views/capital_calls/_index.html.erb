@@ -1,51 +1,46 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h3 mb-0 text-gray-800">Capital Calls</h1>
-
-
-    <div class="d-flex flex-wrap align-items-center gap-2">
-
-        <% fund ||= nil %>
-
-        <% if fund && policy(fund).update? %>
-
-            <%= link_to new_capital_call_path("capital_call[fund_id]": fund.id),
+  <h1 class="h3 mb-0 text-gray-800">Capital Calls</h1>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <% fund ||= nil %>
+    <% if fund %>
+      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
+                  data-bs-toggle="collapse" data-bs-target="#callAnalytics" 
+                  aria-expanded="false" aria-controls="callAnalytics">
+        <i class="ti ti-chart-bar"></i> Analytics
+      </button>
+    <% end %>
+    <% if fund && policy(fund).update? %>
+      <%= link_to new_capital_call_path("capital_call[fund_id]": fund.id),
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-plus"></i> New Call
-            <% end %>
-
-            <%= link_to new_import_upload_path(
+        <i class="ti ti-plus"></i> New Call
+      <% end %>
+      <%= link_to new_import_upload_path(
                         "import_upload[owner_id]": fund.id,
                         "import_upload[owner_type]": "Fund",
                         "import_upload[import_type]": "CapitalCall",
                         "sample_upload": "CAPITAL_CALL_SAMPLE"),
                         class: "btn btn-outline-primary d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-upload"></i> <%= t_common(:upload) %>
-            <% end %>
-
-            <%= link_to capital_calls_path(fund_id: fund&.id, all: true, format: "xlsx"),
+        <i class="ti ti-upload"></i> <%= t_common(:upload) %>
+      <% end %>
+      <%= link_to capital_calls_path(fund_id: fund&.id, all: true, format: "xlsx"),
                         class: "btn btn-outline-success d-inline-flex align-items-center",
                         data: { turbo: false } do %>
-            <i class="ti ti-download"></i> <%= t_common(:download) %>
-            <% end %>
-
-        <% end %>
-
-    </div>
-
-
+        <i class="ti ti-download"></i> <%= t_common(:download) %>
+      <% end %>
+    <% end %>
+  </div>
 </div>
-
+<%= render "/capital_calls/analytics", fund: %>
 <%
+
     import_upload_id ||= params[:import_upload_id]
 %>
 <% data_source ||= capital_calls_path(params: params.to_unsafe_h, import_upload_id:) %>
-
 <% capital_calls_frame = "capital_calls_frame" %>
 <% q ||= nil %>
 <%=render SearchComponent.new(data_source: data_source, turbo_frame: capital_calls_frame) %>
-
 <div class="">
-<%= render RansackTable.new(CapitalCall, q: q, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: capital_calls, turbo_frame: capital_calls_frame, referrer: request.referrer, pagy: @pagy) %>
+  <%= render RansackTable.new(CapitalCall, q: q, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: capital_calls, turbo_frame: capital_calls_frame, referrer: request.referrer, pagy: @pagy) %>
 </div>

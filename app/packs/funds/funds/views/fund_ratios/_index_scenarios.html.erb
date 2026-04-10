@@ -1,5 +1,7 @@
 <% fund ||= nil %>
-
+<% data_source ||= fund_ratios_path(params: params.to_unsafe_h) %>
+<%= render "fund_ratios/index_header", fund: , data_source: %>
+<%= render "fund_ratios/analytics", fund: %>
 <%
   # Group fund ratios by name (Metric) and then by scenario
   # We want latest from each scenario
@@ -47,7 +49,6 @@
   # Check if currency filter should be shown
   show_currency_filter = params[:show_currency_filter].to_s == 'true'
 %>
-
 <div class="" <%= "data-controller=\"fund-ratios-filter\" data-fund-ratios-filter-entity-currency-value=\"#{entity_currency}\"".html_safe if show_currency_filter %>>
   <% if show_currency_filter %>
     <div class="d-flex justify-content-end mb-3">
@@ -60,56 +61,55 @@
         data-action="change->fund-ratios-filter#applyFilter">
         <% available_currencies.each do |currency| %>
           <option value="<%= currency %>" <%= 'selected' if currency == entity_currency %>><%= currency %></option>
-        <% end %>
-      </select>
-    </div>
-  <% end %>
-
-  <table class="table datatable">
-    <thead>
-      <tr class="">
-        <th class="">Metric</th>
-        <% scenarios.each do |scenario| %>
-          <th class="text-center">
-            <div>
-              <%= scenario == 'Default' ? 'Actual' : scenario %>
-              <%
+          <% end %>
+        </select>
+      </div>
+    <% end %>
+    <table class="table datatable">
+      <thead>
+        <tr class="">
+          <th class="">Metric</th>
+          <% scenarios.each do |scenario| %>
+            <th class="text-center">
+              <div>
+                <%= scenario == 'Default' ? 'Actual' : scenario %>
+                <%
                 # Find a date to display under the header (latest date for this scenario across any metric)
                 latest_date = fund_ratios.select { |fr| fr.scenario == scenario }.map(&:end_date).compact.max
               %>
-              <% if latest_date %>
-                <div class=""><%= date_with_ordinal(latest_date, format: params[:date_format]) %></div>
-              <% end %>
-            </div>
-          </th>
-        <% end %>
-      </tr>
-    </thead>
-    <tbody class="">
-      <% grouped_ratios.each_with_index do |(metric_name, scenario_map), index| %>
-        <%# Build a searchable text for this row that includes the metric name and all available display_values %>
-        <% row_text = ([metric_name] + scenario_map.values.compact.map(&:display_value)).join(' ') %>
-        <%# Extract currency from metric name if present %>
-        <% match_result = metric_name.match(/\(([A-Z]{3})\)$/) %>
-        <% metric_currency = match_result ? match_result[1] : nil %>
-        <% base_metric_name = metric_name.gsub(/\([A-Z]{3}\)$/, '').strip %>
-        <% is_base_metric = metric_currency.nil? %>
-  <tr class=""
+                <% if latest_date %>
+                  <div class=""><%= date_with_ordinal(latest_date, format: params[:date_format]) %></div>
+                <% end %>
+              </div>
+            </th>
+          <% end %>
+        </tr>
+      </thead>
+      <tbody class="">
+        <% grouped_ratios.each_with_index do |(metric_name, scenario_map), index| %>
+          <%# Build a searchable text for this row that includes the metric name and all available display_values %>
+          <% row_text = ([metric_name] + scenario_map.values.compact.map(&:display_value)).join(' ') %>
+          <%# Extract currency from metric name if present %>
+          <% match_result = metric_name.match(/\(([A-Z]{3})\)$/) %>
+          <% metric_currency = match_result ? match_result[1] : nil %>
+          <% base_metric_name = metric_name.gsub(/\([A-Z]{3}\)$/, '').strip %>
+          <% is_base_metric = metric_currency.nil? %>
+          <tr class=""
       data-ratio-text="<%= h(row_text) %>"
       data-metric="<%= h(metric_name) %>"
       <%= "data-metric-currency=\"#{metric_currency}\"".html_safe if show_currency_filter && metric_currency %>
       <%= "data-is-base=\"#{is_base_metric}\"".html_safe if show_currency_filter %>
       <%= 'data-fund-ratios-filter-target="row"'.html_safe if show_currency_filter %>>
-          <td class="">
-            <%= show_currency_filter ? base_metric_name : metric_name %>
-          </td>
-          <% scenarios.each do |scenario| %>
-            <td class="text-center">
-              <%= scenario_map[scenario] ? link_to(scenario_map[scenario].display_value, scenario_map[scenario]) : " " %>
+            <td class="">
+              <%= show_currency_filter ? base_metric_name : metric_name %>
             </td>
-          <% end %>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
-</div>
+            <% scenarios.each do |scenario| %>
+              <td class="text-center">
+                <%= scenario_map[scenario] ? link_to(scenario_map[scenario].display_value, scenario_map[scenario]) : " " %>
+              </td>
+            <% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>

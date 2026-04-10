@@ -22,6 +22,10 @@ class InvestorKycPolicy < ApplicationPolicy
     user.enable_kycs
   end
 
+  def analytics?
+    index?
+  end
+
   def bulk_actions?
     index?
   end

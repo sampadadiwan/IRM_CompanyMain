@@ -1,0 +1,39 @@
+<%= turbo_frame_tag "deals_analytics_frame" do %>
+  <div class="row g-4">
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= deals_status_chart(@deals) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= deals_by_currency_chart(@deals) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= deals_by_tag_chart(@deals) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= global_investor_pipeline_chart(@deals) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= deals_volume_trend_chart(@deals) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= top_deals_chart(@deals) %>
+      </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= aggregate_investor_sources_chart(@deals) %>
+      </div>
+    </div>
+  </div>
+<% end %>

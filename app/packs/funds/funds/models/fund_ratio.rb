@@ -32,6 +32,7 @@ class FundRatio < ApplicationRecord
   scope :latest, -> { where(latest: true) }
   scope :default, -> { where(scenario: "Default") }
   scope :for_portfolio_companies, -> { where(owner_type: "PortfolioCompany") }
+  scope :for_fund, ->(fund_id) { where(fund_id:, owner_type: "Fund") }
 
   before_create :set_scenario_if_missing
   def set_scenario_if_missing

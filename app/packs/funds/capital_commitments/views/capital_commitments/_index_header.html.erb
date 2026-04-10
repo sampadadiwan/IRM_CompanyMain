@@ -1,17 +1,21 @@
 <%# View local variables and defaults %>
 <% toolbar ||= "Yes" %>
 <% title ||= "Capital Commitments" %>
-
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= title.html_safe %></h1>
-
   <% if toolbar == "Yes" %>
     <div class="d-flex flex-wrap align-items-center gap-2">
-
+      <%# Analytics Toggle Button %>
+      <% if fund %>
+        <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
+                data-bs-toggle="collapse" data-bs-target="#commitmentAnalytics" 
+                aria-expanded="false" aria-controls="commitmentAnalytics">
+          <i class="ti ti-chart-bar"></i> Analytics
+        </button>
+      <% end %>
       <%# Actions for users with fund update permissions %>
       <% if fund && policy(fund).update? %>
         <% form_types = FormType.where(entity_id: current_user.entity_id, name: "CapitalCommitment") %>
-
         <%# New Commitment Button/Dropdown %>
         <% if form_types.length > 1 %>
           <div class="btn-group">
@@ -20,7 +24,6 @@
                       data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 <i class="ti ti-plus"></i> New Commitment:
               </button>
-
               <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                 <% form_types.each do |form_type| %>
                   <%= link_to form_type.tag,
@@ -46,7 +49,6 @@
             <i class="ti ti-plus"></i> New Commitment
           <% end %>
         <% end %>
-
         <%# Generate Documents Dropdown %>
         <div class="btn-group">
           <div class="dropdown">
@@ -54,10 +56,8 @@
                     data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               <i class="ti ti-script"></i> Generate
             </button>
-
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
               <% msg = "Generate Documents for all capital commitment from kyc and fund info. This will delete any previously generated documentation which is not signed. Proceed?" %>
-
               <%# Link to view all generated documents for this fund's commitments %>
               <%= link_to "View Generated Documents",
                           documents_path(
@@ -74,9 +74,7 @@
                             bs_toggle: "tooltip",
                             bs_title: "View All generated Agreements and Statement for this fund"
                           } %>
-
               <div class="dropdown-divider"></div>
-
               <%# Options to generate documentation based on available templates %>
               <% fund.documents.where(owner_tag: ["Commitment Template"]).each do |template| %>
                 <%= button_to generate_documentation_fund_path(fund, template_id: template.id),
@@ -94,7 +92,6 @@
                   <i class="ti ti-file-description"></i> <%= template.name %>
                 <% end %>
               <% end %>
-
               <%# Generate Investor Statement option %>
               <% if policy(fund).allocate? %>
                 <%= link_to allocate_form_fund_path(fund, generate_soa: true),
@@ -110,7 +107,6 @@
             </div>
           </div>
         </div>
-
         <%# Bulk Upload Button %>
         <%= link_to new_import_upload_path(
                       "import_upload[owner_id]": fund.id,
@@ -127,13 +123,11 @@
           <i class="ti ti-upload"></i> <%= t_common(:upload) %>
         <% end %>
       <% end %>
-
       <%# Download/Export Dropdown %>
       <div class="btn-group">
         <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="ti ti-download"></i> <%= t_common(:download) %>
         </button>
-
         <ul class="dropdown-menu">
           <%# Export all records as Excel %>
           <li>
@@ -141,20 +135,18 @@
               <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
             <% end %>
           </li>
-
           <%# Export only currently visible records %>
           <li>
             <button class="dropdown-item"
                     data-controller="export-xl"
                     data-action="click->export-xl#export"
-                    data-tableid="capital_commitments"
-                    data-filename="Capital Commitments">
+              data-tableid="capital_commitments"
+              data-filename="Capital Commitments">
               <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
             </button>
           </li>
         </ul>
       </div>
-
     </div>
   <% end %>
 </div>

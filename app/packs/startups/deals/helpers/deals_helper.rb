@@ -43,7 +43,7 @@ module DealsHelper
   def deal_investors_status(deal)
     deal_investors = deal.deal_investors.joins(:investor).group(:status).count
 
-    pie_chart deal_investors, id: "chart-deal-status", library: {
+    pie_chart deal_investors, donut: true, id: "chart-deal-status", library: {
       plotOptions: {
         pie: {
           cursor: 'pointer',
@@ -61,7 +61,7 @@ module DealsHelper
     deal_activities = deal.deal_activities.unscoped.joins(:deal_investor)
                           .merge(DealInvestor.not_declined).group(:status).count
 
-    pie_chart deal_activities, id: "chart-deal-activities", library: {
+    pie_chart deal_activities, donut: true, id: "chart-deal-activities", library: {
       plotOptions: {
         pie: {
           cursor: 'pointer',
@@ -160,7 +160,7 @@ module DealsHelper
     data = deal.deal_investors.not_declined.group(:source).sum(:total_amount_cents)
     data = data.map { |source, cents| [source.presence || "Unknown", cents / 100.0] }
 
-    pie_chart data, id: "chart-deal-source", library: {
+    pie_chart data, donut: true, id: "chart-deal-source", library: {
       plotOptions: {
         pie: {
           cursor: 'pointer',
@@ -199,6 +199,92 @@ module DealsHelper
           cursor: 'pointer'
         }
       },
+      **chart_theme_color
+    }
+  end
+
+  # Aggregate Analytics for Deals Index
+
+  def deals_status_chart(deals)
+    data = deals.group(:status).count
+    pie_chart data, donut: true, id: "deals-status-chart", library: {
+      title: { text: "Deal Status" },
+      **chart_theme_color
+    }
+  end
+
+  def deals_by_currency_chart(deals)
+    data = deals.group(:currency).sum(:amount_cents)
+    data = data.map { |curr, cents| [curr, cents / 100.0] }
+    column_chart data, id: "deals-currency-chart", library: {
+      title: { text: "Total Amount by Currency" },
+      plotOptions: {
+        column: { colorByPoint: true }
+      },
+      **chart_theme_color
+    }
+  end
+
+  def deals_by_tag_chart(deals)
+    tags = deals.pluck(:tags).compact.flat_map { |t| t.split(",").map(&:strip) }
+    data = tags.tally.sort_by { |_tag, count| -count }.first(10)
+    bar_chart data, id: "deals-tag-chart", library: {
+      title: { text: "Top 10 Tags" },
+      plotOptions: {
+        bar: { colorByPoint: true }
+      },
+      **chart_theme_color
+    }
+  end
+
+  def global_investor_pipeline_chart(deals)
+    data = DealInvestor.where(deal_id: deals.pluck(:id)).group(:status).count
+    stages = ['New', 'Interested', 'In Progress', 'Committed', 'Complete']
+    sorted_data = stages.map { |stage| [stage, data[stage] || 0] }
+
+    bar_chart sorted_data, id: "global-pipeline-chart", library: {
+      title: { text: "Global Investor Pipeline" },
+      plotOptions: {
+        bar: { colorByPoint: true }
+      },
+      **chart_theme_color
+    }
+  end
+
+  def deals_volume_trend_chart(deals)
+    # Group by month using SQL to avoid Groupdate timezone restriction
+    # Using COALESCE to fallback to created_at if start_date is null
+    group_sql = if Rails.env.test?
+                  "strftime('%Y-%m-01', COALESCE(start_date, created_at))"
+                else
+                  "DATE_FORMAT(COALESCE(start_date, created_at), '%Y-%m-01')"
+                end
+    data = deals.group(group_sql).count
+    # Convert keys to Date objects for better display in Chartkick
+    data = data.transform_keys { |k| Date.parse(k) }
+
+    area_chart data, id: "deals-volume-chart", library: {
+      title: { text: "Deal Volume Trend" },
+      **chart_theme_color
+    }
+  end
+
+  def top_deals_chart(deals)
+    data = deals.order(amount_cents: :desc).limit(5).map { |d| [d.name, d.amount.to_f] }
+    bar_chart data, id: "top-deals-chart", library: {
+      title: { text: "Top 5 Deals by Amount" },
+      plotOptions: {
+        bar: { colorByPoint: true }
+      },
+      **chart_theme_color
+    }
+  end
+
+  def aggregate_investor_sources_chart(deals)
+    data = DealInvestor.where(deal_id: deals.pluck(:id)).group(:source).count
+    data = data.transform_keys { |k| k.presence || "Unknown" }
+    pie_chart data, donut: true, id: "aggregate-sources-chart", library: {
+      title: { text: "Investor Sources" },
       **chart_theme_color
     }
   end

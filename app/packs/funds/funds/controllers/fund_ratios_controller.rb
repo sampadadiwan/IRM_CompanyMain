@@ -1,4 +1,6 @@
 class FundRatiosController < ApplicationController
+  helper FundStatisticsHelper
+  helper FundDashboardHelper
   before_action :set_fund_ratio, only: %i[show edit update destroy]
 
   # GET /fund_ratios or /fund_ratios.json

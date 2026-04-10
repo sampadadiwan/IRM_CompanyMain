@@ -1,5 +1,31 @@
 class FundsController < ApplicationController
-  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers show_email_list trigger_adhoc_notification]
+  helper CapitalCommitmentDashboardHelper
+  helper CapitalCallDashboardHelper
+  helper CapitalDistributionDashboardHelper
+  helper CapitalRemittanceDashboardHelper
+  helper AggregatePortfolioInvestmentDashboardHelper
+  helper AggregatePortfolioInvestmentsHelper
+  helper PortfolioHelper
+  helper FundStatisticsHelper
+  before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers show_email_list trigger_adhoc_notification analytics]
+
+  # GET /funds/1/analytics
+  def analytics
+    if params[:type] == "CapitalCall"
+      render "/capital_calls/analytics_content", layout: false
+    elsif params[:type] == "CapitalDistribution"
+      render "/capital_distributions/analytics_content", layout: false
+    elsif params[:type] == "CapitalRemittance"
+      @owner = params[:capital_call_id].present? ? CapitalCall.find(params[:capital_call_id]) : @fund
+      render "/capital_remittances/analytics_content", layout: false
+    elsif params[:type] == "AggregatePortfolioInvestment"
+      render "/aggregate_portfolio_investments/analytics_content", layout: false
+    elsif params[:type] == "FundRatio"
+      render "/fund_ratios/analytics_content", layout: false
+    else
+      render "/capital_commitments/analytics_content", layout: false
+    end
+  end
 
   # GET /funds or /funds.json
   def index

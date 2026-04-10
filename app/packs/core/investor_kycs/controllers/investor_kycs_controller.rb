@@ -1,4 +1,5 @@
 class InvestorKycsController < ApplicationController
+  helper InvestorKycAnalyticsHelper
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
   before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields]
@@ -21,6 +22,12 @@ class InvestorKycsController < ApplicationController
     end
   end
 
+  def analytics
+    authorize(InvestorKyc)
+    fetch_rows
+    render "investor_kycs/analytics_content", layout: false
+  end
+
   def fetch_rows
     authorize(InvestorKyc)
 
@@ -30,6 +37,7 @@ class InvestorKycsController < ApplicationController
 
     @investor = Investor.find(params[:investor_id]) if params[:investor_id].present?
 
+    @all_investor_kycs = @investor_kycs
     @pagy, @investor_kycs = pagy(@investor_kycs, limit: params[:per_page]) if params[:all].blank? && !request.format.xlsx?
 
     @investor_kycs

@@ -50,6 +50,27 @@ module ApplicationHelper
     end
   end
 
+  # Generates Highcharts configuration for clickable chart slices.
+  # This allows charts to act as interactive filters for data tables.
+  #
+  # @param param [String] The Ransack query parameter to apply (e.g., "q[category_eq]")
+  # @param frame_id [String] The ID of the Turbo Frame to refresh (defaults to 'investors_frame')
+  # @return [Hash] Highcharts plotOptions configuration
+  def clickable_chart_options(param, frame_id: 'investors_frame')
+    # Resolve the actual frame ID (handles report-specific frame naming)
+    actual_frame_id = with_frame(frame_id)
+    {
+      plotOptions: {
+        series: {
+          cursor: 'pointer', # Change cursor to indicate interactivity
+          clickable: true,   # Custom flag for the global JS listener
+          clickParam: param, # The Ransack parameter to pass to JS
+          clickFrameId: actual_frame_id # The target frame to refresh
+        }
+      }
+    }
+  end
+
   def parse_json(obj)
     JSON.parse(obj)
   rescue JSON::ParserError, TypeError

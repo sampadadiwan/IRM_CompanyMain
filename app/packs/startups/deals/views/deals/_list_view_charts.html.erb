@@ -128,7 +128,7 @@
               "Fees" => (investors.sum(:fee_cents) / 100.0).round(2)
             }
           %>
-          <%= pie_chart breakdown_data, library: {
+          <%= pie_chart breakdown_data, donut: true, library: {
             plotOptions: { pie: { dataLabels: { enabled: true, format: '<b>{point.name}</b>: {point.percentage:.1f}%' } } },
             **chart_theme_color
           } %>

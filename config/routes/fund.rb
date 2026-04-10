@@ -146,6 +146,7 @@ resources :funds do
   get 'check_access_rights', on: :member
   delete 'delete_all', on: :member
   get 'dashboard', on: :member
+  get 'analytics', on: :member
   post 'generate_tracking_numbers', on: :member
   get 'show_email_list', on: :member
   patch 'trigger_adhoc_notification', on: :member

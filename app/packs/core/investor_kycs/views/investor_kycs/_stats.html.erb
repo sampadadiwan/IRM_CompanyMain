@@ -1,5 +1,7 @@
-<% cache_if(current_user != nil, cache_key("kyc_stats"), expires_in: 5.day) do %>
-  <% kyc_types = {
+<% cache_if(current_user != nil && params[:q].blank? && params[:support_agent_report].blank?, cache_key("kyc_stats"), expires_in: 5.day) do %>
+  <%
+    records ||= @all_investor_kycs || @investor_kycs || policy_scope(current_user.entity.investor_kycs)
+    kyc_types = {
       verified: { path: investor_kycs_path(q: ransack_query_params("verified", :eq, true)), subtitle: "Verified", progress_bar_color: "success", icon: "ti ti-check" },
       unverified: { path: investor_kycs_path(q: ransack_query_params("verified", :eq, false)), subtitle: "Unverified", progress_bar_color: "warning", icon: "ti ti-question-mark" },
       completed: { path: investor_kycs_path(q: ransack_query_params("completed_by_investor", :eq, true)), subtitle: "Completed", progress_bar_color: "info", icon: "ti ti-circle-dashed-check" },
@@ -8,7 +10,6 @@
       non_individual: { path: investor_kycs_path(q: ransack_query_params("kyc_type", :eq, "Non Individual")), subtitle: "Non Individual", progress_bar_color: "secondary", icon: "ti ti-building" }
     }
   %>
-
   <div class="row">
     <% kyc_types.each do |type, data| %>
       <div class="col">
@@ -18,7 +19,7 @@
               <div class="d-flex align-items-center mb-3">
                 <div>
                   <div data-controller="counters"
-                      data-counters-value-value="<%= policy_scope(current_user.entity.investor_kycs.send(type)).count %>">
+                      data-counters-value-value="<%= records.send(type).count %>">
                     <h3 class="fs-7" data-counters-target="output">0</h3>
                   </div>
                   <h3 class="fs-6"></h3>

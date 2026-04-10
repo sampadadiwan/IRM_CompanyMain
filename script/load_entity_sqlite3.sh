@@ -11,7 +11,7 @@ MYSQL_PORT="${MYSQL_PORT:-3306}"
 MYSQL_USER="${MYSQL_USER:-root}"
 MYSQL_PASS="${MYSQL_PASS:-root}"
 MYSQL_DB="${MYSQL_DB:-IRM_development}"
-SOURCE_SQLITE_DB="${SOURCE_SQLITE_DB:-tmp/test.sqlite3}"
+SOURCE_SQLITE_DB="${SOURCE_SQLITE_DB:-}"
 ENTITY_ID="${ENTITY_ID:-}"
 
 if [ -z "$ENTITY_ID" ]; then
@@ -21,6 +21,23 @@ if [ -z "$ENTITY_ID" ]; then
 fi
 
 SQLITE_DB="${SQLITE_DB:-/tmp/irm_entity_${ENTITY_ID}.sqlite3}"
+
+############################################
+# LOG CONFIG
+############################################
+echo "############################################"
+echo "Starting DB dump for entity $ENTITY_ID"
+echo "ADAPTER: $ADAPTER"
+if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
+  echo "SOURCE_SQLITE_DB: $SOURCE_SQLITE_DB"
+else
+  echo "MYSQL_HOST: $MYSQL_HOST"
+  echo "MYSQL_PORT: $MYSQL_PORT"
+  echo "MYSQL_USER: $MYSQL_USER"
+  echo "MYSQL_DB: $MYSQL_DB"
+fi
+echo "TARGET_SQLITE_DB: $SQLITE_DB"
+echo "############################################"
 
 START_TIME=$(date +%s)
 
@@ -252,8 +269,8 @@ INDEX_capital_calls='
   CREATE INDEX "idx_capital_calls_form_type_id" ON "capital_calls"("form_type_id");
   CREATE INDEX "idx_capital_calls_fund_id" ON "capital_calls"("fund_id");
 '
-COLS_capital_commitments=("id" "adjustment_amount_cents" "adjustment_folio_amount_cents" "arrear_amount_cents" "arrear_folio_amount_cents" "call_amount_cents" "collected_amount_cents" "commitment_date" "committed_amount_cents" "compliant" "created_at" "deleted_at" "distribution_amount_cents" "document_folder_id" "entity_id" "esign_completed" "esign_emails" "esign_link" "esign_provider" "esign_required" "exchange_rate_id" "feeder_fund_id" "folio_call_amount_cents" "folio_collected_amount_cents" "folio_committed_amount_cents" "folio_currency" "folio_id" "form_type_id" "fund_close" "fund_id" "generated_deleted" "import_upload_id" "investor_id" "investor_kyc_id" "investor_name" "investor_signatory_id" "investor_signature_types" "is_feeder_fund" "json_fields" "notes" "onboarding_completed" "orig_committed_amount_cents" "orig_folio_committed_amount_cents" "other_fee_cents" "percentage" "ppm_number" "slug" "total_allocated_expense_cents" "total_allocated_income_cents" "total_fund_units_quantity" "total_units_amount_cents" "total_units_premium_cents" "tracking_adjustment_amount_cents" "tracking_collected_amount_cents" "tracking_committed_amount_cents" "tracking_distribution_amount_cents" "tracking_orig_committed_amount_cents" "unit_type" "updated_at" "virtual_bank_account")
-TEXT_COLS_capital_commitments=("esign_emails" "esign_link" "esign_provider" "folio_currency" "folio_id" "fund_close" "investor_name" "investor_signature_types" "json_fields" "notes" "slug" "unit_type" "virtual_bank_account")
+COLS_capital_commitments=("id" "adjustment_amount_cents" "adjustment_folio_amount_cents" "arrear_amount_cents" "arrear_folio_amount_cents" "call_amount_cents" "collected_amount_cents" "commitment_date" "committed_amount_cents" "compliant" "created_at" "deleted_at" "distribution_amount_cents" "document_folder_id" "entity_id" "esign_completed" "esign_emails" "esign_link" "esign_provider" "esign_required" "exchange_rate_id" "feeder_fund_id" "folio_call_amount_cents" "folio_collected_amount_cents" "folio_committed_amount_cents" "folio_currency" "folio_id" "form_type_id" "fund_close" "fund_id" "generated_deleted" "import_upload_id" "investor_id" "investor_kyc_id" "investor_name" "investor_signatory_id" "is_feeder_fund" "json_fields" "notes" "onboarding_completed" "orig_committed_amount_cents" "orig_folio_committed_amount_cents" "other_fee_cents" "percentage" "ppm_number" "slug" "total_allocated_expense_cents" "total_allocated_income_cents" "total_fund_units_quantity" "total_units_amount_cents" "total_units_premium_cents" "tracking_adjustment_amount_cents" "tracking_collected_amount_cents" "tracking_committed_amount_cents" "tracking_distribution_amount_cents" "tracking_orig_committed_amount_cents" "unit_type" "updated_at" "virtual_bank_account")
+TEXT_COLS_capital_commitments=("esign_emails" "esign_link" "esign_provider" "folio_currency" "folio_id" "fund_close" "investor_name" "json_fields" "notes" "slug" "unit_type" "virtual_bank_account")
 SCHEMA_capital_commitments='
   "id" BIGINT PRIMARY KEY,
   "adjustment_amount_cents" DECIMAL(20,2),
@@ -291,7 +308,6 @@ SCHEMA_capital_commitments='
   "investor_kyc_id" BIGINT,
   "investor_name" VARCHAR(255),
   "investor_signatory_id" BIGINT,
-  "investor_signature_types" VARCHAR(255),
   "is_feeder_fund" BOOLEAN,
   "json_fields" JSON,
   "notes" TEXT,
@@ -575,12 +591,10 @@ INDEX_distribution_fees='
   CREATE INDEX "idx_distribution_fees_entity_id" ON "distribution_fees"("entity_id");
   CREATE INDEX "idx_distribution_fees_fund_id" ON "distribution_fees"("fund_id");
 '
-COLS_documents=("id" "adhaar_esign_completed" "adhaar_esign_enabled" "approved" "approved_by_id" "created_at" "deleted_at" "display_on_page" "download" "embed" "entity_id" "esign_status" "file_data" "folder_id" "force_esign_order" "form_type_id" "from_template_id" "import_upload_id" "impressions_count" "json_fields" "last_status_updated_at" "locked" "name" "orignal" "owner_id" "owner_tag" "owner_type" "printing" "provider_doc_id" "public_visibility" "qna" "send_email" "sent_for_esign" "sent_for_esign_date" "signature_enabled" "signature_type" "signed_by_accept" "signed_by_id" "tag_list" "template" "template_docs_to_append" "text" "updated_at" "user_id" "visible_to")
-TEXT_COLS_documents=("display_on_page" "esign_status" "file_data" "json_fields" "name" "owner_tag" "owner_type" "provider_doc_id" "qna" "signature_type" "tag_list" "template_docs_to_append" "text" "visible_to")
+COLS_documents=("id" "approved" "approved_by_id" "created_at" "deleted_at" "display_on_page" "download" "embed" "entity_id" "esign_status" "file_data" "folder_id" "force_esign_order" "form_type_id" "from_template_id" "import_upload_id" "impressions_count" "json_fields" "last_status_updated_at" "locked" "name" "orignal" "owner_id" "owner_tag" "owner_type" "printing" "provider_doc_id" "public_visibility" "qna" "send_email" "sent_for_esign" "sent_for_esign_date" "signature_enabled" "tag_list" "template" "template_docs_to_append" "text" "updated_at" "user_id" "visible_to")
+TEXT_COLS_documents=("display_on_page" "esign_status" "file_data" "json_fields" "name" "owner_tag" "owner_type" "provider_doc_id" "qna" "tag_list" "template_docs_to_append" "text" "visible_to")
 SCHEMA_documents='
   "id" BIGINT PRIMARY KEY,
-  "adhaar_esign_completed" BOOLEAN,
-  "adhaar_esign_enabled" BOOLEAN,
   "approved" BOOLEAN,
   "approved_by_id" BIGINT,
   "created_at" DATETIME,
@@ -613,9 +627,6 @@ SCHEMA_documents='
   "sent_for_esign" BOOLEAN,
   "sent_for_esign_date" DATETIME,
   "signature_enabled" BOOLEAN,
-  "signature_type" VARCHAR(255),
-  "signed_by_accept" BOOLEAN,
-  "signed_by_id" BIGINT,
   "tag_list" VARCHAR(255),
   "template" BOOLEAN,
   "template_docs_to_append" VARCHAR(255),
@@ -634,28 +645,24 @@ INDEX_documents='
   CREATE INDEX "idx_documents_signed_by_id" ON "documents"("signed_by_id");
   CREATE INDEX "idx_documents_user_id" ON "documents"("user_id");
 '
-COLS_e_signatures=("id" "api_updates" "created_at" "deleted_at" "document_id" "email" "entity_id" "label" "notes" "position" "remind_in" "signature_type" "signer_id" "status" "updated_at" "user_id")
-TEXT_COLS_e_signatures=("api_updates" "email" "label" "notes" "signature_type" "signer_id" "status")
+COLS_e_signatures=("id" "api_updates" "created_at" "document_id" "email" "entity_id" "label" "notes" "position" "signature_type" "status" "updated_at" "user_id")
+TEXT_COLS_e_signatures=("api_updates" "email" "label" "notes" "signature_type" "status")
 SCHEMA_e_signatures='
   "id" BIGINT PRIMARY KEY,
   "api_updates" TEXT,
   "created_at" DATETIME,
-  "deleted_at" DATETIME,
   "document_id" BIGINT,
   "email" VARCHAR(255),
   "entity_id" BIGINT,
   "label" VARCHAR(255),
   "notes" TEXT,
   "position" INTEGER,
-  "remind_in" INTEGER,
   "signature_type" VARCHAR(255),
-  "signer_id" VARCHAR(255),
   "status" VARCHAR(255),
   "updated_at" DATETIME,
   "user_id" BIGINT
 '
 INDEX_e_signatures='
-  CREATE INDEX "idx_e_signatures_deleted_at" ON "e_signatures"("deleted_at");
   CREATE INDEX "idx_e_signatures_document_id" ON "e_signatures"("document_id");
   CREATE INDEX "idx_e_signatures_entity_id" ON "e_signatures"("entity_id");
   CREATE INDEX "idx_e_signatures_user_id" ON "e_signatures"("user_id");
@@ -826,7 +833,7 @@ INDEX_fund_ratios='
   CREATE INDEX "idx_fund_ratios_portfolio_scenario_id" ON "fund_ratios"("portfolio_scenario_id");
   CREATE INDEX "idx_fund_ratios_valuation_id" ON "fund_ratios"("valuation_id");
 '
-COLS_fund_unit_settings=("id" "carry" "created_at" "entity_id" "form_type_id" "fund_id" "gp_units" "import_upload_id" "isin" "json_fields" "management_fee" "name" "notes" "setup_fee" "updated_at")
+COLS_fund_unit_settings=("id" "carry" "created_at" "entity_id" "form_type_id" "fund_id" "import_upload_id" "isin" "json_fields" "management_fee" "name" "notes" "setup_fee" "updated_at")
 TEXT_COLS_fund_unit_settings=("isin" "json_fields" "name" "notes")
 SCHEMA_fund_unit_settings='
   "id" BIGINT PRIMARY KEY,
@@ -835,7 +842,6 @@ SCHEMA_fund_unit_settings='
   "entity_id" BIGINT,
   "form_type_id" BIGINT,
   "fund_id" BIGINT,
-  "gp_units" BOOLEAN,
   "import_upload_id" BIGINT,
   "isin" VARCHAR(255),
   "json_fields" JSON,
@@ -875,7 +881,7 @@ INDEX_fund_unit_transfers='
   CREATE INDEX "idx_fund_unit_transfers_fund_id" ON "fund_unit_transfers"("fund_id");
   CREATE INDEX "idx_fund_unit_transfers_to_commitment_id" ON "fund_unit_transfers"("to_commitment_id");
 '
-COLS_fund_units=("id" "amount_cents" "capital_commitment_id" "created_at" "deleted_at" "entity_id" "fund_id" "gp_units" "import_upload_id" "investor_id" "issue_date" "owner_id" "owner_type" "premium_cents" "premium_old" "price_cents" "price_old" "quantity" "reason" "total_premium_cents" "transfer" "unit_type" "updated_at")
+COLS_fund_units=("id" "amount_cents" "capital_commitment_id" "created_at" "deleted_at" "entity_id" "fund_id" "import_upload_id" "investor_id" "issue_date" "owner_id" "owner_type" "premium_cents" "premium_old" "price_cents" "price_old" "quantity" "reason" "total_premium_cents" "transfer" "unit_type" "updated_at")
 TEXT_COLS_fund_units=("owner_type" "reason" "transfer" "unit_type")
 SCHEMA_fund_units='
   "id" BIGINT PRIMARY KEY,
@@ -885,7 +891,6 @@ SCHEMA_fund_units='
   "deleted_at" DATETIME,
   "entity_id" BIGINT,
   "fund_id" BIGINT,
-  "gp_units" BOOLEAN,
   "import_upload_id" BIGINT,
   "investor_id" BIGINT,
   "issue_date" DATE,
@@ -910,8 +915,8 @@ INDEX_fund_units='
   CREATE INDEX "idx_fund_units_investor_id" ON "fund_units"("investor_id");
   CREATE INDEX "idx_fund_units_owner_type_owner_id" ON "fund_units"("owner_type", "owner_id");
 '
-COLS_funds=("id" "call_amount_cents" "capital_commitments_count" "capital_fee_cents" "category" "collected_amount_cents" "commitment_doc_list" "committed_amount_cents" "created_at" "currency" "data_room_folder_id" "deleted_at" "details" "distribution_amount_cents" "document_folder_id" "editable_formulas" "entity_id" "esign_emails" "first_close_date" "form_type_id" "fund_signatory_id" "fund_signature_types" "funding_round_id" "import_upload_id" "investor_signature_types" "json_fields" "last_close_date" "master_fund_id" "name" "orignal_id" "other_fee_cents" "permissions" "portfolio_cost_type" "regulatory_env" "show_fund_ratios" "show_portfolios" "show_valuations" "slug" "snapshot" "snapshot_date" "start_date" "tag_list" "target_committed_amount_cents" "total_units_premium_cents" "tracking_call_amount_cents" "tracking_co_invest_call_amount_cents" "tracking_collected_amount_cents" "tracking_committed_amount_cents" "tracking_currency" "tracking_distribution_amount_cents" "trustee_signatory_id" "unit_types" "units_allocation_engine" "updated_at")
-TEXT_COLS_funds=("category" "commitment_doc_list" "currency" "details" "esign_emails" "fund_signature_types" "investor_signature_types" "json_fields" "name" "portfolio_cost_type" "regulatory_env" "slug" "tag_list" "tracking_currency" "unit_types" "units_allocation_engine")
+COLS_funds=("id" "call_amount_cents" "capital_commitments_count" "capital_fee_cents" "category" "collected_amount_cents" "commitment_doc_list" "committed_amount_cents" "created_at" "currency" "data_room_folder_id" "deleted_at" "details" "distribution_amount_cents" "document_folder_id" "editable_formulas" "entity_id" "esign_emails" "first_close_date" "form_type_id" "fund_signatory_id" "funding_round_id" "import_upload_id" "json_fields" "last_close_date" "master_fund_id" "name" "orignal_id" "other_fee_cents" "portfolio_cost_type" "show_fund_ratios" "show_portfolios" "show_valuations" "snapshot" "snapshot_date" "start_date" "tag_list" "target_committed_amount_cents" "total_units_premium_cents" "tracking_call_amount_cents" "tracking_co_invest_call_amount_cents" "tracking_collected_amount_cents" "tracking_committed_amount_cents" "tracking_currency" "tracking_distribution_amount_cents" "trustee_signatory_id" "unit_types" "units_allocation_engine" "updated_at")
+TEXT_COLS_funds=("category" "commitment_doc_list" "currency" "details" "esign_emails" "json_fields" "name" "portfolio_cost_type" "tag_list" "tracking_currency" "unit_types" "units_allocation_engine")
 SCHEMA_funds='
   "id" BIGINT PRIMARY KEY,
   "call_amount_cents" DECIMAL(20,2),
@@ -934,23 +939,18 @@ SCHEMA_funds='
   "first_close_date" DATE,
   "form_type_id" BIGINT,
   "fund_signatory_id" BIGINT,
-  "fund_signature_types" VARCHAR(255),
   "funding_round_id" BIGINT,
   "import_upload_id" BIGINT,
-  "investor_signature_types" VARCHAR(255),
   "json_fields" JSON,
   "last_close_date" DATE,
   "master_fund_id" BIGINT,
   "name" VARCHAR(255),
   "orignal_id" BIGINT,
   "other_fee_cents" DECIMAL(20,2),
-  "permissions" INTEGER,
   "portfolio_cost_type" VARCHAR(255),
-  "regulatory_env" VARCHAR(255),
   "show_fund_ratios" BOOLEAN,
   "show_portfolios" BOOLEAN,
   "show_valuations" BOOLEAN,
-  "slug" VARCHAR(255),
   "snapshot" BOOLEAN,
   "snapshot_date" DATE,
   "start_date" DATE,
@@ -978,7 +978,6 @@ INDEX_funds='
   CREATE INDEX "idx_funds_funding_round_id" ON "funds"("funding_round_id");
   CREATE INDEX "idx_funds_import_upload_id" ON "funds"("import_upload_id");
   CREATE INDEX "idx_funds_master_fund_id" ON "funds"("master_fund_id");
-  CREATE INDEX "idx_funds_slug" ON "funds"("slug");
   CREATE INDEX "idx_funds_snapshot_date" ON "funds"("snapshot_date");
   CREATE INDEX "idx_funds_trustee_signatory_id" ON "funds"("trustee_signatory_id");
 '
@@ -1176,8 +1175,8 @@ INDEX_investor_kpi_mappings='
   CREATE INDEX "idx_investor_kpi_mappings_reported_kpi_name" ON "investor_kpi_mappings"("reported_kpi_name");
   CREATE INDEX "idx_investor_kpi_mappings_standard_kpi_name" ON "investor_kpi_mappings"("standard_kpi_name");
 '
-COLS_investor_kycs=("id" "PAN" "address" "agreement_committed_amount_cents" "agreement_unit_type" "all_docs_valid" "aml_status" "bank_account_number" "bank_account_type" "bank_branch" "bank_name" "bank_verification_response" "bank_verification_status" "bank_verified" "birth_date" "call_amount_cents" "collected_amount_cents" "comments" "committed_amount_cents" "completed_by_investor" "compliant" "corr_address" "created_at" "deleted_at" "distribution_amount_cents" "doc_question_answers" "docs_completed" "document_folder_id" "due_amount_cents" "entity_id" "esign_emails" "expiry_date" "form_type_id" "full_name" "ifsc_code" "import_upload_id" "investor_id" "investor_name" "investor_user_id" "investor_user_updated_at" "json_fields" "kyc_type" "notification_msg" "other_fee_cents" "pan_card_data" "pan_verification_response" "pan_verification_status" "pan_verified" "reminder_sent" "reminder_sent_date" "residency" "send_kyc_form_to_user" "signature_data" "slug" "type" "uncalled_amount_cents" "updated_at" "verified" "verified_by_id")
-TEXT_COLS_investor_kycs=("PAN" "address" "agreement_unit_type" "aml_status" "bank_account_number" "bank_account_type" "bank_branch" "bank_name" "bank_verification_response" "bank_verification_status" "comments" "corr_address" "doc_question_answers" "esign_emails" "full_name" "ifsc_code" "investor_name" "json_fields" "kyc_type" "notification_msg" "pan_card_data" "pan_verification_response" "pan_verification_status" "residency" "signature_data" "slug" "type")
+COLS_investor_kycs=("id" "PAN" "address" "agreement_committed_amount_cents" "agreement_unit_type" "all_docs_valid" "aml_status" "bank_account_number" "bank_account_type" "bank_branch" "bank_name" "bank_verification_response" "bank_verification_status" "bank_verified" "birth_date" "call_amount_cents" "collected_amount_cents" "comments" "committed_amount_cents" "completed_by_investor" "compliant" "corr_address" "created_at" "deleted_at" "distribution_amount_cents" "doc_question_answers" "docs_completed" "document_folder_id" "due_amount_cents" "entity_id" "esign_emails" "expiry_date" "form_type_id" "full_name" "ifsc_code" "import_upload_id" "investor_id" "investor_name" "investor_user_id" "investor_user_updated_at" "json_fields" "kyc_type" "notification_msg" "other_fee_cents" "pan_verification_response" "pan_verification_status" "pan_verified" "reminder_sent" "reminder_sent_date" "residency" "send_kyc_form_to_user" "slug" "type" "uncalled_amount_cents" "updated_at" "verified" "verified_by_id")
+TEXT_COLS_investor_kycs=("PAN" "address" "agreement_unit_type" "aml_status" "bank_account_number" "bank_account_type" "bank_branch" "bank_name" "bank_verification_response" "bank_verification_status" "comments" "corr_address" "doc_question_answers" "esign_emails" "full_name" "ifsc_code" "investor_name" "json_fields" "kyc_type" "notification_msg" "pan_verification_response" "pan_verification_status" "residency" "slug" "type")
 SCHEMA_investor_kycs='
   "id" BIGINT PRIMARY KEY,
   "PAN" VARCHAR(255),
@@ -1223,7 +1222,6 @@ SCHEMA_investor_kycs='
   "kyc_type" VARCHAR(255),
   "notification_msg" TEXT,
   "other_fee_cents" DECIMAL(20,2),
-  "pan_card_data" TEXT,
   "pan_verification_response" TEXT,
   "pan_verification_status" VARCHAR(255),
   "pan_verified" BOOLEAN,
@@ -1231,7 +1229,6 @@ SCHEMA_investor_kycs='
   "reminder_sent_date" DATETIME,
   "residency" VARCHAR(255),
   "send_kyc_form_to_user" BOOLEAN,
-  "signature_data" TEXT,
   "slug" VARCHAR(255),
   "type" VARCHAR(255),
   "uncalled_amount_cents" DECIMAL(20,2),
@@ -1539,7 +1536,7 @@ INDEX_portfolio_cashflows='
   CREATE INDEX "idx_portfolio_cashflows_payment_date" ON "portfolio_cashflows"("payment_date");
   CREATE INDEX "idx_portfolio_cashflows_portfolio_company_id" ON "portfolio_cashflows"("portfolio_company_id");
 '
-COLS_portfolio_investments=("id" "aggregate_portfolio_investment_id" "amount_cents" "base_amount_cents" "capital_commitment_id" "capital_distribution_id" "category" "compliant" "conversion_date" "cost_of_remaining_cents" "cost_of_sold_cents" "created_at" "deleted_at" "document_folder_id" "entity_id" "ex_expenses_amount_cents" "ex_expenses_base_amount_cents" "exchange_rate_id" "excused_folio_ids" "fmv_cents" "folio_id" "form_type_id" "fund_id" "gain_cents" "import_upload_id" "instrument_currency_cost_of_remaining_cents" "instrument_currency_fmv_cents" "instrument_currency_unrealized_gain_cents" "investment_date" "investment_domicile" "investment_instrument_id" "json_fields" "net_amount_cents" "net_bought_amount_cents" "net_bought_quantity" "net_quantity" "notes" "orignal_id" "portfolio_company_id" "portfolio_company_name" "proforma" "quantity" "quantity_as_of_date" "ref_id" "reference_id" "sector" "snapshot" "snapshot_date" "sold_quantity" "startup" "sub_category" "tracking_amount_cents" "tracking_fmv_cents" "transfer_amount_cents" "transfer_quantity" "unrealized_gain_cents" "updated_at" "valuation_id")
+COLS_portfolio_investments=("id" "aggregate_portfolio_investment_id" "amount_cents" "base_amount_cents" "capital_commitment_id" "capital_distribution_id" "category" "compliant" "conversion_date" "cost_of_remaining_cents" "cost_of_sold_cents" "created_at" "deleted_at" "document_folder_id" "entity_id" "ex_expenses_amount_cents" "ex_expenses_base_amount_cents" "exchange_rate_id" "excused_folio_ids" "fmv_cents" "folio_id" "form_type_id" "fund_id" "gain_cents" "import_upload_id" "instrument_currency_cost_of_remaining_cents" "instrument_currency_fmv_cents" "instrument_currency_unrealized_gain_cents" "investment_date" "investment_domicile" "investment_instrument_id" "json_fields" "net_amount_cents" "net_bought_amount_cents" "net_bought_quantity" "net_quantity" "notes" "orignal_id" "portfolio_company_id" "portfolio_company_name" "proforma" "quantity" "quantity_as_of_date" "ref_id" "sector" "snapshot" "snapshot_date" "sold_quantity" "startup" "sub_category" "tracking_amount_cents" "tracking_fmv_cents" "transfer_amount_cents" "transfer_quantity" "unrealized_gain_cents" "updated_at" "valuation_id")
 TEXT_COLS_portfolio_investments=("category" "excused_folio_ids" "folio_id" "investment_domicile" "json_fields" "notes" "portfolio_company_name" "sector" "sub_category")
 SCHEMA_portfolio_investments='
   "id" BIGINT PRIMARY KEY,
@@ -1586,7 +1583,6 @@ SCHEMA_portfolio_investments='
   "quantity" DECIMAL(20,2),
   "quantity_as_of_date" DECIMAL(20,2),
   "ref_id" BIGINT,
-  "reference_id" BIGINT,
   "sector" VARCHAR(255),
   "snapshot" BOOLEAN,
   "snapshot_date" DATE,
@@ -2005,6 +2001,7 @@ for table in "${TABLES[@]}"; do
   if [[ "$ADAPTER" == "sqlite3" ]] || [[ -n "$SOURCE_SQLITE_DB" ]]; then
     SQLITE_SOURCE="${SOURCE_SQLITE_DB:-$MYSQL_DB}"
     QUERY="SELECT ${SELECT_LIST} FROM \"${table}\" ${WHERE_CLAUSE};"
+    echo "  Executing SQLite query: $QUERY"
     sqlite3 "$SQLITE_SOURCE" <<SQL | pv -l -t -e -r -a > "$EXPORT_TSV"
 .mode tabs
 .nullvalue \\N
@@ -2012,6 +2009,7 @@ $QUERY
 SQL
   else
     QUERY="SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED; SELECT ${SELECT_LIST} FROM \`${table}\` ${WHERE_CLAUSE};"
+    echo "  Executing MySQL query: SELECT ... FROM \`$table\` $WHERE_CLAUSE"
     mysql_cmd -e "${QUERY}" | pv -l -t -e -r -a > "$EXPORT_TSV"
   fi
   log_step_time "Export $table" "$STEP_START"
@@ -2022,7 +2020,10 @@ SQL
   STEP_START=$(date +%s)
   echo "  Step 2: Creating schema for $table"
   # Quote column names in SCHEMA by the ruby generator
-  sqlite3 "$SQLITE_DB" "CREATE TABLE \"$table\" ($SCHEMA);"
+  if ! sqlite3 "$SQLITE_DB" "CREATE TABLE \"$table\" ($SCHEMA);"; then
+    echo "  Error: Failed to create schema for $table"
+    exit 1
+  fi
   log_step_time "Schema $table" "$STEP_START"
 
   ############################################

@@ -4,7 +4,7 @@ module PortfolioHelper
     valuations = valuations.group_by { |v| v.valuation_date.strftime("%m/%Y") }
                            .map { |date, vals| [date, vals[-1].per_share_value_cents / 100] }
                            .sort_by { |date, _| Date.strptime(date, "%m/%Y") }
-    line_chart valuations, library: {
+    line_chart valuations, id: "share_price_line_chart_#{investment_instrument.id}", library: {
       plotOptions: { column: {
         dataLabels: {
           enabled: true,
@@ -20,7 +20,7 @@ module PortfolioHelper
                                                           .group_by { |v| v.investment_date.strftime("%m/%Y") }
                                                           .map { |date, vals| [date, vals.inject(0) { |sum, pi| sum + pi.quantity }] }
 
-    column_chart cumulative(portfolio_investments), library: {
+    column_chart cumulative(portfolio_investments), id: "bought_sold_chart_#{aggregate_portfolio_investment.id}", library: {
       plotOptions: { column: {
         dataLabels: {
           enabled: true,
@@ -38,7 +38,7 @@ module PortfolioHelper
                      .order(end_date: :asc)
                      .pluck(:end_date, :value)
 
-    column_chart xirrs, library: {
+    column_chart xirrs, id: "api_xirr_chart_#{api.id}", library: {
       plotOptions: { column: {
         dataLabels: {
           enabled: true,
@@ -55,7 +55,7 @@ module PortfolioHelper
                                     .where("name like 'IRR%'").group_by(&:name)
 
     display_list = portfolio_irr_ratios.map { |name, ratios| { name:, data: ratios.map { |r| [r.end_date, r.value] } } }
-    line_chart display_list, library: {
+    line_chart display_list, id: "portfolio_xirr_lines_chart_#{fund.id}", library: {
       plotOptions: { line: {
         dataLabels: {
           enabled: true,
@@ -95,7 +95,7 @@ module PortfolioHelper
     if pc_frs.present?
       portfolio_irr_ratios = pc_frs.map { |fr| [fr.owner.name, fr.value] }
 
-      column_chart portfolio_irr_ratios, library: {
+      column_chart portfolio_irr_ratios, id: "portfolio_last_xirr_chart_#{fund.id}", library: {
         plotOptions: { column: {
           dataLabels: {
             enabled: true,
@@ -115,7 +115,7 @@ module PortfolioHelper
       portfolio_irr_ratios = api_frs.map { |fr| [fr.owner.to_s, fr.value] }
       Rails.logger.debug portfolio_irr_ratios
 
-      column_chart portfolio_irr_ratios, library: {
+      column_chart portfolio_irr_ratios, id: "api_last_xirr_chart_#{fund.id}", library: {
         plotOptions: { line: {
           dataLabels: {
             enabled: true,

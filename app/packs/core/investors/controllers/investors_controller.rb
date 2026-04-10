@@ -1,4 +1,5 @@
 class InvestorsController < ApplicationController
+  helper InvestorAnalyticsHelper
   before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports portfolio_investments_report]
   after_action :verify_authorized, except: %i[merge portfolio_investments_report_all]
 
@@ -6,6 +7,8 @@ class InvestorsController < ApplicationController
   def index
     template = "investors/index"
     authorize(Investor)
+
+    fetch_rows
 
     if params[:multi_portfolio_dashboard].present?
       setup_portfolio_dashboard
@@ -15,6 +18,21 @@ class InvestorsController < ApplicationController
       template = "investors/portfolio_agent_run"
     end
 
+    respond_to do |format|
+      format.html { render template }
+      format.turbo_stream
+      format.xlsx
+      format.json
+    end
+  end
+
+  def analytics
+    authorize(Investor)
+    fetch_rows
+    render "investors/analytics_content", layout: false
+  end
+
+  def fetch_rows
     @q = Investor.ransack(params[:q])
     @investors = policy_scope(@q.result)
 
@@ -34,17 +52,11 @@ class InvestorsController < ApplicationController
 
     @investors = InvestorSearch.search(@investors, params, current_user)
 
+    @all_investors = @investors
     @pagy, @investors = pagy(@investors, limit: params[:per_page]) if params[:multi_portfolio_dashboard].blank? && params[:portfolio_agent_run].blank? && params[:all].blank?
 
     # For portfolio_agent_run, fetch last run times efficiently
     @investors = @investors.includes(:support_agent_report) if params[:portfolio_agent_run].present?
-
-    respond_to do |format|
-      format.html { render template }
-      format.turbo_stream
-      format.xlsx
-      format.json
-    end
   end
 
   def portfolio_investments_report

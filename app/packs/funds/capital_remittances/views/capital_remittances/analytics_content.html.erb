@@ -1,0 +1,29 @@
+<%= turbo_frame_tag "remittance_analytics_frame" do %>
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= remittance_status_chart(@owner) %>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="p-3 border rounded h-100">
+        <%= remittance_collection_progress_chart(@owner) %>
+      </div>
+    </div>
+    <div class="col-lg-12">
+      <div class="p-3 border rounded h-100">
+        <%= remittance_payment_timeline_chart(@owner) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100">
+        <%= remittance_fee_breakdown_chart(@owner) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100">
+        <%= top_delinquent_investors_chart(@owner, top_n: 5) %>
+      </div>
+    </div>
+  </div>
+<% end %>

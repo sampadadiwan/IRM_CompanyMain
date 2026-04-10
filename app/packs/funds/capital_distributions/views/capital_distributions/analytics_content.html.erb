@@ -1,0 +1,29 @@
+<%= turbo_frame_tag "distribution_analytics_frame" do %>
+  <div class="row g-4">
+    <div class="col-lg-4">
+      <div class="p-3 border rounded h-100">
+        <%= distribution_status_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-8">
+      <div class="p-3 border rounded h-100">
+        <%= distribution_history_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-12">
+      <div class="p-3 border rounded h-100">
+        <%= cumulative_distributions_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100">
+        <%= distribution_component_breakdown_chart(@fund) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100">
+        <%= investor_distributions_chart(@fund, top_n: 5) %>
+      </div>
+    </div>
+  </div>
+<% end %>

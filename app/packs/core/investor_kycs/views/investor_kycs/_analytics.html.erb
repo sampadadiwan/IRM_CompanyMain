@@ -1,0 +1,17 @@
+<div class="collapse mb-4" id="investorKycAnalytics">
+  <div class="card shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">KYC Analytics</h5>
+      <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#investorKycAnalytics" aria-label="Close"></button>
+    </div>
+    <div class="card-body">
+      <%= turbo_frame_tag "investor_kyc_analytics_frame", src: analytics_investor_kycs_path, loading: "lazy" do %>
+        <div class="d-flex justify-content-center p-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
