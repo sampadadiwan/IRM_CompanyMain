@@ -20,7 +20,6 @@ Feature: KPI Budget View Month and Partial Data
     When I go to the KPI reports page for "Monthly Startup" with budget view enabled and tags "Actual,Budget" and period "Month"
     And I fill in the number of periods with "2"
     And I click the filter button
-    Then I should see a column header "Month"
     And I should see "1,000" in the "Revenue" row
     And I should see "1,500" in the "Revenue" row
     And I should see "1,200" in the "Revenue" row

@@ -1,3 +1,16 @@
+
+
+V9.2.13
+7b45d7b00 feat: Add sandbox settings fields to entity form
+2da952ea9 Fix/portfolio report widget filter (#1347)
+84aa3e815 Fund charts (#1351)
+2ee82b449 fix: Update ransackable_attributes to include category for Kpi and InvestorKpiMapping
+a5f4fac67 (css_upgrade) Fixed col headers
+42756c8d4 Approval emails subject and body updated (#1344)
+b3f32f45b Updated the Horizontal captable view to show the categories as define… (#1346)
+623389c02 fix: Remove unnecessary no_card option from WidgetCardComponent instantiation
+ae345875d feat: Enhance WidgetCardComponent with collapsible and maximizable options
+
 V9.2.12
 0ab0c8440 Allow manual triggers for DB dumps regardless of frequency settings
 d13f79b85 Metadata add captable quantity show updated main (#1343)
