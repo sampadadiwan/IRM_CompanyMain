@@ -83,6 +83,32 @@
   </div>
 <% end %>
 
+
+  <%= form.fields_for :entity_setting do |entity_setting_subform| %>
+    <%= entity_setting_subform.text_field :id, hidden: true %>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :sandbox, "Sandbox" %>
+      <%= entity_setting_subform.check_box :sandbox, class: "form-check-input"  %>
+      <small class="text-muted">When sandbox is enabled, all notifications will be directed to sandbox email ids / phone numbers</small>
+    </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :sandbox_emails %>
+      <%= entity_setting_subform.text_field :sandbox_emails, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :cc, "cc" %>
+      <%= entity_setting_subform.text_field :cc, class: "form-control"  %>
+    </div>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :sandbox_numbers %>
+      <%= entity_setting_subform.text_field :sandbox_numbers, class: "form-control"  %>
+    </div>
+  <% end %>
+
 <div class="form-group">
   <%= form.label :enable_support %>
   <%= form.check_box :enable_support, class: "form-check-input"  %>
