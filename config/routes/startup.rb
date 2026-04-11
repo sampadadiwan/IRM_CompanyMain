@@ -25,6 +25,7 @@ end
 resources :share_transfers
 
 resources :valuations do
+  get 'analytics', on: :collection
   post 'value_bridge', on: :collection
   get 'value_bridge', on: :collection
 end

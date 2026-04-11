@@ -1,7 +1,8 @@
 class ValuationsController < ApplicationController
+  helper ValuationsHelper
   before_action :set_valuation, only: %i[show edit update destroy]
   skip_after_action :verify_policy_scoped, only: :index
-  after_action :verify_authorized, except: %i[index search bulk_actions value_bridge]
+  after_action :verify_authorized, except: %i[index search bulk_actions value_bridge analytics]
 
   # GET /valuations or /valuations.json
   def index
@@ -13,6 +14,14 @@ class ValuationsController < ApplicationController
     @pagy, @valuations = pagy(@valuations, limit: per_page) if params[:all].blank?
 
     authorize(service.owner, :show?) if service.owner
+  end
+
+  def analytics
+    service = ValuationList.call(current_user, params) { |relation| policy_scope(relation) }
+    @valuations = service.valuations
+    @owner = service.owner
+    authorize(@owner, :show?) if @owner
+    render "analytics_content", layout: false
   end
 
   # GET /valuations/1 or /valuations/1.json

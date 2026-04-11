@@ -1,0 +1,18 @@
+<%= turbo_frame_tag "valuations_analytics_frame" do %>
+  <div class="row g-4">
+    <div class="col-md-12">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <h6 class="mb-3 font-weight-bold text-primary">Valuation History</h6>
+        <%= valuations_chart(current_user.entity, owner_id: params[:owner_id], owner_type: params[:owner_type], valuations: @valuations) %>
+      </div>
+    </div>
+    <% valuation_json_fields_charts(current_user.entity, @valuations).each do |chart_data| %>
+      <div class="col-md-6">
+        <div class="p-3 border rounded h-100 bg-white shadow-sm">
+          <h6 class="mb-3 font-weight-bold text-primary"><%= chart_data[:title] %></h6>
+          <%= chart_data[:chart] %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

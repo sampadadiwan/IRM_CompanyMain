@@ -1,0 +1,21 @@
+<div class="collapse mb-4" id="valuationsAnalytics">
+  <div class="card shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Valuation Analytics</h5>
+      <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#valuationsAnalytics" aria-label="Close"></button>
+    </div>
+    <div class="card-body">
+      <% 
+        investor_id = local_assigns[:investor_id] || params[:owner_id] || (@investor&.id if defined?(@investor))
+        investor_type = local_assigns[:investor_type] || params[:owner_type] || 'Investor'
+      %>
+      <%= turbo_frame_tag "valuations_analytics_frame", src: analytics_valuations_path(owner_id: investor_id, owner_type: investor_type), loading: "lazy" do %>
+        <div class="d-flex justify-content-center p-5">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
