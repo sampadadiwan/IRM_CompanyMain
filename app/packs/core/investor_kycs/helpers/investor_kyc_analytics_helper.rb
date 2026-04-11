@@ -43,4 +43,36 @@ module InvestorKycAnalyticsHelper
       **chart_theme_color
     }
   end
+
+  # Renders a chart for a specific key within the json_fields.
+  # Supports both 'pie' and 'bar' chart types.
+  def kyc_json_field_chart(records, key, chart_type = 'pie')
+    # Sanitize key to allow only alphanumeric and underscores for safety
+    safe_key = key.to_s.gsub(/[^a-zA-Z0-9_]/, '')
+    return if safe_key.blank?
+
+    # Use MySQL-specific JSON extraction and grouping
+    data = records.group(Arel.sql("JSON_UNQUOTE(investor_kycs.json_fields->'$.#{safe_key}')")).count
+
+    # Clean up results: Handle nulls and empty strings
+    data = data.transform_keys { |k| k.present? && k != "null" ? k : "N/A" }
+
+    title = safe_key.humanize.titleize
+    chart_id = "kyc_json_#{safe_key}_chart"
+
+    options = {
+      title: title,
+      id: chart_id,
+      library: {
+        **chart_theme_color,
+        **clickable_chart_options("q[json_fields.#{safe_key}_eq]", frame_id: 'investor_kycs_frame')
+      }
+    }
+
+    if chart_type == 'bar'
+      bar_chart data, **options
+    else
+      pie_chart data, donut: true, **options
+    end
+  end
 end

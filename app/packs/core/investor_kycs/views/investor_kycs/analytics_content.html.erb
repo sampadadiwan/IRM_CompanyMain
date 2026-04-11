@@ -1,5 +1,15 @@
 <%= turbo_frame_tag "investor_kyc_analytics_frame" do %>
   <div class="row g-4">
+    <% if params[:json_keys].present? %>
+      <% chart_type = params[:chart_type] || 'pie' %>
+      <% params[:json_keys].split(',').each do |key| %>
+        <div class="col-md-6">
+          <div class="p-3 border rounded h-100 bg-white shadow-sm">
+            <%= kyc_json_field_chart(@all_investor_kycs, key.strip, chart_type) %>
+          </div>
+        </div>
+      <% end %>
+    <% end %>
     <div class="col-md-6">
       <div class="p-3 border rounded h-100 bg-white shadow-sm">
         <%= kyc_verification_status_chart(@all_investor_kycs) %>

@@ -5,7 +5,7 @@
       <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#investorKycAnalytics" aria-label="Close"></button>
     </div>
     <div class="card-body">
-      <%= turbo_frame_tag "investor_kyc_analytics_frame", src: analytics_investor_kycs_path, loading: "lazy" do %>
+      <%= turbo_frame_tag "investor_kyc_analytics_frame", src: analytics_investor_kycs_path(params.to_unsafe_h.slice("json_keys", "chart_type")), loading: "lazy" do %>
         <div class="d-flex justify-content-center p-5">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
