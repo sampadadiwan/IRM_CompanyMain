@@ -1,14 +1,17 @@
     <% ul_class ||= "" %>
-    <% widget_id ||= nil %>
+    <%
+        widget_id ||= nil
+        documents_as_tags ||= nil
+    %>
     <% folders.each do |folder, children| %>
         <ul id="<%=folder.id%>" class="<%= ul_class %>">
 
         <li id="folder_<%=folder.id%>" >
             <span class="caret">
-                <%= link_to folder.name, folder_documents_path(folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id], no_folders: true, widget_id: widget_id),
+                <%= link_to folder.name, folder_documents_path(folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id], no_folders: true, widget_id: widget_id, documents_as_tags: documents_as_tags),
                       class: "truncate" %>
             </span>
-            <%= render "/folders/tree_view", folders: children, ul_class: "nested", widget_id: widget_id if children.present? %>
+            <%= render "/folders/tree_view", folders: children, ul_class: "nested", widget_id: widget_id, documents_as_tags: documents_as_tags if children.present? %>
         </li>
 
         </ul>

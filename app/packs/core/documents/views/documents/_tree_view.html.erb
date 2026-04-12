@@ -18,7 +18,7 @@
                 <div id="<%= tree_view_id %>" class="tree_view" data-controller="treeview" data-treeview-documents-frame-id-value="<%= documents_frame_id %>">
                     <% if params[:page].blank? %>
                         <% folders = get_tree_view_folders(params, current_user, @entity, @documents) %>
-                        <%= render "folders/tree_view", folders: folders, widget_id: widget_id  %>
+                        <%= render "folders/tree_view", folders: folders, widget_id: widget_id, documents_as_tags: params[:documents_as_tags] %>
                     <% end %>
                 </div>
             </div>
@@ -49,6 +49,7 @@
                         documents = documents.where(folder_id: params[:folder_id]) if params[:folder_id].present?
                         @pagy, documents = pagy(documents) if params[:all].blank?
                     %>
+
                     <%= render "documents/index", documents: documents, entity: entity, owner: @owner %>
                     <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="#{documents_frame_id}" data-remote="true")) if @pagy %>
                 <% end %>

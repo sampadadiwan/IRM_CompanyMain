@@ -139,30 +139,39 @@
     <% end %>
   </div>
 </div>
-<div class="table-responsive">
-  <table id="documents" class="table table-bordered  dataTable jqDataTable">
-    <thead>
-      <tr>
-        <th class="text-col">
-          Name
-        </th>
-        <th class="text-col">
-          Tags
-        </th>
-        <th class="date-col">
-          Created
-        </th>
-        <th class="action-col">
-        </th>
-      </tr>
-    </thead>
-    <tbody>
+
+<% if params[:documents_as_tags].present? %>
+  <div class="d-flex flex-wrap gap-2 mb-3">
       <% documents.each do |document| %>
-        <%= render partial: "documents/document" , locals: {document: document} %>
+          <span class="badge bg-secondary"><%= link_to document.name, document_path(document) %></span>
       <% end %>
-    </tbody>
-  </table>
-</div>
+  </div>
+<% else %>
+  <div class="table-responsive">
+    <table id="documents" class="table table-bordered  dataTable jqDataTable">
+      <thead>
+        <tr>
+          <th class="text-col">
+            Name
+          </th>
+          <th class="text-col">
+            Tags
+          </th>
+          <th class="date-col">
+            Created
+          </th>
+          <th class="action-col">
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <% documents.each do |document| %>
+          <%= render partial: "documents/document" , locals: {document: document} %>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
 <%
 msg ||= nil
 if false && msg.present?
