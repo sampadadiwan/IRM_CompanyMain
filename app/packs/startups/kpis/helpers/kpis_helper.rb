@@ -6,7 +6,7 @@ module KpisHelper
   #
   # Each series corresponds to one unique (portfolio_company, entity, tag, kpi_name) combination.
   # Values are cast to Float so JSON serialises them as numbers (not BigDecimal strings).
-  def build_kpi_chart_data(kpis, investor_kpi_mappings: nil, date_format: :short)
+  def build_kpi_chart_data(kpis, investor_kpi_mappings: nil, date_format: :month_year)
     dates = kpi_chart_dates(kpis)
     date_labels = dates.index_by { |d| d }.transform_values { |d| date_with_ordinal(d, format: date_format) }
 
@@ -60,7 +60,7 @@ module KpisHelper
     end
   end
 
-  def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil, date_format: :short)
+  def multiple_entity_kpi_lines_by_date(kpis, id: nil, investor_kpi_mappings: nil, date_format: :month_year)
     data_map = build_kpi_chart_data(kpis, investor_kpi_mappings:, date_format:)
 
     line_chart data_map, id:, library: {
@@ -77,7 +77,7 @@ module KpisHelper
     }
   end
 
-  def flexible_kpi_chart(kpis, id: nil, investor_kpi_mappings: nil, chart_config: [], date_format: :short)
+  def flexible_kpi_chart(kpis, id: nil, investor_kpi_mappings: nil, chart_config: [], date_format: :month_year)
     data_map = build_kpi_chart_data(kpis, investor_kpi_mappings: investor_kpi_mappings, date_format: date_format)
 
     # Convert chart_config to an array if it's a hash

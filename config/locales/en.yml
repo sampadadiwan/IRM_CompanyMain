@@ -5,6 +5,7 @@ en:
       default: "%d/%m/%Y"
       long: "%B %d, %Y"
       short: "%b %d"
+      month_year: "%b %Y"
   investor_kyc:
     tax_id: "PAN / Tax ID"
     bank_routing_number: "IFSC Code"
@@ -65,11 +66,6 @@ en:
     step: Step
     upload: Upload
     refetch: Re-fetch
-  date:
-    formats:
-      default: "%d/%m/%Y"
-      long: "%B %d, %Y"
-      short: "%b %d"
   deal:
     create: Deal was created
     destroy: Deal was deleted
@@ -324,6 +320,7 @@ en:
       default: "%d/%m/%Y %H:%M"
       long: "%B %d, %Y"
       short: "%b %d"
+      month_year: "%b %Y"
   top_menus:
     access_rights: Access Rights
     account_settings: Account Settings
@@ -373,4 +370,3 @@ en:
       next: "&rsaquo;"
       previous: "&lsaquo;"
       truncate: "&hellip;"
-
