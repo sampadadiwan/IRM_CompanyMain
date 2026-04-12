@@ -35,7 +35,7 @@ module KpisHelper
 
   # Returns unique, ascending dates that have KPI data in the given scope.
   def kpi_chart_dates(kpis)
-    KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
+    KpiReport.where(id: kpis.unscope(:order).pluck("kpis.kpi_report_id")).order(as_of: :asc).pluck(:as_of).uniq
   end
 
   # Builds the "[Company] - [Tags]" prefix for a chart series name.
@@ -77,12 +77,60 @@ module KpisHelper
     }
   end
 
+  def flexible_kpi_chart(kpis, id: nil, investor_kpi_mappings: nil, chart_config: [], date_format: :short)
+    data_map = build_kpi_chart_data(kpis, investor_kpi_mappings: investor_kpi_mappings, date_format: date_format)
+
+    # Convert chart_config to an array if it's a hash
+    config_array = chart_config.is_a?(Hash) || chart_config.respond_to?(:values) ? chart_config.values : chart_config
+
+    # Sort configs by name length descending to match more specific names first
+    sorted_configs = config_array.sort_by { |c| (c["name"] || c[:name]).to_s.length }.reverse
+
+    # Apply custom types from chart_config
+    data_map.each do |series|
+      series_name = series[:name].to_s.downcase
+
+      # Robust matching: look for the config that matches this series name
+      config = sorted_configs.find do |c|
+        c_name = (c["name"] || c[:name]).to_s.downcase
+        series_name == c_name ||
+          series_name.include?(" - #{c_name}") ||
+          series_name.end_with?(" - #{c_name}")
+      end
+
+      if config
+        assigned_type = config["type"] || config[:type]
+        Rails.logger.debug { "KPI Chart: Matching series '#{series[:name]}' with config type '#{assigned_type}'" }
+
+        series[:type] = assigned_type
+        series[:type] = "column" if series[:type] == "bar"
+        series[:type] = "pie" if series[:type] == "donut"
+        series[:innerSize] = "50%" if assigned_type == "donut"
+
+        if series[:type] == "line"
+          series[:marker] = { enabled: true, radius: 4 }
+          series[:lineWidth] = 2
+        end
+        Rails.logger.debug { "KPI Chart: Series '#{series[:name]}' data count: #{series[:data].count}" }
+      else
+        series[:type] = "column"
+        Rails.logger.debug { "KPI Chart: No config found for series '#{series[:name]}', using default column" }
+      end
+    end
+
+    line_chart data_map, id: id, library: {
+      plotOptions: {
+        column: { pointWidth: 40 },
+        series: { dataLabels: { enabled: false } }
+      },
+      **chart_theme_color
+    }
+  end
+
   def display_kpi(kpi, investor_kpi_mapping, params: {})
     return if kpi.value.blank?
 
     decimals = params[:decimals]&.to_i || 2
-    # number_with_precision returns the value rounded to specified decimals - needed for kpi widget.
-    # We add a delimiter (e.g., 1,000.00) to improve readability for large figures.
     result = number_with_precision(kpi.value, precision: decimals, delimiter: ',')
     percentage_value = (kpi.value * 100).round(decimals)
 
@@ -123,7 +171,8 @@ module KpisHelper
 
   def get_standard_kpi_name(investor_kpi_mappings, kpi)
     if investor_kpi_mappings
-      mapping = investor_kpi_mappings[[kpi.entity_id, kpi&.name]]
+      # Use portfolio_company_id as the primary lookup key to match mapping.investor_id
+      mapping = investor_kpi_mappings[[kpi.portfolio_company_id, kpi&.name&.downcase]]
       mapping.present? ? mapping[0].standard_kpi_name : kpi&.name
     else
       kpi&.name
@@ -139,14 +188,12 @@ module KpisHelper
 
     investor_kpi_mappings = portfolio_company.investor_kpi_mappings
 
-    # Build header row
     header_data = { "val_0" => "KPI" }
     kpi_reports.each_with_index do |kr, i|
       header_data["val_#{i + 1}"] = "#{I18n.l(kr.as_of)} #{kr.tag_list}"
     end
     headers = [OpenStruct.new(header_data)]
 
-    # Build data rows
     rows = investor_kpi_mappings.map do |ikm|
       row_data = { "val_0" => ikm.standard_kpi_name }
 
@@ -155,17 +202,12 @@ module KpisHelper
         row_data["val_#{i + 1}"] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
 
-      # TODO: OpenStruct is soft-deprecated and has known performance issues. This is pre-existing, but if touched again, replace with Data.define or a plain struct.
       OpenStruct.new(row_data)
     end
 
     headers + rows
   end
 
-  # Returns badge classes for the tag/report type label.
-  # Each entry combines a Bootstrap 5 bg-*-subtle fallback (works on all tenants) with
-  # the kedaara-specific badge-tag-* class (defined in kedaara.css with !important, so it
-  # overrides the Bootstrap colours for Kedaara and keeps the brand palette there).
   def tag_badge_class(tag)
     case tag.to_s.strip.downcase
     when "actual"    then "bg-primary-subtle text-primary badge-tag-actual"
@@ -175,5 +217,18 @@ module KpisHelper
     when "budget"    then "bg-success-subtle text-success badge-tag-budget"
     else                  "bg-secondary-subtle text-secondary badge-tag-other"
     end
+  end
+
+  def set_investor_kpi_mappings(kpi_reports, investor, current_user, category: nil)
+    mappings = if ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
+                 investor&.investor_kpi_mappings || []
+               else
+                 Kpi.where(kpi_report_id: kpi_reports.unscope(:order).pluck("kpi_reports.id")).pluck(:name).uniq.map do |kpi_name|
+                   InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name, category: "General")
+                 end
+               end
+
+    mappings = mappings.select { |ikm| ikm.category == category } if category.present?
+    mappings
   end
 end

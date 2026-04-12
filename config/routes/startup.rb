@@ -14,6 +14,7 @@ resources :kpi_reports do
   patch 'recompute_percentage_change', on: :member
   post "analyze", on: :member
   post 'send_portco_notification', on: :collection
+  post 'chart_refresh', on: :collection
   post 'trigger_periodic_reports', on: :collection
   post 'trigger_periodic_reports', on: :member
   get "show_performance", on: :collection
@@ -22,6 +23,7 @@ resources :kpi_reports do
   get :show_deleted, on: :collection
 end
 
+resources :kpi_chart_settings, only: %i[index create destroy show]
 resources :share_transfers
 
 resources :valuations do

@@ -1,77 +1,102 @@
-
 <%
+    portfolio_company_id = params[:portfolio_company_id] || params[:id]
     kpi_reports = kpi_reports.order(as_of: :asc)
-    investor = Investor.where(id: params[:portfolio_company_id]).first if params[:portfolio_company_id].present?
+    investor = Investor.where(id: portfolio_company_id).first if portfolio_company_id.present?
+
+    kpi_chart_settings = KpiChartSetting.where(user_id: current_user.id)
+    kpi_chart_settings = kpi_chart_settings.where(portfolio_company_id: portfolio_company_id) if portfolio_company_id.present?
 %>
-
-
-<% if params[:no_actions].blank? %>
+<!-- FLEXIBLE CHART VERSION 2.0 -->
+<div data-controller="kpi-chart"
+     data-kpi-chart-portfolio-company-id-value="<%= portfolio_company_id %>"
+     data-kpi-chart-entity-id-value="<%= current_user.entity_id %>"
+     data-kpi-chart-refresh-url-value="<%= chart_refresh_kpi_reports_path %>">
+  <% if params[:no_actions].blank? %>
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-
-        <div data-controller="export-xl"></div>
-
-        <%= turbo_frame_tag "remote_modal_alerts" %>
-
-        <h1 class="h4 mb-0 text-800 me-auto">
-            KPIs:
-
-            <% if params[:portfolio_company_id].present? %>
-                <%=  investor ? link_to(investor.investor_name, investor) : @entity.name %>
-            <% end %>
-        </h1>
-
-        <span>
-            <% if params[:q].blank?%>
-                <%= render "kpi_reports/filter", entity: @entity %>
-            <% end %>
-
-            <div class="btn-group">
-            <div class="dropdown">
-                <button class="btn btn-outline-primary dropdown-toggle ti ti-settings" type="button"
-                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Actions
-                </button>
-                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                    <% if params[:view_unapproved] == 'true' %>
-                        <%= link_to "Hide Staged", kpi_reports_path(params.to_unsafe_h.merge(view_unapproved: false)), class: "dropdown-item text-warning ti ti-eye-off" %>
-                    <% else %>
-                        <%= link_to "View Including Staged", kpi_reports_path(params.to_unsafe_h.merge(view_unapproved: true)), class: "dropdown-item text-warning ti ti-eye" %>
+      <div data-controller="export-xl"></div>
+      <%= turbo_frame_tag "remote_modal_alerts" %>
+      <h1 class="h4 mb-0 text-800 me-auto">
+        KPIs:
+        <% if params[:portfolio_company_id].present? %>
+          <%=  investor ? link_to(investor.investor_name, investor) : @entity.name %>
+        <% end %>
+      </h1>
+      <span>
+        <% if params[:q].blank?%>
+          <%= render "kpi_reports/filter", entity: @entity %>
+        <% end %>
+        <div class="btn-group me-2">
+          <div class="dropdown">
+            <button class="btn btn-outline-info dropdown-toggle ti ti-chart-dots" type="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Saved Charts
+            </button>
+            <div class="dropdown-menu shadow" aria-labelledby="savedChartsDropdown" style="min-width: 250px;">
+              <div class="px-3 py-2 border-bottom mb-2">
+                <label class="small font-weight-bold d-block mb-1">Select Charts to Draw</label>
+                <div id="saved-settings-list" data-kpi-chart-target="savedSettingsList" style="max-height: 300px; overflow-y: auto;">
+                  <% if kpi_chart_settings.any? %>
+                    <% kpi_chart_settings.each do |s| %>
+                      <div class="px-3 py-1 dropdown-item-text">
+                        <div class="form-check">
+                          <input class="form-check-input" type="checkbox" value="<%= s.id %>" id="setting_<%= s.id %>"
+                               data-action="change->kpi-chart#toggleSavedSetting click->kpi-chart#stopProp">
+                          <label class="form-check-label small" for="setting_<%= s.id %>" data-action="click->kpi-chart#stopProp">
+                            <%= s.name %>
+                          </label>
+                        </div>
+                      </div>
                     <% end %>
-
-                    <% if investor && params[:view_unapproved] == 'true' && Kpi.unapproved.where(portfolio_company_id: investor.id).exists? %>
-                        <%
+                  <% else %>
+                    <div class="px-3 small text-muted">No saved settings</div>
+                  <% end %>
+                </div>
+              </div>
+              <div class="px-3 py-2 text-center d-flex justify-content-center gap-3">
+                <button class="btn btn-sm btn-link text-primary p-0" data-action="click->kpi-chart#addAll">Add All</button>
+                <button class="btn btn-sm btn-link text-danger p-0" data-action="click->kpi-chart#clearAll">Clear All</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="btn-group">
+          <div class="dropdown">
+            <button class="btn btn-outline-primary dropdown-toggle ti ti-settings" type="button"
+                        data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              Actions
+            </button>
+            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <% if params[:view_unapproved] == 'true' %>
+                <%= link_to "Hide Staged", kpi_reports_path(params.to_unsafe_h.merge(view_unapproved: false)), class: "dropdown-item text-warning ti ti-eye-off" %>
+              <% else %>
+                <%= link_to "View Including Staged", kpi_reports_path(params.to_unsafe_h.merge(view_unapproved: true)), class: "dropdown-item text-warning ti ti-eye" %>
+              <% end %>
+              <% if investor && params[:view_unapproved] == 'true' && Kpi.unapproved.where(portfolio_company_id: investor.id).exists? %>
+                <%
                             approve_all_msg = "This will approve all pending KPIs for #{investor.investor_name}. Proceed?"
                             reject_all_msg = "This will reject and delete all pending KPIs for #{investor.investor_name}. Proceed?"
                         %>
-                        <%= button_to approve_all_kpis_path(portfolio_company_id: investor.id), method: :patch, class: "dropdown-item text-success ti ti-check", form_class: "approveButton",
+                <%= button_to approve_all_kpis_path(portfolio_company_id: investor.id), method: :patch, class: "dropdown-item text-success ti ti-check", form_class: "approveButton",
                             data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no", msg: approve_all_msg } do %>
-                            Approve All Staged
-                        <% end %>
-
-                        <%= button_to approve_all_kpis_path(portfolio_company_id: investor.id, reject: true), method: :patch, class: "dropdown-item text-danger ti ti-x", form_class: "rejectButton",
+                  Approve All Staged
+                <% end %>
+                <%= button_to approve_all_kpis_path(portfolio_company_id: investor.id, reject: true), method: :patch, class: "dropdown-item text-danger ti ti-x", form_class: "rejectButton",
                             data: { action: "click->confirm#popup", turbo: false, method: :patch, notification: "no", msg: reject_all_msg } do %>
-                            Reject All Staged
-                        <% end %>
-                    <% end %>
-
-                    <%= link_to "New", new_kpi_report_path('kpi_report[portfolio_company_id]': investor.id), class: "dropdown-item ti ti-plus", data: {bs_toggle: "tooltip", bs_title: "Add a new KPI report"} if investor %>
-
-                    <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item ti ti-report", data: {bs_toggle: "tooltip", bs_title: "Opens the report view for KPI analytics"} %>
-
-                    <%= content_tag :button, "Download", class: "dropdown-item ti ti-download", data: {action: "click->export-xl#export", tableid: "kpi_reports_grid", filename: 'kpi_reports', bs_toggle: "tooltip", bs_title: "Download KPI reports as Excel file"} %>
-
-                    <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-percentage", data: {bs_toggle: "tooltip", bs_title: "Regenrate % change compared to the previous period (by default this is computed when uploading KPI data)"} if kpi_reports.last %>
-
-                    <%= button_to "Recompute Auto-Fill", recompute_cumulative_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-refresh", data: {bs_toggle: "tooltip", bs_title: "Recompute cumulative and forward fill calculations for this company"} if kpi_reports.last %>
-
-                    <% if investor %>
-                        <a href="#" class="dropdown-item ti ti-bell" data-bs-toggle="modal" data-bs-target="#sendReminderModal-<%= investor.id %>">
-                        Send Reminder
-                        </a>
-                    <% end %>
-
-                    <!-- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader -->
-                    <%= link_to "Upload",
+                  Reject All Staged
+                <% end %>
+              <% end %>
+              <%= link_to "New", new_kpi_report_path('kpi_report[portfolio_company_id]': investor.id), class: "dropdown-item ti ti-plus", data: {bs_toggle: "tooltip", bs_title: "Add a new KPI report"} if investor %>
+              <%= link_to "Reports", kpis_path(filter: true), class: "dropdown-item ti ti-report", data: {bs_toggle: "tooltip", bs_title: "Opens the report view for KPI analytics"} %>
+              <%= content_tag :button, "Download", class: "dropdown-item ti ti-download", data: {action: "click->export-xl#export", tableid: "kpi_reports_grid", filename: 'kpi_reports', bs_toggle: "tooltip", bs_title: "Download KPI reports as Excel file"} %>
+              <%= button_to "Recompute Percentages", recompute_percentage_change_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-percentage", data: {bs_toggle: "tooltip", bs_title: "Regenrate % change compared to the previous period (by default this is computed when uploading KPI data)"} if kpi_reports.last %>
+              <%= button_to "Recompute Auto-Fill", recompute_cumulative_kpi_report_path(kpi_reports.last), method: :patch, class: "dropdown-item ti ti-refresh", data: {bs_toggle: "tooltip", bs_title: "Recompute cumulative and forward fill calculations for this company"} if kpi_reports.last %>
+              <% if investor %>
+                <a href="#" class="dropdown-item ti ti-bell" data-bs-toggle="modal" data-bs-target="#sendReminderModal-<%= investor.id %>">
+                  Send Reminder
+                </a>
+              <% end %>
+              <!-- This is no longer used - its there just to satisfy tests. See KpiWorkbookReader -->
+              <%= link_to "Upload",
                         new_import_upload_path(
                             "import_upload[import_type]": "Kpi",
                             "import_upload[entity_id]": current_user.entity_id,
@@ -79,81 +104,91 @@
                             "import_upload[owner_type]": "Investor",
                             "sample_upload": "KPIS_SAMPLE"),
                             { class: "dropdown-item ti ti-upload"} if Rails.env.test? %>
-
-
-                    <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item ti ti-line-scan", data: {bs_toggle: "tooltip", bs_title: "Generate report to compare period KPIs for this company"} if investor %>
-
-
-                    <%= link_to "Actuals/Budget", kpi_reports_path(portfolio_company_id: params[:portfolio_company_id], budget_view: true, tag_list: ["Actual","Budget"], all: true, num_periods: 2), class: "dropdown-item ti ti-presentation-analytics", data: {bs_toggle: "tooltip", bs_title: "Opens the analytical view showing actual vs budget"} %>
-
-
-                </div>
+              <%= link_to "Compare", kpis_path(grid_view: true, q: ransack_query_params(:portfolio_company_investor_name, :eq, investor.investor_name)), class: "dropdown-item ti ti-line-scan", data: {bs_toggle: "tooltip", bs_title: "Generate report to compare period KPIs for this company"} if investor %>
+              <%= link_to "Actuals/Budget", kpi_reports_path(portfolio_company_id: params[:portfolio_company_id], budget_view: true, tag_list: ["Actual","Budget"], all: true, num_periods: 2), class: "dropdown-item ti ti-presentation-analytics", data: {bs_toggle: "tooltip", bs_title: "Opens the analytical view showing actual vs budget"} %>
             </div>
-            </div>
-        </span>
-
-
-        <% if investor %>
+          </div>
+        </div>
+      </span>
+      <% if investor %>
         <div class="modal fade" id="sendReminderModal-<%= investor.id %>" tabindex="-1" aria-labelledby="sendReminderModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+          <div class="modal-dialog">
             <div class="modal-content">
-            <%= form_with url: send_portco_notification_kpi_reports_path(modal_id: "sendReminderModal-#{investor.id}"), method: :post do |f| %>
+              <%= form_with url: send_portco_notification_kpi_reports_path(modal_id: "sendReminderModal-#{investor.id}"), method: :post do |f| %>
                 <div class="modal-header">
-                <h5 class="modal-title" id="sendReminderModalLabel">Send KPI Report Reminder</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  <h5 class="modal-title" id="sendReminderModalLabel">Send KPI Report Reminder</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                <%= f.hidden_field :portfolio_company_id, value: investor.id %>
-                <div class="mb-3">
+                  <%= f.hidden_field :portfolio_company_id, value: investor.id %>
+                  <div class="mb-3">
                     <%= f.label :as_of, "Period Ending Date", class: "form-label" %>
                     <%= f.date_field :as_of, class: "form-control", required: true, value: Date.today.end_of_month %>
-                </div>
-                <div class="mb-3">
+                  </div>
+                  <div class="mb-3">
                     <%= f.label :period, "Period", class: "form-label" %>
                     <%= f.select :period, KpiReport::PERIODS, { selected: "Month" }, class: "form-control", required: true %>
-                </div>
+                  </div>
                 </div>
                 <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <%= f.submit "Send Reminder", class: "btn btn-primary" %>
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                  <%= f.submit "Send Reminder", class: "btn btn-primary" %>
                 </div>
-            <% end %>
+              <% end %>
             </div>
+          </div>
         </div>
-        </div>
-        <% end %>
-
+      <% end %>
     </div>
-<% end %>
+  <% end %>
+  <%= render "kpi_reports/unapproved_stats" if params[:view_unapproved] == 'true' %>
+  <div class="card shadow mb-4 d-none" id="kpi-chart-controls-panel" data-kpi-chart-target="mainControls">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+      <h6 class="m-0 font-weight-bold text-primary">Chart Controls</h6>
+      <button class="btn btn-sm btn-outline-secondary ti ti-x" data-action="click->kpi-chart#clearAll"></button>
+    </div>
+    <div class="card-body">
+      <div data-kpi-chart-target="controlsContainer"></div>
+      <div class="border-top pt-3 mt-3 d-flex gap-2 align-items-end">
+        <button class="btn btn-primary" data-action="click->kpi-chart#refreshChart">Update Chart</button>
+        <button class="btn btn-outline-secondary" data-action="click->kpi-chart#clearAll">Clear All</button>
+        <div class="flex-grow-1">
+          <input type="text" class="form-control" placeholder="Setting Name" data-kpi-chart-target="settingNameInput">
+        </div>
+        <button class="btn btn-outline-success" data-action="click->kpi-chart#saveSetting">Save Setting</button>
+      </div>
+    </div>
+  </div>
 
-<%= render "kpi_reports/unapproved_stats" if params[:view_unapproved] == 'true' %>
-
-
-
-<% if kpi_reports.present? %>
+  <div class="modal fade" id="kpiChartAlertModal" tabindex="-1" aria-labelledby="kpiChartAlertModalLabel" aria-hidden="true" data-kpi-chart-target="alertModal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="kpiChartAlertModalLabel">KPI Chart</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" data-kpi-chart-target="alertModalBody">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <% if kpi_reports.present? %>
     <%
+      investor_kpi_mappings = set_investor_kpi_mappings(kpi_reports, investor, current_user, category: params[:category])
+  %>
 
-        if ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
-            # Create dummy mappings for the startup, which has all the kpi names
-            investor_kpi_mappings = investor.investor_kpi_mappings
-        else
-            investor_kpi_mappings = Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).pluck(:name).uniq.map{|kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name, category: "General")}
-        end
-
-        # Filter investor_kpi_mappings based on the category if provided
-        if params[:category].present?
-            investor_kpi_mappings = investor_kpi_mappings.select{|ikm| ikm.category == params[:category]}
-        end
-    %>
+    <div id="kpi_grid_view_chart_container" data-kpi-chart-target="chartContainer">
+      <%= render "/kpi_reports/grid_view_chart", kpi_reports:, investor_kpi_mappings:, chart_configs: [], investor: investor  %>
+    </div>
 
     <% if params[:compound].present? %>
-        <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:  %>
+      <%= render "/kpi_reports/grid_view_compound_table", kpi_reports:, investor_kpi_mappings:  %>
     <% else %>
-        <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:  %>
+      <%= render "/kpi_reports/grid_view_table", kpi_reports:, investor_kpi_mappings:  %>
     <% end %>
 
-    <%= render "/kpi_reports/grid_view_chart", kpi_reports:, investor_kpi_mappings:  %>
-
-
-<% end %>
-
+  <% end %>
+</div>

@@ -178,6 +178,13 @@ FactoryBot.define do
     category { InvestorKpiMapping::CATEGORIES.sample }
   end
 
+  factory :kpi_chart_setting do
+    entity
+    user
+    name { Faker::Company.name }
+    config { [{ "name" => "Revenue", "type" => "line" }] }
+  end
+
   factory :quick_link_step do
     name { Faker::Company.name }
     link { Faker::Company.catch_phrase }

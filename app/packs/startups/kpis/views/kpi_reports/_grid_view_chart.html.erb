@@ -1,27 +1,67 @@
-</div>
-
-    <% if params[:chart].nil? || params[:chart] == "true" %>
-        <% 
-            kpi_names = investor_kpi_mappings.collect(&:standard_kpi_name)
-            kpis = Kpi.where(name: kpi_names, kpi_report_id: kpi_reports.pluck(:id))
-            kpi_mappings = investor_kpi_mappings.group_by{|ikm| [ikm.investor&.investor_entity_id, ikm.standard_kpi_name] }
-        %>
-        <div class="associated_entity">
-            <div class="row">
-                <div class="col-lg-12 mb-4">
-
-                    <!-- Illustrations -->
-                    <div class="card shadow mb-4">
-                        <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary"> <%= "KPIs" %> </h6>
-                        </div>
-                        <div class="card-body">
-                            <% id = params[:report_id] %>
-                            <%= multiple_entity_kpi_lines_by_date(kpis, id: "kpi_lines_#{id}", investor_kpi_mappings: kpi_mappings) %>
-                        </div>
-                    </div>
-                </div>
+<div id="kpi_grid_view_chart_container">
+  <% 
+    # Determine which configs to render
+    configs_to_render = local_assigns[:chart_configs] || []
+    
+    # Fallback for manual chart param or initial load
+    show_default = configs_to_render.empty? && (params[:chart].nil? || params[:chart] == "true")
+  %>
+  <% configs_to_render.each_with_index do |chart_config_obj, idx| %>
+    <% 
+        config_name = chart_config_obj[:name]
+        chart_config = chart_config_obj[:config]
+        kpi_names = chart_config.map{|c| c[:name] || c["name"]}
+        
+        # Ensure we have all mappings for the investor (not just the filtered category) for name resolution
+        all_investor_mappings = investor&.investor_kpi_mappings || []
+        
+        # Map standard names back to reported names to find the actual Kpi records
+        relevant_mappings = all_investor_mappings.select { |m| kpi_names.map(&:downcase).include?(m.standard_kpi_name.downcase) }
+        reported_names = relevant_mappings.map(&:reported_kpi_name).uniq
+        
+        # Fallback: if no mappings found, use kpi_names directly
+        reported_names = kpi_names if reported_names.empty?
+        
+        kpis = Kpi.where("LOWER(name) IN (?)", reported_names.map(&:downcase)).where(kpi_report_id: kpi_reports.unscope(:order).pluck("kpi_reports.id"))
+        kpi_mappings = all_investor_mappings.group_by{|ikm| [ikm.investor_id, ikm.reported_kpi_name.downcase] }
+    %>
+    <div class="associated_entity mb-4">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="card shadow">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary"> <%= config_name %> </h6>
             </div>
+            <div class="card-body">
+              <%= flexible_kpi_chart(kpis, id: "flexible_kpi_chart_#{idx}", investor_kpi_mappings: kpi_mappings, chart_config: chart_config) %>
+            </div>
+          </div>
         </div>
-    <% end %>
+      </div>
+    </div>
+  <% end %>
+  <% if show_default %>
+    <% 
+        all_investor_mappings = investor&.investor_kpi_mappings || []
+        kpi_names = investor_kpi_mappings.collect(&:standard_kpi_name)
+        reported_names = investor_kpi_mappings.collect(&:reported_kpi_name).uniq
+        kpis = Kpi.where("LOWER(name) IN (?)", reported_names.map(&:downcase)).where(kpi_report_id: kpi_reports.unscope(:order).pluck("kpi_reports.id"))
+        kpi_mappings = all_investor_mappings.group_by{|ikm| [ikm.investor_id, ikm.reported_kpi_name.downcase] }
+    %>
+    <div class="associated_entity">
+      <div class="row">
+        <div class="col-lg-12 mb-4">
+          <div class="card shadow">
+            <div class="card-header py-3">
+              <h6 class="m-0 font-weight-bold text-primary"> KPIs </h6>
+            </div>
+            <div class="card-body">
+              <% id = params[:report_id] %>
+              <%= multiple_entity_kpi_lines_by_date(kpis, id: "kpi_lines_#{id}", investor_kpi_mappings: kpi_mappings) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
 </div>

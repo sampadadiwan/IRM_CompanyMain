@@ -1,59 +1,39 @@
 class KpiReportsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[show edit update], if: -> { params[:signed_id].present? }
   before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze]
-  after_action :verify_authorized, except: %i[index search show_performance]
+  after_action :verify_authorized, except: %i[index search show_performance chart_refresh]
+  after_action :verify_policy_scoped, only: %i[index chart_refresh]
 
   # GET /kpi_reports or /kpi_reports.json
   def index
     authorize(KpiReport)
+    fetch_kpi_reports
 
-    if params[:q].is_a?(String)
-      begin
-        params[:q] = JSON.parse(params[:q]).with_indifferent_access
-      rescue JSON::ParserError
-        params[:q] = nil
-      end
-    end
-
-    # Extract sort_field and sort_direction
-    sort_field, sort_direction, sort_query = extract_sorting_params
-
-    @q = KpiReport.ransack(params[:q])
-
-    @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company)
-
-    @kpi_reports = if params[:grid_view].present?
-                     @kpi_reports.includes(:kpis, :documents, :owner)
-                   else
-                     @kpi_reports.includes(:user)
-                   end
-
-    @kpi_reports = if params[:tag_list].blank?
-                     @tag_list = ["Actual"]
-                     @kpi_reports.where(tag_list: @tag_list)
-                   elsif params[:tag_list].is_a?(String)
-                     @tag_list = params[:tag_list].split(",").map(&:strip)
-                     @kpi_reports.where(tag_list: @tag_list)
-                   elsif params[:tag_list].is_a?(Array)
-                     @tag_list = params[:tag_list].map(&:strip)
-                     @kpi_reports.where(tag_list: @tag_list)
-                   end
-
-    @kpi_reports = sort_field == "entity_name" ? @kpi_reports.order("entities.name #{sort_direction}") : @kpi_reports
-    @kpi_reports = filter_params(@kpi_reports, :period, :owner_type, :entity_id, :import_upload_id)
-    @kpi_reports = KpiReportSearch.perform(@kpi_reports, params)
-    @entity = Entity.find(params[:entity_id]) if params[:entity_id].present?
-
-    @pagy, @kpi_reports = pagy(@kpi_reports, limit: params[:per_page]) if params[:all].blank? && !request.format.xlsx?
-
-    # Add back the sort field so UI can reflect the current sort if sorted by entity_name
-    @q.sorts = sort_query if sort_query.present?
+    @pagy, @kpi_reports = pagy(@kpi_reports, limit: params[:per_page]) if params[:all].blank? && params[:grid_view].blank? && !request.format.xlsx?
 
     respond_to do |format|
       format.html { render :index }
       format.xlsx { render :index }
       format.json { render json: KpiReportDatatable.new(params, kpi_reports: @kpi_reports) }
+      format.turbo_stream do
+        if params[:flexible_chart] == "true"
+          prepare_chart_configs
+          render turbo_stream: turbo_stream.replace("kpi_grid_view_chart_container",
+                                                    partial: "kpi_reports/grid_view_chart",
+                                                    locals: { kpi_reports: @kpi_reports, investor_kpi_mappings: @investor_kpi_mappings, chart_configs: @chart_configs, investor: @investor })
+        end
+      end
     end
+  end
+
+  def chart_refresh
+    authorize(KpiReport)
+    fetch_kpi_reports
+    prepare_chart_configs
+
+    render turbo_stream: turbo_stream.replace("kpi_grid_view_chart_container",
+                                              partial: "kpi_reports/grid_view_chart",
+                                              locals: { kpi_reports: @kpi_reports, investor_kpi_mappings: @investor_kpi_mappings, chart_configs: @chart_configs, investor: @investor })
   end
 
   # GET /kpi_reports/1 or /kpi_reports/1.json
@@ -253,34 +233,80 @@ class KpiReportsController < ApplicationController
     params.require(:kpi_report).permit(:portfolio_company_id, :entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :delete_kpis, :update_existing_kpis, :upload_new_kpis, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy], documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 
-  def find_or_create_kpi_report_shell(portfolio_company)
-    # Requirement: notifications must target an Actual-tag KPI report shell at quarter end.
-    # If the request is sent more than 15 days after quarter end and the previous quarter
-    # report is still empty (no KPIs), we should reuse that previous quarter shell.
-    current_quarter_end = Time.zone.today.end_of_quarter
-    as_of = current_quarter_end
-    period = "Quarter"
 
-    if Time.zone.today > (current_quarter_end + 15.days)
-      # Create (or reuse) the previous quarter shell so we can check if it has KPIs.
-      previous_quarter_end = (Time.zone.today - 3.months).end_of_quarter
-      previous_report = find_or_create_kpi_report_for(portfolio_company, previous_quarter_end, period)
-      as_of = previous_report.kpis.none? ? previous_quarter_end : current_quarter_end
+  def search
+    @q = KpiReport.ransack(params[:q])
+    @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company)
+    render json: @kpi_reports.map { |kr| { id: kr.id, text: kr.name } }
+  end
 
-      # If we are reusing the previous quarter, return that shell directly.
-      return previous_report if as_of == previous_quarter_end
+  def show_performance; end
+
+  private
+
+  def fetch_kpi_reports
+    if params[:q].is_a?(String)
+      begin
+        params[:q] = JSON.parse(params[:q]).with_indifferent_access
+      rescue JSON::ParserError
+        params[:q] = nil
+      end
     end
 
-    # Default to the current quarter shell.
-    KpiReport.find_or_create_by(
-      entity_id: current_user.entity_id,
-      portfolio_company_id: portfolio_company.id,
-      as_of: as_of,
-      period: period,
-      tag_list: "Actual"
-    ) do |report|
-      report.user_id = current_user.id
-      report.enable_portco_upload = true
+    # Ensure consistency in parameters for search window
+    params[:portfolio_company_id] ||= params[:q][:portfolio_company_id_eq] if params[:q].present? && params[:q][:portfolio_company_id_eq].present?
+
+    @q = KpiReport.ransack(params[:q])
+    sort_field, sort_direction, sort_query = extract_sorting_params
+
+    @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company)
+
+    if params[:tag_list].blank?
+      @tag_list = ["Actual"]
+      @kpi_reports = @kpi_reports.where(tag_list: @tag_list)
+    elsif params[:tag_list].is_a?(String)
+      @tag_list = params[:tag_list].split(",").map(&:strip)
+      @kpi_reports = @kpi_reports.where(tag_list: @tag_list)
+    elsif params[:tag_list].is_a?(Array)
+      @tag_list = params[:tag_list].map(&:strip)
+      @kpi_reports = @kpi_reports.where(tag_list: @tag_list)
+    end
+
+    @kpi_reports = if params[:grid_view].present? || params[:flexible_chart] == "true"
+                     @kpi_reports.includes(:kpis, :documents, :owner)
+                   else
+                     @kpi_reports.includes(:user)
+                   end
+
+    @kpi_reports = sort_field == "entity_name" ? @kpi_reports.order("entities.name #{sort_direction}") : @kpi_reports
+    @kpi_reports = filter_params(@kpi_reports, :period, :owner_type, :entity_id, :import_upload_id)
+    @kpi_reports = KpiReportSearch.perform(@kpi_reports, params)
+
+    @investor = Investor.find_by(id: params[:portfolio_company_id])
+
+    @investor_kpi_mappings = helpers.set_investor_kpi_mappings(@kpi_reports, @investor, current_user, category: params[:category])
+
+    # Add back the sort field so UI can reflect the current sort if sorted by entity_name
+    @q.sorts = sort_query if sort_query.present?
+  end
+
+  def prepare_chart_configs
+    @chart_configs = []
+
+    # Add current manual config if present
+    if params[:chart_config].present?
+      manual_config = params[:chart_config].is_a?(ActionController::Parameters) ? params[:chart_config].values : params[:chart_config]
+      @chart_configs << { name: "Current Selection", config: manual_config } if manual_config.any?
+    end
+
+    # Add saved settings configs
+    if params[:selected_setting_ids].present?
+      saved_settings = KpiChartSetting.where(id: params[:selected_setting_ids], user_id: current_user.id)
+      saved_settings.each do |s|
+        @chart_configs << { name: s.name, config: s.config }
+      end
     end
   end
+
+
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 20_260_410_113_954) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_11_120000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2434,7 +2434,21 @@ ActiveRecord::Schema[8.1].define(version: 20_260_410_113_954) do
     t.decimal "value", precision: 20, scale: 2, default: "0.0"
   end
 
-  create_table "kpi_reports", force: :cascade do |t|
+  create_table "kpi_chart_settings", force: :cascade do |t|
+    t.json "config", null: false
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.boolean "is_default", default: false
+    t.string "name", null: false
+    t.bigint "portfolio_company_id"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["entity_id"], name: "index_kpi_chart_settings_on_entity_id"
+    t.index ["portfolio_company_id"], name: "index_kpi_chart_settings_on_portfolio_company_id"
+    t.index ["user_id"], name: "index_kpi_chart_settings_on_user_id"
+  end
+
+  create_table "kpi_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "analysis"
     t.date "as_of"
     t.boolean "autofill_completed", default: false, null: false

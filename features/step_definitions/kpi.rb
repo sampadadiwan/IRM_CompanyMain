@@ -92,7 +92,13 @@ end
 
 When('I go to the KPIs of the company {string}') do |name|
   kpi_entity = Entity.where(name: name).first
-  visit(kpi_reports_path(entity_id: kpi_entity.id, grid_view: true))
+  # Try to find if there is an investor record for this entity in the current user's entity
+  investor = Investor.find_by(investor_entity_id: kpi_entity.id, entity_id: @user.entity_id)
+  if investor
+    visit(kpi_reports_path(portfolio_company_id: investor.id, grid_view: true))
+  else
+    visit(kpi_reports_path(entity_id: kpi_entity.id, grid_view: true))
+  end
 end
 
 Then('I should not see the KPI Reports') do

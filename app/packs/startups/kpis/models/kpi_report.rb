@@ -147,7 +147,7 @@ class KpiReport < ApplicationRecord
   end
 
   def self.grid(kpi_reports)
-    Kpi.where(kpi_report_id: kpi_reports.pluck(:id)).group_by(&:name)
+    Kpi.where(kpi_report_id: kpi_reports.unscope(:order).pluck(:id)).group_by(&:name)
   end
 
   def investor_for(for_entity_id)

@@ -81,7 +81,7 @@ class KpiBudgetViewService
       investor_kpi_mappings = investor_kpi_mappings.where(category: @params[:categories].split(",")) if @params[:categories].present?
     else
       # Using standard_kpi_name twice as per original code logic (though likely typo there, safe to preserve)
-      investor_kpi_mappings = Kpi.where(kpi_report_id: @kpi_reports.pluck(:id)).pluck(:name).uniq.map { |kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, category: "General") }
+      investor_kpi_mappings = Kpi.where(kpi_report_id: @kpi_reports.unscope(:order).pluck(:id)).pluck(:name).uniq.map { |kpi_name| InvestorKpiMapping.new(standard_kpi_name: kpi_name, category: "General") }
     end
 
     # Filter investor_kpi_mappings based on the category if provided

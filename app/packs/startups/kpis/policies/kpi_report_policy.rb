@@ -15,6 +15,7 @@ class KpiReportPolicy < KpiPolicyBase
   def index?
     user.enable_kpis
   end
+  alias chart_refresh? index?
 
   def show_performance?
     show?
