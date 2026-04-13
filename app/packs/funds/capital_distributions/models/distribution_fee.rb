@@ -12,6 +12,12 @@ class DistributionFee < ApplicationRecord
   before_validation :setup_entity
 
   scope :formulas, -> { where(formula: true) }
+  scope :income, -> { where(fee_type: "Income") }
+  scope :expense, -> { where(fee_type: "Expense") }
+  scope :tax, -> { where(fee_type: "Tax") }
+  scope :reinvestment, -> { where(fee_type: "Reinvestment") }
+  scope :display_only, -> { where(fee_type: "Display Only") }
+  scope :fv_for_redemption, -> { where(fee_type: "FV For Redemption") }
 
   def setup_entity
     self.entity_id = capital_distribution.entity_id
