@@ -179,6 +179,18 @@
                     </li>
                 <% end %>
 
+
+                <% if capital_distribution_payment.capital_distribution.distribution_fees.filter{|fee| fee.fee_type == "Display Only"}.any? %>
+                <li class="list-group-item py-3 px-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-muted">Misc Account Entries</span>
+                    </div>
+                    <div class="fw-bold">
+                        <%= render "/capital_distribution_payments/account_entries", type: ["Display Only"] %>
+                    </div>
+                </li>
+                <% end %>
+
                 <% if capital_distribution_payment.folio_amount != capital_distribution_payment.net_payable %>
                     <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
                         <span class="text-muted">Folio Amount</span>
