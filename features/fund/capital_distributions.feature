@@ -97,5 +97,42 @@ Scenario Outline: Capital Distribution Payment custom notification
   Then the investors must receive email with subject "Custom Dist Notification" with the document "Distribution Template" attached
 
   Examples:
-  	|user	    |entity                                 |fund                 |msg	|
-  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+   	|user	    |entity                                 |fund                 |msg	|
+   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+
+Scenario Outline: Capital Distribution with Display Only fee type
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Display Only Fund;currency=INR" for the entity
+  Given there is an existing investor "name=Investor 1"
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a AccountEntry for distribution "name=Audit Entry;reporting_date=2024-12-01;entry_type=Display Only;amount_cents=99999"
+  When I create a Capital Distribution "title=CD with Display Only;income_cents=10000000;cost_of_investment_cents=5000000;reinvestment_cents=0;distribution_date=2024-12-15"
+  Then it should create Capital Distribution
+  And the Display Only fee should not affect income_with_fees_cents
+  And the Display Only fee should not affect cost_of_investment_with_fees_cents
+  And the ae_audit should contain the Display Only fee details
+  And the json_fields should contain the Display Only fee name with amount "99999"
+
+Scenario Outline: Capital Distribution with Reinvestment fee type
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Reinvestment Fund;currency=INR" for the entity
+  Given there is an existing investor "name=Investor 1"
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a AccountEntry for distribution "name=Dividend Reinvestment;reporting_date=2024-12-01;entry_type=Reinvestment;amount_cents=50000"
+  When I create a Capital Distribution "title=CD with Reinvestment;income_cents=10000000;cost_of_investment_cents=5000000;reinvestment_cents=0;distribution_date=2024-12-15"
+  Then it should create Capital Distribution
+  And the reinvestment_with_fees_cents should be correctly calculated
+  And the net_payable_cents should account for reinvestment correctly
+
+Scenario Outline: Capital Distribution with Expense fee type
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Expense Fund;currency=INR" for the entity
+  Given there is an existing investor "name=Investor 1"
+  Given there is a capital commitment of "orig_folio_committed_amount_cents=100000000;folio_currency=INR" for the last investor
+  Given there is a AccountEntry for distribution "name=Management Fees;reporting_date=2024-12-01;entry_type=Expense;amount_cents=25000"
+  When I create a Capital Distribution "title=CD with Expense;income_cents=10000000;cost_of_investment_cents=5000000;reinvestment_cents=0;distribution_date=2024-12-15"
+  Then it should create Capital Distribution
+  And the expense should reduce the income_with_fees_cents correctly

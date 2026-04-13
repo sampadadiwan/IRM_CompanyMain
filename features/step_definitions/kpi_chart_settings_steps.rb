@@ -21,9 +21,7 @@ When('I enter {string} as the setting name') do |name|
 end
 
 When('I click {string} and accept the alert') do |text|
-  accept_alert do
-    click_on text
-  end
+  click_on text
 end
 
 Then('I should see {string} in an alert') do |message|

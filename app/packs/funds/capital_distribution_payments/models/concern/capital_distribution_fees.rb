@@ -59,6 +59,9 @@ module CapitalDistributionFees
         self.income_with_fees_cents -= ae_cents
         net_ae_cents -= ae_cents
         # We do not reduce the gross_ae_cents as we want to show the total
+      when "Display Only"
+        # Do not add or subtract the fees from any field, just show in the audit
+        Rails.logger.debug { "Display Only fee type, not adding to income_with_fees_cents or cost_of_investment_with_fees_cents, just showing in audit" }
       else
         Rails.logger.debug { "Unknown fee type: #{distribution_fee.fee_type}, not adding to income_with_fees_cents or cost_of_investment_with_fees_cents" }
       end
