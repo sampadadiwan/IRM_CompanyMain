@@ -7,8 +7,6 @@
   #  Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder
   fields_to_display = args[:fields] ? args[:fields].split(",").map { |field| field.strip.split(":") } : []
   uri_params ||= {}
-  cols = 1
-  show_logo = args[:show_logo].to_s.downcase != "false"
 %>
 
 <%= render(
@@ -20,15 +18,8 @@
       )
     ) do %>
 
+  <div class="card-title"><%= name %></div>
   <div class="data-card">
-    <% if show_logo %>
-      <% logo = investor.logo_doc %>
-      <% if logo %>
-        <div class="data-card-logo">
-          <%= image_tag logo.file.url, alt: "Investor Logo", class: "img-fluid", style: "max-height: 100px;" %>
-        </div>
-      <% end %>
-    <% end %>
     <% fields_to_display.each do |label, key| %>
       <div>
         <strong><%= label.humanize %></strong>

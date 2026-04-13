@@ -164,6 +164,6 @@ module ApplicationHelper
   end
 
   def pie_chart_colors_from_css
-    (1..10).map { |i| "var(--pie-color-#{i})" }
+    (1..20).map { |i| "var(--pie-color-#{i})" }
   end
 end

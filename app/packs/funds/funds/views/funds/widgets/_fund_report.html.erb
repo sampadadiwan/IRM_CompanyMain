@@ -5,27 +5,20 @@
         args[:fund_id] = @fund&.id
         args[:investor_id] = @investor&.id
         args[:parent_name] = @investor&.to_s
-        args[:title] = report.name
+        args[:title] ||= report.name
 
+        # Substitute {placeholder} tokens in the report's stored URL with real values from args
+        # (e.g. {fund_id} → 42, {investor_id} → 7). Any args that are not placeholders
+        # (e.g. show_currency_filter) are automatically appended as extra query params.
         uri = report.url_from(args)
 
-        # Append show_currency_filter parameter for valuation URIs
-        if uri.include?('/valuations')
-          if args[:show_currency_filter].to_s == 'true'
-            # Insert show_currency_filter=true before &button=
-            uri = uri.sub(/&button=/, '&show_currency_filter=true&button=')
-          end
-          # If show_currency_filter is false or not set, keep the URI as is with &button=
-        end
-
-
-%>
-    <%
-      # We need unique div ids to apply custom css to widgets in case of multiple widgets with same name. Hence adding report id and widget id to the id.
-        id = "#{widget.widget_name.strip.parameterize.underscore}"
-        id += "_#{report.model.underscore}" if report.present?
-        id += "_#{widget.id}"
+        # Build a unique DOM id for this widget so per-widget CSS overrides don't collide
+        # when the same report type appears multiple times on a dashboard.
+        id = "#{widget.widget_name.strip.parameterize.underscore}"  # slugify the widget name
+        id += "_#{report.model.underscore}" if report.present?      # append the report model name (e.g. _valuation)
+        id += "_#{widget.id}"                                       # append the widget's DB id to guarantee uniqueness
     %>
+
     <%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size, html_options: { id: id})) do %>
         <turbo-frame id="report_<%=report.id%>" src="<%= uri %>" loading="lazy" target="_top">
         </turbo-frame>

@@ -11,7 +11,7 @@
 %>
 
 <% unless dashboard_name == "Portfolio Dashboard" %>
-<nav class="dashboard-nav sticky-top <%= theme %> shadow-sm d-none d-md-block" style="top:70px; z-index: 1020;">
+<nav class="dashboard-nav sticky-top <%= theme %> shadow-sm d-none d-md-block" style="top:70px; z-index: 1000;">
 
     <!-- Header row: logo + name on left, label/value on right -->
     <%# Currently only shows if logo is present as otherwise it doesnt look good %>
@@ -50,7 +50,7 @@
             <li class="nav-item" data-nav-overflow-target="item">
                 <a class="nav-link btn btn-sm" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
                     <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
-                    <%= label != "KYCs" ? label.titleize : label %>
+                    <%= label %>
                 </a>
             </li>
         <% end %>
@@ -64,7 +64,7 @@
                     <li data-index="<%= index %>">
                         <a class="dropdown-item" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
                             <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
-                            <%= label != "KYCs" ? label.titleize : label %>
+                            <%= label %>
                         </a>
                     </li>
                 <% end %>

@@ -1,4 +1,11 @@
-<% uri = URI(kpi_reports_path(portfolio_company_id: @investor.id, entity_id: @investor.entity_id, grid_view: true, **args, units: args[:force_units], all: true)) %>
+<%
+  args ||= {}
+  args[:grid_view] = true
+  args[:portfolio_company_id] = @investor.id
+  args[:entity_id] = @investor.entity_id
+  args[:all] = true
+
+  uri = URI(kpi_reports_path(**args)) %>
 <%= render(
       WidgetCardComponent.new(
         widget: widget,
@@ -7,6 +14,7 @@
       )
     ) do
 %>
+
     <%= turbo_frame_tag "kpi_reports_list", target: "_top", src: "#{uri.to_s}" do %>
     <%end%>
 

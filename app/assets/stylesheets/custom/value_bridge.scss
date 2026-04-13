@@ -1,0 +1,18 @@
+// Value Bridge chart color variables & utilities.
+// The :root block sets the defaults. Override per tenant/theme by redefining
+// the variables in a more specific selector (e.g. body.tenant-acme { ... }).
+
+:root {
+  --value-bridge-positive-bg:    #76b264;
+  --value-bridge-negative-bg:    #E97451;
+  --value-bridge-positive-label: #ffffff;
+  --value-bridge-negative-label: #ffffff;
+}
+
+.value-bridge-positive {
+  color: var(--value-bridge-positive-label, #ffffff);
+}
+
+.value-bridge-negative {
+  color: var(--value-bridge-negative-label, #ffffff);
+}

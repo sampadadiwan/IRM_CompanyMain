@@ -5,8 +5,8 @@
 </div>
 
 <div class="table-responsive">
-  
-  <table class="table table-bordered table-day-calendar mb-0">
+
+  <table class="table table-bordered dataTable table-day-calendar mb-0">
     <thead>
       <tr class="text-center bg-light">
         <th class="time-slot-column-day">Date</th>
@@ -21,13 +21,13 @@
             <%= l event.start_time %>
           </td>
           <td class="events-cell-day">
-            
+
             <div class="events-list-day">
                 <div class="event-item-day">
                   <%= link_to event_path(event), class: 'event-item', data: { turbo: false } do %>
                     <%= event.title %> - <%= event.start_time.strftime('%I:%M %p') %>
                   <% end %>
-                </div>            
+                </div>
             </div>
           </td>
         </tr>

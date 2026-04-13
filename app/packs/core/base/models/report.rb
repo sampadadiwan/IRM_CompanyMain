@@ -161,24 +161,30 @@ class Report < ApplicationRecord
   def url_from(params)
     uri = URI.parse(url)
 
-    # Extract the path and append /dynamic
     updated_path = uri.path
+    query = CGI.unescape(uri.query || "")
 
-    # Decode and substitute parameters in query string
-    substituted_query = if uri.query.present?
-                          query = CGI.unescape(uri.query)
-                          params.each do |key, value|
-                            query = query.sub("{#{key}}", value.to_s)
-                          end
-                          query
-                        end
+    extra_params = {}
 
-    # Reconstruct the final URL
-    final_url = if substituted_query.present?
-                  "#{updated_path}?#{substituted_query}"
-                else
-                  updated_path
-                end
+    params.each do |key, value|
+      key_s = key.to_s
+      if query.include?("{#{key_s}}")
+        # Substitute placeholder in query string
+        query = query.sub("{#{key_s}}", value.to_s)
+      else
+        # No placeholder found — collect as an extra param to append
+        extra_params[key_s] = value.to_s
+      end
+    end
+
+    # Merge extra params into existing query params
+    if extra_params.any?
+      existing = CGI.parse(query)
+      extra_params.each { |k, v| existing[k] = v }
+      query = URI.encode_www_form(existing)
+    end
+
+    final_url = query.present? ? "#{updated_path}?#{query}" : updated_path
 
     Rails.logger.debug { "Original URL: #{url}" }
     Rails.logger.debug { "Params: #{params}" }

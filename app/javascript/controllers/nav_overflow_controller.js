@@ -16,28 +16,33 @@ export default class extends Controller {
   }
 
   recalculate() {
-    const navWidth = this.navTarget.offsetWidth
-    const moreWidth = this.hasMoreTarget ? this.moreTarget.offsetWidth || 100 : 100
-    const reportsWidth = this.hasReportsDropdownTarget ? this.reportsDropdownTarget.offsetWidth || 100 : 0
+    const navWidth = this.navTarget.offsetWidth;
+    const reportsWidth = this.hasReportsDropdownTarget ? this.reportsDropdownTarget.offsetWidth || 50 : 0;
+    const padding = 5; // Safety margin
 
-    let currentWidth = 0
-    let overflowIndices = []
-    const padding = 20 // Safety margin
+    // Measure the "More" button by temporarily making it visible
+    let moreWidth = 50;
+    if (this.hasMoreTarget) {
+      const wasHidden = this.moreTarget.classList.contains('d-none');
+      this.moreTarget.classList.remove('d-none');
+      moreWidth = this.moreTarget.offsetWidth || 50;
+      console.log(`Measured "More" width: ${moreWidth}px (was hidden: ${wasHidden})`);
+      if (wasHidden) this.moreTarget.classList.add('d-none');
+    }
+
+    // Available width once we reserve space for "More" and Reports
+    const availableWidth = navWidth - moreWidth - reportsWidth - padding;
+
+    let currentWidth = 0;
+    let overflowIndices = [];
 
     // First pass: identify which items overflow
     this.itemTargets.forEach((item, index) => {
       item.classList.remove('d-none')
       const itemWidth = item.offsetWidth
 
-      // If we are getting close to the end, we need to account for the "More" button width
-      // We assume if one item overflows, we'll need the "More" button
-      if (currentWidth + itemWidth + reportsWidth + padding > navWidth) {
-         // Check if it fits even if we add 'More'
-         if (currentWidth + itemWidth + moreWidth + reportsWidth + padding > navWidth) {
-            overflowIndices.push(index)
-         } else {
-            currentWidth += itemWidth
-         }
+      if (currentWidth + itemWidth > availableWidth) {
+        overflowIndices.push(index)
       } else {
         currentWidth += itemWidth
       }

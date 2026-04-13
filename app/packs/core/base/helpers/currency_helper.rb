@@ -23,7 +23,7 @@ module CurrencyHelper
     end
   end
 
-  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil, decimals: nil)
+  def money_to_currency(money, params = {}, ignore_units = false, view_cookies: nil, decimals: nil, negative_in_parentheses: false)
     decimals ||= params[:decimals]&.to_i || 2
 
     sanf = true
@@ -52,20 +52,34 @@ module CurrencyHelper
       cookies[:currency_units] = units if cookies
     end
     if money.is_a?(Money)
-      display(money, sanf, units, decimals:)
+      display(money, sanf, units, decimals:, negative_in_parentheses:)
     else
       # Its just a number
-      number_with_delimiter(money.round(decimals))
+      display_numbers_for_ui(money, precision: decimals, negative_in_parentheses:)
     end
   end
 
-  def display(money, sanf, units, decimals:)
+  def display_numbers_for_ui(num, precision: 2, delimiter: ",", negative_in_parentheses: false)
+    abs_val = number_with_precision(num.abs, precision: precision, delimiter: delimiter)
+    if num.negative?
+      negative_in_parentheses ? "(#{abs_val})" : "-#{abs_val}"
+    else
+      abs_val
+    end
+  end
+
+  def display(money, sanf, units, decimals:, negative_in_parentheses: false)
     display_val = case money.currency.iso_code
                   when "INR"
                     money.format(format: FORMAT, south_asian_number_formatting: sanf, precision: decimals)
                   else
                     money.format(format: FORMAT, precision: decimals)
                   end
+
+    if negative_in_parentheses && money.negative?
+      # money.format outputs "-₹1,234.00" or "-$1,234.00" — rewrite to "(₹1,234.00)"
+      display_val = "(#{display_val.delete_prefix('-')})"
+    end
 
     units.present? ? "#{display_val} #{units}" : display_val
     # val = val + "(#{money.to_i.rupees.humanize})"

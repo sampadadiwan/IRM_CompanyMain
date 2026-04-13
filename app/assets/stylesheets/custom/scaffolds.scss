@@ -1435,6 +1435,25 @@ button:disabled {
   }
 }
 
+// Override vendor theme z-index values to follow Bootstrap conventions:
+// topbar (1030) > sidebar (1025) > dark-transparent overlay (1015) > dashboard-nav (1000) > page content
+.topbar {
+  z-index: 1030 !important;  // was 9 in vendor CSS
+}
+
+.left-sidebar {
+  z-index: 1035 !important;  // was 99 in vendor CSS — below topbar, above overlay
+}
+
+[data-layout=vertical] body[data-sidebartype=mini-sidebar] .left-sidebar:hover {
+  z-index: 1035 !important;  // was 50 in vendor CSS
+}
+
+// Sidebar backdrop overlay — must cover the dashboard-nav ribbon
+.show-sidebar + .dark-transparent {
+  z-index: 1015 !important;  // was 10 in vendor CSS — above dashboard-nav (1000)
+}
+
 .dashboard-nav {
   background-color: var(--bs-primary); /* fallback to dark gray */
 }

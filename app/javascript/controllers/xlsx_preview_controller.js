@@ -286,34 +286,76 @@ export default class extends Controller {
     const escapeHtml = (unsafe) => {
       if (unsafe === null || unsafe === undefined) return "";
       return String(unsafe)
-        .replace(/&/g, "&")
-        .replace(/</g, "<")
-        .replace(/>/g, ">")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
     };
 
+    // Format cell value: negative numbers rendered in red with parentheses
+    const formatCell = (value) => {
+      if (value === null || value === undefined || value === "") return "";
+      const str = String(value).trim();
+      // Match values already in parenthesis format from Excel e.g. (1,850) or (1,241)
+      const parenMatch = str.match(/^\(([$€£₹]?[\s]?[\d,]+\.?\d*)(%?)\)$/);
+      if (parenMatch) {
+        const pct = parenMatch[2];
+        return `<span class="text-danger">(${escapeHtml(parenMatch[1])})${pct}</span>`;
+      }
+      // Match negative numbers/percentages e.g. -1,234.56 or -$1,234 or -21%
+      const negativeMatch = str.match(/^-[\s]*([$€£₹]?[\s]?[\d,]+\.?\d*)(%?)$/);
+      if (negativeMatch) {
+        const absVal = escapeHtml(negativeMatch[1]);
+        const pct = negativeMatch[2];
+        return `<span class="text-danger">(${absVal})${pct}</span>`;
+      }
+      return escapeHtml(str);
+    };
+
     const data = XLSXLib.utils.sheet_to_json(sheet, { header: 1, blankrows: false, defval: "", raw: false });
     if (!data || data.length === 0) {
-      return '<table class="table table-bordered table-striped datatable"></table>';
+      return '<table class="table table-bordered table-striped dataTable"></table>';
     }
 
-    const headers = data[0] || [];
-    const rows = data.slice(1);
+    // Detect multi-row headers: if row[1] has no numeric/percentage values and
+    // looks like a sub-header row (e.g. "Actuals", "Forecast"), treat it as a second header row.
+    const isSubHeaderRow = (row) => {
+      const nonEmpty = row.filter(c => c !== null && c !== undefined && String(c).trim() !== "");
+      if (nonEmpty.length === 0) return false;
+      return nonEmpty.every(c => {
+        const s = String(c).trim();
+        // Sub-header if it contains only text labels (no digits or % signs)
+        return !/\d/.test(s) && !s.includes("%");
+      });
+    };
 
-    const maxCols = Math.max(headers.length, ...rows.map(r => r.length));
+    let headerRows = [data[0] || []];
+    let dataStartIndex = 1;
 
-    let html = '<table class="table table-bordered table-striped datatable">';
-    html += '<thead><tr>';
-    for (let i = 0; i < maxCols; i++) {
-      html += `<th>${escapeHtml(headers[i] || "")}</th>`;
+    if (data.length > 1 && isSubHeaderRow(data[1])) {
+      headerRows.push(data[1]);
+      dataStartIndex = 2;
     }
-    html += '</tr></thead><tbody>';
+
+    const rows = data.slice(dataStartIndex);
+    const maxCols = Math.max(...headerRows.map(r => r.length), ...rows.map(r => r.length), 0);
+
+    let html = '<table class="table table-bordered table-striped dataTable">';
+    html += '<thead>';
+    headerRows.forEach(headerRow => {
+      html += '<tr>';
+      for (let i = 0; i < maxCols; i++) {
+        html += `<th>${escapeHtml(headerRow[i] || "")}</th>`;
+      }
+      html += '</tr>';
+    });
+    html += '</thead><tbody>';
 
     rows.forEach(row => {
       html += '<tr>';
       for (let i = 0; i < maxCols; i++) {
-        html += `<td>${escapeHtml(row[i] || "")}</td>`;
+        html += `<td>${formatCell(row[i])}</td>`;
       }
       html += '</tr>';
     });

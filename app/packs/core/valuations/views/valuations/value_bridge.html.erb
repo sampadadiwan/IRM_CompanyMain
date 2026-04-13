@@ -42,7 +42,7 @@
                         label = @moic ? "#{number_with_precision(value, precision: 2)}x" : number_with_delimiter(number_with_precision(value, precision: 2))
                         font_color = "white"
                     else
-                        color = value && value > 0 ? "#76b264ff" : "#E97451"
+                        color = value && value > 0 ? "var(--value-bridge-positive-bg, #76b264)" : "var(--value-bridge-negative-bg, #E97451)"
                         prefix = (value && value > 0) ? "+" : ""
                         label = if @moic
                                     "#{prefix}#{number_with_precision(value, precision: 2)}x"

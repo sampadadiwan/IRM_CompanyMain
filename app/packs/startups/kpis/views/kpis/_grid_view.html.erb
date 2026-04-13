@@ -1,167 +1,189 @@
 
-<div data-controller="export-xl">
+<% turbo_frame_id ||= params[:turbo_frame_id]
+    if turbo_frame_id.blank? && params[:widget_id].present?
+        turbo_frame_id = "kpis_frame_widget_#{params[:widget_id]}"
+    elsif params[:report_id].present?
+        turbo_frame_id = "kpis_frame_report_#{params[:report_id]}"
+    else
+        turbo_frame_id = "kpis_frame"
+    end
 
-    <div class="d-sm-flex align-items-center justify-content-between mb-2">
-        <h1 class="h4 mb-0 text-gray-800">
-            <%= params[:title].presence || "KPIs" %>
-        </h1>
+    show_inputs = params[:show_inputs].to_s == "false" ? false : true
+    show_prefix = params[:show_prefix].to_s == "false" ? false : true
+    show_name = params[:show_name].to_s == "false" ? false : true
+    show_tags = params[:show_tags].to_s == "false" ? false : true
+%>
 
-        <span>
-            <div class="btn-group">
-                <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="ti ti-download"></i> Download
-                </button>
-                <ul class="dropdown-menu dropdown-menu-end">
-                    <li>
-                        <%= link_to kpis_path(params: params.to_unsafe_h.merge(format: :xlsx)),
-                                    class: "dropdown-item",
-                                    title: "Exports all rows across all pages. You will receive a notification when it's ready.",
-                                    data: { turbo: false } do %>
-                            <i class="ti ti-file-spreadsheet"></i> Export All
-                        <% end %>
-                    </li>
-                    <li>
-                        <button class="dropdown-item"
-                                data-action="click->export-xl#export"
-                                data-tableid="kpis_grid"
-                                data-filename="kpis">
-                            <i class="ti ti-table-export"></i> Export Visible
-                        </button>
-                    </li>
-                </ul>
-            </div>
-        </span>
-    </div>
+<%= turbo_frame_tag turbo_frame_id do %>
+    <div data-controller="export-xl">
 
-    <div class="mb-3">
-        <%= render SearchComponent.new(
-                data_source: kpis_path(params: params.to_unsafe_h),
-                turbo_frame: "_top",
-                allow_search: false) %>
-    </div>
+        <div class="d-sm-flex align-items-center justify-content-between mb-2">
+            <%# Does not look identical to widget name/tag display so can be hidden %>
+            <% if show_inputs %>
+            <h1 class="h4 mb-2 text-gray-800">
+                <%= params[:title].presence || "KPIs" %>
+            </h1>
+            <% end %>
+            <% if show_inputs %>
+            <span>
+                <div class="btn-group">
+                    <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="ti ti-download"></i> Download
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <%= link_to kpis_path(params: params.to_unsafe_h.merge(format: :xlsx)),
+                                        class: "dropdown-item",
+                                        title: "Exports all rows across all pages. You will receive a notification when it's ready.",
+                                        data: { turbo: false } do %>
+                                <i class="ti ti-file-spreadsheet"></i> Export All
+                            <% end %>
+                        </li>
+                        <li>
+                            <button class="dropdown-item"
+                                    data-action="click->export-xl#export"
+                                    data-tableid="kpis_grid"
+                                    data-filename="kpis">
+                                <i class="ti ti-table-export"></i> Export Visible
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </span>
+            <% end %>
+        </div>
 
-    <%
-        # group_by investor_entity_id and standard_kpi_name
-        investor_kpi_mappings = InvestorKpiMapping.includes(:investor).where(entity_id: current_user.entity_id).group_by{|ikm| [ikm.investor_id, ikm.standard_kpi_name] }
+        <% if show_inputs %>
+            <%= render SearchComponent.new(
+                    data_source: kpis_path(params: params.to_unsafe_h),
+                    turbo_frame: "_top",
+                    allow_search: false) %>
+        <% end %>
+        <%
+            # group_by investor_entity_id and standard_kpi_name
+            investor_kpi_mappings = InvestorKpiMapping.includes(:investor).where(entity_id: current_user.entity_id).group_by{|ikm| [ikm.investor_id, ikm.standard_kpi_name] }
 
-        grouped_kpis = kpis.group_by{|k| [k.entity_id, k.owner_id, k.kpi_report.tag_list]}
-        dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
-    %>
+            grouped_kpis = kpis.group_by{|k| [k.entity_id, k.owner_id, k.kpi_report.tag_list]}
+            dates = KpiReport.where(id: kpis.pluck(:kpi_report_id)).order(as_of: :asc).pluck(:as_of).uniq
+        %>
 
-    <% unless params[:show_table] == "false" %>
-        <div class="table-responsive">
-            <table id="kpis_grid" class="table table-bordered table-striped dataTable table-grey">
-                <thead>
-                    <tr>
-                        <th class="no-sort">Portfolio Company</th>
-                        <th class="no-sort">Tags</th>
-                        <th class="no-sort">KPI</th>
-                        <% dates.each do |as_of| %>
-                            <th><%= date_with_ordinal(as_of, format: params[:date_format]&.to_sym) %></th>
-                        <% end %>
-                    </tr>
-                </thead>
-                <tbody>
-                    <%
-                        grouped_kpis.each do |key, kpis|
-                        entity_id, owner_id, tag_list = key
-                    %>
-                        <% kpis.group_by { |kpi| [kpi.name, kpi.portfolio_company_id] }.each do |(name, company_id), kpis| %>
-                            <tr>
-                                <td><%= kpis.first.portfolio_company&.investor_name %></td>
-                                <%
-                                    kpi = kpis.first
-                                    ikm = get_investor_kpi_mapping(investor_kpi_mappings, kpi)
-                                    standard_kpi_name = get_standard_kpi_name(investor_kpi_mappings, kpi)
-                                %>
-                                <td>
-                                    <span class="badge badge-pill <%= tag_badge_class(tag_list) %>"><%= tag_list %></span>
-                                    <% if kpi.owner %>
-                                        <span class="d-block"> <%= kpi.owner %> </span>
-                                    <% end %>
-                                </td>
-                                <td>
-                                    <%= standard_kpi_name %>
-                                </td>
-                                <% dates.each do |as_of| %>
-                                    <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
+        <% unless params[:show_table] == "false" %>
+            <div class="table-responsive">
+                <table id="kpis_grid" class="table table-bordered table-striped dataTable table-grey">
+                    <thead>
+                        <tr>
+                            <th class="no-sort">Portfolio Company</th>
+                            <th class="no-sort">Tags</th>
+                            <th class="no-sort">KPI</th>
+                            <% dates.each do |as_of| %>
+                                <th><%= date_with_ordinal(as_of, format: params[:date_format]&.to_sym) %></th>
+                            <% end %>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <%
+                            grouped_kpis.each do |key, kpis|
+                            entity_id, owner_id, tag_list = key
+                        %>
+                            <% kpis.group_by { |kpi| [kpi.name, kpi.portfolio_company_id] }.each do |(name, company_id), kpis| %>
+                                <tr>
+                                    <td><%= kpis.first.portfolio_company&.investor_name %></td>
+                                    <%
+                                        kpi = kpis.first
+                                        ikm = get_investor_kpi_mapping(investor_kpi_mappings, kpi)
+                                        standard_kpi_name = get_standard_kpi_name(investor_kpi_mappings, kpi)
+                                    %>
                                     <td>
-                                        <% if kpi && kpi.value.present? %>
-                                            <%= display_kpi(kpi, ikm, params:) %>
-                                            <br>
-                                            <%= kpi_percentage_class(kpi, ikm).html_safe %>
-                                            <% if kpi.notes.present? %>
-                                                <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
-                                            <% end %>
+                                        <% if show_tags %>
+                                            <span class="badge badge-pill <%= tag_badge_class(tag_list) %>"><%= tag_list %></span>
+                                        <% end %>
+                                        <% if kpi.owner %>
+                                            <span class="d-block"> <%= kpi.owner %> </span>
                                         <% end %>
                                     </td>
-                                <% end %>
-                            </tr>
+                                    <td>
+                                        <%= standard_kpi_name %>
+                                    </td>
+                                    <% dates.each do |as_of| %>
+                                        <% kpi = kpis.find{|k| k.kpi_report.as_of == as_of} %>
+                                        <td>
+                                            <% if kpi && kpi.value.present? %>
+                                                <%= display_kpi(kpi, ikm, params:) %>
+                                                <br>
+                                                <%= kpi_percentage_class(kpi, ikm).html_safe %>
+                                                <% if kpi.notes.present? %>
+                                                    <i class="ti ti-info-circle text-primary float-end fs-4" data-bs-toggle="tooltip" data-bs-placement="top" title="<%= kpi.notes %>"></i>
+                                                <% end %>
+                                            <% end %>
+                                        </td>
+                                    <% end %>
+                                </tr>
+                            <% end %>
+
                         <% end %>
+                    </tbody>
+                </table>
+                <% if @pagy_series %>
+                    <div class="d-flex align-items-center justify-content-between mt-2 mb-4">
+                        <div class="text-muted small"><%= raw pagy_info(@pagy_series) %></div>
+                        <%# 30,11:       <%= raw pagy_bootstrap_nav(@pagy, anchor_string: %(data-turbo-frame="assistant_tasks_frame" data-remote="true")) %>
+                        <%= raw pagy_bootstrap_nav(@pagy_series, anchor_string: %(data-turbo-frame="kpis_frame" data-remote="true")) %>
+                    </div>
+                <% end %>
 
-                    <% end %>
-                </tbody>
-            </table>
-        </div>
-    <% end %>
+            </div>
+        <% end %>
 
-</div>
+    </div>
 
-<% unless params[:show_chart] == "false" %>
-    <%
-        chart_data = build_kpi_chart_data(kpis, investor_kpi_mappings:, date_format: :default)
-    %>
-    <div class="associated_entity">
-        <div class="row">
-            <div class="col-lg-12 mb-4">
+    <% unless params[:show_chart] == "false" %>
+        <%
+            chart_data = build_kpi_chart_data(kpis, investor_kpi_mappings:, date_format: :default, show_prefix: show_prefix, show_name: show_name)
+        %>
+        <div class="associated_entity">
+            <div class="row">
+                <div class="col-lg-12 mb-4">
 
-                <!-- Illustrations -->
-                <div class="card shadow mb-4"
-                     data-controller="chart-switcher"
-                     data-chart-switcher-chart-data-value="<%= chart_data.to_json %>"
-                     data-chart-switcher-storage-key-value="chart_switcher:<%= request.path %>">
-                    <div class="card-header py-3 d-flex align-items-center justify-content-between">
-                        <h6 class="m-0 font-weight-bold text-primary"> <%= params[:title].presence || "KPIs" %> </h6>
-                        <div class="d-flex align-items-center gap-2">
-                            <%# Date picker — only visible for pie/donut charts, shown/hidden by the JS controller %>
-                            <div data-chart-switcher-target="dateSelectWrapper" style="display:none;">
-                                <select class="form-select form-select-sm"
-                                        data-action="change->chart-switcher#switchDate"
-                                        data-chart-switcher-target="dateSelect">
+                    <!-- Illustrations -->
+                    <div class="card shadow mb-4"
+                        data-controller="chart-switcher"
+                        data-chart-switcher-chart-data-value="<%= chart_data.to_json %>"
+                        data-chart-switcher-storage-key-value="chart_switcher:<%= request.path %>">
+                        <div class="card-header py-3 d-flex align-items-center justify-content-end">
+                            <div class="d-flex align-items-center gap-2">
+                                <%# Date picker — only visible for pie/donut charts, shown/hidden by the JS controller %>
+                                <div data-chart-switcher-target="dateSelectWrapper" style="display:none;">
+                                    <select class="form-select form-select-sm"
+                                            data-action="change->chart-switcher#switchDate"
+                                            data-chart-switcher-target="dateSelect">
+                                    </select>
+                                </div>
+                                <select class="form-select form-select-sm w-auto"
+                                        data-action="change->chart-switcher#switch"
+                                        data-chart-switcher-target="typeSelect">
+                                    <optgroup label="Trend">
+                                        <option value="LineChart">Line</option>
+                                        <option value="SplineChart">Spline</option>
+                                        <option value="AreaChart">Area</option>
+                                    </optgroup>
+                                    <optgroup label="Comparison">
+                                        <option value="ColumnChart">Column</option>
+                                        <option value="BarChart">Bar (Horizontal)</option>
+                                    </optgroup>
+                                    <optgroup label="Distribution">
+                                        <option value="PieChart">Pie</option>
+                                        <option value="DonutChart">Donut</option>
+                                        <option value="HalfDonutChart">Half Donut</option>
+                                    </optgroup>
                                 </select>
                             </div>
-                            <select class="form-select form-select-sm w-auto"
-                                    data-action="change->chart-switcher#switch"
-                                    data-chart-switcher-target="typeSelect">
-                                <optgroup label="Trend">
-                                    <option value="LineChart">Line</option>
-                                    <option value="SplineChart">Spline</option>
-                                    <option value="AreaChart">Area</option>
-                                </optgroup>
-                                <optgroup label="Comparison">
-                                    <option value="ColumnChart">Column</option>
-                                    <option value="BarChart">Bar (Horizontal)</option>
-                                </optgroup>
-                                <optgroup label="Distribution">
-                                    <option value="PieChart">Pie</option>
-                                    <option value="DonutChart">Donut</option>
-                                    <option value="HalfDonutChart">Half Donut</option>
-                                </optgroup>
-                            </select>
                         </div>
-                    </div>
-                    <div class="card-body">
-                        <div data-chart-switcher-target="container" style="min-height: 300px;"></div>
+                        <div class="card-body">
+                            <div data-chart-switcher-target="container" style="min-height: 300px;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-<% end %>
-
-<% if @pagy_series %>
-    <div class="d-flex align-items-center justify-content-between mt-2 mb-4">
-        <div class="text-muted small"><%= raw pagy_info(@pagy_series) %></div>
-        <%= raw pagy_bootstrap_nav(@pagy_series) %>
-    </div>
+    <% end %>
 <% end %>

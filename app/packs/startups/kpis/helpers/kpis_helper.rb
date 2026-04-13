@@ -1,4 +1,6 @@
 module KpisHelper
+  include CurrencyHelper
+
   # Builds the Highcharts-compatible data array for the chart switcher.
   #
   # Returns an array of series hashes:
@@ -6,7 +8,7 @@ module KpisHelper
   #
   # Each series corresponds to one unique (portfolio_company, entity, tag, kpi_name) combination.
   # Values are cast to Float so JSON serialises them as numbers (not BigDecimal strings).
-  def build_kpi_chart_data(kpis, investor_kpi_mappings: nil, date_format: :month_year)
+  def build_kpi_chart_data(kpis, investor_kpi_mappings: nil, date_format: :month_year, show_prefix: true, show_name: true)
     dates = kpi_chart_dates(kpis)
     date_labels = dates.index_by { |d| d }.transform_values { |d| date_with_ordinal(d, format: date_format) }
 
@@ -17,14 +19,21 @@ module KpisHelper
     grouped_kpis.flat_map do |(_portfolio_company_id, _entity_id, tags), group_kpis|
       portfolio_company = group_kpis.first.portfolio_company
       entity            = group_kpis.first.entity
-      series_prefix     = kpi_chart_series_prefix(portfolio_company, entity, tags, single_company)
+      series_prefix     = show_prefix ? kpi_chart_series_prefix(portfolio_company, entity, tags, single_company) : ""
 
       group_kpis.group_by(&:name).map do |_name, kpis_by_name|
-        standard_kpi = get_standard_kpi_name(investor_kpi_mappings, kpis_by_name.first)
-        full_name    = series_prefix.present? ? "#{series_prefix} - #{standard_kpi}" : standard_kpi
+        standard_kpi = show_name ? get_standard_kpi_name(investor_kpi_mappings, kpis_by_name.first) : ""
 
+        full_name = if series_prefix.present? && standard_kpi.present?
+                      "#{series_prefix} - #{standard_kpi}"
+                    elsif series_prefix.present?
+                      series_prefix
+                    else
+                      standard_kpi
+                    end
         {
           name: full_name,
+          tag: tags.to_s.strip.downcase, # passed to JS so it can look up --tag-color-*
           data: kpi_chart_series_data(kpis_by_name, dates, date_labels)
         }
       end
@@ -131,19 +140,24 @@ module KpisHelper
     return if kpi.value.blank?
 
     decimals = params[:decimals]&.to_i || 2
-    result = number_with_precision(kpi.value, precision: decimals, delimiter: ',')
-    percentage_value = (kpi.value * 100).round(decimals)
+    # if negative_in_parentheses is not provided, default to true (i.e., show negatives in parentheses)
+    negative_in_parentheses = params[:negative_in_parentheses].nil? || params[:negative_in_parentheses]
+    # number_with_precision returns the value rounded to specified decimals - needed for kpi widget.
+    # We add a delimiter (e.g., 1,000.00) to improve readability for large figures.
+    result = display_numbers_for_ui(kpi.value, precision: decimals, delimiter: ',', negative_in_parentheses: negative_in_parentheses)
+    percentage_value = (kpi.value * 100)
+    percentage_value = display_numbers_for_ui(percentage_value, precision: decimals, delimiter: nil, negative_in_parentheses: negative_in_parentheses)
 
     if investor_kpi_mapping.present?
       case investor_kpi_mapping.data_type
       when "money"
         result = if params[:units].present?
-                   money_to_currency(kpi.value, params)
+                   money_to_currency(kpi.value, params, negative_in_parentheses: negative_in_parentheses)
                  else
-                   money_to_currency(kpi.value, params, true)
+                   money_to_currency(kpi.value, params, true, negative_in_parentheses: negative_in_parentheses)
                  end
       when "percentage"
-        result = "#{percentage_value} %"
+        result = "#{percentage_value}%"
       end
     end
     result
@@ -188,12 +202,14 @@ module KpisHelper
 
     investor_kpi_mappings = portfolio_company.investor_kpi_mappings
 
+    # Build header row
     header_data = { "val_0" => "KPI" }
     kpi_reports.each_with_index do |kr, i|
       header_data["val_#{i + 1}"] = "#{I18n.l(kr.as_of)} #{kr.tag_list}"
     end
     headers = [OpenStruct.new(header_data)]
 
+    # Build data rows
     rows = investor_kpi_mappings.map do |ikm|
       row_data = { "val_0" => ikm.standard_kpi_name }
 
@@ -202,12 +218,17 @@ module KpisHelper
         row_data["val_#{i + 1}"] = kpi ? number_with_delimiter(kpi.value.round(2)) : "N/A"
       end
 
+      # TODO: OpenStruct is soft-deprecated and has known performance issues. This is pre-existing, but if touched again, replace with Data.define or a plain struct.
       OpenStruct.new(row_data)
     end
 
     headers + rows
   end
 
+  # Returns badge classes for the tag/report type label.
+  # Each entry combines a Bootstrap 5 bg-*-subtle fallback (works on all tenants) with
+  # the kedaara-specific badge-tag-* class (defined in kedaara.css with !important, so it
+  # overrides the Bootstrap colours for Kedaara and keeps the brand palette there).
   def tag_badge_class(tag)
     case tag.to_s.strip.downcase
     when "actual"    then "bg-primary-subtle text-primary badge-tag-actual"

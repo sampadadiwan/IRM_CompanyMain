@@ -1,5 +1,11 @@
 :root,
 [data-bs-theme=light] {
+  /* Value Bridge chart colors */
+  --value-bridge-positive-bg: #00565C;
+  --value-bridge-negative-bg: #B21832;
+  --value-bridge-positive-label: #ffffff;
+  --value-bridge-negative-label: #ffffff;
+
   --bs-blue: #006D74;
   --bs-indigo: #6610f2;
   --bs-purple: #6f42c1;
@@ -121,7 +127,7 @@
   --bs-form-valid-border-color: #006D74;
   --bs-form-invalid-color: #fa896b;
   --bs-form-invalid-border-color: #fa896b;
-  /* Pie Chart Colors */
+  /* Pie / chart fallback palette — used when a series has no tag colour */
   --pie-color-1: #006D74;
   --pie-color-2: #550C18;
   --pie-color-3: #00BFC6;
@@ -132,6 +138,27 @@
   --pie-color-8: #F4A261;
   --pie-color-9: #7FB258;
   --pie-color-10: #DE61F4;
+  /* Extra colors just in case */
+  --pie-color-11: #5d87ff;
+  --pie-color-12: #65C18C;
+  --pie-color-13: #9ADCFF;
+  --pie-color-14: #364F6B;
+  --pie-color-15: #3FC1C9;
+  --pie-color-16: #54BAB9;
+  --pie-color-17: #FC5185;
+  --pie-color-18: #FFBCBC;
+  --pie-color-19: #EDF6E5;
+  --pie-color-20: #FF964F;
+
+  /* KPI tag chart colours — must stay in sync with .badge-tag-* rules below.
+     Override these variables in a client-specific CSS file to retheme charts
+     without touching any Ruby or JavaScript. */
+  --tag-color-actual:    #1976D2;
+  --tag-color-budget:    #579158;
+  --tag-color-ic-case:   #EF6C00;
+  --tag-color-audited:   #FF0084;
+  --tag-color-projected: #6f42c1;
+  --tag-color-other:     #14ebaa;
 
   /* OLD COLORS */
   /* --pie-color-1: #006D74;
@@ -278,7 +305,7 @@
 .badge-tag-ic-case   { background-color: #FDEDE0 !important; color: #EF6C00 !important; }
 .badge-tag-audited   { background-color: #FFEBF6 !important; color: #FF0084 !important; }
 .badge-tag-projected { background-color: #F0EAFB !important; color: #6f42c1 !important; }
-.badge-tag-other { background-color: #EAF1EB !important; color: #14ebaa !important; }
+.badge-tag-other { background-color: #E2E2F6 !important; color: #1f22a6 !important; }
 
 [data-bs-theme=light][data-color-theme=Blue_Theme]:root .btn-outline-success, [data-bs-theme=dark][data-color-theme=Blue_Theme]:root .btn-outline-success {
     --bs-btn-color: #006D74;
@@ -431,6 +458,7 @@ a:hover {
     margin-right: 0px;
     border-radius: 0px;
     margin-bottom: 0px;
+    border-bottom: 2px solid transparent; /* reserve space so hover border doesn't shift height */
 }
 
 .dashboard-nav .nav-pills .nav-item .nav-link.active{
@@ -439,7 +467,7 @@ a:hover {
 
 
 .dashboard-nav .nav-link {
-    padding: 0.25rem 0.35rem 0.40rem;
+    padding: 8px 16px;
 }
 
 .dashboard-nav .btn-check:checked + .btn, .dashboard-nav :not(.btn-check) + .btn:active, .dashboard-nav .btn:first-child:active, .dashboard-nav .btn.active, .dashboard-nav .btn.show{
@@ -451,7 +479,7 @@ a:hover {
 
 .dashboard-nav .nav-link:hover, .dashboard-nav .nav-link:focus {
     color: var(--bs-nav-link-hover-color);
-    border-bottom: 2px solid var(--bs-primary);
+    border-bottom: 2px solid var(--bs-primary) !important;
 }
 
 .dashboard-nav.bg-light{
@@ -473,6 +501,16 @@ a:hover {
   scrollbar-width: none;
   -ms-overflow-style: none;
 
+}
+
+/* Allow dropdown menus to escape the clipped nav-pills container */
+.dashboard-nav .nav-pills:has(.dropdown-menu.show) {
+  overflow: visible;
+}
+
+/* Ensure the nav wrapper itself does not clip the dropdown */
+.dashboard-nav {
+  overflow: visible !important;
 }
 
 .dashboard-nav .nav-pills::-webkit-scrollbar {
@@ -546,11 +584,11 @@ a:hover {
     border-radius: 0px;
     margin: 0px 0px -2px;
     justify-content: center;
-    padding-bottom: 18px;
+    padding: 18px 10px 18px;
     min-height: 3em;
     box-sizing: border-box;
-    padding-top: 0px;
     align-items: center;
+    font-weight: 400;
 }
 
 .nav.nav-pills.nav-justified .nav-link img {
@@ -788,7 +826,8 @@ table.table.dataTable.table-striped>tbody>tr:nth-of-type(2n+1)>* {
     box-shadow: unset !important;
 }
 
-.table tbody tr td.text-danger{
+.table tbody tr td.text-danger,
+.table tbody tr td .text-danger {
     color: #D32F2F !important;
 }
 
@@ -1175,17 +1214,17 @@ form .form-group label {
 }
 
 form#kpi_reports_filter {
-    display: inline-flex !important;
     align-items: center;
     justify-content: space-between;
     overflow-x: auto;
-    gap: 5px;
+    gap: 15px;
 }
 
+
 #kpi_reports_filter .select2-container {
-    width: 200px !important;
-    min-width: 200px !important;
-    max-width: 200px !important;
+    width: 250px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
     display: inline-block !important;
 }
 
@@ -1194,7 +1233,17 @@ form#kpi_reports_filter {
 }
 
 #kpi_reports_filter select#category {
-    width: 160px !important;
+    width: 220px !important;
+}
+
+#kpi_reports_filter select#period {
+    width: 130px !important;
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+#kpi_reports_filter select#units {
+    width: 130px !important;
 }
 
 #kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice__display{
@@ -1242,9 +1291,9 @@ form#kpi_reports_filter {
 
 #kpi_reports_filter .form-group {
     margin-top: 0px;
-    display: flex;
+    /* display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 2px; */
 }
 
 #kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice[title="Actual"] {
@@ -1316,7 +1365,7 @@ form#kpi_reports_filter {
 }
 
 #kpi_reports_filter button{
-    margin-bottom: 12px;
+    /* margin-bottom: 12px; */
 }
 
 #kpi_reports_budget_grid thead tr:first-child th:first-child {
@@ -1548,7 +1597,27 @@ ul.pagination {
 }
 
 [id^="portfolio_stats_"] .card-body{
-    padding: 20px;
+    padding: 20px !important;
+}
+
+/* [id^="portfolio_stats_"] .card-body .form-select.form-select-sm{
+    margin-right: 10px;
+} */
+
+[id^="portfolio_stats_"] .card-body .d-flex.align-items-center.mb-3 {
+    margin-bottom: 0.7rem !important;
+}
+
+[id^="portfolio_stats_"] .card-body .d-flex.justify-content-end.mb-3{
+    margin-bottom: 0rem !important;
+}
+
+[id^="portfolio_stats_"] .card-body  .col-md-6 .card.p-2.m-2.border.shadow-sm.rounded-3 {
+    margin: 20px 0px 0px !important;
+}
+
+[id^="portfolio_stats_"] .card-body .col-md-6 .card-body{
+    padding: 10px !important;
 }
 
 .currency-wrapper {
@@ -1595,6 +1664,10 @@ div.dt-container div.dt-length label {
     box-shadow: 0 0 0 0.25rem rgba(0, 109, 116, 0.25);
 }
 
+#fund_ratios_frame th div {
+    font-size: 1rem;
+}
+
 #fund_ratios_frame th div div{
     font-weight: 500;
     color: #DFDDDD;
@@ -1623,16 +1696,26 @@ div.dt-container div.dt-length label {
     text-align: left !important;
 }
 
-#portfolio_stats_2 .fs-5 {
+/* #portfolio_stats_2 .fs-5 {
     font-size: 1.0rem !important;
+} */
+
+#portfolio_stats_2 .fs-5 {
+    font-weight: 700;
+}
+
+.text-muted {
+   color: #5A6A86 !important;
+    font-weight: 400;
+}
+
+.nav.nav-pills.nav-justified .nav-link.active{
+    font-weight: 700;
 }
 
 @media (min-width: 1600px) and (max-width: 3000px) {
-    #portfolio_stats_2 .dashboard-widget-container.col-md-7{
-        width: 60%;
-    }
-    #data_card_1 .dashboard-widget-container.col-md-5{
-        width: 40%;
+    [id^="portfolio_stats_"].col-md-7{
+        width: 67%;
     }
 }
 

@@ -1,4 +1,5 @@
 
+<% field_names ||= []%>
 <% if portfolio_company %>
 
   <% cache_if(current_user != nil, cache_key(["api_stats", portfolio_company, params[:display_currency], show_currency_filter]), expires_in: 5.day) do %>
@@ -57,7 +58,7 @@
           { path: nil, stat: money_to_currency(Money.new(income_cents, target_currency), params, decimals: decimals), subtitle: "Income", progress_bar_color: "success", text_info: "cash" },
           { path: nil, stat: money_to_currency(Money.new(sold_plus_fmv_cents, target_currency), params, decimals: decimals), subtitle: "Sold + FMV", progress_bar_color: "warning", text_info: "coins" }
         ]
-        cards_data = fields.blank? ? all_cards_data : all_cards_data.select { |card| fields.include?(card[:subtitle]) }
+        cards_data = fields.blank? ? all_cards_data : fields.map { |f| all_cards_data.find { |card| card[:subtitle] == f } }.compact
 
       rescue => e
         error = "Error fetching portfolio company stats: #{e.message}"
@@ -106,11 +107,14 @@
                            end
         %>
         <div id="stats_cards_<%= portfolio_company.id %>" class="row" <%= 'data-portfolio-stats-currency-target="stats"'.html_safe if show_currency_filter %>>
-          <% cards_data.each do |card_data| %>
+          <% cards_data.each_with_index do |card_data, index| %>
+            <% subtitle = card_data[:subtitle] %>
+            <% subtitle = field_names[index] if field_names[index].present? %>
             <%= render(NumberStatsComponent.new(
                         path: card_data[:path],
                         amount: card_data[:stat],
-                        subtitle: card_data[:subtitle],
+                        subtitle: subtitle,
+                        fs_size: "5 font-weight-bold",
                         progress_bar_color: card_data[:progress_bar_color],
                         text_info: card_data[:text_info],
                         css_class: card_col_class

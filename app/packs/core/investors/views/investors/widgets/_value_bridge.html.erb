@@ -40,7 +40,14 @@
       final_valuation =   valuations.order(valuation_date: :desc).first
     end
     # Load the uri for the value bridge
-    uris << URI("/valuations/value_bridge?portfolio_company_id=#{@investor.id}&hide_table=#{hide_table}&show_form=#{show_form}&initial_valuation_id=#{initial_valuation.id}&final_valuation_id=#{final_valuation.id}&date_format=#{date_format}") if initial_valuation && final_valuation
+    uri_params[:portfolio_company_id] = @investor.id
+    uri_params[:hide_table] = hide_table
+    uri_params[:show_form] = show_form
+    uri_params[:initial_valuation_id] = initial_valuation.id if initial_valuation
+    uri_params[:final_valuation_id] = final_valuation.id if final_valuation
+    uri_params[:date_format] = date_format if date_format
+
+    uris << URI("/valuations/value_bridge?#{URI.encode_www_form(uri_params)}") if initial_valuation && final_valuation
   end
 
 %>

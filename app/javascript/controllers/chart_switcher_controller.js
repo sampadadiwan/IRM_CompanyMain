@@ -21,11 +21,63 @@ const URL_PARAM         = "chart_type"
 const URL_DATE_PARAM    = "chart_date"
 const DEFAULT_TYPE      = "LineChart"
 
+// Read the --pie-color-1 … --pie-color-10 CSS custom properties that are
+// defined in kedaara.css.  Called once at connect() so the values are always
+// resolved against the live :root style (supports dark-mode / theme switches).
+function readPieColors() {
+  const style = getComputedStyle(document.documentElement)
+  const colors = []
+  for (let i = 1; i <= 10; i++) {
+    const val = style.getPropertyValue(`--pie-color-${i}`).trim()
+    if (val) colors.push(val)
+  }
+  // Fall back to a sensible default palette if the CSS variables aren't loaded.
+  // colors identical to PIE_CHART_COLORS in fund_statistics_helper.rb
+  return colors.length ? colors : [
+    "#5d87ff", "#65C18C", "#9ADCFF", "#364F6B", "#3FC1C9",
+    "#54BAB9", "#FC5185", "#FFBCBC", "#EDF6E5", "#FF964F",
+    "#006D74","#550C18","#00BFC6","#FF6B6B","#FFC857",
+    "#6A5CFF","#000088","#F4A261","#7FB258","#DE61F4"
+  ]
+}
+
+// Resolve a series colour:
+//   1. If the series has a `tag`, look up --tag-color-<normalised-tag> in :root.
+//      The normalisation matches the CSS variable names: lowercase, spaces → hyphens,
+//      with "ic …" collapsed to "ic-case" and "audited…" to "audited".
+//   2. Fall back to the next slot in the --pie-color-N palette.
+function normaliseTagKey(tag) {
+  if (!tag) return null
+  const t = tag.trim().toLowerCase()
+  if (t.startsWith("ic "))      return "ic-case"
+  if (t.startsWith("audited"))  return "audited"
+  return t.replace(/\s+/g, "-")
+}
+
+function resolveSeriesColors(rawData, palette, rootStyle) {
+  let paletteIdx = 0
+  return rawData.map(s => {
+    const key = normaliseTagKey(s.tag)
+    if (key) {
+      const cssVal = rootStyle.getPropertyValue(`--tag-color-${key}`).trim()
+      if (cssVal) return { ...s, color: cssVal }
+    }
+    // No tag or no CSS variable found — use the next pie-color slot
+    const color = palette[paletteIdx % palette.length]
+    paletteIdx++
+    return { ...s, color }
+  })
+}
+
 export default class extends Controller {
   static targets = ["container", "typeSelect", "dateSelect", "dateSelectWrapper"]
   static values  = { chartData: Array, storageKey: String }
 
   connect() {
+    // Resolve the --pie-color CSS palette once, at mount time.
+    this._palette   = readPieColors()
+    this._rootStyle = getComputedStyle(document.documentElement)
+
     // Per-page localStorage key: use the value passed from the view, falling back to a
     // path-based key so different pages don't share the same chart type preference.
     const storageKey   = this.hasStorageKeyValue && this.storageKeyValue
@@ -184,6 +236,7 @@ export default class extends Controller {
     wrapper.appendChild(mount)
 
     const rawData = this.chartDataValue
+    const coloredData = resolveSeriesColors(rawData, this._palette, this._rootStyle)
 
     let hcOptions
 
@@ -192,7 +245,7 @@ export default class extends Controller {
       // Find the index of that label in each series' data array.
       const dateLabel = this.hasDateSelectTarget ? this.dateSelectTarget.value : ""
 
-      const piePoints = rawData.map(s => {
+      const piePoints = coloredData.map(s => {
         let y = null
         if (dateLabel) {
           const pt = (s.data || []).find(p => p[0] === dateLabel)
@@ -203,7 +256,7 @@ export default class extends Controller {
           const pts = (s.data || []).filter(p => p[1] != null)
           y = pts.length ? pts[pts.length - 1][1] : null
         }
-        return { name: s.name, y: y != null ? Number(y) : 0 }
+        return { name: s.name, y: y != null ? Number(y) : 0, color: s.color }
       }).filter(p => p.y !== 0)
 
       const seriesConfig = {
@@ -222,7 +275,7 @@ export default class extends Controller {
       hcOptions = {
         chart: { type: "pie" },
         title: { text: null },
-        subtitle: { text: dateLabel, style: { color: "#888", fontSize: "12px" } },
+        subtitle: { text: null },
         tooltip: { pointFormat: "<b>{point.y}</b> ({point.percentage:.1f}%)" },
         plotOptions: {
           pie: {
@@ -239,10 +292,11 @@ export default class extends Controller {
       }
     } else {
       // Cartesian charts: line, column, bar, area, spline
-      const series = rawData.map(s => ({
-        name: s.name,
-        type: config.type,
-        data: (s.data || []).map(point => point[1] ?? null)
+      const series = coloredData.map(s => ({
+        name:  s.name,
+        type:  config.type,
+        color: s.color,
+        data:  (s.data || []).map(point => point[1] ?? null)
       }))
       const categories = rawData.length > 0
         ? (rawData[0].data || []).map(point => point[0])
