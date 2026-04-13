@@ -1,4 +1,14 @@
+V9.2.15
+6917f4bbb Kedaara updates 4 (#1352)
 
+V9.2.14
+58ea5e448 feat: Enhance document and folder views to support documents as tags
+df4f172cd feat: Update date format options to include month_year for KPI charts
+fc4ee85d9 Kpi charts (#1353)
+6316eaacd feat: Add dynamic JSON field chart rendering and update analytics view
+c120fb898 feat: Add analytics feature to valuations with charts and new view
+61a398e5d feat: Show synthetic valuation checkbox only for new records
+116eefaf8 fix: Remove "Month" column header from KPI budget view scenario
 
 V9.2.13
 7b45d7b00 feat: Add sandbox settings fields to entity form
