@@ -1,3 +1,9 @@
+V9.2.18
+c77d6fd40 feat: Enhance document links in fund ratio view with styled buttons
+a62f3da22 Kedaara updates 7 (#1358)
+0da96a34d feat: Enhance fund ratio calculations with cashflow document creation and user tracking
+4dcc9da99 Added release notes
+
 V9.2.17
 15aeb0e3c Added release notes
 47bb5cb1f Kedaara updated 6 (#1356)
