@@ -6,7 +6,7 @@ class StockAdjustment < ApplicationRecord
   belongs_to :investment_instrument
   belongs_to :user
 
-  validates :adjustment, numericality: { less_than: 100 }
+  validates :adjustment, numericality: true
 
   after_create_commit :apply_stock_adjustment
 
