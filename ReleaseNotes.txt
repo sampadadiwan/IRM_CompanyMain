@@ -1,3 +1,8 @@
+V9.2.16
+3849d0384 Refactor display_only scope for distribution fees and update view logic
+897d74c19 feat: Add 'Misc Account Entries' section for 'Display Only' fee type in capital distribution payments
+7e91af19b feat: Add support for 'Display Only' fee type in capital distributions and update related tests
+
 V9.2.15
 6917f4bbb Kedaara updates 4 (#1352)
 
