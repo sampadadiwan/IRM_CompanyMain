@@ -111,8 +111,10 @@
           <td>
             <ul>
               <% @fund_ratio.documents.each do |doc| %>
-                <li>
-                  <%= link_to doc.name, doc.file.url(expires_in: 60*60*24*7, response_content_disposition: "inline; filename=#{doc.name_with_extension}"), target: "_blank" %>
+                <li class="list-unstyled">
+                  <%= link_to doc.file.url(expires_in: 60*60*24*7, response_content_disposition: "inline; filename=#{doc.name_with_extension}"), target: "_blank", class: "btn btn-outline-primary mb-1" do %>
+                    <i class="fa-solid fa-file-csv"></i> <%= doc.name %>
+                  <% end %>
                 </li>
               <% end %>
             </ul>
