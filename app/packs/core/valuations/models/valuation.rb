@@ -14,6 +14,8 @@ class Valuation < ApplicationRecord
 
   ADDITIONAL_COLUMNS_FROM = ["investment_instrument"].freeze
 
+  COMPUTE_VAL_BRIDGE_CF = "compute_value_bridge".freeze
+
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true, touch: true
 

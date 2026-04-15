@@ -25,7 +25,7 @@ class ValueBridgeService
   VALUE_BRIDGE_FIELDS = ["Revenue", "EBITDA Margin", "Valuation Multiple"].freeze
   KEY_FIELDS = ["EBITDA", "Enterprise Value", "Enterprise Value Change"].freeze
 
-  attr_accessor :value_bridge_fields, :key_fields, :value_bridge_custom_fields
+  attr_accessor :value_bridge_fields, :key_fields, :value_bridge_custom_fields, :moic
 
   def initialize(investment_date_valuation, analysis_date_valuation, value_bridge_fields: VALUE_BRIDGE_FIELDS, moic: false)
     @investment_date_valuation = investment_date_valuation
@@ -33,9 +33,9 @@ class ValueBridgeService
     @value_bridge_fields = value_bridge_fields.presence || VALUE_BRIDGE_FIELDS
 
     # Fetch custom fields for the value bridge if they exist
-    @value_bridge_custom_fields = FormCustomField.joins(:form_type).where(form_type:{entity_id: @investment_date_valuation.entity_id, name: "Valuation"}).where(form_custom_fields: {label: @value_bridge_fields + KEY_FIELDS}).index_by { |f| f.label }
+    @value_bridge_custom_fields = FormCustomField.joins(:form_type).where(form_type: { entity_id: @investment_date_valuation.entity_id, name: "Valuation" }).where(form_custom_fields: { label: @value_bridge_fields + KEY_FIELDS }).index_by { |f| f.label }
 
-    @key_fields =  (@value_bridge_fields + KEY_FIELDS).uniq
+    @key_fields = (@value_bridge_fields + KEY_FIELDS).uniq
 
     @moic = moic
     Rails.logger.debug { "ValueBridgeService: value_bridge_fields = #{@value_bridge_fields}" }

@@ -3,6 +3,8 @@ class InvestorKpiMapping < ApplicationRecord
 
   has_ancestry
 
+  HIGHLIGHT_KPI_CF = "highlight_kpi".freeze
+
   belongs_to :entity
   belongs_to :investor
   acts_as_list scope: :investor, add_new_at: :bottom

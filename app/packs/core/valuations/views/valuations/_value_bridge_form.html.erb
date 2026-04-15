@@ -1,8 +1,9 @@
 <% show_form = params[:show_form] || true %>
+<% decimals ||= params[:decimals].present? ? params[:decimals].to_i : 2 %>
+<% valuations ||= @valuations.map { |i| [i.to_extended_s, i.id] } %>
+
 <%= render FormCard.new(title: "Value Bridge") do %>
   <%= form_with(model: Valuation.new(entity_id: current_user.entity_id), url: value_bridge_valuations_path, method: :get, data: { turbo_frame: "value_bridge_frame", controller: "valuebridge" }) do |form| %>
-
-    <% valuations = @portfolio_company.valuations.with_synthetic.order(valuation_date: :desc).map { |i| [i.to_extended_s, i.id] } %>
 
     <%= form.hidden_field :portfolio_company_id, value: @portfolio_company.id, name: :portfolio_company_id %>
     <%= form.hidden_field :show_form, value: show_form, name: :show_form %>
@@ -12,19 +13,23 @@
     <% end %>
 
     <div class="d-flex align-items-end gap-5 w-100">
-      <div class="flex-grow-1" style="min-width: 0;">
+      <div style="width: 33%; min-width: 0;">
         <%= form.label :initial_valuation_id, "Start Point", class: "ms-1 form-label" %>
         <%= form.select :initial_valuation_id, valuations, { selected: params[:initial_valuation_id] }, class: "form-select", name: :initial_valuation_id, data: { action: "change->valuebridge#submit" } %>
       </div>
 
-      <div class="flex-grow-1" style="min-width: 0;">
+      <div style="width: 33%; min-width: 0;">
         <%= form.label :final_valuation_id, "End Point", class: "ms-1 form-label" %>
         <%= form.select :final_valuation_id, valuations, { selected: params[:final_valuation_id] }, class: "form-select", name: :final_valuation_id, data: { action: "change->valuebridge#submit" } %>
       </div>
 
-      <div style="width: 130px; flex-shrink: 0">
-        <%= form.select :moic, [["Amount", "0"], ["MOIC", "1"]], { selected: params[:moic] == "1" ? "1" : "0" }, class: "form-select", name: :moic, data: { action: "change->valuebridge#submit" } %>
+      <div class="align-items-end" style="width: 130px; flex-shrink: 0">
+        <%= form.label :moic, "Basis", class: "ms-1 form-label" %>
+        <%= form.select :moic, [["Values", "0"], ["MOIC", "1"]], { selected: params[:moic] == "1" ? "1" : "0" }, class: "form-select", name: :moic, data: { action: "change->valuebridge#submit" } %>
       </div>
+
+      <%= hidden_field_tag "decimals", decimals %>
+
     </div>
 
   <% end %>

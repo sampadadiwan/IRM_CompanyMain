@@ -43,7 +43,8 @@ export default class extends Controller {
     let allFinished = true
 
     frames.forEach(frame => {
-      const content = frame.innerHTML.replace(/<!--[\s\S]*?-->/g, '').trim()
+      const content = frame.textContent.replace(/\s+/g, '')
+      // const content = frame.innerHTML.replace(/<!--[\s\S]*?-->/g, '').trim()
       const frameHasContent = content.length > 0
 
       if (frameHasContent) {
@@ -66,6 +67,7 @@ export default class extends Controller {
         }
       }
     })
+
 
     if (hasAnyContent) {
       // Show the widget as soon as ANY frame has content

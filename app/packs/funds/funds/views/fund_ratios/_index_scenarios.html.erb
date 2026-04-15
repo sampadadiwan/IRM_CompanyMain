@@ -1,8 +1,9 @@
 <% fund ||= nil %>
-<% data_source ||= fund_ratios_path(params: params.to_unsafe_h) %>
-<%= render "fund_ratios/index_header", fund: , data_source: %>
-<%= render "fund_ratios/analytics", fund: %>
-<%
+<% data_source ||= fund_ratios_path(params: params.to_unsafe_h)
+
+  # Check if currency filter should be shown
+  show_currency_filter = params[:show_currency_filter].to_s == 'true'
+
   # Group fund ratios by name (Metric) and then by scenario
   # We want latest from each scenario
 
@@ -45,26 +46,13 @@
   # Always include entity currency as the base option
   available_currencies << entity_currency unless available_currencies.include?(entity_currency)
   available_currencies.sort!
-
-  # Check if currency filter should be shown
-  show_currency_filter = params[:show_currency_filter].to_s == 'true'
 %>
+
 <div class="" <%= "data-controller=\"fund-ratios-filter\" data-fund-ratios-filter-entity-currency-value=\"#{entity_currency}\"".html_safe if show_currency_filter %>>
-  <% if show_currency_filter %>
-    <div class="d-flex justify-content-end mb-3">
-      <label for="metrics_filter_select" class="me-2 align-self-center mb-0">Currency:</label>
-      <select
-        id="metrics_filter_select"
-        class="form-select form-select-sm"
-        style="width: 120px;"
-        data-fund-ratios-filter-target="select"
-        data-action="change->fund-ratios-filter#applyFilter">
-        <% available_currencies.each do |currency| %>
-          <option value="<%= currency %>" <%= 'selected' if currency == entity_currency %>><%= currency %></option>
-          <% end %>
-        </select>
-      </div>
-    <% end %>
+
+<%= render "fund_ratios/index_header", fund: , data_source: , show_currency_filter: , available_currencies: , entity_currency: %>
+<%= render "fund_ratios/analytics", fund: %>
+
 
     <table class="table table table-bordered table-striped dataTable table-grey">
       <thead>

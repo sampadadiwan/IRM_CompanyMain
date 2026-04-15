@@ -318,39 +318,69 @@ export default class extends Controller {
       return '<table class="table table-bordered table-striped dataTable"></table>';
     }
 
-    // Detect multi-row headers: if row[1] has no numeric/percentage values and
-    // looks like a sub-header row (e.g. "Actuals", "Forecast"), treat it as a second header row.
-    const isSubHeaderRow = (row) => {
-      const nonEmpty = row.filter(c => c !== null && c !== undefined && String(c).trim() !== "");
-      if (nonEmpty.length === 0) return false;
-      return nonEmpty.every(c => {
-        const s = String(c).trim();
-        // Sub-header if it contains only text labels (no digits or % signs)
-        return !/\d/.test(s) && !s.includes("%");
-      });
+    // Detect tag rows: row begins with "tags"
+    const isTagRow = (row) => {
+      console.log("Checking for tag row:", row);
+      const firstCell = String(row[0] ?? "").trim().toLowerCase();
+      return firstCell === "tags";
+    };
+
+    // method replicated from kpi_helper
+    const tagBadgeClass = (tag) => {
+      const value = String(tag ?? "").trim().toLowerCase();
+      if (value === "actual") return "bg-primary-subtle text-primary badge-tag-actual";
+      if (value === "projected") return "bg-info-subtle text-info badge-tag-projected";
+      if (/^ic /.test(value)) return "bg-warning-subtle text-warning badge-tag-ic-case";
+      if (/^audited/.test(value)) return "bg-danger-subtle text-danger badge-tag-audited";
+      if (value === "budget") return "bg-success-subtle text-success badge-tag-budget";
+      return "bg-secondary-subtle text-secondary badge-tag-other";
+    };
+
+    const renderTagCell = (value) => {
+      const text = String(value ?? "").trim();
+      if (text === "") return "";
+      return text.split(/[;,]\s*/).filter(Boolean).map((tag) => {
+        return `<small class="badge badge-pill ${tagBadgeClass(tag)}">${escapeHtml(tag)}</small>`;
+      }).join(" ");
+    };
+
+    const renderHeaderTags = (index) => {
+      const badgeHtml = tagRows
+        .map(row => String(row[index] ?? "").trim())
+        .filter(value => value !== "" && value.toLowerCase() !== "tags")
+        .map(renderTagCell)
+        .filter(Boolean)
+        .join(" ");
+
+      return badgeHtml ? `<span class="d-block">${badgeHtml}</span>` : "";
     };
 
     let headerRows = [data[0] || []];
+    let tagRows = [];
     let dataStartIndex = 1;
 
-    if (data.length > 1 && isSubHeaderRow(data[1])) {
-      headerRows.push(data[1]);
-      dataStartIndex = 2;
+    while (dataStartIndex < data.length && isTagRow(data[dataStartIndex])) {
+      tagRows.push(data[dataStartIndex]);
+      dataStartIndex += 1;
     }
 
+    console.log(headerRows.length, "header row(s) detected:", headerRows);
+    console.log(tagRows.length, "tag row(s) detected:", tagRows);
     const rows = data.slice(dataStartIndex);
-    const maxCols = Math.max(...headerRows.map(r => r.length), ...rows.map(r => r.length), 0);
+    const maxCols = Math.max(...headerRows.map(r => r.length), ...tagRows.map(r => r.length), ...rows.map(r => r.length), 0);
 
-    let html = '<table class="table table-bordered table-striped dataTable">';
+    let html = '<table class="table table-bordered table-striped dataTable table-grey">';
     html += '<thead>';
     headerRows.forEach(headerRow => {
       html += '<tr>';
       for (let i = 0; i < maxCols; i++) {
-        html += `<th>${escapeHtml(headerRow[i] || "")}</th>`;
+        const thClass = i === 0 ? ' class="align-middle"' : ' class="text-center"';
+        html += `<th${thClass}>${escapeHtml(headerRow[i] || "")}${renderHeaderTags(i)}</th>`;
       }
       html += '</tr>';
     });
     html += '</thead><tbody>';
+
 
     rows.forEach(row => {
       html += '<tr>';

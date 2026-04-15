@@ -142,43 +142,46 @@
     </div>
   <% end %>
   <%= render "kpi_reports/unapproved_stats" if params[:view_unapproved] == 'true' %>
-  <div class="card shadow mb-4 d-none" id="kpi-chart-controls-panel" data-kpi-chart-target="mainControls">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-      <h6 class="m-0 font-weight-bold text-primary">Chart Controls</h6>
-      <button class="btn btn-sm btn-outline-secondary ti ti-x" data-action="click->kpi-chart#clearAll"></button>
-    </div>
-    <div class="card-body">
-      <div data-kpi-chart-target="controlsContainer"></div>
-      <div class="border-top pt-3 mt-3 d-flex gap-2 align-items-end">
-        <button class="btn btn-primary" data-action="click->kpi-chart#refreshChart">Update Chart</button>
-        <button class="btn btn-outline-secondary" data-action="click->kpi-chart#clearAll">Clear All</button>
-        <div class="flex-grow-1">
-          <input type="text" class="form-control" placeholder="Setting Name" data-kpi-chart-target="settingNameInput">
-        </div>
-        <button class="btn btn-outline-success" data-action="click->kpi-chart#saveSetting">Save Setting</button>
-      </div>
-    </div>
-  </div>
 
-  <div class="modal fade" id="kpiChartAlertModal" tabindex="-1" aria-labelledby="kpiChartAlertModalLabel" aria-hidden="true" data-kpi-chart-target="alertModal">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="kpiChartAlertModalLabel">KPI Chart</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body" data-kpi-chart-target="alertModalBody">
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+  <% if kpi_reports.present? %>
+  <%# We only render the chart controls if kpi reports are present so as not to have html with elements and data attributes but no content inside.
+    Such elements cause issues when we want to hide empty widget cards on the dashboard as cleaning the html tags still doesnt clean certain things like the data attrs and then we see an empty card %>
+    <div class="card shadow mb-4 d-none" id="kpi-chart-controls-panel" data-kpi-chart-target="mainControls">
+      <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Chart Controls</h6>
+        <button class="btn btn-sm btn-outline-secondary ti ti-x" data-action="click->kpi-chart#clearAll"></button>
+      </div>
+      <div class="card-body">
+        <div data-kpi-chart-target="controlsContainer"></div>
+        <div class="border-top pt-3 mt-3 d-flex gap-2 align-items-end">
+          <button class="btn btn-primary" data-action="click->kpi-chart#refreshChart">Update Chart</button>
+          <button class="btn btn-outline-secondary" data-action="click->kpi-chart#clearAll">Clear All</button>
+          <div class="flex-grow-1">
+            <input type="text" class="form-control" placeholder="Setting Name" data-kpi-chart-target="settingNameInput">
+          </div>
+          <button class="btn btn-outline-success" data-action="click->kpi-chart#saveSetting">Save Setting</button>
         </div>
       </div>
     </div>
-  </div>
-  <% if kpi_reports.present? %>
+
+    <div class="modal fade" id="kpiChartAlertModal" tabindex="-1" aria-labelledby="kpiChartAlertModalLabel" aria-hidden="true" data-kpi-chart-target="alertModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="kpiChartAlertModalLabel">KPI Chart</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body" data-kpi-chart-target="alertModalBody">
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <%
       investor_kpi_mappings = set_investor_kpi_mappings(kpi_reports, investor, current_user, category: params[:category])
-  %>
+    %>
 
     <div id="kpi_grid_view_chart_container" data-kpi-chart-target="chartContainer">
       <%= render "/kpi_reports/grid_view_chart", kpi_reports:, investor_kpi_mappings:, chart_configs: [], investor: investor  %>

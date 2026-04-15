@@ -151,7 +151,7 @@ module KpisHelper
     if investor_kpi_mapping.present?
       case investor_kpi_mapping.data_type
       when "money"
-        result = if params[:units].present?
+        result = if params[:units].present? || params[:force_units].present?
                    money_to_currency(kpi.value, params, negative_in_parentheses: negative_in_parentheses)
                  else
                    money_to_currency(kpi.value, params, true, negative_in_parentheses: negative_in_parentheses)

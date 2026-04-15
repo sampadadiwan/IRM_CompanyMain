@@ -28,7 +28,12 @@
               &nbsp;&nbsp;
               <i class="">&nbsp;&nbsp;</i>
             <% end %>
+            <% if ikm.json_fields[InvestorKpiMapping::HIGHLIGHT_KPI_CF].to_s == "1" %>
+              <%# used weight 1000 instead of bold as it was not noticable for kedaara %>
+              <span style="font-weight: 1000;"><%= ikm.standard_kpi_name %></span>
+            <% else %>
             <%= ikm.standard_kpi_name %>
+            <% end %>
             <% if ikm.child_count > 0 %>
               <span class="expand">></span>
             <% end %>

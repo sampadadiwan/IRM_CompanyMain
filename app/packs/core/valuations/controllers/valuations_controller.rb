@@ -150,18 +150,27 @@ class ValuationsController < ApplicationController
         # Get the value bridge fields from the entity setting if they exist
         @value_bridge_fields = @current_user.entity.entity_setting.value_bridge_cols
         @value_bridge_fields = @value_bridge_fields.split(",").map(&:strip) if @value_bridge_fields
-        moic = params[:moic] == "1"
+        @moic = params[:moic] == "1"
 
-        @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, value_bridge_fields: @value_bridge_fields, moic: moic)
+        @value_bridge_service = ValueBridgeService.new(@initial_valuation, @final_valuation, value_bridge_fields: @value_bridge_fields, moic: @moic)
         @bridge = @value_bridge_service.compute_bridge
       else
         @bridge = nil
       end
 
+      @valuations = if @initial_valuation.form_custom_fields.pluck(:name).include?(Valuation::COMPUTE_VAL_BRIDGE_CF)
+                      @portfolio_company.valuations.with_synthetic.search_custom_fields(Valuation::COMPUTE_VAL_BRIDGE_CF, "1").order(valuation_date: :desc)
+                    else
+
+                      @portfolio_company.valuations.with_synthetic.order(valuation_date: :desc)
+                    end
+
       render "value_bridge"
     elsif params[:portfolio_company_id].present?
       @portfolio_company = Investor.find(params[:portfolio_company_id])
       authorize(@portfolio_company, :show?)
+      @valuations = @portfolio_company.valuations.with_synthetic.order(valuation_date: :desc)
+
       render "value_bridge_form"
     else
       redirect_to root_path, alert: "Portfolio company nor specified"

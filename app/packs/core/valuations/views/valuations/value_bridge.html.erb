@@ -1,5 +1,6 @@
 
 <%= turbo_frame_tag "value_bridge_frame" do %>
+<% decimals ||= params[:decimals].present? ? params[:decimals].to_i : 2 %>
 
 <% if params[:show_form] == "true" %>
   <%= render "valuations/value_bridge_form" %>
@@ -35,19 +36,19 @@
                 <%
                     # The label should be the valuation date for Entry and Exit, otherwise the field name
                     name = bridge_field == "Entry" ? date_with_ordinal(@bridge[bridge_field].valuation_date, format: params[:date_format]&.to_sym) : "#{bridge_field} Impact"
-                    value = idx == 0 ? @bridge[bridge_field].json_fields["enterprise_value"]  : @bridge[bridge_field].json_fields["enterprise_value_change"]
+                    value = idx == 0 ? @bridge[bridge_field].json_fields["enterprise_value"]  : @bridge[bridge_field].json_fields["enterprise_value_change"].to_f.round(decimals)
 
                     if idx == 0
                         color = "#212529"
-                        label = @moic ? "#{number_with_precision(value, precision: 2)}x" : number_with_delimiter(number_with_precision(value, precision: 2))
+                        label = @moic ? "#{number_with_precision(value, precision: decimals)}x" : number_with_delimiter(number_with_precision(value, precision: decimals))
                         font_color = "white"
                     else
                         color = value && value > 0 ? "var(--value-bridge-positive-bg, #76b264)" : "var(--value-bridge-negative-bg, #E97451)"
                         prefix = (value && value > 0) ? "+" : ""
                         label = if @moic
-                                    "#{prefix}#{number_with_precision(value, precision: 2)}x"
+                                    "#{prefix}#{number_with_precision(value, precision: decimals)}x"
                                 else
-                                    "#{prefix}#{number_with_delimiter(number_with_precision(value, precision: 2))}"
+                                    "#{prefix}#{number_with_delimiter(number_with_precision(value, precision: decimals))}"
                                 end
                         font_color = nil
                     end
@@ -58,7 +59,7 @@
 
             <%
                 exit_value = @bridge["Exit"].json_fields["enterprise_value"]
-                exit_label = @moic ? "#{number_with_precision(exit_value, precision: 2)}x" : number_with_delimiter(number_with_precision(exit_value, precision: 2))
+                exit_label = @moic ? "#{number_with_precision(exit_value, precision: decimals)}x" : number_with_delimiter(number_with_precision(exit_value, precision: decimals))
                 waterfall_chart_data << { name: date_with_ordinal(@bridge["Exit"].valuation_date, format: params[:date_format]&.to_sym), y: exit_value, isSum: true, color: "#212529", label: exit_label, font_color: "white" }
             %>
         </tr>
@@ -99,10 +100,10 @@
 
                             formatted_val = if val.is_a?(Numeric)
                                                 if @moic
-                                                    "#{number_with_precision(val, precision: 2)}x"
+                                                    "#{number_with_precision(val, precision: decimals)}x"
                                                 else
                                                     prefix = (key == "Enterprise Value Change" && val > 0) ? "+" : ""
-                                                    "#{prefix}#{number_with_delimiter(number_with_precision(val, precision: 2))}"
+                                                    "#{prefix}#{number_with_delimiter(number_with_precision(val, precision: decimals))}"
                                                 end
                                             else
                                                 val

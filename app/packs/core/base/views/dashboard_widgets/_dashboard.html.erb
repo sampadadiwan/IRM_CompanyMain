@@ -18,7 +18,7 @@
     <% if logo.present? %>
         <div class="d-flex align-items-center justify-content-between px-3 py-3">
             <div class="d-flex align-items-center gap-3">
-                <div class="dashboard-nav-logo rounded-circle overflow-hidden d-flex align-items-center justify-content-center" style="width:55px; height:55px; flex-shrink:0; border: 2px solid var(--bs-primary);">
+                <div class="dashboard-nav-logo rounded-circle overflow-hidden d-flex align-items-center justify-content-center" style="width:70px; height:70px; flex-shrink:0; border: 2px solid var(--bs-primary);">
                     <%= image_tag logo.url, style: "width:100%; height:100%; object-fit:contain;" %>
                 </div>
                 <% if title.present? %>
@@ -103,7 +103,7 @@
 
     <% dashboard_widgets(dashboard_name, current_user.entity_id, name:, owner:).each do |name, dashboard_widget| %>
         <div id="<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
-            <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:  %>
+            <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:, owner:  %>
         </div>
     <% end %>
 

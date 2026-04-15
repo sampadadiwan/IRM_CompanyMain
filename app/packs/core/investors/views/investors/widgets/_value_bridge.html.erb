@@ -46,6 +46,7 @@
     uri_params[:initial_valuation_id] = initial_valuation.id if initial_valuation
     uri_params[:final_valuation_id] = final_valuation.id if final_valuation
     uri_params[:date_format] = date_format if date_format
+    uri_params[:decimals] = args[:decimals] if args[:decimals]
 
     uris << URI("/valuations/value_bridge?#{URI.encode_www_form(uri_params)}") if initial_valuation && final_valuation
   end

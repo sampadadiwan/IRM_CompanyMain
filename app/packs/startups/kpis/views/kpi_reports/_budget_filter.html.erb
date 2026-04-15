@@ -16,7 +16,7 @@
   <% form.hidden_field :entity_id, value: current_user.entity_id %>
 
   <div class="row align-items-center g-2">
-    <div class="col-auto">
+    <div class="col-auto d-flex align-items-center gap-2">
       <% no_of_periods = params[:num_periods].presence || 2 %>
       <%= form.label :num_periods, "No of Periods", class: "col-form-label" %>
       <%= form.text_field :num_periods, class: "form-control", style: "width: 60px;", name: "num_periods", value: no_of_periods %>

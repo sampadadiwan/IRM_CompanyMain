@@ -48,7 +48,7 @@
                             <th class="text-center"><%= tag %></th>
                         <% end %>
                         <% if show_achievement_column %>
-                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %></th>
+                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %>(%)</th>
                         <% end %>
                     <% end %>
                     <% year_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
@@ -56,7 +56,7 @@
                             <th class="text-center"><%= tag %></th>
                         <% end %>
                         <% if show_achievement_column %>
-                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %></th>
+                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %>(%)</th>
                         <% end %>
                     <% end %>
                 </tr>
@@ -97,7 +97,18 @@
                                         tag2_value = tag2_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
                                     %>
                                     <% if tag1_value.present? && tag2_value.present? && tag2_value.to_f != 0 %>
-                                        <%= number_to_percentage((tag1_value.to_f / tag2_value.to_f) * 100, precision:) %>
+                                        <% result = (tag1_value.to_f / tag2_value.to_f) * 100
+                                           element_class =  if result.positive?
+                                                                'text-success'
+                                                            elsif result.negative?
+                                                                'text-danger'
+                                                            else
+                                                                ''
+                                                            end
+                                        %>
+                                        <span class="<%= element_class %>">
+                                            <%= number_to_percentage_for_ui(result, precision:, negative_in_parentheses: true) %>
+                                        </span>
                                     <% else %>
 
                                     <% end %>
@@ -133,7 +144,20 @@
                                         tag2_value = tag2_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
                                     %>
                                     <% if tag1_value.present? && tag2_value.present? && tag2_value.to_f != 0 %>
-                                        <%= number_to_percentage((tag1_value.to_f / tag2_value.to_f) * 100, precision:) %>
+
+                                        <% result = (tag1_value.to_f / tag2_value.to_f) * 100
+                                           element_class =  if result.positive?
+                                                                'text-success'
+                                                            elsif result.negative?
+                                                                'text-danger'
+                                                            else
+                                                                ''
+                                                            end
+
+                                        %>
+                                        <span class="<%= element_class %>">
+                                            <%= number_to_percentage_for_ui(result, precision:, negative_in_parentheses: true) %>
+                                        </span>
                                     <% else %>
 
                                     <% end %>

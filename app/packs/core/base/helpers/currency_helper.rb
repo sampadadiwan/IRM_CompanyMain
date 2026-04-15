@@ -88,4 +88,16 @@ module CurrencyHelper
   def currency_from_cents(cents, currency, params)
     money_to_currency Money.new(cents, currency), params
   end
+
+  # Display negative percentage in parentheses if negative_in_parentheses is true, else with a negative sign. If number is nil, display "-"
+  def number_to_percentage_for_ui(number, precision: 2, negative_in_parentheses: false)
+    return "-" if number.nil?
+
+    abs_val = number_with_precision(number.abs, precision: precision)
+    if negative_in_parentheses && number.negative?
+      "(#{abs_val})%"
+    else
+      number_to_percentage(number, precision: precision)
+    end
+  end
 end

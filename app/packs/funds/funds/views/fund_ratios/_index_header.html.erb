@@ -1,10 +1,27 @@
 <% valuation ||= nil %>
+<% show_currency_filter ||= nil %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">
     <%= params[:title].presence || "Fund Ratios" %>
     <%= link_to l(valuation.valuation_date), valuation if valuation %>
   </h1>
   <div class="d-flex flex-wrap align-items-center gap-2">
+    <% if show_currency_filter %>
+    <div class="d-flex justify-content-end mb-3">
+      <label for="metrics_filter_select" class="me-2 align-self-center mb-0">Currency:</label>
+      <select
+        id="metrics_filter_select"
+        class="form-select form-select-sm"
+        style="width: 120px;"
+        data-fund-ratios-filter-target="select"
+        data-action="change->fund-ratios-filter#applyFilter">
+        <% available_currencies.each do |currency| %>
+          <option value="<%= currency %>" <%= 'selected' if currency == entity_currency %>><%= currency %></option>
+          <% end %>
+        </select>
+      </div>
+    <% end %>
     <% if fund.present? %>
       <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
               data-bs-toggle="collapse" data-bs-target="#fundRatioAnalytics"
