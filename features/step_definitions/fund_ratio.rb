@@ -315,3 +315,20 @@ Then('the FundRatio should be updated with correct data') do
   expect(@fund_ratio.label).to eq(@temp_ratio.label) if @temp_ratio.label.present?
   expect(@fund_ratio.notes).to eq(@temp_ratio.notes) if @temp_ratio.notes.present?
 end
+
+Then('the cashflow CSV documents should be created for the fund ratios') do
+  # We expect XIRR and MOIC ratios to have cashflow documents since return_cash_flows was true
+  ratios_with_cf = FundRatio.where(name: ['XIRR', 'MOIC', 'Gross Portfolio IRR', 'IRR'])
+  expect(ratios_with_cf.count).to be > 0
+
+  ratios_with_cf.each do |fr|
+    expect(fr.documents.count).to be >= 1
+    doc = fr.documents.first
+    expect(doc.name).to include("Cash Flows")
+    expect(doc.file.metadata['filename']).to include(".csv")
+
+    # Verify folder
+    expect(doc.folder.name).to eq("FundRatios")
+    expect(doc.folder.parent.name).to eq(@fund.name)
+  end
+end

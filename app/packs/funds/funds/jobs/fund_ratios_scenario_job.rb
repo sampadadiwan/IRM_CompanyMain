@@ -75,9 +75,11 @@ class FundRatiosScenarioJob < ApplicationJob
 
     # Create the ratios
     xirr, cash_flows = calc.xirr(return_cash_flows: false)
-    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "XIRR", value: xirr, cash_flows:, display_value: "#{xirr} %", scenario: @scenario)
+    fr = FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "XIRR", value: xirr, display_value: "#{xirr} %", scenario: @scenario)
+    fr.create_cashflow_document(cash_flows, @user.id) if cash_flows.present?
 
     moic, = calc.moic
+
     FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "MOIC", value: moic, display_value: "#{moic} x", scenario: @scenario)
 
     value = calc.rvpi
@@ -118,7 +120,8 @@ class FundRatiosScenarioJob < ApplicationJob
 
     # Compute the portfolio_company_ratios
     calc.portfolio_company_irr(return_cash_flows: false).each do |portfolio_company_id, values|
-      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %", scenario: @scenario)
+      fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %", scenario: @scenario)
+      fr.create_cashflow_document(values[:cash_flows], @user.id) if values[:cash_flows].present?
     end
 
     # Compute the portfolio_company_ratios

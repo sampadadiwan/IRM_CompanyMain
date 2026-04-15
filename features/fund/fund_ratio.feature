@@ -17,6 +17,7 @@ Scenario Outline: Compute Fund Ratios
   And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
   And given the fund_ratios are computed for the date "31-03-2024"
   Then the fund ratios computed must match the ratios in "fund_ratios/fund_ratios.xlsx"
+  And the cashflow CSV documents should be created for the fund ratios
 
 Scenario Outline: Compute Fund Ratios in tracking currency
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"

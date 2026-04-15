@@ -2,6 +2,8 @@ class FundRatio < ApplicationRecord
   # include Trackable.new
   include ForInvestor
 
+  has_many :documents, as: :owner, dependent: :destroy
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_commitment, optional: true
@@ -49,5 +51,58 @@ class FundRatio < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     %w[fund portfolio_scenario]
+  end
+
+  def create_cashflow_document(cash_flows, user_id)
+    return if cash_flows.blank?
+
+    csv_data = if cash_flows.is_a?(Array)
+                 # If it's XirrCashflow (Array of XirrTransaction), we need to handle it differently
+                 if cash_flows.first.is_a?(XirrTransaction)
+                   all_keys = %w[date amount notes]
+                   CSV.generate do |csv|
+                     csv << all_keys.map(&:titleize)
+                     cash_flows.each do |tx|
+                       csv << [tx.date, tx.amount, tx.notes]
+                     end
+                   end
+                 else
+                   all_keys = cash_flows.flat_map { |cf| cf.respond_to?(:keys) ? cf.keys : [] }.uniq
+                   CSV.generate do |csv|
+                     csv << all_keys.map(&:to_s).map(&:titleize)
+                     cash_flows.each do |cf|
+                       csv << all_keys.map { |key| cf[key] }
+                     end
+                   end
+                 end
+               elsif cash_flows.is_a?(Hash)
+                 CSV.generate do |csv|
+                   csv << cash_flows.keys.map(&:to_s).map(&:titleize)
+                   csv << cash_flows.values
+                 end
+               end
+
+    return if csv_data.blank?
+
+    folder = fund.get_or_create_folder("FundRatios")
+
+    temp_file = Tempfile.new(["cash_flows_#{id}", ".csv"])
+    temp_file.write(csv_data)
+    temp_file.rewind
+
+    begin
+      Document.create!(
+        name: "Cash Flows - #{name} - #{end_date}.csv",
+        file: temp_file,
+        user_id: user_id,
+        owner: self,
+        folder: folder,
+        entity_id: entity_id,
+        orignal: true
+      )
+    ensure
+      temp_file.close
+      temp_file.unlink
+    end
   end
 end

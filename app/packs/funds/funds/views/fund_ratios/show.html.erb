@@ -1,164 +1,128 @@
 <div class="container-fluid">
-<%= render FormCard.new(title: "Fund Ratio : #{@fund_ratio.name}") do %>
-
-<table class="table table-bordered dataTable">
-  <tr>
-    <td>
-      Entity
-    </td>
-    <td>
-      <%= @fund_ratio.entity.name %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Fund
-    </td>
-    <td>
-      <%= link_to @fund_ratio.fund %>
-    </td>
-  </tr>
-
-  <% if @fund_ratio.portfolio_scenario.present? %>
-  <tr>
-    <td>
-      Portfolio Scenario
-    </td>
-    <td>
-      <%= link_to @fund_ratio.portfolio_scenario %>
-    </td>
-  </tr>
-  <% end %>
-
-  <tr>
-    <td>
-      Scenario
-    </td>
-    <td>
-      <%= @fund_ratio.scenario %>
-    </td>
-  </tr>
-
-  <% if @fund_ratio.capital_commitment %>
-  <tr>
-    <td>
-      For
-    </td>
-    <td>
-      <%= link_to @fund_ratio.capital_commitment %>
-    </td>
-  </tr>
-  <% end %>
-
-  <% if @fund_ratio.owner %>
-  <tr>
-    <td>
-      Owner
-    </td>
-    <td>
-      <%= link_to @fund_ratio.owner %>
-    </td>
-  </tr>
-  <% end %>
-
-  <tr>
-    <td>
-      Name
-    </td>
-    <td>
-      <%= @fund_ratio.name %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Value
-    </td>
-    <td>
-      <%= @fund_ratio.value %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Display Value
-    </td>
-    <td>
-      <%= @fund_ratio.display_value %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      On
-    </td>
-    <td>
-      <%= l @fund_ratio.end_date if @fund_ratio.end_date %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Label
-    </td>
-    <td>
-      <%= @fund_ratio.label %>
-    </td>
-  </tr>
-  <tr>
-    <td>
-      Notes
-    </td>
-    <td>
-      <%= @fund_ratio.notes %>
-    </td>
-  </tr>
-
-  <% if @fund_ratio.cash_flows.present? %>
-  <tr>
-    <td>
-      Cashflows
-    </td>
-    <td>
-      <% if @fund_ratio.cash_flows.is_a?(Array) %>
-
-        <button class="dropdown-item" data-controller="export-xl"
-                        data-action="click->export-xl#export"
-                        data-tableid="cash_flows_table"
-                        data-filename="Cash Flows">
-                  <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
-        </button>
-
-        <% all_keys = @fund_ratio.cash_flows.flat_map(&:keys).uniq %>
-
-        <table class="table table-bordered" id="cash_flows_table">
-          <thead>
-            <tr>
-              <% all_keys.each do |key| %>
-                <th><%= key.titleize %></th>
-              <% end %>
-            </tr>
-          </thead>
-          <tbody>
-            <% @fund_ratio.cash_flows.each do |cash_flow| %>
-              <tr>
-                <% all_keys.each do |key| %>
-                  <td><%= cash_flow[key] %></td>
-                <% end %>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      <% else %>
-        No cash flows available.
+  <%= render FormCard.new(title: "Fund Ratio : #{@fund_ratio.name}") do %>
+    <table class="table table-bordered dataTable">
+      <tr>
+        <td>
+          Entity
+        </td>
+        <td>
+          <%= @fund_ratio.entity.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Fund
+        </td>
+        <td>
+          <%= link_to @fund_ratio.fund %>
+        </td>
+      </tr>
+      <% if @fund_ratio.portfolio_scenario.present? %>
+        <tr>
+          <td>
+            Portfolio Scenario
+          </td>
+          <td>
+            <%= link_to @fund_ratio.portfolio_scenario %>
+          </td>
+        </tr>
       <% end %>
-    </td>
-  </tr>
+      <tr>
+        <td>
+          Scenario
+        </td>
+        <td>
+          <%= @fund_ratio.scenario %>
+        </td>
+      </tr>
+      <% if @fund_ratio.capital_commitment %>
+        <tr>
+          <td>
+            For
+          </td>
+          <td>
+            <%= link_to @fund_ratio.capital_commitment %>
+          </td>
+        </tr>
+      <% end %>
+      <% if @fund_ratio.owner %>
+        <tr>
+          <td>
+            Owner
+          </td>
+          <td>
+            <%= link_to @fund_ratio.owner %>
+          </td>
+        </tr>
+      <% end %>
+      <tr>
+        <td>
+          Name
+        </td>
+        <td>
+          <%= @fund_ratio.name %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Value
+        </td>
+        <td>
+          <%= @fund_ratio.value %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Display Value
+        </td>
+        <td>
+          <%= @fund_ratio.display_value %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          On
+        </td>
+        <td>
+          <%= l @fund_ratio.end_date if @fund_ratio.end_date %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Label
+        </td>
+        <td>
+          <%= @fund_ratio.label %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Notes
+        </td>
+        <td>
+          <%= @fund_ratio.notes %>
+        </td>
+      </tr>
+      <% if @fund_ratio.documents.any? %>
+        <tr>
+          <td>
+            Cashflows
+          </td>
+          <td>
+            <ul>
+              <% @fund_ratio.documents.each do |doc| %>
+                <li>
+                  <%= link_to doc.name, doc.file.url(expires_in: 60*60*24*7, response_content_disposition: "inline; filename=#{doc.name_with_extension}"), target: "_blank" %>
+                </li>
+              <% end %>
+            </ul>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+    <div class="associated_entity">
+      <%= link_to  t_common(:edit), edit_fund_ratio_path(@fund_ratio), {class: "btn btn-outline-primary"} if policy(@fund_ratio).update? %>
+      <%= button_to t_common(:delete), @fund_ratio, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  if policy(@fund_ratio).destroy? %>
+    </div>
   <% end %>
-
-</table>
-
-<div class="associated_entity">
-  <%= link_to  t_common(:edit), edit_fund_ratio_path(@fund_ratio), {class: "btn btn-outline-primary"} if policy(@fund_ratio).update? %>
-  <%= button_to t_common(:delete), @fund_ratio, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  if policy(@fund_ratio).destroy? %>
-</div>
-
-<% end %>
-
 </div>

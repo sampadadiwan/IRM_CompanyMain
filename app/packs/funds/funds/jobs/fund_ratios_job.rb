@@ -1,3 +1,5 @@
+require 'csv'
+
 class FundRatiosJob < ApplicationJob
   queue_as :low
   sidekiq_options retry: 1
@@ -7,7 +9,7 @@ class FundRatiosJob < ApplicationJob
     fund, capital_commitment = _setup_job(fund_id, capital_commitment_id)
 
     Chewy.strategy(:sidekiq) do
-      _calculate_and_touch(fund, capital_commitment, end_date, return_cash_flows)
+      _calculate_and_touch(fund, capital_commitment, end_date, return_cash_flows, user_id)
       _generate_ratios_for_commitments(fund, end_date, user_id, return_cash_flows) if generate_for_commitments
       fund.update_latest_fund_ratios(end_date)
       _handle_success_notification(fund, user_id)
@@ -24,15 +26,15 @@ class FundRatiosJob < ApplicationJob
     [fund, capital_commitment]
   end
 
-  def _calculate_and_touch(fund, capital_commitment, end_date, return_cash_flows)
-    calc_fund_ratios(fund, capital_commitment, end_date, return_cash_flows)
+  def _calculate_and_touch(fund, capital_commitment, end_date, return_cash_flows, user_id)
+    calc_fund_ratios(fund, capital_commitment, end_date, return_cash_flows, user_id)
     capital_commitment&.touch
     fund.touch
   end
 
   def _generate_ratios_for_commitments(fund, end_date, user_id, return_cash_flows)
     fund.capital_commitments.each do |capital_commitment|
-      calc_fund_ratios(fund, capital_commitment, end_date, return_cash_flows)
+      calc_fund_ratios(fund, capital_commitment, end_date, return_cash_flows, user_id)
       notify("Folio #{capital_commitment.folio_id} calculations are now complete.", user_id)
     rescue StandardError => e
       notify("Error in fund ratios: #{e.message}", user_id, level: "danger")
@@ -49,13 +51,13 @@ class FundRatiosJob < ApplicationJob
     raise error
   end
 
-  def calc_fund_ratios(fund, capital_commitment, end_date, return_cash_flows)
+  def calc_fund_ratios(fund, capital_commitment, end_date, return_cash_flows, user_id)
     owner = capital_commitment || fund
     _delete_previous_fund_ratios(fund, capital_commitment, end_date)
     calc = _initialize_calculator(fund, capital_commitment, end_date)
 
-    _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows)
-    _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows)
+    _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
+    _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
     _create_rvpi_ratio(calc, owner, fund, capital_commitment, end_date)
     _create_dpi_ratio(calc, owner, fund, capital_commitment, end_date)
     _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date)
@@ -66,7 +68,7 @@ class FundRatiosJob < ApplicationJob
       _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: true)
     end
 
-    calc_only_fund(calc, fund, capital_commitment, end_date, owner, return_cash_flows:) unless capital_commitment
+    calc_only_fund(calc, fund, capital_commitment, end_date, owner, return_cash_flows:, user_id:) unless capital_commitment
   end
 
   def _delete_previous_fund_ratios(fund, capital_commitment, end_date)
@@ -77,25 +79,29 @@ class FundRatiosJob < ApplicationJob
     capital_commitment ? CapitalCommitmentCalcs.new(capital_commitment, end_date) : FundPortfolioCalcs.new(fund, end_date)
   end
 
-  def _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows)
+  def _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
     xirr, cash_flows = calc.xirr(return_cash_flows:)
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, cash_flows:, display_value: "#{xirr} %")
+    fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, display_value: "#{xirr} %")
+    fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
 
     if fund.has_tracking_currency?
       tracking_xirr, cash_flows = calc.xirr(return_cash_flows:, use_tracking_currency: true)
-      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR (#{fund.tracking_currency})", value: tracking_xirr, cash_flows:, display_value: "#{tracking_xirr} %")
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR (#{fund.tracking_currency})", value: tracking_xirr, display_value: "#{tracking_xirr} %")
+      fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
     end
   end
 
-  def _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows)
+  def _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
     return if calc.is_a?(CapitalCommitmentCalcs)
 
     moic, cash_flows = calc.moic(return_cash_flows:)
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: moic, cash_flows:, display_value: "#{moic} x")
+    fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: moic, display_value: "#{moic} x")
+    fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
 
     if fund.has_tracking_currency?
       tracking_moic, cash_flows = calc.moic(return_cash_flows:, use_tracking_currency: true)
-      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC (#{fund.tracking_currency})", value: tracking_moic, cash_flows:, display_value: "#{tracking_moic} x")
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC (#{fund.tracking_currency})", value: tracking_moic, display_value: "#{tracking_moic} x")
+      fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
     end
   end
 
@@ -120,7 +126,7 @@ class FundRatiosJob < ApplicationJob
     FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
   end
 
-  def calc_only_fund(calc, fund, capital_commitment, end_date, owner, return_cash_flows:)
+  def calc_only_fund(calc, fund, capital_commitment, end_date, owner, return_cash_flows:, user_id:)
     _create_portfolio_value_to_cost_ratio(calc, owner, fund, capital_commitment, end_date)
     _create_paid_in_to_committed_capital_ratio(calc, owner, fund, capital_commitment, end_date)
 
@@ -128,11 +134,11 @@ class FundRatiosJob < ApplicationJob
       _create_portfolio_value_to_cost_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: true)
       _create_paid_in_to_committed_capital_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: true)
     end
-    _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
-    _create_api_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
-    _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
-    _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows)
-    _create_gross_portfolio_irr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows:)
+    _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
+    _create_api_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
+    _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
+    _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows, user_id)
+    _create_gross_portfolio_irr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
   end
 
   def _create_portfolio_value_to_cost_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
@@ -149,67 +155,76 @@ class FundRatiosJob < ApplicationJob
     FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
   end
 
-  def _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
+  def _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
     calc.portfolio_company_irr(return_cash_flows:).each do |portfolio_company_id, values|
-      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value: values[:xirr], cash_flows: values[:cash_flows], display_value: "#{values[:xirr]} %")
+      fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %")
+      fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
     end
 
     if fund.has_tracking_currency?
       calc.portfolio_company_irr_map = {}
       calc.portfolio_company_irr(return_cash_flows:, use_tracking_currency: true).each do |portfolio_company_id, values|
-        FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], cash_flows: values[:cash_flows], display_value: "#{values[:xirr]} %")
+        fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], display_value: "#{values[:xirr]} %")
+        fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
       end
     end
   end
 
-  def _create_api_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
+  def _create_api_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
     calc.api_irr(return_cash_flows:).each do |api_id, values|
       value = values[:xirr]
       cash_flows = values[:cash_flows]
-      FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value:, cash_flows:, display_value: "#{value} %")
+      fr = FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value:, display_value: "#{value} %")
+      fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
     end
 
     if fund.has_tracking_currency?
       calc.api_irr_map = {}
       calc.api_irr(return_cash_flows:, use_tracking_currency: true).each do |api_id, values|
-        FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], cash_flows: values[:cash_flows], display_value: "#{values[:xirr]} %")
+        fr = FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], display_value: "#{values[:xirr]} %")
+        fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
       end
     end
   end
 
-  def _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:)
+  def _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
     calc.portfolio_company_metrics(return_cash_flows:).each do |portfolio_company_id, values|
-      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: values[:moic], cash_flows: values[:cash_flows], display_value: "#{values[:moic]&.round(2)} x")
+      fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
+      fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
     end
 
     if fund.has_tracking_currency?
       calc.portfolio_company_metrics_map = {}
       calc.portfolio_company_metrics(return_cash_flows:, use_tracking_currency: true).each do |portfolio_company_id, values|
-        FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC (#{fund.tracking_currency})", value: values[:moic], cash_flows: values[:cash_flows], display_value: "#{values[:moic]&.round(2)} x")
+        fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC (#{fund.tracking_currency})", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
+        fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
       end
     end
     # TODO: do we need moic for tracking currency?
   end
 
-  def _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows)
+  def _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows, user_id)
     calc.api_cost_to_value(return_cash_flows:).each do |api_id, values|
-      FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: values[:moic], cash_flows: values[:cash_flows], display_value: "#{values[:moic]&.round(2)} x")
+      fr = FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
+      fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
     end
   end
 
-  def _create_gross_portfolio_irr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows:)
+  def _create_gross_portfolio_irr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
     result = calc.gross_portfolio_irr(return_cash_flows:)
     xirr_value = result[:xirr]
     cash_flows = result[:cash_flows]
     display_value = "#{xirr_value} %"
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR", value: xirr_value, cash_flows:, display_value:)
+    fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR", value: xirr_value, display_value:)
+    fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
 
     if fund.has_tracking_currency?
       result = calc.gross_portfolio_irr(return_cash_flows:, use_tracking_currency: true)
       xirr_value = result[:xirr]
       cash_flows = result[:cash_flows]
       display_value = "#{xirr_value} %"
-      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR (#{fund.tracking_currency})", value: xirr_value, cash_flows:, display_value:)
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR (#{fund.tracking_currency})", value: xirr_value, display_value:)
+      fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
     end
   end
 
