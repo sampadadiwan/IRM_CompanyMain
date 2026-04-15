@@ -39,11 +39,19 @@
 
     <div class="col-auto d-flex align-items-center gap-2">
       <%
-        selected_tags = params[:tag_list].is_a?(Array) ? params[:tag_list] : params[:tag_list].split(",").map(&:strip) if params[:tag_list].present?
-        selected_tags ||= ["Actual"]
+        selected_tags = if params[:tag_list].present?
+          Array(params[:tag_list]).flat_map { |value| value.to_s.split(",") }.map(&:strip).reject(&:blank?)
+        else
+          ["Actual"]
+        end
+
+        available_tags = current_user.entity.kpi_reports.pluck(:tag_list).uniq
+        # we need to have the options for select in the order of selected tags first and then the rest of the available tags, so that when user selects multiple tags, they are shown in the order they selected in the UI
+        # This is important because the first and last are used to compute the Achievement column in _budget_view_table.html.erb
+        tag_options = selected_tags + (available_tags - selected_tags)
       %>
       <%= form.label :tag_list, "Tags", class: "col-form-label mb-0 text-nowrap" %>
-      <%= form.select :tag_list, current_user.entity.kpi_reports.pluck(:tag_list).uniq, { selected: selected_tags, include_blank: false, include_hidden: false }, class: "form-control select2", name: "tag_list[]", multiple: true, data: { width: "180px" } %>
+      <%= form.select :tag_list, tag_options, { selected: selected_tags, include_blank: false, include_hidden: false }, class: "form-control select2", name: "tag_list[]", multiple: true, data: { width: "180px" } %>
     </div>
 
     <div class="col-auto ms-auto d-flex gap-2">

@@ -241,18 +241,6 @@ class KpiWorkbookReader
     # Find or initialize a KPI entry for the given report and KPI name
     standard_name = @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)].standard_kpi_name
 
-    # Check if an approved KPI with the same value already exists.
-    # If it does, we don't even need to create an unapproved one.
-    existing_approved = kpi_report.kpis.approved.find_by(
-      name: standard_name,
-      portfolio_company_id: @portfolio_company_id
-    )
-
-    if existing_approved && existing_approved.value.to_d.round(6) == value.to_d.round(6)
-      Rails.logger.debug { "Approved KPI value for #{standard_name} #{kpi_report.as_of} is same, skipping" }
-      return
-    end
-
     # Find or initialize an unapproved KPI for this report and standard name
     kpi = kpi_report.kpis.unapproved.where(
       name: standard_name,
@@ -271,6 +259,18 @@ class KpiWorkbookReader
                    else 1
                    end
       value = value.to_d * multiplier
+    end
+
+    # Check if an approved KPI with the same value already exists.
+    # If it does, we don't even need to create an unapproved one.
+    existing_approved = kpi_report.kpis.approved.find_by(
+      name: standard_name,
+      portfolio_company_id: @portfolio_company_id
+    )
+
+    if existing_approved && existing_approved.value.to_d.round(6) == value.to_d.round(6)
+      Rails.logger.debug { "Approved KPI value for #{standard_name} #{kpi_report.as_of} is same, skipping" }
+      return
     end
 
     Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} Unapproved KPI: #{kpi.name}, value: #{value}" }

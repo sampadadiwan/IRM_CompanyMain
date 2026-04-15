@@ -8,11 +8,14 @@
 
 %>
 
-<% grouped_mappings.each do |category, mappings| %>
+<% grouped_mappings.each_with_index do |(category, mappings), index| %>
   <% title = "#{category}: #{params[:title_suffix]}" %>
-  <div class="card kpi-category-section">
+  <% element_class = "card kpi-category-section"
+    element_class += " mt-4" unless index == 0 # add top margin to all but the first section
+  %>
+  <div class="<%= element_class %>">
     <div class="card-header">
-      <h3 class="card-title"><%= title %></h3>
+      <h3 class="card-title mb-0"><%= title %></h3>
     </div>
     <div class="card-body">
       <%= render 'grid_view_simple_table', kpi_reports: kpi_reports, investor_kpi_mappings: mappings %>

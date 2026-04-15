@@ -45,8 +45,11 @@
                             kpis = kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h
                         %>
             <!-- Find the kpi with the name or an alias for the name and show its value-->
-            <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
-            <td id="value_<%=kpi&.id%>" class="<%= (kpi && kpi.value.negative?) ? 'text-danger' : nil %>">
+            <% kpi = kpis[ikm.standard_kpi_name.downcase].presence
+              kpi_class = kpi&.value.to_i.negative? ? 'text-danger' : nil
+              kpi_style = ikm.json_fields[InvestorKpiMapping::HIGHLIGHT_KPI_CF].to_s == "1" ? "font-weight: 1000;" : nil
+            %>
+            <td id="value_<%=kpi&.id%>" class="<%= kpi_class %>" style="<%= kpi_style %>">
               <% if kpi %>
                 <% if kpi.value.negative? %>
                   <%= display_kpi(kpi, ikm, params: params) %>

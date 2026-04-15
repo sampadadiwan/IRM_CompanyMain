@@ -128,27 +128,17 @@
   --bs-form-invalid-color: #fa896b;
   --bs-form-invalid-border-color: #fa896b;
   /* Pie / chart fallback palette — used when a series has no tag colour */
-  --pie-color-1: #006D74;
-  --pie-color-2: #550C18;
-  --pie-color-3: #00BFC6;
-  --pie-color-4: #FF6B6B;
-  --pie-color-5: #FFC857;
-  --pie-color-6: #6A5CFF;
-  --pie-color-7: #000088;
-  --pie-color-8: #F4A261;
-  --pie-color-9: #7FB258;
-  --pie-color-10: #DE61F4;
-  /* Extra colors just in case */
-  --pie-color-11: #5d87ff;
-  --pie-color-12: #65C18C;
-  --pie-color-13: #9ADCFF;
-  --pie-color-14: #364F6B;
-  --pie-color-15: #3FC1C9;
-  --pie-color-16: #54BAB9;
-  --pie-color-17: #FC5185;
-  --pie-color-18: #FFBCBC;
-  --pie-color-19: #EDF6E5;
-  --pie-color-20: #FF964F;
+
+  --pie-color-1: #DDD0BB;
+  --pie-color-2: #C8440C;
+  --pie-color-3: #9E2B0A;
+  --pie-color-4: #4A7C59;
+  --pie-color-5: #7FB069;
+  --pie-color-6: #006D74;
+  --pie-color-7: #3E7EA6;
+  --pie-color-8: #A8C8D8;
+  --pie-color-9: #6B4226;
+  --pie-color-10: #3A2416;
 
   /* KPI tag chart colours — must stay in sync with .badge-tag-* rules below.
      Override these variables in a client-specific CSS file to retheme charts
@@ -159,18 +149,6 @@
   --tag-color-audited:   #FF0084;
   --tag-color-projected: #6f42c1;
   --tag-color-other:     #14ebaa;
-
-  /* OLD COLORS */
-  /* --pie-color-1: #006D74;
-  --pie-color-2: #550C18;
-  --pie-color-3: #1F8C92;
-  --pie-color-4: #7A1F2B;
-  --pie-color-5: #4A9DA3;
-  --pie-color-6: #8F3C47;
-  --pie-color-7: #6FBFC5;
-  --pie-color-8: #C76A75;
-  --pie-color-9: #A9D4D7;
-  --pie-color-10: #E6B7BC; */
 }
 
 
@@ -1223,7 +1201,7 @@ form#kpi_reports_filter {
 }
 
 #kpi_reports_filter select#category {
-    width: 250px !important;
+    width: 315px !important;
 }
 
 #kpi_reports_filter select#period {
@@ -1628,10 +1606,6 @@ ul.pagination {
     max-width: 120px;
 }
 
-.left-sidebar{
-    z-index: 9999 !important;
-}
-
 div.dt-container div.dt-info {
     padding-top: 0em !important;
     font-size: 12px;
@@ -1664,6 +1638,14 @@ div.dt-container div.dt-length label {
     letter-spacing: 0px;
     line-height: 16px;
     font-size: 0.875em;
+}
+
+[id^="embed_document_"] .card-body, [id^="kpis_budget_vs_actual_"] .card-body, [id^="portfolio_company_report_"] .card-body, [id^="fund_ratios_"] .card-body, [id^="kpi_reports_list"] .card-body,[id^="valuations_"] .card-body{
+    padding-top: 15px;
+}
+
+[id^="embed_document_"] .mb-4, [id^="kpis_budget_vs_actual_"] .mb-4, [id^="portfolio_company_report_"] .mb-4, [id^="fund_ratios_"] .mb-4, [id^="kpi_reports_list"] .mb-4,[id^="valuations_"] .mb-4{
+    margin-bottom: 1rem !important;
 }
 
 [id^="embed_document_"] table.table, [id^="kpis_budget_vs_actual_"] table.table, [id^="portfolio_company_report_"] table.table{

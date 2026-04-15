@@ -29,6 +29,7 @@
   params[:show_tags] = args[:show_tags] unless args[:show_tags].nil?
   params[:per_row] = args[:per_row] if args[:per_row].present?
   params[:widget_id] = widget.id
+  params[:documents_as_tags] = args[:documents_as_tags] unless args[:documents_as_tags].nil?
 %>
 <% outer_frame_id = "documents_tree_frame_#{widget.id}" %>
 <% uri = params[:card_view] ? URI(documents_path(params)) : URI(folder_documents_path(params)) %>
