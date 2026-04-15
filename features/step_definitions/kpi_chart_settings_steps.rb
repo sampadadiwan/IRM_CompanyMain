@@ -22,6 +22,7 @@ end
 
 When('I click {string} and accept the alert') do |text|
   click_on text
+  sleep(2)
 end
 
 Then('I should see {string} in an alert') do |message|

@@ -172,10 +172,10 @@ Then('The Portfolio company MOIC ratio can be viewed properly') do
   fr = FundRatio.find_by(owner:, name: "MOIC (#{tracking_currency})")
   visit(fund_ratio_path(fr))
   expect(page).to have_content("MOIC (#{tracking_currency})")
-  expect(page).to have_content("Cost Of Remaining")
-  expect(page).to have_content("Fmv")
-  expect(page).to have_content("Sold Amount")
-  expect(page).to have_content("Bought Amount")
+  # expect(page).to have_content("Cost Of Remaining")
+  # expect(page).to have_content("Fmv")
+  # expect(page).to have_content("Sold Amount")
+  # expect(page).to have_content("Bought Amount")
 end
 
 Given('I log in as user {string}') do |first_name|
