@@ -233,14 +233,11 @@ class KpiReportsController < ApplicationController
     params.require(:kpi_report).permit(:portfolio_company_id, :entity_id, :as_of, :tag_list, :notes, :user_id, :form_type_id, :delete_kpis, :update_existing_kpis, :upload_new_kpis, :period, properties: {}, kpis_attributes: %i[id entity_id name period value display_value notes _destroy], documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 
-
   def search
     @q = KpiReport.ransack(params[:q])
     @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company)
     render json: @kpi_reports.map { |kr| { id: kr.id, text: kr.name } }
   end
-
-  def show_performance; end
 
   private
 
@@ -307,6 +304,4 @@ class KpiReportsController < ApplicationController
       end
     end
   end
-
-
 end

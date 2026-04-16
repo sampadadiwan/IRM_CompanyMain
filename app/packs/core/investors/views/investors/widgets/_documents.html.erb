@@ -11,28 +11,18 @@
   per page and per_row can be used to control the pagination and layout of the document cards
   widget_id (from widget.id) is used to generate a unique turbo frame id so pagination works correctly when there are multiple document widgets on the same page
  %>
-<% args ||= {} %>
-<% params = {entity_id: @investor.entity_id}
-  params[:owner_type] = args[:owner_type] if args[:owner_type].present?
-  if args[:owner_id].present?
-    params[:owner_id] = args[:owner_id]
-  elsif args[:owner_type].present? && params[:owner_type] == "Investor"
-    params[:owner_id] = @investor.id
-  end
-  params[:title] = args[:title] if args[:title].present?
-  params[:per_page] = args[:per_page] if args[:per_page].present?
-  params[:card_view] = args[:card_view] unless args[:card_view].nil?
-  params[:folder_id] = args[:folder_id] if args[:folder_id].present?
-  params[:folder_id] ||= @investor.document_folder.id
-  params[:include_sub_folders] = args[:include_sub_folders] unless args[:include_sub_folders].nil?
-  params[:show_owner] = args[:show_owner] unless args[:show_owner].nil?
-  params[:show_tags] = args[:show_tags] unless args[:show_tags].nil?
-  params[:per_row] = args[:per_row] if args[:per_row].present?
-  params[:widget_id] = widget.id
-  params[:documents_as_tags] = args[:documents_as_tags] unless args[:documents_as_tags].nil?
+<% args ||= {}
+  args[:entity_id] = @investor.entity_id
+  args[:owner_type] = args[:owner_type] if args[:owner_type].present?
+  args[:owner_id] ||= @investor.id if  args[:owner_id].blank? && args[:owner_type].present? && args[:owner_type] == "Investor"
+  args[:folder_id] ||= @investor.document_folder.id
+  args[:widget_id] = widget.id
+
+
+  args[:show_action_buttons] = args[:show_action_buttons].to_s == "true" # default to false if not present
 %>
 <% outer_frame_id = "documents_tree_frame_#{widget.id}" %>
-<% uri = params[:card_view] ? URI(documents_path(params)) : URI(folder_documents_path(params)) %>
+<% uri = args[:card_view] ? URI(documents_path(args)) : URI(folder_documents_path(args)) %>
 
 <%= render(
       WidgetCardComponent.new(

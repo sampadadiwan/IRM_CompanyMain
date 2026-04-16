@@ -149,6 +149,8 @@
   --tag-color-audited:   #FF0084;
   --tag-color-projected: #6f42c1;
   --tag-color-other:     #14ebaa;
+
+  --background-matte-beige: #F7F4EE;
 }
 
 
@@ -457,6 +459,7 @@ a:hover {
 
 .dashboard-nav .nav-link:hover, .dashboard-nav .nav-link:focus {
     color: var(--bs-nav-link-hover-color);
+    border-top: 2px !important;
     border-bottom: 2px solid var(--bs-primary) !important;
 }
 
@@ -480,7 +483,15 @@ a:hover {
   -ms-overflow-style: none;
 
   justify-content: space-between;
+}
 
+.dashboard-nav .nav-pills.bg-light{
+      background-color:  var(--background-matte-beige) !important;
+
+}
+
+.dashboard-nav .nav-pills .nav-item .dropdown-menu{
+      background-color:  var(--background-matte-beige) !important;
 }
 
 /* Allow dropdown menus to escape the clipped nav-pills container */

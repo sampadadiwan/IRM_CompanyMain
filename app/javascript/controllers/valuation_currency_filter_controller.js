@@ -22,7 +22,7 @@ export default class extends Controller {
     this.rowTargets.forEach((tr) => {
       const rowCurrency = tr.getAttribute('data-row-currency')
       const isBaseRow = tr.getAttribute('data-is-base-row') === 'true'
-      const attrCell = tr.querySelector('td:nth-child(2)')
+      const attrCell = tr.querySelector('[data-valuation-currency-filter-attr]')
       const fullAttrLabel = tr.getAttribute('data-full-attr-label')
 
       // Logic:
@@ -32,8 +32,8 @@ export default class extends Controller {
       if (isBaseRow && selectedCurrency === this.entityCurrencyValue) {
         // Base attribute shown when entity currency is selected
         visible = true
-      } else if (!isBaseRow && rowCurrency === selectedCurrency) {
-        // Currency-specific attribute shown when that currency is selected
+      } else if (!isBaseRow && rowCurrency === selectedCurrency && selectedCurrency !== this.entityCurrencyValue) {
+        // Currency-specific attribute shown when a non-entity currency is selected
         visible = true
       }
 

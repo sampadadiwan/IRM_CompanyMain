@@ -40,7 +40,7 @@
     <% end %>
 
     <!-- Nav pills row -->
-    <ul class="nav nav-pills px-2 pb-2" data-controller="nav-overflow" data-nav-overflow-target="nav">
+    <ul class="nav nav-pills <%= theme %> p-1" data-controller="nav-overflow" data-nav-overflow-target="nav">
         <!-- Add a link to the dashboard widgets -->
         <%
             all_widgets = dashboard_widgets(dashboard_name, current_user.entity_id, name:, owner:, show_menu: true).to_a

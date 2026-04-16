@@ -1,6 +1,6 @@
 /* Remove default bullets */
 .tree_view{
-    
+
     ul {
       list-style-type: none;
       padding-inline-start: 20px;
@@ -9,39 +9,49 @@
     li {
       padding: 5px;
     }
-    
+
     /* Remove margins and padding from the parent ul */
     ul:first-child {
       margin: 0;
       padding: 0;
     }
-    
+
     /* Style the caret/arrow */
     .caret {
       cursor: pointer;
       user-select: none; /* Prevent text selection */
     }
-    
+
     /* Create the caret/arrow with a unicode, and style it */
     .caret::before {
       content: "\25B6";
       display: inline-block;
       margin-right: 2px;
     }
-    
+
     /* Rotate the caret/arrow icon when clicked on (using JavaScript) */
     .caret-down::before {
       transform: rotate(90deg);
     }
-    
+
     /* Hide the nested list */
     .nested {
       display: none;
     }
-    
+
     /* Show the nested list when the user clicks on the caret/arrow (with JavaScript) */
     .active {
       display: block;
     }
-    
+
+    /* Highlight the selected folder link */
+    a.selected {
+      text-decoration: underline !important;
+      font-weight: 600;
+    }
+
+    a.selected:hover {
+      text-decoration: underline !important;
+    }
+
 }

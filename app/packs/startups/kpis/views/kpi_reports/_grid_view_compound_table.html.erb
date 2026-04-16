@@ -9,7 +9,7 @@
 %>
 
 <% grouped_mappings.each_with_index do |(category, mappings), index| %>
-  <% title = "#{category}: #{params[:title_suffix]}" %>
+  <% title = "#{category} #{params[:title_suffix]}:" %>
   <% element_class = "card kpi-category-section"
     element_class += " mt-4" unless index == 0 # add top margin to all but the first section
   %>

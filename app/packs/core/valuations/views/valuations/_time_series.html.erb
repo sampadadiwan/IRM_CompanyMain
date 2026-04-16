@@ -81,9 +81,8 @@
     <tbody>
       <% instruments.each do |instrument| %>
         <% attributes.each do |attr| %>
-          <% attr_key = attr.to_s.split(".")[-1] %>
           <%
-
+             attr_key = attr.to_s.split(".")[-1]
             # Extract currency from attribute key if present (e.g., fmv_usd -> USD)
             currency_match = attr_key.match(/(.+)_([a-z]{3})$/i)
             attr_currency = currency_match ? currency_match[2].upcase : nil
@@ -102,19 +101,19 @@
 
             # Determine if field should be filtered by currency
             # Exclude fields with "multiple" or "holding" in their name (case-insensitive)
-            is_excluded_field = (attr_key =~ /multiple|holding/i) || (attr_label.to_s =~ /multiple|holding/i)
+            is_excluded_field = attr_key.match?(/multiple|holding/i) || attr_label.to_s.match?(/multiple|holding/i)
 
             # Filter fields that have currency suffixes (_usd, _inr, etc.)
             # OR are FMV/Equity/Co_valuations related (both base and currency versions)
             has_currency_suffix = !is_base_attr
-            is_value_metric = (attr_key =~ /fmv|fair.*market.*value|equity|book.*value|co_valuation/i) ||
-                            (attr_label.to_s =~ /fmv|fair.*market.*value|equity.*value|book.*value|co.*valuation/i)
+            is_value_metric = attr_key.match?(/fmv|fair.*market.*value|equity|book.*value|co_valuation/i) ||
+                            attr_label.to_s.match?(/fmv|fair.*market.*value|equity.*value|book.*value|co.*valuation/i)
 
             # Apply filter if: show_currency_filter is enabled AND (has currency suffix OR is a value metric) AND not excluded
             should_filter = show_currency_filter && (has_currency_suffix || is_value_metric) && !is_excluded_field
           %>
           <% if should_filter %>
-            <tr data-valuation-currency-filter-target="row" data-row-currency=<%= "#{attr_currency}" %> data-is-base-row=<%= "#{is_base_attr}" %> data-full-attr-label=<%= "#{h(attr_label)}" %>>
+            <tr data-valuation-currency-filter-target="row" data-row-currency="<%= attr_currency %>" data-is-base-row="<%= is_base_attr %>" data-full-attr-label="<%= h(attr_label) %>">
           <% else %>
             <tr>
           <% end %>
@@ -122,11 +121,10 @@
           <% if show_instrument %>
             <td><%= link_to instrument.name, instrument if instrument %></td>
           <% end %>
-            <td>
+            <td data-valuation-currency-filter-attr="true">
               <%= show_currency_filter && attr_label.to_s.match(/\([A-Z]{3}\)$/) ? attr_label.gsub(/\s*\([A-Z]{3}\)$/, '').strip : attr_label %>
             </td>
-            </td>
-            <% ordered_valuation_dates.each do |day| %>
+          <% ordered_valuation_dates.each do |day| %>
               <% valuation = valuations.find { |v| v.valuation_date == day && v.investment_instrument == instrument } %>
               <td class="text-end">
                 <% if valuation.present? %>

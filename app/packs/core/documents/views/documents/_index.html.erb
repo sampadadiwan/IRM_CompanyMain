@@ -1,15 +1,30 @@
 <%
   @entity ||= nil
   title ||= "Documents"
+
   # sometimes we render the partial directly instead of going through the controller
   # the controller does sorting but when the partial is rendered we sort the documents here
   documents = documents.order(created_at: :desc) if documents && documents.respond_to?(:arel) && documents.arel.orders.blank?
+
+  owner ||= nil
+  entity_id = @entity&.id
+  entity_id ||= owner&.entity_id
+  entity_id ||= current_user.entity_id
+
+  document = Document.new(entity_id: , owner: owner)
+  doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
+
+  @folder ||= nil
+  folder_id = @folder&.id || owner&.document_folder_id || params[:folder_id]
+  @folder ||= Folder.find(folder_id) if folder_id.present?
+  show_action_buttons = params[:show_action_buttons].to_s != "false" # default to true
 %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4" id="docs_index">
-  <% if params[:folder_id].present? %>
+  <% if folder_id.present? %>
     <%
         # Get the folder
-        @folder = Folder.find(params[:folder_id])
+        @folder = Folder.find(folder_id)
         # link for users or just path for investors
         link = (@folder.entity_id == current_user.entity_id) ? link_to(@folder.name, @folder) : @folder.name
       %>
@@ -21,129 +36,119 @@
       <%= title %>
     </h4>
   <% end %>
-  <%
-      owner ||= nil
-      entity_id = @entity&.id
-      entity_id ||= owner&.entity_id
-      entity_id ||= current_user.entity_id
 
-      document = Document.new(entity_id: , owner: owner)
-      doc_attributes = document.attributes.delete_if{|k,v| !["entity_id", "owner_id", "owner_type"].include?(k)}
-
-      @folder ||= nil
-      folder_id = @folder&.id || owner&.document_folder_id
-      @folder ||= Folder.find(folder_id) if folder_id.present?
-    %>
-  <input type="text" id="selected_folder_id" value="<%=folder_id%>" hidden>
-  <div class="d-flex flex-wrap align-items-center gap-2">
-    <div class="btn-group">
-      <div class="dropdown">
-        <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
-                id="doc_actions" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-          <i class="ti ti-settings"></i> <%= t_common(:actions) %>
-        </button>
-        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-          <% if folder_id.present? %>
-            <% if params[:q].present? %>
-              <%= button_to download_documents_path(q: params.to_unsafe_h[:q], back_to: request.original_url, folder_id: folder_id),
-                            method: :post,
-                            class: "dropdown-item d-flex align-items-center",
-                            data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup", method: :post } do %>
-                <i class="ti ti-download"></i> <%= t_common(:download) %> ZIP
-              <% end %>
-            <% else %>
-              <% if policy(@folder).download? %>
-                <%= button_to download_folder_path(id: folder_id, back_to: request.original_url),
-                              method: :get,
-                              class: "dropdown-item d-flex align-items-center d-none d-sm-block",
-                              data: { action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", method: :get } do %>
-                  <i class="ti ti-download"></i> <%= t_common(:download) %> Folder
-                <% end %>
-              <% end %>
-            <% end %>
-            <% if policy(@folder).create? %>
-              <%= link_to new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_id]": @folder.id),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-folder-plus"></i> New Folder
-              <% end %>
-            <% end %>
-            <% if policy(document).create? %>
-              <%= link_to new_document_path(document: doc_attributes, "document[folder_id]": folder_id, format: :html, turbo: false),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-file-plus"></i> New Document
-              <% end %>
-            <% end %>
-            <% if policy(@folder).update? %>
-              <%= link_to new_import_upload_path(
-                            "import_upload[owner_id]": folder_id,
-                            "import_upload[owner_type]": "Folder",
-                            "import_upload[import_type]": "Documents",
-                            "sample_upload": "DOCS_SAMPLE"),
-                          class: "dropdown-item d-flex align-items-center d-none d-sm-block" do %>
-                <i class="ti ti-upload"></i> Bulk Upload
-              <% end %>
-            <% end %>
-            <% if @folder && policy(@folder).generate_report? %>
-              <%= link_to generate_report_folder_path(id: folder_id, report_type: @folder.owner.class.name),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-report"></i> Generate Report
-              <% end %>
-            <% end %>
-            <%# Show "Create AI Portfolio Report" only if user has LLM access and entity has portfolio company agent enabled %>
-            <% if current_user.enable_user_llm_chat && current_user.entity&.support_agents&.portfolio_company_agent? && @folder && @folder.owner.is_a?(Investor) && @folder.owner.category == 'Portfolio Company' %>
-              <% if @folder.documents.any? %>
-                <%= link_to new_ai_portfolio_report_path(portfolio_company_id: @folder.owner.id),
-                  class: "dropdown-item d-flex align-items-center",
-                  data: { turbo: false } do %>
-                  <i class="ti ti-robot"></i> Create AI Portfolio Report (<%= @folder.documents.count %> docs)
+  <% if show_action_buttons %>
+    <input type="text" id="selected_folder_id" value="<%=folder_id%>" hidden>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"
+                  id="doc_actions" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ti ti-settings"></i> <%= t_common(:actions) %>
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <% if folder_id.present? %>
+              <% if params[:q].present? %>
+                <%= button_to download_documents_path(q: params.to_unsafe_h[:q], back_to: request.original_url, folder_id: folder_id),
+                              method: :post,
+                              class: "dropdown-item d-flex align-items-center",
+                              data: { msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", action: "click->confirm#popup", method: :post } do %>
+                  <i class="ti ti-download"></i> <%= t_common(:download) %> ZIP
                 <% end %>
               <% else %>
-                <span class="dropdown-item text-muted disabled">
-                  <i class="ti ti-robot"></i> Upload documents first to generate AI Report
-                </span>
+                <% if policy(@folder).download? %>
+                  <%= button_to download_folder_path(id: folder_id, back_to: request.original_url),
+                                method: :get,
+                                class: "dropdown-item d-flex align-items-center d-none d-sm-block",
+                                data: { action: "click->confirm#popup", msg: "This will create a zipfile of the documents and email you a link to download the zipfile. This will take a few minutes, please be patient. Proceed?", method: :get } do %>
+                    <i class="ti ti-download"></i> <%= t_common(:download) %> Folder
+                  <% end %>
+                <% end %>
               <% end %>
-            <% end %>
-            <div class="dropdown-divider"></div>
-            <% if params[:q].present? %>
-              <%= render "documents/bulk_actions", folder_id: folder_id %>
+              <% if policy(@folder).create? %>
+                <%= link_to new_folder_path("folder[entity_id]": current_user.entity_id, "folder[parent_id]": @folder.id),
+                            class: "dropdown-item d-flex align-items-center" do %>
+                  <i class="ti ti-folder-plus"></i> New Folder
+                <% end %>
+              <% end %>
+              <% if policy(document).create? %>
+                <%= link_to new_document_path(document: doc_attributes, "document[folder_id]": folder_id, format: :html, turbo: false),
+                            class: "dropdown-item d-flex align-items-center" do %>
+                  <i class="ti ti-file-plus"></i> New Document
+                <% end %>
+              <% end %>
+              <% if policy(@folder).update? %>
+                <%= link_to new_import_upload_path(
+                              "import_upload[owner_id]": folder_id,
+                              "import_upload[owner_type]": "Folder",
+                              "import_upload[import_type]": "Documents",
+                              "sample_upload": "DOCS_SAMPLE"),
+                            class: "dropdown-item d-flex align-items-center d-none d-sm-block" do %>
+                  <i class="ti ti-upload"></i> Bulk Upload
+                <% end %>
+              <% end %>
+              <% if @folder && policy(@folder).generate_report? %>
+                <%= link_to generate_report_folder_path(id: folder_id, report_type: @folder.owner.class.name),
+                            class: "dropdown-item d-flex align-items-center" do %>
+                  <i class="ti ti-report"></i> Generate Report
+                <% end %>
+              <% end %>
+              <%# Show "Create AI Portfolio Report" only if user has LLM access and entity has portfolio company agent enabled %>
+              <% if current_user.enable_user_llm_chat && current_user.entity&.support_agents&.portfolio_company_agent? && @folder && @folder.owner.is_a?(Investor) && @folder.owner.category == 'Portfolio Company' %>
+                <% if @folder.documents.any? %>
+                  <%= link_to new_ai_portfolio_report_path(portfolio_company_id: @folder.owner.id),
+                    class: "dropdown-item d-flex align-items-center",
+                    data: { turbo: false } do %>
+                    <i class="ti ti-robot"></i> Create AI Portfolio Report (<%= @folder.documents.count %> docs)
+                  <% end %>
+                <% else %>
+                  <span class="dropdown-item text-muted disabled">
+                    <i class="ti ti-robot"></i> Upload documents first to generate AI Report
+                  </span>
+                <% end %>
+              <% end %>
+              <div class="dropdown-divider"></div>
+              <% if params[:q].present? %>
+                <%= render "documents/bulk_actions", folder_id: folder_id %>
+              <% else %>
+                <%= link_to documents_path(folder_id: folder_id, filter: true, no_folders: true),
+                            class: "dropdown-item d-flex align-items-center" do %>
+                  <i class="ti ti-filter"></i> Filter Documents
+                <% end %>
+              <% end %>
+              <!-- Future (Send for eSignatures) link is disabled for now -->
             <% else %>
-              <%= link_to documents_path(folder_id: folder_id, filter: true, no_folders: true),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-filter"></i> Filter Documents
+              <% if document && policy(document).create? %>
+                <%= link_to new_document_path(document: doc_attributes),
+                            class: "dropdown-item d-flex align-items-center" do %>
+                  <i class="ti ti-file-plus"></i> New Document
+                <% end %>
               <% end %>
+              <%= render "documents/bulk_actions" %>
             <% end %>
-            <!-- Future (Send for eSignatures) link is disabled for now -->
-          <% else %>
-            <% if document && policy(document).create? %>
-              <%= link_to new_document_path(document: doc_attributes),
-                          class: "dropdown-item d-flex align-items-center" do %>
-                <i class="ti ti-file-plus"></i> New Document
-              <% end %>
-            <% end %>
-            <%= render "documents/bulk_actions" %>
-          <% end %>
+          </div>
         </div>
       </div>
-    </div>
-    <% owner ||= nil %>
-    <% @deal ||= nil %>
-    <% if owner && ["Deal", "DealInvestor"].include?(owner.class.name) %>
-      <% @deal = owner.is_a?(Deal) ? owner : owner.deal %>
-    <% end %>
-    <% if @deal %>
-      <%= link_to folder_documents_path(entity_id: @deal.entity_id, folder_id: @deal.data_room_folder_id, parent_folder_id: @deal.document_folder.id),
-                  class: "btn btn-outline-primary d-inline-flex align-items-center",
-                  data: { turbo: false } do %>
-        <i class="ti ti-database"></i> Data Room
+      <% owner ||= nil %>
+      <% @deal ||= nil %>
+      <% if owner && ["Deal", "DealInvestor"].include?(owner.class.name) %>
+        <% @deal = owner.is_a?(Deal) ? owner : owner.deal %>
       <% end %>
-    <% end %>
-  </div>
+      <% if @deal %>
+        <%= link_to folder_documents_path(entity_id: @deal.entity_id, folder_id: @deal.data_room_folder_id, parent_folder_id: @deal.document_folder.id),
+                    class: "btn btn-outline-primary d-inline-flex align-items-center",
+                    data: { turbo: false } do %>
+          <i class="ti ti-database"></i> Data Room
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
 </div>
 
 <% if params[:documents_as_tags].present? %>
   <div class="d-flex flex-wrap gap-2 mb-3">
       <% documents.each do |document| %>
-          <span class="badge bg-secondary"><%= link_to document.name, document_path(document) %></span>
+        <h2><span class="badge bg-secondary fs-4"><%= link_to document.name, document_path(document) %></span></h2>
       <% end %>
   </div>
 <% else %>

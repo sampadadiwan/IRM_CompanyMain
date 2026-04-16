@@ -119,7 +119,7 @@ class PortfolioReportExtractsController < ApplicationController
   #   { name: "Financial Analysis", body: "..." }
   # ]
   def build_sections_from_params(sections_array)
-    return {} unless sections_array.is_a?(Array)
+    return {}.to_json unless sections_array.is_a?(Array)
 
     sections_array.each_with_object({}) do |section, result|
       key = section[:name].to_s
@@ -128,6 +128,6 @@ class PortfolioReportExtractsController < ApplicationController
       # Split by line, strip whitespace, drop empty lines
       lines = body.split(/\r?\n/).map(&:strip).compact_blank
       result[key] = lines if key.present?
-    end
+    end.to_json
   end
 end

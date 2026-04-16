@@ -14,7 +14,7 @@ class KpiCumulateJob < ApplicationJob
 
       # 1. Aggregation Phase: Cumulate & Forward Fill
       # We iterate over the reports that need processing (mostly Monthly ones)
-      kpi_reports.actuals.each do |kpi_report|
+      kpi_reports.each do |kpi_report|
         Rails.logger.debug { "Cumulating KPIs for KpiReport ID: #{kpi_report.id}" }
         send_notification("Processing KPI cumulation for KpiReport ID: #{kpi_report.id} (As of: #{kpi_report.as_of})", user_id, :info)
 
