@@ -24,7 +24,7 @@
     <%= render "aggregate_portfolio_investments/widgets/fund_ratio_list", fund_ratios_by_owner: fund_ratios %>
   <% end %>
 
-  <% if args["show_charts"] != "false" %>
+  <% if args["show_chart"] != "false" %>
     <%= portfolio_irr_chart(fund, compact: true) %>
   <% end %>
 
