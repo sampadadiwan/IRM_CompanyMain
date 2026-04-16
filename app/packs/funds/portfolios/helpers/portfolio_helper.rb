@@ -91,15 +91,19 @@ module PortfolioHelper
   end
 
   def portfolio_last_xirr(fund)
-    pc_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: "IRR", owner_type: "Investor")
+    pc_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: ["IRR", "MOIC"], owner_type: "Investor").includes(:owner)
     if pc_frs.present?
-      portfolio_irr_ratios = pc_frs.map { |fr| [fr.owner.name, fr.value] }
+      grouped = pc_frs.group_by { |fr| fr.owner.name }
+      chart_data = [
+        { name: "IRR", data: grouped.map { |name, ratios| [name, ratios.find { |r| r.name == "IRR" }&.value || 0] } },
+        { name: "MOIC", data: grouped.map { |name, ratios| [name, ratios.find { |r| r.name == "MOIC" }&.value || 0] } }
+      ]
 
-      column_chart portfolio_irr_ratios, id: "portfolio_last_xirr_chart_#{fund.id}", library: {
+      column_chart chart_data, id: "portfolio_last_xirr_chart_#{fund.id}", library: {
         plotOptions: { column: {
           dataLabels: {
             enabled: true,
-            format: "{point.y:,.2f} %"
+            format: "{point.y:,.2f}"
           }
         } },
         **chart_theme_color

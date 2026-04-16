@@ -1,7 +1,8 @@
-<% 
+<%
   uri_params ||= {}
   fund_id ||= uri_params[:owner_id]
   fund ||= uri_params[:fund]
+  args = widget.metadata_args || {}
 %>
 <%= render(
       WidgetCardComponent.new(
@@ -10,6 +11,22 @@
         widget_size: widget.widget_size
       )
     ) do %>
-  <!-- This block becomes the `content` inside the component -->
-  <%= portfolio_irr_chart(fund, compact: true) %>
+
+
+  <% if args[:show_table] != "false" %>
+    <%
+      fund_ratios = FundRatio.latest
+                             .where(entity_id: fund.entity_id, fund_id: fund.id, name: ["IRR", "MOIC"], owner_type: "Investor")
+                             .includes(:owner)
+                             .order(end_date: :desc)
+                             .group_by { |fr| fr.owner.name }
+    %>
+    <%= render "aggregate_portfolio_investments/widgets/fund_ratio_list", fund_ratios_by_owner: fund_ratios %>
+  <% end %>
+
+  <% if args[:show_charts] != "false" %>
+    <%= portfolio_irr_chart(fund, compact: true) %>
+  <% end %>
+
+
 <% end %>
