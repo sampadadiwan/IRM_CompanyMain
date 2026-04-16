@@ -33,15 +33,17 @@ class ApplicationRecord < ActiveRecord::Base
   DEFAULT_DATA_TYPE = "String".freeze
   def self.ag_grids_default_columns
     self::STANDARD_COLUMNS.map do |label, key|
-      data_type = if key.include?("custom_fields.")
+      clean_label = label.split(";").first.strip
+      clean_key = key.split(";").first.strip
+      data_type = if clean_key.include?("custom_fields.")
                     DEFAULT_DATA_TYPE
                   else
-                    columns_hash[key]&.type.to_s.capitalize.presence ||
-                      columns_hash["#{key}_cents"]&.type.to_s.capitalize.presence ||
+                    columns_hash[clean_key]&.type.to_s.capitalize.presence ||
+                      columns_hash["#{clean_key}_cents"]&.type.to_s.capitalize.presence ||
                       DEFAULT_DATA_TYPE
                   end
 
-      { label: label, key: key, data_type: data_type }
+      { label: clean_label, key: clean_key, data_type: data_type }
     end
   end
 
