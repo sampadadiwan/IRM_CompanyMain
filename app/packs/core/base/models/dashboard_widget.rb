@@ -113,7 +113,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Holding Cost %", path: "aggregate_portfolio_investments/widgets/holding_costs_percentage", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Bought %", path: "aggregate_portfolio_investments/widgets/bought_percentage", size: "Medium"),
     DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Sold %", path: "aggregate_portfolio_investments/widgets/sold_percentage", size: "Medium"),
-    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio IRR", path: "aggregate_portfolio_investments/widgets/irr", size: "XL")
+    DashboardWidget.new(dashboard_name: "Portfolio Dashboard", widget_name: "Portfolio IRR", path: "aggregate_portfolio_investments/widgets/irr", size: "XL", metadata_help: "{show_table: false, show_chart: false}"),
   ].freeze
 
   AGGREGATED_WIDGETS = [
