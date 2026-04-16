@@ -100,14 +100,15 @@ module FundDashboardHelper
 
     # Group and sum data by quarter
     data = {
-      "Capital Calls" => capital_calls,
-      "Capital Distributions" => capital_distributions,
-      "Portfolio Investments" => portfolio_investments,
-      "Expenses" => account_entries
-    }.transform_values do |records|
-      records.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
-             .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
-    end
+      "Capital Calls" => capital_calls.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+                                      .transform_values { |entries| entries.sum { |e| (e.try(:collected_amount_cents) || 0) / 100.0 } },
+      "Capital Distributions" => capital_distributions.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+                                                      .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
+      "Portfolio Investments" => portfolio_investments.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+                                                      .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
+      "Expenses" => account_entries.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+                                   .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
+    }
 
     # Get all quarters and sort them
     all_quarters = data.values.flat_map(&:keys).uniq.sort_by do |q|
