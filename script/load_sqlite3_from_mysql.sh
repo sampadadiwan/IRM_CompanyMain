@@ -995,8 +995,13 @@ for table in "${TABLES[@]}"; do
   SELECT_LIST="${SELECT_LIST%,}"
 
   # Some tables don't have deleted_at
+  HAS_DELETED_AT=0
+  for c in "${COLS[@]}"; do
+    if [[ "$c" == "deleted_at" ]]; then HAS_DELETED_AT=1; break; fi
+  done
+
   WHERE_CLAUSE="WHERE 1=1"
-  if [[ "$table" != "fund_unit_settings" ]] && [[ "$table" != "funds" ]] && [[ "$table" != "exchange_rates" ]]; then
+  if [[ $HAS_DELETED_AT -eq 1 ]]; then
     WHERE_CLAUSE="WHERE deleted_at IS NULL"
   fi
 
