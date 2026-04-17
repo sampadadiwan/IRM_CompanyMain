@@ -7,6 +7,8 @@ class CapitalRemittancePaymentsController < ApplicationController
     @q = service.q
     @capital_remittance_payments = service.capital_remittance_payments
     @report = Report.find_by(id: params[:report_id]) if params[:report_id].present?
+
+    @pagy, @capital_remittance_payments = pagy(@capital_remittance_payments, limit: params[:per_page]) if params[:all].blank?
   end
 
   # GET /capital_remittance_payments/1 or /capital_remittance_payments/1.json
