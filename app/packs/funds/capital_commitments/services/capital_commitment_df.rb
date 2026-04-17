@@ -9,9 +9,11 @@ class CapitalCommitmentDf < ApplicationDataframe
   # This is called by the ApplicationDataframe class to enhance the dataframe
   def enhance_df(dataframe)
     # Create an amount column by dividing 'amount_cents' by 100 and rounding to 2 decimal places
-    dataframe = dataframe.with_column((Polars.col("committed_amount_cents").cast(:f64) / 100).alias("committed_amount"))
-    dataframe = dataframe.with_column((Polars.col("collected_amount_cents").cast(:f64) / 100).alias("collected_amount"))
-    dataframe = dataframe.with_column((Polars.col("distribution_amount_cents").cast(:f64) / 100).alias("distribution_amount"))
-    dataframe.with_column((Polars.col("call_amount_cents").cast(:f64) / 100).alias("call_amount"))
+    dataframe.with_columns([
+      (Polars.col("committed_amount_cents").cast(Polars::Float64) / 100).alias("committed_amount"),
+      (Polars.col("collected_amount_cents").cast(Polars::Float64) / 100).alias("collected_amount"),
+      (Polars.col("distribution_amount_cents").cast(Polars::Float64) / 100).alias("distribution_amount"),
+      (Polars.col("call_amount_cents").cast(Polars::Float64) / 100).alias("call_amount")
+    ])
   end
 end

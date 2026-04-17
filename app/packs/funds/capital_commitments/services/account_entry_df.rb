@@ -9,6 +9,8 @@ class AccountEntryDf < ApplicationDataframe
   # This is called by the ApplicationDataframe class to enhance the dataframe
   def enhance_df(dataframe)
     # Create an amount column by dividing 'amount_cents' by 100 and rounding to 2 decimal places
-    dataframe.with_column((Polars.col("amount_cents").cast(:f64) / 100).alias("amount"))
+    dataframe.with_columns([
+      (Polars.col("amount_cents").cast(Polars::Float64) / 100).alias("amount")
+    ])
   end
 end
