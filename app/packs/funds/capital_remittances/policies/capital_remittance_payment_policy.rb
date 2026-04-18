@@ -17,8 +17,7 @@ class CapitalRemittancePaymentPolicy < FundBasePolicy
   end
 
   def update?
-    permissioned_investor? ||
-      permissioned_employee?(:update)
+    permissioned_employee?(:update)
   end
 
   def edit?

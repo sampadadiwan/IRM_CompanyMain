@@ -19,6 +19,13 @@
     show_achievement_column = service_result.show_achievement_column
     tag_lists_to_display = service_result.tag_lists_to_display
     achievement_tags = service_result.achievement_tags
+
+    # Group all KPIs by report_id and then by name (lowercase) to avoid redundant find/map in loops
+    all_reports = (quarterly_reports + year_reports).uniq
+    kpis_by_report_and_name = {}
+    all_reports.each do |kr|
+      kpis_by_report_and_name[kr.id] = kr.kpis.index_by { |k| k.name.downcase }
+    end
 %>
 
 
@@ -73,17 +80,12 @@
                         <% quarterly_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
                             <% tag_lists_to_display.each do |tag| %>
                                 <% kpi_report = grouped_quarterly_reports[as_of_date][tag] %>
-                                <td class="value_<%= kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.id %>">
+                                <% kpi = kpis_by_report_and_name.dig(kpi_report&.id, ikm.standard_kpi_name.downcase) %>
+                                <td class="value_<%= kpi&.id %>">
                                     <% if kpi_report %>
-                                        <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
-                                        <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
                                         <% if kpi %>
                                             <span class="<%= kpi.value.to_f.negative? ? 'text-danger' : nil %>"><%= display_kpi(kpi, ikm, params: params) %></span>
-                                        <% else %>
-
                                         <% end %>
-                                    <% else %>
-
                                     <% end %>
                                 </td>
                             <% end %>
@@ -93,8 +95,10 @@
                                     <%
                                         tag1_report = grouped_quarterly_reports[as_of_date][achievement_tags.first]
                                         tag2_report = grouped_quarterly_reports[as_of_date][achievement_tags.last]
-                                        tag1_value = tag1_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
-                                        tag2_value = tag2_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                        tag1_kpi = kpis_by_report_and_name.dig(tag1_report&.id, ikm.standard_kpi_name.downcase)
+                                        tag2_kpi = kpis_by_report_and_name.dig(tag2_report&.id, ikm.standard_kpi_name.downcase)
+                                        tag1_value = tag1_kpi&.value
+                                        tag2_value = tag2_kpi&.value
                                     %>
                                     <% if tag1_value.present? && tag2_value.present? && tag2_value.to_f != 0 %>
                                         <% result = (tag1_value.to_f / tag2_value.to_f) * 100
@@ -120,17 +124,12 @@
                         <% year_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
                             <% tag_lists_to_display.each do |tag| %>
                                 <% kpi_report = grouped_yearly_reports[as_of_date][tag] %>
-                                <td class="value_<%= kpi_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.id %>">
+                                <% kpi = kpis_by_report_and_name.dig(kpi_report&.id, ikm.standard_kpi_name.downcase) %>
+                                <td class="value_<%= kpi&.id %>">
                                     <% if kpi_report %>
-                                        <% kpis = kpi_report.kpis.map{|kpi| [kpi.name.downcase, kpi]}.to_h %>
-                                        <% kpi = kpis[ikm.standard_kpi_name.downcase].presence %>
                                         <% if kpi %>
                                             <span class="<%= kpi.value.to_f.negative? ? 'text-danger' : nil %>"><%= display_kpi(kpi, ikm, params: params) %></span>
-                                        <% else %>
-
                                         <% end %>
-                                    <% else %>
-
                                     <% end %>
                                 </td>
                             <% end %>
@@ -140,8 +139,10 @@
                                     <%
                                         tag1_report = grouped_yearly_reports[as_of_date][achievement_tags.first]
                                         tag2_report = grouped_yearly_reports[as_of_date][achievement_tags.last]
-                                        tag1_value = tag1_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
-                                        tag2_value = tag2_report&.kpis&.find{|k| k.name.downcase == ikm.standard_kpi_name.downcase}&.value
+                                        tag1_kpi = kpis_by_report_and_name.dig(tag1_report&.id, ikm.standard_kpi_name.downcase)
+                                        tag2_kpi = kpis_by_report_and_name.dig(tag2_report&.id, ikm.standard_kpi_name.downcase)
+                                        tag1_value = tag1_kpi&.value
+                                        tag2_value = tag2_kpi&.value
                                     %>
                                     <% if tag1_value.present? && tag2_value.present? && tag2_value.to_f != 0 %>
 

@@ -1,0 +1,10 @@
+<% investment_opportunities = policy_scope(InvestmentOpportunity) %>
+<% if investment_opportunities.count > 0 %>
+    <div id="opportunities-section">
+        <%= render ToggleCard.new(title: t('entities.fm_dashboard2.investment_opportunities'), css_class: "show_ios") do %>
+            <% investment_opportunities.each do |investment_opportunity| %>
+                <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity, show_tags: true %>
+            <% end %>
+        <% end %>
+    </div>
+<% end %>

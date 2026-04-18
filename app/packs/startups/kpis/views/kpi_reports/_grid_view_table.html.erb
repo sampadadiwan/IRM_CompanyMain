@@ -1,4 +1,14 @@
 <div class="sticky-table-wrapper" style="overflow: auto; max-height: 80vh; position: relative;">
+  <%
+    view_unapproved = params[:view_unapproved] == 'true'
+    # Group all KPIs by report_id and then by name (lowercase) to avoid N+1 and repetitive group_by
+    kpis_by_report_and_name = {}
+    kpi_reports.each do |kr|
+      kpis = kr.kpis
+      kpis = kpis.select(&:approved?) unless view_unapproved
+      kpis_by_report_and_name[kr.id] = kpis.group_by { |k| k.name.downcase }
+    end
+  %>
   <table id="kpi_reports_grid" class="table table-bordered table-striped sticky-table">
     <thead>
       <tr>
@@ -48,19 +58,9 @@
             <%= ikm.category %>
           </td>
           <% kpi_reports.each do |kpi_report| %>
-            <!-- Create a hash of the kpis with the name as the key -->
-            <%
-                            view_unapproved = params[:view_unapproved] == 'true'
-                            kpis_scope = view_unapproved ? kpi_report.kpis : kpi_report.kpis.approved
-
-                            # If multiple exist for the same name (e.g. approved & unapproved),
-                            # we want to show both or prioritize one.
-                            # Let's group them by name.
-                            kpis_by_name = kpis_scope.group_by { |k| k.name.downcase }
-                        %>
             <!-- Find the kpis with the name -->
             <%
-                            report_kpis = kpis_by_name[ikm.standard_kpi_name.downcase] || []
+                            report_kpis = kpis_by_report_and_name.dig(kpi_report.id, ikm.standard_kpi_name.downcase) || []
                             # Sort so approved is first if both exist, but we might want to show both
                         %>
             <td class="value_<%= report_kpis.first&.id %>">

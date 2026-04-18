@@ -7,6 +7,9 @@ module WithCustomField
     attr_accessor :skip_cf_before_save
 
     attribute :json_fields, :json, default: {}
+    def json_fields
+      super || {}
+    end
     alias_attribute :properties, :json_fields
 
     # This is used to get the form type

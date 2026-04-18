@@ -1,0 +1,10 @@
+<% if current_user.enable_secondary_sale && (offers = policy_scope(Offer).joins(:secondary_sale).includes(:entity, :investor).where("secondary_sales.active=?", true)).any? %>
+    <%= render ToggleCard.new(title: "Offers", css_class: "show_offers") do |component|  %>
+        <% component.with_header do %>
+            <a class="btn btn-outline-primary" href="<%=offers_path%>"><i class="fa-solid fa-table-cells"></i></a>
+        <% end %>
+        <% offers.each do |offer| %>
+            <%= render "/offers/card", offer: %>
+        <% end %>
+    <% end %>
+<% end %>

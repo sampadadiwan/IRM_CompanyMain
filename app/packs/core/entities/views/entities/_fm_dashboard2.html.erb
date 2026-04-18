@@ -1,47 +1,11 @@
 <% params[:units] ||= "Million" %>
 
-<% unless current_user.investor_advisor? %>
-    <% cache_if(current_user != nil, cache_key("FMDashBoardStats"), expires_in: 5.day) do %>
-        <%= render "entities/fm_dashboard_stats" %>
-    <% end %>
-<% end %>
+<%# Removed static stats call as it's now a widget %>
 
 <%= render "entities/fm_dashboard_menus" %>
 
 <div data-controller="datatable">
 
-    <% cache_if(current_user != nil, cache_key("FMDashBoard", include_theme: true), expires_in: 5.day) do %>
-
-        <% if current_user.enable_funds %>
-            <div id="funds-section">
-                <% title = link_to(t('entities.fm_dashboard2.funds'), funds_path) %>
-                <%= render ToggleCard.new(title:, css_class: "show_funds") do %>
-                    <% @pagy, funds = pagy(policy_scope(Fund)) %>
-
-                    <% funds.includes(:fund_ratios).each do |fund| %>
-                        <%= render "/funds/card", fund: %>
-                    <% end %>
-
-                    <div class="d-flex justify-content-between align-items-center">
-                        <%= raw pagy_info(@pagy) %>
-                        <%= raw pagy_bootstrap_nav(@pagy) %>
-                    </div>
-                <% end %>
-            </div>
-        <% end %>
-
-
-        <% investment_opportunities = policy_scope(InvestmentOpportunity) %>
-        <% if investment_opportunities.count > 0 %>
-            <div id="opportunities-section">
-                <%= render ToggleCard.new(title: t('entities.fm_dashboard2.investment_opportunities'), css_class: "show_ios") do %>
-                    <% investment_opportunities.each do |investment_opportunity| %>
-                        <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity, show_tags: true %>
-                    <% end %>
-                <% end %>
-            </div>
-        <% end %>
-
-    <% end %>
+    <%= render "dashboard_widgets/dashboard", dashboard_name: DashboardWidget::FM_LANDING_PAGE, show_nav: false %>
 
 </div>

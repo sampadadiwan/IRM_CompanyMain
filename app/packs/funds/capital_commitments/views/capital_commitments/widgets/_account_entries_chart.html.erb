@@ -1,0 +1,29 @@
+<%
+  fund = uri_params[:fund] || Fund.find_by(id: uri_params[:owner_id])
+  # If we don't have a fund from owner_id, it might be the FM/LP landing page where owner is not set or is entity
+  fund ||= current_user.entity.funds.first if current_user.entity.respond_to?(:funds)
+
+  entry_names = (args[:account_entry_names] || "").split(",").map(&:strip).compact_blank
+  chart_type = args[:chart_type] || "column"
+  aggregate_by = args[:aggregate_by] || "quarter"
+  number_of_periods = args[:number_of_periods].present? ? args[:number_of_periods].to_i : 8
+%>
+
+<% if fund %>
+  <%= render(
+        WidgetCardComponent.new(
+          widget: widget,
+          args: args,
+          widget_size: widget.widget_size
+        )
+      ) do %>
+    <%= account_entries_chart(fund,
+                              entry_names: entry_names,
+                              chart_type: chart_type,
+                              aggregate_by: aggregate_by,
+                              number_of_periods: number_of_periods,
+                              compact: args[:compact]) %>
+  <% end %>
+<% else %>
+  <div class="alert alert-warning">No Fund found to display account entries.</div>
+<% end %>

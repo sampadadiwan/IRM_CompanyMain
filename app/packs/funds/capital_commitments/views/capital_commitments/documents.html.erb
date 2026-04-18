@@ -1,59 +1,14 @@
-<div class="table-responsive" data-controller="datatable">
+<% frame_id = params[:widget_id].present? ? "documents_tree_frame_#{params[:widget_id]}" : "documents_tree_frame" %>
 
-  <table id="documents" class="table table-bordered  dataTable jqDataTable">
-
-    <thead>
-      <tr>
-        
-        <th>
-          Linked To
-        </th>
-
-        <th>
-          Document
-        </th>
-        <th>
-          Tags
-        </th>
-        <th>
-          Date
-        </th>
-
-        <th>
-        </th>
-
-      </tr>
-    </thead>
-    <tbody>
-      <% @documents.each do |document| %>
-        <tr id="document_<%= document.id %>">
-              
-            <td>
-                <%= link_to document.owner %>
-            </td>
-            <td>
-                <%= link_to document.name, document_path(document.id) %>
-                <% if document.orignal %>
-                    <%= link_to document.file_url(), class: "document_download_icon", target: "_blank" do %>
-                        <i class="fas fa-download"></i>
-                    <% end %>          
-                <% end %>
-            </td>  
-            <td>
-                <%= document.tag_list %>
-                <%= document.owner_tag %>
-            </td>
-            <td>
-                <%= l document.created_at %>
-            </td>
-            <td>
-                <%= link_to  t_common(:show), document, class: "btn btn-outline-primary" %>
-            </td>
-
-        </tr>
-
-      <% end %>
-    </tbody>
-  </table>
-
-</div>
+<%= render ReportingComponent.new do %>
+    <%= turbo_frame_tag frame_id, target: "_top" do %>
+        <%= render "/documents/tree_view",
+            documents: @documents,
+            entity: @entity,
+            show_steps: false,
+            folder_url_method: :documents_capital_commitments_path,
+            use_entity_name_for_root: true,
+            virtual_root: "Commitment Documents"
+        %>
+    <% end %>
+<% end %>

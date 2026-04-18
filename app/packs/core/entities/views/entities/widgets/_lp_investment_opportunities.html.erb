@@ -1,0 +1,8 @@
+<% investment_opportunities = policy_scope(InvestmentOpportunity) %>
+<% if investment_opportunities.any? %>
+    <%= render ToggleCard.new(title: "Investment Opportunities", css_class: "show_ios") do %>
+        <% investment_opportunities.each do |investment_opportunity| %>
+            <%= render "investment_opportunities/card", investment_opportunity: investment_opportunity, show_tags: true %>
+        <% end %>
+    <% end %>
+<% end %>

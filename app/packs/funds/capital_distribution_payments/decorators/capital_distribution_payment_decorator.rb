@@ -4,7 +4,11 @@ class CapitalDistributionPaymentDecorator < ApplicationDecorator
   end
 
   def distribution_name
-    h.link_to object.capital_distribution.title, object.capital_distribution
+    if h.current_user.entity_id == object.entity_id
+      h.link_to object.capital_distribution.title, object.capital_distribution
+    else
+      object.capital_distribution.title
+    end
   end
 
   def income

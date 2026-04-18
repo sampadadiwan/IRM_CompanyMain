@@ -1,4 +1,6 @@
 class CapitalCommitmentsController < ApplicationController
+  include DocumentHelper
+
   before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
                                                   report generate_soa generate_soa_form transfer_fund_units]
 
@@ -33,6 +35,7 @@ class CapitalCommitmentsController < ApplicationController
     @documents = @documents.where(owner_tag: "Generated", approved: true).or(@documents.where.not(owner_tag: "Generated")).or(@documents.where(owner_tag: nil)).not_template if current_user.curr_role_investor?
 
     @documents = @documents.order(id: :desc)
+    @entity = params[:entity_id].present? ? Entity.find(params[:entity_id]) : current_user.entity
 
     @no_folders = false
     render "documents"

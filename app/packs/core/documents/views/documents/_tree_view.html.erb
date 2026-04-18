@@ -3,6 +3,9 @@
     tree_view_id = widget_id.present? ? "tree_view_#{widget_id}" : "tree_view"
     documents_frame_id = widget_id.present? ? "documents_frame_#{widget_id}" : "documents_frame"
     show_action_buttons = params[:show_action_buttons].to_s != "false" # default to true
+    folder_url_method ||= :folder_documents_path
+    use_entity_name_for_root ||= false
+    virtual_root ||= nil
 %>
 
 <%= render "/layouts/steps", steps: ["Create Folders", "Upload Docs", "Setup Access Rights"].freeze if show_steps %>
@@ -21,7 +24,7 @@
                 <div id="<%= tree_view_id %>" class="tree_view" data-controller="treeview" data-treeview-documents-frame-id-value="<%= documents_frame_id %>" data-treeview-selected-folder-id-value="<%= params[:folder_id].to_s if params[:folder_id].present? %>">
                     <% if params[:page].blank? %>
                         <% folders = get_tree_view_folders(params, current_user, @entity, @documents) %>
-                        <%= render "folders/tree_view", folders: folders, widget_id: widget_id, documents_as_tags: params[:documents_as_tags], show_action_buttons:  %>
+                        <%= render "folders/tree_view", folders: folders, widget_id: widget_id, documents_as_tags: params[:documents_as_tags], show_action_buttons: show_action_buttons, folder_url_method: folder_url_method, use_entity_name_for_root: use_entity_name_for_root, virtual_root: virtual_root %>
                     <% end %>
                 </div>
             </div>

@@ -1,0 +1,7 @@
+<% deal_investors = policy_scope(DealInvestor).includes(:investor, :deal) %>
+<% if current_user.enable_deals && deal_investors.any? %>
+    <%= render ToggleCard.new(title: "Deals", css_class: "show_deals") do %>
+        <%= turbo_frame_tag "deal_investors_frame", target: "_top", loading: :lazy, src: deal_investors_path do %>
+        <% end %>
+    <% end %>
+<% end %>

@@ -1,4 +1,5 @@
-<%  ul_class ||= ""
+    <%
+        ul_class ||= ""
         widget_id ||= nil
         documents_as_tags ||= nil
         show_action_buttons = if show_action_buttons.present?
@@ -8,20 +9,51 @@
                             else
                                 true # default to true if not present in params
                             end
+        # If virtual_root is provided, wrap the folders under it
+        virtual_root ||= nil
+        folder_url_method ||= :folder_documents_path
+        use_entity_name_for_root ||= false
     %>
-    <% folders.each do |folder, children| %>
-        <ul id="<%=folder.id%>" class="<%= ul_class %>">
-
-        <li id="folder_<%=folder.id%>" >
-            <span class="caret">
-                <%= link_to folder.name, folder_documents_path(folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id], no_folders: true, widget_id: widget_id, documents_as_tags: documents_as_tags, show_action_buttons: show_action_buttons),
-                      class: ["truncate", (folder.id.to_s == params[:folder_id].to_s ? "selected" : nil)].compact.join(" "),
-                      data: { folder_id: folder.id } %>
-            </span>
-            <%= render "/folders/tree_view", folders: children, ul_class: "nested", widget_id: widget_id, documents_as_tags: documents_as_tags, show_action_buttons: show_action_buttons if children.present? %>
-        </li>
-
+    <% if virtual_root %>
+        <ul class="<%= ul_class %>">
+            <li>
+                <span class="caret">
+                    <a href="#" class="truncate"><%= virtual_root %></a>
+                </span>
+                <ul class="nested active">
+                    <% folders.each do |folder, children| %>
+                        <%= render "/folders/tree_view", 
+                                   folders: { folder => children }, 
+                                   ul_class: "", 
+                                   widget_id: widget_id, 
+                                   documents_as_tags: documents_as_tags, 
+                                   show_action_buttons: show_action_buttons, 
+                                   folder_url_method: folder_url_method, 
+                                   use_entity_name_for_root: use_entity_name_for_root,
+                                   virtual_root: nil %>
+                    <% end %>
+                </ul>
+            </li>
         </ul>
+    <% else %>
+        <% folders.each do |folder, children| %>
+            <ul id="<%=folder.id%>" class="<%= ul_class %>">
+
+            <li id="folder_<%=folder.id%>" >
+                <span class="caret">
+                    <% 
+                        folder_name = folder.name
+                        folder_name = folder.entity.name if use_entity_name_for_root && folder.root?
+                    %>
+                    <%= link_to folder_name, send(folder_url_method, folder_id: folder.id, entity_id: params[:entity_id], parent_folder_id: params[:parent_folder_id], no_folders: true, widget_id: widget_id, documents_as_tags: documents_as_tags, show_action_buttons: show_action_buttons),
+                          class: ["truncate", (folder.id.to_s == params[:folder_id].to_s ? "selected" : nil)].compact.join(" "),
+                          data: { folder_id: folder.id } %>
+                </span>
+                <%= render "/folders/tree_view", folders: children, ul_class: "nested", widget_id: widget_id, documents_as_tags: documents_as_tags, show_action_buttons: show_action_buttons, folder_url_method: folder_url_method, use_entity_name_for_root: use_entity_name_for_root, virtual_root: nil if children.present? %>
+            </li>
+
+            </ul>
+        <% end %>
     <% end %>
 
 

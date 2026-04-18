@@ -23,7 +23,7 @@
 
             <div class="col-md-6">
               <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Capital Distribution</label>
-              <div class="fs-4"><%= link_to capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution, class: "text-decoration-none fw-bold text-primary" %></div>
+              <div class="fs-4"><%= current_user.entity_id == capital_distribution_payment.entity_id ? link_to(capital_distribution_payment.capital_distribution.title, capital_distribution_payment.capital_distribution, class: "text-decoration-none fw-bold text-primary") : capital_distribution_payment.capital_distribution.title %></div>
             </div>
 
             <div class="col-md-6">

@@ -1,6 +1,8 @@
 <%
     uri_params ||= {}
     name ||= "Default"
+    show_nav = local_assigns.fetch(:show_nav, true)
+
     admin_settings = JSON.parse(cookies[:adminSettings]) rescue {}
     theme = admin_settings["Theme"] == "dark" ? "bg-dark" : "bg-light"
     owner ||= uri_params[:owner_type].constantize.find(uri_params[:owner_id]) if uri_params[:owner_id].present? && uri_params[:owner_type].present?
@@ -10,7 +12,7 @@
     header_value ||= nil
 %>
 
-<% unless dashboard_name == "Portfolio Dashboard" %>
+<% unless !show_nav || dashboard_name == "Portfolio Dashboard" %>
 <nav class="dashboard-nav sticky-top <%= theme %> shadow-sm d-none d-md-block" style="top:70px; z-index: 1000;">
 
     <!-- Header row: logo + name on left, label/value on right -->

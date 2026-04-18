@@ -8,7 +8,11 @@ class CapitalRemittanceDecorator < ApplicationDecorator
   end
 
   def capital_call_name
-    h.link_to object.capital_call.name, object.capital_call
+    if h.current_user.entity_id == object.entity_id
+      h.link_to object.capital_call.name, object.capital_call
+    else
+      object.capital_call.name
+    end
   end
 
   # def collected_amount

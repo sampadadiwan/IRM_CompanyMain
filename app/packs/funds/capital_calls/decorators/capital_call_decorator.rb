@@ -6,7 +6,11 @@ class CapitalCallDecorator < ApplicationDecorator
   end
 
   def name_link
-    h.link_to object.name, object
+    if h.current_user.entity_id == object.entity_id
+      h.link_to object.name, object
+    else
+      object.name
+    end
   end
 
   def fund_link
