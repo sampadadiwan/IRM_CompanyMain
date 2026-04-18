@@ -1,3 +1,10 @@
+V9.2.20
+65e91be9b Landing page dashboard (#1361)
+91788f0c4 (HEAD -> main, origin/main, origin/HEAD) Fund ae widget2 (#1362)
+86e646d9a (fund_ae_widget) fix: Update data source path to include 'all: true' parameter for capital remittance payments
+f29991ed3 feat: Implement pagination for capital remittance payments index view
+44d3654ad fix: Refactor enhance_df methods to use with_columns for better readability and performance
+
 V9.2.18
 c77d6fd40 feat: Enhance document links in fund ratio view with styled buttons
 a62f3da22 Kedaara updates 7 (#1358)
