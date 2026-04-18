@@ -146,7 +146,7 @@ class ValuationsController < ApplicationController
       @portfolio_company = Investor.find(params[:portfolio_company_id])
 
       if @initial_valuation.investment_instrument_id == @final_valuation.investment_instrument_id
-
+        @valuation_currency = @initial_valuation.currency
         # Get the value bridge fields from the entity setting if they exist
         @value_bridge_fields = @current_user.entity.entity_setting.value_bridge_cols
         @value_bridge_fields = @value_bridge_fields.split(",").map(&:strip) if @value_bridge_fields

@@ -17,11 +17,9 @@ end
     <% if args[:list].nil? || args[:list] == true %>
       <%= turbo_frame_tag "fund_ratios_frame", target: "_top", src: "#{uri.to_s}" do %>
       <% end %>
-    <%end%>
-
-
-    <% if args[:chart].nil? || args[:chart] == true %>
-      <%= fund_ratios_line_chart(nil, owner_id: @investor.id, owner_type: "Investor", ratio_names: args[:ratio_names], months: args[:months]) %>
+    <% elsif args[:chart].nil? || args[:chart] == true %>
+      <%# Chart is now rendered in ratios index view with already fetched ratios , so we only render here if list is false i.e. when index wont render %>
+      <%= fund_ratios_line_chart(nil, owner_id: @investor.id, owner_type: "Investor", ratio_names: args[:ratio_names], months: args[:months], scenarios: args[:scenarios], scenario: args[:scenario]) %>
     <% end %>
 
 <% end %>

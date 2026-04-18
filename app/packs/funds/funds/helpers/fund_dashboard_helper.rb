@@ -1,23 +1,24 @@
 module FundDashboardHelper
-  def fund_ratios_line_chart(fund, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 24, chart_id: "fund_ratios_chart")
+  def fund_ratios_line_chart(fund, args: {}, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 24, fund_ratios: [], scenarios: nil, scenario: nil, chart_id: "fund_ratios_chart")
     months ||= 24
     ratio_names ||= ["XIRR", "RVPI", "DPI", "TVPI", "Fund Utilization", "Portfolio Value to Cost", "Paid In to Committed Capital", "Quarterly IRR", "IRR", "Value To Cost", "Gross Portfolio IRR"]
 
+    # we only fetch ratios if not passed as argument, this is to optimize in cases where we already have the ratios fetched for list and just want to render the chart with them
+    if fund_ratios.blank?
+      if owner.present?
+        owner_id ||= owner.id
+        owner_type ||= owner.class.name
+      end
+
+      # This will add but not override attrs if they are already present in args
+      args = { fund_id: fund&.id, owner_id:, owner_type:, name: ratio_names, scenarios: scenarios, scenario: scenario, months: months }.merge(args)
+      result = FundRatioList.call(current_user, args) { |relation| policy_scope(relation) }
+      fund_ratios = result.fund_ratios
+    end
+
     from_date = months.is_a?(Numeric) ? Time.zone.today - months.months : nil
-
-    # Fetch all fund_ratios in one query
-    fund_ratios = if fund.present?
-                    FundRatio.for_fund(fund.id)
-                  else
-                    FundRatio.where(owner_type: "Fund").includes(:fund) # Include fund to group properly
-                  end
-
-    fund_ratios = fund_ratios.where(owner_id: owner_id, owner_type: owner_type) if owner_id.present? && owner_type.present?
-    fund_ratios = fund_ratios.where(name: ratio_names)
     fund_ratios = fund_ratios.where(end_date: from_date..) if from_date
     fund_ratios = fund_ratios.order(:name, :end_date)
-
-    fund_ratios = fund_ratios.where(owner: owner) if owner.present?
 
     # Group by fund name and ratio name
     ratios_data = fund_ratios.group_by { |fr| [fr.fund.name, fr.name] }.transform_values do |ratios|
@@ -101,13 +102,13 @@ module FundDashboardHelper
     # Group and sum data by quarter
     data = {
       "Collected Capital" => capital_calls.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
-                                      .transform_values { |entries| entries.sum { |e| (e.try(:collected_amount_cents) || 0) / 100.0 } },
+                             .transform_values { |entries| entries.sum { |e| (e.try(:collected_amount_cents) || 0) / 100.0 } },
       "Capital Distributions" => capital_distributions.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
-                                                      .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
+                                 .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
       "Portfolio Investments" => portfolio_investments.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
-                                                      .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
+                                 .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
       "Expenses" => account_entries.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
-                                   .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
+                    .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
     }
 
     # Get all quarters and sort them

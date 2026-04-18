@@ -10,4 +10,8 @@
     <% else %>
         <%= render "/fund_ratios/index", fund_ratios: @fund_ratios, q: @q, fund: @fund %>
     <% end %>
+
+    <% if params[:chart].to_s == "true" %>
+      <%= fund_ratios_line_chart(nil, fund_ratios: @fund_ratios, months: params[:months]) %>
+    <% end %>
 <% end %>

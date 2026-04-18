@@ -28,6 +28,13 @@
         <%= form.select :moic, [["Values", "0"], ["MOIC", "1"]], { selected: params[:moic] == "1" ? "1" : "0" }, class: "form-select", name: :moic, data: { action: "change->valuebridge#submit" } %>
       </div>
 
+      <div class="align-items-end" style="width: 130px; flex-shrink: 0">
+        <%= form.label :currency, class: "ms-1 form-label" %>
+        <div>
+          <%= form.label :currency_value, @valuation_currency, class: "badge bg-light text-dark border ms-1" if @valuation_currency %>
+        </div>
+      </div>
+
       <%= hidden_field_tag "decimals", decimals %>
 
     </div>

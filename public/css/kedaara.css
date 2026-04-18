@@ -1639,7 +1639,7 @@ div.dt-container div.dt-length label {
     box-shadow: 0 0 0 0.25rem rgba(0, 109, 116, 0.25);
 }
 
-#fund_ratios_frame th div {
+#fund_ratios_frame th {
     font-size: 1rem;
 }
 
