@@ -63,8 +63,8 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Investment Performance", path: "aggregate_portfolio_investments/widgets/performance", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Realized vs Unrealized", path: "aggregate_portfolio_investments/widgets/gain_breakdown", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Instrument Exposure", path: "aggregate_portfolio_investments/widgets/instrument_exposure", size: "Medium"),
-    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Portfolio Income", path: "aggregate_portfolio_investments/widgets/income_by_company", size: "Medium")
-
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Portfolio Income", path: "aggregate_portfolio_investments/widgets/income_by_company", size: "Medium"),
+    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Account Entries Chart", path: "capital_commitments/widgets/account_entries_chart", size: "Medium", metadata_help: "{account_entry_names: 'Management Fee, Setup Fee', chart_type: 'column/pie/line', aggregate_by: 'quarter/year/sum', number_of_periods: 8}")
   ].freeze
 
   OPS_WIDGETS = [
@@ -153,8 +153,7 @@ class DashboardWidget < ApplicationRecord
   FM_LANDING_PAGE_WIDGETS = [
     DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "FM Stats", path: "entities/widgets/fm_stats", size: "XL"),
     DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Funds", path: "entities/widgets/funds", size: "XL"),
-    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Investment Opportunities", path: "entities/widgets/investment_opportunities", size: "XL"),
-    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Account Entries Chart", path: "capital_commitments/widgets/account_entries_chart", size: "Medium", metadata_help: "{account_entry_names: 'Management Fee, Setup Fee', chart_type: 'column/pie/line', aggregate_by: 'quarter/year/sum', number_of_periods: 8}")
+    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Investment Opportunities", path: "entities/widgets/investment_opportunities", size: "XL")
   ].freeze
 
   LP_LANDING_PAGE_WIDGETS = [
@@ -163,8 +162,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Interests", path: "entities/widgets/lp_interests", size: "XL"),
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Deals", path: "entities/widgets/lp_deals", size: "XL"),
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Investment Opportunities", path: "entities/widgets/lp_investment_opportunities", size: "XL"),
-    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Entities", path: "entities/widgets/lp_entities", size: "XL"),
-    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Account Entries Chart", path: "capital_commitments/widgets/account_entries_chart", size: "Medium", metadata_help: "{account_entry_names: 'Management Fee, Setup Fee', chart_type: 'column/pie/line', aggregate_by: 'quarter/year/sum', number_of_periods: 8}")
+    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Entities", path: "entities/widgets/lp_entities", size: "XL")
   ].freeze
 
   OPS_LANDING_PAGE_WIDGETS = [

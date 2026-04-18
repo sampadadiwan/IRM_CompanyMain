@@ -7,8 +7,8 @@
   documents = documents.order(created_at: :desc) if documents && documents.respond_to?(:arel) && documents.arel.orders.blank?
 
   owner ||= nil
-  entity_id = @entity&.id
   entity_id ||= owner&.entity_id
+  entity_id ||= @entity&.id
   entity_id ||= current_user.entity_id
 
   document = Document.new(entity_id: , owner: owner)

@@ -3,10 +3,10 @@
   # If we don't have a fund from owner_id, it might be the FM/LP landing page where owner is not set or is entity
   fund ||= current_user.entity.funds.first if current_user.entity.respond_to?(:funds)
 
-  entry_names = (args[:account_entry_names] || "").split(",").map(&:strip).compact_blank
+  entry_names = (args[:entry_name] || args[:account_entry_names] || "").split(",").map(&:strip).compact_blank
   chart_type = args[:chart_type] || "column"
-  aggregate_by = args[:aggregate_by] || "quarter"
-  number_of_periods = args[:number_of_periods].present? ? args[:number_of_periods].to_i : 8
+  aggregate_by = args[:period_type] || args[:aggregate_by] || "quarter"
+  number_of_periods = (args[:no_of_periods] || args[:number_of_periods]).present? ? (args[:no_of_periods] || args[:number_of_periods]).to_i : 8
 %>
 
 <% if fund %>
