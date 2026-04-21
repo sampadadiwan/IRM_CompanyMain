@@ -12,6 +12,6 @@
     <% end %>
 
     <% if params[:chart].to_s == "true" %>
-      <%= fund_ratios_line_chart(nil, fund_ratios: @fund_ratios, months: params[:months]) %>
+      <%= fund_ratios_line_chart(nil, args: params.to_unsafe_h, fund_ratios: @fund_ratios, months: params[:months]) %>
     <% end %>
 <% end %>

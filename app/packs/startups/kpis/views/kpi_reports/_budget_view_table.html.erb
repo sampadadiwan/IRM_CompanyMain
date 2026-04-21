@@ -55,7 +55,7 @@
                             <th class="text-center"><%= tag %></th>
                         <% end %>
                         <% if show_achievement_column %>
-                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %>(%)</th>
+                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %> (%)</th>
                         <% end %>
                     <% end %>
                     <% year_reports.map(&:as_of).uniq.sort.each do |as_of_date| %>
@@ -63,7 +63,7 @@
                             <th class="text-center"><%= tag %></th>
                         <% end %>
                         <% if show_achievement_column %>
-                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %>(%)</th>
+                            <th class="text-center"><%= achievement_tags.first %> / <%= achievement_tags.last %> (%)</th>
                         <% end %>
                     <% end %>
                 </tr>

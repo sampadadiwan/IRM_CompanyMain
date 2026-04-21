@@ -36,20 +36,34 @@ module FundDashboardHelper
       }
     end
 
+    line_chart_options = create_line_chart_options(fund_ratios, args)
+
     # Plot the chart with multiple series
-    line_chart series, id: chart_id, library: {
+    line_chart series, id: chart_id, library: line_chart_options
+  end
+  # rubocop:enable Metrics/ParameterLists
+
+  def create_line_chart_options(fund_ratios, args)
+    decimals = args[:decimals].present? ? args[:decimals].to_i : 2
+    label_format = "{point.y:,.#{decimals}f}"
+
+    line_chart_options = {
       plotOptions: {
         series: {
           dataLabels: {
             enabled: true,
-            format: "{point.y:,.2f}"
+            format: label_format
           }
         }
       },
       **chart_theme_color
     }
+
+    line_chart_options[:yAxis] = { title: { text: nil }, labels: { enabled: false } } if args[:show_y_axis].to_s.downcase == "false"
+    line_chart_options[:legend] = { enabled: false } if args[:show_legend].to_s.downcase == "false"
+
+    line_chart_options
   end
-  # rubocop:enable Metrics/ParameterLists
 
   def account_entries_line_chart(fund, entry_types: %w[Expense Fee], months: 12)
     from_date = Time.zone.today - months.months
