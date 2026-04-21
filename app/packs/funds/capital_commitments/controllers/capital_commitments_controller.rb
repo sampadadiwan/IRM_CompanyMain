@@ -2,10 +2,10 @@ class CapitalCommitmentsController < ApplicationController
   include DocumentHelper
 
   before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
-                                                  report generate_soa generate_soa_form transfer_fund_units]
+                                                  report generate_soa generate_soa_form transfer_fund_units performance_chart]
 
   after_action :verify_authorized, only: %i[show edit update destroy generate_documentation
-                                            report generate_soa generate_soa_form]
+                                            report generate_soa generate_soa_form performance_chart]
 
   # GET /capital_commitments or /capital_commitments.json
   def index
@@ -90,19 +90,24 @@ class CapitalCommitmentsController < ApplicationController
   # GET /capital_commitments/1 or /capital_commitments/1.json
   def show
     respond_to do |format|
-      format.turbo_stream do
-        render turbo_stream: turbo_stream.replace(
-          "performance_chart_container_#{@capital_commitment.id}",
-          partial: "capital_commitments/performance_chart",
-          locals: { capital_commitment: @capital_commitment, period: params[:chart_period] }
-        )
-      end
       format.html
       format.json
       format.pdf do
         FerrumPdf.browser(timeout: 60)
         pdf = render_pdf
         send_data pdf, disposition: :inline, filename: "#{@capital_commitment.folio_id}.pdf"
+      end
+    end
+  end
+
+  def performance_chart
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "performance_chart_container_#{@capital_commitment.id}",
+          partial: "capital_commitments/performance_chart",
+          locals: { capital_commitment: @capital_commitment, period: params[:chart_period] }
+        )
       end
     end
   end

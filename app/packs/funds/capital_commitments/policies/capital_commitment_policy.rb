@@ -16,6 +16,10 @@ class CapitalCommitmentPolicy < FundBasePolicy
       permissioned_investor?
   end
 
+  def performance_chart?
+    show?
+  end
+
   def documents?
     true
   end

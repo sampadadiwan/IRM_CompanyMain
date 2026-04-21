@@ -111,7 +111,7 @@
             <div id="performance_chart_container_<%= capital_commitment.id %>" class="rounded-3 overflow-hidden">
               <%= card2_performance_chart(capital_commitment) %>
             </div>
-            <%= hidden_field_tag :chart_url, capital_commitment_path(capital_commitment), data: { chart_period_target: "url" } %>
+            <%= hidden_field_tag :chart_url, performance_chart_capital_commitment_path(capital_commitment), data: { chart_period_target: "url" } %>
           </div>
         </div>
       </div>

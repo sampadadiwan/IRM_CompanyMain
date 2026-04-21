@@ -128,6 +128,7 @@ resources :capital_commitments do
   get 'transfer_fund_units', on: :member
   post 'transfer_fund_units', on: :member
   put :restore_deleted, on: :member
+  get 'performance_chart', on: :member
   get :show_deleted, on: :collection
 end
 
