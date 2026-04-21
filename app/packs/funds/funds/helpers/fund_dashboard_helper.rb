@@ -22,9 +22,9 @@ module FundDashboardHelper
 
     # Group by fund name and ratio name
     ratios_data = fund_ratios.group_by { |fr| [fr.fund.name, fr.name] }.transform_values do |ratios|
-      ratios.group_by { |v| v.end_date.strftime("%m/%Y") }
-            .map { |date, vals| [date, vals[-1].value&.round(2)] } # Take last value for the month
-            .sort_by { |date, _| Date.strptime(date, "%m/%Y") }
+      ratios.group_by { |v| v.end_date.beginning_of_month }
+            .map { |date, vals| [date, vals[-1].value&.round(2)] }
+            .sort_by { |date, _| date }
     end
 
     # Prepare the series data for the chart
@@ -90,7 +90,7 @@ module FundDashboardHelper
     }
   end
 
-  def fund_cashflows(fund, months: 36)
+  def fund_cashflows(fund, months: 36, series: nil, chart_type: nil)
     from_date = Time.zone.today - months.months
 
     # Fetch data
@@ -99,23 +99,24 @@ module FundDashboardHelper
     portfolio_investments = fund.portfolio_investments.where(investment_date: from_date..)
     account_entries = fund.account_entries.not_cumulative.where.not(capital_commitment_id: nil).where(entry_type: %w[Expense Fee], reporting_date: from_date..)
 
-    # Group and sum data by quarter
+    # Group and sum data by quarter-end date
     data = {
-      "Collected Capital" => capital_calls.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+      "Collected Capital" => capital_calls.group_by { |record| record_date(record).end_of_quarter }
                              .transform_values { |entries| entries.sum { |e| (e.try(:collected_amount_cents) || 0) / 100.0 } },
-      "Capital Distributions" => capital_distributions.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+      "Capital Distributions" => capital_distributions.group_by { |record| record_date(record).end_of_quarter }
                                  .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
-      "Portfolio Investments" => portfolio_investments.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+      "Portfolio Investments" => portfolio_investments.group_by { |record| record_date(record).end_of_quarter }
                                  .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
-      "Expenses" => account_entries.group_by { |record| "Q#{quarter(record_date(record))}-#{record_date(record).strftime('%y')}" }
+      "Expenses" => account_entries.group_by { |record| record_date(record).end_of_quarter }
                     .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
     }
 
-    # Get all quarters and sort them
-    all_quarters = data.values.flat_map(&:keys).uniq.sort_by do |q|
-      quarter_part, year_part = q.split("-")
-      [year_part.to_i, quarter_part.delete_prefix("Q").to_i]
-    end
+    # Get all quarter-end dates and sort chronologically
+    all_quarters = data.values.flat_map(&:keys).uniq.sort
+
+    # Filter to requested series if specified
+    allowed = Array(series).map(&:to_s).map(&:strip) if series.present?
+    data = data.select { |name, _| allowed.nil? || allowed.any? { |s| name.downcase.include?(s.downcase) } }
 
     # Prepare chart data
     chart_data = data.map do |name, records|
@@ -127,17 +128,28 @@ module FundDashboardHelper
 
     Rails.logger.debug chart_data
 
-    # Plot the chart
-    line_chart chart_data, library: {
+    chart_method = case chart_type.to_s
+                   when "bar"    then :column_chart
+                   when "area"   then :area_chart
+                   when "spline" then :line_chart
+                   else               :line_chart
+                   end
+
+    library_options = {
       plotOptions: {
         series: {
-          dataLabels: { enabled: true, format: "{point.y:,.2f}" }
+          dataLabels: { enabled: true, format: "{point.y:,.2f}" },
+          **({ curve: true } if chart_type.to_s == "spline")
         }
       },
-      xAxis: { type: 'category', title: { text: 'Quarters' } },
+      xAxis: { type: 'datetime' },
       yAxis: { title: { text: 'Amount (in currency)' } },
       **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    }
+
+    # Plot the chart
+    send(chart_method, chart_data, library: library_options,
+               prefix: "#{fund.currency}:")
   end
 
   private

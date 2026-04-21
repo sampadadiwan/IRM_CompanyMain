@@ -85,21 +85,66 @@ module CapitalRemittanceDashboardHelper
     chart + explanation
   end
 
-  def remittance_payment_timeline_chart(owner)
+  def remittance_payment_timeline_chart(owner, chart_type: nil)
+    chart_type ||= :area
     remittances = owner_remittances(owner)
-    # This is tricky because payments are in a separate table
-    payments = CapitalRemittancePayment.where(capital_remittance_id: remittances.select(:id)).order(:payment_date)
 
+    # Initial historical amount (e.g. from previous calls not in the current scope)
+    # We want a starting point if we are looking at a subset, but usually 'owner' is a Fund or CapitalCall.
+    # If it's a Fund, we want the total cumulative from the beginning.
+    # If it's a CapitalCall, maybe we only want that call's payments?
+    # The existing owner_remittances(owner) handles the scoping.
+
+    payments = CapitalRemittancePayment.where(capital_remittance_id: remittances.select(:id))
+                                       .where("amount_cents > 0")
+                                       .order(:payment_date)
+
+    # Sum payments by date
+    daily_totals = payments.group(:payment_date).sum(:amount_cents)
+
+    # To show a continuous cumulative chart even on days with no payments, 
+    # we need to fill in the gaps if we want a "step" look, 
+    # but Highcharts with an area/line chart usually handles the interpolation.
+    
     cumulative_amount = 0
-    data = payments.each_with_object({}) do |p, hash|
-      cumulative_amount += p.amount_cents / 100.0
-      hash[p.payment_date] = cumulative_amount
+    sorted_dates = daily_totals.keys.compact.sort
+    
+    data = sorted_dates.each_with_object([]) do |date, arr|
+      cumulative_amount += daily_totals[date] / 100.0
+      arr << [date, cumulative_amount]
     end
 
-    chart = area_chart data, title: "Cumulative Collection Timeline", id: "remittance_payment_timeline_chart_#{owner.id}", library: {
-      xAxis: { type: 'datetime' },
-      **chart_theme_color
-    }, prefix: "#{owner_currency(owner)}:"
+    # Handle Chart Type Mapping
+    chart_method = case chart_type.to_s
+                   when "line" then :line_chart
+                   when "spline" then :line_chart
+                   when "bar" then :column_chart
+                   when "area" then :area_chart
+                   else :area_chart
+                   end
+
+    options = {
+      title: "Cumulative Collection Timeline",
+      id: "remittance_payment_timeline_chart_#{owner.id}",
+      library: {
+        xAxis: { type: "datetime" },
+        plotOptions: {
+          series: {
+            marker: { enabled: true }
+          }
+        },
+        **chart_theme_color
+      },
+      prefix: "#{owner_currency(owner)}:"
+    }
+    options[:curve] = true if chart_type.to_s == "spline"
+
+    # For cumulative charts, we want to see the progress as a step-up when a payment occurs
+    if %w[area line spline bar].include?(chart_type.to_s)
+      options[:library][:plotOptions][:series][:step] = 'left'
+    end
+
+    chart = send(chart_method, data, **options)
 
     explanation = content_tag(:div, class: "mt-3 text-muted small") do
       "Visualizes the velocity of capital inflows over time.".html_safe

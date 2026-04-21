@@ -6,5 +6,5 @@
         widget_size: widget.widget_size
       )
     ) do %>
-  <%= remittance_payment_timeline_chart(owner) %>
+  <%= remittance_payment_timeline_chart(owner, chart_type: args[:chart_type]) %>
 <% end %>
