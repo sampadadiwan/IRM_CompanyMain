@@ -5,6 +5,15 @@ IFS=$'\n\t'
 # Description: Restore MySQL XtraBackup from S3 into a Docker container.
 # This script handles version mismatches by allowing you to specify the MySQL version.
 
+
+export BUCKET="docs.caphive.com.production-backup-xtra"
+export AWS_REGION="ap-south-1"
+export AWS_ACCESS_KEY_ID=""
+export AWS_SECRET_ACCESS_KEY=""
+export MYSQL_PASSWORD=""
+export MYSQL_USER="root"
+export DATABASE_NAME="IRM_production"
+
 # Configuration (Inherited from environment or defaults)
 : "${BUCKET:=docs.caphive.us.production.us-east-1-backup-xtra}"
 : "${AWS_REGION:=us-east-1}"
@@ -16,11 +25,14 @@ IFS=$'\n\t'
 : "${MYSQL_VERSION:=8.4}" # Default to 8.4 as per the backup version found
 : "${CONTAINER_NAME:=mysql-restored}"
 : "${PORT:=33066}"
+: "${XB_IMAGE:=percona/percona-xtrabackup:8.0}"
+: "${PARALLEL:=4}"       # parallel threads for xbstream extract + xtrabackup decompress/prepare
+: "${XB_MEMORY:=2G}"     # InnoDB buffer pool for prepare (default is ~100MB — very slow)
 
 
 
 # Internal paths
-MYSQL_TMPDIR="${MYSQL_TMPDIR:-/tmp}"
+MYSQL_TMPDIR="${MYSQL_TMPDIR:-/home/thimmaiah/work/xtrabackup_restore}"
 TMPDIR="${MYSQL_TMPDIR}/xb_docker_$$"
 STAGING_DIR="${TMPDIR}/staging"
 RESTORE_DIR="${TMPDIR}/restore"
@@ -28,6 +40,42 @@ RESTORE_DIR="${TMPDIR}/restore"
 mkdir -p "$STAGING_DIR" "$RESTORE_DIR"
 
 export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION MYSQL_PWD="$MYSQL_PASSWORD"
+
+# Long-lived worker container — started once in main(), reused for all
+# xtrabackup/xbstream calls via docker exec (avoids per-operation cold-starts).
+XB_CONTAINER="xb_worker_$$"
+
+start_xb_container() {
+  echo "→ Pre-pulling $XB_IMAGE..."
+  docker pull -q "$XB_IMAGE"
+  echo "→ Starting xtrabackup worker container..."
+  docker run -d \
+    --name "$XB_CONTAINER" \
+    --user "$(id -u):$(id -g)" \
+    -v "$TMPDIR:$TMPDIR" \
+    --entrypoint sleep \
+    "$XB_IMAGE" infinity
+}
+
+stop_xb_container() {
+  docker rm -f "$XB_CONTAINER" 2>/dev/null || true
+}
+
+# Run a command inside the worker container.
+xb_run() {
+  docker exec "$XB_CONTAINER" "$@"
+}
+
+# Download a backup key from S3 and extract it — all inside the worker container
+# so xbcloud and xbstream share a single process namespace (no inter-container pipe).
+# --decompress handles .zst inline, eliminating a separate decompress pass.
+download_and_extract() {
+  local key=$1 dir=$2
+  local xb_args_str
+  xb_args_str=$(printf '%q ' "${XB_ARGS[@]}")
+  retry 3 docker exec "$XB_CONTAINER" bash -c \
+    "xbcloud ${xb_args_str} get $(printf '%q' "$key") | xbstream -x --decompress --parallel=${PARALLEL} -C $(printf '%q' "$dir")"
+}
 
 XB_ARGS=(--storage=S3
          --s3-bucket="${BUCKET}"
@@ -52,6 +100,7 @@ retry() {
 cleanup() {
   echo "→ Cleaning up temporary directory: $TMPDIR"
   rm -rf "$STAGING_DIR"
+  stop_xb_container
 }
 
 get_latest_full() {
@@ -79,12 +128,10 @@ get_all_incrs_since_full() {
 
 restore_full() {
   local key=$1 dir=$2
-  echo "→ Downloading full backup '$key'..."
-  retry 3 xbcloud "${XB_ARGS[@]}" get "$key" | xbstream -x -C "$dir"
-  echo "→ Decompressing..."
-  xtrabackup --decompress --target-dir="$dir" --remove-original
+  echo "→ Downloading and extracting full backup '$key'..."
+  download_and_extract "$key" "$dir"
   echo "→ Preparing (apply-log-only)..."
-  xtrabackup --prepare --apply-log-only --target-dir="$dir"
+  xb_run xtrabackup --prepare --apply-log-only --use-memory="${XB_MEMORY}" --target-dir="$dir"
 }
 
 apply_incremental() {
@@ -92,19 +139,18 @@ apply_incremental() {
   local incr_tmp_dir="${TMPDIR}/incr_stage"
   rm -rf "$incr_tmp_dir" && mkdir -p "$incr_tmp_dir"
 
-  echo "→ Downloading incremental '$key'..."
-  retry 3 xbcloud "${XB_ARGS[@]}" get "$key" | xbstream -x -C "$incr_tmp_dir"
-  echo "→ Decompressing incremental..."
-  xtrabackup --decompress --target-dir="$incr_tmp_dir" --remove-original
+  echo "→ Downloading and extracting incremental '$key'..."
+  download_and_extract "$key" "$incr_tmp_dir"
   echo "→ Applying incremental to base..."
-  xtrabackup --prepare --apply-log-only --target-dir="$base_dir" --incremental-dir="$incr_tmp_dir"
+  xb_run xtrabackup --prepare --apply-log-only --use-memory="${XB_MEMORY}" \
+    --target-dir="$base_dir" --incremental-dir="$incr_tmp_dir"
   rm -rf "$incr_tmp_dir"
 }
 
 final_prepare() {
   local dir=$1
   echo "→ Final prepare..."
-  xtrabackup --prepare --target-dir="$dir"
+  xb_run xtrabackup --prepare --use-memory="${XB_MEMORY}" --target-dir="$dir"
 }
 
 run_docker_mysql() {
@@ -164,6 +210,9 @@ main() {
   local cmd=${1:-}
   local full_key=${2:-}
   local incr_key=${3:-}
+
+  start_xb_container
+  trap stop_xb_container EXIT
 
   case "$cmd" in
     restore_primary)

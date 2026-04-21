@@ -1,4 +1,6 @@
 module CapitalCommitmentDashboardHelper
+  include FundDashboardHelper
+
   def commitment_deployment_chart(fund, compact: false)
     called = fund.capital_commitments.sum(:call_amount_cents) / 100.0
     total = fund.capital_commitments.sum(:committed_amount_cents) / 100.0
@@ -145,5 +147,220 @@ module CapitalCommitmentDashboardHelper
     end
 
     chart + explanation
+  end
+
+  def card2_metrics(cc)
+    calcs = CapitalCommitmentCalcs.new(cc, Time.zone.today)
+    invested = cc.collected_amount
+    committed = cc.committed_amount
+    invested_pct = committed.positive? ? (invested / committed * 100).round(1) : 0
+
+    nav_cents = calcs.fmv_cents + calcs.cash_in_hand_cents + calcs.net_current_assets_cents
+    
+    # Fallback to sum of account entries if standard NAV calc is <= 0
+    # Use reporting_date filter to match the "as of" date of the dashboard
+    if nav_cents <= 0
+      nav_cents = cc.account_entries.where(reporting_date: ..Time.zone.today).sum(:amount_cents).to_i
+    end
+    
+    # Ensure NAV displayed in metrics is not negative
+    nav_cents = 0 if nav_cents < 0
+    nav = Money.new(nav_cents, cc.currency)
+
+    # Simple comparison for NAV % change (vs previous account entry date)
+    prev_ae = cc.account_entries.where(name: "Portfolio FMV").where("reporting_date < ?", Time.zone.today).order(reporting_date: :desc).second
+    nav_change_pct = 0
+    if prev_ae && prev_ae.amount_cents.positive?
+      nav_change_pct = ((nav_cents - prev_ae.amount_cents).to_f / prev_ae.amount_cents * 100).round(1)
+    end
+
+    currency_units = cc.currency == "INR" ? "Crores" : "Millions"
+
+    {
+      committed: cc.committed_amount,
+      invested: invested,
+      invested_pct: invested_pct,
+      nav: nav,
+      nav_change_pct: nav_change_pct,
+      distributed: cc.distribution_amount,
+      tvpi: calcs.tvpi.round(2),
+      irr: (calcs.xirr * 100).round(2),
+      currency_units: currency_units
+    }
+  end
+
+  def card2_performance_chart(cc, period: "YTD")
+    start_date = case period
+                 when "3M" then 3.months.ago.to_date.beginning_of_month
+                 when "6M" then 6.months.ago.to_date.beginning_of_month
+                 when "YTD" then Time.zone.today.beginning_of_year
+                 else nil
+                 end
+
+    events = Hash.new { |h, k| h[k] = { called: 0.0, distributed: 0.0, nav: 0.0, has_nav: false } }
+
+    cc.capital_remittances.verified.find_each do |r|
+      month = r.remittance_date.to_date.beginning_of_month
+      events[month][:called] += r.collected_amount_cents / 100.0
+    end
+
+    cc.capital_distribution_payments.find_each do |d|
+      month = d.payment_date.to_date.beginning_of_month
+      events[month][:distributed] += d.net_payable_cents / 100.0
+    end
+
+    nav_query = cc.account_entries.where(name: ["Portfolio FMV", "Cash In Hand", "Net Current Assets", "NAV"])
+    if nav_query.empty? || nav_query.sum(:amount_cents).zero?
+      nav_query = cc.account_entries.where("name LIKE ?", "%Investable Capital%")
+    end
+    if nav_query.empty? || nav_query.sum(:amount_cents).zero?
+      nav_query = cc.account_entries.where.not(amount_cents: 0)
+    end
+
+    nav_query.find_each do |ae|
+      month = ae.reporting_date.to_date.beginning_of_month
+      events[month][:nav] += ae.amount_cents / 100.0
+      events[month][:has_nav] = true
+    end
+
+    all_months = events.keys.dup
+    all_months << Time.zone.today.beginning_of_month
+    all_months << start_date if start_date
+    
+    if all_months.any?
+      first_month = all_months.min
+      last_month = all_months.max
+      
+      current_month = first_month
+      while current_month <= last_month
+        all_months << current_month
+        current_month += 1.month
+      end
+    end
+    
+    all_months.uniq!
+    all_months.sort!
+
+    # Pre-calculate AE sum by month for the cumulative NAV fallback
+    ae_by_month = cc.account_entries.each_with_object(Hash.new(0)) do |ae, h|
+      h[ae.reporting_date.to_date.beginning_of_month] += ae.amount_cents
+    end
+
+    cum_called = 0.0
+    cum_distributed = 0.0
+    cum_ae = 0.0
+    last_nav = nil
+
+    # We build the full historical timeline FIRST to ensure cumulative totals
+    # are correct even when we slice for 6M or 3M later.
+    timeseries = all_months.each_with_object({}) do |month, h|
+      if events.key?(month)
+        cum_called += events[month][:called]
+        cum_distributed += events[month][:distributed]
+        last_nav = events[month][:nav] if events[month][:has_nav]
+      end
+      
+      cum_ae += (ae_by_month[month] / 100.0)
+
+      h[month] = {
+        called: cum_called,
+        distributed: cum_distributed,
+        # Use standard NAV snapshot if available, otherwise fallback to running total of AE
+        nav: [last_nav || cum_ae, 0.0].max
+      }
+    end
+
+    # Apply the period filter AFTER the full historical calculation
+    if start_date
+      timeseries.select! { |month, _| month >= start_date }
+    end
+
+    # Pass actual Date objects to Chartkick; ensure consistent sorting
+    called_data = timeseries.sort.to_h.transform_values { |v| v[:called] }
+    distributed_data = timeseries.sort.to_h.transform_values { |v| v[:distributed] }
+    nav_data = timeseries.sort.to_h.transform_values { |v| v[:nav] }
+
+    chart_id = "cc_performance_chart_#{cc.id}_#{period}"
+    
+    column_chart [
+      { name: "NAV", data: nav_data, library: { type: 'area' } },
+      { name: "Called", data: called_data, library: { type: 'column' } },
+      { name: "Distributed", data: distributed_data, library: { type: 'column' } }
+    ], id: chart_id, library: {
+      xAxis: {
+        type: 'datetime',
+        labels: {
+          style: { fontSize: '10px' },
+          autoRotation: [-45],
+          padding: 5
+        },
+        dateTimeLabelFormats: {
+          month: '%b \'%y',
+          year: '%Y'
+        }
+      },
+      **chart_theme_color
+    }, prefix: "#{cc.currency}:"
+  end
+
+  def card2_recent_activity(cc)
+    activities = []
+
+    cc.capital_remittances.verified.limit(5).each do |r|
+      activities << { type: :remittance, date: r.remittance_date, title: "#{money_to_currency(r.collected_amount)} collected", icon: "ti-arrow-up-right", color: "text-primary" }
+    end
+
+    cc.capital_distribution_payments.limit(5).each do |d|
+      status = d.completed ? "distributed" : "pending distribution"
+      activities << { type: :distribution, date: d.payment_date, title: "#{money_to_currency(d.net_payable)} #{status}", icon: "ti-arrow-down-left", color: "text-success" }
+    end
+
+    cc.account_entries.where(name: "Portfolio FMV").limit(5).each do |ae|
+      activities << { type: :nav, date: ae.reporting_date, title: "NAV updated", icon: "ti-chart-line", color: "text-info" }
+    end
+
+    activities.sort_by { |a| a[:date] }.reverse.first(5)
+  end
+
+  def card2_attention_items(cc)
+    items = []
+    # Find the latest capital remittance that is not paid
+    latest_pending_remittance = cc.capital_remittances.where.not(status: "Paid").order(remittance_date: :desc).first
+
+    if latest_pending_remittance
+      items << {
+        type: :due_payment,
+        title: "#{money_to_currency(latest_pending_remittance.due_amount)} Due Payment",
+        description: "Pay the capital call for #{latest_pending_remittance.capital_call.name} by #{l(latest_pending_remittance.capital_call.due_date)}.",
+        action_text: "Pay Now",
+        action_url: Rails.application.routes.url_helpers.capital_remittance_path(latest_pending_remittance),
+        icon: "ti-wallet",
+        color: "bg-danger-subtle text-danger"
+      }
+    elsif cc.due_amount.positive?
+      items << {
+        type: :due_payment,
+        title: "#{money_to_currency(cc.due_amount)} Due Payment",
+        description: "You have an outstanding balance due on your commitment.",
+        action_text: "Pay Now",
+        action_url: Rails.application.routes.url_helpers.capital_commitment_path(cc),
+        icon: "ti-wallet",
+        color: "bg-danger-subtle text-danger"
+      }
+    end
+
+    kyc = cc.investor_kyc
+    if kyc && (!kyc.verified || kyc.expired? || !kyc.completed_by_investor)
+      items << {
+        type: :kyc_update,
+        title: "KYC Update Needed",
+        description: "Your KYC documents need updating to remain compliant.",
+        action_text: "Show Kyc",
+        action_url: Rails.application.routes.url_helpers.investor_kyc_path(kyc),
+        icon: "ti-id",
+        color: "bg-warning-subtle text-warning"
+      }
+    end
+    items
   end
 end

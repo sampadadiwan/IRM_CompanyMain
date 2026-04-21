@@ -2,6 +2,7 @@
     uri_params ||= {}
     name ||= "Default"
     show_nav = local_assigns.fetch(:show_nav, true)
+    entity_id ||= current_user.entity_id
 
     admin_settings = JSON.parse(cookies[:adminSettings]) rescue {}
     theme = admin_settings["Theme"] == "dark" ? "bg-dark" : "bg-light"
@@ -45,7 +46,7 @@
     <ul class="nav nav-pills <%= theme %> p-1" data-controller="nav-overflow" data-nav-overflow-target="nav">
         <!-- Add a link to the dashboard widgets -->
         <%
-            all_widgets = dashboard_widgets(dashboard_name, current_user.entity_id, name:, owner:, show_menu: true).to_a
+            all_widgets = dashboard_widgets(dashboard_name, entity_id, name:, owner:, show_menu: true).to_a
         %>
 
         <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
@@ -103,15 +104,15 @@
 
 <div class="row mt-4">
 
-    <% dashboard_widgets(dashboard_name, current_user.entity_id, name:, owner:).each do |name, dashboard_widget| %>
+    <% dashboard_widgets(dashboard_name, entity_id, name:, owner:).each do |name, dashboard_widget| %>
         <div id="<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" class="dashboard-widget-container <%= dashboard_widget.widget_size %>">
-            <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:, owner:  %>
+            <%= render dashboard_widget.path, widget: dashboard_widget, name: dashboard_widget.widget_name, dashboard_widget:, widget_size: dashboard_widget.widget_size, args: dashboard_widget.metadata_args, uri_params:, owner:, entity_id:  %>
         </div>
     <% end %>
 
     <% if params[:debug].present? %>
         <%= dashboard_name %>
-        <%= current_user.entity_id %>
+        <%= entity_id %>
         <%= name %>
     <% end %>
 

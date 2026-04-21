@@ -38,6 +38,8 @@
 
           <ul class="navbar-nav flex-row ms-auto align-items-center justify-content-center">
 
+            <div id="topbar_gp_dropdown" class="d-flex align-items-center"></div>
+
             <% if current_user && current_user.support_user_id.present? %>
               <span class="blink text-danger fs-5"> Support for: <%= current_user.entity.name %> &nbsp; </span>
             <% end %>

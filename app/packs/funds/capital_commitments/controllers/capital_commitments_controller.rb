@@ -90,6 +90,13 @@ class CapitalCommitmentsController < ApplicationController
   # GET /capital_commitments/1 or /capital_commitments/1.json
   def show
     respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "performance_chart_container_#{@capital_commitment.id}",
+          partial: "capital_commitments/performance_chart",
+          locals: { capital_commitment: @capital_commitment, period: params[:chart_period] }
+        )
+      end
       format.html
       format.json
       format.pdf do

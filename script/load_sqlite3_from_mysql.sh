@@ -981,9 +981,7 @@ for table in "${TABLES[@]}"; do
     done
 
     if [[ $is_text -eq 1 ]]; then
-      # Escape newlines as literal \n so TSV stays on one line
-      # We use a unique marker for newlines/tabs to avoid collision with literal \n in data
-      # Replace double quotes with a marker, then escape newlines/tabs
+      # Escape newlines/tabs/etc as markers so TSV stays single-line per row.
       SELECT_LIST+="REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`${c}\`,''), '\"', '###DQ###'), CHAR(10), '###NL###'), CHAR(13), '###CR###'), CHAR(9), '###TAB###'),"
     elif [[ "$table" == "account_entries" && "$c" == "migrated" ]]; then
       # migrated field is not in source, default to 0
@@ -1079,36 +1077,49 @@ SQL
   STEP_START=$(date +%s)
   echo "  Step 4: Cleanup & Indexing for $table"
 
-  # Cleanup script
-  CLEANUP_SQL=""
-  UPDATE_SET=""
+  # Two-pass cleanup to avoid OOM on large tables:
+  # Pass 1 (non-text cols): WHERE col='' skips rows with no NULLs — fast equality scan.
+  # Pass 2 (text cols): full-table UPDATE decodes ###markers### and restores NULLs.
+  #   No WHERE needed — LIKE '%###%' on large TEXT columns causes SQLite OOM.
+  NONTEXT_SET=""
+  NONTEXT_WHERE=""
+  TEXT_SET=""
 
   for c in "${COLS[@]}"; do
-    # Skip ID
     if [[ "$c" == "id" ]]; then continue; fi
 
-    # Check if this is a text column requiring unescaping
     is_text=0
     for tc in "${TEXT_COLS[@]}"; do
       if [[ "$c" == "$tc" ]]; then is_text=1; break; fi
     done
 
     if [[ $is_text -eq 1 ]]; then
-      # Restore double quotes, newlines, carriage returns and tabs from markers, THEN check for empty string
-      UPDATE_SET+="\`$c\` = NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`$c\`, ''), '###DQ###', '\"'), '###NL###', CHAR(10)), '###CR###', CHAR(13)), '###TAB###', CHAR(9)), ''), "
+      TEXT_SET+="\`$c\` = NULLIF(REPLACE(REPLACE(REPLACE(REPLACE(IFNULL(\`$c\`,''), '###DQ###', '\"'), '###NL###', CHAR(10)), '###CR###', CHAR(13)), '###TAB###', CHAR(9)), ''), "
     else
-      # Standard NULL cleanup for non-text columns
-      UPDATE_SET+="\`$c\` = NULLIF(\`$c\`, ''), "
+      NONTEXT_SET+="\`$c\` = NULLIF(\`$c\`, ''), "
+      NONTEXT_WHERE+="\`$c\` = '' OR "
     fi
   done
 
-  if [[ -n "$UPDATE_SET" ]]; then
-    UPDATE_SET="${UPDATE_SET%, }"
-    CLEANUP_SQL="UPDATE $table SET $UPDATE_SET;"
+  if [[ -n "$NONTEXT_SET" && -n "$NONTEXT_WHERE" ]]; then
+    NONTEXT_SET="${NONTEXT_SET%, }"
+    NONTEXT_WHERE="${NONTEXT_WHERE% OR }"
+    echo "  NULL cleanup for non-text columns in $table..."
+    sqlite3 "$SQLITE_DB" <<SQL
+PRAGMA synchronous = OFF;
+PRAGMA cache_size = -100000;
+UPDATE $table SET $NONTEXT_SET WHERE $NONTEXT_WHERE;
+SQL
+  fi
 
-    # Actually run the cleanup as a separate call to ensure it finishes before indexing
-    echo "  Applying character restoration and NULL cleanup for $table..."
-    sqlite3 "$SQLITE_DB" "$CLEANUP_SQL"
+  if [[ -n "$TEXT_SET" ]]; then
+    TEXT_SET="${TEXT_SET%, }"
+    echo "  Marker restoration for text columns in $table..."
+    sqlite3 "$SQLITE_DB" <<SQL
+PRAGMA synchronous = OFF;
+PRAGMA cache_size = -100000;
+UPDATE $table SET $TEXT_SET;
+SQL
   fi
 
   sqlite3 "$SQLITE_DB" <<SQL

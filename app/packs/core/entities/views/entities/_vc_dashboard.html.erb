@@ -1,5 +1,49 @@
 <% params[:units] ||= "Million" %>
 
-<div data-controller="datatable">
-    <%= render "dashboard_widgets/dashboard", dashboard_name: DashboardWidget::LP_LANDING_PAGE, show_nav: false %>
-</div>
+<% 
+  # Get all GP entities based on the CapitalCommitments the user can see
+  gp_entities = policy_scope(CapitalCommitment).includes(:entity).map(&:entity).uniq.compact.sort_by { |e| e.name.downcase }
+  
+  # Determine selected entity:
+  # - If user submitted the form with an entity, use that.
+  # - If @current_entity is present, use that.
+  # - On initial load, default to the first GP entity, or current_user.entity_id.
+  if params.key?(:gp_entity_id)
+    selected_entity_id = params[:gp_entity_id].presence || current_user.entity_id
+  elsif defined?(@current_entity) && @current_entity.present?
+    selected_entity_id = @current_entity.id
+  else
+    selected_entity_id = gp_entities.first&.id || current_user.entity_id
+  end
+%>
+
+<% if (current_page?(root_path) || current_page?(dashboard_entities_path)) && gp_entities.any? %>
+  <div id="gp_dropdown_source" class="d-none">
+    <div class="topbar-divider d-none d-lg-block"></div>
+    <%= form_with url: dashboard_entities_path, method: :get, data: { turbo_frame: "vc_dashboard_frame" }, class: "d-inline-block px-2" do |f| %>
+      <div class="d-flex align-items-center gap-2">
+        <%= f.label :gp_entity_id, "GP:", class: "fw-bold mb-0 text-nowrap text-muted d-none" %>
+        <%= f.select :gp_entity_id, 
+                     options_from_collection_for_select(gp_entities, :id, :name, selected_entity_id),
+                     {}, 
+                     { class: "form-control", onchange: "this.form.requestSubmit()" } %>
+      </div>
+    <% end %>
+  </div>
+  <script>
+    (function() {
+      var target = document.getElementById('topbar_gp_dropdown');
+      var source = document.getElementById('gp_dropdown_source');
+      if (target && source) {
+        target.innerHTML = source.innerHTML;
+        source.remove();
+      }
+    })();
+  </script>
+<% end %>
+
+<turbo-frame id="vc_dashboard_frame" target="_top">
+  <div data-controller="datatable">
+      <%= render "dashboard_widgets/dashboard", dashboard_name: DashboardWidget::LP_LANDING_PAGE, show_nav: false, entity_id: selected_entity_id %>
+  </div>
+</turbo-frame>

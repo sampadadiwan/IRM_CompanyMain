@@ -1,5 +1,5 @@
 module FundDashboardHelper
-  def fund_ratios_line_chart(fund, args: {}, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 24, fund_ratios: [], scenarios: nil, scenario: nil, chart_id: "fund_ratios_chart")
+  def fund_ratios_line_chart(fund, args: {}, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 24, fund_ratios: [], scenarios: nil, scenario: nil, chart_id: "fund_ratios_chart", hide_fund_name: false)
     months ||= 24
     ratio_names ||= ["XIRR", "RVPI", "DPI", "TVPI", "Fund Utilization", "Portfolio Value to Cost", "Paid In to Committed Capital", "Quarterly IRR", "IRR", "Value To Cost", "Gross Portfolio IRR"]
 
@@ -29,8 +29,9 @@ module FundDashboardHelper
 
     # Prepare the series data for the chart
     series = ratios_data.map do |(fund_name, ratio_name), data|
+      series_name = hide_fund_name ? ratio_name : "#{fund_name} - #{ratio_name}"
       {
-        name: "#{fund_name} - #{ratio_name}",
+        name: series_name,
         data: data
       }
     end
