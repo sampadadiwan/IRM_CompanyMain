@@ -1,4 +1,7 @@
-<% owner = uri_params[:owner_type].constantize.find(uri_params[:owner_id]) %>
+<%
+  owner = uri_params[:owner_type].constantize.find(uri_params[:owner_id])
+  aggregate_by = params[:aggregate_by] || args[:aggregate_by] || args[:period] || "month"
+%>
 <%= render(
       WidgetCardComponent.new(
         widget: widget,
@@ -6,5 +9,14 @@
         widget_size: widget.widget_size
       )
     ) do %>
-  <%= remittance_payment_timeline_chart(owner, chart_type: args[:chart_type]) %>
+  <%= turbo_frame_tag "payment_timeline_widget_#{widget.id}" do %>
+    <div class="d-flex justify-content-end mb-3">
+      <div class="btn-group btn-group-sm" role="group">
+        <%= link_to "Month", url_for(request.query_parameters.merge(aggregate_by: "month")), class: "btn btn-outline-primary #{'active' if aggregate_by == 'month'}" %>
+        <%= link_to "Quarter", url_for(request.query_parameters.merge(aggregate_by: "quarter")), class: "btn btn-outline-primary #{'active' if aggregate_by == 'quarter'}" %>
+        <%= link_to "Year", url_for(request.query_parameters.merge(aggregate_by: "year")), class: "btn btn-outline-primary #{'active' if aggregate_by == 'year'}" %>
+      </div>
+    </div>
+    <%= remittance_payment_timeline_chart(owner, chart_type: args[:chart_type], aggregate_by: aggregate_by) %>
+  <% end %>
 <% end %>

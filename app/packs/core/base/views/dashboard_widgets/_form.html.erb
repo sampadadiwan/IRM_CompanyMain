@@ -45,15 +45,22 @@
         </div>
 
         <div class="form-group mb-3">
-          <%= form.label :tag_list, "Tags", class: "form-label fw-bold" %>
+          <%= form.label :tag_list, "Tag List", class: "form-label fw-bold" %>
           <%= form.text_field :tag_list, class: "form-control", placeholder: "Comma separated..."  %>
+          <small class="form-text text-muted">Comma-separated tags to filter this widget. If set, the widget only appears if the dashboard owner (e.g. Fund, Investor) has matching tags. Leave blank to always show.</small>
         </div>
+
+        <div class="form-group mb-3">
+          <%= form.label :tags, "Tags", class: "form-label fw-bold" %>
+          <%= form.text_field :tags, class: "form-control", placeholder: "Comma separated..."  %>
+          <small class="form-text text-muted">Display label or suffix for this widget instance. Used to distinguish multiple widgets of the same type. (Required)</small>
+        </div>
+
       </div>
     </div>
 
     <%= form.hidden_field :owner_id %>
     <%= form.hidden_field :owner_type %>
-    <%= form.hidden_field :tags %>
 
     <!-- This is a hidden field to store the widget options in JSON format -->
     <%= hidden_field_tag "widget_options_json", DashboardWidget.widget_select.to_json, id: "widget_options_json" %>
@@ -65,7 +72,7 @@
         <h5 class="mb-0 text-primary"><i class="fas fa-sliders-h me-2"></i>Widget Configuration</h5>
         <hr class="flex-grow-1 ms-3 opacity-25">
       </div>
-      
+
       <div id="dynamic_metadata_fields" class="mb-4">
         <% if dashboard_widget.widget_name.present? %>
           <%= render "dashboard_widgets/metadata_fields", dashboard_widget: dashboard_widget %>

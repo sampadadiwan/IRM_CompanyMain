@@ -66,7 +66,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Remittance Progress", path: "capital_remittances/widgets/collection_progress", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Delinquent Investors", path: "capital_remittances/widgets/delinquent_investors", size: "Medium", metadata_help: "{top_n: 10}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Remittance Fees", path: "capital_remittances/widgets/fee_breakdown", size: "Medium"),
-    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Remittance Timeline", path: "capital_remittances/widgets/payment_timeline", size: "Medium", metadata_help: "{chart_type: 'bar/spline/line', months: 12}"),
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Remittance Timeline", path: "capital_remittances/widgets/payment_timeline", size: "Medium", metadata_help: "{chart_type: 'bar/spline/line', months: 12, aggregate_by: 'day/quarter/year'}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Portfolio Allocation", path: "aggregate_portfolio_investments/widgets/allocation", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Investment Performance", path: "aggregate_portfolio_investments/widgets/performance", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Realized vs Unrealized", path: "aggregate_portfolio_investments/widgets/gain_breakdown", size: "Medium"),
@@ -164,7 +164,7 @@ class DashboardWidget < ApplicationRecord
   ].freeze
 
   LP_LANDING_PAGE_WIDGETS = [
-    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Funds", path: "entities/widgets/lp_funds", size: "XL"),
+    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Funds", path: "entities/widgets/lp_funds", size: "XL", metadata_help: "{card_type: card/card2}"),
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Offers", path: "entities/widgets/lp_offers", size: "XL"),
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Interests", path: "entities/widgets/lp_interests", size: "XL"),
     DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Deals", path: "entities/widgets/lp_deals", size: "XL"),
@@ -250,11 +250,11 @@ class DashboardWidget < ApplicationRecord
   def metadata_args
     ret_val = metadata ? eval(metadata) : {}
     ret_val = ret_val.is_a?(Hash) ? ret_val : {}
-    ret_val.with_indifferent_access
+    ret_val.deep_symbolize_keys
   end
 
   def metadata_help_hash
-    return {}.with_indifferent_access if metadata_help.blank?
+    return {}.deep_symbolize_keys if metadata_help.blank?
 
     # Attempt to sanitize common "help-isms" to make it valid Ruby
     # We want to be careful not to double-quote already quoted strings
@@ -282,22 +282,22 @@ class DashboardWidget < ApplicationRecord
         ret_val[k] = v.gsub(/\.\.\.*/, "").gsub(/,\s*$/, "").strip
       end
     end
-    ret_val.with_indifferent_access
+    ret_val.deep_symbolize_keys
   rescue StandardError, SyntaxError => e
     # Fallback to a more robust regex-based extractor if eval fails
-    extract_keys_from_help.with_indifferent_access
+    extract_keys_from_help.deep_symbolize_keys
   end
 
   private
 
   def extract_keys_from_help
-    keys = {}.with_indifferent_access
+    keys = {}.deep_symbolize_keys
     # Match key: value where value can be a quoted string, an array [...], or a simple value
     # This is still a heuristic but better than the previous one
     metadata_help.scan(/(\w+):\s*('[^']*'|"[^"]*"|\[[^\]]*\]|[^,{}]+)/).each do |key, value|
       clean_value = value.strip
       # If it's a quoted string, strip quotes for the internal representation
-      if (clean_value.start_with?("'") && clean_value.end_with?("'")) || 
+      if (clean_value.start_with?("'") && clean_value.end_with?("'")) ||
          (clean_value.start_with?('"') && clean_value.end_with?('"'))
         clean_value = clean_value[1...-1]
       end
@@ -307,7 +307,7 @@ class DashboardWidget < ApplicationRecord
     end
     keys
   rescue StandardError
-    {}.with_indifferent_access
+    {}.deep_symbolize_keys
   end
   # rubocop:enable Security/Eval
 end

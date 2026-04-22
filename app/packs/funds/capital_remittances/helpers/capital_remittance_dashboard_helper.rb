@@ -85,33 +85,38 @@ module CapitalRemittanceDashboardHelper
     chart + explanation
   end
 
-  def remittance_payment_timeline_chart(owner, chart_type: nil)
+  def remittance_payment_timeline_chart(owner, chart_type: nil, aggregate_by: nil)
     chart_type ||= :area
     remittances = owner_remittances(owner)
-
-    # Initial historical amount (e.g. from previous calls not in the current scope)
-    # We want a starting point if we are looking at a subset, but usually 'owner' is a Fund or CapitalCall.
-    # If it's a Fund, we want the total cumulative from the beginning.
-    # If it's a CapitalCall, maybe we only want that call's payments?
-    # The existing owner_remittances(owner) handles the scoping.
 
     payments = CapitalRemittancePayment.where(capital_remittance_id: remittances.select(:id))
                                        .where("amount_cents > 0")
                                        .order(:payment_date)
 
-    # Sum payments by date
-    daily_totals = payments.group(:payment_date).sum(:amount_cents)
+    # Grouping logic
+    aggregate_by ||= "month"
+    period_totals = if aggregate_by.to_s == "quarter"
+                      payments.to_a.group_by { |p| p.payment_date.beginning_of_quarter }.transform_values { |v| v.sum(&:amount_cents) }
+                    elsif aggregate_by.to_s == "year"
+                      payments.to_a.group_by { |p| p.payment_date.beginning_of_year }.transform_values { |v| v.sum(&:amount_cents) }
+                    else
+                      payments.to_a.group_by { |p| p.payment_date.beginning_of_month }.transform_values { |v| v.sum(&:amount_cents) }
+                    end
 
-    # To show a continuous cumulative chart even on days with no payments, 
-    # we need to fill in the gaps if we want a "step" look, 
-    # but Highcharts with an area/line chart usually handles the interpolation.
-    
     cumulative_amount = 0
-    sorted_dates = daily_totals.keys.compact.sort
-    
-    data = sorted_dates.each_with_object([]) do |date, arr|
-      cumulative_amount += daily_totals[date] / 100.0
-      arr << [date, cumulative_amount]
+    sorted_periods = period_totals.keys.compact.sort
+
+    data = sorted_periods.each_with_object([]) do |period, arr|
+      cumulative_amount += period_totals[period] / 100.0
+      label = case aggregate_by.to_s
+              when "quarter", "month"
+                period.strftime("%m/%y")
+              when "year"
+                period.year.to_s
+              else
+                period.to_s
+              end
+      arr << [label, cumulative_amount]
     end
 
     # Handle Chart Type Mapping
@@ -127,7 +132,6 @@ module CapitalRemittanceDashboardHelper
       title: "Cumulative Collection Timeline",
       id: "remittance_payment_timeline_chart_#{owner.id}",
       library: {
-        xAxis: { type: "datetime" },
         plotOptions: {
           series: {
             marker: { enabled: true }
@@ -137,11 +141,12 @@ module CapitalRemittanceDashboardHelper
       },
       prefix: "#{owner_currency(owner)}:"
     }
+    options[:library][:xAxis] = { type: "datetime" } unless aggregate_by.present?
     options[:curve] = true if chart_type.to_s == "spline"
 
     # For cumulative charts, we want to see the progress as a step-up when a payment occurs
     if %w[area line spline bar].include?(chart_type.to_s)
-      options[:library][:plotOptions][:series][:step] = 'left'
+      options[:library][:plotOptions][:series][:step] = "left"
     end
 
     chart = send(chart_method, data, **options)
