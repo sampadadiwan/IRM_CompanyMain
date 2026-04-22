@@ -10,7 +10,7 @@
 .gitnexus/
 app/.tmp
 app/.gitnexus
-
+graphify-out/
 
 # Ignore the default SQLite database.
 /db/*.sqlite3
@@ -114,3 +114,17 @@ dev-debug.log
 *.sw?
 # OS specific.vscode/mcp.json
 public/assets/*
+.graphify_analysis.json
+.graphify_ast.json
+.graphify_detect.json
+.graphify_extract.json
+.graphify_labels.json
+.graphify_semantic_new.json
+.graphify_semantic.json
+.graphify_uncached.txt
+CLAUDE.md
+opencode.json
+.opencode/plugins/graphify.js
+.vscode/mcp.json
+.vscode/mcp.json
+.vscode/mcp.json

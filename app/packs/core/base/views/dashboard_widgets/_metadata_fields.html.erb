@@ -1,0 +1,94 @@
+<div class="row row-cols-1 row-cols-md-2 g-4" data-metadata-form-target="container">
+  <% 
+    help_hash = dashboard_widget.metadata_help_hash.with_indifferent_access
+    current_metadata = dashboard_widget.metadata_args.with_indifferent_access
+    
+    # Merge keys: start with help definitions, then add any existing metadata keys not in help
+    display_hash = help_hash.dup
+    current_metadata.each do |key, value|
+      display_hash[key] = value unless display_hash.has_key?(key)
+    end
+  %>
+  <% if display_hash.any? %>
+    <% display_hash.each do |key, sample_value| %>
+      <% 
+        # Only use the value if it's actually in the metadata
+        db_value = current_metadata[key]
+        
+        # Determine type based on the sample_value
+        type_reference = help_hash.has_key?(key) ? help_hash[key] : db_value
+        
+        input_type = "text"
+        data_type = "string"
+        is_boolean = false
+        
+        if type_reference.is_a?(TrueClass) || type_reference.is_a?(FalseClass) || (type_reference.is_a?(String) && ["true", "false"].include?(type_reference))
+          is_boolean = true
+          data_type = "boolean"
+        elsif type_reference.is_a?(Numeric)
+          input_type = "number"
+          data_type = "number"
+        elsif type_reference.is_a?(Array)
+          data_type = "array"
+          db_value = db_value.join(", ") if db_value.is_a?(Array)
+        end
+
+        options = nil
+        if type_reference.is_a?(String) && type_reference.include?("/")
+          options = type_reference.split("/")
+        end
+      %>
+
+      <div class="col">
+        <div class="form-group mb-0">
+          <label class="form-label fw-bold small text-muted mb-1">
+            <%= key.to_s.humanize %>
+          </label>
+          
+          <% if options %>
+            <%= select_tag "metadata_#{key}", options_for_select(options, db_value), 
+                include_blank: "Default",
+                class: "form-select", 
+                data: { 
+                  metadata_key: key, 
+                  metadata_form_target: "field",
+                  action: "change->metadata-form#updateMetadata" 
+                } %>
+          <% elsif is_boolean %>
+            <%= select_tag "metadata_#{key}", options_for_select([["Default", ""], ["ON", "true"], ["OFF", "false"]], db_value.nil? ? "" : db_value.to_s), 
+                class: "form-select", 
+                data: { 
+                  metadata_key: key, 
+                  metadata_form_target: "field",
+                  action: "change->metadata-form#updateMetadata" 
+                } %>
+          <% else %>
+            <%= text_field_tag "metadata_#{key}", db_value, 
+                type: input_type,
+                class: "form-control", 
+                placeholder: "e.g. #{sample_value}",
+                data: { 
+                  metadata_key: key, 
+                  metadata_type: data_type, 
+                  metadata_form_target: "field",
+                  action: "input->metadata-form#updateMetadata" 
+                } %>
+          <% end %>
+          
+          <% if data_type == "array" %>
+            <div class="form-text x-small text-muted mt-1">Comma-separated list</div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="col-12 text-center text-muted py-3">
+      No configuration parameters found for this widget.
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .x-small { font-size: 0.75rem; }
+  .form-label { letter-spacing: 0.025em; }
+</style>

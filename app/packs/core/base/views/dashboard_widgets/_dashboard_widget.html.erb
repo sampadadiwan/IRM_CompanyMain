@@ -22,7 +22,14 @@
     <%= dashboard_widget.position %>
   </td>
   <td>
-    <%= dashboard_widget.metadata %>
+    <% dashboard_widget.metadata_args.each do |key, value| %>
+      <div class="mb-1">
+        <span class="badge bg-light text-dark border">
+          <span class="text-muted"><%= key %>:</span>
+          <span class="fw-bold"><%= value.is_a?(Array) ? value.join(", ") : value %></span>
+        </span>
+      </div>
+    <% end %>
   </td>
   <td>
     <%= display_boolean dashboard_widget.enabled %>

@@ -1,3 +1,10 @@
+V9.2.22
+7df9655a8 Fixed the turbo stream issue for commitments charts for LP dashboard
+f470159dc Kedaara 10 (#1367)
+2bae58ce6 Landing page dashboard2 (#1366)
+15f2ee664 Fund dashboard2 (#1365)
+
+
 V9.2.20
 65e91be9b Landing page dashboard (#1361)
 91788f0c4 (HEAD -> main, origin/main, origin/HEAD) Fund ae widget2 (#1362)

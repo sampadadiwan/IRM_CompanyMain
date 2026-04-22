@@ -6,3 +6,9 @@
 <%= turbo_stream.update "metadata_help" do %>
   <%= help_txt %>
 <% end %>
+
+<%= turbo_stream.update "dynamic_metadata_fields" do %>
+  <% if @dashboard_widget %>
+    <%= render "dashboard_widgets/metadata_fields", dashboard_widget: @dashboard_widget %>
+  <% end %>
+<% end %>

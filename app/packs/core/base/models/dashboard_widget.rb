@@ -14,7 +14,15 @@ class DashboardWidget < ApplicationRecord
   # The path to the widget partial to be rendered
   attr_accessor :path
   # metadata help text to be show in the UI, to help users understand what metadata can be passed
-  attr_accessor :metadata_help
+  attr_writer :metadata_help
+
+  def metadata_help
+    @metadata_help || self.class.definitions_map[[dashboard_name, widget_name]]&.instance_variable_get(:@metadata_help)
+  end
+
+  def self.definitions_map
+    @definitions_map ||= all_widgets.index_by { |w| [w.dashboard_name, w.widget_name] }
+  end
 
   FM_LANDING_PAGE = "FM Landing Page".freeze
   LP_LANDING_PAGE = "LP Landing Page".freeze
@@ -29,10 +37,10 @@ class DashboardWidget < ApplicationRecord
   FUND_WIDGETS = [
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Stats", path: "funds/fund_stats", size: "XL"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Card", path: "funds/card", size: "XL"),
-    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Ratios", path: "funds/widgets/fund_ratios", size: "Medium", metadata_help: "{title: 'Title', scenario: 'Default', condensed: true, chart: false, list: true, months: 12, ratio_names: ['XIRR', 'TVPI', 'DPI' ....] }"),
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Ratios", path: "funds/widgets/fund_ratios", size: "Medium", metadata_help: "{title: 'Title', scenario: 'Default', condensed: true, chart: false, list: true, months: 12, ratio_names: ['XIRR', 'TVPI', 'DPI'] }"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Cashflows", path: "funds/widgets/fund_cashflows", size: "Medium", metadata_help: "{months: 36, series: 'Collected Capital, Portfolio Investments', chart_type: 'line/bar/area/spline'}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Distributions", path: "funds/widgets/fund_distributions", size: "Medium"),
-    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium"),
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium", metadata_help: "{months: 12}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Portfolios", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', force_units: 'Lakhs/Crores/Millions'}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Report", path: "funds/widgets/fund_report", size: "XL", metadata_help: "{report_id: 1, other_report_args: '...' }"),
@@ -199,13 +207,6 @@ class DashboardWidget < ApplicationRecord
     "#{dashboard_name} #{widget_name} #{tags} #{tag_list}"
   end
 
-  # rubocop:disable Security/Eval
-  def metadata_args
-    ret_val = metadata ? eval(metadata) : {}
-    ret_val.is_a?(Hash) ? ret_val : {}
-  end
-  # rubocop:enable Security/Eval
-
   def widget_size
     case size
     when "XS"
@@ -245,4 +246,69 @@ class DashboardWidget < ApplicationRecord
       widgets.map(&:widget_name).sort
     end
   end
+
+  # rubocop:disable Security/Eval
+  def metadata_args
+    ret_val = metadata ? eval(metadata) : {}
+    ret_val = ret_val.is_a?(Hash) ? ret_val : {}
+    ret_val.with_indifferent_access
+  end
+
+  def metadata_help_hash
+    return {}.with_indifferent_access if metadata_help.blank?
+
+    # Attempt to sanitize common "help-isms" to make it valid Ruby
+    # We want to be careful not to double-quote already quoted strings
+    sanitized_help = metadata_help
+                     .gsub(/\.\.\.*/, "") # Remove ....
+                     .gsub("'/'", "/")    # Fix 'Investor'/'Valuation'
+                     .gsub(/(\w+):\s*([,}])/, '\1: nil\2') # Fix empty values like folder_id:,
+                     .gsub(/(\w+):\s*([^,}\['"\s]+)\/([^,}\]]+)/) do |match|
+                       # Only quote if not already quoted
+                       m = Regexp.last_match
+                       if m[2].start_with?("'") || m[2].start_with?('"')
+                         match
+                       else
+                         "#{m[1]}: '#{m[2]}/#{m[3]}'"
+                       end
+                     end
+                     .gsub(/,\s*\]/, "]")
+                     .gsub(/,\s*\}/, "}")
+
+    ret_val = eval(sanitized_help)
+    ret_val = ret_val.is_a?(Hash) ? ret_val : {}
+    # Clean up values in the hash
+    ret_val.each do |k, v|
+      if v.is_a?(String)
+        ret_val[k] = v.gsub(/\.\.\.*/, "").gsub(/,\s*$/, "").strip
+      end
+    end
+    ret_val.with_indifferent_access
+  rescue StandardError, SyntaxError => e
+    # Fallback to a more robust regex-based extractor if eval fails
+    extract_keys_from_help.with_indifferent_access
+  end
+
+  private
+
+  def extract_keys_from_help
+    keys = {}.with_indifferent_access
+    # Match key: value where value can be a quoted string, an array [...], or a simple value
+    # This is still a heuristic but better than the previous one
+    metadata_help.scan(/(\w+):\s*('[^']*'|"[^"]*"|\[[^\]]*\]|[^,{}]+)/).each do |key, value|
+      clean_value = value.strip
+      # If it's a quoted string, strip quotes for the internal representation
+      if (clean_value.start_with?("'") && clean_value.end_with?("'")) || 
+         (clean_value.start_with?('"') && clean_value.end_with?('"'))
+        clean_value = clean_value[1...-1]
+      end
+      # Remove trailing dots and commas that are often used in help text
+      clean_value = clean_value.gsub(/\.\.\.*/, "").gsub(/,\s*$/, "").strip
+      keys[key] = clean_value
+    end
+    keys
+  rescue StandardError
+    {}.with_indifferent_access
+  end
+  # rubocop:enable Security/Eval
 end

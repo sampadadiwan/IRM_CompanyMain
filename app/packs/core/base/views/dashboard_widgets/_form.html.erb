@@ -12,84 +12,111 @@
       </div>
     <% end %>
 
-    <div class="form-group">
-      <%= form.label :dashboard_name %>
-      <%= form.select :dashboard_name, DashboardWidget.dashboard_names, {}, class: "form-control", id: "dashboard_name"  %>
-    </div>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="form-group mb-3">
+          <%= form.label :dashboard_name, class: "form-label fw-bold" %>
+          <%= form.select :dashboard_name, DashboardWidget.dashboard_names, {}, class: "form-select", id: "dashboard_name"  %>
+        </div>
 
-    <div class="form-group">
-      <%= form.label :name %>
-      <%= form.text_field :name, class: "form-control"  %>
+        <div class="form-group mb-3">
+          <%= form.label :name, "Instance Name", class: "form-label fw-bold" %>
+          <%= form.text_field :name, class: "form-control", placeholder: "e.g. Q3 Performance Summary"  %>
+        </div>
+
+        <div class="form-group mb-3"
+              data-controller="dashboard-widgets"
+              data-dashboard-widgets-url-value="<%= metadata_help_dashboard_widgets_path %>"
+              data-dashboard-widgets-param-value="widget_name">
+          <%= form.label :widget_name, "Widget Type", class: "form-label fw-bold" %>
+          <%= form.select :widget_name, {}, {prompt: 'Select Widget Type'}, class: "form-select", id: :widget_name  %>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="form-group mb-3">
+          <%= form.label :size, class: "form-label fw-bold" %>
+          <%= form.select :size, ["XL", "Large", "Medium", "Small", "XS"], {}, class: "form-select"  %>
+        </div>
+
+        <div class="form-group mb-3">
+          <%= form.label :position, class: "form-label fw-bold" %>
+          <%= form.number_field :position, class: "form-control"  %>
+        </div>
+
+        <div class="form-group mb-3">
+          <%= form.label :tag_list, "Tags", class: "form-label fw-bold" %>
+          <%= form.text_field :tag_list, class: "form-control", placeholder: "Comma separated..."  %>
+        </div>
+      </div>
     </div>
 
     <%= form.hidden_field :owner_id %>
     <%= form.hidden_field :owner_type %>
+    <%= form.hidden_field :tags %>
 
     <!-- This is a hidden field to store the widget options in JSON format -->
     <%= hidden_field_tag "widget_options_json", DashboardWidget.widget_select.to_json, id: "widget_options_json" %>
     <!-- This is a hidden field to store the selected widget name, used in dashboard_widgets_controller.js -->
     <%= hidden_field_tag "selected_widget_name", dashboard_widget.widget_name, id: "selected_widget_name" %>
 
-    <div class="form-group"
-          data-controller="dashboard-widgets"
-          data-dashboard-widgets-url-value="<%= metadata_help_dashboard_widgets_path %>"
-          data-dashboard-widgets-param-value="widget_name">
-      <%= form.label :widget_name %>
-      <%= form.select :widget_name, {}, {prompt: 'Select Widget'}, class: "form-control", id: :widget_name  %>
-      <span class="text-muted">Select a widget corresponding to the Dashboard Name sected above</span>
+    <div data-controller="metadata-form" class="mt-4 pt-4 border-top">
+      <div class="d-flex align-items-center mb-3">
+        <h5 class="mb-0 text-primary"><i class="fas fa-sliders-h me-2"></i>Widget Configuration</h5>
+        <hr class="flex-grow-1 ms-3 opacity-25">
+      </div>
+      
+      <div id="dynamic_metadata_fields" class="mb-4">
+        <% if dashboard_widget.widget_name.present? %>
+          <%= render "dashboard_widgets/metadata_fields", dashboard_widget: dashboard_widget %>
+        <% else %>
+          <div class="text-center text-muted py-3 small bg-light rounded">Please select a Widget Type above to configure parameters.</div>
+        <% end %>
+      </div>
+
+      <div class="mb-4">
+        <a class="text-muted small text-decoration-none" data-bs-toggle="collapse" href="#rawMetadataCollapse" role="button" aria-expanded="false" aria-controls="rawMetadataCollapse">
+          <i class="fas fa-code me-1"></i> Advanced: Raw Metadata
+        </a>
+        <div class="collapse mt-2" id="rawMetadataCollapse">
+          <%= form.text_field :metadata, class: "form-control form-control-sm bg-light font-monospace", data: { metadata_form_target: "metadataInput" }, readonly: true  %>
+        </div>
+      </div>
     </div>
 
-
-    <div class="form-group">
-      <%= form.label :tags %>
-      <%= form.text_field :tags, class: "form-control"  %>
+    <div class="border-top pt-4">
+      <h5 class="mb-3"><i class="fas fa-eye me-2"></i>Display Settings</h5>
+      <div class="row">
+        <div class="col-md-3">
+          <div class="form-check">
+            <%= form.check_box :enabled, class: "form-check-input"  %>
+            <%= form.label :enabled, class: "form-check-label" %>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-check">
+            <%= form.check_box :display_name, class: "form-check-input"  %>
+            <%= form.label :display_name, "Show Title", class: "form-check-label" %>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-check">
+            <%= form.check_box :display_tag, class: "form-check-input"  %>
+            <%= form.label :display_tag, "Show Tags", class: "form-check-label" %>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="form-check">
+            <%= form.check_box :show_menu, class: "form-check-input"  %>
+            <%= form.label :show_menu, "Show Menu", class: "form-check-label" %>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <div class="form-group">
-      <%= form.label :tag_list %>
-      <%= form.text_field :tag_list, class: "form-control"  %>
-      <span class="text-muted">Comma separated list of tags. Used for filtering of widgets (ex by portfolio company / fund tags).</span>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :size %>
-      <%= form.select :size, ["XL", "Large", "Medium", "Small", "XS"], {}, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :position %>
-      <%= form.number_field :position, class: "form-control"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :metadata %>
-      <%= form.text_field :metadata, class: "form-control"  %>
-      <small id="metadata_help" class="text-muted"></small>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :enabled %>
-      <%= form.check_box :enabled, class: "form-check-input"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :display_name %>
-      <%= form.check_box :display_name, class: "form-check-input"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :display_tag %>
-      <%= form.check_box :display_tag, class: "form-check-input"  %>
-    </div>
-
-    <div class="form-group">
-      <%= form.label :show_menu %>
-      <%= form.check_box :show_menu, class: "form-check-input"  %>
-    </div>
-
-
-    <div class="form-group">
-      <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+    <div class="form-group mt-5 text-end border-top pt-3">
+      <%= link_to "Cancel", dashboard_widgets_path, class: "btn btn-link text-muted me-2" %>
+      <%= form.submit t_common(:save), {class: "btn btn-primary px-4"}%>
     </div>
 
   <% end %>
