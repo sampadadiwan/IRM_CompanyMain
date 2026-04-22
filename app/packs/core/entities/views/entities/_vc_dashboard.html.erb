@@ -1,9 +1,9 @@
 <% params[:units] ||= "Million" %>
 
-<% 
+<%
   # Get all GP entities based on the CapitalCommitments the user can see
   gp_entities = policy_scope(CapitalCommitment).includes(:entity).map(&:entity).uniq.compact.sort_by { |e| e.name.downcase }
-  
+
   # Determine selected entity:
   # - If user submitted the form with an entity, use that.
   # - If @current_entity is present, use that.
@@ -15,6 +15,8 @@
   else
     selected_entity_id = gp_entities.first&.id || current_user.entity_id
   end
+
+  selected_entity = gp_entities.find { |e| e.id.to_s == selected_entity_id.to_s }
 %>
 
 <% if (current_page?(root_path) || current_page?(dashboard_entities_path)) && gp_entities.any? %>
@@ -23,9 +25,9 @@
     <%= form_with url: dashboard_entities_path, method: :get, data: { turbo_frame: "vc_dashboard_frame" }, class: "d-inline-block px-2" do |f| %>
       <div class="d-flex align-items-center gap-2">
         <%= f.label :gp_entity_id, "GP:", class: "fw-bold mb-0 text-nowrap text-muted d-none" %>
-        <%= f.select :gp_entity_id, 
+        <%= f.select :gp_entity_id,
                      options_from_collection_for_select(gp_entities, :id, :name, selected_entity_id),
-                     {}, 
+                     {},
                      { class: "form-control", onchange: "this.form.requestSubmit()" } %>
       </div>
     <% end %>
@@ -43,6 +45,18 @@
 <% end %>
 
 <turbo-frame id="vc_dashboard_frame" target="_top">
+  <% if selected_entity && selected_entity.id != current_user.entity_id %>
+    <div class="alert alert-light-primary bg-primary-subtle border-primary border-opacity-25 d-flex align-items-center gap-3 mb-4 rounded-4 shadow-sm" role="alert">
+      <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px;">
+        <i class="ti ti-building-bank fs-5"></i>
+      </div>
+      <div>
+        <h6 class="mb-1 fw-bolder text-primary-emphasis"> <%= selected_entity.name %> </h6>
+        <p class="mb-0 fs-2 text-dark-emphasis opacity-75">You are currently viewing data for <%= selected_entity.name %>.</p>
+      </div>
+    </div>
+  <% end %>
+
   <div data-controller="datatable">
       <%= render "dashboard_widgets/dashboard", dashboard_name: DashboardWidget::LP_LANDING_PAGE, show_nav: false, entity_id: selected_entity_id %>
   </div>
