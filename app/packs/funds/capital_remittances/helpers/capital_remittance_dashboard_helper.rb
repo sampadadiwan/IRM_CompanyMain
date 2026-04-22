@@ -96,11 +96,11 @@ module CapitalRemittanceDashboardHelper
     # Grouping logic
     aggregate_by ||= "month"
     period_totals = if aggregate_by.to_s == "quarter"
-                      payments.to_a.group_by { |p| p.payment_date.beginning_of_quarter }.transform_values { |v| v.sum(&:amount_cents) }
+                      payments.to_a.group_by { |p| p.payment_date.end_of_quarter }.transform_values { |v| v.sum(&:amount_cents) }
                     elsif aggregate_by.to_s == "year"
-                      payments.to_a.group_by { |p| p.payment_date.beginning_of_year }.transform_values { |v| v.sum(&:amount_cents) }
+                      payments.to_a.group_by { |p| p.payment_date.end_of_year }.transform_values { |v| v.sum(&:amount_cents) }
                     else
-                      payments.to_a.group_by { |p| p.payment_date.beginning_of_month }.transform_values { |v| v.sum(&:amount_cents) }
+                      payments.to_a.group_by { |p| p.payment_date.end_of_month }.transform_values { |v| v.sum(&:amount_cents) }
                     end
 
     cumulative_amount = 0
@@ -112,7 +112,7 @@ module CapitalRemittanceDashboardHelper
               when "quarter", "month"
                 period.strftime("%m/%y")
               when "year"
-                period.year.to_s
+                period.strftime("%Y")
               else
                 period.to_s
               end
@@ -136,18 +136,20 @@ module CapitalRemittanceDashboardHelper
             marker: { enabled: true }
           }
         },
+        xAxis: {
+          tickmarkPlacement: "on"
+        },
         **chart_theme_color
       },
       prefix: "#{owner_currency(owner)}:"
     }
-    options[:library][:xAxis] = { type: "datetime" } unless aggregate_by.present?
 
     # For cumulative charts, we want to see the progress as a step-up when a payment occurs
     if %w[area line bar].include?(chart_type.to_s)
       options[:library][:plotOptions][:series][:step] = "left"
     end
 
-    chart = send(chart_method, data, **options)
+    chart = send(chart_method, data, discrete: true, **options)
 
     explanation = content_tag(:div, class: "mt-3 text-muted small") do
       "Visualizes the velocity of capital inflows over time.".html_safe

@@ -132,9 +132,9 @@ module FundDashboardHelper
 
     # Grouping logic
     group_fn = case aggregate_by.to_s
-               when "month"   then ->(d) { d.beginning_of_month }
-               when "year"    then ->(d) { d.beginning_of_year }
-               else                ->(d) { d.beginning_of_quarter }
+               when "month"   then ->(d) { d.end_of_month }
+               when "year"    then ->(d) { d.end_of_year }
+               else                ->(d) { d.end_of_quarter }
                end
 
     # Group and sum data
