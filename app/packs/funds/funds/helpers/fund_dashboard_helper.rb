@@ -1,6 +1,7 @@
 module FundDashboardHelper
-  def fund_ratios_line_chart(fund, args: {}, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 24, fund_ratios: [], scenarios: nil, scenario: nil, chart_id: "fund_ratios_chart", hide_fund_name: false)
+  def fund_ratios_line_chart(fund, args: {}, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 24, fund_ratios: [], scenarios: nil, scenario: nil, chart_id: "fund_ratios_chart", hide_fund_name: false, chart_type: nil)
     months ||= 24
+    chart_type ||= args[:chart_type] || "line"
     ratio_names ||= ["XIRR", "RVPI", "DPI", "TVPI", "Fund Utilization", "Portfolio Value to Cost", "Paid In to Committed Capital", "Quarterly IRR", "IRR", "Value To Cost", "Gross Portfolio IRR"]
 
     # we only fetch ratios if not passed as argument, this is to optimize in cases where we already have the ratios fetched for list and just want to render the chart with them
@@ -20,11 +21,16 @@ module FundDashboardHelper
     fund_ratios = fund_ratios.where(end_date: from_date..) if from_date
     fund_ratios = fund_ratios.order(:name, :end_date)
 
+    # Get all unique dates across all ratios to ensure consistent X-axis sorting
+    all_dates = fund_ratios.map { |fr| fr.end_date.beginning_of_month }.uniq.sort
+
     # Group by fund name and ratio name
     ratios_data = fund_ratios.group_by { |fr| [fr.fund.name, fr.name] }.transform_values do |ratios|
-      ratios.group_by { |v| v.end_date.beginning_of_month }
-            .map { |date, vals| [date, vals[-1].value&.round(2)] }
-            .sort_by { |date, _| date }
+      ratios_by_date = ratios.group_by { |v| v.end_date.beginning_of_month }
+      all_dates.map do |date|
+        vals = ratios_by_date[date]
+        [date.strftime("%b %y"), vals ? vals[-1].value&.round(2) : nil]
+      end
     end
 
     # Prepare the series data for the chart
@@ -38,8 +44,14 @@ module FundDashboardHelper
 
     line_chart_options = create_line_chart_options(fund_ratios, args)
 
+    chart_method = case chart_type.to_s
+                   when "bar"    then :column_chart
+                   when "area"   then :area_chart
+                   else               :line_chart
+                   end
+
     # Plot the chart with multiple series
-    line_chart series, id: chart_id, library: line_chart_options
+    send(chart_method, series, id: chart_id, discrete: true, library: line_chart_options)
   end
   # rubocop:enable Metrics/ParameterLists
 
@@ -58,6 +70,8 @@ module FundDashboardHelper
       },
       **chart_theme_color
     }
+
+    line_chart_options[:xAxis] = (line_chart_options[:xAxis] || {}).merge(type: 'category', tickmarkPlacement: 'on')
 
     line_chart_options[:yAxis] = { title: { text: nil }, labels: { enabled: false } } if args[:show_y_axis].to_s.downcase == "false"
     line_chart_options[:legend] = { enabled: false } if args[:show_legend].to_s.downcase == "false"
