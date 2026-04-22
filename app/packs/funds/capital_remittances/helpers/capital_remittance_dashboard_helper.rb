@@ -122,7 +122,6 @@ module CapitalRemittanceDashboardHelper
     # Handle Chart Type Mapping
     chart_method = case chart_type.to_s
                    when "line" then :line_chart
-                   when "spline" then :line_chart
                    when "bar" then :column_chart
                    when "area" then :area_chart
                    else :area_chart
@@ -142,10 +141,9 @@ module CapitalRemittanceDashboardHelper
       prefix: "#{owner_currency(owner)}:"
     }
     options[:library][:xAxis] = { type: "datetime" } unless aggregate_by.present?
-    options[:curve] = true if chart_type.to_s == "spline"
 
     # For cumulative charts, we want to see the progress as a step-up when a payment occurs
-    if %w[area line spline bar].include?(chart_type.to_s)
+    if %w[area line bar].include?(chart_type.to_s)
       options[:library][:plotOptions][:series][:step] = "left"
     end
 

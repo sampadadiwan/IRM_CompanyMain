@@ -105,7 +105,9 @@ module FundDashboardHelper
     }
   end
 
-  def fund_cashflows(fund, months: 36, series: nil, chart_type: nil)
+  def fund_cashflows(fund, months: 36, series: nil, chart_type: nil, aggregate_by: nil)
+    months ||= 36
+    aggregate_by ||= "quarter"
     from_date = Time.zone.today - months.months
 
     # Fetch data
@@ -114,20 +116,27 @@ module FundDashboardHelper
     portfolio_investments = fund.portfolio_investments.where(investment_date: from_date..)
     account_entries = fund.account_entries.not_cumulative.where.not(capital_commitment_id: nil).where(entry_type: %w[Expense Fee], reporting_date: from_date..)
 
-    # Group and sum data by quarter-end date
+    # Grouping logic
+    group_fn = case aggregate_by.to_s
+               when "month"   then ->(d) { d.beginning_of_month }
+               when "year"    then ->(d) { d.beginning_of_year }
+               else                ->(d) { d.beginning_of_quarter }
+               end
+
+    # Group and sum data
     data = {
-      "Collected Capital" => capital_calls.group_by { |record| record_date(record).end_of_quarter }
+      "Collected Capital" => capital_calls.group_by { |record| group_fn.call(record_date(record)) }
                              .transform_values { |entries| entries.sum { |e| (e.try(:collected_amount_cents) || 0) / 100.0 } },
-      "Capital Distributions" => capital_distributions.group_by { |record| record_date(record).end_of_quarter }
+      "Capital Distributions" => capital_distributions.group_by { |record| group_fn.call(record_date(record)) }
                                  .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
-      "Portfolio Investments" => portfolio_investments.group_by { |record| record_date(record).end_of_quarter }
+      "Portfolio Investments" => portfolio_investments.group_by { |record| group_fn.call(record_date(record)) }
                                  .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
-      "Expenses" => account_entries.group_by { |record| record_date(record).end_of_quarter }
+      "Expenses" => account_entries.group_by { |record| group_fn.call(record_date(record)) }
                     .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
     }
 
-    # Get all quarter-end dates and sort chronologically
-    all_quarters = data.values.flat_map(&:keys).uniq.sort
+    # Get all period dates and sort chronologically
+    all_periods = data.values.flat_map(&:keys).uniq.compact.sort
 
     # Filter to requested series if specified
     allowed = Array(series).map(&:to_s).map(&:strip) if series.present?
@@ -137,7 +146,14 @@ module FundDashboardHelper
     chart_data = data.map do |name, records|
       {
         name: name,
-        data: all_quarters.map { |quarter| [quarter, records[quarter] || 0] }
+        data: all_periods.map do |period|
+          label = case aggregate_by.to_s
+                  when "month", "quarter" then period.strftime("%m/%y")
+                  when "year"             then period.year.to_s
+                  else                         period.to_s
+                  end
+          [label, records[period] || 0]
+        end
       }
     end
 
@@ -146,25 +162,22 @@ module FundDashboardHelper
     chart_method = case chart_type.to_s
                    when "bar"    then :column_chart
                    when "area"   then :area_chart
-                   when "spline" then :line_chart
                    else               :line_chart
                    end
 
     library_options = {
       plotOptions: {
         series: {
-          dataLabels: { enabled: true, format: "{point.y:,.2f}" },
-          **({ curve: true } if chart_type.to_s == "spline")
+          dataLabels: { enabled: true, format: "{point.y:,.2f}" }
         }
       },
-      xAxis: { type: 'datetime' },
       yAxis: { title: { text: 'Amount (in currency)' } },
       **chart_theme_color
     }
 
     # Plot the chart
-    send(chart_method, chart_data, library: library_options,
-               prefix: "#{fund.currency}:")
+    options = { library: library_options, prefix: "#{fund.currency}:" }
+    send(chart_method, chart_data, **options)
   end
 
   private

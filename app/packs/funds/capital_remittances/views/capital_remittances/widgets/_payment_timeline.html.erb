@@ -1,6 +1,7 @@
 <%
   owner = uri_params[:owner_type].constantize.find(uri_params[:owner_id])
   aggregate_by = params[:aggregate_by] || args[:aggregate_by] || args[:period] || "month"
+  chart_type = params[:chart_type] || args[:chart_type] || "area"
 %>
 <%= render(
       WidgetCardComponent.new(
@@ -10,13 +11,18 @@
       )
     ) do %>
   <%= turbo_frame_tag "payment_timeline_widget_#{widget.id}" do %>
-    <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex justify-content-end mb-3 gap-2">
       <div class="btn-group btn-group-sm" role="group">
         <%= link_to "Month", url_for(request.query_parameters.merge(aggregate_by: "month")), class: "btn btn-outline-primary #{'active' if aggregate_by == 'month'}" %>
         <%= link_to "Quarter", url_for(request.query_parameters.merge(aggregate_by: "quarter")), class: "btn btn-outline-primary #{'active' if aggregate_by == 'quarter'}" %>
         <%= link_to "Year", url_for(request.query_parameters.merge(aggregate_by: "year")), class: "btn btn-outline-primary #{'active' if aggregate_by == 'year'}" %>
       </div>
+      <div class="btn-group btn-group-sm" role="group">
+        <%= link_to "Area", url_for(request.query_parameters.merge(chart_type: "area")), class: "btn btn-outline-secondary #{'active' if chart_type == 'area'}" %>
+        <%= link_to "Bar", url_for(request.query_parameters.merge(chart_type: "bar")), class: "btn btn-outline-secondary #{'active' if chart_type == 'bar'}" %>
+        <%= link_to "Line", url_for(request.query_parameters.merge(chart_type: "line")), class: "btn btn-outline-secondary #{'active' if chart_type == 'line'}" %>
+      </div>
     </div>
-    <%= remittance_payment_timeline_chart(owner, chart_type: args[:chart_type], aggregate_by: aggregate_by) %>
+    <%= remittance_payment_timeline_chart(owner, chart_type: chart_type, aggregate_by: aggregate_by) %>
   <% end %>
 <% end %>
