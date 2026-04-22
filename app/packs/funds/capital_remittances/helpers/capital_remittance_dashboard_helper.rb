@@ -94,7 +94,7 @@ module CapitalRemittanceDashboardHelper
                                        .order(:payment_date)
 
     # Grouping logic
-    aggregate_by ||= "month"
+    aggregate_by ||= "year"
     period_totals = if aggregate_by.to_s == "quarter"
                       payments.to_a.group_by { |p| p.payment_date.end_of_quarter }.transform_values { |v| v.sum(&:amount_cents) }
                     elsif aggregate_by.to_s == "year"

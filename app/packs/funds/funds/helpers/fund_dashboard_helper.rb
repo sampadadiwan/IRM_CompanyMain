@@ -121,7 +121,7 @@ module FundDashboardHelper
 
   def fund_cashflows(fund, months: 36, series: nil, chart_type: nil, aggregate_by: nil)
     months ||= 36
-    aggregate_by ||= "quarter"
+    aggregate_by ||= "year"
     from_date = Time.zone.today - months.months
 
     # Fetch data

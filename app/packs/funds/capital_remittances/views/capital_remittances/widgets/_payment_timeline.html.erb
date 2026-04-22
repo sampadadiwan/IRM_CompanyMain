@@ -1,6 +1,6 @@
 <%
   owner = uri_params[:owner_type].constantize.find(uri_params[:owner_id])
-  aggregate_by = params[:aggregate_by] || args[:aggregate_by] || args[:period] || "month"
+  aggregate_by = params[:aggregate_by] || args[:aggregate_by] || args[:period] || "year"
   chart_type = params[:chart_type] || args[:chart_type] || "area"
 %>
 <%= render(
