@@ -1,3 +1,15 @@
+V9.2.23
+6403eebef Add Investor Advisor User Guide detailing setup, permissions, and capabilities
+164b358aa (kyc_issue_3233) Update aggregation period to year for remittance and fund cashflows charts for consistency
+f630acff0 Refactor grouping logic in charts to use end of period dates for improved accuracy
+de2642b23 Better charts for fund ratios - align dates with points
+81b76dbbc Enhance fund cashflows widget with aggregate and chart type selection options for improved user interaction
+fdefb4fa1 Enhance dashboard widget metadata and form fields for improved configuration and user guidance
+f905337a0 Enhance metadata help for dashboard widgets to improve user guidance and functionality
+833fc2332 Implement dynamic metadata configuration for dashboard widgets with enhanced UI and functionality
+c627abcd2 Enhance GP entity selection with alert for current entity in VC dashboard
+
+
 V9.2.22
 7df9655a8 Fixed the turbo stream issue for commitments charts for LP dashboard
 f470159dc Kedaara 10 (#1367)
