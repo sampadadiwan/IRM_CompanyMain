@@ -7,6 +7,7 @@ class CommitmentAdjustmentsController < ApplicationController
 
     @q = result.q
     @commitment_adjustments = result.commitment_adjustments
+    @commitment_adjustments = filter_params(@commitment_adjustments, :fund_id, :capital_commitment_id, :adjustment_type)
 
     @commitment_adjustments = @commitment_adjustments.order(as_of: :desc, created_at: :desc) if @commitment_adjustments.arel.orders.blank? && !ransack_has_attr?(params[:q], 's')
 

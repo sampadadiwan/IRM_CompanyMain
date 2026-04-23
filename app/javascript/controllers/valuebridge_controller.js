@@ -34,6 +34,8 @@ export default class extends Controller {
     const positiveColor = this.resolveClassColor('value-bridge-positive', '#00565C');
     const negativeColor = this.resolveClassColor('value-bridge-negative', '#B21832');
 
+    const pointWidth = chartElement.dataset.pointWidth ? parseInt(chartElement.dataset.pointWidth) : null;
+
     Highcharts.chart(chartElement.id, { // ← use dynamic id
       chart: { type: 'waterfall', ...(themeOptions.chart || {}) },
       title: { text: '' },
@@ -43,27 +45,25 @@ export default class extends Controller {
       series: [{
         name: "Value Bridge",
         data: chartData,
+        pointWidth: pointWidth,
+        upColor: null, // Allow individual point colors for positive values
         dataLabels: {
           enabled: true,
           inside: true,
-          backgroundColor: 'transparent', // removes white background
-          borderWidth: 0,                 // remove border if any
+          overflow: 'allow',
+          crop: false,
+          backgroundColor: 'transparent',
+          borderWidth: 0,
           formatter: function() {
-            const isNeutral = !!this.point.options.font_color; // Entry/Exit bars have explicit font_color
-            let fontColor;
-            if (isNeutral) {
-              fontColor = this.point.options.font_color;
-            } else {
-              fontColor = this.y >= 0 ? positiveColor : negativeColor;
-            }
             const label = this.point.options.label || this.y;
-            return `<span style="color: ${fontColor}">${label}</span>`;
+            return `<span>${label}</span>`;
           },
           useHTML: true,
           style: {
-            textOutline: 'none',          // removes white halo
+            textOutline: '1px #000000',
+            color: '#ffffff',
             fontWeight: 'bold',
-            fontSize: '14px'
+            fontSize: '13px'
           }
       }
       }]

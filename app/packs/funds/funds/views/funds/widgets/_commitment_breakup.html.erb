@@ -1,0 +1,20 @@
+<%
+  chart_data = CommitmentBreakupService.new(@fund).call
+%>
+
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+  <div data-controller="valuebridge" class="w-100">
+    <div id="commitment_breakup_chart_<%= widget.id %>" 
+         style="height: 450px; min-width: 300px;" 
+         data-valuebridge-target="chart" 
+         data-point-width="60"
+         data-chart-values="<%= chart_data.to_json %>">
+    </div>
+  </div>
+<% end %>

@@ -38,6 +38,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Stats", path: "funds/fund_stats", size: "XL"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Card", path: "funds/card", size: "XL"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Ratios", path: "funds/widgets/fund_ratios", size: "Medium", metadata_help: "{title: 'Title', scenario: 'Default', scenarios: 'Actual,Budget', condensed: true, chart: false, list: true, months: 12, ratio_names: ['XIRR', 'TVPI', 'DPI'], show_y_axis: true, show_legend: true, decimals: 2, hide_fund_name: false }"),
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Commitment Breakup", path: "funds/widgets/commitment_breakup", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Cashflows", path: "funds/widgets/fund_cashflows", size: "Medium", metadata_help: "{months: 36, series: 'Collected Capital, Portfolio Investments', chart_type: 'line/bar/area/spline'}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Distributions", path: "funds/widgets/fund_distributions", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium", metadata_help: "{months: 12, entry_types: ['Expense', 'Fee']}"),
