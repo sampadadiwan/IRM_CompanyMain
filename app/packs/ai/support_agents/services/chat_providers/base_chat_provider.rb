@@ -13,20 +13,27 @@
 class BaseChatProvider
   attr_reader :support_agent, :target, :analyst
 
+  # @param support_agent [SupportAgent]
+  # @param target [Object] the entity/subject of this chat (e.g. a Fund, a User)
+  # @param analyst [User] the user who is chatting
   def initialize(support_agent:, target:, analyst:)
     @support_agent = support_agent
     @target = target
     @analyst = analyst
   end
 
+  # @return [String] system prompt for the LLM. Must be overridden.
+  # @raise [NotImplementedError]
   def system_prompt
     raise NotImplementedError
   end
 
+  # @return [String] optional domain-specific context string injected into the chat.
   def build_context
     ""
   end
 
+  # @return [Array<RubyLLM::Tool>] tools the LLM may call in this chat.
   def tools
     []
   end
@@ -40,6 +47,7 @@ class BaseChatProvider
                      when "CallNoticeAgent" then defined?(CallNoticeChatProvider) ? CallNoticeChatProvider : DefaultChatProvider
                      when "PortfolioReportAgent" then defined?(PortfolioChatProvider) ? PortfolioChatProvider : DefaultChatProvider
                      when "PortfolioCompanyAgent" then defined?(PortfolioCompanyChatProvider) ? PortfolioCompanyChatProvider : DefaultChatProvider
+                     when "LpAssistantAgent" then defined?(LpChatProvider) ? LpChatProvider : DefaultChatProvider
 
                      else DefaultChatProvider
                      end
@@ -74,6 +82,17 @@ class BaseChatProvider
       Use REAL data from the context provided. Include a brief text summary before/after the chart.
       The JSON must use double quotes only (no single quotes inside the JSON value).
       Always include "responsive":true and "maintainAspectRatio":false in the options.
+      STRICT JSON — NO JAVASCRIPT:
+      - The chart spec MUST be strictly valid JSON, parseable by JSON.parse.
+      - FORBIDDEN: `function(...)`, arrow functions `=>`, expressions, variables,
+        tick callbacks, comments. Only strings, numbers, booleans, null, arrays, objects.
+      - DO NOT add a y-axis tick callback to append "%" or any suffix. Instead include
+        the unit in the dataset label, e.g. "label":"IRR (%)".
+      - DO NOT embed computed values; pre-compute in SQL and pass literal numbers.
+
+      Example of a valid line chart with percentage data:
+      {"type":"line","data":{"labels":["Q1","Q2","Q3"],"datasets":[{"label":"IRR (%)","data":[12.3,13.1,14.5],"borderWidth":2,"fill":false}]},"options":{"responsive":true,"maintainAspectRatio":false,"plugins":{"legend":{"display":true}},"scales":{"y":{"beginAtZero":false}}}}
+
     PROMPT
   end
 
