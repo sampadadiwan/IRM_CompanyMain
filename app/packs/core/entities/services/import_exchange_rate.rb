@@ -19,16 +19,11 @@ class ImportExchangeRate < ImportUtil
 
     exchange_rate = ExchangeRate.find_by(exchange_rate_attributes.slice(:from, :to, :entity_id, :as_of))
     if exchange_rate.present?
-      ret_val = [false, "Duplicate, already present"]
+      raise "Duplicate, already present"
     else
-      exchange_rate = ExchangeRate.create(exchange_rate_attributes)
-      ret_val = if exchange_rate.valid?
-                  [true, "Success"]
-                else
-                  [false, exchange_rate.errors.full_messages]
-                end
+      exchange_rate = ExchangeRate.create!(exchange_rate_attributes)
+      true
     end
-    ret_val
   end
 
   def get_exchange_rate_attributes(user_data, import_upload)
