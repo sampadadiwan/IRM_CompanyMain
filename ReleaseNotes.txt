@@ -1,3 +1,12 @@
+
+
+V9.2.24
+7e618074b (HEAD -> main, origin/main, origin/HEAD) Enable Paralle tests (#1374)
+dcfcbff5c Fund dashboard fix1 (#1373)
+d116bd3e5 Feature/lp assistant agent added skills (#1371)
+0558a56ae Update point width in Commitment Breakup chart for improved visualization
+f622b3cfb Add Commitment Breakup widget and service for fund commitment analysis
+
 V9.2.23
 6403eebef Add Investor Advisor User Guide detailing setup, permissions, and capabilities
 164b358aa (kyc_issue_3233) Update aggregation period to year for remittance and fund cashflows charts for consistency
