@@ -27,6 +27,7 @@ mcp.json
 .aider*
 /db/sphinx
 /config/*.sphinx.conf
+.tmp/*
 
 /vendor/cache/*
 /qdrant_storage/*

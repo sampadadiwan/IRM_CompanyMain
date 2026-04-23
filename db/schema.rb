@@ -3220,7 +3220,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_120000) do
   end
 
   create_table "stock_adjustments", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.decimal "adjustment", precision: 10, scale: 8, default: "0.0"
+    t.decimal "adjustment", precision: 12, scale: 8, default: "0.0"
     t.string "category", limit: 10
     t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
