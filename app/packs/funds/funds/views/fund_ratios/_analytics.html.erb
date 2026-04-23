@@ -6,7 +6,7 @@
         <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#fundRatioAnalytics" aria-label="Close"></button>
       </div>
       <div class="card-body">
-        <%= turbo_frame_tag "fund_ratio_analytics_frame", src: analytics_fund_path(fund, type: "FundRatio"), loading: "lazy" do %>
+        <%= turbo_frame_tag with_frame("fund_ratio_analytics_frame"), src: analytics_fund_path(fund, type: "FundRatio", widget_id: params[:widget_id]), loading: "lazy" do %>
           <div class="d-flex justify-content-center p-5">
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">Loading...</span>

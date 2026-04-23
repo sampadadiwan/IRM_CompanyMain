@@ -39,14 +39,14 @@
     </thead>
     <tbody>
       <% @parent.grid_view_preferences.order(:sequence).each do |preference| %>
-        <tr class="column column_<%= preference.key %>" data-draggable-row-target="column" draggable="true" data-key="<%= preference.key %>" data-row-id="<%= preference.id %>">
+        <tr class="column column_<%= preference.clean_key %>" data-draggable-row-target="column" draggable="true" data-key="<%= preference.clean_key %>" data-row-id="<%= preference.id %>">
           
           <td><%= preference.sequence %></td>
 
-          <td><i class="ti ti-arrows-move handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.name.to_s.titleize %></td>
+          <td><i class="ti ti-arrows-move handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.clean_name.titleize %></td>
           
-          <td><%= preference.key %></td>
-          <td><%= preference.label %></td>
+          <td><%= preference.clean_key %></td>
+          <td><%= preference.clean_label %></td>
           <td><%= preference.data_type %></td>
 
           <td>

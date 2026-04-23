@@ -1,4 +1,4 @@
-<%= form_with(model: nil, method: :get, url: "/fund_ratios", id: "fund_ratios_filter",  data: {turbo_frame: "fund_ratios_frame"} ) do |form| %>
+<%= form_with(model: nil, method: :get, url: "/fund_ratios", id: "fund_ratios_filter",  data: {turbo_frame: with_frame("fund_ratios_frame")} ) do |form| %>
     
   <input name="fund_id" value="<%= fund.id%>" hidden="hidden">
 

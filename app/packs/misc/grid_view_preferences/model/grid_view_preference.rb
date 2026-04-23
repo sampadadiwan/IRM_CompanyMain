@@ -24,9 +24,18 @@ class GridViewPreference < ApplicationRecord
   # Tries to lookup in the parent's STANDARD_COLUMNS, otherwise humanizes the key
   def self.get_column_name(parent, key)
     begin
-      column_name = parent.name.constantize::STANDARD_COLUMNS.key(key)
+      standard_columns = parent.name.constantize::STANDARD_COLUMNS
     rescue NameError
-      column_name = parent.model.constantize::STANDARD_COLUMNS.key(key)
+      standard_columns = parent.model.constantize::STANDARD_COLUMNS
+    end
+
+    # Try exact match first
+    column_name = standard_columns.key(key)
+
+    # If not found, try matching clean key against clean values in STANDARD_COLUMNS
+    if column_name.blank?
+      clean_key = key.split(";").first.strip
+      column_name = standard_columns.find { |_, v| v.split(";").first.strip == clean_key }&.first
     end
 
     return column_name if column_name.present?
@@ -51,7 +60,9 @@ class GridViewPreference < ApplicationRecord
       begin
         model_columns_hash = owner.model_columns_hash
         # lookup the column type in the model's columns hash i.e DB
-        column = model_columns_hash[key] || model_columns_hash["#{key}_cents"]
+        # We split the key by ";" to handle keys that include type suffixes
+        clean_key = key.split(";").first.strip
+        column = model_columns_hash[clean_key] || model_columns_hash["#{clean_key}_cents"]
         # If the column is not found, fallback to the default data type
         # If the column is found, use its type
         column&.type.to_s.capitalize.presence || DEFAULT_DATA_TYPE
@@ -66,17 +77,29 @@ class GridViewPreference < ApplicationRecord
     self[:label].presence || name
   end
 
+  def clean_name
+    name.to_s.split(";").first.strip
+  end
+
+  def clean_key
+    key.to_s.split(";").first.strip
+  end
+
+  def clean_label
+    label.to_s.split(";").first.strip
+  end
+
   def name_with_alignment
     if alignment.present?
-      "#{label.presence || name}; #{alignment}"
+      "#{clean_label}; #{alignment}"
     else
-      label.presence || name
+      label
     end
   end
 
   def key_with_alignment
     if alignment.present?
-      "#{key}; #{alignment}"
+      "#{clean_key}; #{alignment}"
     else
       key
     end

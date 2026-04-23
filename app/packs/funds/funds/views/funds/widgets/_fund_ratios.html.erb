@@ -4,7 +4,10 @@ if args[:ratio_names].present?
   ransack_params << [:name, :in, ratio_names]
 end
 %>
-<% uri = URI(fund_ratios_path(**args, q: ransack_query_params_multiple(ransack_params, sort_by: "end_date", sort_direction: "desc"))) %>
+<% 
+  args_with_widget = args.merge(widget_id: widget.id)
+  uri = URI(fund_ratios_path(**args_with_widget, q: ransack_query_params_multiple(ransack_params, sort_by: "end_date", sort_direction: "desc"))) 
+%>
 <%= render(
       WidgetCardComponent.new(
         widget: widget,
@@ -14,7 +17,7 @@ end
     ) do %>
 
     <% if args[:list].nil? || args[:list] == true %>
-      <%= turbo_frame_tag "fund_ratios_frame", target: "_top", src: "#{uri.to_s}" do %>
+      <%= turbo_frame_tag "fund_ratios_frame_#{widget.id}", target: "_top", src: "#{uri.to_s}" do %>
       <% end %>
     <%end%>
 
@@ -31,7 +34,7 @@ end
             <% end %>
           </div>
         </div>
-        <%= fund_ratios_line_chart(@fund, ratio_names: args[:ratio_names], months: args[:months], chart_id: "fund_ratios_chart_#{widget.id}", chart_type: params[:chart_type]) %>
+        <%= fund_ratios_line_chart(@fund, args: args, owner_id: @fund.id, owner_type: "Fund", ratio_names: args[:ratio_names], months: args[:months], chart_id: "fund_ratios_chart_#{widget.id}", chart_type: params[:chart_type]) %>
       <% end %>
     <% end %>
 

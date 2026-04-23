@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "fund_ratio_analytics_frame" do %>
+<%= turbo_frame_tag with_frame("fund_ratio_analytics_frame") do %>
   <% 
     months = params[:months].present? ? params[:months].to_i : 24 
     months_label = months == 0 ? "All Time" : "Last #{months} Months"
@@ -11,15 +11,16 @@
         <% [["Area", "area"], ["Bar", "bar"], ["Line", "line"]].each do |label, type| %>
           <%= link_to label, request.params.merge(chart_type: type), 
               class: "btn #{current_type == type ? 'btn-primary' : 'btn-outline-primary bg-white'}",
-              data: { turbo_frame: "fund_ratio_analytics_frame" } %>
+              data: { turbo_frame: with_frame("fund_ratio_analytics_frame") } %>
         <% end %>
       </div>
 
       <div class="d-flex align-items-center gap-2">
         <span class="text-muted small">Range:</span>
-        <%= form_with url: analytics_fund_path(@fund), method: :get, data: { turbo_frame: "fund_ratio_analytics_frame" } do |f| %>
+        <%= form_with url: analytics_fund_path(@fund), method: :get, data: { turbo_frame: with_frame("fund_ratio_analytics_frame") } do |f| %>
           <%= hidden_field_tag :type, "FundRatio" %>
           <%= hidden_field_tag :chart_type, params[:chart_type] %>
+          <%= hidden_field_tag :widget_id, params[:widget_id] %>
           <%= f.select :months, 
               [["Last 12 Months", 12], ["Last 24 Months", 24], ["Last 36 Months", 36], ["Last 60 Months", 60], ["All Time", 0]], 
               { selected: months }, 
@@ -36,7 +37,7 @@
     <h5 class="mb-3">Performance Trends (<%= months_label %>)</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        <%= fund_ratios_line_chart(@fund, ratio_names: ["XIRR", "MOIC", "Gross Portfolio IRR"], chart_id: "fund_performance_trends", months: (months == 0 ? nil : months), chart_type: params[:chart_type]) %>
+        <%= fund_ratios_line_chart(@fund, owner: @fund, ratio_names: ["XIRR", "MOIC", "Gross Portfolio IRR"], chart_id: "fund_performance_trends", months: (months == 0 ? nil : months), chart_type: params[:chart_type]) %>
       </div>
     </div>
   </div>
@@ -44,7 +45,7 @@
     <h5 class="mb-3">Multiple Trends (<%= months_label %>)</h5>
     <div class="card shadow mb-4">
       <div class="card-body">
-        <%= fund_ratios_line_chart(@fund, ratio_names: ["XIRR", "TVPI", "DPI", "RVPI"], chart_id: "fund_multiple_trends", months: (months == 0 ? nil : months), chart_type: params[:chart_type]) %>
+        <%= fund_ratios_line_chart(@fund, owner: @fund, ratio_names: ["XIRR", "TVPI", "DPI", "RVPI"], chart_id: "fund_multiple_trends", months: (months == 0 ? nil : months), chart_type: params[:chart_type]) %>
       </div>
     </div>
   </div>

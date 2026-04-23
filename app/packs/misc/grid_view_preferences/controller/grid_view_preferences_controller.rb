@@ -137,6 +137,9 @@ class GridViewPreferencesController < ApplicationController
       @custom_field_names = form_type.form_custom_fields.where.not(field_type: "GridColumns").pluck(:name).map(&:to_s)
       @field_options = (@field_options.map { |name, value| [name, value] } + Array(@custom_field_names).map { |name| [name.humanize, "custom_fields.#{name}"] }).to_h
     end
+
+    # Clean up the labels in field_options for display in the dropdown
+    @field_options = @field_options.transform_keys { |k| k.split(";").first.strip }
   end
 
   private

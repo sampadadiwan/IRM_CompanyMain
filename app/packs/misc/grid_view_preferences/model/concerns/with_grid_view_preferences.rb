@@ -31,8 +31,8 @@ module WithGridViewPreferences
       # Skips the preference if custom_data_type is nil (commented out for now)
 
       {
-        label: preference.label.presence || preference.name, # Use label if present, otherwise name
-        key: preference.key, # The unique key for the column
+        label: preference.clean_label, # Use label if present, otherwise name
+        key: preference.clean_key, # The unique key for the column
         data_type: custom_data_type.presence # Include data_type if present
       }
     end

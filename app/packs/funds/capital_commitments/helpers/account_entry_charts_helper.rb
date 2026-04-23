@@ -24,24 +24,18 @@ module AccountEntryChartsHelper
     # Time-series aggregation (Month, Quarter or Year)
     group_field = case aggregate_by.to_s.downcase
                   when 'year'
-                    "EXTRACT(YEAR FROM reporting_date)"
+                    "DATE_FORMAT(reporting_date, '%Y-12-31')"
                   when 'month'
-                    "DATE_FORMAT(reporting_date, '%Y-%m-01')"
+                    "LAST_DAY(reporting_date)"
                   else # quarter
-                    :period
+                    "LAST_DAY(DATE_ADD(DATE_FORMAT(reporting_date, '%Y-01-01'), INTERVAL (QUARTER(reporting_date) * 3 - 1) MONTH))"
                   end
 
     # Get the raw data: { [period, name] => sum }
-    raw_data = entries.group(group_field, :name).sum(:amount_cents)
+    raw_data = entries.group(Arel.sql(group_field), :name).sum(:amount_cents)
 
     # Get all unique periods in correct chronological order
-    all_periods = if aggregate_by.to_s.downcase == 'year'
-                    raw_data.keys.map(&:first).uniq.sort
-                  elsif aggregate_by.to_s.downcase == 'month'
-                    raw_data.keys.map(&:first).uniq.sort
-                  else # quarter
-                    raw_data.keys.map(&:first).uniq.sort_by { |p| q, y = p.to_s.split('-'); "#{y}#{q}" }
-                  end
+    all_periods = raw_data.keys.map(&:first).uniq.sort
 
     # Apply number_of_periods limit
     all_periods = all_periods.last(number_of_periods) if number_of_periods
@@ -49,13 +43,22 @@ module AccountEntryChartsHelper
     # Pivot data into series format for Chartkick: [{ name: "Entry 1", data: { "Q1-2024" => 100 } }, ...]
     series_data = entry_names.map do |name|
       data_points = all_periods.each_with_object({}) do |period, hash|
-        label = if period.is_a?(Time) || period.is_a?(Date)
-                  period.strftime("%b %Y")
-                elsif period.to_s =~ /^\d{4}-\d{2}-\d{2}$/
-                  Date.parse(period).strftime("%b %Y")
+        date = if period.is_a?(Time) || period.is_a?(Date)
+                 period
+               elsif period.to_s =~ /^\d{4}-\d{2}-\d{2}$/
+                 Date.parse(period.to_s)
+               end
+
+        label = if date
+                  if aggregate_by.to_s.downcase == 'year'
+                    date.strftime("%Y")
+                  else
+                    date.strftime("%m/%y")
+                  end
                 else
                   period.to_s
                 end
+
         amount = raw_data[[period, name]] || 0
         hash[label] = amount / 100.0
       end

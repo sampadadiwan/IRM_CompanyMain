@@ -32,7 +32,28 @@ class RansackTableHeader < ViewComponent::Base
 
     form_type = entity.form_types.find_by(name: @model.to_s)
     columns = form_type&.ag_selected_columns if columns.blank?
-    columns = @default_columns_map if columns.blank? && @default_columns_map.present?
+
+    if columns.blank? && @default_columns_map.present?
+      # If default_columns_map is a Hash (STANDARD_COLUMNS format), convert it to AG Grid format
+      if @default_columns_map.is_a?(Hash)
+        columns = @default_columns_map.map do |label, key|
+          clean_label = label.split(";").first.strip
+          clean_key = key.split(";").first.strip
+          # Try to infer data type
+          data_type = if clean_key.include?("custom_fields.")
+                        ApplicationRecord::DEFAULT_DATA_TYPE
+                      else
+                        @model.columns_hash[clean_key]&.type.to_s.capitalize.presence ||
+                          @model.columns_hash["#{clean_key}_cents"]&.type.to_s.capitalize.presence ||
+                          ApplicationRecord::DEFAULT_DATA_TYPE
+                      end
+          { label: clean_label, key: clean_key, data_type: data_type }
+        end
+      else
+        columns = @default_columns_map
+      end
+    end
+
     columns = @model.ag_grids_default_columns if columns.blank?
     # Makes ag grid col link works correctly
     # enforce data types from default columns
@@ -42,13 +63,13 @@ class RansackTableHeader < ViewComponent::Base
       default_columns = @model.ag_grids_default_columns
       default_columns_map = default_columns.index_by { |col| col[:key] }
       columns = columns.map do |col|
-        col_key = col[:key] || col["key"]
+        col = col.with_indifferent_access
+        col_key = col[:key]
         if default_columns_map[col_key]
           default_type = default_columns_map[col_key][:data_type]
           # If the default type involves special rendering (not String), prefer it
           if default_type != "String"
             col[:data_type] = default_type
-            col["data_type"] = default_type if col.key?("data_type")
           end
         end
         col
