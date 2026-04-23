@@ -4,7 +4,10 @@
   <div class="card card-body">
     <span class="side-stick"></span>
     <h6 class="note-title text-truncate w-75 mb-0">
-      <% if report.is_dynamic? %>
+      <% if report.report_builder? %>
+        <%= link_to report.name, edit_report_builder_path(report), class: "fw-bolder" %>
+        <span class="badge bg-primary ms-1" style="font-size:.6rem">Builder</span>
+      <% elsif report.is_dynamic? %>
         <%= report.name %>
       <% else %>
         <%= link_to report.name, report.url, class: "fw-bolder" %>
@@ -56,15 +59,8 @@
                                 " href="<%= report_path(report) %>">Show</a>
 
             <% if policy(report).update? %>
-              <a class="
-                                    note-social
-                                    badge-group-item badge-social
-                                    dropdown-item
-                                    position-relative
-                                    category-social
-                                    d-flex
-                                    ti ti-edit
-                                  " href="<%= edit_report_path(report) %>"> Edit</a>
+              <a class="note-social badge-group-item badge-social dropdown-item position-relative category-social d-flex ti ti-edit"
+                 href="<%= report.report_builder? ? edit_report_builder_path(report) : edit_report_path(report) %>"> Edit</a>
 
                 <% if report.allow_custom_grid_columns? %>
 

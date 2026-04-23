@@ -14,6 +14,25 @@ resources :reports do
   post 'generate_report_insight', on: :member
 end
 
+scope path: 'report_builder', controller: :report_builder do
+  get    'new',                      action: :new,               as: :new_report_builder
+  get    'models',                   action: :models,            as: :report_builder_models
+  get    'associations',             action: :associations,      as: :report_builder_associations
+  post   '',                         action: :create,            as: :report_builder_create
+  get    ':id/edit',                 action: :edit,              as: :edit_report_builder
+  get    ':id/preview',              action: :preview,           as: :preview_report_builder
+  get    ':id/download',             action: :download,          as: :download_report_builder
+  patch  ':id/template',             action: :update_template,   as: :update_report_builder_template
+  post   ':id/columns',              action: :add_column,        as: :add_report_builder_column
+  delete ':id/columns/:gvp_id',      action: :remove_column,     as: :remove_report_builder_column
+  post   ':id/join',                 action: :add_join,          as: :add_report_builder_join
+  delete ':id/join',                 action: :remove_join,       as: :remove_report_builder_join
+  patch  ':id/aggregate',            action: :update_aggregate,  as: :update_report_builder_aggregate
+  patch  ':id/sort',                 action: :update_sort,       as: :update_report_builder_sort
+  patch  ':id/name',                 action: :update_name,       as: :update_report_builder_name
+  patch  ':id/pivot',                action: :update_pivot,      as: :update_report_builder_pivot
+end
+
 resources :report_insights
 resources :audits
 resources :reminders do

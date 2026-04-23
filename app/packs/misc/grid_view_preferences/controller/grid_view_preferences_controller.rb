@@ -78,16 +78,11 @@ class GridViewPreferencesController < ApplicationController
     permitted_params = params.permit(:index, :key)
     index = permitted_params[:index].to_i
     if @grid_view_preference
-      @grid_view_preference.sequence = index + 1
+      # acts_as_list uses 1-based indexing for insert_at
+      @grid_view_preference.insert_at(index + 1)
 
-      if @grid_view_preference.save
-        respond_to do |format|
-          format.json { head :no_content }
-        end
-      else
-        respond_to do |format|
-          format.json { render json: { error: 'Failed to update sequence' }, status: :unprocessable_entity }
-        end
+      respond_to do |format|
+        format.json { head :no_content }
       end
     else
       respond_to do |format|

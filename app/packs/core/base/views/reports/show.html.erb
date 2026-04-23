@@ -150,7 +150,13 @@
 <% end %>
 <div>
   <% if policy(@report).edit? %>
-    <%= link_to  t_common(:edit), edit_report_path(@report), {class: "btn btn-outline-primary ti ti-pencil"} %>
+    <% if @report.report_builder? %>
+      <%= link_to edit_report_builder_path(@report), class: "btn btn-outline-primary" do %>
+        <i class="ti ti-wand me-1"></i>Open Builder
+      <% end %>
+    <% else %>
+      <%= link_to  t_common(:edit), edit_report_path(@report), {class: "btn btn-outline-primary ti ti-pencil"} %>
+    <% end %>
     <%= button_to t_common(:delete), @report, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
 
 

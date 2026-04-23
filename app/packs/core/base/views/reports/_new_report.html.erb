@@ -1,4 +1,4 @@
-<div data-controller="reports" class="row">
+<div data-controller="reports" class="row" style="align-items: center; gap: 0.5rem">
     <div class="col">
         <div class="row">
             <input type="text" class="form-control" placeholder="Search" data-action="input->reports#search">
@@ -23,4 +23,12 @@
         </div>
         <% end %>
     </div>
+
+    <% if policy(Report.new).create? %>
+    <div class="col-auto">
+      <%= link_to new_report_builder_path, class: "btn btn-outline-primary btn-sm" do %>
+        <i class="ti ti-wand me-1"></i>Builder Report
+      <% end %>
+    </div>
+    <% end %>
 </div>

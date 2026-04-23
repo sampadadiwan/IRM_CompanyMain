@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_11_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_22_224543) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3071,6 +3071,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_11_120000) do
     t.string "notification_start_unit", default: "days"
     t.datetime "notify_last_run_at"
     t.datetime "notify_next_run_at"
+    t.boolean "report_builder", default: false, null: false
     t.boolean "send_notification", default: false
     t.string "tag_list"
     t.json "template"

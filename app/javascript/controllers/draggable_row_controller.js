@@ -41,29 +41,37 @@ export default class DraggableRowController extends Controller {
   }
 
   sendColumnInfo(draggingElement) {
-    const targetClass = `column_${draggingElement.dataset.key}`
-    const updatedColumns = Array.from(document.getElementsByClassName('column'))
-    const draggedIndex = updatedColumns.findIndex(column => 
-      column.classList.contains(targetClass)
-    );
+    const rowId = draggingElement.dataset.rowId;
+    const rows = Array.from(this.element.querySelectorAll('tbody tr.column'));
+    const newIndex = rows.indexOf(draggingElement);
 
-    const columnInfo = {
-      index: draggedIndex,
-      key: draggingElement.dataset.key
-    };
+    if (newIndex === -1) return;
 
-    $.ajax({
-      url: `/grid_view_preferences/${draggingElement.dataset.rowId}/update_column_sequence.json`,
-      type: 'PATCH',
-      dataType: 'json',
-      data: columnInfo,
-      success: function(response) {
-        console.log('Update successful!');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    fetch(`/grid_view_preferences/${rowId}/update_column_sequence.json`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        'Accept': 'application/json'
       },
-      error: function(xhr) {
-        console.log('Update failed: ' + xhr.responseText);
+      body: JSON.stringify({ index: newIndex })
+    })
+    .then(response => {
+      if (response.ok) {
+        console.log('Sequence updated successfully');
+        // Trigger preview refresh if the report-builder controller is present
+        const rbController = this.element.closest('[data-controller~="report-builder"]');
+        if (rbController) {
+          const stimulusController = this.application.getControllerForElementAndIdentifier(rbController, 'report-builder');
+          if (stimulusController) stimulusController.loadPreview();
+        }
+      } else {
+        console.error('Failed to update sequence');
       }
-    });
+    })
+    .catch(error => console.error('Error updating sequence:', error));
   }
 
   dragEnd(event) {
