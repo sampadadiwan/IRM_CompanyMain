@@ -58,7 +58,7 @@ module PortfolioCompanyAssistantTools
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
+    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
       q = (query || {}).with_indifferent_access
       q[:aggregate_field] ||= aggregate_field if aggregate_field.present?
       q[:group_by] ||= group_by_field if group_by_field.present?
@@ -89,7 +89,7 @@ module PortfolioCompanyAssistantTools
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
+    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
       return { error: "At least one filter (scope, query, or aggregate) must be provided for list_portfolio_investments for this company as the dataset is too large." }.to_json if scope.blank? && (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
 
       q = (query || {}).with_indifferent_access
@@ -122,7 +122,7 @@ module PortfolioCompanyAssistantTools
       @data_manager = data_manager
     end
 
-    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
+    def execute(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
       return { error: "At least one filter (scope, query, or aggregate) must be provided for list_portfolio_kpis for this company as the dataset is too large." }.to_json if scope.blank? && (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
 
       q = (query || {}).with_indifferent_access
@@ -152,7 +152,7 @@ module PortfolioCompanyAssistantTools
       @data_manager = data_manager
     end
 
-    def execute(query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil)
+    def execute(query: {}, sort: nil, limit: nil, aggregate: nil, aggregate_field: nil, group_by_field: nil, **_kwargs)
       return { error: "A query filter or aggregate must be provided for list_fund_ratios for this company as the dataset is too large." }.to_json if (query.blank? || query.values.all?(&:blank?)) && aggregate.blank?
 
       q = (query || {}).with_indifferent_access

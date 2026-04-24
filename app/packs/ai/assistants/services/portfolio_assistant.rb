@@ -12,11 +12,6 @@ class PortfolioAssistant < BaseAssistant
     @data_manager = PortfolioAssistantDataManager.new(user: user)
   end
 
-  # Expose entity from the user so tools can access it via @assistant.entity.
-  # Required by BaseAssistantTools#generate_chart_html to pass entity-specific API keys
-  # to ChartAgentService. Without this, calling @assistant.entity raises NoMethodError.
-  delegate :entity, to: :@user
-
   def tools
     [
       PortfolioAssistantTools::ListPortfolioCompanies.new(@data_manager),

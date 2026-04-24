@@ -283,9 +283,10 @@ class PortfolioAssistantDataManager
   # @param sort [String, nil] Sort string.
   # @param limit [Integer, nil] Maximum number of records to return.
   # @param aggregate [String, nil] Type of aggregation to perform.
+  # @param scope [String, nil] Optional scope name to filter fund ratios (e.g., "latest").
   # @return [Array<Hash>] List of fund ratios.
-  def list_fund_ratios(portfolio_company_id: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
-    Rails.logger.debug { "[PortfolioAssistantDataManager] list_fund_ratios called with portfolio_company_id: #{portfolio_company_id.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
+  def list_fund_ratios(portfolio_company_id: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    Rails.logger.debug { "[PortfolioAssistantDataManager] list_fund_ratios called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
     ransack_query = query || {}
     ransack_query[:s] ||= sort if sort.present?
     ransack_query[:owner_id_eq] = portfolio_company_id if portfolio_company_id.present?

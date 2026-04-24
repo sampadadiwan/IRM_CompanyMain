@@ -25,8 +25,8 @@ class PortfolioCompanyAssistantDataManager < PortfolioAssistantDataManager
   end
 
   # Lists fund ratios for the mandatory portfolio company.
-  def list_fund_ratios(query: {}, sort: nil, limit: nil, aggregate: nil)
-    super(portfolio_company_id: @portfolio_company.id, query: query, sort: sort, limit: limit, aggregate: aggregate)
+  def list_fund_ratios(scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
+    super(portfolio_company_id: @portfolio_company.id, scope: scope, query: query, sort: sort, limit: limit, aggregate: aggregate)
   end
 
   # Lists documents for the mandatory portfolio company.

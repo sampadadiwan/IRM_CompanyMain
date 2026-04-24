@@ -8,6 +8,17 @@ require 'ostruct'
 class BaseAssistant
   attr_reader :data_manager
 
+  # Exposes the tenant Entity via the assistant so tools (e.g. chart tools) can read
+  # entity-specific LLM API keys. {BaseAssistantTools#generate_chart_html} passes
+  # +@assistant.entity+ to {ChartAgentService}, which forwards it to
+  # {LlmService.ruby_llm_chat} for per-tenant key selection and billing.
+  # Defined here (rather than in each subclass) so every assistant inherits it;
+  # {BaseAssistant#initialize} guarantees +@user+ is set before any tool runs.
+  #
+  # @!method entity
+  #   @return [Entity, nil] the entity associated with the current user
+  delegate :entity, to: :@user
+
   AI_TIMEOUT = ENV.fetch('AI_ASSISTANT_TIMEOUT', '180').to_i.seconds
 
   def initialize(user:, chat: nil)
