@@ -9,7 +9,7 @@
   fund_ids ||= @selected_fund_ids.presence || Array(params[:fund_ids]).presence || @funds.pluck(:id).presence || []
   allowed_plot_params = ["fmv", "bought_amount"]
   plot_param ||= args[:plot].present? ? args[:plot] : "fmv"
-  title = args[:title] || tags&.titleize || "Portfolio Company Charts"
+  title = args[:title] || tags || "Portfolio Company Charts"
 
   # Default behavior: show_portfolio_company_wise is true if no other parameter is set
   show_sector_wise = args[:show_sector_wise] == true
@@ -17,6 +17,8 @@
   show_table = args.key?(:show_table) ? args[:show_table] == true : true
   show_chart = args.key?(:show_chart) ? args[:show_chart] == true : true
   table_limit = args[:table_limit] || 10
+
+  unique_id = args[:unique_id] || SecureRandom.hex(4)
 %>
 
 <% valid_plot_param = allowed_plot_params.include?(plot_param.downcase) %>
@@ -32,7 +34,7 @@
           <% if show_sector_wise %>
             <div class="<%= (show_sector_wise && show_portfolio_company_wise) ? 'col-12 col-lg-6' : 'col-12' %>">
 
-              <%= investment_chart_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sectors_to_include, plot_param, limit: table_limit) if show_chart %>
+              <%= investment_chart_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sectors_to_include, plot_param, limit: table_limit, id: "investment_chart_by_sectors_chart_#{current_user.entity.id}_#{unique_id}") if show_chart %>
               <% if show_table %>
                 <% grouped = investment_grouped_data_by_sectors(current_user.entity, fund_ids, portfolio_company_ids, sectors_to_include, plot_param) rescue [] %>
                 <% table_data = process_table_data(grouped, limit: table_limit) %>
@@ -92,7 +94,7 @@
           <% if show_portfolio_company_wise %>
             <div class="<%= (show_sector_wise && show_portfolio_company_wise) ? 'col-12 col-lg-6' : 'col-12' %>">
 
-              <%= investment_chart_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids, limit: table_limit) if show_chart %>
+              <%= investment_chart_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids, limit: table_limit, id: "investment_chart_by_companies_chart_#{current_user.entity.id}_#{unique_id}") if show_chart %>
               <% if show_table %>
               <% grouped = investment_grouped_data_by_companies(current_user.entity, fund_ids, plot_param, portfolio_company_ids) rescue [] %>
               <% table_data = process_table_data(grouped, limit: table_limit) %>

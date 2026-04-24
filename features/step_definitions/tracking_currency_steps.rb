@@ -21,7 +21,9 @@ end
 
 Given('I trigger the tracking currency job again') do
   click_on("Actions")
+  expect(page).to have_css('#misc_action_menu', visible: true)
   find('#misc_action_menu').hover
+  expect(page).to have_button("Generate Tracking Numbers", visible: true)
   click_on("Generate Tracking Numbers")
   sleep(3)
 end

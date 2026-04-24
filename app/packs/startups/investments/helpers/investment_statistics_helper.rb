@@ -4,7 +4,7 @@ module InvestmentStatisticsHelper
   ].freeze
 
   # TODO: Identical method exists in FundStatisticsHelper - consider refactoring to a common helper if needed in multiple places
-  def pie_chart_with_options(data, chart_type: "donut", custom_colors: false)
+  def pie_chart_with_options(data, chart_type: "donut", custom_colors: false, **extra_options)
     chart_type = chart_type.to_s.downcase
     inner_size = chart_type == "pie" ? nil : "50%"
     semi       = chart_type == "half_donut"
@@ -32,20 +32,18 @@ module InvestmentStatisticsHelper
 
     # When custom_colors: true (e.g. called from a branded widget), use CSS vars
     # --pie-color-1..10 defined in the custom stylesheet (e.g. kedaara.css).
-    # Otherwise fall back to PIE_CHART_COLORS for > 8 slices, and let Chartkick's
-    # own 8 global colors handle smaller datasets.
-    chartkick_default_color_count = 8 # can use Chartkick.options[:colors]&.size but avoiding a method call
-    if data.size > chartkick_default_color_count
-      base_colors = custom_colors ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
-      extended_colors = base_colors.dup
+    # Otherwise fall back to PIE_CHART_COLORS.
+    base_colors = custom_colors ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
+    extended_colors = base_colors.dup
+    if extended_colors.size < data.size
       loop do
         extended_colors += base_colors[1..] # Always start from index 1 to avoid adjacency
         break if extended_colors.size >= data.size
       end
-      options[:colors] = extended_colors
     end
+    options[:colors] = extended_colors
 
-    pie_chart data, **options
+    pie_chart data, **options.deep_merge(extra_options)
   end
 
   # 1. Column Chart for Amount by Funding Round

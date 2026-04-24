@@ -24,12 +24,13 @@ end
 
 Then("I see AllocationRun created") do
 	visit allocate_form_fund_path(@fund.id, run_allocations: true)
+	eventually { expect(AllocationRun.last).to be_present }
 	@allocation_run = AllocationRun.last
 	within('table') do
     expect(page).to have_css('tr', text: @allocation_run.start_date.strftime('%d/%m/%Y'))
     expect(page).to have_css('tr', text: @allocation_run.end_date.strftime('%d/%m/%Y'))
   end
-  expect(AccountEntry.last).to(be_present)
+  eventually { expect(AccountEntry.last).to(be_present) }
 end
 
 Given("I lock the AllocationRun") do

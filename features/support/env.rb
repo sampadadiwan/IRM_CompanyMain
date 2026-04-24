@@ -34,7 +34,7 @@ SimpleCov.start
 # recommended as it will mask a lot of errors for you!
 #
 ActionController::Base.allow_rescue = false
-Cucumber::Rails::Database.autorun_database_cleaner = false
+Cucumber::Rails::Database.autorun_database_cleaner = true
 
 # Remove/comment out the lines below if your app doesn't have a database.
 # For some databases (like MongoDB and CouchDB) you may need to use :truncation instead.
@@ -51,7 +51,6 @@ rescue NameError => e
 end
 
 Before do |scenario|
-  DatabaseCleaner.start
   puts "Starting scenario: #{scenario.name}"
   puts "Capybara.app_host: #{Capybara.app_host}"
   puts "Capybara.server_host: #{Capybara.server_host}"
@@ -71,7 +70,6 @@ end
 # end
 
 After do |scenario|
-  DatabaseCleaner.clean
   next unless scenario.failed?
 
   exception = scenario.exception
@@ -160,19 +158,39 @@ end
 # Cucumber::Rails::Database.javascript_strategy = :truncation
 
 Capybara.run_server = true
-Capybara.server_port = (3000 + ENV['TEST_ENV_NUMBER'].to_i)
+port = (3100 + ENV['TEST_ENV_NUMBER'].to_i)
+Capybara.server_port = port
 # Capybara.default_max_wait_time = 5
 
 Capybara.register_server :puma do |app, _port, host|
   require 'puma'
   Puma::Server.new(app).tap do |s|
-    s.add_tcp_listener host, (3000 + ENV['TEST_ENV_NUMBER'].to_i)
-    puts "Starting Puma on #{host}:#{3000 + ENV['TEST_ENV_NUMBER'].to_i}"
+    s.add_tcp_listener host, port
+    puts "Starting Puma on #{host}:#{port}"
   end.run.join
 end
 
 Capybara.server_host = "localhost"
-Capybara.app_host = "http://localhost:#{3000 + ENV['TEST_ENV_NUMBER'].to_i}"
+Capybara.app_host = "http://localhost:#{port}"
+
+# Override environment variables for parallel tests
+ENV['HOST'] = "localhost:#{port}"
+ENV['DOMAIN'] = "localhost:#{port}"
+ENV['BASE_URL'] = "http://localhost:#{port}"
+ENV['BASE_DOMAIN'] = "localhost:#{port}"
+ENV['SITES'] = "{'local': 'http://localhost:#{port}', 'in': 'http://localhost:#{port}'}"
+
+# Update Rails default url options
+Rails.application.routes.default_url_options[:host] = ENV['HOST']
+
+# Ensure unique logging per parallel process
+if ENV['TEST_ENV_NUMBER'].present?
+  log_path = Rails.root.join("log/test_#{ENV['TEST_ENV_NUMBER']}.log")
+  Rails.logger = ActiveSupport::Logger.new(log_path)
+  Rails.logger.formatter = config.log_formatter if defined?(config) && config.respond_to?(:log_formatter)
+  ActiveRecord::Base.logger = Rails.logger
+end
+
 Capybara.default_max_wait_time = 10 # or more
 
 Capybara.register_driver(:playwright) do |app|
@@ -198,6 +216,17 @@ ENV["SYNC_API_BASE_URL_IN"] ||= "https://dev.altconnects.in"
 ENV["SYNC_API_BASE_URL_SG"] ||= "https://dev.altconnects.sg"
 
 module IRMUtils
+  def eventually(timeout: Capybara.default_max_wait_time)
+    start_time = Time.now
+    begin
+      yield
+    rescue RSpec::Expectations::ExpectationNotMetError, ActiveRecord::RecordNotFound, Capybara::ElementNotFound => e
+      raise e if Time.now - start_time >= timeout
+      sleep 0.5
+      retry
+    end
+  end
+
   def key_values(model, args)
     puts "Setting #{args} on #{model.class} #{model.id}"
     key_val = args.split(";").map { |kv| kv.split("=") }.to_h

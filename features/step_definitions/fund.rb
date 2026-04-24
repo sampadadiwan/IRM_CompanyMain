@@ -2796,7 +2796,7 @@ end
 Given('The distribution payment documents are approved') do
   @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
   @capital_distribution_payments.each do |cdp|
-    expect(cdp.documents.count).to be > 0
+    eventually { expect(cdp.documents.count).to be > 0 }
     cdp.documents.each do |doc|
       doc.approved = true
       res = doc.save

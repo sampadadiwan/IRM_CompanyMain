@@ -1,68 +1,73 @@
-<h1>Configure Grid View Preferences</h1>
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h3 class="card-title">Grid View Preferences: <%= @parent%></h3>
+  </div>
+  <div class="card-body">
+    <%= turbo_frame_tag "new_grid_view_preference" do %>
+    <% end %>
 
-<%= turbo_frame_tag "new_grid_view_preference" do %>
-<% end %>
+    <!-- Add New Field Form -->
+    <%= render FormCard.new(title: "Add New Field") do %>
+      <%= form_with(model: GridViewPreference.new, url: grid_view_preferences_path, method: :post, validate: true, id: "grid_view_form", data: { controller: "grid-view", grid_view_target: "form" }, local: true) do |form| %>
 
-<!-- Add New Field Form -->
-<%= render FormCard.new(title: "Add New Field") do %>
-  <%= form_with(model: GridViewPreference.new, url: grid_view_preferences_path, method: :post, validate: true, id: "grid_view_form", data: { controller: "grid-view", grid_view_target: "form" }, local: true) do |form| %>
+        <div class="form-group">
+          <%= form.label :key, "Select Grid View Name" %>
+          <%= form.select :key, options_for_select(@field_options.to_a), { prompt: 'Select the column to add' }, class: "form-control", id: "grid_view_name_select", data: { grid_view_target: "select" } %>
+          <small class="text-muted">
+            <%= link_to new_grid_view_preference_path("grid_view_preference[owner_type]": @parent.class.name,
+                                                     "grid_view_preference[owner_id]": @parent.id,
+                                                     turbo: true),
+                                                     data: { turbo_frame: "new_grid_view_preference" } do %>
+            <i class="ti ti-plus"></i> <span>Add Derived Field</span>
+          <% end %>
+          </small>
+        </div>
 
-    <div class="form-group">
-      <%= form.label :key, "Select Grid View Name" %>
-      <%= form.select :key, options_for_select(@field_options.to_a), { prompt: 'Select the column to add' }, class: "form-control", id: "grid_view_name_select", data: { grid_view_target: "select" } %>
-      <small class="text-muted"> 
-        <%= link_to new_grid_view_preference_path("grid_view_preference[owner_type]": @parent.class.name, 
-                                                 "grid_view_preference[owner_id]": @parent.id, 
-                                                 turbo: true), 
-                                                 data: { turbo_frame: "new_grid_view_preference" } do %>
-        <i class="ti ti-plus"></i> <span>Add Derived Field</span>
+        <%= form.hidden_field :owner_type, value: @parent.class.name %>
+        <%= form.hidden_field :owner_id, value: @parent.id %>
       <% end %>
-      </small>
+    <% end %>
+
+    <div class="custom_grid_view mt-4" data-controller="draggable-row" data-owner-type="<%= @parent.class.name %>" data-owner-id="<%= @parent.id %>">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Sequence</th>
+            <th>Name</th>
+            <th>Key</th>
+            <th>Label</th>
+            <th>Data Type</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @parent.grid_view_preferences.order(:sequence).each do |preference| %>
+            <tr class="column column_<%= preference.clean_key %>" data-draggable-row-target="column" draggable="true" data-key="<%= preference.clean_key %>" data-row-id="<%= preference.id %>">
+
+              <td><%= preference.sequence %></td>
+
+              <td><i class="ti ti-arrows-move handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.clean_name.titleize %></td>
+
+              <td><%= preference.clean_key %></td>
+              <td><%= preference.clean_label %></td>
+              <td><%= preference.data_type %></td>
+
+              <td>
+                <%= link_to grid_view_preference_path(preference), {class: "btn btn-outline-success"} do %>
+                  <i class="ti ti-eye"></i> <%= t_common(:show) %>
+                <% end %>
+                <%= link_to edit_grid_view_preference_path(preference), {class: "btn btn-outline-primary"} do %>
+                  <i class="ti ti-edit"></i> Edit
+                <% end %>
+                <%= button_to preference, method: :delete, class: "btn btn-outline-danger",
+                  form_class: "deleteButton", data: {msg: "This will remove the deleted Column from the Grid View. Proceed?", action: "click->confirm#popup", turbo: false} do %>
+                  <i class="ti ti-trash"></i> <%= t_common(:delete) %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     </div>
-
-    <%= form.hidden_field :owner_type, value: @parent.class.name %>
-    <%= form.hidden_field :owner_id, value: @parent.id %>
-  <% end %>
-<% end %>
-
-<div class="custom_grid_view" data-controller="draggable-row" data-owner-type="<%= @parent.class.name %>" data-owner-id="<%= @parent.id %>">
-  <table class="table table-striped">
-    <thead>
-      <tr>
-        <th>Sequence</th>
-        <th>Name</th>
-        <th>Key</th>
-        <th>Label</th>
-        <th>Data Type</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% @parent.grid_view_preferences.order(:sequence).each do |preference| %>
-        <tr class="column column_<%= preference.clean_key %>" data-draggable-row-target="column" draggable="true" data-key="<%= preference.clean_key %>" data-row-id="<%= preference.id %>">
-          
-          <td><%= preference.sequence %></td>
-
-          <td><i class="ti ti-arrows-move handle" data-bs-toggle="tooltip" data-title="Drag to reorder"></i><%= preference.clean_name.titleize %></td>
-          
-          <td><%= preference.clean_key %></td>
-          <td><%= preference.clean_label %></td>
-          <td><%= preference.data_type %></td>
-
-          <td>
-            <%= link_to grid_view_preference_path(preference), {class: "btn btn-outline-success"} do %>
-              <i class="ti ti-eye"></i> <%= t_common(:show) %>
-            <% end %>
-            <%= link_to edit_grid_view_preference_path(preference), {class: "btn btn-outline-primary"} do %>
-              <i class="ti ti-edit"></i> Edit
-            <% end %>
-            <%= button_to preference, method: :delete, class: "btn btn-outline-danger",
-              form_class: "deleteButton", data: {msg: "This will remove the deleted Column from the Grid View. Proceed?", action: "click->confirm#popup", turbo: false} do %>
-              <i class="ti ti-trash"></i> <%= t_common(:delete) %>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table>
+  </div>
 </div>

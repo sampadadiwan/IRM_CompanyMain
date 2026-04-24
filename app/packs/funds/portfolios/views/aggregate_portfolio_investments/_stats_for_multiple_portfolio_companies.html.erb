@@ -20,49 +20,67 @@
           target_currency = current_user.entity.currency
         end
         # Fetch relevant portfolio investments and cashflows for the selected investors
-        portfolio_company_investments= Pundit.policy_scope(current_user, PortfolioInvestment).where(portfolio_company_id: @investors.map(&:id))
-        portfolio_investments_fund_details = portfolio_company_investments.includes(:fund)
-        portfolio_company_cashflows = Pundit.policy_scope(current_user, PortfolioCashflow).where(portfolio_company_id: @investors.map(&:id))
-        portfolio_company_cashflows_fund_details = portfolio_company_cashflows.includes(:fund)
+        investor_ids = @investors.map(&:id)
+        portfolio_investments = Pundit.policy_scope(current_user, PortfolioInvestment)
+                                      .where(portfolio_company_id: investor_ids)
+                                      .includes(:fund, :investment_instrument, :valuation, portfolio_company: :entity)
+        
+        portfolio_cashflows = Pundit.policy_scope(current_user, PortfolioCashflow)
+                                    .where(portfolio_company_id: investor_ids)
+                                    .includes(:fund, :investment_instrument, portfolio_company: :entity)
+
         # Filter by selected funds if any
         if @selected_fund_ids.present?
-          fund_portfolio_investments = portfolio_investments_fund_details.where(fund_id: @selected_fund_ids)
-          fund_portfolio_cashflows = portfolio_company_cashflows_fund_details.where(fund_id: @selected_fund_ids)
-        else
-          fund_portfolio_investments = portfolio_company_investments
-          fund_portfolio_cashflows = portfolio_company_cashflows_fund_details
+          portfolio_investments = portfolio_investments.where(fund_id: @selected_fund_ids)
+          portfolio_cashflows = portfolio_cashflows.where(fund_id: @selected_fund_ids)
         end
+
+        # Load records into memory to avoid N+1 queries during aggregation
+        portfolio_investments = portfolio_investments.to_a
+        portfolio_cashflows = portfolio_cashflows.to_a
+
+        # Pre-fetch exchange rates for all involved entities
+        entity_ids = (portfolio_investments.map { |pi| pi.portfolio_company.entity_id } + 
+                      portfolio_cashflows.map { |pc| pc.portfolio_company.entity_id }).uniq
+        
+        all_rates = ExchangeRate.where(entity_id: entity_ids).order(as_of: :desc).to_a.group_by(&:entity_id)
+        
+        # Helper for in-memory currency conversion
+        convert_in_memory = lambda do |from, to, amount, as_of, entity_id|
+          return amount if from == to || amount.zero?
+          rates = all_rates[entity_id]&.select { |r| r.from == from && r.to == to && r.as_of <= as_of }
+          rate = rates&.first&.rate
+          rate ? (amount * rate).to_i : 0
+        end
+
         # Compute aggregated stats across all investors and funds
+        total_bought_amount_cents = 0
+        total_sold_amount_cents = 0
+        total_fmv_cents = 0
 
-        total_bought_amount_cents = fund_portfolio_investments.buys.sum do |pi|
+        portfolio_investments.each do |pi|
           # Skip master_fund investments
-          if pi.portfolio_company.json_fields["master_fund"] == "yes" && pi.fund.master_fund_id.present? && selected_fund_ids.include?(pi.fund.master_fund_id)
-            next 0
+          if pi.portfolio_company.json_fields["master_fund"] == "yes" && pi.fund.master_fund_id.present? && @selected_fund_ids.include?(pi.fund.master_fund_id)
+            next
           end
-          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity.id)
-        end
 
-        total_sold_amount_cents = fund_portfolio_investments.sells.sum do |pi|
-          if pi.portfolio_company.json_fields["master_fund"] == "yes" && pi.fund.master_fund_id.present? && selected_fund_ids.include?(pi.fund.master_fund_id)
-            next 0
+          converted_amount = convert_in_memory.call(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity_id)
+          
+          if pi.quantity.positive?
+            total_bought_amount_cents += converted_amount
+          elsif pi.quantity.negative?
+            total_sold_amount_cents += converted_amount
           end
-          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity.id)
-        end
 
-        total_fmv_cents = fund_portfolio_investments.sum do |pi|
-          if pi.portfolio_company.json_fields["master_fund"] == "yes" && pi.fund.master_fund_id.present? && selected_fund_ids.include?(pi.fund.master_fund_id)
-            next 0
-          end
           conversion_date = pi.valuation.present? ? pi.valuation.valuation_date : pi.investment_date
-          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, conversion_date, pi.portfolio_company.entity.id)
+          total_fmv_cents += convert_in_memory.call(pi.investment_instrument.currency, target_currency, pi.fmv_cents, conversion_date, pi.portfolio_company.entity_id)
         end
 
-
-        total_income_cents = fund_portfolio_cashflows.sum do |pc|
-          if pc.portfolio_company.json_fields["master_fund"] == "yes" && pc.fund.master_fund_id.present? && selected_fund_ids.include?(pc.fund.master_fund_id)
+        total_income_cents = portfolio_cashflows.sum do |pc|
+          if pc.portfolio_company.json_fields["master_fund"] == "yes" && pc.fund.master_fund_id.present? && @selected_fund_ids.include?(pc.fund.master_fund_id)
             next 0
           end
-          ExchangeRate.convert(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, pc.portfolio_company.entity.id)
+          convert_in_memory.call(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, pc.portfolio_company.entity_id)
         end
 
         all_cards_data = [

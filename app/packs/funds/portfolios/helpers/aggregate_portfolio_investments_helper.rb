@@ -1,18 +1,20 @@
 module AggregatePortfolioInvestmentsHelper
-  def investment_fmv_by_company(fund)
+  def investment_fmv_by_company(fund, **options)
     portfolio_investments = fund.portfolio_investments.includes(:portfolio_company).group(:investor_name).sum(:fmv_cents)
     grouped = portfolio_investments.map { |name, fmv_cents| [name, fmv_cents / 100.0] }
     chart_data = group_chart_data_for_pie(grouped, limit: 10)
 
-    pie_chart_with_options(chart_data, id: "investment_fmv_by_company_chart_#{fund.id}")
+    options[:id] ||= "investment_fmv_by_company_chart_#{fund.id}"
+    pie_chart_with_options(chart_data, **options)
   end
 
-  def investment_fmv_by_companies(fund, portfolio_company_ids)
+  def investment_fmv_by_companies(fund, portfolio_company_ids, **options)
     portfolio_investments = fund.portfolio_investments.includes(:portfolio_company).where(portfolio_company_id: portfolio_company_ids).group(:portfolio_company_name).sum(:fmv_cents)
     grouped = portfolio_investments.map { |name, fmv_cents| [name, fmv_cents / 100.0] }
     chart_data = group_chart_data_for_pie(grouped, limit: 10)
 
-    pie_chart_with_options(chart_data, id: "investment_fmv_by_companies_chart_#{fund.id}")
+    options[:id] ||= "investment_fmv_by_companies_chart_#{fund.id}"
+    pie_chart_with_options(chart_data, **options)
   end
 
   # Generate a pie chart for portfolio investments grouped by sector
@@ -27,11 +29,12 @@ module AggregatePortfolioInvestmentsHelper
   # @param attr [String] Attribute to sum ('fmv' or 'bought_amount')
   # @param limit [Integer] Maximum number of slices to show (default: 10)
   # @return [String] HTML for pie chart
-  def investment_chart_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr, limit: 10)
+  def investment_chart_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr, limit: 10, **options)
     grouped = investment_grouped_data_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr)
     chart_data = group_chart_data_for_pie(grouped, limit: limit)
 
-    pie_chart_with_options(chart_data, id: "investment_chart_by_sectors_chart_#{entity.id}")
+    options[:id] ||= "investment_chart_by_sectors_chart_#{entity.id}"
+    pie_chart_with_options(chart_data, **options)
   end
 
   # Generate a pie chart for portfolio investments grouped by company
@@ -45,30 +48,33 @@ module AggregatePortfolioInvestmentsHelper
   # @param portfolio_company_ids [Array<Integer>] Portfolio company IDs to filter by
   # @param limit [Integer] Maximum number of slices to show (default: 10)
   # @return [String] HTML for pie chart
-  def investment_chart_by_companies(entity, fund_ids, attr, portfolio_company_ids = [], limit: 10)
+  def investment_chart_by_companies(entity, fund_ids, attr, portfolio_company_ids = [], limit: 10, **options)
     grouped = investment_grouped_data_by_companies(entity, fund_ids, attr, portfolio_company_ids)
     chart_data = group_chart_data_for_pie(grouped, limit: limit)
 
-    pie_chart_with_options(chart_data, id: "investment_chart_by_companies_chart_#{entity.id}")
+    options[:id] ||= "investment_chart_by_companies_chart_#{entity.id}"
+    pie_chart_with_options(chart_data, **options)
   end
 
-  def investment_bought_by_company(fund)
+  def investment_bought_by_company(fund, **options)
     portfolio_investments = fund.portfolio_investments.buys.where(quantity: 0..).includes(:portfolio_company).group(:investor_name).sum(:amount_cents)
     grouped = portfolio_investments.map { |name, amount_cents| [name, amount_cents / 100.0] }
     chart_data = group_chart_data_for_pie(grouped, limit: 10)
 
-    pie_chart_with_options(chart_data, id: "investment_bought_by_company_chart_#{fund.id}")
+    options[:id] ||= "investment_bought_by_company_chart_#{fund.id}"
+    pie_chart_with_options(chart_data, **options)
   end
 
-  def investment_sold_by_company(fund)
+  def investment_sold_by_company(fund, **options)
     portfolio_investments = fund.portfolio_investments.sells.includes(:portfolio_company).group(:investor_name).sum(:amount_cents)
     grouped = portfolio_investments.map { |name, amount_cents| [name, amount_cents / 100.0] }
     chart_data = group_chart_data_for_pie(grouped, limit: 10)
 
-    pie_chart_with_options(chart_data, id: "investment_sold_by_company_chart_#{fund.id}")
+    options[:id] ||= "investment_sold_by_company_chart_#{fund.id}"
+    pie_chart_with_options(chart_data, **options)
   end
 
-  def investment_holding_cost_by_company(fund)
+  def investment_holding_cost_by_company(fund, **options)
     portfolio_investments = fund.portfolio_investments.buys.group_by(&:portfolio_company_name)
 
     grouped = portfolio_investments.transform_values do |pis|
@@ -79,38 +85,45 @@ module AggregatePortfolioInvestmentsHelper
     chart_ready = grouped.map { |name, value| [name, value.to_f] }
     chart_data = group_chart_data_for_pie(chart_ready, limit: 10)
 
-    pie_chart_with_options(chart_data, id: "investment_holding_cost_by_company_chart_#{fund.id}")
+    options[:id] ||= "investment_holding_cost_by_company_chart_#{fund.id}"
+    pie_chart_with_options(chart_data, **options)
   end
 
-  def bought_sold_fmv(fund)
+  def bought_sold_fmv(fund, **options)
     aggregate_portfolio_investments = fund.aggregate_portfolio_investments
     grouped = aggregate_portfolio_investments
               .map { |k| [k.portfolio_company_name, k.fmv.to_d, k.bought_amount.to_d, k.sold_amount.to_d] }
+
+    options[:id] ||= "bought_sold_fmv_chart_#{fund.id}"
+    options[:library] ||= {}
+    options[:library].deep_merge!({
+      plotOptions: {
+        column: {
+          pointWidth: 40,
+          dataLabels: {
+            enabled: false,
+            format: "{point.y:,.2f}"
+          }
+        }
+      },
+      **chart_theme_color
+    })
 
     column_chart [
       { name: "Bought", data: grouped.map { |k| [k[0], k[2]] } },
       { name: "Sold", data: grouped.map { |k| [k[0], k[3]] } },
       { name: "FMV", data: grouped.map { |k| [k[0], k[1]] } }
-    ], id: "bought_sold_fmv_chart_#{fund.id}", library: {
-      plotOptions: {
-        column: {
-          pointWidth: 40,
-          dataLabels: {
-            enabled: false,
-            format: "{point.y:,.2f}"
-          }
-        }
-      },
-      **chart_theme_color
-    }
+    ], **options
   end
 
-  def buy_sell_timeline(fund)
+  def buy_sell_timeline(fund, **options)
     buy_data = fund.portfolio_investments.buys.group_by { |pi| pi.investment_date.year }.map { |k, arr| [k, arr.inject(0) { |sum, element| sum + element.amount.to_d }] }
 
     sell_data = fund.portfolio_investments.sells.group_by { |pi| pi.investment_date.year }.map { |k, arr| [k, arr.inject(0) { |sum, element| sum + element.amount.to_d }] }
 
-    column_chart [{ name: "Buys", data: buy_data }, { name: "Sells", data: sell_data }], id: "buy_sell_timeline_chart_#{fund.id}", library: {
+    options[:id] ||= "buy_sell_timeline_chart_#{fund.id}"
+    options[:library] ||= {}
+    options[:library].deep_merge!({
       plotOptions: {
         column: {
           pointWidth: 40,
@@ -121,7 +134,9 @@ module AggregatePortfolioInvestmentsHelper
         }
       },
       **chart_theme_color
-    }
+    })
+
+    column_chart [{ name: "Buys", data: buy_data }, { name: "Sells", data: sell_data }], **options
   end
 
   # Return grouped data for sectors as array of [sector_name, value_in_dollars]

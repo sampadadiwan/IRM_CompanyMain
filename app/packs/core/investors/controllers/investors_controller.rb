@@ -38,14 +38,14 @@ class InvestorsController < ApplicationController
 
     if params[:multi_portfolio_dashboard].present? || params[:portfolio_agent_run].present?
       # Get portfolio companies first
-      base_investors = @investors.portfolio_companies
+      base_investors = current_user.entity.investors.portfolio_companies
 
       # Build tags and sectors options from ALL portfolio companies (before filtering)
-      @tags_for_select = base_investors.pluck(:tag_list).map { |tag_list| tag_list&.split(",")&.map(&:strip) }.flatten.uniq.compact_blank.sort
-      @sectors_for_select = base_investors.pluck(:sector).map { |sectors| sectors&.split(",")&.map(&:strip) }.flatten.uniq.compact_blank.sort
+      @tags_for_select = base_investors.pluck(:tag_list).compact.flat_map { |t| t.split(",") }.map(&:strip).uniq.compact_blank.sort
+      @sectors_for_select = base_investors.pluck(:sector).compact.flat_map { |s| s.split(",") }.map(&:strip).uniq.compact_blank.sort
 
       # Now apply filters
-      @investors = base_investors
+      @investors = @investors.portfolio_companies
       @investors = @investors.with_tag_list(params[:tag_list]) if params[:tag_list].present?
       @investors = @investors.in_sector(params[:sector]) if params[:sector].present?
     end
@@ -115,8 +115,8 @@ class InvestorsController < ApplicationController
     params[:filter] = true
 
     # Initialize empty arrays - will be populated in index method
-    @tags_for_select = []
-    @sectors_for_select = []
+    @tags_for_select ||= []
+    @sectors_for_select ||= []
   end
 
   def setup_portfolio_agent_run
@@ -125,8 +125,8 @@ class InvestorsController < ApplicationController
     params[:filter] = true
 
     # Initialize empty arrays - will be populated in index method
-    @tags_for_select = []
-    @sectors_for_select = []
+    @tags_for_select ||= []
+    @sectors_for_select ||= []
 
     # Get available support agents for the current entity
     @support_agents = SupportAgent.where(entity_id: current_user.entity_id)

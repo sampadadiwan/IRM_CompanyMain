@@ -56,6 +56,8 @@ class AggregatePortfolioInvestment < ApplicationRecord
     "Tracking Sold Amount; num-col" => "tracking_sold_amount; num-col"
   }.freeze
 
+  ADDITIONAL_COLUMNS_FROM = %w[portfolio_company investment_instrument].freeze
+
   STANDARD_COLUMNS_WITH_FUND = { "Fund Name; text-col" => "fund_name; text-col" }.merge(STANDARD_COLUMNS).freeze
   INVESTOR_TAB_STANDARD_COLUMNS = STANDARD_COLUMNS_WITH_FUND.except("Portfolio Company; text-col").freeze
 

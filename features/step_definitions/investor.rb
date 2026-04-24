@@ -1276,7 +1276,7 @@ def docusign_retrieve_signed_response_first_signed
 end
 
 def hit_signature_progress(payload)
-  url = URI.parse('http://localhost:3000/documents/signature_progress')
+  url = URI.parse("#{Capybara.app_host}/documents/signature_progress")
   http = Net::HTTP.new(url.host, url.port)
 
   # Create a request
@@ -1587,7 +1587,7 @@ Given('there is an incoming email sent for this investor {string}') do |args|
   @incoming_email = FactoryBot.build(:incoming_email)
   key_values(@incoming_email, args)
 
-  RAILS_APP_URL = "http://localhost:3000/incoming_emails/sendgrid"
+  rails_app_url = "#{Capybara.app_host}/incoming_emails/sendgrid"
 
   # Construct the request payload
   email_payload = {
@@ -1611,7 +1611,7 @@ Given('there is an incoming email sent for this investor {string}') do |args|
   json_payload = email_payload.to_json
 
   # Create URI object
-  uri = URI.parse(RAILS_APP_URL)
+  uri = URI.parse(rails_app_url)
 
   # Send HTTP POST request
   http = Net::HTTP.new(uri.host, uri.port)

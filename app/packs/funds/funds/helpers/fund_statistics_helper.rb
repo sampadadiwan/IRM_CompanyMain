@@ -32,18 +32,16 @@ module FundStatisticsHelper
 
     # When custom_colors: true (e.g. called from a branded widget), use CSS vars
     # --pie-color-1..10 defined in the custom stylesheet (e.g. kedaara.css).
-    # Otherwise fall back to PIE_CHART_COLORS for > 8 slices, and let Chartkick's
-    # own 8 global colors handle smaller datasets.
-    chartkick_default_color_count = 8 # can use Chartkick.options[:colors]&.size but avoiding a method call
-    if data.size > chartkick_default_color_count
-      base_colors = custom_colors ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
-      extended_colors = base_colors.dup
+    # Otherwise fall back to PIE_CHART_COLORS.
+    base_colors = custom_colors ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
+    extended_colors = base_colors.dup
+    if extended_colors.size < data.size
       loop do
         extended_colors += base_colors[1..] # Always start from index 1 to avoid adjacency
         break if extended_colors.size >= data.size
       end
-      options[:colors] = extended_colors
     end
+    options[:colors] = extended_colors
 
     pie_chart data, **options.deep_merge(extra_options)
   end

@@ -4,7 +4,7 @@ import { Controller } from "@hotwired/stimulus"
 // Makes the side by side company and sector others lists toggleable and maintains same size
 export default class extends Controller {
   connect() {
-    document.querySelectorAll('[data-role="company-others-toggle"]').forEach(btn => {
+    this.element.querySelectorAll('[data-role="company-others-toggle"]').forEach(btn => {
       btn.onclick = () => {
         const icon = btn.querySelector('[data-role="company-others-toggle-icon"]')
         if (icon) icon.textContent = icon.textContent === "▸" ? "▾" : "▸"
@@ -17,7 +17,7 @@ export default class extends Controller {
       }
     })
 
-    document.querySelectorAll('[data-role="sector-others-toggle"]').forEach(btn => {
+    this.element.querySelectorAll('[data-role="sector-others-toggle"]').forEach(btn => {
       btn.onclick = () => {
         const icon = btn.querySelector('[data-role="sector-others-toggle-icon"]')
         if (icon) icon.textContent = icon.textContent === "▸" ? "▾" : "▸"

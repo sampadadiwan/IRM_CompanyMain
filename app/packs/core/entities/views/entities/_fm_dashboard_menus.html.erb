@@ -23,6 +23,26 @@
     <div class="col-md">
         <div class="card">
         <div class="card-body">
+            <a href="<%= investors_path(multi_portfolio_dashboard: true) %>">
+                <div class="d-flex flex-row align-items-center">
+                <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-info">
+                    <i class="ti ti-layout-dashboard fs-6"></i>
+                </div>
+                <div class="ms-3 align-self-center">
+                    <h3 class="mb-0 fs-6">
+                        <%= t('entities.fm_dashboard_menus.portfolio_dashboard') %>
+                    </h3>
+                    <span class="text-muted">Analyze Portfolio</span>
+                </div>
+                </div>
+            </a>
+        </div>
+        </div>
+    </div>
+
+    <div class="col-md">
+        <div class="card">
+        <div class="card-body">
             <a href="<%= quick_links_path(tags: "Fund") %>">
                 <div class="d-flex flex-row align-items-center">
                 <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
