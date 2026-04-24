@@ -57,7 +57,10 @@ test: &test
   adapter: sqlite3
   pool: 15
   timeout: 10000
-  database: tmp/test_<%= ENV['TEST_ENV_NUMBER'] %>.sqlite3
+  # File based database, but can be slow
+  # database: tmp/test_<%= ENV['TEST_ENV_NUMBER'] %>.sqlite3
+  # RAM speed, but behaves exactly like a standard file. No issues with schema loading or multi-connection sharing.
+  database: /dev/shm/test_<%= ENV['TEST_ENV_NUMBER'] %>.sqlite3
   # database: ":memory:" # Use an in-memory database
 
 test2: &test
