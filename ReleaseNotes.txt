@@ -1,3 +1,13 @@
+V9.2.25
+54cf0aa34 (HEAD -> main, origin/main, origin/HEAD) Mp dashboard fixes (#1382)
+ba97144d4 Kedaara 11 3 (#1381)
+dfeb97e14 Added kyc level dist notice generation (#1305)
+832110c7a Delegate :entity to user in BaseAssistant so chart tools work across … (#1372)
+e503d7d23 Enable Paralle tests (#1377)
+c25229686 Feature/report builder v2 (#1376)
+cd77b0174 Refactor duplicate check in ImportExchangeRate to raise an error directly
+168432c24 Update ReleaseNotes.txt for version 9.2.24 with recent changes
+8728584e9 Report builder (#1375)
 
 
 V9.2.24
