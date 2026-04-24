@@ -173,7 +173,7 @@
   <% end %>
 </div>
 
-<div class="container-fluid px-3 pb-3">
+<div class="container-fluid px-3 pb-3" id="capital_distribution_<%= @capital_distribution.id %>_actions">
   <% if policy(@capital_distribution).update? %>
     <%= link_to edit_capital_distribution_path(@capital_distribution), class: "btn btn-outline-primary" do %>
       <i class="ti ti-edit"></i> <%= t_common(:edit) %>

@@ -67,20 +67,33 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # Generated Distribution Notice For all thhe payment
   def generate_docs
-    CapitalDistributionPaymentDocJob.perform_later(@capital_distribution_payment.capital_distribution_id, @capital_distribution_payment.id, current_user.id)
-    redirect_to capital_distribution_payment_path(@capital_distribution_payment), notice: "Documentation generation started, please check back in a few mins."
+    # If skip_call_notice is set to yes in the folio then notice will not be generated for this dist payment
+    # skip_call_notice is used and not skip_dist notice to keep things simple
+    if @capital_distribution_payment.capital_commitment.skip_call_notice?
+      redirect_to capital_distribution_payment_path(@capital_distribution_payment), alert: "Notice cannot be generated as skip_call_notice is set to Yes in the Commitment"
+    else
+      # If call_notice_on is set to kyc in the fund json_fields then notice will be generated with KYC level data
+      dist_notice_per_kyc = @capital_distribution_payment.fund.json_fields["call_notice_on"].to_s.strip.downcase == "kyc"
+      CapitalDistributionPaymentDocJob.perform_later(@capital_distribution_payment.capital_distribution_id, @capital_distribution_payment.id, current_user.id, options: { dist_notice_per_kyc: dist_notice_per_kyc })
+      redirect_to capital_distribution_payment_path(@capital_distribution_payment), notice: "Documentation generation started, please check back in a few mins."
+    end
   end
 
   def send_notification
-    result = CapitalDistributionPaymentSendNotification.call(capital_distribution_payment: @capital_distribution_payment, force_notification: true)
-    msg = result[:notification_message]
-    respond_to do |format|
-      if result.success?
-        format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: msg }
-        format.json { render :show, status: :ok, location: @capital_distribution_payment }
-      else
-        format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), alert: "#{msg}. #{@capital_distribution_payment.errors.full_messages.join(', ')}" }
-        format.json { render json: @capital_distribution_payment.errors, status: :unprocessable_entity }
+    # If dist notice generation is skipped then notification should also be skipped
+    if @capital_distribution_payment.capital_commitment.skip_call_notice?
+      redirect_to capital_distribution_payment_path(@capital_distribution_payment), alert: "Notification cannot be sent as skip_call_notice is set to Yes in the Commitment"
+    else
+      result = CapitalDistributionPaymentSendNotification.call(capital_distribution_payment: @capital_distribution_payment, force_notification: true)
+      msg = result[:notification_message]
+      respond_to do |format|
+        if result.success?
+          format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), notice: msg }
+          format.json { render :show, status: :ok, location: @capital_distribution_payment }
+        else
+          format.html { redirect_to capital_distribution_payment_url(@capital_distribution_payment), alert: "#{msg}. #{@capital_distribution_payment.errors.full_messages.join(', ')}" }
+          format.json { render json: @capital_distribution_payment.errors, status: :unprocessable_entity }
+        end
       end
     end
   end

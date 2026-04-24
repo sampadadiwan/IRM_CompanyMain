@@ -3019,8 +3019,14 @@ Then('remittance notice must be generated for the latest remittance for each kyc
   # Group by KYC (through the commitment)
   call_template_name = @capital_call.fund.documents.where(owner_tag: "Call Template").last.name
   remittances.group_by { |cr| cr.capital_commitment.investor_kyc_id }.each_value do |group|
-    # If only one remittance for that KYC, nothing to "earlier" update
-    next if group.size <= 1
+    # If only one remittance for that KYC, then it should have the notice generated, so we will check that in the loop itself. We only need this "earlier remittance" logic if there are multiple remittances for the same KYC
+
+    if group.size == 1
+      cr = group.first
+      puts "Only one remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id}, checking if notice is generated"
+      cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+      next
+    end
 
     # Take all except the latest (last in the sorted group)
     group[0..-2].each do |cr|
@@ -3042,4 +3048,209 @@ end
 Given('I go to fund page with debug mode enabled') do
    @fund ||= Fund.last
   visit(fund_url(@fund, debug: true))
+end
+
+
+Given('The capital distribution payments are approved') do
+  CapitalDistributionPayment.where(capital_distribution: @capital_distribution).each do |cdp|
+    cdp.approved = true
+    res = cdp.save
+    puts "Capital distribution payment #{cdp.id} approved: #{res}"
+  end
+end
+
+Given('the fund has a Distribution Template') do
+  @distribution_template = Document.create!(name: "Distribution Template", owner_tag: "Distribution Template",
+    owner: @fund, entity_id: @fund.entity_id, user: @user,
+    file: File.new("public/sample_uploads/Distribution notice template.docx", "r"))
+end
+
+Given('the dist payments have proper notification users') do
+  @capital_distribution ||= @fund.capital_distributions.first
+  @capital_distribution.capital_distribution_payments.each do |cdp|
+    if cdp.investor.notification_users(@fund).blank?
+      investor = cdp.investor
+      user = FactoryBot.create(:user, entity: investor.investor_entity)
+      user.permissions.set(:enable_funds)
+      user.save!
+      user.entity.permissions.set(:enable_funds)
+      user.entity.save!
+      if @fund.access_rights.where(access_to_investor_id: cdp.investor_id).blank?
+        AccessRight.create!(entity: @fund.entity, access_to_investor_id: cdp.investor_id, metadata: "investor", access_type: "Fund", owner: @fund)
+      end
+      InvestorAccess.create!(email: user.email, investor: investor, approved: true, entity: investor.entity, first_name: user.first_name, last_name: user.last_name, user: @user, email_enabled: true)
+      user.reload
+    end
+  end
+  @fund.reload
+end
+
+Given('dist notice is generated for the dist payments') do
+  @capital_distribution = @fund.capital_distributions.first
+  visit(capital_distribution_path(@capital_distribution))
+  within "#capital_distribution_#{@capital_distribution.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Generate Documents")
+  click_on("Proceed")
+  sleep(10) # Wait for the job to complete
+  expect(page).to have_content("Documentation generation started, please check back in a few mins. Each distribution payment will have the customized document attached")
+end
+
+Then('dist notice must be generated for each dist payment') do
+  @capital_distribution ||= @fund.capital_distributions.first
+  distribution_template_name = @capital_distribution.fund.documents.where(owner_tag: "Distribution Template").first.name
+  @capital_distribution.capital_distribution_payments.each do |cdp|
+    puts "Checking distribution payment #{cdp.id} for investor #{cdp.investor_name} for document #{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}"
+    puts "All Available documents for distribution payment #{cdp.id}: #{cdp.documents.pluck(:name)}"
+    puts "------------------------------------------------------------------------"
+    cdp.documents.pluck(:name).include?("#{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}").should == true
+  end
+end
+
+  # Given the distribution is approved
+Given('the distribution is approved') do
+  dists = @capital_distribution.present? ? @fund.capital_distributions.where(id: @capital_distribution.id) : @fund.capital_distributions
+  dists.update_all(approved: true)
+end
+
+Given('I trigger notification for the distribution') do
+  @capital_distribution ||= @fund.capital_distributions.first
+  visit(capital_distribution_path(@capital_distribution))
+  within "#capital_distribution_#{@capital_distribution.id}_actions" do
+    click_on("Actions")
+  end
+  click_on("Send Payment Notifications")
+  click_on("Proceed")
+  sleep(5) # Wait for the job to complete
+end
+
+Then('the notification must be sent to the investors where the distribution notice was generated') do
+  @capital_distribution ||= @fund.capital_distributions.first
+  puts "Total Notifications - #{ Noticed::Notification.count }"
+
+  distribution_template_name = @capital_distribution.fund.documents.where(owner_tag: "Distribution Template").first.name
+  @capital_distribution.capital_distribution_payments.each do |cdp|
+    if cdp.documents.pluck(:name).include?("#{distribution_template_name} - #{cdp.investor_kyc} - #{cdp.folio_id}")
+      cdp.investor.notification_users(@fund).each do |nu|
+        current_email = nil
+        emails_sent_to(nu.email).each do |email|
+          puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+          current_email = email if email.subject.include?("Capital Distribution: #{cdp.fund.name}")
+        end
+        puts "Checking email to #{nu.email} for distribution payment #{cdp.id}"
+        expect(current_email.body).to include "Please refer to the attached notice for further details or click on the link below"
+      end
+    else
+      puts "No distribution notice generated for distribution payment #{cdp.id}, skipping notification check"
+    end
+  end
+end
+
+Given('I update the dist payments commitments custom fields with the same kyc and earlier payment date {string}') do |custom_fields|
+
+  @capital_distribution ||= @fund.capital_distributions.first
+  # Load all dist payments for the distribution, with their commitments + KYC,
+  # ordered so that within each KYC group, the latest remittance is last.
+  dist_payments = @capital_distribution.capital_distribution_payments
+                             .joins(:capital_commitment)
+                             .includes(:capital_commitment)
+                             .where.not(capital_commitments: { investor_kyc_id: nil })
+                             .order(
+                               'capital_commitments.investor_kyc_id ASC',
+                               'capital_distribution_payments.payment_date ASC',
+                               'capital_distribution_payments.id ASC'
+                             )
+
+  # Group by KYC (through the commitment)
+  dist_payments.group_by { |cr| cr.capital_commitment.investor_kyc_id }.each_value do |group|
+    # If only one dist payment for that KYC, nothing to "earlier" update
+    next if group.size <= 1
+
+    # Take all except the latest (last in the sorted group)
+    group[0..-2].each do |cdp|
+      puts "Updating commitment #{cdp.capital_commitment.id} for dist payment #{cdp.id} for KYC #{cdp.capital_commitment.investor_kyc_id}"
+      # Assuming key_values(model, attrs_string) assigns attributes from attrs
+      custom_fields.split(",").each do |cf|
+        k, v = cf.split(":").map(&:strip)
+        cdp.capital_commitment.json_fields[k] = v
+      end
+      cdp.capital_commitment.save!
+    end
+  end
+end
+
+And('dist notice must be generated for the latest dist payment for each kyc') do
+
+  @capital_distribution ||= @fund.capital_distributions.first
+  # Load all dist payments for the distribution, with their commitments + KYC,
+  # ordered so that within each KYC group, the latest remittance is last.
+  dist_payments = @capital_distribution.capital_distribution_payments
+                             .joins(:capital_commitment)
+                             .includes(:capital_commitment)
+                             .where.not(capital_commitments: { investor_kyc_id: nil })
+                             .order(
+                               'capital_commitments.investor_kyc_id ASC',
+                               'capital_distribution_payments.payment_date ASC',
+                               'capital_distribution_payments.id ASC'
+                             )
+
+  # Group by KYC (through the commitment)
+  dist_template_name = @capital_distribution.fund.documents.where(owner_tag: "Distribution Template").last.name
+  dist_payments.group_by { |cr| cr.capital_commitment.investor_kyc_id }.each_value do |group|
+    # If only one dist payment for that KYC, then doc will be generated for that, so just check and move to next
+
+    if group.size == 1
+      cr = group.first
+      puts "Only one distribution payment #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id}, checking if document is generated"
+      cr.documents.pluck(:name).include?("#{dist_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+      next
+    end
+
+    # Take all except the latest (last in the sorted group)
+    group[0..-2].each do |cr|
+      puts "Checking dist payment #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id} is NOT generated"
+      cr.documents.pluck(:name).include?("#{dist_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == false
+    end
+    group.last.tap do |cr|
+      puts "Checking dist payment #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id} IS generated"
+      cr.documents.pluck(:name).include?("#{dist_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+    end
+  end
+end
+
+Given('the distribution is not manually generated') do
+  @capital_distribution ||= @fund.capital_distributions.first
+  @capital_distribution.update_columns(manual_generation: false)
+end
+
+Then('the new capital distribution payments must have the data in the sheet {string}') do |file_name|
+  file = File.open("./public/sample_uploads/#{file_name}", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  cdps = Set.new
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+
+    # create hash from headers and cells
+    row_data = [headers, row].transpose.to_h
+    capital_distribution = CapitalDistribution.where(title: row_data["Capital Distribution"].strip).first
+    investor = Investor.where(investor_name: row_data["Stakeholder"]).first
+
+    cdp = CapitalDistributionPayment.where(investor:, capital_distribution:).where.not(id: cdps.map(&:id)).first
+    cdps.add(cdp)
+    puts "Checking import of #{cdp.to_json}"
+
+    cdp.investor_name.should == row_data["Stakeholder"]
+    cdp.income.to_d.should == row_data["Income"].to_d
+    cdp.cost_of_investment.to_d.should == row_data["Face Value For Redemption"].to_d
+    cdp.payment_date.should == Date.local_parse(row_data["Payment Date"].to_s)
+    cdp.completed.should == (row_data["Completed"] == "Yes")
+    cdp.income_with_fees.to_d.should == cdp.income.to_d
+    cdp.cost_of_investment_with_fees.to_d.should == cdp.cost_of_investment.to_d
+
+    cdp.net_payable_cents.should == cdp.income_cents + cdp.net_of_account_entries_cents + cdp.cost_of_investment_cents - cdp.reinvestment_with_fees_cents
+    cdp.gross_payable_cents.should == cdp.income_cents + cdp.gross_of_account_entries_cents + cdp.cost_of_investment_cents
+  end
 end

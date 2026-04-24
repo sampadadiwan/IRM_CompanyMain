@@ -6,6 +6,8 @@ module CapitalDistributionFees
   extend ActiveSupport::Concern
   include CurrencyHelper
 
+  DISTRIBUTION_FEE_TYPES = ["FV For Redemption", "Income", "Expense", "Tax", "Reinvestment"].freeze
+
   def setup_distribution_fees
     # Sum of the account_entries ex taxes and expenses
     net_ae_cents = 0
@@ -52,8 +54,8 @@ module CapitalDistributionFees
       when "Reinvestment"
         # Add the fees to the reinvestment_with_fees_cents
         self.reinvestment_with_fees_cents += ae_cents
-        net_ae_cents += ae_cents
-        gross_ae_cents += ae_cents
+        # We now subtract reinvestment from the net_ae_cents similar to tax, expense
+        net_ae_cents -= ae_cents
       when "Tax", "Expense"
         # Subtract the fees from the income_with_fees_cents
         self.income_with_fees_cents -= ae_cents
@@ -75,8 +77,8 @@ module CapitalDistributionFees
     self.gross_of_account_entries_cents = gross_ae_cents
 
     # Set the net_payable_cents to the sum of income_cents, net_ae_cents and cost_of_investment_cents
-    # The net_ae_cents contains the amounts added to the income_with_fees_cents and cost_of_investment_with_fees_cents
-    self.net_payable_cents = income_cents + net_ae_cents + cost_of_investment_cents - reinvestment_with_fees_cents
+    # The net_ae_cents contains the fee component added to the income_with_fees_cents, cost_of_investment_with_fees_cents and reinvestment_with_fees_cents
+    self.net_payable_cents = income_cents + net_ae_cents + cost_of_investment_cents - reinvestment_cents
     self.gross_payable_cents = income_cents + gross_ae_cents + cost_of_investment_cents
   end
 end

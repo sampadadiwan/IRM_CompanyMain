@@ -142,10 +142,10 @@ end
 Then('the net_payable_cents should account for reinvestment correctly') do
   CapitalDistributionPayment.all.each do |cdp|
     # Verify net_payable is correctly computed (reinvestment increases reinvestment_with_fees which reduces net_payable)
-    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Reinvestment").sum(:amount_cents)
+    reinvestment_fees_cents = AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Reinvestment").sum(:amount_cents)
     # net_payable should be income + cost_of_investment + net_ae_from_reinvestment - reinvestment_with_fees
     # Since reinvestment adds to both net_ae and reinvestment_with_fees, they cancel out for Reinvestment type
-    expected_net_payable = cdp.income_cents + cdp.cost_of_investment_cents
+    expected_net_payable = cdp.income_cents + cdp.cost_of_investment_cents - (cdp.reinvestment_cents + reinvestment_fees_cents)
     cdp.net_payable_cents.should == expected_net_payable
     puts "Net Payable with Reinvestment: net_payable_cents (#{cdp.net_payable_cents}) == income_cents (#{cdp.income_cents}) + cost_of_investment_cents (#{cdp.cost_of_investment_cents}) - PASS"
   end

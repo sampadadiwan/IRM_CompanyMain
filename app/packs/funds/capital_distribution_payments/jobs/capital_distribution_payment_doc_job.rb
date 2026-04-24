@@ -43,7 +43,7 @@ class CapitalDistributionPaymentDocJob < DocGenJob
   end
 
   # This is idempotent, we should be able to call it multiple times for the same CapitalDistributionPayment
-  def perform(capital_distribution_id, capital_distribution_payment_id, user_id, template_id: nil)
+  def perform(capital_distribution_id, capital_distribution_payment_id, user_id, template_id: nil, options: {})
     @capital_distribution_id = capital_distribution_id
     @capital_distribution = CapitalDistribution.find(capital_distribution_id)
     @fund = @capital_distribution.fund
@@ -55,7 +55,7 @@ class CapitalDistributionPaymentDocJob < DocGenJob
     @template_id = template_id
 
     Chewy.strategy(:sidekiq) do
-      generate(@start_date, @end_date, @user_id) if valid_inputs
+      generate(@start_date, @end_date, @user_id, options: options) if valid_inputs
     end
 
     @error_msg

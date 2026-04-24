@@ -118,8 +118,9 @@ class CapitalDistributionPayment < ApplicationRecord
     msg = nil
 
     if force || !notification_sent
-      if  completed && capital_distribution.send_notification_on_complete &&
-          capital_distribution.approved && !capital_distribution.manual_generation
+      # Dont send notification if notice generation is skipped
+      if completed && capital_distribution.send_notification_on_complete &&
+         capital_distribution.approved && !capital_distribution.manual_generation && !capital_commitment.skip_call_notice?
 
         investor.notification_users(fund).each do |user|
           CapitalDistributionPaymentNotifier.with(record: self, entity_id:, email_method: :send_notification).deliver_later(user)
@@ -133,6 +134,7 @@ class CapitalDistributionPayment < ApplicationRecord
         msg += " (notification on complete not set)" unless capital_distribution.send_notification_on_complete
         msg += " (capital distribution not approved)" unless capital_distribution.approved
         msg += " (manual generation)" if capital_distribution.manual_generation
+        msg += " (skip call notice)" if capital_commitment.skip_call_notice?
       end
     else
       msg = "Skipping notification for Distribution Payment #{id} as it is already sent."
@@ -183,5 +185,42 @@ class CapitalDistributionPayment < ApplicationRecord
 
   def self.ransackable_associations(_auth_object = nil)
     %w[fund capital_distribution investor capital_commitment]
+  end
+
+  # Builds an array of OpenStructs with name, date, amount and fee_type. It also sorts the fees by name to have a consistent order in the notice.
+  def build_fee_structs
+    fee_data = json_fields["ae_audit"]
+    return [] if fee_data.blank?
+
+    fee_data.flatten(1).map do |(name, date, amount, fee_type)|
+      OpenStruct.new(
+        name: name,
+        date: Date.parse(date),
+        amount: amount.to_f,
+        fee_type: fee_type
+      )
+    end.sort_by(&:name)
+  end
+
+  # Groups the fees by fee type
+  def self.group_by_fee_type(fees)
+    fees.group_by(&:fee_type)
+  end
+
+  # We will be consolidating the AEs by name for each fee type
+  # This is to show the total fees for each fee type in the notice at
+  # distribution level (all distribution payments of the distribution),
+  # kyc level (all distribution payments of the distribution with the SAME KYC),
+  # and folio level (current payment)
+  def self.consolidate_fees(fees)
+    grouped = fees.group_by(&:name)
+
+    grouped.sort.map do |name, rows|
+      OpenStruct.new(
+        name: name,
+        amount: Money.new(rows.sum(&:amount)),
+        date: rows.map(&:date).max # TODO: Discuss if latest date is ok
+      )
+    end
   end
 end

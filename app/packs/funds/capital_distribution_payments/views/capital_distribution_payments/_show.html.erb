@@ -51,7 +51,7 @@
             <% if capital_distribution_payment.exchange_rate %>
                 <div class="col-md-6">
                     <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Exchange Rate</label>
-                    <div class="fs-4 fw-medium "><%= link_to capital_distribution_payment.exchange_rate, class: "text-decoration-none fw-bold text-primary" %></div>
+                    <div class="fs-4 fw-medium "><%= link_to capital_distribution_payment.exchange_rate.to_s, capital_distribution_payment.exchange_rate, class: "text-decoration-none fw-bold text-primary" %></div>
                 </div>
             <% end %>
 

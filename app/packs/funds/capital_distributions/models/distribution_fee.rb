@@ -6,6 +6,17 @@ class DistributionFee < ApplicationRecord
 
   TYPES = ["FV For Redemption", "Income", "Expense", "Tax", "Reinvestment", "Display Only"].freeze
 
+  # Maps each fee type label to the context key suffix used when storing breakdowns.
+  # Used in CapitalDistributionPaymentDocGenerator
+  KYC_FEE_TYPE_KEYS = {
+    "FV For Redemption" => :fvr,
+    "Income" => :income,
+    "Expense" => :expense,
+    "Tax" => :tax,
+    "Reinvestment" => :reinvestment,
+    "Display Only" => :disp
+  }.freeze
+
   NESTED_ATTRIBUTES = %i[id name start_date end_date fee_type notes _destroy].freeze
   NESTED_ATTRIBUTES_WITH_FORMULA = %i[id name start_date end_date fee_type notes _destroy formula].freeze
 
