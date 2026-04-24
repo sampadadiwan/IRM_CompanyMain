@@ -21,6 +21,7 @@ resources :kpi_reports do
   get "new_notification", on: :collection
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
+  patch "refresh_import", on: :member
 end
 
 resources :kpi_chart_settings, only: %i[index create destroy show]

@@ -95,3 +95,24 @@ Feature: KPI Workbook Reading
     And the KPI "Net Profit" should have a value of 50000000.0
     And the KPI "Expenses" should have a value of 200000.0
     And the KPI "Customers" should have a value of 5000.0
+
+  Scenario: Refresh should re-run kpi workbook job and update KPIs
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    Given the KPI workbook file "<workbook_file>" for a kpi report
+    And the target KPIs are "<target_kpis>"
+    When the KpiWorkbookReader processes the file
+    Then the extracted KPI data should be valid for the given workbook and targets with "<count>"
+
+    Given I note the kpi values for the target KPIs
+    And I add new target KPIs "EBITDA, COD %"
+    Given I update the KPI workbook file to "<workbook_file2>"
+    Then I go to the kpi report page
+    And I click "Refresh"
+    And I click "Proceed"
+    Then the KPI data should be updated with the new values
+
+    Examples:
+      | workbook_file                   | workbook_file2                   | target_kpis                                                                          | count |
+      | kpi_extraction/MIS sample.xlsx  | kpi_extraction/MIS sample1_refresh.xlsx | Revenue, Number of Distributors, Net Current Assets, Orders MoM Growth, Returns%      | 17 |

@@ -166,4 +166,19 @@ module ApplicationHelper
   def pie_chart_colors_from_css
     (1..20).map { |i| "var(--pie-color-#{i})" }
   end
+
+  def resolve_doc_color(document_name, custom_colors)
+    name = document_name.to_s.downcase
+
+    match = custom_colors.fetch("match", {})
+                         .transform_keys { |k| k.to_s.downcase }
+
+    return match[name] if match[name]
+
+    custom_colors.fetch("contain", {}).each do |keyword, color|
+      return color if name.include?(keyword.to_s.downcase)
+    end
+
+    nil
+  end
 end

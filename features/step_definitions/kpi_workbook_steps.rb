@@ -28,6 +28,12 @@ And('the target KPIs are {string}') do |target_kpis_string|
   @portfolio_company.reload
 end
 
+And('I add new target KPIs {string}') do |target_kpis_string|
+  steps %(
+    And the target KPIs are "#{target_kpis_string}"
+  )
+end
+
 And('the following KPI mappings with denominations exist for the portfolio company:') do |table|
   table.hashes.each do |row|
     @portfolio_company.investor_kpi_mappings.create!(
@@ -137,4 +143,55 @@ end
 Then('KPIs should be imported for future dates') do
   future_kpis = Kpi.joins(:kpi_report).where('kpi_reports.as_of > ?', Date.current)
   expect(future_kpis.count).to be > 0, "Expected future KPIs to be imported, but found none"
+end
+
+
+Given('I note the kpi values for the target KPIs') do
+  puts "KPIs created - IDs and values: #{Kpi.where(portfolio_company_id: @portfolio_company.id).pluck(:name).tally}"
+  @kpi_values = Kpi.where(portfolio_company_id: @portfolio_company.id).order(:id).pluck(:id, :value).to_h
+end
+
+Given('I update the KPI workbook file to {string}') do |string|
+  # Update the workbook file path to the new file for refresh
+  @workbook_file = "public/sample_uploads/#{string}"
+  expect(File.exist?(@workbook_file)).to be(true), "Test file not found: #{@workbook_file}"
+
+  # Update the existing document with the new file
+  @document.file = File.open(@workbook_file)
+  @document.name = "KPIs"
+  @document.save!
+end
+
+Then('I go to the kpi report page') do
+  @kpi_report ||= @document.owner
+  @kpi_report.user = @user
+  @kpi_report.save!
+  @kpi_report.reload
+  visit kpi_report_path(@kpi_report)
+  expect(page).to have_content("Kpi Report #{@kpi_report.portfolio_company} : ", wait: 5)
+end
+
+Then('the KPI data should be updated with the new values') do
+  expect(page).to have_content("KPI Report refresh enqueued", wait: 5)
+  not_equal = []
+  equal = []
+  @kpi_values.each do |id, old_value|
+    kpi = Kpi.find(id)
+    if kpi.value.to_f != old_value.to_f
+      not_equal << [id, old_value, kpi.value]
+    else
+      equal << id
+    end
+  end
+
+  puts "Updated KPIs (ID, old value, new value): #{not_equal}"
+  expect(not_equal).not_to be_empty, "Expected some KPI values to be updated, but none were. Checked KPI IDs: #{equal}"
+
+
+  new_kpis = Kpi.where.not(id: @kpi_values.keys)
+  puts "New KPIs created: #{new_kpis.pluck(:id, :name, :value)}"
+  expect(new_kpis.count).to be > 0, "Expected new KPIs to be created, but found none"
+  expect(new_kpis.pluck(:name).uniq).to include("EBITDA", "COD %"), "Expected new KPIs 'EBITDA' and 'COD %' to be created, but they were not found among new KPIs: #{new_kpis.pluck(:name).uniq}"
+
+  puts "All KPIs after refresh: #{Kpi.where(portfolio_company_id: @portfolio_company.id).pluck(:name).tally}"
 end

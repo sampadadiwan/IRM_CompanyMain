@@ -36,7 +36,7 @@
 
     <%= render "/investments/horizontal_captable" %>
 
-    <div class="associated_entity">
+    <div class="investments_captable associated_entity">
 
       <% if params[:show_charts].blank? || params[:show_charts] == "true"  %>
         <%= render "/investments/charts", investments: @investments %>

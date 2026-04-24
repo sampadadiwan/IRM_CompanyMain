@@ -42,7 +42,7 @@ module FundDashboardHelper
       }
     end
 
-    line_chart_options = create_line_chart_options(fund_ratios, args)
+    line_chart_options = create_line_chart_options(args)
 
     chart_method = case chart_type.to_s
                    when "bar"    then :column_chart
@@ -55,7 +55,7 @@ module FundDashboardHelper
   end
   # rubocop:enable Metrics/ParameterLists
 
-  def create_line_chart_options(fund_ratios, args)
+  def create_line_chart_options(args)
     decimals = args[:decimals].present? ? args[:decimals].to_i : 2
     label_format = "{point.y:,.#{decimals}f}"
 

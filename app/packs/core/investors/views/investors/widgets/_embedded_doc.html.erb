@@ -18,7 +18,7 @@
       ) do
   %>
 
-        <%= render "/documents/embed", document: document, xlsx_as_grid: xlsx_as_grid %>
+        <%= render "/documents/embed", document: document, xlsx_as_grid: xlsx_as_grid, title: args[:title] %>
 
   <% end %>
 

@@ -26,10 +26,18 @@
     all_reports.each do |kr|
       kpis_by_report_and_name[kr.id] = kr.kpis.index_by { |k| k.name.downcase }
     end
+    title ||= params[:title].presence
 %>
 
 
 <%= turbo_frame_tag "kpi_reports_budget", target: "_top" do %>
+    <% if title.present? %>
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+      <h1 class="card-title h3 mb-0 text-gray-800">
+        <%= title %>
+      </h1>
+    </div>
+    <% end %>
 
     <%= render "/kpi_reports/budget_filter", entity: @entity %>
 

@@ -2,6 +2,7 @@
   widget_size ||= "col-md-5"
   name ||= "Company Overview"
   args ||= {}
+  title ||= args[:title].presence || name
   investor = @investor
   #  fields have lable and key
   #  Category:category,City:city,Sector:custom_fields.sector,Founder:custom_fields.founder
@@ -18,7 +19,7 @@
       )
     ) do %>
 
-  <div class="card-title"><%= name %></div>
+  <div class="card-title"><%= title %></div>
   <div class="data-card">
     <% fields_to_display.each do |label, key| %>
       <div>

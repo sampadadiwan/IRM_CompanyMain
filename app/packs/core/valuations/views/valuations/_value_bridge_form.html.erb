@@ -1,8 +1,10 @@
 <% show_form = params[:show_form] || true %>
 <% decimals ||= params[:decimals].present? ? params[:decimals].to_i : 2 %>
-<% valuations ||= @valuations.map { |i| [i.to_extended_s, i.id] } %>
+<% valuations ||= @valuations.map { |i| [i.to_extended_s, i.id] }
+   title ||= params[:title].presence || "Value Bridge"
+%>
 
-<%= render FormCard.new(title: "Value Bridge") do %>
+<%= render FormCard.new(title: title) do %>
   <%= form_with(model: Valuation.new(entity_id: current_user.entity_id), url: value_bridge_valuations_path, method: :get, data: { turbo_frame: "value_bridge_frame", controller: "valuebridge" }) do |form| %>
 
     <%= form.hidden_field :portfolio_company_id, value: @portfolio_company.id, name: :portfolio_company_id %>

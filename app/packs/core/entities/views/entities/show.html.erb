@@ -194,6 +194,16 @@
             <%= "Cap Table," if @entity.permissions.enable_captable? %>
           </td>
         </tr>
+        <% if @entity.entity_setting.document_colors.present? %>
+          <tr>
+            <td>
+              Document Colors
+            </td>
+            <td>
+              <%= @entity.entity_setting.document_colors %>
+            </td>
+          </tr>
+        <% end %>
       <% end %>
     </table>
     <div>

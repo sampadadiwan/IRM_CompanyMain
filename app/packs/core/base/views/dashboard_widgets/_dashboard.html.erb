@@ -25,17 +25,17 @@
                     <%= image_tag logo.url, style: "width:100%; height:100%; object-fit:contain;" %>
                 </div>
                 <% if title.present? %>
-                    <span class="fw-semibold fs-6"><%= title %></span>
+                    <span class="fw-semibold fs-8"><%= title %></span>
                 <% end %>
             </div>
 
             <% if header_label.present? && header_value.present? %>
                 <div class="text-start">
                     <% if header_label.present? %>
-                        <div class="text-small"> <%= header_label %></div>
+                        <div class=""> <%= header_label %></div>
                     <% end %>
                     <% if header_value.present? %>
-                        <div class="text-primary"><%= header_value %></div>
+                        <div class="text-primary fs-5"><%= header_value %></div>
                     <% end %>
                 </div>
             <% end %>

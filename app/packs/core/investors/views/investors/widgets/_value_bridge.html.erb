@@ -40,6 +40,7 @@
       final_valuation =   valuations.order(valuation_date: :desc).first
     end
     # Load the uri for the value bridge
+    uri_params[:title] = args[:title]
     uri_params[:portfolio_company_id] = @investor.id
     uri_params[:hide_table] = hide_table
     uri_params[:show_form] = show_form

@@ -14,8 +14,13 @@
 <% args ||= {}
   args[:entity_id] = @investor.entity_id
   args[:owner_type] = args[:owner_type] if args[:owner_type].present?
-  args[:owner_id] ||= @investor.id if  args[:owner_id].blank? && args[:owner_type].present? && args[:owner_type] == "Investor"
-  args[:folder_id] ||= @investor.document_folder.id
+  args[:owner_id] ||= @investor.id if args[:owner_id].blank? && args[:owner_type].present? && args[:owner_type] == "Investor"
+  if args[:folder_name].present?
+    args[:folder_id] = @investor.document_folder.descendants.where(name: args[:folder_name].to_s.strip).first&.id
+  else
+    args[:folder_id] ||= @investor.document_folder.id
+  end
+  args[:no_folders] =  true if args[:folder_id].blank?
   args[:widget_id] = widget.id
 
 

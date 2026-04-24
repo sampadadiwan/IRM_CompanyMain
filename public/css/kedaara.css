@@ -280,6 +280,11 @@
 }
 
 /* Tag-type badge classes — colours reuse existing values from kpi_reports_filter */
+.badge a {
+  color: inherit !important;
+  text-decoration: none !important;
+}
+
 .badge-tag-actual    { background-color: #E3EEF9 !important; color: #1976D2 !important; }
 .badge-tag-budget    { background-color: #EAF1EB !important; color: #579158 !important; }
 .badge-tag-ic-case   { background-color: #FDEDE0 !important; color: #EF6C00 !important; }
@@ -694,12 +699,20 @@ th .sort_link {
     justify-content: center !important;
 }
 
-.table tbody td {
+.table tbody td{
     padding: 15px 12px;
     color: #2A3547;
     font-weight: 600;
     white-space: nowrap;
     text-align: center;
+}
+
+.table tbody td a{
+    color: #2A3547 !important;
+}
+
+.table tbody td a:focus, .table tbody td a:hover{
+    color: var(--bs-primary) !important;
 }
 
 .table tbody td:first-child{
@@ -884,6 +897,11 @@ table.table.dataTable.table-striped>tbody>tr:nth-of-type(2n+1)>* {
 
 .card-body .card-header.py-3 {
     padding-top: 0px !important;
+}
+
+.investments_captable .card-header.py-3{
+    padding-top: 1rem !important;
+    padding-bottom: 0rem !important;
 }
 
 .show_horizontal_cap_table {

@@ -50,6 +50,10 @@ class KpiReportPolicy < KpiPolicyBase
     create?
   end
 
+  def refresh_import?
+    update? && user.entity_id == record.entity_id
+  end
+
   def recompute_percentage_change?
     index?
   end

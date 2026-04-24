@@ -146,10 +146,27 @@
 </div>
 
 <% if params[:documents_as_tags].present? %>
+  <% custom_colors = current_user.entity.entity_setting.get_document_colors || {} %>
+
   <div class="d-flex flex-wrap gap-2 mb-3">
-      <% documents.each do |document| %>
-        <h2><span class="badge bg-secondary fs-4"><%= link_to document.name, document_path(document) %></span></h2>
-      <% end %>
+    <% documents.each do |document| %>
+
+      <% color = resolve_doc_color(document.name, custom_colors)%>
+
+      <% style =
+          if color.present?
+            "background-color: color-mix(in srgb, #{color} 10%, white) !important; color: #{color} !important;"
+          else
+            ""
+          end
+      %>
+
+      <h2>
+        <%= link_to document.name, document_path(document),
+          class: "badge bg-secondary fs-4",
+          style: style %>
+      </h2>
+    <% end %>
   </div>
 <% else %>
   <div class="table-responsive">

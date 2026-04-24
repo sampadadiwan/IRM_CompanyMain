@@ -1,7 +1,7 @@
 class KpiReportsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[show edit update], if: -> { params[:signed_id].present? }
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze]
-  after_action :verify_authorized, except: %i[index search show_performance chart_refresh]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze refresh_import]
+  after_action :verify_authorized, except: %i[index search show_performance chart_refresh refresh_import]
   after_action :verify_policy_scoped, only: %i[index chart_refresh]
 
   # GET /kpi_reports or /kpi_reports.json
@@ -92,6 +92,21 @@ class KpiReportsController < ApplicationController
         format.json { render :show, status: :ok, location: @kpi_report }
       else
         format.html { render :edit, status: :unprocessable_entity }
+        format.json { render json: @kpi_report.errors, status: :unprocessable_entity }
+      end
+    end
+  end
+
+  def refresh_import
+    respond_to do |format|
+      if @kpi_report.update(kpi_report_params.slice(:upload_new_kpis, :update_existing_kpis).merge(user_id: current_user.id))
+        format.html { redirect_to(request.referer || kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: "KPI Report refresh enqueued.") }
+        format.json { render :show, status: :ok, location: @kpi_report }
+      else
+        format.html do
+          flash.now[:alert] = "KPI Report refresh failed: #{@kpi_report.errors.full_messages.join(', ')}"
+          redirect_to(request.referer || kpi_report_url(@kpi_report, signed_id: params[:signed_id]))
+        end
         format.json { render json: @kpi_report.errors, status: :unprocessable_entity }
       end
     end

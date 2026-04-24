@@ -59,7 +59,8 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     db_dumps_email_enabled: Field::BooleanEmoji,
     db_dumps_frequency: Field::Select.with_options(collection: EntitySetting.db_dumps_frequency.options),
     db_dumps_interval: Field::Number,
-    db_dumps_custom_days: Field::String
+    db_dumps_custom_days: Field::String,
+    document_colors: Field::Text
   }.freeze
 
   # COLLECTION_ATTRIBUTES
@@ -138,6 +139,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     db_dumps_frequency
     db_dumps_interval
     db_dumps_custom_days
+    document_colors
     created_at
     updated_at
   ].freeze
@@ -192,6 +194,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     db_dumps_frequency
     db_dumps_interval
     db_dumps_custom_days
+    document_colors
     custom_flags
   ].freeze
 

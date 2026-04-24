@@ -18,8 +18,35 @@ class EntitySetting < ApplicationRecord
 
   before_save :check_esign_provider
   before_create :set_kanban_steps
+
+  before_save :validate_document_colors
   # Add new flags to the end of this list
   flag :custom_flags, %i[no_password_login]
+
+  def validate_document_colors
+    if document_colors.is_a?(String)
+      begin
+        JSON.parse(document_colors)
+      rescue JSON::ParserError => e
+        errors.add(:document_colors, "must be a valid JSON string")
+        throw(:abort)
+      end
+    end
+  end
+
+  def get_document_colors
+    if document_colors.is_a?(String)
+      begin
+        JSON.parse(document_colors)
+      rescue JSON::ParserError => e
+        {}
+      end
+    elsif document_colors.is_a?(Hash)
+      document_colors
+    else
+      {}
+    end
+  end
 
   def check_esign_provider
     self.esign_provider = "Digio" if esign_provider.blank?

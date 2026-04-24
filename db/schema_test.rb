@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_23_165550) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_24_104258) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1421,6 +1421,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_23_165550) do
     t.string "digio_client_id"
     t.string "digio_client_secret"
     t.datetime "digio_cutover_date"
+    t.json "document_colors"
     t.string "domain"
     t.integer "email_delay_seconds", default: 0
     t.string "entity_bcc"

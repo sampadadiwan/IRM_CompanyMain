@@ -3,6 +3,7 @@ if args[:ratio_names].present?
   ratio_names = args[:ratio_names]
   ransack_params << [:name, :in, ratio_names]
 end
+args[:widget_id] ||= widget.id
 %>
 
 <% 
@@ -20,16 +21,14 @@ end
     <% if args[:list].nil? || args[:list] == true %>
       <%= turbo_frame_tag "fund_ratios_frame_#{widget.id}", target: "_top", src: "#{uri.to_s}" do %>
       <% end %>
-    <% end %>
-
-    <% if args[:chart].nil? || args[:chart] == true %>
+    <% elsif args[:chart].nil? || args[:chart] == true %>
       <%# Chart is now rendered in ratios index view with already fetched ratios , so we only render here if list is false i.e. when index wont render %>
       <%= turbo_frame_tag "fund_ratios_chart_frame_#{widget.id}" do %>
         <div class="mb-3 d-flex justify-content-end">
           <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Chart type">
             <% current_type = params[:chart_type] || "line" %>
             <% [["Area", "area"], ["Bar", "bar"], ["Line", "line"]].each do |label, type| %>
-              <%= link_to label, request.params.merge(chart_type: type), 
+              <%= link_to label, request.params.merge(chart_type: type),
                   class: "btn #{current_type == type ? 'btn-primary' : 'btn-outline-primary bg-white'}",
                   data: { turbo_frame: "fund_ratios_chart_frame_#{widget.id}" } %>
             <% end %>

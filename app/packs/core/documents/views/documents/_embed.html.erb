@@ -1,3 +1,11 @@
+<% title ||= params[:title] %>
+<% if title.present? %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="card-title h3 mb-0 text-gray-800">
+      <%= title %>
+    </h1>
+  </div>
+<% end %>
 <div id="excel_viewer" class="card">
   <% xlsx_as_grid ||= nil %>
   <% if params[:xlsx_as_grid].present? || xlsx_as_grid%>
