@@ -2,8 +2,10 @@
 
 <%# Helper for filter rows %>
 <%
-  @filter_ops = [["=", "eq"], ["contains", "cont"], ["any of", "in"], ["≠", "not_eq"], ["≥", "gteq"], ["≤", "lteq"]]
-  @known_op_suffixes = %w[eq not_eq cont not_cont in not_in gteq lteq gt lt]
+  @filter_ops = [["=", "eq"], ["contains", "cont"], ["any of", "in"], ["≠", "not_eq"],
+                 ["≥", "gteq"], ["≤", "lteq"], ["is nil", "null"], ["is not nil", "not_null"]]
+  @no_value_ops = %w[null not_null].to_set
+  @known_op_suffixes = %w[eq not_eq cont not_cont in not_in gteq lteq gt lt null not_null]
 
   def parse_filter_pred(pred_key)
     op = @known_op_suffixes.find { |s| pred_key.to_s.end_with?("_#{s}") }
@@ -11,11 +13,12 @@
   end
 
   def render_filter_row(scope:, relation: nil, pred_key:, val:, columns:)
-    parsed = parse_filter_pred(pred_key)
-    display_val = Array(val).join(", ")
-    is_in = parsed[:op] == "in"
-    placeholder = is_in ? "val1, val2, …" : "value"
+    parsed      = parse_filter_pred(pred_key)
+    no_value    = @no_value_ops.include?(parsed[:op])
+    display_val = no_value ? "" : Array(val).join(", ")
+    placeholder = parsed[:op] == "in" ? "val1, val2, …" : "value"
     relation_attr = relation ? "data-relation=\"#{relation}\"" : ""
+    val_style   = no_value ? "display:none; flex:1; min-width:60px" : "flex:1; min-width:60px"
 
     field_opts = columns.map { |c|
       sel = parsed[:field] == c[:key] ? " selected" : ""
@@ -32,10 +35,11 @@
         <select class="form-select form-select-sm filter-field border-0 bg-light" style="width:36%">
           <option value="">— field —</option>#{field_opts}
         </select>
-        <select class="form-select form-select-sm filter-op border-0 bg-light" style="width:26%">#{op_opts}</select>
+        <select class="form-select form-select-sm filter-op border-0 bg-light" style="width:26%"
+                data-action="change->report-builder#filterOpChanged">#{op_opts}</select>
         <input type="text" class="form-control form-control-sm filter-val border-0 bg-light"
                value="#{ERB::Util.html_escape(display_val)}"
-               placeholder="#{placeholder}" style="flex:1; min-width:60px">
+               placeholder="#{placeholder}" style="#{val_style}">
         <button type="button" class="btn btn-link text-danger p-0 opacity-50 hover-opacity-100 flex-shrink-0"
                 data-action="click->report-builder#removeFilterRow">
           <i class="ti ti-trash" style="font-size:.9rem"></i>
@@ -45,12 +49,15 @@
   end
 %>
 
-<div data-controller="report-builder"
+<div data-controller="report-builder command-palette"
      data-report-builder-aggregate-url-value="<%= update_report_builder_aggregate_path(@report) %>"
      data-report-builder-sort-url-value="<%= update_report_builder_sort_path(@report) %>"
      data-report-builder-name-url-value="<%= update_report_builder_name_path(@report) %>"
      data-report-builder-template-url-value="<%= update_report_builder_template_path(@report) %>"
      data-report-builder-preview-url-value="<%= preview_report_builder_path(@report) %>"
+     data-report-builder-validate-formula-url-value="<%= validate_report_builder_formula_path(@report) %>"
+     data-report-builder-view-settings-url-value="<%= update_report_builder_view_settings_path(@report) %>"
+     data-report-builder-schedule-url-value="<%= update_report_builder_schedule_path(@report) %>"
      data-report-builder-csrf-value="<%= form_authenticity_token %>"
      class="report-builder-container px-0">
 
@@ -87,6 +94,19 @@
         </div>
 
         <div class="d-flex gap-2">
+          <div class="btn-group shadow-sm" role="group">
+            <input type="radio" class="btn-check" name="builder_mode" id="buildMode" autocomplete="off" checked data-action="change->report-builder#switchMode" value="build">
+            <label class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" for="buildMode"><i class="ti ti-tools"></i> Build</label>
+            
+            <input type="radio" class="btn-check" name="builder_mode" id="viewMode" autocomplete="off" data-action="change->report-builder#switchMode" value="view">
+            <label class="btn btn-outline-primary btn-sm d-flex align-items-center gap-1" for="viewMode"><i class="ti ti-eye"></i> View</label>
+          </div>
+
+          <button class="btn btn-outline-secondary d-flex align-items-center gap-2 shadow-sm"
+                  data-bs-toggle="modal" data-bs-target="#templateModal">
+            <i class="ti ti-template fs-5"></i> Templates
+          </button>
+
           <%= link_to download_report_builder_path(@report),
                 class: "btn btn-success d-flex align-items-center gap-2 shadow-sm",
                 data: {
@@ -116,7 +136,7 @@
 
   <div class="container-fluid mw-100 px-2 px-lg-3 pb-5">
     <%= turbo_frame_tag "report_builder_setup" do %>
-    <div class="row g-3 mx-0">
+    <div class="row g-3 mx-0" id="report_builder_setup_row">
 
       <%# ── Left: Column Palette ────────────────────────────────────────── %>
       <div class="col-xxl-2 col-xl-3 col-lg-3">
@@ -293,6 +313,27 @@
             <h6 class="card-title mb-0 d-flex align-items-center gap-2">
               <i class="ti ti-git-merge text-primary"></i> Relations & Joins
             </h6>
+            <button class="btn btn-link btn-xs p-0" type="button" data-bs-toggle="collapse" data-bs-target="#joinMapCollapse">
+              <i class="ti ti-sitemap"></i> Map
+            </button>
+          </div>
+          <div class="collapse" id="joinMapCollapse">
+            <div class="card-body bg-light border-bottom p-3">
+              <div class="join-tree small">
+                <div class="fw-bold mb-1"><i class="ti ti-table me-1"></i><%= @root_class.name %></div>
+                <% @config.joins.each do |join| %>
+                  <% parts = join[:relation].to_s.split(".") %>
+                  <div class="ms-3 border-start ps-2 py-1">
+                    <% parts.each_with_index do |part, i| %>
+                      <div style="margin-left: <%= i * 10 %>px">
+                        <i class="ti ti-corner-down-right opacity-50"></i>
+                        <span class="badge bg-white text-dark border rounded-pill"><%= part %></span>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            </div>
           </div>
           <div class="card-body p-3">
             <% if @config.joins.empty? %>
@@ -326,7 +367,7 @@
                     </div>
 
                     <div class="pivot-section mt-2 pt-2 border-top">
-                      <% pivot_active = pivot[:group_by].present? && pivot[:value_col].present? %>
+                      <% pivot_active = Array(pivot[:group_bys] || pivot[:group_by]).any?(&:present?) && pivot[:value_col].present? %>
                       <div class="d-flex align-items-center justify-content-between mb-2">
                         <span class="small fw-bold text-secondary text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.05em">
                           <i class="ti ti-layout-columns me-1"></i>Pivot Configuration
@@ -339,12 +380,11 @@
                       <%= form_tag update_report_builder_pivot_path(@report), method: :patch do %>
                         <input type="hidden" name="relation" value="<%= join_rel %>">
                         <div class="row g-2">
-                          <div class="col-6">
-                            <label class="form-label mb-1 fs-2 fw-bold text-muted">Category</label>
-                            <select name="group_by" class="form-select form-select-sm bg-light border-0" required>
-                              <option value="">— select —</option>
+                          <div class="col-12">
+                            <label class="form-label mb-1 fs-2 fw-bold text-muted">Categories (Multi-select)</label>
+                            <select name="group_bys[]" class="form-select form-select-sm select2" multiple>
                               <% join_cols.each do |col| %>
-                                <option value="<%= col[:key] %>" <%= pivot[:group_by] == col[:key] ? 'selected' : '' %>><%= col[:label] %></option>
+                                <option value="<%= col[:key] %>" <%= Array(pivot[:group_bys] || pivot[:group_by]).include?(col[:key].to_s) ? 'selected' : '' %>><%= col[:label] %></option>
                               <% end %>
                             </select>
                           </div>
@@ -388,20 +428,22 @@
               <% available_joins = @associations.reject { |a| @config.joins.any? { |j| j[:relation].to_s == a[:name] } } %>
               <% if available_joins.any? %>
                 <%= form_tag add_report_builder_join_path(@report), method: :post do %>
-                  <div class="input-group input-group-sm shadow-sm border rounded overflow-hidden">
-                    <select name="relation_json" class="form-select border-0 bg-white"
-                            data-action="change->report-builder#joinSelectChanged">
-                      <option value="">+ Add new relation…</option>
-                      <% available_joins.each do |assoc| %>
-                        <option value="<%= assoc.to_json %>">
-                          <%= assoc[:label] %> (<%= assoc[:macro] %>)
-                        </option>
-                      <% end %>
-                    </select>
-                    <input type="hidden" name="relation">
-                    <input type="hidden" name="model">
-                    <input type="hidden" name="fk">
-                    <button type="submit" class="btn btn-primary border-0 px-3">Add</button>
+                  <div class="d-flex align-items-center">
+                    <div class="input-group input-group-sm shadow-sm border rounded overflow-hidden flex-grow-1">
+                      <select name="relation_json" class="form-select border-0 bg-white"
+                              data-action="change->report-builder#joinSelectChanged">
+                        <option value="">+ Add new relation…</option>
+                        <% available_joins.each do |assoc| %>
+                          <option value="<%= assoc.to_json %>">
+                            <%= assoc[:label] %> (<%= assoc[:macro] %>)<%= assoc[:has_children] ? " ›" : "" %>
+                          </option>
+                        <% end %>
+                      </select>
+                      <input type="hidden" name="relation">
+                      <input type="hidden" name="model">
+                      <input type="hidden" name="fk">
+                      <button type="submit" class="btn btn-primary border-0 px-3">Add</button>
+                    </div>
                   </div>
                 <% end %>
               <% end %>
@@ -477,37 +519,168 @@
           </div>
         </div>
 
-        <%# Sort Card %>
+        <%# Sort & Grouping Card %>
         <div class="card border shadow-sm">
           <div class="card-header bg-white py-3 border-bottom">
             <h6 class="card-title mb-0 d-flex align-items-center gap-2">
-              <i class="ti ti-arrows-sort text-primary"></i> Default Sorting
+              <i class="ti ti-arrows-sort text-primary"></i> Sorting & Grouping
             </h6>
           </div>
           <div class="card-body p-3">
-            <div class="row g-2">
-              <div class="col-8">
-                <select class="form-select form-select-sm bg-light border-0"
-                        data-action="change->report-builder#sortChanged"
-                        data-report-builder-target="sortKey">
-                  <option value="">— none —</option>
-                  <% gvps_for_sort = @report.grid_view_preferences.order(:sequence).to_a %>
-                  <% gvps_for_sort.each do |gvp| %>
-                    <% ck = gvp.key.split(";").first.strip %>
-                    <% next if ck.include?(".") %>
-                    <option value="<%= ck %>" <%= @config.sort[:key].to_s.split(";").first&.strip == ck ? "selected" : "" %>>
-                      <%= gvp.label.presence || gvp.name %>
-                    </option>
-                  <% end %>
+            <div class="mb-3">
+              <label class="form-label small fw-bold">Default Sort</label>
+              <div class="row g-2">
+                <div class="col-8">
+                  <select class="form-select form-select-sm bg-light border-0"
+                          data-action="change->report-builder#sortChanged"
+                          data-report-builder-target="sortKey">
+                    <option value="">— none —</option>
+                    <% gvps_for_sort = @report.grid_view_preferences.order(:sequence).to_a %>
+                    <% gvps_for_sort.each do |gvp| %>
+                      <% ck = gvp.key.split(";").first.strip %>
+                      <% next if ck.include?(".") %>
+                      <option value="<%= ck %>" <%= @config.sort[:key].to_s.split(";").first&.strip == ck ? "selected" : "" %>>
+                        <%= gvp.label.presence || gvp.name %>
+                      </option>
+                    <% end %>
+                  </select>
+                </div>
+                <div class="col-4">
+                  <select class="form-select form-select-sm bg-light border-0"
+                          data-action="change->report-builder#sortChanged"
+                          data-report-builder-target="sortDir">
+                    <option value="asc"  <%= @config.sort[:dir] != "desc" ? "selected" : "" %>>↑ ASC</option>
+                    <option value="desc" <%= @config.sort[:dir] == "desc" ? "selected" : "" %>>↓ DESC</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="mb-0">
+              <label class="form-label small fw-bold">Row Grouping (Excel)</label>
+              <select class="form-select form-select-sm bg-light border-0"
+                      data-action="change->report-builder#groupingChanged"
+                      data-report-builder-target="groupRowsBy">
+                <option value="">— none —</option>
+                <% gvps_for_sort.each do |gvp| %>
+                  <% ck = gvp.key.split(";").first.strip %>
+                  <option value="<%= ck %>" <%= @config.group_rows_by == ck ? "selected" : "" %>>
+                    <%= gvp.label.presence || gvp.name %>
+                  </option>
+                <% end %>
+              </select>
+              <div class="form-text small" style="font-size: 0.65rem">Creates collapsible groups in Excel export.</div>
+            </div>
+          </div>
+        </div>
+
+        <%# Formulas Card %>
+        <div class="card border shadow-sm mt-4">
+          <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom">
+            <h6 class="card-title mb-0 d-flex align-items-center gap-2">
+              <i class="ti ti-math-function text-primary"></i> Formulas
+            </h6>
+          </div>
+          <div class="card-body p-3">
+            <% if @config.formulas.empty? %>
+              <div class="text-center py-3 bg-light rounded border border-dashed mb-3">
+                <p class="text-muted small mb-0">No formulas yet.</p>
+              </div>
+            <% else %>
+              <div class="d-flex flex-column gap-2 mb-3">
+                <% @config.formulas.each do |formula| %>
+                  <div class="p-2 border rounded bg-white d-flex align-items-center justify-content-between shadow-sm">
+                    <div class="min-width-0">
+                      <div class="fw-bold small text-truncate"><%= formula[:label] %></div>
+                      <code class="text-muted text-truncate d-block" style="font-size: 0.7rem"><%= formula[:expression] %></code>
+                    </div>
+                    <%= button_to remove_report_builder_formula_path(@report, key: formula[:key]),
+                          method: :delete,
+                          class: "btn btn-link text-danger p-0 ms-2",
+                          data: { msg: "Remove formula '#{formula[:label]}'?", action: "click->confirm#popup" } do %>
+                      <i class="ti ti-trash"></i>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
+            <button type="button" class="btn btn-outline-primary btn-sm w-100"
+                    data-bs-toggle="modal" data-bs-target="#formulaModal">
+              <i class="ti ti-plus me-1"></i> Add Formula
+            </button>
+          </div>
+        </div>
+
+        <%# View & Sharing Card %>
+        <div class="card border shadow-sm mt-4">
+          <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom">
+            <h6 class="card-title mb-0 d-flex align-items-center gap-2">
+              <i class="ti ti-layout-grid text-primary"></i> View & Sharing
+            </h6>
+          </div>
+          <div class="card-body p-3">
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="isViewToggle" 
+                     <%= @report.is_view ? 'checked' : '' %>
+                     data-action="change->report-builder#toggleView">
+              <label class="form-check-label fw-bold" for="isViewToggle">Save as View</label>
+              <div class="form-text small">Make this report available as a live view on index pages.</div>
+            </div>
+
+            <div id="viewTargetSection" class="<%= @report.is_view ? '' : 'd-none' %> mb-3">
+              <label class="form-label small fw-bold">Target Page</label>
+              <select class="form-select form-select-sm" data-action="change->report-builder#updateViewTarget" data-report-builder-target="viewTarget">
+                <option value="">— select page —</option>
+                <option value="investors_index" <%= @report.view_target == 'investors_index' ? 'selected' : '' %>>Investors Index</option>
+                <option value="funds_index" <%= @report.view_target == 'funds_index' ? 'selected' : '' %>>Funds Index</option>
+                <option value="commitments_index" <%= @report.view_target == 'commitments_index' ? 'selected' : '' %>>Commitments Index</option>
+              </select>
+            </div>
+
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="sharedToggle" 
+                     <%= @report.shared ? 'checked' : '' %>
+                     data-action="change->report-builder#toggleShared">
+              <label class="form-check-label fw-bold" for="sharedToggle">Share with Team</label>
+              <div class="form-text small">Allow other users in your entity to see and run this report.</div>
+            </div>
+          </div>
+        </div>
+
+        <%# Schedule Card %>
+        <div class="card border shadow-sm mt-4">
+          <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom">
+            <h6 class="card-title mb-0 d-flex align-items-center gap-2">
+              <i class="ti ti-calendar-event text-primary"></i> Automated Delivery
+            </h6>
+          </div>
+          <div class="card-body p-3">
+            <% schedule = @report.report_schedule || ReportSchedule.new %>
+            <div class="form-check form-switch mb-3">
+              <input class="form-check-input" type="checkbox" id="scheduleActiveToggle" 
+                     <%= schedule.active ? 'checked' : '' %>
+                     data-action="change->report-builder#toggleSchedule">
+              <label class="form-check-label fw-bold" for="scheduleActiveToggle">Enable Scheduling</label>
+            </div>
+
+            <div id="scheduleSettings" class="<%= schedule.active ? '' : 'd-none' %>">
+              <div class="mb-3">
+                <label class="form-label small fw-bold">Frequency</label>
+                <select class="form-select form-select-sm" data-action="change->report-builder#updateSchedule" data-report-builder-target="scheduleFrequency">
+                  <option value="daily" <%= schedule.frequency == 'daily' ? 'selected' : '' %>>Daily (9 AM)</option>
+                  <option value="weekly" <%= schedule.frequency == 'weekly' ? 'selected' : '' %>>Weekly (Mon 9 AM)</option>
+                  <option value="monthly" <%= schedule.frequency == 'monthly' ? 'selected' : '' %>>Monthly (1st 9 AM)</option>
                 </select>
               </div>
-              <div class="col-4">
-                <select class="form-select form-select-sm bg-light border-0"
-                        data-action="change->report-builder#sortChanged"
-                        data-report-builder-target="sortDir">
-                  <option value="asc"  <%= @config.sort[:dir] != "desc" ? "selected" : "" %>>↑ ASC</option>
-                  <option value="desc" <%= @config.sort[:dir] == "desc" ? "selected" : "" %>>↓ DESC</option>
-                </select>
+
+              <div class="mb-0">
+                <label class="form-label small fw-bold">Recipients</label>
+                <textarea class="form-control form-control-sm" rows="2" 
+                          placeholder="emails separated by commas"
+                          data-action="blur->report-builder#updateSchedule"
+                          data-report-builder-target="scheduleRecipients"><%= Array(schedule.recipients).join(", ") %></textarea>
+                <div class="form-text small" style="font-size: 0.65rem">Separate multiple emails with commas.</div>
               </div>
             </div>
           </div>
@@ -518,14 +691,21 @@
     <% end %>
 
     <%# ── Preview Section ──────────────────────────────────────────────── %>
-    <div class="row mt-4">
+    <div class="row mt-4" id="report_builder_preview_row">
       <div class="col-12">
         <div class="card border shadow-sm">
           <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom">
-            <h6 class="card-title mb-0 d-flex align-items-center gap-2">
-              <i class="ti ti-table-export text-primary"></i> Data Preview
-              <small class="text-muted fw-normal ms-2">(showing first 50 rows)</small>
-            </h6>
+            <div>
+              <h6 class="card-title mb-0 d-flex align-items-center gap-2">
+                <i class="ti ti-table-export text-primary"></i> Data Preview
+                <span class="badge bg-warning text-dark fw-normal" style="font-size:.7rem">PREVIEW</span>
+              </h6>
+              <p class="text-muted small mb-0 mt-1">
+                Showing up to <strong>50 rows</strong> — a quick sample to check your setup.
+                <i class="ti ti-info-circle ms-1" title="Previewing is fast because it only fetches a tiny slice. Running the full report (especially with joins, pivots, or many rows) takes more time and database work — use Download to get all your data."></i>
+                To get all your data, use <strong>Download as Excel</strong>.
+              </p>
+            </div>
             <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2"
                     data-action="click->report-builder#loadPreview">
               <i class="ti ti-refresh"></i> Refresh Preview
@@ -540,7 +720,8 @@
                   <i class="ti ti-search text-light" style="font-size: 4rem"></i>
                 </div>
                 <h5 class="text-dark">No preview loaded</h5>
-                <p class="text-muted small">Click <strong>Refresh Preview</strong> to see how your report looks with current settings.</p>
+                <p class="text-muted small">Click <strong>Refresh Preview</strong> to see a sample of up to 50 rows.</p>
+                <p class="text-muted small">This is just a preview — use <strong>Download as Excel</strong> for the full dataset.</p>
               </div>
             <% end %>
           </div>
@@ -549,5 +730,105 @@
     </div>
   </div>
 
-  <% end %> <%# unless @root_class %>
+<!-- Command Palette Modal -->
+<div class="modal fade" id="commandPaletteModal" tabindex="-1" aria-hidden="true" data-command-palette-target="modal">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-body p-0">
+        <div class="input-group input-group-lg border-bottom">
+          <span class="input-group-text bg-white border-0"><i class="ti ti-search text-muted"></i></span>
+          <input type="text" class="form-control border-0 shadow-none" 
+                 placeholder="Search columns or actions... (Cmd+K)" 
+                 data-command-palette-target="input"
+                 data-action="input->command-palette#search">
+        </div>
+        <div class="list-group list-group-flush overflow-auto" style="max-height: 400px" data-command-palette-target="results">
+          <!-- Results will be injected here -->
+        </div>
+      </div>
+      <div class="modal-footer bg-light py-2 px-3 justify-content-start">
+        <div class="d-flex gap-3 small text-muted">
+          <span><kbd class="bg-white text-dark border shadow-sm">↑↓</kbd> to navigate</span>
+          <span><kbd class="bg-white text-dark border shadow-sm">Enter</kbd> to select</span>
+          <span><kbd class="bg-white text-dark border shadow-sm">Esc</kbd> to close</span>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+
+<!-- Template Modal -->
+<div class="modal fade" id="templateModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Quick Start Gallery</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <% report_templates.each do |key, config| %>
+            <div class="col-md-6">
+              <div class="card h-100 border shadow-sm hover-shadow transition-all">
+                <div class="card-body">
+                  <h6 class="fw-bold text-primary"><%= config[:name] %></h6>
+                  <p class="small text-muted mb-3"><%= config[:description] %></p>
+                  <%= button_to apply_report_builder_template_path(@report, template_key: key),
+                        method: :post,
+                        class: "btn btn-sm btn-outline-primary w-100",
+                        data: { confirm: "This will clear your current configuration. Continue?" } do %>
+                    Apply Template
+                  <% end %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Formula Modal -->
+<div class="modal fade" id="formulaModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Formula Playground</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <%= form_tag add_report_builder_formula_path(@report), method: :post do %>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Label</label>
+            <input type="text" name="label" class="form-control" placeholder="e.g. Call %" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Expression</label>
+            <textarea name="expression" class="form-control font-monospace" rows="3" 
+                      placeholder="e.g. ([capital_commitments.called_amount] / [capital_commitments.amount]) * 100"
+                      data-report-builder-target="formulaInput"
+                      data-action="input->report-builder#validateFormula"></textarea>
+            <div class="form-text small">
+              Use <code>[column.key]</code> to reference columns. Supports <code>+ - * / ( ) IF AND OR ROUND</code> etc.
+            </div>
+          </div>
+          
+          <div class="p-3 bg-light rounded border">
+            <h6 class="fs-2 fw-bold text-uppercase text-muted mb-2">Live Preview</h6>
+            <div data-report-builder-target="formulaPreview" class="small text-dark">
+              Enter an expression to see preview...
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-report-builder-target="formulaSubmit" disabled>Add Formula</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+  <% end %> <%# unless @root_class %>
+</div> <%# main div %>

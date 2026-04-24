@@ -151,6 +151,16 @@
             </a>
             <% end %>
 
+            <a href="<%= dashboard_widgets_path %>" class="py-8 px-7 d-flex align-items-center">
+                <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                <i class="ti ti-layout-dashboard"></i>
+                </span>
+                <div class="w-75 d-inline-block v-middle ps-3">
+                <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.dashboard_widgets') %></h6>
+                <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.manage_dashboard_widgets') %></span>
+                </div>
+            </a>
+
 
         <% end %>
 

@@ -4,6 +4,7 @@ class Report < ApplicationRecord
   belongs_to :entity, optional: true
   belongs_to :user
   has_many :report_insights, dependent: :destroy
+  has_one :report_schedule, dependent: :destroy
 
   attribute :template, :json
 

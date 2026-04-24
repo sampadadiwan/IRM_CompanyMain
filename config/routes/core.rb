@@ -21,6 +21,7 @@ scope path: 'report_builder', controller: :report_builder do
   post   '',                         action: :create,            as: :report_builder_create
   get    ':id/edit',                 action: :edit,              as: :edit_report_builder
   get    ':id/preview',              action: :preview,           as: :preview_report_builder
+  get    ':id/view',                 action: :view,              as: :view_report_builder
   get    ':id/download',             action: :download,          as: :download_report_builder
   patch  ':id/template',             action: :update_template,   as: :update_report_builder_template
   post   ':id/columns',              action: :add_column,        as: :add_report_builder_column
@@ -31,6 +32,12 @@ scope path: 'report_builder', controller: :report_builder do
   patch  ':id/sort',                 action: :update_sort,       as: :update_report_builder_sort
   patch  ':id/name',                 action: :update_name,       as: :update_report_builder_name
   patch  ':id/pivot',                action: :update_pivot,      as: :update_report_builder_pivot
+  patch  ':id/view_settings',        action: :update_view_settings, as: :update_report_builder_view_settings
+  patch  ':id/schedule',             action: :update_schedule,      as: :update_report_builder_schedule
+  post   ':id/apply_template',       action: :apply_template,       as: :apply_report_builder_template
+  post   ':id/formulas',             action: :add_formula,       as: :add_report_builder_formula
+  delete ':id/formulas/:key',        action: :remove_formula,    as: :remove_report_builder_formula
+  post   ':id/validate_formula',     action: :validate_formula,  as: :validate_report_builder_formula
 end
 
 resources :report_insights

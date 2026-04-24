@@ -1,10 +1,20 @@
 <%= turbo_frame_tag "report_builder_preview" do %>
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-  <small class="text-muted">
-    Showing first <%= @rows.size %> of <%= @total %> rows
-  </small>
-</div>
+<% if @total > @rows.size %>
+  <div class="alert alert-info alert-dismissible d-flex align-items-center gap-2 mb-0 py-2 rounded-0 border-0 border-bottom">
+    <i class="ti ti-info-circle flex-shrink-0"></i>
+    <span>
+      <strong>This is a preview</strong> — showing <strong><%= @rows.size %> of <%= @total %> rows</strong>.
+      Previewing is fast because it fetches only a small sample; running the full report takes more time and database work.
+      Use <strong>Download as Excel</strong> to get all your data.
+    </span>
+    <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+<% else %>
+  <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom bg-light">
+    <small class="text-muted">Showing all <%= @rows.size %> rows</small>
+  </div>
+<% end %>
 
 <% if @columns.empty? %>
   <div class="alert alert-info mb-0">

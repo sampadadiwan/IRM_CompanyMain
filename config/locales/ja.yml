@@ -330,6 +330,7 @@ ja:
     compliance_checks: コンプライアンスチェック
     compliance_rules: コンプライアンスルール
     customize_forms: フォームのカスタマイズ
+    dashboard_widgets: Dashboard Widgets
     dark_theme: ダーク
     design_personalized_form: パーソナライズされたフォームのデザイン
     download_audit_trail: 監査証跡のダウンロード
@@ -340,6 +341,7 @@ ja:
     imports: インポート
     light_theme: ライト
     log_out: ログアウト
+    manage_dashboard_widgets: Manage and customize dashboard widgets
     manage_exchange_rates: 為替レートの管理
     messages_notifications: メッセージと通知
     my_inbox: 受信トレイ

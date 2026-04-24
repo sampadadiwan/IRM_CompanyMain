@@ -1,6 +1,8 @@
 <% category = params[:category] %>
 <ul class="nav nav-pills p-3 mb-3 rounded align-items-center card flex-row">
   <li class="nav-item">
+
+
     <a href="<%=reports_path(card: true)%>" class="
                       nav-link
                       gap-6
@@ -17,6 +19,21 @@
     </a>
   </li>
 
+  <li class="nav-item">
+    <%= link_to new_report_builder_path, {class: "
+                      nav-link
+                      gap-6
+                      note-link
+                      d-flex
+                      align-items-center
+                      justify-content-center
+                      px-3 px-md-3 active
+                      me-0 me-md-2 text-body-color
+                    "} do %>
+      <i class="ti ti-plus"></i>
+      <span class="d-none d-md-block font-weight-medium">New Custom Report</span>
+    <% end %>
+  </li>
   <li class="nav-item ms-auto">
     <%= render "/reports/new_report" %>
   </li>

@@ -1,16 +1,18 @@
 # Wraps the Report#template JSON into a typed value object.
 class ReportBuilderConfig
-    attr_reader :root_model, :joins, :aggregates, :root_filters, :sort, :currency
+    attr_reader :root_model, :joins, :aggregates, :root_filters, :sort, :currency, :formulas, :group_rows_by
 
     def initialize(template)
       t = (template || {}).with_indifferent_access
 
-      @root_model   = t[:root_model].to_s
-      @joins        = (t[:joins] || []).map { |j| j.with_indifferent_access }
-      @aggregates   = (t[:aggregates] || {}).with_indifferent_access
-      @root_filters = (t[:root_filters] || {}).with_indifferent_access
-      @sort         = (t[:sort] || {}).with_indifferent_access
-      @currency     = t[:currency]
+      @root_model    = t[:root_model].to_s
+      @joins         = (t[:joins] || []).map { |j| j.with_indifferent_access }
+      @aggregates    = (t[:aggregates] || {}).with_indifferent_access
+      @root_filters  = (t[:root_filters] || {}).with_indifferent_access
+      @sort          = (t[:sort] || {}).with_indifferent_access
+      @currency      = t[:currency]
+      @formulas      = (t[:formulas] || []).map { |f| f.with_indifferent_access }
+      @group_rows_by = t[:group_rows_by]
     end
 
     def root_class

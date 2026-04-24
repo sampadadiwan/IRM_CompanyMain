@@ -4,7 +4,9 @@ class ReportBuilderController < ApplicationController
     add_column remove_column
     add_join remove_join
     update_aggregate update_sort update_name
-    update_pivot
+    update_pivot update_view_settings update_schedule
+    add_formula remove_formula validate_formula
+    view apply_template
   ]
 
   # GET /report_builder/models
@@ -24,10 +26,11 @@ class ReportBuilderController < ApplicationController
   # GET /report_builder/associations?model=Investor
   def associations
     authorize Report, :index?
-    klass = params[:model].constantize
+    model_name = params[:model].to_s.strip
+    klass = ReportBuilderModelDiscovery.all_models.find { |m| m.name == model_name }
+    return render json: { error: "Unknown model" }, status: :unprocessable_entity unless klass
+
     render json: ReportBuilderModelDiscovery.associations_for(klass)
-  rescue NameError
-    render json: { error: "Unknown model" }, status: :unprocessable_entity
   end
 
   # GET /report_builder/new
@@ -94,11 +97,31 @@ class ReportBuilderController < ApplicationController
     end
   end
 
+  # GET /report_builder/:id/view
+  def view
+    authorize @report, :show?
+
+    engine = ReportBuilderQueryEngine.new(
+      report: @report,
+      entity: current_user.entity,
+      external_filters: params[:q]
+    )
+
+    @rows    = engine.run
+    @columns = engine.columns
+    @total   = engine.count
+
+    # Mimic standard index variables
+    @q = @report.root_class.ransack(params[:q])
+    
+    render :view
+  end
+
   # GET /report_builder/:id/preview
   def preview
     authorize @report, :show?
 
-    engine   = ReportBuilderQueryEngine.new(report: @report, entity: current_user.entity)
+    engine   = ReportBuilderQueryEngine.new(report: @report, entity: current_user.entity, external_filters: params[:q])
     @rows    = engine.run(limit: 20)
     @columns = engine.columns
     @total   = engine.count
@@ -255,7 +278,7 @@ class ReportBuilderController < ApplicationController
           j.except("pivot")
         else
           j.merge("pivot" => {
-            "group_by"  => params[:group_by].to_s.strip,
+            "group_bys" => Array(params[:group_bys]).map(&:to_s).map(&:strip).reject(&:blank?),
             "value_col" => params[:value_col].to_s.strip,
             "aggregate" => params[:aggregate].to_s.strip.presence || "sum"
           })
@@ -269,7 +292,182 @@ class ReportBuilderController < ApplicationController
     redirect_to edit_report_builder_path(@report)
   end
 
+  # PATCH /report_builder/:id/view_settings
+  def update_view_settings
+    authorize @report, :update?
+
+    if @report.update(params.permit(:is_view, :view_target, :shared))
+      render json: { ok: true }
+    else
+      render json: { errors: @report.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # PATCH /report_builder/:id/schedule
+  def update_schedule
+    authorize @report, :update?
+
+    schedule = @report.report_schedule || @report.build_report_schedule
+    
+    # Handle recipients as array
+    recipients = params[:recipients].to_s.split(",").map(&:strip).compact_blank
+    
+    if schedule.update(
+      frequency: params[:frequency],
+      recipients: recipients,
+      active: params[:active] == "true"
+    )
+      render json: { ok: true }
+    else
+      render json: { errors: schedule.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+  # POST /report_builder/:id/formulas
+  def add_formula
+    authorize @report, :update?
+
+    expression = params[:expression].to_s
+    allowed_keys = @report.grid_view_preferences.pluck(:key).map { |k| k.split(";").first.strip }.to_set
+    referenced   = expression.scan(/\[([^\]]+)\]/).flatten.map { |r| r.split(";").first.strip }
+    bad          = referenced.reject { |r| allowed_keys.include?(r) }
+
+    if bad.any?
+      return redirect_to edit_report_builder_path(@report),
+                         alert: "Formula references unknown column(s): #{bad.join(', ')}"
+    end
+
+    tmpl = (@report.template || {}).deep_stringify_keys
+    formulas = tmpl["formulas"] || []
+
+    formulas << {
+      "key"        => "formula_#{Time.now.to_i}",
+      "label"      => params[:label].presence || "New Formula",
+      "expression" => expression
+    }
+
+    @report.update!(template: tmpl.merge("formulas" => formulas))
+    redirect_to edit_report_builder_path(@report)
+  end
+
+  # DELETE /report_builder/:id/formulas/:key
+  def remove_formula
+    authorize @report, :update?
+
+    tmpl = (@report.template || {}).deep_stringify_keys
+    formulas = (tmpl["formulas"] || []).reject { |f| f["key"] == params[:key] }
+
+    @report.update!(template: tmpl.merge("formulas" => formulas))
+    redirect_to edit_report_builder_path(@report)
+  end
+
+  # POST /report_builder/:id/validate_formula
+  def validate_formula
+    authorize @report, :update?
+
+    expression = params[:expression].to_s
+
+    # Extract all [column.key] references from the expression and validate
+    # them against the columns actually selected in this report.
+    allowed_keys = @report.grid_view_preferences.pluck(:key).map { |k| k.split(";").first.strip }.to_set
+
+    referenced = expression.scan(/\[([^\]]+)\]/).flatten.map { |r| r.split(";").first.strip }
+    bad = referenced.reject { |r| allowed_keys.include?(r) }
+    if bad.any?
+      return render json: { ok: false, error: "Unknown column(s): #{bad.join(', ')}. Only selected report columns can be used in formulas." }
+    end
+
+    engine = ReportBuilderQueryEngine.new(report: @report, entity: current_user.entity)
+    sample_row = engine.run(limit: 1).first || {}
+    sample_row = referenced.index_with(0) if sample_row.empty?
+
+    result = ReportBuilderFormulaService.validate(expression, sample_row)
+
+    if result == true
+      render json: { ok: true }
+    else
+      render json: { ok: false, error: result }
+    end
+  end
+
+  # POST /report_builder/:id/apply_template
+  def apply_template
+    authorize @report, :update?
+
+    template_key = params[:template_key]
+    template_config = report_templates[template_key]
+
+    if template_config
+      # Clear existing GVPs
+      @report.grid_view_preferences.destroy_all
+      
+      # Update template JSON
+      @report.update!(template: template_config[:template].deep_stringify_keys)
+      
+      # Create new GVPs
+      template_config[:columns].each_with_index do |col, i|
+        @report.grid_view_preferences.create!(
+          key: col[:key],
+          name: col[:name],
+          label: col[:label],
+          entity_id: @report.entity_id,
+          sequence: i + 1
+        )
+      end
+      
+      redirect_to edit_report_builder_path(@report), notice: "Template '#{template_config[:name]}' applied."
+    else
+      redirect_to edit_report_builder_path(@report), alert: "Template not found."
+    end
+  end
+
   private
+
+  def report_templates
+    {
+      "investor_commitment_summary" => {
+        name: "Investor Commitment Summary",
+        description: "Total committed and called amounts per investor.",
+        template: {
+          root_model: "Investor",
+          joins: [
+            { relation: "capital_commitments", model: "CapitalCommitment", include_zero_rows: true }
+          ],
+          aggregates: {
+            "capital_commitments.amount" => "sum",
+            "capital_commitments.called_amount" => "sum",
+            "capital_commitments.id" => "count"
+          }
+        },
+        columns: [
+          { key: "investor_name", name: "Name", label: "Investor Name" },
+          { key: "capital_commitments.amount; num-col", name: "Committed", label: "Total Committed" },
+          { key: "capital_commitments.called_amount; num-col", name: "Called", label: "Total Called" },
+          { key: "capital_commitments.id", name: "Count", label: "# Commitments" }
+        ]
+      },
+      "kyc_audit" => {
+        name: "KYC Compliance Audit",
+        description: "Latest KYC status and verification dates for all investors.",
+        template: {
+          root_model: "Investor",
+          joins: [
+            { relation: "investor_kycs", model: "InvestorKyc", include_zero_rows: true }
+          ],
+          aggregates: {
+            "investor_kycs.status" => "latest",
+            "investor_kycs.verified_at" => "latest"
+          }
+        },
+        columns: [
+          { key: "investor_name", name: "Name", label: "Investor Name" },
+          { key: "investor_kycs.status", name: "Status", label: "KYC Status" },
+          { key: "investor_kycs.verified_at", name: "Verified At", label: "Last Verified" }
+        ]
+      }
+    }
+  end
+  helper_method :report_templates
 
   def set_report
     @report = Report.find(params[:id])

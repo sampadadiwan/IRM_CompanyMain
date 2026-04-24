@@ -1,4 +1,26 @@
 class ReportBuilderModelDiscovery
+  # Add or remove class names here to control what appears in the "New Report" dropdown.
+  ROOT_MODELS = %w[
+    Fund
+    Investor
+    InvestorKyc
+    CapitalCommitment
+    CapitalCall
+    CapitalRemittance
+    CapitalRemittancePayment
+    CapitalDistributionPayment
+    CapitalDistribution
+    PortfolioInvestment
+    AggregatePortfolioInvestment
+    AccountEntry
+    FundUnit
+    CommitmentAdjustment
+    ExchangeRate
+    KpiReport
+    Kpi
+    Document
+  ].freeze
+
   EXCLUDED_TABLES = %w[
     versions audits solid_cache_entries
     active_storage_attachments active_storage_blobs active_storage_variant_records
@@ -10,31 +32,41 @@ class ReportBuilderModelDiscovery
     exception_tracks sync_records
   ].freeze
 
-  # Models eligible as report roots: must define STANDARD_COLUMNS and have entity_id.
+  # Models eligible as report roots — edit ROOT_MODELS above to control this list.
   def self.roots
-    eager_load!
-    app_models
-      .select { |k| k.const_defined?(:STANDARD_COLUMNS) }
-      .select { |k| k.column_names.include?("entity_id") }
-      .sort_by(&:name)
+    @roots ||= ROOT_MODELS.filter_map { |name|
+      klass = name.safe_constantize
+      next unless klass
+      next unless klass.column_names.include?("entity_id") rescue nil
+      klass
+    }.sort_by(&:name)
   end
 
   def self.all_models
-    eager_load!
-    app_models.sort_by(&:name)
+    @all_models ||= begin
+      eager_load!
+      app_models.sort_by(&:name)
+    end
+  end
+
+  # Reset cached results — called by Rails reloader in development.
+  def self.reset_cache!
+    @roots      = nil
+    @all_models = nil
   end
 
   def self.associations_for(klass)
     klass.reflect_on_all_associations.filter_map do |r|
       next if r.options[:polymorphic]
-      next unless r.klass rescue next
+      target_klass = r.klass rescue next
 
       {
-        name:        r.name.to_s,
-        model:       r.klass.name,
-        macro:       r.macro.to_s,
-        foreign_key: foreign_key_for(klass, r),
-        label:       r.name.to_s.humanize
+        name:         r.name.to_s,
+        model:        target_klass.name,
+        macro:        r.macro.to_s,
+        foreign_key:  foreign_key_for(klass, r),
+        label:        r.name.to_s.humanize,
+        has_children: target_klass.reflect_on_all_associations.any? { |child| !child.options[:polymorphic] }
       }
     rescue NameError
       nil
@@ -72,12 +104,12 @@ class ReportBuilderModelDiscovery
   private_class_method :app_models
 
   def self.eager_load!
-    # In Zeitwerk (Rails 7+), we should use the autoloader or eager_load
-    if Rails.respond_to?(:autoloaders) && Rails.autoloaders.main
-      # This is a bit heavy but ensures everything is loaded for discovery
-      Rails.application.eager_load!
+    if Rails.respond_to?(:autoloaders)
+      # Eager load each Zeitwerk loader directly, bypassing the @eager_loaded cache
+      # that can cause stale results when roots is first called before all packs are warm.
+      Rails.autoloaders.each { |loader| loader.eager_load(force: true) rescue loader.eager_load rescue nil }
     else
-      Dir.glob(Rails.root.join("app/packs/**/*.rb")).each { |f| require_dependency f rescue nil }
+      Rails.application.eager_load!
     end
   end
   private_class_method :eager_load!

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_22_224543) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_23_165550) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3053,6 +3053,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_224543) do
     t.index ["report_id"], name: "index_report_insights_on_report_id"
   end
 
+  create_table "report_schedules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.boolean "active"
+    t.datetime "created_at", null: false
+    t.string "cron_expression"
+    t.string "frequency"
+    t.datetime "last_run_at"
+    t.text "recipients"
+    t.bigint "report_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["report_id"], name: "index_report_schedules_on_report_id"
+  end
+
   create_table "reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.text "ai_prompt"
     t.string "category", limit: 30
@@ -3060,6 +3072,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_224543) do
     t.string "curr_role", limit: 10, default: "employee"
     t.text "description"
     t.bigint "entity_id"
+    t.boolean "is_view", default: false, null: false
+    t.datetime "last_run_at"
     t.text "metadata"
     t.string "model"
     t.string "name"
@@ -3073,12 +3087,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_224543) do
     t.datetime "notify_next_run_at"
     t.boolean "report_builder", default: false, null: false
     t.boolean "send_notification", default: false
+    t.boolean "shared", default: false, null: false
     t.string "tag_list"
     t.json "template"
     t.text "template_xls_data"
     t.datetime "updated_at", null: false
     t.text "url"
     t.bigint "user_id", null: false
+    t.string "view_target"
     t.index ["entity_id"], name: "index_reports_on_entity_id"
     t.index ["user_id"], name: "index_reports_on_user_id"
   end
@@ -3921,6 +3937,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_224543) do
   add_foreign_key "reminders", "entities"
   add_foreign_key "report_insights", "entities"
   add_foreign_key "report_insights", "reports"
+  add_foreign_key "report_schedules", "reports"
   add_foreign_key "reports", "entities"
   add_foreign_key "reports", "users"
   add_foreign_key "rm_mappings", "entities"

@@ -1,0 +1,50 @@
+<% content_for :title, "Report View – #{@report.name}" %>
+
+<div class="container-fluid mw-100 px-4 py-4">
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      <i class="ti ti-layout-grid me-2 text-primary"></i><%= @report.name %>
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill fs-1 ms-2">
+        Custom View
+      </span>
+    </h1>
+    <div class="d-flex gap-2">
+      <%= link_to edit_report_builder_path(@report), class: "btn btn-outline-primary d-flex align-items-center gap-2" do %>
+        <i class="ti ti-edit"></i> Edit Builder
+      <% end %>
+      <%= link_to download_report_builder_path(@report), class: "btn btn-success d-flex align-items-center gap-2" do %>
+        <i class="ti ti-file-spreadsheet"></i> Export XLSX
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border mb-4">
+    <div class="card-header bg-white py-3">
+      <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
+    </div>
+    <div class="card-body">
+      <%= search_form_for @q, url: view_report_builder_path(@report), method: :get, class: "row g-3" do |f| %>
+        <div class="col-md-10">
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0"><i class="ti ti-search"></i></span>
+            <%= f.search_field :investor_name_cont, class: "form-control border-start-0", placeholder: "Search by name..." %>
+          </div>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card shadow-sm border">
+    <div class="card-body p-0">
+      <%= render ReportBuilderTable.new(report: @report, columns: @columns, rows: @rows, q: @q) %>
+    </div>
+    <div class="card-footer bg-white py-3">
+      <div class="text-muted small">
+        Showing all <%= @rows.size %> records.
+      </div>
+    </div>
+  </div>
+</div>

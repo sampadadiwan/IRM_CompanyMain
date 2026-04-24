@@ -375,6 +375,9 @@ GEM
       reline (>= 0.3.8)
     debug_inspector (1.2.0)
     declarative (0.0.20)
+    dentaku (3.5.7)
+      bigdecimal
+      concurrent-ruby
     devise (5.0.0)
       bcrypt (~> 3.0)
       orm_adapter (~> 0.1)
@@ -1208,6 +1211,7 @@ DEPENDENCIES
   cucumber-rails
   database_cleaner-active_record
   debug
+  dentaku
   devise
   devise-api!
   docusign_esign (~> 4.0.0.rc1)

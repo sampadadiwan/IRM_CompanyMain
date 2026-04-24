@@ -1,6 +1,6 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Reports</h1>
-  <%#= link_to "New Report", new_report_path, {class: "btn btn-outline-primary"}  %>
+  <%= link_to "New Custom Report", new_report_builder_path, {class: "btn btn-outline-primary"}  %>
   <%= render "/reports/new_report" %>
 </div>
 <div class="table-responsive" data-controller="datatable">

@@ -12,4 +12,13 @@ class ExchangeRate < ApplicationRecord
       end
     end
   end
+
+  def self.ransackable_attributes(auth_object = nil)
+      ["as_of", "decimal",  "from", "latest", "notes", "rate", "to", "updated_at"]
+  end
+
+  def self.ransackable_associations(auth_object = nil)
+    []
+  end
+
 end

@@ -334,6 +334,7 @@ en:
     compliance_checks: Compliance Checks
     compliance_rules: Compliance Rules
     customize_forms: Customize Forms
+    dashboard_widgets: Dashboard Widgets
     dark_theme: Dark
     design_personalized_form: Design Personalized Form
     download_audit_trail: Download Audit Trail
@@ -344,6 +345,7 @@ en:
     imports: Imports
     light_theme: Light
     log_out: Log Out
+    manage_dashboard_widgets: Manage and customize dashboard widgets
     manage_exchange_rates: Manage Exchange Rates
     messages_notifications: Messages & Notifications
     my_inbox: My Inbox

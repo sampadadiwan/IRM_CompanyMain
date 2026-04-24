@@ -121,6 +121,17 @@ export default class extends Controller {
         let at = $(this.deleteForm).find('input[name="authenticity_token"]').val();
         $("#confirm_submit").find("#confirm_at").val(at);
 
+        // Copy any extra hidden params (e.g. relation, id) from the original form
+        $("#confirm_submit .extra-param").remove();
+        $(this.deleteForm).find('input[type="hidden"]')
+            .not('[name="_method"]')
+            .not('[name="authenticity_token"]')
+            .each(function() {
+                $("#confirm_submit").append(
+                    $("<input>").attr({ type: "hidden", name: $(this).attr("name"), value: $(this).val(), class: "extra-param" })
+                );
+            });
+
         // Initialize and display the Bootstrap modal
         var myModal = new bootstrap.Modal(document.getElementById('confirmModal'), {});
         myModal.show();

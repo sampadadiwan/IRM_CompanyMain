@@ -3,11 +3,12 @@
 #   Pass 2 – one aggregator per join (pivot or regular)
 # Then merges results into an array of hashes keyed by column key.
 class ReportBuilderQueryEngine
-  def initialize(report:, entity:)
-    @report          = report
-    @entity          = entity
-    @config          = ReportBuilderConfig.new(report.template)
-    @dynamic_columns = []
+  def initialize(report:, entity:, external_filters: {})
+    @report           = report
+    @entity           = entity
+    @config           = ReportBuilderConfig.new(report.template)
+    @external_filters = (external_filters || {}).with_indifferent_access
+    @dynamic_columns  = []
   end
 
   # Returns Array<Hash> where each hash is one output row.
@@ -17,7 +18,9 @@ class ReportBuilderQueryEngine
     @dynamic_columns = []
     root_records, root_ids = pass1(limit: limit)
     child_data             = pass2(root_ids)
-    merge(root_records, child_data)
+    rows                   = merge(root_records, child_data)
+    
+    apply_formulas(rows)
   end
 
   # Row count without loading all data (for preview badge).
@@ -25,25 +28,40 @@ class ReportBuilderQueryEngine
     return 0 unless config.valid?
 
     scope = config.root_class.where(entity_id: entity.id)
-    scope = scope.ransack(config.root_filters.presence || {}).result
+    merged_filters = config.root_filters.merge(@external_filters)
+    scope = scope.ransack(merged_filters).result
     scope.count
   end
 
-  # GVP columns + any dynamic pivot columns (populated after run).
+  # GVP columns + any dynamic pivot columns + formula columns.
   def columns
     @gvp_columns ||= report.grid_view_preferences.reorder(:sequence, :id).to_a
-    @gvp_columns + @dynamic_columns
+    formula_cols = (config.formulas || []).map do |f|
+      ReportBuilderDynamicColumn.new(key: f["key"], label: f["label"])
+    end
+    @gvp_columns + @dynamic_columns + formula_cols
   end
 
   private
 
   attr_reader :report, :entity, :config
 
+  def apply_formulas(rows)
+    formulas = config.formulas
+    return rows if formulas.blank?
+
+    service = ReportBuilderFormulaService.new(formulas)
+    rows.map { |row| service.evaluate(row) }
+  end
+
   # ── Pass 1 ──────────────────────────────────────────────────────────────
 
   def pass1(limit: nil)
     scope = config.root_class.where(entity_id: entity.id)
-    scope = scope.ransack(config.root_filters.presence || {}).result
+    
+    merged_filters = config.root_filters.merge(@external_filters)
+    scope = scope.ransack(merged_filters).result
+    
     scope = apply_sort(scope)
     scope = scope.limit(limit) if limit
 
@@ -61,11 +79,20 @@ class ReportBuilderQueryEngine
   end
 
   def root_db_columns
+    col_names = config.root_class.column_names
     (@gvp_columns ||= report.grid_view_preferences.reorder(:sequence, :id).to_a)
       .map(&:key)
       .reject { |k| k.include?(".") }
       .map    { |k| k.split(";").first.strip }
-      .select { |k| config.root_class.column_names.include?(k) }
+      .flat_map { |k|
+        if col_names.include?(k)
+          [k]
+        elsif col_names.include?("#{k}_cents")
+          ["#{k}_cents"]
+        else
+          []
+        end
+      }
       .uniq
   end
 
@@ -75,32 +102,43 @@ class ReportBuilderQueryEngine
     return {} if root_ids.empty?
 
     config.joins.each_with_object({}) do |join_cfg, acc|
-      relation = join_cfg[:relation].to_s
-      fk       = resolve_fk(config.root_class, relation, join_cfg)
+      relation_path = join_cfg[:relation].to_s
+      parts         = relation_path.split(".")
+      first_rel     = parts.first
+      
+      reflection = config.root_class.reflect_on_association(first_rel.to_sym)
+      next unless reflection
+      
+      base_class = reflection.klass
+      fk         = reflection.macro == :belongs_to ? "id" : reflection.foreign_key.to_s
+      
+      # The rest of the path are the joins
+      # e.g. "fund.fund_manager"
+      remaining_path = parts.size > 1 ? parts[1..-1].join(".") : nil
 
       pivot_cfg = join_cfg[:pivot]
       pivot_ready = pivot_cfg.present? &&
-                    pivot_cfg[:group_by].to_s.present? &&
+                    Array(pivot_cfg[:group_bys] || pivot_cfg[:group_by]).any?(&:present?) &&
                     pivot_cfg[:value_col].to_s.present?
 
       if pivot_ready
         dyn_cols, pivot_data = ReportBuilderPivotAggregator.new(
-          join_config: join_cfg.merge(fk: fk),
+          join_config: join_cfg.merge(base_class: base_class, joins: remaining_path, fk: fk),
           root_ids: root_ids
         ).call
         @dynamic_columns.concat(dyn_cols)
-        acc[relation] = pivot_data
+        acc[relation_path] = pivot_data
       else
         gvp_keys = (@gvp_columns ||= report.grid_view_preferences.order(:sequence).to_a)
                    .map(&:key)
-                   .select { |k| k.split(";").first.strip.start_with?("#{relation}.") }
+                   .select { |k| k.split(";").first.strip.start_with?("#{relation_path}.") }
 
         next if gvp_keys.empty?
 
-        acc[relation] = ReportBuilderChildAggregator.new(
-          join_config: join_cfg.merge(fk: fk),
+        acc[relation_path] = ReportBuilderChildAggregator.new(
+          join_config: join_cfg.merge(base_class: base_class, joins: remaining_path, fk: fk),
           root_ids: root_ids,
-          aggregates: build_rel_aggregates(relation, gvp_keys),
+          aggregates: build_rel_aggregates(relation_path, gvp_keys),
           gvp_keys: gvp_keys
         ).call
       end

@@ -3,12 +3,18 @@
 # and one MAX(id)-subquery for "latest" columns.
 class ReportBuilderChildAggregator
   GROUP_SQL = {
-    "sum" => ->(col) { "SUM(`#{col}`)" },
+    "sum"   => ->(col) { "SUM(#{col})" },
     "count" => ->(_)   { "COUNT(*)" },
-    "avg" => ->(col) { "AVG(`#{col}`)" },
-    "min" => ->(col) { "MIN(`#{col}`)" },
-    "max" => ->(col) { "MAX(`#{col}`)" },
-    "list" => ->(col) { "GROUP_CONCAT(DISTINCT `#{col}` SEPARATOR ', ')" }
+    "avg"   => ->(col) { "AVG(#{col})" },
+    "min"   => ->(col) { "MIN(#{col})" },
+    "max"   => ->(col) { "MAX(#{col})" },
+    "list"  => ->(col) {
+      if ActiveRecord::Base.connection.adapter_name =~ /mysql/i
+        "GROUP_CONCAT(DISTINCT #{col} SEPARATOR ', ')"
+      else
+        "GROUP_CONCAT(DISTINCT #{col})"
+      end
+    }
   }.freeze
 
   # join_config  – one element from Config#joins (with :fk added by QueryEngine)
@@ -37,8 +43,9 @@ class ReportBuilderChildAggregator
   attr_reader :join_config, :root_ids, :aggregates, :gvp_keys
 
   def relation    = join_config[:relation].to_s
-  def child_class = join_config[:model].constantize
+  def child_class = join_config[:base_class].to_s.constantize
   def fk          = join_config[:fk].to_s
+  def joins       = join_config[:joins]
 
   def child_filters
     (join_config[:child_filters] || {}).with_indifferent_access
@@ -46,13 +53,23 @@ class ReportBuilderChildAggregator
 
   def base_scope
     scope = child_class.where(fk => root_ids)
+    scope = scope.joins(joins.to_sym) if joins.present?
     child_filters.present? ? scope.ransack(child_filters).result : scope
   end
 
-  # Strip "relation." prefix and "; col-type" suffix to get bare column name.
+  # Strip "relation.path." prefix and "; col-type" suffix to get bare column name.
   def bare_col(gvp_key)
     without_type = gvp_key.split(";").first.strip
-    without_type.split(".", 2).last
+    # If key is "capital_commitments.fund.name", and relation is "capital_commitments.fund"
+    # we want "name".
+    # But wait, QueryEngine passes relation_path as "capital_commitments.fund"
+    # So we can just remove the relation_path prefix.
+    rel_prefix = "#{relation}."
+    if without_type.start_with?(rel_prefix)
+      without_type.sub(rel_prefix, "")
+    else
+      without_type.split(".", 2).last
+    end
   end
 
   def agg_alias(gvp_key)
@@ -82,7 +99,7 @@ class ReportBuilderChildAggregator
     end
 
     base_scope
-      .group(fk)
+      .group("`#{child_class.table_name}`.`#{fk}`")
       .select("`#{child_class.table_name}`.`#{fk}`", *exprs)
       .each do |row|
         id = row.send(fk)
@@ -97,36 +114,76 @@ class ReportBuilderChildAggregator
     return if latest_keys.empty?
 
     # Use model's latest scope if available, otherwise fallback to MAX(id)
-    latest_id_scope = base_scope.group(fk)
+    latest_id_scope = base_scope.group("`#{child_class.table_name}`.`#{fk}`")
     latest_id_scope = child_class.respond_to?(:latest) ? latest_id_scope.latest : latest_id_scope
-    latest_id_sql   = latest_id_scope.select("MAX(id) AS max_id").to_sql
+    latest_id_sql   = latest_id_scope.select("MAX(`#{child_class.table_name}`.id) AS max_id").to_sql
 
     db_cols = latest_keys.map { |k| db_col(bare_col(k)) }.uniq
 
     child_class
-      .where("id IN (#{latest_id_sql})")
-      .select("`#{fk}`", *db_cols.map { |c| "`#{c}`" })
+      .joins(joins&.to_sym)
+      .where("`#{child_class.table_name}`.id IN (#{latest_id_sql})")
+      .select("`#{child_class.table_name}`.`#{fk}`", *db_cols.map { |c| c.include?(".") ? c : "`#{child_class.table_name}`.`#{c}`" })
       .each do |row|
         id = row.send(fk)
         latest_keys.each do |k|
           col = bare_col(k)
-          raw = row.send(db_col(col))
+          raw = row.send(db_col(col).split(".").last.delete("`"))
           result[id][clean_key(k)] = monetized?(col) ? cents_to_amount(raw) : raw
         end
       end
   end
 
   # Returns the actual DB column, falling back to _cents for monetized attributes.
+  # Handles joined columns by prefixing with table name if needed.
   def db_col(col)
-    return col if child_class.column_names.include?(col)
+    if col.include?(".")
+      # e.g. "fund.name"
+      parts = col.split(".")
+      target_col = parts.last
+      
+      # We need the table name for the joined model
+      # This is tricky because ActiveRecord might alias tables.
+      # For now, let's assume standard table names.
+      
+      # We can try to resolve the table name from the association
+      current_klass = child_class
+      parts[0..-2].each do |part|
+        reflection = current_klass.reflect_on_association(part.to_sym)
+        current_klass = reflection.klass if reflection
+      end
+      
+      table_name = current_klass.table_name
+      
+      # Check for monetization on the target class
+      cents = "#{target_col}_cents"
+      final_col = current_klass.column_names.include?(cents) ? cents : target_col
+      
+      "`#{table_name}`.`#{final_col}`"
+    else
+      return "`#{child_class.table_name}`.`#{col}`" if child_class.column_names.include?(col)
 
-    cents = "#{col}_cents"
-    child_class.column_names.include?(cents) ? cents : col
+      cents = "#{col}_cents"
+      final_col = child_class.column_names.include?(cents) ? cents : col
+      "`#{child_class.table_name}`.`#{final_col}`"
+    end
   end
 
   def monetized?(col)
-    child_class.column_names.exclude?(col) &&
-      child_class.column_names.include?("#{col}_cents")
+    target_klass = child_class
+    target_col   = col
+    
+    if col.include?(".")
+      parts = col.split(".")
+      target_col = parts.last
+      parts[0..-2].each do |part|
+        reflection = target_klass.reflect_on_association(part.to_sym)
+        target_klass = reflection.klass if reflection
+      end
+    end
+
+    target_klass.column_names.exclude?(target_col) &&
+      target_klass.column_names.include?("#{target_col}_cents")
   end
 
   def cents_to_amount(cents_val)

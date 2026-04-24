@@ -50,10 +50,34 @@ class ReportBuilderXlsxExporter
         sheet.auto_filter = "A3:#{col_letter(col_count)}3"
 
         # Data rows
-        rows.each_with_index do |row_data, idx|
+        current_group = nil
+        group_col = config.group_rows_by
+        
+        # Sort rows by group if grouping is enabled
+        sorted_rows = if group_col.present?
+                        rows.sort_by { |r| r[group_col].to_s }
+                      else
+                        rows
+                      end
+
+        sorted_rows.each_with_index do |row_data, idx|
+          if group_col.present?
+            group_val = row_data[group_col].to_s
+            if group_val != current_group
+              # Add a group header row
+              sheet.add_row [group_val], style: bold_style(wb)
+              sheet.merge_cells("A#{sheet.rows.size}:#{col_letter(col_count)}#{sheet.rows.size}")
+              current_group = group_val
+            end
+          end
+
           values = columns.map { |gvp| formatted_value(row_data[gvp.key], gvp) }
           styles = columns.map { |gvp| data_style(wb, gvp, idx) }
-          sheet.add_row(values, style: styles)
+          
+          row_opts = {}
+          row_opts[:outline_level] = 1 if group_col.present?
+          
+          sheet.add_row(values, style: styles, **row_opts)
         end
 
         # Auto-fit column widths (sample first 200 rows + header)

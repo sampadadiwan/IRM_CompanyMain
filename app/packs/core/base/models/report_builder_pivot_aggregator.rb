@@ -14,7 +14,11 @@ class ReportBuilderPivotAggregator
   # Returns [Array<ReportBuilderDynamicColumn>, Hash{ root_id => { col_key => value } }]
   def call
     return [[], {}] if root_ids.empty?
-    return [[], {}] if group_by.blank? || value_col.blank?
+    return [[], {}] if group_bys.blank? || value_col.blank?
+
+    # Validate all user-supplied column names against the table schema before
+    # interpolating them into SQL. This prevents column-name injection.
+    return [[], {}] unless valid_columns?
 
     distinct_values = discover_values
     return [[], {}] if distinct_values.empty?
@@ -33,9 +37,10 @@ class ReportBuilderPivotAggregator
   attr_reader :join_config, :root_ids, :pivot
 
   def relation    = join_config[:relation].to_s
-  def child_class = join_config[:model].constantize
+  def child_class = join_config[:base_class].to_s.constantize
   def fk          = join_config[:fk].to_s
-  def group_by    = pivot[:group_by].to_s
+  def joins       = join_config[:joins]
+  def group_bys   = Array(pivot[:group_bys] || pivot[:group_by]).map(&:to_s).reject(&:blank?)
   def value_col   = pivot[:value_col].to_s
   def aggregate   = pivot[:aggregate].to_s.presence || "sum"
 
@@ -45,37 +50,53 @@ class ReportBuilderPivotAggregator
 
   def base_scope
     scope = child_class.where(fk => root_ids)
+    scope = scope.joins(joins.to_sym) if joins.present?
     child_filters.present? ? scope.ransack(child_filters).result : scope
   end
 
   def discover_values
-    base_scope.distinct.order(group_by.to_sym).pluck(group_by).compact
+    return [] if group_bys.empty?
+
+    # If multiple group_bys, we want distinct combinations
+    cols = group_bys.map { |gb| db_col(gb) }
+    base_scope.distinct.order(cols.map { |c| Arel.sql(c) }).pluck(*cols.map { |c| Arel.sql(c) })
   end
 
-  def pivot_key(val)
-    "#{relation}.#{value_col}__pivot__#{val}"
+  def pivot_key(val_combination)
+    val_str = Array(val_combination).join(" | ")
+    "#{relation}.#{value_col}__pivot__#{val_str}"
   end
 
-  def build_dynamic_columns(values)
-    values.map do |val|
+  def build_dynamic_columns(combinations)
+    combinations.map do |combo|
+      label = Array(combo).join(" | ")
       ReportBuilderDynamicColumn.new(
-        key: pivot_key(val),
-        label: "#{val} (#{aggregate})"
+        key: pivot_key(combo),
+        label: "#{label} (#{aggregate})"
       )
     end
   end
 
-  def run_pivot_query(values)
-    return run_latest_pivot_query(values) if aggregate == "latest"
+  def run_pivot_query(combinations)
+    return run_latest_pivot_query(combinations) if aggregate == "latest"
 
     result  = Hash.new { |h, k| h[k] = {} }
-    db_col  = resolve_db_col(value_col)
+    db_val_col = db_col(value_col)
+    db_grp_cols = group_bys.map { |gb| db_col(gb) }
     conn    = child_class.connection
 
-    case_exprs = values.map do |val|
-      safe = "pv_#{val.to_s.gsub(/[^a-z0-9]/i, '_')[0, 40]}_#{values.index(val)}"
-      sql  = case_when_sql(db_col, aggregate, group_by, val, conn)
-      { val: val, alias: safe, sql: "#{sql} AS `#{safe}`" }
+    case_exprs = combinations.map do |combo|
+      combo_vals = Array(combo)
+      safe = "pv_#{combo_vals.join('_').gsub(/[^a-z0-9]/i, '_')[0, 40]}_#{combinations.index(combo)}"
+      
+      # Build multi-column WHEN clause
+      when_parts = db_grp_cols.each_with_index.map do |col, i|
+        "#{col} = #{conn.quote(combo_vals[i])}"
+      end
+      when_clause = "CASE WHEN #{when_parts.join(' AND ')} THEN #{db_val_col} END"
+      
+      sql = agg_for_sql(aggregate, when_clause)
+      { combo: combo, alias: safe, sql: "#{sql} AS `#{safe}`" }
     end
 
     fk_sql = Arel.sql("`#{child_class.table_name}`.`#{fk}`")
@@ -86,40 +107,68 @@ class ReportBuilderPivotAggregator
         id = row.send(fk)
         case_exprs.each do |e|
           raw = row.send(e[:alias])
-          result[id][pivot_key(e[:val])] = monetized?(value_col) ? cents_to_amount(raw) : raw
+          result[id][pivot_key(e[:combo])] = monetized?(value_col) ? cents_to_amount(raw) : raw
         end
       end
 
     result
   end
 
-  def run_latest_pivot_query(values)
+  def run_latest_pivot_query(combinations)
     result = Hash.new { |h, k| h[k] = {} }
     
-    # Find latest ID per (root, category)
-    latest_ids_scope = base_scope.group(fk, group_by)
+    db_grp_cols = group_bys.map { |gb| db_col(gb) }
+    
+    # Find latest ID per (root, categories)
+    latest_ids_scope = base_scope.group("`#{child_class.table_name}`.`#{fk}`", *db_grp_cols)
     latest_ids_scope = child_class.respond_to?(:latest) ? latest_ids_scope.latest : latest_ids_scope
-    latest_ids_query = latest_ids_scope.select("MAX(id)")
+    latest_ids_query = latest_ids_scope.select("MAX(`#{child_class.table_name}`.id)")
 
     # Fetch values for those IDs
-    db_col_name = resolve_db_col(value_col)
+    db_val_col_name = db_col(value_col)
     child_class
-      .where(id: latest_ids_query)
-      .select(fk, group_by, db_col_name)
+      .joins(joins&.to_sym)
+      .where("`#{child_class.table_name}`.id IN (#{latest_ids_query.to_sql})")
+      .select("`#{child_class.table_name}`.`#{fk}`", *db_grp_cols, db_val_col_name)
       .each do |row|
         root_id = row.send(fk)
-        cat_val = row.send(group_by)
-        next unless values.include?(cat_val)
+        
+        # Extract combination from row
+        combo = group_bys.map { |gb| row.send(gb.split(".").last) }
+        next unless combinations.include?(combo) || combinations.include?(combo.first) # handle single vs multi
 
-        raw = row.send(db_col_name)
-        result[root_id][pivot_key(cat_val)] = monetized?(value_col) ? cents_to_amount(raw) : raw
+        raw = row.send(value_col.split(".").last)
+        result[root_id][pivot_key(combo)] = monetized?(value_col) ? cents_to_amount(raw) : raw
       end
 
     result
   end
 
-  def case_when_sql(db_col, agg, group_col, val, conn)
-    when_clause = "CASE WHEN `#{group_col}` = #{conn.quote(val)} THEN `#{db_col}` END"
+  def valid_columns?
+    allowed = child_class.column_names.to_set
+
+    # Validate each group_by column (simple columns only; dot-notation resolved via db_col)
+    group_bys.each do |gb|
+      col = gb.include?(".") ? gb.split(".").last : gb
+      cents = "#{col}_cents"
+      unless allowed.include?(col) || allowed.include?(cents)
+        Rails.logger.warn "[ReportBuilderPivotAggregator] Rejected unknown group_by column: #{gb}"
+        return false
+      end
+    end
+
+    # Validate value_col
+    vcol = value_col.include?(".") ? value_col.split(".").last : value_col
+    vcents = "#{vcol}_cents"
+    unless allowed.include?(vcol) || allowed.include?(vcents)
+      Rails.logger.warn "[ReportBuilderPivotAggregator] Rejected unknown value_col: #{value_col}"
+      return false
+    end
+
+    true
+  end
+
+  def agg_for_sql(agg, when_clause)
     case agg
     when "count" then "COUNT(#{when_clause})"
     when "avg"   then "AVG(#{when_clause})"
@@ -130,16 +179,42 @@ class ReportBuilderPivotAggregator
     end
   end
 
-  def resolve_db_col(col)
-    return col if child_class.column_names.include?(col)
-
-    cents = "#{col}_cents"
-    child_class.column_names.include?(cents) ? cents : col
+  def db_col(col)
+    if col.include?(".")
+      parts = col.split(".")
+      target_col = parts.last
+      target_klass = child_class
+      parts[0..-2].each do |part|
+        reflection = target_klass.reflect_on_association(part.to_sym)
+        target_klass = reflection.klass if reflection
+      end
+      
+      cents = "#{target_col}_cents"
+      final_col = target_klass.column_names.include?(cents) ? cents : target_col
+      "`#{target_klass.table_name}`.`#{final_col}`"
+    else
+      return "`#{child_class.table_name}`.`#{col}`" if child_class.column_names.include?(col)
+      cents = "#{col}_cents"
+      final_col = child_class.column_names.include?(cents) ? cents : col
+      "`#{child_class.table_name}`.`#{final_col}`"
+    end
   end
 
   def monetized?(col)
-    child_class.column_names.exclude?(col) &&
-      child_class.column_names.include?("#{col}_cents")
+    target_klass = child_class
+    target_col   = col
+    
+    if col.include?(".")
+      parts = col.split(".")
+      target_col = parts.last
+      parts[0..-2].each do |part|
+        reflection = target_klass.reflect_on_association(part.to_sym)
+        target_klass = reflection.klass if reflection
+      end
+    end
+
+    target_klass.column_names.exclude?(target_col) &&
+      target_klass.column_names.include?("#{target_col}_cents")
   end
 
   def cents_to_amount(val)
