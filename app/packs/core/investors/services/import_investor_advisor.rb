@@ -11,6 +11,15 @@ class ImportInvestorAdvisor < ImportUtil
     email = user_data['Email']
     investor_name = user_data['Stakeholder']
     allowed_roles = user_data['Allowed Roles'].present? ? user_data['Allowed Roles'].downcase.split(',').map(&:strip) : %w[employee investor]
+    # Finding 2: Validate roles in the import spreadsheet against the whitelist.
+    invalid_roles = allowed_roles - InvestorAdvisor::ALLOWED_ADVISOR_ROLES
+    raise "Invalid roles in 'Allowed Roles' column: #{invalid_roles.join(', ')}" if invalid_roles.any?
+
+    # Finding 2: Ensure 'company_admin' can only be granted by a company admin during import.
+    if allowed_roles.include?('company_admin')
+      importer = User.find(import_upload.user_id)
+      raise "Role 'company_admin' can only be granted by a company admin" unless importer.has_cached_role?(:company_admin)
+    end
 
     entity = import_upload.entity
     investor = entity.investors.where(investor_name:).first

@@ -20,12 +20,18 @@ Scenario Outline: Import Investor Advisors
   Given I log out
   Given I log in with email "terrie@hansen-inc.com"
   And I switch to becoming the advisor for "Investor 1"
+  Then my active entity should be the switched entity
+  And my roles should include "investor_advisor"
+  And my roles should not include "company_admin"
+  And my roles should not include "super"
   And I should see the fund in all funds page
   When I am at the fund details page
   Then I should be able to see my capital commitments
   Then I should be able to see my capital remittances
   Then I should be able to see my capital distributions
   Then I should be able to see my investor kycs
+  And I revert to my home entity
+  Then I am back in my original entity
   Given I log out
   Given I log in with email "jeanice@hansen-inc.com"
   And I switch to becoming the advisor for "Investor 2"
@@ -130,3 +136,209 @@ Scenario Outline: Create new investor advisor for capital commitment
   Examples:
   	|user	    |entity                                 |fund                 |msg	|
   	|  	      |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+
+
+# ── Security Scenarios ────────────────────────────────────────────────────────
+# These scenarios directly test that each security fix is effective.
+
+@security
+Scenario: SEC-1 Allowed roles whitelist — model rejects platform-level role at save
+  # Finding 2: allowed_roles must block system-wide roles that no entity admin
+  # has authority to bestow. :super is the key example — it transcends entities.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=AlphaVC;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  And there is an existing investor advisor user
+  When I try to build an investor advisor with allowed_roles including "super"
+  Then the investor advisor should fail validation with "contains invalid role"
+
+@security
+Scenario: SEC-2 Allowed roles whitelist — import raises error for platform-level role in spreadsheet
+  # Finding 2 (import path): the import service must reject rows whose
+  # Allowed Roles column contains roles outside ALLOWED_ADVISOR_ROLES.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And given there are investor advisors "terrie@hansen-inc.com"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  And Given import file "investors.xlsx" for "Investor"
+  And Given import file "investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "investor_access.xlsx" for "InvestorAccess"
+  And Given import file "capital_commitments_with_kycs.xlsx" for "CapitalCommitment"
+  When I process an investor advisor import row with allowed_roles "super"
+  Then the import row should raise an invalid roles error
+
+@security
+Scenario: SEC-3 Allowed roles whitelist — all entity-level roles are accepted
+  # Finding 2 (positive case): employee, investor, company_admin, and rm must
+  # all pass validation because entity admins legitimately grant these.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=AlphaVC2;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  And there is an existing investor advisor user
+  When I try to build an investor advisor with allowed_roles including "employee"
+  Then the investor advisor should pass allowed_roles validation
+  When I try to build an investor advisor with allowed_roles including "investor"
+  Then the investor advisor should pass allowed_roles validation
+  When I try to build an investor advisor with allowed_roles including "company_admin"
+  Then the investor advisor should pass allowed_roles validation
+  When I try to build an investor advisor with allowed_roles including "rm"
+  Then the investor advisor should pass allowed_roles validation
+
+@security
+Scenario: SEC-4 IDOR blocked — user from unrelated entity cannot create advisor for another entity's investor
+  # Finding 1: create_for_investor? must check user entity, not just ID equality.
+  # A user from RogueCo should never pass the policy for ManagingCo's investor.
+  Given Im logged in as a user "first_name=Attacker" for an entity "name=RogueCo;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  And there is a separate managing entity with an investor
+  When I check create_for_investor policy against the other entity's investor
+  Then the policy should deny create_for_investor access
+
+@security
+Scenario: SEC-5 IDOR blocked — user from the owning entity is allowed through create_for_investor
+  # Finding 1 (positive case): an admin of the managing entity must still be
+  # able to add advisors through this path.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=ManagingCo;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  And there is an investor belonging to this managing entity
+  When I check create_for_investor policy for this entity's own investor
+  Then the policy should allow create_for_investor access
+
+@security
+Scenario: SEC-6 Feature flag enforced — entity without enable_investor_advisors cannot create advisors
+  # Finding 4: create? must check enable_investor_advisors, not just entity membership.
+  # Disabling the flag must block writes, not just hide the index page.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=LockedFund;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity does not have the investor advisors feature enabled
+  And there is an existing investor "name=TestInv" with "1" users
+  When I check the create investor advisor policy
+  Then the policy should deny create access
+
+@security
+Scenario: SEC-7 Feature flag enforced — entity with enable_investor_advisors can create advisors
+  # Finding 4 (positive case): the flag being on must still allow the existing flow.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=EnabledFund;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  And there is an existing investor "name=TestInv" with "1" users
+  When I check the create investor advisor policy
+  Then the policy should allow create access
+
+@security
+Scenario: SEC-8 Revert endpoint — non-advisor user is denied
+  # Finding 3: the revert path of switch must check investor_advisor? before running.
+  # A regular investor user must receive Pundit::NotAuthorizedError.
+  Given Im logged in as a user "first_name=Investor" for an entity "name=BetaFund;entity_type=Investment Fund"
+  Given the user has role "investor"
+  Then the user is not in advisor context
+  And attempting the advisor revert switch should be denied
+
+@security
+Scenario: SEC-9 Revert endpoint — switched advisor can revert normally
+  # Finding 3 (positive case): a user who is genuinely in advisor context must
+  # be able to revert without error.
+  Given Im logged in as a user "first_name=Advisor" for an entity "name=AdvisoryFirm2;entity_type=Investor Advisor"
+  Given the user has role "investor_advisor"
+  And there is an investor advisor record for this user in another entity
+  And I have switched into that advisor entity
+  Then the advisor revert should succeed and return to the home entity
+
+@security
+Scenario: SEC-10 GET request does not trigger entity switch
+  # Finding 6: switch_advisor before_action must only fire on POST requests.
+  # A GET visit to any page with investor_advisor_id in the query string must
+  # not modify the user's entity_id in the database.
+  Given Im logged in as a user "first_name=Advisor" for an entity "name=AdvisoryFirm;entity_type=Investor Advisor"
+  Given the user has role "investor_advisor"
+  And there is an investor advisor record for this user in another entity
+  When I visit a page with the investor_advisor_id parameter as a GET request
+  Then my active entity should not have changed
+
+@security
+Scenario: SEC-11 Invalid fund_id in new_for_investor redirects gracefully without 500
+  # Finding 7: a missing @fund must redirect, not crash with NoMethodError.
+  # The response must be a redirect, not an error, regardless of fund_id value.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=SafeFund;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  And there is an existing investor "name=TestInv" with "1" users
+  When I visit the new_for_investor page with an invalid fund_id
+  Then I should be redirected to the funds page with an alert
+
+@security
+Scenario: SEC-12 Roles after switch are scoped to allowed_roles only — no privilege escalation
+  # Findings 2 + 8: after switching, the advisor must hold only the roles
+  # configured in allowed_roles, never anything beyond them.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=GreenVC;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And given there are investor advisors "terrie@hansen-inc.com"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  And Given import file "investors.xlsx" for "Investor"
+  And Given import file "investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "investor_access.xlsx" for "InvestorAccess"
+  And Given import file "capital_commitments_with_kycs.xlsx" for "CapitalCommitment"
+  And Given I upload "investor_advisors.xlsx" file for Investment Advisors
+  Given I log out
+  Given I log in with email "terrie@hansen-inc.com"
+  And I switch to becoming the advisor for "Investor 1"
+  Then my roles should include "investor_advisor"
+  And my roles should not include "company_admin"
+  And my roles should not include "super"
+  And my permissions should match the investor advisor permissions
+  And my extended permissions should match the investor advisor extended permissions
+
+@security
+Scenario: SEC-13 Mass assignment blocked — user_id is ignored in strong params
+  # Finding 5: submitting user_id in the form must not override the user
+  # resolved from the email field.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=MassTestFund;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  And there is an existing investor advisor user
+  Then user_id is not accepted as a permitted parameter for investor advisor creation
+
+@security
+Scenario: SEC-14 Permissions and extended_permissions are accepted from the UI
+  # User requirement: entity admins must be able to set permissions and
+  # extended_permissions from the form. These are intentionally permitted.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=MassTestFund2;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  Then permissions and extended_permissions are accepted as permitted parameters
+
+@security
+Scenario: SEC-15 Only company admins can create or update investor advisors
+  # Policy change: create? now requires company_admin. A regular employee of
+  # the same entity must be denied even with the feature flag on.
+  Given Im logged in as a user "first_name=Employee" for an entity "name=StaffFund;entity_type=Investment Fund"
+  Given the user has role "employee"
+  And the entity has the investor advisors feature enabled
+  And there is an existing investor "name=TestInv" with "1" users
+  When I check the create investor advisor policy
+  Then the policy should deny create access
+
+@security
+Scenario: SEC-16 company_admin role in allowed_roles — blocked for non-company-admin granter
+  # Belt-and-suspenders: even if someone bypasses the policy check, the model
+  # validation must reject company_admin in allowed_roles when acting_user is
+  # not a company admin.
+  Given Im logged in as a user "first_name=Employee" for an entity "name=StaffFund2;entity_type=Investment Fund"
+  Given the user has role "employee"
+  And the entity has the investor advisors feature enabled
+  And there is an existing investor advisor user
+  When a non-company-admin tries to build an investor advisor with allowed_roles "company_admin"
+  Then the investor advisor should fail validation with "cannot include 'company_admin'"
+
+@security
+Scenario: SEC-17 company_admin role in allowed_roles — allowed for company_admin granter
+  # Positive case: a company admin may legitimately grant company_admin to an
+  # advisor so they have full admin access when operating in that entity.
+  Given Im logged in as a user "first_name=Fund Manager" for an entity "name=AdminGrantFund;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  And the entity has the investor advisors feature enabled
+  And there is an existing investor advisor user
+  When a company_admin tries to build an investor advisor with allowed_roles "company_admin"
+  Then the investor advisor should pass the company_admin granter validation

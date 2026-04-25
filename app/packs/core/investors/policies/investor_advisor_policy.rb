@@ -6,6 +6,7 @@ class InvestorAdvisorPolicy < ApplicationPolicy
   end
 
   def index?
+    # Finding 4: Ensure the feature flag is checked.
     user.enable_investor_advisors && !user.investor_advisor?
   end
 
@@ -14,7 +15,11 @@ class InvestorAdvisorPolicy < ApplicationPolicy
   end
 
   def create?
-    belongs_to_entity?(user, record)
+    # Finding 4: Feature flag must be enforced for write operations, not just index.
+    # Also restricted to company_admin to prevent regular employees from creating advisors.
+    user.enable_investor_advisors &&
+      belongs_to_entity?(user, record) &&
+      user.has_cached_role?(:company_admin)
   end
 
   def switch?
@@ -26,15 +31,21 @@ class InvestorAdvisorPolicy < ApplicationPolicy
   end
 
   def new_for_investor?
-    investor_advisor = record[:investor_advisor]
     investor = record[:investor]
-    investor_advisor&.entity_id == investor&.investor_entity_id
+    return false if investor.nil?
+
+    # Finding 1: Check that the current user belongs to the managing entity
+    # of the investor. This prevents IDOR where a user from one entity
+    # could add an advisor to an investor belonging to another entity.
+    belongs_to_entity?(user, investor) && user.has_cached_role?(:company_admin)
   end
 
   def create_for_investor?
-    investor_advisor = record[:investor_advisor]
     investor = record[:investor]
-    investor_advisor&.entity_id == investor&.investor_entity_id
+    return false if investor.nil?
+
+    # Finding 1: Same IDOR protection as new_for_investor?.
+    belongs_to_entity?(user, investor) && user.has_cached_role?(:company_admin)
   end
 
   def update?

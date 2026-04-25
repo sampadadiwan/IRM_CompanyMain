@@ -20,15 +20,23 @@ class InvestorAdvisorsController < ApplicationController
 
   def new_for_investor
     @investor = Investor.find_by(id: params[:investor_id])
+    # Finding 7: Gracefully handle missing investor to prevent nil crash and enumeration oracle.
     if @investor.nil?
       authorize({ investor_advisor: nil, investor: nil }, policy_class: InvestorAdvisorPolicy)
       redirect_to funds_path, alert: "Investor not found."
       return
     end
 
+    @fund = Fund.find_by(id: params[:fund_id])
+    # Finding 7: Gracefully handle missing fund to prevent nil crash and enumeration oracle.
+    if @fund.nil?
+      authorize({ investor_advisor: nil, investor: @investor }, policy_class: InvestorAdvisorPolicy)
+      redirect_to funds_path, alert: "Fund not found."
+      return
+    end
+
     @investor_advisor = InvestorAdvisor.new(entity_id: @investor.investor_entity_id)
     @entity = @investor_advisor.entity
-    @fund = Fund.find_by(id: params[:fund_id])
     authorize({ investor_advisor: @investor_advisor, investor: @investor }, policy_class: InvestorAdvisorPolicy)
     @back_to = params[:back_to] || fund_path(@fund)
     @bread_crumbs = { Funds: funds_path,
@@ -42,18 +50,21 @@ class InvestorAdvisorsController < ApplicationController
   def edit; end
 
   def create_for_investor
-    @investor_advisor = InvestorAdvisor.new(investor_advisor_params)
     @investor = Investor.find(params[:investor_advisor][:investor_id])
     @fund = Fund.find(params[:investor_advisor][:fund_id])
     @entity = @investor.investor_entity
+    authorize({ investor_advisor: InvestorAdvisor.new, investor: @investor }, policy_class: InvestorAdvisorPolicy)
+
+    @investor_advisor = InvestorAdvisor.new(investor_advisor_params)
+    # Finding 1: Force entity_id server-side to match the investor's entity.
+    # This prevents IDOR where a user could attempt to link an advisor to an unrelated entity.
+    @investor_advisor.entity_id = @investor.investor_entity_id
     @investor_advisor.allowed_roles = ["investor"]
     @investor_advisor.owner_name = @fund.name
     @investor_advisor.permissions = @investor.investor_entity.permissions
     @investor_advisor.extended_permissions = %i[investor_kyc_read investor_read]
     @investor_advisor.created_by = current_user
-    # since this IA has entity that is investor's investor entity it will not pass this authorization
-    # authorize(@investor_advisor)
-    authorize({ investor_advisor: @investor_advisor, investor: @investor }, policy_class: InvestorAdvisorPolicy)
+    @investor_advisor.acting_user = current_user
 
     ActiveRecord::Base.transaction do
       @result = AddFolioInvestorAdvisor.wtf?(investor_advisor: @investor_advisor, investor: @investor, fund: @fund, params: params)
@@ -88,6 +99,7 @@ class InvestorAdvisorsController < ApplicationController
   def create
     @investor_advisor = InvestorAdvisor.new(investor_advisor_params)
     @investor_advisor.created_by = current_user
+    @investor_advisor.acting_user = current_user
     authorize(@investor_advisor)
 
     respond_to do |format|
@@ -103,6 +115,7 @@ class InvestorAdvisorsController < ApplicationController
 
   # PATCH/PUT /investor_advisors/1 or /investor_advisors/1.json
   def update
+    @investor_advisor.acting_user = current_user
     respond_to do |format|
       if @investor_advisor.update(investor_advisor_params)
         format.html { redirect_to investor_advisor_url(@investor_advisor), notice: "Investor advisor was successfully updated." }
@@ -128,12 +141,14 @@ class InvestorAdvisorsController < ApplicationController
     if params[:id].present?
       @investor_advisor = InvestorAdvisor.find(params[:id])
       authorize(@investor_advisor)
-      # Switch to advisor
       @investor_advisor.switch(current_user)
-
       redirect_back_or_to(root_path, notice: "You have now been switched to the advisor role for #{@investor_advisor.entity.name}.")
     else
-      # Switch back to normal
+      # Finding 3: The revert path must check that the user is actually an advisor
+      # currently switched into another entity. This prevents account corruption
+      # for regular users and unauthorized session disruption.
+      raise Pundit::NotAuthorizedError unless current_user.investor_advisor?
+
       InvestorAdvisor.revert(current_user, params[:persona])
       redirect_back_or_to(root_path, notice: "You have now been switched out of the advisor role.")
     end
@@ -148,7 +163,10 @@ class InvestorAdvisorsController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # Note: :user_id is intentionally omitted — it is resolved server-side from :email via ensure_user.
+  # Finding 5: permissions and extended_permissions are kept here per user requirement (SEC-14),
+  # allowing entity admins to set them from the UI.
   def investor_advisor_params
-    params.require(:investor_advisor).permit(:entity_id, :user_id, :email, allowed_roles: [], permissions: [], extended_permissions: [])
+    params.require(:investor_advisor).permit(:entity_id, :email, allowed_roles: [], permissions: [], extended_permissions: [])
   end
 end

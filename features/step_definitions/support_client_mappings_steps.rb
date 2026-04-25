@@ -96,13 +96,15 @@ Then("the user should gain the company_admin role") do
 end
 
 Given("the user has switched") do
+  # Capture original entity_id before switch; perform_revert clears json_fields after revert
+  # so assertions can no longer read orig_entity_id from there (security fix Finding 3).
+  @orig_entity_id = @mapping.user.entity_id
   @mapping.enable_support
   @mapping.switch
 end
 
 Then("the user's entity should be reset to the original") do
-  orig_entity_id = @mapping.user.json_fields["orig_entity_id"]
-  expect(@mapping.user.entity_id).to eq(orig_entity_id)
+  expect(@mapping.user.reload.entity_id).to eq(@orig_entity_id)
 end
 
 Then("the user should have the support role") do
@@ -201,6 +203,9 @@ When("I manually disable the mapping") do
 end
 
 Given("I have switched to the client entity context") do
+  # Capture original entity_id before switch; perform_revert clears json_fields after revert
+  # so assertions can no longer read orig_entity_id from there (security fix Finding 3).
+  @orig_entity_id = @mapping.user.entity_id
   @mapping.switch
 end
 
@@ -217,6 +222,9 @@ Given("the mapping's end_date was 2 weeks ago") do
 end
 
 When("I switch to the client entity context") do
+  # Capture original entity_id before switch; perform_revert clears json_fields after revert
+  # so assertions can no longer read orig_entity_id from there (security fix Finding 3).
+  @orig_entity_id = @mapping.user.entity_id
   @mapping.switch
 end
 
@@ -241,11 +249,15 @@ When("I revert to my original entity context") do
 end
 
 Then("my current entity should be my original entity") do
-  expect(@user.reload.entity_id).to eq(@user.json_fields['orig_entity_id'])
+  expect(@user.reload.entity_id).to eq(@orig_entity_id)
 end
 
 Then("my original state should be cleared from json_fields") do
-  expect(@user.reload.entity_id).to eq(@user.json_fields['orig_entity_id'])
+  # Security fix (Finding 3): perform_revert must clear orig_entity_id and orig_roles from
+  # json_fields after a successful revert so stale role/entity data cannot be replayed.
+  user = @user.reload
+  expect(user.json_fields['orig_entity_id']).to be_nil
+  expect(user.json_fields['orig_roles']).to be_nil
 end
 
 When("I check my mapping status") do
@@ -343,7 +355,7 @@ end
 
 Then("the user should still be able to revert via the mapping") do
   expect { @mapping.revert }.not_to raise_error
-  expect(@user.reload.entity_id).to eq(@user.json_fields["orig_entity_id"])
+  expect(@user.reload.entity_id).to eq(@orig_entity_id)
 end
 
 When("I delete the mapping") do

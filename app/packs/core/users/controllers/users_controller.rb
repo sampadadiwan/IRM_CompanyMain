@@ -93,30 +93,54 @@ class UsersController < ApplicationController
   end
 
   def no_password_login
-    # If we have support trying to log in as this user, lets track that
-    support_user_id = current_user&.has_cached_role?(:support) ? current_user.id : nil
-    ActiveRecord::Base.connected_to(role: :writing) do
-      if params[:signed_id]
-        # Find user by signed id, the signed_id is generated as per https://kukicola.io/posts/signed-urls-with-ruby/
-        @user = User.find_signed params[:signed_id]
-        if @user.present?
-          # Confirm user if not confirmed, as he has used his email to login
-          @user.confirm unless @user.confirmed?
-          # Sign in user
-          sign_in @user
-          # Set support user id if present, so audit trail can reflect who actually made changes. see ApplicationController.current_user_or_support_user and config/initializers/audited.rb
-          session[:support_user_id] = support_user_id if support_user_id.present?
-          # Redirect to root path
-          redirect_to ( params[:redirect_to].presence ||
-                        session[:user_return_to].presence ||
-                        root_path), notice: "Signed in successfully"
-        else
-          redirect_to new_session_path(User), notice: "Invalid login link"
-        end
-      else
-        redirect_to new_session_path(User), notice: "Invalid login link"
+    # Security fix (Finding 5): Capture the support user identity before any sign_in call
+    # changes current_user. We need both the id (for the audit session) and the full object
+    # (to run the allow_login_as check).
+    support_user    = current_user&.has_cached_role?(:support) ? current_user : nil
+    support_user_id = support_user&.id
+
+    unless params[:signed_id]
+      redirect_to new_session_path(User), notice: "Invalid login link"
+      return
+    end
+
+    # Find user by signed id — see https://kukicola.io/posts/signed-urls-with-ruby/
+    @user = User.find_signed(params[:signed_id])
+
+    unless @user.present?
+      redirect_to new_session_path(User), notice: "Invalid login link"
+      return
+    end
+
+    # Security fix (Finding 5): SupportClientMapping#allow_login_as was never called in this
+    # action, making the enable_user_login / user_emails whitelist completely unenforced. Any
+    # user with the :support role could log in as any client user regardless of what the
+    # administrator configured on the mapping. Now we look up the active mapping for this
+    # support user and the target user's entity and reject the login if the support user's
+    # email is not whitelisted (or if login delegation is disabled on the mapping entirely).
+    if support_user.present?
+      mapping = SupportClientMapping.find_by(
+        user_id:   support_user_id,
+        entity_id: @user.entity_id,
+        enabled:   true
+      )
+      unless mapping&.allow_login_as(support_user.email)
+        redirect_to root_path, alert: "Login delegation not permitted for this account."
+        return
       end
     end
+
+    ActiveRecord::Base.connected_to(role: :writing) do
+      # Confirm user if not confirmed, as they have used their email link to login
+      @user.confirm unless @user.confirmed?
+      sign_in @user
+      # Set support_user_id in session so the audit trail records who actually made changes.
+      # See ApplicationController#current_user_or_support_user and config/initializers/audited.rb
+      session[:support_user_id] = support_user_id if support_user_id.present?
+    end
+
+    redirect_to(params[:redirect_to].presence || session[:user_return_to].presence || root_path,
+                notice: "Signed in successfully")
   end
 
   # GET /users/1 or /users/1.json

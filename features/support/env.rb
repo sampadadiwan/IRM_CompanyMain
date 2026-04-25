@@ -160,7 +160,6 @@ end
 Capybara.run_server = true
 port = (3100 + ENV['TEST_ENV_NUMBER'].to_i)
 Capybara.server_port = port
-# Capybara.default_max_wait_time = 5
 
 Capybara.register_server :puma do |app, _port, host|
   require 'puma'
@@ -191,7 +190,6 @@ if ENV['TEST_ENV_NUMBER'].present?
   ActiveRecord::Base.logger = Rails.logger
 end
 
-Capybara.default_max_wait_time = 10 # or more
 
 Capybara.register_driver(:playwright) do |app|
   Capybara::Playwright::Driver.new(app,

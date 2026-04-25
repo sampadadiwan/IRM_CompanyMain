@@ -6,7 +6,10 @@ module WithAuthentication
     after_action :verify_policy_scoped, only: [:index]
 
     before_action :set_current_entity
-    before_action :switch_advisor, if: proc { |controller| controller.current_user&.has_cached_role?(:investor_advisor) && controller.params[:investor_advisor_id].present? }
+    # Finding 6: switch_advisor must only fire on POST requests.
+    # This prevents state mutation on GET requests, which could be exploited
+    # via phishing links or open redirects to silently switch an advisor's entity.
+    before_action :switch_advisor, if: proc { |controller| controller.request.post? && controller.current_user&.has_cached_role?(:investor_advisor) && controller.params[:investor_advisor_id].present? }
     before_action :authenticate_user!, unless: :devise_controller?
     before_action :configure_permitted_parameters, if: :devise_controller?
 
