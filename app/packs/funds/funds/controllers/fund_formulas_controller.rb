@@ -146,6 +146,24 @@ class FundFormulasController < ApplicationController
     end
   end
 
+  def fetch_templates
+    authorize FundFormula
+    fund_ids = params[:fund_ids]
+    name = params[:name]
+    rule_type = params[:rule_type]
+
+    @formulas = FundFormula.includes(fund: :entity).where(fund_id: fund_ids)
+    @formulas = @formulas.where(name: name) if name.present?
+    @formulas = @formulas.where(rule_type: rule_type) if rule_type.present?
+    
+    # Group by formula to keep them distinct but keep access to fund/entity info
+    @formulas = @formulas.to_a.uniq(&:formula)
+
+    respond_to do |format|
+      format.turbo_stream
+    end
+  end
+
   # DELETE /fund_formulas/1 or /fund_formulas/1.json
   def destroy
     @fund_formula.destroy

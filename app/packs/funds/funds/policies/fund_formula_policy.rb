@@ -40,6 +40,10 @@ class FundFormulaPolicy < FundBasePolicy
     create?
   end
 
+  def fetch_templates?
+    support?
+  end
+
   def destroy?
     update?
   end

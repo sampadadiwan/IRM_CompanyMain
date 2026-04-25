@@ -149,10 +149,22 @@
 
   <div class="col-lg-6 mb-4">
     <div class="row">
-      <div class="col-12" data-controller="datatable ">
+      <div class="col-12" data-controller="datatable fund-formula-templates" data-fund-formula-templates-url-value="<%= fetch_templates_fund_formulas_path %>">
         <%= render FormCard.new(title: "Formula Templates", controller: "") do %>
-          <table class="table table-bordered dataTable jqDataTable">
+          <% if current_user.support? %>
+            <div class="form-group">
+              <%= label_tag :fund_ids, "Select Funds to fetch formulas from" %>
+              <%= select_tag :fund_ids, options_for_select(Fund.includes(:entity).order(:name).map { |f| ["#{f.name} : #{f.entity.name}", f.id] }), multiple: true, class: "form-control select2", data: { fund_formula_templates_target: "fundIds" } %>
+              <small class="text-muted">Formulas will be filtered by Name and Rule Type from the left form.</small>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm mb-3" data-action="fund-formula-templates#fetch">Fetch Formulas</button>
+            <div id="fetched_formulas_results" data-fund-formula-templates-target="results">
+              <!-- Results will be rendered here -->
+            </div>
+            <hr>
+          <% end %>
 
+          <table class="table table-bordered dataTable jqDataTable" <%= 'style="display:none"' if current_user.support? %>>
             <thead>
               <th>Name</th>
               <th>Formula</th>

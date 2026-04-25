@@ -1,0 +1,32 @@
+<% if formulas.any? %>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Fund / Entity</th>
+        <th>Formula</th>
+        <th style="width: 50px;"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% formulas.each_with_index do |fund_formula, index| %>
+        <tr>
+          <td>
+            <small class="d-block"><strong>Fund:</strong> <%= fund_formula.fund.name %></small>
+            <small class="d-block text-muted"><strong>Entity:</strong> <%= fund_formula.fund.entity.name %></small>
+          </td>
+          <td id="fetched_formula_<%= index %>"><%= fund_formula.formula %></td>
+          <td>
+            <i class="fas fa-lg fa-copy text-primary" 
+               data-action="click->confirm#copy" 
+               data-target="#fetched_formula_<%= index %>" 
+               data-notify="#imp_links_notice" 
+               title="Copy Formula"
+               style="cursor: pointer;"></i>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <div class="alert alert-warning">No matching formulas found.</div>
+<% end %>
