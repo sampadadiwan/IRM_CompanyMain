@@ -328,8 +328,12 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
     @inv_adv
   end
 
-  def send_magic_link(current_entity_id, redirect_to)
-    UserMailer.with(id:, current_entity_id:, redirect_to:).magic_link.deliver_later
+  # Security fix (Finding 7 — redirect_to phishing): redirect_to parameter removed.
+  # The magic link email must not embed a caller-supplied redirect destination.
+  # After authentication, the destination is determined solely from session[:user_return_to]
+  # server-side in UsersController#no_password_login. See that action for the full rationale.
+  def send_magic_link(current_entity_id)
+    UserMailer.with(id:, current_entity_id:).magic_link.deliver_later
   end
 
   def show_all_cols?

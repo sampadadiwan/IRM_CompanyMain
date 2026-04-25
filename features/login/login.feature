@@ -38,8 +38,8 @@ Scenario Outline: Login Successfully, without password
 
   Examples:
   	|user	  |login_msg	            | subject                         | link         | msg |
-  	|  	    |Signed in successfully| Login Link: Expires in 5 minutes |Click To Login|Login link sent, please check your mailbox.|
-    |  	    |Signed in successfully| Login Link: Expires in 5 minutes |Click To Login|Login link sent, please check your mailbox.|
+  	|  	    |Signed in successfully| Login Link: Expires in 10 minutes |Click To Login|If that address is registered, a login link is on its way.|
+    |  	    |Signed in successfully| Login Link: Expires in 10 minutes |Click To Login|If that address is registered, a login link is on its way.|
 
 Scenario Outline: Login Incorrectly
   Given there is a user "<user>" for an entity ""

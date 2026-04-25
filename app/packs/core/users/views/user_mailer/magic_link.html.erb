@@ -1,20 +1,44 @@
 <h3>Dear <%= @user.full_name %></h3>
 
 <p>
-    Please click on the link below to login, note this link will expire in 5 mins.
+    Please click on the link below to login. This link will expire in
+    <%= UserMailer::MAGIC_LINK_TTL.in_minutes.to_i %> minutes.
 </p>
 
 <%
     @current_entity ||= nil
-    subdomain = @current_entity && !Rails.env.test? ? @current_entity.sub_domain : nil
-    puts "subdomain: #{subdomain}, current_entity: #{@current_entity.id}"
+
+    # Security fix (Finding 5 — silent email failure / NoMethodError):
+    # The original code called `puts "...: #{@current_entity.id}"` which:
+    #   1. Raised NoMethodError on nil in Ruby 3.x when current_entity_id was absent (main
+    #      domain logins). The background job crashed silently — the user was told "Login link
+    #      sent" but received nothing, effectively denying magic-link authentication.
+    #   2. Logged entity ID and subdomain to stdout on every magic link request in production.
+    # Fixed by using safe navigation (.present?) and removing the debug puts entirely.
+    subdomain = @current_entity.present? && !Rails.env.test? ? @current_entity.sub_domain : nil
+
+    # Security fix (Finding 6 — expiry mismatch): token TTL now driven by the same constant
+    # as the subject line (UserMailer::MAGIC_LINK_TTL = 10 minutes). Previously the subject
+    # said "Expires in 5 minutes" but signed_id used 15.minutes, leaving an undisclosed
+    # extra window during which an intercepted link could be replayed.
     # https://kukicola.io/posts/signed-urls-with-ruby/
-    signed_id = @user.signed_id(expires_in: 15.minutes)
+    signed_id = @user.signed_id(expires_in: UserMailer::MAGIC_LINK_TTL)
 %>
 
 <p class="btn btn-outline-primary">
-    <!-- redirect_to is the page from where the user was redirected to the login page -->
-    <%= link_to 'Click To Login', no_password_login_users_url(signed_id:, subdomain:, redirect_to: params[:redirect_to]) %>
+    <%#
+      Security fix (Finding 7 — redirect_to phishing): redirect_to has been removed from
+      this URL. Previously, whatever value was passed as params[:redirect_to] to the
+      POST /users/magic_link endpoint was embedded here verbatim. An unauthenticated attacker
+      could supply any internal path; the victim — receiving an email from our legitimate mail
+      server — would be redirected there after authenticating without any visible warning.
+
+      The destination after login is now determined exclusively from session[:user_return_to]
+      server-side in UsersController#no_password_login. That value is set by Devise when it
+      intercepts an unauthenticated request, lives only in the server session store, and is
+      never attacker-controlled through the magic link flow.
+    %>
+    <%= link_to 'Click To Login', no_password_login_users_url(signed_id:, subdomain:) %>
 </p>
 
 <p>

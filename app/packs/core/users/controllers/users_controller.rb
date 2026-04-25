@@ -46,15 +46,33 @@ class UsersController < ApplicationController
   end
 
   def magic_link
-    @user = User.find_by(email: params[:user][:email]) if params[:user].present?
-    @user ||= nil
-    if @user.present?
-      # redirect_to is the page from where the user was redirected to the login page
-      @user.send_magic_link(params[:current_entity_id], params[:redirect_to])
-      redirect_to new_session_path(User, display_status: true), notice: "Login link sent, please check your mailbox."
+    # Security fix (Finding 3 — email enumeration): the original code returned a different
+    # flash message depending on whether the email was registered:
+    #   found     → "Login link sent, please check your mailbox."
+    #   not found → "User not found. Please signup."
+    # An unauthenticated attacker could probe this endpoint to determine which addresses are
+    # in the system, especially because the per-email Rack::Attack throttle was broken for
+    # this action (it read params['email'] but the form sends user[email]).
+    #
+    # Fix: the browser always receives the same response. For the not-found case we send a
+    # "no account found" email to the submitted address instead of disclosing anything in the
+    # HTTP response. A legitimate user who mistyped their address learns about it in their own
+    # inbox; an attacker probing the endpoint gains no information from the HTTP response.
+    email = params.dig(:user, :email).to_s.strip.downcase
+    @user = User.find_by(email:)
+
+    if @user
+      # Security fix (Finding 7 — redirect_to phishing): do not forward params[:redirect_to]
+      # into the magic link email. See the no_password_login action below for the full
+      # rationale. The destination after login is handled server-side via session[:user_return_to].
+      @user.send_magic_link(params[:current_entity_id])
     else
-      redirect_to new_session_path(User), notice: "User not found. Please signup."
+      UserMailer.with(email:).no_account_found.deliver_later
     end
+
+    # Identical flash for both branches — no enumeration oracle.
+    redirect_to new_session_path(User, display_status: true),
+                notice: "If that address is registered, a login link is on its way."
   end
 
   # Generates a cross-site login link for the user and redirects to the target site
