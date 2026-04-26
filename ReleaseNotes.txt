@@ -1,3 +1,13 @@
+V9.2.27
+b0263e0f8 Updated elasticsearch version in pkr.hcl (#1388)
+d4c6e2be3 Fixed adjustment index, update commitment index with unit type and fund close (#1389)
+
+V9.2.26
+37b8aafb6 Fixed table a elements (#1383)
+626c3863c SupportClientMapping security fixes (#1386)
+cbc5868db Ia security fixes (#1385)
+f77ab623a Implement fetch templates functionality for fund formulas with associated views and policies
+
 V9.2.25
 54cf0aa34 (HEAD -> main, origin/main, origin/HEAD) Mp dashboard fixes (#1382)
 ba97144d4 Kedaara 11 3 (#1381)
