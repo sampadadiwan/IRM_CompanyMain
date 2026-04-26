@@ -14,7 +14,8 @@ module AggregatePortfolioInvestmentsHelper
     chart_data = group_chart_data_for_pie(grouped, limit: 10)
 
     options[:id] ||= "investment_fmv_by_companies_chart_#{fund.id}"
-    pie_chart_with_options(chart_data, **options)
+    custom_colors = options.delete(:custom_colors) || false
+    pie_chart_with_options(chart_data, custom_colors: custom_colors, **options)
   end
 
   # Generate a pie chart for portfolio investments grouped by sector
@@ -34,7 +35,8 @@ module AggregatePortfolioInvestmentsHelper
     chart_data = group_chart_data_for_pie(grouped, limit: limit)
 
     options[:id] ||= "investment_chart_by_sectors_chart_#{entity.id}"
-    pie_chart_with_options(chart_data, **options)
+    custom_colors = options.delete(:custom_colors) || false
+    pie_chart_with_options(chart_data, custom_colors: custom_colors, **options)
   end
 
   # Generate a pie chart for portfolio investments grouped by company
@@ -97,17 +99,17 @@ module AggregatePortfolioInvestmentsHelper
     options[:id] ||= "bought_sold_fmv_chart_#{fund.id}"
     options[:library] ||= {}
     options[:library].deep_merge!({
-      plotOptions: {
-        column: {
-          pointWidth: 40,
-          dataLabels: {
-            enabled: false,
-            format: "{point.y:,.2f}"
-          }
-        }
-      },
-      **chart_theme_color
-    })
+                                    plotOptions: {
+                                      column: {
+                                        pointWidth: 40,
+                                        dataLabels: {
+                                          enabled: false,
+                                          format: "{point.y:,.2f}"
+                                        }
+                                      }
+                                    },
+                                    **chart_theme_color
+                                  })
 
     column_chart [
       { name: "Bought", data: grouped.map { |k| [k[0], k[2]] } },
@@ -124,17 +126,17 @@ module AggregatePortfolioInvestmentsHelper
     options[:id] ||= "buy_sell_timeline_chart_#{fund.id}"
     options[:library] ||= {}
     options[:library].deep_merge!({
-      plotOptions: {
-        column: {
-          pointWidth: 40,
-          dataLabels: {
-            enabled: false,
-            format: "{point.y:,.2f}"
-          }
-        }
-      },
-      **chart_theme_color
-    })
+                                    plotOptions: {
+                                      column: {
+                                        pointWidth: 40,
+                                        dataLabels: {
+                                          enabled: false,
+                                          format: "{point.y:,.2f}"
+                                        }
+                                      }
+                                    },
+                                    **chart_theme_color
+                                  })
 
     column_chart [{ name: "Buys", data: buy_data }, { name: "Sells", data: sell_data }], **options
   end

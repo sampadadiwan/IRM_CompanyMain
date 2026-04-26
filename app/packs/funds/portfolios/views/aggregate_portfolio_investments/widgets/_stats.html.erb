@@ -13,6 +13,7 @@
   fields ||= []
   show_currency_filter = args[:show_currency_filter] if args && args[:show_currency_filter].present?
   force_units = args[:force_units]
+  per_row = args[:per_row].presence
 %>
 
 
@@ -28,8 +29,8 @@
   <% if fund %>
     <%= render "aggregate_portfolio_investments/stats",  fund: fund, fields: fields, force_units: force_units, decimals: decimals, widget_size: widget.widget_size %>
   <% elsif portfolio_company %>
-    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: portfolio_company, fields: fields, field_names: field_names, force_units: force_units, tracking_currency: tracking_currency, decimals: decimals, widget_size: widget.widget_size, show_currency_filter: show_currency_filter %>
+    <%= render "aggregate_portfolio_investments/stats_for_portfolio_company", portfolio_company: portfolio_company, fields: fields, field_names: field_names, force_units: force_units, tracking_currency: tracking_currency, decimals: decimals, widget_size: widget.widget_size, per_row: per_row, show_currency_filter: show_currency_filter %>
   <% elsif params[:multi_portfolio_dashboard].present? && @investors.present? %>
-    <%= render "aggregate_portfolio_investments/stats_for_multiple_portfolio_companies", portfolio_companies: @investors, fields: fields, force_units: force_units, currency: currency, decimals: decimals, widget_size: widget.widget_size %>
+    <%= render "aggregate_portfolio_investments/stats_for_multiple_portfolio_companies", portfolio_companies: @investors, fields: fields, field_names: field_names, force_units: force_units, currency: currency, decimals: decimals, widget_size: widget.widget_size, widget_id: widget.id, per_row: per_row %>
   <% end %>
 <% end %>

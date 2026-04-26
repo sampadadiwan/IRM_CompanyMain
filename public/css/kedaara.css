@@ -580,7 +580,7 @@ a:hover {
     border-radius: 0px;
     margin: 0px 0px -2px;
     justify-content: center;
-    padding: 0px 10px 18px;
+    padding: 4px 10px
     min-height: 3em;
     box-sizing: border-box;
     align-items: center;
@@ -705,14 +705,6 @@ th .sort_link {
     font-weight: 600;
     white-space: nowrap;
     text-align: center;
-}
-
-.table tbody td a{
-    color: #2A3547 !important;
-}
-
-.table tbody td a:focus, .table tbody td a:hover{
-    color: var(--bs-primary) !important;
 }
 
 .table tbody td:first-child{
@@ -1761,7 +1753,7 @@ div.dt-container div.dt-length label {
         align-items: start !important;
     }
 
-    .nav.nav-pills.nav-justified{
+     .nav.nav-pills.nav-justified{
         border-bottom: 0px solid #D9DBE9;
         border-radius: 0px !important;
         padding: 0px 10px !important;

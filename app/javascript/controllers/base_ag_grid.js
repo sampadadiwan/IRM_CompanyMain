@@ -12,6 +12,10 @@ export default class BaseAgGrid extends Controller {
         customFields: String // Custom fields to be added to the grid
     }
 
+    disconnect() {
+        if (this._beforeCacheHandler) document.removeEventListener('turbo:before-cache', this._beforeCacheHandler)
+    }
+
 
 
     connect() {
@@ -139,11 +143,30 @@ export default class BaseAgGrid extends Controller {
 
         this.loadData();
 
-        // We need to destroy the grid when we leave the page
+        // We need to destroy the grid when we leave the page, but skip
+        // destruction for hash-only navigations (Turbo snapshots the page
+        // for hash changes but no re-render will follow). This mirrors the
+        // Select2 fix which keeps instances alive for hash-only navigation.
         var api = this.gridOptions.api;
-        $(document).on('turbo:before-cache', function () {
-            api.destroy();
-        });
+
+        this._beforeCacheHandler = function () {
+            try {
+                const current = new URL(location.href);
+                const cached = new URL(document.location.href);
+                const isHashOnly = current.pathname === cached.pathname && current.search === cached.search;
+                if (isHashOnly) return;
+            } catch (err) {
+                // If URL parsing fails, fall back to destroying to be safe
+            }
+
+            try {
+                if (api && api.destroy) api.destroy();
+            } catch (e) {
+                console.warn('AG Grid destroy failed during before-cache', e);
+            }
+        };
+
+        document.addEventListener('turbo:before-cache', this._beforeCacheHandler);
 
     }
 

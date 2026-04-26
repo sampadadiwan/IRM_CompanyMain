@@ -1,26 +1,3 @@
-.multi-portfolio-dashboard {
-  .multi-portfolio-dashboard__tabs {
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    /* Add generous padding on both sides so the active tab is fully visible */
-    scroll-padding-inline: clamp(24px, 4vw, 64px);
-
-    .nav-link,
-    .nav-item {
-      /* Ensure each tab accounts for its own width when scrolled into view */
-      scroll-margin-inline: clamp(24px, 4vw, 64px);
-    }
-  }
-
-  .dashboard-widget-container {
-    /* sticky nav top (70px inline style) + small spacing */
-    scroll-margin-top: calc(70px + 5.5rem);
-    padding-top: clamp(16px, 2vw, 32px);
-    display: flex;
-    flex-direction: column;
-  }
-}
-
 .single-portfolio-dashboard {
   .dashboard-widget-container {
     // Ensure the browser offset for anchor jumps accounts for the sticky dashboard nav,
@@ -54,6 +31,8 @@
   // can use flex:1 to fill the full column height without needing height:100%.
   display: flex;
   flex-direction: column;
+  scroll-margin-top: calc(70px + 3.5rem);
+
 
   > * {
     flex: 1 1 auto;
