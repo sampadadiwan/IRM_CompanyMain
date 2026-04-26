@@ -150,7 +150,7 @@ locals {
 
     # Run Docker containers on reboot in ubuntu user's crontab (persistent)
     "logger 'Setting up crontab entries for ubuntu user (persistent).'",
-    "sudo -u ubuntu bash -c 'tmpfile=$(mktemp); (crontab -l 2>/dev/null || true) > $tmpfile; echo \"@reboot docker run -d --rm --name elasticsearch -p 9200:9200 -p 9300:9300 -e ES_JAVA_OPTS=\\\"-Xms512m -Xmx512m\\\" -e \\\"discovery.type=single-node\\\" elasticsearch:7.11.1\" >> $tmpfile; echo \"@reboot docker run -d --rm --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest\" >> $tmpfile; crontab $tmpfile; rm $tmpfile'",
+    "sudo -u ubuntu bash -c 'tmpfile=$(mktemp); (crontab -l 2>/dev/null || true) > $tmpfile; echo \"@reboot docker run -d --rm --name elasticsearch -p 9200:9200 -p 9300:9300 -e ES_JAVA_OPTS=\\\"-Xms512m -Xmx512m\\\" -e \\\"discovery.type=single-node\\\" -e \\\"xpack.security.enabled=false\\\" elasticsearch:8.19.0\" >> $tmpfile; echo \"@reboot docker run -d --rm --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest\" >> $tmpfile; crontab $tmpfile; rm $tmpfile'",
     "logger 'Crontab successfully updated for ubuntu user. Verifying...'",
     "sudo -u ubuntu crontab -l || true",
     "logger 'Ubuntu user crontab setup complete.'",
