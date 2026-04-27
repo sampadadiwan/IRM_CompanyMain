@@ -33,7 +33,7 @@ module DashboardWidgetsHelper
       # Step 5a: If no custom widgets are configured for this dashboard/entity/owner, return the default set.
       # For Landing Page, we only show a subset by default to avoid context-specific widget crashes
       if [DashboardWidget::FM_LANDING_PAGE, DashboardWidget::LP_LANDING_PAGE, DashboardWidget::OPS_LANDING_PAGE].include?(dashboard_name)
-        DashboardWidget::WIDGETS[dashboard_name].take(3).index_by(&:widget_name)
+        DashboardWidget::WIDGETS[dashboard_name].take(4).index_by(&:widget_name)
       else
         DashboardWidget::WIDGETS[dashboard_name].index_by(&:widget_name)
       end

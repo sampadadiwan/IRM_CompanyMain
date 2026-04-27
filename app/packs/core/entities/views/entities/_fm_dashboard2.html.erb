@@ -1,9 +1,5 @@
 <% params[:units] ||= "Million" %>
 
-<%# Removed static stats call as it's now a widget %>
-
-<%= render "entities/fm_dashboard_menus" %>
-
 <div data-controller="datatable">
 
     <%= render "dashboard_widgets/dashboard", dashboard_name: DashboardWidget::FM_LANDING_PAGE, show_nav: false %>

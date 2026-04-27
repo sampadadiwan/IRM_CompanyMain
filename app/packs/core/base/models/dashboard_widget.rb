@@ -158,8 +158,9 @@ class DashboardWidget < ApplicationRecord
   ].freeze
 
   FM_LANDING_PAGE_WIDGETS = [
-    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "FM Stats", path: "entities/widgets/fm_stats", size: "XL"),
-    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Funds", path: "entities/widgets/funds", size: "XL"),
+    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "FM Menus", path: "entities/widgets/fm_menus", size: "XL", metadata_help: "{card_type: 'card/card2'}"),
+    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "FM Stats", path: "entities/widgets/fm_stats", size: "XL", metadata_help: "{card_type: 'card/card2'}"),
+    DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Funds", path: "entities/widgets/funds", size: "XL", metadata_help: "{card_type: 'card/card2'}"),
     DashboardWidget.new(dashboard_name: FM_LANDING_PAGE, widget_name: "Investment Opportunities", path: "entities/widgets/investment_opportunities", size: "XL")
   ].freeze
 

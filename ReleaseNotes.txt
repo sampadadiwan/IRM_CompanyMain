@@ -7,6 +7,9 @@ V9.2.26
 626c3863c SupportClientMapping security fixes (#1386)
 cbc5868db Ia security fixes (#1385)
 f77ab623a Implement fetch templates functionality for fund formulas with associated views and policies
+2ceb7fbfd Update Gemfile.lock and modify test database configuration
+696db1d79 Fixed failing feature tests for multi portfolio dashboard (#1380)
+
 
 V9.2.25
 54cf0aa34 (HEAD -> main, origin/main, origin/HEAD) Mp dashboard fixes (#1382)

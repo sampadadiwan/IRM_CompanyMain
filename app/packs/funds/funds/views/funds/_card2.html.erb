@@ -1,0 +1,142 @@
+<%
+  fund ||= @fund
+  params[:force_units] = fund.default_currency_units
+
+  committed_f = fund.committed_amount.to_f
+  called_pct  = committed_f > 0 ? [[(fund.call_amount.to_f / committed_f * 100).round(0), 0].max, 100].min : 0
+
+  ratio_names = ["Gross Portfolio IRR", "XIRR", "TVPI", "Portfolio Value to Cost", "DPI", "Net IRR"]
+  fund_ratios = fund.fund_ratios
+    .select { |r| r.owner_type == "Fund" && r.owner_id == fund.id && ratio_names.include?(r.name) }
+    .sort_by { |r| ratio_names.index(r.name) || 99 }
+    .take(4)
+
+  ratio_color = ->(r) {
+    val = r.value.to_f
+    case r.name
+    when "XIRR", "IRR", "Gross Portfolio IRR", "Net IRR"
+      val > 15 ? "fc2-good" : val > 8 ? "fc2-ok" : "fc2-poor"
+    when "TVPI", "MOIC", "Value To Cost", "Portfolio Value to Cost", "DPI"
+      val > 2.0 ? "fc2-good" : val > 1.0 ? "fc2-ok" : "fc2-poor"
+    else "fc2-neutral"
+    end
+  }
+
+  accent_color = case fund.category
+                 when "Category I"   then "#10b981"
+                 when "Category III" then "#f59e0b"
+                 else                     "var(--card-primary, #5d87ff)"
+                 end
+
+  hero_ratio = fund_ratios.find { |r| ["Gross Portfolio IRR", "XIRR", "IRR"].include?(r.name) } || fund_ratios.first
+%>
+
+<div class="col-lg-6 mb-3">
+  <div class="fc2-card" style="--fc2-accent: <%= accent_color %>;">
+
+    <%# ── Header ──────────────────────────────────────────────────────── %>
+    <div class="fc2-header">
+      <div class="fc2-header-left">
+        <div class="fc2-name">
+          <%= link_to fund.name, fund %>
+          <% if fund.category.present? %>
+            <span class="fc2-pill">
+              <%= fund.category.sub("Category ", "Cat ") %>
+            </span>
+          <% end %>
+        </div>
+        <div class="fc2-meta">
+          <% if fund.start_date.present? %><span>Vintage <%= fund.start_date.year %></span><% end %>
+          <span><%= fund.currency %></span>
+          <span><%= fund.capital_commitments_count %> folios</span>
+          <% fund.tag_list.to_s.split(",").first(1).each do |t| %>
+            <span><%= t.strip %></span>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="fc2-header-right">
+        <% if hero_ratio %>
+          <div class="fc2-hero-ratio">
+            <span class="fc2-hero-val <%= ratio_color.call(hero_ratio) %>"><%= hero_ratio.display_value %></span>
+            <span class="fc2-hero-lbl"><%= hero_ratio.name.sub("Portfolio ", "") %></span>
+          </div>
+        <% end %>
+        <div class="dropdown">
+          <button class="fc2-actions-btn dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="ti ti-dots-vertical"></i>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end">
+            <%= link_to dashboard_fund_path(fund), class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ti ti-layout-dashboard"></i> Dashboard
+            <% end %>
+            <%= link_to edit_fund_path(fund), class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ti ti-edit"></i> <%= t_common(:edit) %> Fund
+            <% end %>
+            <div class="dropdown-divider"></div>
+            <%= link_to fund_path(fund, tab: "docs-tab"), class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ti ti-file-text"></i> Documents
+            <% end %>
+            <%= link_to fund_path(fund, tab: "portfolio-investments-tab"), class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ti ti-briefcase"></i> Portfolio
+            <% end %>
+            <%= link_to fund_unit_settings_path(fund_id: fund.id), class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ti ti-settings"></i> Fund Unit Settings
+            <% end %>
+            <%= link_to account_entries_path(fund_id: fund.id, fund_accounts_only: true), class: "dropdown-item d-flex align-items-center gap-2" do %>
+              <i class="ti ti-book"></i> Ledger
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── Capital row ─────────────────────────────────────────────────── %>
+    <div class="fc2-capital-row">
+      <div class="fc2-kv">
+        <span class="fc2-val"><%= money_to_currency(fund.committed_amount, params) %></span>
+        <span class="fc2-lbl">Committed</span>
+      </div>
+      <div class="fc2-kv-divider"></div>
+      <div class="fc2-kv">
+        <span class="fc2-val"><%= money_to_currency(fund.call_amount, params) %></span>
+        <span class="fc2-lbl">Called</span>
+      </div>
+      <div class="fc2-kv-divider"></div>
+      <div class="fc2-kv">
+        <span class="fc2-val"><%= money_to_currency(fund.distribution_amount.abs, params) %></span>
+        <span class="fc2-lbl">Distributed</span>
+      </div>
+      <div class="fc2-kv-divider fc2-kv-divider--hide-sm"></div>
+      <div class="fc2-kv fc2-kv--hide-sm">
+        <span class="fc2-val"><%= fund.capital_commitments_count %></span>
+        <span class="fc2-lbl">Folios</span>
+      </div>
+    </div>
+
+    <%# ── Deployment bar ──────────────────────────────────────────────── %>
+    <div class="fc2-progress-wrap">
+      <div class="fc2-progress-track">
+        <div class="fc2-progress-fill" style="width: <%= called_pct %>%"></div>
+      </div>
+      <span class="fc2-progress-label"><%= called_pct %>% called</span>
+    </div>
+
+    <%# ── Ratios row ──────────────────────────────────────────────────── %>
+    <% if fund_ratios.present? %>
+      <div class="fc2-sep"></div>
+      <div class="fc2-ratio-row">
+        <% fund_ratios.each_with_index do |ratio, i| %>
+          <% unless i == 0 %><div class="fc2-kv-divider"></div><% end %>
+          <div class="fc2-kv">
+            <span class="fc2-ratio-val <%= ratio_color.call(ratio) %>"><%= ratio.display_value %></span>
+            <span class="fc2-lbl"><%= link_to ratio.name.sub("Portfolio ", ""), ratio %></span>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+  </div>
+</div>
+<% params[:force_units] = nil %>
