@@ -12,10 +12,14 @@
   fund_ids ||= @selected_fund_ids.presence || @funds.pluck(:id).presence || []
   investor_ids= @investors.pluck(:id).presence || []
 
+  owner_types = args[:owner_type] || ["Investor"]
+  owner_ids = args[:owner_id] || investor_ids
+  latest = args[:latest].to_s == "false" ? false : true
+
   # This is not the final way need to discuss the storage of Fund Ratios for multiple funds and portfolio companies
   ratios_by_name = {}
 
-  fund_ratios = fund_ratio_list(investor_ids, fund_ids, owner_types: ["Investor"], ratio_names: ratio_names)
+  fund_ratios = fund_ratio_list(owner_ids, fund_ids, owner_types: owner_types, ratio_names: ratio_names, latest: latest, end_date: args[:end_date])
   ratio_names.each do |ratio_name|
     ratios_by_name[ratio_name] = fund_ratios.where(name: ratio_name).map do |fr|
       # For IRR, use fr.value with decimals precision

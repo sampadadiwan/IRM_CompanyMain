@@ -37,9 +37,20 @@ class FundRatioList < BaseList
       @fund_ratios = @fund_ratios.where(scenario: scenario_names)
     end
 
+    begin
+      end_date = Date.parse(@params[:end_date]) if @params[:end_date].present?
+    rescue StandardError => e
+      Rails.logger.error "Invalid end_date format: #{@params[:end_date]}. Error: #{e.message}"
+      end_date = nil
+    end
+
+    @fund_ratios = @fund_ratios.where(end_date:) if end_date.present?
+
     # Step 4: Special filters with more specific logic
     @fund_ratios = @fund_ratios.where(capital_commitment_id: nil) if @params[:fund_ratios_only].present?
-    @fund_ratios = @fund_ratios.where(latest: true) if @params[:latest] == "true"
+    @fund_ratios = @fund_ratios.where(latest: true) if @params[:latest].to_s == "true"
+
+    @fund_ratios = @fund_ratios.order(end_date: :desc) unless ransack_has_attr?(params[:q], 's')
 
     result_attrs = { q: @q, fund_ratios: @fund_ratios, fund: @fund }
 

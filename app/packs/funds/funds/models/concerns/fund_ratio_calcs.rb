@@ -193,16 +193,16 @@ class FundRatioCalcs
   end
 
   def get_ratio_formula_entries(formula)
-    scope = AccountEntry.where(entity_id: model.entity_id, fund_id: (model.is_a?(Fund) ? model.id : model.fund_id))
+    scope = AccountEntry.where(entity_id: @model.entity_id, fund_id: (@model.is_a?(Fund) ? @model.id : @model.fund_id))
                         .where(name: formula.account_entry_names, reporting_date: ..@end_date, cumulative: false)
 
     case formula.level
     when 'Fund'
       scope = scope.where(capital_commitment_id: nil)
     when 'Folio'
-      return [] unless model.is_a?(CapitalCommitment)
+      return [] unless @model.is_a?(CapitalCommitment)
 
-      scope = scope.where(folio_id: model.folio_id)
+      scope = scope.where(folio_id: @model.folio_id)
     when 'PortfolioCompany'
       # This level might need specific logic depending on where it's called
       # For now, if we have a portfolio_company context, we filter by it

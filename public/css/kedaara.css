@@ -1226,13 +1226,13 @@ form#kpi_reports_filter {
 }
 
 #kpi_reports_filter select#period {
-    width: 130px !important;
+    width: 110px !important;
     padding-left: 5px;
     padding-right: 5px;
 }
 
 #kpi_reports_filter select#units {
-    width: 130px !important;
+    width: 110px !important;
 }
 
 #kpi_reports_filter .select2-container--default .select2-selection--multiple .select2-selection__choice__display{

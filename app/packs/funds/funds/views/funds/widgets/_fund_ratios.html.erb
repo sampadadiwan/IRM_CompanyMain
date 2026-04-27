@@ -1,12 +1,10 @@
-<% ransack_params = [[:owner_id, :eq, @fund.id], [:owner_type, :eq, "Fund"]]
-if args[:ratio_names].present?
-  ratio_names = args[:ratio_names]
-  ransack_params << [:name, :in, ratio_names]
-end
-%>
-<% 
+<%
+  args[:name] = args[:ratio_names].presence
   args_with_widget = args.merge(widget_id: widget.id)
-  uri = URI(fund_ratios_path(**args_with_widget, q: ransack_query_params_multiple(ransack_params, sort_by: "end_date", sort_direction: "desc"))) 
+  uri = URI(fund_ratios_path(**args_with_widget))
+  owner_id = args[:owner_id] || @fund.id
+  owner_type = args[:owner_type] || "Fund"
+  fund = args[:fund].to_s == "false" ? nil : @fund
 %>
 <%= render(
       WidgetCardComponent.new(
@@ -28,13 +26,13 @@ end
           <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Chart type">
             <% current_type = params[:chart_type] || "line" %>
             <% [["Area", "area"], ["Bar", "bar"], ["Line", "line"]].each do |label, type| %>
-              <%= link_to label, request.params.merge(chart_type: type), 
+              <%= link_to label, request.params.merge(chart_type: type),
                   class: "btn #{current_type == type ? 'btn-primary' : 'btn-outline-primary bg-white'}",
                   data: { turbo_frame: "fund_ratios_chart_frame_#{widget.id}" } %>
             <% end %>
           </div>
         </div>
-        <%= fund_ratios_line_chart(@fund, args: args, owner_id: @fund.id, owner_type: "Fund", ratio_names: args[:ratio_names], months: args[:months], chart_id: "fund_ratios_chart_#{widget.id}", chart_type: params[:chart_type]) %>
+        <%= fund_ratios_line_chart(fund, args: args, owner_id: owner_id, owner_type: owner_type, ratio_names: args[:ratio_names], months: args[:months], chart_id: "fund_ratios_chart_#{widget.id}", chart_type: params[:chart_type]) %>
       <% end %>
     <% end %>
 

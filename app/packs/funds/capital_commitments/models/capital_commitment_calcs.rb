@@ -3,6 +3,7 @@ class CapitalCommitmentCalcs < FundRatioCalcs
 
   def initialize(capital_commitment, end_date)
     @capital_commitment = capital_commitment
+    @model = @capital_commitment
     @end_date = end_date
     super()
   end

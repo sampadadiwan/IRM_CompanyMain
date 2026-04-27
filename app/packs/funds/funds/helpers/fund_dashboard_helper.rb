@@ -25,17 +25,16 @@ module FundDashboardHelper
     all_dates = fund_ratios.map { |fr| fr.end_date.beginning_of_month }.uniq.sort
 
     # Group by fund name and ratio name
-    ratios_data = fund_ratios.group_by { |fr| [fr.fund.name, fr.name] }.transform_values do |ratios|
-      ratios_by_date = ratios.group_by { |v| v.end_date.beginning_of_month }
-      all_dates.map do |date|
-        vals = ratios_by_date[date]
-        [date.strftime("%b %y"), vals ? vals[-1].value&.round(2) : nil]
-      end
-    end
-
+    ratios_data = fetch_ratios_data(fund_ratios, all_dates)
     # Prepare the series data for the chart
     series = ratios_data.map do |(fund_name, ratio_name), data|
-      series_name = hide_fund_name ? ratio_name : "#{fund_name} - #{ratio_name}"
+      series_name =
+        if fund_name.nil? || hide_fund_name
+          ratio_name
+        else
+          "#{fund_name} - #{ratio_name}"
+        end
+
       {
         name: series_name,
         data: data
@@ -54,6 +53,32 @@ module FundDashboardHelper
     send(chart_method, series, id: chart_id, discrete: true, library: line_chart_options)
   end
   # rubocop:enable Metrics/ParameterLists
+
+  def fetch_ratios_data(fund_ratios, all_dates)
+    if fund_ratios.map(&:name).uniq.size == 1
+      ratio_name = fund_ratios.first.name
+
+      {
+        [nil, ratio_name] => fund_ratios.map do |fr|
+          [
+            "#{fr.fund.name} - #{fr.scenario}",
+            fr.value&.round(2)
+          ]
+        end
+      }
+    else
+      fund_ratios
+        .group_by { |fr| [fr.fund.name, fr.name] }
+        .transform_values do |ratios|
+          ratios_by_date = ratios.group_by { |v| v.end_date.beginning_of_month }
+
+          all_dates.map do |date|
+            vals = ratios_by_date[date]
+            [date.strftime("%b %y"), vals ? vals[-1].value&.round(2) : nil]
+          end
+        end
+    end
+  end
 
   def create_line_chart_options(args)
     decimals = args[:decimals].present? ? args[:decimals].to_i : 2

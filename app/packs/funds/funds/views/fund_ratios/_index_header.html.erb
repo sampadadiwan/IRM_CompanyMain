@@ -62,9 +62,13 @@
                         class: "dropdown-item d-flex align-items-center" do %>
               <i class="ti ti-briefcase"></i> Filter: Instrument
             <% end %>
-            <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :null, true)),
+            <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :eq, "Fund")),
                         class: "dropdown-item d-flex align-items-center" do %>
               <i class="ti ti-circle-off"></i> Filter: Fund Only
+            <% end %>
+            <%= link_to fund_ratios_path(fund_id: fund.id, q: ransack_query_params("owner_type", :eq, "User")),
+                        class: "dropdown-item d-flex align-items-center" do %>
+              <i class="ti ti-arrows-join"></i> Filter: Cross-Portfolio Only
             <% end %>
             <div class="dropdown-divider"></div>
             <%= link_to new_import_upload_path(

@@ -19,7 +19,7 @@ const CHART_TYPES = {
 const STORAGE_KEY       = "chart_switcher_type"
 const URL_PARAM         = "chart_type"
 const URL_DATE_PARAM    = "chart_date"
-const DEFAULT_TYPE      = "LineChart"
+const DEFAULT_TYPE      = "DonutChart"
 
 // Read the --pie-color-1 … --pie-color-10 CSS custom properties that are
 // defined in kedaara.css.  Called once at connect() so the values are always
@@ -71,7 +71,9 @@ function resolveSeriesColors(rawData, palette, rootStyle) {
 
 export default class extends Controller {
   static targets = ["container", "typeSelect", "dateSelect", "dateSelectWrapper"]
-  static values  = { chartData: Array, storageKey: String }
+  // Accept an optional initialTypeValue from server-side rendered data attribute.
+  // Priority for resolved type will be: URL param > initialTypeValue > localStorage > default
+  static values  = { chartData: Array, storageKey: String, initialType: String }
 
   connect() {
     // Resolve the --pie-color CSS palette once, at mount time.
@@ -84,15 +86,23 @@ export default class extends Controller {
                          ? this.storageKeyValue
                          : `${STORAGE_KEY}:${window.location.pathname}`
 
-    // Priority: URL param > localStorage > default
-    const searchParams  = new URLSearchParams(window.location.search)
-    const urlType       = searchParams.get(URL_PARAM)
-    const urlDateLabel  = searchParams.get(URL_DATE_PARAM)   // actual date label string, not an index
-    const savedType     = localStorage.getItem(storageKey)
-    const type          = (urlType && CHART_TYPES[urlType])    ? urlType
-                        : (savedType && CHART_TYPES[savedType]) ? savedType
-                        : DEFAULT_TYPE
+  // Priority: URL param > server-provided initialType value > localStorage > default
+  const searchParams   = new URLSearchParams(window.location.search)
+  const urlType        = searchParams.get(URL_PARAM)
+  const urlDateLabel   = searchParams.get(URL_DATE_PARAM)   // actual date label string, not an index
+  // Treat an empty string from the data attribute as absent.
+  const initialTypeValRaw = this.hasInitialTypeValue ? this.initialTypeValue : null
+  const initialTypeVal = (initialTypeValRaw && initialTypeValRaw.trim() !== "") ? initialTypeValRaw : null
+  const savedType      = localStorage.getItem(storageKey)
+  const type = (urlType && CHART_TYPES[urlType])                     ? urlType
+         : (initialTypeVal && CHART_TYPES[initialTypeVal])       ? initialTypeVal
+         : (savedType && CHART_TYPES[savedType])                 ? savedType
+         : DEFAULT_TYPE
 
+         console.log("urlType", urlType)
+         console.log("initialTypeVal", initialTypeVal)
+          console.log("savedType", savedType)
+          console.log("resolved type", type)
     // Stash the resolved key so switch() can reuse it without re-computing
     this._storageKey = storageKey
 
@@ -104,8 +114,13 @@ export default class extends Controller {
     // Populate date options, then restore the URL-specified label (if any)
     this.#populateDateSelect(urlDateLabel)
 
-    // Always sync the full URL so chart_type + chart_date are both present/absent correctly
-    this.#syncUrl(type)
+    // Only sync the full URL on initial load if there was a chart_type in the URL
+    // or there is no server-provided initialType. If the server provided an
+    // initialType, we should preserve it in the URL and avoid overwriting it
+    // with a blank or default value.
+    if (urlType || !initialTypeVal) {
+      this.#syncUrl(type)
+    }
 
     this.render(type)
   }

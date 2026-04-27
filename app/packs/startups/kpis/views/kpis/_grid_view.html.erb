@@ -12,6 +12,7 @@
     show_prefix = params[:show_prefix].to_s == "false" ? false : true
     show_name = params[:show_name].to_s == "false" ? false : true
     show_tags = params[:show_tags].to_s == "false" ? false : true
+    chart_type = params[:chart_type] || "DonutChart"
 %>
 
 <%= turbo_frame_tag turbo_frame_id do %>
@@ -148,7 +149,8 @@
                     <div class="card shadow mb-4"
                         data-controller="chart-switcher"
                         data-chart-switcher-chart-data-value="<%= chart_data.to_json %>"
-                        data-chart-switcher-storage-key-value="chart_switcher:<%= request.path %>">
+                        data-chart-switcher-storage-key-value="chart_switcher:<%= request.path %>"
+                        data-chart-switcher-initial-type-value="<%= params[:chart_type].presence || "" %>">
                         <div class="card-header py-3 d-flex align-items-center justify-content-end">
                             <div class="d-flex align-items-center gap-2">
                                 <%# Date picker — only visible for pie/donut charts, shown/hidden by the JS controller %>

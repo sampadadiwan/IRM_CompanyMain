@@ -78,20 +78,13 @@ module PortfolioHelper
     filtered_frs.map { |fr| { name: fr.owner.name, value: fr.display_value } }
   end
 
-  def fund_ratio_list(owner_ids, fund_ids, owner_types: ["Fund"], ratio_names: %w[IRR])
-    return FundRatio.none if owner_ids.blank?
-
-    scope = FundRatio.where(owner_id: owner_ids, owner_type: owner_types, fund_id: fund_ids)
-                     .latest
-                     .includes(:owner)
-                     .order(end_date: :desc)
-
-    scope = scope.where(name: ratio_names) if ratio_names.present?
-    scope
+  def fund_ratio_list(owner_ids, fund_ids, owner_types: ["Fund"], ratio_names: %w[IRR], latest: true, end_date: nil)
+    result = FundRatioList.call(current_user, { owner_id: owner_ids, fund_id: fund_ids, owner_type: owner_types, name: ratio_names, latest:, end_date: end_date })
+    result.fund_ratios
   end
 
   def portfolio_last_xirr(fund)
-    pc_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: ["IRR", "MOIC"], owner_type: "Investor").includes(:owner)
+    pc_frs = FundRatio.latest.where(entity_id: fund.entity_id, fund_id: fund.id, name: %w[IRR MOIC], owner_type: "Investor").includes(:owner)
     if pc_frs.present?
       grouped = pc_frs.group_by { |fr| fr.owner.name }
       chart_data = [
