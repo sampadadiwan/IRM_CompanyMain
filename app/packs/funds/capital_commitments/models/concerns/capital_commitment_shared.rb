@@ -40,11 +40,19 @@ module CapitalCommitmentShared
   end
 
   def percentage_pending_call
-    call_amount_cents.positive? ? 100 * (collected_amount_cents / call_amount_cents).round(2) : 0
+    call_amount_cents.positive? ? (100 * collected_amount_cents / call_amount_cents).to_f.round(2) : 0
+  end
+
+  def called_capital_percentage
+    committed_amount_cents.positive? ? (100 * call_amount_cents / committed_amount_cents).to_f.round(2) : 0
+  end
+
+  def uncalled_capital_percentage
+    committed_amount_cents.positive? ? (100 * uncalled_amount.cents / committed_amount_cents).to_f.round(2) : 0
   end
 
   def percentage_pending_committed
-    committed_amount_cents.positive? ? 100 * (collected_amount_cents / committed_amount_cents).round(2) : 0
+    committed_amount_cents.positive? ? (100 * collected_amount_cents / committed_amount_cents).to_f.round(2) : 0
   end
 
   def unfunded_commitment_as_of(end_date, folio_currency: false, tracking_currency: false)

@@ -33,7 +33,7 @@ module FundStatisticsHelper
     # When custom_colors: true (e.g. called from a branded widget), use CSS vars
     # --pie-color-1..10 defined in the custom stylesheet (e.g. kedaara.css).
     # Otherwise fall back to PIE_CHART_COLORS.
-    base_colors = custom_colors ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
+    base_colors = use_custom_colors? ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
     extended_colors = base_colors.dup
     if extended_colors.size < data.size
       loop do

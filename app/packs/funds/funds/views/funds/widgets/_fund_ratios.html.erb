@@ -17,9 +17,7 @@
     <% if args[:list].nil? || args[:list] == true %>
       <%= turbo_frame_tag "fund_ratios_frame_#{widget.id}", target: "_top", src: "#{uri.to_s}" do %>
       <% end %>
-    <%end%>
-
-    <% if args[:chart].nil? || args[:chart] == true %>
+    <%elsif args[:chart].nil? || args[:chart] == true %>
       <!-- This block becomes the `content` inside the component -->
       <%= turbo_frame_tag "fund_ratios_chart_frame_#{widget.id}" do %>
         <div class="mb-3 d-flex justify-content-end">
@@ -32,7 +30,15 @@
             <% end %>
           </div>
         </div>
-        <%= fund_ratios_line_chart(fund, args: args, owner_id: owner_id, owner_type: owner_type, ratio_names: args[:ratio_names], months: args[:months], chart_id: "fund_ratios_chart_#{widget.id}", chart_type: params[:chart_type]) %>
+        <% if args[:scenarios].present?
+          args[:owner_id] ||= owner_id
+          args[:owner_type] ||= owner_type
+          current_type = params[:chart_type] || "line"
+        %>
+          <%= fund_ratios_line_chart_by_scenario(fund, args: args, chart_type: current_type) %>
+        <% else %>
+          <%= fund_ratios_line_chart(fund, args: args, owner_id: owner_id, owner_type: owner_type, ratio_names: args[:ratio_names], months: args[:months], chart_id: "fund_ratios_chart_#{widget.id}", chart_type: params[:chart_type]) %>
+        <% end %>
       <% end %>
     <% end %>
 

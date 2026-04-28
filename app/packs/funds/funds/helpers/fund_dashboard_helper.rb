@@ -1,5 +1,5 @@
 module FundDashboardHelper
-  def fund_ratios_line_chart(fund, args: {}, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 24, fund_ratios: [], scenarios: nil, scenario: nil, chart_id: "fund_ratios_chart", hide_fund_name: false, chart_type: nil)
+  def fund_ratios_line_chart(fund, args: {}, owner_id: nil, owner_type: nil, ratio_names: nil, owner: nil, months: 24, fund_ratios: [], chart_id: "fund_ratios_chart", hide_fund_name: false, chart_type: nil)
     months ||= 24
     chart_type ||= args[:chart_type] || "line"
     ratio_names ||= ["XIRR", "RVPI", "DPI", "TVPI", "Fund Utilization", "Portfolio Value to Cost", "Paid In to Committed Capital", "Quarterly IRR", "IRR", "Value To Cost", "Gross Portfolio IRR"]
@@ -12,7 +12,7 @@ module FundDashboardHelper
       end
 
       # This will add but not override attrs if they are already present in args
-      args = { fund_id: fund&.id, owner_id:, owner_type:, name: ratio_names, scenarios: scenarios, scenario: scenario, months: months }.merge(args)
+      args = { fund_id: fund&.id, owner_id:, owner_type:, name: ratio_names, months: months }.merge(args)
       result = FundRatioList.call(current_user, args) { |relation| policy_scope(relation) }
       fund_ratios = result.fund_ratios
     end
@@ -25,7 +25,14 @@ module FundDashboardHelper
     all_dates = fund_ratios.map { |fr| fr.end_date.beginning_of_month }.uniq.sort
 
     # Group by fund name and ratio name
-    ratios_data = fetch_ratios_data(fund_ratios, all_dates)
+    ratios_data = fund_ratios.group_by { |fr| [fr.fund.name, fr.name] }.transform_values do |ratios|
+      ratios_by_date = ratios.group_by { |v| v.end_date.beginning_of_month }
+      all_dates.map do |date|
+        vals = ratios_by_date[date]
+        [date.strftime("%b %y"), vals ? vals[-1].value&.round(2) : nil]
+      end
+    end
+
     # Prepare the series data for the chart
     series = ratios_data.map do |(fund_name, ratio_name), data|
       series_name =
@@ -53,32 +60,6 @@ module FundDashboardHelper
     send(chart_method, series, id: chart_id, discrete: true, library: line_chart_options)
   end
   # rubocop:enable Metrics/ParameterLists
-
-  def fetch_ratios_data(fund_ratios, all_dates)
-    if fund_ratios.map(&:name).uniq.size == 1
-      ratio_name = fund_ratios.first.name
-
-      {
-        [nil, ratio_name] => fund_ratios.map do |fr|
-          [
-            "#{fr.fund.name} - #{fr.scenario}",
-            fr.value&.round(2)
-          ]
-        end
-      }
-    else
-      fund_ratios
-        .group_by { |fr| [fr.fund.name, fr.name] }
-        .transform_values do |ratios|
-          ratios_by_date = ratios.group_by { |v| v.end_date.beginning_of_month }
-
-          all_dates.map do |date|
-            vals = ratios_by_date[date]
-            [date.strftime("%b %y"), vals ? vals[-1].value&.round(2) : nil]
-          end
-        end
-    end
-  end
 
   def create_line_chart_options(args)
     decimals = args[:decimals].present? ? args[:decimals].to_i : 2
@@ -217,6 +198,84 @@ module FundDashboardHelper
     # Plot the chart
     options = { library: library_options, prefix: "#{fund.currency}:" }
     send(chart_method, chart_data, **options)
+  end
+
+  # Renders a chart grouped by metric (name) with scenarios as series.
+  # This aligns with the `_index_scenarios` table which picks the latest value
+  # per (metric, scenario). X-axis will be metric names (base name without currency)
+  # and each scenario will be a series of values.
+  def fund_ratios_line_chart_by_scenario(fund = nil, args: {}, fund_ratios: [], grouped_ratios: nil, chart_id: "fund_ratios_by_scenario_chart", chart_type: nil)
+    if grouped_ratios.present?
+      metrics = grouped_ratios.keys
+      scenarios = metrics.any? ? grouped_ratios[metrics.first].keys : []
+    else
+      if fund_ratios.blank?
+        args = { fund_id: fund&.id, name: args[:ratio_names], months: args[:months] }.merge(args)
+        result = FundRatioList.call(current_user, args) { |relation| policy_scope(relation) }
+        fund_ratios = result.fund_ratios
+      end
+
+      metrics = fund_ratios.map(&:name).uniq
+
+      if args[:scenarios].present? && args[:scenarios] != "true"
+        scenarios = args[:scenarios].to_s.split(",").map(&:strip)
+      else
+        scenarios = fund_ratios.map(&:scenario).uniq
+
+        if scenarios.include?("Default")
+          scenarios.delete("Default")
+          scenarios.unshift("Default")
+        end
+      end
+
+      grouped_ratios = {}
+
+      metrics.each do |metric|
+        grouped_ratios[metric] = {}
+
+        scenarios.each do |scenario|
+          grouped_ratios[metric][scenario] =
+            fund_ratios
+            .select { |fr| fr.name == metric && fr.scenario == scenario }
+            .max_by(&:end_date)
+        end
+      end
+    end
+
+    categories = scenarios.map { |scenario| scenario == "Default" ? "Actual" : scenario }
+
+    series = metrics.map do |metric|
+      display_metric_name = metric.gsub(/\([A-Z]{3}\)$/, "").strip
+
+      values = scenarios.map do |scenario|
+        fr = grouped_ratios.dig(metric, scenario)
+        fr&.value&.round(2)
+      end
+
+      {
+        name: display_metric_name,
+        data: categories.zip(values)
+      }
+    end
+
+    chart_method = case chart_type.to_s
+                   when "bar" then :column_chart
+                   when "area" then :area_chart
+                   else :line_chart
+                   end
+
+    chart_options = create_line_chart_options(args)
+
+    # Important: do NOT set xAxis categories here.
+    # Chartkick uses the [["Actual", 1.0], ["MOIC", 2.2]] data pairs directly.
+
+    send(
+      chart_method,
+      series,
+      id: chart_id,
+      discrete: true,
+      library: chart_options
+    )
   end
 
   private

@@ -1074,6 +1074,19 @@ progress {
   --bs-breakpoint-lg: 992px;
   --bs-breakpoint-xl: 1300px;
   --bs-breakpoint-xxl: 1400px;
+
+
+  /* PIE COLORS SO WHEN WE USE CUSTOM COLORS THE WIDGETS DONT BREAK ON USING NORMAL CSS */
+  --pie-color-1: var(--bs-primary);
+  --pie-color-2: var(--bs-success);
+  --pie-color-3: var(--bs-warning);
+  --pie-color-4: var(--bs-info);
+  --pie-color-5: var(--bs-danger);
+  --pie-color-6: var(--bs-secondary);
+  --pie-color-7: var(--bs-light-primary);
+  --pie-color-8: var(--bs-pink);
+  --pie-color-9: var(--bs-indigo);
+  --pie-color-10: var(--bs-teal);
 }
 
 .row {

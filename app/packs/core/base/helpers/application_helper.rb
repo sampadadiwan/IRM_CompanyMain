@@ -2,6 +2,8 @@ module ApplicationHelper
   include Pagy::Backend
   include Pagy::Frontend
 
+  attr_accessor :use_custom_colors
+
   def t_common(key)
     t("common.#{key}")
   end
@@ -163,8 +165,17 @@ module ApplicationHelper
     end
   end
 
+  def use_custom_colors?
+    if @use_custom_colors.nil?
+      @use_custom_colors = (@current_entity && @current_entity.custom_css.present?) || params[:custom_css].present?
+    else
+      @use_custom_colors
+    end
+  end
+
   def pie_chart_colors_from_css
-    (1..20).map { |i| "var(--pie-color-#{i})" }
+    @pie_chart_colors_from_css ||= (1..10).map { |i| "var(--pie-color-#{i})" }
+    @pie_chart_colors_from_css
   end
 
   def resolve_doc_color(document_name, custom_colors)

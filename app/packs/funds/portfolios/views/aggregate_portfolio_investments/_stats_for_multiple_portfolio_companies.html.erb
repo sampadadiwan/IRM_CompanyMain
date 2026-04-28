@@ -67,6 +67,7 @@
         # Compute aggregated stats across all investors and funds
         total_bought_amount_cents = 0
         total_sold_amount_cents = 0
+        total_cost_of_remaining_cents = 0
         total_fmv_cents = 0
 
         portfolio_investments.each do |pi|
@@ -75,6 +76,7 @@
             next
           end
 
+          total_cost_of_remaining_cents += convert_in_memory.call(pi.investment_instrument.currency, target_currency, pi.cost_of_remaining_cents, pi.investment_date, pi.portfolio_company.entity_id)
           converted_amount = convert_in_memory.call(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity_id)
 
           if pi.quantity.positive?
@@ -87,6 +89,8 @@
           total_fmv_cents += convert_in_memory.call(pi.investment_instrument.currency, target_currency, pi.fmv_cents, conversion_date, pi.portfolio_company.entity_id)
         end
 
+        total_sold_plus_fmv_cents = total_sold_amount_cents + total_fmv_cents
+
         total_income_cents = portfolio_cashflows.sum do |pc|
           if pc.portfolio_company.json_fields["master_fund"] == "yes" && pc.fund.master_fund_id.present? && @selected_fund_ids.include?(pc.fund.master_fund_id)
             next 0
@@ -98,7 +102,9 @@
           { path: nil, stat: money_to_currency(Money.new(total_bought_amount_cents, target_currency), params, decimals: decimals), subtitle: "Total Bought Amount", progress_bar_color: "success", text_info: "plus" },
           { path: nil, stat: money_to_currency(Money.new(total_sold_amount_cents, target_currency), params, decimals: decimals), subtitle: "Total Sold Amount", progress_bar_color: "danger", text_info: "minus" },
           { path: nil, stat: money_to_currency(Money.new(total_fmv_cents, target_currency), params, decimals: decimals), subtitle: "Total FMV", progress_bar_color: "info", text_info: "graph" },
-          { path: nil, stat: money_to_currency(Money.new(total_income_cents, target_currency), params, decimals: decimals), subtitle: "Total Income", progress_bar_color: "success", text_info: "cash" }
+          { path: nil, stat: money_to_currency(Money.new(total_cost_of_remaining_cents, target_currency), params, decimals: decimals), subtitle: "Total Cost Of Remaining", progress_bar_color: "danger", text_info: "currency-dollar" },
+          { path: nil, stat: money_to_currency(Money.new(total_income_cents, target_currency), params, decimals: decimals), subtitle: "Total Income", progress_bar_color: "success", text_info: "cash" },
+          { path: nil, stat: money_to_currency(Money.new(total_sold_plus_fmv_cents, target_currency), params, decimals: decimals), subtitle: "Sold + FMV", progress_bar_color: "warning", text_info: "coins" }
         ]
 
         cards_data = fields.blank? ? all_cards_data : all_cards_data.select { |card| fields.include?(card[:subtitle]) }

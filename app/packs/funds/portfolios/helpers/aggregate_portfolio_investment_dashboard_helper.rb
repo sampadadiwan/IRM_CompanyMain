@@ -8,12 +8,16 @@ module AggregatePortfolioInvestmentDashboardHelper
       chart_data["Others"] = others_sum
     end
 
-    chart = pie_chart chart_data, donut: true, title: "Portfolio Allocation (by FMV)", id: "portfolio_allocation_by_company_chart_#{fund.id}", library: {
+    options = { library: {
       plotOptions: {
         pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
       },
       **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    }, prefix: "#{fund.currency}:" }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = pie_chart chart_data, donut: true, title: "Portfolio Allocation (by FMV)", id: "portfolio_allocation_by_company_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -33,12 +37,18 @@ module AggregatePortfolioInvestmentDashboardHelper
       { name: "Realized", data: apis.map { |api| [api.portfolio_company_name, api.sold_amount_cents / 100.0] } }
     ]
 
-    chart = column_chart data, stacked: false, title: "Investment Performance (Top 10)", id: "portfolio_performance_by_company_chart_#{fund.id}", library: {
-      plotOptions: {
-        column: { dataLabels: { enabled: false } }
-      },
-      **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    options = {
+      library: {
+        plotOptions: {
+          column: { dataLabels: { enabled: false } }
+        },
+        **chart_theme_color
+      }, prefix: "#{fund.currency}:"
+    }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = column_chart data, stacked: false, title: "Investment Performance (Top 10)", id: "portfolio_performance_by_company_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -55,12 +65,17 @@ module AggregatePortfolioInvestmentDashboardHelper
 
     data = { "Realized Gains" => realized, "Unrealized Gains" => unrealized }
 
-    chart = pie_chart data, donut: true, title: "Realized vs Unrealized Gains", id: "portfolio_gain_breakdown_chart_#{fund.id}", library: {
-      plotOptions: {
-        pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
-      },
-      **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    options = {
+      library: {
+        plotOptions: {
+          pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
+        },
+        **chart_theme_color
+      }, prefix: "#{fund.currency}:"
+    }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+    chart = pie_chart data, donut: true, title: "Realized vs Unrealized Gains", id: "portfolio_gain_breakdown_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -76,12 +91,16 @@ module AggregatePortfolioInvestmentDashboardHelper
                .group("investment_instruments.name").sum(:fmv_cents)
                .transform_values { |v| v / 100.0 }
 
-    chart = pie_chart data, donut: true, title: "Exposure by Instrument Type", id: "portfolio_instrument_exposure_chart_#{fund.id}", library: {
+    options = { library: {
       plotOptions: {
         pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
       },
       **chart_theme_color
-    }
+    } }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = pie_chart data, donut: true, title: "Exposure by Instrument Type", id: "portfolio_instrument_exposure_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -98,12 +117,18 @@ module AggregatePortfolioInvestmentDashboardHelper
                .transform_values { |v| v / 100.0 }
                .sort_by { |_k, v| -v }.to_h
 
-    chart = bar_chart data, title: "Portfolio Income by Company", id: "portfolio_income_by_company_chart_#{fund.id}", library: {
-      plotOptions: {
-        series: { dataLabels: { enabled: true, format: "{point.y:,.0f}" } }
-      },
-      **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    options = {
+      library: {
+        plotOptions: {
+          series: { dataLabels: { enabled: true, format: "{point.y:,.0f}" } }
+        },
+        **chart_theme_color
+      }, prefix: "#{fund.currency}:"
+    }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = bar_chart data, title: "Portfolio Income by Company", id: "portfolio_income_by_company_chart_#{fund.id}", **options
 
     return chart if compact
 

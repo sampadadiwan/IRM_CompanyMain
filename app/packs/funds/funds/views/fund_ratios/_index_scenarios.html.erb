@@ -102,3 +102,20 @@
       </tbody>
     </table>
   </div>
+
+
+<% if params[:chart].to_s == "true" %>
+  <%= turbo_frame_tag with_frame("fund_ratios_index_scenarios_chart_frame") do %>
+    <div class="mb-3 d-flex justify-content-end">
+      <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Chart type">
+        <% current_type = params[:chart_type] || "line" %>
+        <% [["Area", "area"], ["Bar", "bar"], ["Line", "line"]].each do |label, type| %>
+          <%= link_to label, request.params.merge(chart_type: type),
+              class: "btn #{current_type == type ? 'btn-primary' : 'btn-outline-primary bg-white'}",
+              data: { turbo_frame: with_frame("fund_ratios_index_scenarios_chart_frame") } %>
+        <% end %>
+      </div>
+    </div>
+    <%= fund_ratios_line_chart_by_scenario(nil, args: params.to_unsafe_h, fund_ratios: @fund_ratios, grouped_ratios: grouped_ratios, chart_type: params[:chart_type]) %>
+  <% end %>
+<% end %>

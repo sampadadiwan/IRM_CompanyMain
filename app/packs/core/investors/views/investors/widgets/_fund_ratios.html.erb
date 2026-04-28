@@ -1,14 +1,14 @@
-<% ransack_params = [[:owner_id, :eq, @investor.id], [:owner_type, :eq, "Investor"]]
-if args[:ratio_names].present?
-  ratio_names = args[:ratio_names]
-  ransack_params << [:name, :in, ratio_names]
-end
+<%
+args[:name] = args[:ratio_names] if args[:ratio_names].present?
+args[:owner_id] = @investor.id
+args[:owner_type] = "Investor"
 args[:widget_id] ||= widget.id
+args[:group_by_date] = args[:group_by_date].to_s != "false" # default to true unless explicitly set to false
 %>
 
-<% 
+<%
   args_with_widget = args.merge(widget_id: widget.id)
-  uri = URI(fund_ratios_path(title: "Company Ratios", show_funds: true, **args_with_widget, q: ransack_query_params_multiple(ransack_params, sort_by: "end_date", sort_direction: "desc"))) 
+  uri = URI(fund_ratios_path(title: "Company Ratios", show_funds: true, **args_with_widget))
 %>
 <%= render(
       WidgetCardComponent.new(
@@ -34,7 +34,7 @@ args[:widget_id] ||= widget.id
             <% end %>
           </div>
         </div>
-        <%= fund_ratios_line_chart(nil, args: args, owner_id: @investor.id, owner_type: "Investor", ratio_names: args[:ratio_names], months: args[:months], scenarios: args[:scenarios], scenario: args[:scenario], chart_type: params[:chart_type]) %>
+        <%= fund_ratios_line_chart(nil, args: args, owner_id: @investor.id, owner_type: "Investor", ratio_names: args[:ratio_names], months: args[:months], chart_type: params[:chart_type]) %>
       <% end %>
     <% end %>
 

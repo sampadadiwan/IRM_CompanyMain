@@ -8,12 +8,18 @@ module CapitalCommitmentDashboardHelper
 
     data = { "Called" => called, "Uncalled (Dry Powder)" => uncalled }
 
-    chart = pie_chart data, donut: true, title: "Capital Called vs Uncalled", id: "commitment_deployment_chart_#{fund.id}", library: {
-      plotOptions: {
-        pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
-      },
-      **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    options = {
+      library: {
+        plotOptions: {
+          pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
+        },
+        **chart_theme_color
+      }, prefix: "#{fund.currency}:"
+    }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = pie_chart data, donut: true, title: "Capital Called vs Uncalled", id: "commitment_deployment_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -35,12 +41,18 @@ module CapitalCommitmentDashboardHelper
       top_data["Others"] = others_sum
     end
 
-    chart = pie_chart top_data, donut: true, title: "Investor Concentration (Top #{top_n})", id: "investor_concentration_chart_#{fund.id}", library: {
-      plotOptions: {
-        pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
-      },
-      **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    options = {
+      library: {
+        plotOptions: {
+          pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
+        },
+        **chart_theme_color
+      }, prefix: "#{fund.currency}:"
+    }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = pie_chart top_data, donut: true, title: "Investor Concentration (Top #{top_n})", id: "investor_concentration_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -57,12 +69,17 @@ module CapitalCommitmentDashboardHelper
 
     data = { "GP" => gp_amount, "LP" => lp_amount }
 
-    chart = pie_chart data, donut: true, title: "GP vs LP Commitment", id: "gp_lp_commitment_chart_#{fund.id}", library: {
-      plotOptions: {
-        pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
-      },
-      **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    options = {
+      library: {
+        plotOptions: {
+          pie: { dataLabels: { enabled: true, format: "<b>{point.name}</b>: {point.percentage:.1f} %" } }
+        },
+        **chart_theme_color
+      }, prefix: "#{fund.currency}:"
+    }
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = pie_chart data, donut: true, title: "GP vs LP Commitment", id: "gp_lp_commitment_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -95,9 +112,15 @@ module CapitalCommitmentDashboardHelper
   def onboarding_status_chart(fund, compact: false)
     data = fund.capital_commitments.group(:onboarding_completed).count.transform_keys { |k| k ? "Completed" : "Pending" }
 
-    chart = pie_chart data, donut: true, title: "Onboarding Status", id: "onboarding_status_chart_#{fund.id}", library: {
+    options = {
+      library: {
       **chart_theme_color
+      }
     }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = pie_chart data, donut: true, title: "Onboarding Status", id: "onboarding_status_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -119,10 +142,16 @@ module CapitalCommitmentDashboardHelper
       hash[date] = cumulative_amount
     end
 
-    chart = area_chart data, title: "Fundraising Timeline (Cumulative)", id: "fundraising_timeline_chart_#{fund.id}", library: {
-      xAxis: { type: 'datetime' },
-      **chart_theme_color
-    }, prefix: "#{fund.currency}:"
+    options = {
+      library: {
+        xAxis: { type: 'datetime' },
+        **chart_theme_color
+      }, prefix: "#{fund.currency}:"
+    }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = area_chart data, title: "Fundraising Timeline (Cumulative)", id: "fundraising_timeline_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -136,9 +165,15 @@ module CapitalCommitmentDashboardHelper
   def currency_exposure_chart(fund, compact: false)
     data = fund.capital_commitments.group(:folio_currency).sum(:committed_amount_cents).transform_values { |v| v / 100.0 }
 
-    chart = pie_chart data, donut: true, title: "Currency Exposure", id: "currency_exposure_chart_#{fund.id}", library: {
+    options = {
+      library: {
       **chart_theme_color
+      }
     }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+    chart = pie_chart data, donut: true, title: "Currency Exposure", id: "currency_exposure_chart_#{fund.id}", **options
 
     return chart if compact
 
@@ -156,13 +191,11 @@ module CapitalCommitmentDashboardHelper
     invested_pct = committed.positive? ? (invested / committed * 100).round(1) : 0
 
     nav_cents = calcs.fmv_cents + calcs.cash_in_hand_cents + calcs.net_current_assets_cents
-    
+
     # Fallback to sum of account entries if standard NAV calc is <= 0
     # Use reporting_date filter to match the "as of" date of the dashboard
-    if nav_cents <= 0
-      nav_cents = cc.account_entries.where(reporting_date: ..Time.zone.today).sum(:amount_cents).to_i
-    end
-    
+    nav_cents = cc.account_entries.where(reporting_date: ..Time.zone.today).sum(:amount_cents).to_i if nav_cents <= 0
+
     # Ensure NAV displayed in metrics is not negative
     nav_cents = 0 if nav_cents < 0
     nav = Money.new(nav_cents, cc.currency)
@@ -170,9 +203,7 @@ module CapitalCommitmentDashboardHelper
     # Simple comparison for NAV % change (vs previous account entry date)
     prev_ae = cc.account_entries.where(name: "Portfolio FMV").where("reporting_date < ?", Time.zone.today).order(reporting_date: :desc).second
     nav_change_pct = 0
-    if prev_ae && prev_ae.amount_cents.positive?
-      nav_change_pct = ((nav_cents - prev_ae.amount_cents).to_f / prev_ae.amount_cents * 100).round(1)
-    end
+    nav_change_pct = ((nav_cents - prev_ae.amount_cents).to_f / prev_ae.amount_cents * 100).round(1) if prev_ae && prev_ae.amount_cents.positive?
 
     currency_units = cc.currency == "INR" ? "Crores" : "Millions"
 
@@ -210,12 +241,8 @@ module CapitalCommitmentDashboardHelper
     end
 
     nav_query = cc.account_entries.where(name: ["Portfolio FMV", "Cash In Hand", "Net Current Assets", "NAV"])
-    if nav_query.empty? || nav_query.sum(:amount_cents).zero?
-      nav_query = cc.account_entries.where("name LIKE ?", "%Investable Capital%")
-    end
-    if nav_query.empty? || nav_query.sum(:amount_cents).zero?
-      nav_query = cc.account_entries.where.not(amount_cents: 0)
-    end
+    nav_query = cc.account_entries.where("name LIKE ?", "%Investable Capital%") if nav_query.empty? || nav_query.sum(:amount_cents).zero?
+    nav_query = cc.account_entries.where.not(amount_cents: 0) if nav_query.empty? || nav_query.sum(:amount_cents).zero?
 
     nav_query.find_each do |ae|
       month = ae.reporting_date.to_date.beginning_of_month
@@ -226,18 +253,18 @@ module CapitalCommitmentDashboardHelper
     all_months = events.keys.dup
     all_months << Time.zone.today.beginning_of_month
     all_months << start_date if start_date
-    
+
     if all_months.any?
       first_month = all_months.min
       last_month = all_months.max
-      
+
       current_month = first_month
       while current_month <= last_month
         all_months << current_month
         current_month += 1.month
       end
     end
-    
+
     all_months.uniq!
     all_months.sort!
 
@@ -259,7 +286,7 @@ module CapitalCommitmentDashboardHelper
         cum_distributed += events[month][:distributed]
         last_nav = events[month][:nav] if events[month][:has_nav]
       end
-      
+
       cum_ae += (ae_by_month[month] / 100.0)
 
       h[month] = {
@@ -271,9 +298,7 @@ module CapitalCommitmentDashboardHelper
     end
 
     # Apply the period filter AFTER the full historical calculation
-    if start_date
-      timeseries.select! { |month, _| month >= start_date }
-    end
+    timeseries.select! { |month, _| month >= start_date } if start_date
 
     # Pass actual Date objects to Chartkick; ensure consistent sorting
     called_data = timeseries.sort.to_h.transform_values { |v| v[:called] }
@@ -281,26 +306,32 @@ module CapitalCommitmentDashboardHelper
     nav_data = timeseries.sort.to_h.transform_values { |v| v[:nav] }
 
     chart_id = "cc_performance_chart_#{cc.id}_#{period}"
-    
+
+    options = {
+      library: {
+        xAxis: {
+          type: 'datetime',
+          labels: {
+            style: { fontSize: '10px' },
+            autoRotation: [-45],
+            padding: 5
+          },
+          dateTimeLabelFormats: {
+            month: '%b \'%y',
+            year: '%Y'
+          }
+        },
+        **chart_theme_color
+      }, prefix: "#{cc.currency}:"
+    }
+
+    options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
     column_chart [
       { name: "NAV", data: nav_data, library: { type: 'area' } },
       { name: "Called", data: called_data, library: { type: 'column' } },
       { name: "Distributed", data: distributed_data, library: { type: 'column' } }
-    ], id: chart_id, library: {
-      xAxis: {
-        type: 'datetime',
-        labels: {
-          style: { fontSize: '10px' },
-          autoRotation: [-45],
-          padding: 5
-        },
-        dateTimeLabelFormats: {
-          month: '%b \'%y',
-          year: '%Y'
-        }
-      },
-      **chart_theme_color
-    }, prefix: "#{cc.currency}:"
+    ], id: chart_id, **options
   end
 
   def card2_recent_activity(cc)
@@ -319,7 +350,7 @@ module CapitalCommitmentDashboardHelper
       activities << { type: :nav, date: ae.reporting_date, title: "NAV updated", icon: "ti-chart-line", color: "text-info" }
     end
 
-    activities.sort_by { |a| a[:date] }.reverse.first(5)
+    activities.sort_by { |a| a[:date] }.last(5).reverse
   end
 
   def card2_attention_items(cc)

@@ -92,15 +92,20 @@ module PortfolioHelper
         { name: "MOIC", data: grouped.map { |name, ratios| [name, ratios.find { |r| r.name == "MOIC" }&.value || 0] } }
       ]
 
-      column_chart chart_data, id: "portfolio_last_xirr_chart_#{fund.id}", library: {
-        plotOptions: { column: {
-          dataLabels: {
-            enabled: true,
-            format: "{point.y:,.2f}"
-          }
-        } },
-        **chart_theme_color
+      options = {
+        library: {
+          plotOptions: { column: {
+            dataLabels: {
+              enabled: true,
+              format: "{point.y:,.2f}"
+            }
+          } },
+          **chart_theme_color
+        }
       }
+      options[:colors] = pie_chart_colors_from_css if use_custom_colors?
+
+      column_chart chart_data, id: "portfolio_last_xirr_chart_#{fund.id}", **options
     else
       "No data available."
     end
