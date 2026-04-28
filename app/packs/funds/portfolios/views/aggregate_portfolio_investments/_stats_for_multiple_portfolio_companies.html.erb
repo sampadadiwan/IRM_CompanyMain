@@ -7,7 +7,8 @@
 
     <%
       error = nil
-
+      show_currency_filter ||= false
+      tracking_currency ||= nil
       begin
         # How many decimals to show in the stats
         decimals ||= 2
@@ -15,8 +16,16 @@
         field_names ||= []
 
         # Determine target currency
+        selected_currency = params[:display_currency]
 
-        if currency.present? && current_user.entity.currency_list.include?(currency)
+        if selected_currency.present?
+          target_currency = selected_currency
+        elsif show_currency_filter
+          # When currency filter is shown, default to entity currency so it appears pre-selected in the dropdown
+          target_currency = current_user.entity.currency
+        elsif tracking_currency.present? && current_user.entity.tracking_currency.present?
+          target_currency = current_user.entity.tracking_currency
+        elsif currency.present? && current_user.entity.currency_list.include?(currency)
           target_currency = currency
         else
           target_currency = current_user.entity.currency
@@ -104,11 +113,11 @@
         <%= error %>
       </div>
     <% else %>
-       <%
-          per_row ||= nil
-          if per_row.present? && per_row.to_i > 0
-            card_col_class = "col-md-#{12 / per_row.to_i}"
-          else
+      <%
+        per_row ||= nil
+        if per_row.present? && per_row.to_i > 0
+          card_col_class = "col-md-#{12 / per_row.to_i}"
+        else
           card_col_class = case cards_data.length
                            when 1 then "col-md-12"
                            when 2 then "col-md-6"
@@ -116,10 +125,40 @@
                            when 4 then "col-md-6"
                            else ""
                            end
-          end
-        %>
-      <div id="stats_cards_<%= widget_id %>" class="row">
-        <% cards_data.each_with_index do |card_data, index| %>
+        end
+
+        investor_ids = @investors.map(&:id)
+        stimulus_data = show_currency_filter ? {
+          "data-controller" => "portfolio-stats-currency",
+          "data-portfolio-stats-currency-investor-ids-value" => investor_ids.to_json,
+          "data-portfolio-stats-currency-current-path-value" => request.fullpath,
+          "data-portfolio-stats-currency-fields-value" => fields.join(","),
+          "data-portfolio-stats-currency-decimals-value" => decimals.to_s,
+          "data-portfolio-stats-currency-force-units-value" => (force_units || current_user.entity.default_currency_units).to_s,
+          "data-portfolio-stats-currency-tracking-currency-value" => tracking_currency.to_s,
+          "data-portfolio-stats-currency-currency-value" => currency.to_s,
+          "data-portfolio-stats-currency-widget-size-value" => widget_size.to_s,
+          "data-portfolio-stats-currency-widget-id-value" => widget_id.to_s
+        } : {}
+      %>
+      <div <%= stimulus_data.map { |k, v| "#{k}=\"#{v}\"" }.join(" ").html_safe %>>
+        <% if show_currency_filter %>
+          <div class="d-flex justify-content-end mb-3">
+            <label class="me-2 align-self-center mb-0">Currency:</label>
+            <select
+              class="form-select form-select-sm"
+              style="width: 120px;"
+              data-portfolio-stats-currency-target="select"
+              data-action="change->portfolio-stats-currency#changeCurrency">
+              <% current_user.entity.currency_list.each do |cur| %>
+                <option value="<%= cur %>" <%= 'selected' if target_currency == cur %>><%= cur %></option>
+              <% end %>
+            </select>
+          </div>
+        <% end %>
+
+        <div id="multi_portfolio_stats_cards_<%= widget_id %>" class="row" <%= 'data-portfolio-stats-currency-target="stats"'.html_safe if show_currency_filter %>>
+          <% cards_data.each_with_index do |card_data, index| %>
             <% subtitle = card_data[:subtitle] %>
             <% subtitle = field_names[index] if field_names[index].present? %>
             <%= render(NumberStatsComponent.new(
@@ -131,9 +170,8 @@
                         text_info: card_data[:text_info],
                         css_class: card_col_class
             )) %>
-
-        <% end %>
-
+          <% end %>
+        </div>
       </div>
       <% params[:force_units] = nil %>
     <% end %>

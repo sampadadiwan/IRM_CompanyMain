@@ -155,6 +155,37 @@ class InvestorsController < ApplicationController
     end
   end
 
+  def multi_portfolio_stat_currency
+    investor_ids = Array(params[:investor_ids]).map(&:to_i).reject(&:zero?)
+
+    # Apply policy scope first to ensure tenant isolation, then filter to requested ids
+    @investors = policy_scope(Investor).where(id: investor_ids)
+
+    authorize Investor, :index?
+
+    @selected_fund_ids = Array(params[:fund_ids]).map(&:to_i).reject(&:zero?)
+
+    # Mirror the locals passed by widgets/_stats.html.erb for the multi-portfolio case
+    fields = params[:fields].present? ? params[:fields].split(",").map(&:strip) : []
+    decimals = params[:decimals]&.to_i || 2
+    force_units = params[:force_units] || current_user.entity.default_currency_units
+    tracking_currency = params[:tracking_currency].presence || current_user.entity.tracking_currency
+    currency = params[:currency].presence
+    widget_id = params[:widget_id].presence
+
+    render partial: "aggregate_portfolio_investments/stats_for_multiple_portfolio_companies",
+           locals: {
+             show_currency_filter: true,
+             fields: fields,
+             decimals: decimals,
+             force_units: force_units,
+             tracking_currency: tracking_currency,
+             currency: currency,
+             widget_size: params[:widget_size].presence || "col-md-12",
+             widget_id: widget_id
+           }
+  end
+
   def merge
     @entity = current_user.has_cached_role?(:super) ? Entity.find(params[:entity_id]) : current_user.entity
     if request.get?

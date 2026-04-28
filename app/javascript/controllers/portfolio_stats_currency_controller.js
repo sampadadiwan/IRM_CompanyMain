@@ -3,61 +3,84 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static targets = ["select", "stats"]
   static values = {
+    // Single portfolio mode
     portfolioCompanyId: String,
-    currentPath: String
+    currentPath: String,
+    // Multi portfolio mode (present when investor_ids are passed)
+    investorIds: Array,
+    fields: String,
+    decimals: Number,
+    forceUnits: String,
+    trackingCurrency: String,
+    currency: String,
+    widgetSize: String,
+    widgetId: String
+  }
+
+  get isMultiMode() {
+    return this.hasInvestorIdsValue && this.investorIdsValue.length > 0
   }
 
   connect() {
-    console.log('[PortfolioStatsCurrency] Controller connected for portfolio company:', this.portfolioCompanyIdValue)
-    console.log('[PortfolioStatsCurrency] Targets available:', {
-      select: this.hasSelectTarget,
-      stats: this.hasStatsTarget
-    })
-    console.log('[PortfolioStatsCurrency] Current path:', this.currentPathValue)
+    if (this.isMultiMode) {
+      console.log('[PortfolioStatsCurrency] Multi-portfolio mode, investor ids:', this.investorIdsValue)
+    } else {
+      console.log('[PortfolioStatsCurrency] Single portfolio mode, company id:', this.portfolioCompanyIdValue)
+    }
   }
 
   changeCurrency(event) {
-    console.log('[PortfolioStatsCurrency] changeCurrency called')
-
     if (!this.hasSelectTarget) {
       console.error('[PortfolioStatsCurrency] Select target not found')
       return
     }
-
     if (!this.hasStatsTarget) {
       console.error('[PortfolioStatsCurrency] Stats target not found')
       return
     }
 
     const selectedCurrency = this.selectTarget.value
-    const portfolioCompanyId = this.portfolioCompanyIdValue
     const statsContainer = this.statsTarget
 
-    console.log('[PortfolioStatsCurrency] Selected currency:', selectedCurrency)
-
-    // Build the URL with the new currency parameter
     let url
     try {
-      url = new URL(this.currentPathValue, window.location.origin)
-      console.log('[PortfolioStatsCurrency] Base URL constructed:', url.toString())
+      if (this.isMultiMode) {
+        // Multi: call investor action directly
+        url = new URL('/investors/multi_portfolio_stat_currency', window.location.origin)
+
+        // Pass investor ids
+        this.investorIdsValue.forEach(id => url.searchParams.append('investor_ids[]', id))
+
+        // Forward existing filter params from current URL (fund_ids, tag_list, sector)
+        const currentUrl = new URL(window.location.href)
+        ;['fund_ids', 'tag_list', 'sector'].forEach(key => {
+          currentUrl.searchParams.getAll(key + '[]').forEach(val => url.searchParams.append(key + '[]', val))
+          currentUrl.searchParams.getAll(key).forEach(val => url.searchParams.append(key, val))
+        })
+
+        // Forward widget config
+        if (this.hasFieldsValue && this.fieldsValue)                     url.searchParams.set('fields', this.fieldsValue)
+        if (this.hasDecimalsValue && this.decimalsValue)                  url.searchParams.set('decimals', this.decimalsValue)
+        if (this.hasForceUnitsValue && this.forceUnitsValue)              url.searchParams.set('force_units', this.forceUnitsValue)
+        if (this.hasTrackingCurrencyValue && this.trackingCurrencyValue)  url.searchParams.set('tracking_currency', this.trackingCurrencyValue)
+        if (this.hasCurrencyValue && this.currencyValue)                  url.searchParams.set('currency', this.currencyValue)
+        if (this.hasWidgetSizeValue && this.widgetSizeValue)              url.searchParams.set('widget_size', this.widgetSizeValue)
+        if (this.hasWidgetIdValue && this.widgetIdValue)                  url.searchParams.set('widget_id', this.widgetIdValue)
+      } else {
+        // Single: re-fetch the current page
+        url = new URL(this.currentPathValue, window.location.origin)
+      }
     } catch (error) {
       console.error('[PortfolioStatsCurrency] Error constructing URL:', error)
-      console.error('[PortfolioStatsCurrency] currentPathValue:', this.currentPathValue)
-      alert('Error constructing URL. Check console for details.')
       return
     }
 
-    // Always set the display_currency parameter with the selected currency
     url.searchParams.set('display_currency', selectedCurrency)
+    console.log('[PortfolioStatsCurrency] Fetching:', url.toString())
 
-    console.log('[PortfolioStatsCurrency] Final URL:', url.toString())
-
-    // Show loading state
     statsContainer.style.opacity = '0.5'
     statsContainer.style.pointerEvents = 'none'
 
-    // Fetch the updated stats via AJAX
-    console.log('[PortfolioStatsCurrency] Fetching:', url.toString())
     fetch(url.toString(), {
       headers: {
         'Accept': 'text/html',
@@ -65,45 +88,48 @@ export default class extends Controller {
       }
     })
     .then(response => {
-      console.log('[PortfolioStatsCurrency] Response status:', response.status)
       if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.status}`)
+        return response.text().then(body => {
+          throw new Error(`HTTP ${response.status}: ${body.substring(0, 500)}`)
+        })
       }
       return response.text()
     })
     .then(html => {
-      console.log('[PortfolioStatsCurrency] Response received, length:', html.length)
-
-      // Create a temporary container to parse the response
       const tempDiv = document.createElement('div')
       tempDiv.innerHTML = html
 
-      // Extract the stats cards from the response
-      const newStatsCards = tempDiv.querySelector(`#stats_cards_${portfolioCompanyId}`)
-      console.log('[PortfolioStatsCurrency] Looking for selector:', `#stats_cards_${portfolioCompanyId}`)
-      console.log('[PortfolioStatsCurrency] Found stats cards:', !!newStatsCards)
+      const selector = this.isMultiMode
+        ? `#multi_portfolio_stats_cards_${this.widgetIdValue}`
+        : `#stats_cards_${this.portfolioCompanyIdValue}`
 
-      if (newStatsCards) {
-        // Replace the stats container content
-        statsContainer.innerHTML = newStatsCards.innerHTML
+      console.log('[PortfolioStatsCurrency] widgetIdValue:', this.widgetIdValue, '| selector:', selector)
+
+      const newStats = tempDiv.querySelector(selector)
+      console.log('[PortfolioStatsCurrency] Looking for:', selector, '— found:', !!newStats)
+      if (!newStats) {
+        console.error('[PortfolioStatsCurrency] Response HTML:', html.substring(0, 1000))
+      }
+
+      if (newStats) {
+        statsContainer.innerHTML = newStats.innerHTML
         statsContainer.style.opacity = '1'
         statsContainer.style.pointerEvents = 'auto'
 
-        console.log('[PortfolioStatsCurrency] Stats updated successfully')
-
-        // Update browser URL without reload
-        if (window.history && window.history.pushState) {
+        // Only push URL state in single mode (multi uses a dedicated endpoint)
+        if (!this.isMultiMode && window.history?.pushState) {
           window.history.pushState({}, '', url.toString())
         }
       } else {
-        throw new Error('Stats container not found in response')
+        throw new Error(`Stats container "${selector}" not found in response`)
       }
     })
     .catch(error => {
-      console.error('[PortfolioStatsCurrency] Error fetching stats:', error)
+      console.error('[PortfolioStatsCurrency] Error:', error)
       statsContainer.style.opacity = '1'
       statsContainer.style.pointerEvents = 'auto'
       alert('Failed to update currency. Please try again.')
     })
   }
 }
+
