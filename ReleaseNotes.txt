@@ -1,3 +1,12 @@
+V9.2.29
+f8b6b5b97 Kedaara 13 (#1391)
+37d8dc167 Merged the changes and checked functionality - agg dash currency filter (#1387)
+207c0d9da Refactor card2 metrics display: simplify layout and remove TVPI and IRR metrics
+22ad1cb80 Fix scope leak and incorrect calculations in TrackingCurrencyJob methods
+347254166 Refactored the docs folder - cleanup and reorg
+7c584f066 Add Investment Opportunity User Guide with detailed roles, permissions, and EOI workflow
+bcd3e41d0 Remove unused ticker feed view, update application view paths, and clean up routes; add Approvals User Guide and Notification System technical reference documentation.
+
 V9.2.28
 e66554251 Fixed get_ratio_formula_entries for commitment calcs (#1390)
 868ca8fa7 Add E-Signing System and User Guide documentation
