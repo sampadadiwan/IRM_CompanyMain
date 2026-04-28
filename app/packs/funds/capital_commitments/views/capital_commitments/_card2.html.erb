@@ -66,10 +66,8 @@
         { label: "Invested", value: money_to_currency(metrics[:invested], { units: metrics[:currency_units] }), icon: "ti-arrow-up-right", color: "info", sub: "#{metrics[:invested_pct]}%" },
         { label: "Current NAV", value: money_to_currency(metrics[:nav], { units: metrics[:currency_units] }), icon: "ti-chart-line", color: "success", sub: "#{metrics[:nav_change_pct]}%" },
         { label: "Distributed", value: money_to_currency(metrics[:distributed], { units: metrics[:currency_units] }), icon: "ti-arrow-down-left", color: "secondary" },
-        { label: "TVPI", value: "#{metrics[:tvpi]}x", icon: "ti-multiplier-1-5x", color: "warning" },
-        { label: "IRR", value: "#{metrics[:irr]}%", icon: "ti-percentage", color: "danger" }
       ].each do |m| %>
-        <div class="col-lg-2 col-md-4 col-6">
+        <div class="col">
           <div class="text-center p-3 rounded-4 bg-<%= m[:color] %>-subtle border border-<%= m[:color] %> border-opacity-10 h-100 transition-all hover-shadow">
             <div class="text-<%= m[:color] %>-emphasis mb-2">
               <i class="ti <%= m[:icon] %> fs-7"></i>
@@ -126,7 +124,7 @@
                  <span class="badge bg-danger rounded-circle p-1 ms-1" style="width: 8px; height: 8px;"></span>
                <% end %>
             </h5>
-            
+
             <div class="vstack gap-3">
               <% if attention_items.any? %>
                 <% attention_items.each do |item| %>
@@ -176,7 +174,7 @@
                 <i class="ti ti-arrow-up-right fs-4"></i> Library
               <% end %>
             </div>
-            
+
             <div class="row g-3">
               <% capital_commitment.docs_for_investor.limit(3).order(id: :desc).each do |doc| %>
                 <div class="col-12">
@@ -221,7 +219,7 @@
                 <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Chart type">
                   <% current_type = params[:chart_type] || "line" %>
                   <% [["Area", "area"], ["Bar", "bar"], ["Line", "line"]].each do |label, type| %>
-                    <%= link_to label, request.params.merge(chart_type: type), 
+                    <%= link_to label, request.params.merge(chart_type: type),
                         class: "btn #{current_type == type ? 'btn-primary' : 'btn-outline-primary bg-white'}",
                         data: { turbo_frame: "benchmark_trends_chart_frame_#{capital_commitment.id}" } %>
                   <% end %>
