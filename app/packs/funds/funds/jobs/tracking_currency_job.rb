@@ -99,8 +99,8 @@ class TrackingCurrencyJob < ApplicationJob
     # Conversion is based on the date the payment was actually received
     scope.pluck(:payment_date).compact.uniq.each do |date|
       rate = fund.tracking_exchange_rate(exchange_rate_date: date).rate
-      fund.capital_remittance_payments.where(payment_date: date)
-          .update_all("tracking_amount_cents = amount_cents * #{rate}")
+      scope.where(payment_date: date)
+           .update_all("tracking_amount_cents = amount_cents * #{rate}")
     rescue StandardError
       @missing_rates << "Remittance Payments: #{fund.currency}->#{fund.tracking_currency} on #{date}"
     end
@@ -122,7 +122,7 @@ class TrackingCurrencyJob < ApplicationJob
     # Remittance conversion is based on the original call date
     scope.pluck(:remittance_date).compact.uniq.each do |date|
       rate = fund.tracking_exchange_rate(exchange_rate_date: date).rate
-      fund.capital_remittances.where(remittance_date: date).find_each do |cr|
+      scope.where(remittance_date: date).find_each do |cr|
         # tracking_collected_amount is a rollup of the tracking amounts of individual payments
         cr.update_columns(
           tracking_call_amount_cents: cr.call_amount_cents * rate,
@@ -146,7 +146,7 @@ class TrackingCurrencyJob < ApplicationJob
     # Distribution payments are converted based on their specific payment date
     scope.pluck(:payment_date).compact.uniq.each do |date|
       rate = fund.tracking_exchange_rate(exchange_rate_date: date).rate
-      fund.capital_distribution_payments.where(payment_date: date).update_all(
+      scope.where(payment_date: date).update_all(
         "tracking_net_payable_cents = net_payable_cents * #{rate},
          tracking_gross_payable_cents = gross_payable_cents * #{rate},
          tracking_reinvestment_with_fees_cents = reinvestment_with_fees_cents * #{rate}"
@@ -168,8 +168,8 @@ class TrackingCurrencyJob < ApplicationJob
     # Commitment adjustments use the 'as_of' date for currency conversion
     scope.pluck(:as_of).compact.uniq.each do |date|
       rate = fund.tracking_exchange_rate(exchange_rate_date: date).rate
-      fund.commitment_adjustments.where(as_of: date)
-          .update_all("tracking_amount_cents = amount_cents * #{rate}")
+      scope.where(as_of: date)
+           .update_all("tracking_amount_cents = amount_cents * #{rate}")
     rescue StandardError
       @missing_rates << "Commitment Adjustments: #{fund.currency}->#{fund.tracking_currency} on #{date}"
     end
@@ -182,19 +182,31 @@ class TrackingCurrencyJob < ApplicationJob
   def convert_capital_commitments(fund, user_id, force: false)
     send_notification("Updating tracking currency for capital commitments", user_id)
     scope = fund.capital_commitments
-    scope = scope.where(tracking_committed_amount_cents: 0) unless force
+    # Guard on the orig field — it is the only one converted at a point-in-time rate.
+    # tracking_committed_amount_cents is always recomputed at the end of this method.
+    scope = scope.where(tracking_orig_committed_amount_cents: 0) unless force
 
-    # Capital commitments are converted based on the date the commitment was signed/effective
+    # Each commitment's original pledge is converted at its own commitment_date rate.
+    # Adjustments are handled separately in convert_commitment_adjustments (each at their as_of rate).
     scope.pluck(:commitment_date).compact.uniq.each do |date|
       rate = fund.tracking_exchange_rate(exchange_rate_date: date).rate
-      fund.capital_commitments.where(commitment_date: date).update_all(
-        # This is incorrect - TODO fix
-        "tracking_committed_amount_cents = committed_amount_cents * #{rate},
-         tracking_orig_committed_amount_cents = orig_committed_amount_cents * #{rate}"
+      scope.where(commitment_date: date).update_all(
+        "tracking_orig_committed_amount_cents = orig_committed_amount_cents * #{rate}"
       )
     rescue StandardError
       @missing_rates << "Capital Commitments: #{fund.currency}->#{fund.tracking_currency} on #{date}"
     end
+
+    # Rebuild tracking_adjustment_amount_cents from commitment_adjustments.tracking_amount_cents.
+    # update_all in convert_commitment_adjustments bypasses counter_culture callbacks, so we fix counts here.
+    CommitmentAdjustment.counter_culture_fix_counts(where: { fund_id: fund.id })
+
+    # tracking_committed_amount_cents is derived from its two tracking components.
+    # Recompute for all commitments so the total stays consistent with orig + adjustments.
+    fund.capital_commitments.update_all(
+      "tracking_committed_amount_cents = tracking_orig_committed_amount_cents + tracking_adjustment_amount_cents"
+    )
+
     {}
   rescue StandardError => e
     Rails.logger.debug e.backtrace
