@@ -13,7 +13,6 @@ Rails.application.routes.draw do
   resources :excused_investors
 
   resources :rm_mappings
-  resources :key_biz_metrics
 
   mount ActionCable.server => '/cable'
 

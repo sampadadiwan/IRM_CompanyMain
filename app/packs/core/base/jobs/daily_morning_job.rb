@@ -17,9 +17,6 @@ class DailyMorningJob < ApplicationJob
       Rails.logger.debug "Update SecondarySale: Make expired sales inactive"
       SecondarySale.where(active: true, end_date: ..Time.zone.today).update(active: false)
 
-      Rails.logger.debug "Generate Key Biz Metrics"
-      KeyBizMetricsJob.perform_now
-
       Rails.logger.debug "Send scheduled Reminders"
       ReminderJob.perform_now
 
