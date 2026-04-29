@@ -25,14 +25,15 @@
   <% if @investors.present? %>
       <!-- Display the dashboard -->
     <%
-      all_widgets = dashboard_widgets(@dashboard_name, current_user.entity_id, name: @name, show_menu: true).to_a
+      all_widgets = dashboard_widgets(@dashboard_name, current_user.entity_id, name: @name).to_a
+      all_menu_widgets = all_widgets.select { |widget| widget.show_menu }
     %>
 
     <nav class="dashboard-nav sticky-top <%= theme %> shadow-sm d-none d-md-block"  style="top:70px; z-index: 1000;">
       <ul class="nav nav-pills <%= theme %> p-1" data-controller="nav-overflow" data-nav-overflow-target="nav">
           <!-- Add a link to the dashboard widgets -->
 
-          <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
+          <% all_menu_widgets.each_with_index do |(name, dashboard_widget), index| %>
               <li class="nav-item" data-nav-overflow-target="item">
                   <a class="nav-link btn btn-sm" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
                       <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
@@ -46,7 +47,7 @@
                   More
               </a>
               <ul class="dropdown-menu shadow" aria-labelledby="moreWidgetsDropdown" data-nav-overflow-target="moreDropdown">
-                  <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
+                  <% all_menu_widgets.each_with_index do |(name, dashboard_widget), index| %>
                       <li data-index="<%= index %>">
                           <a class="dropdown-item" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false>
                               <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>

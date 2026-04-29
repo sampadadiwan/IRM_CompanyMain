@@ -4,7 +4,7 @@ module FundStatisticsHelper
   ].freeze
 
   # Only pass custom colors as true if we are sure the css has these colors defined otherwise the chart will have all black color (no color actually but looks black)
-  def pie_chart_with_options(data, chart_type: "donut", custom_colors: false, **extra_options)
+  def pie_chart_with_options(data, chart_type: "donut", **extra_options)
     chart_type = chart_type.to_s.downcase
     inner_size = chart_type == "pie" ? nil : "50%"
     semi       = chart_type == "half_donut"
@@ -30,9 +30,9 @@ module FundStatisticsHelper
       prefix: ""
     }
 
-    # When custom_colors: true (e.g. called from a branded widget), use CSS vars
+    # When use_custom_colors?: true , use CSS vars
     # --pie-color-1..10 defined in the custom stylesheet (e.g. kedaara.css).
-    # Otherwise fall back to PIE_CHART_COLORS.
+    # Otherwise fall back to pie-colors in styles.css.
     base_colors = use_custom_colors? ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
     extended_colors = base_colors.dup
     if extended_colors.size < data.size

@@ -1,11 +1,10 @@
 <%# Define the list of potential charts to be displayed based on request parameters %>
 <% diluted_chart ||= params[:diluted_chart] || 'pie' %>
-<% custom_colors ||= params[:custom_colors] || false %>
 
 <% charts = [
   { visible: (params[:self_ownership_trend].blank? || params[:self_ownership_trend] == "true"), title: "Ownership Trend", content_method: :self_ownership_trend, args: [investments] },
   { visible: (params[:amount_by_funding_round].blank? || params[:amount_by_funding_round] == "true"), title: "Amount By Funding Round", content_method: :investment_amount_by_funding_round, args: [investments], kwargs: {} },
-  { visible: (params[:diluted_share_holdings].blank? || params[:diluted_share_holdings] == "true"), title: "Diluted Share Holdings", content_method: :fully_diluted_holdings, args: [investments], kwargs: { chart_type: diluted_chart.to_sym, custom_colors: custom_colors } },
+  { visible: (params[:diluted_share_holdings].blank? || params[:diluted_share_holdings] == "true"), title: "Diluted Share Holdings", content_method: :fully_diluted_holdings, args: [investments], kwargs: { chart_type: diluted_chart.to_sym } },
   { visible: (params[:amount_by_investor].blank? || params[:amount_by_investor] == "true"), title: "Amount By Investor", content_method: :investment_amount_by_investor, args: [investments] },
   { visible: (params[:self_by_funding_round].blank? || params[:self_by_funding_round] == "true"), title: "Self By Funding Round", content_method: :investment_amount_by_funding_round, args: [investments], kwargs: { category: "Self" } }
 ].select { |c| c[:visible] } %>

@@ -79,7 +79,7 @@ module InvestmentStatisticsHelper
 
   # 2. Pie Chart for Fully Diluted Holding Across Investors
   # chart_type: :pie, :donut (default), or :half_donut
-  def fully_diluted_holdings(investments, chart_type: :donut, custom_colors: false)
+  def fully_diluted_holdings(investments, chart_type: :donut)
     # Calculate total equity holdings
     equity_holdings = investments.reorder(nil).where(investment_type: "Equity").group(:investor_name).sum(:quantity)
 
@@ -95,7 +95,7 @@ module InvestmentStatisticsHelper
       [investor, total_holdings]
     end
 
-    pie_chart_with_options fully_diluted, chart_type:, custom_colors:
+    pie_chart_with_options fully_diluted, chart_type:
   end
 
   # 3. Column Chart for Amount Per Investor

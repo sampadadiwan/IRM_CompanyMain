@@ -14,8 +14,7 @@ module AggregatePortfolioInvestmentsHelper
     chart_data = group_chart_data_for_pie(grouped, limit: 10)
 
     options[:id] ||= "investment_fmv_by_companies_chart_#{fund.id}"
-    custom_colors = options.delete(:custom_colors) || false
-    pie_chart_with_options(chart_data, custom_colors: custom_colors, **options)
+    pie_chart_with_options(chart_data, **options)
   end
 
   # Generate a pie chart for portfolio investments grouped by sector
@@ -35,8 +34,7 @@ module AggregatePortfolioInvestmentsHelper
     chart_data = group_chart_data_for_pie(grouped, limit: limit)
 
     options[:id] ||= "investment_chart_by_sectors_chart_#{entity.id}"
-    custom_colors = options.delete(:custom_colors) || false
-    pie_chart_with_options(chart_data, custom_colors: custom_colors, **options)
+    pie_chart_with_options(chart_data, **options)
   end
 
   # Generate a pie chart for portfolio investments grouped by company
