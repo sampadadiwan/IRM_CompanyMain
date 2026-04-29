@@ -1,6 +1,6 @@
 # Investor Advisor User Guide
 
-This guide explains the **Investor Advisor** system in IRM, detailing how to set it up, how permissions are managed, and the specific capabilities and limitations of the advisor role.
+This guide explains the **Investor Advisor** system in CapHive, detailing how to set it up, how permissions are managed, and the specific capabilities and limitations of the advisor role.
 
 ---
 

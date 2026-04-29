@@ -1,6 +1,6 @@
 # Deals Management User Guide
 
-This guide provides a comprehensive overview of how to manage investors and track fundraising progress using the IRM Deals interface.
+This guide provides a comprehensive overview of how to manage investors and track fundraising progress using the CapHive Deals interface.
 
 ---
 

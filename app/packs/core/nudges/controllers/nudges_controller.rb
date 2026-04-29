@@ -3,14 +3,18 @@ class NudgesController < ApplicationController
 
   # GET /nudges or /nudges.json
   def index
+    @bread_crumbs = { Nudges: nudges_path }
     @nudges = policy_scope(Nudge).order(id: :desc).limit(50)
   end
 
   # GET /nudges/1 or /nudges/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Nudges: nudges_path, "#{@nudge.subject}": nudge_path(@nudge) }
+  end
 
   # GET /nudges/new
   def new
+    @bread_crumbs = { Nudges: nudges_path, New: nil }
     @nudge = Nudge.new(nudge_params)
     @nudge.user_id = current_user.id
     @nudge.entity_id = current_user.entity_id
@@ -19,7 +23,9 @@ class NudgesController < ApplicationController
   end
 
   # GET /nudges/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs = { Nudges: nudges_path, "#{@nudge.subject}": nudge_path(@nudge), Edit: nil }
+  end
 
   # POST /nudges or /nudges.json
   def create

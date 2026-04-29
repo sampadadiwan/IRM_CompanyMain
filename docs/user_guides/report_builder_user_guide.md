@@ -1,6 +1,6 @@
 # Report Builder User Guide
 
-The **Report Builder** is a powerful self-service tool that allows you to create custom data exports across multiple tables in the IRM system. You can join related data, perform aggregations (like summing commitment amounts), apply complex filters, and even create pivot tables—all without writing any code.
+The **Report Builder** is a powerful self-service tool that allows you to create custom data exports across multiple tables in the CapHive system. You can join related data, perform aggregations (like summing commitment amounts), apply complex filters, and even create pivot tables—all without writing any code.
 
 ---
 
@@ -60,7 +60,7 @@ You can filter both the primary table and the joined tables independently.
 1.  In the **Filters** section (right panel), click **Add** under the relevant table.
 2.  **Field:** Select the field to filter by.
 3.  **Operator:** Choose an operator (e.g., *equals*, *contains*, *greater than*, *any of*).
-4.  **Value:** Enter the filter value. 
+4.  **Value:** Enter the filter value.
     *   *Tip:* Use **"any of"** with commas (e.g., `Individual, Institutional`) to filter for multiple values at once.
 5.  Click **Save All Filters** to apply your changes.
 

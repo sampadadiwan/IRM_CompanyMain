@@ -5,6 +5,7 @@ class InvestorsController < ApplicationController
 
   # GET /investors or /investors.json
   def index
+    @bread_crumbs = { Investors: investors_path }
     template = "investors/index"
     authorize(Investor)
 
@@ -220,6 +221,7 @@ class InvestorsController < ApplicationController
 
   # GET /investors/new
   def new
+    @bread_crumbs = { Investors: investors_path, New: nil }
     @investor = Investor.new(investor_params)
     authorize @investor
     setup_custom_fields(@investor)
@@ -234,6 +236,7 @@ class InvestorsController < ApplicationController
 
   # GET /investors/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@investor)
   end
 

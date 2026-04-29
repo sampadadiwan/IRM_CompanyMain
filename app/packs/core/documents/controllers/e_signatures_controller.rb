@@ -3,6 +3,7 @@ class ESignaturesController < ApplicationController
 
   # GET /e_signatures or /e_signatures.json
   def index
+    @bread_crumbs = { "E-Signatures": e_signatures_path }
     @e_signatures = policy_scope(ESignature).order(:position)
   end
 
@@ -13,10 +14,13 @@ class ESignaturesController < ApplicationController
   def new
     @e_signature = ESignature.new(e_signature_params)
     authorize @e_signature
+    @bread_crumbs = { "#{@e_signature.document.name}": document_path(@e_signature.document), "New eSignature": nil }
   end
 
   # GET /e_signatures/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs[:Edit] = nil
+  end
 
   # POST /e_signatures or /e_signatures.json
   def create

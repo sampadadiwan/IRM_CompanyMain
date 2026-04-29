@@ -210,7 +210,16 @@
         </ul>
       </li>
     <% end %>
-  </ul>
-  <!-- End of Sidebar -->
+      <% if current_user && current_user.curr_role != "investor" %>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="/user_guides" >
+            <span><i class="ti ti-book"></i></span>
+            <span class="hide-menu"><%= t('top_menus.user_guides') %></span>
+          </a>
+        </li>
+      <% end %>
+    </ul>
+    <!-- End of Sidebar -->
+
 </nav>
 <% end %>

@@ -1,186 +1,444 @@
-/* Markdown renderer wrapper (app-native + lightly polished) */
+/* ============================================================
+   User Guide Markdown renderer — premium docs styling
+   Scope: .ai-md (user_guides show view only)
+   ============================================================ */
+
 .ai-md {
-  /* -----------------------------
-     Base: inherit app look & tokens
-     ----------------------------- */
+  /* ----------------------------------------------------------
+     Design tokens
+     ---------------------------------------------------------- */
+  --ai-primary:          var(--bs-primary, #5d87ff);
+  --ai-primary-rgb:      var(--bs-primary-rgb, 93, 135, 255);
+  --ai-primary-subtle:   var(--bs-primary-bg-subtle, #ecf2ff);
+  --ai-primary-border:   var(--bs-primary-border-subtle, #becfff);
+  --ai-border:           var(--bs-border-color, #dee2e6);
+  --ai-muted:            var(--bs-secondary-color, rgba(33,37,41,.65));
+  --ai-bg-soft:          var(--bs-tertiary-bg, #f8f9fa);
+  --ai-body-bg:          var(--bs-body-bg, #fff);
+  --ai-body-color:       var(--bs-body-color, #212529);
+  --ai-radius:           var(--bs-border-radius, 0.5rem);
+  --ai-radius-sm:        0.3rem;
+  --ai-code-bg:          #1e2130;
+  --ai-code-color:       #cdd6f4;
+  --ai-code-dim:         #6272a4;
+
   font-family: inherit;
-  font-size: 1.02rem; /* slightly larger for readable reports */
-  color: inherit;
-  line-height: 1.6;
+  font-size: 1.02rem;
+  color: var(--ai-body-color);
+  line-height: 1.7;
+  max-width: 860px;
 
-  /* App-friendly tokens with fallbacks */
-  --ai-border: var(--bs-border-color, #dee2e6);
-  --ai-muted: var(--bs-secondary-color, rgba(33, 37, 41, 0.75));
-  --ai-bg-soft: var(--bs-tertiary-bg, #f8f9fa);
-  --ai-radius: var(--bs-border-radius, 0.5rem);
-  --ai-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  /* Vertical rhythm — overridden per-element below */
+  > * + * { margin-top: 0.85rem; }
 
-  /* Consistent vertical rhythm */
-  > * + * { margin-top: 0.75rem; }
 
-  /* -----------------------------
-     Typography
-     ----------------------------- */
-  p, li { font-size: inherit; color: inherit; }
+  /* ==========================================================
+     HEADINGS
+     ========================================================== */
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: inherit;
+    scroll-margin-top: 5rem;
+  }
+
+  /* H1 — document title */
+  h1 {
+    font-size: 1.85rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+    color: var(--ai-body-color);
+    margin: 0 0 0.5rem;
+    padding-bottom: 0.7rem;
+    border-bottom: 2px solid var(--ai-primary);
+  }
+
+  /* H2 — major section; styled as a section banner */
+  h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--ai-body-color);
+    margin: 2.25rem 0 0.85rem;
+    padding: 0.55rem 1rem 0.55rem 0.9rem;
+    border-left: 3px solid var(--ai-primary);
+    background: var(--ai-primary-subtle);
+    border-radius: 0 var(--ai-radius-sm) var(--ai-radius-sm) 0;
+    position: relative;
+
+    /* Remove the old thin underline */
+    &::after { display: none; }
+  }
+
+  /* H3 — subsection */
+  h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--ai-body-color);
+    margin: 1.75rem 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &::before {
+      content: "";
+      display: inline-block;
+      flex-shrink: 0;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--ai-primary);
+      opacity: 0.75;
+    }
+  }
+
+  /* H4 — field-level heading */
+  h4 {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ai-muted);
+    margin: 1.5rem 0 0.4rem;
+  }
+
+  h5 { font-size: 0.95rem; font-weight: 600; margin: 1.25rem 0 0.35rem; }
+  h6 { font-size: 0.9rem;  font-weight: 600; margin: 1rem 0 0.3rem; }
+
+
+  /* ==========================================================
+     TABLE OF CONTENTS  (h2 + ol pattern)
+     ========================================================== */
+
+  /* "Table of Contents" heading — rendered as a card header strip */
+  h2:has(+ ol) {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #fff;
+    background: var(--ai-primary);
+    border-left: none;
+    padding: 0.55rem 1rem;
+    margin: 1.75rem 0 0;
+    border-radius: var(--ai-radius) var(--ai-radius) 0 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &::before {
+      content: "≡";
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1;
+      opacity: 0.85;
+    }
+
+    /* Remove the left-bar ::after from section h2s */
+    &::after { display: none; }
+  }
+
+  h2 + ol {
+    list-style: none;
+    counter-reset: toc;
+    background: var(--ai-primary-subtle);
+    border: 1px solid var(--ai-primary-border);
+    border-top: none;
+    border-radius: 0 0 var(--ai-radius) var(--ai-radius);
+    padding: 0.75rem 1rem 0.85rem;
+    margin: 0 0 2.5rem;
+    columns: 2;
+    column-gap: 0;
+    column-rule: 1px solid var(--ai-primary-border);
+
+    li {
+      counter-increment: toc;
+      position: relative;
+      break-inside: avoid;
+      margin: 0;
+      padding: 0.22rem 0.5rem 0.22rem 2.25rem;
+      border-radius: var(--ai-radius-sm);
+      transition: background-color 0.12s;
+
+      &:hover {
+        background: rgba(var(--ai-primary-rgb), 0.08);
+      }
+
+      &::before {
+        content: counter(toc, decimal-leading-zero);
+        position: absolute;
+        left: 0.5rem;
+        top: 0.26rem;
+        font-size: 0.7rem;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: var(--ai-primary);
+        opacity: 0.6;
+        line-height: 1.6;
+      }
+
+      a {
+        font-size: 0.9rem;
+        color: var(--ai-body-color);
+        text-decoration: none;
+        display: block;
+
+        &:hover { color: var(--ai-primary); }
+      }
+    }
+  }
+
+
+  /* ==========================================================
+     FAQ  — p:has(> strong:first-child + br)
+     Bold question + hard-wrap br + answer text, all in one <p>.
+     ========================================================== */
+  p:has(> strong:first-child + br) {
+    background: var(--ai-bg-soft);
+    border: 1px solid var(--ai-border);
+    border-left: 3px solid var(--ai-primary);
+    border-radius: 0 var(--ai-radius) var(--ai-radius) 0;
+    padding: 0.85rem 1rem 0.85rem 1rem;
+    margin-top: 0.65rem;
+
+    /* The Q: question label */
+    strong:first-child {
+      display: block;
+      color: var(--ai-primary);
+      font-weight: 700;
+      font-size: 0.97rem;
+      margin-bottom: 0.4rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px dashed var(--ai-primary-border);
+    }
+
+    /* Hide the hard-wrap <br> that separates Q from A */
+    br:first-of-type {
+      display: none;
+    }
+  }
+
+
+  /* ==========================================================
+     BODY TEXT & LINKS
+     ========================================================== */
+  p { color: var(--ai-body-color); }
 
   a {
-    color: var(--bs-link-color, inherit);
+    color: var(--ai-primary);
     text-underline-offset: 0.18em;
     text-decoration-thickness: from-font;
   }
 
-  /* -----------------------------
-     Headings (app sizes, custom rhythm + underline)
-     ----------------------------- */
-  h1, h2, h3, h4, h5, h6 {
-    font-family: inherit;
-    color: inherit;
-    margin: 0; /* spacing controlled below */
-    scroll-margin-top: 5rem;
-  }
+  strong { font-weight: 600; }
 
-  h1 { margin: 1.25rem 0 0.75rem; }
-  h2 { margin: 1.1rem 0 0.65rem; }
-  h3 { margin: 1rem 0 0.5rem; }
-  h4 { margin: 0.9rem 0 0.45rem; }
-  h5 { margin: 0.8rem 0 0.4rem; }
-  h6 { margin: 0.75rem 0 0.35rem; }
 
-  /* Underline for h2: inset from edges (not full-bleed) */
-  h2 {
-    position: relative;
-    padding-bottom: 0.4rem;
-  }
-
-  h2::after {
-    content: "";
-    position: absolute;
-    left: 0.5rem;
-    right: 0.5rem;
-    bottom: 0;
-    height: 1px;
-    background-color: var(--ai-border);
-  }
-
-  /* -----------------------------
-     Lists
-     ----------------------------- */
-  ul, ol {
-    padding-left: 1.25rem;
+  /* ==========================================================
+     LISTS (non-TOC)
+     ========================================================== */
+  ul, ol:not(h2 + ol) {
+    padding-left: 1.5rem;
     color: inherit;
   }
 
-  li { margin: 0.2rem 0; }
+  ul li, ol:not(h2 + ol) li {
+    margin: 0.3rem 0;
+    padding-left: 0.2rem;
+  }
 
-  /* -----------------------------
-     Dividers & Quotes
-     ----------------------------- */
+  ul li::marker { color: var(--ai-primary); }
+
+
+  /* ==========================================================
+     DIVIDERS
+     ========================================================== */
   hr {
     border: 0;
     height: 1px;
-    background: var(--ai-border);
-    margin: 1rem 0;
+    background: linear-gradient(to right, transparent, var(--ai-border) 20%, var(--ai-border) 80%, transparent);
+    margin: 2.25rem 0;
   }
 
+
+  /* ==========================================================
+     BLOCKQUOTES — callout card
+     ========================================================== */
   blockquote {
-    margin: 0.9rem 0;
-    padding: 0.75rem 1rem;
-    border-left: 4px solid var(--ai-border);
-    background: var(--ai-bg-soft);
+    margin: 1.1rem 0;
+    padding: 0.9rem 1.25rem 0.9rem 1rem;
+    border-left: 3px solid var(--ai-primary);
+    background: var(--ai-primary-subtle);
     border-radius: 0 var(--ai-radius) var(--ai-radius) 0;
-    color: var(--ai-muted);
+    position: relative;
+
+    &::before {
+      content: "ℹ";
+      display: block;
+      font-size: 0.95rem;
+      color: var(--ai-primary);
+      margin-bottom: 0.35rem;
+      line-height: 1;
+    }
+
+    p { margin: 0; color: var(--ai-body-color); }
+    p + p { margin-top: 0.5rem; }
   }
 
-  /* -----------------------------
-     Code
-     ----------------------------- */
-  code {
+
+  /* ==========================================================
+     CODE BLOCKS
+     ========================================================== */
+
+  /* Inline code */
+  :not(pre) > code {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-    font-size: 0.92em;
+    font-size: 0.87em;
+    background: var(--ai-primary-subtle);
+    color: var(--ai-primary);
+    border: 1px solid var(--ai-primary-border);
+    border-radius: 3px;
+    padding: 0.1em 0.42em;
   }
 
+  /* Fenced / pre blocks */
   pre {
-    margin: 0.9rem 0;
-    padding: 0.85rem 1rem;
-    border: 1px solid var(--ai-border);
-    border-radius: var(--ai-radius);
-    background: var(--ai-bg-soft);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  pre code {
-    background: transparent;
+    margin: 1.1rem 0;
     padding: 0;
+    border: none;
+    border-radius: var(--ai-radius);
+    background: var(--ai-code-bg);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    overflow: hidden;
+
+    /* Top bar — macOS-style traffic-light dots */
+    &::before {
+      content: "● ● ●";
+      display: block;
+      background: color-mix(in srgb, var(--ai-code-bg) 75%, #000);
+      color: #555e7d;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    code {
+      display: block;
+      padding: 1rem 1.25rem;
+      background: transparent;
+      color: var(--ai-code-color);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 0.84rem;
+      line-height: 1.65;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
   }
 
-  /* -----------------------------
-     Tables
-     ----------------------------- */
+
+  /* ==========================================================
+     TABLES
+     ========================================================== */
   table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin: 0.9rem 0 1.1rem;
-    font-size: inherit;
-
-    border: 1px solid var(--ai-border);
+    margin: 1rem 0 1.4rem;
+    font-size: 0.93rem;
     border-radius: var(--ai-radius);
-    box-shadow: var(--ai-shadow);
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    border: 1px solid var(--ai-primary-border);
+    max-width: 100%;
+  }
+
+  thead {
     overflow: hidden;
 
-    /* Keeps wide tables from breaking layout */
-    max-width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    th {
+      background: var(--ai-primary);
+      color: #fff;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      padding: 0.7rem 1rem;
+      vertical-align: middle;
+      border-bottom: none;
+      white-space: nowrap;
+
+      &:first-child { border-top-left-radius: var(--ai-radius); }
+      &:last-child  { border-top-right-radius: var(--ai-radius); }
+    }
   }
 
-  thead { overflow: hidden; }
+  tbody {
+    tr {
+      transition: background-color 0.12s;
 
-  th, td {
-    padding: 0.65rem 0.75rem;
-    vertical-align: top;
-    border-bottom: 1px solid var(--ai-border);
+      &:hover td {
+        background: var(--ai-primary-subtle) !important;
+      }
+
+      &:last-child td { border-bottom: 0; }
+    }
+
+    td {
+      padding: 0.65rem 1rem;
+      vertical-align: top;
+      border-bottom: 1px solid var(--ai-border);
+      color: var(--ai-body-color);
+    }
+
+    tr:nth-child(even) td {
+      background: color-mix(in srgb, var(--ai-bg-soft) 60%, transparent);
+    }
   }
 
-  th {
-    background: var(--ai-bg-soft);
-    font-weight: inherit;
-    color: inherit;
-    text-align: left;
-    white-space: nowrap;
+  /* First-column term cells (bold keyword pattern) */
+  td:first-child strong {
+    font-weight: 600;
+    color: var(--ai-body-color);
   }
 
-  td { white-space: normal; }
 
-  tr:last-child td { border-bottom: 0; }
-
-  /* Rounded header corners */
-  thead th:first-child { border-top-left-radius: var(--ai-radius); }
-  thead th:last-child  { border-top-right-radius: var(--ai-radius); }
-
-  /* Subtle zebra without hardcoding colors */
-  tbody tr:nth-child(even) td {
-    background: color-mix(in srgb, var(--ai-bg-soft) 55%, transparent);
-  }
-
-  /* -----------------------------
-     Media
-     ----------------------------- */
+  /* ==========================================================
+     IMAGES
+     ========================================================== */
   img {
     max-width: 100%;
     height: auto;
     border-radius: var(--ai-radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    border: 1px solid var(--ai-border);
   }
 
-  /* -----------------------------
-     Charts
-     ----------------------------- */
+
+  /* ==========================================================
+     CHARTS (existing helper)
+     ========================================================== */
   .ai-chart {
     margin: 1rem 0;
     padding: 0.75rem 0.75rem 0.5rem;
     border: 1px solid var(--ai-border);
     border-radius: var(--ai-radius);
     background: transparent;
+  }
+
+  /* ==========================================================
+     MERMAID DIAGRAMS
+     ========================================================== */
+  .mermaid {
+    display: flex;
+    justify-content: center;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid var(--ai-border);
+    border-radius: var(--ai-radius);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    
+    svg {
+      max-width: 100%;
+      height: auto;
+    }
   }
 }

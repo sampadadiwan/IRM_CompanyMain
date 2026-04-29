@@ -6,6 +6,7 @@ class ValuationsController < ApplicationController
 
   # GET /valuations or /valuations.json
   def index
+    @bread_crumbs = { Valuations: valuations_path }
     service = ValuationList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = service.q
     @valuations = service.valuations
@@ -32,12 +33,19 @@ class ValuationsController < ApplicationController
     @valuation = Valuation.new(valuation_params)
     @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
     @valuation.valuation_date = Time.zone.today
+
+    @bread_crumbs = { Stakeholders: investors_path(entity_id: @valuation.entity_id) }
+    @bread_crumbs["#{@valuation.owner&.investor_name}"] = investor_path(@valuation.owner) if @valuation.owner.present?
+    @bread_crumbs[:New] = nil
+
     authorize @valuation
     setup_custom_fields(@valuation)
   end
 
+
   # GET /valuations/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@valuation)
   end
 
@@ -183,7 +191,9 @@ class ValuationsController < ApplicationController
   def set_valuation
     @valuation = Valuation.with_synthetic.find(params[:id])
     authorize @valuation
-    @bread_crumbs = { Stakeholders: investors_path(entity_id: @valuation.entity_id), "#{@valuation.owner&.investor_name}": investor_path(@valuation.owner), "#{@valuation}": valuation_path(@valuation) }
+    @bread_crumbs = { Stakeholders: investors_path(entity_id: @valuation.entity_id) }
+    @bread_crumbs["#{@valuation.owner&.investor_name}"] = investor_path(@valuation.owner) if @valuation.owner.present?
+    @bread_crumbs["#{@valuation}"] = valuation_path(@valuation)
   end
 
   # Only allow a list of trusted parameters through.

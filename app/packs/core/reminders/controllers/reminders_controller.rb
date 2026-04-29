@@ -3,6 +3,7 @@ class RemindersController < ApplicationController
 
   # GET /reminders or /reminders.json
   def index
+    @bread_crumbs = { Reminders: reminders_path }
     @reminders = policy_scope(Reminder)
     @reminders = @reminders.where(owner_id: params[:owner_id]) if params[:owner_id].present?
     @reminders = @reminders.where(owner_type: params[:owner_type]) if params[:owner_type].present?
@@ -13,10 +14,13 @@ class RemindersController < ApplicationController
   end
 
   # GET /reminders/1 or /reminders/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Reminders: reminders_path, "#{@reminder.note}": reminder_path(@reminder) }
+  end
 
   # GET /reminders/new
   def new
+    @bread_crumbs = { Reminders: reminders_path, New: nil }
     @reminder = Reminder.new(reminder_params)
     @reminder.entity_id = @reminder.owner.entity_id
     @reminder.due_date = Time.zone.today + 7.days
@@ -26,7 +30,9 @@ class RemindersController < ApplicationController
   end
 
   # GET /reminders/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs = { Reminders: reminders_path, "#{@reminder.note}": reminder_path(@reminder), Edit: nil }
+  end
 
   # POST /reminders or /reminders.json
   def create

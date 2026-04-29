@@ -5,6 +5,7 @@ class TasksController < ApplicationController
 
   # GET /tasks or /tasks.json
   def index
+    @bread_crumbs = { Tasks: tasks_path }
     result = TaskList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = result.q
     @tasks = result.tasks
@@ -41,7 +42,11 @@ class TasksController < ApplicationController
   end
 
   # GET /tasks/1 or /tasks/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Tasks: tasks_path }
+    @bread_crumbs["#{@task.owner}"] = polymorphic_path(@task.owner) if @task.owner.present?
+    @bread_crumbs["#{@task.category}"] = task_path(@task)
+  end
 
   # GET /tasks/new
   def new
@@ -50,12 +55,22 @@ class TasksController < ApplicationController
     @task.entity_id ||= current_user.entity_id
     @task.due_date = Time.zone.today + 1.week
     @task.user = current_user
+
+    @bread_crumbs = { Tasks: tasks_path }
+    @bread_crumbs["#{@task.owner}"] = polymorphic_path(@task.owner) if @task.owner.present?
+    @bread_crumbs[:New] = nil
+
     authorize @task
     setup_custom_fields(@task)
   end
 
   # GET /tasks/1/edit
   def edit
+    @bread_crumbs = { Tasks: tasks_path }
+    @bread_crumbs["#{@task.owner}"] = polymorphic_path(@task.owner) if @task.owner.present?
+    @bread_crumbs["#{@task.category}"] = task_path(@task)
+    @bread_crumbs[:Edit] = nil
+
     setup_custom_fields(@task)
   end
 

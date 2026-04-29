@@ -3,14 +3,18 @@ class PaymentsController < ApplicationController
 
   # GET /payments or /payments.json
   def index
+    @bread_crumbs = { Payments: payments_path }
     @payments = policy_scope(Payment)
   end
 
   # GET /payments/1 or /payments/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Payments: payments_path, "#{@payment.reference_number}": payment_path(@payment) }
+  end
 
   # GET /payments/new
   def new
+    @bread_crumbs = { Payments: payments_path, New: nil }
     @payment = Payment.new(payment_params)
     @payment.entity_id = current_user.entity_id
     @payment.user_id = current_user.id
@@ -18,7 +22,9 @@ class PaymentsController < ApplicationController
   end
 
   # GET /payments/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs = { Payments: payments_path, "#{@payment.reference_number}": payment_path(@payment), Edit: nil }
+  end
 
   # POST /payments or /payments.json
   def create

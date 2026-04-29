@@ -1,14 +1,15 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Remittance Payments</h1>
-  <% capital_remittance||= nil %>
-  <span>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= user_guide_info_icon %>
+    <% capital_remittance||= nil %>
     <%= link_to "New Payment", new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id), {class: "btn btn-outline-primary ti ti-plus"} if capital_remittance && policy(capital_remittance).update? %>
     <%
     data_source ||= capital_remittance_payments_path(params: params.to_unsafe_h, format: :json, all: true)
     xl_link = download_xl_link(data_source)
   %>
     <%= link_to "Download", xl_link, { class: "btn btn-outline-success ti ti-download", data: { turbo: false } } %>
-  </span>
+  </div>
 </div>
 <div class="table-responsive">
   <table id="capital_remittance_payments" class="table table-bordered dataTable jqDataTable">

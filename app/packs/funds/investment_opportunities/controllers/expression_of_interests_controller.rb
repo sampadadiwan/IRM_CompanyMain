@@ -3,6 +3,7 @@ class ExpressionOfInterestsController < ApplicationController
 
   # GET /expression_of_interests or /expression_of_interests.json
   def index
+    @bread_crumbs = { Opportunities: investment_opportunities_path }
     @q = ExpressionOfInterest.ransack(params[:q])
     @expression_of_interests = policy_scope(@q.result).includes(:investor, user: [:roles])
     @expression_of_interests = @expression_of_interests.where(investment_opportunity_id: params[:investment_opportunity_id]) if params[:investment_opportunity_id].present?
@@ -14,6 +15,10 @@ class ExpressionOfInterestsController < ApplicationController
   # GET /expression_of_interests/new
   def new
     @expression_of_interest = ExpressionOfInterest.new(expression_of_interest_params)
+    @bread_crumbs = { Opportunities: investment_opportunities_path }
+    @bread_crumbs["#{@expression_of_interest.investment_opportunity.company_name}"] = investment_opportunity_path(@expression_of_interest.investment_opportunity) if @expression_of_interest.investment_opportunity.present?
+    @bread_crumbs[:New] = nil
+
     @expression_of_interest.entity_id = @expression_of_interest.investment_opportunity.entity_id
     if current_user.entity_id != @expression_of_interest.entity_id
       @expression_of_interest.eoi_entity_id = @expression_of_interest.investment_opportunity.entity_id
@@ -26,6 +31,7 @@ class ExpressionOfInterestsController < ApplicationController
 
   # GET /expression_of_interests/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@expression_of_interest)
   end
 
@@ -131,7 +137,9 @@ class ExpressionOfInterestsController < ApplicationController
   def set_expression_of_interest
     @expression_of_interest = ExpressionOfInterest.find(params[:id])
     authorize @expression_of_interest
-    @bread_crumbs = { Opportunity: investment_opportunity_path(id: @expression_of_interest.investment_opportunity_id) }
+    @bread_crumbs = { Opportunities: investment_opportunities_path }
+    @bread_crumbs["#{@expression_of_interest.investment_opportunity.company_name}"] = investment_opportunity_path(@expression_of_interest.investment_opportunity) if @expression_of_interest.investment_opportunity.present?
+    @bread_crumbs["EOI"] = expression_of_interest_path(@expression_of_interest)
   end
 
   # Only allow a list of trusted parameters through.

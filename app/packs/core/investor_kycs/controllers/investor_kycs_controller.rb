@@ -12,6 +12,7 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs or /investor_kycs.json
   def index
+    @bread_crumbs = { KYCs: investor_kycs_path }
     fetch_rows
 
     respond_to do |format|
@@ -67,6 +68,10 @@ class InvestorKycsController < ApplicationController
     @investor_kyc = kyc_type == "Individual" ? IndividualKyc.new(investor_kyc_params) : NonIndividualKyc.new(investor_kyc_params)
     @investor_kyc.type = @investor_kyc.type_from_kyc_type
 
+    @bread_crumbs = { KYCs: investor_kycs_path }
+    @bread_crumbs["#{@investor_kyc.investor.investor_name}"] = investor_path(@investor_kyc.investor) if @investor_kyc.investor.present?
+    @bread_crumbs[:New] = nil
+
     # If the investor is present, set the full_name to the investor's name
     @investor_kyc.full_name = @investor_kyc.investor.investor_name if @investor_kyc.investor.present? && @investor_kyc.individual?
     authorize(@investor_kyc)
@@ -103,6 +108,7 @@ class InvestorKycsController < ApplicationController
 
   # GET /investor_kycs/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     if params[:kyc_type].present?
       ActiveRecord::Base.connected_to(role: :writing) do
         # The form is reloaded if the user changes the kyc type
@@ -476,7 +482,9 @@ class InvestorKycsController < ApplicationController
   def set_investor_kyc
     @investor_kyc = InvestorKyc.find(params[:id])
     authorize(@investor_kyc)
-    @bread_crumbs = { KYCs: investor_kycs_path, "#{@investor_kyc.full_name}": investor_kyc_path(@investor_kyc) }
+    @bread_crumbs = { KYCs: investor_kycs_path }
+    @bread_crumbs["#{@investor_kyc.investor.investor_name}"] = investor_path(@investor_kyc.investor) if @investor_kyc.investor.present?
+    @bread_crumbs["#{@investor_kyc.full_name}"] = investor_kyc_path(@investor_kyc)
   end
 
   # Only allow a list of trusted parameters through.

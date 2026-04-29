@@ -127,6 +127,7 @@ class DealsController < ApplicationController
 
   # GET /deals/new
   def new
+    @bread_crumbs = { Deals: deals_path, New: nil }
     @deal = Deal.new(deal_params)
     @deal.currency = @deal.entity.currency
     @deal.activity_list = Deal::ACTIVITIES

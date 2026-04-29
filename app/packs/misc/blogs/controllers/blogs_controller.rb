@@ -3,6 +3,7 @@ class BlogsController < ApplicationController
 
   # GET /blogs
   def index
+    @bread_crumbs = { Blogs: blogs_path }
     @q = Blog.ransack(params[:q])
     @blogs = policy_scope(@q.result)
   end
@@ -12,12 +13,15 @@ class BlogsController < ApplicationController
 
   # GET /blogs/new
   def new
+    @bread_crumbs = { Blogs: blogs_path, New: nil }
     @blog = Blog.new
     authorize @blog
   end
 
   # GET /blogs/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs[:Edit] = nil
+  end
 
   # POST /blogs
   def create

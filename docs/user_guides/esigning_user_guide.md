@@ -1,6 +1,6 @@
 # E-Signing User Guide
 
-This guide walks you through requesting, tracking, and completing electronic signatures on documents in IRM. No technical knowledge required.
+This guide walks you through requesting, tracking, and completing electronic signatures on documents in CapHive. No technical knowledge required.
 
 ---
 
@@ -23,7 +23,7 @@ This guide walks you through requesting, tracking, and completing electronic sig
 
 ## What is E-Signing?
 
-E-signing lets you send documents — such as subscription agreements, KYC forms, or offer letters — directly to investors and fund staff for legally binding electronic signatures. Signers receive an email with a link and sign from their phone or computer. Once everyone has signed, IRM automatically saves a final signed copy to the investor's file.
+E-signing lets you send documents — such as subscription agreements, KYC forms, or offer letters — directly to investors and fund staff for legally binding electronic signatures. Signers receive an email with a link and sign from their phone or computer. Once everyone has signed, CapHive automatically saves a final signed copy to the investor's file.
 
 ---
 
@@ -41,19 +41,19 @@ To use e-signing you need:
 
 ## Setting Up Signatories on a Document
 
-Before sending a document for signature, you tell IRM who needs to sign it.
+Before sending a document for signature, you tell CapHive who needs to sign it.
 
 1. Open the **document** you want to send.
 2. Click the **E-Signatures** tab (or section) on the document page.
 3. Click **Add Signatory**.
 4. Fill in the details for each signer:
 
-   | Field              | What to enter                                                  |
-   |--------------------|----------------------------------------------------------------|
-   | **Email**          | The signer's email address — this is where their link is sent |
-   | **Label**          | A name for this role, e.g. "Investor", "Fund Manager"         |
-   | **Signature Type** | Choose **Aadhaar** (India biometric) or **DSC** (digital certificate) |
-   | **Notes**          | Optional — internal notes visible only to your team           |
+| Field              | What to enter                                                  |
+|--------------------|----------------------------------------------------------------|
+| **Email**          | The signer's email address — this is where their link is sent |
+| **Label**          | A name for this role, e.g. "Investor", "Fund Manager"         |
+| **Signature Type** | Choose **Aadhaar** (India biometric) or **DSC** (digital certificate) |
+| **Notes**          | Optional — internal notes visible only to your team           |
 
 5. If there are **multiple signers**, add each one separately.
 6. To set a **signing order** (one person must sign before the next is notified), drag signers into the desired order. The order is shown by the number next to each row.
@@ -78,7 +78,7 @@ Once signatories are set up:
 
 1. Open the document.
 2. Click **Send for eSign**.
-3. IRM queues the request and sends it to the signing provider in the background. You will see a confirmation notification at the top of the screen.
+3. CapHive queues the request and sends it to the signing provider in the background. You will see a confirmation notification at the top of the screen.
 4. The document status changes to **Requested**.
 
 > Signing requests expire after **90 days** if not completed.
@@ -91,7 +91,7 @@ If you have a folder of documents that are all ready to go:
 
 1. Navigate to the **Folder** containing the documents.
 2. Click **Send All for eSign**.
-3. IRM will identify every generated, approved document in the folder that has not yet been sent and queue them all.
+3. CapHive will identify every generated, approved document in the folder that has not yet been sent and queue them all.
 4. You will see a notification showing how many documents were queued.
 
 > Documents are sent with a small random delay between each one to avoid overloading the signing service.
@@ -106,26 +106,26 @@ If you have a folder of documents that are all ready to go:
 2. Click the **E-Signatures** tab.
 3. You will see each signatory with a coloured status badge:
 
-   | Badge colour | Meaning                                    |
-   |--------------|--------------------------------------------|
-   | 🟡 Yellow    | Awaiting signature (Requested or Sent)     |
-   | 🟢 Green     | Signed                                     |
-   | 🔴 Red       | Failed, Cancelled, Expired, or Voided      |
-   | (none)       | Not yet sent                               |
+| Badge colour | Meaning                                    |
+|--------------|--------------------------------------------|
+| 🟡 Yellow    | Awaiting signature (Requested or Sent)     |
+| 🟢 Green     | Signed                                     |
+| 🔴 Red       | Failed, Cancelled, Expired, or Voided      |
+| (none)       | Not yet sent                               |
 
-4. To get the latest status right now, click **Fetch eSign Updates**. IRM will check with the provider and refresh the page within a few seconds.
+4. To get the latest status right now, click **Fetch eSign Updates**. CapHive will check with the provider and refresh the page within a few seconds.
 
-> IRM also checks automatically every night and updates statuses for all open documents.
+> CapHive also checks automatically every night and updates statuses for all open documents.
 
 ---
 
 ## What Signers Experience
 
 1. **Signer receives an email** from the signing provider (Digio or DocuSign) with a unique link.
-2. They click the link and are taken to the provider's secure signing page — no IRM account required.
+2. They click the link and are taken to the provider's secure signing page — no CapHive account required.
 3. They review the document and apply their signature (Aadhaar OTP, DSC token, or drawn signature depending on configuration).
 4. They receive a confirmation email when done.
-5. IRM is notified automatically and updates the status.
+5. CapHive is notified automatically and updates the status.
 
 ---
 
@@ -133,7 +133,7 @@ If you have a folder of documents that are all ready to go:
 
 Once **all signatories** have signed:
 
-1. IRM automatically downloads the signed document from the provider.
+1. CapHive automatically downloads the signed document from the provider.
 2. A new document tagged **"Signed"** is created in the same folder — this is the final, legally binding copy.
 3. The signed document is **locked** (cannot be edited) and **approved**.
 4. The original document is marked as **Completed**.
@@ -148,7 +148,7 @@ If you need to stop a signing process that is in progress:
 
 1. Open the document.
 2. Click **Cancel eSign**.
-3. IRM notifies the provider, who invalidates any outstanding signing links.
+3. CapHive notifies the provider, who invalidates any outstanding signing links.
 4. The document status changes to **Cancelled**.
 
 > Once cancelled, signers can no longer use their email links. You can set up new signatories and resend if needed.
@@ -161,7 +161,7 @@ If a document status shows **Failed**, **Cancelled**, or **Expired**, you can st
 
 1. Open the document.
 2. Click **Resend for eSign**.
-3. IRM sends a fresh request to the provider. Signers receive new email links.
+3. CapHive sends a fresh request to the provider. Signers receive new email links.
 
 > **Force Resend** (available to administrators) can restart signing even if the document was previously sent successfully. Use this only if you are sure the previous signing attempt should be discarded.
 
@@ -202,10 +202,10 @@ If a document status shows **Failed**, **Cancelled**, or **Expired**, you can st
 No. Once a document is sent for signing, the signatories are locked. Cancel the request first, update the signatories, then resend.
 
 **A signer says they did not receive the email. What do I do?**
-Ask them to check their spam/junk folder first. The email comes from the signing provider (Digio or DocuSign), not from your IRM email address. If they still cannot find it, click **Resend for eSign** on the document to issue fresh links.
+Ask them to check their spam/junk folder first. The email comes from the signing provider (Digio or DocuSign), not from your CapHive email address. If they still cannot find it, click **Resend for eSign** on the document to issue fresh links.
 
 **The status has not updated even though the signer says they signed. What should I do?**
-Click **Fetch eSign Updates** on the document. If the status still does not change after a minute, wait — IRM checks automatically overnight. If it remains stuck the next day, contact your administrator.
+Click **Fetch eSign Updates** on the document. If the status still does not change after a minute, wait — CapHive checks automatically overnight. If it remains stuck the next day, contact your administrator.
 
 **How long do signers have to sign?**
 Signing links are valid for **90 days** from the date the document was sent. After 90 days the document expires and you will need to resend.

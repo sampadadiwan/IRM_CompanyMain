@@ -6,6 +6,7 @@ class KpiReportsController < ApplicationController
 
   # GET /kpi_reports or /kpi_reports.json
   def index
+    @bread_crumbs = { Kpis: kpi_reports_path }
     authorize(KpiReport)
     fetch_kpi_reports
 
@@ -51,6 +52,10 @@ class KpiReportsController < ApplicationController
     @kpi_report.entity_id = current_user.entity_id
     @kpi_report.user_id = current_user.id
     @kpi_report.as_of = Time.zone.today
+    @bread_crumbs = { Kpis: kpi_reports_path }
+    @bread_crumbs["#{@kpi_report.portfolio_company.investor_name}"] = investor_path(@kpi_report.portfolio_company) if @kpi_report.portfolio_company.present?
+    @bread_crumbs[:New] = nil
+
     authorize @kpi_report
 
     @kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.order(:reported_kpi_name) if @kpi_report.portfolio_company.present?
@@ -60,6 +65,7 @@ class KpiReportsController < ApplicationController
 
   # GET /kpi_reports/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@kpi_report)
     @kpi_mappings = @kpi_report.portfolio_company.investor_kpi_mappings.order(:reported_kpi_name) if @kpi_report.portfolio_company.present?
     @kpi_report.custom_kpis
@@ -240,7 +246,9 @@ class KpiReportsController < ApplicationController
     @kpi_report ||= KpiReport.find(params[:id]) if params[:id].present? && params[:id] != 'shared'
 
     authorize @kpi_report
-    @bread_crumbs = { Kpis: kpi_reports_path, "#{@kpi_report.as_of}": kpi_report_path(@kpi_report) }
+    @bread_crumbs = { Kpis: kpi_reports_path }
+    @bread_crumbs["#{@kpi_report.portfolio_company.investor_name}"] = investor_path(@kpi_report.portfolio_company) if @kpi_report.portfolio_company.present?
+    @bread_crumbs["#{@kpi_report.as_of}"] = kpi_report_path(@kpi_report)
   end
 
   # Only allow a list of trusted parameters through.

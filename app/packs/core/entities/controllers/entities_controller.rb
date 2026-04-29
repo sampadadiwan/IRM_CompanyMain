@@ -4,6 +4,7 @@ class EntitiesController < ApplicationController
 
   # GET /entities or /entities.json
   def index
+    @bread_crumbs = { Entities: entities_path }
     @entities = policy_scope(Entity)
     render "index", locals: { vc_view: false }
   end
@@ -34,13 +35,19 @@ class EntitiesController < ApplicationController
   end
 
   # GET /entities/1 or /entities/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Entities: entities_path, "#{@entity.name}": entity_path(@entity) }
+  end
 
   # GET /entities/new
-  def new; end
+  def new
+    @bread_crumbs = { Entities: entities_path, New: nil }
+  end
 
   # GET /entities/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs = { Entities: entities_path, "#{@entity.name}": entity_path(@entity), Edit: nil }
+  end
 
   # POST /entities or /entities.json
   def create

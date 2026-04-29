@@ -64,6 +64,8 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "entities#dashboard"
 
+  resources :user_guides, only: [:index, :show]
+
   get 'outlook_addin/taskpane', to: 'outlook_addin#taskpane'
   get 'outlook_addin/investors', to: 'outlook_addin#investors'
   resources :email_matches, only: [:create]

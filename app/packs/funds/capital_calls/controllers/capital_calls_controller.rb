@@ -50,12 +50,14 @@ class CapitalCallsController < ApplicationController
     @capital_call.entity_id = @capital_call.fund.entity_id
     @capital_call.due_date = Time.zone.today + 2.weeks
     @capital_call.call_date = Time.zone.today
+    @bread_crumbs = { Funds: funds_path, "#{@capital_call.fund.name}": fund_path(@capital_call.fund), New: nil }
     authorize @capital_call
     setup_custom_fields(@capital_call)
   end
 
   # GET /capital_calls/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@capital_call)
   end
 
@@ -127,7 +129,7 @@ class CapitalCallsController < ApplicationController
     @capital_call = CapitalCall.find(params[:id])
     authorize @capital_call
     @bread_crumbs = { Funds: funds_path, "#{@capital_call.fund.name}": fund_path(@capital_call.fund),
-                      "#{@capital_call}": nil }
+                      "#{@capital_call}": capital_call_path(@capital_call) }
   end
 
   # Only allow a list of trusted parameters through.

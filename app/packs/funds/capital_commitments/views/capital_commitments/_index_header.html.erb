@@ -5,6 +5,7 @@
   <h1 class="h3 mb-0 text-gray-800"><%= title.html_safe %></h1>
   <% if toolbar == "Yes" %>
     <div class="d-flex flex-wrap align-items-center gap-2">
+      <%= user_guide_info_icon %>
       <%# Analytics Toggle Button %>
       <% if fund %>
         <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 

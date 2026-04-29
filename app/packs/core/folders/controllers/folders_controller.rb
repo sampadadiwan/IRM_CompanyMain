@@ -4,6 +4,7 @@ class FoldersController < ApplicationController
 
   # GET /folders or /folders.json
   def index
+    @bread_crumbs = { Folders: folders_path }
     @folders = policy_scope(Folder).order(:full_path).includes(:parent)
     @folders = @folders.not_system if params[:all].blank?
   end
@@ -12,10 +13,13 @@ class FoldersController < ApplicationController
   def data_rooms; end
 
   # GET /folders/1 or /folders/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Folders: folders_path, "#{@folder.name}": folder_path(@folder) }
+  end
 
   # GET /folders/new
   def new
+    @bread_crumbs = { Folders: folders_path, New: nil }
     @folder = Folder.new(folder_params)
     authorize @folder
   end
@@ -45,7 +49,9 @@ class FoldersController < ApplicationController
   end
 
   # GET /folders/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs = { Folders: folders_path, "#{@folder.name}": folder_path(@folder), Edit: nil }
+  end
 
   # POST /folders or /folders.json
   def create

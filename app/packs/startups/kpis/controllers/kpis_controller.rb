@@ -3,6 +3,7 @@ class KpisController < ApplicationController
 
   # GET /kpis or /kpis.json
   def index
+    @bread_crumbs = { Kpis: kpis_path }
     authorize(Kpi)
 
     # For XLSX format, hand off to background job (can be a large dataset)
@@ -48,18 +49,39 @@ class KpisController < ApplicationController
   end
 
   # GET /kpis/1 or /kpis/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Kpis: kpis_path }
+    if @kpi.kpi_report.present?
+      @bread_crumbs["#{@kpi.kpi_report.portfolio_company.investor_name}"] = investor_path(@kpi.kpi_report.portfolio_company)
+      @bread_crumbs["#{@kpi.kpi_report.as_of}"] = kpi_report_path(@kpi.kpi_report)
+    end
+    @bread_crumbs["#{@kpi.name}"] = kpi_path(@kpi)
+  end
 
   # GET /kpis/new
   def new
     @kpi = Kpi.new(kpi_params)
     @kpi.entity_id = current_user.entity_id
+    @bread_crumbs = { Kpis: kpis_path }
+    if @kpi.kpi_report.present?
+      @bread_crumbs["#{@kpi.kpi_report.portfolio_company.investor_name}"] = investor_path(@kpi.kpi_report.portfolio_company)
+      @bread_crumbs["#{@kpi.kpi_report.as_of}"] = kpi_report_path(@kpi.kpi_report)
+    end
+    @bread_crumbs[:New] = nil
+
     authorize @kpi
     setup_custom_fields(@kpi)
   end
 
   # GET /kpis/1/edit
   def edit
+    @bread_crumbs = { Kpis: kpis_path }
+    if @kpi.kpi_report.present?
+      @bread_crumbs["#{@kpi.kpi_report.portfolio_company.investor_name}"] = investor_path(@kpi.kpi_report.portfolio_company)
+      @bread_crumbs["#{@kpi.kpi_report.as_of}"] = kpi_report_path(@kpi.kpi_report)
+    end
+    @bread_crumbs["#{@kpi.name}"] = kpi_path(@kpi)
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@kpi)
   end
 

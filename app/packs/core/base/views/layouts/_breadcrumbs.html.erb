@@ -19,6 +19,7 @@
         </div>
 
         <div class="col-md-2 col-sm-2">
+
             <% owner_id = @owner_id || params[:id] %>
             <% if owner_id.present? %>
               <%= button_to favorites_path(favoritable_type: @owner_type || controller_name.classify, favoritable_id: owner_id), "data-bs-toggle": "tooltip", title: "Add to Favorites", class: "fs-5 btn mb-1 btn-danger rounded-circle round d-inline-flex align-items-center justify-content-center", method: :post  do %>
@@ -30,6 +31,14 @@
               <% end %>
 
             <% end %>
+
+            <% guide_path = current_user_guide_path %>
+            <% if guide_path %>
+              <%= link_to guide_path, target: "_blank", "data-bs-toggle": "tooltip", title: "User Guide", class: "fs-5 btn mb-1 btn-info rounded-circle round d-inline-flex align-items-center justify-content-center" do %>
+                <i class="ti ti-info-circle"></i>
+              <% end %>
+            <% end %>
+
         </div>
 
       </div>

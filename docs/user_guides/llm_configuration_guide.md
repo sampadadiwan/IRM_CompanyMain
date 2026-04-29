@@ -1,6 +1,6 @@
 # User Guide: Entity-Specific LLM Configuration
 
-This guide explains how to configure Large Language Model (LLM) settings for individual entities within the IRM platform.
+This guide explains how to configure Large Language Model (LLM) settings for individual entities within the CapHive platform.
 
 ## Overview
 Entities can now use their own API keys for Anthropic and OpenRouter, allowing for independent billing and access to specific models.

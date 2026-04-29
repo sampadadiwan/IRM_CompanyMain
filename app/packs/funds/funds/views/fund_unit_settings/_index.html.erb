@@ -1,6 +1,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Fund Unit Settings</h1>
-  <span>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= user_guide_info_icon %>
 
   <%= link_to "New", new_fund_unit_setting_path("fund_unit_setting[fund_id]": params[:fund_id], "fund_unit_setting[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary"}  if params[:fund_id].present? %>
 
@@ -16,7 +17,7 @@
                   "sample_upload": "FUND_UNIT_SETTING_SAMPLE"),
                   { class: "btn btn-outline-success"}  %>
 
-  </span>
+  </div>
 </div>
 
 <%fund_unit_settings_frame = "fund_unit_settings_frame"%>

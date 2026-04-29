@@ -14,6 +14,7 @@
   <h1 class="h3 mb-0 text-gray-800"><%= params[:title] || "Portfolio Investments" %></h1>
 
   <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= user_guide_info_icon %>
 
     <% if fund && policy(fund).update? %>
 

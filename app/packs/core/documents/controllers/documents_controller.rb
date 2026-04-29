@@ -23,6 +23,7 @@ class DocumentsController < ApplicationController
 
   # GET /documents or /documents.json
   def index
+    @bread_crumbs = { Documents: documents_path }
     fetch_rows
 
     # If card view is requested then we paginate the results
@@ -181,6 +182,10 @@ class DocumentsController < ApplicationController
   # GET /documents/new
   def new
     @document = Document.new(document_params)
+    @bread_crumbs = { Documents: documents_path }
+    @bread_crumbs["#{@document.owner}"] = polymorphic_path(@document.owner) if @document.owner.present?
+    @bread_crumbs[:New] = nil
+
     @document.setup_folder_defaults
     setup_custom_fields(@document)
     authorize @document
@@ -188,6 +193,7 @@ class DocumentsController < ApplicationController
 
   # GET /documents/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@document)
   end
 
@@ -307,7 +313,9 @@ class DocumentsController < ApplicationController
   def set_document
     @document = Document.find(params[:id])
     authorize @document
-    @bread_crumbs = { Documents: documents_path, "#{@document.name}": document_path(@document) }
+    @bread_crumbs = { Documents: documents_path }
+    @bread_crumbs["#{@document.owner}"] = polymorphic_path(@document.owner) if @document.owner.present?
+    @bread_crumbs["#{@document.name}"] = document_path(@document)
   end
 
   def entity_documents

@@ -4,6 +4,7 @@ class ApprovalsController < ApplicationController
 
   # GET /approvals or /approvals.json
   def index
+    @bread_crumbs = { Approvals: approvals_path }
     authorize Approval
     @approvals = policy_scope(Approval)
 
@@ -20,12 +21,23 @@ class ApprovalsController < ApplicationController
     @approval.entity_id = current_user.entity_id
     @approval.due_date = Time.zone.today + 7.days
     @approval.default_response_status
+
+    @bread_crumbs = { Approvals: approvals_path }
+    @bread_crumbs["#{@approval.owner}"] = polymorphic_path(@approval.owner) if @approval.owner.present?
+    @bread_crumbs[:New] = nil
+
     authorize @approval
     setup_custom_fields(@approval)
   end
 
   # GET /approvals/1/edit
   def edit
+    @bread_crumbs = if @approval.owner.present?
+                      { "#{@approval.owner}": polymorphic_path(@approval.owner), Approvals: approvals_path, "#{@approval.title}": approval_path(@approval) }
+                    else
+                      { Approvals: approvals_path, "#{@approval.title}": approval_path(@approval) }
+                    end
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@approval)
   end
 

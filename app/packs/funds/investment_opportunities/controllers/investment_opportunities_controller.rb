@@ -5,6 +5,7 @@ class InvestmentOpportunitiesController < ApplicationController
   skip_after_action :verify_authorized, only: [:no_password_show]
   # GET /investment_opportunities or /investment_opportunities.json
   def index
+    @bread_crumbs = { Opportunities: investment_opportunities_path }
     authorize(InvestmentOpportunity)
     @investment_opportunities = policy_scope(InvestmentOpportunity)
 
@@ -44,6 +45,7 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # GET /investment_opportunities/new
   def new
+    @bread_crumbs = { Opportunities: investment_opportunities_path, New: nil }
     @investment_opportunity = InvestmentOpportunity.new
     @investment_opportunity.entity_id = current_user.entity_id
     @investment_opportunity.currency = current_user.entity.currency
@@ -54,6 +56,7 @@ class InvestmentOpportunitiesController < ApplicationController
 
   # GET /investment_opportunities/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@investment_opportunity)
   end
 
@@ -148,6 +151,7 @@ class InvestmentOpportunitiesController < ApplicationController
   def set_investment_opportunity
     @investment_opportunity = InvestmentOpportunity.find(params[:id])
     authorize @investment_opportunity
+    @bread_crumbs = { Opportunities: investment_opportunities_path, "#{@investment_opportunity.company_name}": investment_opportunity_path(@investment_opportunity) }
   end
 
   # Only allow a list of trusted parameters through.

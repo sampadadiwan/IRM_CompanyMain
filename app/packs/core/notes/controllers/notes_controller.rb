@@ -3,6 +3,12 @@ class NotesController < ApplicationController
 
   # GET /notes or /notes.json
   def index
+    @bread_crumbs = { Notes: notes_path }
+    if params[:investor_id]
+      @investor = Investor.find(params[:investor_id])
+      @bread_crumbs["#{@investor.investor_name}"] = investor_path(@investor, tab: 'notes-tab')
+    end
+
     @q = Note.ransack(params[:q])
     if params[:q].nil? || params[:q][:s].blank?
       @q.sorts = 'on desc' # Set your default sort column and direction
@@ -42,7 +48,9 @@ class NotesController < ApplicationController
   end
 
   # GET /notes/1 or /notes/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Notes: notes_path, "#{@note}": note_path(@note) }
+  end
 
   # GET /notes/new
   def new
@@ -52,11 +60,17 @@ class NotesController < ApplicationController
     @note.user_id ||= current_user.id
     @note.on = Time.zone.today
     @note.reminder = Reminder.new(entity_id: @note.entity_id)
+
+    @bread_crumbs = { Notes: notes_path }
+    @bread_crumbs["#{@note.investor.investor_name}"] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
+    @bread_crumbs[:New] = nil
+
     authorize @note
   end
 
   # GET /notes/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     @note.build_reminder(entity_id: @note.entity_id) unless @note.reminder
   end
 
@@ -122,7 +136,11 @@ class NotesController < ApplicationController
   def set_note
     @note = Note.find(params[:id])
     authorize @note
+    @bread_crumbs = { Notes: notes_path }
+    @bread_crumbs["#{@note.investor.investor_name}"] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
+    @bread_crumbs["#{@note}"] = note_path(@note)
   end
+
 
   # Only allow a list of trusted parameters through.
   def note_params

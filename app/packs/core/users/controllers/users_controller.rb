@@ -28,6 +28,7 @@ class UsersController < ApplicationController
 
   # GET /users or /users.json
   def index
+    @bread_crumbs = { Users: users_path }
     authorize(User)
     @users = policy_scope(User).includes(:entity, :roles)
   end
@@ -163,11 +164,13 @@ class UsersController < ApplicationController
 
   # GET /users/1 or /users/1.json
   def show
+    @bread_crumbs = { Users: users_path, "#{@user.full_name}": user_path(@user) }
     authorize @user
   end
 
   # GET /users/new
   def new
+    @bread_crumbs = { Users: users_path, New: nil }
     @user = params[:user].present? ? User.new(user_params) : User.new
     @user.entity_id = current_user.entity_id
     @user.permissions ||= current_user.permissions
@@ -178,6 +181,7 @@ class UsersController < ApplicationController
 
   # GET /users/1/edit
   def edit
+    @bread_crumbs = { Users: users_path, "#{@user.full_name}": user_path(@user), Edit: nil }
     authorize @user
     setup_custom_fields(@user)
   end

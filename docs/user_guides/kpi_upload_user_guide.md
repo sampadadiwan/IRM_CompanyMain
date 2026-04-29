@@ -1,86 +1,169 @@
-# KPI Management & Workbook Upload User Guide
+# KPI Management & Workbook Upload User Guide (V9.1.86)
 
-To ensure your KPI data is processed accurately and without errors, please follow these guidelines for managing reports and preparing your Excel workbooks for upload.
+This guide provides a comprehensive overview of the Key Performance Indicator (KPI) reporting system in IRM. It covers everything from preparing your Excel workbooks to the automated approval workflows.
 
-## 👥 Roles & Permissions
-The KPI management system is role-based to ensure data integrity:
-
-| Role | Permissions |
-| :--- | :--- |
-| **Fund Admin** | Full access to create, edit, approve, and delete all KPI reports. Can trigger recomputations and send notifications to companies. |
-| **Portfolio Company (User)** | Can view and edit their own reports (typically via a secure signed link). Can upload workbooks for their specific company. |
-| **Advisor / Read-Only** | Can view approved KPI reports and performance dashboards but cannot modify data or trigger recomputations. |
-
-## 🖥️ Screen Reference
-
-### 1. KPI Reports Index (`/kpi_reports`)
-The main dashboard for managing and tracking all KPI submissions.
-*   **Data Displayed**: A list of reports showing the Portfolio Company, Period (Month/Quarter/YTD), As Of date, Tags (Actual/Budget), and Status.
-*   **Key Buttons & Actions**:
-    *   **New KPI Report**: Create a manual entry or start a new workbook upload shell.
-    *   **Filter/Search**: Filter reports by Tag (e.g., only "Actual"), Period, or specific Portfolio Companies.
-    *   **Send Notifications**: Opens a modal to send email/WhatsApp reminders to one or many Portfolio Companies to upload their data.
-    *   **Grid View**: Switches to a compact view highlighting data coverage across companies.
-
-### 2. KPI Report Detail View (`/kpi_reports/:id`)
-A deep dive into a specific submission for a company and period.
-*   **Data Displayed**: Detailed table of all KPIs (Revenue, EBITDA, etc.), including their values, notes, and calculated percentage changes (MoM, YoY).
-*   **Key Buttons & Actions**:
-    *   **Edit**: Modify individual KPI values or notes manually.
-    *   **Recompute % Change**: Manually trigger a recalculation of the growth metrics for this report.
-    *   **Recompute Cumulative**: Force the system to recalculate Quarterly and YTD sums for the company (useful after data corrections).
-    *   **Analyze**: Triggers an AI-driven analysis to identify trends or anomalies in the data.
-    *   **Upload Document**: Attach the source Excel/PDF file to the report for audit trails.
-
-### 3. Performance Table (`/kpi_reports/show_performance`)
-A high-level comparison view across periods.
-*   **Data Displayed**: A comparative table showing KPI performance for a specific company over multiple months or quarters.
-*   **Key Buttons & Actions**:
-    *   **Download XLSX**: Export the performance table to Excel for offline reporting.
+## 📑 Table of Contents
+1. [Key Takeaways](#-key-takeaways)
+2. [Roles & Permissions](#-roles--permissions)
+3. [The Reporting Workflow](#-the-reporting-workflow)
+4. [Workbook Preparation Checklist](#-workbook-preparation-checklist)
+5. [Supported Date Formats](#-supported-date-formats)
+6. [Automated System Actions](#-automated-system-actions)
+7. [Common Pitfalls & Troubleshooting](#-common-pitfalls--troubleshooting)
+8. [FAQ](#-faq)
 
 ---
 
-## 📋 KPI Upload Checklist
+## 🚀 Key Takeaways
+*   **Two-Stage Process**: Data is first **Staged** (Unapproved) and then **Promoted** (Approved) by an authorized user.
+*   **Approved Data Only**: Dashboards, performance tables, and growth calculations only use **Approved** data.
+*   **Smart Matching**: The system skips identical values to avoid duplicates and flags changes for review.
+*   **Automated Calculations**: Quarterly, YTD, and Annual totals are automatically recalculated upon approval.
+*   **Direct Links**: Portfolio companies should use the link in their reminder email to upload directly to the correct period.
 
-### 1. Workbook Structure & Layout
-*   **Header Identification:** The system scans the first row of each sheet to find the header. Ensure your date headers (e.g., "Jan 2024", "Q1 FY24") are within these top 10 rows.
-*   **Header Row Requirement:** A valid header row must contain at least **two** date-like values to be recognized.
-*   **KPI Name Column:** Place your KPI names in one of the first column. The system automatically detects which column contains the KPI names by matching them against your configured target KPIs.
-*   **Data Rows:** KPI values should be placed in the rows directly beneath the identified header row.
+---
+
+## 👥 Roles & Permissions
+The KPI system ensures data integrity through role-based access:
+
+| Role | Permissions |
+| :--- | :--- |
+| **Fund Admin / Approver** | Full access. Can create reports, approve staged data, trigger recomputations, and send notifications. |
+| **Portfolio Company User** | Can upload workbooks for their specific company and edit their own reports via secure links. |
+| **Advisor / Read-Only** | Can view approved reports and dashboards but cannot modify data or approve uploads. |
+
+---
+
+## 🔄 The Reporting Workflow
+
+### 1. Notification & Request
+The process typically begins when a Fund Admin sends a reminder to a Portfolio Company.
+*   **Self-Reporting**: The system enables "Self-Reporting" for the specific period.
+*   **Reminder Email**: The company receives an email with a direct link to the upload portal.
+
+### 2. Staged Import (The Upload)
+
+When a workbook is uploaded, the system performs a "Staged Import":
+
+```
+sequenceDiagram
+    participant U as User
+    participant J as Import Job
+    participant R as Workbook Reader
+    participant DB as Database
+
+    U->>DB: Upload Workbook
+    DB->>J: Enqueue Import Job
+    J->>R: Scan Sheets & Extract KPIs
+    loop Every Data Row
+        R->>DB: Compare with Approved Data
+        alt Value Changed or New
+            R->>DB: Create UNAPPROVED (Staged) Record
+        else Value Identical
+            R->>R: Skip (No Change)
+        end
+    end
+    J->>U: Notify: Import Completed (Pending Approval)
+```
+
+### 3. Authorized Approval
+
+An Admin reviews the staged data. Unapproved values are highlighted in **orange** with a **"Pending"** badge in the KPI Grid View.
+
+```
+sequenceDiagram
+    participant A as Approver
+    participant S as Approval Service
+    participant DB as Database
+    participant J as Calculation Jobs
+
+    A->>S: Approve KPI(s)
+    S->>DB: Promote Staged to Approved
+    S->>DB: Overwrite Old Approved Data
+    S->>J: Trigger Cumulative & % Change Recalcs
+    S->>A: Success Confirmation
+```
+
+---
+
+## 📋 Workbook Preparation Checklist
+
+### 1. Structure & Layout
+*   **Header Detection**: The system scans the first 10 rows to find your date headers (e.g., "Jan 2024").
+*   **Header Requirement**: A valid header row must contain at least **two** date-like values.
+*   **KPI Column**: Place KPI names in the first column. The system matches these against your configured "Reported KPI Names."
+*   **Data Rows**: Values should be directly beneath the header row.
 
 ### 2. KPI Naming
-*   **Matching:** KPI names are matched using a case-insensitive and space-insensitive method (e.g., "Gross Profit" will match "gross profit" or "GrossProfit").
-*   **Consistency:** Ensure the KPI names in your Excel file exactly match the "Reported KPI Names" configured in your mapping settings.
+*   **Smart Matching**: Names are matched case-insensitively and space-insensitively (e.g., "Gross Profit" matches "gross profit").
+*   **Consistency**: Ensure names match the "Reported KPI Names" in your mapping settings.
 
-### 3. Supported Period (Date) Formats
-Your column headers should use one of the following recognized formats:
-*   **Monthly:** `Jan 2024`, `January 2024`, `Sep 23`.
-*   **Quarterly:** `Q1 FY24`, `Q3 CY22`, `JFM 2024` (Jan-Feb-Mar), `Jan-Mar 2024`.
-*   **Fiscal/Calendar Year:** `FY 2023-24`, `FY2024`, `CY2024`, or just `2024`.
-*   **Half-Year:** `H1 2023`, `H2 FY24`.
-*   **Year-to-Date (YTD):** `YTD Nov 23`, `YTD Jan-Sept 2023`.
-*   **Standard Dates:** `DD-MM-YYYY` or `DD/MM/YYYY`.
+### 3. Data Integrity
+*   **Numeric Only**: Ensure values are numbers. Use `na` or `n/a` for non-applicable fields.
+*   **No Duplicates**: Avoid duplicate period headers (e.g., two "Jan 2024" columns) in the same sheet.
+*   **Future Dates**: Values for future dates are automatically skipped for "Actual" tags.
 
-### 4. Data Values
-*   **Numeric Values:** Ensure KPI values are numeric.
-*   **Empty Cells:** Blank cells are skipped. If a KPI is not applicable for a period, you can leave it blank or use `n/a` or `na`.
-*   **Duplicates:** Avoid having duplicate period headers (e.g., two columns both labeled "Jan 2024") in the same sheet, as the system will skip the duplicates.
-*   **Precision & Matching:** If an identical value (checked to 6 decimal places) is already approved in the system, the upload will skip that specific entry to avoid redundant updates.
+---
 
-### 5. Automated System Actions & Side Effects
-After a successful upload, the system automatically performs several background tasks:
-*   **KPI Approval Workflow:** Newly uploaded values are created as **Unapproved**. If a value differs from an existing approved record, it will trigger a pending approval notification.
-*   **Percentage Change Calculation:** The system automatically recalculates Year-on-Year and Month-on-Month percentage changes for all KPIs related to the Portfolio Company.
-*   **Cumulative Recalculation:** The system triggers a recalculation of **Quarterly**, **YTD**, and **Year** (Annual) cumulative records based on the newly imported monthly data.
-*   **Search Indexing:** The system updates search indexes (via Chewy/Sidekiq) to ensure the new data is searchable immediately.
+## 📅 Supported Date Formats
+Your column headers should use one of these recognized formats:
 
-### 6. Notifications
-*   **Success/Error Summary:** Users receive an email summary of the import. If errors occur (e.g., missing KPIs, unrecognized date formats), a detailed report is sent via email.
-*   **Approval Alerts:** Admins are notified if new data requires review/approval.
+| Type | Examples |
+| :--- | :--- |
+| **Monthly** | `Jan 2024`, `January 2024`, `Sep 23` |
+| **Quarterly** | `Q1 FY24`, `Q3 CY22`, `Jan-Mar 2024`, `JFM 2024` |
+| **Annual** | `FY 2023-24`, `FY2024`, `CY2024`, `2024` |
+| **Half-Year** | `H1 2023`, `H2 FY24` |
+| **YTD** | `YTD Nov 23`, `YTD Jan-Sept 2023` |
+| **Standard** | `DD-MM-YYYY`, `DD/MM/YYYY` |
 
-### 7. Common Pitfalls to Avoid
-*   **Hidden Rows/Columns:** While the system attempts to clean the file, it's best to avoid hidden rows or columns that might contain "ghost" data.
-*   **Future Dates:** "Actual" values for future dates (beyond the current day) are automatically skipped.
-*   **Missing Target KPIs:** Ensure all KPIs mapped for the Portfolio Company are present in the workbook; the system will flag any missing target KPIs in the error report.
-*   **Invalid Characters:** Avoid using special characters or non-numeric text in cells designated for KPI values (other than `na` or `n/a`).
-*   **Sheet Selection:** The system processes **all sheets** in the workbook. Ensure all sheets follow the supported layout or do not contain conflicting data.
+---
+
+## ⚙️ Automated System Actions
+After approval, the system automatically triggers several high-impact tasks:
+1.  **Growth Metrics**: Recalculates Year-on-Year (YoY) and Month-on-Month (MoM) percentage changes.
+2.  **Cumulative Totals**: Recomputes **Quarterly**, **YTD**, and **Annual** sums based on monthly data.
+3.  **Audit Trail**: Appends approval details (User, Timestamp) to the KPI notes.
+4.  **Search Indexing**: Updates the search engine so new data is immediately findable.
+
+---
+
+## 🛠️ Common Pitfalls & Troubleshooting
+
+### 1. "No Date Headers Found"
+*   **Cause**: The system couldn't find at least two date-like values in the first 10 rows.
+*   **Fix**: Ensure your headers use supported formats (e.g., "Jan 2024") and are not buried deep in the sheet.
+
+### 2. "KPI Name Not Mapped"
+*   **Cause**: The KPI name in Excel doesn't match any "Reported KPI Name" in the system.
+*   **Fix**: Check your mapping settings or update the Excel file to use the correct name.
+
+### 3. "Value Skipped (Identical)"
+*   **Cause**: The value in Excel is exactly the same as the currently approved value.
+*   **Fix**: No action needed. The system does this to save time and avoid redundant approvals.
+
+### 4. "Future Date Skipped"
+*   **Cause**: You are uploading "Actual" data for a date that hasn't occurred yet.
+*   **Fix**: Use the "Budget" or "Projected" tag if you are uploading future-looking data.
+
+---
+
+## ❓ FAQ
+
+**Q: I uploaded my KPIs, but the dashboard hasn't updated. Why?**
+A: Your data is likely in the **Staged (Unapproved)** state. Dashboards only reflect **Approved** data. Contact your Fund Admin to review and approve the upload.
+
+**Q: How do I see my "Pending" data?**
+A: In the **KPI Grid View**, authorized users can enable **"View Including Staged"** to see unapproved values highlighted in orange.
+
+**Q: What happens if I upload the same file twice?**
+A: The system checks for identical values. If the data hasn't changed, it will skip the import for those specific KPIs to avoid redundant approvals.
+
+**Q: Can I upload data for multiple companies in one workbook?**
+A: No. Each upload is scoped to a specific Portfolio Company to ensure data security and correct mapping.
+
+**Q: The system didn't recognize my date headers. What should I do?**
+A: Ensure your dates are in one of the supported formats (see Section 5) and are located within the first 10 rows of the sheet.
+
+---
+*For technical support or custom KPI mapping, please contact your system administrator.*

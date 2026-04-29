@@ -36,6 +36,7 @@ class ReportBuilderController < ApplicationController
   # GET /report_builder/new
   def new
     authorize Report.new(entity: current_user.entity), :create?
+    @bread_crumbs = { Reports: reports_path, "New Report Builder": nil }
     @root_models = ReportBuilderModelDiscovery.roots.group_by { |m| ReportBuilderModelDiscovery.pack_for(m) }
   end
 
@@ -69,6 +70,7 @@ class ReportBuilderController < ApplicationController
   # GET /report_builder/:id/edit
   def edit
     authorize @report, :update?
+    @bread_crumbs = { Reports: reports_path, @report.name => view_report_builder_path(@report), Edit: nil }
     @config     = ReportBuilderConfig.new(@report.template)
     @root_class = @config.root_class rescue nil
 
@@ -100,6 +102,7 @@ class ReportBuilderController < ApplicationController
   # GET /report_builder/:id/view
   def view
     authorize @report, :show?
+    @bread_crumbs = { Reports: reports_path, @report.name => nil }
 
     engine = ReportBuilderQueryEngine.new(
       report: @report,

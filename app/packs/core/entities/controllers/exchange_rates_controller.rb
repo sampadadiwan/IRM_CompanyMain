@@ -3,6 +3,7 @@ class ExchangeRatesController < ApplicationController
 
   # GET /exchange_rates or /exchange_rates.json
   def index
+    @bread_crumbs = { 'Exchange Rates': exchange_rates_path }
     @exchange_rates = policy_scope(ExchangeRate)
     @exchange_rates = @exchange_rates.latest if params[:all].blank?
   end
@@ -18,6 +19,7 @@ class ExchangeRatesController < ApplicationController
 
   # GET /exchange_rates/new
   def new
+    @bread_crumbs = { 'Exchange Rates': exchange_rates_path, New: nil }
     @exchange_rate = ExchangeRate.new
     @exchange_rate.entity_id = current_user.entity_id
     @exchange_rate.as_of = Time.zone.today
@@ -28,7 +30,9 @@ class ExchangeRatesController < ApplicationController
   end
 
   # GET /exchange_rates/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs[:Edit] = nil
+  end
 
   # POST /exchange_rates or /exchange_rates.json
   def create

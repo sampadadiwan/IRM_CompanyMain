@@ -35,11 +35,14 @@ class CapitalDistributionsController < ApplicationController
     @capital_distribution = CapitalDistribution.new(capital_distribution_params)
     @capital_distribution.entity_id = @capital_distribution.fund.entity_id
     @capital_distribution.distribution_date = Time.zone.today
+    @bread_crumbs = { Funds: funds_path, "#{@capital_distribution.fund.name}": fund_path(@capital_distribution.fund), New: nil }
     authorize @capital_distribution
   end
 
   # GET /capital_distributions/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs[:Edit] = nil
+  end
 
   # POST /capital_distributions or /capital_distributions.json
   def create
@@ -132,7 +135,7 @@ class CapitalDistributionsController < ApplicationController
     authorize @capital_distribution
     @bread_crumbs = { Funds: funds_path,
                       "#{@capital_distribution.fund.name}": fund_path(@capital_distribution.fund),
-                      "#{@capital_distribution}": nil }
+                      "#{@capital_distribution}": capital_distribution_path(@capital_distribution) }
   end
 
   # Only allow a list of trusted parameters through.

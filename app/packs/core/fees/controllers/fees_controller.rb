@@ -3,21 +3,27 @@ class FeesController < ApplicationController
 
   # GET /fees or /fees.json
   def index
+    @bread_crumbs = { Fees: fees_path }
     @fees = policy_scope(Fee)
   end
 
   # GET /fees/1 or /fees/1.json
-  def show; end
+  def show
+    @bread_crumbs = { Fees: fees_path, "#{@fee.advisor_name}": fee_path(@fee) }
+  end
 
   # GET /fees/new
   def new
+    @bread_crumbs = { Fees: fees_path, New: nil }
     @fee = Fee.new(fee_params)
     @fee.entity_id = current_user.entity_id
     authorize(@fee)
   end
 
   # GET /fees/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs = { Fees: fees_path, "#{@fee.advisor_name}": fee_path(@fee), Edit: nil }
+  end
 
   # POST /fees or /fees.json
   def create

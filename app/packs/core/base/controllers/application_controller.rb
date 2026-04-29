@@ -9,6 +9,7 @@ class ApplicationController < ActionController::Base
   include WithEmailPreview
   include WithLocale
   include WithSetupCustomFields
+  include UserGuideHelper
 
   before_action :prepare_exception_notifier
   before_action :validate_page_limit

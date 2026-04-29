@@ -146,12 +146,14 @@ class CapitalCommitmentsController < ApplicationController
   def new
     @capital_commitment = CapitalCommitment.new(capital_commitment_params)
     @capital_commitment.entity_id = @capital_commitment.fund.entity_id
+    @bread_crumbs = { Funds: funds_path, "#{@capital_commitment.fund.name}": fund_path(@capital_commitment.fund), New: nil }
     authorize @capital_commitment
     setup_custom_fields(@capital_commitment)
   end
 
   # GET /capital_commitments/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@capital_commitment)
   end
 
@@ -207,7 +209,7 @@ class CapitalCommitmentsController < ApplicationController
     authorize @capital_commitment
     @bread_crumbs = { Funds: funds_path,
                       "#{@capital_commitment.fund.name}": fund_path(@capital_commitment.fund),
-                      "#{@capital_commitment}": nil }
+                      "#{@capital_commitment}": capital_commitment_path(@capital_commitment) }
   end
 
   # Only allow a list of trusted parameters through.

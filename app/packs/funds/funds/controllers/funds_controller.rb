@@ -29,6 +29,7 @@ class FundsController < ApplicationController
 
   # GET /funds or /funds.json
   def index
+    @bread_crumbs = { Funds: funds_path }
     # Serves both Fund and FundSnapshot
     @funds = ransack_with_snapshot.includes(:entity)
     @funds = @funds.where(entity_id: params[:entity_id]) if params[:entity_id].present?
@@ -79,6 +80,7 @@ class FundsController < ApplicationController
 
   # GET /funds/new
   def new
+    @bread_crumbs = { Funds: funds_path, New: nil }
     @fund = Fund.new
     @fund.entity_id = current_user.entity_id
     @fund.currency = @fund.entity.currency
@@ -88,6 +90,7 @@ class FundsController < ApplicationController
 
   # GET /funds/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@fund)
   end
 

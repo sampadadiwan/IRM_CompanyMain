@@ -25,22 +25,34 @@
 
         as_of_date = Date.current
         entity_id = portfolio_company.entity.id
+        debug_mode = params[:debug] == 'true'
+        debug_rates = [] if debug_mode
 
         bought_amount_cents = portfolio_company.portfolio_investments.buys.sum do |pi|
-          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
+          converted = ExchangeRate.convert(pi.fund.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
+          debug_rates << { field: "Bought Amount", pi_id: pi.id, from: pi.fund.currency, to: target_currency, date: pi.investment_date, rate: ExchangeRate.get_rate(pi.fund.currency, target_currency, pi.investment_date, entity_id), original_cents: pi.amount_cents, converted_cents: converted } if debug_mode
+          converted
         end
         sold_amount_cents = portfolio_company.portfolio_investments.sells.sum do |pi|
-          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
+          converted = ExchangeRate.convert(pi.fund.currency, target_currency, pi.amount_cents, pi.investment_date, entity_id) || 0
+          debug_rates << { field: "Sold Amount", pi_id: pi.id, from: pi.fund.currency, to: target_currency, date: pi.investment_date, rate: ExchangeRate.get_rate(pi.fund.currency, target_currency, pi.investment_date, entity_id), original_cents: pi.amount_cents, converted_cents: converted } if debug_mode
+          converted
         end
         fmv_cents = portfolio_company.portfolio_investments.includes(:valuation).sum do |pi|
           conversion_date = pi.valuation.present? ? pi.valuation.valuation_date : pi.investment_date # need this as valuation is optional in PI
-          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.fmv_cents, conversion_date, entity_id) || 0
+          converted = ExchangeRate.convert(pi.fund.currency, target_currency, pi.fmv_cents, conversion_date, entity_id) || 0
+          debug_rates << { field: "FMV", pi_id: pi.id, from: pi.fund.currency, to: target_currency, date: conversion_date, rate: ExchangeRate.get_rate(pi.fund.currency, target_currency, conversion_date, entity_id), original_cents: pi.fmv_cents, converted_cents: converted } if debug_mode
+          converted
         end
         cost_of_remaining_cents = portfolio_company.portfolio_investments.sum do |pi|
-          ExchangeRate.convert(pi.investment_instrument.currency, target_currency, pi.cost_of_remaining_cents, pi.investment_date, entity_id) || 0
+          converted = ExchangeRate.convert(pi.fund.currency, target_currency, pi.cost_of_remaining_cents, pi.investment_date, entity_id) || 0
+          debug_rates << { field: "Cost of Remaining", pi_id: pi.id, from: pi.fund.currency, to: target_currency, date: pi.investment_date, rate: ExchangeRate.get_rate(pi.fund.currency, target_currency, pi.investment_date, entity_id), original_cents: pi.cost_of_remaining_cents, converted_cents: converted } if debug_mode
+          converted
         end
         income_cents = portfolio_company.portfolio_cashflows.sum do |pc|
-          ExchangeRate.convert(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, entity_id) || 0
+          converted = ExchangeRate.convert(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, entity_id) || 0
+          debug_rates << { field: "Income", pi_id: pc.id, from: pc.investment_instrument.currency, to: target_currency, date: pc.payment_date, rate: ExchangeRate.get_rate(pc.investment_instrument.currency, target_currency, pc.payment_date, entity_id), original_cents: pc.amount_cents, converted_cents: converted } if debug_mode
+          converted
         end
         sold_plus_fmv_cents = sold_amount_cents + fmv_cents
 
@@ -121,6 +133,40 @@
             )) %>
           <% end %>
         </div>
+
+        <% if debug_mode && debug_rates.present? %>
+          <div class="mt-4">
+            <h6 class="text-muted">Exchange Rate Debug (target: <%= target_currency %>)</h6>
+            <table class="table table-sm table-bordered small">
+              <thead class="table-light">
+                <tr>
+                  <th>Field</th>
+                  <th>ID</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Date Used</th>
+                  <th>Rate</th>
+                  <th>Original (cents)</th>
+                  <th>Converted (cents)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% debug_rates.each do |r| %>
+                  <tr class="<%= 'table-warning' if r[:rate].nil? %>">
+                    <td><%= r[:field] %></td>
+                    <td><%= r[:pi_id] %></td>
+                    <td><%= r[:from] %></td>
+                    <td><%= r[:to] %></td>
+                    <td><%= r[:date] %></td>
+                    <td><%= r[:rate].present? ? r[:rate] : '<span class="text-danger">missing</span>'.html_safe %></td>
+                    <td><%= r[:original_cents] %></td>
+                    <td><%= r[:converted_cents] %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
       </div>
     <% end %>
 

@@ -5,6 +5,13 @@ class InvestorAccessesController < ApplicationController
   # GET /investor_accesses or /investor_accesses.json
   def index
     authorize(InvestorAccess)
+    if params[:investor_id].present?
+      @investor = Investor.find(params[:investor_id])
+      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), "Access": nil }
+    else
+      @bread_crumbs = { "Investor Access": investor_accesses_path }
+    end
+
     @q = InvestorAccess.ransack(params[:q])
     @investor_accesses = policy_scope(@q.result).includes(:investor, :user, :granter)
     @investor_accesses = InvestorAccessSearch.perform(@investor_accesses, current_user, params)
@@ -15,6 +22,8 @@ class InvestorAccessesController < ApplicationController
   end
 
   def search
+    authorize(InvestorAccess)
+    @bread_crumbs = { "Investor Access": investor_accesses_path }
     @entity = current_user.entity
     query = params[:query]
     if query.present?
@@ -60,10 +69,19 @@ class InvestorAccessesController < ApplicationController
     @investor_access.send_confirmation = true
 
     authorize @investor_access
+
+    if @investor_access.investor_id.present?
+      @investor = @investor_access.investor
+      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), "Access": investor_accesses_path(investor_id: @investor.id), New: nil }
+    else
+      @bread_crumbs = { "Investor Access": investor_accesses_path, New: nil }
+    end
   end
 
   # GET /investor_accesses/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs[:Edit] = nil
+  end
 
   def approve
     @investor_access.approved = !@investor_access.approved
@@ -88,7 +106,10 @@ class InvestorAccessesController < ApplicationController
     end
   end
 
-  def upload; end
+  def upload
+    authorize(InvestorAccess)
+    @bread_crumbs = { "Investor Access": investor_accesses_path, "Upload": nil }
+  end
 
   # POST /investor_accesses or /investor_accesses.json
   def create
@@ -153,8 +174,14 @@ class InvestorAccessesController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_investor_access
-    @investor_access = InvestorAccess.includes(:user).find(params[:id])
+    @investor_access = InvestorAccess.includes(:user, :investor).find(params[:id])
     authorize @investor_access
+    @bread_crumbs = {
+      Investors: investors_path,
+      @investor_access.investor.investor_name => investor_path(@investor_access.investor),
+      "Access": investor_accesses_path(investor_id: @investor_access.investor_id),
+      @investor_access.email => investor_access_path(@investor_access)
+    }
   end
 
   # Only allow a list of trusted parameters through.

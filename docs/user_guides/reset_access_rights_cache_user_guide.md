@@ -1,7 +1,7 @@
 # User Guide: Reset Access Rights Cache
 
 ## Overview
-The Investor Relationship Management (IRM) system utilizes an `AccessRightsCache` to optimize permission checks across the platform. This cache stores a bitmask of permissions for each user based on their roles and associated entities. Occasionally, due to complex changes in investor access or organizational mappings, this cache might need to be manually refreshed to ensure the user has the correct level of visibility.
+The Investor Relationship Management (CapHive) system utilizes an `AccessRightsCache` to optimize permission checks across the platform. This cache stores a bitmask of permissions for each user based on their roles and associated entities. Occasionally, due to complex changes in investor access or organizational mappings, this cache might need to be manually refreshed to ensure the user has the correct level of visibility.
 
 ## Purpose
 The **Reset Access Rights Cache** feature allows administrators to manually trigger a full rebuild of a user's permission cache. This ensures that the user's data visibility is accurately reflected based on their current authorized access rights.

@@ -58,12 +58,17 @@ class CapitalRemittancesController < ApplicationController
     @capital_remittance.fund_id = @capital_remittance.capital_call.fund_id
 
     @capital_remittance.call_amount = @capital_remittance.due_amount
+    @bread_crumbs = { Funds: funds_path,
+                      "#{@capital_remittance.fund.name}": fund_path(@capital_remittance.fund),
+                      "#{@capital_remittance.capital_call}": capital_call_path(@capital_remittance.capital_call),
+                      New: nil }
     authorize @capital_remittance
     setup_custom_fields(@capital_remittance)
   end
 
   # GET /capital_remittances/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     @capital_remittance.status = params[:status] if params[:status]
     @capital_remittance.collected_amount_cents = @capital_remittance.call_amount_cents if @capital_remittance.status == "Paid" && @capital_remittance.collected_amount_cents.zero?
 
@@ -149,7 +154,7 @@ class CapitalRemittancesController < ApplicationController
     @bread_crumbs = { Funds: funds_path,
                       "#{@capital_remittance.fund.name}": fund_path(@capital_remittance.fund),
                       "#{@capital_remittance.capital_call}": capital_call_path(@capital_remittance.capital_call),
-                      "#{@capital_remittance}": nil }
+                      "#{@capital_remittance}": capital_remittance_path(@capital_remittance) }
   end
 
   # Only allow a list of trusted parameters through.

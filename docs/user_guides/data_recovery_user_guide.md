@@ -1,6 +1,6 @@
 # User Guide: Data Recovery & Soft-Delete Management
 
-The Investor Relationship Management (IRM) system includes a robust data recovery feature that allows administrators to view and restore accidentally deleted records. This feature leverages "soft-deletion," meaning records are not immediately removed from the database but are instead marked as deleted.
+The Investor Relationship Management (CapHive) system includes a robust data recovery feature that allows administrators to view and restore accidentally deleted records. This feature leverages "soft-deletion," meaning records are not immediately removed from the database but are instead marked as deleted.
 
 ---
 

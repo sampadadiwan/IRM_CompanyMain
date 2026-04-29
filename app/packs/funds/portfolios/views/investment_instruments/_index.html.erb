@@ -1,7 +1,8 @@
 <%= turbo_frame_tag with_frame("investment_instruments_list"), target: "_top" do %>
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Investment Instruments</h1>
-    <span>
+    <div class="d-flex flex-wrap align-items-center gap-2">
+      <%= user_guide_info_icon %>
       <% entity_id = @portfolio_company ? @portfolio_company.entity_id : current_user.entity_id %>
       <% investment_instrument = InvestmentInstrument.new(portfolio_company_id: params[:portfolio_company_id], entity_id: entity_id) %>
       <% if policy(investment_instrument).new?%>
@@ -52,7 +53,7 @@
                       "import_upload[import_type]": "InvestmentInstrument",
                       "sample_upload": "INVESTMENT_INSTRUMENT_SAMPLE"),
                       { class: "btn btn-outline-success ti ti-upload", data: {bs_toggle: "tooltip", bs_title: "Opens page to bulk upload Investment Instruments in excel"} } %>
-    </span>
+    </div>
   </div>
   <div class="table-responsive" data-controller="datatable">
     <table id="investment_instruments" class="table table-bordered dataTable jqDataTable">

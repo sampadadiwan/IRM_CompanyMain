@@ -1,6 +1,6 @@
 # User Guide: Entity Database Dumps
 
-The Investor Relationship Management (IRM) system provides an automated feature to generate portable SQLite database dumps for each entity. These dumps contain a fund-specific slice of data, allowing for offline analysis, backups, and data portability.
+The Investor Relationship Management (CapHive) system provides an automated feature to generate portable SQLite database dumps for each entity. These dumps contain a fund-specific slice of data, allowing for offline analysis, backups, and data portability.
 
 ---
 
@@ -32,7 +32,7 @@ The system supports several scheduling options to match your data backup needs:
 *   **Daily (Default):** Generates one dump every 24 hours.
 *   **Weekly:** Generates one dump per calendar week.
 *   **Monthly:** Generates one dump per calendar month.
-*   **Interval:** Generates a dump every `N` days (e.g., every 10 days). 
+*   **Interval:** Generates a dump every `N` days (e.g., every 10 days).
     *   *Requires setting the **Interval (Days)** field.*
 *   **Custom Days:** Generates a dump only on specific days of the week (e.g., "Monday, Thursday").
     *   *Requires setting the **Custom Days** field with comma-separated day names.*

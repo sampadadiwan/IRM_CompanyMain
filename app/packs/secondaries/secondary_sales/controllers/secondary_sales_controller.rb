@@ -7,6 +7,7 @@ class SecondarySalesController < ApplicationController
 
   # GET /secondary_sales or /secondary_sales.json
   def index
+    @bread_crumbs = { Secondaries: secondary_sales_path }
     authorize(SecondarySale)
     @q = SecondarySale.ransack(params[:q])
     @secondary_sales = policy_scope(@q.result).includes(:entity)
@@ -135,6 +136,7 @@ class SecondarySalesController < ApplicationController
 
   # GET /secondary_sales/new
   def new
+    @bread_crumbs = { Secondaries: secondary_sales_path, New: nil }
     @secondary_sale = SecondarySale.new(secondary_sale_params)
     @secondary_sale.entity_id = current_user.entity_id
     @secondary_sale.start_date = Time.zone.today
@@ -147,6 +149,7 @@ class SecondarySalesController < ApplicationController
 
   # GET /secondary_sales/1/edit
   def edit
+    @bread_crumbs[:Edit] = nil
     setup_custom_fields(@secondary_sale, force_form_type: @secondary_sale.secondary_sale_form_type)
   end
 

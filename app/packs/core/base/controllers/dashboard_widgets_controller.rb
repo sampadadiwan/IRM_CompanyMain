@@ -5,6 +5,7 @@ class DashboardWidgetsController < ApplicationController
 
   # GET /dashboard_widgets
   def index
+    @bread_crumbs = { Widgets: dashboard_widgets_path }
     @q = DashboardWidget.ransack(params[:q])
     @dashboard_widgets = policy_scope(@q.result).includes(:owner)
     @dashboard_widgets = @dashboard_widgets.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
@@ -28,13 +29,16 @@ class DashboardWidgetsController < ApplicationController
 
   # GET /dashboard_widgets/new
   def new
+    @bread_crumbs = { Widgets: dashboard_widgets_path, New: nil }
     @dashboard_widget = DashboardWidget.new
     @dashboard_widget.entity_id = current_user.entity_id
     authorize @dashboard_widget
   end
 
   # GET /dashboard_widgets/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs[:Edit] = nil
+  end
 
   # POST /dashboard_widgets
   def create

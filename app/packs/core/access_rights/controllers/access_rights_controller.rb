@@ -5,6 +5,13 @@ class AccessRightsController < ApplicationController
 
   # GET /access_rights or /access_rights.json
   def index
+    if params[:investor_id].present?
+      @investor = Investor.find(params[:investor_id])
+      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), "Access Rights": nil }
+    else
+      @bread_crumbs = { "Access Rights": access_rights_path }
+    end
+
     # Step 1: Apply policy scope and eager load associations
     @access_rights = policy_scope(AccessRight).includes(:investor, :user)
     @access_rights = AccessRightSearch.search(@access_rights, params, current_user)
@@ -103,7 +110,17 @@ class AccessRightsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_access_right
-    @access_right = AccessRight.find(params[:id])
+    @access_right = AccessRight.includes(:investor, :owner).find(params[:id])
+    if @access_right.investor
+      @bread_crumbs = {
+        Investors: investors_path,
+        @access_right.investor.investor_name => investor_path(@access_right.investor),
+        "Access Rights": access_rights_path(investor_id: @access_right.access_to_investor_id),
+        @access_right.owner_type => nil
+      }
+    else
+      @bread_crumbs = { "Access Rights": access_rights_path, @access_right.owner_type => nil }
+    end
   end
 
   # Only allow a list of trusted parameters through.

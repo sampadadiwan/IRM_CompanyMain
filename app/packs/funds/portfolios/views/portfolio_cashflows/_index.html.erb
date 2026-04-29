@@ -2,7 +2,8 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Portfolio Income</h1>
 
-  <span>
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <%= user_guide_info_icon %>
     <%= link_to "New Portfolio Income", new_portfolio_cashflow_path("portfolio_cashflow[aggregate_portfolio_investment_id]": aggregate_portfolio_investment.id), {class: "btn btn-outline-primary ti ti-plus"}  if aggregate_portfolio_investment %>
 
     <%= link_to "Upload",
@@ -13,7 +14,7 @@
 
 
     <%= link_to "Download", portfolio_cashflows_path(params: params.to_unsafe_h, format: :xlsx), { class: "btn btn-outline-primary ti ti-download"}   %>
-  </span>
+  </div>
 
 </div>
 <div class="table-responsive" data-controller="datatable" data-datatable-responsive-details-value=true>
