@@ -65,14 +65,31 @@ module AccountEntryAllocation
 
       master_fund_account_entries = ctx[:master_fund_account_entries]
 
-      if name_or_entry_type == "name"
-        # Filter by name if name_or_entry_type is "name"
-        master_fund_account_entries = master_fund_account_entries.where(name: fund_formula.name)
-      elsif name_or_entry_type == "entry_type"
-        # Filter by entry_type if name_or_entry_type is "entry_type", but the catch is use the fund_formula.name as the value for filtering. Be clear about this.
-        master_fund_account_entries = master_fund_account_entries.where(entry_type: fund_formula.name)
-      else
-        raise "Invalid name_or_entry_type: #{name_or_entry_type}"
+      already_filtered = false
+
+      if fund_formula.meta_data_hash.present?
+        if fund_formula.meta_data_hash["name"]&.strip.present?
+          # If the formula has a specific name in meta_data_hash, we need to filter by that name instead of the default name or entry_type
+          master_fund_account_entries = master_fund_account_entries.where(name: fund_formula.meta_data_hash["name"].strip)
+          already_filtered = true
+        elsif fund_formula.meta_data_hash["entry_type"]&.strip.present?
+          # If the formula has a specific entry_type in meta_data_hash, we need to filter by that entry_type instead of the default name or entry_type
+          master_fund_account_entries = master_fund_account_entries.where(entry_type: fund_formula.meta_data_hash["entry_type"].strip)
+          already_filtered = true
+        end
+      end
+
+      # only filter if not already filtered
+      unless already_filtered
+        if name_or_entry_type == "name"
+          # Filter by name if name_or_entry_type is "name"
+          master_fund_account_entries = master_fund_account_entries.where(name: fund_formula.name)
+        elsif name_or_entry_type == "entry_type"
+          # Filter by entry_type if name_or_entry_type is "entry_type", but the catch is use the fund_formula.name as the value for filtering. Be clear about this.
+          master_fund_account_entries = master_fund_account_entries.where(entry_type: fund_formula.name)
+        else
+          raise "Invalid name_or_entry_type: #{name_or_entry_type}"
+        end
       end
 
       if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["scope"]&.strip.present?
@@ -124,6 +141,9 @@ module AccountEntryAllocation
               parent: parent,
               folio_amount_cents: 0
             )
+
+            # if the formula has a specific assign_name in meta_data_hash, we need to use that name for the feeder account entry instead of the master account entry name.
+            feeder_account_entry.name = fund_formula.meta_data_hash["assign_name"].strip if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["assign_name"]&.strip.present?
 
             begin
               Rails.logger.debug { "Processing account entry #{account_entry.id} #{account_entry} for commitment #{capital_commitment.id} in formula #{fund_formula.name}" } unless Rails.env.production?
