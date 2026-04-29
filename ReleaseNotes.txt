@@ -1,3 +1,10 @@
+V9.2.30
+f3cb6a250 Custom colors dont rely on metadata - only on custom css (#1392)
+85727f608 Enhance account entries handling: add use_entries parameter for filtering in charts and widgets
+3b974f142 Enhance ChangeFundCurrencyJob: add validation for exchange rates and reprocess methods for various fund components
+ec149b845 Refactor switch method: comment out role removal for support users during entity switch
+f022dd166 Feature/user guides and breadcrumbs (#1393)
+
 V9.2.29
 f8b6b5b97 Kedaara 13 (#1391)
 37d8dc167 Merged the changes and checked functionality - agg dash currency filter (#1387)
