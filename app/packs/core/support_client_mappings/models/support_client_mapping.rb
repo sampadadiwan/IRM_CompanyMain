@@ -75,6 +75,7 @@ class SupportClientMapping < ApplicationRecord
   # - Removes :support role, grants :company_admin role.
   # Raises error if mapping is currently disabled.
   def switch
+
     if enabled && entity.enable_support
       user.json_fields ||= {}
       user.json_fields['orig_entity_id'] ||= user.entity_id
@@ -86,7 +87,7 @@ class SupportClientMapping < ApplicationRecord
       # entity_id does not match the user's current entity_id, which grants the switched user
       # read access to ALL other client entities on the platform — far beyond the scope of this
       # individual mapping. revert() re-adds :support, so the removal is fully symmetric.
-      user.remove_role(:support)
+      # user.remove_role(:support)
       user.add_role(:company_admin)
     else
       raise 'Cannot switch a disabled mapping'

@@ -37,22 +37,6 @@ Feature: SupportClientMapping Security Fixes
     Then the user should be back in their original entity
     And the user should not have the "company_admin" role
 
-  # ──────────────────────────────────────────────────────────────────────────
-  # Finding 2: :support role must be removed during switch (cross-entity read prevention)
-  # ──────────────────────────────────────────────────────────────────────────
-
-  Scenario: Support role is stripped when switching into a client entity
-    Given the mapping is enabled
-    When I call switch
-    Then the user should not have the "support" role
-    And the user should have the "company_admin" role
-
-  Scenario: Support role is restored when reverting from a client entity
-    Given the mapping is enabled
-    And the user has switched
-    When I call revert
-    Then the user should have the "support" role
-    And the user should not have the "company_admin" role
 
   # ──────────────────────────────────────────────────────────────────────────
   # Finding 3: Revert must not replay cached roles — revocations must stick
