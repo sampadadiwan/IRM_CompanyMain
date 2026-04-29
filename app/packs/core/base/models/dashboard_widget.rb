@@ -41,7 +41,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Commitment Breakup", path: "funds/widgets/commitment_breakup", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Cashflows", path: "funds/widgets/fund_cashflows", size: "Medium", metadata_help: "{months: 36, series: 'Collected Capital, Portfolio Investments', chart_type: 'line/bar/area/spline'}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Distributions", path: "funds/widgets/fund_distributions", size: "Medium"),
-    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium", metadata_help: "{months: 12, entry_types: ['Expense', 'Fee']}"),
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Account Entries", path: "funds/widgets/fund_account_entries", size: "Medium", metadata_help: "{months: 12, entry_types: ['Expense', 'Fee'], use_entries: 'folio_only/fund_only'}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Portfolios", path: "aggregate_portfolio_investments/widgets/portfolio_investments", size: "XL"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Portfolio Stats", path: "aggregate_portfolio_investments/widgets/stats", size: "XL", metadata_help: "{fields: 'Bought Amount,Sold Amount,...', field_names: 'Bought, Sold,...', force_units: 'Lakhs/Crores/Millions', tracking_currency: true, currency: 'USD', decimals: 2, show_currency_filter: true}"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Fund Report", path: "funds/widgets/fund_report", size: "XL", metadata_help: "{report_id: 1, title: 'Report Title', investor_id: 123, fund_id: 456, parent_name: 'Name', other_report_args: '...' }"),
@@ -73,7 +73,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Realized vs Unrealized", path: "aggregate_portfolio_investments/widgets/gain_breakdown", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Instrument Exposure", path: "aggregate_portfolio_investments/widgets/instrument_exposure", size: "Medium"),
     DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Portfolio Income", path: "aggregate_portfolio_investments/widgets/income_by_company", size: "Medium"),
-    DashboardWidget.new(dashboard_name: LP_LANDING_PAGE, widget_name: "Account Entries Chart", path: "capital_commitments/widgets/account_entries_chart", size: "Medium", metadata_help: "{account_entry_names: 'Management Fee, Setup Fee', entry_name: '...', chart_type: 'column/pie/line', aggregate_by: 'quarter/year/sum', period_type: 'quarter', number_of_periods: 8, no_of_periods: 8, compact: true}")
+    DashboardWidget.new(dashboard_name: FUND_DASHBOARD, widget_name: "Account Entries Chart", path: "capital_commitments/widgets/account_entries_chart", size: "Medium", metadata_help: "{account_entry_names: 'Management Fee, Setup Fee', entry_name: '...', chart_type: 'column/pie/line', aggregate_by: 'quarter/year/sum', period_type: 'quarter', number_of_periods: 8, no_of_periods: 8, compact: true, use_entries: 'folio_only/fund_only'}")
   ].freeze
 
   OPS_WIDGETS = [

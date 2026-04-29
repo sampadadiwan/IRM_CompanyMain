@@ -85,14 +85,23 @@ module FundDashboardHelper
     line_chart_options
   end
 
-  def account_entries_line_chart(fund, entry_types: %w[Expense Fee], months: 12)
+  def account_entries_line_chart(fund, entry_types: %w[Expense Fee], months: 12, use_entries: 'folio_only')
+    months = months.to_i if months.is_a?(String)
+
     from_date = Time.zone.today - months.months
     # Retrieve and group data by entry_type and date
     entries_by_type = entry_types.each_with_object({}) do |type, hash|
       account_entries = fund.account_entries
                             .not_cumulative
-                            .where(entry_type: type).where.not(capital_commitment_id: nil)
-                            .where(reporting_date: from_date..)
+                            .where(entry_type: type)
+
+      account_entries = if use_entries.to_s == 'fund_only'
+                          account_entries.where(capital_commitment_id: nil)
+                        else
+                          account_entries.where.not(capital_commitment_id: nil)
+                        end
+
+      account_entries = account_entries.where(reporting_date: from_date..)
 
       grouped_entries = account_entries.group_by { |entry| entry.reporting_date.strftime("%m/%Y") }
                                        .map { |date, entries| [date, entries.sum(&:amount_cents) / 100] }

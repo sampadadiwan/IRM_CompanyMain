@@ -22,7 +22,8 @@
                               chart_type: chart_type,
                               aggregate_by: aggregate_by,
                               number_of_periods: number_of_periods,
-                              compact: args[:compact]) %>
+                              compact: args[:compact],
+                              use_entries: args[:use_entries] || 'folio_only') %>
   <% end %>
 <% else %>
   <div class="alert alert-warning">No Fund found to display account entries.</div>

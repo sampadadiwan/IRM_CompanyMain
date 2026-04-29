@@ -1,8 +1,14 @@
 module AccountEntryChartsHelper
-  def account_entries_chart(fund, entry_names: [], chart_type: 'column', aggregate_by: 'quarter', number_of_periods: 8, compact: false)
+  def account_entries_chart(fund, entry_names: [], chart_type: 'column', aggregate_by: 'quarter', number_of_periods: 8, compact: false, use_entries: 'folio_only')
     return "No account entry names provided" if entry_names.blank?
 
-    entries = fund.account_entries.where(name: entry_names).not_cumulative.for_folios
+    entries = fund.account_entries.where(name: entry_names).not_cumulative
+
+    entries = if use_entries.to_s == 'fund_only'
+                entries.where(capital_commitment_id: nil)
+              else
+                entries.where.not(capital_commitment_id: nil)
+              end
 
     chart_id = "account_entries_chart_#{fund.id}_#{SecureRandom.hex(4)}"
     # title = "Account Entries: #{entry_names.join(', ')}"
