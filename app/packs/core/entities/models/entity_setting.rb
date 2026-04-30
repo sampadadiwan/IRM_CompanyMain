@@ -24,9 +24,13 @@ class EntitySetting < ApplicationRecord
   flag :custom_flags, %i[no_password_login]
 
   def validate_document_colors
+    if document_colors.blank?
+      self.document_colors = {}
+      return
+    end
     if document_colors.is_a?(String)
       begin
-        JSON.parse(document_colors)
+        self.document_colors = JSON.parse(document_colors)
       rescue JSON::ParserError => e
         errors.add(:document_colors, "must be a valid JSON string")
         throw(:abort)

@@ -144,6 +144,7 @@ module AccountEntryAllocation
 
             # if the formula has a specific assign_name in meta_data_hash, we need to use that name for the feeder account entry instead of the master account entry name.
             feeder_account_entry.name = fund_formula.meta_data_hash["assign_name"].strip if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["assign_name"]&.strip.present?
+            feeder_account_entry.entry_type = fund_formula.meta_data_hash["assign_entry_type"].strip if fund_formula.meta_data_hash.present? && fund_formula.meta_data_hash["assign_entry_type"]&.strip.present?
 
             begin
               Rails.logger.debug { "Processing account entry #{account_entry.id} #{account_entry} for commitment #{capital_commitment.id} in formula #{fund_formula.name}" } unless Rails.env.production?
