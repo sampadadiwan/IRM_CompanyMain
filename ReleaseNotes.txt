@@ -1,3 +1,7 @@
+V9.2.33
+aee3eab4c Kedaara 15 (#1400)
+7b3368fb1 Commitment ratios widget (#1399)
+
 V9.2.32
 3e3408800 Can now assign entry type from metadata (#1396)
 
