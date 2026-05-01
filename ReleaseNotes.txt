@@ -1,3 +1,6 @@
+V9.2.32
+3e3408800 Can now assign entry type from metadata (#1396)
+
 V9.2.31
 b8e085a7a Ae formula update (#1395)
 
