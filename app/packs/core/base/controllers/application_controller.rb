@@ -85,6 +85,28 @@ class ApplicationController < ActionController::Base
   #   find_by_signed_id_for_user(params[:signed_id])
   #   # Sets @kpi_report and @signed_id_user if the signed ID is for a KpiReport.
 
+  # Resolves the ordered list of named dashboards and the active dashboard name for a given
+  # dashboard_type. User preferences can override alphabetical order and the default selection.
+  #
+  # Returns [dashboard_names, name] where:
+  #   dashboard_names - ordered array of distinct dashboard names for the dropdown
+  #   name            - the active dashboard name (from params, then preference, then "Default")
+  def resolve_dashboard(dashboard_type, requested_name)
+    raw_names = DashboardWidget.enabled
+      .where(dashboard_name: dashboard_type, entity_id: current_user.entity_id)
+      .distinct.pluck(:name)
+
+    sequence = current_user.dashboard_sequence(dashboard_type)
+    ordered = if sequence.any?
+      (sequence & raw_names) + (raw_names - sequence).sort
+    else
+      raw_names.sort
+    end
+
+    name = requested_name || sequence.first || "Default"
+    [ordered, name]
+  end
+
   # rubocop:disable Rails/DynamicFindBy
   def find_by_signed_id_for_user(signed_id)
     return if signed_id.blank?

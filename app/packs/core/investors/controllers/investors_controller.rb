@@ -106,13 +106,13 @@ class InvestorsController < ApplicationController
   def dashboard
     @dashboard_name = params[:dashboard_name]
     @dashboard_name ||= @investor.category == "Portfolio Company" ? "Portfolio Company Dashboard" : "Investor Dashboard"
-    @name = params[:name] || "Default"
+    @dashboard_names, @name = resolve_dashboard(@dashboard_name, params[:name])
     @logo = @investor.logo_doc&.file
   end
 
   def setup_portfolio_dashboard
     @dashboard_name = "Aggregated Portfolio Dashboard"
-    @name = params[:name] || "Default"
+    @dashboard_names, @name = resolve_dashboard(@dashboard_name, params[:name])
     params[:filter] = true
 
     # Initialize empty arrays - will be populated in index method

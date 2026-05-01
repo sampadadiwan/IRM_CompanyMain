@@ -137,6 +137,38 @@
 
         <%= display_custom_fields(@user) %>
 
+        <% if @user.preferences&.dig("dashboard").present? %>
+          <tr>
+            <td colspan="2" class="fw-semibold pt-3">Dashboard Preferences</td>
+          </tr>
+          <tr>
+            <td colspan="2" class="p-0">
+              <table class="table table-sm table-bordered mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Dashboard</th>
+                    <th>Order</th>
+                    <th>Default</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% @user.preferences["dashboard"].each do |dashboard_type, config| %>
+                    <% sequence = config["sequence"].to_s.split(",").map(&:strip).compact_blank %>
+                    <tr>
+                      <td><%= dashboard_type %></td>
+                      <td>
+                        <% sequence.each_with_index do |name, i| %>
+                          <span class="badge bg-secondary me-1"><%= "#{i + 1}. #{name}" %></span>
+                        <% end %>
+                      </td>
+                      <td><span class="badge bg-primary"><%= sequence.first %></span></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        <% end %>
 
         <tr>
           <td>

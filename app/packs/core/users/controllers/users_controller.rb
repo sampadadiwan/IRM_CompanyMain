@@ -262,17 +262,39 @@ class UsersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def user_params
-    if current_user.has_cached_role?(:company_admin)
-      # Allow the user to change the role and permissions
-      params.require(:user).permit(:first_name, :last_name, :email,
-                                   :phone, :whatsapp_enabled, :signature, :call_code,
-                                   :dept, :sale_notification, :enable_support, :tag_list, role_name: [], permissions: [], extended_permissions: [], properties: {})
+    permitted = if current_user.has_cached_role?(:company_admin)
+                  params.require(:user).permit(:first_name, :last_name, :email,
+                                               :phone, :whatsapp_enabled, :signature, :call_code,
+                                               :dept, :sale_notification, :enable_support, :tag_list, :entity_id,
+                                               role_name: [], permissions: [], extended_permissions: [], properties: {}, preferences: {})
+                else
+                  params.require(:user).permit(:first_name, :last_name, :email,
+                                               :phone, :whatsapp_enabled, :signature, :call_code,
+                                               :dept, :sale_notification, :enable_support, :tag_list, properties: {})
+                end
 
-    else
-      # Do not allow the user to change the role or permissions
-      params.require(:user).permit(:first_name, :last_name, :email,
-                                   :phone, :whatsapp_enabled, :signature, :call_code,
-                                   :dept, :sale_notification, :enable_support, :tag_list, properties: {})
+    if current_user.has_cached_role?(:company_admin) && params.dig(:user, :preferences, :dashboard).present?
+      permitted[:preferences] = sanitized_preferences
     end
+
+    permitted
+  end
+
+  # Safely extracts dashboard preferences from params. Allows updating valid dashboard types
+  # while preserving other existing preferences.
+  def sanitized_preferences
+    prefs = (@user.preferences || {}).deep_dup
+    dashboard_prefs = prefs["dashboard"] || {}
+    dashboard_params = params.dig(:user, :preferences, :dashboard)
+
+    if dashboard_params.respond_to?(:each)
+      dashboard_params.each do |dashboard_type, config|
+        next unless DashboardWidget.dashboard_names.include?(dashboard_type)
+
+        dashboard_prefs[dashboard_type] = { "sequence" => config[:sequence].to_s.strip }
+      end
+    end
+
+    prefs.merge("dashboard" => dashboard_prefs)
   end
 end

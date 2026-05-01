@@ -24,7 +24,7 @@ class DashboardWidgetsController < ApplicationController
 
   def dashboard
     @dashboard_name = params[:dashboard_name] || "Ops Dashboard"
-    @name = params[:name] || "Default"
+    @dashboard_names, @name = resolve_dashboard(@dashboard_name, params[:name])
     authorize DashboardWidget
   end
 

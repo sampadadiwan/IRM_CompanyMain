@@ -1,0 +1,17 @@
+<% if dashboard_names.length > 1 %>
+  <li class="nav-item dropdown ms-auto">
+    <a class="nav-link btn btn-sm btn-outline-secondary dropdown-toggle" href="#" id="dashboardSelectorDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+      <%= current_name %>
+    </a>
+    <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="dashboardSelectorDropdown">
+      <% dashboard_names.each do |n| %>
+        <li>
+          <%= link_to n,
+                      request.params.merge(name: n),
+                      class: "dropdown-item #{'active' if n == current_name}",
+                      data: { turbo: false } %>
+        </li>
+      <% end %>
+    </ul>
+  </li>
+<% end %>

@@ -3,6 +3,7 @@
     name ||= "Default"
     show_nav = local_assigns.fetch(:show_nav, true)
     entity_id ||= current_user.entity_id
+    dashboard_names ||= []
 
     admin_settings = JSON.parse(cookies[:adminSettings]) rescue {}
     theme = admin_settings["Theme"] == "dark" ? "bg-dark" : "bg-light"
@@ -98,6 +99,12 @@
                 </ul>
             </li>
         <% end %>
+
+        <%= render "/dashboard_widgets/dashboard_selector",
+              dashboard_names: dashboard_names,
+              current_name: name,
+              dashboard_name: dashboard_name,
+              frame_id: "#{dashboard_name.parameterize(separator: '_')}_frame" %>
     </ul>
 </nav>
 <% end %>

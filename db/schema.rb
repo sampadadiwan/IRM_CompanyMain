@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_24_104258) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_01_120000) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -331,6 +331,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_104258) do
     t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
     t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
+  end
+
+  create_table "ai_kpi_shadow_runs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "ai_count", default: 0, null: false
+    t.integer "ai_only_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "det_count", default: 0, null: false
+    t.integer "det_only_count", default: 0, null: false
+    t.json "details"
+    t.bigint "document_id", null: false
+    t.bigint "entity_id", null: false
+    t.integer "input_tokens", default: 0, null: false
+    t.bigint "kpi_report_id", null: false
+    t.integer "match_count", default: 0, null: false
+    t.float "match_rate", default: 0.0, null: false
+    t.integer "mismatch_count", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.bigint "portfolio_company_id", null: false
+    t.datetime "run_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_ai_kpi_shadow_runs_on_document_id"
+    t.index ["entity_id"], name: "index_ai_kpi_shadow_runs_on_entity_id"
+    t.index ["mismatch_count"], name: "index_ai_kpi_shadow_runs_on_mismatch_count"
+    t.index ["portfolio_company_id"], name: "index_ai_kpi_shadow_runs_on_portfolio_company_id"
+    t.index ["run_at"], name: "index_ai_kpi_shadow_runs_on_run_at"
   end
 
   create_table "ai_portfolio_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -1400,6 +1425,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_104258) do
   end
 
   create_table "entity_settings", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.boolean "ai_kpi_reader_shadow", default: false, null: false
     t.boolean "aml_enabled", default: false
     t.string "anthropic_api_key"
     t.string "append_to_commitment_agreement"
@@ -1459,6 +1485,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_104258) do
     t.boolean "trial"
     t.date "trial_end_date"
     t.datetime "updated_at", null: false
+    t.boolean "use_ai_kpi_reader", default: false, null: false
     t.string "valuation_math"
     t.string "value_bridge_cols"
     t.string "whatsapp_endpoint"
@@ -3055,12 +3082,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_104258) do
   end
 
   create_table "report_schedules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.boolean "active"
+    t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
     t.string "cron_expression"
-    t.string "frequency"
+    t.string "frequency", null: false
     t.datetime "last_run_at"
-    t.text "recipients"
+    t.text "recipients", null: false
     t.bigint "report_id", null: false
     t.datetime "updated_at", null: false
     t.index ["report_id"], name: "index_report_schedules_on_report_id"
@@ -3515,6 +3542,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_104258) do
     t.datetime "locked_at"
     t.bigint "permissions", default: 0, null: false
     t.string "phone", limit: 100
+    t.json "preferences"
     t.string "primary_region"
     t.integer "primary_region_id"
     t.string "regions"
@@ -3640,6 +3668,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_24_104258) do
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
+  add_foreign_key "ai_kpi_shadow_runs", "documents"
+  add_foreign_key "ai_kpi_shadow_runs", "entities"
   add_foreign_key "ai_portfolio_reports", "folders"
   add_foreign_key "ai_portfolio_reports", "investment_criteria_templates"
   add_foreign_key "ai_presentations", "entities"

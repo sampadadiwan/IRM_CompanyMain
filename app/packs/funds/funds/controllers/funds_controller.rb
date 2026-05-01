@@ -67,7 +67,7 @@ class FundsController < ApplicationController
 
   def dashboard
     @dashboard_name = params[:dashboard_name] || "Fund Dashboard"
-    @name = params[:name] || "Default"
+    @dashboard_names, @name = resolve_dashboard(@dashboard_name, params[:name])
     respond_to do |format|
       format.html
       format.pdf do

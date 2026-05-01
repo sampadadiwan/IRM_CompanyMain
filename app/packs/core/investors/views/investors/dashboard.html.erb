@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "#{@name.downcase.underscore}_#{@dashboard_name.downcase.underscore}_frame", target: "_top" do %>
+<%= turbo_frame_tag "#{@dashboard_name.parameterize(separator: '_')}_frame", target: "_top", data: { turbo_action: "advance" } do %>
 
     <%
         widgets = dashboard_widgets("Portfolio Company Dashboard", current_user.entity_id, name: params[:name])
@@ -8,7 +8,15 @@
     <% end %>
 
     <div class="single-portfolio-dashboard" >
-        <%= render "/dashboard_widgets/dashboard", dashboard_name: @dashboard_name, name: @name, uri_params: {owner_id: @investor.id, owner_type: "Investor"}, logo: @logo, header_label: "Sector", header_value: @investor.sector, title: @investor.investor_name %>
+        <%= render "/dashboard_widgets/dashboard",
+              dashboard_name: @dashboard_name,
+              name: @name,
+              dashboard_names: @dashboard_names,
+              uri_params: { owner_id: @investor.id, owner_type: "Investor" },
+              logo: @logo,
+              header_label: "Sector",
+              header_value: @investor.sector,
+              title: @investor.investor_name %>
     </div>
 
 <% end %>

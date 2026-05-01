@@ -1,4 +1,4 @@
-<%= turbo_frame_tag "#{@name.downcase.underscore}_#{@dashboard_name.downcase.underscore}_frame", target: "_top" do %>
+<%= turbo_frame_tag "#{@dashboard_name.parameterize(separator: '_')}_frame", target: "_top", data: { turbo_action: "advance" } do %>
   <%  @funds, @selected_fund_ids = setup_fund_selection(current_user, params)
 
       admin_settings = JSON.parse(cookies[:adminSettings]) rescue {}

@@ -131,6 +131,24 @@
 
     <% end %>
 
+    <% if user.id.present? && user.preferences&.dig("dashboard").present? %>
+      <hr>
+      <h6 class="mb-3">Dashboard Preferences</h6>
+      <% user.preferences["dashboard"].each do |dashboard_type, config| %>
+        <div class="form-group">
+          <%= label_tag "user_preferences_dashboard_#{dashboard_type.parameterize}_sequence",
+                "#{dashboard_type} – Order" %>
+          <%= text_field_tag "user[preferences][dashboard][#{dashboard_type}][sequence]",
+                config["sequence"],
+                class: "form-control",
+                id: "user_preferences_dashboard_#{dashboard_type.parameterize}_sequence",
+                placeholder: "e.g. Default,Budget,Compliance" %>
+          <small class="form-text text-muted">Comma-separated names. First becomes the default view.</small>
+        </div>
+      <% end %>
+      <hr>
+    <% end %>
+
     <div class="form-group">
       <%= form.submit t_common(:save), {class: "btn btn-outline-primary"} %>
     </div>

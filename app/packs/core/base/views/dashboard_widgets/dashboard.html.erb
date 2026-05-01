@@ -1,5 +1,9 @@
-<%= turbo_frame_tag "#{@name.downcase.underscore}_#{@dashboard_name.downcase.underscore}_frame", target: "_top" do %>
+<%= turbo_frame_tag "#{@dashboard_name.parameterize(separator: '_')}_frame", target: "_top", data: { turbo_action: "advance" } do %>
 
-    <%= render "/dashboard_widgets/dashboard", dashboard_name: @dashboard_name, name: @name, uri_params: params[:uri_params] %>
+    <%= render "/dashboard_widgets/dashboard",
+          dashboard_name: @dashboard_name,
+          name: @name,
+          dashboard_names: @dashboard_names,
+          uri_params: params[:uri_params] %>
 
 <% end %>

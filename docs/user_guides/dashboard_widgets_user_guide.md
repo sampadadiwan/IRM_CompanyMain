@@ -1,4 +1,4 @@
-# Dashboard Widgets User Guide (V9.1.86)
+# Dashboard Widgets User Guide (V9.1.87)
 
 This guide provides a detailed reference for configuring dashboard widgets in the IRM platform. Dashboards are modular and can be customized per entity or fund using a flexible widget system.
 
@@ -14,12 +14,20 @@ This guide provides a detailed reference for configuring dashboard widgets in th
     - [Aggregated Portfolio Dashboard](#aggregated-portfolio-dashboard)
     - [Landing Pages (FM, LP, Ops)](#landing-pages)
 5. [Advanced Features](#5-advanced-features)
+    - [Named Dashboards](#named-dashboards)
+    - [Dashboard Selector Dropdown](#dashboard-selector-dropdown)
+    - [User Dashboard Preferences](#user-dashboard-preferences)
+    - [Flexible KPI Charts](#flexible-kpi-charts)
+    - [Embedded Documents (Excel as Grid)](#embedded-documents-excel-as-grid)
+    - [Agent Charts](#agent-charts)
 6. [FAQ](#6-faq)
 
 ---
 
 ## 1. Overview
 Dashboards in IRM are composed of "Widgets"—individual blocks of information or functionality. Administrators can enable, disable, resize, and reorder these widgets to create a tailored experience for different users and entities.
+
+Each dashboard type (e.g., Fund Dashboard, Investor Dashboard) can have multiple **named configurations** — separate sets of widgets with their own layout and metadata. The special name `Default` is used when no other configuration is specified. Named dashboards allow an entity to maintain several distinct views of the same data (e.g., an operational view, a compliance view, and a presentation view) and switch between them instantly.
 
 ## 2. Global Widget Settings
 Every widget has three primary settings that control its appearance on the dashboard:
@@ -180,6 +188,95 @@ Used for cross-fund portfolio analysis.
 
 ## 5. Advanced Features
 
+### Named Dashboards
+
+A **named dashboard** is a distinct set of widgets saved under a custom `Name` for a given dashboard type and entity. Any dashboard type supports multiple names.
+
+| Field | Description |
+| :--- | :--- |
+| **Dashboard Name** | The dashboard type, e.g., `Fund Dashboard`, `Investor Dashboard` |
+| **Name** | The configuration label, e.g., `Default`, `Compliance`, `Budget View` |
+
+All widgets that share the same **Dashboard Name + Name + Entity** form one named dashboard. Widgets with `Name = Default` are the fallback shown when no specific name is requested.
+
+**To create a named dashboard:**
+1. Go to **Dashboard Widgets** in the admin menu.
+2. Create one or more widgets, setting **Name** to your chosen label (e.g., `Compliance`).
+3. Ensure all widgets for that named dashboard share the same **Name** value.
+
+The same widget type can appear in multiple named dashboards with different metadata — for example, a `Fund Ratios` widget configured for `Actual` in the `Default` dashboard and for `Budget` in a `Budget View` dashboard.
+
+---
+
+### Dashboard Selector Dropdown
+
+When an entity has **more than one** named dashboard configured for a dashboard type, a selector dropdown appears automatically at the right-hand end of the dashboard navigation bar.
+
+*   The dropdown lists all available dashboard names in **alphabetical order** (or in the order defined by user preferences — see below).
+*   Selecting a name immediately loads that dashboard via a Turbo Frame swap — no full page reload.
+*   The selected name is reflected in the URL (`?name=Compliance`) so the view can be **bookmarked and shared**.
+*   If only one named dashboard exists for an entity, the dropdown is not shown.
+
+> **Note:** The dropdown is only visible on dashboard types rendered through the main dashboard view (Fund, Investor, Portfolio Company, and the generic Ops Dashboard). The Aggregated Portfolio Dashboard selector is planned for a future release.
+
+---
+
+### User Dashboard Preferences
+
+Administrators can configure per-user preferences that control:
+
+1. **The order** in which named dashboards appear in the dropdown.
+2. **The default** dashboard loaded when no `?name=` parameter is present in the URL (i.e., the first in the sequence).
+
+Preferences are stored as JSON on the User record under the `preferences` column with the following structure:
+
+```json
+{
+  "dashboard": {
+    "Fund Dashboard": {
+      "sequence": "Compliance,Default"
+    },
+    "Investor Dashboard": {
+      "sequence": "Budget View,Default"
+    }
+  }
+}
+```
+
+The `sequence` value is a comma-separated ordered list of dashboard names. The **first name** is loaded by default when the user navigates to that dashboard page.
+
+**Editing preferences via the User form:**
+
+The User edit form shows a **Dashboard Preferences** section automatically when the user already has preferences saved. Each dashboard type appears as a labelled text field showing the current sequence, which can be edited inline and saved.
+
+> The section is only shown for existing users who already have at least one dashboard preference entry. New preferences must be seeded via the Rails console or a one-off script.
+
+**Editing preferences via the Rails console:**
+
+```ruby
+Chewy.strategy(:bypass) do
+  user = User.find(103)
+  user.update!(preferences: {
+    "dashboard" => {
+      "Fund Dashboard" => { "sequence" => "Compliance,Default" }
+    }
+  })
+end
+```
+
+**The User show page** displays a read-only summary table of all dashboard preferences, including the full ordered sequence and the highlighted default for each dashboard type.
+
+**Fallback behaviour:**
+
+| Condition | Dashboard loaded |
+| :--- | :--- |
+| User has a sequence preference and no `?name=` in URL | First name in the sequence |
+| No sequence preference and no `?name=` in URL | `Default` |
+| `?name=X` is present in the URL | Always `X`, regardless of preference |
+| A sequence name no longer has widgets configured | Widget helper falls back to the full default widget set |
+
+---
+
 ### Flexible KPI Charts
 The **Kpis** widget supports an interactive charting mode. Users can select multiple KPIs from the grid and choose different chart types (Line, Bar, Area) for each to create mixed-mode visualizations. These configurations can be saved and loaded later.
 *See the [Flexible KPI Charts User Guide](./kpi_flexible_charts_user_guide.md) for more details.*
@@ -207,6 +304,21 @@ A: Yes. You can add multiple instances of the same widget to a dashboard and use
 
 **Q: What happens if I enter invalid metadata?**
 A: The widget will usually fall back to its default settings. Check the "Sample Metadata" hint in the edit form for the correct format.
+
+**Q: I've created a named dashboard but the dropdown isn't appearing.**
+A: The dropdown only appears when there are **two or more** distinct named dashboards configured for the same entity and dashboard type. Check that your widgets have different `Name` values and that all are **Enabled**. If only one name is configured (e.g., just `Default`), no dropdown is shown.
+
+**Q: How do I control which named dashboard a user sees first?**
+A: Set a `sequence` preference on the user record. The first name in the sequence becomes the default. You can do this via the User edit form (if a preference already exists) or via the Rails console. See [User Dashboard Preferences](#user-dashboard-preferences) for details.
+
+**Q: A user has a preference set but still lands on Default.**
+A: Check that the name in the sequence exactly matches the `Name` field on the dashboard widgets (case-sensitive). Also confirm the widgets for that named dashboard are enabled and belong to the correct entity.
+
+**Q: Can I share a link to a specific named dashboard?**
+A: Yes. The URL includes `?name=<dashboard-name>` whenever a named dashboard is active (e.g., `?name=Compliance`). Copy and share that URL — recipients will land on the same named dashboard directly.
+
+**Q: The dropdown shows names in the wrong order.**
+A: By default names are sorted alphabetically. To override the order for a specific user, set a `sequence` preference on their user record listing names in the desired order.
 
 ---
 *For technical support or custom widget requests, please contact the system administrator.*

@@ -50,6 +50,17 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
     tag_list.present? ? tag_list.to_s.split(",").map(&:strip).compact_blank : []
   end
 
+  attribute :preferences, :json, default: {}
+
+  # Returns the ordered list of dashboard names for a given dashboard_type from user preferences.
+  # Stored as preferences["dashboard"][dashboard_type]["sequence"] = "D1,D2,D3"
+  def dashboard_sequence(dashboard_type)
+    Array(preferences&.dig("dashboard", dashboard_type, "sequence")
+                     &.split(",")
+                     &.map(&:strip)
+                     &.compact_blank)
+  end
+
   def support_user
     @support_user ||= User.find(support_user_id) if support_user_id.present?
     @support_user
