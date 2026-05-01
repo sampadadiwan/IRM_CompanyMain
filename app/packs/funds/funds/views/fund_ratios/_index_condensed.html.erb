@@ -8,5 +8,6 @@
 <% q ||=nil %>
 <%=render SearchComponent.new(data_source: data_source, turbo_frame: fund_ratios_frame) %>
 <div class="">
-  <%= render RansackTable.new(FundRatio, q: q, current_user: current_user, records: fund_ratios, default_columns_map: FundRatio::CONDENSED_COLUMNS, report_id: params["report_id"], turbo_frame: fund_ratios_frame, referrer: request.referrer, pagy: @pagy, actions_column: false) %>
+  <% columns_map = params[:for_commitments] ? FundRatio::COMMITMENT_CONDENSED_COLUMNS : FundRatio::CONDENSED_COLUMNS %>
+  <%= render RansackTable.new(FundRatio, q: q, current_user: current_user, records: fund_ratios, default_columns_map: columns_map, report_id: params["report_id"], turbo_frame: fund_ratios_frame, referrer: request.referrer, pagy: @pagy, actions_column: false) %>
 </div>

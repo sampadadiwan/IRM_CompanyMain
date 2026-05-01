@@ -2,6 +2,12 @@
 args[:name] = args[:ratio_names] if args[:ratio_names].present?
 args[:owner_id] = @investor.id
 args[:owner_type] = "Investor"
+
+if args[:for_commitments] == true
+  args[:owner_type] = "CapitalCommitment"
+  args[:owner_id] = @investor.capital_commitments.ids
+end
+
 args[:widget_id] ||= widget.id
 args[:group_by_date] = args[:group_by_date].to_s != "false" # default to true unless explicitly set to false
 %>
@@ -34,7 +40,7 @@ args[:group_by_date] = args[:group_by_date].to_s != "false" # default to true un
             <% end %>
           </div>
         </div>
-        <%= fund_ratios_line_chart(nil, args: args, owner_id: @investor.id, owner_type: "Investor", ratio_names: args[:ratio_names], months: args[:months], chart_type: params[:chart_type]) %>
+        <%= fund_ratios_line_chart(nil, args: args, owner_id: args[:owner_id], owner_type: args[:owner_type], ratio_names: args[:ratio_names], months: args[:months], chart_type: params[:chart_type]) %>
       <% end %>
     <% end %>
 

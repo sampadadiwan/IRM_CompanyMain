@@ -1,0 +1,40 @@
+<%
+  all_dates = fund_ratios.map(&:end_date).uniq.sort
+
+  # Show "For" column when there are multiple distinct owners
+  show_owner = fund_ratios.map { |fr| [fr.owner_type, fr.owner_id] }.uniq.size > 1
+
+  grouped = fund_ratios.group_by { |fr|
+    label = fr.capital_commitment.present? ? fr.capital_commitment.to_s : fr.fund.name
+    [label, fr.name]
+  }.sort_by { |(label, name), _| [label, name] }
+%>
+<div class="table-responsive">
+  <table class="table table-sm table-hover align-middle">
+    <thead class="table-primary">
+      <tr>
+        <% if show_owner %>
+          <th>For</th>
+        <% end %>
+        <th>Name</th>
+        <% all_dates.each do |date| %>
+          <th class="text-end"><%= date.strftime("%b %y") %></th>
+        <% end %>
+      </tr>
+    </thead>
+    <tbody>
+      <% grouped.each do |(owner_label, ratio_name), ratios| %>
+        <tr>
+          <% if show_owner %>
+            <td><%= owner_label %></td>
+          <% end %>
+          <td><%= ratio_name %></td>
+          <% by_date = ratios.index_by(&:end_date) %>
+          <% all_dates.each do |date| %>
+            <td class="text-end"><%= by_date[date]&.display_value %></td>
+          <% end %>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>

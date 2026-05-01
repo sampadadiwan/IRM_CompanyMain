@@ -5,6 +5,8 @@
         <%= render "/fund_ratios/pivot", fund_ratios: @fund_ratios, fund: @fund, pivot: @pivot %>
     <% elsif params[:scenarios].present? %>
         <%= render "/fund_ratios/index_scenarios", fund_ratios: @fund_ratios, fund: @fund %>
+    <% elsif params[:timeseries].present? %>
+        <%= render "/fund_ratios/index_timeseries", fund_ratios: @fund_ratios, fund: @fund %>
     <% elsif params[:condensed].present? %>
         <%= render "/fund_ratios/index_condensed", fund_ratios: @fund_ratios, q: @q, fund: @fund %>
     <% else %>

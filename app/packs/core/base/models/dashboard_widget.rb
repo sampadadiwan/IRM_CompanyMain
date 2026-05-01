@@ -91,7 +91,8 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Notes", path: "dashboard_widgets/widgets/notes", size: "Medium"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "KYCs", path: "investors/widgets/kycs", size: "Medium"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Commitments", path: "investors/widgets/commitments", size: "Medium"),
-    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Embed Document", path: "investors/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name', xlsx_as_grid: true, title: 'Optional Title'}")
+    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Embed Document", path: "investors/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name', xlsx_as_grid: true, title: 'Optional Title'}"),
+    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Fund Ratios", path: "investors/widgets/fund_ratios", size: "XL", metadata_help: "{title: 'Title', scenario: 'Default', scenarios: 'Actual,Budget', condensed: true, chart: false, list: true, months: 12, ratio_names: ['XIRR', 'TVPI', 'DPI'], show_y_axis: true, show_legend: true, decimals: 2, hide_fund_name: false, for_commitments: true, timeseries: true }"),
 
   ].freeze
 

@@ -28,6 +28,13 @@ class FundRatio < ApplicationRecord
     "On; date-col" => "end_date; date-col"
   }.freeze
 
+  COMMITMENT_CONDENSED_COLUMNS = {
+    "For; text-col" => "owner_name; text-col",
+    "Name; text-col" => "name; text-col",
+    "Display Value; num-col" => "display_value; num-col",
+    "On; date-col" => "end_date; date-col"
+  }.freeze
+
   validates :display_value, :label, length: { maximum: 50 }
   validates :name, :owner_type, length: { maximum: 255 }
 

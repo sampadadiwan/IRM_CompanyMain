@@ -13,7 +13,7 @@ class FundRatiosController < ApplicationController
     @pivot = result.pivot
 
     # Step 5: Pivot grouping (if requested)
-    @pagy, @fund_ratios = pagy(@fund_ratios, limit: params[:per_page]) if params[:pivot].blank? && params[:all].blank? && params[:condensed].blank? && params[:scenarios].blank?
+    @pagy, @fund_ratios = pagy(@fund_ratios, limit: params[:per_page]) if params[:pivot].blank? && params[:all].blank? && params[:condensed].blank? && params[:scenarios].blank? && params[:timeseries].blank?
 
     # Step 6: Render appropriate format
     respond_to do |format|

@@ -14,6 +14,8 @@
         decimals ||= 2
         fields ||= []
         field_names ||= []
+        debug_mode = params[:debug] == 'true'
+        debug_rates = [] if debug_mode
 
         # Determine target currency
         selected_currency = params[:display_currency]
@@ -57,11 +59,13 @@
         all_rates = ExchangeRate.where(entity_id: entity_ids).order(as_of: :desc).to_a.group_by(&:entity_id)
 
         # Helper for in-memory currency conversion
-        convert_in_memory = lambda do |from, to, amount, as_of, entity_id|
+        convert_in_memory = lambda do |from, to, amount, as_of, entity_id, debug_label: nil, debug_id: nil|
           return amount if from == to || amount.zero?
           rates = all_rates[entity_id]&.select { |r| r.from == from && r.to == to && r.as_of <= as_of }
           rate = rates&.first&.rate
-          rate ? (amount * rate).to_i : 0
+          result = rate ? (amount * rate).to_i : 0
+          debug_rates << { field: debug_label, pi_id: debug_id, from: from, to: to, date: as_of, rate: rate, original_cents: amount, converted_cents: result } if debug_mode && debug_label
+          result
         end
 
         # Compute aggregated stats across all investors and funds
@@ -76,17 +80,16 @@
             next
           end
 
-          total_cost_of_remaining_cents += convert_in_memory.call(pi.investment_instrument.currency, target_currency, pi.cost_of_remaining_cents, pi.investment_date, pi.portfolio_company.entity_id)
-          converted_amount = convert_in_memory.call(pi.investment_instrument.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity_id)
+          total_cost_of_remaining_cents += convert_in_memory.call(pi.fund.currency, target_currency, pi.cost_of_remaining_cents, pi.investment_date, pi.portfolio_company.entity_id, debug_label: "Cost of Remaining", debug_id: pi.id)
 
           if pi.quantity.positive?
-            total_bought_amount_cents += converted_amount
+            total_bought_amount_cents += convert_in_memory.call(pi.fund.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity_id, debug_label: "Bought Amount", debug_id: pi.id)
           elsif pi.quantity.negative?
-            total_sold_amount_cents += converted_amount
+            total_sold_amount_cents += convert_in_memory.call(pi.fund.currency, target_currency, pi.amount_cents, pi.investment_date, pi.portfolio_company.entity_id, debug_label: "Sold Amount", debug_id: pi.id)
           end
 
           conversion_date = pi.valuation.present? ? pi.valuation.valuation_date : pi.investment_date
-          total_fmv_cents += convert_in_memory.call(pi.investment_instrument.currency, target_currency, pi.fmv_cents, conversion_date, pi.portfolio_company.entity_id)
+          total_fmv_cents += convert_in_memory.call(pi.fund.currency, target_currency, pi.fmv_cents, conversion_date, pi.portfolio_company.entity_id, debug_label: "FMV", debug_id: pi.id)
         end
 
         total_sold_plus_fmv_cents = total_sold_amount_cents + total_fmv_cents
@@ -95,7 +98,7 @@
           if pc.portfolio_company.json_fields["master_fund"] == "yes" && pc.fund.master_fund_id.present? && @selected_fund_ids.include?(pc.fund.master_fund_id)
             next 0
           end
-          convert_in_memory.call(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, pc.portfolio_company.entity_id)
+          convert_in_memory.call(pc.investment_instrument.currency, target_currency, pc.amount_cents, pc.payment_date, pc.portfolio_company.entity_id, debug_label: "Income", debug_id: pc.id)
         end
 
         all_cards_data = [
@@ -178,6 +181,40 @@
             )) %>
           <% end %>
         </div>
+
+        <% if debug_mode && debug_rates.present? %>
+          <div class="mt-4">
+            <h6 class="text-muted">Exchange Rate Debug (target: <%= target_currency %>)</h6>
+            <table class="table table-sm table-bordered small">
+              <thead class="table-light">
+                <tr>
+                  <th>Field</th>
+                  <th>ID</th>
+                  <th>From</th>
+                  <th>To</th>
+                  <th>Date Used</th>
+                  <th>Rate</th>
+                  <th>Original (cents)</th>
+                  <th>Converted (cents)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% debug_rates.each do |r| %>
+                  <tr class="<%= 'table-warning' if r[:rate].nil? %>">
+                    <td><%= r[:field] %></td>
+                    <td><%= r[:pi_id] %></td>
+                    <td><%= r[:from] %></td>
+                    <td><%= r[:to] %></td>
+                    <td><%= r[:date] %></td>
+                    <td><%= r[:rate].present? ? r[:rate] : '<span class="text-danger">missing</span>'.html_safe %></td>
+                    <td><%= r[:original_cents] %></td>
+                    <td><%= r[:converted_cents] %></td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        <% end %>
       </div>
       <% params[:force_units] = nil %>
     <% end %>

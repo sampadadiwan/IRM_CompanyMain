@@ -24,8 +24,11 @@ module FundDashboardHelper
     # Get all unique dates across all ratios to ensure consistent X-axis sorting
     all_dates = fund_ratios.map { |fr| fr.end_date.beginning_of_month }.uniq.sort
 
-    # Group by fund name and ratio name
-    ratios_data = fund_ratios.group_by { |fr| [fr.fund.name, fr.name] }.transform_values do |ratios|
+    # Group by commitment name (when owner is a commitment) or fund name, plus ratio name
+    ratios_data = fund_ratios.group_by { |fr|
+      label = fr.capital_commitment.present? ? fr.capital_commitment.to_s : fr.fund.name
+      [label, fr.name]
+    }.transform_values do |ratios|
       ratios_by_date = ratios.group_by { |v| v.end_date.beginning_of_month }
       all_dates.map do |date|
         vals = ratios_by_date[date]
