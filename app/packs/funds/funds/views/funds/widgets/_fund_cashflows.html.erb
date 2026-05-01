@@ -1,6 +1,11 @@
 <%
   aggregate_by = params[:aggregate_by] || args[:aggregate_by] || "year"
   chart_type = params[:chart_type] || args[:chart_type] || "line"
+  cumulative = if params.key?(:cumulative)
+        ActiveModel::Type::Boolean.new.cast(params[:cumulative])
+      else
+        args[:cumulative] || false
+      end
 %>
 <%= render(
       WidgetCardComponent.new(
@@ -22,6 +27,6 @@
         <%= link_to "Line", url_for(request.query_parameters.merge(chart_type: "line")), class: "btn btn-outline-secondary #{'active' if chart_type == 'line'}" %>
       </div>
     </div>
-    <%= fund_cashflows(@fund, **widget.metadata_args.merge(aggregate_by: aggregate_by, chart_type: chart_type)) %>
+    <%= fund_cashflows(@fund, **widget.metadata_args.merge(aggregate_by: aggregate_by, chart_type: chart_type, cumulative: cumulative )) %>
   <% end %>
 <% end %>

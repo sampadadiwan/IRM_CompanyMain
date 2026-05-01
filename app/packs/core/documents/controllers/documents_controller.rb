@@ -59,7 +59,12 @@ class DocumentsController < ApplicationController
                      # @documents = @documents.or(Document.where(folder_id: params[:folder_id]))
                    end
       # Newest docs first
-      @documents = @documents.includes(:folder).order(id: :desc)
+      @documents = @documents.includes(:folder)
+      @documents = if params[:documents_as_tags].present?
+                     @documents.order(name: :asc)
+                   else
+                     @documents.order(id: :desc)
+                   end
 
     else
       # Newest docs first

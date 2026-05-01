@@ -1,4 +1,7 @@
-<% fund_ratios ||= [] %>
+<% fund_ratios ||= []
+  decimals ||= (params[:decimals] || 2).to_i
+%>
+
 
 <%= tag.div class: "fund-ratio-list w-100" do
       if fund_ratios.any?
@@ -22,7 +25,13 @@
                         fund_ratio.owner.respond_to?(:name) ? fund_ratio.owner.name : fund_ratio.owner_type
                       end,
                       tag.td(class: "text-end") do
-                        fund_ratio.display_value.presence || number_with_precision(fund_ratio.value, precision: 2)
+                        display_val = "#{number_with_precision(fund_ratio.value, precision: decimals)}"
+                        if fund_ratio.name.upcase.include?("IRR")
+                          display_val += " %"
+                        else
+                          display_val += " x"
+                        end
+                        display_val
                       end,
                       tag.td(class: "text-end text-muted") do
                         fund_ratio.end_date.present? ? l(fund_ratio.end_date.to_date, format: :long) : "—"

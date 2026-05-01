@@ -27,9 +27,16 @@
     end
   end
 
+  valuations = if FormCustomField.where(form_type_id: @investor.valuations.pluck(:form_type_id)).pluck(:name).include?(Valuation::COMPUTE_VAL_BRIDGE_CF)
+                  @investor.valuations.with_synthetic.search_custom_fields(Valuation::COMPUTE_VAL_BRIDGE_CF, "1")
+                else
+                  @investor.valuations.with_synthetic
+                end
   # For each instrument, get the valuations and setup the uri
   investment_instruments.each do |instrument|
-    valuations = @investor.valuations.where(investment_instrument_id: instrument.id)
+
+    valuations = valuations.where(investment_instrument_id: instrument.id)
+
     if across.nil? || across.strip.downcase == "first last"
       # Get the valuations for the given instrument, first and last
       initial_valuation = valuations.order(valuation_date: :asc).first

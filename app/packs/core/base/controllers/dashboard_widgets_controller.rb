@@ -8,6 +8,7 @@ class DashboardWidgetsController < ApplicationController
     @bread_crumbs = { Widgets: dashboard_widgets_path }
     @q = DashboardWidget.ransack(params[:q])
     @dashboard_widgets = policy_scope(@q.result).includes(:owner)
+    @dashboard_widgets = @dashboard_widgets.order(:position) if @dashboard_widgets.arel.orders.blank? && params.dig(:q, :s).blank?
     @dashboard_widgets = @dashboard_widgets.where(import_upload_id: params[:import_upload_id]) if params[:import_upload_id].present?
     @pagy, @dashboard_widgets = pagy(@dashboard_widgets) unless request.format == "xlsx"
   end
@@ -73,7 +74,10 @@ class DashboardWidgetsController < ApplicationController
   def set_dashboard_widget
     @dashboard_widget = DashboardWidget.find(params[:id])
     authorize @dashboard_widget
-    @bread_crumbs = { Widgets: dashboard_widgets_path, "#{@dashboard_widget.widget_name}": dashboard_widget_path(@dashboard_widget) }
+    @bread_crumbs = { Widgets: dashboard_widgets_path }
+    @bread_crumbs[@dashboard_widget.dashboard_name.to_s] = dashboard_widgets_path(q: RansackQueryBuilder.single("dashboard_name", :eq, @dashboard_widget.dashboard_name)) if @dashboard_widget.dashboard_name.present?
+
+    @bread_crumbs[@dashboard_widget.widget_name.to_s] = dashboard_widget_path(@dashboard_widget)
   end
 
   # Only allow a list of trusted parameters through.

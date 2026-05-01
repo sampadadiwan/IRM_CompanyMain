@@ -23,7 +23,7 @@
   <div class="data-card">
     <% fields_to_display.each do |label, key| %>
       <div>
-        <strong><%= label.humanize %></strong>
+        <strong><%= label.titleize %></strong>
         <% value = safe_field_value(investor, key) %>
         <% if value.is_a?(Date) %>
           <span><%= l(value) %></span>

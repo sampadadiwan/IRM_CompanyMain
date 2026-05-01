@@ -7,7 +7,7 @@
   chart_colors = args[:chart_colors] || ["green", "DarkOrange"]
   negative_colors = args[:negative_colors] || ['orange', 'red']
   titles = args[:titles] || Array.new(ratio_names.size, tags ? tags.titleize : nil) || ["Gross Portfolio IRR", "Gross Portfolio MOIC"]
-  decimals = args[:decimals] || 2
+  decimals = (args[:decimals] || 2).to_i
 
   fund_ids ||= @selected_fund_ids.presence || @funds.pluck(:id).presence || []
   investor_ids= @investors.pluck(:id).presence || []
@@ -28,9 +28,8 @@
         numeric_value = fr.value.to_f
         formatted_value = numeric_value.round(decimals)
       else
-        # For MOIC, extract numeric value from display_value (e.g., "2.0 x" -> 2.0)
-        numeric_value = fr.display_value.to_s.gsub(/[^\d.-]/, '').to_f
-        formatted_value = numeric_value.round(1)
+        numeric_value = fr.value.to_f
+        formatted_value = numeric_value.round(decimals)
       end
       [fr.owner.name, formatted_value]
     end
@@ -55,8 +54,8 @@
 
                   # Determine suffix and decimal places based on ratio name
                   is_irr = ratio_name.upcase.include?('IRR')
-                  suffix = is_irr ? ' %' : (ratio_name.upcase.include?('MOIC') ? 'x' : '')
-                  chart_decimals = is_irr ? decimals : 1
+                  suffix = is_irr ? ' %' : ' x'
+                  chart_decimals = decimals
                 %>
                 <%= column_chart chart_data, colors: [chart_colors[idx]], library: {
                   chart: { height: 260 },
@@ -77,7 +76,7 @@
             <% end %>
             <% if show_table %>
               <div>
-                <%= render "fund_ratio_list", fund_ratios: fund_ratios.where(name: ratio_name) %>
+                <%= render "fund_ratio_list", fund_ratios: fund_ratios.where(name: ratio_name), decimals: decimals %>
               </div>
             <% end %>
           </div>

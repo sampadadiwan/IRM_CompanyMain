@@ -4,6 +4,7 @@ module InvestorShared
   included do
     scope :advisors, -> { where(category: "Investor Advisor") }
     scope :rms, -> { where(category: ["RM", "Wealth Manager"]) }
+    scope :lps, -> { where(category: "LP") }
     scope :portfolio_companies, -> { where(category: "Portfolio Company") }
     scope :not_portfolio_companies, -> { where.not(category: "Portfolio Company") }
     scope :not_advisors, -> { where.not(category: "Investor Advisor") }

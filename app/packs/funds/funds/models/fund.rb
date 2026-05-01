@@ -79,6 +79,16 @@ class Fund < ApplicationRecord
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
   validates :category, length: { maximum: 15 }
 
+  scope :ordered, lambda {
+    order(Arel.sql("
+    COALESCE(
+      CAST(funds.json_fields->>'$.position' AS DECIMAL(10,2)),
+      99999.0
+    ) ASC,
+    funds.created_at ASC
+  "))
+  }
+
   CATEGORIES = ["Category I", "Category II", "Category III"].freeze
   REMITTANCE_GENERATION_BASIS = ["Folio Amount", "Fund Amount"].freeze
   STANDARD_COLUMNS = {

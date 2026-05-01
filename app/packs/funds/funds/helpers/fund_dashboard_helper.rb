@@ -137,7 +137,7 @@ module FundDashboardHelper
     }
   end
 
-  def fund_cashflows(fund, months: 36, series: nil, chart_type: nil, aggregate_by: nil)
+  def fund_cashflows(fund, months: 36, series: nil, chart_type: nil, aggregate_by: nil, cumulative: false)
     months ||= 36
     aggregate_by ||= "year"
     from_date = Time.zone.today - months.months
@@ -146,23 +146,29 @@ module FundDashboardHelper
     capital_calls = fund.capital_calls.where(call_date: from_date..)
     capital_distributions = fund.capital_distributions.where(distribution_date: from_date..)
     portfolio_investments = fund.portfolio_investments.where(investment_date: from_date..)
-    account_entries = fund.account_entries.not_cumulative.where.not(capital_commitment_id: nil).where(entry_type: %w[Expense Fee], reporting_date: from_date..)
+    account_entries = fund.account_entries
+                          .not_cumulative
+                          .where.not(capital_commitment_id: nil)
+                          .where(entry_type: %w[Expense Fee], reporting_date: from_date..)
 
     # Grouping logic
     group_fn = case aggregate_by.to_s
-               when "month"   then ->(d) { d.end_of_month }
-               when "year"    then ->(d) { d.end_of_year }
-               else                ->(d) { d.end_of_quarter }
+               when "month" then ->(d) { d.end_of_month }
+               when "year"  then ->(d) { d.end_of_year }
+               else              ->(d) { d.end_of_quarter }
                end
 
     # Group and sum data
     data = {
       "Collected Capital" => capital_calls.group_by { |record| group_fn.call(record_date(record)) }
                              .transform_values { |entries| entries.sum { |e| (e.try(:collected_amount_cents) || 0) / 100.0 } },
+
       "Capital Distributions" => capital_distributions.group_by { |record| group_fn.call(record_date(record)) }
                                  .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
+
       "Portfolio Investments" => portfolio_investments.group_by { |record| group_fn.call(record_date(record)) }
                                  .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
+
       "Expenses" => account_entries.group_by { |record| group_fn.call(record_date(record)) }
                     .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
     }
@@ -176,15 +182,25 @@ module FundDashboardHelper
 
     # Prepare chart data
     chart_data = data.map do |name, records|
+      running_total = 0
+
       {
-        name: name,
+        name: cumulative ? "#{name} - Cumulative" : name,
         data: all_periods.map do |period|
           label = case aggregate_by.to_s
                   when "month", "quarter" then period.strftime("%m/%y")
                   when "year"             then period.year.to_s
                   else                         period.to_s
                   end
-          [label, records[period] || 0]
+
+          amount = records[period] || 0
+          value = if cumulative
+                    running_total += amount
+                  else
+                    amount
+                  end
+
+          [label, value]
         end
       }
     end
@@ -192,9 +208,9 @@ module FundDashboardHelper
     Rails.logger.debug chart_data
 
     chart_method = case chart_type.to_s
-                   when "bar"    then :column_chart
-                   when "area"   then :area_chart
-                   else               :line_chart
+                   when "bar"  then :column_chart
+                   when "area" then :area_chart
+                   else             :line_chart
                    end
 
     library_options = {
@@ -203,7 +219,7 @@ module FundDashboardHelper
           dataLabels: { enabled: true, format: "{point.y:,.2f}" }
         }
       },
-      yAxis: { title: { text: 'Amount (in currency)' } },
+      yAxis: { title: { text: "Amount (in currency)" } },
       **chart_theme_color
     }
 

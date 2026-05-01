@@ -97,6 +97,7 @@ ja:
       funds: ファンド
       opportunities: 機会
       stakeholders: ステークホルダー
+      lps: LPs
   errors:
     format: "%{attribute}%{message}"
     messages:

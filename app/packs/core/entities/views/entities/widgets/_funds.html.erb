@@ -50,7 +50,7 @@
       <% end %>
 
       <% @pagy, funds = pagy(policy_scope(Fund)) %>
-      <% funds.includes(:fund_ratios).each do |fund| %>
+      <% funds.ordered.includes(:fund_ratios).each do |fund| %>
         <%= render card_partial, fund: %>
       <% end %>
 

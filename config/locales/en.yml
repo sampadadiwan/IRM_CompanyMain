@@ -107,6 +107,7 @@ en:
       funds: Funds
       opportunities: Opportunities
       stakeholders: Stakeholders
+      lps: LPs
   fund:
     create: Fund was created
     destroy: Fund was deleted
@@ -173,7 +174,8 @@ en:
   secondaries_actions:
     accept_transaction_documents: Accept Transaction Documents
     accept_transaction_documents_button: Accept the Transaction Document(s) <br> %{accept_button}
-    acceptance_recorded: Your acceptance of the Transaction Document(s) has already
+    acceptance_recorded:
+      Your acceptance of the Transaction Document(s) has already
       been recorded
     add_investor_notice: Add Investor Notice
     additional_documents: Additional Documents
@@ -183,7 +185,7 @@ en:
     allocated_interests: Allocated Interests
     allocated_offers: Allocated Offers
     allocated_quantity: Allocated Quantity
-    allocation_notification_all: 'Allocation Notification : To All'
+    allocation_notification_all: "Allocation Notification : To All"
     allocations: Allocations
     approve_all_pending: Approve All Pending
     audit_trail: Audit Trail
@@ -192,8 +194,8 @@ en:
     complete_offer_details: Complete Offer Details
     complete_offer_details_button: Complete your offer details using the button below
     completed: Completed
-    confirm_spa_notification_buyers: 'Confirm SPA Notification : To Buyers'
-    confirm_spa_notification_sellers: 'Confirm SPA Notification : To Sellers'
+    confirm_spa_notification_buyers: "Confirm SPA Notification : To Buyers"
+    confirm_spa_notification_sellers: "Confirm SPA Notification : To Sellers"
     download_all_offers: Download All Offers
     download_allocations: Download Allocations
     download_docs: Download Docs
@@ -227,17 +229,18 @@ en:
     quantity: Quantity
     reject: Reject
     reports: Reports
-    review_transaction_documents: Please review the Transaction Document(s) </br>
+    review_transaction_documents:
+      Please review the Transaction Document(s) </br>
       %{documents}
     sell_quantity: Sell Quantity
     seller: Seller
     seller_signatory_emails: Seller Signatory Emails
     send_email_to_change: Send email to change
     send_email_with_selected_template: Send email with selected template
-    send_interest_reminder_buyers: 'Send Interest Reminder : To Buyers'
-    send_offer_reminder_sellers: 'Send Offer Reminder : To Sellers'
-    send_sale_open_buyers: 'Send Sale Open : To Buyers'
-    send_sale_open_sellers: 'Send Sale Open : To Sellers'
+    send_interest_reminder_buyers: "Send Interest Reminder : To Buyers"
+    send_offer_reminder_sellers: "Send Offer Reminder : To Sellers"
+    send_sale_open_buyers: "Send Sale Open : To Buyers"
+    send_sale_open_sellers: "Send Sale Open : To Sellers"
     shortlist: Shortlist
     shortlist_all: Shortlist All
     spa_not_accepted: SPA Not Accepted
@@ -247,7 +250,8 @@ en:
     un_allocated_offers: Un Allocated Offers
     unverify: Unverify
     upload_allocations: Upload Allocations
-    upload_documents_complete_offer: You may need to upload documents to complete
+    upload_documents_complete_offer:
+      You may need to upload documents to complete
       the offer.
     upload_download: Upload / Download
     upload_interests: Upload Interests
