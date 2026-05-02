@@ -1,9 +1,7 @@
 Given('I ransack filter the {string}') do |filter_for|
   visit("/reports")
-
-  within all("form").first do
-    select "Commitments", from: "url"
-  end
+  expect(page).to have_content("All Reports")
+  select "Commitments", from: "url"
 end
 
 Given('I save the filtered data as a report {string}') do |string|

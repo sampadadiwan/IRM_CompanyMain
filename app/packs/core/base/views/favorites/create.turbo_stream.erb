@@ -1,0 +1,4 @@
+
+<%= turbo_stream.remove('page_alerts') %>
+<%= turbo_stream.prepend('user_alert', partial: 'layouts/alerts', locals: { alert: msg }) %>
+

@@ -1,9 +1,13 @@
 class Favorite < ApplicationRecord
-  extend ActsAsFavoritor::FavoriteScopes
+  belongs_to :user
 
-  belongs_to :favoritable, polymorphic: true
-  # This is typically a User model, we touch it to bust the topbar chache which caches the favs
-  belongs_to :favoritor, polymorphic: true, touch: true
+  validates :title, presence: true
+  validates :url, presence: true
+  validates :url, uniqueness: { scope: :user_id }
 
-  validates :favoritable_id, uniqueness: { scope: %i[favoritable_type favoritor_type favoritor_id] }
+  after_commit :touch_user
+
+  def touch_user
+    user.touch # rubocop:disable Rails/SkipsModelValidations
+  end
 end

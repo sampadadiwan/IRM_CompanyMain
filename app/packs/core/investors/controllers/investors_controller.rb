@@ -106,6 +106,8 @@ class InvestorsController < ApplicationController
   def dashboard
     @dashboard_name = params[:dashboard_name]
     @dashboard_name ||= @investor.category == "Portfolio Company" ? "Portfolio Company Dashboard" : "Investor Dashboard"
+    @favorite_title = "#{@investor.investor_name} Dashboard"
+    @favorite_url = dashboard_investor_path(id: @investor.id)
     @dashboard_names, @name = resolve_dashboard(@dashboard_name, params[:name])
     @logo = @investor.logo_doc&.file
   end
@@ -114,6 +116,8 @@ class InvestorsController < ApplicationController
     @dashboard_name = "Aggregated Portfolio Dashboard"
     @dashboard_names, @name = resolve_dashboard(@dashboard_name, params[:name])
     params[:filter] = true
+    @favorite_title = "Portfolio Dashboard"
+    @favorite_url = investors_path(multi_portfolio_dashboard: true)
 
     # Initialize empty arrays - will be populated in index method
     @tags_for_select ||= []

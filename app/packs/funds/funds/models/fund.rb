@@ -10,7 +10,6 @@ class Fund < ApplicationRecord
   include FundShared
   include FundNotifiers
 
-  acts_as_favoritable
   include ForInvestor
   include WithCustomField
   include RansackerAmounts.new(fields: %w[collected_amount committed_amount call_amount distribution_amount])

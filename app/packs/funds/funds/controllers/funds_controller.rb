@@ -68,6 +68,8 @@ class FundsController < ApplicationController
   def dashboard
     @dashboard_name = params[:dashboard_name] || "Fund Dashboard"
     @dashboard_names, @name = resolve_dashboard(@dashboard_name, params[:name])
+    @favorite_title = "#{@fund.name} Dashboard"
+    @favorite_url = dashboard_fund_path(id: @fund.id)
     respond_to do |format|
       format.html
       format.pdf do

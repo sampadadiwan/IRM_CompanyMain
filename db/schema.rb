@@ -1614,21 +1614,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_120000) do
   end
 
   create_table "favorites", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.boolean "blocked", default: false, null: false
     t.datetime "created_at", null: false
-    t.bigint "favoritable_id", null: false
-    t.string "favoritable_type", null: false
-    t.bigint "favoritor_id", null: false
-    t.string "favoritor_type", null: false
-    t.string "scope", default: "favorite", null: false
+    t.string "title", null: false
     t.datetime "updated_at", null: false
-    t.index ["blocked"], name: "index_favorites_on_blocked"
-    t.index ["favoritable_id", "favoritable_type"], name: "fk_favoritables"
-    t.index ["favoritable_type", "favoritable_id", "favoritor_id", "scope"], name: "uniq_favs_and_favoritables", unique: true
-    t.index ["favoritable_type", "favoritable_id"], name: "index_favorites_on_favoritable"
-    t.index ["favoritor_id", "favoritor_type"], name: "fk_favorites"
-    t.index ["favoritor_type", "favoritor_id"], name: "index_favorites_on_favoritor"
-    t.index ["scope"], name: "index_favorites_on_scope"
+    t.string "url", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id", "url"], name: "index_favorites_on_user_id_and_url", unique: true
+    t.index ["user_id"], name: "index_favorites_on_user_id"
   end
 
   create_table "fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|

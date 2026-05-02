@@ -1,7 +1,7 @@
 class FavoritePolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
-      scope.where(favoritor: user)
+      scope.where(user: user)
     end
   end
 
@@ -10,11 +10,11 @@ class FavoritePolicy < ApplicationPolicy
   end
 
   def show?
-    record.favoritor == user
+    record.user == user
   end
 
   def create?
-    record.favoritor == user
+    record.user == user
   end
 
   def new?

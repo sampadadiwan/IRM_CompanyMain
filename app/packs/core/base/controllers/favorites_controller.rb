@@ -6,20 +6,31 @@ class FavoritesController < ApplicationController
   end
 
   def create
-    @favorite = Favorite.new
-    @favorite.favoritable_type = params[:favoritable_type]
-    @favorite.favoritable_id = params[:favoritable_id]
-    @favorite.favoritor = current_user
+    @favorite = Favorite.new(favorite_params)
+    @favorite.user = current_user
     authorize @favorite
 
-    msg = @favorite.save ? "Favorited!" : "Already in favorites."
+    msg = if @favorite.save
+            "Favorited!"
+          elsif @favorite.errors[:url].include?("has already been taken")
+            "Already in favorites."
+          else
+            "Failed to add to favorites: #{@favorite.errors.full_messages.join(', ')}"
+          end
 
-    redirect_to @favorite.favoritable, alert: msg
+    respond_to do |format|
+      format.html do
+        redirect_to request.referer || @favorite.url, notice: msg
+      end
+      format.turbo_stream do
+        render :create, locals: { msg: }
+      end
+    end
   end
 
   def destroy
     @favorite.destroy
-    redirect_to @favorite.favoritable
+    redirect_to request.referer || @favorite.url, alert: "Removed from favorites."
   end
 
   private
@@ -30,6 +41,6 @@ class FavoritesController < ApplicationController
   end
 
   def favorite_params
-    params.require(:favorite).permit(:favoriteable_id, :favoriteable_type)
+    params.require(:favorite).permit(:url, :title)
   end
 end

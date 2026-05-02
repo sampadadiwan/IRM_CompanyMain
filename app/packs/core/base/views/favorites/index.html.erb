@@ -1,4 +1,3 @@
-<% cache_if(current_user != nil, cache_key("favorites"), expires_in: 5.day) do %>
 
 <div class="table-responsive" data-controller="datatable">
 
@@ -6,8 +5,7 @@
     <thead>
         <tr>
             <th>Id</th>
-            <th>Type</th>
-            <th>Favorite</th>
+            <th>Title</th>
             <th>By</th>
             <th>Created At</th>
             <th>Actions</th>
@@ -17,9 +15,8 @@
         <% @favorites.each do |favorite| %>
         <tr>
             <td><%= favorite.id %></td>
-            <td><%= favorite.favoritable_type %></td>
-            <td><%= link_to favorite.favoritable %></td>
-            <td><%= favorite.favoritor %></td>
+            <td><%= link_to favorite.title, favorite.url %></td>
+            <td><%= link_to favorite.user.to_s, favorite.user %></td>
             <td><%= favorite.created_at %></td>
             <td>
                 <%= button_to t_common(:delete), favorite, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
@@ -30,5 +27,3 @@
 </table>
 
 </div>
-
-<% end %>

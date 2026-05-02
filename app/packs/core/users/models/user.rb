@@ -5,8 +5,6 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
   include AccessRightsCache
   include CanonicalFingerprint
 
-  acts_as_favoritor
-
   include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions])
 
   attr_accessor :role_name
@@ -97,6 +95,7 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   # Noticed gem
   has_many :notifications, as: :recipient, dependent: :destroy, class_name: "Noticed::Notification"
+  has_many :favorites, dependent: :destroy
 
   include FileUploader::Attachment(:signature)
 

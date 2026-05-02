@@ -8,13 +8,6 @@ GIT
       faraday-multipart (>= 1)
 
 GIT
-  remote: https://github.com/ausangshukla/acts_as_favoritor.git
-  revision: 353fe5010c225a012cf6d34881827c165eb47281
-  specs:
-    acts_as_favoritor (6.0.1)
-      activerecord (>= 5.0)
-
-GIT
   remote: https://github.com/nejdetkadir/devise-api.git
   revision: bd49310c4e96ec6e56ec38c2542754718b2f1c57
   branch: main
@@ -1172,7 +1165,6 @@ PLATFORMS
 DEPENDENCIES
   active_flag
   activerecord-import
-  acts_as_favoritor!
   acts_as_list
   administrate
   administrate-field-active_storage

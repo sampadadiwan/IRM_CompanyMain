@@ -11,45 +11,47 @@
         <div class="ps-7 pt-7">
           <div class="border-bottom">
             <div class="row">
-              <% 
-                favs = current_user.favorites.includes(:favoritable).order(id: :desc).limit(10).to_a
-                fav_splits = favs.present? ? favs.each_slice((favs.length + 1)/2).to_a : favs
+              <%
+                favorites = current_user.favorites.order(id: :desc).limit(10).to_a
+                favorites_per_column = [(favorites.length / 2.0).ceil, 1].max
+                favorite_columns = favorites.each_slice(favorites_per_column).to_a
+
                 colors = ["info", "primary", "success", "warning", "danger", "secondary"]
               %>
 
-              <% fav_splits.each do |favs| %>
+              <% favorite_columns.each do |favorite_column| %>
                 <div class="col">
-                    <div class="position-relative">
-                    
-                    <% favs.each do |favourite| %>
-                        <% color = colors.sample %>
-                        <%= link_to favourite.favoritable, class: "d-flex align-items-center pb-9 position-relative"  do %>
-                                    
-                            <div class="p-6 bg-<%= color %>-subtle rounded me-6 d-flex align-items-center justify-content-center">
-                                <i class="ti ti-bookmark text-<%= color %> fs-6"></i>
-                            </div>
-                            <div class="d-inline-block">
-                            <h6 class="mb-1 fw-semibold fs-3">
-                                <%= favourite.favoritable %>
-                            </h6>
-                            <span class="fs-2 d-block text-body-secondary"><%= favourite.favoritable_type %></span>
-                            </div>
-                        <% end %>                    
+                  <div class="position-relative">
+                    <% favorite_column.each_with_index do |favorite, index| %>
+                      <% color = colors[index % colors.length] %>
+
+                      <%= link_to favorite.url,
+                        class: "d-flex align-items-center pb-9 position-relative text-decoration-none" do %>
+
+                        <div class="p-6 bg-<%= color %>-subtle rounded me-6 d-flex align-items-center justify-content-center">
+                          <i class="ti ti-bookmark text-<%= color %> fs-6"></i>
+                        </div>
+
+                        <div class="d-inline-block">
+                          <h6 class="mb-1 fw-semibold fs-3">
+                            <%= favorite.title %>
+                          </h6>
+                        </div>
+                      <% end %>
                     <% end %>
-                    
-                    </div>
+                  </div>
                 </div>
               <% end %>
             </div>
-          </div>
-          <div class="row align-items-center py-3">
-            <div class="col-8">
-              <!--a class="fw-semibold text-dark d-flex align-items-center lh-1" href="#"><i
-                        class="ti ti-help fs-6 me-2"></i>Frequently Asked Questions</a -->
-            </div>
-            <div class="col-4">
-              <div class="d-flex justify-content-end pe-4">
-                <%= link_to "View All", favorites_path, class: "btn btn-outline-primary" %>
+            <div class="row align-items-center py-3">
+              <div class="col-8">
+                <!--a class="fw-semibold text-dark d-flex align-items-center lh-1" href="#"><i
+                          class="ti ti-help fs-6 me-2"></i>Frequently Asked Questions</a -->
+              </div>
+              <div class="col-4">
+                <div class="d-flex justify-content-end pe-4">
+                  <%= link_to "View All", favorites_path, class: "btn btn-outline-primary" %>
+                </div>
               </div>
             </div>
           </div>

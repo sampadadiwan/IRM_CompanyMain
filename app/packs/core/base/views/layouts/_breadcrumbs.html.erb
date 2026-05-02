@@ -20,12 +20,24 @@
 
         <div class="col-md-2 col-sm-2">
 
+
+            <%= button_to favorites_path,
+              method: :post,
+              params: {
+                favorite: {
+                  title: favorite_title,
+                  url: favorite_url
+                }
+              },
+              "data-bs-toggle": "tooltip",
+              title: "Add to Favorites",
+              id: "add-to-favorites-button",
+              class: "fs-5 btn mb-1 btn-danger rounded-circle round d-inline-flex align-items-center justify-content-center" do %>
+              <i class="ti ti-heart"></i>
+            <% end %>
+
             <% owner_id = @owner_id || params[:id] %>
             <% if owner_id.present? %>
-              <%= button_to favorites_path(favoritable_type: @owner_type || controller_name.classify, favoritable_id: owner_id), "data-bs-toggle": "tooltip", title: "Add to Favorites", class: "fs-5 btn mb-1 btn-danger rounded-circle round d-inline-flex align-items-center justify-content-center", method: :post  do %>
-                <i class="ti ti-heart"></i>
-              <% end %>
-
               <%= link_to events_path(owner_type: @owner_type || controller_name.classify, owner_id: @owner_id || params[:id]), "data-bs-toggle": "tooltip", title: "Add an event", class: "fs-5 btn mb-1 btn-secondary rounded-circle round d-inline-flex align-items-center justify-content-center", method: :get  do %>
                 <i class="ti ti-calendar"></i>
               <% end %>
