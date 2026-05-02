@@ -43,4 +43,24 @@ module SearchHelper
   def self.sanitize_text_for_search(text)
     text&.gsub(/[^\p{L}\p{N}\s'-]/u, '')&.squish
   end
+
+  def self.search_access_scope_for(user)
+    # If the user is an investor, we need to scope the search to the entities that have them as investor
+    if user.curr_role_investor?
+      { entity_id: (Investor.where(investor_entity_id: user.entity_id).pluck(:entity_id) + [user.entity_id]).uniq }
+    else
+      { entity_id: [user.entity_id] }
+    end
+  end
+
+  def self.es_terms_filter(field, values)
+    values = Array(values).compact_blank
+    return nil if values.empty?
+
+    {
+      terms: {
+        field.to_sym => values
+      }
+    }
+  end
 end

@@ -47,15 +47,28 @@ class CapitalCommitmentList < BaseList
   def search_ids
     # This is only when the datatable sends a search query
     query = "#{SearchHelper.sanitize_text_for_search(@params[:search][:value])}*"
-    term = { entity_id: @current_user.entity_id }
 
-    # Here we search for all the CapitalCommitments that belong to the entity of the current user
-    # Only return first 100 results
-    index_search = CapitalCommitmentIndex.filter(term:)
-                                         .query(simple_query_string: { fields: CapitalCommitmentIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' })
+    filter_terms = SearchHelper.search_access_scope_for(@current_user).map do |field, values|
+      SearchHelper.es_terms_filter(field, values)
+    end
 
-    index_search = index_search.filter(term: { fund_id: @params[:fund_id] }) if @params[:fund_id].present?
+    # Add as many filter terms as possible as its helpful to narrow down the broad entity_id scope for investor users
+    filter_terms << SearchHelper.es_terms_filter(:fund_id, @params[:fund_id])
+    filter_terms.compact!
+
+    # Search only CapitalCommitments visible to the current user.
+    # Only return first 100 results.
+    index_search = CapitalCommitmentIndex
+                   .filter(bool: { filter: filter_terms })
+                   .query(
+                     simple_query_string: {
+                       fields: CapitalCommitmentIndex::SEARCH_FIELDS,
+                       query:,
+                       default_operator: 'and'
+                     }
+                   )
+                   .per(100)
+
     index_search = index_search.per(100)
 
     index_search.map(&:id)

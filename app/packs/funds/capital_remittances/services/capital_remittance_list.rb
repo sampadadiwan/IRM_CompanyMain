@@ -45,18 +45,29 @@ class CapitalRemittanceList < BaseList
   def search_ids
     # This is only when the datatable sends a search query
     query = "#{SearchHelper.sanitize_text_for_search(@params[:search][:value])}*"
-    term = { entity_id: @current_user.entity_id }
 
-    # Here we search for all the CapitalCommitments that belong to the entity of the current user
+    filter_terms = SearchHelper.search_access_scope_for(@current_user).map do |field, values|
+      SearchHelper.es_terms_filter(field, values)
+    end
+
+    filter_terms << SearchHelper.es_terms_filter(:fund_id, @params[:fund_id])
+    filter_terms << SearchHelper.es_terms_filter(:capital_call_id, @params[:capital_call_id])
+    filter_terms << SearchHelper.es_terms_filter(:capital_commitment_id, @params[:capital_commitment_id])
+    filter_terms.compact!
+
+    # Here we search for all the CapitalCommitments that belong to the entity accesible to current user
     # Only return first 100 results
-    index_search = CapitalRemittanceIndex.filter(term:)
-                                         .query(simple_query_string: { fields: CapitalRemittanceIndex::SEARCH_FIELDS,
-                                                                       query:, default_operator: 'and' }).per(100)
+    index_search = CapitalRemittanceIndex
+                   .filter(bool: { filter: filter_terms })
+                   .query(
+                     simple_query_string: {
+                       fields: CapitalRemittanceIndex::SEARCH_FIELDS,
+                       query:,
+                       default_operator: 'and'
+                     }
+                   )
+                   .per(100)
 
-    # Filter by fund, capital_distribution and capital_commitment
-    index_search = index_search.filter(term: { fund_id: @params[:fund_id] }) if @params[:fund_id].present?
-    index_search = index_search.filter(term: { capital_call_id: @params[:capital_call_id] }) if @params[:capital_call_id].present?
-    index_search = index_search.filter(term: { capital_commitment_id: @params[:capital_commitment_id] }) if @params[:capital_commitment_id].present?
     index_search.map(&:id)
   end
 end

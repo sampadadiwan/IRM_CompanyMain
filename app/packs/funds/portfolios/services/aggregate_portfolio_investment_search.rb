@@ -5,10 +5,18 @@ class AggregatePortfolioInvestmentSearch
   end
 
   def self.search_ids(params, current_user)
-    query = "#{params[:search][:value]}*"
-    entity_ids = [current_user.entity_id]
-    AggregatePortfolioInvestmentIndex.filter(terms: { entity_id: entity_ids })
-                                     .query(simple_query_string: { fields: AggregatePortfolioInvestmentIndex::SEARCH_FIELDS,
-                                                                   query:, default_operator: 'and' }).per(1000).map(&:id)
+    query = "#{SearchHelper.sanitize_text_for_search(params[:search][:value])}*"
+
+    filter_terms = SearchHelper.search_access_scope_for(current_user).map do |field, values|
+      SearchHelper.es_terms_filter(field, values)
+    end
+    filter_terms.compact!
+
+    AggregatePortfolioInvestmentIndex.filter(bool: { filter: filter_terms })
+                                     .query(simple_query_string: {
+                                              fields: AggregatePortfolioInvestmentIndex::SEARCH_FIELDS,
+                                              query:,
+                                              default_operator: 'and'
+                                            }).per(1000).map(&:id)
   end
 end
