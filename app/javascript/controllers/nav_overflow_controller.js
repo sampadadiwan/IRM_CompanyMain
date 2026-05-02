@@ -1,7 +1,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["nav", "item", "more", "moreDropdown", "reportsDropdown", "moreReportsHeader", "moreReportsDivider"]
+  static targets = ["nav", "item", "more", "moreDropdown", "reportsDropdown", "moreReportsHeader", "moreReportsDivider", "dashboardSelector"]
 
   connect() {
     this.recalculate()
@@ -16,22 +16,24 @@ export default class extends Controller {
   }
 
   recalculate() {
-    const navWidth = this.navTarget.offsetWidth;
+    const containerWidth = this.navTarget.parentElement.offsetWidth;
     const reportsWidth = this.hasReportsDropdownTarget ? this.reportsDropdownTarget.offsetWidth || 50 : 0;
-    const padding = 5; // Safety margin
+    const dashboardSelectorWidth = this.hasDashboardSelectorTarget ? this.dashboardSelectorTarget.offsetWidth || 180 : 0;
+    const gapWidth = 8; // gap-2 is 0.5rem = 8px
+    const padding = 20; // Increased safety margin
 
     // Measure the "More" button by temporarily making it visible
-    let moreWidth = 50;
+    let moreWidth = 180;
     if (this.hasMoreTarget) {
       const wasHidden = this.moreTarget.classList.contains('d-none');
       this.moreTarget.classList.remove('d-none');
-      moreWidth = this.moreTarget.offsetWidth || 50;
-      console.log(`Measured "More" width: ${moreWidth}px (was hidden: ${wasHidden})`);
+      moreWidth = this.moreTarget.offsetWidth || 180;
       if (wasHidden) this.moreTarget.classList.add('d-none');
     }
 
-    // Available width once we reserve space for "More" and Reports
-    const availableWidth = navWidth - moreWidth - reportsWidth - padding;
+    // Available width once we reserve space for "More", Reports, and Dashboard Selector
+    const reservedWidth = moreWidth + reportsWidth + dashboardSelectorWidth + padding;
+    const availableWidth = containerWidth - reservedWidth;
 
     let currentWidth = 0;
     let overflowIndices = [];
@@ -41,10 +43,13 @@ export default class extends Controller {
       item.classList.remove('d-none')
       const itemWidth = item.offsetWidth
 
-      if (currentWidth + itemWidth > availableWidth) {
+      // Add gap width for all items except the first one
+      const effectiveItemWidth = index === 0 ? itemWidth : itemWidth + gapWidth;
+
+      if (currentWidth + effectiveItemWidth > availableWidth) {
         overflowIndices.push(index)
       } else {
-        currentWidth += itemWidth
+        currentWidth += effectiveItemWidth
       }
     })
 
