@@ -41,7 +41,7 @@ When('the database dump job runs for {string}') do |entity_name|
   allow_any_instance_of(EntityDbDumpJob).to receive(:system).and_return(true)
 
   # Mock Time.zone.now for predictable filenames
-  fixed_time = Time.zone.parse("2026-04-07 12:00:00")
+  fixed_time = Time.zone.now.change(usec: 0)
   allow(Time.zone).to receive(:now).and_return(fixed_time)
 
   timestamp = fixed_time.strftime('%Y%m%d_%H%M%S')

@@ -1,0 +1,28 @@
+<p>This is an automated alert from the KYC Onboarding Agent.</p>
+
+<p>The following KYC record requires your attention:</p>
+
+<table style="border-collapse:collapse;width:100%">
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Investor</td>
+    <td style="padding:6px 12px"><%= @investor_kyc.full_name %></td>
+  </tr>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">KYC Type</td>
+    <td style="padding:6px 12px"><%= @investor_kyc.kyc_type %></td>
+  </tr>
+  <% if @investor_kyc.expiry_date.present? %>
+  <tr>
+    <td style="padding:6px 12px;font-weight:bold">Expiry Date</td>
+    <td style="padding:6px 12px"><%= @investor_kyc.expiry_date %></td>
+  </tr>
+  <% end %>
+</table>
+
+<% @issues.each do |issue| %>
+  <p style="margin-top:12px;padding:8px 12px;background:<%= issue[:type] == :kyc_expired ? '#fdecea' : '#fff8e1' %>;border-left:4px solid <%= issue[:type] == :kyc_expired ? '#d32f2f' : '#f57c00' %>">
+    <%= issue[:message] %>
+  </p>
+<% end %>
+
+<p>Please log in and update the KYC record before the next capital call.</p>

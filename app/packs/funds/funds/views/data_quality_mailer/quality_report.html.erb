@@ -1,0 +1,55 @@
+<p>This is an automated data quality report from the nightly integrity check for <strong><%= @fund.name %></strong>.</p>
+
+<h3 style="margin-top:16px">Health Score: <%= @health_score %>%</h3>
+
+<table style="border-collapse:collapse;width:100%;margin-top:8px">
+  <thead>
+    <tr style="background:#f5f5f5">
+      <th style="padding:8px 12px;text-align:left;border:1px solid #ddd">Check</th>
+      <th style="padding:8px 12px;text-align:left;border:1px solid #ddd">Status</th>
+      <th style="padding:8px 12px;text-align:left;border:1px solid #ddd">Issues</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @check_results.each do |result| %>
+      <tr>
+        <td style="padding:8px 12px;border:1px solid #ddd"><%= result[:name] %></td>
+        <td style="padding:8px 12px;border:1px solid #ddd;color:<%= result[:status] == :pass ? '#2e7d32' : result[:status] == :fail ? '#c62828' : '#757575' %>">
+          <%= result[:status].to_s.upcase %>
+        </td>
+        <td style="padding:8px 12px;border:1px solid #ddd"><%= result[:count] || '—' %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<% failed_sections = [
+  ["Commitment Overflows", @issues[:commitment_issues]],
+  ["Missing Valuations",   @issues[:valuation_issues]],
+  ["Stale FX Rates",       @issues[:fx_issues]]
+].select { |_, items| items.any? } %>
+
+<% if failed_sections.any? %>
+  <h3 style="margin-top:24px">Fix-it List</h3>
+  <% failed_sections.each do |section_name, items| %>
+    <h4 style="margin-top:16px"><%= section_name %></h4>
+    <table style="border-collapse:collapse;width:100%">
+      <thead>
+        <tr style="background:#f5f5f5">
+          <th style="padding:6px 10px;text-align:left;border:1px solid #ddd">Name</th>
+          <th style="padding:6px 10px;text-align:left;border:1px solid #ddd">Issue</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.each do |item| %>
+          <tr>
+            <td style="padding:6px 10px;border:1px solid #ddd"><%= item["name"] %></td>
+            <td style="padding:6px 10px;border:1px solid #ddd"><%= item["reason"] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+<% else %>
+  <p style="color:#2e7d32;margin-top:16px">All checks passed. No issues to fix.</p>
+<% end %>

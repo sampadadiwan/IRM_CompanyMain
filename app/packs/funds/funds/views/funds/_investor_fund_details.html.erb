@@ -111,7 +111,7 @@
           <div id="collapsePortfolio" class="accordion-collapse collapse" aria-labelledby="portfolio-tab" data-bs-parent="#investorFundDetailsAccordion">
             <div class="accordion-body">
               <div id="portfolio_investments" class="">
-                <%= turbo_frame_tag "default_portfolio dashboard_frame", target: "_top", loading: :lazy, src: dashboard_fund_path(fund, dashboard_name: "Portfolio Dashboard") do %>
+                <%= turbo_frame_tag "portfolio_dashboard_frame", target: "_top", loading: :lazy, src: dashboard_fund_path(fund, dashboard_name: "Portfolio Dashboard") do %>
                   <%= render "/layouts/loading" %>
                 <% end %>
               </div>

@@ -3,6 +3,7 @@ class PortfolioCompanyAgent < SupportAgentService
   step :initialize_agent
   # == Core Functions ==
   step :check_kpi_submission
+  step :send_kpi_reminder
   step :check_document_presence
   step :check_valuations
   step :generate_progress_reports
@@ -123,6 +124,73 @@ class PortfolioCompanyAgent < SupportAgentService
     true
   end
 
+  # Sends a KPI reminder email to the portfolio company when KPIs are missing,
+  # but only on configured day-offsets from the period start to avoid daily spam.
+  #
+  # Configurable via json_fields:
+  #   send_kpi_reminder — "true"/"false" (default true)
+  #   reminder_days     — comma-separated offsets from period start, e.g. "7,14,21"
+  #   due_period        — reporting period, e.g. "Quarter" (shared with check_kpi_submission)
+  def send_kpi_reminder(ctx, portfolio_company:, support_agent:, **)
+    unless enabled?("send_kpi_reminder")
+      Rails.logger.debug { "[#{self.class.name}] KPI reminder disabled, skipping." }
+      return true
+    end
+
+    kpi_missing = ctx[:issues][:kpi_issues].any? { |i| i[:severity] == :blocking }
+    unless kpi_missing
+      ctx[:issues][:kpi_issues] << {
+        key: :reminder, type: :info,
+        message: "KPIs submitted — no reminder needed", severity: :success
+      }
+      return true
+    end
+
+    due_period    = support_agent.json_fields["due_period"] || "Quarter"
+    reminder_days = support_agent.json_fields["reminder_days"]
+                                 &.split(",")&.map(&:to_i) || [7, 14, 21]
+    period_start  = case due_period.downcase
+                    when "month"   then Date.today.beginning_of_month
+                    when "year"    then Date.today.beginning_of_year
+                    else                Date.today.beginning_of_quarter
+                    end
+    days_elapsed  = (Date.today - period_start).to_i
+
+    unless reminder_days.include?(days_elapsed)
+      ctx[:issues][:kpi_issues] << {
+        key: :reminder, type: :info,
+        message: "Reminder not due today (day #{days_elapsed}; fires on days #{reminder_days.join(', ')})",
+        severity: :success
+      }
+      return true
+    end
+
+    # Avoid double-sending on the same calendar day
+    last_report = SupportAgentReport
+      .where(owner: portfolio_company, support_agent: support_agent)
+      .order(created_at: :desc).first
+    last_sent = last_report&.json_fields&.dig("last_kpi_reminder_sent_at")
+    if last_sent && Date.parse(last_sent) >= Date.today
+      ctx[:issues][:kpi_issues] << {
+        key: :reminder, type: :info, message: "Reminder already sent today", severity: :success
+      }
+      return true
+    end
+
+    EntityMailer.with(
+      entity_id: portfolio_company.entity_id,
+      requesting_entity_id: support_agent.entity_id
+    ).kpi_reminder.deliver_later
+
+    ctx[:last_kpi_reminder_sent_at] = Date.today.iso8601
+    ctx[:issues][:kpi_issues] << {
+      key: :reminder, type: :info,
+      message: "KPI reminder sent (day #{days_elapsed} of #{due_period})", severity: :success
+    }
+    Rails.logger.info { "[#{self.class.name}] KPI reminder sent for Investor ID=#{portfolio_company.id}" }
+    true
+  end
+
   # Verifies if mandatory documents are present for compliance and operational checks.
   # Adds issues to ctx[:issues][:document_issues] if any required documents are missing or invalid.
   def check_document_presence(ctx, support_agent:, **)
@@ -167,6 +235,10 @@ class PortfolioCompanyAgent < SupportAgentService
   # Called for both single-company (with steps) and batch (adhoc/scheduled) runs.
   # Batch coordination (looping, chart job, notifications) is handled by process_batch.
   def generate_progress_reports(ctx, portfolio_company: nil, support_agent:, **)
+    # Persist last reminder timestamp so the double-send guard works across runs
+    if ctx[:last_kpi_reminder_sent_at]
+      ctx[:issues]["last_kpi_reminder_sent_at"] = ctx[:last_kpi_reminder_sent_at]
+    end
     super(ctx, model: portfolio_company, support_agent: support_agent)
     broadcast_portco_row(target: portfolio_company)
     # Only enqueue an individual chart job when NOT running inside process_batch.

@@ -27,6 +27,7 @@ class KycOnboardingAgent < SupportAgentService
   step :check_document_presence
   step :check_document_validity
   step :check_field_to_document_consistency
+  step :check_expiry_status
   step :generate_progress_reports
   step :send_reminders
   step :trigger_aml_if_complete
@@ -174,8 +175,8 @@ class KycOnboardingAgent < SupportAgentService
           {"matches": true/false, "explanation": "<short reason>"}
         PROMPT
 
-        raw = llm.ask(prompt, with: [doc.file.url])
         begin
+          raw = llm.ask(prompt, with: [doc.file.url])
           content = if raw.is_a?(RubyLLM::Message)
                       raw.content.is_a?(RubyLLM::Content) ? raw.content.text : raw.content
                     else
@@ -194,6 +195,9 @@ class KycOnboardingAgent < SupportAgentService
         rescue JSON::ParserError
           ctx[:issues][:document_issues] << { type: :llm_parse_error, name: doc.name, message: "Could not ascertain #{label}", severity: :warning, raw: raw }
           Rails.logger.warn("[KycOnboardingAgent] LLM parse error for document #{label}, raw=#{raw.inspect}")
+        rescue Faraday::ResourceNotFound, Faraday::Error => e
+          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible (#{e.class})", severity: :warning }
+          Rails.logger.warn("[KycOnboardingAgent] Document file unavailable for #{label}: #{e.message.lines.first.chomp}")
         end
       end
 
@@ -220,14 +224,80 @@ class KycOnboardingAgent < SupportAgentService
     super(ctx, model: investor_kyc, support_agent: support_agent)
   end
 
-  # Schedules reminder notifications when blocking issues are identified.
-  # Actual sending handled by external Reminder API integration.
-  def send_reminders(ctx, investor_kyc:, support_agent:, **)
-    if enabled?("send_reminder")
-      Rails.logger.debug { "[KycOnboardingAgent] Preparing reminders for InvestorKyc ID=#{investor_kyc.id}, support_agent=#{support_agent.id}, blocking issues=#{ctx[:issues].inspect}" }
-    else
-      Rails.logger.debug { "[KycOnboardingAgent] Reminder sending is disabled, skipping." }
+  # Checks whether the KYC record is expired or approaching expiry.
+  # Adds a blocking issue if expired, a warning if within configured thresholds.
+  #
+  # Configurable via json_fields:
+  #   check_expiry        — "true"/"false" (default true)
+  #   expiry_warning_days — comma-separated day thresholds, e.g. "60,30,15"
+  def check_expiry_status(ctx, investor_kyc:, **)
+    unless enabled?("check_expiry")
+      Rails.logger.debug { "[KycOnboardingAgent] Expiry check disabled, skipping." }
+      return true
     end
+
+    expiry_date = investor_kyc.expiry_date
+
+    if expiry_date.nil?
+      ctx[:issues][:field_issues] << { type: :info, message: "No expiry date set", severity: :success }
+      return true
+    end
+
+    days_remaining = (expiry_date - Date.today).to_i
+    warning_thresholds = @support_agent.json_fields["expiry_warning_days"]
+                                       &.split(",")&.map(&:to_i) || [60, 30, 15]
+
+    if investor_kyc.expired?
+      ctx[:issues][:field_issues] << {
+        type: :kyc_expired,
+        message: "KYC expired on #{expiry_date}",
+        severity: :blocking
+      }
+      Rails.logger.warn { "[KycOnboardingAgent] KYC expired for InvestorKyc ID=#{investor_kyc.id}" }
+    elsif warning_thresholds.any? { |d| days_remaining <= d }
+      ctx[:issues][:field_issues] << {
+        type: :kyc_expiring_soon,
+        message: "KYC expires in #{days_remaining} day(s) on #{expiry_date}",
+        severity: :warning
+      }
+      Rails.logger.info { "[KycOnboardingAgent] KYC expiring soon for InvestorKyc ID=#{investor_kyc.id}: #{days_remaining} days remaining" }
+    else
+      ctx[:issues][:field_issues] << {
+        type: :info,
+        message: "KYC valid until #{expiry_date} (#{days_remaining} days remaining)",
+        severity: :success
+      }
+    end
+    true
+  end
+
+  # Sends expiry alert emails when blocking or warning expiry issues are found.
+  #
+  # Configurable via json_fields:
+  #   send_reminder — "true"/"false" (default true)
+  def send_reminders(ctx, investor_kyc:, support_agent:, **)
+    unless enabled?("send_reminder")
+      Rails.logger.debug { "[KycOnboardingAgent] Reminder sending disabled, skipping." }
+      return true
+    end
+
+    expiry_issues = ctx[:issues][:field_issues].select { |i|
+      %i[kyc_expired kyc_expiring_soon].include?(i[:type])
+    }
+
+    if expiry_issues.empty?
+      Rails.logger.debug { "[KycOnboardingAgent] No expiry issues for InvestorKyc ID=#{investor_kyc.id} — skipping reminder." }
+      return true
+    end
+
+    KycExpiryMailer.with(
+      investor_kyc_id: investor_kyc.id,
+      issues: expiry_issues,
+      entity_id: support_agent.entity_id
+    ).expiry_alert.deliver_later
+
+    Rails.logger.info { "[KycOnboardingAgent] Expiry alert queued for InvestorKyc ID=#{investor_kyc.id}" }
+    true
   end
 
   # Triggers AML workflow if KYC process is complete.
