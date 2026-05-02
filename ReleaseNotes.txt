@@ -1,3 +1,12 @@
+V9.2.34
+4776671b8 Favorites 1 (#1398)
+8dbeb846e Add dashboard selector to navigation overflow controller and update styles
+6365ac26a Add migration to reindex investor entity IDs in Chewy
+55f971977 Enhance search indexing by including investor associations in various models
+435eb8732 Now investor can search commitment, dist, remittance, and API (#1403)
+0434f4ce4 Named dashboard selector (#1402)
+e73234a9e Named dashboard selector (#1401)
+
 V9.2.33
 aee3eab4c Kedaara 15 (#1400)
 7b3368fb1 Commitment ratios widget (#1399)
