@@ -1,10 +1,11 @@
 class AggregatePortfolioInvestmentIndex < Chewy::Index
   SEARCH_FIELDS = %i[portfolio_company_name investment_instrument fund_name].freeze
 
-  index_scope AggregatePortfolioInvestment.includes(:entity, :fund)
+  index_scope AggregatePortfolioInvestment.includes(:entity, :fund, :portfolio_company)
 
   field :portfolio_company_name
   field :investment_instrument, value: ->(aggregate_portfolio_investment) { aggregate_portfolio_investment.investment_instrument&.name }
   field :fund_name, value: ->(aggregate_portfolio_investment) { aggregate_portfolio_investment.fund.name }
   field :entity_id
+  field :investor_entity_id, value: ->(a) { a.portfolio_company.investor_entity_id }
 end

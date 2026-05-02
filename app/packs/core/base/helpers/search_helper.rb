@@ -47,7 +47,10 @@ module SearchHelper
   def self.search_access_scope_for(user)
     # If the user is an investor, we need to scope the search to the entities that have them as investor
     if user.curr_role_investor?
-      { entity_id: (Investor.where(investor_entity_id: user.entity_id).pluck(:entity_id) + [user.entity_id]).uniq }
+      {
+        entity_id: (Investor.where(investor_entity_id: user.entity_id).pluck(:entity_id) + [user.entity_id]).uniq,
+        investor_entity_id: [user.entity_id]
+      }
     else
       { entity_id: [user.entity_id] }
     end

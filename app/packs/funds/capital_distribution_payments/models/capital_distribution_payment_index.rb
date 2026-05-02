@@ -1,8 +1,9 @@
 class CapitalDistributionPaymentIndex < Chewy::Index
   SEARCH_FIELDS = %i[entity_name investor_name fund_name capital_distribution_title folio_id].freeze
 
-  index_scope CapitalDistributionPayment.includes(:entity, :fund, :capital_distribution)
+  index_scope CapitalDistributionPayment.includes(:entity, :fund, :capital_distribution, :investor)
   field :entity_id
+  field :investor_entity_id, value: ->(f) { f.investor.investor_entity_id }
   field :capital_distribution_id
   field :capital_commitment_id
   field :fund_id
