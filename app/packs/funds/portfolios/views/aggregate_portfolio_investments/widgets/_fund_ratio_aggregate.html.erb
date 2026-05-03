@@ -5,7 +5,6 @@
   condensed = args[:condensed].to_s == "true"
   hide_fund_name = args[:hide_fund_name].to_s == "true"
   show_y_axis = args[:show_y_axis].nil? ? true : args[:show_y_axis].to_s != "false"
-  show_legend = args[:show_legend].nil? ? false : args[:show_legend].to_s != "false"
   ratio_names = args[:ratio_names] || ["IRR", "MOIC"]
   chart_colors = args[:chart_colors] || ['green', 'DarkOrange']
   negative_colors = args[:negative_colors] || ['orange', 'red']
@@ -28,10 +27,18 @@
     months: args[:months]
   )
 
+  scenario_list = args[:scenarios].present? ? args[:scenarios].split(",").map(&:strip) : nil
+  show_legend = args[:show_legend].nil? ? scenario_list.present? : args[:show_legend].to_s != "false"
+
   ratios_by_name = {}
   ratio_names.each do |ratio_name|
-    ratios_by_name[ratio_name] = fund_ratios.where(name: ratio_name).map do |fr|
-      [hide_fund_name ? "" : fr.owner.name, fr.value.to_f.round(decimals)]
+    scoped = fund_ratios.where(name: ratio_name)
+    ratios_by_name[ratio_name] = if scenario_list.present?
+      scenario_list.map do |sc|
+        { name: sc, data: scoped.where(scenario: sc).map { |fr| [hide_fund_name ? "" : fr.owner.name, fr.value.to_f.round(decimals)] } }
+      end
+    else
+      scoped.map { |fr| [hide_fund_name ? "" : fr.owner.name, fr.value.to_f.round(decimals)] }
     end
   end
 %>
