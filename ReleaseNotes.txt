@@ -1,3 +1,9 @@
+V9.2.35
+518884191 Refactor fund ratio aggregation to conditionally display legend based on scenarios
+b768ee97b Enhance fund ratio widget with additional parameters and improve display options
+8643b21e4 Add PRD for Customer Success Dashboard & QBR Platform
+a506f0e62 Refactor dashboard navigation styles and add foreign key for favorites
+
 V9.2.34
 4776671b8 Favorites 1 (#1398)
 8dbeb846e Add dashboard selector to navigation overflow controller and update styles
