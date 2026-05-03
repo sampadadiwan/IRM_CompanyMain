@@ -3797,6 +3797,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_120000) do
   add_foreign_key "expression_of_interests", "users"
   add_foreign_key "expression_of_interests", "users", column: "investor_signatory_id"
   add_foreign_key "faq_threads", "users"
+  add_foreign_key "favorites", "users"
   add_foreign_key "fees", "entities"
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"

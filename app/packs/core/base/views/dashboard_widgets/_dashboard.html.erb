@@ -53,14 +53,14 @@
         <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
             <li class="nav-item" data-nav-overflow-target="item">
                 <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
-                <a class="nav-link px-3 py-2 text-primary fw-medium rounded-pill border border-primary-subtle text-center" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false style="width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background-color: rgba(var(--bs-primary-rgb), 0.03);" title="<%= label %>">
+                <a class="nav-link px-3 py-2 text-center" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false style="width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<%= label %>">
                     <%= label %>
                 </a>
             </li>
         <% end %>
 
         <li class="nav-item dropdown d-none" data-nav-overflow-target="more">
-            <a class="nav-link px-3 py-2 text-primary fw-medium rounded-pill border border-primary-subtle dropdown-toggle text-center" href="#" id="moreWidgetsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 180px; background-color: rgba(var(--bs-primary-rgb), 0.03);">
+            <a class="nav-link px-3 py-2 dropdown-toggle text-center" href="#" id="moreWidgetsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 180px; ">
                 More
             </a>
             <ul class="dropdown-menu shadow" aria-labelledby="moreWidgetsDropdown" data-nav-overflow-target="moreDropdown">
@@ -89,7 +89,7 @@
         <% reports = Report.where("tag_list LIKE ?", "%#{dashboard_name}%") %>
         <% if reports.any? %>
             <li class="nav-item dropdown" data-nav-overflow-target="reportsDropdown">
-                <a class="nav-link px-3 py-2 text-primary fw-medium rounded-pill border border-primary dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <a class="nav-link px-3 py-2  dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                     Reports
                 </a>
                 <ul class="dropdown-menu shadow" aria-labelledby="navbarDropdown">
