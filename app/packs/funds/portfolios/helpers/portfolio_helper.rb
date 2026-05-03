@@ -78,9 +78,11 @@ module PortfolioHelper
     filtered_frs.map { |fr| { name: fr.owner.name, value: fr.display_value } }
   end
 
-  def fund_ratio_list(owner_ids, fund_ids, owner_types: ["Fund"], ratio_names: %w[IRR], latest: true, end_date: nil)
-    result = FundRatioList.call(current_user, { owner_id: owner_ids, fund_id: fund_ids, owner_type: owner_types, name: ratio_names, latest:, end_date: end_date })
-    result.fund_ratios
+  def fund_ratio_list(owner_ids, fund_ids, owner_types: ["Fund"], ratio_names: %w[IRR], latest: true, end_date: nil, scenario: nil, scenarios: nil, months: nil)
+    result = FundRatioList.call(current_user, { owner_id: owner_ids, fund_id: fund_ids, owner_type: owner_types, name: ratio_names, latest:, end_date:, scenario:, scenarios: })
+    fund_ratios = result.fund_ratios
+    fund_ratios = fund_ratios.where("end_date >= ?", months.to_i.months.ago.to_date) if months.present? && end_date.nil?
+    fund_ratios
   end
 
   def portfolio_last_xirr(fund)

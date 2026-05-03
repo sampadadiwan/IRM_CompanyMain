@@ -1,7 +1,11 @@
 <%
   args ||= {}
-  show_chart = args[:show_chart].nil? ? true : args[:show_chart]
-  show_table = args[:show_table].nil? ? true : args[:show_table]
+  show_chart = args[:show_chart].nil? ? (args[:chart].nil? ? true : args[:chart].to_s != "false") : args[:show_chart].to_s != "false"
+  show_table = args[:show_table].nil? ? (args[:list].nil? ? true : args[:list].to_s != "false") : args[:show_table].to_s != "false"
+  condensed = args[:condensed].to_s == "true"
+  hide_fund_name = args[:hide_fund_name].to_s == "true"
+  show_y_axis = args[:show_y_axis].nil? ? true : args[:show_y_axis].to_s != "false"
+  show_legend = args[:show_legend].nil? ? false : args[:show_legend].to_s != "false"
   ratio_names = args[:ratio_names] || ["IRR", "MOIC"]
   chart_colors = args[:chart_colors] || ['green', 'DarkOrange']
   negative_colors = args[:negative_colors] || ['orange', 'red']
@@ -13,59 +17,54 @@
   owner_ids = args[:owner_id] || fund_ids
   latest = args[:latest].to_s == "false" ? false : true
 
-  # This is not the final way need to discuss the storage of Fund Ratios for multiple funds and portfolio companies
+  fund_ratios = fund_ratio_list(
+    owner_ids, fund_ids,
+    owner_types: owner_types,
+    ratio_names: ratio_names,
+    latest: latest,
+    end_date: args[:end_date],
+    scenario: args[:scenario],
+    scenarios: args[:scenarios],
+    months: args[:months]
+  )
+
   ratios_by_name = {}
-  fund_ratios = fund_ratio_list(owner_ids, fund_ids, owner_types: owner_types, ratio_names: ratio_names, latest: latest, end_date: args[:end_date])
   ratio_names.each do |ratio_name|
     ratios_by_name[ratio_name] = fund_ratios.where(name: ratio_name).map do |fr|
-      # For IRR, use fr.value with decimals precision
-      # For MOIC, parse from display_value to get the correct value
-      if ratio_name.upcase.include?('IRR')
-        numeric_value = fr.value.to_f
-        formatted_value = numeric_value.round(decimals)
-      else
-        numeric_value = fr.value.to_f
-        formatted_value = numeric_value.round(decimals)
-      end
-      [fr.owner.name, formatted_value]
+      [hide_fund_name ? "" : fr.owner.name, fr.value.to_f.round(decimals)]
     end
   end
 %>
-
 
 <div class="row g-3 mb-3">
   <% ratios_by_name.each_with_index do |(ratio_name, ratios_data), idx| %>
     <% col_class = ratios_by_name.size == 1 ? 'col-12' : 'col-12 col-lg-6' %>
     <div class="<%= col_class %>">
       <div class="card h-100 shadow-sm">
-        <div class="card-body d-flex flex-column gap-3">
-          <h3 class="h3 mb-0 text-gray-800"><%= titles[idx] || ratio_name %></h3>
+        <div class="card-body d-flex flex-column gap-3<%= ' p-2' if condensed %>">
+          <h3 class="<%= condensed ? 'h5' : 'h3' %> mb-0 text-gray-800"><%= titles[idx] || ratio_name %></h3>
 
           <div class="irr-detail-block d-flex flex-column">
             <% if show_chart %>
               <div>
                 <%
-                  # Extract numeric values - they're already formatted with decimals from ratios_by_name
-                  chart_data = ratios_data
-
-                  # Determine suffix and decimal places based on ratio name
-                  is_irr = ratio_name.upcase.include?('IRR')
-                  suffix = is_irr ? ' %' : ' x'
-                  chart_decimals = decimals
+                  suffix = ratio_name.upcase.include?('IRR') ? ' %' : ' x'
                 %>
-                <%= column_chart chart_data, colors: [chart_colors[idx]], library: {
-                  chart: { height: 260 },
+                <%= column_chart ratios_data, colors: [chart_colors[idx]], library: {
+                  chart: { height: condensed ? 180 : 260 },
                   plotOptions: {
                     column: {
                       dataLabels: {
                         enabled: true,
-                        format: "{y:.#{chart_decimals}f}#{suffix}"
+                        format: "{y:.#{decimals}f}#{suffix}"
                       },
                       negativeColor: negative_colors[idx],
                       color: chart_colors[idx]
                     }
                   },
-                  legend: { enabled: false },
+                  xAxis: { labels: { enabled: !hide_fund_name } },
+                  yAxis: { visible: show_y_axis },
+                  legend: { enabled: show_legend },
                   **chart_theme_color
                 } %>
               </div>
