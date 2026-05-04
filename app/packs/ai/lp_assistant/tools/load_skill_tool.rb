@@ -21,12 +21,16 @@ class LoadSkillTool < RubyLLM::Tool
   # @param skill_name [String] name from list_skills output (sanitized to [a-z0-9_]).
   # @return [String] full markdown of the skill file, or an error string.
   def execute(skill_name:)
+    t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
     safe_name = skill_name.to_s.gsub(/[^a-z0-9_]/i, '')
     return 'Invalid skill name.' if safe_name.empty?
 
     path = SKILLS_DIR.join("#{safe_name}.md")
     return "Skill '#{skill_name}' not found." unless File.exist?(path)
 
-    File.read(path)
+    content = File.read(path)
+    Rails.logger.info("[lp_assistant] LoadSkillTool took #{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round}ms skill=#{skill_name}")
+    content
   end
 end

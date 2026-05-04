@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy
@@ -49,5 +49,28 @@ class SupportAgent < ApplicationRecord
 
   def chat_model
     chat_config["model"] || entity&.entity_setting&.default_llm_model || ENV.fetch('DEFAULT_MODEL', 'gpt-4o-mini')
+  end
+
+  # Returns the list of starter questions surfaced as clickable chips in the
+  # chat panel's welcome state. Each agent type provides its own set so the
+  # generic chat UI can teach users what they can ask without per-host wiring.
+  #
+  # @return [Array<String>] sample questions for this agent's `agent_type`.
+  #   Returns an empty array for agent types without curated examples.
+  # @see #chat_enabled?
+  # @see AGENT_TYPES
+  def sample_questions
+    case agent_type
+    when "LpAssistantAgent"
+      ["What's my current IRR?", "Show my SOA", "When is the next capital call?"]
+    when "CashFlowAssistantAgent"
+      ["Which funds are running low?", "Show stale balances", "Recommend capital calls"]
+    when "PortfolioReportAgent"
+      ["Top 5 portfolio companies by valuation", "Which companies missed KPIs?"]
+    when "PortfolioCompanyAgent"
+      ["Show latest KPIs", "What's the current valuation?", "List recent investments"]
+    else
+      []
+    end
   end
 end

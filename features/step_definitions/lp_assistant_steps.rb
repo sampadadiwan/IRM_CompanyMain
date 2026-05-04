@@ -96,6 +96,44 @@ Given("a document with unsupported owner_type is created under the LP's entity")
   @document.update_columns(owner_type: "Note", owner_id: @fund.id)
 end
 
+Given("another investor has an SOA {string} attached to their commitment in the LP's fund") do |doc_name|
+  lp_inv_company    = FactoryBot.create(:entity, name: "LP-A Holdings",    entity_type: "Company")
+  other_inv_company = FactoryBot.create(:entity, name: "LP-B Holdings",    entity_type: "Company")
+
+  lp_investor = FactoryBot.create(:investor,
+    entity:          @fund.entity,
+    investor_entity: lp_inv_company
+  )
+  other_investor = FactoryBot.create(:investor,
+    entity:          @fund.entity,
+    investor_entity: other_inv_company
+  )
+  @lp_investor_ids = [lp_investor.id]
+
+  other_commitment = FactoryBot.create(:capital_commitment,
+    fund:     @fund,
+    entity:   @fund.entity,
+    investor: other_investor
+  )
+
+  folder = FactoryBot.create(:folder,
+    name:   'Investor Statements',
+    owner:  @fund,
+    entity: @fund.entity
+  )
+  @document = FactoryBot.create(:document,
+    name:      doc_name,
+    entity:    @fund.entity,
+    folder:    folder,
+    user:      @user,
+    owner_tag: 'Generated',
+    approved:  true
+  )
+  @document.update_columns(owner_type: 'CapitalCommitment', owner_id: other_commitment.id)
+end
+
+
+
 When('the LP requests the URL for that document') do
   tool = DocumentUrlTool.new(
     entity_ids:              @lp_entity_ids,

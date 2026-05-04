@@ -17,6 +17,8 @@ class ListSkillsTool < RubyLLM::Tool
 
   # @return [String] formatted skill summary, or a fallback when the directory is empty.
   def execute
+    t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
     entries = Dir.glob(SKILLS_DIR.join('*.md')).map do |path|
       fm = parse_frontmatter(File.read(path))
       name = fm['name'] || File.basename(path, '.md')
@@ -25,6 +27,8 @@ class ListSkillsTool < RubyLLM::Tool
     end
 
     return 'No skills available.' if entries.empty?
+
+    Rails.logger.info("[lp_assistant] ListSkillsTool took #{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round}ms ")
 
     "Available skills:\n#{entries.join("\n")}\n\n" \
       "Call load_skill(skill_name) to get schema and SQL examples for a domain."

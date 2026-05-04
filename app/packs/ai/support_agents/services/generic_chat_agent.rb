@@ -71,7 +71,9 @@ class GenericChatAgent < SupportAgentService
     # Do NOT duplicate it in the user message — Gemini interprets "use this data to answer"
     # as a signal to compute from context, which prevents it from calling tools like
     # the stress scenario tool for "what if" questions.
+    t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     response = chat.ask(ctx[:user_message])
+    Rails.logger.info("[Generic chat agent] execute_chat took #{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round}ms ")
     ctx[:ai_response] = response.content.to_s.presence || "(no response)"
   rescue StandardError => e
     Rails.logger.error "[GenericChatAgent] chat.ask failed: #{e.class} — #{e.message}"

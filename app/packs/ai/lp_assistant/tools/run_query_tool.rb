@@ -8,10 +8,7 @@
 # supplied by LpChatProvider. Any query missing {ENTITY_ID} or {FUND_IDS} is
 # rejected.
 #
-# Cross-FM note: one LP login can span multiple Fund Manager entities (e.g. an
-# LP invested in both Kedara and Fireside). {ENTITY_ID} therefore resolves to a
-# SET of entity_ids (the distinct entity_ids of the LP's accessible funds) and
-# must be used with `IN (...)` syntax in skill SQL.
+# {ENTITY_ID} is the single FM entity_id; IN syntax kept for uniformity.
 #
 # Security layers:
 #   1. SELECT-only (rejects WITH, INSERT, UPDATE, DELETE, DDL, etc.)
@@ -59,7 +56,7 @@ class RunQueryTool < RubyLLM::Tool
   FORBIDDEN_KEYWORDS = %w[INSERT UPDATE DELETE DROP ALTER TRUNCATE GRANT REVOKE CREATE].freeze
   MAX_ROWS = 100
 
-  # @param entity_ids [Array<Integer>] FM entity_ids — substitutes {ENTITY_ID}
+  # @param entity_ids [Array<Integer>] single-element list with the scoped FM entity_id.
   # @param accessible_fund_ids [Array<Integer>] — substitutes {FUND_IDS}
   # @param accessible_investor_ids [Array<Integer>] — substitutes {INVESTOR_IDS}; defaults to []
   def initialize(entity_ids:, accessible_fund_ids:, accessible_investor_ids: [])
@@ -81,12 +78,25 @@ class RunQueryTool < RubyLLM::Tool
     end
 
     error = validate(sql)
-    return "Query rejected: #{error}" if error
+    if error
+      Rails.logger.warn(
+        "[lp_assistant][RunQueryTool] REJECTED — reason=#{error}\n  " \
+        "llm_sql=#{sql}"
+      )
+      return "Query rejected: #{error}"
+    end
 
     safe_sql = substitute_and_limit(sql)
+    t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     result = ActiveRecord::Base.connection.exec_query(safe_sql, 'LP Assistant Query')
+    Rails.logger.info("[lp_assistant] RunQueryTool took #{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round}ms sql=#{sql.first(200)}")
     format_result(result)
   rescue ActiveRecord::StatementInvalid => e
+    Rails.logger.error(
+      "[lp_assistant][RunQueryTool] SQL FAILED — #{e.class}: #{e.message.lines.first&.strip}\n  " \
+      "llm_sql=#{sql}\n  " \
+      "executed_sql=#{safe_sql}"
+    )
     "SQL execution failed: #{e.message.lines.first&.strip}"
   end
 
@@ -105,6 +115,8 @@ class RunQueryTool < RubyLLM::Tool
     upper = stripped.upcase
     kw = FORBIDDEN_KEYWORDS.find { |w| upper.match?(/\b#{w}\b/) }
     return "forbidden keyword: #{kw}" if kw
+
+    return 'comma-separated FROM lists are not allowed; use explicit JOIN syntax.' if stripped.match?(/\bFROM\s+`?\w+`?\s*,/i)
 
     tables = stripped.scan(/(?:\bFROM|\bJOIN)\s+`?(\w+)`?/i).flatten.map(&:downcase).uniq
     invalid = tables - ALLOWED_TABLES

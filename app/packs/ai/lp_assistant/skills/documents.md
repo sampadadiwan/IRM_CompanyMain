@@ -18,6 +18,18 @@ Caphive stores every LP-visible document in a single polymorphic `documents` tab
 
 ---
 
+## Why these rules exist (read first)
+
+Multiple LPs share funds. Each LP receives **their own** Statement of Account, distribution payment advice, and (sometimes) call notice — these documents live in the **same folder** of the **same fund** and differ only by which `CapitalCommitment` / `CapitalDistributionPayment` they're attached to. The rules below are the only thing keeping LP-A from seeing LP-B's documents in a fund both invest in:
+
+- `cc.investor_id IN ({INVESTOR_IDS})` is **non-negotiable** for any query joining `capital_commitments`. Drop it and you leak another LP's SOA.
+- `d.entity_id IN ({ENTITY_ID})` is the cross-tenant guard. Drop it and you leak across FMs.
+- `cc.fund_id IN ({FUND_IDS})` is the cross-fund guard. Drop it and you leak funds the LP isn't invested in.
+
+`DocumentUrlTool` performs the same checks again server-side as a second line of defence, but you must still write the SQL correctly — a missing filter here means we return an unaccessible `document_id` to the LLM, which the LLM may surface in error text (e.g. "I found document 7566 but cannot open it"). That leaks the **existence** of the other LP's document even when the URL itself is blocked. Don't.
+
+---
+
 ## Universal Rules — Apply to EVERY Query
 
 1. **Three-axis scoping is mandatory**:
@@ -207,14 +219,14 @@ SELECT
   d.id         AS document_id,
   d.name       AS doc_name,
   fund.name    AS fund_name,
-  call.name    AS call_name,
+  cap_call.name    AS call_name,
   d.created_at AS issued_at
 FROM documents d
 JOIN folders f          ON f.id = d.folder_id
-JOIN capital_calls call ON call.id = d.owner_id
-JOIN funds fund         ON fund.id = call.fund_id
+JOIN capital_calls cap_call ON cap_call.id = d.owner_id
+JOIN funds fund         ON fund.id = cap_call.fund_id
 WHERE d.entity_id IN ({ENTITY_ID})
-  AND call.fund_id IN ({FUND_IDS})
+  AND cap_call.fund_id IN ({FUND_IDS})
   AND d.owner_type = 'CapitalCall'
   AND d.template   = false
   AND ( (d.owner_tag = 'Generated' AND d.approved = true)
@@ -222,7 +234,7 @@ WHERE d.entity_id IN ({ENTITY_ID})
         OR d.owner_tag IS NULL )
   AND d.deleted_at    IS NULL
   AND f.deleted_at    IS NULL
-  AND call.deleted_at IS NULL
+  AND cap_call.deleted_at IS NULL
   AND fund.deleted_at IS NULL
 ORDER BY d.created_at DESC
 LIMIT 1
@@ -352,12 +364,12 @@ FROM documents d
 JOIN folders f ON f.id = d.folder_id
 LEFT JOIN capital_commitments cc
        ON cc.id = d.owner_id AND d.owner_type = 'CapitalCommitment'
-LEFT JOIN capital_calls call
-       ON call.id = d.owner_id AND d.owner_type = 'CapitalCall'
+LEFT JOIN capital_calls cap_call
+       ON cap_call.id = d.owner_id AND d.owner_type = 'CapitalCall'
 LEFT JOIN capital_distributions cd
        ON cd.id = d.owner_id AND d.owner_type = 'CapitalDistribution'
 LEFT JOIN funds fund
-       ON fund.id = COALESCE(cc.fund_id, call.fund_id, cd.fund_id,
+       ON fund.id = COALESCE(cc.fund_id, cap_call.fund_id, cd.fund_id,
                              CASE WHEN d.owner_type = 'Fund' THEN d.owner_id END)
 WHERE d.entity_id IN ({ENTITY_ID})
   AND d.template = false
@@ -396,6 +408,9 @@ After `run_query` returns rows, **for each `document_id`** call the `document_ur
 > Your most recent Statement of Account is **[SOA - Q4 2025](https://s3.amazonaws.com/...)** for **Growth Fund**, issued **15 Jan 2026**. Click the link to open the PDF.
 
 **Example — multiple docs (mixed types):**
+
+- NEVER render document links as a Markdown table. Always use a bulleted list — one document per `- [name](url) — meta` line. Tables break inline link parsing for long presigned S3 URLs (the link renders as raw `[text](url)` text instead of a clickable anchor). This applies even if the LP asks for a "table" or "better visualization" — explain in prose, list with bullets.
+
 
 > Your recent documents:
 > - [SOA - Q4 2025](<url_1>) — Statement · Growth Fund · 15 Jan 2026

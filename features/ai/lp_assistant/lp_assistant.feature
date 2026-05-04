@@ -80,3 +80,9 @@ Feature: LP Assistant Tools
     Given a document with unsupported owner_type is created under the LP's entity
     When the LP requests the URL for that document
     Then the document response should include "not found or not accessible"
+
+  Scenario: LP cannot resolve a URL for another LP's SOA in the same fund
+    Given another investor has an SOA "SOA - Q4 2025" attached to their commitment in the LP's fund
+    When the LP requests the URL for that document
+    Then the document response should include "not found or not accessible"
+

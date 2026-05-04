@@ -59,14 +59,23 @@
 
   <div data-controller="datatable">
       <%= render "dashboard_widgets/dashboard", dashboard_name: DashboardWidget::LP_LANDING_PAGE, show_nav: false, entity_id: selected_entity_id %>
-      <% lp_agent = SupportAgent.find_by(
-    entity_id: current_user.investor_accesses.where(approved: true).pluck(:entity_id),
-    agent_type: "LpAssistantAgent",
-    enabled: true
-) %>
-<% if lp_agent&.chat_enabled? %>
-  <%= render "support_agents/chat_panel", support_agent: lp_agent, chattable: current_user %>
-<% end %>
+     <%
+      has_approved_access = current_user.investor_accesses
+                                    .where(entity_id: selected_entity_id, approved: true)
+                                    .exists?
+
+      lp_agent = if has_approved_access
+               SupportAgent.find_by(
+                 entity_id: selected_entity_id,
+                 agent_type: "LpAssistantAgent",
+                 enabled: true
+               )
+             end
+    %>
+    <% if lp_agent&.chat_enabled? %>
+      <%= render "support_agents/chat_panel", support_agent: lp_agent, chattable: current_user %>
+    <% end %>
+
 
   </div>
 </turbo-frame>

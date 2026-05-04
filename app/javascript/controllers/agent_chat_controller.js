@@ -1,4 +1,18 @@
 import { Controller } from "@hotwired/stimulus"
+import { marked } from "marked"
+import DOMPurify from "dompurify"
+
+marked.setOptions({ gfm: true, breaks: true })
+
+DOMPurify.addHook("afterSanitizeAttributes", (node) => {
+  if (node.tagName === "A") {
+    node.setAttribute("target", "_blank")
+    node.setAttribute("rel", "noopener noreferrer")
+  }
+})
+
+
+
 
 export default class extends Controller {
   static targets = ["panel", "toggleBtn", "messages", "input", "spinner", "welcome", "sendBtn", "resizeHandle"]
@@ -160,6 +174,20 @@ close() {
   if (container) container.classList.remove("chat-open")
 }
 
+/**
+ * Pre-fills the chat input with the clicked sample-question chip's prompt
+ * and focuses the textarea. Used by chips inside the panel's welcome state.
+ *
+ * @param {MouseEvent} e - Click event from a chip; reads `data-prompt`.
+ * @returns {void}
+ */
+fillPrompt(e) {
+  this.inputTarget.value = e.currentTarget.dataset.prompt
+  this.inputTarget.focus()
+}
+
+
+
 
   handleEnter(e) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -290,39 +318,12 @@ close() {
   }
 
 formatMarkdown(text) {
-  // Sanitize dangerous tags
-  let html = text
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-
-  // Strip markdown code fences
-  html = html.replace(/```\w*\s*/g, '')
-
-  // Collapse multiple blank lines into one
-  html = html.replace(/\n{3,}/g, '\n\n')
-
-  // Apply markdown formatting
-  html = html
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g, "<em>$1</em>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>")
-
-        // Markdown links [text](url)
-  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-
-    // Bare URLs not already inside an href
-  html = html.replace(/(?<!href=")(https?:\/\/[^\s<"]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
-
-
-  // Remove formatting whitespace between HTML tags
-  html = html.replace(/>\s+</g, '><')
-
-  // Convert remaining newlines to <br> (text content only)
-  html = html.replace(/\n/g, "<br>")
-
-  return html
+  const rawHtml = marked.parse(text || "")
+  return DOMPurify.sanitize(rawHtml, {
+    ADD_ATTR: ["target", "rel"]
+  })
 }
+
 
 
 
