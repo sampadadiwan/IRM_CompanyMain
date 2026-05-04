@@ -14,8 +14,17 @@
   <td class="text-col">
     <%= investor_access.email %>
     <% if investor_access.cc.present? %>
+      <% cc_emails = investor_access.cc.split(',').map(&:strip) %>
       <br>
-      <%= "cc: #{investor_access.cc}" %>
+      <span class="text-muted small">cc: <%= cc_emails.first %></span>
+      <% if cc_emails.size > 1 %>
+        <span class="badge bg-secondary ms-1"
+              data-bs-toggle="tooltip"
+              data-bs-placement="top"
+              data-bs-html="true"
+              title="<%= cc_emails[1..].join('<br>').html_safe %>"
+              style="cursor: default;">+<%= cc_emails.size - 1 %> more</span>
+      <% end %>
     <% end %>
   </td>
   <td class="text-col">
