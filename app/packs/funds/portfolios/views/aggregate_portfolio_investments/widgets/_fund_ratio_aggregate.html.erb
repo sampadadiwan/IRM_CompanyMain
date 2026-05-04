@@ -35,7 +35,7 @@
     scoped = fund_ratios.where(name: ratio_name)
     ratios_by_name[ratio_name] = if scenario_list.present?
       scenario_list.map do |sc|
-        { name: sc, data: scoped.where(scenario: sc).map { |fr| [hide_fund_name ? "" : fr.owner.name, fr.value.to_f.round(decimals)] } }
+        [sc, scoped.where(scenario: sc).first&.value.to_f.round(decimals)]
       end
     else
       scoped.map { |fr| [hide_fund_name ? "" : fr.owner.name, fr.value.to_f.round(decimals)] }
@@ -69,9 +69,9 @@
                       color: chart_colors[idx]
                     }
                   },
-                  xAxis: { labels: { enabled: !hide_fund_name } },
+                  xAxis: { labels: { enabled: scenario_list.present? || !hide_fund_name } },
                   yAxis: { visible: show_y_axis },
-                  legend: { enabled: show_legend },
+                  legend: { enabled: show_legend && scenario_list.blank? },
                   **chart_theme_color
                 } %>
               </div>
