@@ -1296,6 +1296,19 @@ input[type=number] {
   display: unset !important;
 }
 
+.ag-theme-quartz,
+.ag-theme-quartz-dark,
+.ag-theme-alpine {
+  .ag-row-footer {
+    .ag-cell,
+    .ag-cell-value,
+    .ag-group-value,
+    span, a {
+      font-weight: 700 !important;
+    }
+  }
+}
+
 
 iframe {
   overflow: hidden;
