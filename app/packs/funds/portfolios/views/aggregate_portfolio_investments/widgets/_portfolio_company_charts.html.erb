@@ -7,9 +7,14 @@
   tags ||= nil
   sectors_to_include = uri_params[:sector] || []
   fund_ids ||= @selected_fund_ids.presence || Array(params[:fund_ids]).presence || @funds.pluck(:id).presence || []
-  allowed_plot_params = ["fmv", "bought_amount"]
+  allowed_plot_params = ["fmv", "bought_amount", "sold_amount"]
   plot_param ||= args[:plot].present? ? args[:plot] : "fmv"
   title = args[:title] || tags || "Portfolio Company Charts"
+  attr_label = case plot_param
+               when "fmv" then "FMV"
+               when "sold_amount" then "Sold Amount"
+               else "Bought Amount"
+               end
 
   # Default behavior: show_portfolio_company_wise is true if no other parameter is set
   show_sector_wise = args[:show_sector_wise] == true
@@ -46,7 +51,7 @@
                       <thead>
                         <tr>
                           <th class="p-1 pe-4 small">Sector</th>
-                          <th class="p-1 ps-4 small text-end"><%= plot_param == "fmv" ? "FMV" : "Bought Amount" %> (<%= entity_currency %>)</th>
+                          <th class="p-1 ps-4 small text-end"><%= attr_label %> (<%= entity_currency %>)</th>
                           <th class="p-1 ps-4 small text-end">%</th>
                         </tr>
                       </thead>
@@ -112,7 +117,7 @@
                     <thead>
                       <tr>
                         <th class="p-1 pe-4 small">Company</th>
-                        <th class="p-1 ps-4 small text-end"><%= plot_param == "fmv" ? "FMV" : "Bought Amount" %> (<%= entity_currency %>)</th>
+                        <th class="p-1 ps-4 small text-end"><%= attr_label %> (<%= entity_currency %>)</th>
                         <th class="p-1 ps-4 small text-end">%</th>
                       </tr>
                     </thead>
