@@ -44,7 +44,7 @@
     <% end %>
 
     <!-- Nav pills row -->
-    <ul class="nav nav-pills flex-nowrap align-items-center gap-2 <%= theme %> mb-4" data-controller="nav-overflow" data-nav-overflow-target="nav">
+    <ul class="nav nav-pills flex-nowrap align-items-center <%= theme %> mb-4" data-controller="nav-overflow" data-nav-overflow-target="nav">
         <!-- Add a link to the dashboard widgets -->
         <%
             all_widgets = dashboard_widgets(dashboard_name, entity_id, name:, owner:, show_menu: true).to_a
@@ -53,14 +53,14 @@
         <% all_widgets.each_with_index do |(name, dashboard_widget), index| %>
             <li class="nav-item" data-nav-overflow-target="item">
                 <% label = dashboard_widget.tags.presence || dashboard_widget.widget_name %>
-                <a class="nav-link px-3 py-2 text-center" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false style="width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="<%= label %>">
+                <a class="nav-link py-2 text-center" href="#<%= "#{dashboard_widget.widget_name.parameterize.underscore}_#{dashboard_widget.position}" %>" data-turbo=false title="<%= label %>">
                     <%= label %>
                 </a>
             </li>
         <% end %>
 
         <li class="nav-item dropdown d-none" data-nav-overflow-target="more">
-            <a class="nav-link px-3 py-2 dropdown-toggle text-center" href="#" id="moreWidgetsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 180px; ">
+            <a class="nav-link py-2 dropdown-toggle text-center" href="#" id="moreWidgetsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"">
                 More
             </a>
             <ul class="dropdown-menu shadow" aria-labelledby="moreWidgetsDropdown" data-nav-overflow-target="moreDropdown">
