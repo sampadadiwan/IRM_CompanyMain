@@ -19,6 +19,7 @@
   table_limit = args[:table_limit] || 10
 
   unique_id = args[:unique_id] || SecureRandom.hex(4)
+  entity_currency = current_user.entity.currency
 %>
 
 <% valid_plot_param = allowed_plot_params.include?(plot_param.downcase) %>
@@ -45,14 +46,16 @@
                       <thead>
                         <tr>
                           <th class="p-1 pe-4 small">Sector</th>
-                          <th class="p-1 small text-end">Percentage of <%= plot_param == "fmv" ? "FMV" : "Bought Amount" %></th>
+                          <th class="p-1 ps-4 small text-end"><%= plot_param == "fmv" ? "FMV" : "Bought Amount" %> (<%= entity_currency %>)</th>
+                          <th class="p-1 ps-4 small text-end">%</th>
                         </tr>
                       </thead>
                       <tbody>
                         <% table_data[:top].each do |name, value| %>
                           <tr>
                             <td class="p-1 pe-4 small"><%= name %></td>
-                            <td class="p-1 small text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                            <td class="p-1 ps-4 small text-end"><%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %></td>
+                            <td class="p-1 ps-4 small text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
                           </tr>
                         <% end %>
                         <% if table_data[:others].any? %>
@@ -65,17 +68,21 @@
                               </button>
                               Other
                             </td>
-                            <td class="p-1 small text-end"><%= number_to_percentage((other_sum.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                            <td class="p-1 ps-4 small text-end"><%= number_to_currency(other_sum, unit: "#{entity_currency} ", precision: 0) %></td>
+                            <td class="p-1 ps-4 small text-end"><%= number_to_percentage((other_sum.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
                           </tr>
                           <tr class="d-none" data-role="sector-others-list-row">
-                            <td colspan="2" class="p-0">
+                            <td colspan="3" class="p-0">
                               <div class="border-top px-2 py-2 bg-body-tertiary">
                                 <div class="small fw-semibold text-muted mb-1">Other sectors</div>
                                 <ul class="list-unstyled small mb-0">
                                   <% table_data[:others].each do |name, value| %>
                                     <li class="d-flex justify-content-between align-items-center py-1 border-top">
                                       <span class="text-truncate" title="<%= name %>"><%= name %></span>
-                                      <span class="fw-semibold"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></span>
+                                      <span class="fw-semibold">
+                                        <%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %>
+                                        (<%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %>)
+                                      </span>
                                     </li>
                                   <% end %>
                                 </ul>
@@ -105,14 +112,16 @@
                     <thead>
                       <tr>
                         <th class="p-1 pe-4 small">Company</th>
-                        <th class="p-1 small text-end">Percentage of <%= plot_param == "fmv" ? "FMV" : "Bought Amount" %></th>
+                        <th class="p-1 ps-4 small text-end"><%= plot_param == "fmv" ? "FMV" : "Bought Amount" %> (<%= entity_currency %>)</th>
+                        <th class="p-1 ps-4 small text-end">%</th>
                       </tr>
                     </thead>
                     <tbody>
                       <% table_data[:top].each do |name, value| %>
                         <tr>
                           <td class="p-1 pe-4 small"><%= name %></td>
-                          <td class="p-1 small text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
+                          <td class="p-1 ps-4 small text-end"><%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %></td>
+                          <td class="p-1 ps-4 small text-end"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></td>
                         </tr>
                       <% end %>
 
@@ -126,19 +135,25 @@
                             </button>
                             Other
                           </td>
-                          <td class="p-1 small text-end align-middle">
+                          <td class="p-1 ps-4 small text-end align-middle">
+                            <%= number_to_currency(other_sum, unit: "#{entity_currency} ", precision: 0) %>
+                          </td>
+                          <td class="p-1 ps-4 small text-end align-middle">
                             <%= number_to_percentage((other_sum.to_f / table_data[:total]) * 100.0, precision: 1) %>
                           </td>
                         </tr>
                         <tr class="d-none" data-role="company-others-list-row">
-                          <td colspan="2" class="p-0">
+                          <td colspan="3" class="p-0">
                             <div class="border-top px-2 py-2 bg-body-tertiary">
                               <div class="small fw-semibold text-muted mb-1">Other companies</div>
                               <ul class="list-unstyled small mb-0">
                                 <% table_data[:others].each do |name, value| %>
                                   <li class="d-flex justify-content-between align-items-center py-1 border-top">
                                     <span class="text-truncate" title="<%= name %>"><%= name %></span>
-                                    <span class="fw-semibold"><%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %></span>
+                                    <span class="fw-semibold">
+                                      <%= number_to_currency(value, unit: "#{entity_currency} ", precision: 0) %>
+                                      (<%= number_to_percentage((value.to_f / table_data[:total]) * 100.0, precision: 1) %>)
+                                    </span>
                                   </li>
                                 <% end %>
                               </ul>

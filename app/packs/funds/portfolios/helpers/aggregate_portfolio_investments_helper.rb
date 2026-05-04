@@ -151,38 +151,37 @@ module AggregatePortfolioInvestmentsHelper
   # @param attr [String] Attribute to sum ('fmv' or 'bought_amount')
   # @return [Array<Array>] Array of [sector_name, value_in_dollars] pairs
   def investment_grouped_data_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr) # rubocop:disable Metrics/CyclomaticComplexity
-    attr = if attr.to_s.downcase == "fmv"
-             "fmv_cents"
-           else
-             "amount_cents"
-           end
+    use_fmv = attr.to_s.downcase == "fmv"
+    attr = use_fmv ? "fmv_cents" : "amount_cents"
 
-    # Fetch all portfolio investments with their associated portfolio_company (buys only, like companies)
-    portfolio_investments = filter_investments(entity.portfolio_investments.buys.includes(:portfolio_company), fund_ids, portfolio_company_ids)
+    # :fund and :valuation are eager-loaded to avoid N+1 queries
+    portfolio_investments = filter_investments(entity.portfolio_investments.buys.includes(:portfolio_company, :fund, :valuation), fund_ids, portfolio_company_ids)
 
-    # Normalize sectors_to_include for case-insensitive comparison (support comma-separated input)
     sectors_arr = sectors_to_include.is_a?(Array) ? sectors_to_include : Array(sectors_to_include.to_s.split(','))
     allowed = sectors_arr.map { |s| s.to_s.strip.downcase }.reject(&:empty?)
 
-    # Initialize a hash to store the aggregated value for each sector
     sector_data = Hash.new(0)
+    entity_currency = entity.currency
+    # Cache rates by [fund_currency, entity_currency, date] — one DB hit per unique combination
+    rates_cache = {}
+    today = Time.zone.today
 
-    # Iterate through the portfolio investments and group by sector(s)
     portfolio_investments.each do |investment|
       pc = investment.portfolio_company
       next unless pc && pc.sector.present?
 
-      if sectors_to_include.present?
-        pc.sector.to_s.split(',').map(&:strip).reject(&:empty?).each do |sector|
-          normalized = sector.downcase
-          next if allowed.any? && allowed.exclude?(normalized)
+      # fmv_cents is valued at the latest valuation date, so the exchange rate must reflect that date.
+      # amount_cents is a point-in-time transaction, so use the investment_date for its rate.
+      # Falls back to rate=1 when no exchange rate row exists (same-currency funds always return 1).
+      fund_currency = investment.fund.currency
+      exchange_rate_date = use_fmv ? (investment.valuation&.valuation_date || today) : investment.investment_date
+      rate = rates_cache[[fund_currency, entity_currency, exchange_rate_date]] ||= ExchangeRate.get_rate(fund_currency, entity_currency, exchange_rate_date, entity.id) || 1
+      converted_cents = investment.send(attr).to_i * rate
 
-          sector_data[sector] += investment.send(attr).to_i
-        end
-      else
-        pc.sector.to_s.split(',').map(&:strip).reject(&:empty?).each do |sector|
-          sector_data[sector] += investment.send(attr).to_i
-        end
+      pc.sector.to_s.split(',').map(&:strip).reject(&:empty?).each do |sector|
+        next if allowed.any? && allowed.exclude?(sector.downcase)
+
+        sector_data[sector] += converted_cents
       end
     end
 
@@ -195,27 +194,45 @@ module AggregatePortfolioInvestmentsHelper
     investments
   end
 
-  # Return grouped data for companies as array of [company_name, value_in_dollars]
+  # Return grouped data for companies as array of [company_name, value_in_entity_currency]
   # Fetches buy transactions only and groups by portfolio company name.
   # Supports filtering by funds and specific companies.
+  #
+  # Uses a Ruby loop rather than SQL GROUP BY SUM because fmv_cents / amount_cents are stored in
+  # each fund's own currency — a SQL sum would mix currencies. Each value is converted to
+  # entity.currency before accumulation, using an exchange rate as of the date appropriate to
+  # the attribute: valuation_date for FMV, investment_date for bought amount.
   #
   # @param entity [Entity] The entity to fetch investments for
   # @param fund_ids [Array<Integer>] Fund IDs to filter by
   # @param attr [String] Attribute to sum ('fmv' or 'bought_amount')
   # @param portfolio_company_ids [Array<Integer>] Portfolio company IDs to filter by
-  # @return [Array<Array>] Array of [company_name, value_in_dollars] pairs
+  # @return [Array<Array>] Array of [company_name, value_in_entity_currency] pairs
   def investment_grouped_data_by_companies(entity, fund_ids, attr, portfolio_company_ids = [])
-    attr = if attr.to_s.downcase == "fmv"
-             "fmv_cents"
-           else
-             "amount_cents"
-           end
+    use_fmv = attr.to_s.downcase == "fmv"
+    attr = use_fmv ? "fmv_cents" : "amount_cents"
 
-    portfolio_investments = entity.portfolio_investments.buys.includes(:portfolio_company)
+    # :fund and :valuation are eager-loaded to avoid N+1 queries
+    portfolio_investments = entity.portfolio_investments.buys.includes(:fund, :valuation)
     portfolio_investments = portfolio_investments.where(fund_id: fund_ids) if fund_ids.present?
     portfolio_investments = portfolio_investments.where(portfolio_company_id: portfolio_company_ids) if portfolio_company_ids.present?
 
-    grouped = portfolio_investments.group(:portfolio_company_name).sum(attr.to_sym)
+    entity_currency = entity.currency
+    # Cache rates by [fund_currency, entity_currency, date] — one DB hit per unique combination
+    rates_cache = {}
+    today = Time.zone.today
+
+    grouped = Hash.new(0)
+    portfolio_investments.each do |investment|
+      # fmv_cents is valued at the latest valuation date, so the exchange rate must reflect that date.
+      # amount_cents is a point-in-time transaction, so use the investment_date for its rate.
+      # Falls back to rate=1 when no exchange rate row exists (same-currency funds always return 1).
+      fund_currency = investment.fund.currency
+      exchange_rate_date = use_fmv ? (investment.valuation&.valuation_date || today) : investment.investment_date
+      rate = rates_cache[[fund_currency, entity_currency, exchange_rate_date]] ||= ExchangeRate.get_rate(fund_currency, entity_currency, exchange_rate_date, entity.id) || 1
+      grouped[investment.portfolio_company_name] += investment.send(attr).to_i * rate
+    end
+
     grouped.map { |name, amount_cents| [name, amount_cents / 100.0] }
   end
 
