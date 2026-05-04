@@ -1,3 +1,15 @@
+V9.2.36
+4b213d252 Donuts descending values (#1407)
+39c10b48a Fix/lp asst table render entity scope (#1397)
+b988bdba2 Enhance investment data handling to support sold amounts; update chart labels accordingly
+ce46711c7 Enhance investor access email display with CC handling and tooltips; add tooltip controller to stakeholder details
+15cff60d9 Refactor portfolio company charts to display values in entity currency and improve layout for percentage representation
+d29887a20 Update to bolden the total in Multi portfolio dashboard (#1405)
+8f54c6b4c Fix nav ribbon spacing (#1406)
+7e6b7249a Update fund ratio chart data handling to support scenario-based display and improve legend visibility
+d3a45c951 Refactor fund ratio display logic to improve scenario handling and legend visibility
+
+
 V9.2.35
 518884191 Refactor fund ratio aggregation to conditionally display legend based on scenarios
 b768ee97b Enhance fund ratio widget with additional parameters and improve display options
