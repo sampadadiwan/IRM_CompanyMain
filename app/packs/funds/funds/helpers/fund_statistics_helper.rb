@@ -4,10 +4,19 @@ module FundStatisticsHelper
   ].freeze
 
   # Only pass custom colors as true if we are sure the css has these colors defined otherwise the chart will have all black color (no color actually but looks black)
-  def pie_chart_with_options(data, chart_type: "donut", **extra_options)
+  def pie_chart_with_options(data, chart_type: "donut", descending: true, **extra_options) # rubocop:disable Metrics/CyclomaticComplexity
     chart_type = chart_type.to_s.downcase
     inner_size = chart_type == "pie" ? nil : "50%"
     semi       = chart_type == "half_donut"
+
+    # Sort data in descending order if requested
+    data = if descending && data.is_a?(Hash)
+             data.sort_by { |_, v| -v }.to_h
+           elsif descending && data.is_a?(Array)
+             data.sort_by { |_, v| -v }
+           else
+             data
+           end
 
     pie_plot_opts = {
       dataLabels: {
@@ -31,7 +40,7 @@ module FundStatisticsHelper
     }
 
     # When use_custom_colors?: true , use CSS vars
-    # --pie-color-1..10 defined in the custom stylesheet (e.g. kedaara.css).
+    # --pie-color-1..15 defined in the custom stylesheet (e.g. kedaara.css).
     # Otherwise fall back to pie-colors in styles.css.
     base_colors = use_custom_colors? ? (pie_chart_colors_from_css.presence || PIE_CHART_COLORS.dup) : PIE_CHART_COLORS.dup
     extended_colors = base_colors.dup
@@ -64,7 +73,7 @@ module FundStatisticsHelper
       charts << content_tag(:div, class: "col-md-6 mb-4") do
         content_tag(:div, class: "card shadow h-100") do
           content_tag(:div, class: "card-body") do
-            pie_chart_with_options(data, title: "Fund Utilization (%)", id: "fund_utilization_chart_#{fund.id}")
+            pie_chart_with_options(data, title: "Fund Utilization (%)", id: "fund_utilization_chart_#{fund.id}", descending: false)
           end
         end
       end

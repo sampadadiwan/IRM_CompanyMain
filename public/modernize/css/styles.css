@@ -1087,6 +1087,11 @@ progress {
   --pie-color-8: var(--bs-pink);
   --pie-color-9: var(--bs-indigo);
   --pie-color-10: var(--bs-teal);
+  --pie-color-11: var(--bs-red);
+  --pie-color-12: var(--bs-orange);
+  --pie-color-13: var(--bs-yellow);
+  --pie-color-14: var(--bs-green);
+  --pie-color-15: var(--bs-teal);
 }
 
 .row {

@@ -139,6 +139,11 @@
   --pie-color-8: #A8C8D8;
   --pie-color-9: #6B4226;
   --pie-color-10: #3A2416;
+  --pie-color-11: #B08A5B; /* dry clay / muted ochre */
+  --pie-color-12: #87986A; /* sage olive */
+  --pie-color-13: #5E6F46; /* moss green */
+  --pie-color-14: #8C5E3C; /* warm bark */
+  --pie-color-15: #2F4F4F; /* deep forest teal */
 
   /* KPI tag chart colours — must stay in sync with .badge-tag-* rules below.
      Override these variables in a client-specific CSS file to retheme charts
