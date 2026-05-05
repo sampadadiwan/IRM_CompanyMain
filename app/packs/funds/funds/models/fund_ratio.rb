@@ -43,6 +43,22 @@ class FundRatio < ApplicationRecord
   scope :for_portfolio_companies, -> { where(owner_type: "PortfolioCompany") }
   scope :for_fund, ->(fund_id) { where(fund_id:, owner_type: "Fund") }
 
+  # Marks the latest=true flag per scenario independently, so that e.g. a Default job
+  # run never clears the latest flag on Bull Case rows (or any other scenario).
+  def self.update_latest(fund, end_date)
+    where(fund:).distinct.pluck(:scenario).each do |scenario|
+      scoped = where(fund:, scenario:)
+
+      # Skip if a newer ratio already exists for this scenario — the incoming end_date
+      # is not the latest, so we must not demote whichever row currently holds that flag.
+      last = scoped.order(end_date: :desc).first
+      next unless last && last.end_date <= end_date
+
+      scoped.update_all(latest: false)
+      scoped.where(end_date:).update_all(latest: true)
+    end
+  end
+
   before_create :set_scenario_if_missing
   def set_scenario_if_missing
     self.scenario = portfolio_scenario.name if (scenario.blank? || scenario == "Default") && portfolio_scenario.present?

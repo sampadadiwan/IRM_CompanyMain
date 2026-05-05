@@ -204,12 +204,7 @@ class Fund < ApplicationRecord
   end
 
   def update_latest_fund_ratios(end_date)
-    last_fund_ratio = fund_ratios.order(end_date: :desc).first
-    # Only update the latest flag if the end_date is the latest
-    if last_fund_ratio && last_fund_ratio.end_date <= end_date
-      fund_ratios.update_all(latest: false)
-      fund_ratios.where(end_date:).update_all(latest: true)
-    end
+    FundRatio.update_latest(self, end_date)
   end
 
   def reports_folder
