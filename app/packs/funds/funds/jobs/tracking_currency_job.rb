@@ -9,14 +9,14 @@ class TrackingCurrencyJob < ApplicationJob
       @missing_rates = Set.new # Tracks unique missing rate definitions for the final report
 
       funds = if fund_id.present?
-                # This is run when a specific fund needs to be updated
                 Fund.where(id: fund_id)
               elsif entity_id.present?
-                # This is run when all funds for an entity need to be updated, typically called when an exchangee rate changes
                 Fund.where(entity_id: entity_id)
               else
-                # This is run daily, to compute for all funds that have tracking currency
-                Fund.where("tracking_currency <> currency")
+                # Only funds belonging to entities with tracking currency enabled.
+                # entity_currency_fmv_cents is populated for all such funds (regardless of whether
+                # fund.currency matches entity.currency) so cross-fund SUM queries always work.
+                Fund.joins(:entity).merge(Entity.where_permissions(:enable_tracking_currency))
               end
 
       funds.each do |fund|
@@ -46,15 +46,12 @@ class TrackingCurrencyJob < ApplicationJob
         @error_msg.merge!(convert_distributions(fund, user_id, force: force))
         @error_msg.merge!(convert_commitment_adjustments(fund, user_id, force: force))
         @error_msg.merge!(convert_capital_commitments(fund, user_id, force: force))
-        @error_msg.merge!(convert_portfolio_investments(fund, force: force))
-
-        msg = "Tracking currency updated for fund #{fund.name}"
-        send_notification(msg, user_id)
-      else
-        msg = "#{fund.name} tracking currency not present, skipping conversion to tracking currency"
-        send_notification(msg, user_id, :info)
-        Rails.logger.debug { msg }
       end
+
+      # PI entity currency columns run for every fund so cross-fund SUM queries always work.
+      @error_msg.merge!(convert_portfolio_investments(fund, force: force))
+
+      send_notification("Tracking/entity currency updated for fund #{fund.name}", user_id)
     end
   end
 
@@ -214,38 +211,67 @@ class TrackingCurrencyJob < ApplicationJob
   end
 
   def convert_portfolio_investments(fund, force: false)
-    send_notification("Updating tracking currency for portfolio investments", nil)
-    # Always check FMV for all PIs, but only update investment amount if forced or not yet set
+    send_notification("Updating entity/tracking currency for portfolio investments", nil)
+    entity_currency = fund.entity.currency
+
     fund.portfolio_investments.find_each do |pi|
       updates = {}
 
-      # Update original investment amount to tracking currency
-      if force || pi.tracking_amount_cents.zero?
+      # --- Tracking currency amount (only when fund has a distinct tracking currency) ---
+      if fund.has_tracking_currency? && (force || pi.tracking_amount_cents.zero?)
         rate = fund.tracking_exchange_rate(exchange_rate_date: pi.investment_date).rate
         updates[:tracking_amount_cents] = pi.amount_cents * rate
       end
 
-      # Dynamic FMV Refresh: Tracking FMV is refreshed every time to account for new valuations
-      # or corrected historical exchange rates for valuation dates.
+      # --- Entity currency amount ---
+      # Always written so cross-fund SUM queries work on a single column.
+      # When currencies match, rate is 1 (direct copy of amount_cents).
+      if force || pi.entity_currency_amount_cents.zero?
+        entity_rate = entity_rate_for(fund, entity_currency, pi.investment_date)
+        updates[:entity_currency_amount_cents] = pi.amount_cents * entity_rate if entity_rate
+      end
+
+      # --- FMV: always refresh to pick up new valuations or corrected exchange rates ---
       latest_valuation = pi.latest_valuation_on(Time.zone.today)
       if latest_valuation
-        fmv_rate = fund.tracking_exchange_rate(exchange_rate_date: latest_valuation.valuation_date).rate
-        updates[:tracking_fmv_cents] = pi.fmv_cents * fmv_rate
+        valuation_date = latest_valuation.valuation_date
+
+        if fund.has_tracking_currency?
+          fmv_rate = fund.tracking_exchange_rate(exchange_rate_date: valuation_date).rate
+          updates[:tracking_fmv_cents] = pi.fmv_cents * fmv_rate
+        end
+
+        entity_fmv_rate = entity_rate_for(fund, entity_currency, valuation_date)
+        updates[:entity_currency_fmv_cents] = pi.fmv_cents * entity_fmv_rate if entity_fmv_rate
+      else
+        updates[:entity_currency_fmv_cents] = 0
       end
 
       pi.update_columns(updates) if updates.any?
     rescue StandardError => e
-      @missing_rates << "Portfolio Investment (#{pi.id}): Missing rate for conversion"
+      @missing_rates << "Portfolio Investment (#{pi.id}): #{e.message}"
       Rails.logger.error "Error updating PI #{pi.id}: #{e.message}"
     end
 
-    # Recalculate counter culture totals for Portfolio Investments at the fund level
     PortfolioInvestment.counter_culture_fix_counts(where: { fund_id: fund.id })
 
     {}
   rescue StandardError => e
     Rails.logger.debug e.backtrace
     { "#{fund.name}: Portfolio Investments" => e.message }
+  end
+
+  # Returns the exchange rate multiplier from fund currency to the target currency.
+  # Returns 1 when currencies are the same to avoid a DB lookup.
+  def entity_rate_for(fund, target_currency, date)
+    return 1 if fund.currency == target_currency
+
+    er = fund.get_exchange_rate(fund.currency, target_currency, date)
+    unless er
+      @missing_rates << "Portfolio Investments: #{fund.currency}->#{target_currency} on #{date}"
+      return nil
+    end
+    er.rate
   end
   # rubocop:enable Rails/SkipsModelValidations
 end

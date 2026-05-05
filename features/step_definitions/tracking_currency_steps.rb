@@ -2,6 +2,19 @@ When('I run the TrackingCurrencyJob for the fund') do
   TrackingCurrencyJob.new.perform(fund_id: @fund.id, user_id: @user.id)
 end
 
+When('I run the TrackingCurrencyJob with force for the fund') do
+  TrackingCurrencyJob.new.perform(fund_id: @fund.id, user_id: @user.id, force: true)
+end
+
+When('I run the TrackingCurrencyJob for all funds in the entity') do
+  TrackingCurrencyJob.new.perform(entity_id: @user.entity.id, user_id: @user.id)
+end
+
+Given('the entity has {string} permission') do |permission|
+  @user.entity.permissions.set(permission.to_sym)
+  @user.entity.save!
+end
+
 Then('the tracking amounts should be calculated for the fund') do
   # Verify Account Entries
   expect(@fund.account_entries.count).to be > 0
@@ -111,4 +124,99 @@ Then('the tracking amounts should be recalculated') do
     puts "#{id} - #{amount} vs #{@portfolio_investment_tracking_amounts_2[id]}"
     expect(@portfolio_investment_tracking_amounts_2[id]).not_to eq(amount)
   end
+end
+
+# -----------------------------------------------------------------------
+# Entity currency step definitions
+# -----------------------------------------------------------------------
+
+Then('the entity currency amounts should be calculated for the USD fund') do
+  usd_fund = @user.entity.funds.find_by(currency: "USD")
+  pis = usd_fund.portfolio_investments
+  expect(pis.exists?).to be true
+
+  pis_with_amount = pis.where.not(amount_cents: 0)
+  expect(pis_with_amount.where.not(entity_currency_amount_cents: 0).count).to eq(pis_with_amount.count),
+    "Expected all USD fund PIs with amount_cents to have entity_currency_amount_cents set"
+
+  pis_with_amount.each do |pi|
+    puts "PI #{pi.id}: amount_cents=#{pi.amount_cents} entity_currency_amount_cents=#{pi.entity_currency_amount_cents}"
+    expect(pi.entity_currency_amount_cents).not_to eq(pi.amount_cents),
+      "PI #{pi.id}: entity_currency_amount_cents should differ from amount_cents when fund.currency(USD) != entity.currency(INR)"
+  end
+end
+
+Then('the entity currency FMV should be calculated for the USD fund') do
+  usd_fund = @user.entity.funds.find_by(currency: "USD")
+  pis_with_fmv = usd_fund.portfolio_investments.where.not(fmv_cents: 0)
+
+  expect(pis_with_fmv.exists?).to be true
+
+  pis_with_fmv.each do |pi|
+    puts "PI #{pi.id}: fmv_cents=#{pi.fmv_cents} entity_currency_fmv_cents=#{pi.entity_currency_fmv_cents}"
+    expect(pi.entity_currency_fmv_cents).not_to eq(0),
+      "PI #{pi.id}: entity_currency_fmv_cents should be non-zero when fmv_cents is non-zero"
+    expect(pi.entity_currency_fmv_cents).not_to eq(pi.fmv_cents),
+      "PI #{pi.id}: entity_currency_fmv_cents should differ from fmv_cents when fund.currency(USD) != entity.currency(INR)"
+  end
+end
+
+Then('the entity currency amounts should equal the fund currency amounts for the INR fund') do
+  inr_fund = @user.entity.funds.find_by(currency: "INR")
+  pis = inr_fund.portfolio_investments.where.not(amount_cents: 0)
+
+  expect(pis.exists?).to be true
+
+  pis.each do |pi|
+    puts "PI #{pi.id}: amount_cents=#{pi.amount_cents} entity_currency_amount_cents=#{pi.entity_currency_amount_cents}"
+    expect(pi.entity_currency_amount_cents).to eq(pi.amount_cents),
+      "PI #{pi.id}: entity_currency_amount_cents should equal amount_cents when fund.currency(INR) == entity.currency(INR)"
+  end
+end
+
+Given('I know the entity currency amounts for the fund') do
+  @pi_entity_currency_amounts = @fund.portfolio_investments
+                                     .where.not(entity_currency_amount_cents: 0)
+                                     .pluck(:id, :entity_currency_amount_cents, :entity_currency_fmv_cents)
+                                     .map { |id, amt, fmv| [id, { amount: amt, fmv: fmv }] }
+                                     .to_h
+end
+
+Then('the entity currency amounts should not be recalculated for the fund') do
+  @fund.portfolio_investments.where.not(entity_currency_amount_cents: 0).each do |pi|
+    prior = @pi_entity_currency_amounts[pi.id]
+    next unless prior
+
+    puts "PI #{pi.id} amount: #{prior[:amount]} vs #{pi.entity_currency_amount_cents}"
+    expect(pi.entity_currency_amount_cents).to eq(prior[:amount]),
+      "PI #{pi.id}: entity_currency_amount_cents should be unchanged without force"
+  end
+end
+
+Then('the entity currency amounts should be recalculated for the fund') do
+  @fund.portfolio_investments.reload.where.not(entity_currency_amount_cents: 0).each do |pi|
+    prior = @pi_entity_currency_amounts[pi.id]
+    next unless prior && prior[:amount] != 0
+
+    puts "PI #{pi.id} amount: #{prior[:amount]} vs #{pi.entity_currency_amount_cents}"
+    expect(pi.entity_currency_amount_cents).not_to eq(prior[:amount]),
+      "PI #{pi.id}: entity_currency_amount_cents should be recalculated after force with updated exchange rates"
+  end
+end
+
+Then('every portfolio investment in the entity should have a non-zero entity currency amount') do
+  entity = @user.entity
+  pis_with_amount = entity.portfolio_investments.where.not(amount_cents: 0)
+
+  expect(pis_with_amount.exists?).to be true
+
+  pis_with_amount.each do |pi|
+    puts "PI #{pi.id} (fund #{pi.fund_id}, #{pi.fund.currency}): entity_currency_amount_cents=#{pi.entity_currency_amount_cents}"
+    expect(pi.entity_currency_amount_cents).not_to eq(0),
+      "PI #{pi.id} in fund #{pi.fund.name} (#{pi.fund.currency}) should have entity_currency_amount_cents set for cross-fund aggregation"
+  end
+
+  total = entity.portfolio_investments.sum(:entity_currency_amount_cents)
+  puts "Cross-fund total entity_currency_amount_cents = #{total}"
+  expect(total).not_to eq(0)
 end

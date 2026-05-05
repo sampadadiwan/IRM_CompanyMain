@@ -68,6 +68,9 @@ class PortfolioInvestment < ApplicationRecord
   monetize :tracking_amount_cents, :tracking_fmv_cents,
            with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
 
+  monetize :entity_currency_amount_cents, :entity_currency_fmv_cents,
+           with_currency: ->(i) { i.fund.entity.currency }
+
   monetize :ex_expenses_base_amount_cents, :base_amount_cents, :base_cost_cents, :instrument_currency_fmv_cents, :instrument_currency_cost_of_remaining_cents, :instrument_currency_unrealized_gain_cents,
            with_currency: ->(i) { i.investment_instrument&.currency || i.fund.currency }
 
@@ -121,6 +124,8 @@ class PortfolioInvestment < ApplicationRecord
   ADDITIONAL_COLUMNS = {
     "Tracking Amount; num-col" => "tracking_amount; num-col",
     "Tracking FMV; num-col" => "tracking_fmv; num-col",
+    "Entity Currency Amount; num-col" => "entity_currency_amount; num-col",
+    "Entity Currency FMV; num-col" => "entity_currency_fmv; num-col",
     "Cost Of Sold Per Share; num-col" => "cost_of_sold_per_share; num-col",
     "Sale Price Per Share; num-col" => "sale_price_per_share; num-col",
     "Sector; text-col" => "sector; text-col"
