@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_02_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_05_100000) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1614,7 +1614,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_120000) do
   end
 
   create_table "favorites", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.boolean "blocked", default: false, null: false
     t.datetime "created_at", null: false
+    t.bigint "favoritable_id"
+    t.string "favoritable_type"
+    t.bigint "favoritor_id"
+    t.string "favoritor_type"
+    t.string "scope", default: "favorite", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
@@ -2884,6 +2890,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_02_120000) do
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
+    t.decimal "entity_currency_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "entity_currency_fmv_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "entity_id", null: false
     t.decimal "ex_expenses_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "ex_expenses_base_amount_cents", precision: 20, scale: 2, default: "0.0"

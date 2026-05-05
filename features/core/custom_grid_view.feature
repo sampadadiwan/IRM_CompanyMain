@@ -61,8 +61,8 @@ Scenario Outline: Create custom grid view for AggregatePortfolioInvestments
   When I create a form type and custom grid view for "AggregatePortfolioInvestment"
   When I select each option and click Add
   And I visit AggregatePortfolioInvestment Page and find 6 columns in the grid
-  When I visit Custom Grid View page and uncheck "investment_instrument"
-  And I should not find "investment_instrument" column in the Investor Grid
+  When I visit Custom Grid View page and uncheck "investment_instrument_name"
+  And I should not find "investment_instrument_name" column in the Investor Grid
 
 Examples:
   |user       |entity|

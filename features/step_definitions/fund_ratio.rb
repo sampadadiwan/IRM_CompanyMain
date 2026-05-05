@@ -284,6 +284,30 @@ Then('the FundRatios should be have owner from file {string}') do |file_name|
   end
 end
 
+Then('all FundRatios for the fund should have latest set to true') do
+  # After the first import there are no older records to compete with,
+  # so every imported ratio must be flagged as latest.
+  ratios = FundRatio.where(fund: @fund)
+  expect(ratios.count).to be > 0
+  expect(ratios.where(latest: false).count).to eq(0)
+end
+
+Then('only FundRatios with end date {string} should have latest set to true for the fund') do |end_date_str|
+  # After importing a newer batch, only the records with the newer end_date
+  # should carry latest=true; older records must have been demoted to false.
+  end_date = Date.local_parse(end_date_str)
+  newer_ratios = FundRatio.where(fund: @fund, end_date: end_date)
+  older_ratios = FundRatio.where(fund: @fund).where.not(end_date: end_date)
+
+  expect(newer_ratios.count).to be > 0
+  expect(older_ratios.count).to be > 0
+
+  # All newer records that share a name+scenario with an older record must be latest
+  newer_ratios.each { |fr| expect(fr.latest).to be(true), "Expected latest=true for #{fr.name} end_date=#{fr.end_date}" }
+  # Older records for the same name+scenario must have been demoted
+  older_ratios.each { |fr| expect(fr.latest).to be(false), "Expected latest=false for #{fr.name} end_date=#{fr.end_date}" }
+end
+
 Given('I go to fund ratio show page') do
   @fund_ratio ||= FundRatio.last
   visit(fund_ratio_path(@fund_ratio))

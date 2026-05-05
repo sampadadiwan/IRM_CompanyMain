@@ -82,6 +82,22 @@ Scenario Outline: Bulk update Fund Ratio
       |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |
 
 
+@import
+Scenario Outline: Import Fund Ratio sets latest flag correctly
+  # Verifies that post_process calls update_latest_fund_ratios so the latest flag
+  # ends up on the most-recent end_date record, not on the stale older one.
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And there is a fund "<fund>" for the entity
+  Given a Bulk Upload is performed for FundRatios with file "fund_ratios_older.xlsx"
+  Then all FundRatios for the fund should have latest set to true
+  Given a Bulk Upload is performed for FundRatios with file "fund_ratios.xlsx"
+  Then only FundRatios with end date "31/03/2022" should have latest set to true for the fund
+
+  Examples:
+      |user     |entity                                                        |fund            |
+      |           |entity_type=Investment Fund;enable_funds=true  |name=Demo Fund  |
+
 Scenario: Calculate XIRR from XLS sheets
   Given I have an Excel file "public/sample_uploads/xirr/xirr_scenarios.xlsx"
   When I read all sheets and compute XIRR
