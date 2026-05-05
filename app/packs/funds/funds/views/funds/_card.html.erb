@@ -113,17 +113,22 @@
               <!-- Ratios -->
               <div class="col-sm-6">
                 <%
-                                    fund_ratios = fund.fund_ratios
-                                      .select { |r| r.owner_type == "Fund" && r.owner_id == fund.id && ["XIRR", "TVPI", "Portfolio Value to Cost", "Gross Portfolio IRR"].include?(r.name) }
-                                      .sort_by(&:id)
-                                      .reverse
-                                      .take(4)
-                                %>
-                <% if fund_ratios.present? %>
-                  <% fund_ratios.each do |fund_ratio| %>
+                  # Define ratio config with icons
+                  ratio_config = {
+                    "Gross Portfolio IRR" => "ti-trending-up",
+                    "Portfolio Value to Cost" => "ti-chart-dots",
+                    "XIRR" => "ti-percentage",
+                    "TVPI" => "ti-chart-arrows-vertical"
+                  }
+
+                  # Get latest ratios from pre-loaded data (in-memory lookup)
+                  ratios_by_name = get_latest_fund_ratios(fund, ratio_config.keys)
+                %>
+                <% if ratios_by_name.present? %>
+                  <% ratios_by_name.each do |name, fund_ratio| %>
                     <div class="metric-item">
                       <div class="icon-box">
-                        <i class="ti ti-chart-pie"></i>
+                        <i class="ti <%= ratio_config[name] %>"></i>
                       </div>
                       <div class="content">
                         <span class="value"><%= fund_ratio.display_value %></span>

@@ -34,6 +34,7 @@ class FundsController < ApplicationController
     @funds = ransack_with_snapshot.includes(:entity)
     @funds = @funds.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     @funds = @funds.where("funds.tag_list LIKE ?", "%#{params[:tag]}%") if params[:tag].present?
+    @funds = @funds.includes(:fund_ratios) if params[:card].present?
     @pagy, @funds = pagy(@funds) if params[:card].present? || params[:all].present?
   end
 

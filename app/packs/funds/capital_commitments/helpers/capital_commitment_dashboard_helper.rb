@@ -6,7 +6,7 @@ module CapitalCommitmentDashboardHelper
     total = fund.capital_commitments.sum(:committed_amount_cents) / 100.0
     uncalled = total - called
 
-    data = { "Called" => called, "Uncalled (Dry Powder)" => uncalled }
+    data = { "Called" => called, "Uncalled (Dry Powder)" => uncalled }.sort_by { |_, v| -v }
 
     options = {
       library: {
@@ -67,7 +67,7 @@ module CapitalCommitmentDashboardHelper
     gp_amount = CapitalCommitment.gp(fund.id).sum(:committed_amount_cents) / 100.0
     lp_amount = CapitalCommitment.lp(fund.id).sum(:committed_amount_cents) / 100.0
 
-    data = { "GP" => gp_amount, "LP" => lp_amount }
+    data = { "GP" => gp_amount, "LP" => lp_amount }.sort_by { |_, v| -v }
 
     options = {
       library: {
@@ -110,7 +110,7 @@ module CapitalCommitmentDashboardHelper
   end
 
   def onboarding_status_chart(fund, compact: false)
-    data = fund.capital_commitments.group(:onboarding_completed).count.transform_keys { |k| k ? "Completed" : "Pending" }
+    data = fund.capital_commitments.group(:onboarding_completed).count.transform_keys { |k| k ? "Completed" : "Pending" }.sort_by { |_, v| -v }
 
     options = {
       library: {
@@ -163,7 +163,7 @@ module CapitalCommitmentDashboardHelper
   end
 
   def currency_exposure_chart(fund, compact: false)
-    data = fund.capital_commitments.group(:folio_currency).sum(:committed_amount_cents).transform_values { |v| v / 100.0 }
+    data = fund.capital_commitments.group(:folio_currency).sum(:committed_amount_cents).transform_values { |v| v / 100.0 }.sort_by { |_, v| -v }
 
     options = {
       library: {

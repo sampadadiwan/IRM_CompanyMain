@@ -63,7 +63,7 @@ module AggregatePortfolioInvestmentDashboardHelper
     realized = fund.aggregate_portfolio_investments.sum(:gain_cents) / 100.0
     unrealized = fund.aggregate_portfolio_investments.sum(:unrealized_gain_cents) / 100.0
 
-    data = { "Realized Gains" => realized, "Unrealized Gains" => unrealized }
+    data = { "Realized Gains" => realized, "Unrealized Gains" => unrealized }.sort_by { |_, v| -v }
 
     options = {
       library: {
@@ -89,7 +89,7 @@ module AggregatePortfolioInvestmentDashboardHelper
   def portfolio_instrument_exposure_chart(fund, compact: false)
     data = fund.aggregate_portfolio_investments.joins(:investment_instrument)
                .group("investment_instruments.name").sum(:fmv_cents)
-               .transform_values { |v| v / 100.0 }
+               .transform_values { |v| v / 100.0 }.sort_by { |_k, v| -v }
 
     options = { library: {
       plotOptions: {

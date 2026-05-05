@@ -4,7 +4,7 @@ module CapitalDistributionDashboardHelper
     gross = fund.capital_distributions.sum(:gross_amount_cents) / 100.0
     pending = gross - completed
 
-    data = { "Completed" => completed, "Pending" => pending }
+    data = { "Completed" => completed, "Pending" => pending }.sort_by { |_, v| -v }
 
     options = {
       library: {
@@ -54,7 +54,7 @@ module CapitalDistributionDashboardHelper
     income = fund.capital_distributions.sum(:income_cents) / 100.0
     fees = fund.capital_distributions.sum(:fee_cents) / 100.0
 
-    data = { "Principal (Cost)" => principal, "Income (Gains)" => income, "Fees" => fees }
+    data = { "Principal (Cost)" => principal, "Income (Gains)" => income, "Fees" => fees }.sort_by { |_, v| -v }
 
     options = {
       library: {

@@ -1,7 +1,7 @@
 module CapitalRemittanceDashboardHelper
   def remittance_status_chart(owner)
     remittances = owner_remittances(owner)
-    data = remittances.group(:status).count
+    data = remittances.group(:status).count.sort_by { |_, v| -v }
 
     chart = pie_chart data, donut: true, title: "Remittance Status", id: "remittance_status_chart_#{owner.id}", library: {
       plotOptions: {
@@ -23,7 +23,7 @@ module CapitalRemittanceDashboardHelper
     called = remittances.sum("call_amount_cents + other_fee_cents") / 100.0
     outstanding = called - collected
 
-    data = { "Collected" => collected, "Outstanding" => outstanding }
+    data = { "Collected" => collected, "Outstanding" => outstanding }.sort_by { |_, v| -v }
 
     chart = pie_chart data, donut: true, title: "Collection Progress", id: "remittance_collection_progress_chart_#{owner.id}", library: {
       plotOptions: {
@@ -69,7 +69,7 @@ module CapitalRemittanceDashboardHelper
     capital_fees = remittances.sum(:capital_fee_cents) / 100.0
     other_fees = remittances.sum(:other_fee_cents) / 100.0
 
-    data = { "Investment" => principal, "Capital Fees" => capital_fees, "Other Fees" => other_fees }
+    data = { "Investment" => principal, "Capital Fees" => capital_fees, "Other Fees" => other_fees }.sort_by { |_, v| -v }
 
     chart = pie_chart data, donut: true, title: "Fee vs Investment Breakdown", id: "remittance_fee_breakdown_chart_#{owner.id}", library: {
       plotOptions: {
@@ -145,9 +145,7 @@ module CapitalRemittanceDashboardHelper
     }
 
     # For cumulative charts, we want to see the progress as a step-up when a payment occurs
-    if %w[area line bar].include?(chart_type.to_s)
-      options[:library][:plotOptions][:series][:step] = "left"
-    end
+    options[:library][:plotOptions][:series][:step] = "left" if %w[area line bar].include?(chart_type.to_s)
 
     chart = send(chart_method, data, discrete: true, **options)
 

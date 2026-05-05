@@ -4,7 +4,7 @@ module CapitalCallDashboardHelper
     total_called = fund.capital_calls.sum(:call_amount_cents) / 100.0
     outstanding = total_called - collected
 
-    data = { "Collected" => collected, "Outstanding" => outstanding }
+    data = { "Collected" => collected, "Outstanding" => outstanding }.sort_by { |_, v| -v }
 
     chart = pie_chart data, donut: true, title: "Overall Collection Status", id: "call_collection_status_chart_#{fund.id}", library: {
       plotOptions: {
@@ -65,7 +65,7 @@ module CapitalCallDashboardHelper
     total_called = fund.capital_calls.sum(:call_amount_cents) / 100.0
     investment_amount = total_called - capital_fees
 
-    data = { "Investment" => investment_amount, "Capital Fees" => capital_fees, "Other Fees" => other_fees }
+    data = { "Investment" => investment_amount, "Capital Fees" => capital_fees, "Other Fees" => other_fees }.sort_by { |_, v| -v }
 
     chart = pie_chart data, donut: true, title: "Fee vs Investment Breakdown", id: "call_fee_breakdown_chart_#{fund.id}", library: {
       plotOptions: {

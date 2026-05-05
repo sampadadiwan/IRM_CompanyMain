@@ -10,11 +10,11 @@ module FundsHelper
                                      .order(commitment_date: :asc)
                                      .group_by { |v| v.fund.name }
                                      .map do |fname, vals|
-                                       [fname,
-                                        vals.inject(0) { |sum, com| sum + com.committed_amount.to_f },
-                                        vals.inject(0) { |sum, com| sum + com.call_amount.to_f },
-                                        vals.inject(0) { |sum, com| sum + com.collected_amount.to_f },
-                                        vals.inject(0) { |sum, com| sum + com.distribution_amount.to_f }]
+      [fname,
+       vals.inject(0) { |sum, com| sum + com.committed_amount.to_f },
+       vals.inject(0) { |sum, com| sum + com.call_amount.to_f },
+       vals.inject(0) { |sum, com| sum + com.collected_amount.to_f },
+       vals.inject(0) { |sum, com| sum + com.distribution_amount.to_f }]
     end
 
     # column_chart cumulative(commitments), library: {
@@ -241,5 +241,28 @@ module FundsHelper
     funds = Pundit.policy_scope(current_user, Fund)
     selected_fund_ids = Array(params[:fund_ids]).presence || []
     [funds, selected_fund_ids]
+  end
+
+  # Returns the latest values for specified ratios from pre-loaded fund_ratios
+  # Expects fund_ratios to be eager-loaded via includes(:fund_ratios) in controller
+  def get_latest_fund_ratios(fund, ratio_names = ["Gross Portfolio IRR", "Portfolio Value to Cost", "XIRR", "TVPI"])
+    ratios_by_name = {}
+
+    # Filter pre-loaded ratios by name and owner, then group by name
+    # If multiple ratios are marked as latest (edge case), use the most recent end_date
+    ratios_by_name_group = fund.fund_ratios
+                               .where(name: ratio_names, owner: fund).default.latest
+                               .group_by(&:name)
+
+    # For each ratio, get the one with the most recent end_date
+    ratio_names.each do |name|
+      matching_ratios = ratios_by_name_group[name]
+      if matching_ratios.present?
+        latest_ratio = matching_ratios.max_by { |r| r.end_date || Date.new(0) }
+        ratios_by_name[name] = latest_ratio
+      end
+    end
+
+    ratios_by_name
   end
 end
