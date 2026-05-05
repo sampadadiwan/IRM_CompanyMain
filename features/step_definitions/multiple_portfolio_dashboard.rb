@@ -83,7 +83,7 @@ When("I fill the new dashboard widget form with data 2") do
   fill_in "dashboard_widget_position", with: 2
   # fill_in "dashboard_widget_metadata", with: "{title:'Company-Bought Amount', plot: 'bought_amount', show_portfolio_company_wise: true, show_table: true}"
   fill_in "metadata_title", with: "Company-Bought Amount"
-  fill_in "metadata_plot", with: "bought_amount"
+  select "bought_amount", from: "metadata_plot"
   select "ON", from: "metadata_show_portfolio_company_wise"
   select "ON", from: "metadata_show_table"
   check "dashboard_widget_enabled"
@@ -98,7 +98,7 @@ When("I fill the new dashboard widget form with data 3") do
   fill_in "dashboard_widget_position", with: 3
   # fill_in "dashboard_widget_metadata", with: "{title:'Sector-FMV', plot: 'fmv', show_sector_wise: true, show_table: true}"
   fill_in "metadata_title", with: "Sector-FMV"
-  fill_in "metadata_plot", with: "fmv"
+  select "fmv", from: "metadata_plot"
   select "ON", from: "metadata_show_sector_wise"
   select "ON", from: "metadata_show_table"
   check "dashboard_widget_enabled"
