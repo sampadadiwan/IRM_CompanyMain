@@ -1,3 +1,10 @@
+V9.2.37
+d6f7818dd Donuts descending order 2 (#1410)
+1b8ad653f Pi in entity currency (#1412)
+6e32e2c2c Add entity currency support to portfolio investments and update tracking currency job logic (#1411)
+91200f502 Refactor fund ratio update logic to handle latest flags per scenario independently (#1409)
+9e2fdf00e Changed the test to suite pattern (#1408)
+
 V9.2.36
 4b213d252 Donuts descending values (#1407)
 39c10b48a Fix/lp asst table render entity scope (#1397)
