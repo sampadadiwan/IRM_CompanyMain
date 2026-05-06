@@ -110,11 +110,8 @@
 
     <div class="form-group">
       <%= entity_setting_subform.label :document_colors %>
-      <% if entity_setting_subform.object.document_colors.present? %>
-        <%= entity_setting_subform.text_area :document_colors, value: entity_setting_subform.object.document_colors.to_json, class: "form-control"  %>
-      <% else %>
-        <%= entity_setting_subform.text_area :document_colors, class: "form-control"  %>
-      <% end %>
+      <% colors_json = entity_setting_subform.object.document_colors.is_a?(Hash) ? JSON.pretty_generate(entity_setting_subform.object.document_colors) : entity_setting_subform.object.document_colors.to_s %>
+      <%= entity_setting_subform.text_area :document_colors, class: "form-control", value: colors_json  %>
       <small class="text-muted">e.g - {"match": {"Sep 2025.Pdf": "green", "Captable.xlsx": "yellow"}, "contain": {"PAN": "indigo", "SOA": "#32a83a", "FATCA": "red"}}</small>
 
     </div>

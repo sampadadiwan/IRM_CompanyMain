@@ -51,6 +51,11 @@
                 <h1 class="card-title h3 mb-0 text-gray-800">
                 <%= title %>
                 </h1>
+                <div class="ms-auto">
+                    <%= link_to edit_portfolio_report_extract_path(portfolio_report_extract), class: "btn btn-sm btn-outline-success", title: "Edit Portfolio Report", data: { turbo_frame: "_top" } do %>
+                        <i class="ti ti-edit fs-4"></i>
+                    <% end %>
+                </div>
             </div>
         <% end %>
         <!-- Create tabs for each section -->
@@ -65,11 +70,13 @@
                     </a>
                 <% end %>
             </nav>
-            <div class="ms-3">
-                <%= link_to edit_portfolio_report_extract_path(portfolio_report_extract), class: "btn btn-sm btn-outline-success", title: "Edit Portfolio Report", data: { turbo_frame: "_top" } do %>
-                    <i class="ti ti-edit fs-4"></i>
-                <% end %>
-            </div>
+            <% unless title.present? %>
+                <div class="ms-3">
+                    <%= link_to edit_portfolio_report_extract_path(portfolio_report_extract), class: "btn btn-sm btn-outline-success", title: "Edit Portfolio Report", data: { turbo_frame: "_top" } do %>
+                        <i class="ti ti-edit fs-4"></i>
+                    <% end %>
+                </div>
+            <% end %>
         </div>
 
         <!-- Tab content -->

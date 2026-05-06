@@ -60,7 +60,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     db_dumps_frequency: Field::Select.with_options(collection: EntitySetting.db_dumps_frequency.options),
     db_dumps_interval: Field::Number,
     db_dumps_custom_days: Field::String,
-    document_colors: Field::Text
+    document_colors: JsonField
   }.freeze
 
   # COLLECTION_ATTRIBUTES

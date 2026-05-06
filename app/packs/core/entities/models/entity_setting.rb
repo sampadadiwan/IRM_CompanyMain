@@ -31,7 +31,7 @@ class EntitySetting < ApplicationRecord
     if document_colors.is_a?(String)
       begin
         self.document_colors = JSON.parse(document_colors)
-      rescue JSON::ParserError => e
+      rescue JSON::ParserError
         errors.add(:document_colors, "must be a valid JSON string")
         throw(:abort)
       end
@@ -42,7 +42,7 @@ class EntitySetting < ApplicationRecord
     if document_colors.is_a?(String)
       begin
         JSON.parse(document_colors)
-      rescue JSON::ParserError => e
+      rescue JSON::ParserError
         {}
       end
     elsif document_colors.is_a?(Hash)

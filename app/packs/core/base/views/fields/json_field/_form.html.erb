@@ -2,5 +2,6 @@
   <%= f.label field.attribute %>
 </div>
 <div class="field-unit__field">
-  <%= f.text_area field.attribute, class: 'form-control' %>
+  <% json_value = field.data.is_a?(Hash) ? JSON.pretty_generate(field.data) : field.data.to_s %>
+  <%= f.text_area field.attribute, class: 'form-control', value: json_value %>
 </div>
