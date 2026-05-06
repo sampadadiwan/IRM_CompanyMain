@@ -1,3 +1,11 @@
+V9.2.39
+51c32d7d1 Feature/port portfolio asst supp agent frmwrk (#1413)
+c59b2ba2e Doc colors fix (#1414)
+
+V9.2.38
+680b6248a Add entity currency details to portfolio investment view
+68446cda6 Update generate_tracking_numbers? method to check permissions for tracking currency
+
 V9.2.37
 d6f7818dd Donuts descending order 2 (#1410)
 1b8ad653f Pi in entity currency (#1412)
