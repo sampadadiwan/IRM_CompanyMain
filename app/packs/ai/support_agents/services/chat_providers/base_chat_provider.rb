@@ -48,6 +48,7 @@ class BaseChatProvider
                      when "PortfolioReportAgent" then defined?(PortfolioChatProvider) ? PortfolioChatProvider : DefaultChatProvider
                      when "PortfolioCompanyAgent" then defined?(PortfolioCompanyChatProvider) ? PortfolioCompanyChatProvider : DefaultChatProvider
                      when "LpAssistantAgent" then defined?(LpChatProvider) ? LpChatProvider : DefaultChatProvider
+                     when "PortfolioAssistantAgent" then defined?(PortfolioAssistantChatProvider) ? PortfolioAssistantChatProvider : DefaultChatProvider
 
                      else DefaultChatProvider
                      end

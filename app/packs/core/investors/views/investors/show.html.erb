@@ -115,3 +115,17 @@
 <div id="investor_associated_details" class="associated_entity">
   <%= render "investors/investor_details" , investor: @investor %>
 </div>
+
+<% if @investor.category == "Portfolio Company" %>
+  <% portfolio_agent = SupportAgent.find_by(
+    entity_id: @investor.entity_id,
+    agent_type: "PortfolioAssistantAgent",
+    enabled: true
+  ) %>
+  <% if portfolio_agent&.chat_enabled? %>
+    <%= render "support_agents/chat_panel",
+               support_agent: portfolio_agent,
+               chattable: @investor %>
+  <% end %>
+<% end %>
+

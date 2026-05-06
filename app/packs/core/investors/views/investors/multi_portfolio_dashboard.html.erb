@@ -95,4 +95,16 @@
       <% end %>
     </div>
   <% end %>
+    <% portfolio_agent = SupportAgent.find_by(
+       entity_id: current_user.entity_id,
+       agent_type: "PortfolioAssistantAgent",
+       enabled: true
+     ) %>
+  <% if portfolio_agent&.chat_enabled? %>
+    <%= render "support_agents/chat_panel",
+               support_agent: portfolio_agent,
+               chattable: current_user.entity %>
+  <% end %>
+
 <% end %>
+

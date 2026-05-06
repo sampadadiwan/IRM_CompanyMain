@@ -277,14 +277,15 @@ module PortfolioCompanyAssistantTools
 
   # PlotChart for PortfolioCompanyAssistant.
   class PlotChart < BaseAssistantTools::PlotChart
+    description "Generates an interactive Chart.js chart (HTML) from a dataset and a prompt describing the desired visualization. Use this when the user asks for a graph, plot, or chart."
     def name = "plot_chart"
-
     param :data, type: :string, desc: "A JSON string of the data to be plotted.", required: true
     param :prompt, type: :string, desc: "A natural language prompt describing what the chart should represent.", required: true
   end
 
   # PlotChartFromQuery for PortfolioCompanyAssistant.
   class PlotChartFromQuery < BaseAssistantTools::PlotChartFromQuery
+    description "Generates an interactive Chart.js chart (HTML) from a query and a prompt describing the desired visualization. Use this when the user asks for a graph, plot, or chart."
     def name = "plot_chart_from_query"
 
     param :resource, type: :string, desc: "The resource to fetch data from (e.g. 'valuations', 'kpis', 'investments').", required: true

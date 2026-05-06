@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy
@@ -69,6 +69,8 @@ class SupportAgent < ApplicationRecord
       ["Top 5 portfolio companies by valuation", "Which companies missed KPIs?"]
     when "PortfolioCompanyAgent"
       ["Show latest KPIs", "What's the current valuation?", "List recent investments"]
+    when "PortfolioAssistantAgent"
+      ["Show recent valuations", "Plot KPIs over time", "Summarize portfolio performance"]
     else
       []
     end

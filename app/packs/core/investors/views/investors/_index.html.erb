@@ -1,3 +1,4 @@
+
 <%
   lazy_load_data ||= false
   import_upload_id ||= params[:import_upload_id]
@@ -117,4 +118,27 @@
   <%= render "investors/analytics" %>
   <%= render RansackTable.new(Investor, q: @q, default_columns_map:, entity: current_user.entity, current_user: current_user, report_id: params["report_id"], records: @investors, turbo_frame: investors_frame, referrer: request.referrer, pagy: @pagy) %>
 </div>
+
+<%
+  q_hash = params.to_unsafe_h.fetch(:q, {})
+  portfolio_filter_active = Array(q_hash[:c]&.values).any? do |cond|
+    next false unless cond.is_a?(Hash)
+    attrs = Array(cond[:a]&.values).map { |a| a.is_a?(Hash) ? a[:name] : nil }
+    vals  = Array(cond[:v]&.values).map { |v| v.is_a?(Hash) ? v[:value] : nil }
+    attrs.include?("category") && cond[:p] == "eq" && vals.include?("Portfolio Company")
+  end
+%>
+<% if portfolio_filter_active %>
+  <% portfolio_agent = SupportAgent.find_by(
+       entity_id: current_user.entity_id,
+       agent_type: "PortfolioAssistantAgent",
+       enabled: true
+     ) %>
+  <% if portfolio_agent&.chat_enabled? %>
+    <%= render "support_agents/chat_panel",
+               support_agent: portfolio_agent,
+               chattable: current_user.entity %>
+  <% end %>
+<% end %>
+
 <%= turbo_frame_tag "remote_modal" %>

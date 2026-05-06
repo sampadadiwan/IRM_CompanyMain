@@ -15,7 +15,7 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
 
 
 export default class extends Controller {
-  static targets = ["panel", "toggleBtn", "messages", "input", "spinner", "welcome", "sendBtn", "resizeHandle"]
+  static targets = ["panel", "toggleBtn", "messages", "input", "spinner", "welcome", "sendBtn", "resizeHandle", "maximizeIcon", "maximizeLabel" , "maximizeBtn"]
   static values = {
     supportAgentId: Number,
     chattableType: String,
@@ -27,6 +27,7 @@ export default class extends Controller {
   }
 
   connect() {
+    this.isMaximized = false
     this.historyLoaded = false
     this._onMouseMove = this.handleMouseMove.bind(this)
     this._onMouseUp = this.stopResize.bind(this)
@@ -164,6 +165,56 @@ export default class extends Controller {
   }
 
 
+/**
+ * Toggles the chat panel between its floating size and full-screen.
+ * Saves the prior inline styles on maximize and restores them on minimize,
+ * so manual drag/resize positions survive the round-trip.
+ *
+ * @returns {void}
+ */
+toggleMaximize() {
+  const panel = this.panelTarget
+
+  if (!this.isMaximized) {
+    this.savedStyles = {
+      width: panel.style.width,
+      height: panel.style.height,
+      top: panel.style.top,
+      left: panel.style.left,
+      right: panel.style.right,
+      bottom: panel.style.bottom,
+      maxHeight: panel.style.maxHeight,
+      borderRadius: panel.style.borderRadius
+    }
+
+    panel.style.top = "0"
+    panel.style.left = "0"
+    panel.style.right = "0"
+    panel.style.bottom = "0"
+    panel.style.width = "100vw"
+    panel.style.height = "100vh"
+    panel.style.maxHeight = "100vh"
+    panel.style.borderRadius = "0"
+
+    if (this.hasMaximizeIconTarget) {
+      this.maximizeIconTarget.classList.remove("bi-arrows-fullscreen")
+      this.maximizeIconTarget.classList.add("bi-arrows-angle-contract")
+    }
+    if (this.hasMaximizeLabelTarget) this.maximizeLabelTarget.textContent = "Restore"
+
+    this.isMaximized = true
+  } else {
+    Object.assign(panel.style, this.savedStyles || {})
+
+    if (this.hasMaximizeIconTarget) {
+      this.maximizeIconTarget.classList.remove("bi-arrows-angle-contract")
+      this.maximizeIconTarget.classList.add("bi-arrows-fullscreen")
+    }
+    if (this.hasMaximizeLabelTarget) this.maximizeLabelTarget.textContent = "Maximize"
+
+    this.isMaximized = false
+  }
+}
 
 close() {
   this.expandedValue = false
