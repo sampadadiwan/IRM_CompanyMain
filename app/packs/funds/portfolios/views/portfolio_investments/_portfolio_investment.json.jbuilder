@@ -39,6 +39,11 @@ json.cost_of_sold_per_share portfolio_investment.cost_of_sold_per_share.to_f.rou
 json.tracking_amount portfolio_investment.tracking_amount.to_f.round(2)
 json.tracking_fmv portfolio_investment.tracking_fmv.to_f.round(2)
 
+# Entity currency — present when entity currency differs from fund currency
+json.entity_currency portfolio_investment.fund.entity.currency.to_s
+json.entity_currency_amount portfolio_investment.entity_currency_amount.to_f.round(2)
+json.entity_currency_fmv portfolio_investment.entity_currency_fmv.to_f.round(2)
+
 json.created_at l(portfolio_investment.created_at)
 
 json.portfolio_company portfolio_investment.portfolio_company, partial: 'investors/investor', as: :investor

@@ -147,6 +147,17 @@
                 <span class="fw-bold "><%= money_to_currency @portfolio_investment.fmv, params %></span>
             </li>
 
+            <% if @portfolio_investment.fund.entity.currency != @portfolio_investment.fund.currency %>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Amount (<%= @portfolio_investment.fund.entity.currency %>)</span>
+                    <span class="fw-bold "><%= money_to_currency @portfolio_investment.entity_currency_amount %></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">FMV (<%= @portfolio_investment.fund.entity.currency %>)</span>
+                    <span class="fw-bold "><%= money_to_currency @portfolio_investment.entity_currency_fmv %></span>
+                </li>
+            <% end %>
+
              <% if @portfolio_investment.sell? %>
                  <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                     <span class="text-muted">Sale Price/Share</span>
