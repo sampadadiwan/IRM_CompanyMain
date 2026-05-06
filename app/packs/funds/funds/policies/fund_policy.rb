@@ -74,7 +74,7 @@ class FundPolicy < FundBasePolicy
   # rubocop:enable Style/RedundantCondition
 
   def generate_tracking_numbers?
-    record.has_tracking_currency? && update?
+    record.entity.permissions.set?(:enable_tracking_currency) && update?
   end
 
   def generate_fund_ratios?
