@@ -232,6 +232,9 @@ class TrackingCurrencyJob < ApplicationJob
       end
 
       # --- FMV: always refresh to pick up new valuations or corrected exchange rates ---
+      pi.compute_fmv
+      updates[:fmv_cents] = pi.fmv_cents
+
       latest_valuation = pi.latest_valuation_on(Time.zone.today)
       if latest_valuation
         valuation_date = latest_valuation.valuation_date

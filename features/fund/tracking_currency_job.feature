@@ -23,7 +23,7 @@ Feature: Tracking Currency Job
     And Given import file "allocate_account_entries_2/portfolio_investments.xlsx" for "PortfolioInvestment"
     And Given import file "allocate_account_entries_2/account_entries.xlsx" for "AccountEntry"
     And Given import file "allocate_account_entries_2/fund_formulas.xlsx" for "FundFormula"
-    When I run the TrackingCurrencyJob for the fund
+    When I run the TrackingCurrencyJob for all funds in the entity
     Then the entity currency amounts should be calculated for the USD fund
     And the entity currency FMV should be calculated for the USD fund
 
@@ -64,10 +64,11 @@ Feature: Tracking Currency Job
     And Given import file "allocate_account_entries_2/portfolio_investments.xlsx" for "PortfolioInvestment"
     And Given import file "allocate_account_entries_2/account_entries.xlsx" for "AccountEntry"
     And Given import file "allocate_account_entries_2/fund_formulas.xlsx" for "FundFormula"
-    When I run the TrackingCurrencyJob for the fund
+    When I run the TrackingCurrencyJob for all funds in the entity
+    Given I go to the fund show page for "Comprehensive Test Fund Aug 2025 - Master Fund"
     Given I know the entity currency amounts for the fund
     Given I update all the exchange rates
-    When I run the TrackingCurrencyJob for the fund
+    When I run the TrackingCurrencyJob for all funds in the entity
     Then the entity currency amounts should not be recalculated for the fund
     When I run the TrackingCurrencyJob with force for the fund
     Then the entity currency amounts should be recalculated for the fund
@@ -131,9 +132,7 @@ Feature: Tracking Currency Job
     Then the tracking amounts should be calculated for the fund
     Given I know the amounts calculated for the fund
     Given I update all the exchange rates
-    Given I go to fund page
-    Given I trigger the tracking currency job again
+    When I run the TrackingCurrencyJob for the fund
     Then the tracking amounts should not be recalculated
-    Given I go to fund page with debug mode enabled
-    Given I trigger the tracking currency job again with force regeneration
+    When I run the TrackingCurrencyJob with force for the fund
     Then the tracking amounts should be recalculated

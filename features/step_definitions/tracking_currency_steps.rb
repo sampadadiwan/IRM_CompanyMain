@@ -38,7 +38,6 @@ Given('I trigger the tracking currency job again') do
   find('#misc_action_menu').hover
   expect(page).to have_button("Generate Tracking Numbers", visible: true)
   click_on("Generate Tracking Numbers")
-  sleep(3)
 end
 
 Given('I know the amounts calculated for the fund') do
@@ -92,7 +91,6 @@ Given('I trigger the tracking currency job again with force regeneration') do
   click_on("Actions")
   find('#misc_action_menu').hover
   click_on("Generate Tracking Numbers (Force Regeneration)")
-  sleep(3)
 end
 
 Then('the tracking amounts should be recalculated') do
