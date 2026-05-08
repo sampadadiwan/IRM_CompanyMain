@@ -4,6 +4,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
                        "Type; text-col" => "kyc_type; text-col",
                        "Completed; text-col" => "completed_by_investor; text-col",
                        "Kyc Verified; text-col" => "verified; text-col",
+                       "AML Status; text-col" => "aml_status; text-col",
                        "Expired; text-col" => "expired; text-col" }.freeze
 
   ONBOARDING_AGENT_REPORT_COLUMNS = {
@@ -12,6 +13,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
     "Type; text-col" => "kyc_type; text-col",
     "Completed; text-col" => "completed_by_investor; text-col",
     "Kyc Verified; text-col" => "verified; text-col",
+    "AML Status; text-col" => "aml_status; text-col",
     "Expired; text-col" => "expired; text-col",
     "Status; text-col" => "onboarding_status; text-col"
   }.freeze
@@ -23,6 +25,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
                                 "Type; text-col" => "kyc_type; text-col",
                                 "Completed; text-col" => "completed_by_investor; text-col",
                                 "Kyc Verified; text-col" => "verified; text-col",
+                                "AML Status; text-col" => "aml_status; text-col",
                                 "Expired; text-col" => "expired; text-col" }.freeze
 
   SEBI_INVESTOR_CATEGORIES = %i[Internal Domestic Foreign Other].freeze
