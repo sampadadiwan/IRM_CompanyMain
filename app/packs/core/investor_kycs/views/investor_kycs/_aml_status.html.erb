@@ -1,0 +1,7 @@
+<span class="fw-bold ">
+    <% if investor_kyc.aml_status == "no_match" %>
+        <span class="badge bg-success"><%= investor_kyc.aml_status.titleize %></span>
+    <% elsif investor_kyc.aml_status == "potential_match"%>
+        <span class="badge bg-warning"><%= investor_kyc.aml_status.titleize %></span>
+    <% end %>
+</span>

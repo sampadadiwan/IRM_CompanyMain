@@ -1,4 +1,11 @@
 class InvestorKycDecorator < ApplicationDecorator
+
+  def aml_status
+    return if object.blank?
+
+    h.render partial: "investor_kycs/aml_status", locals: { investor_kyc: object }, formats: [:html]
+  end
+
   def onboarding_status
     return if object.blank?
 
