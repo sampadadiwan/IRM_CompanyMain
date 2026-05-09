@@ -1,3 +1,9 @@
+V9.2.40
+2f4e8f0e2 Cdp tax expense (#1417)
+6ee8201a1 Add AML status rendering to InvestorKycDecorator and create corresponding partial view
+6ddeaa6ee Add AML Status to investor KYC reporting columns
+d5ca54ae1 Enhance TrackingCurrencyJob to compute FMV and update feature steps for entity funds
+
 V9.2.39
 51c32d7d1 Feature/port portfolio asst supp agent frmwrk (#1413)
 c59b2ba2e Doc colors fix (#1414)
