@@ -3,7 +3,7 @@ class CapitalDistributionPayment < ApplicationRecord
   include WithExchangeRate
   include Trackable.new
   include CapitalDistributionFees
-  include RansackerAmounts.new(fields: %w[income cost_of_investment cost_of_investment_with_fees folio_amount net_of_account_entries net_payable income_with_fees reinvestment reinvestment_with_fees gross_payable gross_of_account_entries tracking_net_payable])
+  include RansackerAmounts.new(fields: %w[income cost_of_investment cost_of_investment_with_fees folio_amount net_of_account_entries net_payable income_with_fees reinvestment reinvestment_with_fees gross_payable gross_of_account_entries tracking_net_payable tax_with_fees expense_with_fees display_only_with_fees])
 
   include WithFolder
 
@@ -36,10 +36,10 @@ class CapitalDistributionPayment < ApplicationRecord
   has_one :investor_kyc, through: :capital_commitment
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
-  monetize :tracking_net_payable_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
+  monetize :tracking_net_payable_cents, :tracking_gross_payable_cents, :tracking_reinvestment_with_fees_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
   # Note that cost_of_investment_cents is Face value for redemption
   monetize :folio_amount_cents, :net_of_account_entries_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
-  monetize :income_cents, :income_with_fees_cents, :cost_of_investment_cents, :net_payable_cents, :gross_payable_cents, :cost_of_investment_with_fees_cents, :reinvestment_cents, :reinvestment_with_fees_cents, :gross_of_account_entries_cents, with_currency: ->(i) { i.fund.currency }
+  monetize :income_cents, :income_with_fees_cents, :cost_of_investment_cents, :net_payable_cents, :gross_payable_cents, :cost_of_investment_with_fees_cents, :reinvestment_cents, :reinvestment_with_fees_cents, :gross_of_account_entries_cents, :tax_with_fees_cents, :expense_with_fees_cents, :display_only_with_fees_cents, with_currency: ->(i) { i.fund.currency }
 
   validates :folio_id, presence: true
   validates_uniqueness_of :folio_id, scope: :capital_distribution_id

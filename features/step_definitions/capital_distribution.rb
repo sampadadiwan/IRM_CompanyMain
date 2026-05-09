@@ -159,3 +159,23 @@ Then('the expense should reduce the income_with_fees_cents correctly') do
     puts "Expense: income_with_fees_cents (#{cdp.income_with_fees_cents}) == income_cents (#{cdp.income_cents}) - expense AE amount (#{expense_ae_amount}) - PASS"
   end
 end
+
+Then('the distribution payments should have the {string} fee details') do |fee_type|
+  attr_name = fee_type.downcase.gsub(" ", "_") + "_with_fees_cents"
+  CapitalDistributionPayment.all.each do |cdp|
+    fee_ae_amount = AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: fee_type).sum(:amount_cents)
+    puts "Checking #{fee_type} fee details for CD Payment #{cdp.id}: AE amount = #{fee_ae_amount} cents, attribute #{attr_name} = #{cdp.send(attr_name)} cents"
+    expect(fee_ae_amount).to be > 0, "Expected to find AccountEntry with fee type #{fee_type} for capital commitment #{cdp.capital_commitment_id}"
+    expect(cdp.send(attr_name)).to eq fee_ae_amount
+  end
+end
+
+Then('the tax should reduce the income_with_fees_cents correctly') do
+  CapitalDistributionPayment.all.each do |cdp|
+    tax_ae_amount = AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Tax").sum(:amount_cents)
+    expected_income_with_fees = cdp.income_cents - tax_ae_amount
+    puts "Checking Tax fee details for CD Payment #{cdp.id}: income_cents = #{cdp.income_cents} cents, Tax AE amount = #{tax_ae_amount} cents, expected income_with_fees_cents = #{expected_income_with_fees} cents"
+    cdp.income_with_fees_cents.should == expected_income_with_fees
+    puts "Tax: income_with_fees_cents (#{cdp.income_with_fees_cents}) == income_cents (#{cdp.income_cents}) - tax AE amount (#{tax_ae_amount}) - PASS"
+  end
+end

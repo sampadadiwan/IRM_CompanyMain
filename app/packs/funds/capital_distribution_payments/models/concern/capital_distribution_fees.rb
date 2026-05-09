@@ -21,6 +21,9 @@ module CapitalDistributionFees
     self.income_with_fees_cents = income_cents
     self.cost_of_investment_with_fees_cents = cost_of_investment_cents
     self.reinvestment_with_fees_cents = reinvestment_cents
+    self.tax_with_fees_cents = 0
+    self.expense_with_fees_cents = 0
+    self.display_only_with_fees_cents = 0
 
     capital_distribution.distribution_fees.order(fee_type: :asc).each do |distribution_fee|
       Rails.logger.debug { "Processing distribution_fee: #{distribution_fee.name} for capital_distribution_payment: #{id}" }
@@ -56,12 +59,20 @@ module CapitalDistributionFees
         self.reinvestment_with_fees_cents += ae_cents
         # We now subtract reinvestment from the net_ae_cents similar to tax, expense
         net_ae_cents -= ae_cents
-      when "Tax", "Expense"
+      when "Tax"
         # Subtract the fees from the income_with_fees_cents
         self.income_with_fees_cents -= ae_cents
+        self.tax_with_fees_cents += ae_cents
+        net_ae_cents -= ae_cents
+        # We do not reduce the gross_ae_cents as we want to show the total
+      when "Expense"
+        # Subtract the fees from the income_with_fees_cents
+        self.income_with_fees_cents -= ae_cents
+        self.expense_with_fees_cents += ae_cents
         net_ae_cents -= ae_cents
         # We do not reduce the gross_ae_cents as we want to show the total
       when "Display Only"
+        self.display_only_with_fees_cents += ae_cents
         # Do not add or subtract the fees from any field, just show in the audit
         Rails.logger.debug { "Display Only fee type, not adding to income_with_fees_cents or cost_of_investment_with_fees_cents, just showing in audit" }
       else

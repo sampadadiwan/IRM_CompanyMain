@@ -781,9 +781,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_100000) do
     t.decimal "cost_of_investment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
+    t.decimal "display_only_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.bigint "entity_id", null: false
     t.bigint "exchange_rate_id"
+    t.decimal "expense_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "folio_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.string "folio_id", limit: 40
     t.bigint "form_type_id"
@@ -803,6 +805,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_100000) do
     t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
     t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tax_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_gross_payable_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_net_payable_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"

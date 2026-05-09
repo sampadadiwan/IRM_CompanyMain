@@ -61,6 +61,43 @@
                     <div class="fs-4 fw-medium "><%= capital_distribution_payment.units_quantity %></div>
                 </div>
             <% end %>
+
+            <% if params[:debug].present? %>
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Tax With Fees</label>
+                    <div class="fs-4 fw-medium "><%= money_to_currency capital_distribution_payment.tax_with_fees, params %></div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Expense With Fees</label>
+                    <div class="fs-4 fw-medium "><%= money_to_currency capital_distribution_payment.expense_with_fees, params %></div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Display Only With Fees</label>
+                    <div class="fs-4 fw-medium "><%= money_to_currency capital_distribution_payment.display_only_with_fees, params %></div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Tracking Gross Payable</label>
+                    <div class="fs-4 fw-medium "><%= money_to_currency capital_distribution_payment.tracking_gross_payable, params %></div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Tracking Reinvestment with Fees</label>
+                    <div class="fs-4 fw-medium "><%= money_to_currency capital_distribution_payment.tracking_reinvestment_with_fees, params %></div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Net AE Amount</label>
+                    <div class="fs-4 fw-medium "><%= money_to_currency capital_distribution_payment.net_of_account_entries, params %></div>
+                </div>
+
+                <div class="col-md-6">
+                    <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Gross AE Amount</label>
+                    <div class="fs-4 fw-medium "><%= money_to_currency capital_distribution_payment.gross_of_account_entries, params %></div>
+                </div>
+            <% end %>
           </div>
         </div>
       </div>
@@ -121,7 +158,7 @@
                     <span class="fw-bold "><%= money_to_currency capital_distribution_payment.cost_of_investment, params %></span>
                 </li>
 
-                <% if capital_distribution_payment.cost_of_investment_cents != capital_distribution_payment.cost_of_investment_with_fees_cents %>
+                <% if (capital_distribution_payment.cost_of_investment_cents != capital_distribution_payment.cost_of_investment_with_fees_cents) || params[:debug].present? %>
                     <li class="list-group-item py-3 px-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="text-muted">Redemption Account Entries</span>
@@ -142,7 +179,7 @@
                     <span class="fw-bold "><%= money_to_currency capital_distribution_payment.income, params %></span>
                 </li>
 
-                <% if capital_distribution_payment.income_cents != capital_distribution_payment.income_with_fees_cents %>
+                <% if (capital_distribution_payment.income_cents != capital_distribution_payment.income_with_fees_cents) || params[:debug].present? %>
                     <li class="list-group-item py-3 px-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="text-muted">Other Account Entries</span>
@@ -163,7 +200,7 @@
                     <span class="fw-bold "><%= money_to_currency capital_distribution_payment.reinvestment, params %></span>
                 </li>
 
-                <% if capital_distribution_payment.reinvestment_cents != capital_distribution_payment.reinvestment_with_fees_cents %>
+                <% if (capital_distribution_payment.reinvestment_cents != capital_distribution_payment.reinvestment_with_fees_cents) || params[:debug].present? %>
                     <li class="list-group-item py-3 px-4">
                         <div class="d-flex justify-content-between align-items-center mb-2">
                             <span class="text-muted">Reinvestment Account Entries</span>
@@ -191,7 +228,7 @@
                 </li>
                 <% end %>
 
-                <% if capital_distribution_payment.folio_amount != capital_distribution_payment.net_payable %>
+                <% if (capital_distribution_payment.folio_amount != capital_distribution_payment.net_payable) || params[:debug].present? %>
                     <li class="list-group-item d-flex justify-content-between align-items-center py-3 px-4">
                         <span class="text-muted">Folio Amount</span>
                         <span class="fw-bold "><%= money_to_currency capital_distribution_payment.folio_amount, params %></span>
