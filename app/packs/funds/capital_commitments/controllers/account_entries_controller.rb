@@ -173,11 +173,8 @@ class AccountEntriesController < ApplicationController
           url: url
         )
       end
-
-      # Remove format and 'all' params from redirect to ensure pagination is applied on the redirected page
-      redirect_params = params.to_unsafe_h.except(:format, :all)
-      redirect_to account_entries_path(params: redirect_params),
-                  notice: "Your download is being prepared. You will receive a notification with a download link and an email when it's ready."
+      UserAlert.new(message: "Your download is being prepared. You will receive a notification with a download link and an email when it's ready.", user_id: current_user.id, level: :info).broadcast
+      head :no_content
       nil
     end
   end
