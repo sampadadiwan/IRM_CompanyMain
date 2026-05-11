@@ -1,3 +1,6 @@
+V9.2.41
+ef4c3eb6e No redirect on download, show user alert only (#1418)
+
 V9.2.40
 2f4e8f0e2 Cdp tax expense (#1417)
 6ee8201a1 Add AML status rendering to InvestorKycDecorator and create corresponding partial view
