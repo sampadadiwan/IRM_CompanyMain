@@ -1,4 +1,6 @@
 class FundRatio < ApplicationRecord
+  include WithValidationRules
+
   # include Trackable.new
   include ForInvestor
 

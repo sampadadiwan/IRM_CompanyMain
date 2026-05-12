@@ -211,6 +211,10 @@
         <%= link_to  t_common(:edit), edit_entity_path(@entity), {class: "btn btn-outline-primary"} %>
         <%= link_to "View Payments", payments_path, {class: "btn btn-outline-success"} if @entity.entity_type == "Company" %>
       <% end %>
+      <%# Validation rule overrides: visible to company_admin and super/support %>
+      <% if current_user.has_cached_role?(:company_admin) || current_user.has_cached_role?(:super) || current_user.has_cached_role?(:support) %>
+        <%= link_to "Validation Rules", validation_rule_overrides_path, class: "btn btn-outline-secondary" %>
+      <% end %>
       <% if policy(@entity).db_dump? %>
         <%= button_to "Generate DB Dump", db_dump_entity_path(@entity),
                       class: "btn btn-outline-info", data: {

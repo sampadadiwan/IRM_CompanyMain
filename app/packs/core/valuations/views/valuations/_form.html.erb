@@ -1,3 +1,12 @@
+<%
+  # Wrap the form card in a div that activates the rule-validation Stimulus controller.
+  # The controller intercepts field blur (real-time) and form submit (modal on save).
+%>
+<div data-controller="rule-validation"
+     data-rule-validation-target-model-value="Valuation"
+     data-rule-validation-record-id-value="<%= valuation.persisted? ? valuation.id : '' %>"
+     data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>">
+
 <%= render FormCard.new(title: "Valuation : #{valuation.owner.presence || 'New'}") do %>
 
   <%= form_with(model: valuation, validate: true, data: {turbo: false}) do |form| %>
@@ -80,3 +89,5 @@
   <% end %>
 
 <% end %>
+
+</div><%# /rule-validation controller wrapper %>

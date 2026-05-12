@@ -1,4 +1,6 @@
 class AllocationRun < ApplicationRecord
+  include WithValidationRules
+
   belongs_to :entity
   belongs_to :fund
   belongs_to :user

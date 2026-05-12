@@ -1,4 +1,5 @@
 class Valuation < ApplicationRecord
+  include WithValidationRules
   include Trackable.new
   include WithCustomField
   include WithExchangeRate

@@ -8,11 +8,18 @@
 
 <%= render NewCard.new do %>
 
+  <div data-controller="rule-validation"
+       data-rule-validation-target-model-value="AllocationRun"
+       data-rule-validation-record-id-value=""
+       data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>">
+
   <%= render FormCard.new(title:, header_css_class: "fs-5") do %>
 
   <%= form_with(model: @fund, url: allocate_fund_path(@fund), method: :patch) do |form| %>
 
     <%= form.text_field :sample, class: "form-control", name: "sample", value: params[:sample], hidden: true %>
+    <%# Included so the rule-validation Stimulus controller can pass fund_id to the evaluate endpoint %>
+    <%= hidden_field_tag :fund_id, @fund.id %>
 
     <div class="form-group">
       <%= form.label :start_date %>
@@ -77,6 +84,8 @@
   <% end %>
 
   <% end %>
+
+  </div><%# /rule-validation controller wrapper %>
 
 <% end %>
 

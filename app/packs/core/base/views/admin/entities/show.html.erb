@@ -39,6 +39,8 @@ as well as a link to its edit page.
     ) if accessible_action?(page.resource, :destroy) %>
 
     <%= link_to 'Create Support Mapping', new_support_client_mapping_path(entity_id: page.resource.id), class: "btn btn-outline-danger" if current_user.has_cached_role?(:super) %>
+    <%= link_to "Validation Rules", admin_validation_rules_path(entity_id: page.resource.id), class: "btn btn-outline-secondary" %>
+    <%= link_to "Rule Overrides", admin_validation_rule_overrides_path(search: page.resource.name), class: "btn btn-outline-secondary" %>
   </div>
 </header>
 

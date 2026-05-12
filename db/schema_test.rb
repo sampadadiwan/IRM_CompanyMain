@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_05_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_11_100003) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3551,7 +3551,43 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_05_100000) do
     t.index ["user_id"], name: "index_users_roles_on_user_id"
   end
 
-  create_table "valuations", force: :cascade do |t|
+  create_table "validation_rule_overrides", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.boolean "enabled", default: true, null: false
+    t.bigint "entity_id", null: false
+    t.string "message_override"
+    t.json "param_overrides", null: false
+    t.string "severity_override"
+    t.datetime "updated_at", null: false
+    t.bigint "validation_rule_id", null: false
+    t.index ["created_by_id"], name: "index_validation_rule_overrides_on_created_by_id"
+    t.index ["entity_id"], name: "index_validation_rule_overrides_on_entity_id"
+    t.index ["validation_rule_id", "entity_id"], name: "idx_validation_rule_overrides_unique", unique: true
+    t.index ["validation_rule_id"], name: "index_validation_rule_overrides_on_validation_rule_id"
+  end
+
+  create_table "validation_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.json "condition_tree", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.text "description"
+    t.boolean "enabled", default: false, null: false
+    t.bigint "entity_id"
+    t.boolean "is_default", default: false, null: false
+    t.string "message_template", null: false
+    t.string "name", null: false
+    t.json "params", null: false
+    t.string "severity", default: "warning", null: false
+    t.string "target_model", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_validation_rules_on_created_by_id"
+    t.index ["entity_id"], name: "index_validation_rules_on_entity_id"
+    t.index ["name", "target_model", "entity_id"], name: "idx_validation_rules_unique_name", unique: true
+    t.index ["target_model"], name: "index_validation_rules_on_target_model"
+  end
+
+  create_table "valuations", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.decimal "base_amount_cents", precision: 20, scale: 2
     t.string "category", limit: 10
     t.datetime "created_at", null: false

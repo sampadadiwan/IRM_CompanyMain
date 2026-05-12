@@ -145,6 +145,18 @@ class FundsController < ApplicationController
     if params[:end_date].present?
       generate_for_commitments = params[:generate_for_commitments] == "1"
 
+      # Build a throwaway FundRatio record so blockers can be evaluated before the job is enqueued.
+      # Only the "fund" type has a meaningful end_date to validate; cross-fund/cross-portfolio
+      # share the same form field so we check it universally.
+      temp_ratio = FundRatio.new(entity_id: @fund.entity_id, fund_id: @fund.id,
+                                 end_date: Date.local_parse(params[:end_date]))
+      blockers = ValidationRuleEvaluator.call(record: temp_ratio, entity: current_user.entity)
+                                        .select(&:blocker?)
+      if blockers.any?
+        flash[:alert] = blockers.map(&:message).join(" ")
+        redirect_back_or_to(generate_fund_ratios_fund_path(@fund)) and return
+      end
+
       case params[:type]
       when "fund"
         FundRatiosJob.perform_later(@fund.id, nil, Date.local_parse(params[:end_date]), current_user.id, generate_for_commitments, return_cash_flows: params[:return_cash_flows] == "1")
@@ -206,7 +218,24 @@ class FundsController < ApplicationController
         end
       end
       template_name = template_id ? Document.find(template_id).name : nil
-      allocation_run = AllocationRun.create!(entity_id: @fund.entity_id, fund_id: @fund.id, start_date:, end_date:, run_allocations:, generate_soa:, template_name:, fund_ratios:, user_id: current_user.id, rule_for:, tag_list:)
+
+      # Build a temporary (unsaved) record so blocker rules can be evaluated.
+      # If any blockers fire the run is halted regardless of force_save — blockers
+      # are always enforced server-side. Warnings are handled by the Stimulus modal.
+      temp_run = AllocationRun.new(entity_id: @fund.entity_id, fund_id: @fund.id,
+                                   start_date:, end_date:, locked: false)
+      blockers = ValidationRuleEvaluator.call(record: temp_run, entity: current_user.entity)
+                                        .select(&:blocker?)
+      if blockers.any?
+        flash[:alert] = blockers.map(&:message).join(" ")
+        redirect_back_or_to(allocate_form_fund_path(@fund)) and return
+      end
+
+      # Blocker check above confirmed no rules fire — skip the model-level re-evaluation
+      # to avoid running the rule engine twice on the same record.
+      allocation_run = WithValidationRules.skip do
+        AllocationRun.create!(entity_id: @fund.entity_id, fund_id: @fund.id, start_date:, end_date:, run_allocations:, generate_soa:, template_name:, fund_ratios:, user_id: current_user.id, rule_for:, tag_list:)
+      end
     rescue StandardError => e
       Rails.logger.debug { "allocate: Errors #{e.message}" }
       Rails.logger.debug "allocate: Dates not sent properly"

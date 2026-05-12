@@ -1,0 +1,8 @@
+metadata:
+      stewards:
+      - "@CapHive/core"
+      slack_channels:
+      - "#core"
+      enforce_privacy: true
+      dependencies:
+        - app/packs/core

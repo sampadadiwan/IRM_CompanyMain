@@ -4,6 +4,12 @@ class ValuationsController < ApplicationController
   skip_after_action :verify_policy_scoped, only: :index
   after_action :verify_authorized, except: %i[index search bulk_actions value_bridge analytics]
 
+  # Runs blocker rules server-side before create/update.
+  # If blockers fire and the user has not confirmed (force_save != "1"),
+  # the save is halted and an error is returned.
+  # Warnings are enforced only on the client side (Stimulus modal).
+  before_action :enforce_blocker_rules, only: %i[create update]
+
   # GET /valuations or /valuations.json
   def index
     @bread_crumbs = { Valuations: valuations_path }
@@ -55,29 +61,35 @@ class ValuationsController < ApplicationController
     # We need to create a valuation for each investment instrument
     if request.format.html?
 
-      Valuation.transaction do
-        params[:investment_instrument_ids].each do |investment_instrument_id|
-          next if investment_instrument_id.blank?
+      # enforce_blocker_rules before_action already confirmed no blockers — skip the
+      # model-level re-evaluation to avoid running the rule engine twice per save.
+      WithValidationRules.skip do
+        Valuation.transaction do
+          params[:investment_instrument_ids].each do |investment_instrument_id|
+            next if investment_instrument_id.blank?
 
-          @valuation = Valuation.new(valuation_params)
-          @valuation.investment_instrument_id = investment_instrument_id
-          @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
-          @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
-          authorize @valuation
-          saved_all &&= @valuation.save
-          valuations << @valuation
-          break unless saved_all
+            @valuation = Valuation.new(valuation_params)
+            @valuation.investment_instrument_id = investment_instrument_id
+            @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
+            @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
+            authorize @valuation
+            saved_all &&= @valuation.save
+            valuations << @valuation
+            break unless saved_all
+          end
         end
       end
 
     elsif request.format.json?
-      Valuation.transaction do
-        @valuation = Valuation.new(valuation_params)
-        @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
-        @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
-        authorize @valuation
-        saved_all = @valuation.save
-        valuations << @valuation
+      WithValidationRules.skip do
+        Valuation.transaction do
+          @valuation = Valuation.new(valuation_params)
+          @valuation.entity_id = @valuation.owner&.entity_id || current_user.entity_id
+          @valuation.per_share_value_cents = valuation_params[:per_share_value].to_d * 100
+          authorize @valuation
+          saved_all = @valuation.save
+          valuations << @valuation
+        end
       end
     end
 
@@ -111,8 +123,10 @@ class ValuationsController < ApplicationController
     # We need to remove the per_share_value from the params hash, this is so the per_share_value_cents is used to update the DB till the last 8 decimal digits. Otherwise only 2 digits gets saved
     cleaned_params = valuation_params.except(:per_share_value)
 
+    # enforce_blocker_rules before_action already confirmed no blockers — skip the
+    # model-level re-evaluation to avoid running the rule engine twice per save.
     respond_to do |format|
-      if @valuation.update(cleaned_params)
+      if WithValidationRules.skip { @valuation.update(cleaned_params) }
         format.html { redirect_to valuation_url(@valuation), notice: "Valuation was successfully updated." }
         format.json { render :show, status: :ok, location: @valuation }
       else
@@ -199,5 +213,37 @@ class ValuationsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def valuation_params
     params.require(:valuation).permit(:entity_id, :valuation_date, :investment_instrument_id, :owner_id, :owner_type, :form_type_id, :per_share_value, :report, :valuation, :synthetic, properties: {})
+  end
+
+  # Builds a temporary (unsaved) Valuation from the current params and runs all
+  # rules against it.  Blocker rules are enforced regardless of force_save.
+  # Warning rules are skipped here — they're handled client-side by the Stimulus modal.
+  def enforce_blocker_rules
+    # Build the record exactly as the save action would, without persisting it
+    temp_record = if action_name == "create"
+                    r = Valuation.new(valuation_params)
+                    r.entity_id = r.owner&.entity_id || current_user.entity_id
+                    r
+                  else
+                    # dup produces an unpersisted copy (id=nil, persisted?=false).
+                    # Context providers guard against self-comparison via `persisted?`,
+                    # and valuation_date scoping still excludes the current record correctly.
+                    @valuation.dup.tap { |r| r.assign_attributes(valuation_params) }
+                  end
+
+    results  = ValidationRuleEvaluator.call(record: temp_record, entity: current_user.entity)
+    blockers = results.select(&:blocker?)
+    return if blockers.empty?
+
+    # Blockers always prevent saving — force_save does not bypass them
+    messages = blockers.map(&:message).join("; ")
+
+    respond_to do |format|
+      format.html do
+        flash[:alert] = "Cannot save: #{messages}"
+        action_name == "create" ? render(:new, status: :unprocessable_entity) : render(:edit, status: :unprocessable_entity)
+      end
+      format.json { render json: { errors: blockers.map(&:message) }, status: :unprocessable_entity }
+    end
   end
 end

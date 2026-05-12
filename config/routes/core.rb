@@ -1,3 +1,10 @@
+resources :validation_rules, only: %i[index new create edit update destroy] do
+  post :evaluate, on: :collection
+end
+
+# Company-admin-facing UI: view all rules + manage their entity's overrides
+resources :validation_rule_overrides, only: %i[index new create edit update destroy]
+
 resources :quick_link_steps
 resources :quick_links do
   put :restore_deleted, on: :member

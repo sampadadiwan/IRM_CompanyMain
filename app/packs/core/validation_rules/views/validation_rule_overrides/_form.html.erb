@@ -1,0 +1,99 @@
+<%# @override must be set; @override.validation_rule must be loaded %>
+<% rule = @override.validation_rule %>
+
+<%# ── Rule identity card ─────────────────────────────────────────────────── %>
+<div class="vr-identity-card vr-identity-card--<%= rule.severity %>">
+  <div class="vr-identity-card__name"><%= rule.name.gsub("_", " ").titleize %></div>
+  <div class="vr-identity-card__description"><%= rule.description %></div>
+  <div class="d-flex align-items-center gap-3 flex-wrap">
+    <%= render_severity_badge(rule.severity) %>
+    <% rule.params.each do |k, v| %>
+      <span class="vr-param-chip">
+        <code><%= k %></code>
+        <strong class="ms-1"><%= v %></strong>
+      </span>
+    <% end %>
+  </div>
+</div>
+
+<%= form_with model: @override, url: @override.persisted? ? validation_rule_override_path(@override) : validation_rule_overrides_path do |f| %>
+
+  <%= f.hidden_field :validation_rule_id, value: rule.id %>
+
+  <%# ── Section: Status ────────────────────────────────────────────────── %>
+  <div class="mb-4">
+    <div class="vr-section-label">Status</div>
+    <div class="vr-status-row">
+      <div>
+        <div class="vr-status-row__title">Enable this rule</div>
+        <div class="vr-status-row__hint">Uncheck to suppress this rule entirely for your organisation</div>
+      </div>
+      <%# Toggle switch — pure CSS via :checked selector in rule_validation.scss, no JS needed %>
+      <label class="vr-toggle-label">
+        <%= f.check_box :enabled, id: "override_enabled_toggle" %>
+        <span class="vr-toggle-track"></span>
+        <span class="vr-toggle-thumb"></span>
+      </label>
+    </div>
+  </div>
+
+  <%# ── Section: Severity ──────────────────────────────────────────────── %>
+  <div class="mb-4">
+    <div class="vr-section-label">Severity</div>
+    <%= f.select :severity_override,
+          [["Inherit from global default", ""], ["Warning — user can confirm and save", "warning"], ["Blocker — must fix before saving", "blocker"]],
+          { selected: @override.severity_override.to_s },
+          class: "form-select w-auto" %>
+    <div class="vr-hint">Leave as "Inherit" to use the global default severity.</div>
+  </div>
+
+  <%# ── Section: Thresholds ────────────────────────────────────────────── %>
+  <% if rule.params.present? %>
+    <div class="mb-4">
+      <div class="vr-section-label">Thresholds</div>
+      <div class="vr-param-table">
+        <% rule.params.each do |(key, default_value)| %>
+          <%# Use *_field_tag with explicit name to get correct bracket nesting:
+              validation_rule_override[param_overrides][key] %>
+          <% field_name  = "validation_rule_override[param_overrides][#{key}]" %>
+          <% field_value = @override.param_overrides&.dig(key) %>
+          <% is_numeric  = default_value.is_a?(Numeric) || (default_value.is_a?(String) && default_value.match?(/\A-?\d+(\.\d+)?\z/)) %>
+          <div class="vr-param-row">
+            <div class="vr-param-row__key"><code><%= key %></code></div>
+            <% if is_numeric %>
+              <%= number_field_tag field_name, field_value,
+                    placeholder: default_value, class: "form-control form-control-sm",
+                    step: "any", style: "flex:0 0 140px" %>
+            <% else %>
+              <%= text_field_tag field_name, field_value,
+                    placeholder: default_value.presence || "e.g. Name1, Name2",
+                    class: "form-control form-control-sm", style: "flex:1 1 200px" %>
+            <% end %>
+            <div class="vr-param-row__default">default: <%= default_value %></div>
+          </div>
+        <% end %>
+      </div>
+      <div class="vr-hint">Leave blank to inherit the global default.</div>
+    </div>
+  <% end %>
+
+  <%# ── Section: Custom Message ─────────────────────────────────────────── %>
+  <div class="mb-4">
+    <div class="vr-section-label">Custom Message</div>
+    <%= f.text_area :message_override,
+          class: "form-control",
+          rows: 3,
+          placeholder: rule.message_template,
+          style: "resize:vertical" %>
+    <div class="vr-hint">
+      Leave blank to use the default message. Supports <code>%{field_name}</code> placeholders.
+    </div>
+  </div>
+
+  <%# ── Actions ─────────────────────────────────────────────────────────── %>
+  <div class="vr-actions">
+    <%= f.submit "Save Override", class: "btn btn-primary btn-sm" %>
+    <%= link_to "Cancel", validation_rule_overrides_path, class: "btn btn-outline-secondary btn-sm" %>
+  </div>
+
+<% end %>

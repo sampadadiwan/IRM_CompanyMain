@@ -4,6 +4,12 @@
     title += " for #{@fund.name}" if type == "fund"
     scenario = params[:scenario] || "#{current_user.initials}-#{Time.zone.now.strftime("%Y-%m-%d")}"
 %>
+<%# rule-validation controller intercepts submit, fires /validation_rules/evaluate before the job is dispatched %>
+<div data-controller="rule-validation"
+     data-rule-validation-target-model-value="FundRatio"
+     data-rule-validation-record-id-value=""
+     data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>">
+
 <%= render FormCard.new(title:) do %>
 
     <%= form_with(model: @fund, url: generate_fund_ratios_fund_path(@fund), method: :post) do |form| %>
@@ -67,3 +73,5 @@
     <% end %>
 
 <% end %>
+
+</div><%# /rule-validation controller wrapper %>

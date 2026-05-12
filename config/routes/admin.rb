@@ -1,4 +1,7 @@
 namespace :admin do
+  resources :validation_rules
+  resources :validation_rule_overrides
+
   namespace :paper_trail do
     resources :versions, except: :index
   end

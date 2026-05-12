@@ -1,0 +1,106 @@
+<%= render NewCard.new(col_md: "col-md-12") do %>
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+  <div>
+    <h4 class="mb-1">Validation Rules</h4>
+    <p class="text-muted small mb-0">
+      Global defaults are read-only. Use <strong>Set Override</strong> to customise a rule for your organisation.
+    </p>
+  </div>
+</div>
+
+<% @rules_by_model.each do |model_name, rules| %>
+  <div class="mb-5">
+
+    <h6 class="vr-model-label text-muted fw-semibold mb-3"><%= model_name.titleize %></h6>
+
+    <%# ── Desktop: scrollable table (hidden on xs/sm) ──────────────────── %>
+    <div class="d-none d-md-block">
+      <div class="vr-table-scroll">
+        <table class="table table-bordered align-middle mb-0 vr-table">
+          <thead class="table-light">
+            <tr>
+              <th style="width:20%">Rule</th>
+              <th style="width:28%">Description</th>
+              <th style="width:10%">Default Severity</th>
+              <th style="width:14%">Default Params</th>
+              <th style="width:18%">Your Override</th>
+              <th style="width:10%"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% rules.each do |rule| %>
+              <% override = @overrides_by_rule_id[rule.id] %>
+              <tr>
+                <td><span class="fw-medium"><%= rule.name.gsub("_", " ").titleize %></span></td>
+                <td class="text-muted small"><%= rule.description %></td>
+                <td><%= render_severity_badge(rule.severity) %></td>
+                <td>
+                  <% if rule.params.present? %>
+                    <% rule.params.each do |k, v| %>
+                      <div class="small"><code><%= k %></code>: <span class="text-muted"><%= v %></span></div>
+                    <% end %>
+                  <% else %>
+                    <span class="text-muted">—</span>
+                  <% end %>
+                </td>
+                <td><%= render_override_summary(override) %></td>
+                <td class="text-end text-nowrap">
+                  <%= render_override_actions(override, rule) %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <%# ── Mobile: stacked cards (hidden on md+) ─────────────────────────── %>
+    <div class="d-md-none">
+      <% rules.each do |rule| %>
+        <% override = @overrides_by_rule_id[rule.id] %>
+        <div class="vr-rule-card">
+
+          <div class="vr-rule-card__header">
+            <span class="fw-semibold small"><%= rule.name.gsub("_", " ").titleize %></span>
+            <%= render_severity_badge(rule.severity) %>
+          </div>
+
+          <div class="vr-rule-card__body">
+            <p class="text-muted mb-2 small"><%= rule.description %></p>
+
+            <% if rule.params.present? %>
+              <div class="mb-2">
+                <div class="vr-card-sublabel mb-1">Defaults</div>
+                <div class="d-flex flex-wrap gap-1">
+                  <% rule.params.each do |k, v| %>
+                    <span class="vr-mobile-chip">
+                      <code><%= k %></code> <strong><%= v %></strong>
+                    </span>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
+
+            <div class="mb-3">
+              <div class="vr-card-sublabel mb-1">Your Override</div>
+              <%= render_override_summary(override) %>
+            </div>
+
+            <div class="d-flex flex-wrap gap-2">
+              <%= render_override_actions(override, rule) %>
+            </div>
+          </div>
+
+        </div>
+      <% end %>
+    </div>
+
+  </div>
+<% end %>
+
+<% if @rules_by_model.empty? %>
+  <p class="text-muted">No validation rules have been configured yet.</p>
+<% end %>
+
+<% end %>
