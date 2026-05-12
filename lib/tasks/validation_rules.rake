@@ -65,6 +65,63 @@ namespace :rules do
     puts "[rules:seed_defaults] Done. #{created} created, #{updated} updated."
   end
 
+  # ── Enable / disable all rules for a single entity ───────────────────────────
+
+  desc <<~DESC
+    Create or update ValidationRuleOverrides so all global default rules are ENABLED for an entity.
+
+    Usage:
+      rails rules:enable_for_entity[123]
+
+    Idempotent: safe to re-run. Creates overrides that don't exist; sets enabled=true on existing ones.
+    Run rules:seed_defaults first if the global rules haven't been seeded yet.
+  DESC
+  task :enable_for_entity, [:entity_id] => :environment do |_, args|
+    entity = Entity.find_by(id: args[:entity_id].to_i)
+    abort "[rules:enable_for_entity] Entity #{args[:entity_id]} not found." unless entity
+
+    puts "[rules:enable_for_entity] Enabling all rules for entity #{entity.id} (#{entity.name})..."
+    created = updated = 0
+
+    ValidationRule.where(is_default: true, entity_id: nil).each do |rule|
+      override = ValidationRuleOverride.find_or_initialize_by(validation_rule: rule, entity:)
+      new_record = override.new_record?
+      override.enabled = true
+      override.save!
+      new_record ? (created += 1) : (updated += 1)
+      puts "  [#{new_record ? 'created' : 'updated'}] #{rule.target_model} / #{rule.name}"
+    end
+
+    puts "[rules:enable_for_entity] Done. #{created} created, #{updated} updated."
+  end
+
+  desc <<~DESC
+    Create or update ValidationRuleOverrides so all global default rules are DISABLED for an entity.
+
+    Usage:
+      rails rules:disable_for_entity[123]
+
+    Idempotent: safe to re-run.
+  DESC
+  task :disable_for_entity, [:entity_id] => :environment do |_, args|
+    entity = Entity.find_by(id: args[:entity_id].to_i)
+    abort "[rules:disable_for_entity] Entity #{args[:entity_id]} not found." unless entity
+
+    puts "[rules:disable_for_entity] Disabling all rules for entity #{entity.id} (#{entity.name})..."
+    created = updated = 0
+
+    ValidationRule.where(is_default: true, entity_id: nil).each do |rule|
+      override = ValidationRuleOverride.find_or_initialize_by(validation_rule: rule, entity:)
+      new_record = override.new_record?
+      override.enabled = false
+      override.save!
+      new_record ? (created += 1) : (updated += 1)
+      puts "  [#{new_record ? 'created' : 'updated'}] #{rule.target_model} / #{rule.name}"
+    end
+
+    puts "[rules:disable_for_entity] Done. #{created} created, #{updated} updated."
+  end
+
   # ── Entity override seed task ─────────────────────────────────────────────────
 
   # Demonstrates all three override patterns:
