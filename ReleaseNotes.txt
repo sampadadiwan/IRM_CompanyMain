@@ -1,3 +1,10 @@
+V9.2.42
+e65c688cf Dist pi UI update (#1419)
+5c9b2020e Deal steps changes latest main (#1416)
+00b72e4c2 Add tasks to enable and disable validation rules for a specific entity
+c4966aa90 Feature/validation rule engine (#1422)
+f0d9e4d51 Feature/validation rule engine (#1421)
+
 V9.2.41
 ef4c3eb6e No redirect on download, show user alert only (#1418)
 
