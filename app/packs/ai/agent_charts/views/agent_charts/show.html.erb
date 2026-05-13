@@ -174,11 +174,11 @@
         <%# chart_height is nil when not configured; the Stimulus controller falls back to 420 px. %>
         <%# responsive + maintainAspectRatio: false are injected by validate_chartjs! so the
             canvas height (not the aspect ratio) controls the rendered chart size. %>
-        <div data-controller="chart-renderer"
+        <div class="chart-renderer-container"
+             data-controller="chart-renderer"
              data-chart-renderer-spec-value='<%= @agent_chart.spec[params[:portfolio_company_id]].to_json %>'
-             data-chart-renderer-height-value="<%= @agent_chart.chart_height.presence || 420 %>"
-             style="width: 100%; margin: 2rem 0;">
-          <canvas data-chart-renderer-target="canvas" style="width: 100%;"></canvas>
+             data-chart-renderer-height-value="<%= params[:height].presence || @agent_chart.chart_height.presence || 420 %>">
+          <canvas data-chart-renderer-target="canvas"></canvas>
         </div>
       <% end %>
     <% else %>

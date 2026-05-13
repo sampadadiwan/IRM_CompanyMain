@@ -87,6 +87,9 @@ export default class extends Controller {
       // validate_chartjs!), so Chart.js honours this height rather than overriding it
       // with an aspect-ratio-derived value.
       if (this.heightValue > 0) {
+        // Set height on the container so Chart.js (which measures the immediate parent)
+        // sees the correct dimensions before its first layout pass.
+        this.element.style.height = `${this.heightValue}px`
         this.canvasTarget.style.height = `${this.heightValue}px`
       }
 

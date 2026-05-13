@@ -4,7 +4,8 @@
   args ||= {}
   uri_params ||= {}
   agent_chart = AgentChart.where(title: args[:title], entity_id: @investor.entity_id).last
-  uri = agent_chart_path(agent_chart, portfolio_company_id: @investor.id) if agent_chart
+  # Widget-level height overrides the chart's own chart_height; both fall back to the JS default.
+  uri = agent_chart_path(agent_chart, portfolio_company_id: @investor.id, height: args[:height]) if agent_chart
 %>
 
 
