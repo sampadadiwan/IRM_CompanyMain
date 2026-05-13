@@ -89,61 +89,66 @@
       <% end %>
     </div>
 
-    <%# ── Per-chart list, grouped by tag ──────────────────────────────── %>
-    <% grouped.each do |tag_label, charts| %>
-      <div class="mb-4">
+    <%# ── Per-chart list, each tag group in its own collapsible card ────── %>
+    <% grouped.each_with_index do |(tag_label, charts), idx| %>
+      <%
+        # Derive a unique CSS class for Bootstrap collapse targeting.
+        slug          = tag_label.present? ? tag_label.gsub(/[^a-z0-9]/i, "-").downcase : "all-companies"
+        collapse_cls  = "agent-chart-group-#{idx}-#{slug}"
+        card_title    = tag_label.present? ? tag_label : "All Companies"
+      %>
+      <%= render ToggleCard.new(title: card_title, css_class: collapse_cls, state: "show") do |card| %>
+        <% card.with_header do %>
+          <span class="text-muted small me-2">
+            <%= charts.size %> <%= "chart".pluralize(charts.size) %>
+          </span>
+        <% end %>
 
-        <%# Group header %>
-        <div class="d-flex align-items-center gap-2 mb-2">
-          <% if tag_label.present? %>
-            <span class="badge bg-primary"><%= tag_label %></span>
-          <% else %>
-            <span class="badge bg-secondary">all companies</span>
-          <% end %>
-          <span class="text-muted small"><%= charts.size %> <%= "chart".pluralize(charts.size) %></span>
-        </div>
+        <%# col-12 fills the row wrapper that ToggleCard adds around its content %>
+        <div class="col-12">
+          <div class="list-group">
+            <% charts.each do |chart| %>
+              <%
+                has_spec  = chart.spec&.key?(portco_id)
+                is_failed = chart.status == "failed" && !has_spec
+                status_badge_class = has_spec ? "bg-success" : (is_failed ? "bg-danger" : "bg-light text-secondary border")
+                status_label       = has_spec ? "Ready"      : (is_failed ? "Failed"    : "Pending")
+                btn_label          = has_spec ? "Regenerate" : "Generate"
+              %>
+              <div class="list-group-item d-flex align-items-start gap-3">
 
-        <%# Chart rows %>
-        <div class="list-group">
-          <% charts.each do |chart| %>
-            <%
-              has_spec  = chart.spec&.key?(portco_id)
-              is_failed = chart.status == "failed" && !has_spec
-              status_badge_class = has_spec ? "bg-success" : (is_failed ? "bg-danger" : "bg-light text-secondary border")
-              status_label       = has_spec ? "Ready"      : (is_failed ? "Failed"    : "Pending")
-              btn_label          = has_spec ? "Regenerate" : "Generate"
-            %>
-            <div class="list-group-item d-flex align-items-center gap-3">
+                <%# Chart info — grows to fill available width %>
+                <div class="flex-grow-1 overflow-hidden">
+                  <%= link_to chart.title, agent_chart_path(chart),
+                              class: "fw-semibold text-body text-decoration-none d-block",
+                              data: { turbo: false } %>
+                  <% kpis = chart.kpi_names&.reject(&:blank?) %>
+                  <% if kpis&.any? %>
+                    <div class="text-muted small mb-1"><%= kpis.join(" · ") %></div>
+                  <% end %>
+                  <%# Full prompt so it is clear what the LLM will be asked %>
+                  <% if chart.prompt.present? %>
+                    <p class="text-muted small mb-0"><%= chart.prompt %></p>
+                  <% end %>
+                </div>
 
-              <%# Chart info %>
-              <div class="flex-grow-1 overflow-hidden">
-                <%= link_to chart.title, agent_chart_path(chart),
-                            class: "fw-semibold text-body text-decoration-none d-block text-truncate",
-                            title: chart.title,
-                            data: { turbo: false } %>
-                <% kpis = chart.kpi_names&.reject(&:blank?) %>
-                <% if kpis&.any? %>
-                  <span class="text-muted small"><%= kpis.join(" · ") %></span>
-                <% end %>
+                <%# Status badge + per-chart generate button, pinned top-right %>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                  <span class="badge <%= status_badge_class %>"><%= status_label %></span>
+                  <%= form_with url: generate_agent_charts_investor_path(@investor), method: :post,
+                                data: { turbo: false } do |f| %>
+                    <%= f.hidden_field :agent_chart_id, value: chart.id %>
+                    <%= f.submit btn_label,
+                                 class: "btn btn-sm btn-outline-warning",
+                                 data: { disable_with: "…" } %>
+                  <% end %>
+                </div>
+
               </div>
-
-              <%# Status + action %>
-              <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                <span class="badge <%= status_badge_class %>"><%= status_label %></span>
-                <%= form_with url: generate_agent_charts_investor_path(@investor), method: :post,
-                              data: { turbo: false } do |f| %>
-                  <%= f.hidden_field :agent_chart_id, value: chart.id %>
-                  <%= f.submit btn_label,
-                               class: "btn btn-sm btn-outline-warning",
-                               data: { disable_with: "…" } %>
-                <% end %>
-              </div>
-
-            </div>
-          <% end %>
+            <% end %>
+          </div>
         </div>
-
-      </div>
+      <% end %>
     <% end %>
 
   <% end %>
