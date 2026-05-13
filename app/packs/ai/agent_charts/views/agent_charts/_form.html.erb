@@ -40,12 +40,19 @@
           <%= form.number_field :kpi_before, class: "form-control", min: 1, style: "max-width: 60px;" %>
           <%= form.select :kpi_before_period, KpiReport::PERIODS, {}, class: "form-control" %>
         </div>
-    </div>
+      </div>
+    </div><%# closes .row — previously this div was unclosed, breaking the Bootstrap grid %>
 
     <div class="form-group">
       <%= form.label :tag_list, "Tags (optional)" %>
       <%= form.text_field :tag_list, class: "form-control", placeholder: "e.g. sales, marketing" %>
       <span>Comma separated list of tags of portfolio companies to generate this chart for</span>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :chart_height, "Chart Height (px, optional)" %>
+      <%= form.number_field :chart_height, class: "form-control", min: 100, max: 2000, placeholder: "420" %>
+      <span>Canvas height in pixels. Leave blank to use the default (420 px).</span>
     </div>
 
     <div class="form-group">

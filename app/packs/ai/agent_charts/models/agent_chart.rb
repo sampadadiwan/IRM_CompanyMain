@@ -27,12 +27,10 @@ class AgentChart < ApplicationRecord
 
   def generate_spec!(portfolio_company_id:, csv_paths: [], kpis: [])
     owner = nil
-    # This comes from the AgentChart definition
+    # Fall back to the KPI names stored on this AgentChart definition if none are passed in.
     kpis = kpi_names if kpis.empty?
 
-    # For each document, download the CSV if not already provided
     if csv_paths.empty? && document_names.present?
-      # Load CSV paths from associated documents if not explicitly provided
       documents(portfolio_company_id).each do |doc|
         owner = doc.owner
         file = doc.file.download
@@ -40,16 +38,19 @@ class AgentChart < ApplicationRecord
       end
     end
 
-    # Update status to draft while generating
     update!(status: "draft", error: nil, owner: owner)
     raw_data = get_kpis(portfolio_company_id, kpis: kpis) if kpis.present?
 
     if csv_paths.present? || raw_data.present?
-      # Pass entity so chart generation uses entity-specific API keys (Gemini, OpenAI, etc.)
+      # Pass entity so ChartAgentService uses entity-specific API keys (Gemini, OpenAI, etc.)
       # rather than falling back to global credentials.
       spec_hash = ChartAgentService.new(json_data: raw_data, csv_paths:, entity: entity).generate_chart!(prompt: prompt)
       spec ||= {}
-      spec[portfolio_company_id] = spec_hash
+      # JSON (JSONB column) serialises all Hash keys as strings on round-trip, so we
+      # write with a string key here to match what the view looks up via
+      # @agent_chart.spec["#{portfolio_company.id}"].  Using an integer key would
+      # produce a silent mismatch after the first DB read.
+      spec[portfolio_company_id.to_s] = spec_hash
       update!(spec: spec, status: "ready")
     else
       raise "No data sources (CSV files or KPIs) available to generate chart for portfolio company #{portfolio_company_id}"
@@ -57,16 +58,6 @@ class AgentChart < ApplicationRecord
   rescue StandardError => e
     update!(status: "failed", error: "#{e.class}: #{e.message}")
     raise
-  end
-
-  def get_report_data
-    if report_id.present? && report.present?
-      # We need to make an api call, but as the user
-      u = entity.employees.company_admins.first
-      Rails.logger.debug { "No company admin user found for entity #{entity_id}, cannot fetch report data" } if u.blank?
-    else
-      Rails.logger.debug "No report associated with this chart"
-    end
   end
 
   def documents(portfolio_company_id)

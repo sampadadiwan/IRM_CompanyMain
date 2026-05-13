@@ -97,6 +97,14 @@
               <% end %>
           <% end %>
 
+          <% if @investor.category == "Portfolio Company" %>
+            <%= link_to generate_agent_charts_investor_path(@investor),
+                        class: "dropdown-item d-flex align-items-center",
+                        data: { turbo: false, bs_toggle: "tooltip", bs_title: "Generate AI charts for this portfolio company using configured agent chart prompts" } do %>
+              <i class="ti ti-chart-bar"></i> Generate AI Charts
+            <% end %>
+          <% end %>
+
 
 
           <%= link_to incoming_emails_path(owner_id: @investor.id, owner_type: "Investor"),

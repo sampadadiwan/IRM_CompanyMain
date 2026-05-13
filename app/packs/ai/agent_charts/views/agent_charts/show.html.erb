@@ -100,7 +100,7 @@
       <%= button_to "Delete", @agent_chart, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
     <% end %>
 
-    <% if @agent_chart.spec.present?  && @agent_chart.spec.keys.present? %>
+    <% if @agent_chart.spec.present? && @portfolio_companies.any? %>
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle" type="button"
@@ -108,9 +108,11 @@
             <i class="ti ti-chart-bar"></i> Charts
           </button>
           <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-              <% @agent_chart.spec.keys.each do |portfolio_company_id| %>
-                <%= link_to Investor.find(portfolio_company_id).name, agent_chart_path(@agent_chart, portfolio_company_id:), id: "agent_chart_generate_spec_#{portfolio_company_id}_btn", class: "dropdown-item"%>
-              <% end %>
+            <%# @portfolio_companies is preloaded in the controller — no N+1 Investor.find here %>
+            <% @portfolio_companies.each do |pc_id, pc| %>
+              <%= link_to pc.name, agent_chart_path(@agent_chart, portfolio_company_id: pc_id),
+                          id: "agent_chart_generate_spec_#{pc_id}_btn", class: "dropdown-item" %>
+            <% end %>
           </div>
         </div>
       </div>
@@ -118,17 +120,65 @@
   </div>
 <% end %>
 
+<% if policy(@agent_chart).update? %>
+  <%= render FormCard.new(title: "Generate Charts") do %>
+    <p class="text-muted small mb-3">
+      <% if @agent_chart.tag_list.present? %>
+        <%= @candidate_companies.size %> portfolio
+        <%= "company".pluralize(@candidate_companies.size) %> match tag
+        <strong><%= @agent_chart.tag_list %></strong>.
+        Select specific ones below, or generate for all of them at once.
+      <% else %>
+        No tag filter — all <%= @candidate_companies.size %> portfolio
+        <%= "company".pluralize(@candidate_companies.size) %> are available.
+        Select specific ones below, or generate for all at once.
+      <% end %>
+    </p>
+
+    <%= form_with url: regenerate_agent_chart_path(@agent_chart), method: :post,
+                  data: { turbo: false } do |f| %>
+      <div class="form-group">
+        <%= f.label :portfolio_company_ids, "Portfolio companies" %>
+        <%# include_hidden: false prevents a blank hidden field from submitting an empty
+            array when nothing is selected — we want nil (not [""]) so the controller
+            falls back to "generate for all". %>
+        <%= f.select :portfolio_company_ids,
+                     @candidate_companies.map { |pc| [pc.investor_name, pc.id] },
+                     { include_hidden: false },
+                     { multiple: true, class: "form-control select2" } %>
+      </div>
+
+      <div class="d-flex gap-2 mt-3">
+        <%= f.submit "Generate for Selected",
+                     class: "btn btn-outline-warning",
+                     data: { disable_with: "Generating…" } %>
+        <%= f.submit "Generate for All (#{@candidate_companies.size})",
+                     class: "btn btn-warning",
+                     # Clear the multi-select so portfolio_company_ids arrives empty →
+                     # controller treats it as "run for all matching companies".
+                     onclick: "this.form.querySelectorAll('[name=\"portfolio_company_ids[]\"]').forEach(o => o.selected = false)",
+                     data: { disable_with: "Generating…" } %>
+      </div>
+    <% end %>
+  <% end %>
+<% end %>
+
 <% if params[:portfolio_company_id].present? && @agent_chart.spec.present? && @agent_chart.spec[params[:portfolio_company_id]].present? %>
-  <% portfolio_company = Investor.find(params[:portfolio_company_id]) %>
+  <%# Use the preloaded hash — avoids a redundant Investor.find for the selected company. %>
+  <% portfolio_company = @portfolio_companies[params[:portfolio_company_id]] %>
   <% title = "#{@agent_chart.title}: &nbsp; #{link_to portfolio_company.name, portfolio_company}".html_safe %>
 
   <%= turbo_frame_tag with_frame("agent_chart_#{@agent_chart.id}"), target: "_top" do %>
     <% if @agent_chart.spec.present? %>
       <%= render FormCard.new(title: link_to(title, agent_chart_path(@agent_chart, portfolio_company_id: portfolio_company.id))) do %>
+        <%# chart_height is nil when not configured; the Stimulus controller falls back to 420 px. %>
+        <%# responsive + maintainAspectRatio: false are injected by validate_chartjs! so the
+            canvas height (not the aspect ratio) controls the rendered chart size. %>
         <div data-controller="chart-renderer"
-            data-chart-renderer-spec-value='<%= @agent_chart.spec["#{portfolio_company.id}"].to_json %>'
-            style="width: 100%; margin: 2rem 0;">
-          <canvas data-chart-renderer-target="canvas" style="width:100%; height:420px;"></canvas>
+             data-chart-renderer-spec-value='<%= @agent_chart.spec[params[:portfolio_company_id]].to_json %>'
+             data-chart-renderer-height-value="<%= @agent_chart.chart_height.presence || 420 %>"
+             style="width: 100%; margin: 2rem 0;">
+          <canvas data-chart-renderer-target="canvas" style="width: 100%;"></canvas>
         </div>
       <% end %>
     <% else %>

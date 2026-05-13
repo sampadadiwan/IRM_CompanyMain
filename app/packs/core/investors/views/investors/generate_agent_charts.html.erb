@@ -1,0 +1,151 @@
+<%
+  portco_id    = @investor.id.to_s
+  ready_count  = @applicable_charts.count { |c| c.spec&.key?(portco_id) }
+  failed_count = @applicable_charts.count { |c| c.status == "failed" && !c.spec&.key?(portco_id) }
+  pending_count = @applicable_charts.size - ready_count - failed_count
+
+  # Group by the chart's tag_list; nil/blank charts go under a sentinel key
+  # so "all companies" charts render last and are visually separated.
+  all_companies_key = ""
+  grouped = @applicable_charts.group_by { |c| c.tag_list.presence || all_companies_key }
+                               .sort_by { |tag, _| tag.empty? ? "zzz" : tag.downcase }
+%>
+
+<%= render NewCard.new do %>
+
+  <%# ── Page header ──────────────────────────────────────────────────────── %>
+  <div class="d-flex align-items-start justify-content-between border-bottom pb-3 mb-4">
+    <div>
+      <h5 class="mb-1">Generate AI Charts</h5>
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="text-muted">for</span>
+        <strong><%= @investor.investor_name %></strong>
+        <% @investor.tag_list.to_s.split(",").map(&:strip).each do |tag| %>
+          <span class="badge bg-primary"><%= tag %></span>
+        <% end %>
+      </div>
+    </div>
+
+    <% unless @applicable_charts.empty? %>
+      <%# ── Summary stats ──────────────────────────────────────────────── %>
+      <div class="d-flex gap-4 text-center">
+        <div>
+          <div class="fs-5 fw-bold"><%= @applicable_charts.size %></div>
+          <div class="text-muted small">Charts</div>
+        </div>
+        <div>
+          <div class="fs-5 fw-bold text-success"><%= ready_count %></div>
+          <div class="text-muted small">Ready</div>
+        </div>
+        <div>
+          <div class="fs-5 fw-bold text-secondary"><%= pending_count %></div>
+          <div class="text-muted small">Pending</div>
+        </div>
+        <div>
+          <div class="fs-5 fw-bold text-danger"><%= failed_count %></div>
+          <div class="text-muted small">Failed</div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <% if @applicable_charts.empty? %>
+
+    <%# ── Empty state ──────────────────────────────────────────────────── %>
+    <div class="text-center py-5">
+      <i class="ti ti-chart-bar fs-1 text-muted"></i>
+      <h6 class="mt-3 mb-1">No charts configured</h6>
+      <p class="text-muted mb-3">
+        <% if @investor.tag_list.present? %>
+          No agent charts match the tags
+          <% @investor.tag_list.split(",").map(&:strip).each do |tag| %>
+            <span class="badge bg-secondary"><%= tag %></span>
+          <% end %>
+          Create a chart with a matching tag, or leave the tag blank to apply to all companies.
+        <% else %>
+          This portfolio company has no tags — only untagged agent charts apply.
+          Create an agent chart without a tag to use it here.
+        <% end %>
+      </p>
+      <%= link_to "Create an agent chart", new_agent_chart_path, class: "btn btn-outline-primary", data: { turbo: false } %>
+    </div>
+
+  <% else %>
+
+    <%# ── Generate All section ──────────────────────────────────────────── %>
+    <div class="d-flex align-items-center justify-content-between bg-light rounded p-3 mb-4">
+      <div>
+        <div class="fw-semibold mb-1">Generate all <%= @applicable_charts.size %> charts</div>
+        <div class="text-muted small">
+          Queues one LLM call per chart.
+          <%= ready_count > 0 ? "#{ready_count} existing #{ready_count == 1 ? "spec" : "specs"} will be overwritten." : "" %>
+        </div>
+      </div>
+      <%= form_with url: generate_agent_charts_investor_path(@investor), method: :post,
+                    data: { turbo: false } do |f| %>
+        <%= f.submit "Generate All (#{@applicable_charts.size})",
+                     class: "btn btn-warning flex-shrink-0",
+                     data: { disable_with: "Queueing…" } %>
+      <% end %>
+    </div>
+
+    <%# ── Per-chart list, grouped by tag ──────────────────────────────── %>
+    <% grouped.each do |tag_label, charts| %>
+      <div class="mb-4">
+
+        <%# Group header %>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <% if tag_label.present? %>
+            <span class="badge bg-primary"><%= tag_label %></span>
+          <% else %>
+            <span class="badge bg-secondary">all companies</span>
+          <% end %>
+          <span class="text-muted small"><%= charts.size %> <%= "chart".pluralize(charts.size) %></span>
+        </div>
+
+        <%# Chart rows %>
+        <div class="list-group">
+          <% charts.each do |chart| %>
+            <%
+              has_spec  = chart.spec&.key?(portco_id)
+              is_failed = chart.status == "failed" && !has_spec
+              status_badge_class = has_spec ? "bg-success" : (is_failed ? "bg-danger" : "bg-light text-secondary border")
+              status_label       = has_spec ? "Ready"      : (is_failed ? "Failed"    : "Pending")
+              btn_label          = has_spec ? "Regenerate" : "Generate"
+            %>
+            <div class="list-group-item d-flex align-items-center gap-3">
+
+              <%# Chart info %>
+              <div class="flex-grow-1 overflow-hidden">
+                <%= link_to chart.title, agent_chart_path(chart),
+                            class: "fw-semibold text-body text-decoration-none d-block text-truncate",
+                            title: chart.title,
+                            data: { turbo: false } %>
+                <% kpis = chart.kpi_names&.reject(&:blank?) %>
+                <% if kpis&.any? %>
+                  <span class="text-muted small"><%= kpis.join(" · ") %></span>
+                <% end %>
+              </div>
+
+              <%# Status + action %>
+              <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <span class="badge <%= status_badge_class %>"><%= status_label %></span>
+                <%= form_with url: generate_agent_charts_investor_path(@investor), method: :post,
+                              data: { turbo: false } do |f| %>
+                  <%= f.hidden_field :agent_chart_id, value: chart.id %>
+                  <%= f.submit btn_label,
+                               class: "btn btn-sm btn-outline-warning",
+                               data: { disable_with: "…" } %>
+                <% end %>
+              </div>
+
+            </div>
+          <% end %>
+        </div>
+
+      </div>
+    <% end %>
+
+  <% end %>
+
+<% end %>

@@ -70,11 +70,26 @@ function sliceToCompleteJson(text) {
 export default class extends Controller {
   static targets = ["canvas"]
 
-  // Treat as string and parse ourselves (more robust than Stimulus ObjectValue)
-  static values = { spec: String }
+  static values = {
+    // spec: parsed manually (more robust than Stimulus ObjectValue for LLM-generated HTML
+    // which may contain stray escaping that Stimulus's built-in parser rejects)
+    spec: String,
+    // height: canvas height in pixels; 0 means "not set — use the inline-style default".
+    // Injected from AgentChart#chart_height by the show view.
+    height: { type: Number, default: 0 },
+  }
 
   connect() {
     try {
+      // Apply the user-configured height before constructing the Chart instance so
+      // Chart.js reads the correct canvas dimensions on its first layout pass.
+      // The spec will always have maintainAspectRatio: false (injected server-side in
+      // validate_chartjs!), so Chart.js honours this height rather than overriding it
+      // with an aspect-ratio-derived value.
+      if (this.heightValue > 0) {
+        this.canvasTarget.style.height = `${this.heightValue}px`
+      }
+
       const ctx = this.canvasTarget.getContext("2d")
       const spec = this.parseSpec()
 

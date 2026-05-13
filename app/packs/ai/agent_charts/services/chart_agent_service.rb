@@ -74,40 +74,51 @@ class ChartAgentService
     USER
   end
 
-  # Returns a Ruby Hash ready to pass to Chart.js on the frontend
+  # Returns a Ruby Hash ready to pass to Chart.js on the frontend.
   def generate_chart!(prompt:)
     # NOTE: must use @entity (instance variable), not bare `entity` — this class has no
-    # entity method and calling it bare raises NameError: undefined local variable or method 'entity'.
+    # entity method and calling it bare raises NameError.
     chat = LlmService.ruby_llm_chat(entity: @entity)
 
-    # Build the system message with instructions
     system_msg = build_system_msg
-
-    # Build the single user message with instructions and JSON (inline)
-    user_msg = build_user_msg(prompt)
+    user_msg   = build_user_msg(prompt)
 
     Rails.logger.debug user_msg.inspect
 
-    # Attach the CSV files if provided; otherwise just send the message
-    raw = if @csv_paths.any?
-            chat.ask(system_msg) # prime the system instruction
-            chat.ask(user_msg, with: @csv_paths)
-          else
-            chat.ask([system_msg, user_msg].join("\n\n"))
-          end
-
+    raw = ask_llm(chat, system_msg, user_msg)
     Rails.logger.debug raw.inspect
-    # Parse & validate the LLM’s JSON
+
     config = parse_json(raw)
+
+    # Retry once with an explicit correction prompt if the first parse attempt
+    # failed.  LLM output occasionally includes stray markdown fences or trailing
+    # characters that survive parse_json’s cleanup; a single nudge usually fixes it
+    # because the conversation context is preserved across chat.ask calls.
+    if config.nil?
+      Rails.logger.warn "ChartAgentService: first parse attempt failed, retrying with correction prompt"
+      raw    = chat.ask("Your previous response was not valid JSON. Output ONLY a raw JSON object — no markdown, no code fences, no explanation.")
+      config = parse_json(raw)
+    end
+
     validate_chartjs!(config)
-
-    # Cleanup the csv files downloaded
     cleanup
-
     config
   end
 
   private
+
+  # Sends the system primer and user prompt as two separate turns in all cases.
+  # Previously, the non-CSV path concatenated both into a single string, causing
+  # the LLM to treat instructions and data as one blob — producing less reliable JSON.
+  # Now both paths use a two-turn structure: system primer first, user data second.
+  def ask_llm(chat, system_msg, user_msg)
+    chat.ask(system_msg) # prime with instructions
+    if @csv_paths.any?
+      chat.ask(user_msg, with: @csv_paths)
+    else
+      chat.ask(user_msg)
+    end
+  end
 
   def cleanup
     @csv_paths.each do |path|
@@ -156,6 +167,15 @@ class ChartAgentService
     end
 
     cfg["options"] ||= {}
+
+    # Always enforce responsive sizing so the chart fills its container and
+    # respects the canvas height set by the chart-renderer Stimulus controller.
+    # Chart.js defaults maintainAspectRatio to true, which ignores any fixed height
+    # and derives it from the width instead — overriding this lets CSS/inline style
+    # on the canvas element control the actual rendered size.
+    cfg["options"]["responsive"]          = true
+    cfg["options"]["maintainAspectRatio"] = false
+
     cfg
   end
 end

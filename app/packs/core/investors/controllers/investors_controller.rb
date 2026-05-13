@@ -1,6 +1,6 @@
 class InvestorsController < ApplicationController
   helper InvestorAnalyticsHelper
-  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports portfolio_investments_report]
+  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports portfolio_investments_report generate_agent_charts]
   after_action :verify_authorized, except: %i[merge portfolio_investments_report_all]
 
   # GET /investors or /investors.json
@@ -80,6 +80,31 @@ class InvestorsController < ApplicationController
       end
     else
       render "portfolio_investments_report"
+    end
+  end
+
+  def generate_agent_charts
+    load_applicable_agent_charts
+
+    if request.post?
+      if params[:agent_chart_id].present?
+        # Single chart selected from the dropdown.
+        chart = @applicable_charts.find(params[:agent_chart_id])
+        AgentChartJob.perform_later(current_user.id,
+                                    agent_chart_id: chart.id,
+                                    portfolio_company_id: @investor.id)
+        notice = "Generating \"#{chart.title}\" for #{@investor.investor_name}…"
+      else
+        # No specific chart — queue every applicable chart for this portfolio company.
+        @applicable_charts.each do |chart|
+          AgentChartJob.perform_later(current_user.id,
+                                      agent_chart_id: chart.id,
+                                      portfolio_company_id: @investor.id)
+        end
+        notice = "Generating #{@applicable_charts.size} #{"chart".pluralize(@applicable_charts.size)} for #{@investor.investor_name}…"
+      end
+
+      redirect_to investor_path(@investor), notice: notice
     end
   end
 
@@ -319,6 +344,23 @@ class InvestorsController < ApplicationController
   end
 
   private
+
+  # Loads AgentCharts that apply to this portfolio company:
+  #   - charts with no tag_list apply to every portfolio company
+  #   - charts whose tag_list shares at least one tag with the portco's tag_list
+  def load_applicable_agent_charts
+    portco_tags = @investor.tag_list.to_s.split(",").map(&:strip).reject(&:blank?)
+    base = AgentChart.where(entity: @investor.entity).order(:title)
+
+    @applicable_charts = if portco_tags.any?
+      tag_conditions = portco_tags.map { "tag_list LIKE ?" }.join(" OR ")
+      base.where("tag_list IS NULL OR tag_list = '' OR (#{tag_conditions})",
+                 *portco_tags.map { |t| "%#{t}%" })
+    else
+      # Portco has no tags — only untagged charts (which apply to all) are relevant.
+      base.where("tag_list IS NULL OR tag_list = ''")
+    end
+  end
 
   # Use callbacks to share common setup or constraints between actions.
   def set_investor

@@ -64,6 +64,11 @@ class InvestorPolicy < ApplicationPolicy
     update?
   end
 
+  # Permission to generate agent charts for this portfolio company. Requires update permissions.
+  def generate_agent_charts?
+    update?
+  end
+
   # Permission to view portfolio investment reports for this investor. Requires update permissions.
   def portfolio_investments_report?
     update?

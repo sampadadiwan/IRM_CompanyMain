@@ -199,6 +199,8 @@ resources :investors do
   # Route to return a report detail partial/modal for portfolio agent run links
   get 'generate_reports', on: :member
   post 'generate_reports', on: :member
+  get 'generate_agent_charts', on: :member
+  post 'generate_agent_charts', on: :member
   get 'portfolio_investments_report', on: :member
   post 'portfolio_investments_report', on: :member
   get 'portfolio_investments_report_all', on: :collection
