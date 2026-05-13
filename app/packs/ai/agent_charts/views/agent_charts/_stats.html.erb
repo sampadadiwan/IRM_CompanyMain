@@ -1,0 +1,51 @@
+<%
+  colors = ["primary", "success", "warning", "danger", "secondary", "info"].freeze
+
+  all_charts = policy_scope(AgentChart)
+
+  # Count charts per individual tag — a chart with "beauty,skincare" contributes to both.
+  tag_counts = all_charts
+    .pluck(:tag_list)
+    .flat_map { |t| t.to_s.split(",").map(&:strip).reject(&:blank?) }
+    .tally
+    .sort_by { |tag, count| [-count, tag.downcase] }
+
+  untagged_count = all_charts.where("tag_list IS NULL OR tag_list = ''").count
+  total_count    = all_charts.count
+%>
+
+<div class="row mb-4">
+  <%# Total — links to plain index with filter open %>
+  <%= render NumberStatsComponent.new(
+        path:               agent_charts_path(filter: true),
+        amount:             total_count,
+        subtitle:           "All Charts",
+        progress_bar_color: "dark"
+  ) %>
+
+  <%# One card per tag, sorted by frequency %>
+  <% tag_counts.each_with_index do |(tag, count), idx| %>
+    <%= render NumberStatsComponent.new(
+          path:               agent_charts_path(
+                                filter: true,
+                                q: ransack_query_params(:tag_list, :cont, tag)
+                              ),
+          amount:             count,
+          subtitle:           tag,
+          progress_bar_color: colors[idx % colors.length]
+    ) %>
+  <% end %>
+
+  <%# Untagged — charts that apply to all portfolio companies %>
+  <% if untagged_count > 0 %>
+    <%= render NumberStatsComponent.new(
+          path:               agent_charts_path(
+                                filter: true,
+                                q: ransack_query_params(:tag_list, :blank, "1")
+                              ),
+          amount:             untagged_count,
+          subtitle:           "All Companies",
+          progress_bar_color: "secondary"
+    ) %>
+  <% end %>
+</div>

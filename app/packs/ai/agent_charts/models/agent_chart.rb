@@ -12,6 +12,14 @@ class AgentChart < ApplicationRecord
   STATUSES = %w[draft ready failed].freeze
   validates :status, inclusion: { in: STATUSES }
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[title prompt status tag_list kpi_names created_at updated_at]
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    []
+  end
+
   scope :with_tag_list, lambda { |tags|
     tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)
 

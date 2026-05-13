@@ -1,3 +1,7 @@
+<%= render "agent_charts/stats" %>
+
+<%= render "layouts/filter", associations: [] %>
+
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Agent Charts</h1>
   <span>
@@ -9,6 +13,11 @@
                           "sample_upload": "AGENT_CHART_SAMPLE"),
                         class: "btn btn-outline-success ti ti-upload",
                         data: { turbo: false }  %>
+
+    <%= link_to agent_charts_path(filter: true),
+                class: "btn btn-outline-secondary" do %>
+      <i class="ti ti-filter"></i> Filter
+    <% end %>
   </span>
 </div>
 <div class="table-responsive" data-controller="datatable">
