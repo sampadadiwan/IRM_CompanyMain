@@ -1,3 +1,5 @@
+# See docs/features/fund_ratio_run.md for the computation_context design and
+# how fund_id relates to cross-fund / cross-portfolio runs.
 class FundRatio < ApplicationRecord
   include WithValidationRules
 
@@ -7,11 +9,15 @@ class FundRatio < ApplicationRecord
   has_many :documents, as: :owner, dependent: :destroy
 
   belongs_to :entity
-  belongs_to :fund
+  # fund_id is nil for cross-fund and cross-portfolio rows — those are linked via
+  # computation_context instead. Single-fund rows (FundRatiosJob) always have fund_id set.
+  belongs_to :fund, optional: true
+  # Polymorphic parent: either a FundRatioRun (cross-fund / cross-portfolio) or a
+  # PortfolioScenario (scenario-analysis ratios). Nil for single-fund rows.
+  belongs_to :computation_context, polymorphic: true, optional: true
   belongs_to :capital_commitment, optional: true
   belongs_to :valuation, optional: true
   belongs_to :owner, polymorphic: true, optional: true
-  belongs_to :portfolio_scenario, optional: true
 
   STANDARD_COLUMNS = {
     "For; text-col" => "owner_name; text-col",
@@ -63,7 +69,14 @@ class FundRatio < ApplicationRecord
 
   before_create :set_scenario_if_missing
   def set_scenario_if_missing
-    self.scenario = portfolio_scenario.name if (scenario.blank? || scenario == "Default") && portfolio_scenario.present?
+    # Derive scenario label from the parent computation context's name so FundRatio rows
+    # are self-contained for filtering without joining to the parent table.
+    # Check against the column default ("Default") because that value is assigned by the
+    # database before the callback runs, making scenario.blank? always false on new records.
+    col_default = self.class.column_defaults["scenario"]
+    if computation_context.present? && (scenario.blank? || scenario == col_default)
+      self.scenario = computation_context.name
+    end
   end
 
   def to_s
@@ -71,11 +84,11 @@ class FundRatio < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[name value owner_type owner_id end_date latest fund_id scenario].sort
+    %w[name value owner_type owner_id end_date latest fund_id scenario computation_context_type computation_context_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[fund portfolio_scenario]
+    %w[fund computation_context]
   end
 
   def create_cashflow_document(cash_flows, user_id)
@@ -109,7 +122,13 @@ class FundRatio < ApplicationRecord
 
     return if csv_data.blank?
 
-    folder = fund.get_or_create_folder("FundRatios")
+    # Cross-run rows have fund_id nil, so fall back to the computation context's fund.
+    # Both FundRatioRun (#fund → anchor_fund) and PortfolioScenario (#fund) respond to
+    # .fund, so duck typing works without branching. Silently skip if no fund is found.
+    effective_fund = fund || computation_context&.fund
+    return if effective_fund.nil?
+
+    folder = effective_fund.get_or_create_folder("FundRatios")
 
     temp_file = Tempfile.new(["cash_flows_#{id}", ".csv"])
     temp_file.write(csv_data)

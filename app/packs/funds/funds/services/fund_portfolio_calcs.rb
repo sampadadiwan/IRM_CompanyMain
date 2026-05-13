@@ -4,7 +4,8 @@ class FundPortfolioCalcs < FundRatioCalcs
   delegate :ratio_formulas, to: :@fund
 
   def initialize(fund, end_date, synthetic_investments: [])
-    @fund = fund
+    @fund  = fund
+    @model = fund  # FundRatioCalcs delegates portfolio_investments/aggregate_portfolio_investments to :model
     @end_date = end_date
     @synthetic_investments = synthetic_investments
     super()

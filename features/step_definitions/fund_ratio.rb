@@ -227,8 +227,8 @@ Then('the FundRatios should be linked to the PortfolioScenario {string} from fil
             end
     fund_ratio.value.should
     user_data["Value"].to_d
-    fund_ratio.portfolio_scenario_id.should
-    portfolio_scenario.id
+    fund_ratio.computation_context_id.should
+    portfolio_scenario&.id
     fund_ratio.scenario.should
     user_data["Scenario"]&.strip
     fund_ratio.owner.should == owner
@@ -276,7 +276,10 @@ Then('the FundRatios should be have owner from file {string}') do |file_name|
     else
       "#{user_data['Value'].to_d.to_f.round(2)} x"
     end
-    fund_ratio.portfolio_scenario_id.should == portfolio_scenario.id if portfolio_scenario.present?
+    if portfolio_scenario.present?
+      expect(fund_ratio.computation_context_id).to eq(portfolio_scenario.id)
+      expect(fund_ratio.computation_context_type).to eq("PortfolioScenario")
+    end
     user_data["Scenario"].present? ? user_data["Scenario"].strip : "Default"
     fund_ratio.scenario.should
     fund_ratio.end_date.should

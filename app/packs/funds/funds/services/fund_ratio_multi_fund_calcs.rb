@@ -1,23 +1,38 @@
 class FundRatioMultiFundCalcs < FundRatioCalcs
-  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, currency: nil)
+  # See docs/features/fund_ratio_run.md for full parameter documentation.
+  #
+  # portfolio_companies, portfolio_companies_tags, and portfolio_companies_sectors are
+  # all optional and additive: any company matching at least one filter is included.
+  # The union is resolved here so the rest of the class works with a single
+  # @portfolio_companies relation regardless of how companies were selected.
+  def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil)
     @scenario = scenario
-    # All funds must be in the same entity
-    @funds = funds
+    # All funds must belong to the same entity.
+    @funds    = funds
     @fund_ids = @funds.pluck(:id) if funds
-    # The end date is the date of the scenario, all calculations are done as of this date
+    # All calculations are snapshotted at this date.
     @end_date = end_date
-    # The entity for which we are calculating the ratios
-    @entity = entity
-    # The portfolio companies for which we are calculating the ratios
-    @portfolio_companies = portfolio_companies
-    # Sometimes we are passed only the tags, and not the portfolio companies
-    @portfolio_companies = entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags) if portfolio_companies_tags.present?
+    @entity   = entity
 
+    # Union all three company-selection mechanisms into one Set of IDs, then
+    # materialise a single relation. This replaces the old "last filter wins" pattern
+    # where tags silently overwrote explicit IDs.
+    pc_ids = Set.new
+    # 1. Explicitly selected company IDs passed from the job.
+    pc_ids.merge(portfolio_companies.pluck(:id)) if portfolio_companies.present?
+    # 2. Companies resolved via tag filter (comma-separated tag string).
+    pc_ids.merge(entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags).pluck(:id)) if portfolio_companies_tags.present?
+    # 3. Companies resolved via sector filter (array of sector strings, case-insensitive LIKE).
+    pc_ids.merge(entity.investors.portfolio_companies.in_sector(portfolio_companies_sectors).pluck(:id)) if portfolio_companies_sectors.present?
+
+    # If no filter produced any IDs, fall back to the raw relation (may be nil,
+    # meaning "no portfolio-company filter — use all companies").
+    @portfolio_companies   = pc_ids.any? ? entity.investors.where(id: pc_ids.to_a) : portfolio_companies
     @portfolio_company_ids = @portfolio_companies.present? ? @portfolio_companies.pluck(:id) : []
 
-    # The currency for which we are calculating the ratios
     @currency = currency || @entity.currency
-    # Setup the exchange rate bank, to convert across currencies
+    # Variable exchange-rate bank: rates are looked up as of @end_date so historical
+    # runs use the correct FX rates, not today's.
     @bank = ExchangeRate.setup_variable_exchange(@end_date, @entity.id)
     super()
   end
@@ -178,6 +193,25 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
 
       numerator += convert_to_base_currency(Money.new(fund_tv, fund.currency)).cents
       denominator += convert_to_base_currency(Money.new(fund_cc, fund.currency)).cents
+    end
+    denominator.positive? ? (numerator / denominator.to_f) : 0
+  end
+
+  # FMV / total cost basis across all source funds, mirroring FundPortfolioCalcs#portfolio_value_to_cost.
+  def portfolio_value_to_cost
+    return 0 unless @funds.present?
+
+    numerator = 0
+    denominator = 0
+    @funds.each do |fund|
+      fpc = FundPortfolioCalcs.new(fund, @end_date)
+      fund_fmv  = fpc.fmv_cents
+      fund_ticc = fpc.total_investment_costs_cents
+
+      fund_fmv, fund_ticc = fpc.apply_static_formulas('Portfolio Value to Cost', fund_fmv, fund_ticc, false)
+
+      numerator   += convert_to_base_currency(Money.new(fund_fmv,  fund.currency)).cents
+      denominator += convert_to_base_currency(Money.new(fund_ticc, fund.currency)).cents
     end
     denominator.positive? ? (numerator / denominator.to_f) : 0
   end

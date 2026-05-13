@@ -29,7 +29,7 @@ class FinalizePortfolioScenario < Trailblazer::Operation
 
       ratio = FundRatio.find_or_initialize_by(
         owner: portfolio_scenario.fund,
-        portfolio_scenario: portfolio_scenario,
+        computation_context: portfolio_scenario,
         name: xirr_name,
         fund: portfolio_scenario.fund,
         entity: portfolio_scenario.entity
@@ -66,7 +66,7 @@ class FinalizePortfolioScenario < Trailblazer::Operation
 
       ratio = FundRatio.find_or_initialize_by(
         owner: portfolio_scenario.fund,
-        portfolio_scenario: portfolio_scenario,
+        computation_context: portfolio_scenario,
         name: moic_name,
         fund: portfolio_scenario.fund,
         entity: portfolio_scenario.entity
@@ -116,7 +116,7 @@ class FinalizePortfolioScenario < Trailblazer::Operation
 
       ratio = FundRatio.find_or_initialize_by(
         owner: portfolio_scenario.fund,
-        portfolio_scenario: portfolio_scenario,
+        computation_context: portfolio_scenario,
         name: name,
         fund: portfolio_scenario.fund,
         entity: portfolio_scenario.entity
@@ -177,7 +177,7 @@ class FinalizePortfolioScenario < Trailblazer::Operation
         ratio = FundRatio.find_or_initialize_by(
           owner_type: "Investor",
           owner_id: company_id,
-          portfolio_scenario: portfolio_scenario,
+          computation_context: portfolio_scenario,
           name: ratio_name,
           fund: portfolio_scenario.fund,
           entity: portfolio_scenario.entity

@@ -13,7 +13,10 @@ class FundRatioList < BaseList
     @q = FundRatio.ransack(@params[:q])
     @fund_ratios = apply_policy_scope(@q.result, &)
 
-    @fund_ratios = @fund_ratios.includes(:fund, :capital_commitment, :portfolio_scenario)
+    # preload fires separate SELECT * queries for each association, avoiding the
+    # eager-load JOIN strategy that would enumerate columns explicitly and break
+    # whenever the schema cache is stale after a migration (e.g. portfolio_scenario_id).
+    @fund_ratios = @fund_ratios.preload(:fund, :capital_commitment, :computation_context)
 
     @fund_ratios = FundRatioSearch.perform(@fund_ratios, @current_user, @params)
 
@@ -23,7 +26,8 @@ class FundRatioList < BaseList
     @fund_ratios = filter_params(@fund_ratios,
                                  :import_upload_id,
                                  :capital_commitment_id,
-                                 :portfolio_scenario_id,
+                                 :computation_context_type,
+                                 :computation_context_id,
                                  :owner_type,
                                  :owner_id,
                                  :scenario,
@@ -57,7 +61,7 @@ class FundRatioList < BaseList
     # Step 5: Pivot grouping (if requested)
     if @params[:pivot].present?
       group_by_period = @params[:group_by_period] || :quarter
-      result_attrs[:pivot] = FundRatioPivot.new(@fund_ratios.includes(:fund), group_by_period:).call
+      result_attrs[:pivot] = FundRatioPivot.new(@fund_ratios.preload(:fund), group_by_period:).call
     end
 
     Result.new(result_attrs)

@@ -570,8 +570,12 @@ Given("a {string} schedule with last_run_at {string}") do |frequency, time_desc|
 end
 
 When("I check if the schedule is due") do
-  job = ReportBuilderSchedulerJob.new
-  @schedule_due = job.send(:due?, @schedule)
+  # Freeze at 10 AM so daily/weekly/monthly 9 AM slots have already passed,
+  # keeping the assertion deterministic regardless of when the test runs.
+  travel_to(Time.current.beginning_of_day + 10.hours) do
+    job = ReportBuilderSchedulerJob.new
+    @schedule_due = job.send(:due?, @schedule)
+  end
 end
 
 Then("the schedule should be due") do

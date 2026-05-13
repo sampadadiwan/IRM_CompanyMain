@@ -329,11 +329,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.datetime "updated_at", null: false
     t.index ["ai_rule_id"], name: "index_ai_checks_on_ai_rule_id"
     t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
-    t.index %w[owner_type owner_id], name: "index_ai_checks_on_owner"
-    t.index %w[parent_type parent_id], name: "index_ai_checks_on_parent"
+    t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
+    t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
   end
 
-  create_table "ai_portfolio_reports", force: :cascade do |t|
+  create_table "ai_kpi_shadow_runs",  force: :cascade do |t|
+    t.integer "ai_count", default: 0, null: false
+    t.integer "ai_only_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.integer "det_count", default: 0, null: false
+    t.integer "det_only_count", default: 0, null: false
+    t.json "details"
+    t.bigint "document_id", null: false
+    t.bigint "entity_id", null: false
+    t.integer "input_tokens", default: 0, null: false
+    t.bigint "kpi_report_id", null: false
+    t.integer "match_count", default: 0, null: false
+    t.float "match_rate", default: 0.0, null: false
+    t.integer "mismatch_count", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.bigint "portfolio_company_id", null: false
+    t.datetime "run_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["document_id"], name: "index_ai_kpi_shadow_runs_on_document_id"
+    t.index ["entity_id"], name: "index_ai_kpi_shadow_runs_on_entity_id"
+    t.index ["mismatch_count"], name: "index_ai_kpi_shadow_runs_on_mismatch_count"
+    t.index ["portfolio_company_id"], name: "index_ai_kpi_shadow_runs_on_portfolio_company_id"
+    t.index ["run_at"], name: "index_ai_kpi_shadow_runs_on_run_at"
+  end
+
+  create_table "ai_portfolio_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.integer "analyst_id"
     t.text "collated_report_html"
     t.datetime "created_at", null: false
@@ -1721,16 +1746,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
 
-  create_table "fund_ratios", force: :cascade do |t|
+  create_table "fund_ratio_runs",  force: :cascade do |t|
+    t.bigint "anchor_fund_id"
+    t.datetime "created_at", null: false
+    t.string "currency"
+    t.date "end_date", null: false
+    t.bigint "entity_id", null: false
+    t.json "fund_ids", null: false
+    t.string "name", null: false
+    t.string "portfolio_companies_tags"
+    t.json "portfolio_company_ids", null: false
+    t.string "run_type", null: false
+    t.json "sectors", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index "(cast(`fund_ids` as unsigned array))", name: "idx_frr_fund_ids"
+    t.index "(cast(`portfolio_company_ids` as unsigned array))", name: "idx_frr_portfolio_company_ids"
+    t.index ["anchor_fund_id"], name: "index_fund_ratio_runs_on_anchor_fund_id"
+    t.index ["entity_id", "end_date", "name"], name: "idx_frr_unique_fingerprint", unique: true
+    t.index ["entity_id"], name: "index_fund_ratio_runs_on_entity_id"
+    t.index ["user_id"], name: "index_fund_ratio_runs_on_user_id"
+  end
+
+  create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "capital_commitment_id"
     t.json "cash_flows"
+    t.bigint "computation_context_id"
+    t.string "computation_context_type"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "display_value", limit: 50
     t.date "end_date"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
-    t.bigint "fund_id", null: false
+    t.bigint "fund_id"
     t.bigint "import_upload_id"
     t.string "label", limit: 50
     t.boolean "latest", default: false
@@ -1738,18 +1787,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.text "notes"
     t.bigint "owner_id"
     t.string "owner_type"
-    t.bigint "portfolio_scenario_id"
     t.string "scenario", limit: 40, default: "Default"
     t.datetime "updated_at", null: false
     t.bigint "valuation_id"
     t.decimal "value", precision: 20, scale: 8, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
+    t.index ["computation_context_type", "computation_context_id"], name: "index_fund_ratios_on_computation_context"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_ratios_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
-    t.index %w[owner_type owner_id], name: "index_fund_ratios_on_owner"
-    t.index ["portfolio_scenario_id"], name: "index_fund_ratios_on_portfolio_scenario_id"
+    t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 
@@ -3805,17 +3853,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   add_foreign_key "expression_of_interests", "users"
   add_foreign_key "expression_of_interests", "users", column: "investor_signatory_id"
   add_foreign_key "faq_threads", "users"
+  add_foreign_key "favorites", "users"
   add_foreign_key "fees", "entities"
   add_foreign_key "folders", "entities"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
   add_foreign_key "fund_formulas", "entities"
   add_foreign_key "fund_formulas", "funds"
+  add_foreign_key "fund_ratio_runs", "entities"
+  add_foreign_key "fund_ratio_runs", "funds", column: "anchor_fund_id"
+  add_foreign_key "fund_ratio_runs", "users"
   add_foreign_key "fund_ratios", "capital_commitments"
   add_foreign_key "fund_ratios", "entities"
   add_foreign_key "fund_ratios", "form_types"
   add_foreign_key "fund_ratios", "funds"
-  add_foreign_key "fund_ratios", "portfolio_scenarios"
   add_foreign_key "fund_ratios", "valuations"
   add_foreign_key "fund_reports", "entities"
   add_foreign_key "fund_reports", "form_types"
@@ -3844,6 +3895,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   add_foreign_key "import_uploads", "users"
   add_foreign_key "incoming_emails", "entities"
   add_foreign_key "incoming_emails", "folders", column: "document_folder_id"
+  add_foreign_key "incoming_emails", "users", column: "filed_by_user_id"
   add_foreign_key "interests", "folders", column: "document_folder_id"
   add_foreign_key "interests", "form_types"
   add_foreign_key "interests", "funding_rounds"
@@ -3853,6 +3905,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   add_foreign_key "interests", "users"
   add_foreign_key "interests", "users", column: "final_agreement_user_id"
   add_foreign_key "interests", "users", column: "status_updated_by_id"
+  add_foreign_key "investment_criteria_templates", "entities"
+  add_foreign_key "investment_criteria_templates", "users", column: "created_by_user_id"
   add_foreign_key "investment_instruments", "entities"
   add_foreign_key "investment_instruments", "form_types"
   add_foreign_key "investment_instruments", "investors", column: "portfolio_company_id"
@@ -3890,6 +3944,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   add_foreign_key "kanban_cards", "kanban_columns"
   add_foreign_key "kanban_columns", "entities"
   add_foreign_key "kanban_columns", "kanban_boards"
+  add_foreign_key "kpi_chart_settings", "entities"
+  add_foreign_key "kpi_chart_settings", "investors", column: "portfolio_company_id"
+  add_foreign_key "kpi_chart_settings", "users"
   add_foreign_key "kpi_reports", "entities"
   add_foreign_key "kpi_reports", "entities", column: "owner_id"
   add_foreign_key "kpi_reports", "folders", column: "document_folder_id"
@@ -3957,9 +4014,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   add_foreign_key "portfolio_scenarios", "users"
   add_foreign_key "quick_link_steps", "quick_links"
   add_foreign_key "quick_links", "entities"
+  add_foreign_key "ratio_formulas", "entities"
+  add_foreign_key "ratio_formulas", "funds"
   add_foreign_key "reminders", "entities"
   add_foreign_key "report_insights", "entities"
   add_foreign_key "report_insights", "reports"
+  add_foreign_key "report_schedules", "reports"
   add_foreign_key "reports", "entities"
   add_foreign_key "reports", "users"
   add_foreign_key "rm_mappings", "entities"
@@ -3997,15 +4057,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   add_foreign_key "support_client_mappings", "entities"
   add_foreign_key "support_client_mappings", "users"
   add_foreign_key "taggings", "tags"
+  add_foreign_key "task_recurrence_rules", "entities"
   add_foreign_key "task_templates", "entities"
   add_foreign_key "tasks", "entities"
+  add_foreign_key "tasks", "folders", column: "document_folder_id"
   add_foreign_key "tasks", "form_types"
+  add_foreign_key "tasks", "task_recurrence_rules"
   add_foreign_key "tasks", "task_templates"
   add_foreign_key "tasks", "users"
+  add_foreign_key "tear_sheet_presentations", "entities"
+  add_foreign_key "tear_sheet_presentations", "portfolio_report_extracts"
   add_foreign_key "tool_calls", "messages"
   add_foreign_key "user_alerts", "entities"
   add_foreign_key "user_alerts", "users"
   add_foreign_key "users", "form_types"
+  add_foreign_key "validation_rule_overrides", "entities"
+  add_foreign_key "validation_rule_overrides", "users", column: "created_by_id"
+  add_foreign_key "validation_rule_overrides", "validation_rules"
+  add_foreign_key "validation_rules", "entities"
+  add_foreign_key "validation_rules", "users", column: "created_by_id"
   add_foreign_key "valuations", "entities"
   add_foreign_key "valuations", "form_types"
   add_foreign_key "valuations", "investment_instruments"

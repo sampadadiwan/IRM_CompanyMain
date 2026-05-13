@@ -25,8 +25,11 @@ module DashboardWidgetsHelper
     # Step 2: Apply optional filters from the query or parameters.
     widgets = widgets.where(show_menu:) if show_menu.present?
 
-    # Step 4: Handle tag_list filtering. Fall back to owner's tag_list if none is provided.
+    # Step 4: Build tag_list from owner and current_user so widget.tag_list can filter
+    # by either owner tags (e.g. Fund category) OR user role tags (e.g. CFO, Admin).
     tag_list ||= owner.tag_list if owner.respond_to?(:tag_list)
+    user_tags = try(:current_user)&.tag_list.to_s.presence
+    tag_list  = [tag_list, user_tags].compact_blank.join(",").presence
     Rails.logger.debug { "Filtering widgets for dashboard '#{dashboard_name}' with tags: #{tag_list} for owner #{owner}" }
 
     if widgets.empty?

@@ -22,10 +22,11 @@ class ImportFundRatio < ImportUtil
     # Owner determines what the ratio is attached to: fund, investor, instrument, or commitment
     owner  = find_owner(fund, user_data, entity)
 
-    # Portfolio scenario is optional; nil means the ratio is not scoped to a scenario
+    # Portfolio scenario is optional; when present the ratio is set as computation_context.
     portfolio_scenario_name = user_data["Portfolio Scenario"]&.strip
-    portfolio_scenario_id   = fund.portfolio_scenarios.find_by(name: portfolio_scenario_name)&.id
-    raise "Portfolio Scenario not found for #{portfolio_scenario_name}" if portfolio_scenario_name.present? && portfolio_scenario_id.nil?
+    portfolio_scenario      = portfolio_scenario_name.present? ?
+                                fund.portfolio_scenarios.find_by(name: portfolio_scenario_name) : nil
+    raise "Portfolio Scenario not found for #{portfolio_scenario_name}" if portfolio_scenario_name.present? && portfolio_scenario.nil?
 
     # Scenario defaults to "Default" when the column is blank
     scenario = user_data["Scenario"]&.strip || "Default"
@@ -33,18 +34,20 @@ class ImportFundRatio < ImportUtil
     end_date = user_data["End Date"].present? ? parse_date(user_data["End Date"]) : nil
 
     attributes = {
-      fund: fund,
-      entity: entity,
-      owner: owner,
-      user_data: user_data,
-      value: parse_value(user_data["Value"]),
-      display_value: format_display_value(user_data["Value"], user_data["Ratio Name"]),
-      end_date: end_date,
-      import_upload: import_upload,
-      scenario: scenario
+      fund:           fund,
+      entity:         entity,
+      owner:          owner,
+      user_data:      user_data,
+      value:          parse_value(user_data["Value"]),
+      display_value:  format_display_value(user_data["Value"], user_data["Ratio Name"]),
+      end_date:       end_date,
+      import_upload:  import_upload,
+      scenario:       scenario
     }
-    # Only set portfolio_scenario_id when one was resolved; omitting it keeps the column NULL
-    attributes[:portfolio_scenario_id] = portfolio_scenario_id if portfolio_scenario_id
+    # Set computation_context to the PortfolioScenario when one was resolved.
+    # scenario string is also set explicitly here because the before_create callback
+    # only fires on blank scenario — imports may override with a custom value.
+    attributes[:computation_context] = portfolio_scenario if portfolio_scenario
 
     # "Update Only = yes" means the ratio must already exist; error out if it doesn't
     if user_data["Update Only"].to_s.downcase == "yes"
@@ -153,14 +156,14 @@ class ImportFundRatio < ImportUtil
     raise "Fund Ratio not found for update: #{attrs[:user_data]}" if fund_ratio.nil?
 
     fund_ratio.assign_attributes(
-      value: attrs[:value],
-      display_value: attrs[:display_value],
-      end_date: attrs[:end_date],
-      import_upload_id: attrs[:import_upload].id,
-      notes: attrs[:user_data]["Note"],
-      label: attrs[:user_data]["Label"],
-      scenario: attrs[:scenario],
-      portfolio_scenario_id: attrs[:portfolio_scenario_id]
+      value:               attrs[:value],
+      display_value:       attrs[:display_value],
+      end_date:            attrs[:end_date],
+      import_upload_id:    attrs[:import_upload].id,
+      notes:               attrs[:user_data]["Note"],
+      label:               attrs[:user_data]["Label"],
+      scenario:            attrs[:scenario],
+      computation_context: attrs[:computation_context]
     )
     fund_ratio.save!
   end
@@ -170,31 +173,32 @@ class ImportFundRatio < ImportUtil
   def create_fund_ratio(attrs)
     # Uniqueness is enforced at the application layer; (name, end_date, owner) must be unique per fund
     existing_fund_ratio = FundRatio.find_by(
-      fund_id: attrs[:fund].id,
-      entity_id: attrs[:entity].id,
-      name: attrs[:user_data]["Ratio Name"],
-      portfolio_scenario_id: attrs[:portfolio_scenario_id],
-      owner_type: attrs[:owner].class.name,
-      owner_id: attrs[:owner].id,
-      end_date: attrs[:end_date]
+      fund_id:                  attrs[:fund].id,
+      entity_id:                attrs[:entity].id,
+      name:                     attrs[:user_data]["Ratio Name"],
+      computation_context_type: attrs[:computation_context]&.class&.name,
+      computation_context_id:   attrs[:computation_context]&.id,
+      owner_type:               attrs[:owner].class.name,
+      owner_id:                 attrs[:owner].id,
+      end_date:                 attrs[:end_date]
     )
 
     raise "Fund Ratio already exists for the given period (end date: #{attrs[:end_date]})" if existing_fund_ratio
 
     fund_ratio = FundRatio.new(
-      fund_id: attrs[:fund].id,
-      entity_id: attrs[:entity].id,
-      owner_type: attrs[:owner].class.name,
-      owner_id: attrs[:owner].id,
-      name: attrs[:user_data]["Ratio Name"],
-      value: attrs[:value],
-      display_value: attrs[:display_value],
-      end_date: attrs[:end_date],
-      import_upload_id: attrs[:import_upload].id,
-      notes: attrs[:user_data]["Note"],
-      label: attrs[:user_data]["Label"],
-      scenario: attrs[:scenario],
-      portfolio_scenario_id: attrs[:portfolio_scenario_id]
+      fund_id:             attrs[:fund].id,
+      entity_id:           attrs[:entity].id,
+      owner_type:          attrs[:owner].class.name,
+      owner_id:            attrs[:owner].id,
+      name:                attrs[:user_data]["Ratio Name"],
+      value:               attrs[:value],
+      display_value:       attrs[:display_value],
+      end_date:            attrs[:end_date],
+      import_upload_id:    attrs[:import_upload].id,
+      notes:               attrs[:user_data]["Note"],
+      label:               attrs[:user_data]["Label"],
+      scenario:            attrs[:scenario],
+      computation_context: attrs[:computation_context]
     )
 
     # Denormalised column — only set when the ratio is scoped to a specific commitment

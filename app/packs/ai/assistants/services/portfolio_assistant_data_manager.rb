@@ -292,7 +292,7 @@ class PortfolioAssistantDataManager
     ransack_query[:owner_id_eq] = portfolio_company_id if portfolio_company_id.present?
     ransack_query[:owner_type_eq] = 'Investor' if portfolio_company_id.present?
 
-    relation = Pundit.policy_scope(@user, FundRatio).includes(:fund, :portfolio_scenario)
+    relation = Pundit.policy_scope(@user, FundRatio).preload(:fund, :computation_context)
     results = relation.ransack(ransack_query).result
 
     return FundAssistantDataManager.new(user: @user).send(:perform_aggregation, results, aggregate, field: query&.dig(:aggregate_field), group_by: query&.dig(:group_by)) if aggregate.present?
@@ -312,7 +312,7 @@ class PortfolioAssistantDataManager
         owner_type: r.owner_type,
         owner_id: r.owner_id,
         scenario: r.scenario,
-        portfolio_scenario: r.portfolio_scenario&.name,
+        portfolio_scenario: r.computation_context&.name,
         view_link: "/fund_ratios/#{r.id}"
       }
     end

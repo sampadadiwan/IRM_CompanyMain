@@ -516,7 +516,7 @@ class FundAssistantDataManager
     ransack_query[:s] ||= sort if sort.present?
     ransack_query[:fund_id_in] = Array(fund_ids) if fund_ids.present?
 
-    relation = Pundit.policy_scope(@user, FundRatio).includes(:fund, :portfolio_scenario)
+    relation = Pundit.policy_scope(@user, FundRatio).preload(:fund, :computation_context)
     if owner.present?
       ransack_query[:owner_type_eq] = owner[:type]
       ransack_query[:owner_id_eq] = owner[:id]
@@ -545,7 +545,7 @@ class FundAssistantDataManager
         owner_type: r.owner_type,
         owner_id: r.owner_id,
         scenario: r.scenario,
-        portfolio_scenario: r.portfolio_scenario&.name,
+        portfolio_scenario: r.computation_context&.name,
         view_link: "/fund_ratios/#{r.id}"
       }
     end

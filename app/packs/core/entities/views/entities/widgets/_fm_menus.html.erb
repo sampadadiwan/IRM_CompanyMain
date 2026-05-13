@@ -1,14 +1,31 @@
 <%
-  args ||= {}
-  card_type = args[:card_type] || 'card'
+  args      ||= {}
+  card_type      = args[:card_type] || 'card'
+  items_str      = args[:items].to_s
+  dropdown_color = args[:color] || 'primary'
+
+  # If widget.tag_list is set, only render for users whose tag_list intersects it
+  widget_tags = widget.tag_list.to_s.split(",").map(&:strip).map(&:downcase).compact_blank
+  user_tags   = current_user.tag_list.to_s.split(",").map(&:strip).map(&:downcase)
+  show        = widget_tags.blank? || (widget_tags & user_tags).any?
+
+  # Parse configurable extra items: "Label:/path, Label2:/path2" — split on first ":"
+  extra_items = items_str.split(",").filter_map do |item|
+    label, url = item.strip.split(":", 2)
+    next if url.blank?
+    { label: label.to_s.strip, url: url.to_s.strip }
+  end
+
+  # When extra items are present, switch to auto-width so all cards fit in one row
+  col_class = extra_items.any? ? "col-sm-6 col-lg" : "col-sm-6 col-lg-3"
 %>
 
-<% if current_user.enable_funds %>
+<% if show && current_user.enable_funds %>
 
 <% if card_type == 'card2' %>
 
-<div class="row g-3 mb-1">
-  <div class="col-sm-6 col-lg-3">
+<div class="row mb-2">
+  <div class="<%= col_class %>">
     <%= link_to reports_path, class: "text-decoration-none d-block h-100" do %>
       <div class="card fm-menu-card fm-menu-card--success h-100">
         <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
@@ -27,7 +44,7 @@
     <% end %>
   </div>
 
-  <div class="col-sm-6 col-lg-3">
+  <div class="<%= col_class %>">
     <%= link_to investors_path(multi_portfolio_dashboard: true), class: "text-decoration-none d-block h-100" do %>
       <div class="card fm-menu-card fm-menu-card--info h-100">
         <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
@@ -46,7 +63,7 @@
     <% end %>
   </div>
 
-  <div class="col-sm-6 col-lg-3">
+  <div class="<%= col_class %>">
     <%= link_to quick_links_path(tags: "Fund"), class: "text-decoration-none d-block h-100" do %>
       <div class="card fm-menu-card fm-menu-card--primary h-100">
         <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
@@ -65,7 +82,7 @@
     <% end %>
   </div>
 
-  <div class="col-sm-6 col-lg-3">
+  <div class="<%= col_class %>">
     <%= link_to investor_kycs_path, class: "text-decoration-none d-block h-100" do %>
       <div class="card fm-menu-card fm-menu-card--warning h-100">
         <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
@@ -83,11 +100,49 @@
       </div>
     <% end %>
   </div>
+
+  <% if extra_items.any? %>
+    <div class="<%= col_class %>">
+      <div class="dropdown h-100">
+        <div class="card fm-menu-card fm-menu-card--<%= dropdown_color %> h-100 user-select-none"
+             style="cursor: pointer;"
+             data-bs-toggle="dropdown"
+             aria-expanded="false"
+             id="fm-menus-extra-<%= widget.object_id %>">
+          <div class="card-body d-flex align-items-center justify-content-between py-3 px-4">
+            <div class="d-flex align-items-center gap-3">
+              <div class="fm-menu-icon bg-<%= dropdown_color %>-subtle text-<%= dropdown_color %>">
+                <i class="ti ti-grid-dots fs-5"></i>
+              </div>
+              <div>
+                <div class="fw-semibold"><%= widget.tags %></div>
+                <small class="text-muted">More Links</small>
+              </div>
+            </div>
+            <i class="ti ti-chevron-down text-muted fs-5"></i>
+          </div>
+        </div>
+        <ul class="dropdown-menu shadow-sm p-2" style="min-width: 220px;" aria-labelledby="fm-menus-extra-<%= widget.object_id %>">
+          <% extra_items.each do |item| %>
+            <li>
+              <%= link_to item[:url], class: "dropdown-item d-flex align-items-center gap-3 py-2 rounded" do %>
+                <div class="rounded-circle d-flex align-items-center justify-content-center bg-<%= dropdown_color %>-subtle text-<%= dropdown_color %>" style="width:34px;height:34px;min-width:34px;">
+                  <i class="ti ti-link fs-6"></i>
+                </div>
+                <span class="fw-semibold flex-grow-1"><%= item[:label] %></span>
+                <i class="ti ti-chevron-right text-muted fs-6"></i>
+              <% end %>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    </div>
+  <% end %>
 </div>
 
 <% else %>
 
-<div class="row">
+<div class="row mb-2">
   <div class="col-md">
     <div class="card">
       <div class="card-body">
@@ -159,6 +214,42 @@
       </div>
     </div>
   </div>
+
+  <% if extra_items.any? %>
+    <div class="col-md">
+      <div class="card">
+        <div class="card-body">
+          <div class="dropdown">
+            <a class="d-flex flex-row align-items-center text-decoration-none"
+               data-bs-toggle="dropdown"
+               aria-expanded="false"
+               id="fm-menus-extra-<%= widget.object_id %>"
+               style="cursor: pointer;">
+              <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-<%= dropdown_color %>">
+                <i class="ti ti-grid-dots fs-6"></i>
+              </div>
+              <div class="ms-3 align-self-center">
+                <h3 class="mb-0 fs-6"><%= widget.tags %></h3>
+              </div>
+            </a>
+            <ul class="dropdown-menu shadow-sm p-2" style="min-width: 220px;" aria-labelledby="fm-menus-extra-<%= widget.object_id %>">
+              <% extra_items.each do |item| %>
+                <li>
+                  <%= link_to item[:url], class: "dropdown-item d-flex align-items-center gap-3 py-2 rounded" do %>
+                    <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-<%= dropdown_color %>">
+                      <i class="ti ti-link fs-6"></i>
+                    </div>
+                    <span class="fw-semibold flex-grow-1"><%= item[:label] %></span>
+                    <i class="ti ti-chevron-right text-muted fs-6"></i>
+                  <% end %>
+                </li>
+              <% end %>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
 </div>
 
 <% end %>

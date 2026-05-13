@@ -221,6 +221,10 @@ class FundRatioCalcs
     end
   end
 
+  # protected so FundRatioMultiFundCalcs can call it on FundPortfolioCalcs instances
+  # (private would block any explicit-receiver call from sibling subclasses).
+  protected
+
   def apply_static_formulas(ratio_name, numerator, denominator, use_tracking_currency)
     formulas = ratio_formulas.where(action: %w[add_numerator reduce_numerator add_denominator reduce_denominator])
     formulas.each do |formula|

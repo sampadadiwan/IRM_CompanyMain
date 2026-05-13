@@ -1,3 +1,9 @@
+# Computes cross-fund or cross-portfolio ratios and persists them as FundRatio rows.
+# Every run creates (or reuses) one FundRatioRun record that stores the exact parameters
+# used (which funds, companies, tags, sectors), so results are fully auditable.
+# FundRatio rows reference the run via the polymorphic computation_context association.
+#
+# Design rationale: docs/features/fund_ratio_run.md
 class FundRatiosScenarioJob < ApplicationJob
   include Rails.application.routes.url_helpers
   include ApplicationHelper
@@ -5,130 +11,167 @@ class FundRatiosScenarioJob < ApplicationJob
   queue_as :low
   sidekiq_options retry: 1
 
-  # This is used to generate fund ratios for a scenario
-  # This is idempotent, we should be able to call it multiple times for the same CapitalCommitment
-  # fund_id is the fund id where the ratios will be stored, we cannot make this optional as the policy framework needs this
-  # fund_ids and portfolio_company_ids are optional
-  # fund_ids: [1,2,3]
-  # portfolio_company_ids: [4,5,6]
-  # end_date: "2023-10-01"
-  # user_id: 1
-  # scenario: "Scenario A"
-  def perform(fund_id, scenario, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, currency: nil, type: "cross-fund")
-    # Setup the job with the provided parameters
-    setup(fund_id, scenario, end_date, user_id, fund_ids:, portfolio_company_ids:, portfolio_companies_tags:, currency:)
+  # fund_id                     — anchor fund; stored on FundRatioRun for document folder
+  #                               resolution and policy scoping. Does NOT limit calculation data.
+  # fund_ids                    — source funds whose data feeds cross-fund calculations.
+  # portfolio_company_ids       — explicit company IDs for cross-portfolio (additive with tags/sectors).
+  # portfolio_companies_tags    — tag filter; resolves to companies and unions with IDs/sectors.
+  # portfolio_companies_sectors — sector filter; resolves to companies and unions with IDs/tags.
+  # type                        — "cross-fund" or "cross-portfolio"
+  def perform(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil, type: "cross-fund")
+    setup(fund_id, end_date, user_id, fund_ids:, portfolio_company_ids:, portfolio_companies_tags:, portfolio_companies_sectors:, currency:)
 
-    # Use Chewy's sidekiq strategy for Elasticsearch indexing
+    # find_or_initialize_by: re-running the same inputs on the same date reuses the
+    # existing run record (unique index on entity + end_date + name prevents duplicates).
+    @run = FundRatioRun.find_or_initialize_by(
+      entity:   @user.entity,
+      end_date: @end_date,
+      name:     FundRatioRun.fingerprint(
+        fund_ids:              Array(@fund_ids),
+        portfolio_company_ids: Array(@portfolio_company_ids),
+        tags:                  @portfolio_companies_tags,
+        sectors:               Array(@portfolio_companies_sectors)
+      )
+    )
+    @run.assign_attributes(
+      anchor_fund:              @fund,
+      user:                     @user,
+      run_type:                 type,
+      currency:                 @currency,
+      fund_ids:                 Array(@fund_ids),
+      portfolio_company_ids:    Array(@portfolio_company_ids),
+      portfolio_companies_tags: @portfolio_companies_tags,
+      sectors:                  Array(@portfolio_companies_sectors)
+    )
+    begin
+      @run.save!
+    rescue ActiveRecord::RecordNotUnique
+      # Two concurrent jobs with identical inputs hit the unique index simultaneously.
+      # The other job won the race — reuse its persisted run record.
+      @run = FundRatioRun.find_by!(
+        entity:   @user.entity,
+        end_date: @end_date,
+        name:     @run.name
+      )
+    end
+
     Chewy.strategy(:sidekiq) do
       if type == "cross-fund"
-        # Perform fund ratio calculations
         calc_fund_ratios
       elsif type == "cross-portfolio"
-        # Perform portfolio company ratio calculations
         calc_portfolio_company_ratios
       else
-        raise ArgumentError("Invalid type specified: #{type}")
+        raise ArgumentError, "Invalid type specified: #{type}"
       end
 
-      filters = [
-        [scenario.to_s, 'View Generated Ratios'],
-        ['', 'View All Ratios']
-      ]
-
-      links_html = filters.map do |scn, label|
+      # Notification links let the user jump straight to the generated ratios.
+      links_html = [
+        [@run.name,  'View Generated Ratios'],
+        ['',         'View All Ratios']
+      ].map do |scn, label|
         query_params = ransack_query_params_multiple([[:scenario, :eq, scn]])
-        ActionController::Base.helpers.link_to(label, fund_ratios_path(fund_id: fund_id, filter: true, q: query_params), class: 'mb-1 badge  bg-primary-subtle text-primary', target: '_blank', rel: 'noopener')
+        ActionController::Base.helpers.link_to(
+          label,
+          fund_ratios_path(fund_id: fund_id, filter: true, q: query_params),
+          class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank', rel: 'noopener'
+        )
       end.join
 
-      # Notify the user upon successful completion
-      notify("#{scenario} ratio calculations are now complete.<br> #{links_html}", user_id)
+      notify("#{@run.name} ratio calculations are now complete.<br> #{links_html}", user_id)
     rescue StandardError => e
-      # Notify the user in case of an error and re-raise the exception
       notify("Error in fund ratios: #{e.message}", user_id, level: "danger")
       raise e
     end
   end
 
-  def setup(fund_id, scenario, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, currency: nil)
-    # Initialize instance variables for the job
-    @fund_id = fund_id
-    @fund = Fund.find(fund_id) # Find the primary fund
+  def setup(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil)
+    @fund_id  = fund_id
+    @fund     = Fund.find(fund_id)   # anchor fund — document storage only
+    @end_date = end_date
 
-    @scenario = scenario # Scenario for which ratios are calculated
-    @end_date = end_date # End date for the calculations
-    @funds = Fund.where(id: fund_ids) if fund_ids.present? # Optional list of funds
-    @fund_ids = fund_ids # Store the fund IDs
+    # @funds is the ActiveRecord relation used in calculations; @fund_ids is stored on
+    # FundRatioRun for auditing. Both can be nil for cross-portfolio runs.
+    @funds    = Fund.where(id: fund_ids) if fund_ids.present?
+    @fund_ids = fund_ids
 
-    @portfolio_companies = Investor.where(id: portfolio_company_ids) if portfolio_company_ids.present? # Optional list of portfolio companies
-    @portfolio_company_ids = portfolio_company_ids # Store the portfolio company IDs
-    @portfolio_companies_tags = portfolio_companies_tags # Store the portfolio company tags
-    @user = User.find(user_id) # User initiating the job
-    @currency = currency || @user.entity.currency # Default currency based on the user's entity
+    # @portfolio_companies seeds the union resolver in FundRatioMultiFundCalcs.
+    # Tags and sectors are resolved there so the union happens in one place.
+    @portfolio_companies         = Investor.where(id: portfolio_company_ids) if portfolio_company_ids.present?
+    @portfolio_company_ids       = portfolio_company_ids
+    @portfolio_companies_tags    = portfolio_companies_tags
+    @portfolio_companies_sectors = Array(portfolio_companies_sectors).compact_blank
+
+    @user     = User.find(user_id)
+    @currency = currency || @user.entity.currency
   end
 
   def calc_fund_ratios
     owner = @user
-    # Blow off prev fund ratio calcs for this scenario / date
-    FundRatio.where(scenario: @scenario, end_date: @end_date).delete_all
+    # Idempotent: wipe only the ratios that belong to this specific run before recomputing,
+    # so other runs with different fingerprints on the same date are not affected.
+    FundRatio.where(computation_context: @run).delete_all
 
-    calc = FundRatioMultiFundCalcs.new(@scenario, @end_date, @user.entity, funds: @funds, currency: @currency)
+    calc = FundRatioMultiFundCalcs.new(@run.name, @end_date, @user.entity, funds: @funds, currency: @currency)
 
-    # Create the ratios
+    # computation_context replaces fund_ratio_run; scenario is derived from the run's name
+    # by FundRatio#set_scenario_if_missing so we do not need to pass it explicitly.
+    shared = { computation_context: @run, owner:, entity_id: owner.entity_id, end_date: @end_date }
+
     xirr, cash_flows = calc.xirr(return_cash_flows: false)
-    fr = FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "XIRR", value: xirr, display_value: "#{xirr} %", scenario: @scenario)
+    fr = FundRatio.create!(**shared, name: "XIRR", value: xirr, display_value: "#{xirr} %")
     fr.create_cashflow_document(cash_flows, @user.id) if cash_flows.present?
 
     moic, = calc.moic
-
-    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "MOIC", value: moic, display_value: "#{moic} x", scenario: @scenario)
+    FundRatio.create!(**shared, name: "MOIC", value: moic, display_value: "#{moic} x")
 
     value = calc.rvpi
-    display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "RVPI", value:, display_value:, scenario: @scenario)
+    FundRatio.create!(**shared, name: "RVPI", value:, display_value: value ? "#{value.round(2)}x" : nil)
 
     value = calc.dpi
-    display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "DPI", value:, display_value:, scenario: @scenario)
+    FundRatio.create!(**shared, name: "DPI", value:, display_value: value ? "#{value.round(2)}x" : nil)
 
     value = calc.tvpi
-    display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "TVPI", value:, display_value:, scenario: @scenario)
+    FundRatio.create!(**shared, name: "TVPI", value:, display_value: value ? "#{value.round(2)}x" : nil)
 
     value = calc.portfolio_value_to_cost
-    display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "Portfolio Value to Cost", value:, display_value:, scenario: @scenario)
+    FundRatio.create!(**shared, name: "Portfolio Value to Cost", value:, display_value: value ? "#{value.round(2)}x" : nil)
 
     value = calc.paid_in_to_committed_capital
-    display_value = value ? "#{value.round(2)}x" : nil
-    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "Paid In to Committed Capital", value:, display_value:, scenario: @scenario)
+    FundRatio.create!(**shared, name: "Paid In to Committed Capital", value:, display_value: value ? "#{value.round(2)}x" : nil)
 
     value = calc.gross_portfolio_irr
-    display_value = "#{value} %"
-    FundRatio.create!(fund: @fund, owner:, entity_id: owner.entity_id, end_date: @end_date, name: "Gross Portfolio IRR", value:, display_value:, scenario: @scenario)
+    FundRatio.create!(**shared, name: "Gross Portfolio IRR", value:, display_value: "#{value} %")
   end
 
   def calc_portfolio_company_ratios
     owner = @user
-    # Blow off prev fund ratio calcs for this scenario / date
-    FundRatio.where(scenario: @scenario, end_date: @end_date).delete_all
+    FundRatio.where(computation_context: @run).delete_all
 
-    calc = FundRatioMultiFundCalcs.new(@scenario, @end_date, @user.entity, funds: @funds, portfolio_companies: @portfolio_companies, portfolio_companies_tags: @portfolio_companies_tags, currency: @currency)
+    calc = FundRatioMultiFundCalcs.new(
+      @run.name, @end_date, @user.entity,
+      funds:                       @funds,
+      portfolio_companies:         @portfolio_companies,
+      portfolio_companies_tags:    @portfolio_companies_tags,
+      portfolio_companies_sectors: @portfolio_companies_sectors,
+      currency:                    @currency
+    )
+
+    shared = { computation_context: @run, entity_id: @fund.entity_id, end_date: @end_date }
 
     value = calc.gross_portfolio_irr
-    display_value = "#{value} %"
-    FundRatio.create!(fund: @fund, owner:, entity_id: @fund.entity_id, end_date: @end_date, name: "Gross Portfolio IRR", value:, display_value:, scenario: @scenario)
+    FundRatio.create!(**shared, owner:, name: "Gross Portfolio IRR", value:, display_value: "#{value} %")
 
-    # Compute the portfolio_company_ratios
     calc.portfolio_company_irr(return_cash_flows: false).each do |portfolio_company_id, values|
-      fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %", scenario: @scenario)
+      fr = FundRatio.create!(**shared, owner_id: portfolio_company_id, owner_type: "Investor",
+                             name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %")
       fr.create_cashflow_document(values[:cash_flows], @user.id) if values[:cash_flows].present?
     end
 
-    # Compute the portfolio_company_ratios
     calc.portfolio_company_metrics.each do |portfolio_company_id, values|
-      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x", scenario: @scenario)
-
-      FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: @fund.entity_id, fund: @fund, end_date: @end_date, name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x", scenario: @scenario)
+      FundRatio.create!(**shared, owner_id: portfolio_company_id, owner_type: "Investor",
+                        name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x")
+      FundRatio.create!(**shared, owner_id: portfolio_company_id, owner_type: "Investor",
+                        name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
     end
   end
 
