@@ -28,6 +28,7 @@ end
 
 Then('an email should be sent to the current user with subject {string}') do |subject|
   # Recipient should be the company admin (usually @user in these tests)
+
   open_email(@user.email)
   expect(current_email.subject).to include(subject)
 end
@@ -82,6 +83,10 @@ Given('the deal is started and has an investor {string}') do |investor_name|
   # Set the initial activity
   first_template = @deal.deal_activities.templates(@deal).first
   @deal_investor.update!(deal_activity_id: first_template.id)
+end
+
+Given('the deal has enable notifications set') do
+  @deal.update!(json_fields: (@deal.json_fields || {}).merge("enable_notifications" => "1"))
 end
 
 Given('the deal activity {string} has {string} enabled') do |title, flag|

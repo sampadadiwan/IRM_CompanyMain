@@ -8,7 +8,7 @@
     </div>
   </td>
   <td>
-    <%= task.for_entity&.name %>
+    <%= task.owner&.to_s %>
   </td>
   <td>
     <%= task.assigned_to&.first_name %>

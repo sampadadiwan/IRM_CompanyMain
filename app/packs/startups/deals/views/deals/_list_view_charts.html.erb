@@ -1,14 +1,64 @@
 <div class="row mb-4">
-  <!-- Conversion Funnel (Deal Pipeline) -->
+  <!-- Investor Concentration Breakdown -->
   <div class="col-lg-4">
     <div class="card shadow mb-4 border-bottom-primary">
       <div class="card-header py-3 d-flex align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">Conversion Funnel</h6>
+        <h6 class="m-0 font-weight-bold text-primary">Mix (By Source)</h6>
         <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
       </div>
       <div class="card-body">
         <div class="chart-area" style="height: 300px;">
-          <%= deal_conversion_funnel(deal) %>
+          <%= deal_investor_concentration(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Overall Health -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Overall Health</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_activities_completion(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Deal Funnel  -->
+  <div class="col-lg-4">
+        <div class="card shadow mb-4 border-bottom-primary">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Deal Funnel</h6>
+            </div>
+            <div class="card-body">
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/highcharts.js"></script>
+                <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/modules/funnel.js"></script>
+
+                <div
+                  id="funnel-chart-container"
+                  style="width:100%; height:300px;"
+                  data-controller="highcharts-funnel"
+                  data-highcharts-funnel-data-value="<%= kanban_funnel_data(@deal).to_json %>"
+                  data-highcharts-funnel-theme-value="<%= chart_theme_color.to_json %>"
+                ></div>
+            </div>
+        </div>
+  </div>
+</div>
+<div class="row mb-4">
+  <!-- Deal Investors added by month Line Chart  -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Deal Investors Added by Month</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_investors_added_by_month(deal) %>
         </div>
       </div>
     </div>
@@ -22,6 +72,79 @@
       <div class="card-body">
         <div class="chart-area" style="height: 300px;">
           <%= deal_commitment_velocity(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Investor Concentration Breakdown by Deal Lead-->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Mix (By Lead)</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_investor_concentration_by_lead(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row mb-4">
+   <!-- Investor Concentration Breakdown by Tier-->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Mix (By Tier)</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_investor_concentration_by_tier(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- "Days in Stage" Histogram -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">"Days in Stage" Distribution</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_days_in_stage(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Activity Completion Health (Efficiency Analysis) -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4">
+      <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Activity Efficiency (Avg Days)</h6>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_activity_efficiency(deal) %>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="row mb-4">
+  <!-- Conversion Funnel (Deal Pipeline) -->
+  <div class="col-lg-4">
+    <div class="card shadow mb-4 border-bottom-primary">
+      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+        <h6 class="m-0 font-weight-bold text-primary">Conversion Funnel</h6>
+        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
+      </div>
+      <div class="card-body">
+        <div class="chart-area" style="height: 300px;">
+          <%= deal_conversion_funnel(deal) %>
         </div>
       </div>
     </div>
@@ -41,49 +164,6 @@
   </div>
 </div>
 <div class="row mb-4">
-  <!-- Activity Completion Health (Efficiency Analysis) -->
-  <div class="col-lg-4">
-    <div class="card shadow mb-4">
-      <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">Activity Efficiency (Avg Days)</h6>
-      </div>
-      <div class="card-body">
-        <div class="chart-area" style="height: 300px;">
-          <%= deal_activity_efficiency(deal) %>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Investor Concentration Breakdown -->
-  <div class="col-lg-4">
-    <div class="card shadow mb-4 border-bottom-primary">
-      <div class="card-header py-3 d-flex align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">Concentration (By Source)</h6>
-        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
-      </div>
-      <div class="card-body">
-        <div class="chart-area" style="height: 300px;">
-          <%= deal_investor_concentration(deal) %>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- "Days in Stage" Histogram -->
-  <div class="col-lg-4">
-    <div class="card shadow mb-4 border-bottom-primary">
-      <div class="card-header py-3 d-flex align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">"Days in Stage" Distribution</h6>
-        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
-      </div>
-      <div class="card-body">
-        <div class="chart-area" style="height: 300px;">
-          <%= deal_days_in_stage(deal) %>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="row mb-4">
   <!-- Investor Status -->
   <div class="col-lg-4">
     <div class="card shadow mb-4 border-bottom-primary">
@@ -94,20 +174,6 @@
       <div class="card-body">
         <div class="chart-area" style="height: 300px;">
           <%= deal_investors_status(deal) %>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- Overall Health -->
-  <div class="col-lg-4">
-    <div class="card shadow mb-4 border-bottom-primary">
-      <div class="card-header py-3 d-flex align-items-center justify-content-between">
-        <h6 class="m-0 font-weight-bold text-primary">Overall Health</h6>
-        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
-      </div>
-      <div class="card-body">
-        <div class="chart-area" style="height: 300px;">
-          <%= deal_activities_completion(deal) %>
         </div>
       </div>
     </div>

@@ -549,55 +549,33 @@ end
 
 Given('I view the deal details') do
   visit(deal_path(@deal))
-  click_on("#deal_tab")
+  find("#deal_tab").click
 end
 
 Given('I add widgets for the deal') do
-  click_on("Widgets")
-  click_on("New Widget")
-
-  fill_in('ci_widget_title', with: "Left Widget")
-  select("Left", from: "ci_widget_image_placement")
-  details_top_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[3]/trix-editor")
-  details_top_element.set("Left Widget Intro")
-  details_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[4]/trix-editor")
-  details_element.set("Left Widget Details")
-  attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(0.5)
-  click_on("Save")
-  expect(page).to have_content("successfully")
-
-  visit(deal_path(@deal))
-  element = all('.show_details_link').last
-  element.click
-  click_on("Widgets")
-  click_on("New Widget")
-  fill_in('ci_widget_title', with: "Center Widget")
-  select("Center", from: "ci_widget_image_placement")
-  details_top_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[3]/trix-editor")
-  details_top_element.set("Center Widget Intro")
-  details_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[4]/trix-editor")
-  details_element.set("Center Widget Details")
-  attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(0.5)
-  click_on("Save")
-  expect(page).to have_content("successfully")
-
-  visit(deal_path(@deal))
-  element = all('.show_details_link').last
-  element.click
-  click_on("Widgets")
-  click_on("New Widget")
-  fill_in('ci_widget_title', with: "Right Widget")
-  select("Right", from: "ci_widget_image_placement")
-  details_top_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[3]/trix-editor")
-  details_top_element.set("Right Widget Intro")
-  details_element = find(:xpath, "/html/body/div[2]/div[1]/div/div/div[3]/div/div/div[2]/form/div[4]/trix-editor")
-  details_element.set("Right Widget Details")
-  attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-  sleep(0.5)
-  click_on("Save")
-  expect(page).to have_content("successfully")
+  [
+    { title: "Left Widget", placement: "Left" },
+    { title: "Center Widget", placement: "Center" },
+    { title: "Right Widget", placement: "Right" }
+  ].each do |widget|
+    visit(deal_path(@deal))
+    find("a[href='#widgets-tab']").click
+    # "New Widget" opens in _blank — switch to the new window
+    new_window = window_opened_by { click_on("New Widget") }
+    within_window(new_window) do
+      expect(page).to have_field('ci_widget_title', wait: 10)
+      fill_in('ci_widget_title', with: widget[:title])
+      select(widget[:placement], from: "ci_widget_image_placement")
+      trix_editors = all("trix-editor", wait: 5)
+      trix_editors[0].set("#{widget[:title]} Intro")
+      trix_editors[1].set("#{widget[:title]} Details")
+      attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
+      sleep(0.5)
+      click_on("Save")
+      expect(page).to have_content("successfully")
+    end
+    new_window.close
+  end
 end
 
 Given('I add track record for the deal') do

@@ -7,10 +7,38 @@
           <button class="btn btn-primary btn-sm mx-1" data-action="click->deals-list-ag-grid#bulkNudge">
             <i class="ti ti-send"></i> Bulk Nudge
           </button>
-          <button class="btn btn-outline-primary btn-sm mx-1" data-action="click->deals-list-ag-grid#bulkUpdateStatus">
-            Update Status
+          <button class="btn btn-outline-primary btn-sm mx-1"
+                  data-bs-toggle="modal"
+                  data-bs-target="#bulkAdvanceActivityModal">
+            <i class="ti ti-arrow-right"></i> Move to Next Activity
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bulk Advance Activity Modal -->
+<div class="modal fade" id="bulkAdvanceActivityModal" tabindex="-1" aria-labelledby="bulkAdvanceActivityModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bulkAdvanceActivityModalLabel">
+          <i class="ti ti-arrow-right me-2"></i>Move to Next Activity
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-0">
+          This will mark the current activity as <strong>Complete</strong> and advance
+          <strong id="bulk-advance-count">0</strong> selected investor(s) to their next activity.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" id="bulk-advance-confirm-btn" class="btn btn-primary">
+          <i class="ti ti-check me-1"></i>Confirm
+        </button>
       </div>
     </div>
   </div>

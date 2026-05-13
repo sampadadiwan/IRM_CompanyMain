@@ -30,12 +30,28 @@
           <%= form.select :investor_id, Investor.where(entity_id: deal_investor.entity_id).order(:investor_name).pluck(:investor_name, :id), {include_blank: true}, {class: "form-control"} %>
           <small class="text-muted">
             Create <%= link_to "New Stakeholder",
-                new_investor_path("investor[entity_id]": deal_investor.entity_id), target: "_blank" %>
+                new_investor_path(
+                  "investor[entity_id]": deal_investor.entity_id,
+                  turbo_frame: "deal_investor_frame",
+                  turbo: true,
+                  redirect_frame_to: new_deal_investor_path(deal_investor: { deal_id: deal_investor.deal_id }, turbo_frame: "deal_investor_frame")
+                ),
+                data: { turbo_frame: "deal_investor_frame" } %>
           </small>
         </div>
         <div class="form-group">
           <%= form.label :tier %>
-          <%= form.text_field :tier, {class: "form-control"} %>
+          <% deal_tier = deal_investor.deal&.json_fields&.[]("deal_tier") %>
+          <% if deal_tier.present? %>
+            <%= form.text_field :tier, class: "form-control", list: "deal_tier_options" %>
+            <datalist id="deal_tier_options">
+              <% deal_tier.split(",").map(&:strip).each do |option| %>
+                <option value="<%= option %>">
+              <% end %>
+            </datalist>
+          <% else %>
+            <%= form.text_field :tier, { class: "form-control" } %>
+          <% end %>
         </div>
         <div class="form-group">
           <%= form.label :deal_lead %>

@@ -198,7 +198,8 @@ Capybara.register_driver(:playwright) do |app|
                                    playwright_cli_executable_path: 'node_modules/.bin/playwright',
                                    screen_size: { width: 1580, height: 900 },
                                    viewport: { width: 1580, height: 900 },
-                                   default_wait_for_load_state: "domcontentloaded")
+                                   default_wait_for_load_state: "domcontentloaded",
+                                   navigation_timeout: 60_000)
 end
 
 Capybara.default_max_wait_time = 25

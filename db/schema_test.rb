@@ -1173,12 +1173,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.integer "unread_messages_investee", default: 0
     t.integer "unread_messages_investor", default: 0
     t.datetime "updated_at", null: false
+    t.bigint "import_upload_id"
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
     t.index ["document_folder_id"], name: "index_deal_investors_on_document_folder_id"
     t.index ["entity_id"], name: "index_deal_investors_on_entity_id"
     t.index ["form_type_id"], name: "index_deal_investors_on_form_type_id"
+    t.index ["import_upload_id"], name: "index_deal_investors_on_import_upload_id"
     t.index ["investor_entity_id"], name: "index_deal_investors_on_investor_entity_id"
     t.index %w[investor_id deal_id generated_deleted], name: "unique_deal_investor", unique: true
     t.index ["investor_id"], name: "index_deal_investors_on_investor_id"

@@ -256,11 +256,18 @@ class InvestorsController < ApplicationController
         redirect_url = params[:back_to].presence || investor_url(@investor)
         format.turbo_stream do
           @frame = params[:turbo_frame] || params[:investor][:turbo_frame] || "new_deal_investor"
-          partial = params[:back_to].presence || "investors/board_form"
           UserAlert.new(user_id: current_user.id, message: "Investor was successfully created!", level: "success").broadcast
-          render turbo_stream: [
-            turbo_stream.replace(@frame, partial:, locals: { frame: @frame, investor: @investor })
-          ]
+          if params[:redirect_frame_to].present?
+            # Explicit redirect URL for the turbo frame
+            render turbo_stream: [
+              turbo_stream.replace(@frame, html: helpers.turbo_frame_tag(@frame, src: params[:redirect_frame_to]))
+            ]
+          else
+            partial = params[:back_to].presence || "investors/board_form"
+            render turbo_stream: [
+              turbo_stream.replace(@frame, partial:, locals: { frame: @frame, investor: @investor })
+            ]
+          end
         end
         return_to = params[:return_to]
         # Redirect back to AI Portfolio Reports form with new investor pre-selected

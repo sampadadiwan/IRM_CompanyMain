@@ -115,7 +115,7 @@ class DealInvestorsController < ApplicationController
       end
       format.html do
         if @frame == "deal_investor_frame"
-          render partial: @partial, locals: { deal_investor: @deal_investor, turbo_tag: @frame }, layout: false
+          render inline: "<%= turbo_frame_tag @frame do %><%= render @partial, deal_investor: @deal_investor, turbo_tag: @frame %><% end %>", layout: false
         else
           render :new
         end
@@ -160,7 +160,7 @@ class DealInvestorsController < ApplicationController
 
     respond_to do |format|
       if DealInvestorCreate.call(deal_investor: @deal_investor).success?
-        format.html { redirect_to deal_investor_url(@deal_investor), notice: "Deal investor was successfully created." }
+        format.html { redirect_to deal_investor_url(@deal_investor), notice: "Deal Investor was successfully created." }
         format.json { render :show, status: :created, location: @deal_investor }
         format.turbo_stream do
           UserAlert.new(user_id: current_user.id, message: "Deal Investor was successfully created!", level: "success").broadcast
@@ -225,6 +225,78 @@ class DealInvestorsController < ApplicationController
       format.html { redirect_to deal_investors_url, notice: @message }
       format.json { head :no_content }
     end
+  end
+
+  # PATCH /deal_investors/bulk_update_status
+  def bulk_update_status
+    ids = params[:ids].to_a.map(&:to_i)
+    new_status = params[:status]
+
+    @deal_investors = policy_scope(DealInvestor).where(id: ids)
+    return render json: { success: false, error: "No records found" }, status: :not_found if @deal_investors.empty?
+
+    @deal = @deal_investors.first.deal
+    authorize @deal, :update?
+
+    @deal_investors.update_all(status: new_status) # rubocop:disable Rails/SkipsModelValidations
+
+    render json: { success: true, updated_count: @deal_investors.count, status: new_status }
+  rescue Pundit::NotAuthorizedError
+    render json: { success: false, error: "Not authorized" }, status: :forbidden
+  end
+
+  # PATCH /deal_investors/bulk_advance_activity
+  def bulk_advance_activity
+    ids = params[:ids].to_a.map(&:to_i)
+
+    @deal_investors = policy_scope(DealInvestor).where(id: ids)
+                                                .includes(:deal, :deal_activity, :deal_activities)
+    return render json: { success: false, error: "No records found" }, status: :not_found if @deal_investors.empty?
+
+    @deal = @deal_investors.first.deal
+    authorize @deal, :update?
+
+    advanced_count = 0
+    errors = []
+
+
+    @deal_investors.each do |deal_investor|
+      # deal_investor.deal_activity points to the template; find the investor-specific instance
+      current_activity = deal_investor.deal_activities
+                                      .find_by(template_id: deal_investor.deal_activity_id) ||
+                         deal_investor.deal_activity
+
+      next unless current_activity
+
+      next_activity = deal_investor.deal_activities
+                                   .where(status: "incomplete")
+                                   .where("sequence > ?", current_activity.sequence)
+                                   .order(:sequence)
+                                   .first
+
+      unless next_activity
+        errors << "#{deal_investor.investor_name}: already at last activity"
+        next
+      end
+
+      result = PerformActivityAction.call(
+        deal_investor: deal_investor,
+        deal_activity: current_activity,
+        initial_deal_activity_id: deal_investor.deal_activity_id,
+        target_deal_activity_id: next_activity.id,
+        user_id: current_user.id
+      )
+
+      if result.success?
+        advanced_count += 1
+      else
+        errors << "#{deal_investor.investor_name}: #{result[:errors]}"
+      end
+    end
+
+    render json: { success: true, advanced_count: advanced_count, errors: errors }
+  rescue Pundit::NotAuthorizedError
+    render json: { success: false, error: "Not authorized" }, status: :forbidden
   end
 
   private

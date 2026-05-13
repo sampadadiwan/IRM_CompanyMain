@@ -18,7 +18,7 @@ class TaskList < BaseList
         @tasks = @tasks.where(
           "(owner_id = ? AND owner_type = 'Deal') OR (owner_id IN (?) AND owner_type = 'DealInvestor')",
           deal.id, investor_ids.presence || [0]
-        )
+        ).includes(:owner)
       end
     end
 

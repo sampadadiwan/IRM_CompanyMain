@@ -120,8 +120,14 @@ When('I mark the activity {string} as completed for investor {string} in the gri
   @deal_activity = @deal_investor.deal_activities.find_by(title: step_title)
   raise "DealActivity #{step_title} not found for investor" unless @deal_activity
 
-  # Only set current step if it's not already set to something specific by another step
-  @deal_investor.update!(deal_activity_id: @deal_activity.template_id) if @deal_investor.deal_activity_id.blank?
+  # Ensure the deal_investor's current step is set to the activity being completed.
+  # "manually start the deal" sets it to the first step (e.g. "Info Deck Sent"),
+  # but the test may intend to complete a later step — update it and reload the page
+  # so the ag-grid sees the correct initial state when it sends the PATCH request.
+  if @deal_investor.deal_activity_id != @deal_activity.template_id
+    @deal_investor.update!(deal_activity_id: @deal_activity.template_id)
+    visit(deal_path(@deal, grid_view: true))
+  end
 
   # --- START OF COPIED CODE FROM deal_investor.rb ---
 

@@ -24,6 +24,7 @@
                 <%= form.text_field :turbo_frame, name: "turbo_frame", class: "form-control", hidden: true, value: frame %>
 
                 <%= form.hidden_field :back_to, value: params[:back_to], name: "back_to" if params[:back_to].present? %>
+                <%= form.hidden_field :redirect_frame_to, value: params[:redirect_frame_to], name: "redirect_frame_to" if params[:redirect_frame_to].present? %>
                 <%= render "form_fields", investor: investor, form: form %>
 
                 <div class="form-group">

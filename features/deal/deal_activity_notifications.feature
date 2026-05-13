@@ -9,6 +9,7 @@ Feature: Deal Activity Move Notifications
     And I am logged in
     And there exists a deal "name=Series B" for company
     And the deal is started and has an investor "Global VC"
+    And the deal has enable notifications set
 
   @javascript
   Scenario: Standard notification when a deal moves to a new stage

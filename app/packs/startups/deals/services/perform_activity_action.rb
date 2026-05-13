@@ -48,9 +48,15 @@ class PerformActivityAction < Trailblazer::Operation
   def notify_activity_move(_ctx, deal_investor:, target_activity:, **)
     return true unless target_activity
 
+    # Check deal-level custom field `enable_notifications` in json_fields.
+    # If absent/blank -> defaults to enabled (backward-compatible).
+    # If explicitly "false" -> skip all notifications for this deal.
+    return true unless deal_activity_notifications_enabled?(deal_investor.deal)
+
     # Use the activity instance's flags to determine recipients
     if target_activity.notify_employees
-      deal_investor.deal.entity.employees.active.company_admins.each do |admin|
+      admins = deal_investor.deal.entity.employees.active.company_admins
+      admins.each do |admin|
         DealActivityMoveNotifier.with(
           record: deal_investor,
           entity_id: deal_investor.entity_id,
@@ -61,7 +67,8 @@ class PerformActivityAction < Trailblazer::Operation
     end
 
     if target_activity.notify_investor
-      deal_investor.investor.notification_users(deal_investor.deal).each do |user|
+      users = deal_investor.investor.notification_users(deal_investor.deal)
+      users.each do |user|
         DealActivityMoveNotifier.with(
           record: deal_investor,
           entity_id: deal_investor.entity_id,
@@ -85,5 +92,15 @@ class PerformActivityAction < Trailblazer::Operation
     ctx[:errors] = deal_activity.errors.full_messages
     deal_activity.deal.kanban_board.presence&.broadcast_board_event
     true
+  end
+
+  # Returns true if deal-level activity notifications are enabled.
+  # - If `enable_notifications` is absent/blank -> defaults to true (backward-compatible).
+  # - If explicitly "false" -> returns false, suppressing all activity notifications for the deal.
+  def deal_activity_notifications_enabled?(deal)
+    value = deal.json_fields["enable_notifications"]
+    return false if value.nil? || value.to_s.blank?
+
+    value.to_s == "1"
   end
 end

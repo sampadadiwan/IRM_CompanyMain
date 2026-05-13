@@ -40,6 +40,21 @@ module DealsHelper
     }
   end
 
+  def deal_investors_added_by_month(deal)
+    data = deal.deal_investors
+               .where.not(created_at: nil)
+               .order(:created_at)
+               .pluck(:created_at)
+               .group_by { |t| t.strftime("%b %Y") }
+               .transform_values(&:count)
+
+    bar_chart data, id: "chart-investors-by-month", library: {
+      xAxis: { type: 'datetime', labels: { format: '{value:%b %Y}' } },
+      yAxis: { title: { text: 'Investors Added' }, allowDecimals: false },
+      **chart_theme_color
+    }
+  end
+
   def deal_investors_status(deal)
     deal_investors = deal.deal_investors.joins(:investor).group(:status).count
 
@@ -77,8 +92,9 @@ module DealsHelper
 
   def deal_conversion_funnel(deal)
     # Define the stages of the funnel
-    stages = ['New', 'Interested', 'In Progress', 'Committed', 'Complete']
+    stages = ['Active','New', 'Interested', 'In Progress', 'Committed', 'Complete']
     counts = deal.deal_investors.group(:status).count
+
 
     # Map the counts to the stages, ensuring all stages are represented
     data = stages.map { |stage| [stage, counts[stage] || 0] }
@@ -161,6 +177,42 @@ module DealsHelper
     data = data.map { |source, cents| [source.presence || "Unknown", cents / 100.0] }
 
     pie_chart data, donut: true, id: "chart-deal-source", library: {
+      plotOptions: {
+        pie: {
+          cursor: 'pointer',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.percentage:.1f}%'
+          }
+        }
+      },
+      **chart_theme_color
+    }
+  end
+
+  def deal_investor_concentration_by_tier(deal)
+    data = deal.deal_investors.not_declined.group(:tier).sum(:total_amount_cents)
+    data = data.map { |tier, cents| [tier.presence || "Unknown", cents / 100.0] }
+
+    pie_chart data, donut: true, id: "chart-deal-tier", library: {
+      plotOptions: {
+        pie: {
+          cursor: 'pointer',
+          dataLabels: {
+            enabled: true,
+            format: '<b>{point.name}</b>: {point.percentage:.1f}%'
+          }
+        }
+      },
+      **chart_theme_color
+    }
+  end
+
+  def deal_investor_concentration_by_lead(deal)
+    data = deal.deal_investors.not_declined.group(:deal_lead).sum(:total_amount_cents)
+    data = data.map { |lead, cents| [lead.presence || "Unknown", cents / 100.0] }
+
+    pie_chart data, donut: true, id: "chart-deal-lead", library: {
       plotOptions: {
         pie: {
           cursor: 'pointer',

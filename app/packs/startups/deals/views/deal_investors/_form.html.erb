@@ -34,7 +34,7 @@
           <small class="text-muted">
             Create <%= link_to "New Stakeholder",
               new_investor_path("investor[entity_id]": current_user.entity_id,
-                  "back_to": new_deal_investor_path("deal_investor[deal_id]": deal_investor.deal_id,
+                  "redirect_frame_to": new_deal_investor_path("deal_investor[deal_id]": deal_investor.deal_id,
                   "deal_investor[entity_id]": deal_investor.entity_id, back_to: params[:back_to])) %>
           </small>
         </div>

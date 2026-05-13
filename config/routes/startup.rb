@@ -45,6 +45,8 @@ end
 resources :deal_investors do
   get 'search', on: :collection
   get 'kanban_search', on: :collection
+  patch 'bulk_update_status', on: :collection
+  patch 'bulk_advance_activity', on: :collection
 end
 resources :deals do
   get 'search', on: :collection

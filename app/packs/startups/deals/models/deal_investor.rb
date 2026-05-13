@@ -152,6 +152,19 @@ class DealInvestor < ApplicationRecord
     end
   end
 
+  def set_deal_investor_activity
+
+    # After activities are created, set the deal_investor to the first incomplete activity (lowest sequence).
+    # Only set it if not already pointing to a valid activity.
+    return if deal_activity_id.present? && deal_activities.exists?(template_id: deal_activity_id)
+
+    first_activity = deal_activities.where(status: "incomplete").order(:sequence).first
+    return unless first_activity
+
+    # deal_activity_id stores the template id, not the investor-specific instance id
+    update_column(:deal_activity_id, first_activity.template_id)
+  end
+
   def messages_viewed(current_user)
     if current_user.entity_id == investor_entity_id
       self.unread_messages_investor = 0

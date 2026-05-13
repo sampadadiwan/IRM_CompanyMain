@@ -1,5 +1,6 @@
 import BaseAgGrid from "controllers/base_ag_grid"
 import moment from 'moment'
+import * as bootstrap from "bootstrap"
 
 export default class extends BaseAgGrid {
   static values = {
@@ -475,11 +476,13 @@ export default class extends BaseAgGrid {
   updateBulkActionsPanel(selectedRows) {
     const bulkActions = document.getElementById('bulk-actions');
     const selectedCountText = document.getElementById('selected-count');
+    const modalCount = document.getElementById('bulk-advance-count');
 
     if (bulkActions && selectedCountText) {
       if (selectedRows.length > 0) {
         bulkActions.style.display = 'flex';
         selectedCountText.innerText = `${selectedRows.length} items selected`;
+        if (modalCount) modalCount.innerText = selectedRows.length;
       } else {
         bulkActions.style.display = 'none';
       }
@@ -570,7 +573,7 @@ export default class extends BaseAgGrid {
   updateFilterVisuals() {
     const filterModel = this.gridOptions.api.getFilterModel();
     const hasFilters = Object.keys(filterModel).length > 0;
-    
+
     // Update cards visual state
     document.querySelectorAll('.analytics-card').forEach(card => {
       card.classList.remove('border-primary', 'bg-primary-subtle', 'shadow-sm');
@@ -638,7 +641,7 @@ export default class extends BaseAgGrid {
           console.error("updateRowData also failed", e2);
         }
       }
-      
+
       // Close sidepanel after successful save
       const sidepanelElement = document.getElementById('dealInvestorSidepanel');
       if (sidepanelElement) {
@@ -649,7 +652,7 @@ export default class extends BaseAgGrid {
         } catch (e) {
           console.error("Bootstrap hide failed", e);
         }
-        
+
         // jQuery fallback if available
         if (window.jQuery && jQuery.fn.offcanvas) {
           try {
@@ -677,12 +680,68 @@ export default class extends BaseAgGrid {
   }
 
   bulkUpdateStatus() {
+    // Opens the Bootstrap modal — triggered by data-bs-toggle on the button
     const selectedRows = this.gridOptions.api.getSelectedRows();
-    const newStatus = prompt("Enter new status for selected items:", "Interested");
-    if (newStatus) {
-      const ids = selectedRows.map(row => row.id);
-      alert(`Updating status to "${newStatus}" for IDs: ${ids.join(', ')}`);
+    const countEl = document.getElementById('bulk-advance-count');
+    if (countEl) countEl.innerText = selectedRows.length;
+  }
+
+  confirmBulkUpdateStatus() {
+    this.confirmBulkAdvanceActivity();
+  }
+
+  bulkAdvanceActivity() {
+    const selectedRows = this.gridOptions.api.getSelectedRows();
+    const countEl = document.getElementById('bulk-advance-count');
+    if (countEl) countEl.innerText = selectedRows.length;
+  }
+
+  confirmBulkAdvanceActivity() {
+    const selectedRows = this.gridOptions.api.getSelectedRows();
+    console.log("[confirmBulkAdvanceActivity] selectedRows count:", selectedRows.length);
+    console.log("[confirmBulkAdvanceActivity] selectedRows:", selectedRows);
+    if (selectedRows.length === 0) {
+      console.warn("[confirmBulkAdvanceActivity] No rows selected, aborting.");
+      return;
     }
+
+    // Close the modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('bulkAdvanceActivityModal'));
+    if (modal) modal.hide();
+
+    const ids = selectedRows.map(row => row.id);
+    console.log("[confirmBulkAdvanceActivity] ids to advance:", ids);
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+    fetch('/deal_investors/bulk_advance_activity', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify({ ids: ids })
+    })
+    .then(response => {
+      console.log("[confirmBulkAdvanceActivity] response status:", response.status);
+      return response.json();
+    })
+    .then(data => {
+      console.log("[confirmBulkAdvanceActivity] response data:", data);
+      if (data.success) {
+        console.log(`Bulk advance: ${data.advanced_count} investor(s) moved to next activity`);
+        if (data.errors && data.errors.length > 0) {
+          alert(`Advanced ${data.advanced_count} investor(s).\nWarnings:\n${data.errors.join('\n')}`);
+        }
+        this.loadData();
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    })
+    .catch(error => {
+      console.error('[confirmBulkAdvanceActivity] fetch failed:', error);
+      alert('Bulk advance failed. Please try again.');
+    });
   }
 
   gridReady() {
@@ -690,6 +749,23 @@ export default class extends BaseAgGrid {
     this.initTooltips();
     this.updateFilterVisuals();
     setTimeout(() => this.bindChartEvents(), 1000);
+
+    // Wire the Bulk Advance Activity confirm button directly, since the modal
+    // may be outside the Stimulus controller's DOM scope when Bootstrap moves it.
+    const confirmBtn = document.getElementById('bulk-advance-confirm-btn');
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', () => this.confirmBulkAdvanceActivity());
+    }
+
+    // Update the count in the modal each time it opens
+    const advanceModal = document.getElementById('bulkAdvanceActivityModal');
+    if (advanceModal) {
+      advanceModal.addEventListener('show.bs.modal', () => {
+        const selectedRows = this.gridOptions.api.getSelectedRows();
+        const countEl = document.getElementById('bulk-advance-count');
+        if (countEl) countEl.innerText = selectedRows.length;
+      });
+    }
   }
 
   bindChartEvents() {
