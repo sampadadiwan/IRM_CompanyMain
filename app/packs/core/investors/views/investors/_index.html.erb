@@ -53,6 +53,11 @@
             <% end %>
           <% end %>
           <div class="dropdown-divider"></div>
+          <%= link_to agent_charts_path,
+                      class: "dropdown-item d-flex align-items-center",
+                      data: { turbo: false } do %>
+            <i class="ti ti-chart-bar"></i> Agent Charts
+          <% end %>
           <%= link_to portfolio_reports_path,
                       class: "dropdown-item d-flex align-items-center",
                       data: { turbo: false } do %>
