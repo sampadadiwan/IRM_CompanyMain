@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_13_100002) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -163,6 +163,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   end
 
   create_table "agent_charts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "chart_height"
     t.datetime "created_at", null: false
     t.string "document_names"
     t.bigint "entity_id", null: false
@@ -1178,6 +1179,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.decimal "fee_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "form_type_id"
     t.virtual "generated_deleted", type: :datetime, null: false, as: "ifnull(`deleted_at`,_utf8mb4'1900-01-01 00:00:00')"
+    t.bigint "import_upload_id"
     t.integer "impressions_count"
     t.string "investor_advisor", limit: 100
     t.integer "investor_entity_id"
@@ -1199,7 +1201,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.integer "unread_messages_investee", default: 0
     t.integer "unread_messages_investor", default: 0
     t.datetime "updated_at", null: false
-    t.bigint "import_upload_id"
     t.index ["deal_activity_id"], name: "index_deal_investors_on_deal_activity_id"
     t.index ["deal_id"], name: "index_deal_investors_on_deal_id"
     t.index ["deleted_at"], name: "index_deal_investors_on_deleted_at"
@@ -1752,16 +1753,40 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
   end
 
+  create_table "fund_ratio_runs", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "anchor_fund_id"
+    t.datetime "created_at", null: false
+    t.string "currency"
+    t.date "end_date", null: false
+    t.bigint "entity_id", null: false
+    t.json "fund_ids", null: false
+    t.string "name", null: false
+    t.string "portfolio_companies_tags"
+    t.json "portfolio_company_ids", null: false
+    t.string "run_type", null: false
+    t.json "sectors", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index "(cast(`fund_ids` as unsigned array))", name: "idx_frr_fund_ids"
+    t.index "(cast(`portfolio_company_ids` as unsigned array))", name: "idx_frr_portfolio_company_ids"
+    t.index ["anchor_fund_id"], name: "index_fund_ratio_runs_on_anchor_fund_id"
+    t.index ["entity_id", "end_date", "name"], name: "idx_frr_unique_fingerprint", unique: true
+    t.index ["entity_id"], name: "index_fund_ratio_runs_on_entity_id"
+    t.index ["user_id"], name: "index_fund_ratio_runs_on_user_id"
+  end
+
   create_table "fund_ratios", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "capital_commitment_id"
     t.json "cash_flows"
+    t.bigint "computation_context_id"
+    t.string "computation_context_type"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "display_value", limit: 50
     t.date "end_date"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
-    t.bigint "fund_id", null: false
+    t.bigint "fund_id"
     t.bigint "import_upload_id"
     t.string "label", limit: 50
     t.boolean "latest", default: false
@@ -1769,18 +1794,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.text "notes"
     t.bigint "owner_id"
     t.string "owner_type"
-    t.bigint "portfolio_scenario_id"
     t.string "scenario", limit: 40, default: "Default"
     t.datetime "updated_at", null: false
     t.bigint "valuation_id"
     t.decimal "value", precision: 20, scale: 8, default: "0.0"
     t.index ["capital_commitment_id"], name: "index_fund_ratios_on_capital_commitment_id"
+    t.index ["computation_context_type", "computation_context_id"], name: "index_fund_ratios_on_computation_context"
     t.index ["deleted_at"], name: "index_fund_ratios_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_ratios_on_entity_id"
     t.index ["form_type_id"], name: "index_fund_ratios_on_form_type_id"
     t.index ["fund_id"], name: "index_fund_ratios_on_fund_id"
     t.index ["owner_type", "owner_id"], name: "index_fund_ratios_on_owner"
-    t.index ["portfolio_scenario_id"], name: "index_fund_ratios_on_portfolio_scenario_id"
     t.index ["valuation_id"], name: "index_fund_ratios_on_valuation_id"
   end
 
@@ -3853,11 +3877,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   add_foreign_key "form_types", "entities"
   add_foreign_key "fund_formulas", "entities"
   add_foreign_key "fund_formulas", "funds"
+  add_foreign_key "fund_ratio_runs", "entities"
+  add_foreign_key "fund_ratio_runs", "funds", column: "anchor_fund_id"
+  add_foreign_key "fund_ratio_runs", "users"
   add_foreign_key "fund_ratios", "capital_commitments"
   add_foreign_key "fund_ratios", "entities"
   add_foreign_key "fund_ratios", "form_types"
   add_foreign_key "fund_ratios", "funds"
-  add_foreign_key "fund_ratios", "portfolio_scenarios"
   add_foreign_key "fund_ratios", "valuations"
   add_foreign_key "fund_reports", "entities"
   add_foreign_key "fund_reports", "form_types"
