@@ -211,7 +211,7 @@
           <% if @portfolio_investment.capital_distribution.present? %>
             <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                 <span class="text-muted">Linked Distribution</span>
-                <%= link_to "View", @portfolio_investment.capital_distribution %>
+                <%= link_to @portfolio_investment.capital_distribution.to_s, @portfolio_investment.capital_distribution, class: "text-decoration-none fw-bold text-primary" %>
             </li>
           <% end %>
         </ul>

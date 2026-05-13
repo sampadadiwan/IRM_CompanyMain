@@ -46,6 +46,21 @@
                 <div class="fs-4 fw-medium "><%= @capital_distribution.notes.html_safe %></div>
               </div>
             <% end %>
+
+            <% portfolio_investments = @capital_distribution.portfolio_investments.includes(:investment_instrument) %>
+            <% if portfolio_investments.present? %>
+              <div class="col-12">
+                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Portfolio Investments</label>
+                <div class="fs-4 fw-medium ">
+                  <ul>
+                    <% portfolio_investments.each do |pi| %>
+                      <li><%= link_to pi.to_s, portfolio_investment_path(pi), class: "fs-4 fw-medium text-primary" %></li>
+                    <% end %>
+                  </ul>
+                </div>
+              </div>
+            <% end %>
+
           </div>
         </div>
       </div>
