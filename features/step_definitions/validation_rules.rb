@@ -103,6 +103,24 @@ Given('there is a validation rule override for {string} with {string}') do |rule
   override.save!
 end
 
+# Creates a persisted CapitalCall for @fund. args is a JSON-ish hash of close_percentages,
+# e.g. "{'First Close':'100'}". Uses call_basis "Upload" to skip fund_closes validation
+# and avoid triggering the async CapitalCallJob for remittance generation.
+Given('there is a capital call {string} for the fund') do |args|
+  closes = JSON.parse(args.gsub("'", '"'))
+
+  @capital_call = CapitalCall.create!(
+    entity:            @entity,
+    fund:              @fund,
+    name:              "Test Capital Call #{SecureRandom.hex(4)}",
+    call_date:         Date.today,
+    due_date:          Date.today + 30.days,
+    call_basis:        "Upload",
+    percentage_called: 0,
+    close_percentages: closes
+  )
+end
+
 # ── Rule evaluation (backend, no browser) ────────────────────────────────────
 
 # Evaluates rules for a temporary (unsaved) Valuation built from key=value args.
@@ -199,10 +217,12 @@ Given('the capital call has a remittance with an unapproved generated notice') d
   )
   remittance.save(validate: false)
 
-  # Create a folder scoped to the entity and attach a generated unapproved document
+  # Use save(validate: false) to bypass file attachment and user requirements —
+  # rule checks only query by owner/tag/approved, not file content.
   folder = Folder.create!(entity: @entity, name: "Test Notices", full_path: "test-notices-#{SecureRandom.hex(8)}")
-  Document.create!(
+  doc = Document.new(
     entity:     @entity,
+    user:       @user,
     folder:     folder,
     owner:      remittance,
     owner_tag:  "Generated",
@@ -210,6 +230,7 @@ Given('the capital call has a remittance with an unapproved generated notice') d
     send_email: false,
     name:       "Call Notice"
   )
+  doc.save!(validate: false)
 end
 
 # Creates a minimal CapitalRemittance plus a generated AND approved Document.
@@ -225,8 +246,9 @@ Given('the capital call has a remittance with an approved generated notice') do
   remittance.save(validate: false)
 
   folder = Folder.create!(entity: @entity, name: "Test Notices", full_path: "test-notices-#{SecureRandom.hex(8)}")
-  Document.create!(
+  doc = Document.new(
     entity:     @entity,
+    user:       @user,
     folder:     folder,
     owner:      remittance,
     owner_tag:  "Generated",
@@ -234,6 +256,7 @@ Given('the capital call has a remittance with an approved generated notice') do
     send_email: false,
     name:       "Call Notice"
   )
+  doc.save!(validate: false)
 end
 
 # ── Rule result assertions ────────────────────────────────────────────────────
