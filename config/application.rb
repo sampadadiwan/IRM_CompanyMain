@@ -16,8 +16,16 @@ module CapHive
 
     config.autoload_lib(ignore: %w[assets tasks])
 
-    config.autoload_paths += Rails.root.glob('app/packs/**/')
-    config.autoload_paths += %w[app/packs/core/base/controllers/concerns]
+    # Exclude subdirectories within controllers/, dashboards/, and policies/ from being Zeitwerk
+    # roots — they are namespaces (e.g. Admin::, Audited::, Noticed::) resolved relative to
+    # their parent dir. Also exclude delivery_methods/ itself (namespace dir at pack level).
+    # concerns/ dirs are the exception: they define flat top-level constants, so re-added below.
+    config.autoload_paths += Rails.root.glob('app/packs/**/').reject { |path|
+      path_str = path.to_s
+      path_str.match?(%r{/(controllers|channels|dashboards|policies)/[^/]+}) ||
+        path_str.match?(%r{/(delivery_methods|account_entry_allocation)/?$})
+    }
+    config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/')
     config.autoload_paths << Rails.root.join('lib')
 
     core_view_paths = %w[access_rights documents entities folders notes permissions reminders tasks users investors investor_accesses valuations nudges base investor_kycs fees signature_workflows kyc_datas notifications core support_client_mappings validation_rules]
