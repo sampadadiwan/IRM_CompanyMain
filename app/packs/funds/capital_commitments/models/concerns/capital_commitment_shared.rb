@@ -128,34 +128,57 @@ module CapitalCommitmentShared
     end_date = end_date.to_date
     hurdle_rate = fund_unit_setting.json_fields['hurdle_rate'].to_d
 
+    Rails.logger.debug "[Hurdle] Computing hurdle for commitment #{id} as of #{end_date}"
+    Rails.logger.debug "[Hurdle] Hurdle rate: #{hurdle_rate}"
+
     # Calculate hurdle on contributions (remittances)
     hurdle_amount = calculate_hurdle_for_payments(
       capital_remittance_payments.where(payment_date: ..end_date),
       end_date,
       hurdle_rate,
-      amount_column: use_tracking_currency ? :tracking_amount_cents : :amount_cents
+      amount_column: use_tracking_currency ? :tracking_amount_cents : :amount_cents,
+      label: "Contributions"
     )
 
     if use_distributions
       # Subtract hurdle calculated on distributions
-      hurdle_amount -= calculate_hurdle_for_payments(
+      dist_hurdle = calculate_hurdle_for_payments(
         capital_distribution_payments.where(payment_date: ..end_date),
         end_date,
         hurdle_rate,
-        amount_column: use_tracking_currency ? :tracking_gross_payable_cents : :gross_payable_cents
+        amount_column: use_tracking_currency ? :tracking_gross_payable_cents : :gross_payable_cents,
+        label: "Distributions"
       )
+      hurdle_amount -= dist_hurdle
     end
 
+    Rails.logger.debug "[Hurdle] Final calculated hurdle amount: #{hurdle_amount}"
     hurdle_amount
   end
 
   private
 
   # Helper to calculate hurdle for a collection of payments
-  def calculate_hurdle_for_payments(payments, end_date, hurdle_rate, amount_column:)
-    payments.sum do |payment|
-      days = (end_date - payment.payment_date.to_date).to_i + 1
-      payment.send(amount_column) * (hurdle_rate * days / 365)
+  def calculate_hurdle_for_payments(payments, end_date, hurdle_rate, amount_column:, label: "Payments")
+    Rails.logger.debug "[Hurdle] Processing #{label} (#{payments.count} records)"
+
+    total_hurdle = payments.sum do |payment|
+      amount = payment.send(amount_column)
+      payment_date = payment.payment_date.to_date
+
+      # IRR/Hurdle standard calculation: Amount * ((1 + Rate)^(Days/365) - 1)
+      # This calculates the EARNED preferred return over the period.
+      days = (end_date - payment_date).to_i + 1
+
+      # Using (1 + r)^t - 1 formula for compound interest hurdle
+      calculation = amount.to_d * (((1 + hurdle_rate) ** (days / 365.0)) - 1)
+
+      Rails.logger.debug "[Hurdle]   - Payment ID: #{payment.id}, Date: #{payment_date}, Amount: #{amount}, Days: #{days}, Hurdle: #{calculation.to_f}"
+
+      calculation
     end
+
+    Rails.logger.debug "[Hurdle] Total hurdle for #{label}: #{total_hurdle.to_f}"
+    total_hurdle
   end
 end
