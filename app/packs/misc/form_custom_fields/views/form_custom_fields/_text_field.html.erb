@@ -13,6 +13,11 @@
          } %>
    <% end %>
 
-    <%= f.text_field field.name, class: "form-control custom_field", required: field.required %>
+    <% vr = field.validation_rules || {} %>
+    <%= f.text_field field.name, class: "form-control custom_field",
+          required: field.required,
+          minlength: vr["min_length"],
+          maxlength: vr["max_length"],
+          pattern: vr["pattern"] %>
     <small class="text-muted"><%= field.help_text&.html_safe %></small>
 </div>

@@ -12,6 +12,10 @@
            bs_title:     field.info.body.to_html                # sanitised HTML
          } %>
    <% end %>
-    <%= f.number_field field.name, step: :any,  class: "form-control custom_field", required: field.required %>
+    <% vr = field.validation_rules || {} %>
+    <%= f.number_field field.name, step: :any, class: "form-control custom_field",
+          required: field.required,
+          min: vr["min_value"],
+          max: vr["max_value"] %>
     <small class="text-muted"><%= field.help_text&.html_safe %></small>
 </div>

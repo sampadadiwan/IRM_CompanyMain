@@ -24,6 +24,9 @@ module WithCustomField
     # This is done so that if there are any custom_fields which are calculations, then they are run and computed
     before_save :perform_all_calculations, if: -> { skip_cf_before_save != true && form_custom_fields && form_custom_fields.calculations.present? }
 
+    validate :check_required_custom_fields, if: -> { form_type.present? && skip_cf_before_save != true }
+    validate :check_custom_field_formats,   if: -> { form_type.present? && skip_cf_before_save != true }
+
     # Scope to search for custom fields Useage: InvestorKyc.search_custom_fields("nationality", "Indian")
     if Rails.env.test?
       scope :search_custom_fields, lambda { |key, value|
@@ -210,7 +213,123 @@ module WithCustomField
     end
   end
 
+  def check_required_custom_fields
+    required_fields_for.each do |fcf|
+      val = json_fields[fcf.name]
+      msg = fcf.validation_rules&.dig("error_message").presence || "#{fcf.human_label} is required"
+      errors.add(:base, msg) if val.blank?
+    end
+  end
+
+  def check_custom_field_formats
+    return unless form_custom_fields
+    form_custom_fields.visible.not_calculations.each do |fcf|
+      val = json_fields[fcf.name]
+      next if val.blank?
+
+      rules = (fcf.validation_rules || {}).with_indifferent_access
+      error_msg = rules["error_message"].presence
+
+      case fcf.field_type
+      when "NumberField", "Money"
+        validate_numeric_field(fcf, val, rules, error_msg)
+      when "DateField"
+        validate_date_field(fcf, val, rules, error_msg)
+      when "TextField", "TextArea"
+        validate_text_field(fcf, val, rules, error_msg)
+      when "MultiSelect", "CheckBox"
+        validate_selection_field(fcf, val, rules, error_msg)
+      end
+
+      if rules["unique"]
+        validate_unique_field(fcf, val, error_msg)
+      end
+    end
+  end
+
   private
+
+  def validate_numeric_field(fcf, val, rules, error_msg)
+    unless val.to_s =~ /\A-?\d+(\.\d+)?\z/
+      errors.add(:base, error_msg || "#{fcf.human_label} must be a number")
+      return
+    end
+    num = val.to_d
+    if rules["min_value"].present? && num < rules["min_value"].to_d
+      errors.add(:base, error_msg || "#{fcf.human_label} must be at least #{rules['min_value']}")
+    end
+    if rules["max_value"].present? && num > rules["max_value"].to_d
+      errors.add(:base, error_msg || "#{fcf.human_label} must be at most #{rules['max_value']}")
+    end
+    if rules["integer_only"] && num != num.floor
+      errors.add(:base, error_msg || "#{fcf.human_label} must be a whole number")
+    end
+  end
+
+  def validate_date_field(fcf, val, rules, error_msg)
+    date = Date.parse(val.to_s)
+    min_date = resolve_date_rule(rules["min_date"])
+    max_date = resolve_date_rule(rules["max_date"])
+    if min_date && date < min_date
+      errors.add(:base, error_msg || "#{fcf.human_label} cannot be before #{min_date}")
+    end
+    if max_date && date > max_date
+      errors.add(:base, error_msg || "#{fcf.human_label} cannot be after #{max_date}")
+    end
+  rescue ArgumentError, TypeError
+    errors.add(:base, error_msg || "#{fcf.human_label} must be a valid date")
+  end
+
+  def validate_text_field(fcf, val, rules, error_msg)
+    str = val.to_s
+    if rules["min_length"].present? && str.length < rules["min_length"].to_i
+      errors.add(:base, error_msg || "#{fcf.human_label} must be at least #{rules['min_length']} characters")
+    end
+    if rules["max_length"].present? && str.length > rules["max_length"].to_i
+      errors.add(:base, error_msg || "#{fcf.human_label} must be at most #{rules['max_length']} characters")
+    end
+    if rules["pattern"].present?
+      begin
+        errors.add(:base, error_msg || "#{fcf.human_label} format is invalid") unless str.match?(Regexp.new(rules["pattern"]))
+      rescue RegexpError
+        nil
+      end
+    end
+    if rules["format"].present?
+      pattern = FormCustomField::FORMAT_PATTERNS[rules["format"]]
+      errors.add(:base, error_msg || "#{fcf.human_label} is not a valid #{rules['format']}") if pattern && !str.match?(pattern)
+    end
+  end
+
+  def validate_selection_field(fcf, val, rules, error_msg)
+    selections = val.is_a?(Array) ? val : val.to_s.split(",").map(&:strip).reject(&:blank?)
+    count = selections.length
+    if rules["min_selections"].present? && count < rules["min_selections"].to_i
+      errors.add(:base, error_msg || "#{fcf.human_label} requires at least #{rules['min_selections']} selection(s)")
+    end
+    if rules["max_selections"].present? && count > rules["max_selections"].to_i
+      errors.add(:base, error_msg || "#{fcf.human_label} allows at most #{rules['max_selections']} selection(s)")
+    end
+  end
+
+  def validate_unique_field(fcf, val, error_msg)
+    klass = self.class
+    query = if Rails.env.test?
+              klass.where(entity_id:).where("json_extract(json_fields, ?) = ?", "$.#{fcf.name}", val.to_s)
+            else
+              klass.where(entity_id:).where("JSON_UNQUOTE(json_fields -> ?) = ?", "$.#{fcf.name}", val.to_s)
+            end
+    exists = query.where.not(id: id || 0).exists?
+    errors.add(:base, error_msg || "#{fcf.human_label} must be unique") if exists
+  end
+
+  def resolve_date_rule(val)
+    return nil if val.blank?
+    return Time.zone.today if val == "today"
+    Date.parse(val.to_s)
+  rescue ArgumentError
+    nil
+  end
 
   def satisfies_condition?(fcf, json_fields)
     actual_value = json_fields[fcf.condition_on]&.to_s&.downcase

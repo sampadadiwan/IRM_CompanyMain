@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_100002) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_14_100001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1698,6 +1698,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100002) do
     t.string "show_user_ids", limit: 50
     t.integer "step", default: 100
     t.datetime "updated_at", null: false
+    t.json "validation_rules"
     t.index ["form_type_id"], name: "index_form_custom_fields_on_form_type_id"
     t.index ["import_upload_id"], name: "index_form_custom_fields_on_import_upload_id"
     t.index ["name", "form_type_id"], name: "index_form_custom_fields_on_name_and_form_type_id", unique: true

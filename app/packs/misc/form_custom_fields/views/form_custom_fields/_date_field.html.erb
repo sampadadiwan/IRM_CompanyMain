@@ -24,6 +24,13 @@
             val = nil
         end
     %>
-    <%= f.date_field field.name, class: "form-control custom_field", required: field.required, value: val   %>
+    <% vr = field.validation_rules || {} %>
+    <% min_date_val = vr["min_date"] == "today" ? Time.zone.today.iso8601 : vr["min_date"] %>
+    <% max_date_val = vr["max_date"] == "today" ? Time.zone.today.iso8601 : vr["max_date"] %>
+    <%= f.date_field field.name, class: "form-control custom_field",
+          required: field.required,
+          value: val,
+          min: min_date_val,
+          max: max_date_val %>
     <small class="text-muted"><%= field.help_text&.html_safe %></small>
 </div>

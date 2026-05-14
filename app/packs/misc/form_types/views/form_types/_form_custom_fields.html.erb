@@ -1,5 +1,5 @@
 <div class="divider"></div>
-<div class='nested-fields row'>
+<div class='nested-fields row' data-controller="fcf-setup">
     <div class="row">
     <div class="form-group col-md-1">
         <%= f.label :position %>
@@ -18,7 +18,9 @@
     %>
     <div class="form-group col-md-2">
         <%= f.label :field_type %>
-        <%= f.select :field_type, field_types.sort, {}, class: "form-control" %>
+        <%= f.select :field_type, field_types.sort, {},
+              class: "form-control",
+              data: { fcf_setup_target: "fieldType", action: "change->fcf-setup#fieldTypeChanged" } %>
     </div>
 
     <div class="form-group col-md-1">
@@ -133,5 +135,68 @@
             <small class="form-text text-muted">If conditions match this field, will be shown</small>
         </div>
 
+    </div>
+
+    <div class="row collapse" id="custom_condition_row_<%=collapse_id%>">
+        <div class="col-12 mt-2 mb-1"><strong>Validation Rules</strong></div>
+
+        <%# Text / TextArea rules %>
+        <div class="form-group col-md-2 fcf-vr-textfield fcf-vr-textarea">
+            <%= f.label :vr_min_length, "Min Length" %>
+            <%= f.number_field :vr_min_length, class: "form-control", min: 0 %>
+        </div>
+        <div class="form-group col-md-2 fcf-vr-textfield fcf-vr-textarea">
+            <%= f.label :vr_max_length, "Max Length" %>
+            <%= f.number_field :vr_max_length, class: "form-control", min: 0 %>
+        </div>
+        <div class="form-group col-md-3 fcf-vr-textfield fcf-vr-textarea">
+            <%= f.label :vr_pattern, "Pattern (regex)" %>
+            <%= f.text_field :vr_pattern, class: "form-control", placeholder: "e.g. ^[A-Z]{5}[0-9]{4}[A-Z]$" %>
+        </div>
+        <div class="form-group col-md-2 fcf-vr-textfield fcf-vr-textarea">
+            <%= f.label :vr_format, "Format Shortcut" %>
+            <%= f.select :vr_format, [["", nil]] + FormCustomField::VALID_FORMATS, {}, class: "form-control" %>
+            <small class="form-text text-muted">email, pan, gstin, ifsc…</small>
+        </div>
+
+        <%# Number / Money rules %>
+        <div class="form-group col-md-2 fcf-vr-numberfield fcf-vr-money">
+            <%= f.label :vr_min_value, "Min Value" %>
+            <%= f.number_field :vr_min_value, class: "form-control", step: :any %>
+        </div>
+        <div class="form-group col-md-2 fcf-vr-numberfield fcf-vr-money">
+            <%= f.label :vr_max_value, "Max Value" %>
+            <%= f.number_field :vr_max_value, class: "form-control", step: :any %>
+        </div>
+
+        <%# Date rules %>
+        <div class="form-group col-md-2 fcf-vr-datefield">
+            <%= f.label :vr_min_date, "Min Date" %>
+            <%= f.text_field :vr_min_date, class: "form-control", placeholder: "YYYY-MM-DD or 'today'" %>
+        </div>
+        <div class="form-group col-md-2 fcf-vr-datefield">
+            <%= f.label :vr_max_date, "Max Date" %>
+            <%= f.text_field :vr_max_date, class: "form-control", placeholder: "YYYY-MM-DD or 'today'" %>
+        </div>
+
+        <%# MultiSelect / CheckBox rules %>
+        <div class="form-group col-md-2 fcf-vr-multiselect fcf-vr-checkbox">
+            <%= f.label :vr_min_selections, "Min Selections" %>
+            <%= f.number_field :vr_min_selections, class: "form-control", min: 0 %>
+        </div>
+        <div class="form-group col-md-2 fcf-vr-multiselect fcf-vr-checkbox">
+            <%= f.label :vr_max_selections, "Max Selections" %>
+            <%= f.number_field :vr_max_selections, class: "form-control", min: 0 %>
+        </div>
+
+        <%# Universal rules %>
+        <div class="form-group col-md-1">
+            <%= f.label :vr_unique, "Unique" %>
+            <%= f.check_box :vr_unique, class: "form-check-input mt-3" %>
+        </div>
+        <div class="form-group col-md-3">
+            <%= f.label :vr_error_message, "Custom Error Message" %>
+            <%= f.text_field :vr_error_message, class: "form-control", placeholder: "Optional override error text" %>
+        </div>
     </div>
 </div>

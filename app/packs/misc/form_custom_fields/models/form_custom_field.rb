@@ -1,25 +1,60 @@
 class FormCustomField < ApplicationRecord
   HIDDEN_FIELDS = %w[Calculation GridColumns].freeze
 
+  VALID_FIELD_TYPES = %w[TextField NumberField DateField TextArea CheckBox Radio Select
+                         DataList MultiSelect Money File Header GridColumns Calculation].freeze
+  OPTION_FIELD_TYPES = %w[Select Radio CheckBox DataList MultiSelect].freeze
+  VALID_CONDITION_CRITERIAS = %w[eq not_eq contains lt lte gt gte].freeze
+  VALID_CONDITION_STATES = %w[show].freeze
+  VALID_FORMATS = %w[email phone url alphanumeric pan gstin ifsc].freeze
+
+  FORMAT_PATTERNS = {
+    "email"        => /\A[^@\s]+@[^@\s]+\.[^@\s]+\z/i,
+    "phone"        => /\A[\d\s+\-()\[\]]{7,20}\z/,
+    "url"          => /\Ahttps?:\/\/.+/i,
+    "alphanumeric" => /\A[a-zA-Z0-9]+\z/,
+    "pan"          => /\A[A-Z]{5}[0-9]{4}[A-Z]\z/,
+    "gstin"        => /\A[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]\z/,
+    "ifsc"         => /\A[A-Z]{4}0[A-Z0-9]{6}\z/
+  }.freeze
+
+  REGULATORY_ENVS = %w[SEBI CRISIL IFSC MAS].freeze
+  REGULATORY_FIELD_MODELS = %w[IndividualKyc NonIndividualKyc InvestmentInstrument].freeze
+
+  VALIDATION_RULE_KEYS = %w[min_length max_length min_value max_value min_date max_date
+                             min_selections max_selections pattern format unique
+                             error_message max_size_mb].freeze
+
+  VALIDATION_RULE_KEYS.each do |key|
+    define_method("vr_#{key}") { (validation_rules || {})[key] }
+    define_method("vr_#{key}=") do |val|
+      self.validation_rules ||= {}
+      if key == "unique"
+        self.validation_rules[key] = (val == "1" || val == true || val == "true") ? true : nil
+      else
+        cleaned = val.to_s.strip.presence
+        cleaned ? self.validation_rules[key] = cleaned : self.validation_rules.delete(key)
+      end
+    end
+  end
+
   belongs_to :form_type
   acts_as_list scope: :form_type
 
   enum :step,  { one: 1, two: 2, three: 3, end: 100 }
 
-  # normalizes :name, with: ->(name) { FormCustomField.to_name(name) }
   validates :name, :show_user_ids, length: { maximum: 100 }
   validates :label, length: { maximum: 254 }
-  validates :field_type, length: { maximum: 20 }
-  validates :reg_env, length: { maximum: 15 }
-
   validates :name, uniqueness: { scope: :form_type_id }
   validates :name, presence: true
   normalizes :name, :label, with: ->(value) { value&.strip }
 
-  has_rich_text :info
+  validates :field_type, inclusion: { in: VALID_FIELD_TYPES }
+  validates :condition_criteria, inclusion: { in: VALID_CONDITION_CRITERIAS }, allow_blank: true
+  validates :condition_state, inclusion: { in: VALID_CONDITION_STATES }, allow_blank: true
+  validates :reg_env, inclusion: { in: REGULATORY_ENVS }, allow_blank: true
 
-  REGULATORY_ENVS = %w[SEBI CRISIL IFSC MAS].freeze
-  REGULATORY_FIELD_MODELS = %w[IndividualKyc NonIndividualKyc InvestmentInstrument].freeze
+  has_rich_text :info
 
   RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select" }.freeze
 
@@ -35,9 +70,65 @@ class FormCustomField < ApplicationRecord
   scope :for_env, ->(env) { where(reg_env: env) }
 
   validate :meta_data_kosher?, if: -> { field_type == "Calculation" }
+  validate :meta_data_present_for_option_types
+  validate :name_normalizes_to_non_blank
+  validate :validation_rules_consistent, if: -> { validation_rules.present? && VALID_FIELD_TYPES.include?(field_type) }
 
   def meta_data_kosher?
     errors.add(:meta_data, "You cannot do CRUD operations in meta_data") if meta_data.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
+  def meta_data_present_for_option_types
+    return unless OPTION_FIELD_TYPES.include?(field_type)
+    errors.add(:meta_data, "must provide at least one option for #{field_type}") if meta_data.blank?
+  end
+
+  def name_normalizes_to_non_blank
+    return if name.blank?
+    errors.add(:name, "produces an empty field key after normalization") if FormCustomField.to_name(name).blank?
+  end
+
+  def validation_rules_consistent
+    rules = validation_rules.with_indifferent_access
+
+    text_keys      = %w[min_length max_length pattern format error_message unique]
+    numeric_keys   = %w[min_value max_value integer_only error_message unique]
+    date_keys      = %w[min_date max_date error_message]
+    selection_keys = %w[min_selections max_selections error_message]
+    file_keys      = %w[allowed_extensions max_size_mb error_message]
+
+    allowed_keys = case field_type
+                   when "TextField", "TextArea"   then text_keys
+                   when "NumberField", "Money"    then numeric_keys
+                   when "DateField"               then date_keys
+                   when "MultiSelect", "CheckBox" then selection_keys
+                   when "File"                    then file_keys
+                   else                                []
+                   end
+
+    invalid_keys = rules.keys - allowed_keys
+    errors.add(:validation_rules, "contains invalid keys for #{field_type}: #{invalid_keys.join(', ')}") if invalid_keys.any?
+
+    case field_type
+    when "TextField", "TextArea"
+      validate_min_max_rule(rules, "min_length", "max_length")
+      if rules["pattern"].present?
+        begin
+          Regexp.new(rules["pattern"])
+        rescue RegexpError => e
+          errors.add(:validation_rules, "pattern is not a valid regex: #{e.message}")
+        end
+      end
+      if rules["format"].present?
+        errors.add(:validation_rules, "format must be one of: #{VALID_FORMATS.join(', ')}") unless VALID_FORMATS.include?(rules["format"])
+      end
+    when "NumberField", "Money"
+      validate_min_max_rule(rules, "min_value", "max_value")
+    when "DateField"
+      validate_date_rule_values(rules)
+    when "MultiSelect", "CheckBox"
+      validate_min_max_rule(rules, "min_selections", "max_selections")
+    end
   end
 
   validate :read_only_and_required, if: -> { read_only && required }
@@ -138,5 +229,35 @@ class FormCustomField < ApplicationRecord
   def self.json_fields_key(header, model, _form_type_id)
     form_type = model.entity.form_types.where(name: model.class.name).first
     form_type.form_custom_fields.find_by(name: to_name(header))&.id
+  end
+
+  private
+
+  def validate_min_max_rule(rules, min_key, max_key)
+    min = rules[min_key]
+    max = rules[max_key]
+    return unless min.present? && max.present?
+    errors.add(:validation_rules, "#{min_key} must be less than or equal to #{max_key}") if min.to_d > max.to_d
+  end
+
+  def validate_date_rule_values(rules)
+    %w[min_date max_date].each do |key|
+      val = rules[key]
+      next if val.blank? || val == "today"
+      begin
+        Date.parse(val.to_s)
+      rescue ArgumentError
+        errors.add(:validation_rules, "#{key} must be a valid ISO date or 'today'")
+      end
+    end
+
+    min = rules["min_date"]
+    max = rules["max_date"]
+    return unless min.present? && max.present? && min != "today" && max != "today"
+    begin
+      errors.add(:validation_rules, "min_date must be before max_date") if Date.parse(min.to_s) > Date.parse(max.to_s)
+    rescue ArgumentError
+      nil
+    end
   end
 end
