@@ -15,6 +15,7 @@ Given('a cash flow support agent is configured for the entity') do
     name:       "Cash Flow Agent",
     agent_type: "CashFlowAssistantAgent",
     enabled:    true,
+    llm_model:  "gemini-3-flash-preview",
     json_fields: {
       "cash_tags"         => CASH_TAG,
       "expense_tags"      => EXPENSE_TAG,
