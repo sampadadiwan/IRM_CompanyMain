@@ -135,6 +135,36 @@ module ValidationRulesDefaults
       message_template: "Required account entries (%{account_entry_names}) not found in the %{n_days} days before the run end date (%{end_date}). Please ensure all required entries are imported."
     },
 
+    # ── CapitalCall ───────────────────────────────────────────────────────────
+    {
+      name:             "capital_call_notices_not_generated",
+      target_model:     "CapitalCall",
+      description:      "Warns when one or more remittances have no generated call notice document (owner_tag: Generated).",
+      condition_tree:   {
+        "op"         => "AND",
+        "conditions" => [
+          { "field" => "context.remittances_without_notices", "op" => "not_blank" }
+        ]
+      },
+      params:           {},
+      severity:         "warning",
+      message_template: "Call notices have not been generated for: %{remittances_without_notices}. Please generate documents before approving."
+    },
+    {
+      name:             "capital_call_notices_not_approved",
+      target_model:     "CapitalCall",
+      description:      "Blocks approval when generated call notice documents are pending approval.",
+      condition_tree:   {
+        "op"         => "AND",
+        "conditions" => [
+          { "field" => "context.unapproved_notices_count", "op" => "not_blank" }
+        ]
+      },
+      params:           {},
+      severity:         "blocker",
+      message_template: "There are %{unapproved_notices_count} generated call notice(s) pending approval. Please approve all documents before approving this call."
+    },
+
     # ── FundRatio ──────────────────────────────────────────────────────────────
     {
       name:             "fund_ratio_date_not_quarter_end",

@@ -13,9 +13,14 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   // Values passed from the ERB template via data attributes
   static values = {
-    targetModel:  String,
-    recordId:     String,   // empty string for new records
-    evaluateUrl:  String
+    targetModel:            String,
+    recordId:               String,   // empty string for new records
+    evaluateUrl:            String,
+    // Optional CSS selector for a hidden element whose innerHTML is shown in the modal
+    // when the form is about to submit. Rendered above rule items when warnings fire;
+    // shown alone (as a confirmation step) when no rules fire.
+    // Suppressed entirely when blockers fire (approval is already blocked).
+    confirmMessageSelector: String
   }
 
   connect() {
@@ -67,13 +72,20 @@ export default class extends Controller {
     const { warnings, blockers } = results
 
     if (blockers.length === 0 && warnings.length === 0) {
-      // No issues — submit immediately
+      // No rule issues — if a confirm message is configured, show it before submitting
+      const confirmHtml = this._confirmHtml()
+      if (confirmHtml) {
+        this._showModal({ warnings: [], blockers: [], form, confirmHtml })
+        return
+      }
+      // No confirm message — submit immediately
       form.submit()
       return
     }
 
-    // Show the modal; the modal's confirm button will resubmit with force_save=1
-    this._showModal({ warnings, blockers, form })
+    // Show the modal; the modal's confirm button will resubmit with force_save=1.
+    // Include the confirm message above warnings (omit it when blockers fire since approval is blocked).
+    this._showModal({ warnings, blockers, form, confirmHtml: this._confirmHtml() })
   }
 
   // ── Evaluation fetch ──────────────────────────────────────────────────────
@@ -147,11 +159,41 @@ export default class extends Controller {
 
   // ── Modal ─────────────────────────────────────────────────────────────────
 
-  _showModal({ warnings, blockers, form }) {
+  _showModal({ warnings, blockers, form, confirmHtml = null }) {
     document.getElementById("ruleValidationModal")?.remove()
 
-    const hasBlockers = blockers.length > 0
-    const hasWarnings = warnings.length > 0
+    const hasBlockers  = blockers.length > 0
+    const hasWarnings  = warnings.length > 0
+    const hasRules     = hasBlockers || hasWarnings
+    const confirmOnly  = !hasRules && !!confirmHtml
+
+    // Icon: blue info when confirm-only; yellow/red warning triangle when rules fire
+    const iconSvg = confirmOnly
+      ? `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="#3b82f6" viewBox="0 0 16 16">
+           <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+         </svg>`
+      : `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="${hasBlockers ? '#f87171' : '#fbbf24'}" viewBox="0 0 16 16">
+           <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+         </svg>`
+
+    const title = confirmOnly
+      ? 'Confirm Approval'
+      : hasBlockers ? 'Cannot Approve — Issues Found' : 'Review Before Approving'
+
+    // confirmHtml shown above rule items when no blockers; omitted when blockers fire
+    // (approval is blocked so the notification context is irrelevant)
+    const confirmSection = (confirmHtml && !hasBlockers)
+      ? `<div style="margin-bottom:${hasRules ? '0.75rem' : '0'};${hasRules ? 'padding-bottom:0.75rem;border-bottom:1px solid #f0f0f0' : ''}">${confirmHtml}</div>`
+      : ''
+
+    const ruleSection = hasRules ? `
+      ${hasBlockers ? this._renderRuleItems(blockers, '#f87171', '#fff5f5') : ''}
+      ${hasWarnings ? this._renderRuleItems(warnings, '#fbbf24', '#fffbeb') : ''}
+      <p style="font-size:0.8rem;color:#888;margin-top:0.75rem;margin-bottom:0">
+        ${hasBlockers
+          ? 'Fix the issues above before approving.'
+          : 'These are warnings only. You may still proceed by clicking <strong>Confirm &amp; Save</strong>.'}
+      </p>` : ''
 
     const modal = document.createElement("div")
     modal.innerHTML = `
@@ -161,24 +203,16 @@ export default class extends Controller {
 
             <div class="modal-header" style="border-bottom:1px solid #f0f0f0;padding:1rem 1.25rem 0.75rem">
               <div class="d-flex align-items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="${hasBlockers ? '#f87171' : '#fbbf24'}" viewBox="0 0 16 16">
-                  <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                </svg>
+                ${iconSvg}
                 <h6 class="modal-title mb-0 fw-semibold" style="font-size:0.95rem;color:#1a1a1a">
-                  ${hasBlockers ? 'Cannot Save — Issues Found' : 'Review Before Saving'}
+                  ${title}
                 </h6>
               </div>
               <button type="button" class="btn-close" style="width:0.75rem;height:0.75rem" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
             <div class="modal-body" style="padding:1rem 1.25rem">
-              ${hasBlockers ? this._renderRuleItems(blockers, '#f87171', '#fff5f5') : ''}
-              ${hasWarnings ? this._renderRuleItems(warnings, '#fbbf24', '#fffbeb') : ''}
-              <p style="font-size:0.8rem;color:#888;margin-top:0.75rem;margin-bottom:0">
-                ${hasBlockers
-                  ? 'Fix the issues above before saving.'
-                  : 'These are warnings only. You may still save by clicking <strong>Confirm &amp; Save</strong>.'}
-              </p>
+              ${confirmSection}${ruleSection}
             </div>
 
             <div class="modal-footer" style="border-top:1px solid #f0f0f0;padding:0.75rem 1.25rem;gap:0.5rem">
@@ -216,6 +250,12 @@ export default class extends Controller {
       hiddenFlag.value = "1"
       form.submit()
     })
+  }
+
+  // Returns the innerHTML of the element matching confirmMessageSelectorValue, or null.
+  _confirmHtml() {
+    if (!this.hasConfirmMessageSelectorValue || !this.confirmMessageSelectorValue) return null
+    return document.querySelector(this.confirmMessageSelectorValue)?.innerHTML?.trim() || null
   }
 
   // Each rule on its own row: pastel background tint, coloured left border, plain dark text

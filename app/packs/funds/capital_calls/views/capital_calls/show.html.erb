@@ -42,17 +42,39 @@
 
 
         <% if policy(@capital_call).approve? %>
+          <%# Hidden element whose innerHTML the rule-validation controller reads as the confirm message.
+              Shown in the modal when no rules fire (so the user still sees the notification context
+              and links before proceeding) and above warning items when warnings fire. %>
+          <div id="capital_call_approve_confirm_msg" class="d-none">
+            <p style="font-size:0.875rem;margin-bottom:0.5rem">
+              This will generate a notification to your clients, if enabled.
+              Only <strong>Approved</strong> call notices will be attached to the email.
+            </p>
+            <div class="d-flex gap-2 flex-wrap">
+              <%= link_to "View Who Gets Notified",
+                    show_email_list_fund_path(@capital_call.fund, capital_call_id: @capital_call.id),
+                    class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+              <%= link_to "View Generated Call Notices",
+                    documents_path(no_folders: true, filter: true,
+                      q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id],
+                                                        [:owner_tag, :cont, "Generated"]])),
+                    class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+            </div>
+          </div>
 
-          <%
-            approval_msg = "This will generate a notification to your clients, if enabled. Please note only approved call notices will be attached to the email.
-            <br>
-            #{link_to 'View Who Gets Notified', show_email_list_fund_path(@capital_call.fund, capital_call_id: @capital_call.id), class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}
-            #{link_to 'View Generated Call Notices', generated_docs_path, class: 'mb-1 badge  bg-primary-subtle text-primary', target: "_blank"}"
-          %>
-          <%= button_to approve_capital_call_path(@capital_call), id: "capital_call_approve_btn", method: :post, class: "dropdown-item ti ti-check", form_class: "deleteButton",
-              data: {action: "click->confirm#popup", turbo: false, method: :post, notification: "yes", msg: approval_msg, bs_toggle: "tooltip", bs_title: "Send email notification for the call.  Only 'Approved Documents' will be attached to the notification" } do %>
-            Approve
-          <% end %>
+          <%# Wrap in rule-validation controller so the modal fires BEFORE the form reaches the server.
+              confirmMessageSelector points at the hidden div above; its HTML appears in the modal
+              whether rules fire (shown above warnings) or not (shown as the sole confirmation step). %>
+          <div data-controller="rule-validation"
+               data-rule-validation-target-model-value="CapitalCall"
+               data-rule-validation-record-id-value="<%= @capital_call.id %>"
+               data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>"
+               data-rule-validation-confirm-message-selector-value="#capital_call_approve_confirm_msg">
+            <%= button_to approve_capital_call_path(@capital_call), id: "capital_call_approve_btn", method: :post, class: "dropdown-item ti ti-check", form_class: "deleteButton",
+                data: {turbo: false, bs_toggle: "tooltip", bs_title: "Approve call and send notification. Only 'Approved Documents' will be attached."} do %>
+              Approve
+            <% end %>
+          </div>
 
           <div class="dropdown-divider"></div>
         <% end %>

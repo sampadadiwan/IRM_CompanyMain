@@ -102,13 +102,28 @@ class CapitalCallsController < ApplicationController
   end
 
   def approve
+    # Evaluate rules against the current (pre-approval) record state.
+    # Blockers prevent approval entirely; warnings are surfaced in the success notice.
+    rule_results = ValidationRuleEvaluator.call(record: @capital_call, entity: current_user.entity)
+
+    blockers = rule_results.select(&:blocker?)
+    if blockers.any?
+      redirect_to capital_call_url(@capital_call), alert: blockers.map(&:message).join(" ")
+      return
+    end
+
+    warnings = rule_results.select(&:warning?)
+
     @capital_call.approved = true
     @capital_call.approved_by_user = current_user
 
-    result = CapitalCallApprove.call(capital_call: @capital_call)
+    # Skip model-level re-evaluation — already evaluated above
+    result = WithValidationRules.skip { CapitalCallApprove.call(capital_call: @capital_call) }
     respond_to do |format|
       if result.success?
-        format.html { redirect_to capital_call_url(@capital_call), notice: "Capital call was successfully approved." }
+        notice = "Capital call was successfully approved."
+        notice += " Warning: #{warnings.map(&:message).join(' ')}" if warnings.any?
+        format.html { redirect_to capital_call_url(@capital_call), notice: notice }
         format.json { render :show, status: :created, location: @capital_call }
       else
         format.html { redirect_to capital_call_url(@capital_call), alert: "Call not approved: #{result[:errors]}" }

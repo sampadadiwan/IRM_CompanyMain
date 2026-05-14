@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_13_100002) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -163,6 +163,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
   end
 
   create_table "agent_charts", force: :cascade do |t|
+    t.integer "chart_height"
     t.datetime "created_at", null: false
     t.string "document_names"
     t.bigint "entity_id", null: false
@@ -183,7 +184,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_13_100001) do
     t.string "title"
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_agent_charts_on_entity_id"
-    t.index %w[owner_type owner_id], name: "index_agent_charts_on_owner"
+    t.index ["owner_type", "owner_id"], name: "index_agent_charts_on_owner"
   end
 
   create_table "agent_chat_messages", force: :cascade do |t|

@@ -163,6 +163,79 @@ When('the validation rules are evaluated for a FundRatio with {string}') do |arg
   end
 end
 
+# Evaluates rules for a persisted CapitalCall record (@capital_call set by a prior step).
+# Unlike the other model steps (which build unsaved records), CapitalCall rules rely on
+# DB-level associations (remittances and their documents) so the record must be persisted.
+When('the validation rules are evaluated for the capital call') do
+  @rule_results = WithValidationRules.skip do
+    ValidationRuleEvaluator.call(record: @capital_call, entity: @entity)
+  end
+end
+
+# Creates a minimal CapitalRemittance (no generated document) linked to @capital_call.
+# Uses save(validate: false) because the full CapitalRemittance model requires a
+# CapitalCommitment that is expensive to set up and irrelevant to notice-document checks.
+Given('the capital call has a remittance without a generated notice') do
+  investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
+  remittance = CapitalRemittance.new(
+    capital_call: @capital_call,
+    fund:         @fund,
+    entity:       @entity,
+    investor:     investor,
+    folio_id:     "TEST-#{SecureRandom.hex(4)}"
+  )
+  remittance.save(validate: false)
+end
+
+# Creates a minimal CapitalRemittance plus a generated-but-unapproved Document.
+Given('the capital call has a remittance with an unapproved generated notice') do
+  investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
+  remittance = CapitalRemittance.new(
+    capital_call: @capital_call,
+    fund:         @fund,
+    entity:       @entity,
+    investor:     investor,
+    folio_id:     "TEST-#{SecureRandom.hex(4)}"
+  )
+  remittance.save(validate: false)
+
+  # Create a folder scoped to the entity and attach a generated unapproved document
+  folder = Folder.create!(entity: @entity, name: "Test Notices", full_path: "test-notices-#{SecureRandom.hex(8)}")
+  Document.create!(
+    entity:     @entity,
+    folder:     folder,
+    owner:      remittance,
+    owner_tag:  "Generated",
+    approved:   false,
+    send_email: false,
+    name:       "Call Notice"
+  )
+end
+
+# Creates a minimal CapitalRemittance plus a generated AND approved Document.
+Given('the capital call has a remittance with an approved generated notice') do
+  investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
+  remittance = CapitalRemittance.new(
+    capital_call: @capital_call,
+    fund:         @fund,
+    entity:       @entity,
+    investor:     investor,
+    folio_id:     "TEST-#{SecureRandom.hex(4)}"
+  )
+  remittance.save(validate: false)
+
+  folder = Folder.create!(entity: @entity, name: "Test Notices", full_path: "test-notices-#{SecureRandom.hex(8)}")
+  Document.create!(
+    entity:     @entity,
+    folder:     folder,
+    owner:      remittance,
+    owner_tag:  "Generated",
+    approved:   true,
+    send_email: false,
+    name:       "Call Notice"
+  )
+end
+
 # ── Rule result assertions ────────────────────────────────────────────────────
 
 Then('the rule {string} fires as a {string}') do |rule_name, expected_severity|

@@ -81,6 +81,11 @@ class ValidationRulesController < ApplicationController
       attrs = attrs.dup
       # The generate_fund_ratios form is also flat; supply entity_id for monetize/context
       attrs["entity_id"] ||= current_user.entity_id.to_s
+
+    when "CapitalCall"
+      attrs = attrs.dup
+      # Approval evaluates a persisted record; ensure entity_id is present for scoping
+      attrs["entity_id"] ||= current_user.entity_id.to_s
     end
 
     attrs
