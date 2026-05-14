@@ -2913,7 +2913,7 @@ Given('I approve the capital call') do
     click_on("Actions")
   end
   click_on("Approve")
-  click_on("Proceed")
+  click_on("Confirm & Save")
 
 end
 
