@@ -104,20 +104,15 @@ Given('there is a validation rule override for {string} with {string}') do |rule
 end
 
 # Creates a persisted CapitalCall for @fund. args is a JSON-ish hash of close_percentages,
-# e.g. "{'First Close':'100'}". Uses call_basis "Upload" to skip fund_closes validation
-# and avoid triggering the async CapitalCallJob for remittance generation.
+# e.g. "{'First Close':'100'}".
 Given('there is a capital call {string} for the fund') do |args|
   closes = JSON.parse(args.gsub("'", '"'))
 
-  @capital_call = CapitalCall.create!(
+  @capital_call = FactoryBot.create(:capital_call,
     entity:            @entity,
     fund:              @fund,
-    name:              "Test Capital Call #{SecureRandom.hex(4)}",
-    call_date:         Date.today,
-    due_date:          Date.today + 30.days,
-    call_basis:        "Upload",
-    percentage_called: 0,
-    close_percentages: closes
+    close_percentages: closes,
+    fund_closes:       closes.keys
   )
 end
 
@@ -191,11 +186,11 @@ When('the validation rules are evaluated for the capital call') do
 end
 
 # Creates a minimal CapitalRemittance (no generated document) linked to @capital_call.
-# Uses save(validate: false) because the full CapitalRemittance model requires a
-# CapitalCommitment that is expensive to set up and irrelevant to notice-document checks.
+# FactoryBot.build + save(validate:false) because the :capital_remittance factory doesn't
+# satisfy the capital_commitment, folio_id, and folio_committed_amount_cents requirements.
 Given('the capital call has a remittance without a generated notice') do
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
-  remittance = CapitalRemittance.new(
+  remittance = FactoryBot.build(:capital_remittance,
     capital_call: @capital_call,
     fund:         @fund,
     entity:       @entity,
@@ -208,7 +203,7 @@ end
 # Creates a minimal CapitalRemittance plus a generated-but-unapproved Document.
 Given('the capital call has a remittance with an unapproved generated notice') do
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
-  remittance = CapitalRemittance.new(
+  remittance = FactoryBot.build(:capital_remittance,
     capital_call: @capital_call,
     fund:         @fund,
     entity:       @entity,
@@ -217,26 +212,21 @@ Given('the capital call has a remittance with an unapproved generated notice') d
   )
   remittance.save(validate: false)
 
-  # Use save(validate: false) to bypass file attachment and user requirements —
-  # rule checks only query by owner/tag/approved, not file content.
-  folder = Folder.create!(entity: @entity, name: "Test Notices", full_path: "test-notices-#{SecureRandom.hex(8)}")
-  doc = Document.new(
-    entity:     @entity,
-    user:       @user,
-    folder:     folder,
-    owner:      remittance,
-    owner_tag:  "Generated",
-    approved:   false,
-    send_email: false,
-    name:       "Call Notice"
+  folder = FactoryBot.create(:folder, entity: @entity)
+  FactoryBot.create(:document,
+    entity:    @entity,
+    user:      @user,
+    folder:    folder,
+    owner:     remittance,
+    owner_tag: "Generated",
+    approved:  false
   )
-  doc.save!(validate: false)
 end
 
 # Creates a minimal CapitalRemittance plus a generated AND approved Document.
 Given('the capital call has a remittance with an approved generated notice') do
   investor = FactoryBot.create(:investor, entity: @entity, investor_entity: @entity)
-  remittance = CapitalRemittance.new(
+  remittance = FactoryBot.build(:capital_remittance,
     capital_call: @capital_call,
     fund:         @fund,
     entity:       @entity,
@@ -245,18 +235,15 @@ Given('the capital call has a remittance with an approved generated notice') do
   )
   remittance.save(validate: false)
 
-  folder = Folder.create!(entity: @entity, name: "Test Notices", full_path: "test-notices-#{SecureRandom.hex(8)}")
-  doc = Document.new(
-    entity:     @entity,
-    user:       @user,
-    folder:     folder,
-    owner:      remittance,
-    owner_tag:  "Generated",
-    approved:   true,
-    send_email: false,
-    name:       "Call Notice"
+  folder = FactoryBot.create(:folder, entity: @entity)
+  FactoryBot.create(:document,
+    entity:    @entity,
+    user:      @user,
+    folder:    folder,
+    owner:     remittance,
+    owner_tag: "Generated",
+    approved:  true
   )
-  doc.save!(validate: false)
 end
 
 # ── Rule result assertions ────────────────────────────────────────────────────
