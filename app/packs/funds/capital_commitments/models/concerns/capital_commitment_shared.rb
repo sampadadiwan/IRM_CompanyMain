@@ -118,11 +118,44 @@ module CapitalCommitmentShared
     fund.fund_unit_settings.where(name: unit_type).last
   end
 
-  def compute_hurdle(end_date, use_tracking_currency: false)
-    if use_tracking_currency
-      capital_remittance_payments.where(payment_date: ..end_date).sum { |crp| crp.tracking_amount_cents * (fund_unit_setting.json_fields['hurdle_rate'].to_d * ((end_date.to_date - crp.payment_date.to_date).to_i + 1) / 365) }
-    else
-      capital_remittance_payments.where(payment_date: ..end_date).sum { |crp| crp.amount_cents * (fund_unit_setting.json_fields['hurdle_rate'].to_d * ((end_date.to_date - crp.payment_date.to_date).to_i + 1) / 365) }
+  # Computes the hurdle amount (preferred return) for the commitment as of a given end date.
+  # The hurdle is calculated as: sum(payment_amount * hurdle_rate * (days_outstanding / 365))
+  # @param end_date [Date, String] The date up to which the hurdle is calculated.
+  # @param use_tracking_currency [Boolean] Whether to use tracking currency instead of the base currency.
+  # @param use_distributions [Boolean] Whether to subtract the hurdle calculated on distributions.
+  def compute_hurdle(end_date, use_tracking_currency: false, use_distributions: false)
+    # Ensure end_date is a Date object for calculations
+    end_date = end_date.to_date
+    hurdle_rate = fund_unit_setting.json_fields['hurdle_rate'].to_d
+
+    # Calculate hurdle on contributions (remittances)
+    hurdle_amount = calculate_hurdle_for_payments(
+      capital_remittance_payments.where(payment_date: ..end_date),
+      end_date,
+      hurdle_rate,
+      amount_column: use_tracking_currency ? :tracking_amount_cents : :amount_cents
+    )
+
+    if use_distributions
+      # Subtract hurdle calculated on distributions
+      hurdle_amount -= calculate_hurdle_for_payments(
+        capital_distribution_payments.where(payment_date: ..end_date),
+        end_date,
+        hurdle_rate,
+        amount_column: use_tracking_currency ? :tracking_gross_payable_cents : :gross_payable_cents
+      )
+    end
+
+    hurdle_amount
+  end
+
+  private
+
+  # Helper to calculate hurdle for a collection of payments
+  def calculate_hurdle_for_payments(payments, end_date, hurdle_rate, amount_column:)
+    payments.sum do |payment|
+      days = (end_date - payment.payment_date.to_date).to_i + 1
+      payment.send(amount_column) * (hurdle_rate * days / 365)
     end
   end
 end
