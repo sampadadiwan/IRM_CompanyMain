@@ -476,9 +476,8 @@ FactoryBot.define do
     capital_distribution { nil }
     investor { nil }
     form_type { nil }
-    amount { "9.99" }
+    gross_payable_cents { 0 }
     payment_date { "2022-09-04" }
-    properties { Faker::Company.catch_phrase }
   end
 
   factory :capital_distribution do
