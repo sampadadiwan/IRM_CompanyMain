@@ -3254,3 +3254,8 @@ Then('the new capital distribution payments must have the data in the sheet {str
     cdp.gross_payable_cents.should == cdp.income_cents + cdp.gross_of_account_entries_cents + cdp.cost_of_investment_cents
   end
 end
+
+Then('no capital remittances should be created') do
+  @capital_call = CapitalCall.last
+  CapitalRemittance.where(capital_call: @capital_call).count.should == 0
+end

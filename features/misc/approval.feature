@@ -137,3 +137,60 @@ Scenario Outline: Provide approval response
   	|user	    |approval                 |msg	| status |
   	|  	      |title=Test approval;response_enabled_email=true      |Approval was successfully created| Approved |
     |  	      |title=Merger Approval;response_enabled_email=true    |Approval was successfully created| Rejected |
+
+
+# Edge case: partial approval — one investor approves, another rejects, counts must both be nonzero
+Scenario Outline: Partial approval with mixed investor responses
+  Given there is a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  Given there is an existing investor "" with "1" users
+  Given there is an approval "<approval>" for the entity
+  Given the investors are added to the approval
+  When the approval is approved internally
+  When the first investor approves and the second investor rejects
+  Then the approved count of the approval is "1"
+  And the rejected count of the approval is "1"
+
+  Examples:
+    | user | entity               | approval            |
+    |      | entity_type=Company  | title=Test approval |
+    |      | entity_type=Company  | title=Fund Approval |
+
+
+# State machine: update? requires !record.locked — a locked approval cannot be edited or destroyed
+Scenario Outline: Locked approval cannot be edited or destroyed
+  Given there is a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a locked approval "title=Locked Approval" for the entity
+  Then user "false" have "update,edit,destroy" access to the approval
+
+  Examples:
+    | entity              |
+    | entity_type=Company |
+
+
+# State machine: approve? requires !record.approved — already-approved approval cannot be approved again
+Scenario Outline: Already-approved approval cannot be approved again
+  Given there is a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given the user has role "approver"
+  Given there is an approval "title=Approved Approval;approved=true" for the entity
+  Then user "false" have "approve" access to the approval
+
+
+  Examples:
+    | entity              |
+    | entity_type=Company |
+
+
+# Access control: employee without :approver role cannot approve
+Scenario Outline: Employee without approver role cannot approve an approval
+  Given there is a user "" for an entity "<entity>"
+  Given the user has role "employee"
+  Given there is an approval "<approval>" for the entity
+  Then user "false" have "approve" access to the approval
+
+  Examples:
+    | entity              | approval            |
+    | entity_type=Company | title=Test approval |

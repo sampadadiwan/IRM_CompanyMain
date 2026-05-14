@@ -46,8 +46,19 @@
     </div>
 
     <div class="form-group">
-      <%= label_tag "chat_config_model", "Chat Model" %>
-      <%= text_field_tag "chat_config[model]", support_agent.chat_config["model"], class: "form-control", placeholder: "e.g. gemini-2.5-flash, gpt-4o-mini, claude-sonnet-4-5-20250929" %>
+      <%= form.label :llm_model, "AI Model" %>
+      <% available_models = support_agent.entity.entity_setting.available_llm_models %>
+      <% if available_models.empty? %>
+        <div class="alert alert-danger mb-1">
+          <strong>No AI provider API keys configured.</strong>
+          Go to <strong>Entity Settings</strong> and add an OpenAI, Anthropic, or Gemini API key before setting up a support agent.
+        </div>
+      <% else %>
+        <%= form.select :llm_model,
+              grouped_options_for_select(available_models, support_agent.llm_model),
+              { prompt: "— Select a model —" },
+              { class: "form-control", required: true } %>
+      <% end %>
     </div>
 
     <div class="form-group">

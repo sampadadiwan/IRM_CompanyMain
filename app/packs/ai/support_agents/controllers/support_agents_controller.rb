@@ -384,9 +384,8 @@ class SupportAgentsController < ApplicationController
   def merge_chat_config
     return if params[:chat_config].blank?
 
-    chat_cfg = params[:chat_config].permit(:enabled, :model).to_h
+    chat_cfg = params[:chat_config].permit(:enabled).to_h
     chat_cfg["enabled"] = chat_cfg["enabled"] == "true"
-    chat_cfg.reject! { |k, v| k != "enabled" && v.blank? } # keep enabled even when false
 
     existing = (@support_agent.json_fields || {}).deep_dup # deep_dup so Rails detects the change
     existing["chat_config"] = (existing["chat_config"] || {}).merge(chat_cfg)
@@ -433,7 +432,7 @@ class SupportAgentsController < ApplicationController
   #
   # @return [ActionController::Parameters] permitted parameters
   def support_agent_params
-    permitted = params.require(:support_agent).permit(:name, :description, :entity_id, :form_type_id, :agent_type, :json_fields, :document_folder_id, :with_steps, :enabled, properties: {})
+    permitted = params.require(:support_agent).permit(:name, :description, :entity_id, :form_type_id, :agent_type, :json_fields, :document_folder_id, :with_steps, :enabled, :llm_model, properties: {})
 
     if permitted[:json_fields].is_a?(String) && permitted[:json_fields].start_with?("{")
       begin

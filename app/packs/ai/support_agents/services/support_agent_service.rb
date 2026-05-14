@@ -32,7 +32,7 @@ class SupportAgentService < Trailblazer::Operation
   def initialize_agent(ctx, **)
     @support_agent = SupportAgent.find(ctx[:support_agent_id])
     ctx[:support_agent]= @support_agent
-    ctx[:llm] = LlmService.ruby_llm_chat(entity: @support_agent.entity)
+    ctx[:llm] = LlmService.ruby_llm_chat(entity: @support_agent.entity, model: @support_agent.effective_model)
   end
 
   # Verifies all required documents (from form fields and support_agent config)

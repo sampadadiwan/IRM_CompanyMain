@@ -188,8 +188,12 @@ module WithCustomField
   # By default applies condition_on logic, but can ignore conditions to match DB query
   def required_fields_for(field_type: nil)
     json_fields || {}
+    # Use form_type.form_custom_fields (direct has_many on FormType) to avoid loading
+    # the has_many :through target on this model — see check_custom_field_formats for the
+    # full explanation. Falls back to form_custom_fields only if form_type is not loaded.
+    source = form_type&.form_custom_fields || form_custom_fields
 
-    form_custom_fields.select do |fcf|
+    source.select do |fcf|
       next false unless fcf.required?
       next false if field_type && fcf.field_type != field_type
 
@@ -222,8 +226,13 @@ module WithCustomField
   end
 
   def check_custom_field_formats
-    return unless form_custom_fields
-    form_custom_fields.visible.not_calculations.each do |fcf|
+    return unless form_type
+    # Go through form_type.form_custom_fields (direct has_many on FormType) rather than the
+    # has_many :through proxy on this model. When the owner is a new record, Rails autosave
+    # tries to insert_record every item in the through-association's loaded target, which
+    # raises HasManyThroughCantAssociateThroughHasOneOrManyReflection. Accessing via form_type
+    # avoids populating this model's through-association cache.
+    form_type.form_custom_fields.visible.not_calculations.each do |fcf|
       val = json_fields[fcf.name]
       next if val.blank?
 

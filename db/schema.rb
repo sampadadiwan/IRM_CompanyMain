@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_14_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3359,6 +3359,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_100001) do
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.json "json_fields"
+    t.string "llm_model"
     t.string "name", limit: 30
     t.datetime "updated_at", null: false
     t.boolean "with_steps", default: false

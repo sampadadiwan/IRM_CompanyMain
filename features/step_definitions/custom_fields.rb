@@ -359,3 +359,42 @@ Given('The Kyc is unverified') do
   @kyc.save(validate: false)
   expect(@kyc.verified).to be_falsey
 end
+
+When('I try to save a new InvestorKyc {string} without any files') do |args|
+  @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity)
+  key_values(@investor_kyc, args)
+
+  class_name = @investor_kyc.type_from_kyc_type.underscore
+
+  visit(investor_kycs_path)
+  click_on("New KYC")
+  click_on("Individual")
+  select(@investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
+
+  fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
+  fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
+  fill_in("#{class_name}_birth_date", with: @investor_kyc.birth_date)
+  click_on("Next")
+  sleep(2)
+
+  fill_in("#{class_name}_address", with: @investor_kyc.address)
+  fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
+  fill_in("#{class_name}_bank_name", with: @investor_kyc.bank_account_number)
+  fill_in("#{class_name}_bank_branch", with: @investor_kyc.bank_account_number)
+  fill_in("#{class_name}_bank_account_number", with: @investor_kyc.bank_account_number)
+  fill_in("#{class_name}_ifsc_code", with: @investor_kyc.ifsc_code)
+  click_on("Save")
+end
+
+When('I try to create a custom field {string} for {string} without options') do |args, form_class|
+  ft = @entity.form_types.where(name: form_class, tag: "Default").first_or_initialize
+  cf = ft.form_custom_fields.build
+  key_values(cf, args)
+  @cf_save_result = cf.save
+  @cf_errors = cf.errors
+end
+
+Then('the custom field should not be saved with error {string}') do |msg|
+  @cf_save_result.should == false
+  @cf_errors.full_messages.join(" ").should include(msg)
+end

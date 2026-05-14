@@ -62,6 +62,23 @@
       background: rgba(var(--card-primary-rgb), 0.1);
       color: var(--card-primary);
     }
+
+    .agent-model-badge {
+      flex-shrink: 0;
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 12px;
+      background: #f1f5f9;
+      color: #64748b;
+      white-space: nowrap;
+      font-family: monospace;
+
+      [data-bs-theme=dark] & {
+        background: #1e293b;
+        color: #94a3b8;
+      }
+    }
   }
 
   .card-body-custom {

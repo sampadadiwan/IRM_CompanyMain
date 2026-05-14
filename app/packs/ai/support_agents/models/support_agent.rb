@@ -25,6 +25,7 @@ class SupportAgent < ApplicationRecord
   validates :name, length: { maximum: 30 }
   validates :agent_type, presence: true
   validates :agent_type, length: { maximum: 30 }
+  validates :llm_model, presence: true
 
   # Returns the human-readable representation of the SupportAgent
   # In this case, simply the name string.
@@ -47,8 +48,15 @@ class SupportAgent < ApplicationRecord
     [true, "true"].include?(chat_config["enabled"])
   end
 
+  # Resolves the model to use for this agent: per-agent setting → entity default → env fallback.
+  def effective_model
+    llm_model.presence ||
+      entity&.entity_setting&.default_llm_model.presence ||
+      ENV.fetch('DEFAULT_MODEL', nil)
+  end
+
   def chat_model
-    chat_config["model"] || entity&.entity_setting&.default_llm_model || ENV.fetch('DEFAULT_MODEL', 'gpt-4o-mini')
+    effective_model
   end
 
   # Returns the list of starter questions surfaced as clickable chips in the

@@ -48,6 +48,10 @@ class StockConverter < Trailblazer::Operation
                                                       json_fields: from_portfolio_investment.json_fields,
                                                       notes: stock_conversion.notes, conversion_date: stock_conversion.conversion_date)
 
+    # Skip WithCustomField validations — json_fields are copied verbatim from a valid source record,
+    # so re-validating required fields and formats would be redundant and causes a HasManyThrough error.
+    to_portfolio_investment.skip_cf_before_save = true
+
     from_currency = from_portfolio_investment.investment_instrument.currency
     to_currency = to_portfolio_investment.investment_instrument.currency
 

@@ -224,3 +224,47 @@ Scenario Outline: Delete Remittance with payment units alocated
 Examples:
   | commitment                     | call                 | paid_percentage1         | paid_percentage2         | user |entity |
   | orig_folio_committed_amount_cents=100000000 | percentage_called=20 | 50 | 50 | first_name=Test |name=Urban;entity_type=Investment Fund |
+
+
+# Edge case: fund with no commitments should generate zero remittances, not error
+Scenario Outline: Capital call on a fund with no commitments creates zero remittances
+  Given there is a user "<user>" for an entity "<entity>"
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is a fund "name=EmptyFund;currency=INR" for the entity
+  When I create a new capital call "percentage_called=20"
+  Then no capital remittances should be created
+
+  Examples:
+    | user             | entity                                                   |
+    | first_name=Test  | name=Urban;entity_type=Investment Fund;enable_funds=true |
+
+
+# State machine: approve? requires !record.approved; cannot approve a call twice
+Scenario Outline: Approved capital call cannot be approved again
+  Given there is a user "" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given the user has role "approver"
+  Given there is a fund "name=TestFund" for the entity
+  Given the fund has "1" capital call
+  Given the capital calls are approved
+  Then user "false" have "approve" access to the capital calls
+
+  Examples:
+    | entity                                               |
+    | entity_type=Investment Fund;enable_funds=true        |
+
+
+# Access control: only permissioned employees can create capital calls
+Scenario Outline: Capital call creation is restricted to permissioned employees
+  Given there is a user "" for an entity "<entity>"
+  Given the user has role "<role>"
+  Given there is a fund "name=TestFund" for the entity
+  Given the fund has "1" capital call
+  Then user "<can_create>" have "create" access to the capital calls
+
+  Examples:
+    | entity                                               | role          | can_create |
+    | entity_type=Investment Fund;enable_funds=true        | company_admin | true       |
+    | entity_type=Investment Fund;enable_funds=true        | employee      | false      |
+    | entity_type=Investment Fund;enable_funds=true        | investor      | false      |

@@ -72,6 +72,15 @@ class EntitySetting < ApplicationRecord
     "#{entity.name} settings"
   end
 
+  # Returns grouped options for select, filtered to providers with a configured API key.
+  # Format matches grouped_options_for_select: [["Provider", [["Label", "model-id"], ...]], ...]
+  def available_llm_models
+    LlmModels::PROVIDERS.filter_map do |_key, provider|
+      next unless send(provider[:key_field]).present?
+      [provider[:label], provider[:models]]
+    end
+  end
+
   def fetch_whatsapp_endpoint
     whatsapp_endpoint.present? && whatsapp_token.present? ? whatsapp_endpoint : Rails.application.credentials[:WHATSAPP_API_ENDPOINT]
   end

@@ -52,6 +52,11 @@
     count.should == validation_questions.size
   end
 
+  Then('no doc question answers should be recorded') do
+    @investor_kyc.reload
+    @investor_kyc.doc_question_answers.values.flatten.should be_empty
+  end
+
   Then('the kyc extraction doc questions answers must be {string}') do |answers|
 
     extractions = DocQuestion.extractions

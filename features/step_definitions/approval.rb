@@ -277,6 +277,24 @@ When('the approval reminder is sent internally') do
   ApprovalReminder.wtf?(approval: @approval).success?.should == true
 end
 
+When('the first investor approves and the second investor rejects') do
+  investors = @approval.approval_responses.map(&:investor)
+  @approval.approval_responses.where(investor: investors.first).update(status: "Approved")
+  @approval.approval_responses.where(investor: investors.last).update(status: "Rejected")
+end
+
+Given('there is a locked approval {string} for the entity') do |args|
+  @approval = FactoryBot.create(:approval, entity: @user.entity, locked: true)
+  key_values(@approval, args)
+  @approval.save!
+end
+
+Then('user {string} have {string} access to the approval') do |truefalse, accesses|
+  accesses.split(",").each do |access|
+    puts "Checking approval policy #{access}? for #{@user.email} — expected #{truefalse}"
+    Pundit.policy(@user, @approval).send("#{access}?").to_s.should == truefalse
+  end
+end
 
 Then('the approval should have the right access rights') do
   if @approval.owner_type == "Fund"
