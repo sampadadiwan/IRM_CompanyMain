@@ -147,7 +147,23 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
     errors.add(:birth_date, "can't be in the future") if birth_date.present? && birth_date > Date.current
   end
 
+  validate :check_required_file_type_custom_fields, if: -> { skip_cf_before_save != true }
   validate :sebi_investor_sub_category_hierarchy
+
+  # Called by valid? (e.g. inside handle_errors) to surface required File custom-field errors even when
+  # save(validate:false) was originally used. form_type may be nil on new records because setup_form_type
+  # is a before_save callback, so we resolve the form type via type_from_kyc_type ourselves.
+  def check_required_file_type_custom_fields
+    type_name = respond_to?(:type_from_kyc_type) ? (type_from_kyc_type || self.class.name) : self.class.name
+    ft = form_type || entity&.form_types&.where(name: type_name)&.last
+    return unless ft.present?
+
+    ft.form_custom_fields.where(field_type: "File", required: true).each do |fcf|
+      document_name = fcf.label.presence || fcf.name.humanize
+      next if documents.any? { |d| d.name == document_name }
+      errors.add(:base, "#{document_name} can't be blank")
+    end
+  end
 
   def sebi_investor_sub_category_hierarchy
     json_fields["sebi_investor_category"] = json_fields["sebi_investor_category"]&.strip&.titleize

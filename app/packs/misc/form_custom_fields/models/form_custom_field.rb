@@ -30,7 +30,7 @@ class FormCustomField < ApplicationRecord
     define_method("vr_#{key}=") do |val|
       self.validation_rules ||= {}
       if key == "unique"
-        self.validation_rules[key] = (val == "1" || val == true || val == "true") ? true : nil
+        (val == "1" || val == true || val == "true") ? self.validation_rules[key] = true : self.validation_rules.delete(key)
       else
         cleaned = val.to_s.strip.presence
         cleaned ? self.validation_rules[key] = cleaned : self.validation_rules.delete(key)
@@ -105,6 +105,8 @@ class FormCustomField < ApplicationRecord
                    when "File"                    then file_keys
                    else                                []
                    end
+
+    return if allowed_keys.empty?  # field type (e.g. Calculation, Header) carries no validation rules
 
     invalid_keys = rules.keys - allowed_keys
     errors.add(:validation_rules, "contains invalid keys for #{field_type}: #{invalid_keys.join(', ')}") if invalid_keys.any?

@@ -383,6 +383,9 @@ When('I try to save a new InvestorKyc {string} without any files') do |args|
   fill_in("#{class_name}_bank_branch", with: @investor_kyc.bank_account_number)
   fill_in("#{class_name}_bank_account_number", with: @investor_kyc.bank_account_number)
   fill_in("#{class_name}_ifsc_code", with: @investor_kyc.ifsc_code)
+  # Step 2 always has Next; custom file fields live on Step 3
+  click_on("Next")
+  sleep(1)
   click_on("Save")
 end
 

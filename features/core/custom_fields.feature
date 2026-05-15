@@ -23,7 +23,7 @@ Scenario Outline: Create investor kyc - with custom fields as investor
   Given the entity has custom fields "<custom_fields>" for "IndividualKyc"
   Given there is an existing investor "name=Investor 1" with "1" users
   Given I login as the investor user
-  Given I create a new InvestorKyc "PAN=ABCD9876F;properties=F3:Test" with files "<files>" for "{'investor_kyc[entity_id]': 1, 'investor_kyc[investor_id]': 1}"
+  Given I create a new InvestorKyc "PAN=ABCD9876F;properties=F3:Test" with files "<files>" for "{'investor_kyc[entity_id]': @entity.id, 'investor_kyc[investor_id]': @investor.id}"
   Then I should see the "Investor kyc was successfully saved."
   And I should see the kyc documents "<files>"
   Then I should see the investor kyc details on the details page

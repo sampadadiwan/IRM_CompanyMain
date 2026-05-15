@@ -219,6 +219,7 @@ module WithCustomField
 
   def check_required_custom_fields
     required_fields_for.each do |fcf|
+      next if fcf.field_type == "File"  # File fields are stored as Documents, not json_fields; validated separately
       val = json_fields[fcf.name]
       msg = fcf.validation_rules&.dig("error_message").presence || "#{fcf.human_label} is required"
       errors.add(:base, msg) if val.blank?

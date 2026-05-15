@@ -123,7 +123,8 @@ module CapitalCommitmentShared
   # @param end_date [Date, String] The date up to which the hurdle is calculated.
   # @param use_tracking_currency [Boolean] Whether to use tracking currency instead of the base currency.
   # @param use_distributions [Boolean] Whether to subtract the hurdle calculated on distributions.
-  def compute_hurdle(end_date, use_tracking_currency: false, use_distributions: false)
+  # @param skip_distribution_for_hurdle [Boolean] If true, ignore distributions where the parent capital_distribution is flagged to skip.
+  def compute_hurdle(end_date, use_tracking_currency: false, use_distributions: false, skip_distribution_for_hurdle: false)
     # Ensure end_date is a Date object for calculations
     end_date = end_date.to_date
     hurdle_rate = fund_unit_setting.json_fields['hurdle_rate'].to_d
@@ -132,22 +133,45 @@ module CapitalCommitmentShared
     Rails.logger.debug "[Hurdle] Hurdle rate: #{hurdle_rate}"
 
     # Calculate hurdle on contributions (remittances)
+    # We order by date to ensure consistent cumulative calculations if needed.
+    remittances = capital_remittance_payments.where(payment_date: ..end_date).order(payment_date: :asc)
+    remittance_col = use_tracking_currency ? :tracking_amount_cents : :amount_cents
+
     hurdle_amount = calculate_hurdle_for_payments(
-      capital_remittance_payments.where(payment_date: ..end_date),
+      remittances,
       end_date,
       hurdle_rate,
-      amount_column: use_tracking_currency ? :tracking_amount_cents : :amount_cents,
+      amount_column: remittance_col,
       label: "Contributions"
     )
 
     if use_distributions
-      # Subtract hurdle calculated on distributions
+      # USE CASE: Offset hurdle earned on invested capital with distributions received.
+      # RULE: Distributions should only offset hurdle on the "Principal" (remittances) paid back.
+      # If total distributions exceed total remittances (i.e. investor has received more than their cost basis),
+      # we stop calculating "negative hurdle" on the excess. This prevents the hurdle from becoming
+      # artificially low or negative when the investment is highly profitable.
+      total_remittance_cents = remittances.sum(remittance_col)
+      distribution_col = use_tracking_currency ? :tracking_gross_payable_cents : :gross_payable_cents
+      distributions = capital_distribution_payments.where(payment_date: ..end_date).order(payment_date: :asc)
+
+      # OPTIONAL FILTER: Some distributions (e.g. tax distributions or specific recalls) might
+      # need to be excluded from the hurdle calculation entirely.
+      if skip_distribution_for_hurdle
+        # We join with the parent capital_distribution to check the skip flag in json_fields.
+        # This allows us to exclude entire distribution events from the preferred return calculation.
+        distributions = distributions.joins(:capital_distribution)
+                                     .where.not("capital_distributions.json_fields ->> 'skip_distribution_for_hurdle' = ?", "Yes")
+      end
+
+      # Subtract hurdle calculated on distributions, capped at the total remittance amount (cost basis).
       dist_hurdle = calculate_hurdle_for_payments(
-        capital_distribution_payments.where(payment_date: ..end_date),
+        distributions,
         end_date,
         hurdle_rate,
-        amount_column: use_tracking_currency ? :tracking_gross_payable_cents : :gross_payable_cents,
-        label: "Distributions"
+        amount_column: distribution_col,
+        label: "Distributions",
+        cap_amount_cents: total_remittance_cents
       )
       hurdle_amount -= dist_hurdle
     end
@@ -159,23 +183,47 @@ module CapitalCommitmentShared
   private
 
   # Helper to calculate hurdle for a collection of payments
-  def calculate_hurdle_for_payments(payments, end_date, hurdle_rate, amount_column:, label: "Payments")
-    Rails.logger.debug "[Hurdle] Processing #{label} (#{payments.count} records)"
+  # @param cap_amount_cents [Integer] If provided, only calculate hurdle for payments up to this cumulative amount.
+  # This is used for distributions to ensure we only offset hurdle up to the principal amount.
+  def calculate_hurdle_for_payments(payments, end_date, hurdle_rate, amount_column:, label: "Payments", cap_amount_cents: nil)
+    Rails.logger.debug "[Hurdle] Processing #{label} (#{payments.count} records) with cap: #{cap_amount_cents || 'None'}"
 
-    total_hurdle = payments.sum do |payment|
+    cumulative_amount_cents = 0
+    total_hurdle = 0
+
+    payments.each do |payment|
       amount = payment.send(amount_column)
+
+      # If capping is enabled (for distributions), we process payments chronologically
+      # until the cumulative amount reaches the cost basis (total remittances).
+      if cap_amount_cents
+        remaining_cap = cap_amount_cents - cumulative_amount_cents
+
+        # Stop calculating once we've offset all principal.
+        break if remaining_cap <= 0
+
+        # If the current distribution payment exceeds the remaining principal,
+        # only calculate hurdle on the portion that matches the principal.
+        if amount > remaining_cap
+          Rails.logger.debug "[Hurdle]   - Payment ID: #{payment.id} truncated from #{amount} to #{remaining_cap} due to principal cap"
+          amount = remaining_cap
+        end
+      end
+
       payment_date = payment.payment_date.to_date
 
       # IRR/Hurdle standard calculation: Amount * ((1 + Rate)^(Days/365) - 1)
       # This calculates the EARNED preferred return over the period.
-      days = (end_date - payment_date).to_i + 1
+      # Standard financial convention uses (D2 - D1) for the interest period.
+      days = (end_date - payment_date).to_i
 
-      # Using (1 + r)^t - 1 formula for compound interest hurdle
+      # Using (1 + r)^t - 1 formula for compound interest hurdle (XIRR basis).
       calculation = amount.to_d * (((1 + hurdle_rate) ** (days / 365.0)) - 1)
 
       Rails.logger.debug "[Hurdle]   - Payment ID: #{payment.id}, Date: #{payment_date}, Amount: #{amount}, Days: #{days}, Hurdle: #{calculation.to_f}"
 
-      calculation
+      total_hurdle += calculation
+      cumulative_amount_cents += amount
     end
 
     Rails.logger.debug "[Hurdle] Total hurdle for #{label}: #{total_hurdle.to_f}"
