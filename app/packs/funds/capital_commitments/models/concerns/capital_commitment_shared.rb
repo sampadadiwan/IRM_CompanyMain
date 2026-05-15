@@ -221,7 +221,7 @@ module CapitalCommitmentShared
       days = (end_date - payment_date).to_i
 
       # Using (1 + r)^t - 1 formula for compound interest hurdle (XIRR basis).
-      calculation = amount.to_d * (((1 + hurdle_rate) ** (days / 365.0)) - 1)
+      calculation = amount.to_d * (((1 + hurdle_rate) ** ((days + 1)/ 365.0)) - 1)
 
       Rails.logger.debug "[Hurdle]   - Payment ID: #{payment.id}, Date: #{payment_date}, Amount: #{amount}, Days: #{days}, Hurdle: #{calculation.to_f}"
 
