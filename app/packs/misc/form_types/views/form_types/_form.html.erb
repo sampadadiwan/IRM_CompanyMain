@@ -65,13 +65,11 @@
       <h1>Custom Fields</h1>
       <div id='form_custom_fields'>
         <%= form.fields_for :form_custom_fields do |field| %>
-        <%# if field is calc or marked internal then its internal %>
-          <% is_internal = field.object.field_type == "Calculation" || field.object.internal %>
-          <% allowed = current_user.support? || params[:debug].present? || params[:internal].present? #|| Rails.env.local? %>
-
-          <% if !is_internal || allowed %>
-            <%= render 'form_custom_fields', f: field %>
-          <% end %>
+          <%# Calculation/GridColumns are always hidden from non-support users, regardless of debug params %>
+          <% next if field.object.field_type.in?(FormCustomField::HIDDEN_FIELDS) && !current_user.support? %>
+          <%# Other internal fields are hidden unless support/debug/internal params %>
+          <% next if field.object.internal && !(current_user.support? || params[:debug].present? || params[:internal].present?) %>
+          <%= render 'form_custom_fields', f: field %>
         <% end %>
 
         <div class='links'>

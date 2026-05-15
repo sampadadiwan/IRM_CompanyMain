@@ -160,8 +160,11 @@ module CapitalCommitmentShared
       if skip_distribution_for_hurdle
         # We join with the parent capital_distribution to check the skip flag in json_fields.
         # This allows us to exclude entire distribution events from the preferred return calculation.
+        # Note: We only exclude if explicitly set to 'Yes'. If the field is nil or missing,
+        # JSON_EXTRACT returns NULL, and we want to include those (hence the OR condition).
         distributions = distributions.joins(:capital_distribution)
-                                     .where.not("capital_distributions.json_fields ->> 'skip_distribution_for_hurdle' = ?", "Yes")
+                                     .where("JSON_EXTRACT(capital_distributions.json_fields, '$.skip_distribution_for_hurdle') IS NULL OR " \
+                                            "JSON_EXTRACT(capital_distributions.json_fields, '$.skip_distribution_for_hurdle') != ?", "Yes")
       end
 
       # Subtract hurdle calculated on distributions, capped at the total remittance amount (cost basis).
