@@ -1,0 +1,22 @@
+<%# Renders table <tr> rows for all custom fields on a SupportAgent.
+    display_custom_fields handles json_fields-backed types (text, select, number, etc.).
+    File-type fields are stored as Documents so must be rendered separately. %>
+<%= display_custom_fields(support_agent, timestamps_and_snapshot: timestamps_and_snapshot) %>
+<% support_agent.form_custom_fields.select { |f| f.field_type == "File" }.each do |fcf| %>
+  <% doc = support_agent.documents.find_by(name: fcf.human_label) %>
+  <tr>
+    <td>
+      <%= fcf.human_label %>
+      <% if fcf.meta_data.present? %>
+        <br><small class="text-muted"><%= fcf.meta_data %></small>
+      <% end %>
+    </td>
+    <td>
+      <% if doc&.file.present? %>
+        <%= link_to doc.file.original_filename, doc.file.url, target: "_blank" %>
+      <% else %>
+        <span class="text-muted">No file uploaded</span>
+      <% end %>
+    </td>
+  </tr>
+<% end %>

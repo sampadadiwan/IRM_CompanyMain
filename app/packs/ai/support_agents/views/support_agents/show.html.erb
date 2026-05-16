@@ -23,7 +23,11 @@
           Portfolio Agent Reports
         </a>
       <% end %>
-
+      <% if @support_agent.agent_type == "PortfolioScoringAgent" %>
+        <a class="nav-link <%= 'active' if active_tab == 'scoring_reports' %>" data-bs-toggle="pill" href="#scoring-reports-tab">
+          Scoring Reports
+        </a>
+      <% end %>
 
     </nav>
 
@@ -58,6 +62,12 @@
         </div>
       <% end %>
 
+      <% if @support_agent.agent_type == "PortfolioScoringAgent" %>
+        <%# Scoring Reports Tab %>
+        <div id="scoring-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'scoring_reports' %>">
+          <%= render 'scoring_reports_tab', support_agent: @support_agent, scoring_reports: @scoring_reports %>
+        </div>
+      <% end %>
 
     </div>
   </div>

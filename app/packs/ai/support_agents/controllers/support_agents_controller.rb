@@ -56,6 +56,18 @@ class SupportAgentsController < ApplicationController
                          else
                            SupportAgentReport.none
                          end
+
+    # Load latest scoring report per company for PortfolioScoringAgent
+    @scoring_reports = if @support_agent.agent_type == "PortfolioScoringAgent"
+                         reports = SupportAgentReport
+                           .where(support_agent: @support_agent, owner_type: "Investor")
+                           .includes(:owner)
+                         reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+                         # Return the latest report per owner so we can show a per-company summary
+                         reports.order(created_at: :desc)
+                       else
+                         SupportAgentReport.none
+                       end
   end
 
   # Initializes a new support agent for creation.

@@ -1,0 +1,312 @@
+<%
+  score      = report.json_fields["score"] || {}
+  sector     = report.json_fields["sector"].presence || investor.sector
+  scored_at  = report.created_at
+
+  overall    = score["overall_score"].to_i
+  grade      = score["grade"].to_s
+  summary    = score["summary"].to_s
+  dimensions = Array(score["dimensions"])
+  strengths  = Array(score["strengths"])
+  risks      = Array(score["risks"])
+  recs       = Array(score["recommendations"])
+  coverage   = score["data_coverage"] || {}
+
+  bar_class = case overall
+              when 80..100 then "bg-success"
+              when 60..79  then "bg-primary"
+              when 40..59  then "bg-warning"
+              else              "bg-danger"
+              end
+
+  grade_label = case overall
+                when 90..100 then "Exceptional"
+                when 80..89  then "Strong"
+                when 70..79  then "Good"
+                when 60..69  then "Adequate"
+                when 50..59  then "Mixed"
+                when 40..49  then "Underperforming"
+                else              "Distressed"
+                end
+%>
+
+<div class="p-3">
+
+  <%# ── Section 1: Overall Score ─────────────────────────────────────────── %>
+  <div class="d-flex justify-content-between align-items-start mb-1 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-3">
+      <%# Big score number %>
+      <div class="text-center rounded border px-3 py-2" style="min-width: 72px; background: #f8f9fa;">
+        <div class="fw-bold" style="font-size: 2rem; line-height: 1.1; letter-spacing: -1px;"><%= overall %></div>
+        <div class="text-muted" style="font-size: 0.7rem;">OUT OF 100</div>
+      </div>
+      <%# Grade badge + label %>
+      <div>
+        <span class="badge fs-4 px-3 py-2 <%= bar_class %>"><%= grade %></span>
+        <div class="text-muted small mt-1"><%= grade_label %></div>
+      </div>
+    </div>
+    <%# Metadata top-right %>
+    <div class="text-end text-muted small lh-lg">
+      <div>Scored <strong><%= scored_at.strftime("%d %b %Y") %></strong></div>
+      <div>Sector: <strong><%= sector %></strong></div>
+      <% if coverage.present? %>
+        <div class="mt-1">
+          <span class="badge bg-light text-dark border"><i class="ti ti-chart-bar"></i> <%= coverage["kpi_periods"].to_i %> KPI periods</span>
+          <span class="badge bg-light text-dark border"><i class="ti ti-coin"></i> <%= coverage["valuations_used"].to_i %> valuations</span>
+          <span class="badge bg-light text-dark border"><i class="ti ti-file"></i> <%= coverage["documents_read"].to_i %> docs</span>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# Overall score bar %>
+  <div class="mb-1 mt-3">
+    <div class="mb-1">
+      <span class="text-muted small fw-semibold">Overall Score</span>
+    </div>
+    <div class="progress" style="height: 22px; border-radius: 6px; background: #e9ecef;">
+      <div class="progress-bar <%= bar_class %> fw-semibold" role="progressbar"
+           style="width: <%= overall %>%; font-size: 0.85rem;"
+           aria-valuenow="<%= overall %>" aria-valuemin="0" aria-valuemax="100">
+        <%= overall %>
+      </div>
+    </div>
+    <div class="text-muted mt-1 text-center" style="font-size: 0.68rem;">
+      Weighted average of the dimensions below
+    </div>
+  </div>
+
+  <%# Summary — hero statement %>
+  <% if summary.present? %>
+    <div class="my-3" style="font-size: 1.05rem; font-weight: 500; line-height: 1.5; color: #1a1a2e;">
+      <%= summary %>
+    </div>
+  <% end %>
+
+  <%# ── Section 2: Scoring Dimensions ─────────────────────────────────────── %>
+  <% if dimensions.any? %>
+    <div class="border-top pt-3 mt-1 mb-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h6 class="text-uppercase fw-bold mb-0" style="font-size: 0.72rem; letter-spacing: 0.08em;">Scoring Dimensions</h6>
+        <span class="text-muted d-none d-md-inline" style="font-size: 0.68rem;">Score / 100 &nbsp;·&nbsp; Weight = contribution to overall score</span>
+      </div>
+
+      <%# ── Desktop: full table (hidden on mobile) ── %>
+      <table class="table table-bordered mb-2 d-none d-md-table" style="table-layout: fixed; font-size: 0.82rem;">
+        <colgroup>
+          <col style="width: auto;">
+          <col style="width: 100px;">  <%# Score %>
+          <col style="width: 30px;">   <%# × %>
+          <col style="width: 90px;">   <%# Weight %>
+          <col style="width: 30px;">   <%# = %>
+          <col style="width: 100px;">  <%# Contribution %>
+        </colgroup>
+        <thead class="table-light">
+          <tr>
+            <th>Dimension</th>
+            <th class="text-center" title="Raw score for this dimension, 0–100">Score / 100</th>
+            <th></th>
+            <th style="text-align: center; white-space: nowrap;" title="How much this dimension counts toward the overall score">Weight</th>
+            <th></th>
+            <th class="text-center" title="Score × Weight — adds up to the overall score">Contribution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% dimensions.each do |dim| %>
+            <%
+              dim_score    = dim["score"].to_i
+              dim_weight   = dim["weight"].to_f
+              contribution = (dim_score * dim_weight).round(1)
+              dim_bar      = case dim_score
+                             when 80..100 then "bg-success"
+                             when 60..79  then "bg-primary"
+                             when 40..59  then "bg-warning"
+                             else              "bg-danger"
+                             end
+              dim_positives = Array(dim["positives"])
+              dim_concerns  = Array(dim["concerns"])
+              has_bullets   = dim_positives.any? || dim_concerns.any?
+            %>
+            <tr class="align-middle">
+              <td class="py-2">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                  <span class="fw-semibold text-nowrap" style="min-width: 170px;"><%= dim["name"] %></span>
+                  <span class="text-muted" style="font-size: 0.65rem;">0</span>
+                  <div class="progress flex-grow-1" style="height: 18px; border-radius: 4px; background: #e9ecef;">
+                    <div class="progress-bar <%= dim_bar %> fw-semibold" role="progressbar"
+                         style="width: <%= dim_score %>%; font-size: 0.78rem;"
+                         aria-valuenow="<%= dim_score %>" aria-valuemin="0" aria-valuemax="100">
+                      <%= dim_score %>
+                    </div>
+                  </div>
+                  <span class="text-muted" style="font-size: 0.65rem;">100</span>
+                </div>
+                <% if dim["rationale"].present? %>
+                  <div class="text-muted mb-1" style="font-size: 0.76rem; line-height: 1.4;">
+                    <%= dim["rationale"] %>
+                  </div>
+                <% end %>
+                <% if has_bullets %>
+                  <div class="row g-0 mt-1">
+                    <div class="col-6">
+                      <ul class="mb-0 ps-3" style="font-size: 0.8rem; line-height: 1.6; color: #5aab7e;">
+                        <% dim_positives.each do |p| %><li><%= p %></li><% end %>
+                      </ul>
+                    </div>
+                    <div class="col-6">
+                      <ul class="mb-0 ps-3" style="font-size: 0.8rem; line-height: 1.6; color: #e07070;">
+                        <% dim_concerns.each do |c| %><li><%= c %></li><% end %>
+                      </ul>
+                    </div>
+                  </div>
+                <% end %>
+              </td>
+              <td class="text-center align-middle">
+                <span class="badge <%= dim_bar %> fs-6 px-2"><%= dim_score %></span>
+              </td>
+              <td class="text-muted fw-bold" style="font-size: 1rem; text-align: center; vertical-align: middle; padding: 0;">×</td>
+              <td style="vertical-align: middle;">
+                <div style="display: flex; justify-content: center;">
+                  <span class="badge bg-secondary fs-6 px-2"><%= (dim_weight * 100).round %>%</span>
+                </div>
+              </td>
+              <td class="text-muted fw-bold" style="font-size: 1rem; text-align: center; vertical-align: middle; padding: 0;">=</td>
+              <td class="text-center align-middle">
+                <span class="badge <%= dim_bar %> fs-6 px-2"><%= contribution %></span>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="table-light">
+          <% computed = dimensions.sum { |d| d["score"].to_i * d["weight"].to_f }.round(1) %>
+          <tr style="font-size: 0.78rem;">
+            <td colspan="3" class="text-end text-muted fst-italic pe-2">Overall score (sum of contributions)</td>
+            <td class="text-muted" style="text-align: center; vertical-align: middle;">100%</td>
+            <td class="text-muted fw-bold" style="text-align: center; vertical-align: middle; padding: 0;">=</td>
+            <td class="text-center fw-bold fs-6"><%= computed %></td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <%# ── Mobile: one card per dimension (hidden on desktop) ── %>
+      <div class="d-md-none">
+        <% dimensions.each do |dim| %>
+          <%
+            dim_score    = dim["score"].to_i
+            dim_weight   = dim["weight"].to_f
+            contribution = (dim_score * dim_weight).round(1)
+            dim_bar      = case dim_score
+                           when 80..100 then "bg-success"
+                           when 60..79  then "bg-primary"
+                           when 40..59  then "bg-warning"
+                           else              "bg-danger"
+                           end
+            dim_positives = Array(dim["positives"])
+            dim_concerns  = Array(dim["concerns"])
+          %>
+          <div class="mb-3 p-2 rounded border" style="font-size: 0.83rem;">
+            <%# Name + score badge on one line %>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="fw-semibold"><%= dim["name"] %></span>
+              <span class="badge <%= dim_bar %> ms-2"><%= dim_score %> / 100</span>
+            </div>
+            <%# Progress bar %>
+            <div class="progress mb-1" style="height: 14px; border-radius: 4px; background: #e9ecef;">
+              <div class="progress-bar <%= dim_bar %>" role="progressbar"
+                   style="width: <%= dim_score %>%; font-size: 0.72rem;"
+                   aria-valuenow="<%= dim_score %>" aria-valuemin="0" aria-valuemax="100">
+              </div>
+            </div>
+            <%# Weight + contribution in muted small text %>
+            <div class="text-muted mb-1" style="font-size: 0.72rem;">
+              Weight <%= (dim_weight * 100).round %>% &nbsp;·&nbsp; Contribution <strong><%= contribution %></strong>
+            </div>
+            <%# Rationale %>
+            <% if dim["rationale"].present? %>
+              <div class="text-muted mb-2" style="font-size: 0.76rem; line-height: 1.4;"><%= dim["rationale"] %></div>
+            <% end %>
+            <%# Positives (green) then concerns (red) stacked on mobile %>
+            <% if dim_positives.any? %>
+              <ul class="mb-1 ps-3" style="font-size: 0.78rem; line-height: 1.5; color: #5aab7e;">
+                <% dim_positives.each do |p| %><li><%= p %></li><% end %>
+              </ul>
+            <% end %>
+            <% if dim_concerns.any? %>
+              <ul class="mb-0 ps-3" style="font-size: 0.78rem; line-height: 1.5; color: #e07070;">
+                <% dim_concerns.each do |c| %><li><%= c %></li><% end %>
+              </ul>
+            <% end %>
+          </div>
+        <% end %>
+        <%# Total row %>
+        <% computed = dimensions.sum { |d| d["score"].to_i * d["weight"].to_f }.round(1) %>
+        <div class="text-end text-muted fst-italic pb-1" style="font-size: 0.78rem;">
+          Overall score: <strong class="fs-6 text-dark"><%= computed %></strong>
+        </div>
+      </div>
+
+    </div>
+  <% end %>
+
+  <%# ── Section 3: Strengths / Risks / Recommendations ─────────────────────── %>
+  <% if strengths.any? || risks.any? || recs.any? %>
+    <div class="border-top pt-3">
+      <h6 class="text-uppercase fw-bold mb-3" style="font-size: 0.72rem; letter-spacing: 0.08em;">Analysis</h6>
+      <div class="row g-3">
+
+        <% if strengths.any? %>
+          <div class="col-md-4">
+            <div class="p-2 rounded h-100" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+              <div class="fw-bold small text-success mb-2">
+                <i class="ti ti-circle-check"></i> Strengths
+              </div>
+              <ul class="mb-0 ps-3" style="font-size: 0.81rem; line-height: 1.5;">
+                <% strengths.each do |s| %><li class="mb-1"><%= s %></li><% end %>
+              </ul>
+            </div>
+          </div>
+        <% end %>
+
+        <% if risks.any? %>
+          <div class="col-md-4">
+            <div class="p-2 rounded h-100" style="background: #fff5f5; border: 1px solid #fecaca;">
+              <div class="fw-bold small text-danger mb-2">
+                <i class="ti ti-alert-triangle"></i> Risks
+              </div>
+              <ul class="mb-0 ps-3" style="font-size: 0.81rem; line-height: 1.5;">
+                <% risks.each do |r| %><li class="mb-1"><%= r %></li><% end %>
+              </ul>
+            </div>
+          </div>
+        <% end %>
+
+        <% if recs.any? %>
+          <div class="col-md-4">
+            <div class="p-2 rounded h-100" style="background: #eff6ff; border: 1px solid #bfdbfe;">
+              <div class="fw-bold small text-primary mb-2">
+                <i class="ti ti-arrow-right"></i> Recommendations
+              </div>
+              <ul class="mb-0 ps-3" style="font-size: 0.81rem; line-height: 1.5;">
+                <% recs.each do |r| %><li class="mb-1"><%= r %></li><% end %>
+              </ul>
+            </div>
+          </div>
+        <% end %>
+
+      </div>
+    </div>
+  <% end %>
+
+  <%# ── Re-score button ──────────────────────────────────────────────────── %>
+  <% if can_run %>
+    <div class="mt-3 pt-2 border-top">
+      <%= button_to run_support_agents_path(agent_type: scoring_agent.agent_type, target_id: investor.id, method: :post),
+                    class: "btn btn-sm btn-outline-secondary",
+                    data: { bs_toggle: "tooltip", bs_title: "Generate a new score for this company" } do %>
+        <i class="ti ti-refresh"></i> Re-score
+      <% end %>
+    </div>
+  <% end %>
+
+</div>

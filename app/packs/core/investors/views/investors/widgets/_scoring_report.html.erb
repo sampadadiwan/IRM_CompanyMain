@@ -1,0 +1,65 @@
+<%
+  args         ||= {}
+  widget_title  = args[:title].presence || "Company Score"
+  agent_type    = args[:agent_type].presence || "PortfolioScoringAgent"
+
+  scoring_agent = SupportAgent.find_by(agent_type: agent_type, entity_id: @investor.entity_id)
+
+  latest_report = if scoring_agent
+    SupportAgentReport
+      .where(owner: @investor, support_agent: scoring_agent)
+      .order(created_at: :desc)
+      .first
+  end
+
+  can_run = scoring_agent.present? && policy(@investor).update?
+%>
+
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+
+  <% if latest_report&.completed? %>
+    <%= render "investors/widgets/score_display",
+               report:       latest_report,
+               scoring_agent: scoring_agent,
+               investor:     @investor,
+               can_run:      can_run %>
+
+  <% elsif latest_report&.failed? %>
+    <div class="p-3">
+      <div class="alert alert-warning d-flex align-items-start gap-2 mb-3">
+        <i class="ti ti-alert-triangle mt-1"></i>
+        <div>
+          <strong>Last scoring run failed</strong><br>
+          <small class="text-muted"><%= latest_report.json_fields["error"] %></small>
+        </div>
+      </div>
+      <small class="text-muted d-block mb-3">
+        Scored: <%= latest_report.created_at.strftime("%d %b %Y %H:%M") %>
+        &nbsp;·&nbsp; Sector: <strong><%= @investor.sector %></strong>
+      </small>
+      <% if can_run %>
+        <%= button_to run_support_agents_path(agent_type: agent_type, target_id: @investor.id, method: :post),
+                      class: "btn btn-sm btn-outline-primary",
+                      data: { bs_toggle: "tooltip", bs_title: "Re-run the Scoring Agent for this company" } do %>
+          <i class="ti ti-refresh"></i> Re-run Scoring Agent
+        <% end %>
+      <% end %>
+    </div>
+
+  <% else %>
+    <div class="p-3 text-center text-muted">
+      <i class="ti ti-chart-bar" style="font-size: 2rem; opacity: 0.3;"></i>
+      <p class="mt-2 mb-3">No scoring data available for this company.</p>
+      <% if can_run %>
+        <%= button_to run_support_agents_path(agent_type: agent_type, target_id: @investor.id, method: :post),
+                      class: "btn btn-sm btn-primary",
+                      data: { bs_toggle: "tooltip", bs_title: "Run the Scoring Agent to generate a score for this company" } do %>
+          <i class="ti ti-robot"></i> Run Scoring Agent
+        <% end %>
+      <% elsif scoring_agent.nil? %>
+        <small>No Scoring Agent configured for this entity.</small>
+      <% end %>
+    </div>
+  <% end %>
+
+<% end %>

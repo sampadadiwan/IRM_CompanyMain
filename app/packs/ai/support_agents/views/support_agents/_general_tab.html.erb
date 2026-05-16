@@ -23,7 +23,7 @@
     <td>AI Model</td>
     <td><%= support_agent.llm_model %></td>
   </tr>
-  <%= display_custom_fields(support_agent) %>
+  <%= render "support_agents/custom_field_rows", support_agent: support_agent, timestamps_and_snapshot: true %>
 </table>
 
 <div class="mt-3">

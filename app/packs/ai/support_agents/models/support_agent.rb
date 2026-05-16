@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy
@@ -79,8 +79,30 @@ class SupportAgent < ApplicationRecord
       ["Show latest KPIs", "What's the current valuation?", "List recent investments"]
     when "PortfolioAssistantAgent"
       ["Show recent valuations", "Plot KPIs over time", "Summarize portfolio performance"]
+    when "PortfolioScoringAgent"
+      ["What is the overall score?", "Show scoring dimensions", "What are the key risks?"]
     else
       []
     end
+  end
+
+  # Required by WithFolder so Document#setup_folder can resolve a folder for attached skill files.
+  def folder_path
+    "Support Agents/#{agent_type}"
+  end
+
+  # Finds the skill document for the given sector by inspecting File-type custom fields
+  # whose meta_data marks them as skills (e.g. "skill: true, sector: D2C").
+  # Falls back to a "General" skill if no sector-specific one is configured.
+  # Returns the matching Document record, or nil if no skill is configured at all.
+  def skill_for_sector(sector)
+    skill_fields = form_custom_fields.select { |f| f.field_type == "File" && f.meta_data.to_s.match?(/skill/i) }
+
+    # Prefer exact sector match, then fall back to General
+    fcf = skill_fields.find { |f| f.meta_data.to_s.match?(/sector[:\s=]+#{Regexp.escape(sector.to_s)}/i) } ||
+          skill_fields.find { |f| f.meta_data.to_s.match?(/sector[:\s=]+General/i) }
+    return nil unless fcf
+
+    documents.find_by(name: fcf.human_label)
   end
 end
