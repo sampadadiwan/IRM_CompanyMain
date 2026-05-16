@@ -73,6 +73,33 @@ new_form_types = [
       { name: "email",                      field_type: "TextField",   label: "Report recipient email(s)",  meta_data: "",       position: 7,
         help_text: "Comma-separated email addresses for the quality report" }
     ]
+  },
+
+  # --- PortfolioScoringAgent ---
+  # Skill files (File fields) are uploaded manually per sector after seeding.
+  # Add one File field per sector needed; meta_data drives skill_for_sector matching.
+  {
+    name: "SupportAgent", tag: "PortfolioScoringAgent",
+    fields: [
+      { name: "generic_skill_file",       field_type: "File",        label: "Generic Portfolio Skill",     position: 1,
+        meta_data: "skill: true, sector: General",
+        help_text: "Fallback skill prompt used when no sector-specific file is configured." },
+      { name: "beauty_skincare_skill",    field_type: "File",        label: "Beauty & Skincare Skill",     position: 2,
+        meta_data: "skill: true, sector: Beauty & Skincare",
+        help_text: "Sector skill prompt for Beauty & Skincare portfolio companies." },
+      { name: "min_points_per_section",   field_type: "NumberField", label: "Min Points Per Section",      position: 3,
+        meta_data: "",
+        help_text: "Minimum positives/concerns per dimension and minimum items in Strengths, Risks, Recommendations. Default: 3" },
+      { name: "kpi_frequency",            field_type: "Select",      label: "KPI Frequency Filter",        position: 4,
+        meta_data: "All,Month,Quarter,Half Year,Year,YTD",
+        help_text: "Filter KPI reports by period type when scoring. 'All' includes every period." },
+      { name: "docs_from_last_n_reports", field_type: "NumberField", label: "Docs From Last N Reports",    position: 5,
+        meta_data: "",
+        help_text: "Number of recent Actual KPI reports to pull documents from (default: 1)." },
+      { name: "document_name_filter",     field_type: "TextField",   label: "Document Name Filter",        position: 6,
+        meta_data: "",
+        help_text: "Comma-separated document names to include. Leave blank to use all documents from the selected reports." }
+    ]
   }
 ]
 
@@ -106,6 +133,7 @@ portco_ft_id   = 91
 dist_ft_id     = form_type_ids["DistributionReadinessAgent"]
 esign_ft_id    = form_type_ids["EsignMonitorAgent"]
 dq_ft_id       = form_type_ids["DataQualityAgent"]
+scoring_ft_id  = form_type_ids["PortfolioScoringAgent"]
 
 agents_config = [
   # --- KYC Expiry extension of existing KycOnboardingAgent ---
@@ -166,6 +194,24 @@ agents_config = [
       notify_on_partial_success: true,
       notify_caphive_on_error: true
     }
+  },
+
+  # --- New: PortfolioScoringAgent ---
+  # Skill files must be uploaded manually via the agent edit page after seeding.
+  # json_fields below set the runtime defaults; override via the UI as needed.
+  {
+    name:         "Portfolio Scoring Agent",
+    agent_type:   "PortfolioScoringAgent",
+    form_type_id: scoring_ft_id,
+    with_steps:   false,
+    enabled:      true,
+    json_fields: {
+      "min_points_per_section"   => "5",
+      "kpi_frequency"            => "All",
+      "docs_from_last_n_reports" => 3,
+      "document_name_filter"     => ""
+    },
+    schedule: nil  # on-demand and scheduled via rake task; no AgentSchedule needed
   },
 
   # --- New: DataQualityAgent ---

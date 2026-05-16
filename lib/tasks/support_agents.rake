@@ -1,19 +1,260 @@
 # Rake tasks for managing SupportAgent provisioning across entities.
 #
 # Usage:
+#   rake support_agents:setup[ENTITY_ID]
+#     — Idempotently creates/updates all FormTypes, custom fields, and SupportAgent
+#       records for the given entity. Safe to re-run after adding new fields or agents.
+#
 #   rake support_agents:clone[TARGET_ENTITY_ID]
 #   rake support_agents:clone[TARGET_ENTITY_ID,SOURCE_ENTITY_ID]   # defaults source to 157
-#
-# What it does:
-#   1. Enables all support_agent bitflags that the source entity has
-#   2. For each SupportAgent on the source entity:
-#      a. Clones the FormType (name + tag) for the target entity
-#      b. Clones every FormCustomField on that FormType (preserving values)
-#      c. Clones the SupportAgent itself (name, description, agent_type, model, json_fields)
-#      d. For every File-type custom field, copies the attached Document to the new agent
-#   3. Skips records that already exist on the target entity (idempotent)
+#     — Clones a fully configured source entity's agents to a new target entity.
+#       Run setup on the source first, then clone to others.
+
+DEFAULT_LLM_MODEL = "gemini-3-flash-preview"
+
+# ---------------------------------------------------------------------------
+# FormType + field definitions (entity-agnostic; IDs are resolved at runtime)
+# ---------------------------------------------------------------------------
+SUPPORT_AGENT_FORM_CONFIGS = [
+  # Existing agent FormTypes that need extra fields added
+  {
+    tag: "KycOnboardingAgent",
+    extend_only: true,  # FormType already exists; only ensure missing fields
+    fields: [
+      { name: "check_expiry",        field_type: "Select",      label: "Check expiry status",
+        meta_data: "Yes,No", position: 8 },
+      { name: "expiry_warning_days", field_type: "TextField",   label: "Expiry warning days",
+        meta_data: "", position: 9,
+        help_text: "Comma-separated day thresholds before expiry to warn, e.g. 60,30,15" }
+    ]
+  },
+  {
+    tag: "PortfolioCompanyAgent",
+    extend_only: true,
+    fields: [
+      { name: "send_kpi_reminder", field_type: "Select",    label: "Send KPI reminder",
+        meta_data: "Yes,No", position: 7 },
+      { name: "reminder_days",     field_type: "TextField", label: "Reminder days",
+        meta_data: "", position: 8,
+        help_text: "Comma-separated day offsets from period start to send reminders, e.g. 7,14,21" }
+    ]
+  },
+
+  # New agent FormTypes (created fresh when missing)
+  {
+    tag: "DistributionReadinessAgent",
+    agent: {
+      name:        "Distribution Readiness",
+      with_steps:  true,
+      json_fields: {
+        "check_kyc"            => "Yes",
+        "check_net_payable"    => "Yes",
+        "check_docs_generated" => "Yes",
+        "check_docs_approved"  => "Yes",
+        "check_bank_details"   => "Yes"
+      }
+    },
+    fields: [
+      { name: "check_kyc",            field_type: "Select", label: "Check investor KYC",         meta_data: "Yes,No", position: 1 },
+      { name: "check_net_payable",    field_type: "Select", label: "Check net payable computed",  meta_data: "Yes,No", position: 2 },
+      { name: "check_docs_generated", field_type: "Select", label: "Check notices generated",     meta_data: "Yes,No", position: 3 },
+      { name: "check_docs_approved",  field_type: "Select", label: "Check notices approved",      meta_data: "Yes,No", position: 4 },
+      { name: "check_bank_details",   field_type: "Select", label: "Check bank details",          meta_data: "Yes,No", position: 5 }
+    ]
+  },
+  {
+    tag: "EsignMonitorAgent",
+    agent: {
+      name:       "E-Sign Monitor",
+      with_steps: false,
+      json_fields: {
+        "send_reminders"      => "Yes",
+        "flag_expired"        => "Yes",
+        "reminder_after_days" => "3"
+      },
+      schedule: {
+        frequency: "daily", run_at_time: "08:00", timezone: "Asia/Kolkata",
+        enabled: true, notify_on_failure: true, notify_on_success: false,
+        notify_on_partial_success: true, notify_caphive_on_error: true
+      }
+    },
+    fields: [
+      { name: "send_reminders",      field_type: "Select",      label: "Send e-sign reminders",  meta_data: "Yes,No", position: 1 },
+      { name: "flag_expired",        field_type: "Select",      label: "Flag expired documents",  meta_data: "Yes,No", position: 2 },
+      { name: "reminder_after_days", field_type: "NumberField", label: "Reminder after (days)",   meta_data: "",       position: 3,
+        help_text: "Days a document stays in 'requested' before a resend is triggered (default 3)" }
+    ]
+  },
+  {
+    tag: "DataQualityAgent",
+    agent: {
+      name:       "Data Quality",
+      with_steps: false,
+      json_fields: {
+        "check_commitment_overflows" => "Yes",
+        "check_missing_valuations"   => "Yes",
+        "check_stale_fx_rates"       => "Yes",
+        "send_report"                => "Yes",
+        "stale_valuation_days"       => "90",
+        "stale_fx_days"              => "30",
+        "email"                      => ""
+      },
+      schedule: {
+        frequency: "daily", run_at_time: "01:00", timezone: "Asia/Kolkata",
+        enabled: true, notify_on_failure: true, notify_on_success: false,
+        notify_on_partial_success: true, notify_caphive_on_error: true
+      }
+    },
+    fields: [
+      { name: "check_commitment_overflows", field_type: "Select",      label: "Check commitment overflows",  meta_data: "Yes,No", position: 1 },
+      { name: "check_missing_valuations",   field_type: "Select",      label: "Check missing valuations",    meta_data: "Yes,No", position: 2 },
+      { name: "check_stale_fx_rates",       field_type: "Select",      label: "Check stale FX rates",        meta_data: "Yes,No", position: 3 },
+      { name: "send_report",                field_type: "Select",      label: "Send quality report email",   meta_data: "Yes,No", position: 4 },
+      { name: "stale_valuation_days",       field_type: "NumberField", label: "Stale valuation (days)",      meta_data: "",       position: 5,
+        help_text: "Days without a valuation before flagging a portfolio company (default 90)" },
+      { name: "stale_fx_days",              field_type: "NumberField", label: "Stale FX rate (days)",        meta_data: "",       position: 6,
+        help_text: "Days since last FX rate update before flagging (default 30)" },
+      { name: "email",                      field_type: "TextField",   label: "Report recipient email(s)",   meta_data: "",       position: 7,
+        help_text: "Comma-separated email addresses for the quality report" }
+    ]
+  },
+  {
+    tag: "PortfolioScoringAgent",
+    agent: {
+      name:       "Portfolio Scoring Agent",
+      with_steps: false,
+      json_fields: {
+        "min_points_per_section"   => "5",
+        "kpi_frequency"            => "All",
+        "docs_from_last_n_reports" => 3,
+        "document_name_filter"     => ""
+      }
+      # No schedule — triggered on-demand or via rake task
+    },
+    fields: [
+      # Skill files are uploaded manually via the agent edit page after seeding.
+      # Add one File field per sector; meta_data drives skill_for_sector matching.
+      { name: "generic_skill_file",       field_type: "File",        label: "Generic Portfolio Skill",
+        position: 1, meta_data: "skill: true, sector: General",
+        help_text: "Fallback skill prompt used when no sector-specific file is configured." },
+      { name: "beauty_skincare_skill",    field_type: "File",        label: "Beauty & Skincare Skill",
+        position: 2, meta_data: "skill: true, sector: Beauty & Skincare",
+        help_text: "Sector skill prompt for Beauty & Skincare portfolio companies." },
+      { name: "min_points_per_section",   field_type: "NumberField", label: "Min Points Per Section",
+        position: 3, meta_data: "",
+        help_text: "Minimum positives/concerns per dimension and minimum items in Strengths, Risks, Recommendations. Default: 3" },
+      { name: "kpi_frequency",            field_type: "Select",      label: "KPI Frequency Filter",
+        position: 4, meta_data: "All,Month,Quarter,Half Year,Year,YTD",
+        help_text: "Filter KPI reports by period type when scoring. 'All' includes every period." },
+      { name: "docs_from_last_n_reports", field_type: "NumberField", label: "Docs From Last N Reports",
+        position: 5, meta_data: "",
+        help_text: "Number of recent Actual KPI reports to pull documents from (default: 1)." },
+      { name: "document_name_filter",     field_type: "TextField",   label: "Document Name Filter",
+        position: 6, meta_data: "",
+        help_text: "Comma-separated document names to include. Leave blank to use all documents from the selected reports." }
+    ]
+  }
+].freeze
 
 namespace :support_agents do
+  desc "Idempotently set up all SupportAgent FormTypes, custom fields, and agent records " \
+       "for a given entity. Safe to re-run after adding new fields or agents. " \
+       "Usage: rake 'support_agents:setup[ENTITY_ID]'"
+  task :setup, [:entity_id] => :environment do |_, args|
+    entity_id = args[:entity_id].to_i
+    abort "Usage: rake 'support_agents:setup[ENTITY_ID]'" if entity_id.zero?
+
+    entity = Entity.find_by(id: entity_id) || abort("Entity #{entity_id} not found")
+    puts "=== Setting up SupportAgents for #{entity.name} (ID=#{entity_id}) ==="
+    puts ""
+
+    SUPPORT_AGENT_FORM_CONFIGS.each do |cfg|
+      tag = cfg[:tag]
+
+      # 1. Ensure FormType exists (or just extend if extend_only)
+      ft = if cfg[:extend_only]
+             FormType.find_by(entity_id: entity_id, name: "SupportAgent", tag: tag)
+           else
+             FormType.find_or_initialize_by(entity_id: entity_id, name: "SupportAgent", tag: tag)
+           end
+
+      unless ft
+        puts "  [#{tag}] FormType not found — skipping field extensions"
+        next
+      end
+
+      if ft.new_record?
+        ft.save!
+        puts "  [#{tag}] Created FormType (ID=#{ft.id})"
+      else
+        puts "  [#{tag}] FormType exists (ID=#{ft.id})"
+      end
+
+      # 2. Ensure each custom field exists on this FormType
+      cfg[:fields].each do |field_attrs|
+        if ft.form_custom_fields.exists?(name: field_attrs[:name])
+          puts "    [fcf] '#{field_attrs[:name]}' — already exists"
+        else
+          ft.form_custom_fields.create!(field_attrs)
+          puts "    [fcf] '#{field_attrs[:name]}' (#{field_attrs[:field_type]}) — created"
+        end
+      end
+
+      # 3. Create/update the SupportAgent record (only for non-extend_only configs)
+      next unless cfg[:agent]
+
+      agent_cfg = cfg[:agent]
+      sa = SupportAgent.find_or_initialize_by(entity_id: entity_id, agent_type: tag)
+
+      if sa.new_record?
+        sa.assign_attributes(
+          name:        agent_cfg[:name],
+          form_type_id: ft.id,
+          with_steps:  agent_cfg[:with_steps],
+          enabled:     true,
+          llm_model:   DEFAULT_LLM_MODEL,
+          json_fields: agent_cfg[:json_fields] || {}
+        )
+        sa.save!
+        puts "    [agent] Created #{tag} (ID=#{sa.id})"
+      else
+        # Merge new json_fields keys without overwriting existing values set via UI
+        merged = agent_cfg[:json_fields].merge(sa.json_fields || {})
+        sa.update!(json_fields: merged)
+        puts "    [agent] Updated #{tag} (ID=#{sa.id}) — merged json_fields"
+      end
+
+      # 4. Ensure schedule if specified
+      next unless agent_cfg[:schedule]
+
+      sch = AgentSchedule.find_or_initialize_by(support_agent_id: sa.id)
+      sch.assign_attributes(entity_id: entity_id, **agent_cfg[:schedule])
+      sch.next_run_at ||= Time.zone.now.end_of_day
+      sch.save!
+      puts "    [schedule] #{agent_cfg[:schedule][:frequency]} at #{agent_cfg[:schedule][:run_at_time]} #{agent_cfg[:schedule][:timezone]}"
+    end
+
+    # Extend existing agents' json_fields with defaults for newly added fields
+    {
+      "KycOnboardingAgent"      => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15" },
+      "PortfolioCompanyAgent"   => { "send_kpi_reminder" => "Yes", "reminder_days" => "7,14,21" }
+    }.each do |agent_type, defaults|
+      sa = SupportAgent.find_by(entity_id: entity_id, agent_type: agent_type)
+      next puts "  [#{agent_type}] Not found — skipping json_fields update" unless sa
+
+      # Only add keys that aren't already set (don't overwrite UI-configured values)
+      missing = defaults.reject { |k, _| sa.json_fields&.key?(k) }
+      if missing.any?
+        sa.update!(json_fields: (sa.json_fields || {}).merge(missing))
+        puts "  [#{agent_type}] Added json_fields: #{missing.keys.join(', ')}"
+      else
+        puts "  [#{agent_type}] json_fields already up to date"
+      end
+    end
+
+    puts ""
+    puts "=== Done ==="
+  end
   desc "Clone all SupportAgents from a source entity (default: 157) to a target entity. " \
        "Usage: rake 'support_agents:clone[TARGET_ENTITY_ID]'"
   task :clone, [:target_entity_id, :source_entity_id] => :environment do |_, args|
