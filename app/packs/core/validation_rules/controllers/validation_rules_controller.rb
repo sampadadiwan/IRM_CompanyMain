@@ -86,6 +86,11 @@ class ValidationRulesController < ApplicationController
       attrs = attrs.dup
       # Approval evaluates a persisted record; ensure entity_id is present for scoping
       attrs["entity_id"] ||= current_user.entity_id.to_s
+
+    when "CapitalRemittance"
+      attrs = attrs.dup
+      # Send-notification evaluates a persisted record; ensure entity_id is present for scoping
+      attrs["entity_id"] ||= current_user.entity_id.to_s
     end
 
     attrs

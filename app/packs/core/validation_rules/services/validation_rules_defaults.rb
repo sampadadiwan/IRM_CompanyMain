@@ -139,6 +139,7 @@ module ValidationRulesDefaults
     {
       name:             "capital_call_notices_not_generated",
       target_model:     "CapitalCall",
+      enabled:          true,
       description:      "Warns when one or more remittances have no generated call notice document (owner_tag: Generated).",
       condition_tree:   {
         "op"         => "AND",
@@ -153,6 +154,7 @@ module ValidationRulesDefaults
     {
       name:             "capital_call_notices_not_approved",
       target_model:     "CapitalCall",
+      enabled:          true,
       description:      "Blocks approval when generated call notice documents are pending approval.",
       condition_tree:   {
         "op"         => "AND",
@@ -163,6 +165,38 @@ module ValidationRulesDefaults
       params:           {},
       severity:         "blocker",
       message_template: "There are %{unapproved_notices_count} generated call notice(s) pending approval. Please approve all documents before approving this call."
+    },
+
+    # ── CapitalRemittance ─────────────────────────────────────────────────────
+    {
+      name:             "capital_remittance_notice_not_generated",
+      target_model:     "CapitalRemittance",
+      enabled:          true,
+      description:      "Warns when the remittance has no generated call notice document (owner_tag: Generated).",
+      condition_tree:   {
+        "op"         => "AND",
+        "conditions" => [
+          { "field" => "context.notice_not_generated", "op" => "not_blank" }
+        ]
+      },
+      params:           {},
+      severity:         "warning",
+      message_template: "A call notice has not been generated for this remittance. Please generate the document before sending the notification."
+    },
+    {
+      name:             "capital_remittance_notice_not_approved",
+      target_model:     "CapitalRemittance",
+      enabled:          true,
+      description:      "Blocks sending notification when the remittance's generated call notice is pending approval.",
+      condition_tree:   {
+        "op"         => "AND",
+        "conditions" => [
+          { "field" => "context.notice_not_approved", "op" => "not_blank" }
+        ]
+      },
+      params:           {},
+      severity:         "blocker",
+      message_template: "There are %{notice_not_approved} generated call notice(s) for this remittance pending approval. Please approve the document before sending the notification."
     },
 
     # ── FundRatio ──────────────────────────────────────────────────────────────

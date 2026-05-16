@@ -37,10 +37,27 @@
                         method: :patch, class: "dropdown-item ti ti-file-type-doc",
                         form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the drawdown notice for this remittance. Proceed?"} if policy(@capital_remittance).generate_docs? %>
 
-                    <% label = @capital_remittance.notification_sent ? "Send Reminder" : "Send Notification" %>
-                    <%= button_to label, send_notification_capital_remittance_path(@capital_remittance), method: :patch,
-                        class: "dropdown-item ti ti-mail", form_class: "deleteButton",
-                        data: {action: "click->confirm#popup", msg: "This will send out an email notification to the investor for this remittances", method: :patch} if policy(@capital_remittance).send_notification? %>
+                    <% if policy(@capital_remittance).send_notification? %>
+                      <% label = @capital_remittance.notification_sent ? "Send Call Reminder" : "Send Call Notification" %>
+
+                      <%# Hidden static confirm message shown below any validation rule messages %>
+                      <div id="remittance_send_notification_confirm_msg" class="d-none">
+                        <p style="font-size:0.875rem;margin-bottom:0">
+                          This will send an email notification to the investor for this remittance.
+                        </p>
+                      </div>
+
+                      <%# Runs CapitalRemittance-scoped validation rules (notice generated/approved) before sending %>
+                      <div data-controller="rule-validation"
+                           data-rule-validation-target-model-value="CapitalRemittance"
+                           data-rule-validation-record-id-value="<%= @capital_remittance.id %>"
+                           data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>"
+                           data-rule-validation-confirm-message-selector-value="#remittance_send_notification_confirm_msg">
+                        <%= button_to label, send_notification_capital_remittance_path(@capital_remittance), method: :patch,
+                            class: "dropdown-item ti ti-mail", form_class: "deleteButton",
+                            data: {turbo: false, method: :patch} %>
+                      </div>
+                    <% end %>
 
 
                     <% adjustment_params = {commitment_adjustment: {capital_commitment_id: @capital_remittance.capital_commitment_id, owner_id: @capital_remittance.id, owner_type: "CapitalRemittance", folio_amount: @capital_remittance.folio_due_amount, adjustment_type: "Arrear", reason: "Arreas from Remittance #{@capital_remittance.id}"}} %>

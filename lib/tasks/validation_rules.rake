@@ -46,8 +46,9 @@ namespace :rules do
         severity:         rule_attrs[:severity]
       )
 
-      # Default off on creation — entities opt in via ValidationRuleOverride with enabled=true
-      rule.enabled = false if rule.new_record?
+      # Use the enabled flag from the definition if provided; otherwise default off.
+      # Rules with enabled: true fire for all entities unless overridden.
+      rule.enabled = rule_attrs.fetch(:enabled, false) if rule.new_record?
 
       if rule.new_record?
         rule.save!
