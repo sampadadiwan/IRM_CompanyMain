@@ -182,18 +182,31 @@ class PortfolioScoringAgent < SupportAgentService
   # --- Data gathering helpers ---
 
   # Returns approved actuals KPIs only, grouped by their Actual-tagged KPI report.
+  # Filtered by `kpi_frequency` agent config (Month/Quarter/Half Year/Year/YTD/All).
   def gather_kpi_data(investor)
-    actual_reports = investor.portfolio_kpi_reports
-                             .where(tag_list: "Actual")
-                             .order(as_of: :desc)
-                             .includes(:kpis)
+    scope = investor.portfolio_kpi_reports
+                    .where(tag_list: "Actual")
+                    .order(as_of: :desc)
+                    .includes(:kpis)
 
-    actual_reports.map do |report|
+    # Apply period-type filter when configured and not "All"
+    freq = @support_agent.json_fields["kpi_frequency"].to_s.strip
+    if freq.present? && !freq.casecmp?("all")
+      scope = scope.where(period: freq)
+      Rails.logger.info { "[PortfolioScoringAgent] kpi_frequency=#{freq} — filtering KPI reports to period='#{freq}'" }
+    else
+      Rails.logger.info { "[PortfolioScoringAgent] kpi_frequency=#{freq.presence || '(blank)'} — no period filter applied, using all periods" }
+    end
+
+    results = scope.map do |report|
       approved_kpis = report.kpis.approved.map { |k| { name: k.name, value: k.value, denomination: k.investor_kpi_mapping&.denomination }.compact }
       next if approved_kpis.empty?
 
       { period: report.period, as_of: report.as_of, kpis: approved_kpis }
     end.compact
+
+    Rails.logger.info { "[PortfolioScoringAgent] gather_kpi_data → #{results.size} KPI report(s) with approved KPIs (periods: #{results.map { |r| r[:period] }.tally.inspect})" }
+    results
   end
 
   # Snapshots all portfolio investments for this company into plain hashes for the prompt.
@@ -223,25 +236,44 @@ class PortfolioScoringAgent < SupportAgentService
     end
   end
 
-  # Extracts text from documents attached to the latest Actual KPI report only.
+  # Extracts text from documents attached to recent Actual KPI reports.
+  # `docs_from_last_n_reports` controls how many reports to pull from (default 1).
+  # `document_name_filter` is an optional CSV of names to whitelist (blank = all).
   def gather_document_texts(investor)
-    latest_report = investor.portfolio_kpi_reports
-                            .where(tag_list: "Actual")
-                            .order(as_of: :desc)
-                            .first
-    return [] unless latest_report
+    n = @support_agent.json_fields["docs_from_last_n_reports"].to_i
+    n = 1 if n < 1
+
+    name_csv = @support_agent.json_fields["document_name_filter"].to_s
+    allowed_names = name_csv.split(",").map { |s| s.strip.downcase }.reject(&:empty?)
+
+    Rails.logger.info { "[PortfolioScoringAgent] gather_document_texts: docs_from_last_n_reports=#{n}, document_name_filter=#{allowed_names.any? ? allowed_names.inspect : '(none — all docs)'}" }
+
+    reports = investor.portfolio_kpi_reports
+                      .where(tag_list: "Actual")
+                      .order(as_of: :desc)
+                      .limit(n)
+    return [] if reports.empty?
+
+    Rails.logger.info { "[PortfolioScoringAgent] Scanning documents from #{reports.size} KPI report(s): #{reports.map { |r| "#{r.period} #{r.as_of}" }.inspect}" }
 
     docs = []
-    latest_report.documents.each do |doc|
-      next if doc.file.blank?
+    reports.each do |report|
+      report.documents.each do |doc|
+        next if doc.file.blank?
+        # Apply name whitelist when configured
+        if allowed_names.any? && !allowed_names.include?(doc.name.to_s.downcase)
+          Rails.logger.info { "[PortfolioScoringAgent] Skipping '#{doc.name}' — not in document_name_filter" }
+          next
+        end
 
-      extension = File.extname(doc.file.original_filename.to_s).downcase
-      next unless SUPPORTED_DOC_EXTENSIONS.include?(extension)
+        extension = File.extname(doc.file.original_filename.to_s).downcase
+        next unless SUPPORTED_DOC_EXTENSIONS.include?(extension)
 
-      text = read_document_text(doc)
-      docs << { name: doc.name, date: latest_report.as_of, text: text } if text.present?
-    rescue StandardError => e
-      Rails.logger.warn { "[PortfolioScoringAgent] Skipped document '#{doc.name}': #{e.message}" }
+        text = read_document_text(doc)
+        docs << { name: doc.name, date: report.as_of, text: text } if text.present?
+      rescue StandardError => e
+        Rails.logger.warn { "[PortfolioScoringAgent] Skipped document '#{doc.name}': #{e.message}" }
+      end
     end
     docs
   end
