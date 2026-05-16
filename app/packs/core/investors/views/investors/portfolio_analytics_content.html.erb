@@ -1,0 +1,37 @@
+<%= turbo_frame_tag "investor_portfolio_analytics_frame" do %>
+  <div class="row g-4">
+    <%# Row 1: Ownership & Performance %>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= investor_allocation_by_fund_chart(@apis) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= investor_performance_by_fund_chart(@apis) %>
+      </div>
+    </div>
+    <%# Row 2: Gains & Instrument Structure %>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= investor_gains_breakdown_chart(@apis) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= investor_instrument_breakdown_chart(@apis) %>
+      </div>
+    </div>
+    <%# Row 3: Activity %>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= investor_bought_vs_sold_by_fund_chart(@apis) %>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="p-3 border rounded h-100 bg-white shadow-sm">
+        <%= investor_income_by_fund_chart(@apis) %>
+      </div>
+    </div>
+  </div>
+<% end %>

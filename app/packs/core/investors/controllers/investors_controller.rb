@@ -1,6 +1,6 @@
 class InvestorsController < ApplicationController
   helper InvestorAnalyticsHelper
-  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports portfolio_investments_report generate_agent_charts]
+  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports portfolio_investments_report generate_agent_charts portfolio_analytics]
   after_action :verify_authorized, except: %i[merge portfolio_investments_report_all]
 
   # GET /investors or /investors.json
@@ -31,6 +31,16 @@ class InvestorsController < ApplicationController
     authorize(Investor)
     fetch_rows
     render "investors/analytics_content", layout: false
+  end
+
+  # GET /investors/:id/portfolio_analytics
+  def portfolio_analytics
+    if params[:type] == "LPFlow"
+      render "investors/lp_flow_analytics_content", layout: false
+    else
+      @apis = AggregatePortfolioInvestment.where(portfolio_company_id: @investor.id)
+      render "investors/portfolio_analytics_content", layout: false
+    end
   end
 
   def fetch_rows

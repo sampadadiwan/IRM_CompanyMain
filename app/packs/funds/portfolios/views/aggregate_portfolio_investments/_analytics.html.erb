@@ -17,3 +17,39 @@
     </div>
   </div>
 <% end %>
+<% if investor %>
+  <div class="collapse mb-4" id="investorPortfolioAnalytics">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Investment Analytics — <%= investor.investor_name %></h5>
+        <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#investorPortfolioAnalytics" aria-label="Close"></button>
+      </div>
+      <div class="card-body">
+        <%= turbo_frame_tag "investor_portfolio_analytics_frame", src: portfolio_analytics_investor_path(investor), loading: "lazy" do %>
+          <div class="d-flex justify-content-center p-5">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+  <div class="collapse mb-4" id="investorLpFlowAnalytics">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">LP Investor Flow — <%= investor.investor_name %></h5>
+        <button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#investorLpFlowAnalytics" aria-label="Close"></button>
+      </div>
+      <div class="card-body">
+        <%= turbo_frame_tag "investor_lp_flow_analytics_frame", src: portfolio_analytics_investor_path(investor, type: "LPFlow"), loading: "lazy" do %>
+          <div class="d-flex justify-content-center p-5">
+            <div class="spinner-border text-secondary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

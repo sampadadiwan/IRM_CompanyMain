@@ -1,0 +1,41 @@
+<%= turbo_frame_tag "lp_flow_analytics_frame" do %>
+  <%
+    heatmap  = lp_flow_heatmap_data(@fund)
+    currency = @fund.currency
+  %>
+
+  <% if heatmap[:points].empty? && @fund.capital_commitments.where("committed_amount_cents > 0").none? %>
+    <div class="alert alert-info mb-0">
+      No LP commitment or portfolio FMV data available for this fund yet.
+    </div>
+  <% else %>
+    <div class="row g-4">
+      <%# Chart 1: Stacked column — LP implied exposure per portfolio company %>
+      <div class="col-12">
+        <div class="p-3 border rounded bg-white shadow-sm">
+          <%= lp_exposure_by_company_chart(@fund) %>
+        </div>
+      </div>
+
+      <%# Chart 2: Heatmap — LP × Company exposure matrix %>
+      <div class="col-12">
+        <div class="p-3 border rounded bg-white shadow-sm"
+             data-controller="lp-flow"
+             data-lp-flow-heatmap-data-value="<%= heatmap[:points].to_json %>"
+             data-lp-flow-lp-names-value="<%= heatmap[:lp_names].to_json %>"
+             data-lp-flow-company-names-value="<%= heatmap[:company_names].to_json %>"
+             data-lp-flow-currency-value="<%= currency %>">
+          <div data-lp-flow-target="heatmap" style="min-height: 300px; width: 100%;"></div>
+          <div class="mt-2 text-muted small">
+            <strong>How to read:</strong> Each row is one LP investor; each column is a portfolio company in this fund.
+            Cell color = that LP's implied FMV exposure to that company (company's FMV × LP's % of total fund commitments).
+            Darker = larger exposure. Grey cells mean the LP has negligible or zero exposure.
+            LPs are sorted top-to-bottom by total exposure — most invested LPs appear first.
+            Unlike the bar chart above (which is company-centric), this matrix reveals which LPs have
+            broad exposure across many companies versus those concentrated in just one or two.
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>

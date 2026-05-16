@@ -1,7 +1,7 @@
 Feature: Validation Rule Engine
-  Rules fire warnings and blockers on Valuation, AllocationRun, FundRatio, and CapitalCall records.
+  Rules fire warnings and blockers on Valuation, AllocationRun, FundRatio, CapitalCall, and CapitalRemittance records.
   Company admins can view all rules and customise them per entity via overrides.
-  Rules are disabled by default; an entity opts in by creating enabled overrides.
+  CapitalCall and CapitalRemittance rules are enabled by default; all other rules are disabled by default and require an entity opt-in override.
 
   Background:
     Given there is a user "first_name=Test" for an entity "name=RuleTestFirm;entity_type=Investment Fund;currency=INR"
@@ -253,6 +253,49 @@ Feature: Validation Rule Engine
     When the validation rules are evaluated for the capital call
     Then the rule "capital_call_notices_not_generated" does not fire
     And the rule "capital_call_notices_not_approved" does not fire
+
+  Scenario: Capital call and remittance rules fire by default without an entity opt-in
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance without a generated notice
+    When the validation rules are evaluated for the capital call
+    Then the rule "capital_call_notices_not_generated" fires as a "warning"
+
+  # ── CapitalRemittance rules ───────────────────────────────────────────────────
+
+  Scenario: Remittance with no generated notice fires a warning
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And there is a capital remittance without a generated notice for the capital call
+    When the validation rules are evaluated for the capital remittance
+    Then the rule "capital_remittance_notice_not_generated" fires as a "warning"
+    And the rule "capital_remittance_notice_not_approved" does not fire
+
+  Scenario: Remittance with an unapproved generated notice fires a blocker
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And there is a capital remittance with an unapproved generated notice for the capital call
+    When the validation rules are evaluated for the capital remittance
+    Then the rule "capital_remittance_notice_not_approved" fires as a "blocker"
+    And the rule message includes "1 generated call notice"
+    And the rule "capital_remittance_notice_not_generated" does not fire
+
+  Scenario: Remittance with an approved generated notice fires neither rule
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And there is a capital remittance with an approved generated notice for the capital call
+    When the validation rules are evaluated for the capital remittance
+    Then the rule "capital_remittance_notice_not_generated" does not fire
+    And the rule "capital_remittance_notice_not_approved" does not fire
+
+  Scenario: Remittance rules are scoped to the individual remittance not the whole call
+    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is a capital call "{'First Close':'100'}" for the fund
+    And the capital call has a remittance without a generated notice
+    And there is a capital remittance with an approved generated notice for the capital call
+    When the validation rules are evaluated for the capital remittance
+    Then the rule "capital_remittance_notice_not_generated" does not fire
+    And the rule "capital_remittance_notice_not_approved" does not fire
 
   # ── Override management ──────────────────────────────────────────────────────
 

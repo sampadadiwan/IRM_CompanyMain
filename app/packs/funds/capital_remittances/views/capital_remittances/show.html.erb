@@ -19,7 +19,20 @@
 
                     <% label = @capital_remittance.verified ? "Unverify" : "Verify" %>
                     <%
-                        msg = @capital_remittance.verified ? "Mark as Unverified?" : "Mark as Verified?"
+                        if @capital_remittance.verified
+                          msg = "Mark as Unverified?"
+                        else
+                          notif_msg = @capital_remittance.capital_call.send_payment_notification_flag \
+                            ? "This will confirm the payment amount as recorded and send a notification for the collected amount to the investor. Please preview the notification before sending it." \
+                            : "This will confirm the payment amount as recorded but NOT trigger any notification to the investor as 'Send Payment Notification' is disabled."
+                          due = @capital_remittance.due_amount
+                          amount_msg = if due.positive?
+                            "The collected amount is less than the call amount. Are you sure you want to verify the remittance?"
+                          elsif due.negative?
+                            "The collected amount is more than the call amount. Are you sure you want to verify the remittance?"
+                          end
+                          msg = [notif_msg, amount_msg].compact.map { |m| "<p>#{m}</p>" }.join
+                        end
                         verified_icon = @capital_remittance.verified ? "ti ti-x" : "ti ti-check"
                     %>
                     <%= button_to label, verify_capital_remittance_path(@capital_remittance), method: :patch,

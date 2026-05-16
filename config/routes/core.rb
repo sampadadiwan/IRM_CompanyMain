@@ -191,6 +191,7 @@ end
 
 resources :investors do
   get 'analytics', on: :collection
+  get 'portfolio_analytics', on: :member
   get 'search', on: :collection
 
   get 'merge', on: :collection

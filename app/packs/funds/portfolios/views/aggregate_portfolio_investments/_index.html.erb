@@ -1,16 +1,29 @@
 <%
   show_fund_name ||= false
   fund = params[:fund_id].present? ? Fund.find(params[:fund_id]) : nil
+  investor = params[:investor_id].present? ? Investor.find(params[:investor_id]) : nil
 %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Aggregate Portfolio Investments</h1>
   <div class="d-flex flex-wrap align-items-center gap-2">
     <%= user_guide_info_icon %>
     <% if fund %>
-      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
-              data-bs-toggle="collapse" data-bs-target="#portfolioAnalytics" 
+      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
+              data-bs-toggle="collapse" data-bs-target="#portfolioAnalytics"
               aria-expanded="false" aria-controls="portfolioAnalytics">
         <i class="ti ti-chart-bar"></i> Analytics
+      </button>
+    <% end %>
+    <% if investor %>
+      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
+              data-bs-toggle="collapse" data-bs-target="#investorPortfolioAnalytics"
+              aria-expanded="false" aria-controls="investorPortfolioAnalytics">
+        <i class="ti ti-chart-bar"></i> Analytics
+      </button>
+      <button class="btn btn-outline-secondary d-inline-flex align-items-center" type="button"
+              data-bs-toggle="collapse" data-bs-target="#investorLpFlowAnalytics"
+              aria-expanded="false" aria-controls="investorLpFlowAnalytics">
+        <i class="ti ti-arrows-transfer-up"></i> LP Investor Flow
       </button>
     <% end %>
     <% if fund && policy(fund).update? %>
@@ -91,7 +104,7 @@
     <% end %>
   </div>
 </div>
-<%= render "aggregate_portfolio_investments/analytics", fund: fund %>
+<%= render "aggregate_portfolio_investments/analytics", fund: fund, investor: investor %>
 <%= render "aggregate_portfolio_investments/stats",  aggregate_portfolio_investments:, fund: fund unless params[:grid_only].present? %>
 <!-- Table Header with our without fund -->
 <% 

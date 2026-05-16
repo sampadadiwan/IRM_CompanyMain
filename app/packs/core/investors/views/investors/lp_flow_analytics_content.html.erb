@@ -1,0 +1,42 @@
+<%= turbo_frame_tag "investor_lp_flow_analytics_frame" do %>
+  <%
+    heatmap  = investor_lp_exposure_heatmap_data(@investor)
+    currency = @investor.entity.default_currency || ""
+  %>
+
+  <% if heatmap[:points].empty? %>
+    <div class="alert alert-info mb-0">
+      No LP commitment or portfolio FMV data available for this company across its funds.
+    </div>
+  <% else %>
+    <div class="row g-4">
+      <%# Chart 1: Stacked column — LP implied exposure per fund %>
+      <div class="col-12">
+        <div class="p-3 border rounded bg-white shadow-sm">
+          <%= investor_lp_exposure_by_fund_chart(@investor) %>
+        </div>
+      </div>
+
+      <%# Chart 2: Heatmap — LP × Fund exposure matrix %>
+      <div class="col-12">
+        <div class="p-3 border rounded bg-white shadow-sm"
+             data-controller="lp-flow"
+             data-lp-flow-heatmap-data-value="<%= heatmap[:points].to_json %>"
+             data-lp-flow-lp-names-value="<%= heatmap[:lp_names].to_json %>"
+             data-lp-flow-company-names-value="<%= heatmap[:fund_names].to_json %>"
+             data-lp-flow-currency-value="<%= currency %>"
+             data-lp-flow-title-value="LP Exposure by Fund (Implied FMV)">
+          <div data-lp-flow-target="heatmap" style="min-height: 300px; width: 100%;"></div>
+          <div class="mt-2 text-muted small">
+            <strong>How to read:</strong> Each row is one LP investor; each column is a fund holding this company.
+            Cell color = that LP's implied FMV exposure via that fund (fund's FMV × LP's % of that fund's commitments).
+            Darker = larger exposure. Grey cells mean the LP has no commitment in that fund.
+            LPs are sorted top-to-bottom by their total exposure across all funds — so the most invested LPs appear first.
+            Unlike the bar chart above (which is fund-centric), this matrix lets you see at a glance
+            whether an LP's exposure is concentrated in one fund or spread across several.
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+<% end %>

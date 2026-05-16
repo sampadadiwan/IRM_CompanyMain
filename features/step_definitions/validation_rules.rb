@@ -116,6 +116,70 @@ Given('there is a capital call {string} for the fund') do |args|
   )
 end
 
+# ── CapitalRemittance setup helpers ──────────────────────────────────────────
+
+# Creates a minimal CapitalRemittance (no generated document) and stores it as @capital_remittance.
+Given('there is a capital remittance without a generated notice for the capital call') do
+  investor_entity = FactoryBot.create(:entity)
+  investor = FactoryBot.create(:investor, entity: @entity, investor_entity: investor_entity)
+  @capital_remittance = FactoryBot.build(:capital_remittance,
+    capital_call: @capital_call,
+    fund:         @fund,
+    entity:       @entity,
+    investor:     investor,
+    folio_id:     "TEST-#{SecureRandom.hex(4)}"
+  )
+  @capital_remittance.save(validate: false)
+end
+
+# Creates a CapitalRemittance with a generated-but-unapproved Document and stores it as @capital_remittance.
+Given('there is a capital remittance with an unapproved generated notice for the capital call') do
+  investor_entity = FactoryBot.create(:entity)
+  investor = FactoryBot.create(:investor, entity: @entity, investor_entity: investor_entity)
+  @capital_remittance = FactoryBot.build(:capital_remittance,
+    capital_call: @capital_call,
+    fund:         @fund,
+    entity:       @entity,
+    investor:     investor,
+    folio_id:     "TEST-#{SecureRandom.hex(4)}"
+  )
+  @capital_remittance.save(validate: false)
+
+  folder = FactoryBot.create(:folder, entity: @entity)
+  FactoryBot.create(:document,
+    entity:    @entity,
+    user:      @user,
+    folder:    folder,
+    owner:     @capital_remittance,
+    owner_tag: "Generated",
+    approved:  false
+  )
+end
+
+# Creates a CapitalRemittance with a generated AND approved Document and stores it as @capital_remittance.
+Given('there is a capital remittance with an approved generated notice for the capital call') do
+  investor_entity = FactoryBot.create(:entity)
+  investor = FactoryBot.create(:investor, entity: @entity, investor_entity: investor_entity)
+  @capital_remittance = FactoryBot.build(:capital_remittance,
+    capital_call: @capital_call,
+    fund:         @fund,
+    entity:       @entity,
+    investor:     investor,
+    folio_id:     "TEST-#{SecureRandom.hex(4)}"
+  )
+  @capital_remittance.save(validate: false)
+
+  folder = FactoryBot.create(:folder, entity: @entity)
+  FactoryBot.create(:document,
+    entity:    @entity,
+    user:      @user,
+    folder:    folder,
+    owner:     @capital_remittance,
+    owner_tag: "Generated",
+    approved:  true
+  )
+end
+
 # ── Rule evaluation (backend, no browser) ────────────────────────────────────
 
 # Evaluates rules for a temporary (unsaved) Valuation built from key=value args.
@@ -182,6 +246,14 @@ end
 When('the validation rules are evaluated for the capital call') do
   @rule_results = WithValidationRules.skip do
     ValidationRuleEvaluator.call(record: @capital_call, entity: @entity)
+  end
+end
+
+# Evaluates rules for a persisted CapitalRemittance record (@capital_remittance set by a prior step).
+# Rules check only this remittance's documents, not the entire call.
+When('the validation rules are evaluated for the capital remittance') do
+  @rule_results = WithValidationRules.skip do
+    ValidationRuleEvaluator.call(record: @capital_remittance, entity: @entity)
   end
 end
 

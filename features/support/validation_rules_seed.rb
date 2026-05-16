@@ -17,8 +17,8 @@ module ValidationRulesSeed
         message_template: attrs[:message_template],
         severity:         attrs[:severity]
       )
-      # Default off — entities opt in via ValidationRuleOverride with enabled=true
-      rule.enabled = false if rule.new_record?
+      # Use the enabled flag from the definition; default off for rules that don't declare it.
+      rule.enabled = attrs.fetch(:enabled, false) if rule.new_record?
       rule.save!
     end
   end

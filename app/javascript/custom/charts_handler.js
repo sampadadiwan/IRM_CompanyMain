@@ -2,6 +2,8 @@ import Highcharts from "highcharts"
 import "highcharts-more"
 import "highcharts/modules/exporting"
 import "highcharts/modules/offline-exporting"
+import "highcharts/modules/sankey"
+import "highcharts/modules/heatmap"
 
 // Make Highcharts globally available for Chartkick and other scripts
 window.Highcharts = Highcharts

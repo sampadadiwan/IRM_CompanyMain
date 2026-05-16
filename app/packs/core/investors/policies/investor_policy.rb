@@ -49,6 +49,11 @@ class InvestorPolicy < ApplicationPolicy
     show? && user.enable_investments && record.category == "Portfolio Company"
   end
 
+  # Permission to view investor portfolio analytics. Same as show.
+  def portfolio_analytics?
+    show?
+  end
+
   # Permission to view the investor dashboard. Same as show.
   def dashboard?
     show?

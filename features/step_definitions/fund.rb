@@ -179,11 +179,16 @@
     fill_in('capital_call_name', with: @capital_call.name)
 
     fill_in('capital_call_due_date', with: @capital_call.due_date)
-    fill_in "capital_call[close_percentages][First Close]", with: "50"
+    # Field only renders when the fund has commitments with a matching fund_close
+    if page.has_field?("capital_call[close_percentages][First Close]", wait: 0)
+      fill_in "capital_call[close_percentages][First Close]", with: "50"
+    end
     select(@capital_call.call_basis, from: 'capital_call_call_basis')
 
     if @capital_call.call_basis == "Percentage of Commitment"
+      if page.has_field?("capital_call[close_percentages][First Close]", wait: 0)
         fill_in "capital_call[close_percentages][First Close]", with: @capital_call.percentage_called
+      end
     elsif @capital_call.call_basis != "Upload"
       find('#select2-capital_call_fund_closes-container', visible: false)
       select2_trigger = find('.select2-selection--multiple', match: :first)
@@ -309,11 +314,16 @@
     fill_in('capital_call_name', with: @capital_call.name)
 
     fill_in('capital_call_due_date', with: @capital_call.due_date)
-    fill_in "capital_call[close_percentages][First Close]", with: "50"
+    # Field only renders when the fund has commitments with a matching fund_close
+    if page.has_field?("capital_call[close_percentages][First Close]", wait: 0)
+      fill_in "capital_call[close_percentages][First Close]", with: "50"
+    end
     select(@capital_call.call_basis, from: 'capital_call_call_basis')
 
     if @capital_call.call_basis == "Percentage of Commitment"
+      if page.has_field?("capital_call[close_percentages][First Close]", wait: 0)
         fill_in "capital_call[close_percentages][First Close]", with: @capital_call.percentage_called
+      end
     elsif @capital_call.call_basis != "Upload"
       find('#select2-capital_call_fund_closes-container', visible: false)
       select2_trigger = find('.select2-selection--multiple', match: :first)

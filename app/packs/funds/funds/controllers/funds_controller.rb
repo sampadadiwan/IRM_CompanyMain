@@ -7,6 +7,7 @@ class FundsController < ApplicationController
   helper AggregatePortfolioInvestmentsHelper
   helper PortfolioHelper
   helper FundStatisticsHelper
+  helper LpFlowHelper
   before_action :set_fund, only: %i[show dashboard edit update destroy last report generate_fund_ratios allocate_form allocate copy_formulas export generate_documentation check_access_rights delete_all generate_tracking_numbers show_email_list trigger_adhoc_notification analytics]
 
   # GET /funds/1/analytics
@@ -20,6 +21,8 @@ class FundsController < ApplicationController
       render "/capital_remittances/analytics_content", layout: false
     elsif params[:type] == "AggregatePortfolioInvestment"
       render "/aggregate_portfolio_investments/analytics_content", layout: false
+    elsif params[:type] == "LPFlow"
+      render "/lp_flow/analytics_content", layout: false
     elsif params[:type] == "FundRatio"
       render "/fund_ratios/analytics_content", layout: false
     else
