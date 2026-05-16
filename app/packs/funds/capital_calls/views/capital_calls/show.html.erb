@@ -47,8 +47,11 @@
               and links before proceeding) and above warning items when warnings fire. %>
           <div id="capital_call_approve_confirm_msg" class="d-none">
             <p style="font-size:0.875rem;margin-bottom:0.5rem">
-              This will generate a notification to your clients, if enabled.
-              Only <strong>Approved</strong> call notices will be attached to the email.
+              <% if @capital_call.send_call_notice_flag %>
+                &bull; This will send a notification to your investors and attached Approved call notices.
+              <% else %>
+                &bull; This will NOT send any notification to your investors.
+              <% end %>
             </p>
             <div class="d-flex gap-2 flex-wrap">
               <%= link_to "View Who Gets Notified",
@@ -59,6 +62,8 @@
                       q: ransack_query_params_multiple([[:capital_call_id, :eq, @capital_call.id],
                                                         [:owner_tag, :cont, "Generated"]])),
                     class: "badge bg-primary-subtle text-primary", target: "_blank" %>
+
+              <%= link_to "Update Call", edit_capital_call_path(@capital_call), class: "badge bg-primary-subtle text-primary", target: "_blank" %>
             </div>
           </div>
 

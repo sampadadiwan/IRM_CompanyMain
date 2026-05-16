@@ -204,7 +204,7 @@ export default class extends Controller {
             <div class="modal-header" style="border-bottom:1px solid #f0f0f0;padding:1rem 1.25rem 0.75rem">
               <div class="d-flex align-items-center gap-2">
                 ${iconSvg}
-                <h6 class="modal-title mb-0 fw-semibold" style="font-size:0.95rem;color:#1a1a1a">
+                <h6 class="modal-title mb-0 fw-semibold" style="font-size:0.95rem;color:#ffffff">
                   ${title}
                 </h6>
               </div>
