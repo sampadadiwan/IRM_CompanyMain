@@ -180,10 +180,9 @@ export default class extends Controller {
       ? 'Confirm Approval'
       : hasBlockers ? 'Cannot Approve — Issues Found' : 'Review Before Approving'
 
-    // confirmHtml shown above rule items when no blockers; omitted when blockers fire
-    // (approval is blocked so the notification context is irrelevant)
-    const confirmSection = (confirmHtml && !hasBlockers)
-      ? `<div style="margin-bottom:${hasRules ? '0.75rem' : '0'};${hasRules ? 'padding-bottom:0.75rem;border-bottom:1px solid #f0f0f0' : ''}">${confirmHtml}</div>`
+    // confirmHtml always shown below rule items (with a top divider when rules exist)
+    const confirmSection = confirmHtml
+      ? `<div style="${hasRules ? 'margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f0f0f0' : ''}">${confirmHtml}</div>`
       : ''
 
     const ruleSection = hasRules ? `
@@ -212,7 +211,7 @@ export default class extends Controller {
             </div>
 
             <div class="modal-body" style="padding:1rem 1.25rem">
-              ${confirmSection}${ruleSection}
+              ${ruleSection}${confirmSection}
             </div>
 
             <div class="modal-footer" style="border-top:1px solid #f0f0f0;padding:0.75rem 1.25rem;gap:0.5rem">
