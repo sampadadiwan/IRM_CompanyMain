@@ -41,6 +41,10 @@
 
           <%= link_to "Preview Reminder", preview_capital_remittance_path(capital_remittance.id, email_method: "reminder_capital_remittance"), target: "_blank", class: "dropdown-item ti ti-mail" %>
 
+          <% if capital_remittance.capital_remittance_payments.any? %>
+            <%= link_to "Preview Payment Notification", preview_capital_remittance_payment_path(capital_remittance.capital_remittance_payments.first, email_method: "notify_capital_remittance_payment"), target: "_blank", class: "dropdown-item ti ti-mail" %>
+          <% end %>
+
         <% end %>
       </div>
     </div>

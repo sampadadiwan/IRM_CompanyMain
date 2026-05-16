@@ -1,5 +1,5 @@
 class CapitalRemittancePaymentsController < ApplicationController
-  before_action :set_capital_remittance_payment, only: %i[show edit update destroy]
+  before_action :set_capital_remittance_payment, only: %i[show edit update destroy preview]
 
   # GET /capital_remittance_payments or /capital_remittance_payments.json
   def index

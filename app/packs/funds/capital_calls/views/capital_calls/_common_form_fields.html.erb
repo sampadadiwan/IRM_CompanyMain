@@ -1,9 +1,9 @@
       <%= custom_form_fields(capital_call, form) %>
 
       <div class="form-group">
-        <%= form.label :send_call_notice_flag, "Send Call Notice" %>
+        <%= form.label :send_call_notice_flag, "Send Call Notification" %>
         <%= form.check_box :send_call_notice_flag, class: "form-check-input" %>
-        <small class="text-muted">Send call notice to investors when call is approved</small>
+        <small class="text-muted">Send call notification to investors when call is approved and will also attach the call notice.</small>
       </div>
 
       <div class="form-group">
@@ -12,7 +12,7 @@
         <small class="text-muted">Send payment notifications to investors when remittance is verified</small>
       </div>
 
-      <% 
+      <%
         if capital_call.entity.call_fees.formulas.present?
           call_fees = capital_call.entity.call_fees.formulas
           call_fees = call_fees.where(id: call_fees.select('MIN(id)').group(:name))
@@ -20,7 +20,7 @@
       %>
       <div class="form-group">
         <%= form.label :fee_formula_ids, "Call Fee Formulas" %>
-        <%= form.select :fee_formula_ids, fee_computations, {include_blank: false, include_hidden: false}, class: "form-control select2", multiple: true %>        
+        <%= form.select :fee_formula_ids, fee_computations, {include_blank: false, include_hidden: false}, class: "form-control select2", multiple: true %>
       </div>
       <% end %>
 
@@ -32,5 +32,5 @@
       <div id='form_call_fee'>
         <%= form.fields_for :call_fees do |field| %>
           <%= render 'call_fee_fields', :f => field, fund: capital_call.fund %>
-        <% end %>        
+        <% end %>
       </div>

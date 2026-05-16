@@ -7,7 +7,8 @@ class CapitalRemittancePaymentMailer < ApplicationMailer
     @capital_remittance_payment = CapitalRemittancePayment.find params[:capital_remittance_payment_id]
     @capital_remittance = @capital_remittance_payment.capital_remittance
     @capital_call = @capital_remittance.capital_call
-    @custom_notification = @capital_call.custom_notification(@notification.params[:email_method])
+    email_method = params[:email_method] || @notification.params[:email_method]
+    @custom_notification = @capital_call.custom_notification(email_method)
     @additional_ccs = @capital_remittance.capital_commitment.cc
   end
 

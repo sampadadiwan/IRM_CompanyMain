@@ -72,7 +72,9 @@ resources :fund_ratios do
   post 'generate', on: :collection
 end
 
-resources :capital_remittance_payments
+resources :capital_remittance_payments do
+  get "preview", on: :member
+end
 
 resources :capital_distribution_payments do
   get 'search', on: :collection
