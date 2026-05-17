@@ -102,14 +102,9 @@
 // Uppercase divider between form sections (Status, Severity, Thresholds…).
 
 .vr-section-label {
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: #9ca3af;
-  text-transform: uppercase;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid #f3f4f6;
-  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
 }
 
 // ── Status toggle row ────────────────────────────────────────────────────────

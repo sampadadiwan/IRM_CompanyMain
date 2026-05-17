@@ -22,7 +22,7 @@
 
   <%# ── Section: Status ────────────────────────────────────────────────── %>
   <div class="mb-4">
-    <div class="vr-section-label">Status</div>
+    <label class="vr-section-label">Status</label>
     <div class="vr-status-row">
       <div>
         <div class="vr-status-row__title">Enable this rule</div>
@@ -39,7 +39,7 @@
 
   <%# ── Section: Severity ──────────────────────────────────────────────── %>
   <div class="mb-4">
-    <div class="vr-section-label">Severity</div>
+    <label class="vr-section-label">Severity</label>
     <%= f.select :severity_override,
           [["Inherit from global default", ""], ["Warning — user can confirm and save", "warning"], ["Blocker — must fix before saving", "blocker"]],
           { selected: @override.severity_override.to_s },
@@ -50,7 +50,7 @@
   <%# ── Section: Thresholds ────────────────────────────────────────────── %>
   <% if rule.params.present? %>
     <div class="mb-4">
-      <div class="vr-section-label">Thresholds</div>
+      <label class="vr-section-label">Thresholds</label>
       <div class="vr-param-table">
         <% rule.params.each do |(key, default_value)| %>
           <%# Use *_field_tag with explicit name to get correct bracket nesting:
@@ -79,7 +79,7 @@
 
   <%# ── Section: Custom Message ─────────────────────────────────────────── %>
   <div class="mb-4">
-    <div class="vr-section-label">Custom Message</div>
+    <label class="vr-section-label">Custom Message</label>
     <%= f.text_area :message_override,
           class: "form-control",
           rows: 3,
