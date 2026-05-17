@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_15_060202) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1056,6 +1056,50 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
   end
 
+  create_table "compliance_rule_overrides", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "compliance_rule_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.boolean "enabled", default: true, null: false
+    t.bigint "entity_id", null: false
+    t.text "message_override"
+    t.json "param_overrides", null: false
+    t.string "severity_override"
+    t.datetime "updated_at", null: false
+    t.index ["compliance_rule_id", "entity_id"], name: "idx_compliance_rule_overrides_unique", unique: true
+    t.index ["compliance_rule_id"], name: "index_compliance_rule_overrides_on_compliance_rule_id"
+    t.index ["created_by_id"], name: "index_compliance_rule_overrides_on_created_by_id"
+    t.index ["entity_id"], name: "index_compliance_rule_overrides_on_entity_id"
+  end
+
+  create_table "compliance_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.boolean "enabled", default: false, null: false
+    t.text "english_text", null: false
+    t.bigint "entity_id"
+    t.boolean "is_default", default: false, null: false
+    t.datetime "last_evaluated_at"
+    t.string "name", null: false
+    t.json "params", null: false
+    t.boolean "parse_confirmed", default: false, null: false
+    t.text "parse_summary"
+    t.string "parsed_by_model"
+    t.string "rule_class"
+    t.string "schedule", default: "end_of_day", null: false
+    t.string "severity", default: "warning", null: false
+    t.json "structured_plan"
+    t.json "target_models", null: false
+    t.string "tier", default: "semantic", null: false
+    t.datetime "updated_at", null: false
+    t.index ["created_by_id"], name: "index_compliance_rules_on_created_by_id"
+    t.index ["entity_id"], name: "index_compliance_rules_on_entity_id"
+    t.index ["name", "entity_id"], name: "idx_compliance_rules_unique_name", unique: true
+    t.index ["rule_class"], name: "index_compliance_rules_on_rule_class"
+    t.index ["schedule"], name: "index_compliance_rules_on_schedule"
+    t.index ["tier"], name: "index_compliance_rules_on_tier"
+  end
+
   create_table "custom_grid_views", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "owner_id", null: false
@@ -1473,6 +1517,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
     t.text "kyc_docs_note"
     t.date "last_snapshot_on"
     t.string "mailbox", limit: 30
+    t.string "mcp_allowed_clients", default: "[]"
+    t.string "mcp_allowed_roles", default: "[\"employee\"]"
+    t.boolean "mcp_enabled", default: false, null: false
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
@@ -2721,6 +2768,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
   create_table "oauth_access_tokens", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "application_id", null: false
     t.datetime "created_at", null: false
+    t.bigint "entity_id"
     t.integer "expires_in"
     t.string "previous_refresh_token", default: "", null: false
     t.string "refresh_token"
@@ -2729,6 +2777,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
     t.string "scopes"
     t.string "token", null: false
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
+    t.index ["entity_id"], name: "index_oauth_access_tokens_on_entity_id"
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
     t.index ["resource_owner_id"], name: "index_oauth_access_tokens_on_resource_owner_id"
     t.index ["token"], name: "index_oauth_access_tokens_on_token", unique: true
@@ -3818,6 +3867,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
+  add_foreign_key "compliance_rule_overrides", "compliance_rules", name: "fk_compliance_rule_overrides_rule"
+  add_foreign_key "compliance_rule_overrides", "entities", name: "fk_compliance_rule_overrides_entity"
+  add_foreign_key "compliance_rule_overrides", "users", column: "created_by_id", name: "fk_compliance_rule_overrides_created_by"
+  add_foreign_key "compliance_rules", "entities", name: "fk_compliance_rules_entity"
+  add_foreign_key "compliance_rules", "users", column: "created_by_id", name: "fk_compliance_rules_created_by"
   add_foreign_key "custom_notifications", "entities"
   add_foreign_key "custom_notifications", "folders", column: "document_folder_id"
   add_foreign_key "dashboard_widgets", "entities"

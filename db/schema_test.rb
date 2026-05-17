@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_15_060202) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1472,6 +1472,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
     t.text "kyc_docs_note"
     t.date "last_snapshot_on"
     t.string "mailbox", limit: 30
+    t.string "mcp_allowed_clients", default: "[]"
+    t.string "mcp_allowed_roles", default: "[\"employee\"]"
+    t.boolean "mcp_enabled", default: false, null: false
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
@@ -1490,6 +1493,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_14_100003) do
     t.boolean "trial"
     t.date "trial_end_date"
     t.datetime "updated_at", null: false
+    t.boolean "use_ai_kpi_reader", default: false, null: false
     t.string "valuation_math"
     t.string "value_bridge_cols"
     t.string "whatsapp_endpoint"
