@@ -81,3 +81,5 @@ resources :assistants, only: [:show] do
 end
 
 resources :assistant_tasks
+
+post '/mcp', to: 'mcp#create'

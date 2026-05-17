@@ -211,6 +211,37 @@
           </td>
         </tr>
 
+        <tr>
+          <td>AI Client Integration</td>
+          <td>
+            <%= display_boolean @entity.entity_setting.mcp_enabled %>
+          </td>
+        </tr>
+        <% if @entity.entity_setting.mcp_enabled? %>
+          <tr>
+            <td>MCP Allowed Roles</td>
+            <td>
+              <%= @entity.entity_setting.mcp_allowed_roles_list.map { |r|
+                r == "employee" ? "Fund Managers" : r == "investor" ? "Investors (LPs)" : r.titleize
+              }.join(", ") %>
+            </td>
+          </tr>
+          <% if @entity.entity_setting.mcp_allowed_clients_list.present? %>
+            <tr>
+              <td>Allowed AI Clients</td>
+              <td>
+                <%= @entity.entity_setting.mcp_allowed_clients_list.join(", ") %>
+              </td>
+            </tr>
+          <% else %>
+            <tr>
+              <td>Allowed AI Clients</td>
+              <td>All</td>
+            </tr>
+          <% end %>
+        <% end %>
+
+
       <% end %>
     </table>
     <div>

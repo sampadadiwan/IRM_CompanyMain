@@ -6,18 +6,25 @@ Doorkeeper.configure do
   orm :active_record
 
   resource_owner_authenticator do
-    current_user || warden.authenticate!(scope: :user)
+    if current_user
+      current_user
+    else
+      cookies[:oauth_return_to] = { value: request.fullpath, httponly: true, secure: !Rails.env.development? }
+      redirect_to new_user_session_url
+      nil
+    end
   end
 
   admin_authenticator do
-    current_user&.admin? || redirect_to(new_user_session_url)
+    current_user || redirect_to(new_user_session_url)
   end
 
-  access_token_expires_in 2.hours
+  access_token_expires_in 30.days
   use_refresh_token
   force_ssl_in_redirect_uri !Rails.env.development?
+  custom_access_token_attributes [:entity_id]
 
-  default_scopes :openid, :email, :profile
+  default_scopes :read
 
   base_controller 'ActionController::Base' # Needed for Devise compatibility
 
@@ -152,7 +159,7 @@ Doorkeeper.configure do
   #
   # You can not enable this option together with +hash_token_secrets+.
   #
-  # reuse_access_token
+  reuse_access_token
 
   # In case you enabled `reuse_access_token` option Doorkeeper will try to find matching
   # token using `matching_token_for` Access Token API that searches for valid records
@@ -191,7 +198,6 @@ Doorkeeper.configure do
   # Require non-confidential clients to use PKCE when using an authorization code
   # to obtain an access_token (disabled by default)
   #
-  # force_pkce
 
   # Hash access and refresh tokens before persisting them.
   # This will disable the possibility to use +reuse_access_token+
@@ -382,8 +388,9 @@ Doorkeeper.configure do
   #   https://datatracker.ietf.org/doc/html/rfc6819#section-4.4.2
   #   https://datatracker.ietf.org/doc/html/rfc6819#section-4.4.3
   #
-  # grant_flows %w[authorization_code client_credentials]
+  grant_flows %w[authorization_code]
 
+  force_pkce
   # Allows to customize OAuth grant flows that +each+ application support.
   # You can configure a custom block (or use a class respond to `#call`) that must
   # return `true` in case Application instance supports requested OAuth grant flow

@@ -115,6 +115,45 @@
       <small class="text-muted">e.g - {"match": {"Sep 2025.Pdf": "green", "Captable.xlsx": "yellow"}, "contain": {"PAN": "indigo", "SOA": "#32a83a", "FATCA": "red"}}</small>
 
     </div>
+    <hr class="my-4">
+<h5>AI Client Integration (MCP)</h5>
+<small class="text-muted d-block mb-3">Allow external AI clients (Claude, ChatGPT, Gemini) to query fund and portfolio data.</small>
+
+<div class="form-group">
+  <%= entity_setting_subform.label :mcp_enabled, "Enable AI Client Integration" %>
+  <%= entity_setting_subform.check_box :mcp_enabled, class: "form-check-input" %>
+  <small class="text-muted">When enabled, authorized users can connect AI clients to access data based on their role and permissions.</small>
+</div>
+
+<div class="form-group">
+  <label>Allow access for</label>
+  <div class="form-check">
+    <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_roles_list][]", "employee",
+        entity_setting_subform.object.mcp_allowed_roles_list.include?("employee"),
+        class: "form-check-input", id: "mcp_role_employee" %>
+    <%= label_tag "mcp_role_employee", "Fund Managers", class: "form-check-label" %>
+  </div>
+  <div class="form-check">
+    <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_roles_list][]", "investor",
+        entity_setting_subform.object.mcp_allowed_roles_list.include?("investor"),
+        class: "form-check-input", id: "mcp_role_investor" %>
+    <%= label_tag "mcp_role_investor", "Investors (LPs)", class: "form-check-label" %>
+  </div>
+</div>
+
+<div class="form-group">
+  <label>Allowed AI Clients</label>
+  <small class="text-muted d-block mb-2">Leave all unchecked to allow all registered AI clients.</small>
+  <% Doorkeeper::Application.all.each do |app| %>
+    <div class="form-check">
+      <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_clients_list][]", app.name,
+          entity_setting_subform.object.mcp_allowed_clients_list.include?(app.name),
+          class: "form-check-input", id: "mcp_client_#{app.id}" %>
+      <%= label_tag "mcp_client_#{app.id}", app.name, class: "form-check-label" %>
+    </div>
+  <% end %>
+</div>
+
   <% end %>
 
 <div class="form-group">

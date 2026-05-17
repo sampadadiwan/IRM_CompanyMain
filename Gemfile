@@ -267,6 +267,7 @@ gem 'htmltoword'
 gem 'i18n-tasks', group: :development
 gem 'ice_cube'
 gem 'json_schemer'
+gem 'mcp'
 gem 'ruby_linear_regression'
 gem 'ruby_llm'
 gem 'wicked_pdf'

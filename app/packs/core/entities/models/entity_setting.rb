@@ -121,6 +121,38 @@ class EntitySetting < ApplicationRecord
       end
     end
   end
+
+  # --- MCP (AI Client Integration) Settings ---
+
+  # @return [Boolean] whether MCP is enabled for this entity
+  def mcp_enabled?
+    mcp_enabled == true
+  end
+
+  # @return [Array<String>] roles allowed to use MCP
+  def mcp_allowed_roles_list
+    JSON.parse(mcp_allowed_roles || '["employee"]')
+  rescue JSON::ParserError
+    ["employee"]
+  end
+
+  # @param roles [Array<String>] roles to allow
+  def mcp_allowed_roles_list=(roles)
+    self.mcp_allowed_roles = Array(roles).compact_blank.to_json
+  end
+
+  # @return [Array<String>] allowed OAuth client names (empty = all)
+  def mcp_allowed_clients_list
+    JSON.parse(mcp_allowed_clients || '[]')
+  rescue JSON::ParserError
+    []
+  end
+
+  # @param clients [Array<String>] client names to allow
+  def mcp_allowed_clients_list=(clients)
+    self.mcp_allowed_clients = Array(clients).compact_blank.to_json
+  end
+
   # rubocop : enable Rails/SkipsModelValidations
 
   private

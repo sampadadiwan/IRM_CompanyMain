@@ -85,11 +85,21 @@ module WithAuthentication
     request.referer || root_path
   end
 
+  # @param resource [User] the Devise resource that just signed in
+  # @return [String] path to redirect to after sign-in
+  # @note Checks for an OAuth return cookie first (set by Doorkeeper's resource_owner_authenticator
+  #   before redirecting to Devise login). Cookie survives Devise session fixation reset; session-based
+  #   stored_location_for does not.
   def after_sign_in_path_for(resource)
-    stored_location_for(resource) || root_path
+    oauth_return = cookies.delete(:oauth_return_to)
+    oauth_return || stored_location_for(resource) || root_path
   end
 
+  # Resolves the current entity (tenant) from the request subdomain or custom domain.
+  # Skips for OAuth and ngrok routes where subdomain-based tenant resolution is not applicable.
   def set_current_entity
+    return if request.path.start_with?("/oauth")
+
     @current_entity = nil
 
     Rails.logger.debug { "domain = #{request.domain}, sub_domain = #{request.subdomain}" }

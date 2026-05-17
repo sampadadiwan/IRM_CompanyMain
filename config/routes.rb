@@ -64,7 +64,7 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "entities#dashboard"
 
-  resources :user_guides, only: [:index, :show]
+  resources :user_guides, only: %i[index show]
 
   get 'outlook_addin/taskpane', to: 'outlook_addin#taskpane'
   get 'outlook_addin/investors', to: 'outlook_addin#investors'
@@ -83,4 +83,7 @@ Rails.application.routes.draw do
 
   use_doorkeeper_openid_connect
   use_doorkeeper
+
+  get '/.well-known/oauth-authorization-server', to: 'oauth_metadata#show'
+  get '/.well-known/oauth-protected-resource', to: 'oauth_metadata#protected_resource'
 end
