@@ -16,7 +16,7 @@ module ValidationRuleOverridesHelper
     return content_tag(:span, "Using global default", class: "text-muted") unless override
 
     unless override.enabled
-      return content_tag(:span, "Disabled", class: "badge bg-secondary")
+      return content_tag(:span, "Rule disabled", class: "text-muted small")
     end
 
     parts = []
@@ -28,6 +28,16 @@ module ValidationRuleOverridesHelper
     parts << content_tag(:span, "No changes", class: "text-muted") if parts.empty?
 
     safe_join(parts)
+  end
+
+  # Enabled/Disabled badge reflecting the effective status for this entity
+  def render_status_badge(override)
+    # An override with enabled=false disables the rule; everything else (no override, or enabled=true) is active
+    if override.present? && !override.enabled
+      content_tag(:span, "Disabled", class: "badge", style: "background-color:#6b7280;color:#fff")
+    else
+      content_tag(:span, "Enabled", class: "badge", style: "background-color:#22c55e;color:#fff")
+    end
   end
 
   # Edit+Reset or Set Override action buttons (used in both table and card layouts)

@@ -20,11 +20,12 @@
         <table class="table table-bordered align-middle mb-0 vr-table">
           <thead class="table-light">
             <tr>
-              <th style="width:20%">Rule</th>
-              <th style="width:28%">Description</th>
+              <th style="width:18%">Rule</th>
+              <th style="width:25%">Description</th>
               <th style="width:10%">Default Severity</th>
-              <th style="width:14%">Default Params</th>
-              <th style="width:18%">Your Override</th>
+              <th style="width:12%">Default Params</th>
+              <th style="width:8%">Status</th>
+              <th style="width:17%">Your Override</th>
               <th style="width:10%"></th>
             </tr>
           </thead>
@@ -44,6 +45,7 @@
                     <span class="text-muted">—</span>
                   <% end %>
                 </td>
+                <td><%= render_status_badge(override) %></td>
                 <td><%= render_override_summary(override) %></td>
                 <td class="text-end text-nowrap">
                   <%= render_override_actions(override, rule) %>
@@ -64,6 +66,7 @@
           <div class="vr-rule-card__header">
             <span class="fw-semibold small"><%= rule.name.gsub("_", " ").titleize %></span>
             <%= render_severity_badge(rule.severity) %>
+            <%= render_status_badge(override) %>
           </div>
 
           <div class="vr-rule-card__body">
