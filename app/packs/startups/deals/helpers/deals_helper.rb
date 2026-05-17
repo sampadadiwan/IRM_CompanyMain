@@ -91,15 +91,9 @@ module DealsHelper
   end
 
   def deal_conversion_funnel(deal)
-    # Define the stages of the funnel
-    stages = ['Active','New', 'Interested', 'In Progress', 'Committed', 'Complete']
     counts = deal.deal_investors.group(:status).count
+    data = DealInvestor::STATUS.map { |stage| [stage, counts[stage] || 0] }
 
-
-    # Map the counts to the stages, ensuring all stages are represented
-    data = stages.map { |stage| [stage, counts[stage] || 0] }
-
-    # We use a column chart with horizontal orientation or specialized funnel options if available
     bar_chart data, id: "chart-deal-funnel", library: {
       plotOptions: {
         series: {

@@ -103,8 +103,9 @@ class DealInvestor < ApplicationRecord
   end
 
   def short_name
-    names = investor_name&.split("-")
-    %w[Employees Founders].include?(names[1].strip) ? names[1] : names[0]
+    names = investor_name.to_s.split("-")
+    second = names[1]&.strip
+    %w[Employees Founders].include?(second) ? second : names[0]
   end
 
   def total

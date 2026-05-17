@@ -21,6 +21,10 @@ class DealPolicy < ApplicationPolicy
     user.enable_deals
   end
 
+  def analytics?
+    index?
+  end
+
   def show?
     (permissioned_employee? || permissioned_investor?) && user.enable_deals
   end

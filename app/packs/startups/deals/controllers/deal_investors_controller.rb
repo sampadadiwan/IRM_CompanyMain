@@ -30,7 +30,7 @@ class DealInvestorsController < ApplicationController
 
   def search
     @entity = current_user.entity
-    # investor_or_investee = "*, IF(investor_entity_id = #{current_user.entity_id} OR entity_id = #{current_user.entity_id}, 1, 0) AS inv"
+    skip_authorization
 
     query = params[:query]
     if query.present?
@@ -46,19 +46,24 @@ class DealInvestorsController < ApplicationController
 
   def kanban_search
     @entity = current_user.entity
-    @q = DealInvestor.ransack(params[:q])
-    # @deal_investors = policy_scope(@q.result).includes(:investor, :deal)
+    skip_authorization
+
     @deal_investors = if params[:query].blank?
                         @entity.deal_investors
-                        # @deal_investors
                       else
                         deal_investor_ids = DealInvestorIndex.filter(term: { entity_id: @entity.id })
                                                              .query(simple_query_string: { fields: DealInvestorIndex::SEARCH_FIELDS,
                                                                                            query: "*#{params[:query]}*", default_operator: 'and' }).objects.pluck(:id)
-                        DealInvestor.where(id: deal_investor_ids) # @deal_investors.where
+                        DealInvestor.where(id: deal_investor_ids)
                       end
 
-    @deal = params[:deal].present? ? Deal.find(params[:deal]) : @deal_investors.first.deal
+    @deal = if params[:deal].present?
+              Deal.find(params[:deal])
+            else
+              @deal_investors.first&.deal
+            end
+
+    return head :no_content unless @deal
 
     render turbo_stream: [
       turbo_stream.replace("kanban_#{@deal.id}", partial: "/deals/kanban", locals: { deal_investors: @deal_investors, deal_activities: DealActivity.templates(@deal) })

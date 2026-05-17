@@ -16,7 +16,7 @@ class CompleteDealActivity < Trailblazer::Operation
     return true if deal_investor.nil? || !deal_activity.Complete?
 
     ctx[:next_activity] = deal_investor.deal_activities
-                                       .where(status: ["incomplete", "template", nil])
+                                       .where(status: :Incomplete)
                                        .where("sequence > ?", deal_activity.sequence)
                                        .first
     true

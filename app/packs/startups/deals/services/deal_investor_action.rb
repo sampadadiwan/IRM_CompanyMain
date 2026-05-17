@@ -6,7 +6,7 @@ class DealInvestorAction < Trailblazer::Operation
   def handle_errors(ctx, deal_investor:, **)
     unless deal_investor.valid?
       ctx[:errors] = deal_investor.errors.full_messages.join(", ")
-      Rails.logger.error("Investor KYC errors: #{deal_investor.errors.full_messages}")
+      Rails.logger.error("DealInvestor errors: #{deal_investor.errors.full_messages}")
     end
     deal_investor.valid?
   end

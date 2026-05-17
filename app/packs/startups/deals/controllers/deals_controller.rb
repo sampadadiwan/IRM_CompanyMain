@@ -10,8 +10,8 @@ class DealsController < ApplicationController
   # GET /deals/analytics
   def analytics
     @deals = policy_scope(Deal)
-    authorize(Deal, :index?)
-    @deals = @deals.where("tags like ?", "%#{params[:tag]}%") if params[:tag].present?
+    authorize(Deal, :analytics?)
+    @deals = @deals.where("tags like ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:tag])}%") if params[:tag].present?
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
 
     render "analytics_content", layout: false
@@ -20,7 +20,7 @@ class DealsController < ApplicationController
   # GET /deals or /deals.json
   def index
     @deals = policy_scope(Deal)
-    @deals = @deals.where("tags like ?", "%#{params[:tag]}%") if params[:tag].present?
+    @deals = @deals.where("tags like ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:tag])}%") if params[:tag].present?
     @bread_crumbs = { Deals: deals_path }
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
     @units = params[:units]
@@ -129,6 +129,7 @@ class DealsController < ApplicationController
   def new
     @bread_crumbs = { Deals: deals_path, New: nil }
     @deal = Deal.new(deal_params)
+    @deal.entity_id = current_user.entity_id
     @deal.currency = @deal.entity.currency
     @deal.activity_list = Deal::ACTIVITIES
     @deal.start_date = Time.zone.today
@@ -217,7 +218,7 @@ class DealsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def deal_params
-    params.require(:deal).permit(:entity_id, :name, :amount, :status, :form_type_id, :clone_from_id, :tags,
+    params.require(:deal).permit(:name, :amount, :status, :form_type_id, :clone_from_id, :tags,
                                  :start_date, :currency, :units, :activity_list, :archived, card_view_attrs: [], properties: {})
   end
 end

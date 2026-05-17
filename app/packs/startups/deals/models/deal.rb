@@ -10,14 +10,12 @@ class Deal < ApplicationRecord
   include WithIncomingEmail
   include WithCustomNotifications
 
-  # encrypts :name
   monetize :amount_cents, with_model_currency: :currency
 
   # Make all models searchable
   update_index('deal') { self if index_record? }
 
   belongs_to :entity
-  # belongs_to :clone_from, optional: true, class_nane: "Deal"
 
   counter_culture :entity
   delegate :name, to: :entity, prefix: :entity
@@ -39,8 +37,8 @@ class Deal < ApplicationRecord
   validates :units, length: { maximum: 15 }
 
   STATUS = %w[Open Closed].freeze
-  ACTIVITIES = Rack::Utils.parse_nested_query(ENV["DEAL_ACTIVITIES"].tr(":", "=").tr(",", "&"))
-  FUND_ACTIVITIES = Rack::Utils.parse_nested_query(ENV["FUND_DEAL_ACTIVITIES"].tr(":", "=").tr(",", "&"))
+  ACTIVITIES = Rack::Utils.parse_nested_query(ENV.fetch("DEAL_ACTIVITIES", "").tr(":", "=").tr(",", "&"))
+  FUND_ACTIVITIES = Rack::Utils.parse_nested_query(ENV.fetch("FUND_DEAL_ACTIVITIES", "").tr(":", "=").tr(",", "&"))
 
   def create_activities
     deal_investors.each(&:create_activities)
@@ -82,6 +80,6 @@ class Deal < ApplicationRecord
   end
 
   def history
-    versions.each(&:reify)
+    versions.map(&:reify)
   end
 end

@@ -13,8 +13,7 @@ class PerformActivityAction < Trailblazer::Operation
     deal_investor ||= DealInvestor.find_by(id: params[:deal_investor_id])
     initial_id = initial_deal_activity_id || params[:initial_deal_activity_id]
 
-    unless deal_investor.deal_activity.id.to_s == initial_id.to_s
-      # TODO: Abhay - Use en.yml for messages
+    unless deal_investor.deal_activity&.id.to_s == initial_id.to_s
       ctx[:errors] = "Kanban Board unupdated"
       return false
     end
@@ -99,7 +98,7 @@ class PerformActivityAction < Trailblazer::Operation
   # - If explicitly "false" -> returns false, suppressing all activity notifications for the deal.
   def deal_activity_notifications_enabled?(deal)
     value = deal.json_fields["enable_notifications"]
-    return false if value.nil? || value.to_s.blank?
+    return true if value.nil? || value.to_s.blank?
 
     value.to_s == "1"
   end

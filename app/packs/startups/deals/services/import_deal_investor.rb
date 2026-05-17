@@ -62,24 +62,23 @@ class ImportDealInvestor < ImportUtil
       templates = DealActivity.templates(deal)
       templates.each do |template|
         activity = DealActivity.where(deal_id: deal.id, deal_investor_id: deal_investor.id,
-                                      title: template.title).first_or_initialize
+                                      template_id: template.id).first_or_initialize
         next unless activity.new_record?
 
         activity.assign_attributes(
           entity_id:,
-          status:   "incomplete",
-          days:     template.days || 0,
-          sequence: template.sequence
+          title:       template.title,
+          status:      "incomplete",
+          days:        template.days || 0,
+          sequence:    template.sequence,
+          template_id: template.id
         )
         activity.save!
       end
 
-      # Set current deal_activity pointer to last non-incomplete activity or first
-      active_step = deal_investor.deal_activities
-                                 .where.not(status: [DealActivity.statuses["Incomplete"],
-                                                     DealActivity.statuses["Template"]])
-                                 .order(sequence: :desc).first
-      deal_investor.update_column(:deal_activity_id, active_step.id) if active_step
+      # Set current deal_activity pointer to the first incomplete step
+      first_step = deal_investor.deal_activities.order(:sequence).first
+      deal_investor.update_column(:deal_activity_id, first_step.template_id) if first_step&.template_id
     end
 
     true
