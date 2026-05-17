@@ -1,0 +1,173 @@
+<%
+  format_amount = ->(cents, curr) {
+    cents.present? ? Money.new(cents.to_i, curr).format : "--"
+  }
+
+  status_label = {
+    "complete"        => "Complete",
+    "on_track"        => "On Track",
+    "needs_attention" => "Needs Attention",
+    "closed"          => "Closed"
+  }
+  status_color = {
+    "complete"        => "green",
+    "on_track"        => "#1a73e8",
+    "needs_attention" => "#cc8800",
+    "closed"          => "#888"
+  }
+
+  deal_status  = deal_result[:deal_status].to_s
+  deal_name    = deal_result[:deal_name]
+  currency     = deal_result[:currency] || "INR"
+  fill_rate    = deal_result[:fill_rate].to_f
+%>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Deal Report - <%= deal_name %></title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 820px; margin: 0 auto; padding: 20px;">
+
+  <h2>Deal Fundraising Report — <%= deal_name %></h2>
+  <p style="color:#888;">
+    Generated: <%= generated_at.strftime("%d-%b-%Y, %I:%M %p") %> |
+    Agent: <%= support_agent.name %>
+  </p>
+
+  <% if deal_result[:stale] %>
+    <div style="background:#fff8e1; border:1px solid #ffe082; padding:12px; margin:16px 0; border-radius:4px;">
+      <strong style="color:#cc8800;">⚠ Stale Deal:</strong>
+      No investor activity in the last <%= deal_result[:stale_days] %> days.
+    </div>
+  <% end %>
+
+  <% if deal_status == "needs_attention" %>
+    <div style="background:#fff3f3; border:1px solid #fcc; padding:12px; margin:16px 0; border-radius:4px;">
+      <strong style="color:red;">ACTION REQUIRED:</strong>
+      Fill rate is only <%= fill_rate %>% — deal needs more investor engagement.
+    </div>
+  <% end %>
+
+  <!-- ── Summary Table ─────────────────────────────────────── -->
+  <h3>Summary</h3>
+  <table style="width:100%; border-collapse:collapse; margin:8px 0;">
+    <tr style="background:#f0f0f0;">
+      <td style="padding:8px; border:1px solid #ddd; font-weight:bold;">Status</td>
+      <td style="padding:8px; border:1px solid #ddd; color:<%= status_color[deal_status] %>; font-weight:bold;">
+        <%= status_label[deal_status] || deal_status.titleize %>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Target Raise</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right;">
+        <%= format_amount.call(deal_result[:target_cents], currency) %>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Committed (Active)</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right; color:green;">
+        <%= format_amount.call(deal_result[:committed_cents], currency) %>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Pending</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right; color:#1a73e8;">
+        <%= format_amount.call(deal_result[:pending_cents], currency) %>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Declined</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right; color:red;">
+        <%= format_amount.call(deal_result[:declined_cents], currency) %>
+      </td>
+    </tr>
+    <tr style="font-weight:bold; border-top:2px solid #333;">
+      <td style="padding:8px; border:1px solid #ddd;">Remaining to Close</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right;">
+        <%= format_amount.call(deal_result[:remaining_cents], currency) %>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding:8px; border:1px solid #ddd;">Fill Rate</td>
+      <td style="padding:8px; border:1px solid #ddd; text-align:right; color:<%= status_color[deal_status] %>; font-weight:bold;">
+        <%= fill_rate %>%
+        <!-- Simple fill bar -->
+        <div style="background:#eee; border-radius:4px; height:8px; margin-top:4px;">
+          <div style="background:<%= status_color[deal_status] %>; width:<%= [fill_rate, 100].min %>%; height:8px; border-radius:4px;"></div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- ── Investor Counts ───────────────────────────────────── -->
+  <table style="width:100%; border-collapse:collapse; margin:16px 0;">
+    <tr style="background:#f0f0f0;">
+      <th style="padding:8px; border:1px solid #ddd; text-align:center;">Total</th>
+      <th style="padding:8px; border:1px solid #ddd; text-align:center; color:green;">Active</th>
+      <th style="padding:8px; border:1px solid #ddd; text-align:center; color:#1a73e8;">Pending</th>
+      <th style="padding:8px; border:1px solid #ddd; text-align:center; color:red;">Declined</th>
+    </tr>
+    <tr style="text-align:center; font-size:18px; font-weight:bold;">
+      <td style="padding:10px; border:1px solid #ddd;"><%= deal_result[:total_investors] %></td>
+      <td style="padding:10px; border:1px solid #ddd; color:green;"><%= deal_result[:active_count] %></td>
+      <td style="padding:10px; border:1px solid #ddd; color:#1a73e8;"><%= deal_result[:pending_count] %></td>
+      <td style="padding:10px; border:1px solid #ddd; color:red;"><%= deal_result[:declined_count] %></td>
+    </tr>
+  </table>
+
+  <!-- ── Activity Step Distribution ───────────────────────── -->
+  <% step_dist = deal_result[:step_distribution] || deal_result["step_distribution"] %>
+  <% if step_dist.present? && step_dist.any? %>
+    <h3 style="margin-top:24px;">Investor Pipeline by Step</h3>
+    <table style="width:100%; border-collapse:collapse;">
+      <tr style="background:#f0f0f0;">
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">#</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Step</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:right;">Investors</th>
+      </tr>
+      <% step_dist.each do |step| %>
+        <% step = step.is_a?(Hash) ? step.with_indifferent_access : step %>
+        <tr>
+          <td style="padding:8px; border:1px solid #ddd; color:#888;"><%= step[:sequence] %></td>
+          <td style="padding:8px; border:1px solid #ddd;"><%= step[:step_title] %></td>
+          <td style="padding:8px; border:1px solid #ddd; text-align:right; font-weight:bold;">
+            <%= step[:investor_count] %>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  <% end %>
+
+  <!-- ── Top Investors ─────────────────────────────────────── -->
+  <% top = deal_result[:top_investors] || deal_result["top_investors"] %>
+  <% if top.present? && top.any? %>
+    <h3 style="margin-top:24px;">Top Investors (by Amount)</h3>
+    <table style="width:100%; border-collapse:collapse;">
+      <tr style="background:#f0f0f0;">
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Investor</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Tier</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:left;">Current Step</th>
+        <th style="padding:8px; border:1px solid #ddd; text-align:right;">Amount</th>
+      </tr>
+      <% top.each do |inv| %>
+        <% inv = inv.is_a?(Hash) ? inv.with_indifferent_access : inv %>
+        <tr>
+          <td style="padding:8px; border:1px solid #ddd;"><%= inv[:investor_name] %></td>
+          <td style="padding:8px; border:1px solid #ddd;"><%= inv[:tier].presence || "--" %></td>
+          <td style="padding:8px; border:1px solid #ddd; color:#888;"><%= inv[:current_step].presence || "--" %></td>
+          <td style="padding:8px; border:1px solid #ddd; text-align:right;">
+            <%= format_amount.call(inv[:total_amount_cents], currency) %>
+          </td>
+        </tr>
+      <% end %>
+    </table>
+  <% end %>
+
+  <hr style="margin:32px 0; border:none; border-top:1px solid #eee;">
+  <p style="color:#aaa; font-size:12px;">
+    Generated by <%= support_agent.name %> on <%= generated_at.strftime("%d %b %Y") %>
+  </p>
+
+</body>
+</html>

@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealManagementAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy
@@ -88,6 +88,8 @@ class SupportAgent < ApplicationRecord
       ["What's my current IRR?", "Show my SOA", "When is the next capital call?"]
     when "CashFlowAssistantAgent"
       ["Which funds are running low?", "Show stale balances", "Recommend capital calls"]
+    when "DealsReportAgent"
+      ["Show fill rate across deals", "Which deals need attention?", "List top investors by amount"]
     when "PortfolioReportAgent"
       ["Top 5 portfolio companies by valuation", "Which companies missed KPIs?"]
     when "PortfolioCompanyAgent"

@@ -70,6 +70,23 @@ class KanbanBoard < ApplicationRecord
     # rubocop:enable Rails/SkipsModelValidations
   end
 
+  def sync_columns_from_deal_activities
+    return unless owner_type == "Deal"
+
+    activity_titles = owner.deal_activities
+                          .where(deal_investor_id: nil)
+                          .order(:sequence)
+                          .pluck(:title)
+    return if activity_titles.empty?
+
+    kanban_columns.destroy_all  # wipe the placeholder columns from entity_setting
+
+    new_columns = activity_titles.each_with_index.map do |title, index|
+      { name: title.strip, sequence: index + 1, entity_id:, kanban_board_id: id }
+    end
+    KanbanColumn.insert_all(new_columns)
+  end
+
   def to_s
     name
   end

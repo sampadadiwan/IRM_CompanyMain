@@ -80,19 +80,15 @@ class SupportAgentsController < ApplicationController
                         SupportAgentReport.none
                       end
 
-    # Load all deal-level reports for DealManagementAgent, paginated newest-first.
-    # When deal_id param is present, filter to that deal (history view from deal page).
-    if @support_agent.agent_type == "DealManagementAgent"
-      all_deal_reports = SupportAgentReport
-                           .where(support_agent: @support_agent, owner_type: "Deal")
-                           .includes(:owner)
-                           .order(updated_at: :desc)
-      all_deal_reports = all_deal_reports.where(owner_id: params[:deal_id]) if params[:deal_id].present?
-      @filtered_deal   = Deal.find_by(id: params[:deal_id]) if params[:deal_id].present?
-      @pagy_deal_reports, @deal_reports = pagy(all_deal_reports, limit: 10)
-    else
-      @deal_reports = SupportAgentReport.none
-    end
+    @deal_reports = if @support_agent.agent_type == "DealsReportAgent"
+                      SupportAgentReport
+                        .where(support_agent: @support_agent, owner_type: "Deal")
+                        .includes(:owner)
+                        .order(updated_at: :desc)
+                    else
+                      SupportAgentReport.none
+                    end
+
   end
 
   # Initializes a new support agent for creation.
@@ -247,7 +243,9 @@ class SupportAgentsController < ApplicationController
     # PortfolioCompanyAgent running against an entire Entity has no meaningful step UI
     # (it processes all portfolio companies as a batch). Delegate straight to process_batch
     # via SupportAgentJob in :adhoc_batch mode and redirect — no progress panel.
-    if @support_agent.agent_type == "PortfolioCompanyAgent" && params[:target_type] == "Entity"
+    # DealsReportAgent also runs against an Entity and iterates over deals internally.
+    if (@support_agent.agent_type == "PortfolioCompanyAgent" && params[:target_type] == "Entity") ||
+       @support_agent.agent_type == "DealsReportAgent"
       SupportAgentJob.perform_later(
         support_agent_id: @support_agent.id,
         target_id:        params[:target_id],
@@ -256,7 +254,7 @@ class SupportAgentsController < ApplicationController
         with_steps:       true,
         execution_mode:   :adhoc_batch
       )
-      return redirect_to(request.referer || support_agents_path, notice: "#{@support_agent.name} queued for all portfolio companies.")
+      return redirect_to(request.referer || support_agents_path, notice: "#{@support_agent.name} queued.")
     end
 
     # Check if already running for single-target runs

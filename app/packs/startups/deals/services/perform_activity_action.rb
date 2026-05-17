@@ -39,6 +39,12 @@ class PerformActivityAction < Trailblazer::Operation
                       end
 
     deal_investor.deal_activity = actual_activity
+
+    kanban_board = deal_investor.deal.kanban_board
+    if kanban_board
+      matching_column = kanban_board.kanban_columns.find_by(name: target_deal_activity.title)
+      deal_investor.kanban_column_id = matching_column.id if matching_column
+    end
     deal_investor.save!
     ctx[:target_activity] = target_deal_activity
   end

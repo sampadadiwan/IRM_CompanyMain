@@ -1,264 +1,97 @@
-<% run_path ||= nil %>
-<% pagy ||= nil %>
+<%
+  format_amount = ->(cents, curr) {
+    cents.present? ? Money.new(cents.to_i, curr).format : "--"
+  }
+  status_label = {
+    "complete"        => "Complete",
+    "on_track"        => "On Track",
+    "needs_attention" => "Needs Attention",
+    "closed"          => "Closed"
+  }
+  status_color = {
+    "complete"        => "green",
+    "on_track"        => "#1a73e8",
+    "needs_attention" => "red",
+    "closed"          => "#888"
+  }
+%>
+
 <% if deal_reports.empty? %>
-  <div class="card mt-3">
-    <div class="card-header d-flex align-items-center justify-content-between py-2">
-      <span class="fw-semibold"><i class="ti ti-robot me-1"></i> Deal Management Agent</span>
-      <% if run_path %>
-        <%= button_to "Run Now", run_path, method: :post,
-              class: "btn btn-sm btn-primary", data: { turbo: false } %>
-      <% end %>
-    </div>
-    <div class="card-body text-muted" style="font-size:0.85rem;">
-      <i class="ti ti-info-circle me-1"></i>
-      No report yet — click <strong>Run Now</strong> to analyse this deal.
-    </div>
+  <div class="alert alert-secondary">
+    <i class="ti ti-info-circle"></i> No deal reports yet. Run the agent to generate reports.
   </div>
 <% else %>
-  <% deal_reports.each do |report| %>
-    <% deal        = report.owner %>
-    <% jf          = report.json_fields || {} %>
-    <% progress    = jf["progress_issues"]  || [] %>
-    <% doc_issues  = jf["document_issues"]  || [] %>
-    <% terms       = (jf["extracted_terms"] || {}).compact.reject { |_, v| v.blank? } %>
-    <% leaderboard = jf["score_leaderboard"] || [] %>
-    <% has_blocking = (progress + doc_issues).any? { |i| (i["severity"] || i[:severity]).to_s == "blocking" } %>
-
-    <%# Build investor_id → inv_report lookup so score rows can expand inline %>
-    <% inv_report_map = SupportAgentReport
-         .where(support_agent: support_agent, owner_type: "DealInvestor")
-         .latest_only
-         .joins("INNER JOIN deal_investors ON deal_investors.id = support_agent_reports.owner_id")
-         .where("deal_investors.deal_id = ?", deal&.id)
-         .includes(:owner)
-         .index_by { |r| r.owner_id } %>
-
-    <div class="card mb-4">
-
-      <%# ── Header ── %>
-      <div class="card-header py-2">
-        <span class="fw-semibold"><i class="ti ti-robot me-1"></i> Deal Management Agent</span>
-      </div>
-
-      <div class="card-body pt-3">
-
-        <%# ── Meta row: deal name, status badge, last run, Run Now ── %>
-        <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom">
-          <div class="d-flex align-items-center gap-2">
-            <% if deal %>
-              <%= link_to deal.name, deal_path(deal), data: { turbo: false }, class: "fw-semibold text-decoration-none", style: "font-size:0.9rem;" %>
-            <% end %>
-            <% if has_blocking %>
-              <span class="badge bg-danger"><i class="ti ti-alert-triangle"></i> Blockers</span>
-            <% else %>
-              <span class="badge bg-success"><i class="ti ti-check"></i> Ready</span>
-            <% end %>
-          </div>
-          <div class="d-flex align-items-center gap-3">
-            <span class="text-muted" style="font-size:0.78rem;">
-              Last run: <%= report.updated_at.strftime("%d %b %Y, %H:%M") %>
-            </span>
-            <% if run_path %>
-              <%= button_to "Run Now", run_path, method: :post,
-                    class: "btn btn-sm btn-primary", data: { turbo: false } %>
-            <% end %>
-          </div>
-        </div>
-
-        <%# ── Progress + Checklist ── %>
-        <div class="row g-3 mb-3">
-          <div class="col-md-6">
-            <p class="text-uppercase text-muted mb-2" style="font-size:0.7rem;letter-spacing:0.06em;">
-              <i class="ti ti-activity"></i> Deal Progress
-            </p>
-            <% stagnant = progress.select { |i| i["type"] == "stagnant" } %>
-            <% overdue  = progress.select { |i| i["type"] == "overdue"  } %>
-            <% if stagnant.empty? && overdue.empty? %>
-              <p class="mb-0 text-success" style="font-size:0.85rem;"><i class="ti ti-check"></i> All investors on track</p>
-            <% else %>
-              <% stagnant.each do |i| %>
-                <div class="d-flex align-items-start gap-1 mb-1">
-                  <i class="ti ti-clock text-danger mt-1 flex-shrink-0"></i>
-                  <span style="font-size:0.85rem;"><%= i["message"] %></span>
-                </div>
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Deal</th>
+          <th>Status</th>
+          <th class="text-end">Target</th>
+          <th class="text-end">Committed</th>
+          <th class="text-end">Fill %</th>
+          <th class="text-center">Investors</th>
+          <th>Last Run</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% deal_reports.each do |report| %>
+          <% data  = report.json_fields.with_indifferent_access %>
+          <% ds    = data[:deal_status].to_s %>
+          <% curr  = data[:currency] || "INR" %>
+          <% fill  = data[:fill_rate].to_f %>
+          <tr>
+            <td><strong><%= data[:deal_name] %></strong></td>
+            <td style="color:<%= status_color[ds] %>; font-weight:bold;">
+              <%= status_label[ds] || ds.titleize %>
+              <% if data[:stale] %>
+                <span class="badge bg-warning text-dark ms-1" title="<%= data[:stale_days] %> days since last activity">Stale</span>
               <% end %>
-              <% overdue.each do |i| %>
-                <div class="d-flex align-items-start gap-1 mb-1">
-                  <i class="ti ti-calendar-x text-warning mt-1 flex-shrink-0"></i>
-                  <span style="font-size:0.85rem;"><%= i["message"] %></span>
-                </div>
+            </td>
+            <td class="text-end"><%= format_amount.call(data[:target_cents], curr) %></td>
+            <td class="text-end" style="color:green;">
+              <%= format_amount.call(data[:committed_cents], curr) %>
+            </td>
+            <td class="text-end" style="color:<%= status_color[ds] %>; font-weight:bold;">
+              <%= fill %>%
+              <div style="background:#eee; border-radius:3px; height:6px; margin-top:3px;">
+                <div style="background:<%= status_color[ds] %>; width:<%= [fill, 100].min %>%; height:6px; border-radius:3px;"></div>
+              </div>
+            </td>
+            <td class="text-center" style="font-size:13px;">
+              <span class="text-success"><%= data[:active_count] %> active</span> /
+              <span class="text-primary"><%= data[:pending_count] %> pending</span> /
+              <span class="text-danger"><%= data[:declined_count] %> declined</span>
+            </td>
+            <td style="color:#888; font-size:12px;">
+              <%= report.updated_at.strftime("%d %b %Y, %H:%M") %>
+            </td>
+            <td>
+              <% deal = report.owner %>
+              <% if deal.present? %>
+                <%= link_to "View Deal", deal_path(deal), class: "btn btn-sm btn-outline-primary", target: "_top" %>
               <% end %>
-            <% end %>
-          </div>
-
-          <div class="col-md-6">
-            <p class="text-uppercase text-muted mb-2" style="font-size:0.7rem;letter-spacing:0.06em;">
-              <i class="ti ti-file-check"></i> Document Checklist
-            </p>
-            <% if doc_issues.empty? %>
-              <p class="text-muted mb-0" style="font-size:0.85rem;">No checklist configured</p>
-            <% else %>
-              <% doc_issues.each do |i| %>
-                <% present = (i["type"] || i[:type]).to_s == "present" %>
-                <div class="d-flex align-items-center gap-1 mb-1">
-                  <i class="ti <%= present ? 'ti-circle-check text-success' : 'ti-circle-x text-danger' %>"></i>
-                  <span style="font-size:0.85rem;"><%= i["document_name"] || i["message"] %></span>
-                </div>
-              <% end %>
-            <% end %>
-          </div>
-        </div>
-
-        <%# ── Deal Terms table ── %>
-        <% if terms.any? %>
-          <p class="text-uppercase text-muted mb-2" style="font-size:0.7rem;letter-spacing:0.06em;">
-            <i class="ti ti-file-text"></i> Extracted Deal Terms
-          </p>
-          <table class="table table-sm table-bordered mb-3" style="font-size:0.85rem;">
-            <tbody>
-              <% terms.each_slice(2).each do |pair| %>
-                <tr>
-                  <% pair.each do |key, value| %>
-                    <td class="text-muted fw-semibold" style="width:15%;white-space:nowrap;background:#f8f9fa;">
-                      <%= key.to_s.humanize %>
-                    </td>
-                    <td style="width:35%;"><%= value %></td>
-                  <% end %>
-                  <% if pair.size == 1 %>
-                    <td colspan="2"></td>
-                  <% end %>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        <% end %>
-
-        <%# ── Investor Scores — expandable rows ── %>
-        <% if leaderboard.any? %>
-          <p class="text-uppercase text-muted mb-2" style="font-size:0.7rem;letter-spacing:0.06em;">
-            <i class="ti ti-trophy"></i> Investor Scores
-          </p>
-          <table class="table table-sm table-bordered align-middle mb-0" style="font-size:0.85rem;">
-            <thead class="table-light">
-              <tr>
-                <th style="width:2rem;">#</th>
-                <th>Investor</th>
-                <th style="width:7rem;">Status</th>
-                <th style="width:12rem;">Score</th>
-                <th style="width:4rem;">Grade</th>
-                <th style="width:2rem;"></th>
-              </tr>
-            </thead>
-            <tbody>
-              <% leaderboard.each_with_index do |row, idx| %>
-                <% score     = (row["ai_score"] || row[:ai_score]).to_i %>
-                <% grade     = (row["ai_grade"] || row[:ai_grade]).to_s %>
-                <% inv_id    = (row["investor_id"] || row[:investor_id]).to_i %>
-                <% inv_report = inv_report_map[inv_id] %>
-                <% bar_class = score >= 80 ? "bg-success" : score >= 60 ? "bg-primary" : score >= 40 ? "bg-warning" : "bg-danger" %>
-                <% collapse_id = "inv-detail-#{report.id}-#{inv_id}" %>
-
-                <tr>
-                  <td class="text-muted"><%= idx + 1 %></td>
-                  <td class="fw-semibold"><%= row["investor_name"] || row[:investor_name] %></td>
-                  <td>
-                    <% status_str = (row["status"] || row[:status]).to_s %>
-                    <% status_class = status_str == "Active" ? "bg-primary" : "bg-secondary" %>
-                    <span class="badge <%= status_class %>"><%= status_str %></span>
-                  </td>
-                  <td>
-                    <div class="d-flex align-items-center gap-2">
-                      <div class="progress flex-grow-1" style="height:5px;">
-                        <div class="progress-bar <%= bar_class %>" style="width:<%= score %>%;"></div>
-                      </div>
-                      <span class="fw-bold" style="width:2rem;text-align:right;"><%= score %></span>
-                    </div>
-                  </td>
-                  <td><span class="badge <%= bar_class %>"><%= grade %></span></td>
-                  <td class="text-center">
-                    <% if inv_report %>
-                      <button class="btn btn-sm btn-outline-secondary py-1 px-2"
-                              data-bs-toggle="collapse"
-                              data-bs-target="#<%= collapse_id %>"
-                              title="View report">
-                        <i class="ti ti-chevron-down"></i>
-                      </button>
-                    <% end %>
-                  </td>
-                </tr>
-
-                <%# ── Expanded investor detail ── %>
-                <% if inv_report %>
-                  <% ijf = inv_report.json_fields || {} %>
-                  <tr class="collapse" id="<%= collapse_id %>">
-                    <td colspan="6" class="p-0">
-                      <div class="p-3 bg-light border-top">
-
-                        <%# Summary %>
-                        <% if ijf["summary_text"].present? %>
-                          <p class="text-uppercase text-muted mb-1" style="font-size:0.7rem;letter-spacing:0.06em;">Summary</p>
-                          <p style="font-size:0.85rem;white-space:pre-wrap;" class="mb-3"><%= ijf["summary_text"] %></p>
-                        <% end %>
-
-                        <%# Score breakdown %>
-                        <% if (score_data = ijf["score"]).present? %>
-                          <p class="text-uppercase text-muted mb-1" style="font-size:0.7rem;letter-spacing:0.06em;">Score Breakdown</p>
-                          <p style="font-size:0.85rem;" class="mb-3"><%= score_data["summary"] %></p>
-
-                          <% dims = Array(score_data["dimensions"]) %>
-                          <% dims.each do |dim| %>
-                            <% dim_score = dim["score"].to_i %>
-                            <% bar_pct   = (dim_score / 20.0 * 100).round %>
-                            <% dim_class = dim_score >= 17 ? "bg-success" : dim_score >= 13 ? "bg-primary" : dim_score >= 9 ? "bg-warning" : "bg-danger" %>
-                            <div class="mb-2">
-                              <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span style="font-size:0.85rem;" class="fw-semibold"><%= dim["name"] %></span>
-                                <span class="badge <%= dim_class %>"><%= dim_score %> / 20</span>
-                              </div>
-                              <div class="progress mb-1" style="height:4px;">
-                                <div class="progress-bar <%= dim_class %>" style="width:<%= bar_pct %>%;"></div>
-                              </div>
-                              <p style="font-size:0.82rem;" class="text-muted mb-0"><%= dim["rationale"] %></p>
-                            </div>
-                          <% end %>
-
-                          <% if dims.any? %>
-                            <% overall    = score_data["overall_score"].to_i %>
-                            <% grade_str  = score_data["grade"].to_s %>
-                            <% grade_cls  = overall >= 85 ? "bg-success" : overall >= 70 ? "bg-primary" : overall >= 55 ? "bg-warning" : "bg-danger" %>
-                            <div class="border-top pt-2 mt-2 d-flex align-items-center gap-2 flex-wrap">
-                              <span class="text-muted" style="font-size:0.82rem;">
-                                <%= dims.map { |d| d["score"].to_i }.join(" + ") %> =
-                              </span>
-                              <span class="fw-bold" style="font-size:0.85rem;"><%= overall %> / 100</span>
-                              <span class="badge <%= grade_cls %>"><%= grade_str %></span>
-                              <span class="text-muted" style="font-size:0.78rem;">
-                                (A ≥ 85 &nbsp;·&nbsp; B ≥ 70 &nbsp;·&nbsp; C ≥ 55 &nbsp;·&nbsp; D ≥ 40 &nbsp;·&nbsp; F &lt; 40)
-                              </span>
-                            </div>
-                          <% end %>
-                        <% end %>
-
-                        <% if ijf["error"].present? %>
-                          <div class="alert alert-danger py-1 mt-2 mb-0" style="font-size:0.85rem;"><%= ijf["error"] %></div>
-                        <% end %>
-
-                      </div>
-                    </td>
-                  </tr>
+            </td>
+          </tr>
+          <%# Step distribution inline detail %>
+          <% step_dist = data[:step_distribution] %>
+          <% if step_dist.present? && step_dist.any? %>
+            <tr class="table-light">
+              <td colspan="8" style="padding:4px 16px; font-size:12px; color:#555;">
+                <strong>Pipeline:</strong>
+                <% step_dist.each do |step| %>
+                  <% step = step.is_a?(Hash) ? step.with_indifferent_access : step %>
+                  <span class="me-3">
+                    <%= step[:sequence] %>. <%= step[:step_title] %>
+                    <span class="badge bg-secondary"><%= step[:investor_count] %></span>
+                  </span>
                 <% end %>
-              <% end %>
-            </tbody>
-          </table>
+              </td>
+            </tr>
+          <% end %>
         <% end %>
-
-      </div><%# /card-body %>
-    </div><%# /card %>
-  <% end %>
-
-  <% if pagy && pagy.pages > 1 %>
-    <div class="d-flex justify-content-center mt-3">
-      <%= raw pagy_bootstrap_nav(pagy) %>
-    </div>
-  <% end %>
+      </tbody>
+    </table>
+  </div>
 <% end %>
