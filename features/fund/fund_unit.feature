@@ -149,9 +149,9 @@ Scenario Outline: Transfer Fund Units Validations
   Then I should get the error "<message>"
 
 Examples:
-    # to commitment has a later date
+    # to commitment has a later date — now allowed; transfer_date is used as as_of so no date-ordering constraint
   	|fund                 | call                 | transfer | from_commitment | to_commitment | message |
-  	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil| commitment_date=2020-01-01 | commitment_date=2020-01-02 | The `To-Commitment` commitment_date should be on or before the `From-Commitment`. |
+  	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil| commitment_date=2020-01-01 | commitment_date=2020-01-02 | nil |
     # to commitment has the same date
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01 | commitment_date=2020-01-01 | nil |
     # to commitment has the earlier date
@@ -160,9 +160,115 @@ Examples:
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;fund_id=1 | commitment_date=2020-01-01;fund_id=2 | Commitments are not from the same fund. |
     # different unit types
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2 | commitment_date=2020-01-01;unit_type=A1| Commitments are not the same unit type. |
-    # to commitment has a later date, different fund, different unit type
-    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2;fund_id=1  | commitment_date=2020-01-02;unit_type=A1;fund_id=2 | The `To-Commitment` commitment_date should be on or before the `From-Commitment`.Commitments are not from the same fund.Commitments are not the same unit type. |
+    # different fund and different unit type (date ordering no longer an error)
+    |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2;fund_id=1  | commitment_date=2020-01-02;unit_type=A1;fund_id=2 | Commitments are not from the same fund.Commitments are not the same unit type. |
 
+
+Scenario Outline: Transfer Fund Units - Invalid Ratio
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  And Given import file "fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
+  Given the units are generated
+  When fund units are transferred with ratio percentage <ratio>
+  Then I should get the error "<message>"
+
+Examples:
+  | ratio | message                             |
+  | 0     | Transfer ratio must be greater than 0. |
+  | -10   | Transfer ratio must be greater than 0. |
+  | 110   | Transfer ratio must be 100 or less.    |
+
+
+Scenario: Transfer Fund Units - fails when from commitment has no remaining units
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  And Given import file "fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
+  Given the units are generated
+  Given the fund units are fully transferred
+  When fund units are transferred with ratio percentage 50
+  Then I should get the error "From commitment does not have enough units."
+
+
+Scenario: Transfer Fund Units without account entries
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  And Given import file "fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
+  Given the units are generated
+  When fund units are transferred "price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=false,account_entries_excluded=nil"
+  Then the units should be transferred
+  And account entries are not affected by the transfer
+  And the remittances are adjusted upon fund unit transfer
+  And distributions are adjusted upon fund unit transfer
+  And adjustments are create upon fund unit transfer
+
+
+Scenario: Transfer Fund Units with excluded account entries
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  And Given import file "fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
+  Given the units are generated
+  When the fund units are transferred excluding the first account entry
+  Then the excluded account entry is copied in full to the to commitment
+  And the other account entries are pro-rated
+
+
+Scenario: Fund unit counter caches are correct after transfer
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  And Given import file "fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
+  Given the units are generated
+  When fund units are transferred "price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil"
+  Then the fund unit counter caches are correct after transfer
 
 
 @import

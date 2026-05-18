@@ -16,34 +16,41 @@ class FundUnitTransferService < Trailblazer::Operation
   left :handle_errors, Output(:failure) => End(:failure)
 
   def generate_transfer_token(ctx, transfer:, **)
-    ctx[:transfer_token] = SecureRandom.uuid
-    ctx[:transfer_ratio] = transfer.transfer_ratio.to_f / 100.0
+    ctx[:transfer_token]  = SecureRandom.uuid
+    # Store ratio as BigDecimal to avoid float rounding throughout the pipeline.
+    ctx[:transfer_ratio]  = BigDecimal(transfer.transfer_ratio.to_s) / 100
     ctx[:from_commitment] = transfer.from_commitment
-    ctx[:to_commitment] = transfer.to_commitment
-    ctx[:fund] = transfer.fund
-    ctx[:transfer_date] = transfer.transfer_date
-    ctx[:price] = transfer.price || 0.0
-    ctx[:premium] = transfer.premium || 0.0
+    ctx[:to_commitment]   = transfer.to_commitment
+    ctx[:fund]            = transfer.fund
+    ctx[:transfer_date]   = transfer.transfer_date
+    ctx[:price]           = BigDecimal((transfer.price || 0).to_s)
+    ctx[:premium]         = BigDecimal((transfer.premium || 0).to_s)
     ctx[:transfer_account_entries] = transfer.transfer_account_entries
     ctx[:account_entries_excluded] = transfer.account_entries_excluded.present? ? transfer.account_entries_excluded.split(",").map(&:strip) : []
     transfer.transfer_token = ctx[:transfer_token]
-    transfer.save
+    # Skip model validations here — business rules are enforced in validate_transfer.
+    # generate_transfer_token is only responsible for minting the token; a failed
+    # save here would swallow the real validation error message.
+    transfer.save(validate: false)
+    true
   end
 
   def validate_transfer(ctx, transfer_ratio:, from_commitment:, to_commitment:, fund:, **)
-    quantity = (from_commitment.total_fund_units_quantity * transfer_ratio).to_f
+    # Ratio must be valid before we compute quantity to avoid misleading "no units" errors.
+    if transfer_ratio <= 0
+      ctx[:error] = "Transfer ratio must be greater than 0."
+      Rails.logger.error(ctx[:error])
+      return false
+    end
+    if transfer_ratio > 1
+      ctx[:error] = "Transfer ratio must be 100 or less."
+      Rails.logger.error(ctx[:error])
+      return false
+    end
+
+    quantity = (BigDecimal(from_commitment.total_fund_units_quantity.to_s) * transfer_ratio).round(10)
     valid = true
     msg = ""
-    if from_commitment.commitment_date < to_commitment.commitment_date
-      # Adjustments are created for the from_commitment and to_commitment
-      # Both have the as_of date as the from_commitment.commitment_date
-      # Adjustment validated that the as_of date is on or after the commitment_date
-      # If the from_commitment.commitment_date is before the to_commitment.commitment_date, then the to_commitment will fail validation as its commitment_date is after the as_of date
-      msg += "The `To-Commitment` commitment_date should be on or before the `From-Commitment`."
-      Rails.logger.error(msg)
-      ctx[:error] = msg
-      valid = false
-    end
     if from_commitment.fund_id != fund.id || to_commitment.fund_id != fund.id
       msg += "Commitments are not from the same fund."
       Rails.logger.error(msg)
@@ -56,7 +63,7 @@ class FundUnitTransferService < Trailblazer::Operation
       ctx[:error] = msg
       valid = false
     end
-    if from_commitment.total_fund_units_quantity < quantity
+    if quantity <= 0 || BigDecimal(from_commitment.total_fund_units_quantity.to_s) < quantity
       msg += "From commitment does not have enough units."
       Rails.logger.error(msg)
       ctx[:error] = msg
@@ -66,26 +73,30 @@ class FundUnitTransferService < Trailblazer::Operation
   end
 
   def transfer_units(ctx, transfer_ratio:, transfer_date:, from_commitment:, to_commitment:, fund:, price:, premium:, **)
-    # Get the reason for the transfer
     reason = ctx[:reason].presence || "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}. transfer_id: #{ctx[:transfer_token]}"
     success = false
-    price_cents = price.to_d * 100.0
-    premium_cents = premium.to_d * 100.0
-    # The transfer quantity, is the product of the from_commitment's units_quantity and the transfer_ratio
-    quantity = (from_commitment.total_fund_units_quantity * transfer_ratio).to_f
+    price_cents   = (price   * 100).round(0)
+    premium_cents = (premium * 100).round(0)
+    quantity = (BigDecimal(from_commitment.total_fund_units_quantity.to_s) * transfer_ratio).round(10)
     FundUnit.transaction do
-      # Setup the transfer from the from_commitment
-      from_fu = from_commitment.fund_units.create(entity_id: from_commitment.entity_id, unit_type: from_commitment.unit_type, investor_id: from_commitment.investor_id, quantity: -quantity, price_cents:, premium_cents:, fund:, reason:, issue_date: transfer_date, transfer: "out")
-      # Setup the transfer to the to_commitment
-      to_fu = to_commitment.fund_units.create(entity_id: to_commitment.entity_id, unit_type: to_commitment.unit_type, investor_id: to_commitment.investor_id, quantity:, price_cents:, premium_cents:, fund:, reason:, issue_date: transfer_date, transfer: "in")
+      from_fu = from_commitment.fund_units.create(
+        entity_id: from_commitment.entity_id, unit_type: from_commitment.unit_type,
+        investor_id: from_commitment.investor_id, quantity: -quantity,
+        price_cents:, premium_cents:, fund:, reason:, issue_date: transfer_date, transfer: "out"
+      )
+      to_fu = to_commitment.fund_units.create(
+        entity_id: to_commitment.entity_id, unit_type: to_commitment.unit_type,
+        investor_id: to_commitment.investor_id, quantity:,
+        price_cents:, premium_cents:, fund:, reason:, issue_date: transfer_date, transfer: "in"
+      )
 
       if from_fu.valid? && to_fu.valid?
         success = true
       else
-        Rails.logger.error("Error transferring units: #{from_fu.errors.full_messages} #{to_fu.errors.full_messages}")
-        ctx[:errors] = from_fu.errors.full_messages
-        ctx[:errors] += to_fu.errors.full_messages
-        success = false
+        messages = (from_fu.errors.full_messages + to_fu.errors.full_messages).join(", ")
+        Rails.logger.error("Error transferring units: #{messages}")
+        ctx[:error] = messages
+        raise ActiveRecord::Rollback
       end
     end
 
@@ -107,7 +118,6 @@ class FundUnitTransferService < Trailblazer::Operation
     false
   end
 
-  # This is used to transfer the account entries from the from_commitment to the to_commitment, based on the transfer_account_entries parameter and account_entries_excluded and transfer_ratio
   def transfer_account_entries(ctx, **)
     if ctx[:transfer_account_entries]
       # Transfer the account entries
@@ -119,42 +129,41 @@ class FundUnitTransferService < Trailblazer::Operation
           transfer_ratio = ctx[:transfer_ratio]
           retained_ratio = 1 - transfer_ratio
         else
-          transfer_ratio = 1
-          retained_ratio = 1
+          transfer_ratio = BigDecimal("1")
+          retained_ratio = BigDecimal("1")
         end
 
-        orig_amount     = entry.amount_cents
-        orig_folio      = entry.folio_amount_cents
-        orig_tracking   = entry.tracking_amount_cents
+        orig_amount   = BigDecimal(entry.amount_cents.to_s)
+        orig_folio    = BigDecimal(entry.folio_amount_cents.to_s)
+        orig_tracking = BigDecimal(entry.tracking_amount_cents.to_s)
 
         new_entry = entry.dup
-        new_entry.folio_id = to_commitment.folio_id
-        new_entry.investor_id = to_commitment.investor_id
+        new_entry.folio_id        = to_commitment.folio_id
+        new_entry.investor_id     = to_commitment.investor_id
         new_entry.commitment_name = to_commitment.to_s
 
-        new_entry.json_fields["transfer_id"] = ctx[:transfer_token]
-        new_entry.json_fields["orig_amount"] = entry.amount_cents
-        new_entry.json_fields["orig_id"] = entry.id
-        new_entry.capital_commitment_id = to_commitment.id
-        new_entry.amount_cents = orig_amount * transfer_ratio
-        new_entry.folio_amount_cents = orig_folio * transfer_ratio
-        new_entry.tracking_amount_cents = orig_tracking * transfer_ratio
+        new_entry.json_fields["transfer_id"]    = ctx[:transfer_token]
+        new_entry.json_fields["orig_amount"]    = entry.amount_cents
+        new_entry.json_fields["orig_id"]        = entry.id
+        new_entry.capital_commitment_id         = to_commitment.id
+        new_entry.amount_cents                  = (orig_amount   * transfer_ratio).round(2)
+        new_entry.folio_amount_cents            = (orig_folio    * transfer_ratio).round(2)
+        new_entry.tracking_amount_cents         = (orig_tracking * transfer_ratio).round(2)
         new_entry.created_at = Time.zone.now
         new_entry.updated_at = Time.zone.now
         new_entry.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original entry ID: #{entry.id}. #{entry.amount_cents} * #{transfer_ratio} = #{new_entry.amount_cents}"
 
-        entry.json_fields["transfer_id"] = ctx[:transfer_token]
-        entry.json_fields["orig_amount"] = entry.amount_cents
+        entry.json_fields["transfer_id"]    = ctx[:transfer_token]
+        entry.json_fields["orig_amount"]    = entry.amount_cents
         entry.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original entry ID: #{entry.id}"
 
         AccountEntry.transaction do
-          # Update without callbacks
           entry.update_columns(
-            amount_cents: (entry.amount_cents * retained_ratio),
-            folio_amount_cents: (entry.folio_amount_cents * retained_ratio),
-            tracking_amount_cents: (entry.tracking_amount_cents * retained_ratio),
-            json_fields: entry.json_fields,
-            updated_at: Time.current # omit if you truly don't want to touch timestamps
+            amount_cents:          (orig_amount   * retained_ratio).round(2),
+            folio_amount_cents:    (orig_folio    * retained_ratio).round(2),
+            tracking_amount_cents: (orig_tracking * retained_ratio).round(2),
+            json_fields:           entry.json_fields,
+            updated_at:            Time.current
           )
           # Insert without callbacks
           AccountEntry.insert_all!([new_entry.attributes.except("generated_deleted")])
@@ -164,87 +173,84 @@ class FundUnitTransferService < Trailblazer::Operation
     true
   end
 
-  # This is used to transfer the remittances and payments from the from_commitment to the to_commitment, based on the transfer_ratio
   def transfer_remittances(ctx, **)
     from_commitment = ctx[:from_commitment]
-    to_commitment = ctx[:to_commitment]
-    transfer_ratio = ctx[:transfer_ratio]
-    retained_ratio = 1 - transfer_ratio
-    token = ctx[:transfer_token]
-
-    remittances_transferred = 0
+    to_commitment   = ctx[:to_commitment]
+    transfer_ratio  = ctx[:transfer_ratio]
+    retained_ratio  = 1 - transfer_ratio
+    token           = ctx[:transfer_token]
 
     from_commitment.capital_remittances.each do |remittance|
-      orig_call = remittance.call_amount_cents
-      orig_collected  = remittance.collected_amount_cents
-      orig_committed  = remittance.committed_amount_cents
-      orig_folio_call = remittance.folio_call_amount_cents
-      orig_folio_collected = remittance.folio_collected_amount_cents
-      orig_folio_committed = remittance.folio_committed_amount_cents
-      orig_capital_fee = remittance.capital_fee_cents
-      orig_other_fee = remittance.other_fee_cents
-      orig_folio_capital_fee = remittance.folio_capital_fee_cents
-      orig_folio_other_fee = remittance.folio_other_fee_cents
-      orig_computed = remittance.computed_amount_cents
-      orig_percentage = remittance.percentage
-      orig_arrear_folio = remittance.arrear_folio_amount_cents
-      orig_arrear = remittance.arrear_amount_cents
-      orig_tracking_collected = remittance.tracking_collected_amount_cents
-      orig_tracking_call = remittance.tracking_call_amount_cents
+      orig_call              = BigDecimal(remittance.call_amount_cents.to_s)
+      orig_collected         = BigDecimal(remittance.collected_amount_cents.to_s)
+      orig_committed         = BigDecimal(remittance.committed_amount_cents.to_s)
+      orig_folio_call        = BigDecimal(remittance.folio_call_amount_cents.to_s)
+      orig_folio_collected   = BigDecimal(remittance.folio_collected_amount_cents.to_s)
+      orig_folio_committed   = BigDecimal(remittance.folio_committed_amount_cents.to_s)
+      orig_capital_fee       = BigDecimal(remittance.capital_fee_cents.to_s)
+      orig_other_fee         = BigDecimal(remittance.other_fee_cents.to_s)
+      orig_folio_capital_fee = BigDecimal(remittance.folio_capital_fee_cents.to_s)
+      orig_folio_other_fee   = BigDecimal(remittance.folio_other_fee_cents.to_s)
+      orig_computed          = BigDecimal(remittance.computed_amount_cents.to_s)
+      orig_percentage        = BigDecimal(remittance.percentage.to_s)
+      orig_arrear_folio      = BigDecimal(remittance.arrear_folio_amount_cents.to_s)
+      orig_arrear            = BigDecimal(remittance.arrear_amount_cents.to_s)
+      orig_tracking_collected = BigDecimal(remittance.tracking_collected_amount_cents.to_s)
+      orig_tracking_call     = BigDecimal(remittance.tracking_call_amount_cents.to_s)
 
       new_remittance = remittance.dup
-      new_remittance.json_fields["transfer_id"] = ctx[:transfer_token]
-      new_remittance.json_fields["orig_id"] = remittance.id
-      new_remittance.json_fields["orig_call_amount"] = remittance.call_amount_cents
+      new_remittance.json_fields["transfer_id"]           = ctx[:transfer_token]
+      new_remittance.json_fields["orig_id"]               = remittance.id
+      new_remittance.json_fields["orig_call_amount"]      = remittance.call_amount_cents
       new_remittance.json_fields["orig_collected_amount"] = remittance.collected_amount_cents
       new_remittance.json_fields["orig_committed_amount"] = remittance.committed_amount_cents
       new_remittance.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original remittance ID: #{remittance.id}"
 
-      new_remittance.investor_id = to_commitment.investor_id
-      new_remittance.folio_id = to_commitment.folio_id
-      new_remittance.investor_name = to_commitment.investor_name
-      new_remittance.capital_commitment_id = to_commitment.id
-      new_remittance.call_amount_cents = orig_call * transfer_ratio
-      new_remittance.collected_amount_cents = orig_collected * transfer_ratio
-      new_remittance.committed_amount_cents = orig_committed * transfer_ratio
-      new_remittance.folio_call_amount_cents = orig_folio_call * transfer_ratio
-      new_remittance.folio_collected_amount_cents = orig_folio_collected * transfer_ratio
-      new_remittance.folio_committed_amount_cents = orig_folio_committed * transfer_ratio
-      new_remittance.capital_fee_cents = orig_capital_fee * transfer_ratio
-      new_remittance.other_fee_cents = orig_other_fee * transfer_ratio
-      new_remittance.folio_capital_fee_cents = orig_folio_capital_fee * transfer_ratio
-      new_remittance.folio_other_fee_cents = orig_folio_other_fee * transfer_ratio
-      new_remittance.computed_amount_cents = orig_computed * transfer_ratio
-      new_remittance.percentage = orig_percentage * transfer_ratio
-      new_remittance.arrear_folio_amount_cents = orig_arrear_folio * transfer_ratio
-      new_remittance.arrear_amount_cents = orig_arrear * transfer_ratio
-      new_remittance.tracking_collected_amount_cents = orig_tracking_collected * transfer_ratio
-      new_remittance.tracking_call_amount_cents = orig_tracking_call * transfer_ratio
+      new_remittance.investor_id            = to_commitment.investor_id
+      new_remittance.folio_id               = to_commitment.folio_id
+      new_remittance.investor_name          = to_commitment.investor_name
+      new_remittance.capital_commitment_id  = to_commitment.id
+      new_remittance.call_amount_cents                  = (orig_call              * transfer_ratio).round(2)
+      new_remittance.collected_amount_cents             = (orig_collected         * transfer_ratio).round(2)
+      new_remittance.committed_amount_cents             = (orig_committed         * transfer_ratio).round(2)
+      new_remittance.folio_call_amount_cents            = (orig_folio_call        * transfer_ratio).round(2)
+      new_remittance.folio_collected_amount_cents       = (orig_folio_collected   * transfer_ratio).round(2)
+      new_remittance.folio_committed_amount_cents       = (orig_folio_committed   * transfer_ratio).round(2)
+      new_remittance.capital_fee_cents                  = (orig_capital_fee       * transfer_ratio).round(2)
+      new_remittance.other_fee_cents                    = (orig_other_fee         * transfer_ratio).round(2)
+      new_remittance.folio_capital_fee_cents            = (orig_folio_capital_fee * transfer_ratio).round(2)
+      new_remittance.folio_other_fee_cents              = (orig_folio_other_fee   * transfer_ratio).round(2)
+      new_remittance.computed_amount_cents              = (orig_computed          * transfer_ratio).round(2)
+      new_remittance.percentage                         = (orig_percentage        * transfer_ratio).round(10)
+      new_remittance.arrear_folio_amount_cents          = (orig_arrear_folio      * transfer_ratio).round(2)
+      new_remittance.arrear_amount_cents                = (orig_arrear            * transfer_ratio).round(2)
+      new_remittance.tracking_collected_amount_cents    = (orig_tracking_collected * transfer_ratio).round(2)
+      new_remittance.tracking_call_amount_cents         = (orig_tracking_call     * transfer_ratio).round(2)
       new_remittance.created_at = Time.zone.now
       new_remittance.updated_at = Time.zone.now
 
-      remittance.json_fields["transfer_id"] = ctx[:transfer_token]
-      remittance.json_fields["orig_call_amount"] = remittance.call_amount_cents
+      remittance.json_fields["transfer_id"]           = ctx[:transfer_token]
+      remittance.json_fields["orig_call_amount"]      = remittance.call_amount_cents
       remittance.json_fields["orig_collected_amount"] = remittance.collected_amount_cents
       remittance.json_fields["orig_committed_amount"] = remittance.committed_amount_cents
       remittance.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original remittance ID: #{remittance.id}"
 
-      remittance.call_amount_cents *= retained_ratio
-      remittance.collected_amount_cents *= retained_ratio
-      remittance.committed_amount_cents *= retained_ratio
-      remittance.folio_call_amount_cents *= retained_ratio
-      remittance.folio_collected_amount_cents *= retained_ratio
-      remittance.folio_committed_amount_cents *= retained_ratio
-      remittance.capital_fee_cents *= retained_ratio
-      remittance.other_fee_cents *= retained_ratio
-      remittance.folio_capital_fee_cents *= retained_ratio
-      remittance.folio_other_fee_cents *= retained_ratio
-      remittance.computed_amount_cents *= retained_ratio
-      remittance.percentage *= retained_ratio
-      remittance.arrear_folio_amount_cents *= retained_ratio
-      remittance.arrear_amount_cents *= retained_ratio
-      remittance.tracking_collected_amount_cents *= retained_ratio
-      remittance.tracking_call_amount_cents *= retained_ratio
+      remittance.call_amount_cents               = (orig_call              * retained_ratio).round(2)
+      remittance.collected_amount_cents          = (orig_collected         * retained_ratio).round(2)
+      remittance.committed_amount_cents          = (orig_committed         * retained_ratio).round(2)
+      remittance.folio_call_amount_cents         = (orig_folio_call        * retained_ratio).round(2)
+      remittance.folio_collected_amount_cents    = (orig_folio_collected   * retained_ratio).round(2)
+      remittance.folio_committed_amount_cents    = (orig_folio_committed   * retained_ratio).round(2)
+      remittance.capital_fee_cents               = (orig_capital_fee       * retained_ratio).round(2)
+      remittance.other_fee_cents                 = (orig_other_fee         * retained_ratio).round(2)
+      remittance.folio_capital_fee_cents         = (orig_folio_capital_fee * retained_ratio).round(2)
+      remittance.folio_other_fee_cents           = (orig_folio_other_fee   * retained_ratio).round(2)
+      remittance.computed_amount_cents           = (orig_computed          * retained_ratio).round(2)
+      remittance.percentage                      = (orig_percentage        * retained_ratio).round(10)
+      remittance.arrear_folio_amount_cents       = (orig_arrear_folio      * retained_ratio).round(2)
+      remittance.arrear_amount_cents             = (orig_arrear            * retained_ratio).round(2)
+      remittance.tracking_collected_amount_cents = (orig_tracking_collected * retained_ratio).round(2)
+      remittance.tracking_call_amount_cents      = (orig_tracking_call     * retained_ratio).round(2)
 
       CapitalRemittance.transaction do
         # Update without callbacks
@@ -294,45 +300,38 @@ class FundUnitTransferService < Trailblazer::Operation
 
         # Now adjust the capital_remittance_payments
         remittance.capital_remittance_payments.each do |payment|
-          orig_amount = payment.amount_cents
-          orig_folio = payment.folio_amount_cents
-          orig_tracking = payment.tracking_amount_cents
+          orig_amount   = BigDecimal(payment.amount_cents.to_s)
+          orig_folio    = BigDecimal(payment.folio_amount_cents.to_s)
+          orig_tracking = BigDecimal(payment.tracking_amount_cents.to_s)
 
           new_payment = payment.dup
-          new_payment.json_fields["transfer_id"] = ctx[:transfer_token]
-          new_payment.json_fields["orig_amount"] = orig_amount
-          new_payment.json_fields["orig_id"] = payment.id
+          new_payment.json_fields["transfer_id"]    = ctx[:transfer_token]
+          new_payment.json_fields["orig_amount"]    = payment.amount_cents
+          new_payment.json_fields["orig_id"]        = payment.id
           new_payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original payment ID: #{payment.id}"
 
-          new_payment.investor_id = to_commitment.investor_id
-          new_payment.capital_remittance_id = new_remittance_id
-          new_payment.amount_cents = orig_amount * transfer_ratio
-          new_payment.folio_amount_cents = orig_folio * transfer_ratio
-          new_payment.tracking_amount_cents = orig_tracking * transfer_ratio
-
+          new_payment.investor_id             = to_commitment.investor_id
+          new_payment.capital_remittance_id   = new_remittance_id
+          new_payment.amount_cents            = (orig_amount   * transfer_ratio).round(2)
+          new_payment.folio_amount_cents      = (orig_folio    * transfer_ratio).round(2)
+          new_payment.tracking_amount_cents   = (orig_tracking * transfer_ratio).round(2)
           new_payment.created_at = Time.zone.now
           new_payment.updated_at = Time.zone.now
 
-          # Insert without callbacks
           CapitalRemittancePayment.insert_all([new_payment.attributes])
 
-          payment.json_fields["transfer_id"] = ctx[:transfer_token]
-          payment.json_fields["orig_amount"] = payment.amount_cents
+          payment.json_fields["transfer_id"]    = ctx[:transfer_token]
+          payment.json_fields["orig_amount"]    = payment.amount_cents
           payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}"
-          payment.amount_cents *= retained_ratio
-          payment.folio_amount_cents *= retained_ratio
-          payment.tracking_amount_cents *= retained_ratio
 
-          # Update without callbacks
           payment.update_columns(
-            amount_cents: payment.amount_cents,
-            folio_amount_cents: payment.folio_amount_cents,
-            tracking_amount_cents: payment.tracking_amount_cents,
-            json_fields: payment.json_fields
+            amount_cents:          (orig_amount   * retained_ratio).round(2),
+            folio_amount_cents:    (orig_folio    * retained_ratio).round(2),
+            tracking_amount_cents: (orig_tracking * retained_ratio).round(2),
+            json_fields:           payment.json_fields
           )
         end
       end
-      remittances_transferred += 1
     end
 
     true
@@ -343,97 +342,78 @@ class FundUnitTransferService < Trailblazer::Operation
     retained_ratio = 1 - transfer_ratio
 
     from_commitment.capital_distribution_payments.each do |payment|
-      orig_gross_payable = payment.gross_payable_cents
-      orig_units_quantity = payment.units_quantity
-
-      orig_income = payment.income_cents
-      orig_percentage = payment.percentage
-      orig_cost_of_investment = payment.cost_of_investment_cents
-      orig_folio_amount = payment.folio_amount_cents
-      orig_net_of_account_entries = payment.net_of_account_entries_cents
-      orig_net_payable = payment.net_payable_cents
-      orig_income_with_fees = payment.income_with_fees_cents
-      orig_cost_of_investment_with_fees = payment.cost_of_investment_with_fees_cents
-      orig_reinvestment = payment.reinvestment_cents
-      orig_reinvestment_with_fees = payment.reinvestment_with_fees_cents
-      orig_gross_of_account_entries = payment.gross_of_account_entries_cents
-      orig_tracking_net_payable = payment.tracking_net_payable_cents
-      orig_tracking_gross_payable = payment.tracking_gross_payable_cents
-      orig_tracking_reinvestment_with_fees = payment.tracking_reinvestment_with_fees_cents
+      orig_gross_payable                  = BigDecimal(payment.gross_payable_cents.to_s)
+      orig_units_quantity                 = BigDecimal(payment.units_quantity.to_s)
+      orig_income                         = BigDecimal(payment.income_cents.to_s)
+      orig_percentage                     = BigDecimal(payment.percentage.to_s)
+      orig_cost_of_investment             = BigDecimal(payment.cost_of_investment_cents.to_s)
+      orig_folio_amount                   = BigDecimal(payment.folio_amount_cents.to_s)
+      orig_net_of_account_entries         = BigDecimal(payment.net_of_account_entries_cents.to_s)
+      orig_net_payable                    = BigDecimal(payment.net_payable_cents.to_s)
+      orig_income_with_fees               = BigDecimal(payment.income_with_fees_cents.to_s)
+      orig_cost_of_investment_with_fees   = BigDecimal(payment.cost_of_investment_with_fees_cents.to_s)
+      orig_reinvestment                   = BigDecimal(payment.reinvestment_cents.to_s)
+      orig_reinvestment_with_fees         = BigDecimal(payment.reinvestment_with_fees_cents.to_s)
+      orig_gross_of_account_entries       = BigDecimal(payment.gross_of_account_entries_cents.to_s)
+      orig_tracking_net_payable           = BigDecimal(payment.tracking_net_payable_cents.to_s)
+      orig_tracking_gross_payable         = BigDecimal(payment.tracking_gross_payable_cents.to_s)
+      orig_tracking_reinvestment_with_fees = BigDecimal(payment.tracking_reinvestment_with_fees_cents.to_s)
 
       new_payment = payment.dup
-      new_payment.json_fields["transfer_id"] = ctx[:transfer_token]
-      new_payment.json_fields["orig_id"] = payment.id
-      new_payment.json_fields["orig_gross_payable"] = orig_gross_payable
-      new_payment.json_fields["orig_units_quantity"] = orig_units_quantity
+      new_payment.json_fields["transfer_id"]          = ctx[:transfer_token]
+      new_payment.json_fields["orig_id"]              = payment.id
+      new_payment.json_fields["orig_gross_payable"]   = payment.gross_payable_cents
+      new_payment.json_fields["orig_units_quantity"]  = payment.units_quantity
       new_payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, original payment ID: #{payment.id}"
 
-      new_payment.investor_id = to_commitment.investor_id
-      new_payment.folio_id = to_commitment.folio_id
-      new_payment.investor_name = to_commitment.investor_name
-
+      new_payment.investor_id           = to_commitment.investor_id
+      new_payment.folio_id              = to_commitment.folio_id
+      new_payment.investor_name         = to_commitment.investor_name
       new_payment.capital_commitment_id = to_commitment.id
-      new_payment.income_cents = orig_income * transfer_ratio
-      new_payment.percentage = orig_percentage * transfer_ratio
-      new_payment.units_quantity = orig_units_quantity * transfer_ratio
-      new_payment.cost_of_investment_cents = orig_cost_of_investment * transfer_ratio
-      new_payment.folio_amount_cents = orig_folio_amount * transfer_ratio
-      new_payment.net_of_account_entries_cents = orig_net_of_account_entries * transfer_ratio
-      new_payment.net_payable_cents = orig_net_payable * transfer_ratio
-      new_payment.income_with_fees_cents = orig_income_with_fees * transfer_ratio
-      new_payment.cost_of_investment_with_fees_cents = orig_cost_of_investment_with_fees * transfer_ratio
-      new_payment.reinvestment_cents = orig_reinvestment * transfer_ratio
-      new_payment.reinvestment_with_fees_cents = orig_reinvestment_with_fees * transfer_ratio
-      new_payment.gross_payable_cents = orig_gross_payable * transfer_ratio
-      new_payment.gross_of_account_entries_cents = orig_gross_of_account_entries * transfer_ratio
-      new_payment.tracking_net_payable_cents = orig_tracking_net_payable * transfer_ratio
-      new_payment.tracking_gross_payable_cents = orig_tracking_gross_payable * transfer_ratio
-      new_payment.tracking_reinvestment_with_fees_cents = orig_tracking_reinvestment_with_fees * transfer_ratio
+
+      new_payment.income_cents                        = (orig_income                        * transfer_ratio).round(2)
+      new_payment.percentage                          = (orig_percentage                    * transfer_ratio).round(10)
+      new_payment.units_quantity                      = (orig_units_quantity                * transfer_ratio).round(10)
+      new_payment.cost_of_investment_cents            = (orig_cost_of_investment            * transfer_ratio).round(2)
+      new_payment.folio_amount_cents                  = (orig_folio_amount                  * transfer_ratio).round(2)
+      new_payment.net_of_account_entries_cents        = (orig_net_of_account_entries        * transfer_ratio).round(2)
+      new_payment.net_payable_cents                   = (orig_net_payable                   * transfer_ratio).round(2)
+      new_payment.income_with_fees_cents              = (orig_income_with_fees              * transfer_ratio).round(2)
+      new_payment.cost_of_investment_with_fees_cents  = (orig_cost_of_investment_with_fees  * transfer_ratio).round(2)
+      new_payment.reinvestment_cents                  = (orig_reinvestment                  * transfer_ratio).round(2)
+      new_payment.reinvestment_with_fees_cents        = (orig_reinvestment_with_fees        * transfer_ratio).round(2)
+      new_payment.gross_payable_cents                 = (orig_gross_payable                 * transfer_ratio).round(2)
+      new_payment.gross_of_account_entries_cents      = (orig_gross_of_account_entries      * transfer_ratio).round(2)
+      new_payment.tracking_net_payable_cents          = (orig_tracking_net_payable          * transfer_ratio).round(2)
+      new_payment.tracking_gross_payable_cents        = (orig_tracking_gross_payable        * transfer_ratio).round(2)
+      new_payment.tracking_reinvestment_with_fees_cents = (orig_tracking_reinvestment_with_fees * transfer_ratio).round(2)
       new_payment.created_at = Time.zone.now
       new_payment.updated_at = Time.zone.now
 
-      # Insert without callbacks
       CapitalDistributionPayment.insert_all([new_payment.attributes])
 
-      payment.json_fields["transfer_id"] = ctx[:transfer_token]
-      payment.json_fields["orig_gross_payable"] = payment.gross_payable_cents
-      payment.json_fields["orig_units_quantity"] = payment.units_quantity
+      payment.json_fields["transfer_id"]          = ctx[:transfer_token]
+      payment.json_fields["orig_gross_payable"]   = payment.gross_payable_cents
+      payment.json_fields["orig_units_quantity"]  = payment.units_quantity
       payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}"
-      payment.income_cents *= retained_ratio
-      payment.percentage *= retained_ratio
-      payment.units_quantity *= retained_ratio
-      payment.cost_of_investment_cents *= retained_ratio
-      payment.folio_amount_cents *= retained_ratio
-      payment.net_of_account_entries_cents *= retained_ratio
-      payment.net_payable_cents *= retained_ratio
-      payment.income_with_fees_cents *= retained_ratio
-      payment.cost_of_investment_with_fees_cents *= retained_ratio
-      payment.reinvestment_cents *= retained_ratio
-      payment.reinvestment_with_fees_cents *= retained_ratio
-      payment.gross_payable_cents *= retained_ratio
-      payment.gross_of_account_entries_cents *= retained_ratio
-      payment.tracking_net_payable_cents *= retained_ratio
-      payment.tracking_gross_payable_cents *= retained_ratio
-      payment.tracking_reinvestment_with_fees_cents *= retained_ratio
 
-      # Update without callbacks
       payment.update_columns(
-        income_cents: payment.income_cents,
-        percentage: payment.percentage,
-        units_quantity: payment.units_quantity,
-        cost_of_investment_cents: payment.cost_of_investment_cents,
-        folio_amount_cents: payment.folio_amount_cents,
-        net_of_account_entries_cents: payment.net_of_account_entries_cents,
-        net_payable_cents: payment.net_payable_cents,
-        income_with_fees_cents: payment.income_with_fees_cents,
-        cost_of_investment_with_fees_cents: payment.cost_of_investment_with_fees_cents,
-        reinvestment_cents: payment.reinvestment_cents,
-        reinvestment_with_fees_cents: payment.reinvestment_with_fees_cents,
-        gross_payable_cents: payment.gross_payable_cents,
-        gross_of_account_entries_cents: payment.gross_of_account_entries_cents,
-        tracking_net_payable_cents: payment.tracking_net_payable_cents,
-        tracking_gross_payable_cents: payment.tracking_gross_payable_cents,
-        tracking_reinvestment_with_fees_cents: payment.tracking_reinvestment_with_fees_cents,
+        income_cents:                         (orig_income                        * retained_ratio).round(2),
+        percentage:                           (orig_percentage                    * retained_ratio).round(10),
+        units_quantity:                       (orig_units_quantity                * retained_ratio).round(10),
+        cost_of_investment_cents:             (orig_cost_of_investment            * retained_ratio).round(2),
+        folio_amount_cents:                   (orig_folio_amount                  * retained_ratio).round(2),
+        net_of_account_entries_cents:         (orig_net_of_account_entries        * retained_ratio).round(2),
+        net_payable_cents:                    (orig_net_payable                   * retained_ratio).round(2),
+        income_with_fees_cents:               (orig_income_with_fees              * retained_ratio).round(2),
+        cost_of_investment_with_fees_cents:   (orig_cost_of_investment_with_fees  * retained_ratio).round(2),
+        reinvestment_cents:                   (orig_reinvestment                  * retained_ratio).round(2),
+        reinvestment_with_fees_cents:         (orig_reinvestment_with_fees        * retained_ratio).round(2),
+        gross_payable_cents:                  (orig_gross_payable                 * retained_ratio).round(2),
+        gross_of_account_entries_cents:       (orig_gross_of_account_entries      * retained_ratio).round(2),
+        tracking_net_payable_cents:           (orig_tracking_net_payable          * retained_ratio).round(2),
+        tracking_gross_payable_cents:         (orig_tracking_gross_payable        * retained_ratio).round(2),
+        tracking_reinvestment_with_fees_cents: (orig_tracking_reinvestment_with_fees * retained_ratio).round(2),
         json_fields: payment.json_fields
       )
     end
@@ -441,11 +421,9 @@ class FundUnitTransferService < Trailblazer::Operation
   end
 
   def apply_commitment_adjustments(ctx, from_commitment:, to_commitment:, fund:, **)
-    transfer_ratio = ctx[:transfer_ratio]
-
-    from_commitment.committed_amount_cents
-    orig_folio_amount = from_commitment.folio_committed_amount_cents
-    # Do NOT put this in a transaction, adjustments do not work if put in a transaction, as they have counter_culture which execute_after_commit
+    transfer_ratio    = ctx[:transfer_ratio]
+    orig_folio_amount = BigDecimal(from_commitment.folio_committed_amount_cents.to_s)
+    # Do NOT wrap in a transaction — CommitmentAdjustment uses counter_culture which fires after_commit
 
     to_ca = CommitmentAdjustment.new(
       fund_id: fund.id,
@@ -456,10 +434,13 @@ class FundUnitTransferService < Trailblazer::Operation
       adjustment_type: "Transfer",
       reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, transfer_id: #{ctx[:transfer_token]}",
       transfer_date: ctx[:transfer_date],
-      as_of: from_commitment.commitment_date
+      # Use transfer_date so the exchange rate reflects the transaction date, not the
+      # seller's historical commitment date. This also removes the artificial constraint
+      # that required the buyer to have joined the fund before or on the seller's date.
+      as_of: ctx[:transfer_date]
     )
 
-    AdjustmentCreate.call(commitment_adjustment: to_ca)
+    return false unless AdjustmentCreate.call(commitment_adjustment: to_ca).success?
 
     from_ca = CommitmentAdjustment.new(
       fund_id: fund.id,
@@ -470,7 +451,7 @@ class FundUnitTransferService < Trailblazer::Operation
       adjustment_type: "Transfer",
       reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, transfer_id: #{ctx[:transfer_token]}",
       transfer_date: ctx[:transfer_date],
-      as_of: from_commitment.commitment_date
+      as_of: ctx[:transfer_date]
     )
 
     result = AdjustmentCreate.call(commitment_adjustment: from_ca)

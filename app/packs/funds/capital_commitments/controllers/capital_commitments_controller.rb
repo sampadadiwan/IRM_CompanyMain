@@ -44,40 +44,47 @@ class CapitalCommitmentsController < ApplicationController
   def transfer_fund_units
     if request.post?
       from_commitment = @capital_commitment
-      # Check if the to_folio_id is valid
-      to_commitment = @capital_commitment.fund.capital_commitments.find_by(folio_id: params[:to_folio_id])
+      to_commitment   = @capital_commitment.fund.capital_commitments.find_by(folio_id: params[:to_folio_id])
 
       if to_commitment.blank?
-        # Redirect back to the form with an error message
-        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params.to_unsafe_h), alert: "Invalid folio #{params[:to_folio_id]}"
+        redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params.permit!.to_h), alert: "Invalid folio #{params[:to_folio_id]}"
       else
-        # Check if the user is authorized to transfer fund units
         authorize to_commitment, :transfer_fund_units?
-        # Transfer fund units using the TB
         result = nil
-        from_commitment.transaction do
-          transfer = FundUnitTransfer.new(entity_id: @capital_commitment.entity_id,
-                                          fund_id: @capital_commitment.fund_id,
-                                          from_commitment_id: @capital_commitment.id,
-                                          to_commitment_id: to_commitment.id,
-                                          transfer_ratio: params[:transfer_ratio].to_f,
-                                          transfer_date: Date.local_parse(params[:transfer_date]),
-                                          price: params[:price].to_f,
-                                          premium: params[:premium].to_f,
-                                          transfer_account_entries: params[:transfer_account_entries] == "1",
-                                          account_entries_excluded: params[:account_entries_excluded])
 
-          result = FundUnitTransferService.call(transfer:)
-          # If there was an error, rollback the transaction
-          raise ActiveRecord::Rollback if result.failure?
+        begin
+          from_commitment.transaction do
+            # Re-load with a write lock so concurrent transfers on the same folio are
+            # serialised. Rails raises ActiveRecord::StaleObjectError if another request
+            # has already incremented lock_version since this request loaded the record.
+            from_commitment.reload.lock!
+
+            transfer = FundUnitTransfer.new(
+              entity_id:               @capital_commitment.entity_id,
+              fund_id:                 @capital_commitment.fund_id,
+              from_commitment_id:      @capital_commitment.id,
+              to_commitment_id:        to_commitment.id,
+              transfer_ratio:          params[:transfer_ratio].to_i,
+              transfer_date:           Date.local_parse(params[:transfer_date]),
+              price:                   BigDecimal(params[:price].presence || "0"),
+              premium:                 BigDecimal(params[:premium].presence || "0"),
+              transfer_account_entries: params[:transfer_account_entries] == "1",
+              account_entries_excluded: params[:account_entries_excluded]
+            )
+
+            result = FundUnitTransferService.call(transfer:)
+            raise ActiveRecord::Rollback if result.failure?
+          end
+        rescue ActiveRecord::StaleObjectError
+          redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params.permit!.to_h),
+                      alert: "Another transfer is in progress for this commitment. Please try again."
+          return
         end
 
         if result.success?
-          # Redirect to the fund units tab
           redirect_to capital_commitment_url(@capital_commitment, tab: "fund-units-tab"), notice: "Units transferred successfully"
         else
-          # Redirect back to the form with an error message
-          redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params.to_unsafe_h), alert: result[:error]
+          redirect_to transfer_fund_units_capital_commitment_path(@capital_commitment, **params.permit!.to_h), alert: result[:error]
         end
       end
     end

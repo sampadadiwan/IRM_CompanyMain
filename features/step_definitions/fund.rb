@@ -2239,16 +2239,16 @@ Then('adjustments are create upon fund unit transfer') do
   # from_adjustment.amount_cents.should == -(@from_cc_committed_amount_cents * transfer_ratio).round
   from_adjustment.folio_amount_cents.should == -(@from_cc_folio_committed_amount_cents * transfer_ratio).round
   from_adjustment.adjustment_type.should == "Transfer"
-  from_adjustment.as_of.should == @from_cc.commitment_date
-  from_adjustment.transfer_date.should == Date.today
+  from_adjustment.as_of.should == @transfer.transfer_date
+  from_adjustment.transfer_date.should == @transfer.transfer_date
 
   puts "Checking commitment adjustment for #{to_adjustment.id} for #{@to_cc.folio_id}"
   to_adjustment.reason.include?("Transfer from #{@from_cc.folio_id} to #{@to_cc.folio_id}").should == true
   # to_adjustment.amount_cents.should == (@from_cc_committed_amount_cents * transfer_ratio).round
   to_adjustment.folio_amount_cents.should == (@from_cc_folio_committed_amount_cents * transfer_ratio).round
   to_adjustment.adjustment_type.should == "Transfer"
-  to_adjustment.as_of.should == @from_cc.commitment_date
-  to_adjustment.transfer_date.should == Date.today
+  to_adjustment.as_of.should == @transfer.transfer_date
+  to_adjustment.transfer_date.should == @transfer.transfer_date
 end
 
 
@@ -2274,6 +2274,151 @@ Then('I should be able to see the transferred fund units') do
   expect(page).to have_content(to_fu.transfer&.titleize)
 end
 
+
+# ── Transfer Fund Units: new step definitions ─────────────────────────────────
+
+# Runs a transfer with an arbitrary integer ratio (as stored in the DB, i.e. 0–100 or out-of-range)
+# and stores @result for the shared "I should get the error" assertion step.
+When('fund units are transferred with ratio percentage {int}') do |ratio_pct|
+  @fund.reload
+  @from_cc = @fund.capital_commitments.first
+  @to_cc   = @fund.capital_commitments.last
+
+  transfer = FundUnitTransfer.new(
+    entity_id:               @from_cc.entity_id,
+    from_commitment:         @from_cc,
+    to_commitment:           @to_cc,
+    fund:                    @fund,
+    price:                   100.0,
+    premium:                 0.0,
+    transfer_ratio:          ratio_pct,
+    transfer_date:           Date.today,
+    transfer_account_entries: false
+  )
+  @result = FundUnitTransferService.wtf?(transfer:)
+end
+
+# Performs a 100 % transfer to drain all units from the from-commitment so the
+# next transfer attempt finds nothing to move.
+Given('the fund units are fully transferred') do
+  @fund.reload
+  @from_cc = @fund.capital_commitments.first
+  @to_cc   = @fund.capital_commitments.last
+
+  transfer = FundUnitTransfer.create!(
+    entity_id:               @from_cc.entity_id,
+    from_commitment:         @from_cc,
+    to_commitment:           @to_cc,
+    fund:                    @fund,
+    price:                   100.0,
+    premium:                 0.0,
+    transfer_ratio:          100,
+    transfer_date:           Date.today,
+    transfer_account_entries: false
+  )
+  FundUnitTransferService.call(transfer:)
+  @from_cc.reload
+end
+
+# Verifies that no account entries on either commitment were touched by the transfer.
+Then('account entries are not affected by the transfer') do
+  @from_cc.reload
+  @to_cc.reload
+
+  @from_cc.account_entries.each do |entry|
+    entry.json_fields["transfer_id"].should be_nil
+  end
+
+  @to_cc.account_entries.select { |e| e.json_fields["transfer_id"].present? }.should be_empty
+end
+
+# Performs a 50 % transfer and excludes the first account entry on the from-commitment
+# from pro-rating so we can assert full-copy vs. pro-rated behaviour separately.
+When('the fund units are transferred excluding the first account entry') do
+  @fund.reload
+  @transfer_ratio = 0.5
+
+  # Account entries are optional on a commitment; find one that is actually
+  # linked so we have something concrete to exclude from pro-rating.
+  @excluded_ae = @fund.account_entries.where.not(capital_commitment_id: nil).first
+  raise "No commitment-linked account entries in fund — check fixture data" if @excluded_ae.nil?
+
+  @from_cc = @excluded_ae.capital_commitment
+  # to_cc must be in the same fund and same unit_type; no date ordering required
+  # since the service now uses transfer_date (not commitment_date) as the as_of.
+  @to_cc = @fund.capital_commitments
+                 .where(unit_type: @from_cc.unit_type)
+                 .where.not(id: @from_cc.id)
+                 .first
+  raise "No suitable to_commitment found — need a commitment with the same unit_type" if @to_cc.nil?
+
+  @from_cc_folio_committed_amount_cents = @from_cc.folio_committed_amount_cents
+  @transfer_quantity = (@transfer_ratio * @from_cc.total_fund_units_quantity).to_f
+  @excluded_ae_name        = @excluded_ae.name
+  @excluded_ae_orig_amount = @excluded_ae.amount_cents
+
+  transfer = FundUnitTransfer.create!(
+    entity_id:                @from_cc.entity_id,
+    from_commitment:          @from_cc,
+    to_commitment:            @to_cc,
+    fund:                     @fund,
+    price:                    1000.0,
+    premium:                  100.0,
+    transfer_ratio:           (@transfer_ratio * 100).to_i,
+    transfer_date:            Date.today,
+    transfer_account_entries: true,
+    account_entries_excluded: @excluded_ae_name
+  )
+  result = FundUnitTransferService.wtf?(transfer:)
+  puts result[:error]
+  result.success?.should == true
+  @transfer_token = result[:transfer_token]
+end
+
+# The excluded entry should be copied to the to-commitment at its full original amount,
+# and the from-commitment entry should remain unchanged.
+Then('the excluded account entry is copied in full to the to commitment') do
+  @excluded_ae.reload
+  # Service rounds to 2 decimal places; compare at that precision.
+  @excluded_ae.amount_cents.round(2).should == @excluded_ae_orig_amount.round(2)
+
+  to_entry = @to_cc.account_entries.detect { |e| e.json_fields["transfer_id"] == @transfer_token && e.name == @excluded_ae_name }
+  to_entry.should_not be_nil
+  to_entry.amount_cents.round(2).should == @excluded_ae_orig_amount.round(2)
+  to_entry.investor_id.should  == @to_cc.investor_id
+  to_entry.folio_id.should     == @to_cc.folio_id
+end
+
+# All non-excluded entries should be split by the transfer ratio.
+Then('the other account entries are pro-rated') do
+  retained = 1 - @transfer_ratio
+
+  @from_cc.account_entries.each do |entry|
+    next unless entry.json_fields["transfer_id"] == @transfer_token
+    next if entry.name == @excluded_ae_name
+    entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * retained).round(0)
+  end
+
+  @to_cc.account_entries.each do |entry|
+    next unless entry.json_fields["transfer_id"] == @transfer_token
+    next if entry.name == @excluded_ae_name
+    entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * @transfer_ratio).round(0)
+  end
+end
+
+# Verifies that the counter-culture cached totals match the actual sum of fund unit records.
+Then('the fund unit counter caches are correct after transfer') do
+  @from_cc.reload
+  @to_cc.reload
+
+  from_actual = @from_cc.fund_units.sum(:quantity)
+  to_actual   = @to_cc.fund_units.sum(:quantity)
+
+  @from_cc.total_fund_units_quantity.to_d.should be_within(BigDecimal("0.01")).of(from_actual.to_d)
+  @to_cc.total_fund_units_quantity.to_d.should   be_within(BigDecimal("0.01")).of(to_actual.to_d)
+end
+
+# ── End Transfer Fund Units step definitions ───────────────────────────────────
 
 Given('there are payments for each remittance') do
   CapitalRemittance.all.each do |cr|

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_15_060202) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_18_100001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -738,6 +738,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_15_060202) do
     t.bigint "investor_signatory_id"
     t.boolean "is_feeder_fund", default: false
     t.json "json_fields"
+    t.integer "lock_version", default: 0, null: false
     t.text "notes"
     t.boolean "onboarding_completed", default: false
     t.decimal "orig_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
