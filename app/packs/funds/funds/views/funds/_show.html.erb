@@ -259,7 +259,15 @@
             <%= display_boolean fund.show_portfolios %>
           </td>
         </tr>
-      <% end %>      
+        <tr>
+          <td>
+            Show Fund Units to LPs
+          </td>
+          <td>
+            <%= display_boolean fund.show_fund_units %>
+          </td>
+        </tr>
+      <% end %>
 
 
       <%= display_custom_fields(fund) if current_user %>

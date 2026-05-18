@@ -1,11 +1,21 @@
 class FundUnitPolicy < FundBasePolicy
+  class Scope < FundBasePolicy::Scope
+    def resolve
+      if user.curr_role == "investor"
+        super.joins(:fund).where("funds.show_fund_units = true")
+      else
+        super
+      end
+    end
+  end
+
   def index?
     user.enable_funds
   end
 
   def show?
     permissioned_employee? ||
-      permissioned_investor?
+      (record.fund.show_fund_units && permissioned_investor?)
   end
 
   def create?

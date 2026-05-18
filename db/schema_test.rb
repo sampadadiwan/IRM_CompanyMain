@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_18_100002) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_100001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1948,6 +1948,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_18_100002) do
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.string "portfolio_cost_type", limit: 10, default: "FIFO", null: false
     t.boolean "show_fund_ratios", default: false
+    t.boolean "show_fund_units", default: false
     t.boolean "show_portfolios", default: false
     t.boolean "show_valuations", default: false
     t.boolean "snapshot", default: false
