@@ -119,7 +119,7 @@ module CapitalCommitmentShared
   end
 
   # Computes the hurdle amount (preferred return) for the commitment as of a given end date.
-  # The hurdle is calculated as: sum(payment_amount * hurdle_rate * (days_outstanding / 365))
+  # The hurdle is calculated as: sum(payment_amount * ((1 + rate)^(days/365) - 1))
   # @param end_date [Date, String] The date up to which the hurdle is calculated.
   # @param use_tracking_currency [Boolean] Whether to use tracking currency instead of the base currency.
   # @param use_distributions [Boolean] Whether to subtract the hurdle calculated on distributions.
@@ -132,14 +132,55 @@ module CapitalCommitmentShared
     Rails.logger.debug "[Hurdle] Computing hurdle for commitment #{id} as of #{end_date}"
     Rails.logger.debug "[Hurdle] Hurdle rate: #{hurdle_rate}"
 
-    # Calculate hurdle on contributions (remittances)
-    # We order by date to ensure consistent cumulative calculations if needed.
-    remittances = capital_remittance_payments.where(payment_date: ..end_date).order(payment_date: :asc)
     remittance_col = use_tracking_currency ? :tracking_amount_cents : :amount_cents
+    distribution_col = use_tracking_currency ? :tracking_gross_payable_cents : :gross_payable_cents
 
+    # Step 1: Determine effective_end_date.
+    # Default to end_date. When use_distributions is true and total distributions exceed total remittances
+    # (i.e. principal fully returned), hurdle stops accruing at the truncated distribution's payment date.
+    effective_end_date = end_date
+    total_remittance_cents = nil
+
+    if use_distributions
+      # Sum all remittances up to end_date — this is the investor's total cost basis (principal).
+      total_remittance_cents = capital_remittance_payments.where(payment_date: ..end_date).sum(remittance_col)
+
+      # Build the full distributions relation up to end_date (with optional skip filter) for the lookup.
+      all_distributions = capital_distribution_payments.where(payment_date: ..end_date).order(payment_date: :asc)
+
+      # OPTIONAL FILTER: Some distributions (e.g. tax distributions or specific recalls) might
+      # need to be excluded from the hurdle calculation entirely.
+      if skip_distribution_for_hurdle
+        # We join with the parent capital_distribution to check the skip flag in json_fields.
+        # This allows us to exclude entire distribution events from the preferred return calculation.
+        # Note: We only exclude if explicitly set to 'Yes'. If the field is nil or missing,
+        # JSON_EXTRACT returns NULL, and we want to include those (hence the OR condition).
+        all_distributions = all_distributions.joins(:capital_distribution)
+                                             .where("JSON_EXTRACT(capital_distributions.json_fields, '$.skip_distribution_for_hurdle') IS NULL OR " \
+                                                    "JSON_EXTRACT(capital_distributions.json_fields, '$.skip_distribution_for_hurdle') != ?", "Yes")
+      end
+
+      # Walk distributions chronologically; the first payment that pushes cumulative above
+      # total_remittance_cents is the one where principal is fully returned.
+      cumulative_dist_cents = 0
+      truncated_dist = all_distributions.find do |dist|
+        cumulative_dist_cents += dist.send(distribution_col)
+        cumulative_dist_cents > total_remittance_cents
+      end
+
+      if truncated_dist
+        effective_end_date = truncated_dist.payment_date.to_date
+        Rails.logger.debug "[Hurdle] Distributions exceed remittances; effective_end_date capped at #{effective_end_date} (distribution #{truncated_dist.id})"
+      end
+    end
+
+    Rails.logger.debug "[Hurdle] Effective end date: #{effective_end_date}"
+
+    # Step 2: Query payments scoped to effective_end_date and compute hurdles.
+    remittances = capital_remittance_payments.where(payment_date: ..effective_end_date).order(payment_date: :asc)
     hurdle_amount = calculate_hurdle_for_payments(
       remittances,
-      end_date,
+      effective_end_date,
       hurdle_rate,
       amount_column: remittance_col,
       label: "Contributions"
@@ -151,26 +192,17 @@ module CapitalCommitmentShared
       # If total distributions exceed total remittances (i.e. investor has received more than their cost basis),
       # we stop calculating "negative hurdle" on the excess. This prevents the hurdle from becoming
       # artificially low or negative when the investment is highly profitable.
-      total_remittance_cents = remittances.sum(remittance_col)
-      distribution_col = use_tracking_currency ? :tracking_gross_payable_cents : :gross_payable_cents
-      distributions = capital_distribution_payments.where(payment_date: ..end_date).order(payment_date: :asc)
+      distributions = capital_distribution_payments.where(payment_date: ..effective_end_date).order(payment_date: :asc)
 
-      # OPTIONAL FILTER: Some distributions (e.g. tax distributions or specific recalls) might
-      # need to be excluded from the hurdle calculation entirely.
       if skip_distribution_for_hurdle
-        # We join with the parent capital_distribution to check the skip flag in json_fields.
-        # This allows us to exclude entire distribution events from the preferred return calculation.
-        # Note: We only exclude if explicitly set to 'Yes'. If the field is nil or missing,
-        # JSON_EXTRACT returns NULL, and we want to include those (hence the OR condition).
         distributions = distributions.joins(:capital_distribution)
                                      .where("JSON_EXTRACT(capital_distributions.json_fields, '$.skip_distribution_for_hurdle') IS NULL OR " \
                                             "JSON_EXTRACT(capital_distributions.json_fields, '$.skip_distribution_for_hurdle') != ?", "Yes")
       end
 
-      # Subtract hurdle calculated on distributions, capped at the total remittance amount (cost basis).
       dist_hurdle = calculate_hurdle_for_payments(
         distributions,
-        end_date,
+        effective_end_date,
         hurdle_rate,
         amount_column: distribution_col,
         label: "Distributions",
@@ -218,10 +250,11 @@ module CapitalCommitmentShared
       # IRR/Hurdle standard calculation: Amount * ((1 + Rate)^(Days/365) - 1)
       # This calculates the EARNED preferred return over the period.
       # Standard financial convention uses (D2 - D1) for the interest period.
-      days = (end_date - payment_date).to_i
+      # Days is capped at 0 so that payments after effective_end_date contribute nothing.
+      days = [(end_date - payment_date).to_i, 0].max
 
       # Using (1 + r)^t - 1 formula for compound interest hurdle (XIRR basis).
-      calculation = amount.to_d * (((1 + hurdle_rate) ** ((days + 1)/ 365.0)) - 1)
+      calculation = amount.to_d * (((1 + hurdle_rate) ** (days / 365.0)) - 1)
 
       Rails.logger.debug "[Hurdle]   - Payment ID: #{payment.id}, Date: #{payment_date}, Amount: #{amount}, Days: #{days}, Hurdle: #{calculation.to_f}"
 
