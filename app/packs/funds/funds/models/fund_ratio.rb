@@ -51,6 +51,20 @@ class FundRatio < ApplicationRecord
   scope :for_portfolio_companies, -> { where(owner_type: "PortfolioCompany") }
   scope :for_fund, ->(fund_id) { where(fund_id:, owner_type: "Fund") }
 
+  # Cross-fund rows (fund_id: nil) have no parent fund to join against, so the INNER
+  # JOIN in ForInvestor#for_company_admin would silently drop them. LEFT JOIN lets them
+  # through; the WHERE then scopes them by the fund_ratio's own entity_id. Fund-linked
+  # rows still require a live (non-deleted, non-snapshot) fund via the JOIN condition.
+  # for_employee intentionally keeps the INNER JOIN, hiding nil-fund rows from employees.
+  scope :for_company_admin, lambda { |user|
+    entity_ids = user.entity_type == "Group Company" ? user.entity.child_ids : [user.entity_id]
+    left_joins(:fund)
+      .where(
+        "(fund_ratios.fund_id IS NULL AND fund_ratios.entity_id IN (?)) OR funds.entity_id IN (?)",
+        entity_ids, entity_ids
+      )
+  }
+
   # Marks the latest=true flag per scenario independently, so that e.g. a Default job
   # run never clears the latest flag on Bull Case rows (or any other scenario).
   def self.update_latest(fund, end_date)
