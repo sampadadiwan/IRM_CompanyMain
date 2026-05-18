@@ -33,11 +33,13 @@ class FundRatioRun < ApplicationRecord
   # the same string is produced for the same logical inputs at both ends.
   def self.fingerprint(fund_ids: [], portfolio_company_ids: [], tags: nil, sectors: [])
     parts = []
-    parts << "F:#{Array(fund_ids).map(&:to_i).sort.join(',')}"                         if fund_ids.present?
-    parts << "PC:#{Array(portfolio_company_ids).map(&:to_i).sort.join(',')}"           if portfolio_company_ids.present?
+    parts << "F:#{Array(fund_ids).map(&:to_i).sort.join(',')}"                          if fund_ids.present?
+    parts << "PC:#{Array(portfolio_company_ids).map(&:to_i).sort.join(',')}"            if portfolio_company_ids.present?
     parts << "Tag:#{tags.to_s.split(',').map(&:strip).reject(&:blank?).sort.join(',')}" if tags.present?
-    parts << "S:#{Array(sectors).map(&:strip).reject(&:blank?).sort.join(',')}"        if sectors.present?
-    parts.join(' ')
+    parts << "S:#{Array(sectors).map(&:strip).reject(&:blank?).sort.join(',')}"         if sectors.present?
+    # SHA-256 digest keeps the name within VARCHAR(255) regardless of how many IDs are passed.
+    # The raw inputs are preserved in fund_ids / portfolio_company_ids / sectors / portfolio_companies_tags columns.
+    Digest::SHA256.hexdigest(parts.join(' '))
   end
 
   # Finds the unique run matching the given dashboard filter params.
