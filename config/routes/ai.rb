@@ -82,4 +82,6 @@ end
 
 resources :assistant_tasks
 
-post '/mcp', to: 'mcp#create'
+post    '/mcp', to: 'mcp#create'
+get     '/mcp', to: 'mcp#create'    # SSE endpoint for server-initiated messages (MCP Streamable HTTP)
+options '/mcp', to: 'mcp#preflight' # CORS preflight

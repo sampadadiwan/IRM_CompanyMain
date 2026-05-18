@@ -9,12 +9,11 @@
 # @see McpAuthService for token validation
 # @see ApplicationMcpTool for tool base class
 class McpController < ActionController::API
-  before_action :authenticate_mcp!
-  before_action :enforce_entity_governance!
+  before_action :set_mcp_cors_headers
+  before_action :authenticate_mcp!, except: :preflight
+  before_action :enforce_entity_governance!, except: :preflight
 
-  # POST /mcp
-  # Handles JSON-RPC MCP requests (tools/list, tools/call) via Streamable HTTP transport.
-  # Stateless mode ensures compatibility with multi-worker Puma (no server-side sessions).
+  # POST /mcp — JSON-RPC messages; GET /mcp — SSE for server-initiated messages (MCP Streamable HTTP)
   def create
     server = MCP::Server.new(
       name: "caphive-mcp",
@@ -29,7 +28,22 @@ class McpController < ActionController::API
     render json: body.first, status: status, headers: headers
   end
 
+  # OPTIONS /mcp — CORS preflight; auth skipped so browsers can discover OAuth headers freely
+  def preflight
+    head :ok
+  end
+
   private
+
+  # Adds CORS headers so browser-based MCP clients (Claude.ai) can read the WWW-Authenticate
+  # header and response body across origins. WWW-Authenticate must be explicitly exposed.
+  def set_mcp_cors_headers
+    response.set_header('Access-Control-Allow-Origin', request.headers['Origin'] || '*')
+    response.set_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.set_header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Mcp-Session-Id')
+    response.set_header('Access-Control-Expose-Headers', 'WWW-Authenticate, Mcp-Session-Id')
+    response.set_header('Access-Control-Allow-Credentials', 'true')
+  end
 
   # Extracts and validates the OAuth bearer token from the Authorization header.
   # Sets @mcp_user and @mcp_entity for use by governance checks and tool execution.
