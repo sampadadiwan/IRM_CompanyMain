@@ -65,16 +65,35 @@ class FundRatiosScenarioJob < ApplicationJob
       end
 
       # Notification links let the user jump straight to the generated ratios.
-      links_html = [
-        [@run.name,  'View Generated Ratios'],
-        ['',         'View All Ratios']
-      ].map do |scn, label|
-        query_params = ransack_query_params_multiple([[:scenario, :eq, scn]])
-        ActionController::Base.helpers.link_to(
-          label,
-          fund_ratios_path(fund_id: fund_id, filter: true, q: query_params),
-          class: 'mb-1 badge bg-primary-subtle text-primary', target: '_blank', rel: 'noopener'
-        )
+      # When a run exists, cross-fund ratios have fund_id nil so we filter by
+      # computation_context via ransack — passing fund_id would return nothing.
+      # Without a run, ratios are fund-scoped so fund_id is used as before.
+      badge_class = 'mb-1 badge bg-primary-subtle text-primary'
+      h = ActionController::Base.helpers
+      links_html = if @run
+        run_q = ransack_query_params_multiple([
+          [:computation_context_id,   :eq, @run.id],
+          [:computation_context_type, :eq, "FundRatioRun"],
+          [:end_date,                 :eq, @run.end_date]
+        ])
+        [
+          h.link_to('View Generated Ratios',
+                    fund_ratios_path(filter: true, q: run_q),
+                    class: badge_class, target: '_blank', rel: 'noopener'),
+          h.link_to('View All Ratios',
+                    fund_ratios_path(filter: true),
+                    class: badge_class, target: '_blank', rel: 'noopener')
+        ]
+      else
+        [
+          h.link_to('View Generated Ratios',
+                    fund_ratios_path(fund_id: fund_id, filter: true,
+                                     q: ransack_query_params_multiple([[:end_date, :eq, @end_date]])),
+                    class: badge_class, target: '_blank', rel: 'noopener'),
+          h.link_to('View All Ratios',
+                    fund_ratios_path(fund_id: fund_id, filter: true),
+                    class: badge_class, target: '_blank', rel: 'noopener')
+        ]
       end.join
 
       notify("#{@run.name} ratio calculations are now complete.<br> #{links_html}", user_id)

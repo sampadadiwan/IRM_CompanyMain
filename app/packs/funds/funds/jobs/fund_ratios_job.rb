@@ -1,6 +1,9 @@
 require 'csv'
 
 class FundRatiosJob < ApplicationJob
+  include Rails.application.routes.url_helpers
+  include ApplicationHelper
+
   queue_as :low
   sidekiq_options retry: 1
 
@@ -12,7 +15,7 @@ class FundRatiosJob < ApplicationJob
       _calculate_and_touch(fund, capital_commitment, end_date, return_cash_flows, user_id)
       _generate_ratios_for_commitments(fund, end_date, user_id, return_cash_flows) if generate_for_commitments
       fund.update_latest_fund_ratios(end_date)
-      _handle_success_notification(fund, user_id)
+      _handle_success_notification(fund, end_date, user_id)
     rescue StandardError => e
       _handle_error_notification(e, user_id)
     end
@@ -42,8 +45,19 @@ class FundRatiosJob < ApplicationJob
     end
   end
 
-  def _handle_success_notification(fund, user_id)
-    notify("#{fund.name} fund ratio calculations are now complete. Please refresh the page.", user_id)
+  def _handle_success_notification(fund, end_date, user_id)
+    h = ActionController::Base.helpers
+    badge_class = 'mb-1 badge bg-primary-subtle text-primary'
+    links_html = [
+      h.link_to('View Generated Ratios',
+                fund_ratios_path(fund_id: fund.id, filter: true,
+                                 q: ransack_query_params_multiple([[:end_date, :eq, end_date]])),
+                class: badge_class, target: '_blank', rel: 'noopener'),
+      h.link_to('View All Ratios',
+                fund_ratios_path(fund_id: fund.id, filter: true),
+                class: badge_class, target: '_blank', rel: 'noopener')
+    ].join
+    notify("#{fund.name} ratio calculations are now complete.<br> #{links_html}", user_id)
   end
 
   def _handle_error_notification(error, user_id)

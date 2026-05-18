@@ -15,6 +15,10 @@ class FundRatio < ApplicationRecord
   # Polymorphic parent: either a FundRatioRun (cross-fund / cross-portfolio) or a
   # PortfolioScenario (scenario-analysis ratios). Nil for single-fund rows.
   belongs_to :computation_context, polymorphic: true, optional: true
+  # Concrete alias for the polymorphic association when the context is a FundRatioRun.
+  # Shares computation_context_id so no extra column is needed; enables Ransack traversal
+  # (e.g. fund_ratio_run_name_cont) without relying on the polymorphic path.
+  belongs_to :fund_ratio_run, foreign_key: :computation_context_id, optional: true
   belongs_to :capital_commitment, optional: true
   belongs_to :valuation, optional: true
   belongs_to :owner, polymorphic: true, optional: true
@@ -102,7 +106,7 @@ class FundRatio < ApplicationRecord
   end
 
   def self.ransackable_associations(_auth_object = nil)
-    %w[fund computation_context]
+    %w[fund computation_context fund_ratio_run]
   end
 
   def create_cashflow_document(cash_flows, user_id)
