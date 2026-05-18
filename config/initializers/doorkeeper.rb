@@ -15,8 +15,15 @@ Doorkeeper.configure do
     end
   end
 
+  # Restricts /oauth/applications admin UI to CapHive super/support roles.
+  # Matches the same role check used by Admin::ApplicationController#authenticate_admin.
+  # @see Admin::ApplicationController#authenticate_admin
   admin_authenticator do
-    current_user || redirect_to(new_user_session_url)
+    if current_user&.has_role?(:super) || current_user&.has_role?(:support)
+      current_user
+    else
+      redirect_to root_path, alert: 'Not authorized.'
+    end
   end
 
   access_token_expires_in 30.days

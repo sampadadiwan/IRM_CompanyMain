@@ -116,6 +116,10 @@
 
     </div>
     <hr class="my-4">
+<%# MCP configuration section — only visible when CapHive admin has enabled enable_mcp permission for this entity.
+    Entity admins (company_admin role) can then configure mcp_enabled, allowed roles, and allowed AI clients. %>
+<% if entity.permissions.enable_mcp? %>
+
 <h5>AI Client Integration (MCP)</h5>
 <small class="text-muted d-block mb-3">Allow external AI clients (Claude, ChatGPT, Gemini) to query fund and portfolio data.</small>
 
@@ -155,7 +159,7 @@
 </div>
 
   <% end %>
-
+<% end %>
 <div class="form-group">
   <%= form.label :enable_support %>
   <%= form.check_box :enable_support, class: "form-check-input"  %>

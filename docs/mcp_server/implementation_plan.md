@@ -178,17 +178,26 @@ When users from different entities authorize the same AI client, each gets their
 **What happens when a new entity buys the MCP feature:**
 
 1. The OAuth applications (Claude, ChatGPT, Gemini) already exist — no new registration needed
-2. CapHive ops or the entity admin enables `mcp_enabled = true` in that entity's settings
-3. The entity admin chooses which roles (FM, LP) and which AI clients to allow
+2. A CapHive admin (`super`/`support` role) enables the `enable_mcp` permission flag for the entity via the admin panel (`/admin/entities`) — this is the billing/licensing gate
+3. The entity's own admin (`company_admin` role) then enables `mcp_enabled` in their entity settings and chooses which roles (FM, LP) and which AI clients to allow
 4. Individual users at that entity can now connect their AI client via OAuth — self-service, no setup per user
+
+**Two-level governance model:**
+
+| Level | Who Controls | Where | What It Does |
+|---|---|---|---|
+| **Level 1: CapHive Admin** | `super` / `support` role | `/admin/entities` (Administrate) | `enable_mcp` permission flag — billing gate. If off, MCP is completely invisible to the entity. |
+| **Level 2: Entity Admin** | `company_admin` role | `/entities/:id/edit` | `mcp_enabled` toggle + role/client allowlists — self-serve config. |
+| **Level 3: Role Check** | Automatic | `McpController` | User's Rolify role must be in `mcp_allowed_roles_list` |
+| **Level 4: Client Check** | `company_admin` role | `/entities/:id/edit` | OAuth app name must be in `mcp_allowed_clients_list` (optional — empty = all allowed) |
 
 **Who does what:**
 
 | Action | Who | When |
 |---|---|---|
 | Register OAuth apps (Claude, ChatGPT, Gemini) | CapHive engineering team | Once, globally |
-| Enable MCP for an entity | CapHive ops or Entity Admin | When entity purchases the feature |
-| Configure allowed roles and clients | Entity Admin | After enablement |
+| Enable `enable_mcp` permission for an entity | CapHive admin (`super`/`support`) | When entity purchases the feature |
+| Configure `mcp_enabled`, allowed roles and clients | Entity admin (`company_admin`) | After CapHive enables the feature |
 | Connect an AI client (authorize via OAuth) | Individual FM or LP user | Self-service, anytime |
 
 ### How Data Access is Controlled
@@ -232,18 +241,25 @@ The internal assistants use CapHive's own LLM to reason and respond. The MCP ser
 | Aspect | Answer |
 |---|---|
 | **Who buys it?** | Entity (firm-level add-on / premium feature) |
-| **Who configures?** | Entity Admin (role-based, not per-user) |
+| **Who enables it (billing)?** | CapHive Admin (`super`/`support` role) via `/admin/entities` — `enable_mcp` permission flag |
+| **Who configures it?** | Entity Admin (`company_admin` role) via `/entities/:id/edit` — `mcp_enabled` toggle + role/client allowlists |
 | **Who uses it?** | Individual FMs/LPs (self-service OAuth connect) |
-| **What limits access?** | Existing Pundit policies (same as web app) |
-| **What's new to build?** | Entity settings fields + admin UI section |
+| **What limits access?** | Two-level governance + existing Pundit policies (same as web app) |
+| **What's new to build?** | `enable_mcp` in Entity permissions bitflag + Entity settings fields + admin UI section |
 
-### Entity Settings (EntitySetting Model)
+### Entity Governance — Two Levels
 
-Add the following fields to `EntitySetting`:
+**Level 1: CapHive Admin permission (Entity model — `EntityEnabled` concern)**
+
+| Flag | Type | Default | Purpose |
+|---|---|---|---|
+| `enable_mcp` | bitflag (part of `flag :permissions`) | off | Billing/licensing gate — CapHive admins toggle this at `/admin/entities`. If off, MCP section is hidden from entity edit form and all MCP requests return `-32000`. |
+
+**Level 2: Entity Admin settings (EntitySetting model)**
 
 | Field | Type | Default | Purpose |
 |---|---|---|---|
-| `mcp_enabled` | boolean | false | Master switch — is MCP available for this entity? |
+| `mcp_enabled` | boolean | false | Entity-level toggle — entity admin enables/disables MCP for their org |
 | `mcp_allowed_roles` | string (JSON array) | `["employee"]` | Which roles can use MCP: `employee`, `investor`, `company_admin` |
 | `mcp_allowed_clients` | string (JSON array) | `[]` (all) | Restrict to specific OAuth apps, or empty = allow all |
 | `mcp_tool_blocklist` | string (JSON array) | `[]` | Specific tools to disable for this entity |
@@ -253,9 +269,10 @@ Add the following fields to `EntitySetting`:
 ```
 OAuth token arrives at POST /mcp
   → McpAuthService resolves user + entity
-  → Check: entity.entity_setting.mcp_enabled?                    → 403 if false
-  → Check: user role in entity.entity_setting.mcp_allowed_roles?  → 403 if false
-  → Check: OAuth app in entity.entity_setting.mcp_allowed_clients? → 403 if blocked
+  → Level 1: entity.permissions.enable_mcp?                       → 403 (-32000) if false
+  → Level 2: entity.entity_setting.mcp_enabled?                   → 403 (-32001) if false
+  → Level 3: user role in entity.entity_setting.mcp_allowed_roles? → 403 (-32002) if false
+  → Level 4: OAuth app in entity.entity_setting.mcp_allowed_clients? → 403 (-32003) if blocked
   → Filter tools: remove any in entity.entity_setting.mcp_tool_blocklist
   → Filter tools: remove any not visible to user's role
   → Serve remaining tools

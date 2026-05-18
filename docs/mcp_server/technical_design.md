@@ -284,32 +284,45 @@ class McpController < ActionController::API
     render json: { error: e.message }, status: :unauthorized
   end
 
+  # Enforces two-level MCP governance:
+  # Level 1: CapHive admin gate — entity.permissions.enable_mcp? (bitflag, /admin/entities)
+  # Level 2: Entity admin gate — entity_setting.mcp_enabled? (boolean, /entities/edit)
+  # Level 3: Role allowlist — entity_setting.mcp_allowed_roles_list
+  # Level 4: Client allowlist — entity_setting.mcp_allowed_clients_list (optional)
   def enforce_entity_governance!
-    setting = @mcp_entity.entity_setting
-
-    unless setting&.mcp_enabled?
+    # Level 1: CapHive admin billing/license gate
+    unless @mcp_entity.permissions.enable_mcp?
       render json: { jsonrpc: "2.0", id: nil,
-        error: { code: -32001, message: "MCP is not enabled for this organization." }
+        error: { code: -32_000, message: "MCP is not available for this organization. Contact CapHive to enable AI client integration." }
       }, status: :forbidden
       return
     end
 
+    # Level 2: Entity admin self-serve toggle
+    setting = @mcp_entity.entity_setting
+    unless setting&.mcp_enabled?
+      render json: { jsonrpc: "2.0", id: nil,
+        error: { code: -32_001, message: "MCP is not enabled for this organization. Contact your administrator to enable AI client integration." }
+      }, status: :forbidden
+      return
+    end
+
+    # Level 3: Role allowlist
     allowed_roles = setting.mcp_allowed_roles_list
     unless allowed_roles.any? { |role| @mcp_user.has_role?(role) }
       render json: { jsonrpc: "2.0", id: nil,
-        error: { code: -32002, message: "Your role does not have MCP access." }
+        error: { code: -32_002, message: "Your role does not have MCP access. Contact your administrator to update allowed roles." }
       }, status: :forbidden
       return
     end
 
+    # Level 4: Client allowlist (optional — empty means all allowed)
     allowed_clients = setting.mcp_allowed_clients_list
     if allowed_clients.present?
-      token_value = request.headers['Authorization']&.sub(/^Bearer /i, '')
-      token_record = Doorkeeper::AccessToken.find_by(token: token_value)
-      app_name = token_record&.application&.name
+      app_name = @mcp_token&.application&.name
       unless allowed_clients.include?(app_name)
         render json: { jsonrpc: "2.0", id: nil,
-          error: { code: -32003, message: "This AI client is not authorized." }
+          error: { code: -32_003, message: "This AI client (#{app_name}) is not authorized for your organization." }
         }, status: :forbidden
       end
     end
@@ -620,6 +633,39 @@ CapHive Production
 
 ## Security Considerations
 
+### Two-Level Entity Governance
+
+MCP access is controlled by a two-level governance model that separates billing from configuration:
+
+```
+CapHive Admin (/admin/entities)          Entity Admin (/entities/edit)
+─────────────────────────────           ──────────────────────────────
+Level 1: enable_mcp permission           Level 2: mcp_enabled setting
+  (bitflag on Entity via                   (boolean on EntitySetting)
+   EntityEnabled concern)                  - Allowed roles (FM, LP)
+  Managed by super/support roles           - Allowed AI clients
+  Controls billing/licensing               Managed by company_admin role
+                                           Controls self-serve config
+```
+
+**Level 1 — CapHive Admin gate (`entity.permissions.enable_mcp?`):**
+- Part of the `EntityEnabled` concern's `flag :permissions` bitflag system (same mechanism as `enable_documents`, `enable_ai_chat`, etc.)
+- Toggled only from the Administrate admin panel (`/admin/entities`) by users with `super` or `support` roles
+- Acts as the billing/licensing gate — if CapHive hasn't enabled MCP for an entity, the feature is completely invisible (entity edit form hides the MCP section)
+- Error code: `-32000`
+
+**Level 2 — Entity Admin gate (`entity_setting.mcp_enabled?`):**
+- Boolean field on `EntitySetting`, configurable from the entity's own edit form (`/entities/:id/edit`)
+- Managed by users with the `company_admin` role within the entity
+- Controls whether MCP is active for the entity (even after CapHive has enabled it)
+- Also controls role allowlist (`mcp_allowed_roles`) and client allowlist (`mcp_allowed_clients`)
+- Error code: `-32001`
+
+**Level 3 — Role allowlist:** checks user role against `mcp_allowed_roles_list` (error `-32002`)
+**Level 4 — Client allowlist:** checks OAuth app name against `mcp_allowed_clients_list` (error `-32003`, optional — empty means all allowed)
+
+The Doorkeeper OAuth admin UI (`/oauth/applications`) is separately restricted to `super`/`support` roles via `admin_authenticator`, matching the same role check as `Admin::ApplicationController`.
+
 ### Data Protection
 - All queries entity-scoped — no cross-tenant data leakage
 - Read-only by default (no create/update/delete tools in Phase 1-3)
@@ -926,7 +972,7 @@ end
 
 | # | Priority | Issue | Reason Deferred |
 |---|----------|-------|-----------------|
-| 1 | High | `admin_authenticator` in `doorkeeper.rb` allows any logged-in user to access `/oauth/applications` — should restrict to admins via `has_role?(:admin)` | Not blocking staging; only admin-visible route. Address before production. |
+| 1 | ~~High~~ | ~~`admin_authenticator` in `doorkeeper.rb` allows any logged-in user to access `/oauth/applications`~~ | **RESOLVED** — restricted to `super`/`support` roles, matching `Admin::ApplicationController#authenticate_admin`. |
 | 2 | High | `ListFundUnitsTool` calls private `perform_aggregation` via `.send` on `FundAssistantDataManager` — no public `list_fund_units` method exists on the data manager. All other 22 tools delegate to public methods; this is the only one reaching into internals. Fix: add a public `list_fund_units` method to `FundAssistantDataManager`. | Works correctly; encapsulation cleanup for a follow-up PR. |
 | 3 | High | `access_token_expires_in 30.days` + `reuse_access_token` — wide exposure window for token theft. Consider reducing to `7.days` with refresh token rotation, or disabling `reuse_access_token` so each authorization creates a fresh token. AI clients (Claude.ai) support transparent refresh. | Acceptable for staging; must revisit before production deploy. |
 | 4 | Medium | `mcp_allowed_roles` and `mcp_allowed_clients` stored as JSON strings in `string` columns — should be native `json` columns | Works correctly; schema change deferred to avoid migration churn. |

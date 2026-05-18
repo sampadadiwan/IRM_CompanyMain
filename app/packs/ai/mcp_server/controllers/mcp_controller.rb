@@ -45,9 +45,21 @@ class McpController < ActionController::API
     render json: { error: e.message }, status: :unauthorized
   end
 
-  # Enforces per-entity MCP governance: enabled flag, role allowlist, client allowlist.
-  # Returns JSON-RPC formatted errors (codes -32001 to -32003) on denial.
+  # Enforces two-level MCP governance before allowing tool execution.
+  # Level 1: CapHive admin gate — entity.permissions.enable_mcp? (bitflag, managed at /admin/entities)
+  # Level 2: Entity admin gate — entity_setting.mcp_enabled? (boolean, managed at /entities/edit)
+  # Level 3: Role allowlist — entity_setting.mcp_allowed_roles_list
+  # Level 4: Client allowlist — entity_setting.mcp_allowed_clients_list (optional)
+  # @return [void] renders JSON-RPC error (codes -32000 to -32003) and halts on denial
   def enforce_entity_governance!
+    unless @mcp_entity.permissions.enable_mcp?
+      render json: {
+        jsonrpc: "2.0", id: nil,
+        error: { code: -32_000, message: "MCP is not available for this organization. Contact CapHive to enable AI client integration." }
+      }, status: :forbidden
+      return
+    end
+
     setting = @mcp_entity.entity_setting
 
     unless setting&.mcp_enabled?

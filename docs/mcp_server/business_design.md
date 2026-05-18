@@ -170,10 +170,14 @@ Both serve different user needs. The FM Assistant is our product differentiator.
 
 ## Security & Access Control
 
+- **Two-level entity governance:**
+  - **Level 1 — CapHive Admin (billing gate):** MCP must be enabled per-entity by a CapHive admin (`super`/`support` role) via the admin panel (`/admin/entities`). This is a chargeable feature — entities without it cannot see or use MCP at all.
+  - **Level 2 — Entity Admin (self-serve config):** Once CapHive enables MCP, the entity's own admin (`company_admin` role) can toggle it on/off, choose which roles (Fund Managers, LPs) have access, and restrict which AI clients are allowed.
 - **Authentication:** OAuth 2.1 Authorization Code flow with PKCE — users log in via CapHive's existing Devise authentication and authorize the AI client to access their data. AI clients auto-discover OAuth endpoints via standard `/.well-known/` metadata URLs (RFC 8414 + RFC 9728). See `docs/mcp_server/how_it_works.md` for a detailed walkthrough of the complete auth flow.
 - **Authorization:** Same Pundit policies as the web UI — users only see data their role permits
 - **Entity scoping:** Every query is scoped to the user's entity — no cross-tenant data leakage
 - **Read-only:** Initial release is read-only (no creates, updates, or deletes via MCP)
+- **OAuth admin restricted:** The Doorkeeper OAuth applications UI (`/oauth/applications`) is restricted to CapHive `super`/`support` roles only
 - **Token management:** Users can view and revoke active OAuth tokens from a settings page in CapHive UI
 - **Audit logging:** Every MCP tool call is logged (who, what, when)
 - **Rate limiting:** Per-token rate limits to prevent abuse
