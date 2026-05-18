@@ -41,7 +41,9 @@ class McpController < ActionController::API
     @mcp_entity = result.entity
     @mcp_token = result.doorkeeper_token
   rescue McpAuthService::AuthenticationError => e
-    response.set_header('WWW-Authenticate', 'Bearer')
+    # Include resource_metadata so MCP clients (Claude.ai etc.) can discover the OAuth server via RFC 9728
+    resource_metadata_url = "#{request.base_url}/.well-known/oauth-protected-resource"
+    response.set_header('WWW-Authenticate', %(Bearer realm="#{request.base_url}", resource_metadata="#{resource_metadata_url}"))
     render json: { error: e.message }, status: :unauthorized
   end
 
