@@ -1,3 +1,38 @@
+V9.2.43
+92b8c5b4b Fund unit transfer fixes (#1435)
+289d42d74 Refactor section labels in validation rule override form to use <label> tags for improved accessibility
+d14352f8b Add status badge rendering for validation rule overrides and adjust table layout
+f76c67521 Added better support for uploading skills for scoring agents
+e4da23c81 Feature/mcp server oauth (#1431)
+4eee29630 Refactor deal-related services and controllers for improved error handling, authorization, and data processing (#1432)
+e11d11365 Update fund_closes handling for call basis changes to ensure correct default and clear stale values
+a61c7eef0 Add Highcharts Sankey diagram module to vendor JavaScript
+1f78c8838 Add CapitalRemittance support in validation rules and notifications
+1b9a95d96 Refactor confirmation message display in rule validation and update notification text in capital call approval
+5be38d352 Enhance notification messages for capital call approvals and update modal title color
+ef60b1b79 Add preview functionality for capital remittance payments and enhance form labels and notifications
+85b7a5bee Add PortfolioScoringAgent configuration and fields to support agent setup
+ec1a5928d Enhance KPI data gathering and document text extraction in PortfolioScoringAgent; add filtering options for KPI frequency and document names
+5ccc3853d Portfolio scoring agent (#1430)
+5ccb8d34d Fix compound interest hurdle calculation to include an additional day for accuracy in compute_hurdle method
+2fc4f8056 Refactor distribution query in capital_commitment_shared.rb for MySQL compatibility; streamline custom field rendering logic in form templates
+d7d546b24 Enhance InvestorKyc validations and processing for required file custom fields; update compute_hurdle method to support distribution filtering and cap calculations; improve feature step definitions for custom fields
+08ec3616d Enhance compute_hurdle method with detailed logging and improved calculation for contributions and distributions
+f2fb5020b Enhance compute_hurdle method to support tracking currency and distributions (#1429)
+c1777586d Add feature and step definitions for computing hurdle calculations
+13a887340 Add llm_model configuration for cash flow and portfolio support agents
+64e1da334 Custom field validations (#1427)
+43d5a07eb Refactor entity details display: update field labels and reorganize layout for clarity
+39f8075df Update capital call approval button text to "Confirm & Save"
+3f520f5c7 Add CapitalCall validation rules and context provider (#1425)
+1ca55e55e Add "Agent Charts" link to sidebars and dropdown menu
+8cb887efc Add stats rendering for Agent Charts with tag counts and totals
+2aec338f9 Add comprehensive user guide for Agent Charts functionality
+faed12b57 Enhance agent chart widget with customizable height and improved styling
+85de0424b Feature/agent charts (#1424)
+af02ae0a2 Feature/fund ratio run (#1423)
+
+
 V9.2.42
 e65c688cf Dist pi UI update (#1419)
 5c9b2020e Deal steps changes latest main (#1416)
