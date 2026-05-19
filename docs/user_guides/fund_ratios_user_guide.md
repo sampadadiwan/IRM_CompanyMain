@@ -16,12 +16,14 @@ This guide explains how CapHive computes, generates, and manages fund performanc
 8. [Portfolio Company and Instrument Ratios](#portfolio-company-and-instrument-ratios)
 9. [Tracking Currency Variants](#tracking-currency-variants)
 10. [Customising Ratios with Ratio Formulas](#customising-ratios-with-ratio-formulas)
-11. [Scenarios](#scenarios)
-12. [Filtering and Finding Ratios](#filtering-and-finding-ratios)
-13. [Importing Ratios from a Spreadsheet](#importing-ratios-from-a-spreadsheet)
-14. [Cash Flow Documents](#cash-flow-documents)
-15. [Pivot View](#pivot-view)
-16. [Frequently Asked Questions](#frequently-asked-questions)
+11. [Run Records — FundRatioRun](#run-records)
+12. [Scenarios](#scenarios)
+13. [Ratio Run Templates — Saving and Reusing Configurations](#ratio-run-templates)
+14. [Filtering and Finding Ratios](#filtering-and-finding-ratios)
+15. [Importing Ratios from a Spreadsheet](#importing-ratios-from-a-spreadsheet)
+16. [Cash Flow Documents](#cash-flow-documents)
+17. [Pivot View](#pivot-view)
+18. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -178,7 +180,7 @@ A PIC of 0.8x means 80% of the total fund commitment has been drawn down.
 5. Optionally tick **Generate For Each Folio** to also produce per-investor ratios.
 6. Click **Generate**.
 
-CapHive runs the computation in the background. You will receive a notification when it is complete.
+CapHive runs the computation in the background. You will receive a notification with links to the generated ratios when it is complete.
 
 **What gets generated (fund level):**
 - XIRR, DPI, RVPI, TVPI, MOIC, Gross Portfolio IRR, Portfolio Value to Cost, PIC
@@ -201,12 +203,13 @@ Use cross-fund ratios when you want a consolidated view across a subset of funds
 
 ### How to generate
 
-1. Navigate to any fund and click **Generate Fund Ratios**.
+1. Navigate to any fund and click **Generate Fund Ratios**, or go to **Funds → Cross-Fund Ratios** from the Funds index.
 2. Select the **Cross Fund** tab.
-3. Enter a **Scenario Name** (a descriptive label, e.g. "Q4-2025 Portfolio").
-4. Select the **funds** to include in the analysis.
-5. Choose the **end date**.
-6. Click **Generate**.
+3. Select the **funds** to include in the analysis.
+4. Choose the **end date**.
+5. Click **Generate**.
+
+The run is identified automatically by a fingerprint derived from the selected funds and date — no scenario name is required. A notification with links to the results is sent when the job completes.
 
 **Ratios produced:**
 - XIRR (aggregated across selected funds)
@@ -234,6 +237,10 @@ Aggregate:     Total Distributions = $830,000
 
 Cross-fund DPI, RVPI, and TVPI respect each fund's **Ratio Formulas**, applying adjustments before aggregating.
 
+### Re-running and idempotency
+
+Generating cross-fund ratios for the same set of funds and the same end date reuses the existing run record and recalculates the ratios in place — no duplicate records are created. The run is identified by a SHA-256 fingerprint of the fund IDs and date, not by a user-supplied name.
+
 ---
 
 ## Cross-Portfolio-Company Ratios
@@ -246,10 +253,10 @@ Use this when you want to understand the performance of a **specific company** (
 
 ### How to generate
 
-1. Navigate to any fund and click **Generate Fund Ratios**.
+1. Navigate to any fund and click **Generate Fund Ratios**, or go to **Investors → Cross-Portfolio Ratios** from the Investors index.
 2. Select the **Cross Portfolio** tab.
-3. Enter a **Scenario Name**.
-4. Select specific **portfolio companies**, or enter **tags** (comma-separated) to include all companies with any of those tags.
+3. Optionally select specific **funds** to limit the calculation to. Leave blank to span all entity funds.
+4. Optionally select specific **portfolio companies**, enter **tags** (comma-separated), or choose **sectors** to filter which companies are included. At least one filter is recommended; leaving all blank includes every portfolio company in the entity.
 5. Choose the **end date**.
 6. Click **Generate**.
 
@@ -260,6 +267,10 @@ Use this when you want to understand the performance of a **specific company** (
 
 **Summary ratios produced:**
 - Gross Portfolio IRR (for the combined selection)
+
+### Re-running and idempotency
+
+Like cross-fund runs, each cross-portfolio run is identified by a fingerprint of the selected company IDs, tags, and sectors. Re-running the same selection and date recalculates in place.
 
 ---
 
@@ -382,16 +393,69 @@ After saving, the next time you generate ratios, the Fee Rebate balance will be 
 
 ---
 
+## Run Records — FundRatioRun {#run-records}
+
+Every cross-fund or cross-portfolio generation creates (or reuses) a **FundRatioRun** record. This run record stores the exact filter inputs used for that calculation and links to all the `FundRatio` rows it produced.
+
+### What a run stores
+
+| Field | Description |
+|-------|-------------|
+| **Run type** | `cross-fund` or `cross-portfolio` |
+| **End date** | The date the calculation was run for |
+| **Source funds** | The fund IDs that fed the calculation |
+| **Portfolio companies** | Explicit company IDs included (cross-portfolio only) |
+| **Tag filter** | Portfolio company tags used as a filter |
+| **Sector filter** | Portfolio company sectors used as a filter |
+| **Anchor fund** | The fund used for document storage |
+| **Fingerprint** | SHA-256 hash of the filter inputs — used as the unique run identifier |
+| **Run by** | The user who triggered the calculation |
+| **Created at** | When the run was created |
+
+### Fingerprint and idempotency
+
+The fingerprint is computed from the sorted filter inputs (fund IDs, company IDs, tag string, sectors). Two runs with identical inputs on the same date produce the same fingerprint and share a single run record — ratios are recalculated in place rather than duplicated.
+
+### Viewing a run
+
+From any `FundRatio` detail page, click **View Run Inputs** to open the run record and see exactly which funds, companies, tags, and sectors fed the calculation. From the run page you can also navigate to all ratios linked to that run.
+
+---
+
 ## Scenarios
 
-Every fund ratio has a **scenario** field. This lets you tag a set of ratios with a label so you can compare results across different assumptions.
+Every fund ratio has a **scenario** field. For cross-fund and cross-portfolio ratios, this is automatically populated from the first 40 characters of the run's fingerprint — it is not a user-supplied label.
 
-- **Default scenario:** Standard fund-level generation always creates ratios tagged `Default`.
-- **Named scenarios:** Cross-fund and cross-portfolio-company runs require a scenario name of your choice (e.g. "Base Case", "Stress Test Q4", "2026 Plan").
+For **fund-level ratios** (not cross-fund), the scenario is always `Default`.
 
-When viewing ratios, you can filter by scenario name to see only the set you care about.
+When viewing ratios you can filter by scenario, but for cross-fund and cross-portfolio results it is more reliable to filter by **FundRatioRun** (using the run detail page or the computation context filter) rather than by scenario text.
 
-> Generating ratios for the same scenario and end date **replaces** the previous results for that scenario/date pair.
+---
+
+## Ratio Run Templates — Saving and Reusing Configurations {#ratio-run-templates}
+
+If you run the same cross-fund or cross-portfolio calculation repeatedly (e.g. monthly or quarterly), **Ratio Run Templates** let you save the filter configuration once and trigger it for any new date with a single click.
+
+### What you can do with templates
+
+- **Save** a named set of filters (funds, portfolio companies, tags, sectors, anchor fund)
+- **Tag** templates to group them (e.g. `monthly`, `quarterly`, `board-reporting`)
+- **Trigger one** template for a given date
+- **Trigger all** entity templates at once for a date
+- **Trigger by tag** — run only templates with a specific tag
+- **View past runs** — see the history of FundRatioRun records a template has produced
+
+### Quick-start
+
+1. Go to **Funds → Ratio Templates** in the sidebar, or click **Manage Templates** next to the Generate button on any ratio generation page.
+2. Click **New Template**, fill in the filters and a name, and save.
+3. From the index, click **Run** next to any template, enter an end date, and submit.
+
+### Idempotency with templates
+
+Triggering a template twice for the same date reuses the existing FundRatioRun (same fingerprint) and recalculates ratios in place — no duplicates are created.
+
+> See the **[Ratio Run Templates User Guide](fund_ratio_run_templates_user_guide)** for full details on creating, tagging, triggering, and managing templates.
 
 ---
 
@@ -413,6 +477,7 @@ From a fund page, click **Fund Ratios** in the navigation. By default this shows
 | **Recent months** | Pass `months=6` to see ratios from the last 6 months |
 | **Latest only** | Pass `latest=true` to see only the most recent ratio for each name/owner combination |
 | **Fund ratios only** | Pass `fund_ratios_only` to exclude folio-level ratios from the list |
+| **By run** | Filter `computation_context_id` + `computation_context_type=FundRatioRun` to see all ratios from one run |
 
 ### Full-text search
 
@@ -435,13 +500,9 @@ Standard column filters are available for:
 - `scenario` — exact match
 - `latest` — true/false
 
-### Finding cross-fund ratios
+### Finding cross-fund and cross-portfolio ratios
 
-Cross-fund ratios are stored against a **User** owner (the user who triggered the computation). After generating a cross-fund scenario, the system sends you a notification with direct links to:
-- View all ratios for that scenario
-- View all ratios across all scenarios
-
-You can also navigate to **Fund Ratios** and filter by the scenario name you gave the run.
+After a cross-fund or cross-portfolio job completes, CapHive sends you a notification with direct links to the generated ratios filtered by that run. You can also navigate to the **FundRatioRun** record (linked from any ratio's detail page via **View Run Inputs**) and click through to the filtered ratio list from there.
 
 ---
 
@@ -542,3 +603,9 @@ After generating ratios, CapHive marks the most recent ratio for each name/owner
 
 **Can I manually enter a ratio that CapHive does not compute automatically?**
 Yes. Use the import spreadsheet to upload any custom ratio name (e.g. "Revenue Multiple", "Cash Yield"). CapHive will store and display it alongside the computed ratios.
+
+**I need to run the same cross-fund or cross-portfolio calculation every month. Is there a faster way?**
+Yes — use **Ratio Run Templates**. Save the filter configuration once, then trigger it for each new date from the Templates index with a single click, or use the Trigger by Tag feature to run a whole group at once. See the [Ratio Run Templates User Guide](fund_ratio_run_templates_user_guide).
+
+**What is a FundRatioRun?**
+A FundRatioRun is the record that captures exactly which filters were used for a cross-fund or cross-portfolio calculation. Every ratio produced by such a run is linked back to it. You can view a run's inputs by clicking **View Run Inputs** on any cross-fund ratio's detail page.

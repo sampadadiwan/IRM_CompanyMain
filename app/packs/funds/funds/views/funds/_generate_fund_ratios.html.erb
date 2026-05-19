@@ -43,9 +43,14 @@
       Ratios are computed across all holdings of the selected portfolio companies, spanning every fund in the entity &mdash; not just <strong><%= @fund.name %></strong>. Results are stored against <strong><%= @fund.name %></strong> as the anchor fund. The run name is derived automatically from your selections and date.
     </div>
     <div class="form-group">
-        <%= form.label :portfolio_company_ids, "Select the portfolio companies" %>
-        <%= form.select :portfolio_company_ids, policy_scope(Investor).portfolio_companies.map{|f| [f.investor_name, f.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", name: "portfolio_company_ids[]", multiple: true %>
-        <small class="text-muted">Select the portfolio companies across which you want to generate ratios</small>
+        <%= form.label :fund_ids, "Filter by Funds (optional)" %>
+        <%= select_tag "fund_ids[]", options_for_select(policy_scope(Fund).map{|f| [f.name, f.id]}, params[:fund_ids] || []), include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
+        <small class="text-muted">Limit the calculation to these funds only. Leave blank to include all entity funds.</small>
+    </div>
+    <div class="form-group">
+        <%= form.label :portfolio_company_ids, "Select the portfolio companies (optional)" %>
+        <%= select_tag "portfolio_company_ids[]", options_for_select(policy_scope(Investor).portfolio_companies.map{|f| [f.investor_name, f.id]}, params[:portfolio_company_ids] || []), include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
+        <small class="text-muted">Select specific portfolio companies, or leave blank and use tags / sectors below.</small>
     </div>
     <div class="form-group">
         <%= form.label :portfolio_companies_tags %>
@@ -77,8 +82,19 @@
     </div>
     <% end %>
 
-    <div class="form-group">
-        <%= form.submit "Generate", {class: "btn btn-outline-primary"}%>
+    <div class="form-group d-flex align-items-center gap-2">
+        <button type="submit" class="btn btn-outline-primary d-inline-flex align-items-center"
+                data-bs-toggle="tooltip" data-bs-placement="top"
+                data-bs-title="Run the calculation now for the selected date and filters">
+          <i class="ti ti-player-play me-1"></i>Generate
+        </button>
+        <%= link_to fund_ratio_run_templates_path,
+              class: "btn btn-outline-secondary d-inline-flex align-items-center",
+              data: { bs_toggle: "tooltip", bs_placement: "top",
+                      bs_title: "Save these filters as a reusable template and trigger runs in bulk" } do %>
+          <i class="ti ti-template me-1"></i>Manage Templates
+        <% end %>
+        <%= user_guide_icon_for('fund_ratios', tooltip: 'Fund Ratios User Guide') %>
     </div>
     <% end %>
 

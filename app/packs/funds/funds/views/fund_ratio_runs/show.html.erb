@@ -1,0 +1,118 @@
+<%
+  # Resolve stored IDs back to names for display. These are not associations so
+  # we eager-load them here in the view rather than the controller to keep it thin.
+  source_funds        = Fund.where(id: @run.fund_ids).index_by(&:id)
+  source_companies    = Investor.where(id: @run.portfolio_company_ids).index_by(&:id)
+%>
+
+<div class="container-fluid">
+  <%= render FormCard.new(title: "Run Parameters — #{@run.run_type.humanize}") do %>
+    <table class="table table-bordered table-sm">
+
+      <tr>
+        <th class="w-25">Run Type</th>
+        <td><span class="badge bg-primary-subtle text-primary"><%= @run.run_type.humanize %></span></td>
+      </tr>
+
+      <tr>
+        <th>End Date</th>
+        <td><%= l @run.end_date %></td>
+      </tr>
+
+      <tr>
+        <th>Anchor Fund</th>
+        <td><%= @run.anchor_fund&.name || "—" %></td>
+      </tr>
+
+      <tr>
+        <th>Currency</th>
+        <td><%= @run.currency.presence || "—" %></td>
+      </tr>
+
+      <tr>
+        <th>Fingerprint</th>
+        <td><code class="text-muted" style="font-size:0.8rem"><%= @run.name %></code></td>
+      </tr>
+
+      <tr>
+        <th>Run by</th>
+        <td><%= @run.user&.full_name %></td>
+      </tr>
+
+      <tr>
+        <th>Created at</th>
+        <td><%= l @run.created_at, format: :long %></td>
+      </tr>
+
+      <%# ── Source Funds ──────────────────────────────────────────────────── %>
+      <% if @run.fund_ids.any? %>
+        <tr>
+          <th>Source Funds</th>
+          <td>
+            <ul class="list-unstyled mb-0">
+              <% @run.fund_ids.each do |fid| %>
+                <li><%= source_funds[fid]&.name || "Fund ##{fid}" %></li>
+              <% end %>
+            </ul>
+          </td>
+        </tr>
+      <% end %>
+
+      <%# ── Portfolio Companies ───────────────────────────────────────────── %>
+      <% if @run.portfolio_company_ids.any? %>
+        <tr>
+          <th>Portfolio Companies</th>
+          <td>
+            <ul class="list-unstyled mb-0">
+              <% @run.portfolio_company_ids.each do |pcid| %>
+                <li><%= source_companies[pcid]&.investor_name || "Company ##{pcid}" %></li>
+              <% end %>
+            </ul>
+          </td>
+        </tr>
+      <% end %>
+
+      <%# ── Tag Filter ────────────────────────────────────────────────────── %>
+      <% if @run.portfolio_companies_tags.present? %>
+        <tr>
+          <th>Tag Filter</th>
+          <td>
+            <% @run.portfolio_companies_tags.split(",").map(&:strip).each do |tag| %>
+              <span class="badge bg-secondary me-1"><%= tag %></span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+
+      <%# ── Sector Filter ──────────────────────────────────────────────────  %>
+      <% if @run.sectors.any? %>
+        <tr>
+          <th>Sectors</th>
+          <td>
+            <% @run.sectors.each do |s| %>
+              <span class="badge bg-info-subtle text-info me-1"><%= s %></span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+
+      <%# ── Ratios produced by this run ─────────────────────────────────── %>
+      <tr>
+        <th>Ratios</th>
+        <td>
+          <%= link_to "View #{@run.fund_ratios.count} ratios",
+                fund_ratios_path(
+                  filter: true,
+                  q: ransack_query_params_multiple([
+                    [:computation_context_id,   :eq, @run.id],
+                    [:computation_context_type, :eq, "FundRatioRun"],
+                    [:end_date,                 :eq, @run.end_date]
+                  ])
+                ),
+                class: "btn btn-sm btn-outline-primary" %>
+        </td>
+      </tr>
+
+    </table>
+  <% end %>
+</div>

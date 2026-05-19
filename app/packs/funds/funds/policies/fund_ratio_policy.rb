@@ -15,7 +15,8 @@ class FundRatioPolicy < FundBasePolicy
 
   def show?
     permissioned_employee? ||
-      (record.fund.show_fund_ratios && FundPolicy.new(user, record.fund).permissioned_investor?)
+      # fund_id is nil for cross-fund/cross-portfolio rows — skip investor check.
+      (record.fund.present? && record.fund.show_fund_ratios && FundPolicy.new(user, record.fund).permissioned_investor?)
   end
 
   def create?
@@ -31,7 +32,7 @@ class FundRatioPolicy < FundBasePolicy
   end
 
   def update?
-    (FundPolicy.new(user, record.fund).create? && record.import_upload_id.present?) || support?
+    (record.fund.present? && FundPolicy.new(user, record.fund).create? && record.import_upload_id.present?) || support?
   end
 
   def edit?
@@ -39,6 +40,6 @@ class FundRatioPolicy < FundBasePolicy
   end
 
   def destroy?
-    FundPolicy.new(user, record.fund).create?
+    record.fund.present? && FundPolicy.new(user, record.fund).create?
   end
 end

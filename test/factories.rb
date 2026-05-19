@@ -342,6 +342,18 @@ FactoryBot.define do
     # sandbox_emails { "thimmaiah@gmail.com,ausang@gmail.com" }
   end
 
+  factory :fund_ratio_run_template do
+    entity      { nil }
+    user        { nil }
+    anchor_fund { nil }
+    sequence(:name) { |n| "Template #{n}" }
+    tags        { [] }
+    run_type    { "cross-fund" }
+    fund_ids    { [] }
+    portfolio_company_ids { [] }
+    sectors     { [] }
+  end
+
   factory :fund_ratio do
     entity { nil }
     fund { nil }

@@ -80,10 +80,13 @@ class FundRatiosController < ApplicationController
   def set_fund_ratio
     @fund_ratio = FundRatio.find(params[:id])
     authorize(@fund_ratio)
-    @bread_crumbs = { Funds: funds_path,
-                      "#{@fund_ratio.fund.name}": fund_path(@fund_ratio.fund),
-                      'Fund Ratios': fund_ratios_path(fund_id: @fund_ratio.fund_id, filter: true),
-                      "#{@fund_ratio}": nil }
+    # fund_id is nil for cross-fund / cross-portfolio rows — omit that crumb.
+    @bread_crumbs = { Funds: funds_path }
+    if @fund_ratio.fund.present?
+      @bread_crumbs[@fund_ratio.fund.name.to_sym] = fund_path(@fund_ratio.fund)
+    end
+    @bread_crumbs[:'Fund Ratios'] = fund_ratios_path(fund_id: @fund_ratio.fund_id, filter: true)
+    @bread_crumbs[@fund_ratio.to_s.to_sym] = nil
   end
 
   # Only allow a list of trusted parameters through.

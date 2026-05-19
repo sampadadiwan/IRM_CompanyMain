@@ -21,6 +21,14 @@
           <i class="ti ti-brand-github-copilot"></i> Fund Assistant
         <% end %>
       <% end %>
+      <% anchor_fund = @funds.first %>
+      <% if anchor_fund && policy(anchor_fund).generate_fund_ratios? %>
+        <%= link_to generate_fund_ratios_fund_path(anchor_fund, tab: "cross-fund-tab"),
+              class: "btn btn-outline-secondary d-inline-flex align-items-center",
+              data: { bs_toggle: "tooltip", bs_title: "Generate cross-fund ratios across multiple funds" } do %>
+          <i class="ti ti-chart-dots me-1"></i> Cross-Fund Ratios
+        <% end %>
+      <% end %>
       <% if current_user.entity.support_agents.set?(:fund_stats_agent) %>
         <%= button_to run_support_agents_path(agent_type: "FundStatsAgent", target_id: current_user.entity.id, method: :post), class: "btn btn-outline-info" do %>
           <i class="ti ti-robot"></i> Run Fund Stats Agent

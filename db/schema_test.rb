@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_300001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1749,6 +1749,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_100001) do
     t.index ["deleted_at"], name: "index_fund_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_fund_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_fund_formulas_on_fund_id"
+  end
+
+  create_table "fund_ratio_run_templates", force: :cascade do |t|
+    t.bigint  "anchor_fund_id"
+    t.string  "currency"
+    t.bigint  "entity_id",                 null: false
+    t.json    "fund_ids",                  null: false
+    t.string  "name",                      null: false
+    t.string  "portfolio_companies_tags"
+    t.json    "portfolio_company_ids",     null: false
+    t.integer "position"
+    t.string  "run_type",                  null: false
+    t.json    "sectors",                   null: false
+    t.json    "tags",                      null: false
+    t.bigint  "user_id",                   null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "name"], name: "index_fund_ratio_run_templates_on_entity_id_and_name", unique: true
+    t.index ["entity_id"],         name: "index_fund_ratio_run_templates_on_entity_id"
+    t.index ["user_id"],           name: "index_fund_ratio_run_templates_on_user_id"
   end
 
   create_table "fund_ratio_runs",  force: :cascade do |t|

@@ -1,0 +1,151 @@
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <%# ── Toolbar ──────────────────────────────────────────────────────────── %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+      Ratio Run Templates
+    </h1>
+    <div class="d-flex align-items-center gap-2">
+      <%= user_guide_info_icon %>
+      <%= user_guide_icon_for('fund_ratios', tooltip: 'Fund Ratios User Guide') %>
+      <button class="btn btn-outline-success"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#runAllPanel"
+              aria-expanded="false"
+              aria-controls="runAllPanel">
+        Run All
+      </button>
+      <% if @distinct_tags.any? %>
+        <button class="btn btn-outline-primary"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#runByTagPanel"
+                aria-expanded="false"
+                aria-controls="runByTagPanel">
+          Run by Tag
+        </button>
+      <% end %>
+      <%= link_to "New Template", new_fund_ratio_run_template_path, class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+
+  <%# ── Run All collapsible panel ──────────────────────────────────────────── %>
+  <div class="collapse mb-3" id="runAllPanel">
+    <%= render NewCard.new do %>
+      <%= render FormCard.new(title: "Run All Templates") do %>
+        <%= form_with url: trigger_all_fund_ratio_run_templates_path, method: :post,
+                      class: "d-flex align-items-center gap-3 flex-wrap" do |f| %>
+          <div>
+            <%= f.label :end_date, "End Date", class: "form-label mb-1 small fw-semibold" %>
+            <%= f.date_field :end_date, class: "form-control", required: true %>
+          </div>
+          <%= f.submit "Run All", class: "btn btn-success align-self-end" %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+
+  <%# ── Run by Tag collapsible panel ───────────────────────────────────────── %>
+  <% if @distinct_tags.any? %>
+  <div class="collapse mb-3" id="runByTagPanel">
+    <%= render NewCard.new do %>
+      <%= render FormCard.new(title: "Run by Tag") do %>
+        <%= form_with url: trigger_by_tag_fund_ratio_run_templates_path, method: :post,
+                      class: "d-flex align-items-center gap-3 flex-wrap" do |f| %>
+          <div>
+            <%= f.label :tag, "Tag", class: "form-label mb-1 small fw-semibold" %>
+            <%= f.select :tag, @distinct_tags, { include_blank: "— select —" },
+                         class: "form-select", style: "width:180px", required: true %>
+          </div>
+          <div>
+            <%= f.label :end_date, "End Date", class: "form-label mb-1 small fw-semibold" %>
+            <%= f.date_field :end_date, class: "form-control", required: true %>
+          </div>
+          <%= f.submit "Run Tag", class: "btn btn-primary align-self-end" %>
+        <% end %>
+      <% end %>
+    <% end %>
+  </div>
+  <% end %>
+
+  <%# ── Templates table ───────────────────────────────────────────────────── %>
+  <div class="table-responsive" data-controller="datatable">
+    <table class="table table-bordered dataTable jqDataTable">
+      <thead>
+        <tr>
+          <th class="text-col">Name</th>
+          <th class="text-col">Tag</th>
+          <th class="text-col">Type</th>
+          <th class="text-col">Anchor Fund</th>
+          <th class="action-col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @templates.each do |tmpl| %>
+          <tr>
+            <td><%= tmpl.name %></td>
+            <td>
+              <% if tmpl.tags.any? %>
+                <% tmpl.tags.each do |t| %>
+                  <%= content_tag :span, t, class: "badge bg-secondary me-1" %>
+                <% end %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td><%= tmpl.run_type.humanize %></td>
+            <td><%= tmpl.anchor_fund&.name || "—" %></td>
+            <td class="text-end">
+              <div class="d-inline-flex align-items-center gap-2">
+                <%# Date field sits outside the dropdown so the user can set it before clicking Run %>
+                <%= form_with url: trigger_one_fund_ratio_run_template_path(tmpl), method: :post,
+                              class: "d-inline-flex align-items-center",
+                              id: "run-form-#{tmpl.id}" do |f| %>
+                  <%= f.date_field :end_date, class: "form-control", style: "width:150px", required: true %>
+                <% end %>
+
+                <div class="dropdown">
+                  <button class="btn btn-outline-secondary dropdown-toggle d-inline-flex align-items-center gap-1"
+                          type="button"
+                          data-bs-toggle="dropdown"
+                          aria-expanded="false">
+                    <i class="ti ti-settings"></i> Actions
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                      <button class="dropdown-item d-flex align-items-center gap-2"
+                              type="submit"
+                              form="run-form-<%= tmpl.id %>">
+                        <i class="ti ti-player-play"></i> Run
+                      </button>
+                    </li>
+                    <li>
+                      <%= link_to edit_fund_ratio_run_template_path(tmpl), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                        <i class="ti ti-pencil"></i> Edit
+                      <% end %>
+                    </li>
+                    <li>
+                      <%= button_to fund_ratio_run_template_path(tmpl), method: :delete,
+                                    class: "dropdown-item d-flex align-items-center gap-2 text-danger",
+                                    form_class: "deleteButton",
+                                    data: { action: "click->confirm#popup", turbo: false } do %>
+                        <i class="ti ti-trash"></i> Delete
+                      <% end %>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <%= link_to runs_fund_ratio_run_template_path(tmpl), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                        <i class="ti ti-history"></i> View Runs
+                      <% end %>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+<% end %>

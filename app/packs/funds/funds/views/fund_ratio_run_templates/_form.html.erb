@@ -1,0 +1,99 @@
+<%# Shared form for new and edit. Locals: template (FundRatioRunTemplate), url. %>
+<%= render NewCard.new do %>
+  <%= render FormCard.new(title: template.persisted? ? "Edit Template" : "New Template") do %>
+
+  <%= form_with model: template, url: url do |f| %>
+    <% if template.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% template.errors.each do |e| %>
+            <li><%= e.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= f.label :name %>
+      <%= f.text_field :name, class: "form-control", placeholder: "e.g. Benchmark Group A" %>
+    </div>
+
+    <%
+      # Merge entity-wide existing tags with this template's own tags so all
+      # current selections appear as valid options (handles tags unique to one template).
+      all_tag_options = (policy_scope(FundRatioRunTemplate).distinct_tags + Array(template.tags))
+                          .uniq.sort
+    %>
+    <div class="form-group">
+      <%= f.label :tags, "Tags (optional — groups templates for bulk trigger)" %>
+      <%= f.select :tags, all_tag_options,
+                   { include_blank: false, include_hidden: false, selected: template.tags },
+                   class: "form-control select2",
+                   name: "fund_ratio_run_template[tags][]",
+                   multiple: true,
+                   data: { tags: "true" } %>
+      <small class="text-muted">Select existing tags or type a new one and press Enter.</small>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :anchor_fund_id, "Anchor Fund" %>
+      <%= f.select :anchor_fund_id,
+                   policy_scope(Fund).map { |fund| [fund.name, fund.id] },
+                   { include_blank: "— none —" },
+                   class: "form-control select2" %>
+      <small class="text-muted">Used for document storage and policy scoping. Required if no source funds are selected.</small>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :fund_ids, "Source Funds" %>
+      <%= f.select :fund_ids,
+                   policy_scope(Fund).map { |fund| [fund.name, fund.id] },
+                   { include_blank: false, include_hidden: false },
+                   class: "form-control select2", name: "fund_ratio_run_template[fund_ids][]", multiple: true %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :portfolio_company_ids, "Portfolio Companies" %>
+      <%= f.select :portfolio_company_ids,
+                   policy_scope(Investor).portfolio_companies.map { |pc| [pc.investor_name, pc.id] },
+                   { include_blank: false, include_hidden: false },
+                   class: "form-control select2", name: "fund_ratio_run_template[portfolio_company_ids][]", multiple: true %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :portfolio_companies_tags, "Portfolio Company Tags" %>
+      <%= f.text_field :portfolio_companies_tags, class: "form-control",
+                       placeholder: "comma-separated tags" %>
+      <small class="text-muted">Select companies with any of these tags (combined with explicit selection above).</small>
+    </div>
+
+    <%
+      sectors_for_select = policy_scope(Investor).portfolio_companies
+                             .where.not(sector: [nil, ""])
+                             .pluck(:sector)
+                             .flat_map { |s| s.split(",") }
+                             .map(&:strip)
+                             .uniq
+                             .compact_blank
+                             .sort
+    %>
+    <div class="form-group">
+      <%= f.label :sectors, "Sectors" %>
+      <%= f.select :sectors, sectors_for_select,
+                   { include_blank: false, include_hidden: false },
+                   class: "form-control select2", name: "fund_ratio_run_template[sectors][]", multiple: true %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :position, "Display Order" %>
+      <%= f.number_field :position, class: "form-control", min: 1 %>
+    </div>
+
+    <div class="form-group">
+      <%= f.submit t_common(:save), class: "btn btn-outline-primary" %>
+      <%= link_to "Cancel", fund_ratio_run_templates_path, class: "btn btn-outline-secondary ms-2" %>
+    </div>
+  <% end %>
+
+  <% end %>  <%# /FormCard %>
+<% end %>  <%# /NewCard %>

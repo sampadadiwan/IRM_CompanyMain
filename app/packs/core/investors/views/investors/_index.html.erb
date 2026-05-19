@@ -31,6 +31,14 @@
                 data: { turbo: false } do %>
       <i class="ti ti-notes"></i> All Notes
     <% end %>
+    <% cp_fund = current_user.entity.funds.order(:id).first %>
+    <% if cp_fund && policy(cp_fund).generate_fund_ratios? %>
+      <%= link_to generate_fund_ratios_fund_path(cp_fund, tab: "cross-portfolio-tab"),
+            class: "btn btn-outline-secondary d-inline-flex align-items-center",
+            data: { bs_toggle: "tooltip", bs_title: "Generate ratios across portfolio companies spanning all funds" } do %>
+        <i class="ti ti-chart-dots me-1"></i> Cross-Portfolio Ratios
+      <% end %>
+    <% end %>
     <div class="btn-group">
       <div class="dropdown">
         <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button"

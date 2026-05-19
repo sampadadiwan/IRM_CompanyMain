@@ -93,7 +93,10 @@ class FundRatio < ApplicationRecord
     # database before the callback runs, making scenario.blank? always false on new records.
     col_default = self.class.column_defaults["scenario"]
     if computation_context.present? && (scenario.blank? || scenario == col_default)
-      self.scenario = computation_context.name
+      # scenario is VARCHAR(40); FundRatioRun names are 64-char SHA-256 digests,
+      # so truncate to fit. Filtering by computation_context is preferred over
+      # filtering by scenario for run-based rows anyway.
+      self.scenario = computation_context.name.to_s.first(40)
     end
   end
 

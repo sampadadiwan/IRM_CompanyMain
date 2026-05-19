@@ -72,6 +72,15 @@ resources :fund_ratios do
   post 'generate', on: :collection
 end
 
+resources :fund_ratio_runs, only: %i[show]
+
+resources :fund_ratio_run_templates do
+  post 'trigger_all',    on: :collection
+  post 'trigger_by_tag', on: :collection
+  post 'trigger_one',    on: :member
+  get  'runs',           on: :member
+end
+
 resources :capital_remittance_payments do
   get "preview", on: :member
 end

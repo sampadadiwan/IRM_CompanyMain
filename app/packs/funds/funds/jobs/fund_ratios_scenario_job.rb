@@ -105,7 +105,7 @@ class FundRatiosScenarioJob < ApplicationJob
 
   def setup(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil)
     @fund_id  = fund_id
-    @fund     = Fund.find(fund_id)   # anchor fund — document storage only
+    @fund     = Fund.find_by(id: fund_id)   # anchor fund — optional, document storage only
     @end_date = end_date
 
     # @funds is the ActiveRecord relation used in calculations; @fund_ids is stored on

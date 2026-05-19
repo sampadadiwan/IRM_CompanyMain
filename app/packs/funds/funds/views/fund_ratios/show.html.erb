@@ -19,11 +19,16 @@
       </tr>
       <% if @fund_ratio.computation_context_type == "PortfolioScenario" && @fund_ratio.computation_context.present? %>
         <tr>
+          <td>Portfolio Scenario</td>
+          <td><%= link_to @fund_ratio.computation_context %></td>
+        </tr>
+      <% end %>
+      <% if @fund_ratio.computation_context_type == "FundRatioRun" && @fund_ratio.computation_context.present? %>
+        <tr>
+          <td>Run Parameters</td>
           <td>
-            Portfolio Scenario
-          </td>
-          <td>
-            <%= link_to @fund_ratio.computation_context %>
+            <%= link_to "View Run Inputs", fund_ratio_run_path(@fund_ratio.computation_context),
+                        class: "btn btn-sm btn-outline-secondary" %>
           </td>
         </tr>
       <% end %>

@@ -54,6 +54,7 @@ module UserGuideHelper
     'account_entries' => 'capital_commitments_user_guide.md',
     'carry_computations' => 'carry_computations_user_guide.md',
     'fund_ratios' => 'fund_ratios_user_guide.md',
+    'fund_ratio_run_templates' => 'fund_ratio_run_templates_user_guide.md',
     'fund_units' => 'fund_units_user_guide.md',
     'fund_unit_settings' => 'fund_units_user_guide.md',
     'ratio_formulas' => 'ratio_formulas_user_guide.md',
@@ -123,6 +124,22 @@ module UserGuideHelper
     return nil unless guide_path
 
     link_to guide_path, target: "_blank", 'data-bs-toggle': 'tooltip', title: 'User Guide',
+                        class: 'btn btn-info p-0 rounded-circle d-inline-flex align-items-center justify-content-center',
+                        style: 'width: 35px; height: 35px;', rel: 'noopener' do
+      content_tag(:i, '', class: 'ti ti-info-circle fs-5', style: 'margin: 0 !important;')
+    end
+  end
+
+  # Renders a guide icon for an explicit controller key regardless of the current controller.
+  # Use when a view needs to link to a guide that differs from (or supplements) its own.
+  def user_guide_icon_for(controller_key, tooltip: 'User Guide')
+    return nil if current_user&.curr_role == "investor"
+
+    guide_file = USER_GUIDE_MAPPING[controller_key.to_s]&.gsub('.md', '')
+    return nil unless guide_file
+
+    guide_path = Rails.application.routes.url_helpers.user_guide_path(guide_file)
+    link_to guide_path, target: "_blank", 'data-bs-toggle': 'tooltip', title: tooltip,
                         class: 'btn btn-info p-0 rounded-circle d-inline-flex align-items-center justify-content-center',
                         style: 'width: 35px; height: 35px;', rel: 'noopener' do
       content_tag(:i, '', class: 'ti ti-info-circle fs-5', style: 'margin: 0 !important;')

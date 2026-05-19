@@ -1,4 +1,13 @@
 V9.2.43
+998f3c46d Set default value of show_fund_units column to true in funds table
+1f09e3397 Add show_fund_units feature to fund management
+a971d58b1 Update FundRatioRun name with fingerprint and adjust schema version
+a8e2c5ad6 Refactor hurdle calculation logic to use compound interest formula; update feature tests with new expected values for accuracy.
+13c45bf4a Enhance FundRatiosJob and FundRatiosScenarioJob with notification links for generated ratios; add fund_ratio_run association to FundRatio model for improved query capabilities.
+d3758d90b Add scope for company admin to include cross-fund rows in queries
+
+
+V9.2.43
 92b8c5b4b Fund unit transfer fixes (#1435)
 289d42d74 Refactor section labels in validation rule override form to use <label> tags for improved accessibility
 d14352f8b Add status badge rendering for validation rule overrides and adjust table layout

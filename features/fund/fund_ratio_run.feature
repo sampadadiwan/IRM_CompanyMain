@@ -143,3 +143,38 @@ Feature: Fund Ratio Run — Cross-Fund and Cross-Portfolio Computations
       | sector              | SaaS       |
     Then per-company FundRatios should exist for "Alpha Co", "Beta Co", and "Gamma Co" in scenario "Union-Test"
     And the FundRatioRun for scenario "Union-Test" should store sector "SaaS"
+
+  # ─── Cross-portfolio — fund_ids filter ────────────────────────────────────────
+
+  Scenario: Cross-portfolio fund_ids filter limits companies to those funds' investments
+    Given there is a second fund "name=Demo Fund B;currency=INR" for the entity
+    And there are portfolio companies in different funds for cross-portfolio testing:
+      | name     | fund   | sector  | tag_list |
+      | Alpha Co | first  | Fintech | growth   |
+      | Beta Co  | second | SaaS    | stable   |
+    And the cross-portfolio ratios are computed for scenario "FundFilter-Test" on "31-03-2024" with all company ids and first fund filter
+    Then per-company FundRatios should exist for "Alpha Co"
+    And no FundRatios should exist for "Beta Co" in scenario "FundFilter-Test"
+    And FundRatioRun.for_source_fund should return the cross-portfolio run for the first fund
+    And FundRatioRun.for_source_fund should not return the cross-portfolio run for the second fund
+
+  Scenario: Cross-portfolio without fund_ids filter spans all entity funds
+    Given there is a second fund "name=Demo Fund B;currency=INR" for the entity
+    And there are portfolio companies in different funds for cross-portfolio testing:
+      | name     | fund   | sector  | tag_list |
+      | Alpha Co | first  | Fintech | growth   |
+      | Beta Co  | second | SaaS    | stable   |
+    And the cross-portfolio ratios are computed for scenario "AllFunds-Test" on "31-03-2024" with all company ids and no fund filter
+    Then per-company FundRatios should exist for "Alpha Co"
+    And per-company FundRatios should exist for "Beta Co"
+
+  # ─── Nil anchor fund ──────────────────────────────────────────────────────────
+
+  Scenario: Cross-fund job with nil anchor fund still creates FundRatioRun and ratios
+    Given there is a second fund "name=Demo Fund B;currency=INR" for the entity
+    And Given import file "fund_ratios/investors.xlsx" for "Investor"
+    And Given import file "fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+    And the cross-fund ratios are computed with nil anchor fund on "31-03-2024" with the two funds
+    Then a FundRatioRun should exist with run_type "cross-fund" and scenario "nil-anchor"
+    And the FundRatioRun should have nil anchor_fund
+    And all FundRatios for the run should have fund_id nil

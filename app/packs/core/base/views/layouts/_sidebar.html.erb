@@ -91,6 +91,18 @@
                 <span class="hide-menu"><%= t('sidebar.kycs') %></span>
               </a>
             </li>
+            <% if !current_user.curr_role_investor? %>
+              <li class="sidebar-item">
+                <a class="sidebar-link" href="/fund_ratio_run_templates"
+                   data-bs-toggle="tooltip" data-bs-placement="right"
+                   data-bs-title="Saved ratio run configurations — trigger by date or tag">
+                  <div class="round-16 d-flex align-items-center justify-content-center">
+                    <i class="ti ti-chevron-right fs-2"></i>
+                  </div>
+                  <span class="hide-menu">Ratio Templates</span>
+                </a>
+              </li>
+            <% end %>
           </ul>
         </li>
       <% end %>

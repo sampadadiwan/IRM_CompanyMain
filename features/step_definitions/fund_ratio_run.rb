@@ -62,6 +62,74 @@ end
 
 ### Step definitions ##########################################################
 
+# Like the single-fund helper but lets each row specify which fund the company's
+# investment belongs to. 'fund' column must be "first" or "second".
+Given('there are portfolio companies in different funds for cross-portfolio testing:') do |table|
+  @portfolio_companies_for_test = table.hashes.map do |row|
+    # Map the human-readable fund column to the actual Fund record.
+    fund = row['fund'] == 'second' ? @fund_b : @fund
+    create_portfolio_company_with_investment(
+      name:     row['name'],
+      sector:   row['sector'] || 'Fintech',
+      tag_list: row['tag_list'] || '',
+      fund:     fund,
+      entity:   @entity
+    ).portfolio_company
+  end
+end
+
+# Runs cross-portfolio with all company ids from @portfolio_companies_for_test AND
+# restricts to @fund only via fund_ids filter. Stores @cp_fund_ids_filter for assertions.
+Given('the cross-portfolio ratios are computed for scenario {string} on {string} with all company ids and first fund filter') do |_scenario, date_str|
+  @end_date           = Date.local_parse(date_str)
+  pc_ids              = @portfolio_companies_for_test.map(&:id)
+  @cp_fund_ids_filter = [@fund.id]
+  FundRatiosScenarioJob.perform_now(
+    @fund.id, @end_date, @user.id,
+    portfolio_company_ids: pc_ids,
+    fund_ids:              @cp_fund_ids_filter,
+    type:                  "cross-portfolio"
+  )
+  @run = FundRatioRun.find_by(
+    name:     FundRatioRun.fingerprint(portfolio_company_ids: pc_ids, fund_ids: @cp_fund_ids_filter),
+    end_date: @end_date,
+    run_type: "cross-portfolio"
+  )
+end
+
+# Runs cross-portfolio with all company ids but no fund_ids filter — both funds included.
+Given('the cross-portfolio ratios are computed for scenario {string} on {string} with all company ids and no fund filter') do |_scenario, date_str|
+  @end_date = Date.local_parse(date_str)
+  pc_ids    = @portfolio_companies_for_test.map(&:id)
+  FundRatiosScenarioJob.perform_now(
+    @fund.id, @end_date, @user.id,
+    portfolio_company_ids: pc_ids,
+    fund_ids:              nil,
+    type:                  "cross-portfolio"
+  )
+  @run = FundRatioRun.find_by(
+    name:     FundRatioRun.fingerprint(portfolio_company_ids: pc_ids),
+    end_date: @end_date,
+    run_type: "cross-portfolio"
+  )
+end
+
+# Runs cross-fund job passing nil as the anchor fund_id to verify the job handles it gracefully.
+Given('the cross-fund ratios are computed with nil anchor fund on {string} with the two funds') do |date_str|
+  @end_date = Date.local_parse(date_str)
+  @fund_ids = [@fund.id, @fund_b.id]
+  FundRatiosScenarioJob.perform_now(
+    nil, @end_date, @user.id,
+    fund_ids: @fund_ids,
+    type:     "cross-fund"
+  )
+  @run = FundRatioRun.find_by(
+    name:     FundRatioRun.fingerprint(fund_ids: @fund_ids),
+    end_date: @end_date,
+    run_type: "cross-fund"
+  )
+end
+
 Given('there is a second fund {string} for the entity') do |args|
   @fund_b = FactoryBot.build(:fund, entity: @entity)
   key_values(@fund_b, args)
@@ -228,12 +296,14 @@ end
 ### Assertions — scenario column auto-population ##############################
 
 Then('all FundRatios for the run should have scenario set to the run name') do
-  # set_scenario_if_missing callback auto-fills scenario from computation_context.name.
+  # set_scenario_if_missing stores computation_context.name truncated to VARCHAR(40).
+  # @run.name is a 64-char SHA-256 digest so we compare only the stored prefix.
   ratios = FundRatio.where(computation_context: @run)
   expect(ratios).not_to be_empty
+  expected = @run.name.to_s.first(40)
   ratios.each do |fr|
-    expect(fr.scenario).to eq(@run.name),
-      "Expected scenario '#{@run.name}' on FundRatio '#{fr.name}' but got '#{fr.scenario.inspect}'"
+    expect(fr.scenario).to eq(expected),
+      "Expected scenario '#{expected}' on FundRatio '#{fr.name}' but got '#{fr.scenario.inspect}'"
   end
 end
 
@@ -347,6 +417,33 @@ Then('FundRatioRun.for_source_sector {string} should return only the {string} ru
   FundRatioRun.where.not(id: expected_run.id).each do |run|
     expect(results).not_to include(run) unless run.sectors.include?(sector)
   end
+end
+
+# Single-company variant: asserts an IRR FundRatio exists for the named company in @run.
+Then('per-company FundRatios should exist for {string}') do |name|
+  pc  = @entity.investors.find_by(investor_name: name)
+  expect(pc).not_to be_nil, "Expected portfolio company '#{name}' to exist in the entity"
+  irr = FundRatio.find_by(owner: pc, name: "IRR", computation_context: @run)
+  expect(irr).not_to be_nil, "Expected IRR FundRatio for #{name} in run #{@run&.name}"
+end
+
+# Asserts for_source_fund returns @run for @fund (the first fund, used as fund_ids filter).
+Then('FundRatioRun.for_source_fund should return the cross-portfolio run for the first fund') do
+  expect(FundRatioRun.for_source_fund(@fund.id)).to include(@run),
+    "Expected for_source_fund(#{@fund.id}) to include cross-portfolio run #{@run&.id}"
+end
+
+# Asserts for_source_fund does NOT return @run for @fund_b (excluded from the fund_ids filter).
+Then('FundRatioRun.for_source_fund should not return the cross-portfolio run for the second fund') do
+  expect(FundRatioRun.for_source_fund(@fund_b.id)).not_to include(@run),
+    "Expected for_source_fund(#{@fund_b.id}) not to include cross-portfolio run #{@run&.id}"
+end
+
+# Asserts the FundRatioRun was created with anchor_fund nil (optional: true on the belongs_to).
+Then('the FundRatioRun should have nil anchor_fund') do
+  expect(@run).not_to be_nil, "Expected a FundRatioRun to exist"
+  expect(@run.anchor_fund).to be_nil,
+    "Expected anchor_fund to be nil but got #{@run.anchor_fund&.name}"
 end
 
 # for_source_tag uses CONCAT(',', col, ',') LIKE "%,tag,%" rather than MEMBER OF
