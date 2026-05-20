@@ -1969,7 +1969,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_400001) do
     t.decimal "other_fee_cents", precision: 20, scale: 2, default: "0.0"
     t.string "portfolio_cost_type", limit: 10, default: "FIFO", null: false
     t.boolean "show_fund_ratios", default: false
-    t.boolean "show_fund_units", default: false
+    t.boolean "show_fund_units", default: true
     t.boolean "show_portfolios", default: false
     t.boolean "show_valuations", default: false
     t.boolean "snapshot", default: false
