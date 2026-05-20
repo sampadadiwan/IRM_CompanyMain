@@ -11,14 +11,38 @@
             <div class="notification bg-primary rounded-circle"></div>
         </a>
         <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up"
-                aria-labelledby="drop2"">
-            <div class="d-flex align-items-center justify-content-between py-3 px-7">
-                <h5 class="mb-0 fs-5 fw-semibold">Notifications</h5>
-                <span class="badge text-bg-primary rounded-4 px-3 py-1 lh-sm"><%= notification_count%> new</span>
-            </div>
+                aria-labelledby="drop2">
+            <div class="profile-dropdown position-relative" data-simplebar>
 
-            <div class="py-6 px-7 mb-1">
-                <a href="/notifications?user_id=<%=current_user.id%>" class="btn btn-outline-primary w-100">See All Notifications</a>
+                <div class="d-flex align-items-center justify-content-between py-9 mx-7 border-bottom">
+                    <h5 class="mb-0 fs-5 fw-semibold">Notifications</h5>
+                    <span class="badge text-bg-primary rounded-4 px-3 py-1 lh-sm"><%= notification_count %> new</span>
+                </div>
+
+                <div class="message-body">
+                    <a href="/notifications?user_id=<%= current_user.id %>" class="py-8 px-7 d-flex align-items-center">
+                        <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                            <i class="ti ti-bell"></i>
+                        </span>
+                        <div class="w-75 d-inline-block v-middle ps-3">
+                            <h6 class="mb-1 fs-3 fw-semibold lh-base">All Notifications</h6>
+                            <span class="fs-2 d-block text-body-secondary">View your notification history</span>
+                        </div>
+                    </a>
+
+                    <% unless current_user.curr_role == "investor" %>
+                    <%= link_to release_notes_path, class: "py-8 px-7 d-flex align-items-center" do %>
+                        <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                            <i class="ti ti-notes"></i>
+                        </span>
+                        <div class="w-75 d-inline-block v-middle ps-3">
+                            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.release_notes') %></h6>
+                            <span class="fs-2 d-block text-body-secondary">See what's new in this release</span>
+                        </div>
+                    <% end %>
+                    <% end %>
+                </div>
+
             </div>
         </div>
     </li>

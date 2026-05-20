@@ -65,6 +65,7 @@ Rails.application.routes.draw do
   root "entities#dashboard"
 
   resources :user_guides, only: %i[index show]
+  resources :release_notes, only: %i[index show], constraints: { id: /[^\/]+/ }
 
   get 'outlook_addin/taskpane', to: 'outlook_addin#taskpane'
   get 'outlook_addin/investors', to: 'outlook_addin#investors'
