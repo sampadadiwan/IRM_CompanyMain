@@ -80,6 +80,7 @@
             <%= render "/users/reset_password" if (current_user && current_user.reset_password?) %>
             <%= render "/layouts/accept_terms" if (current_user && !current_user.accept_terms) %>
             <span id="alert"></span>
+            <%= render "/layouts/alerts" %>
             <%= render "/layouts/breadcrumbs" %>
             <%= yield %>
           </div>

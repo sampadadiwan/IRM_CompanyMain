@@ -8,6 +8,16 @@ class KpiReport < ApplicationRecord
 
   PERIODS = ["Month", "Quarter", "Half Year", "Year", "YTD"].freeze
 
+  # Lifecycle of a portco self-reporting request.
+  # shell_created → link_sent → draft_saved → submitted → reviewed
+  enum :status, {
+    shell_created: 'shell_created',
+    link_sent: 'link_sent',
+    draft_saved: 'draft_saved',
+    submitted: 'submitted',
+    reviewed: 'reviewed'
+  }, prefix: :status
+
   STANDARD_COLUMNS = {
     "As Of; date-col" => "as_of; date-col",
     "Period; text-col" => "period; text-col",
@@ -43,6 +53,9 @@ class KpiReport < ApplicationRecord
   scope :actuals, -> { where(tag_list: "Actual") }
   scope :budgets, -> { where(tag_list: "Budget") }
   scope :ics, -> { where(tag_list: "IC") }
+  # Reports that portcos have not yet submitted — used to filter bulk reminders.
+  scope :not_submitted, -> { where.not(status: %w[submitted reviewed]) }
+  scope :portco_pending, -> { where(enable_portco_upload: true).not_submitted }
 
   def self.custom_fields
     JSON.parse(ENV.fetch("KPIS", nil)).keys.map(&:titleize).sort
@@ -139,7 +152,7 @@ class KpiReport < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[as_of period tag_list owner_id portfolio_company_id]
+    %w[as_of period tag_list owner_id portfolio_company_id status]
   end
 
   def self.ransackable_associations(_auth_object = nil)

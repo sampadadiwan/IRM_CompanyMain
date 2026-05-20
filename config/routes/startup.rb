@@ -22,6 +22,8 @@ resources :kpi_reports do
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
   patch "refresh_import", on: :member
+  patch "mark_reviewed", on: :member
+  get "portco_pending", on: :collection
 end
 
 resources :kpi_chart_settings, only: %i[index create destroy show]

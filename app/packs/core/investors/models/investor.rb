@@ -289,14 +289,22 @@ class Investor < ApplicationRecord
 
   # We do this because of advisors
   # We dont want to send notifications to all approved users, we send it only if they have at least show access to the model
-  def notification_users(model = nil)
+  # with_tag: if provided, restrict recipients to users with that tag (when any exist).
+  # Falls back to the normal access-based logic when no tagged users are found.
+  def notification_users(model = nil, with_tag: nil)
+    if with_tag.present?
+      tagged = approved_users.with_tag(with_tag)
+      return tagged.to_a if tagged.exists?
+    end
+
     if model
       # Select all users who have show access to the model
       approved_users.select do |user|
         if user.has_cached_role?(:investor_advisor)
-          # This is done because investor_advisors can switch entities and may be logged in as a different entity
-          user.curr_role = "investor"
-          policy = Pundit.policy(user, model)
+          # investor_advisors can switch entities; evaluate the policy as if they are in
+          # "investor" role without mutating the live user object (which could affect other callers).
+          scoped_user = user.dup.tap { |u| u.curr_role = "investor" }
+          policy = Pundit.policy(scoped_user, model)
           policy.permissioned_investor_advisor?(as_entity_id: investor_entity_id) || policy.show?
         else
           # For normal users, we check if they have show access to the model

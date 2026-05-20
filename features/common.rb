@@ -261,3 +261,15 @@ Given('I filter the {string} by {string}') do |controller, args|
   url="#{controller}?q[c][0][a][0][name]=#{key}&q[c][0][p]=eq&q[c][0][v][0][value]=#{value}"
   visit(url)
 end
+
+When('I fill in {string} with {string}') do |field, value|
+  fill_in field, with: value
+end
+
+Then('I should see {string}') do |text|
+  expect(page).to have_content(text)
+end
+
+Then('I should not see {string}') do |text|
+  expect(page).not_to have_content(text)
+end

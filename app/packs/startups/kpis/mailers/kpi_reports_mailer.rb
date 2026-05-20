@@ -8,6 +8,13 @@ class KpiReportsMailer < ApplicationMailer
     send_mail(subject:)
   end
 
+  def submitted_notification
+    @kpi_report = KpiReport.find params[:kpi_report_id]
+    @portfolio_company = @kpi_report.portfolio_company
+    subject = "KPIs submitted: #{@kpi_report.for_name} for #{I18n.l(@kpi_report.as_of)}"
+    send_mail(subject:)
+  end
+
   def send_no_users_warning
     @portfolio_company = Investor.find(params[:portfolio_company_id])
     @kpi_report = KpiReport.find(params[:kpi_report_id])

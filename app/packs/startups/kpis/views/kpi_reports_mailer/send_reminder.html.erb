@@ -2,7 +2,9 @@
 
 <p>This is a reminder to report the KPIs for <strong><%= @kpi_report.for_name %></strong> for the period ending <strong><%= l @kpi_report.as_of %></strong>.</p>
 
-<p>You can fill out the report by clicking the link below:</p>
+<p>You can fill out the report by clicking the link below. Use <strong>Save Draft</strong> to save your progress, and <strong>Submit Report</strong> when all data is final — the fund team will be notified upon submission.</p>
+
+<p><strong>Note:</strong> This link is valid until <strong><%= l 15.days.from_now.to_date %></strong>. After that date, please contact your fund manager to request a new link.</p>
 
 <p class="btn btn-outline-primary"><%= link_to 'Fill KPI Report', edit_kpi_report_url(id: :shared, signed_id: KpiReport.signed_id_for_user(@kpi_report, @user), host: @entity.sub_domain + '.' + ENV.fetch('DOMAIN', 'localhost')) %></p>
 

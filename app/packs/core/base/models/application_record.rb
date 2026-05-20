@@ -85,6 +85,10 @@ class ApplicationRecord < ActiveRecord::Base
     verifier.generate({ record_id: record.id, email: user.email, model: name }, expires_in: expires_in, purpose: :shared_access)
   end
 
+  # Models that are permitted to be looked up via a signed access token.
+  # Extend this list when adding new shared-link flows.
+  SIGNED_ID_ALLOWED_MODELS = %w[KpiReport].freeze
+
   # Verifies a signed ID and returns the associated record and user.
   # The signed ID is expected to contain :model, :record_id, and :email.
   #
@@ -96,6 +100,12 @@ class ApplicationRecord < ActiveRecord::Base
     verifier = ActiveSupport::MessageVerifier.new(Rails.application.secret_key_base)
     data = verifier.verify(signed_id, purpose: :shared_access)
     return nil unless data
+
+    # Allowlist prevents arbitrary class instantiation if the secret is ever compromised.
+    unless SIGNED_ID_ALLOWED_MODELS.include?(data[:model])
+      Rails.logger.warn "Rejected signed_id for disallowed model: #{data[:model]}"
+      return nil
+    end
 
     model_class = data[:model].constantize
     record = model_class.find_by(id: data[:record_id])

@@ -1,7 +1,7 @@
 class KpiReportsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[show edit update], if: -> { params[:signed_id].present? }
-  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze refresh_import]
-  after_action :verify_authorized, except: %i[index search show_performance chart_refresh refresh_import]
+  before_action :set_kpi_report, only: %i[show edit update destroy recompute_percentage_change recompute_cumulative analyze refresh_import mark_reviewed]
+  after_action :verify_authorized, except: %i[index search show_performance chart_refresh refresh_import portco_pending]
   after_action :verify_policy_scoped, only: %i[index chart_refresh]
 
   # GET /kpi_reports or /kpi_reports.json
@@ -80,7 +80,7 @@ class KpiReportsController < ApplicationController
 
     respond_to do |format|
       if @kpi_report.save
-        format.html { redirect_to kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: "Kpi report was successfully created." }
+        format.html { redirect_to edit_kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: "Kpi report was successfully created." }
         format.json { render :show, status: :created, location: @kpi_report }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -92,15 +92,50 @@ class KpiReportsController < ApplicationController
   # PATCH/PUT /kpi_reports/1 or /kpi_reports/1.json
   def update
     setup_doc_user(@kpi_report)
+
+    was_already_submitted = @kpi_report.status_submitted? || @kpi_report.status_reviewed?
+    status_attrs = resolve_status_transition(params[:submit_action])
+    # current_user is nil for unauthenticated magic-link submissions; fall back to @signed_id_user.
+    acting_user = current_user || @signed_id_user
+    merged = kpi_report_params.merge(user_id: acting_user&.id).merge(status_attrs)
+
+    Rails.logger.info "=== KPI UPDATE ==="
+    Rails.logger.info "params: #{params.inspect}"
+    Rails.logger.info "merged: #{merged.inspect}"
+
     respond_to do |format|
-      if @kpi_report.update(kpi_report_params.merge(user_id: current_user.id))
-        format.html { redirect_to kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: "Kpi report was successfully updated." }
+      if @kpi_report.update(merged)
+        Rails.logger.info "KPI update succeeded!"
+        notify_fund_on_submission(@kpi_report) if status_attrs[:status] == 'submitted' && !was_already_submitted
+        notice = status_attrs[:status] == 'submitted' ? "KPI report submitted. The fund team has been notified." : "Kpi report was successfully updated."
+        format.html { redirect_to edit_kpi_report_url(@kpi_report, signed_id: params[:signed_id]), notice: notice }
         format.json { render :show, status: :ok, location: @kpi_report }
       else
+        Rails.logger.info "KPI update failed: #{@kpi_report.errors.full_messages}"
         format.html { render :edit, status: :unprocessable_entity }
         format.json { render json: @kpi_report.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  # PATCH /kpi_reports/:id/mark_reviewed
+  def mark_reviewed
+    authorize @kpi_report
+    @kpi_report.update(status: 'reviewed')
+    redirect_to edit_kpi_report_url(@kpi_report), notice: "Report marked as reviewed."
+  end
+
+  # GET /kpi_reports/portco_pending — dashboard of outstanding requests for the logged-in portco user
+  def portco_pending
+    authorize KpiReport, :portco_pending?
+    # policy_scope uses the for_investor scope which joins on access_rights — portco users have no
+    # access_rights entries on the fund's KPI reports, so we query directly by the portco's entity.
+    @kpi_reports = KpiReport
+      .portco_pending
+      .joins(:portfolio_company)
+      .where(investors: { investor_entity_id: current_user.entity_id })
+      .includes(:portfolio_company, :entity)
+    @bread_crumbs = { "Pending KPI Requests": portco_pending_kpi_reports_path }
   end
 
   def refresh_import
@@ -159,10 +194,22 @@ class KpiReportsController < ApplicationController
       return
     end
 
-    # Authorization check: user should have update permissions for each portfolio company
+    # Authorization check: user must have KPI access, and all portcos must belong to their entity.
+    authorize KpiReport.new(entity_id: current_user.entity_id), :index?
     portfolio_company_ids.each do |pc_id|
       pc = Investor.find(pc_id)
-      authorize pc, :update?
+      raise Pundit::NotAuthorizedError, "portfolio company does not belong to your entity" unless pc.entity_id == current_user.entity_id
+    end
+
+    # Validate as_of before enqueueing so the user gets immediate feedback instead
+    # of a silent job failure + error email.
+    if params[:as_of].present?
+      begin
+        Date.parse(params[:as_of])
+      rescue Date::Error, ArgumentError
+        redirect_to request.referer || kpi_reports_path, alert: "Invalid date format for 'As Of'."
+        return
+      end
     end
 
     SendPortcoNotificationJob.perform_later(
@@ -182,10 +229,14 @@ class KpiReportsController < ApplicationController
           turbo_stream.append("remote_modal", partial: "kpi_reports/alerts"),
           turbo_stream.update("remote_modal_alerts", partial: "kpi_reports/alerts")
         ]
-        # rubocop:disable Rails/OutputSafety
-        streams << turbo_stream.append("remote_modal_alerts", "<script>bootstrap.Modal.getInstance(document.getElementById('#{params[:modal_id]}'))?.hide()</script>".html_safe) if params[:modal_id].present?
+        # Use a data attribute on the stream to carry the modal ID so the browser-side
+        # JS can close it — never interpolate params into a script tag.
+        if params[:modal_id].present?
+          safe_id = params[:modal_id].gsub(/[^a-zA-Z0-9_-]/, "")
+          streams << turbo_stream.append("remote_modal_alerts",
+                                         helpers.content_tag(:div, "", data: { modal_close_id: safe_id }, class: "d-none"))
+        end
         render turbo_stream: streams
-        # rubocop:enable Rails/OutputSafety
       end
     end
   end
@@ -227,6 +278,26 @@ class KpiReportsController < ApplicationController
 
   private
 
+  # Determines the status transition for the update action based on submit_action param.
+  # "final" submits the report; anything else advances from shell/link_sent to draft_saved.
+  def resolve_status_transition(submit_action)
+    if submit_action == 'final'
+      { status: 'submitted', submitted_at: Time.current }
+    elsif @kpi_report.status_shell_created? || @kpi_report.status_link_sent?
+      { status: 'draft_saved' }
+    else
+      {}
+    end
+  end
+
+  # Notifies all fund employees when a portco submits their KPI report.
+  def notify_fund_on_submission(kpi_report)
+    fund_entity = kpi_report.entity
+    fund_entity.employees.find_each do |employee|
+      KpiReportSubmittedNotifier.with(record: kpi_report, entity_id: fund_entity.id).deliver_later(employee)
+    end
+  end
+
   def extract_sorting_params
     q_param = params[:q]
 
@@ -240,9 +311,31 @@ class KpiReportsController < ApplicationController
     [sort_field, sort_direction, sort_query]
   end
 
+  # Pundit uses this method to determine the authorizing user.
+  # When a signed magic link is used, @signed_id_user is the portco user extracted
+  # from the token — use them instead of current_user (which is nil for unauthenticated requests).
+  def pundit_user
+    @signed_id_user || current_user
+  end
+
   # Use callbacks to share common setup or constraints between actions.
   def set_kpi_report
-    find_by_signed_id_for_user(params[:signed_id]) if params[:signed_id].present?
+    if params[:signed_id].present?
+      find_by_signed_id_for_user(params[:signed_id])
+      # Token was invalid or expired — render error inline so unauthenticated
+      # users see a friendly message rather than being bounced to the sign-in page.
+      unless @kpi_report
+        render inline: <<~HTML, layout: false, status: :gone
+          <!DOCTYPE html><html><body>
+          <div style="font-family:sans-serif;max-width:600px;margin:4rem auto;padding:1rem">
+            <h4>This link has expired or is invalid</h4>
+            <p>Please contact your fund manager to request a new invitation link.</p>
+          </div>
+          </body></html>
+        HTML
+        return
+      end
+    end
     @kpi_report ||= KpiReport.find(params[:id]) if params[:id].present? && params[:id] != 'shared'
 
     authorize @kpi_report
@@ -261,8 +354,6 @@ class KpiReportsController < ApplicationController
     @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company)
     render json: @kpi_reports.map { |kr| { id: kr.id, text: kr.name } }
   end
-
-  private
 
   def fetch_kpi_reports
     if params[:q].is_a?(String)

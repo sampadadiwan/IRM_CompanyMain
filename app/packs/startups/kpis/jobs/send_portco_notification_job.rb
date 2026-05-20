@@ -52,7 +52,13 @@ class SendPortcoNotificationJob < ApplicationJob
                    find_or_create_kpi_report_shell(portfolio_company, user)
                  end
 
-    # 2. Authorization check: Ensure the user still has permission for this PortCo/Report
+    # 2. Skip portcos that have already submitted — no need to nag them.
+    if kpi_report.status_submitted? || kpi_report.status_reviewed?
+      Rails.logger.info "SendPortcoNotificationJob: skipping #{portfolio_company.name} — already #{kpi_report.status}"
+      return
+    end
+
+    # 3. Authorization check: Ensure the user still has permission for this PortCo/Report
     policy = KpiReportPolicy.new(user, kpi_report)
     unless policy.send_portco_notification?
       error_msg = "User does not have permission to send notification for this portfolio company."
@@ -65,10 +71,10 @@ class SendPortcoNotificationJob < ApplicationJob
       return
     end
 
-    # 3. Trigger the notification operation
+    # 4. Trigger the notification operation
     result = SendPortcoNotification.call(model: kpi_report, entity_id: user.entity_id)
 
-    # 4. Handle service-level failures
+    # 5. Handle service-level failures
     if result.success?
       send_notification_msg = "Successfully sent notification for #{portfolio_company.name} targeting report as of #{I18n.l(kpi_report.as_of)}."
       send_notification(send_notification_msg, user.id)

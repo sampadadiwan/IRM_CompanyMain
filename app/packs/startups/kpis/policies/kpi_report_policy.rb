@@ -45,8 +45,12 @@ class KpiReportPolicy < KpiPolicyBase
   end
 
   def update?
-    # Original Fund entity user permission or owner access
-    # Reference: kpi_portco_upload.md
+    # If the report is already submitted or reviewed, portco users cannot edit it.
+    # Only fund admins/employees can edit/update it.
+    if record.status_submitted? || record.status_reviewed?
+      return belongs_to_entity?(user, record) || permissioned_employee?
+    end
+
     create?
   end
 
@@ -62,11 +66,21 @@ class KpiReportPolicy < KpiPolicyBase
     index?
   end
 
+  def mark_reviewed?
+    user.enable_kpis && (belongs_to_entity?(user, record) || permissioned_employee?)
+  end
+
+  def portco_pending?
+    user.enable_kpis
+  end
+
   # Allow sending notification reminders if the user can index reports
   # and the report has self-reporting (portco upload) enabled.
   def send_portco_notification?
+    # Fund admin: must belong to the entity that owns the KPI report.
+    # Portco user: must be an approved user of the portfolio company itself.
     user.enable_kpis &&
-      (portfolio_company_user? || InvestorPolicy.new(user, record.portfolio_company).update?) &&
+      (belongs_to_entity?(user, record) || portfolio_company_user?) &&
       record.portfolio_company.investor_accesses.approved.exists?
   end
 
@@ -75,7 +89,8 @@ class KpiReportPolicy < KpiPolicyBase
   end
 
   def edit?
-    update?
+    # Portco users can view the edit page even after submission (it will be read-only).
+    create?
   end
 
   def destroy?

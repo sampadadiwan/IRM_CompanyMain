@@ -778,10 +778,6 @@ Given('User {string} deals folder access is removed') do |email|
   @deal.deal_documents_folder.access_rights.where(access_to_investor_id: @investor.id).destroy_all
 end
 
-Then('I should see {string}') do |message|
-  expect(page).to have_content(message)
-end
-
 Given('User {string} deals access is removed') do |email|
   @user ||= User.find_by(email: email)
   @deal.access_rights.where(access_to_investor_id: @investor.id).destroy_all

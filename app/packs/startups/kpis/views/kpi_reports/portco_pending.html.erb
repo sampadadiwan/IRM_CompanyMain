@@ -1,0 +1,36 @@
+<div class="container-fluid">
+  <h2>Pending KPI Reports</h2>
+  <p class="text-muted">KPI reports requested from your company that have not yet been submitted.</p>
+
+  <% if @kpi_reports.empty? %>
+    <div class="alert alert-success">No pending KPI reports. All submissions are up to date.</div>
+  <% else %>
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Fund</th>
+          <th>Period Ending</th>
+          <th>Period</th>
+          <th>Status</th>
+          <th>Link Sent</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @kpi_reports.each do |report| %>
+          <tr>
+            <td><%= report.entity.name %></td>
+            <td><%= report.as_of.iso8601 %></td>
+            <td><%= report.period %></td>
+            <td>
+              <% badge_class = report.status_draft_saved? ? 'bg-warning text-dark' : 'bg-info text-dark' %>
+              <span class="badge <%= badge_class %>"><%= report.status.humanize.titleize %></span>
+            </td>
+            <td><%= report.link_sent_at.present? ? I18n.l(report.link_sent_at, format: :short) : '—' %></td>
+            <td><%= link_to "Fill Report", edit_kpi_report_path(report), class: "btn btn-sm btn-outline-primary" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</div>

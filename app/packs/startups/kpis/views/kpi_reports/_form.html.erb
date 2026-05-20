@@ -1,3 +1,7 @@
+<% acting_user = current_user || @signed_id_user %>
+<% is_portco_user = acting_user.nil? || acting_user.entity_id != @kpi_report.entity_id %>
+<% is_readonly = is_portco_user %>
+
 <%= render FormCard.new(title: "KPI Report") do %>
 
   <%= form_with(model: kpi_report, validate: true) do |form| %>
@@ -18,13 +22,29 @@
     <%= form.text_field :user_id, class: "form-control", hidden: true %>
     <%= form.text_field :form_type_id, class: "form-control", hidden: true %>
     <%= hidden_field_tag :signed_id, params[:signed_id] if params[:signed_id].present? %>
+    <%= hidden_field_tag :submit_action, 'draft', id: 'submit_action_field' %>
+
+    <%# Status badge — shows both fund admins and portco users where this report stands %>
+    <% unless @kpi_report.new_record? %>
+      <div class="mb-3">
+        <% badge_class = case @kpi_report.status
+           when 'submitted' then 'bg-success'
+           when 'reviewed'  then 'bg-primary'
+           when 'draft_saved' then 'bg-warning text-dark'
+           when 'link_sent'   then 'bg-info text-dark'
+           else 'bg-secondary'
+           end %>
+        <span class="badge <%= badge_class %>"><%= @kpi_report.status.humanize.titleize %></span>
+        <% if @kpi_report.submitted_at.present? %>
+          <small class="text-muted ms-2">Submitted <%= I18n.l(@kpi_report.submitted_at, format: :short) %></small>
+        <% end %>
+      </div>
+    <% end %>
 
     <div class="form-group">
       <%= form.label :portfolio_company_id %>
       <%= form.select :portfolio_company_id, kpi_report.entity.investors.portfolio_companies.map{|pc| [pc.investor_name, pc.id]}, {}, class: "form-control"  %>
     </div>
-
-    <% is_readonly = current_user.entity_id != @kpi_report.entity_id %>
 
     <div class="form-group">
       <%= form.label :as_of %>
@@ -79,8 +99,26 @@
     </div>
 
 
-    <div class="form-group">
-      <%= form.submit t_common(:save), {class: "btn btn-outline-primary"}%>
+    <div class="form-group d-flex gap-2 align-items-center">
+      <% if is_portco_user %>
+        <% if @kpi_report.status_submitted? || @kpi_report.status_reviewed? %>
+          <span class="badge bg-success fs-6 p-2">Report Already Submitted</span>
+        <% else %>
+          <%= form.submit "Save Draft", class: "btn btn-outline-secondary" %>
+          <%= form.submit "Submit Report",
+              class: "btn btn-success",
+              onclick: "if(!confirm('Submit this report to the fund? You will not be able to edit it after submission.')) return false; document.getElementById('submit_action_field').value='final';" %>
+        <% end %>
+      <% else %>
+        <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <%# Mark as Reviewed lives outside form_with to avoid invalid nested <form> elements %>
+  <% if !is_portco_user && !@kpi_report.new_record? && @kpi_report.status_submitted? && !@kpi_report.status_reviewed? %>
+    <div class="mt-2">
+      <%= button_to "Mark as Reviewed", mark_reviewed_kpi_report_path(@kpi_report), method: :patch, class: "btn btn-outline-success", form_class: "d-inline", onclick: "return confirm('Mark this submission as reviewed?')" %>
     </div>
   <% end %>
 

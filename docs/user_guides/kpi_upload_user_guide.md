@@ -1,4 +1,4 @@
-# KPI Management & Workbook Upload User Guide (V9.1.86)
+# KPI Management & Workbook Upload User Guide (V9.3.0)
 
 This guide provides a comprehensive overview of the Key Performance Indicator (KPI) reporting system in IRM. It covers everything from preparing your Excel workbooks to the automated approval workflows.
 
@@ -6,11 +6,12 @@ This guide provides a comprehensive overview of the Key Performance Indicator (K
 1. [Key Takeaways](#-key-takeaways)
 2. [Roles & Permissions](#-roles--permissions)
 3. [The Reporting Workflow](#-the-reporting-workflow)
-4. [Workbook Preparation Checklist](#-workbook-preparation-checklist)
-5. [Supported Date Formats](#-supported-date-formats)
-6. [Automated System Actions](#-automated-system-actions)
-7. [Common Pitfalls & Troubleshooting](#-common-pitfalls--troubleshooting)
-8. [FAQ](#-faq)
+4. [Report Status Lifecycle](#-report-status-lifecycle)
+5. [Workbook Preparation Checklist](#-workbook-preparation-checklist)
+6. [Supported Date Formats](#-supported-date-formats)
+7. [Automated System Actions](#-automated-system-actions)
+8. [Common Pitfalls & Troubleshooting](#-common-pitfalls--troubleshooting)
+9. [FAQ](#-faq)
 
 ---
 
@@ -20,6 +21,9 @@ This guide provides a comprehensive overview of the Key Performance Indicator (K
 *   **Smart Matching**: The system skips identical values to avoid duplicates and flags changes for review.
 *   **Automated Calculations**: Quarterly, YTD, and Annual totals are automatically recalculated upon approval.
 *   **Direct Links**: Portfolio companies should use the link in their reminder email to upload directly to the correct period.
+*   **Save Draft / Submit**: Portfolio companies can save work-in-progress with **Save Draft** and use **Submit Report** when done. The fund is notified automatically upon submission.
+*   **Status Tracking**: Every report has a visible status badge — fund admins can see which companies have submitted at a glance.
+*   **Link Expiry**: Magic links are valid for 15 days. The expiry date is shown in the email. Contact your fund manager for a new link if needed.
 
 ---
 
@@ -28,9 +32,14 @@ The KPI system ensures data integrity through role-based access:
 
 | Role | Permissions |
 | :--- | :--- |
-| **Fund Admin / Approver** | Full access. Can create reports, approve staged data, trigger recomputations, and send notifications. |
-| **Portfolio Company User** | Can upload workbooks for their specific company and edit their own reports via secure links. |
+| **Fund Admin / Approver** | Full access. Can create reports, approve staged data, trigger recomputations, send notifications, and mark reports as reviewed. |
+| **Portfolio Company User** | Can save drafts and submit KPI reports for their company via secure email links or the **Pending KPI Reports** dashboard. |
 | **Advisor / Read-Only** | Can view approved reports and dashboards but cannot modify data or approve uploads. |
+
+### Designated KPI Contact
+Each portfolio company can have one or more **designated KPI contacts**. When any approved user at the portfolio company has the tag **"Kpi"** on their profile, only those tagged users receive KPI reminder emails — untagged users are skipped. If no user has the "Kpi" tag, all approved users are notified as usual.
+
+To designate a contact, a fund admin (or the portco user themselves) adds the tag `Kpi` to the relevant user's profile via the investor's user management page.
 
 ---
 
@@ -38,14 +47,104 @@ The KPI system ensures data integrity through role-based access:
 
 ### 1. Notification & Request
 The process typically begins when a Fund Admin sends a reminder to a Portfolio Company.
-*   **Self-Reporting**: The system enables "Self-Reporting" for the specific period.
-*   **Reminder Email**: The company receives an email with a direct link to the upload portal.
+*   **Self-Reporting**: The system enables "Self-Reporting" for the specific period, creating a report shell and setting its status to **Link Sent**.
+*   **Reminder Email**: The company receives an email with a direct link to the upload portal. The link is valid for **15 days** — the expiry date is shown in the email.
+*   **Bulk Send**: Fund admins can notify all portfolio companies at once. Companies that have already submitted are automatically skipped.
+*   **Automated Reminders**: The periodic job re-sends reminders only to companies whose status is still **Link Sent** or **Draft Saved** — submitted companies are never nagged.
 
-### 2. Staged Import (The Upload)
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Fund Admin
+    participant Web as Rails Web App
+    participant Job as SendPortcoNotificationJob
+    participant DB as Database
+    participant Mail as Mailer Service
+    actor Portco as Portco User
+
+    Admin->>Web: Click "Send Portco Notification"
+    Web->>Job: Enqueue Job (pc_id, as_of, period)
+    activate Job
+    Job->>DB: find_or_create_by! (KPI Report Shell)
+    DB-->>Job: Report Shell Record
+    Job->>Web: Generate Signed Magic Link (signed_id)
+    Job->>Mail: Deliver KPI Reminder Email with Link
+    activate Mail
+    Mail-->>Portco: Send Email (valid for 15 days)
+    deactivate Mail
+    Job->>DB: Update status to "Link Sent" & set link_sent_at
+    deactivate Job
+```
+
+### 2. Portfolio Company Fills Out the Report
+*   The portco user clicks the link in the email (no login required).
+*   They can **Save Draft** at any point to preserve progress without notifying the fund. Saving a draft redirects the user back to the **Edit** page with a success message, keeping them in their editing context.
+*   When all data is final, they click **Submit Report**. The fund team is notified immediately by email.
+*   After submission, the report is locked for editing.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Portco as Portco User
+    participant Web as Rails Web App
+    participant Pundit as Pundit Authorization
+    participant DB as Database
+    participant Mail as Mailer Service
+    actor Admin as Fund Admin
+
+    Portco->>Web: Click Magic Link in Email
+    alt Link is Expired or Invalid
+        Web-->>Portco: Render friendly "Link Expired" page (410 Gone)
+    else Link is Valid
+        Web->>Pundit: Authorize via @signed_id_user
+        Pundit-->>Web: Authorized (No login required)
+        Web-->>Portco: Render KPI Report Edit Page
+    end
+
+    rect rgb(240, 248, 255)
+        note over Portco, Web: Interactive Editing Phase
+        Portco->>Web: Click "Save Draft"
+        Web->>DB: Update status to "Draft Saved"
+        Web-->>Portco: Redirect to Edit Page with success notice
+    end
+
+    Portco->>Web: Click "Submit Report"
+    Web->>DB: Update status to "Submitted" & set submitted_at
+    Web->>Mail: Enqueue Submission Notification
+    Mail-->>Admin: Send Email Notification
+    Web-->>Portco: Redirect to Edit Page (Locked for editing)
+```
+
+### 3. Portco Pending Dashboard
+Portfolio company users can visit **KPI Reports → Pending KPI Requests** to see all outstanding requests from any fund, without needing the original email.
+*   **Direct Entity Querying**: This dashboard is optimized to query directly by the portfolio company's entity, ensuring reliable access without requiring explicit access rights on the fund's KPI reports.
+*   **Standardized Dates**: Outstanding requests are displayed with dates formatted in standard ISO8601 (`YYYY-MM-DD`) format for clarity.
+
+### 4. Fund Admin Review
+*   The fund admin receives a notification email when a portco submits.
+*   They review the data and click **Mark as Reviewed** to advance the report to **Reviewed** status.
+*   **Editing Context**: Clicking **Mark as Reviewed** redirects the admin back to the **Edit** page to keep them in their workflow.
+*   **Clean Layout**: The "Mark as Reviewed" button is located cleanly outside the main form to prevent nested form conflicts.
+*   **Reviewed** reports are excluded from all future reminder cycles.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Admin as Fund Admin
+    participant Web as Rails Web App
+    participant DB as Database
+
+    Admin->>Web: View Submitted KPI Report
+    Admin->>Web: Click "Mark as Reviewed"
+    Web->>DB: Update status to "Reviewed"
+    Web-->>Admin: Redirect to Edit Page with success notice
+```
+
+### 5. Staged Import (The Upload)
 
 When a workbook is uploaded, the system performs a "Staged Import":
 
-```
+```mermaid
 sequenceDiagram
     participant U as User
     participant J as Import Job
@@ -70,7 +169,7 @@ sequenceDiagram
 
 An Admin reviews the staged data. Unapproved values are highlighted in **orange** with a **"Pending"** badge in the KPI Grid View.
 
-```
+```mermaid
 sequenceDiagram
     participant A as Approver
     participant S as Approval Service
@@ -83,6 +182,22 @@ sequenceDiagram
     S->>J: Trigger Cumulative & % Change Recalcs
     S->>A: Success Confirmation
 ```
+
+---
+
+## 🔵 Report Status Lifecycle
+
+Each portco self-reporting request moves through these states:
+
+| Status | Meaning | Who Sees It |
+| :--- | :--- | :--- |
+| **Shell Created** | Report created, link not yet sent | Fund admin |
+| **Link Sent** | Reminder email delivered to portco | Both |
+| **Draft Saved** | Portco saved progress, not yet submitted | Both |
+| **Submitted** | Portco clicked Submit — fund notified | Both |
+| **Reviewed** | Fund admin marked as reviewed | Both |
+
+The status badge is visible on the report form for both the fund admin and the portfolio company user.
 
 ---
 
@@ -146,6 +261,10 @@ After approval, the system automatically triggers several high-impact tasks:
 *   **Cause**: You are uploading "Actual" data for a date that hasn't occurred yet.
 *   **Fix**: Use the "Budget" or "Projected" tag if you are uploading future-looking data.
 
+### 5. "This link has expired or is invalid" Error Page
+*   **Cause**: The magic link you clicked has expired (valid for 15 days) or is invalid.
+*   **Fix**: Contact your fund manager to request a new invitation link. The system will render a friendly, unauthenticated-safe error page with instructions instead of redirecting you to the sign-in page.
+
 ---
 
 ## ❓ FAQ
@@ -163,7 +282,22 @@ A: The system checks for identical values. If the data hasn't changed, it will s
 A: No. Each upload is scoped to a specific Portfolio Company to ensure data security and correct mapping.
 
 **Q: The system didn't recognize my date headers. What should I do?**
-A: Ensure your dates are in one of the supported formats (see Section 5) and are located within the first 10 rows of the sheet.
+A: Ensure your dates are in one of the supported formats (see Section 6) and are located within the first 10 rows of the sheet.
+
+**Q: What is the difference between "Save Draft" and "Submit Report"?**
+A: **Save Draft** saves your progress without notifying the fund — you can come back and continue editing. **Submit Report** finalises the submission, notifies the fund team, and locks the report for editing. Use Save Draft freely while you're working, and Submit only when all numbers are final.
+
+**Q: My magic link expired. How do I get a new one?**
+A: Magic links are valid for 15 days (the expiry date is shown in the reminder email). If your link has expired, contact your fund manager and ask them to resend the notification. They can do this from the KPI reports page by clicking **Send Portco Notification** again.
+
+**Q: I submitted by accident. Can I undo it?**
+A: Contact your fund manager. They can update the report status from their end if needed.
+
+**Q: I keep receiving reminder emails even though I already submitted. Why?**
+A: This should not happen — the system skips already-submitted reports in all reminder cycles. If you're still receiving emails, check that you clicked **Submit Report** (not just Save Draft). The status badge on your report should read "Submitted".
+
+**Q: Who gets the reminder email at my company?**
+A: By default, all approved users at your company receive the reminder. If any user at your company has the **"Kpi"** tag on their profile, only those tagged users will receive reminder emails. To designate specific KPI contacts, ask your fund manager to add the `Kpi` tag to the relevant user profiles. Multiple users can be tagged, and all of them will receive the reminders.
 
 ---
 *For technical support or custom KPI mapping, please contact your system administrator.*

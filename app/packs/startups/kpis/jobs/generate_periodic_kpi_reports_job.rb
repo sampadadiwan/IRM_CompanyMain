@@ -56,9 +56,15 @@ class GeneratePeriodicKpiReportsJob < ApplicationJob
   end
 
   def send_notification(report)
+    # Skip if the portco already submitted — don't send reminder spam.
+    if report.status_submitted? || report.status_reviewed?
+      Rails.logger.info "GeneratePeriodicKpiReportsJob: skipping #{report.portfolio_company.investor_name} — already #{report.status}"
+      return
+    end
+
     portco = report.portfolio_company
     entity = report.entity
-    users = portco.notification_users(report)
+    users = portco.notification_users(report, with_tag: 'Kpi')
     if users.any?
       users.each do |user|
         KpiReportNotifier.with(record: report, entity_id: entity.id).deliver_later(user)

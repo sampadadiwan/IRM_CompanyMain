@@ -90,9 +90,6 @@ Then('I should see a modal with title {string}') do |title|
   expect(page).to have_content(title)
 end
 
-When('I fill in {string} with {string}') do |label, value|
-  fill_in label, with: value
-end
 
 Then('a KpiReport {string} should exist for the portfolio company {string}') do |args, portco_name|
   portfolio_company = Investor.find_by(investor_name: portco_name)

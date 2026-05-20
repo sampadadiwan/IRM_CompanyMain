@@ -21,7 +21,7 @@
           <i class="ti ti-brand-github-copilot"></i> Fund Assistant
         <% end %>
       <% end %>
-      <% anchor_fund = @funds.first %>
+      <% anchor_fund = funds.first %>
       <% if anchor_fund && policy(anchor_fund).generate_fund_ratios? %>
         <%= link_to generate_fund_ratios_fund_path(anchor_fund, tab: "cross-fund-tab"),
               class: "btn btn-outline-secondary d-inline-flex align-items-center",

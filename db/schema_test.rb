@@ -2533,10 +2533,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_400001) do
     t.bigint "form_type_id"
     t.bigint "import_upload_id"
     t.json "json_fields"
+    t.datetime "link_sent_at"
     t.text "notes"
     t.bigint "owner_id"
     t.string "period", limit: 12, default: "Quarter"
     t.bigint "portfolio_company_id"
+    t.string "status", default: "shell_created", null: false
+    t.datetime "submitted_at"
     t.string "tag_list", default: "Actual"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
@@ -2546,6 +2549,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_400001) do
     t.index ["form_type_id"], name: "index_kpi_reports_on_form_type_id"
     t.index ["owner_id"], name: "index_kpi_reports_on_owner_id"
     t.index ["portfolio_company_id"], name: "index_kpi_reports_on_portfolio_company_id"
+    t.index ["status"], name: "index_kpi_reports_on_status"
     t.index ["user_id"], name: "index_kpi_reports_on_user_id"
   end
 

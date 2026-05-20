@@ -45,7 +45,7 @@ class KpiReportCreateShell < Trailblazer::Operation
   # Trigger notifications for all eligible users at the Portfolio Company.
   # The notifier handles the actual email delivery (KpiReportNotifier).
   def notify_users(_ctx, model:, params:, **)
-    params[:portfolio_company].notification_users(model).each do |user|
+    params[:portfolio_company].notification_users(model, with_tag: 'Kpi').each do |user|
       KpiReportNotifier.with(record: model, entity_id: params[:entity].id).deliver_later(user)
     end
 
