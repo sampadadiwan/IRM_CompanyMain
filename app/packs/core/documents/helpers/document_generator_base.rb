@@ -149,7 +149,7 @@ module DocumentGeneratorBase
     UserAlert.new(user_id:, message:, level:).broadcast
   end
 
-  def upload(doc_template, model, start_date = nil, end_date = nil, folder = nil, generated_document_name = nil, user_id: nil, file_extension: "pdf")
+  def upload(doc_template, model, start_date = nil, end_date = nil, folder = nil, generated_document_name = nil, user_id: nil, file_extension: "pdf", as_of: nil)
     file_name = "#{generated_file_name(model)}.#{file_extension}"
     Rails.logger.debug { "Uploading generated file #{file_name} to #{model} " }
 
@@ -188,6 +188,7 @@ module DocumentGeneratorBase
     raise errors.join(", ") if errors.any?
 
     generated_document.stamp_papers = doc_template.stamp_papers_for(model) || []
+    generated_document.as_of = as_of
 
     generated_document.save!
   end

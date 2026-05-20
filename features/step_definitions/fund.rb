@@ -3414,3 +3414,24 @@ Then('no capital remittances should be created') do
   @capital_call = CapitalCall.last
   CapitalRemittance.where(capital_call: @capital_call).count.should == 0
 end
+
+Then('the generated call notices have as_of set to the remittance date') do
+  CapitalRemittance.all.each do |cr|
+    doc = cr.documents.where(from_template_id: @call_template.id).last
+    puts "Checking call notice as_of for remittance #{cr.id}: doc.as_of=#{doc&.as_of}, remittance_date=#{cr.remittance_date}"
+    expect(doc).to be_present, "Expected a generated document for remittance #{cr.id}"
+    expect(doc.as_of).to eq(cr.remittance_date)
+  end
+end
+
+Then('the generated distribution notices have as_of set to the payment date') do
+  @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
+  @capital_distribution_payments.each do |cdp|
+    next unless cdp.capital_commitment&.investor_kyc&.verified
+
+    doc = cdp.documents.generated.last
+    puts "Checking distribution notice as_of for payment #{cdp.id}: doc.as_of=#{doc&.as_of}, payment_date=#{cdp.payment_date}"
+    expect(doc).to be_present, "Expected a generated document for distribution payment #{cdp.id}"
+    expect(doc.as_of).to eq(cdp.payment_date)
+  end
+end

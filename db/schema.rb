@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_300001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_500001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1354,6 +1354,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_300001) do
   create_table "documents", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.boolean "approved", default: false, null: false
     t.bigint "approved_by_id"
+    t.date "as_of"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "display_on_page", limit: 6
@@ -2014,6 +2015,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_300001) do
     t.bigint "import_upload_id"
     t.json "json_fields"
     t.date "last_close_date"
+    t.text "lp_commentary"
     t.bigint "master_fund_id"
     t.string "name"
     t.bigint "orignal_id"

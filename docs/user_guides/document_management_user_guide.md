@@ -16,17 +16,19 @@ CapHive provides a folder-based document management system with access control i
 8. [Uploading a Document](#uploading-a-document)
 9. [Document Fields and Metadata](#document-fields-and-metadata)
 10. [Document Tags and Owner Tags](#document-tags-and-owner-tags)
-11. [Template Documents vs Regular Documents](#template-documents-vs-regular-documents)
-12. [Document Approval](#document-approval)
-13. [Document Sharing (DocShare)](#document-sharing-docshare)
-14. [Document Access Rights](#document-access-rights)
-15. [Viewing Tracking](#viewing-tracking)
-16. [Document Q&A (DocQuestion)](#document-qa-docquestion)
-17. [Download and Print Permissions](#download-and-print-permissions)
-18. [Private Folders](#private-folders)
-19. [E-Signing Documents](#e-signing-documents)
-20. [Key Fields Reference](#key-fields-reference)
-21. [Frequently Asked Questions](#frequently-asked-questions)
+11. [As Of Date](#as-of-date)
+12. [Template Documents vs Regular Documents](#template-documents-vs-regular-documents)
+13. [Document Generation and As Of Date](#document-generation-and-as-of-date)
+14. [Document Approval](#document-approval)
+15. [Document Sharing (DocShare)](#document-sharing-docshare)
+16. [Document Access Rights](#document-access-rights)
+17. [Viewing Tracking](#viewing-tracking)
+18. [Document Q&A (DocQuestion)](#document-qa-docquestion)
+19. [Download and Print Permissions](#download-and-print-permissions)
+20. [Private Folders](#private-folders)
+21. [E-Signing Documents](#e-signing-documents)
+22. [Key Fields Reference](#key-fields-reference)
+23. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -155,6 +157,7 @@ Required:
 Optional:
 - **Tags** — searchable labels (max 120 chars)
 - **Owner Tag** — classification for specific workflows (e.g. `PAN`, `Offer Template`)
+- **As Of Date** — the date the document applies to (e.g. statement period end, call date). When set, this date is shown in the document grid instead of the upload date. Leave blank if not applicable.
 - **Send Email** — whether to notify relevant users on upload
 
 The `entity_id` and `folder` are set automatically from the owner record.
@@ -169,6 +172,7 @@ The `entity_id` and `folder` are set automatically from the owner record.
 | `file` | Uploaded file (Shrine attachment) |
 | `tags` / `tag_list` | Searchable labels |
 | `owner_tag` | Functional classification (used by workflows to find specific doc types) |
+| `as_of` | Optional date the document applies to; shown in the document grid in place of the upload date |
 | `text` | Optional rich-text description |
 | `orignal` | Whether the original (unprotected) file is accessible |
 | `printing` | Whether printing is permitted |
@@ -195,6 +199,35 @@ The `entity_id` and `folder` are set automatically from the owner record.
 | `Allocation Template` | Secondary sale allocation confirmation |
 | `KYC` | KYC document management |
 | Custom | Any value up to 40 characters for bespoke workflows |
+
+---
+
+## As Of Date
+
+Every document has an optional **As Of Date** field. When set, it represents the business date the document applies to — for example, the end of a reporting period or the date of a capital call — rather than the date the file was uploaded.
+
+- **In the document grid**, the **Date** column shows the As Of Date if one is set, and falls back to the upload date if it is blank.
+- **For manually uploaded documents**, you can set the As Of Date in the document form. Leave it blank if the document is not tied to a specific business date.
+- **For generated documents**, the As Of Date is set automatically by the system at generation time (see [Document Generation and As Of Date](#document-generation-and-as-of-date)).
+
+This makes it straightforward for both GPs and LPs to identify, for example, the March 2025 investor statement without having to read each document name carefully.
+
+---
+
+## Document Generation and As Of Date
+
+When a document is generated from a template, the system automatically sets the As Of Date based on the type of document:
+
+| Document Type | As Of Date Set To |
+|---|---|
+| **Investor Statement (SOA) — commitment level** | End date of the statement period |
+| **Investor Statement (SOA) — KYC level** | End date of the statement period |
+| **Capital Call Notice** | Remittance date of the capital call |
+| **Distribution Notice** | Payment date of the distribution |
+| **Fund Report** | End date of the reporting period |
+| **Portfolio Report** | End date of the reporting period |
+| **Commitment Agreement** | Not set — upload date is shown |
+| **EOI / SPA / Secondary Sale documents** | Not set — upload date is shown |
 
 ---
 
@@ -325,6 +358,7 @@ See the **E-Signing User Guide** for the complete workflow including signatories
 | `owner_type` / `owner_id` | Polymorphic owner record |
 | `owner_tag` | Functional classification |
 | `tag_list` | Searchable tags |
+| `as_of` | Business date the document applies to (optional; replaces upload date in the grid) |
 | `orignal` | Original file access permission |
 | `printing` | Print permission |
 | `download` | Download permission |

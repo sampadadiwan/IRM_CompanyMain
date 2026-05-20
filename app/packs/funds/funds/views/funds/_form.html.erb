@@ -128,6 +128,12 @@
                   </div>
 
                   <div class="form-group">
+                    <%= form.label :lp_commentary, "LP Commentary" %>
+                    <%= form.text_area :lp_commentary, class: "form-control", rows: 3 %>
+                    <small class="text-muted">Brief commentary shown to LPs on their landing page (e.g. "Fund performing strongly – Q1 exits completed"). Leave blank for auto-generated text.</small>
+                  </div>
+
+                  <div class="form-group">
                     <%= form.label :show_fund_ratios, "Show fund ratios to LPs" %>
                     <%= form.check_box :show_fund_ratios, class: "form-check-input"  %>
                     <small class="text-muted">Check this to show fund ratios to LPs</small>

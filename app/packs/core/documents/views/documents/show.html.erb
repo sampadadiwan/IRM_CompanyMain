@@ -83,6 +83,16 @@
                            <%= @document.owner_tag %>
                         </td>
                      </tr>
+                     <% if @document.as_of.present? %>
+                     <tr>
+                        <td>
+                           As Of
+                        </td>
+                        <td>
+                           <%= l @document.as_of %>
+                        </td>
+                     </tr>
+                     <% end %>
                      <tr>
                         <td>
                            Created

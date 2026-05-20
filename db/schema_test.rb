@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_300001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_19_400001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1311,6 +1311,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_300001) do
     t.boolean "adhaar_esign_enabled", default: false
     t.boolean "approved", default: false, null: false
     t.bigint "approved_by_id"
+    t.date "as_of"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.string "display_on_page", limit: 6

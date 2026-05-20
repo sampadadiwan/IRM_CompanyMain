@@ -169,6 +169,7 @@
     <% end %>
   </div>
 <% else %>
+  <% lp_view = current_user.curr_role == "investor" %>
   <div class="table-responsive">
     <table id="documents" class="table table-bordered  dataTable jqDataTable">
       <thead>
@@ -176,19 +177,23 @@
           <th class="text-col">
             Name
           </th>
-          <th class="text-col">
-            Tags
-          </th>
+          <% unless lp_view %>
+            <th class="text-col">
+              Tags
+            </th>
+          <% end %>
           <th class="date-col">
-            Created
+            Date
           </th>
-          <th class="action-col">
-          </th>
+          <% unless lp_view %>
+            <th class="action-col">
+            </th>
+          <% end %>
         </tr>
       </thead>
       <tbody>
         <% documents.each do |document| %>
-          <%= render partial: "documents/document" , locals: {document: document} %>
+          <%= render partial: "documents/document", locals: {document: document, lp_view: lp_view} %>
         <% end %>
       </tbody>
     </table>

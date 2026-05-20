@@ -561,3 +561,47 @@ Then('the document should contain an image with dimensions {int}x{int}') do |wid
 
   expect(found_match).to be(true), "Expected image #{width}x#{height} not found. Found images with dimensions: #{found_dimensions.join(', ')}"
 end
+
+# -----------------------------------------------------------------------
+# as_of date steps
+# -----------------------------------------------------------------------
+
+When('I create a new document {string} with as_of {string}') do |args, as_of_date|
+  @folder = Folder.last || Folder.create!(name: "Test Folder", parent: Folder.first, folder_type: :regular, entity_id: Folder.first.entity_id)
+  @document = Document.new
+  key_values(@document, args)
+  @as_of_date = Date.parse(as_of_date)
+
+  find("#doc_actions").click
+  click_on("New Document")
+  if page.has_css?("#document_name")
+    fill_in("document_name", with: @document.name)
+  elsif page.has_css?("#other_name")
+    fill_in("other_name", with: @document.name)
+  end
+  fill_in("document_as_of", with: as_of_date)
+  attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
+  sleep(3)
+  check('document_download') if @document.download
+  check('document_printing') if @document.printing
+  click_on("Save")
+  expect(page).to have_text "Document was successfully saved."
+  @document = Document.last
+end
+
+Then('the document should have as_of date {string}') do |as_of_date|
+  @document = Document.order(:created_at).last
+  expect(@document.as_of).to eq(Date.parse(as_of_date))
+end
+
+Then('the document grid should show the as_of date for the document') do
+  visit(documents_path)
+  expected = I18n.l(@document.as_of)
+  expect(page).to have_content(expected)
+end
+
+Then('the generated investor statement has as_of equal to end date') do
+  doc = @capital_commitment.documents.generated.last
+  puts "Checking as_of: doc.as_of=#{doc.as_of}, end_date=#{@end_date.to_date}"
+  expect(doc.as_of).to eq(@end_date.to_date)
+end

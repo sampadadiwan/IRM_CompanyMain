@@ -27,7 +27,7 @@ class CapitalDistributionPaymentDocGenerator
       else
         create_working_dir(capital_distribution_payment)
         generate(capital_distribution_payment, tempfile.path, options)
-        upload(fund_doc_template, capital_distribution_payment, nil, nil, nil, final_file_name(@fund_doc_template_name, capital_distribution_payment), user_id: user_id)
+        upload(fund_doc_template, capital_distribution_payment, nil, nil, nil, final_file_name(@fund_doc_template_name, capital_distribution_payment), user_id: user_id, as_of: capital_distribution_payment.payment_date)
         notify(fund_doc_template, capital_distribution_payment, user_id) if user_id
       end
     ensure

@@ -28,7 +28,7 @@ class CapitalRemittanceDocGenerator
       else
         create_working_dir(capital_remittance)
         generate(capital_remittance, tempfile.path, options)
-        upload(fund_doc_template, capital_remittance, nil, nil, nil, final_file_name(@fund_doc_template_name, capital_remittance), user_id: user_id)
+        upload(fund_doc_template, capital_remittance, nil, nil, nil, final_file_name(@fund_doc_template_name, capital_remittance), user_id: user_id, as_of: capital_remittance.remittance_date)
         notify(fund_doc_template, capital_remittance, user_id) if user_id
       end
     ensure

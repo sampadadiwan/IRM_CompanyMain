@@ -6,15 +6,15 @@ class FundDocGenerator
 
   # fund - we want to generate the document for this CapitalCommitment
   # fund document template - the document are we using as  template for generation
-  def initialize(fund, fund_doc_template, user_id = nil, options: nil)
-    Rails.logger.debug { "FundDocGenerator: #{fund}, #{fund_doc_template.name}, #{user_id}, #{options}" }
+  def initialize(fund, fund_doc_template, start_date = nil, end_date = nil, user_id = nil, options: nil)
+    Rails.logger.debug { "FundDocGenerator: #{fund}, #{fund_doc_template.name}, #{start_date}, #{end_date}, #{user_id}, #{options}" }
     @fund_doc_template_name = fund_doc_template.name
 
     fund_doc_template.file.download do |tempfile|
       fund_doc_template_path = tempfile.path
       create_working_dir(fund)
-      generate(fund, fund_doc_template_path)
-      upload(fund_doc_template, fund, user_id: user_id)
+      generate(fund, start_date, end_date, fund_doc_template_path)
+      upload(fund_doc_template, fund, user_id: user_id, as_of: end_date&.to_date)
       notify(fund_doc_template, fund, user_id) if user_id
     ensure
       cleanup

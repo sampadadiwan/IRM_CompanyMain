@@ -460,3 +460,27 @@ Scenario Outline: Docusign Esign for a document
   Examples:
   |user	      |entity                         |role       |given  |should	|access | crud |
   |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
+
+Scenario Outline: Generated Investor Statement has as_of set to the statement end date
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "entity_type=Family Office"
+  Given there is an existing investor entity "entity_type=Investor Advisor" with employee "first_name=Advisor"
+  Given there is a fund "name=Test fund" for the entity
+  And another user is "<given>" fund advisor access to the fund
+  And the access right has access "<crud>"
+  Given the user has role "<role>"
+  Given the fund has capital commitments from each investor
+  And each Investor has an approved Investor Kyc
+  Given the fund has "2" capital call
+  Given the capital calls are approved
+  Given the fund has "2" capital distribution
+  Given the capital distributions are approved
+  Given the fund has a template "Commitment level Investor Statement" of type "Investor Statement Template"
+  And we Generate Investor Statement for the first capital commitment
+  Then the "Commitment level Investor Statement" is successfully generated
+  And the generated investor statement has as_of equal to end date
+
+  Examples:
+    |user      |entity                       |role     |given |access                       | crud                       |
+    |          |entity_type=Investment Fund  |investor |yes   |show,edit,update,destroy     | create,read,update,destroy |

@@ -766,7 +766,7 @@ Then('the unapproved Investor Statement is replaced') do
 end
 
 Given('the generated Investor Statement is approved') do
-  @generated_soa = @capital_commitment.documents.generated.last
+  @generated_soa = @capital_commitment.documents.generated.last.reload # reload clears stale owner association cache
   @generated_soa.approved = true
   @generated_soa.save!
 end
@@ -800,12 +800,14 @@ Then('we Generate Commitment Agreement for the first capital commitment again') 
 end
 
 Given('the commitment has a corrupted footer for the template') do
+  @capital_commitment.reload # avoid StaleObjectError when setup_document_folder calls save
   Document.create!(entity: @capital_commitment.entity, name: "#{@template_name} Footer",
                    text: Faker::Company.catch_phrase, user: @user, owner: @capital_commitment,
                    folder: @capital_commitment.document_folder, file: File.new("public/sample_uploads/corrupt.pdf", "r"))
 end
 
 Given('the commitment has a corrupted header for the template') do
+  @capital_commitment.reload # avoid StaleObjectError when setup_document_folder calls save
   Document.create!(entity: @capital_commitment.entity, name: "#{@template_name} Header",
                    text: Faker::Company.catch_phrase, user: @user, owner: @capital_commitment,
                    folder: @capital_commitment.document_folder, file: File.new("public/sample_uploads/corrupt.pdf", "r"))

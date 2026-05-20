@@ -17,6 +17,21 @@ Scenario Outline: Create new document
   	|  	        |entity_type=Company  |name=Q1 Summary;download=true;printing=false |
     |  	        |entity_type=Company  |name=Strategy;download=true;printing=true    |
 
+Scenario Outline: Create document with as_of date shows in the document grid
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given the entity has a folder "name=Test Folder"
+  And I am at the documents page
+  When I create a new document "<document>" with as_of "<as_of>"
+  Then I should see the "Document was successfully saved"
+  And the document should have as_of date "<as_of>"
+  And the document grid should show the as_of date for the document
+
+  Examples:
+    |user  |entity               |document                                      |as_of      |
+    |      |entity_type=Company  |name=Q1 Statement;download=true;printing=false|2025-03-31 |
+    |      |entity_type=Company  |name=Annual Report;download=false;printing=true|2024-12-31 |
+
 Scenario Outline: Check Document File validation
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

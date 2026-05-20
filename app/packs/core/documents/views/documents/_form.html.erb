@@ -52,6 +52,12 @@
           <small class="text-muted">Comma separated list of tags to classify the document</small>
         </div>
 
+        <div class="form-group">
+          <%= form.label :as_of, "As Of Date" %>
+          <%= form.date_field :as_of, class: "form-control" %>
+          <small class="text-muted">Optional date the document applies to; shown in the document list instead of upload date</small>
+        </div>
+
         <% doc_file_required = document.persisted? ? false : true %>
         <% label = document.file.blank? ? "Upload File" : link_to("Uploaded File: #{document.uploaded_file_name}", document.file.url(response_content_disposition: "inline; filename=#{document.name_with_extension}"), target: "_blank") %>
         <%= render "layouts/single_upload", form: form, field_label: label, required: doc_file_required,

@@ -63,6 +63,7 @@ Scenario Outline: Capital Distribution Payment Doc Gen
   And We Generate documents for the capital distribution
   And The distribution payment documents are approved
   Then Distribution notice should be generate for all distribution payments with verified KYC
+  And the generated distribution notices have as_of set to the payment date
   And when the capital distrbution payments are marked as paid
   Then the capital distribution must reflect the payments
   When the capital distribution notifications are sent

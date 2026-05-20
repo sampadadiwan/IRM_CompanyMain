@@ -55,6 +55,7 @@ Scenario Outline: Create new capital call
   Given the fund has capital call template
   And when the capital call docs are generated
   Then the generated doc must be attached to the capital remittances
+  And the generated call notices have as_of set to the remittance date
 
 
   Examples:

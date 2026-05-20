@@ -43,10 +43,10 @@ class KycDocGenerator
         if capital_commitment_id.present?
           # Attach the generated document to the capital commitment
           capital_commitment = CapitalCommitment.find(options[:capital_commitment_id])
-          upload(doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder, user_id: user_id)
+          upload(doc_template, capital_commitment, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), capital_commitment.soa_folder, user_id: user_id, as_of: Time.zone.parse(end_date).to_date)
         else
           # Attach the generated document to the investor KYC
-          upload(doc_template, investor_kyc, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"))
+          upload(doc_template, investor_kyc, Time.zone.parse(start_date).strftime("%d %B,%Y"), Time.zone.parse(end_date).strftime("%d %B,%Y"), as_of: Time.zone.parse(end_date).to_date)
         end
       elsif options.present? && options[:capital_commitment_id].present?
         capital_commitment = CapitalCommitment.find(options[:capital_commitment_id])
