@@ -2239,7 +2239,7 @@ Then('adjustments are create upon fund unit transfer') do
   # from_adjustment.amount_cents.should == -(@from_cc_committed_amount_cents * transfer_ratio).round
   from_adjustment.folio_amount_cents.should == -(@from_cc_folio_committed_amount_cents * transfer_ratio).round
   from_adjustment.adjustment_type.should == "Transfer"
-  from_adjustment.as_of.should == @transfer.transfer_date
+  from_adjustment.as_of.should == @from_cc.commitment_date
   from_adjustment.transfer_date.should == @transfer.transfer_date
 
   puts "Checking commitment adjustment for #{to_adjustment.id} for #{@to_cc.folio_id}"
@@ -2247,7 +2247,7 @@ Then('adjustments are create upon fund unit transfer') do
   # to_adjustment.amount_cents.should == (@from_cc_committed_amount_cents * transfer_ratio).round
   to_adjustment.folio_amount_cents.should == (@from_cc_folio_committed_amount_cents * transfer_ratio).round
   to_adjustment.adjustment_type.should == "Transfer"
-  to_adjustment.as_of.should == @transfer.transfer_date
+  to_adjustment.as_of.should == @from_cc.commitment_date
   to_adjustment.transfer_date.should == @transfer.transfer_date
 end
 
@@ -2344,13 +2344,14 @@ When('the fund units are transferred excluding the first account entry') do
   raise "No commitment-linked account entries in fund — check fixture data" if @excluded_ae.nil?
 
   @from_cc = @excluded_ae.capital_commitment
-  # to_cc must be in the same fund and same unit_type; no date ordering required
-  # since the service now uses transfer_date (not commitment_date) as the as_of.
+  # to_commitment must share the same unit_type and have a commitment_date on or
+  # before from_commitment's date (both conditions enforced by validate_transfer).
   @to_cc = @fund.capital_commitments
                  .where(unit_type: @from_cc.unit_type)
                  .where.not(id: @from_cc.id)
+                 .where("commitment_date <= ?", @from_cc.commitment_date)
                  .first
-  raise "No suitable to_commitment found — need a commitment with the same unit_type" if @to_cc.nil?
+  raise "No suitable to_commitment found — need same unit_type and earlier/equal commitment_date" if @to_cc.nil?
 
   @from_cc_folio_committed_amount_cents = @from_cc.folio_committed_amount_cents
   @transfer_quantity = (@transfer_ratio * @from_cc.total_fund_units_quantity).to_f

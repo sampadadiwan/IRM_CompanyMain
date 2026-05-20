@@ -149,9 +149,9 @@ Scenario Outline: Transfer Fund Units Validations
   Then I should get the error "<message>"
 
 Examples:
-    # to commitment has a later date — now allowed; transfer_date is used as as_of so no date-ordering constraint
+    # to commitment has a later date — rejected when same fund (as_of uses commitment_date, so ordering is enforced)
   	|fund                 | call                 | transfer | from_commitment | to_commitment | message |
-  	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil| commitment_date=2020-01-01 | commitment_date=2020-01-02 | nil |
+  	|name=Test;unit_types=A,B,C  | percentage_called=20 | price=100,premium=10,transfer_ratio=1,transfer_account_entries=true,account_entries_excluded=nil| commitment_date=2020-01-01 | commitment_date=2020-01-02 | The `To-Commitment` commitment_date should be on or before the `From-Commitment`. |
     # to commitment has the same date
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01 | commitment_date=2020-01-01 | nil |
     # to commitment has the earlier date
@@ -160,7 +160,7 @@ Examples:
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;fund_id=1 | commitment_date=2020-01-01;fund_id=2 | Commitments are not from the same fund. |
     # different unit types
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2 | commitment_date=2020-01-01;unit_type=A1| Commitments are not the same unit type. |
-    # different fund and different unit type (date ordering no longer an error)
+    # different fund and different unit type — date ordering check skipped when funds differ
     |name=Merger;unit_types=A,B,C| percentage_called=20;generate_remittances_verified=true | price=1000,premium=100,transfer_ratio=.5,transfer_account_entries=true,account_entries_excluded=nil | commitment_date=2020-01-01;unit_type=A2;fund_id=1  | commitment_date=2020-01-02;unit_type=A1;fund_id=2 | Commitments are not from the same fund.Commitments are not the same unit type. |
 
 

@@ -44,7 +44,7 @@ Before starting the transfer, confirm the following:
 
 - [ ] **Both investors are already in the fund.** The buyer must have an existing folio (capital commitment record) in the same fund as the seller.
 - [ ] **Both investors hold the same unit class.** For example, if the seller holds Class A units, the buyer's folio must also be Class A. You cannot transfer Class A units to a Class B folio.
-- [ ] **The transfer date is on or after both investors' commitment dates.** The system records the adjustment using the transfer date as the effective date, so the transfer date must be on or after the date each investor originally committed to the fund.
+- [ ] **The buyer's folio has an earlier or equal commitment date.** The buyer's commitment date must be on or before the seller's. In practice this is always satisfied because the buyer's folio is created as a copy of the seller's, giving both the same date.
 - [ ] **You know the agreed price and premium per unit.** These are typically set by the parties to the transaction (or determined by the fund's NAV at the transfer date).
 - [ ] **You know the transfer ratio.** This is the percentage of the seller's units being transferred (e.g. 50 means half, 100 means all).
 
@@ -179,8 +179,8 @@ Yes, but only if distributions are generated or recalculated after the transfer 
 **Can I transfer between investors who hold different unit classes?**
 No. Both the seller's and buyer's folio must have the same unit class. If they differ, the transfer will fail with a validation error.
 
-**Does the buyer need to have joined the fund before the seller?**
-No. Both investors simply need to have an existing folio in the same fund. The commitment adjustment is recorded at the transfer date, so there is no requirement for the buyer to have committed earlier than the seller.
+**Does the buyer's folio need an earlier or equal commitment date?**
+Yes, but in practice this is always met. When a buyer's folio is created for a transfer it is copied from the seller's folio and shares the same commitment date, so the constraint is never a problem in normal use.
 
 **Can I see a record of all past transfers?**
 Each unit entry created by a transfer is labelled as a transfer-in or transfer-out and includes a reference to the transfer ID. You can view these on the Fund Units tab of either folio. The modified payment records also contain notes showing the original amounts and the transfer reference.

@@ -65,7 +65,7 @@ Scenario Outline: Access fund & details as Investor
   Given there is a user "first_name=Mohith" for an entity "entity_type=Investment Fund"
   Given there is an existing investor "entity_type=Family Office"
   Given there is an existing investor entity "entity_type=Family Office" with employee "first_name=Investor"
-  Given there is a fund "name=Test fund;show_portfolios=true;show_fund_ratios=true" for the entity
+  Given there is a fund "name=Test fund;show_portfolios=true;show_fund_ratios=true;show_fund_units=true" for the entity
   And another user is "<given>" investor access to the fund
   Given the user has role "<role>"
   Then user "<given>" have "show" access to his own fund

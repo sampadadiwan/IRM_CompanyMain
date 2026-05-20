@@ -51,6 +51,12 @@ class FundUnitTransferService < Trailblazer::Operation
     quantity = (BigDecimal(from_commitment.total_fund_units_quantity.to_s) * transfer_ratio).round(10)
     valid = true
     msg = ""
+    if from_commitment.fund_id == to_commitment.fund_id && from_commitment.commitment_date < to_commitment.commitment_date
+      msg += "The `To-Commitment` commitment_date should be on or before the `From-Commitment`."
+      Rails.logger.error(msg)
+      ctx[:error] = msg
+      valid = false
+    end
     if from_commitment.fund_id != fund.id || to_commitment.fund_id != fund.id
       msg += "Commitments are not from the same fund."
       Rails.logger.error(msg)
@@ -434,10 +440,10 @@ class FundUnitTransferService < Trailblazer::Operation
       adjustment_type: "Transfer",
       reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, transfer_id: #{ctx[:transfer_token]}",
       transfer_date: ctx[:transfer_date],
-      # Use transfer_date so the exchange rate reflects the transaction date, not the
-      # seller's historical commitment date. This also removes the artificial constraint
-      # that required the buyer to have joined the fund before or on the seller's date.
-      as_of: ctx[:transfer_date]
+      # to_commitment is always created as a copy of from_commitment, so both share
+      # the same commitment_date. Using that date for as_of ensures exchange rates and
+      # validate_as_of are evaluated consistently against the original commitment date.
+      as_of: from_commitment.commitment_date
     )
 
     return false unless AdjustmentCreate.call(commitment_adjustment: to_ca).success?
@@ -451,7 +457,7 @@ class FundUnitTransferService < Trailblazer::Operation
       adjustment_type: "Transfer",
       reason: "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}, transfer_id: #{ctx[:transfer_token]}",
       transfer_date: ctx[:transfer_date],
-      as_of: ctx[:transfer_date]
+      as_of: from_commitment.commitment_date
     )
 
     result = AdjustmentCreate.call(commitment_adjustment: from_ca)
