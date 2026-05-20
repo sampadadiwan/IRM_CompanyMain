@@ -75,10 +75,9 @@ class FundRatioRunTemplatesController < ApplicationController
     return redirect_back_or_to(fund_ratio_run_templates_path), alert: "end_date is required" if end_date.nil?
 
     templates = policy_scope(FundRatioRunTemplate).ordered
-    count, warnings = enqueue_templates(templates, end_date)
-    notice = "Enqueued #{count} ratio #{"calculation".pluralize(count)} for #{end_date}."
-    notice += " Warnings: #{warnings.join("; ")}" if warnings.any?
-    redirect_to fund_ratio_run_templates_path, notice: notice
+    count, _warnings = enqueue_templates(templates, end_date)
+    redirect_to fund_ratio_run_templates_path,
+                notice: "Enqueued #{count} ratio #{"calculation".pluralize(count)} for #{end_date}."
   end
 
   # POST /fund_ratio_run_templates/trigger_by_tag
@@ -91,10 +90,9 @@ class FundRatioRunTemplatesController < ApplicationController
     return redirect_back_or_to(fund_ratio_run_templates_path), alert: "tag is required"      if tag.blank?
 
     templates = policy_scope(FundRatioRunTemplate).for_tag(tag).ordered
-    count, warnings = enqueue_templates(templates, end_date)
-    notice = "Enqueued #{count} ratio #{"calculation".pluralize(count)} for tag '#{tag}' on #{end_date}."
-    notice += " Warnings: #{warnings.join("; ")}" if warnings.any?
-    redirect_to fund_ratio_run_templates_path, notice: notice
+    count, _warnings = enqueue_templates(templates, end_date)
+    redirect_to fund_ratio_run_templates_path,
+                notice: "Enqueued #{count} ratio #{"calculation".pluralize(count)} for tag '#{tag}' on #{end_date}."
   end
 
   # POST /fund_ratio_run_templates/:id/trigger_one
@@ -113,10 +111,7 @@ class FundRatioRunTemplatesController < ApplicationController
     end
 
     @template.enqueue(end_date: end_date, user_id: current_user.id)
-    notice = "Enqueued '#{@template.name}' for #{end_date}."
-    warnings = violations.select(&:warning?).map(&:message)
-    notice += " Warnings: #{warnings.join("; ")}" if warnings.any?
-    redirect_to fund_ratio_run_templates_path, notice: notice
+    redirect_to fund_ratio_run_templates_path, notice: "Enqueued '#{@template.name}' for #{end_date}."
   end
 
   private
