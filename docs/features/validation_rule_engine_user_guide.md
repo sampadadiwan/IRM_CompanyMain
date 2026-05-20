@@ -75,7 +75,7 @@ Click **Confirm & Save** to proceed, or **Go Back** to revise the form.
 
 ## Default Rules
 
-These rules are pre-configured for every entity. Thresholds can be adjusted by a Company Admin (see the Admin Setup section below).
+Some rules are **globally enabled** — they fire for every entity automatically with no setup required. Others are **off by default** and must be explicitly enabled by a Company Admin via a Rule Override. Thresholds can be adjusted by a Company Admin (see the Admin Setup section below).
 
 ### Valuation
 
@@ -101,9 +101,11 @@ These rules are pre-configured for every entity. Thresholds can be adjusted by a
 
 ---
 
-## Admin Setup (One-Time)
+## Admin Setup
 
-Company Admins can view, enable/disable, and override rules from the Admin area. This is a one-time configuration; changes apply immediately to all users in your entity.
+Company Admins can view, enable/disable, and override rules from the Admin area. Changes apply immediately to all users in your entity.
+
+Globally-enabled rules (see Default Rules above) require no setup — they fire automatically. Use the steps below to opt out of a rule, adjust its thresholds, or enable a rule that is off by default.
 
 ### Step 1 — Open the Validation Rules list
 
@@ -125,7 +127,7 @@ The list shows all global default rules. Key columns:
 | **Enabled** | Whether the rule is active |
 | **Is Default** | `true` = global default, `false` = entity-specific |
 
-### Step 3 — Disable a rule you don't want
+### Step 3 — Disable a rule you don't want (opt out)
 
 1. Click **Show** on the rule you want to disable.
 2. Open the **Rule Overrides** section at the bottom of the page.
@@ -133,6 +135,14 @@ The list shows all global default rules. Key columns:
 4. Set **Enabled** to `false` and save.
 
 The rule is now disabled only for your entity. The global default is untouched.
+
+### Step 3b — Enable a rule that is off by default (opt in)
+
+1. Click **Show** on the rule you want to enable.
+2. Open the **Rule Overrides** section and click **New Rule Override**.
+3. Set **Enabled** to `true` and save.
+
+The rule will now fire for your entity even though it is globally disabled.
 
 ### Step 4 — Change a threshold (e.g. the % change limit)
 

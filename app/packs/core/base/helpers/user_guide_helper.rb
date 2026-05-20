@@ -97,6 +97,10 @@ module UserGuideHelper
     'support_agent_chats' => 'ai_features_user_guide.md',
     'agent_charts' => 'ai_features_user_guide.md',
 
+    # Validation Rules
+    'validation_rule_overrides' => 'validation_rule_engine_user_guide.md',
+    'validation_rules' => 'validation_rule_engine_user_guide.md',
+
     # Settings & Utilities
     'exchange_rates' => 'tracking_currency_guide.md',
     'db_dumps' => 'db_dumps_user_guide.md',

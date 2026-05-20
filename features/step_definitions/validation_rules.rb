@@ -8,8 +8,8 @@ Given('the default validation rules are seeded') do
   ValidationRulesSeed.seed!
 end
 
-# Opts @entity in to all global default rules by creating enabled=true overrides.
-# Rules are seeded disabled by default; call this in any scenario that expects rules to fire.
+# Creates enabled=true overrides for all global default rules for @entity.
+# Needed only for rules whose global enabled flag is false; rules with enabled=true fire without this step.
 Given('the entity has opted in to all validation rules') do
   ValidationRulesSeed.enable_for_entity!(@entity)
 end

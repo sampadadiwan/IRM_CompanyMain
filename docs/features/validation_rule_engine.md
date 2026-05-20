@@ -40,7 +40,7 @@ A configurable rule engine that evaluates warnings and blockers against model re
 | `condition_tree` | jsonb | AND/OR tree of field conditions (see below) |
 | `severity` | string | `"warning"` or `"blocker"` |
 | `message_template` | string | ERB-style, e.g. `"Date %{valuation_date} is not quarter-end"` |
-| `enabled` | boolean | Default `true`; entity can disable inherited rules |
+| `enabled` | boolean | Default `false`; rules with `true` fire for all entities; entities opt out via an override with `enabled: false` |
 | `is_default` | boolean | `true` if seeded by rake task |
 | `created_by_id` | bigint FK → users | |
 | `created_at` / `updated_at` | datetime | |
@@ -94,7 +94,8 @@ When evaluating rules for a record with `entity_id = E`:
 
 1. Load all global default rules for `target_model` where `entity_id IS NULL`
 2. For each, check if a `ValidationRuleOverride` exists for entity E:
-   - If override has `enabled: false` → skip rule
+   - If override exists → use `override.enabled` (entity can enable or disable)
+   - If no override → use `rule.enabled` (rules with `enabled: true` fire for all entities automatically)
    - If override has `param_overrides` → merge params into condition evaluation
 3. Load entity-specific rules where `entity_id = E` (custom rules, not overrides)
 4. Evaluate all active rules — collect results
@@ -198,7 +199,8 @@ rails rules:seed_defaults              # seed all entities
 ```
 
 Behaviour:
-- Creates global default rules if they don't exist (keyed on `name` + `is_default: true` + `entity_id: nil`)
+- Upserts global default rules keyed on `name` + `is_default: true` + `entity_id: nil`
+- Syncs the `enabled` flag on every run so `DEFAULT_RULES` stays the authoritative source
 - Does **not** touch existing `validation_rule_overrides` (respects tenant customisation)
 - Idempotent — safe to re-run on deploy
 

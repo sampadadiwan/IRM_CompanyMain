@@ -16,17 +16,18 @@ module ValidationRulesSeed
         condition_tree:   attrs[:condition_tree],
         params:           attrs[:params],
         message_template: attrs[:message_template],
-        severity:         attrs[:severity]
+        severity:         attrs[:severity],
+        # Sync enabled on every upsert so DEFAULT_RULES is the authoritative source.
+        # Rules with enabled: true fire for all entities unless overridden to disabled.
+        enabled:          attrs.fetch(:enabled, false)
       )
-      # Use the enabled flag from the definition; default off for rules that don't declare it.
-      rule.enabled = attrs.fetch(:enabled, false) if rule.new_record?
       rule.save!
     end
   end
 
   # Creates (or updates) a ValidationRuleOverride with enabled=true for every global
-  # default rule, for the given entity.  Call this in scenarios where the entity
-  # has opted in to the validation rule engine.
+  # default rule, for the given entity.  Use this to explicitly opt an entity in to
+  # rules that have enabled=false globally (i.e. rules that are off by default).
   def self.enable_for_entity!(entity)
     ValidationRule.where(is_default: true, entity_id: nil).each do |rule|
       override = ValidationRuleOverride.find_or_initialize_by(
@@ -39,8 +40,8 @@ module ValidationRulesSeed
   end
 
   # Creates (or updates) a ValidationRuleOverride with enabled=false for every global
-  # default rule, for the given entity.  Call this in scenarios where the entity
-  # has explicitly opted out (suppresses all rule firing regardless of global defaults).
+  # default rule, for the given entity.  Use this to opt an entity out of rules that
+  # are globally enabled (enabled=true) — overrides suppress firing for that entity.
   def self.disable_for_entity!(entity)
     ValidationRule.where(is_default: true, entity_id: nil).each do |rule|
       override = ValidationRuleOverride.find_or_initialize_by(

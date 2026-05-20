@@ -102,8 +102,8 @@ class ValidationRuleEvaluator
 
     # --- Global defaults (entity_id IS NULL) ---
     # Load ALL global rules regardless of their enabled flag — the effective state
-    # is determined below by the override-wins logic: rules are off by default
-    # (enabled=false) and an entity opts in by creating an override with enabled=true.
+    # is determined below: if no override exists the rule's own enabled flag decides.
+    # Rules with enabled=true fire for all entities; entities opt out via an override with enabled=false.
     global_rules = ValidationRule
                    .global_defaults
                    .for_model(@target_model)
@@ -116,8 +116,8 @@ class ValidationRuleEvaluator
     global_rules.each do |rule|
       override = overrides_by_rule_id[rule.id]
 
-      # Override wins when present; fall back to the global default enabled flag.
-      # Default is off — entity must opt in via a ValidationRuleOverride with enabled=true.
+      # Override wins when present; fall back to the rule's own enabled flag.
+      # Globally-enabled rules (enabled=true) fire for all entities unless overridden to disabled.
       effective_enabled = override ? override.enabled : rule.enabled
       next unless effective_enabled
 
