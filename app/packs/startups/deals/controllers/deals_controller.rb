@@ -4,7 +4,7 @@ class DealsController < ApplicationController
 
   require 'pagy/extras/array'
 
-  before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights]
+  before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights agent_settings update_agent_settings run_now]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
   # GET /deals/analytics
@@ -106,6 +106,75 @@ class DealsController < ApplicationController
 
   def overview; end
 
+  # GET /deals/1/agent_settings
+  def agent_settings
+    authorize(@deal, :update?)
+    @support_agent = find_or_initialize_deals_agent
+    render "list_view"
+  end
+
+  # PATCH /deals/1/agent_settings
+  def update_agent_settings
+    authorize(@deal, :update?)
+    agent = find_or_initialize_deals_agent
+
+    config = (agent.json_fields || {}).merge(
+      "deal_ids"              => @deal.id.to_s,
+      "report_recipients"     => params[:report_recipients].to_s.strip,
+      "stale_days"            => params[:stale_days].to_s.presence || "14",
+      "include_greeting"      => params[:include_greeting].present? ? "true" : "false",
+      "include_updates"       => params[:include_updates].present? ? "true" : "false",
+      "include_tasks_due"     => params[:include_tasks_due].present? ? "true" : "false",
+      "include_tasks_overdue" => params[:include_tasks_overdue].present? ? "true" : "false",
+      "include_stale_items"   => params[:include_stale_items].present? ? "true" : "false"
+    )
+    agent.json_fields = config
+
+    if agent.save
+      # Upsert schedule
+      schedule = agent.agent_schedule || agent.build_agent_schedule
+      schedule.assign_attributes(
+        entity_id:    @deal.entity_id,
+        frequency:    params[:schedule_frequency].presence || "weekly",
+        run_at_time:  params[:schedule_run_at_time].presence || "10:00",
+        run_on_day:   params[:schedule_run_on_day].to_i,
+        timezone:     params[:schedule_timezone].presence || "UTC",
+        enabled:      params.key?(:agent_enabled) ? params[:agent_enabled] == "1" : schedule.enabled
+      )
+
+      unless schedule.save
+        Rails.logger.warn("[update_agent_settings] Schedule save failed for agent #{agent.id}: #{schedule.errors.full_messages.join(', ')}")
+        return respond_to do |format|
+          format.turbo_stream { render turbo_stream: turbo_stream.replace("agent-settings-tab",
+            partial: "deals/deal_agent_settings", locals: { deal: @deal, schedule_errors: schedule.errors.full_messages }) }
+          format.html { redirect_to deal_path(@deal), alert: "Settings saved but schedule failed: #{schedule.errors.full_messages.join(', ')}" }
+        end
+      end
+
+      respond_to do |format|
+        format.turbo_stream { render turbo_stream: turbo_stream.replace("agent-settings-tab",
+          partial: "deals/deal_agent_settings", locals: { deal: @deal }) }
+        format.html { redirect_to deal_path(@deal), notice: "Agent settings saved." }
+      end
+    else
+      respond_to do |format|
+        format.html { redirect_to deal_path(@deal), alert: "Could not save agent settings: #{agent.errors.full_messages.join(', ')}" }
+      end
+    end
+  end
+
+  # POST /deals/1/run_now
+  def run_now
+    authorize(@deal, :update?)
+    agent = find_or_initialize_deals_agent
+    if agent.persisted?
+      SupportAgentJob.perform_later(support_agent_id: agent.id, user_id: current_user.id, execution_mode: :adhoc_batch)
+      redirect_to deal_path(@deal), notice: "Report queued — you'll receive an email shortly."
+    else
+      redirect_to deal_path(@deal), alert: "Please save agent settings first."
+    end
+  end
+
   # GET /deals/new
   def new
     @bread_crumbs = { Deals: deals_path, New: nil }
@@ -202,5 +271,9 @@ class DealsController < ApplicationController
   def deal_params
     params.require(:deal).permit(:name, :amount, :status, :form_type_id, :clone_from_id, :tags,
                                  :start_date, :currency, :units, :activity_list, :archived, card_view_attrs: [], properties: {})
+  end
+
+  def find_or_initialize_deals_agent
+    SupportAgent.find_or_initialize_by(agent_type: "DealsReportAgent", entity_id: @deal.entity_id)
   end
 end

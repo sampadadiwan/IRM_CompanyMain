@@ -8,10 +8,15 @@ class DealsReportMailer < ApplicationMailer
   helper CurrencyHelper
 
   def send_report
-    @support_agent = SupportAgent.find(params[:support_agent_id])
-    @deal_results  = params[:deal_results]
-    @recipients    = params[:recipients]
-    @entity        = @support_agent.entity
+    @support_agent         = SupportAgent.find(params[:support_agent_id])
+    @deal_results          = params[:deal_results]
+    @recipients            = params[:recipients]
+    @entity                = @support_agent.entity
+    @include_greeting      = params.fetch(:include_greeting,      true)
+    @include_updates       = params.fetch(:include_updates,       true)
+    @include_tasks_due     = params.fetch(:include_tasks_due,     true)
+    @include_tasks_overdue = params.fetch(:include_tasks_overdue, true)
+    @include_stale_items   = params.fetch(:include_stale_items,   true)
 
     to_emails = Array(@recipients).join(",")
 

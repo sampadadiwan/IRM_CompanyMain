@@ -17,9 +17,7 @@
     <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">Custom Notifications</a>
-    <% if current_user.entity_id == deal.entity_id && deal.entity.support_agents.set?(:deal_management_agent) %>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#ai-agent-tab"><i class="ti ti-robot me-1"></i>AI Agent</a>
-    <% end %>
+    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#agent-settings-tab">Agent Settings</a>
   </nav>
   <div class="tab-content">
     <div id="charts-tab" class="tab-pane fade in show active">
@@ -82,29 +80,8 @@
         <% end %>
       </div>
     </div>
-    <% if current_user.entity_id == deal.entity_id && deal.entity.support_agents.set?(:deal_management_agent) %>
-      <div id="ai-agent-tab" class="tab-pane fade">
-        <% deal_agent    = SupportAgent.find_by(entity_id: deal.entity_id, agent_type: "DealManagementAgent", enabled: true) %>
-        <% latest_report = deal_agent ? SupportAgentReport.where(support_agent: deal_agent, owner: deal).latest_only : [] %>
-        <% history_count = deal_agent ? SupportAgentReport.where(support_agent: deal_agent, owner: deal).where(latest: false).count : 0 %>
-
-        <%# ── Latest run ── %>
-        <%= render "/support_agents/deal_reports_tab",
-                   support_agent: deal_agent,
-                   deal_reports:  latest_report,
-                   run_path:      run_support_agents_path(agent_type: "DealManagementAgent", target_type: "Deal", target_id: deal.id) %>
-
-        <%# ── History link ── %>
-        <% if deal_agent && history_count > 0 %>
-          <div class="mt-2">
-            <%= link_to support_agent_path(deal_agent, tab: "deal_reports", deal_id: deal.id),
-                  class: "btn btn-sm btn-outline-secondary", data: { turbo: false } do %>
-              <i class="ti ti-history me-1"></i>
-              History (<%= history_count %> previous run<%= history_count == 1 ? '' : 's' %>)
-            <% end %>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
+    <div id="agent-settings-tab" class="tab-pane fade">
+      <%= render "deals/deal_agent_settings", deal: deal %>
+    </div>
   </div>
 </div>

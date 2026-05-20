@@ -19,6 +19,15 @@
 <h3>Deal Fundraising Update — <%= Time.zone.today.strftime("%B %Y") %></h3>
 <p>Report for <strong><%= @support_agent.entity.name %></strong></p>
 
+<% if @include_greeting %>
+  <% @deal_results.each do |deal| %>
+    <p>
+      Hello – Here's your Deal report for <strong><%= deal[:deal_name] %></strong>.
+      The deal is <strong><%= deal[:fill_rate] %>%</strong> complete
+      with an additional <strong><%= format_amount.call(deal[:pending_cents], deal[:currency] || "INR") %></strong> in the pipeline.
+    </p>
+  <% end %>
+<% end %>
 <% attention_deals = @deal_results.select { |d| d[:deal_status] == "needs_attention" } %>
 <% if attention_deals.any? %>
   <div style="background:#fff3f3; border:1px solid #fcc; padding:12px; margin:16px 0; border-radius:4px;">
@@ -32,9 +41,9 @@
 <% end %>
 
 <% stale_deals = @deal_results.select { |d| d[:stale] } %>
-<% if stale_deals.any? %>
+<% if @include_stale_items && stale_deals.any? %>
   <div style="background:#fff8e1; border:1px solid #ffe082; padding:12px; margin:16px 0; border-radius:4px;">
-    <strong style="color:#cc8800;">⚠ Stale Deals (no activity):</strong>
+    <strong style="color:#cc8800;">⚠ No-Activity Items:</strong>
     <ul style="margin:8px 0 0 0; padding-left:16px;">
       <% stale_deals.each do |d| %>
         <li><%= d[:deal_name] %>: <%= d[:stale_days] %> days since last activity</li>
@@ -110,7 +119,7 @@
   </table>
 
   <% step_dist = deal[:step_distribution] %>
-  <% if step_dist.present? && step_dist.any? %>
+  <% if @include_updates && step_dist.present? && step_dist.any? %>
     <strong>Investor Pipeline by Step</strong>
     <table style="width:100%; border-collapse:collapse; margin:6px 0;">
       <% step_dist.each do |step| %>
@@ -122,5 +131,41 @@
         </tr>
       <% end %>
     </table>
+  <% end %>
+
+  <% if @include_tasks_due %>
+    <%
+      deal_record = Deal.find_by(id: deal[:deal_id])
+      tasks_due = deal_record ? Task.where(owner_id: deal_record.id, owner_type: "Deal")
+                                    .where("due_date >= ? AND due_date <= ?", Date.today, 7.days.from_now)
+                                    .where(completed: false)
+                                    .order(:due_date) : []
+    %>
+    <% if tasks_due.any? %>
+      <strong>Tasks Due (next 7 days)</strong>
+      <ul style="margin:4px 0 8px 16px;">
+        <% tasks_due.each do |t| %>
+          <li><%= t.title %> — due <%= t.due_date&.strftime("%b %d") %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
+
+  <% if @include_tasks_overdue %>
+    <%
+      deal_record ||= Deal.find_by(id: deal[:deal_id])
+      tasks_overdue = deal_record ? Task.where(owner_id: deal_record.id, owner_type: "Deal")
+                                        .where("due_date < ?", Date.today)
+                                        .where(completed: false)
+                                        .order(:due_date) : []
+    %>
+    <% if tasks_overdue.any? %>
+      <strong style="color:red;">Tasks Overdue</strong>
+      <ul style="margin:4px 0 8px 16px;">
+        <% tasks_overdue.each do |t| %>
+          <li style="color:red;"><%= t.title %> — was due <%= t.due_date&.strftime("%b %d") %></li>
+        <% end %>
+      </ul>
+    <% end %>
   <% end %>
 <% end %>

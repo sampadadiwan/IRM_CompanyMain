@@ -50,6 +50,13 @@ class DealsReportAgent < SupportAgentService
     @stale_days        = (@config["stale_days"] || 30).to_i
     @deal_ids          = (@config["deal_ids"] || "").split(",").map(&:strip).map(&:to_i).compact_blank
 
+    # Content flags (default all on for backwards compatibility)
+    @include_greeting      = @config.fetch("include_greeting",      "true") == "true"
+    @include_updates       = @config.fetch("include_updates",       "true") == "true"
+    @include_tasks_due     = @config.fetch("include_tasks_due",     "true") == "true"
+    @include_tasks_overdue = @config.fetch("include_tasks_overdue", "true") == "true"
+    @include_stale_items   = @config.fetch("include_stale_items",   "true") == "true"
+
     ctx[:deal_results] = []
 
     report = ctx[:support_agent_report]
@@ -143,9 +150,14 @@ class DealsReportAgent < SupportAgentService
     end
 
     DealsReportMailer.with(
-      support_agent_id: @support_agent.id,
-      deal_results:     ctx[:deal_results],
-      recipients:       @report_recipients
+      support_agent_id:      @support_agent.id,
+      deal_results:          ctx[:deal_results],
+      recipients:            @report_recipients,
+      include_greeting:      @include_greeting,
+      include_updates:       @include_updates,
+      include_tasks_due:     @include_tasks_due,
+      include_tasks_overdue: @include_tasks_overdue,
+      include_stale_items:   @include_stale_items
     ).send_report.deliver_later
 
     mark_step_success(report, :send_report_email,

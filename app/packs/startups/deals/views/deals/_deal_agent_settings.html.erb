@@ -1,0 +1,161 @@
+<%
+  agent = SupportAgent.find_by(agent_type: "DealsReportAgent", entity_id: deal.entity_id)
+  config = agent&.json_fields || {}
+  schedule = agent&.agent_schedule
+
+  freq          = schedule&.frequency || "weekly"
+  run_at_time   = schedule&.run_at_time || "10:00"
+  run_on_day    = schedule&.run_on_day&.to_i || 1
+  tz            = schedule&.timezone || "UTC"
+  enabled       = schedule&.enabled != false
+
+  recipients    = config["report_recipients"] || ""
+  stale_days    = config["stale_days"] || "14"
+
+  inc_greeting      = config.fetch("include_greeting",      "true") == "true"
+  inc_updates       = config.fetch("include_updates",       "true") == "true"
+  inc_tasks_due     = config.fetch("include_tasks_due",     "true") == "true"
+  inc_tasks_overdue = config.fetch("include_tasks_overdue", "true") == "true"
+  inc_stale         = config.fetch("include_stale_items",   "true") == "true"
+%>
+
+<div class="p-3">
+  <h5 class="mb-3">
+    <i class="fas fa-robot me-2 text-primary"></i>Deal Report Agent Settings
+  </h5>
+
+  <%= form_with url: agent_settings_deal_path(deal), method: :patch, local: false, html: { class: "needs-validation" } do |f| %>
+
+    <%# ── RECIPIENTS ── %>
+    <div class="card mb-3">
+      <div class="card-header"><strong>Report Recipients</strong></div>
+      <div class="card-body">
+        <label class="form-label">Email addresses <span class="text-muted">(comma-separated)</span></label>
+        <input type="text"
+               name="report_recipients"
+               class="form-control"
+               value="<%= recipients %>"
+               placeholder="alice@example.com, bob@example.com">
+      </div>
+    </div>
+
+    <%# ── SCHEDULE ── %>
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Schedule</strong>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" id="agent_enabled"
+                 name="agent_enabled" value="1" <%= "checked" if enabled %>>
+          <label class="form-check-label" for="agent_enabled">Enabled</label>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3">
+            <label class="form-label">Frequency</label>
+            <select name="schedule_frequency" class="form-select" id="schedule_frequency">
+              <option value="daily"   <%= "selected" if freq == "daily"   %>>Daily</option>
+              <option value="weekly"  <%= "selected" if freq == "weekly"  %>>Weekly</option>
+              <option value="monthly" <%= "selected" if freq == "monthly" %>>Monthly</option>
+            </select>
+          </div>
+          <div class="col-md-3 weekly-only" style="<%= freq != "weekly" ? "display:none;" : "" %>">
+            <label class="form-label">Day of Week</label>
+            <select name="schedule_run_on_day" class="form-select">
+              <% [["Sunday",0],["Monday",1],["Tuesday",2],["Wednesday",3],["Thursday",4],["Friday",5],["Saturday",6]].each do |label, val| %>
+                <option value="<%= val %>" <%= "selected" if run_on_day == val %>><%= label %></option>
+              <% end %>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Time</label>
+            <input type="time" name="schedule_run_at_time" class="form-control" value="<%= run_at_time %>">
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Timezone</label>
+            <select name="schedule_timezone" class="form-select">
+              <% AgentSchedule::CURATED_TIMEZONES.each do |tzid, label| %>
+                <option value="<%= tzid %>" <%= "selected" if tz == tzid %>><%= label %></option>
+              <% end %>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# ── REPORT CONTENT ── %>
+    <div class="card mb-3">
+      <div class="card-header"><strong>Report Content</strong></div>
+      <div class="card-body">
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="inc_greeting"
+                 name="include_greeting" value="true" <%= "checked" if inc_greeting %>>
+          <label class="form-check-label" for="inc_greeting">
+            <strong>Greeting &amp; Fill Rate Summary</strong>
+            <small class="text-muted d-block">
+              "Hello [First Name] – Here's your Deal report for {title}.
+              The Deal is XX% complete with an additional XX in the pipeline."
+            </small>
+          </label>
+        </div>
+
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="inc_updates"
+                 name="include_updates" value="true" <%= "checked" if inc_updates %>>
+          <label class="form-check-label" for="inc_updates">
+            <strong>Activity Updates</strong>
+            <small class="text-muted d-block">XX updates to existing items; XX new additions.</small>
+          </label>
+        </div>
+
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="inc_tasks_due"
+                 name="include_tasks_due" value="true" <%= "checked" if inc_tasks_due %>>
+          <label class="form-check-label" for="inc_tasks_due">
+            <strong>Tasks Due</strong>
+            <small class="text-muted d-block">List of tasks with upcoming due dates.</small>
+          </label>
+        </div>
+
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="inc_tasks_overdue"
+                 name="include_tasks_overdue" value="true" <%= "checked" if inc_tasks_overdue %>>
+          <label class="form-check-label" for="inc_tasks_overdue">
+            <strong>Tasks Overdue</strong>
+            <small class="text-muted d-block">List of tasks that have passed their due date.</small>
+          </label>
+        </div>
+
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="inc_stale"
+                 name="include_stale_items" value="true" <%= "checked" if inc_stale %>>
+          <label class="form-check-label" for="inc_stale">
+            <strong>No-Activity Items</strong>
+            <small class="text-muted d-block">
+              Items with no activity for more than
+              <input type="number" name="stale_days" value="<%= stale_days %>"
+                     class="form-control form-control-sm d-inline-block" style="width:60px;" min="1">
+              weeks.
+            </small>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <%= f.submit "Save Settings", class: "btn btn-primary" %>
+      <%= link_to "Run Now", run_now_deal_path(deal), method: :post,
+            class: "btn btn-outline-success",
+            data: { confirm: "Queue a report run now?" } if agent.present? %>
+    </div>
+
+  <% end %>
+</div>
+
+<script>
+  document.getElementById("schedule_frequency")?.addEventListener("change", function() {
+    document.querySelectorAll(".weekly-only").forEach(function(el) {
+      el.style.display = this.value === "weekly" ? "" : "none";
+    }, this);
+  });
+</script>

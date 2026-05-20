@@ -54,6 +54,18 @@ class DealPolicy < ApplicationPolicy
     permissioned_employee?(:update)
   end
 
+  def agent_settings?
+    update?
+  end
+
+  def update_agent_settings?
+    update?
+  end
+
+  def run_now?
+    update?
+  end
+
   def edit?
     create?
   end
