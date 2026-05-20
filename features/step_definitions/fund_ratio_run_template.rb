@@ -209,6 +209,19 @@ When('I trigger templates by tag {string} for end_date {string}') do |tag, date_
   @end_date = end_date
 end
 
+### Validation Rules ###########################################################
+
+# Evaluates validation rules for a FundRatioRunTemplate with a given trigger_end_date.
+# Mirrors the pattern used for other models in validation_rules.rb step definitions.
+When('the validation rules are evaluated for a FundRatioRunTemplate {string} with trigger_end_date {string}') do |name, date_str|
+  template = find_template!(name)
+  template.trigger_end_date = Date.parse(date_str)
+
+  @rule_results = WithValidationRules.skip do
+    ValidationRuleEvaluator.call(record: template, entity: @entity)
+  end
+end
+
 ### Idempotency ################################################################
 
 Then('only one FundRatioRun should exist for the template {string} on {string}') do |name, date_str|

@@ -5,12 +5,12 @@ class ValidationRulesController < ApplicationController
   # POST /validation_rules/evaluate
   #
   # Params:
-  #   target_model  [String]  "Valuation" | "AllocationRun" | "FundRatio"
+  #   target_model  [String]  "Valuation" | "AllocationRun" | "FundRatio" | "FundRatioRunTemplate" | ...
   #   record_id     [Integer] omit or null for new records
   #   attributes    [Hash]    current form field values (unsaved)
   #
   # Returns:
-  #   { warnings: [...], blockers: [...], debug: [...] }
+  #   { warnings: [...], blockers: [...] }
   def evaluate
     target_model = params[:target_model].to_s
 
@@ -82,6 +82,12 @@ class ValidationRulesController < ApplicationController
       # The generate_fund_ratios form is also flat; supply entity_id for monetize/context
       attrs["entity_id"] ||= current_user.entity_id.to_s
 
+    when "FundRatioRunTemplate"
+      attrs = attrs.dup
+      # Trigger forms send end_date; the rule engine reads the virtual trigger_end_date attr
+      attrs["trigger_end_date"] = attrs.delete("end_date") if attrs.key?("end_date")
+      attrs["entity_id"] ||= current_user.entity_id.to_s
+
     when "CapitalCall"
       attrs = attrs.dup
       # Approval evaluates a persisted record; ensure entity_id is present for scoping
@@ -96,9 +102,13 @@ class ValidationRulesController < ApplicationController
     attrs
   end
 
+  # Virtual attr_accessors that are not DB columns but must be assignable for rule evaluation.
+  VIRTUAL_ATTRS = {
+    "FundRatioRunTemplate" => %w[trigger_end_date]
+  }.freeze
+
   # Build the set of attributes we can safely assign.
-  # Includes DB column names AND monetize virtual setters (e.g. per_share_value)
-  # since the record is never saved — no mass-assignment risk.
+  # Includes DB column names, monetize virtual setters, and model-specific virtual attrs.
   def assignable_attrs(model_class, raw_attrs)
     columns      = model_class.column_names
     # monetize creates virtual setters like "per_share_value" alongside "per_share_value_cents";
@@ -106,7 +116,8 @@ class ValidationRulesController < ApplicationController
     virtual_money = raw_attrs.keys.select do |k|
       columns.include?("#{k}_cents")
     end
-    (columns + virtual_money).map(&:to_s)
+    virtual = VIRTUAL_ATTRS.fetch(model_class.name, [])
+    (columns + virtual_money + virtual).map(&:to_s)
   end
 
   def serialize(results)

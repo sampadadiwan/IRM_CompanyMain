@@ -11,11 +11,12 @@ class ValidationRuleEvaluator
   # Registry mapping target_model strings to their ContextProvider classes.
   # Add new models here when extending the engine.
   CONTEXT_PROVIDERS = {
-    "Valuation"     => ValuationRuleContextProvider,
-    "AllocationRun" => AllocationRunRuleContextProvider,
-    "FundRatio"     => FundRatioRuleContextProvider,
-    "CapitalCall"        => CapitalCallRuleContextProvider,
-    "CapitalRemittance"  => CapitalRemittanceRuleContextProvider
+    "Valuation"              => ValuationRuleContextProvider,
+    "AllocationRun"          => AllocationRunRuleContextProvider,
+    "FundRatio"              => FundRatioRuleContextProvider,
+    "FundRatioRunTemplate"   => FundRatioRunTemplateRuleContextProvider,
+    "CapitalCall"            => CapitalCallRuleContextProvider,
+    "CapitalRemittance"      => CapitalRemittanceRuleContextProvider
   }.freeze
 
   # What the caller gets back for each fired rule

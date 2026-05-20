@@ -1,3 +1,4 @@
+
 # Provides rule seeding for Cucumber tests without shelling out to rake.
 # DEFAULT_RULES is sourced from ValidationRulesDefaults — the single source
 # of truth shared with lib/tasks/validation_rules.rake.

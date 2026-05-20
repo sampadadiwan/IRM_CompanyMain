@@ -75,9 +75,10 @@ class FundRatioRunTemplatesController < ApplicationController
     return redirect_back_or_to(fund_ratio_run_templates_path), alert: "end_date is required" if end_date.nil?
 
     templates = policy_scope(FundRatioRunTemplate).ordered
-    count = enqueue_templates(templates, end_date)
-    redirect_to fund_ratio_run_templates_path,
-                notice: "Enqueued #{count} ratio #{"calculation".pluralize(count)} for #{end_date}."
+    count, warnings = enqueue_templates(templates, end_date)
+    notice = "Enqueued #{count} ratio #{"calculation".pluralize(count)} for #{end_date}."
+    notice += " Warnings: #{warnings.join("; ")}" if warnings.any?
+    redirect_to fund_ratio_run_templates_path, notice: notice
   end
 
   # POST /fund_ratio_run_templates/trigger_by_tag
@@ -90,9 +91,10 @@ class FundRatioRunTemplatesController < ApplicationController
     return redirect_back_or_to(fund_ratio_run_templates_path), alert: "tag is required"      if tag.blank?
 
     templates = policy_scope(FundRatioRunTemplate).for_tag(tag).ordered
-    count = enqueue_templates(templates, end_date)
-    redirect_to fund_ratio_run_templates_path,
-                notice: "Enqueued #{count} ratio #{"calculation".pluralize(count)} for tag '#{tag}' on #{end_date}."
+    count, warnings = enqueue_templates(templates, end_date)
+    notice = "Enqueued #{count} ratio #{"calculation".pluralize(count)} for tag '#{tag}' on #{end_date}."
+    notice += " Warnings: #{warnings.join("; ")}" if warnings.any?
+    redirect_to fund_ratio_run_templates_path, notice: notice
   end
 
   # POST /fund_ratio_run_templates/:id/trigger_one
@@ -102,9 +104,19 @@ class FundRatioRunTemplatesController < ApplicationController
     end_date = parse_end_date(params[:end_date])
     return redirect_back_or_to(fund_ratio_run_templates_path), alert: "end_date is required" if end_date.nil?
 
+    @template.trigger_end_date = end_date
+    violations = ValidationRuleEvaluator.call(record: @template, entity: current_user.entity)
+    blockers = violations.select(&:blocker?)
+    if blockers.any?
+      return redirect_to fund_ratio_run_templates_path,
+                         alert: "Cannot enqueue '#{@template.name}': #{blockers.map(&:message).join("; ")}"
+    end
+
     @template.enqueue(end_date: end_date, user_id: current_user.id)
-    redirect_to fund_ratio_run_templates_path,
-                notice: "Enqueued '#{@template.name}' for #{end_date}."
+    notice = "Enqueued '#{@template.name}' for #{end_date}."
+    warnings = violations.select(&:warning?).map(&:message)
+    notice += " Warnings: #{warnings.join("; ")}" if warnings.any?
+    redirect_to fund_ratio_run_templates_path, notice: notice
   end
 
   private
@@ -113,10 +125,28 @@ class FundRatioRunTemplatesController < ApplicationController
     @template = FundRatioRunTemplate.find(params[:id])
   end
 
-  # Calls #enqueue on each template and returns the count dispatched.
+  # Validates and enqueues each template. Returns [count_enqueued, warning_messages].
+  # Templates with blocker violations are skipped; warnings are collected and surfaced.
   def enqueue_templates(templates, end_date)
-    templates.each { |t| t.enqueue(end_date: end_date, user_id: current_user.id) }
-    templates.count
+    count    = 0
+    warnings = []
+
+    templates.each do |t|
+      t.trigger_end_date = end_date
+      violations = ValidationRuleEvaluator.call(record: t, entity: current_user.entity)
+
+      if violations.select(&:blocker?).any?
+        # Log blocker violations but do not halt the entire batch — skip this template.
+        Rails.logger.warn("[FundRatioRunTemplates] Skipped '#{t.name}': #{violations.select(&:blocker?).map(&:message).join("; ")}")
+        next
+      end
+
+      warnings.concat(violations.select(&:warning?).map { |v| "#{t.name}: #{v.message}" })
+      t.enqueue(end_date: end_date, user_id: current_user.id)
+      count += 1
+    end
+
+    [count, warnings]
   end
 
   # Returns a Date or nil — never raises so the controller can give a clean error.

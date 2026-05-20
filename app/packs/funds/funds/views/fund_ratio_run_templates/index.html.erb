@@ -33,14 +33,19 @@
   <div class="collapse mb-3" id="runAllPanel">
     <%= render NewCard.new do %>
       <%= render FormCard.new(title: "Run All Templates") do %>
-        <%= form_with url: trigger_all_fund_ratio_run_templates_path, method: :post,
-                      class: "d-flex align-items-center gap-3 flex-wrap" do |f| %>
-          <div>
-            <%= f.label :end_date, "End Date", class: "form-label mb-1 small fw-semibold" %>
-            <%= f.date_field :end_date, class: "form-control", required: true %>
-          </div>
-          <%= f.submit "Run All", class: "btn btn-success align-self-end" %>
-        <% end %>
+        <div data-controller="rule-validation"
+             data-rule-validation-target-model-value="FundRatioRunTemplate"
+             data-rule-validation-record-id-value=""
+             data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>">
+          <%= form_with url: trigger_all_fund_ratio_run_templates_path, method: :post,
+                        class: "d-flex align-items-center gap-3 flex-wrap" do |f| %>
+            <div>
+              <%= f.label :end_date, "End Date", class: "form-label mb-1 small fw-semibold" %>
+              <%= f.date_field :end_date, class: "form-control", required: true %>
+            </div>
+            <%= f.submit "Run All", class: "btn btn-success align-self-end" %>
+          <% end %>
+        </div>
       <% end %>
     <% end %>
   </div>
@@ -50,19 +55,24 @@
   <div class="collapse mb-3" id="runByTagPanel">
     <%= render NewCard.new do %>
       <%= render FormCard.new(title: "Run by Tag") do %>
-        <%= form_with url: trigger_by_tag_fund_ratio_run_templates_path, method: :post,
-                      class: "d-flex align-items-center gap-3 flex-wrap" do |f| %>
-          <div>
-            <%= f.label :tag, "Tag", class: "form-label mb-1 small fw-semibold" %>
-            <%= f.select :tag, @distinct_tags, { include_blank: "— select —" },
-                         class: "form-select", style: "width:180px", required: true %>
-          </div>
-          <div>
-            <%= f.label :end_date, "End Date", class: "form-label mb-1 small fw-semibold" %>
-            <%= f.date_field :end_date, class: "form-control", required: true %>
-          </div>
-          <%= f.submit "Run Tag", class: "btn btn-primary align-self-end" %>
-        <% end %>
+        <div data-controller="rule-validation"
+             data-rule-validation-target-model-value="FundRatioRunTemplate"
+             data-rule-validation-record-id-value=""
+             data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>">
+          <%= form_with url: trigger_by_tag_fund_ratio_run_templates_path, method: :post,
+                        class: "d-flex align-items-center gap-3 flex-wrap" do |f| %>
+            <div>
+              <%= f.label :tag, "Tag", class: "form-label mb-1 small fw-semibold" %>
+              <%= f.select :tag, @distinct_tags, { include_blank: "— select —" },
+                           class: "form-select", style: "width:180px", required: true %>
+            </div>
+            <div>
+              <%= f.label :end_date, "End Date", class: "form-label mb-1 small fw-semibold" %>
+              <%= f.date_field :end_date, class: "form-control", required: true %>
+            </div>
+            <%= f.submit "Run Tag", class: "btn btn-primary align-self-end" %>
+          <% end %>
+        </div>
       <% end %>
     <% end %>
   </div>
@@ -98,11 +108,16 @@
             <td class="text-end">
               <div class="d-inline-flex align-items-center gap-2">
                 <%# Date field sits outside the dropdown so the user can set it before clicking Run %>
-                <%= form_with url: trigger_one_fund_ratio_run_template_path(tmpl), method: :post,
-                              class: "d-inline-flex align-items-center",
-                              id: "run-form-#{tmpl.id}" do |f| %>
-                  <%= f.date_field :end_date, class: "form-control", style: "width:150px", required: true %>
-                <% end %>
+                <div data-controller="rule-validation"
+                     data-rule-validation-target-model-value="FundRatioRunTemplate"
+                     data-rule-validation-record-id-value="<%= tmpl.id %>"
+                     data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>">
+                  <%= form_with url: trigger_one_fund_ratio_run_template_path(tmpl), method: :post,
+                                class: "d-inline-flex align-items-center",
+                                id: "run-form-#{tmpl.id}" do |f| %>
+                    <%= f.date_field :end_date, class: "form-control", style: "width:150px", required: true %>
+                  <% end %>
+                </div>
 
                 <div class="dropdown">
                   <button class="btn btn-outline-secondary dropdown-toggle d-inline-flex align-items-center gap-1"

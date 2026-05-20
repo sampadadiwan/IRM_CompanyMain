@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_19_500001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_20_200001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2482,6 +2482,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_500001) do
     t.boolean "is_holdings_entity", default: false
     t.boolean "is_trust", default: false
     t.json "json_fields"
+    t.bigint "kpi_contact_id"
     t.date "last_interaction_date"
     t.string "pan", limit: 40
     t.string "primary_email"
@@ -2498,6 +2499,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_500001) do
     t.index ["investor_entity_id", "entity_id", "deleted_at"], name: "idx_on_investor_entity_id_entity_id_deleted_at_983d7c8e7a", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
+    t.index ["kpi_contact_id"], name: "index_investors_on_kpi_contact_id"
     t.index ["pan"], name: "index_investors_on_pan"
     t.index ["slug"], name: "index_investors_on_slug", unique: true
     t.index ["tag_list"], name: "index_investors_on_tag_list", type: :fulltext
@@ -4043,6 +4045,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_19_500001) do
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
+  add_foreign_key "investors", "users", column: "kpi_contact_id"
   add_foreign_key "kanban_boards", "entities"
   add_foreign_key "kanban_cards", "entities"
   add_foreign_key "kanban_cards", "kanban_boards"

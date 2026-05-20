@@ -14,6 +14,10 @@ class FundRatioRunTemplate < ApplicationRecord
   attribute :sectors,               :json, default: -> { [] }
   attribute :tags,                  :json, default: -> { [] }
 
+  # Set by trigger actions before validation so rules can inspect the trigger date.
+  # Not persisted — only meaningful during the enqueue flow.
+  attr_accessor :trigger_end_date
+
   belongs_to :entity
   belongs_to :user
   # anchor_fund mirrors FundRatioRun#anchor_fund — used for document folder

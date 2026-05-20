@@ -199,6 +199,22 @@ module ValidationRulesDefaults
       message_template: "There are %{notice_not_approved} generated call notice(s) for this remittance pending approval. Please approve the document before sending the notification."
     },
 
+    # ── FundRatioRunTemplate ───────────────────────────────────────────────────
+    {
+      name:             "fund_ratio_run_template_date_not_quarter_end",
+      target_model:     "FundRatioRunTemplate",
+      description:      "Warns when the run template trigger date does not fall on a quarter-end.",
+      condition_tree:   {
+        "op"         => "AND",
+        "conditions" => [
+          { "field" => "trigger_end_date", "op" => "not_quarter_end" }
+        ]
+      },
+      params:           {},
+      severity:         "warning",
+      message_template: "Run template trigger date %{trigger_end_date} is not a quarter-end date. Please confirm this is intentional."
+    },
+
     # ── FundRatio ──────────────────────────────────────────────────────────────
     {
       name:             "fund_ratio_date_not_quarter_end",
@@ -214,20 +230,5 @@ module ValidationRulesDefaults
       severity:         "warning",
       message_template: "Fund ratio end date %{end_date} is not a quarter-end date. Please confirm this is intentional."
     },
-    {
-      name:             "fund_ratio_value_out_of_range",
-      target_model:     "FundRatio",
-      description:      "Warns when the fund ratio value falls outside a configurable absolute range [min_value, max_value].",
-      condition_tree:   {
-        "op"         => "OR",
-        "conditions" => [
-          { "field" => "value", "op" => "lt", "param" => "min_value" },
-          { "field" => "value", "op" => "gt", "param" => "max_value" }
-        ]
-      },
-      params:           { "min_value" => 0, "max_value" => 10 },
-      severity:         "warning",
-      message_template: "Fund ratio value is outside the expected range. Please review."
-    }
   ].freeze
 end

@@ -75,6 +75,22 @@ Feature: Fund Ratio Run Templates — configuration, bulk trigger, tag trigger
     When I trigger templates by tag "monthly" for end_date "31-03-2024"
     Then 2 FundRatioRuns should exist for end_date "31-03-2024"
 
+  # ── Validation Rules ─────────────────────────────────────────────────────────
+
+  Scenario: Triggering a template on a non-quarter-end date fires a warning when opted in
+    Given the default validation rules are seeded
+    And the entity has opted in to all validation rules
+    And there is a template "name=VR-Template;run_type=cross-fund" for the entity
+    When the validation rules are evaluated for a FundRatioRunTemplate "VR-Template" with trigger_end_date "2024-03-15"
+    Then the rule "fund_ratio_run_template_date_not_quarter_end" fires as a "warning"
+
+  Scenario: Triggering a template on a quarter-end date does not fire the date warning
+    Given the default validation rules are seeded
+    And the entity has opted in to all validation rules
+    And there is a template "name=VR-QE-Template;run_type=cross-fund" for the entity
+    When the validation rules are evaluated for a FundRatioRunTemplate "VR-QE-Template" with trigger_end_date "2024-03-31"
+    Then the rule "fund_ratio_run_template_date_not_quarter_end" does not fire
+
   # ── Idempotency ──────────────────────────────────────────────────────────────
 
   Scenario: Triggering the same template twice for the same end_date reuses the FundRatioRun

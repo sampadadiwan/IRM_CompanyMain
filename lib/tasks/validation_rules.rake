@@ -125,12 +125,12 @@ namespace :rules do
 
   # ── Entity override seed task ─────────────────────────────────────────────────
 
-  # Demonstrates all three override patterns:
+  # Demonstrates override patterns:
   #   1. Tightened threshold   — stricter pct_threshold for valuation swings
   #   2. Custom message        — tenant-branded copy on the allocation-run warning
-  #   3. Widened numeric range — entity accepts fund ratio values up to 20
-  #   4. Disabled rule         — entity switches off the fund-ratio quarter-end check
-  ENTITY_157_OVERRIDES = [
+  #   3. Disabled rule         — entity switches off the fund-ratio quarter-end check
+  #   4. Enabled rule          — entity opts in to the run-template quarter-end check
+  ENTITY_OVERRIDES = [
     # ── Valuation: tighten the large-increase threshold from 50% → 20% ──────────
     {
       rule_name:       "valuation_large_increase",
@@ -158,20 +158,20 @@ namespace :rules do
       message_override: "Allocation end date %{end_date} is not a quarter-end. Per our fund admin policy, all runs should close on Mar 31, Jun 30, Sep 30, or Dec 31. Please confirm this is an off-cycle run."
     },
 
-    # ── FundRatio: widen the value range from 0–10 → 0–20 ───────────────────────
-    {
-      rule_name:        "fund_ratio_value_out_of_range",
-      target_model:     "FundRatio",
-      enabled:          true,
-      param_overrides:  { "min_value" => 0, "max_value" => 20 },
-      message_override: nil   # keep the default message
-    },
-
     # ── FundRatio: disable the quarter-end date check entirely ───────────────────
     {
       rule_name:        "fund_ratio_date_not_quarter_end",
       target_model:     "FundRatio",
       enabled:          false,   # entity runs interim ratios monthly — suppress this warning
+      param_overrides:  {},
+      message_override: nil
+    },
+
+    # ── FundRatioRunTemplate: enable the quarter-end trigger date check ──────────
+    {
+      rule_name:        "fund_ratio_run_template_date_not_quarter_end",
+      target_model:     "FundRatioRunTemplate",
+      enabled:          true,
       param_overrides:  {},
       message_override: nil
     }
@@ -201,7 +201,7 @@ namespace :rules do
     created = 0
     updated = 0
 
-    ENTITY_157_OVERRIDES.each do |attrs|
+    ENTITY_OVERRIDES.each do |attrs|
       # Look up the global default rule by name + model
       rule = ValidationRule.find_by(
         name:         attrs[:rule_name],
