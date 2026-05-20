@@ -75,33 +75,18 @@
             </td>
           </tr>
           <tr class="collapse" id="score-detail-<%= report.id %>">
-            <td colspan="7" class="bg-light p-3">
+            <td colspan="7" class="bg-light p-0">
               <% if report.status.to_s == "completed" && score.present? %>
-                <p class="text-muted small mb-2"><%= score["summary"] %></p>
-                <% Array(score["dimensions"]).each do |dim| %>
-                  <% dim_score = dim["score"].to_i %>
-                  <% dim_bar  = case dim_score
-                                when 80..100 then "bg-success"
-                                when 60..79  then "bg-primary"
-                                when 40..59  then "bg-warning"
-                                else              "bg-danger"
-                                end %>
-                  <div class="mb-2">
-                    <div class="d-flex justify-content-between small mb-1">
-                      <span class="fw-medium"><%= dim["name"] %></span>
-                      <span class="text-muted"><%= dim_score %>/100
-                        <span class="badge bg-light text-dark"><%= (dim["weight"].to_f * 100).round %>%</span>
-                      </span>
-                    </div>
-                    <div class="progress mb-1" style="height: 6px;">
-                      <div class="progress-bar <%= dim_bar %>" role="progressbar"
-                           style="width: <%= dim_score %>%;"></div>
-                    </div>
-                    <div class="text-muted" style="font-size: 0.78rem;"><%= dim["rationale"] %></div>
-                  </div>
-                <% end %>
+                <% can_run = report.owner.present? && policy(report.owner).update? %>
+                <%= render "investors/widgets/score_display",
+                           report:        report,
+                           scoring_agent: support_agent,
+                           investor:      report.owner,
+                           can_run:       can_run %>
               <% else %>
-                <span class="text-danger small"><%= report.json_fields["error"] %></span>
+                <div class="p-3">
+                  <span class="text-danger small"><%= report.json_fields["error"] %></span>
+                </div>
               <% end %>
             </td>
           </tr>
