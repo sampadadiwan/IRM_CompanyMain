@@ -1963,6 +1963,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_200001) do
     t.bigint "import_upload_id"
     t.json "json_fields"
     t.date "last_close_date"
+    t.text "lp_commentary"
     t.bigint "master_fund_id"
     t.string "name"
     t.bigint "orignal_id"
