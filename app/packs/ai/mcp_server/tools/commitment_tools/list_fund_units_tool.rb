@@ -4,18 +4,21 @@
 # Queries Pundit-scoped FundUnit directly, scoped to the given commitment_id.
 class ListFundUnitsTool < ApplicationMcpTool
   description "List fund units for a specific capital commitment. " \
+              "Construct a query hash using available attributes and predicates. " \
               "Attributes: unit_type, quantity, price, amount, as_of_date. " \
-              "Always pass sort and limit for efficiency."
+              "Predicates: _cont (contains), _eq (equals), _gt, _lt, _gteq (>=), _lteq (<=). " \
+              "Use list_capital_commitments first to find commitment IDs. " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'as_of_date desc', limit: 10."
 
   input_schema(
     properties: {
-      commitment_id: { type: "integer", description: "The ID of the capital commitment" },
-      query: { type: "object", description: "Ransack filter hash, e.g. { unit_type_eq: 'Class A' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'as_of_date desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on (e.g. 'amount', 'quantity')" },
-      group_by_field: { type: "string", description: "Field to group results by (e.g. 'unit_type')" }
+      commitment_id: { type: "integer", description: "The ID of the capital commitment. Use list_capital_commitments to find IDs." },
+      query: { type: "object", description: "Ransack query hash, e.g. { unit_type_eq: 'Class A', as_of_date_gteq: '2025-01-01' }" },
+      sort: { type: "string", description: "Sort string, e.g. 'as_of_date desc'. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'amount', 'quantity'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'unit_type'" }
     },
     required: ["commitment_id"]
   )

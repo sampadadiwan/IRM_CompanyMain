@@ -5,11 +5,12 @@
 # @see FundAssistantDataManager#get_fund_details
 class GetFundDetailsTool < ApplicationMcpTool
   description "Get details of a specific fund including name, currency, close dates, " \
-              "tracking currency amounts, and master fund info."
+              "tracking currency amounts, committed/collected/distributed totals, and master fund info. " \
+              "Use list_funds first to find the fund_id, then call this for full details."
 
   input_schema(
     properties: {
-      fund_id: { type: "integer", description: "The ID of the fund" }
+      fund_id: { type: "integer", description: "The ID of the fund. Use list_funds to find fund IDs by name: query: { name_cont: 'fund name' }" }
     },
     required: ["fund_id"]
   )

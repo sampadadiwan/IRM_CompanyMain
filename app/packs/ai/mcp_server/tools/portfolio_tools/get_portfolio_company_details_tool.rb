@@ -2,12 +2,13 @@
 
 # MCP tool to get detailed information about a specific portfolio company.
 class GetPortfolioCompanyDetailsTool < ApplicationMcpTool
-  description "Get details for a specific portfolio company. Returns name, category, email, " \
-              "tags, city, amount invested, and last interaction date."
+  description "Get detailed information about a specific portfolio company. Returns name, category, email, " \
+              "tags, city, amount invested, and last interaction date. " \
+              "Use list_portfolio_companies first to find the portfolio_company_id by name, then call this for full details."
 
   input_schema(
     properties: {
-      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company" }
+      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company. Use list_portfolio_companies with { investor_name_cont: 'name' } to find IDs." }
     },
     required: ["portfolio_company_id"]
   )

@@ -3,19 +3,22 @@
 # MCP tool to list capital distributions with filtering, sorting, and aggregation.
 # Delegates to {FundAssistantDataManager#list_capital_distributions}.
 class ListCapitalDistributionsTool < ApplicationMcpTool
-  description "List capital distributions with optional filtering, sorting, and aggregation. " \
+  description "List capital distributions with optional Ransack filtering, ordering, and limiting. " \
+              "Construct a query hash using available attributes and predicates. " \
               "Attributes: title, distribution_date, approved, completed, distribution_on, gross_amount, income, reinvestment. " \
-              "Always pass sort and limit for efficiency."
+              "Predicates: _cont (contains), _eq (equals), _gt, _lt, _gteq (>=), _lteq (<=). " \
+              "Use list_funds first to find fund IDs, then filter distributions by fund_ids. " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'latest' or 'largest' requests. Example: sort: 'distribution_date desc', limit: 5."
 
   input_schema(
     properties: {
-      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs" },
-      query: { type: "object", description: "Ransack filter hash, e.g. { distribution_date_gteq: '2024-01-01' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'distribution_date desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs. Use list_funds to find IDs by name." },
+      query: { type: "object", description: "Ransack query hash, e.g. { distribution_date_gteq: '2024-01-01', approved_eq: true }" },
+      sort: { type: "string", description: "Sort string, e.g. 'distribution_date desc', 'gross_amount_cents desc'. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 5 or 10) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'gross_amount', 'income', 'reinvestment'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'title', 'approved'" }
     }
   )
 

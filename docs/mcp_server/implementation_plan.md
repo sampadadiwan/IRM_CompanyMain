@@ -483,12 +483,34 @@ Each tool:
 
 ---
 
-## 7. Open Decisions
+## 7. Current Status (as of 2026-05-21)
 
-<!-- To be filled as discussions progress -->
+### Completed
+- All 23 tools implemented and working across 6 domains
+- Two-level entity governance: `enable_mcp` (CapHive admin) + `mcp_enabled` (entity admin)
+- Doorkeeper OAuth admin UI restricted to `super`/`support` roles
+- Staging testing with Claude.ai — multiple team members connected successfully
+- Local testing via ngrok — working with Claude.ai
+- OAuth multi-tenancy design documented (`docs/mcp_server/oauth_multi_tenancy_design.md`)
+- User guide created with setup steps for admin + entity admin + end users
+
+### In Progress
+- **Tool description improvements** — Current descriptions lack usage hints for external AI clients (no default limit guidance, no name search hints, no workflow chain guidance). Claude.ai was observed fetching all portfolio companies without filters when the description didn't guide it. RubyLLM tool descriptions are significantly richer and should be used as reference.
+- **Default limits** — List tools need a default limit (25-50) when AI client omits `limit` param
+
+### Blocked / Deferred
+- `reuse_access_token` must be disabled before production — confirmed problematic (prevents account switching, token revocation from client side ineffective)
+- Per-role tool filtering — `accessible_by?` returns `true` for all tools; override per tool in future phase
+- Token management UI — entity admins need to view/revoke tokens without Rails console access
+- Mobile Claude.ai — MCP connectors not supported on mobile (desktop-only)
+
+---
+
+## 8. Open Decisions
 
 1. **LP tool scoping** — Should LP tools show data across all their commitments, or should they pick a fund first? Current leaning: across all commitments (same as LP portal).
 2. **Document analysis via MCP** — Should we expose `analyze_documents` (which calls our LLM internally)? This means an external AI calling our AI. Could be useful but adds cost and latency. Current leaning: include it, but as a separate "premium" tool that entities can disable.
 3. **Write operations** — Deferred to Phase 5. Read-only for now.
 4. **OAuth scopes** — Single "read" scope for now vs. fine-grained per domain. Current leaning: single scope, simpler.
 5. **Rate limiting** — Per-token? Per-entity? Per-tool? Current leaning: per-token with entity-level override.
+6. **Compound tools** — Consider adding high-level tools (e.g., `get_portfolio_company_overview`) that chain multiple data lookups in one call, similar to how the PortfolioAssistant chains tools internally. This would improve the external AI experience for common queries.

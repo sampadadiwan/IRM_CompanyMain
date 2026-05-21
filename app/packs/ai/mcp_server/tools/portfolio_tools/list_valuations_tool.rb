@@ -3,18 +3,23 @@
 # MCP tool to list valuations for a portfolio company.
 class ListValuationsTool < ApplicationMcpTool
   description "List valuations for a portfolio company. Returns valuation date, per-share value, " \
-              "currency, instrument, and synthetic flag. Use sort 'valuation_date desc' for latest first."
+              "currency, instrument, and synthetic flag. " \
+              "Construct a query hash using available attributes and predicates. " \
+              "Attributes: valuation_date, per_share_value_cents, currency, synthetic. " \
+              "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
+              "Use list_portfolio_companies first to find the portfolio_company_id by name. " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'valuation_date desc', limit: 10."
 
   input_schema(
     properties: {
-      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company" },
-      scope: { type: "string", description: "Scope filter, e.g. 'with_synthetic' to include synthetic valuations" },
-      query: { type: "object", description: "Ransack filter hash, e.g. { valuation_date_gteq: '2025-01-01', currency_eq: 'USD' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'valuation_date desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company. Use list_portfolio_companies with { investor_name_cont: 'name' } to find IDs." },
+      scope: { type: "string", description: "Filter by a predefined scope: 'with_synthetic' to include synthetic valuations" },
+      query: { type: "object", description: "Ransack query hash, e.g. { valuation_date_gteq: '2025-01-01', currency_eq: 'USD' }" },
+      sort: { type: "string", description: "Sort string, e.g. 'valuation_date desc'. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'per_share_value_cents'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'currency'" }
     },
     required: ["portfolio_company_id"]
   )

@@ -2,18 +2,22 @@
 
 # MCP tool to list portfolio companies with filtering, sorting, and aggregation.
 class ListPortfolioCompaniesTool < ApplicationMcpTool
-  description "List portfolio companies. Returns company name, category, city, tags. " \
-              "Supports filtering via Ransack query predicates (_cont, _eq, _gt, _lt), sorting, and aggregation."
+  description "List all portfolio companies with optional Ransack filtering, ordering, and limiting. " \
+              "START HERE for portfolio data — use this tool first to discover portfolio company IDs, then drill into investments, KPIs, valuations, etc. " \
+              "Construct a query hash using available attributes and predicates. " \
+              "Attributes: investor_name, city, tag_list. " \
+              "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Examples: sort: 'investor_name asc', limit: 10."
 
   input_schema(
     properties: {
-      scope: { type: "string", description: "Predefined scope filter, e.g. 'portfolio_companies'" },
-      query: { type: "object", description: "Ransack filter hash, e.g. { investor_name_cont: 'Acme' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'investor_name asc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
+      scope: { type: "string", description: "Filter by a predefined scope: 'portfolio_companies', 'not_portfolio_companies', 'advisors', 'rms'" },
+      query: { type: "object", description: "Ransack query hash, e.g. { investor_name_cont: 'Acme', tag_list_cont: 'Tech' }. Combine attribute + predicate." },
+      sort: { type: "string", description: "Sort string, e.g. 'investor_name asc'. Maps to Ransack `s`. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10 or 25) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
       aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'city', 'tag_list'" }
     }
   )
 

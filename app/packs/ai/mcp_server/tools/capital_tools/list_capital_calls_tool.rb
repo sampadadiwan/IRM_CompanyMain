@@ -3,20 +3,22 @@
 # MCP tool to list capital calls with filtering, sorting, and aggregation.
 # Delegates to {FundAssistantDataManager#list_capital_calls}.
 class ListCapitalCallsTool < ApplicationMcpTool
-  description "List capital calls with optional filtering, sorting, and aggregation. " \
+  description "List capital calls with optional Ransack filtering, ordering, and limiting. " \
+              "Construct a query hash using available attributes and predicates. " \
               "Attributes: name, due_date, approved, call_date, status, verified, call_amount, collected_amount, percentage_called. " \
-              "Predicates: _cont, _eq, _gt, _lt, _gteq, _lteq. " \
-              "Always pass sort and limit for efficiency."
+              "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
+              "Use list_funds first to find fund IDs, then filter calls by fund_ids. " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'due_date desc', limit: 5."
 
   input_schema(
     properties: {
-      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs" },
-      query: { type: "object", description: "Ransack filter hash, e.g. { due_date_gteq: '2024-01-01' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'due_date desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs. Use list_funds to find IDs by name." },
+      query: { type: "object", description: "Ransack query hash, e.g. { due_date_gteq: '2024-01-01', status_eq: 'active' }. Combine attribute + predicate." },
+      sort: { type: "string", description: "Sort string, e.g. 'due_date desc', 'call_amount_cents desc'. Maps to Ransack `s`. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 5 or 10) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'call_amount', 'collected_amount'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'status'" }
     }
   )
 

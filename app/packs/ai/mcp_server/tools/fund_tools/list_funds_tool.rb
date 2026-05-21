@@ -4,20 +4,22 @@
 # Delegates to {FundAssistantDataManager#list_funds} with Ransack filtering, sorting, and aggregation.
 class ListFundsTool < ApplicationMcpTool
   description "List all funds with committed, collected and distribution amounts. " \
-              "Supports filtering, sorting, and aggregation. " \
+              "START HERE — use this tool first to discover fund IDs, then drill into capital calls, commitments, etc. " \
+              "Construct a query hash using available attributes and Ransack predicates. " \
               "Attributes: name, currency, tracking_currency, category, tag_list, unit_types, first_close_date, last_close_date, start_date. " \
               "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
-              "Hint: For totals, use the funds data directly; do not compute using commitments, remittances or distributions."
+              "Hint: For totals, use the funds data directly; do not compute using commitments, remittances or distributions as committed, collected, and distribution amounts are already present in the fund. " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'largest', or 'most recent' requests. Examples: sort: 'committed_amount_cents desc', limit: 10."
 
   input_schema(
     properties: {
-      scope: { type: "string", description: "Filter: 'feeder_funds' or 'master_funds'" },
-      query: { type: "object", description: "Ransack filter hash, e.g. { name_cont: 'Venture', currency_eq: 'USD' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'name asc', 'committed_amount_cents desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      scope: { type: "string", description: "Filter by a predefined scope. Available scopes: 'feeder_funds', 'master_funds'" },
+      query: { type: "object", description: "Ransack query hash, e.g. { name_cont: 'Venture', currency_eq: 'USD' }. Combine attribute + predicate." },
+      sort: { type: "string", description: "Sort string, e.g. 'name asc', 'committed_amount_cents desc'. Maps to Ransack `s`. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10 or 25) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'committed_amount'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'currency', 'category'" }
     }
   )
 

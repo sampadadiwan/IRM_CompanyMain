@@ -5,11 +5,12 @@
 class GetPortfolioCompanySnapshotTool < ApplicationMcpTool
   description "Get a high-level snapshot of a portfolio company. Returns total amount invested, " \
               "current fair market value, latest valuation (date, per-share value, currency), " \
-              "and return multiples (TVPI, RVPI). Use this for a quick executive summary."
+              "and return multiples (TVPI, RVPI). Use this for a quick executive summary before drilling into details. " \
+              "Use list_portfolio_companies first to find the portfolio_company_id by name."
 
   input_schema(
     properties: {
-      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company" }
+      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company. Use list_portfolio_companies with { investor_name_cont: 'name' } to find IDs." }
     },
     required: ["portfolio_company_id"]
   )

@@ -4,19 +4,20 @@
 # Enforces at least one filter to prevent unbounded queries on large datasets.
 # Delegates to {FundAssistantDataManager#list_capital_distribution_payments}.
 class ListCapitalDistributionPaymentsTool < ApplicationMcpTool
-  description "List capital distribution payments. At least one filter (fund_ids, folio_ids, or scope) must be provided. " \
-              "Always pass sort and limit for efficiency."
+  description "List capital distribution payments (individual payment records for distributions to investors). " \
+              "REQUIRED: At least one filter (fund_ids, folio_ids, or scope) must be provided — unfiltered queries are rejected. " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'payment_date desc', limit: 10."
 
   input_schema(
     properties: {
-      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs" },
-      folio_ids: { type: "array", items: { type: "string" }, description: "Filter by folio IDs" },
-      scope: { type: "string", description: "Scope: 'completed', 'incomplete', 'notification_sent', or 'notification_not_sent'" },
-      sort: { type: "string", description: "Sort string, e.g. 'payment_date desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs. Use list_funds to find IDs by name." },
+      folio_ids: { type: "array", items: { type: "string" }, description: "Filter by folio IDs. Use list_capital_commitments to find folio IDs." },
+      scope: { type: "string", description: "Filter by a predefined scope: 'completed', 'incomplete', 'notification_sent', or 'notification_not_sent'" },
+      sort: { type: "string", description: "Sort string, e.g. 'payment_date desc'. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'net_payable', 'gross_payable'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'payment_date', 'investor_name'" }
     }
   )
 

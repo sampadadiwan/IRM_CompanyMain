@@ -4,11 +4,13 @@
 class GetCapTableTool < ApplicationMcpTool
   description "Generate a capitalization table for a portfolio company. Returns shareholding data " \
               "grouped by investor name (default), funding round, or category. " \
-              "Optionally filter by specific funding rounds."
+              "Optionally filter by specific funding rounds. " \
+              "Use list_portfolio_companies first to find the portfolio_company_id by name. " \
+              "For detailed individual investments, use get_investments_in_cap_table instead."
 
   input_schema(
     properties: {
-      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company" },
+      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company. Use list_portfolio_companies with { investor_name_cont: 'name' } to find IDs." },
       funding_rounds: {
         type: "array",
         items: { type: "string" },

@@ -4,21 +4,24 @@
 # Enforces at least one filter to prevent unbounded queries on large datasets.
 # Delegates to {FundAssistantDataManager#list_capital_remittances}.
 class ListCapitalRemittancesTool < ApplicationMcpTool
-  description "List capital remittances. At least one filter (fund_ids, folio_ids, scope, or query) must be provided. " \
+  description "List capital remittances (investor payments toward capital calls). " \
+              "REQUIRED: At least one filter (fund_ids, folio_ids, scope, or query) must be provided — unfiltered queries are rejected. " \
+              "Construct a query hash using available attributes and predicates. " \
               "Attributes: folio_id, investor_name, payment_date, remittance_date, call_amount, collected_amount. " \
-              "Always pass sort and limit for efficiency."
+              "Predicates: _cont (contains), _eq (equals), _gt, _lt, _gteq (>=), _lteq (<=). " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'latest', 'largest', or 'top' requests. Example: sort: 'payment_date desc', limit: 10."
 
   input_schema(
     properties: {
-      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs" },
-      folio_ids: { type: "array", items: { type: "string" }, description: "Filter by folio IDs" },
-      scope: { type: "string", description: "Scope: 'paid', 'pending', 'verified', or 'unverified'" },
-      query: { type: "object", description: "Ransack filter hash" },
-      sort: { type: "string", description: "Sort string, e.g. 'payment_date desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs. Use list_funds to find IDs by name." },
+      folio_ids: { type: "array", items: { type: "string" }, description: "Filter by folio IDs. Use list_capital_commitments to find folio IDs." },
+      scope: { type: "string", description: "Filter by a predefined scope: 'paid', 'pending', 'verified', or 'unverified'" },
+      query: { type: "object", description: "Ransack query hash, e.g. { investor_name_cont: 'Smith', payment_date_gteq: '2024-01-01' }" },
+      sort: { type: "string", description: "Sort string, e.g. 'payment_date desc'. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'call_amount', 'collected_amount'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'investor_name', 'folio_id'" }
     }
   )
 

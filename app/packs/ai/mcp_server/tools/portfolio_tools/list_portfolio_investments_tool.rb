@@ -2,24 +2,27 @@
 
 # MCP tool to list portfolio investments (buys, sells, conversions) for a company.
 class ListPortfolioInvestmentsTool < ApplicationMcpTool
-  description "List portfolio investments for a company. Returns fund, instrument, dates, amounts, " \
-              "quantities, FMV, gains, and proforma status. Filter by transaction type using scope: " \
-              "'buys', 'sells', 'conversions', 'distributed', 'not_distributed', 'proforma', 'non_proforma'."
+  description "List portfolio investments (buys and sells) for a portfolio company. " \
+              "Construct a query hash using available attributes and predicates. " \
+              "Attributes: investment_date, amount_cents, fmv_cents, gain_cents, quantity, notes, startup, proforma. " \
+              "Predicates: _cont (contains), _eq (equals), _gt (greater than), _lt (less than), _gteq (>=), _lteq (<=). " \
+              "Use list_portfolio_companies first to find the portfolio_company_id by name. " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency, especially for 'top', 'latest', or 'largest' requests. Example: sort: 'investment_date desc', limit: 10."
 
   input_schema(
     properties: {
-      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company" },
+      portfolio_company_id: { type: "integer", description: "The ID of the portfolio company. Use list_portfolio_companies with { investor_name_cont: 'name' } to find IDs." },
       scope: {
         type: "string",
         description: "Filter by transaction type: 'buys', 'sells', 'conversions', 'distributed', " \
                      "'not_distributed', 'proforma', 'non_proforma'"
       },
-      query: { type: "object", description: "Ransack filter hash, e.g. { investment_date_gteq: '2025-01-01' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'investment_date desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      query: { type: "object", description: "Ransack query hash, e.g. { investment_date_gteq: '2025-01-01', notes_cont: 'initial' }" },
+      sort: { type: "string", description: "Sort string, e.g. 'investment_date desc', 'amount_cents desc'. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'amount', 'fmv', 'gain'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'status', 'portfolio_company_name'" }
     },
     required: ["portfolio_company_id"]
   )

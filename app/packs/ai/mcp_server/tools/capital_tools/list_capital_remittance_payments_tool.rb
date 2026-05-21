@@ -3,20 +3,23 @@
 # MCP tool to list capital remittance payments with filtering, sorting, and aggregation.
 # Delegates to {FundAssistantDataManager#list_capital_remittance_payments}.
 class ListCapitalRemittancePaymentsTool < ApplicationMcpTool
-  description "List capital remittance payments. Can be filtered by fund_ids or folio_ids. " \
+  description "List capital remittance payments (individual payment records for remittances). " \
+              "Can be filtered by fund_ids, folio_ids, or a Ransack query. " \
+              "Construct a query hash using available attributes and predicates. " \
               "Attributes: payment_date, reference_no, amount, folio_amount, tracking_amount. " \
-              "Always pass sort and limit for efficiency."
+              "Predicates: _cont (contains), _eq (equals), _gt, _lt, _gteq (>=), _lteq (<=). " \
+              "Ordering & Limiting: ALWAYS pass `sort` and `limit` for efficiency. Example: sort: 'payment_date desc', limit: 10."
 
   input_schema(
     properties: {
-      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs" },
-      folio_ids: { type: "array", items: { type: "string" }, description: "Filter by folio IDs" },
-      query: { type: "object", description: "Ransack filter hash, e.g. { payment_date_gteq: '2024-01-01' }" },
-      sort: { type: "string", description: "Sort string, e.g. 'payment_date desc'" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on" },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs. Use list_funds to find IDs by name." },
+      folio_ids: { type: "array", items: { type: "string" }, description: "Filter by folio IDs. Use list_capital_commitments to find folio IDs." },
+      query: { type: "object", description: "Ransack query hash, e.g. { payment_date_gteq: '2024-01-01', reference_no_cont: 'REF' }" },
+      sort: { type: "string", description: "Sort string, e.g. 'payment_date desc'. ALWAYS provide for efficiency." },
+      limit: { type: "integer", description: "Max records to return. ALWAYS provide (e.g. 10) to avoid fetching all records." },
+      aggregate: { type: "string", description: "Perform an aggregation: 'count', 'sum', or 'group_by'" },
+      aggregate_field: { type: "string", description: "Field to aggregate on, e.g. 'amount'" },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'payment_date'" }
     }
   )
 

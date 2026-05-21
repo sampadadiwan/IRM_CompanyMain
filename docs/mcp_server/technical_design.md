@@ -62,10 +62,11 @@ A Rails-native MCP (Model Context Protocol) server that exposes CapHive fund man
 
 | AI Client | Transport | Auth Method | Status |
 |---|---|---|---|
-| Claude.ai (web) | Streamable HTTP | OAuth 2.1 + PKCE | **Working** |
+| Claude.ai (web) | Streamable HTTP | OAuth 2.1 + PKCE | **Working** — tested on staging (2026-05-18) and local via ngrok (2026-05-21) |
+| Claude.ai (mobile) | Streamable HTTP | OAuth 2.1 + PKCE | **Not supported** — "Couldn't reach MCP server" error; MCP connectors are desktop-only |
 | Claude Desktop | Streamable HTTP | OAuth 2.1 + PKCE | Untested |
 | Claude Code / CLI | Streamable HTTP | OAuth 2.1 + PKCE | Untested |
-| ChatGPT (Connector) | Streamable HTTP | OAuth 2.1 + PKCE | OAuth flow blocked (ngrok cookie issue) |
+| ChatGPT (Connector) | Streamable HTTP | OAuth 2.1 + PKCE | Untested on staging |
 | Gemini Enterprise | Streamable HTTP | OAuth 2.1 + PKCE | Untested |
 | Gemini CLI | Streamable HTTP | OAuth 2.1 + PKCE | Untested |
 
@@ -974,8 +975,11 @@ end
 |---|----------|-------|-----------------|
 | 1 | ~~High~~ | ~~`admin_authenticator` in `doorkeeper.rb` allows any logged-in user to access `/oauth/applications`~~ | **RESOLVED** — restricted to `super`/`support` roles, matching `Admin::ApplicationController#authenticate_admin`. |
 | 2 | High | `ListFundUnitsTool` calls private `perform_aggregation` via `.send` on `FundAssistantDataManager` — no public `list_fund_units` method exists on the data manager. All other 22 tools delegate to public methods; this is the only one reaching into internals. Fix: add a public `list_fund_units` method to `FundAssistantDataManager`. | Works correctly; encapsulation cleanup for a follow-up PR. |
-| 3 | High | `access_token_expires_in 30.days` + `reuse_access_token` — wide exposure window for token theft. Consider reducing to `7.days` with refresh token rotation, or disabling `reuse_access_token` so each authorization creates a fresh token. AI clients (Claude.ai) support transparent refresh. | Acceptable for staging; must revisit before production deploy. |
+| 3 | High | `access_token_expires_in 30.days` + `reuse_access_token` — wide exposure window for token theft. **Confirmed problematic during staging testing:** `reuse_access_token` prevents users from switching accounts (Doorkeeper reuses existing token for same user+app, skipping consent screen), and revoked tokens from Claude.ai side don't invalidate because Doorkeeper reissues them. **Recommendation:** Disable `reuse_access_token` and reduce to `7.days` with refresh token rotation before production. AI clients (Claude.ai) support transparent refresh. | Acceptable for staging; must fix before production deploy. |
 | 4 | Medium | `mcp_allowed_roles` and `mcp_allowed_clients` stored as JSON strings in `string` columns — should be native `json` columns | Works correctly; schema change deferred to avoid migration churn. |
 | 5 | Medium | `Doorkeeper::Application.all` queried in `_form_fields.html.erb` view — should be preloaded in controller | Small table; optimize when OAuth app count grows. |
 | 6 | Low | Boilerplate duplication across 17 tools (query normalization, response building) — `ApplicationMcpTool` could provide helpers | Explicit code is fine; refactor when adding more tools. |
 | 7 | Low | `show.html.erb` MCP settings rows use inconsistent indentation | Cosmetic; fix in next touch. |
+| 8 | High | MCP tool descriptions lack usage hints for external AI clients — no default limit guidance, no "search by name" hints, no workflow chain guidance (e.g., "list first to get ID, then call detail tool"). Confirmed during staging testing: Claude.ai fetched all portfolio companies without filters when description didn't guide it. RubyLLM tool descriptions (used by embedded assistants) are significantly richer. | Next improvement — draft improved descriptions for all 23 tools. |
+| 9 | Medium | `ListPortfolioCompaniesTool` — `scope` parameter check uses `Investor.respond_to?(scope)` instead of `relation.respond_to?(scope)`, so custom scopes are silently ignored. | Low impact — filtering works via Ransack `query`; fix in follow-up. |
+| 10 | Low | No default `limit` on list tools — when AI client omits `limit`, all records are returned. Should default to 25-50 for safety. | Implement alongside tool description improvements. |

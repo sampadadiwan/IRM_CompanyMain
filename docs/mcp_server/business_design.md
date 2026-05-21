@@ -186,26 +186,37 @@ Both serve different user needs. The FM Assistant is our product differentiator.
 
 ## Rollout Plan
 
-### Phase 1: Internal Demo (1 day)
+### Phase 1: Internal Demo (1 day) — DONE
 - Single tool (list_funds) with hardcoded entity
-- Test with Claude Code (already done)
+- Tested with Claude Code
 - Demo to team
 
-### Phase 2: Fund Domain — Staging (1 week)
+### Phase 2: Fund Domain — Staging (1 week) — DONE
 - All fund-related tools (funds, capital calls, commitments, distributions, remittances, fund ratios)
-- OAuth 2.0 authentication (Doorkeeper gem) + entity resolution
-- Deploy to staging server
-- Test with Claude Desktop + ChatGPT Connector + Gemini CLI
+- OAuth 2.1 authentication with PKCE (Doorkeeper gem) + entity resolution
+- Deployed to staging server
+- Tested with Claude.ai on staging (2026-05-18)
 
-### Phase 3: Full Domain Coverage (2 weeks)
-- Portfolio companies, investments, valuations, KPIs, documents, cap table
-- Streamable HTTP transport (required for ChatGPT + Gemini Enterprise)
+### Phase 3: Full Domain Coverage (2 weeks) — DONE
+- All 23 tools across 6 domains: funds, capital, portfolio, cap table, documents, commitments
+- Streamable HTTP transport via official `mcp` gem (v0.15.0)
+- Two-level entity governance: CapHive admin billing gate + entity admin self-serve config
+- Doorkeeper OAuth admin restricted to super/support roles
+- Multiple team members connected and tested on staging (2026-05-19)
+- Local testing via ngrok confirmed working (2026-05-21)
 
-### Phase 4: Production (1 week)
-- Deploy to production
+### Phase 3.5: Tool Description Improvements — IN PROGRESS
+- Improve MCP tool descriptions with usage hints, default limits, workflow guidance
+- Add default limit (25-50) to all list tools
+- Align with richer RubyLLM tool descriptions used by embedded assistants
+- Consider compound tools for common multi-step queries
+
+### Phase 4: Production Readiness (1 week)
+- Disable `reuse_access_token` and reduce token lifetime to 7 days
 - OAuth token management UI (view/revoke active tokens)
 - Audit logging dashboard
 - Rate limiting
+- Per-role tool filtering (override `accessible_by?` in tool classes)
 - Documentation for end users (connection guides per AI client)
 
 ### Phase 5: Advanced (Future)
@@ -216,13 +227,13 @@ Both serve different user needs. The FM Assistant is our product differentiator.
 
 ---
 
-## Key Decisions Needed
+## Key Decisions Made
 
-1. **Who gets MCP access?** — All fund managers? Admin-provisioned? Enterprise tier only?
-2. **Read-only or read-write?** — Recommend read-only initially, write operations in Phase 5
-3. **OAuth scopes** — Single "read" scope? Or fine-grained per domain (funds:read, portfolio:read)?
-4. **Hosting** — Same Rails app (mounted at /mcp)? Separate service? Staging first?
-5. **Pricing** — Free with platform? Premium add-on? Usage-based?
+1. **Who gets MCP access?** — Two-level governance: CapHive admin enables per-entity (billing gate), entity admin configures roles and client restrictions (self-serve). Not all entities get it by default — it's a chargeable feature.
+2. **Read-only or read-write?** — Read-only for Phases 1-4. Write operations in Phase 5.
+3. **OAuth scopes** — Single "read" scope. Simpler, sufficient for read-only access.
+4. **Hosting** — Same Rails app, mounted at `POST /mcp`. No separate service.
+5. **OAuth Client ID model** — One Client ID per AI client (Claude.ai, ChatGPT, Gemini), shared across all tenants. Tenant isolation via token + entity governance. See `docs/mcp_server/oauth_multi_tenancy_design.md` for detailed rationale.
 
 ---
 

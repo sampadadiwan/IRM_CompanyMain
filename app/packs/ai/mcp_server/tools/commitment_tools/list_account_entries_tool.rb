@@ -4,21 +4,23 @@
 # Aggregation is mandatory per data manager contract.
 # Delegates to {FundAssistantDataManager#list_account_entries}.
 class ListAccountEntriesTool < ApplicationMcpTool
-  description "List account entries (ALWAYS aggregated). Only returns aggregated data (sum, count, group_by). " \
+  description "List account entries (ALWAYS aggregated). This tool ONLY returns aggregated data (sum, count, group_by). " \
               "Individual records are never returned — aggregation is mandatory. " \
-              "Attributes: name, entry_type, reporting_date, period, folio_id, amount, cumulative, generated, rule_for."
+              "Attributes for filtering/grouping: name, entry_type, reporting_date, period, folio_id, amount, cumulative, generated, rule_for. " \
+              "Use list_funds to find fund IDs, or list_capital_commitments to find folio IDs. " \
+              "Ordering: Use `sort` for grouped results. Example: aggregate: 'group_by', group_by_field: 'entry_type', aggregate_field: 'amount', sort: 'total_cents desc'."
 
   input_schema(
     properties: {
-      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs" },
-      folio_ids: { type: "array", items: { type: "string" }, description: "Filter by folio IDs" },
-      scope: { type: "string", description: "Scope: 'cumulative', 'not_cumulative', 'generated', 'fund_entries', 'reporting', 'accounting', 'for_folios', 'for_portfolio_investments', 'for_portfolio_companies'" },
-      query: { type: "object", description: "Ransack filter hash" },
-      sort: { type: "string", description: "Sort string for grouped results" },
-      limit: { type: "integer", description: "Limit number of results" },
-      aggregate: { type: "string", description: "REQUIRED. Aggregation: 'count', 'sum', or 'group_by'" },
-      aggregate_field: { type: "string", description: "Field to aggregate on. Defaults to 'amount'." },
-      group_by_field: { type: "string", description: "Field to group results by" }
+      fund_ids: { type: "array", items: { type: "integer" }, description: "Filter by fund IDs. Use list_funds to find IDs by name." },
+      folio_ids: { type: "array", items: { type: "string" }, description: "Filter by folio IDs. Use list_capital_commitments to find folio IDs." },
+      scope: { type: "string", description: "Filter by a predefined scope: 'cumulative', 'not_cumulative', 'generated', 'fund_entries', 'reporting', 'accounting', 'for_folios', 'for_portfolio_investments', 'for_portfolio_companies'" },
+      query: { type: "object", description: "Ransack query hash, e.g. { entry_type_eq: 'distribution', reporting_date_gteq: '2025-01-01' }" },
+      sort: { type: "string", description: "Sort string for results, e.g. 'total_cents desc'." },
+      limit: { type: "integer", description: "Max records to return for grouped results." },
+      aggregate: { type: "string", description: "REQUIRED. Perform an aggregation: 'count', 'sum', or 'group_by'. Defaults to 'sum'." },
+      aggregate_field: { type: "string", description: "Field to aggregate on. Defaults to 'amount'. Examples: 'amount'." },
+      group_by_field: { type: "string", description: "Field to group results by, e.g. 'entry_type', 'name', 'period'" }
     },
     required: ["aggregate"]
   )

@@ -5,11 +5,12 @@
 # which requires a pre-bound commitment instance).
 class GetCommitmentDetailsTool < ApplicationMcpTool
   description "Get details of a specific capital commitment including investor, fund, " \
-              "committed/collected/distributed amounts, onboarding status, and fund close."
+              "committed/collected/distributed amounts, onboarding status, and fund close. " \
+              "Use list_capital_commitments first to find commitment IDs by investor name or folio ID."
 
   input_schema(
     properties: {
-      commitment_id: { type: "integer", description: "The ID of the capital commitment" }
+      commitment_id: { type: "integer", description: "The ID of the capital commitment. Use list_capital_commitments with { investor_name_cont: 'name' } to find IDs." }
     },
     required: ["commitment_id"]
   )
