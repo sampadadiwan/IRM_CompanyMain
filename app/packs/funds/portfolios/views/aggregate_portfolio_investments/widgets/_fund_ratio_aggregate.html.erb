@@ -1,90 +1,277 @@
 <%
+  # ─────────────────────────────────────────────────────────────────────────────
+  # _fund_ratio_aggregate.html.erb
+  #
+  # Supports four computation scenarios driven by `display_mode`:
+  #
+  #   Scenario 1 — funds only, display_mode:"aggregate"
+  #     Aggregate ratios (XIRR/MOIC/RVPI/DPI/TVPI…) across all companies in
+  #     those funds. owner_type = "Fund".
+  #
+  #   Scenario 2 — funds + companies, display_mode:"aggregate"
+  #     Same aggregate ratios but scoped to the selected companies only.
+  #     owner_type = "Fund".
+  #
+  #   Scenario 3 — funds + companies, display_mode:"per_company"
+  #     Per-company IRR/MOIC/Value To Cost. owner_type = "Investor".
+  #     Each company's value is independent of the other selected companies.
+  #
+  #   Scenario 4 — funds + companies, display_mode:"both" (default when companies present)
+  #     Renders scenario 2 aggregate section first, then scenario 3 per-company
+  #     section. Each section independently shows "Generate" if no run exists.
+  #
+  # Key args:
+  #   display_mode          — "aggregate" | "per_company" | "both" (auto-detected)
+  #   fund_ids              — overrides @selected_fund_ids / @funds
+  #   investor_ids          — overrides @selected_investor_ids / @investors
+  #   aggregate_ratio_names — ratio names for the aggregate section (Fund owner)
+  #   company_ratio_names   — ratio names for the per-company section (Investor owner)
+  #   ratio_names           — shorthand sets both when display_mode is single
+  #   titles                — chart/card titles aligned to ratio_names
+  #   decimals              — decimal places (default 2)
+  #   show_chart / show_table / condensed / show_y_axis / hide_fund_name
+  #   chart_colors / negative_colors
+  #   end_date / scenario / scenarios — forwarded to ratio query
+  #   latest                — default true
+  # ─────────────────────────────────────────────────────────────────────────────
+
   args ||= {}
-  show_chart = args[:show_chart].nil? ? (args[:chart].nil? ? true : args[:chart].to_s != "false") : args[:show_chart].to_s != "false"
-  show_table = args[:show_table].nil? ? (args[:list].nil? ? true : args[:list].to_s != "false") : args[:show_table].to_s != "false"
-  condensed = args[:condensed].to_s == "true"
+
+  # Display options
+  show_chart     = args[:show_chart].nil? ? (args[:chart].nil? ? true : args[:chart].to_s != "false") : args[:show_chart].to_s != "false"
+  show_table     = args[:show_table].nil? ? (args[:list].nil? ? true : args[:list].to_s != "false") : args[:show_table].to_s != "false"
+  condensed      = args[:condensed].to_s == "true"
   hide_fund_name = args[:hide_fund_name].to_s == "true"
-  show_y_axis = args[:show_y_axis].nil? ? true : args[:show_y_axis].to_s != "false"
-  ratio_names = args[:ratio_names] || ["IRR", "MOIC"]
-  chart_colors = args[:chart_colors] || ['green', 'DarkOrange']
-  negative_colors = args[:negative_colors] || ['orange', 'red']
+  show_y_axis    = args[:show_y_axis].nil? ? true : args[:show_y_axis].to_s != "false"
+  decimals       = (args[:decimals] || 2).to_i
+  chart_colors   = args[:chart_colors] || ['#2ecc71', '#e67e22', '#3498db', '#9b59b6']
+  negative_colors= args[:negative_colors] || ['orange', 'red']
+  latest         = args[:latest].to_s == "false" ? false : true
 
-  titles = args[:titles] || Array.new(ratio_names.size, tags ? tags.titleize : nil) || ["Gross Portfolio IRR", "Gross Portfolio MOIC"]
-  decimals = (args[:decimals] || 2).to_i
-  fund_ids ||= @selected_fund_ids.presence || @funds.pluck(:id).presence || []
-  owner_types = args[:owner_type] || ["Fund"]
-  owner_ids = args[:owner_id] || fund_ids
-  latest = args[:latest].to_s == "false" ? false : true
+  # Data sources
+  fund_ids     = args[:fund_ids].presence || local_assigns[:fund_ids].presence ||
+                 @selected_fund_ids.presence || @funds&.pluck(:id).presence || []
+  investor_ids = args[:investor_ids].presence || @selected_investor_ids.presence ||
+                 @investors&.pluck(:id).presence || []
 
-  fund_ratios = fund_ratio_list(
-    owner_ids, fund_ids,
-    owner_types: owner_types,
-    ratio_names: ratio_names,
-    latest: latest,
-    end_date: args[:end_date],
-    scenario: args[:scenario],
-    scenarios: args[:scenarios],
-    months: args[:months]
-  )
+  # Auto-detect display_mode:
+  #   - companies selected → "both" (aggregate + per-company)
+  #   - funds only         → "aggregate"
+  #   - can be overridden explicitly via args[:display_mode]
+  display_mode = args[:display_mode].presence ||
+                 (investor_ids.present? ? "both" : "aggregate")
 
-  scenario_list = args[:scenarios].present? ? args[:scenarios].split(",").map(&:strip) : nil
-  show_legend = args[:show_legend].nil? ? scenario_list.present? : args[:show_legend].to_s != "false"
+  # Ratio names per section — allow explicit override or fall back to sensible defaults
+  aggregate_ratio_names = args[:aggregate_ratio_names] ||
+                          (display_mode == "aggregate" ? args[:ratio_names] : nil) ||
+                          ["Gross Portfolio IRR", "MOIC", "RVPI", "DPI", "TVPI",
+                           "Portfolio Value to Cost", "Paid In to Committed Capital"]
+  company_ratio_names   = args[:company_ratio_names] ||
+                          (display_mode == "per_company" ? args[:ratio_names] : nil) ||
+                          ["IRR", "MOIC", "Value To Cost"]
 
-  ratios_by_name = {}
-  ratio_names.each do |ratio_name|
-    scoped = fund_ratios.where(name: ratio_name)
-    ratios_by_name[ratio_name] = if scenario_list.present?
-      scenario_list.map do |sc|
-        [sc, scoped.where(scenario: sc).first&.value.to_f.round(decimals)]
+  # Scenario/scenario filtering forwarded to the helper
+  scenario_filter  = args[:scenario]
+  scenarios_filter = args[:scenarios]
+  scenario_list    = scenarios_filter.present? ? scenarios_filter.split(",").map(&:strip) : nil
+  show_legend      = args[:show_legend].nil? ? scenario_list.present? : args[:show_legend].to_s != "false"
+
+  anchor_fund = @funds&.first || (fund_ids.first ? Fund.find_by(id: fund_ids.first) : nil)
+
+  # Smart label for aggregate ratios: single fund → fund name; multiple → "Multi-Fund (N funds)"
+  agg_owner_label = if fund_ids.size == 1
+    anchor_fund&.name || fund_ids.first.to_s
+  elsif fund_ids.size > 1
+    "Multi-Fund (#{fund_ids.size} funds)"
+  else
+    "Portfolio"
+  end
+
+  # ── Helper: build ratios_by_name hash from an AR relation ──────────────────
+  build_ratios_by_name = ->(ratios_rel, rnames, use_agg_label: false) do
+    rnames.each_with_object({}) do |ratio_name, h|
+      scoped = ratios_rel.where(name: ratio_name)
+      h[ratio_name] = if scenario_list.present?
+        scenario_list.map { |sc| [sc, scoped.where(scenario: sc).first&.value.to_f.round(decimals)] }
+      elsif use_agg_label
+        scoped.map { |fr| [agg_owner_label, fr.value.to_f.round(decimals)] }
+      else
+        scoped.map { |fr| [hide_fund_name ? "" : fr.owner&.name.to_s, fr.value.to_f.round(decimals)] }
       end
-    else
-      scoped.map { |fr| [hide_fund_name ? "" : fr.owner.name, fr.value.to_f.round(decimals)] }
     end
   end
+
+  # ── Helper: render a ratio section (chart + table cards) ───────────────────
+  # Called below for aggregate and/or per-company sections.
+  section_titles = args[:titles] || []
 %>
 
-<div class="row g-3 mb-3">
-  <% ratios_by_name.each_with_index do |(ratio_name, ratios_data), idx| %>
-    <% col_class = ratios_by_name.size == 1 ? 'col-12' : 'col-12 col-lg-6' %>
-    <div class="<%= col_class %>">
-      <div class="card h-100 shadow-sm">
-        <div class="card-body d-flex flex-column gap-3<%= ' p-2' if condensed %>">
-          <h3 class="<%= condensed ? 'h5' : 'h3' %> mb-0 text-gray-800"><%= titles[idx] || ratio_name %></h3>
+<%# ═══════════════════════════════════════════════════════════════════════════
+    AGGREGATE SECTION  (Scenarios 1 & 2 — owner_type "Fund")
+    Shows fund-level aggregate ratios. When companies are also selected the
+    calculation is scoped to those companies but the result is still one
+    number per ratio (not per-company).
+══════════════════════════════════════════════════════════════════════════════ %>
+<% if display_mode.in?(["aggregate", "both"]) %>
+  <%
+    aggregate_ratios = multi_fund_cross_portfolio_ratios(
+      fund_ids, investor_ids,
+      owner_types: ["Fund"],
+      ratio_names: aggregate_ratio_names,
+      latest: latest,
+      latest_run_only: true,
+      end_date: args[:end_date],
+      scenario: scenario_filter,
+      scenarios: scenarios_filter
+    )
+  %>
 
-          <div class="irr-detail-block d-flex flex-column">
-            <% if show_chart %>
-              <div>
-                <%
-                  suffix = ratio_name.upcase.include?('IRR') ? ' %' : ' x'
-                  chart_data = scenario_list.present? ? [{ name: titles[idx] || ratio_name, data: ratios_data }] : ratios_data
-                %>
-                <%= column_chart chart_data, colors: [chart_colors[idx]], library: {
-                  chart: { height: condensed ? 180 : 260 },
-                  plotOptions: {
-                    column: {
-                      dataLabels: {
-                        enabled: true,
-                        format: "{y:.#{decimals}f}#{suffix}"
-                      },
-                      negativeColor: negative_colors[idx],
-                      color: chart_colors[idx]
-                    }
-                  },
-                  xAxis: { labels: { enabled: scenario_list.present? || !hide_fund_name } },
-                  yAxis: { visible: show_y_axis },
-                  legend: { enabled: show_legend },
-                  **chart_theme_color
-                } %>
-              </div>
-            <% end %>
-            <% if show_table %>
-              <div>
-                <%= render "fund_ratio_list", fund_ratios: fund_ratios.where(name: ratio_name), decimals: decimals %>
-              </div>
-            <% end %>
-          </div>
-        </div>
+  <% if aggregate_ratios.nil? || aggregate_ratios.empty? %>
+    <div class="card shadow-sm mb-3">
+      <div class="card-body text-center py-4">
+        <p class="text-muted mb-1 fw-semibold">No aggregate ratio computations found.</p>
+        <p class="text-muted small mb-3">
+          <% if investor_ids.present? %>
+            Run a <strong>cross-fund</strong> computation for the selected funds &amp; companies.
+          <% else %>
+            Run a <strong>cross-fund</strong> computation for the selected funds.
+          <% end %>
+        </p>
+        <% if anchor_fund %>
+          <%= link_to "Generate Fund Ratios",
+                generate_fund_ratios_fund_path(anchor_fund, tab: "cross-fund-tab", fund_ids: fund_ids, investor_ids: investor_ids),
+                class: "btn btn-primary btn-sm" %>
+        <% end %>
       </div>
     </div>
+  <% else %>
+    <%
+      agg_ratios_by_name = build_ratios_by_name.call(aggregate_ratios, aggregate_ratio_names, use_agg_label: true)
+      agg_titles = section_titles.presence || Array.new(aggregate_ratio_names.size) { |i| aggregate_ratio_names[i] }
+    %>
+    <% if display_mode == "both" %>
+      <h5 class="text-muted text-uppercase fw-semibold small mb-2 mt-3">Fund Aggregate Ratios</h5>
+    <% end %>
+    <div class="row g-3 mb-3">
+      <% agg_ratios_by_name.each_with_index do |(ratio_name, ratios_data), idx| %>
+        <% next if ratios_data.all? { |_, v| v.zero? } %>
+        <% col_class = agg_ratios_by_name.size == 1 ? 'col-12' : 'col-12 col-lg-6' %>
+        <div class="<%= col_class %>">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body d-flex flex-column gap-3<%= ' p-2' if condensed %>">
+              <h3 class="<%= condensed ? 'h5' : 'h4' %> mb-0 text-gray-800">
+                <%= agg_titles[idx] || ratio_name %>
+              </h3>
+              <div class="irr-detail-block d-flex flex-column">
+                <% if show_chart %>
+                  <%
+                    suffix     = ratio_name.upcase.include?('IRR') ? ' %' : ' x'
+                    chart_data = scenario_list.present? ? [{ name: agg_titles[idx] || ratio_name, data: ratios_data }] : ratios_data
+                    c_color    = chart_colors[idx % chart_colors.size]
+                    n_color    = negative_colors[idx % negative_colors.size]
+                  %>
+                  <%= column_chart chart_data, colors: [c_color], library: {
+                    chart: { height: condensed ? 180 : 260 },
+                    plotOptions: { column: {
+                      dataLabels: { enabled: true, format: "{y:.#{decimals}f}#{suffix}" },
+                      negativeColor: n_color, color: c_color
+                    } },
+                    xAxis: { labels: { enabled: scenario_list.present? || !hide_fund_name } },
+                    yAxis: { visible: show_y_axis },
+                    legend: { enabled: show_legend },
+                    **chart_theme_color
+                  } %>
+                <% end %>
+                <% if show_table %>
+                  <%= render "fund_ratio_list", fund_ratios: aggregate_ratios.where(name: ratio_name), decimals: decimals %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
   <% end %>
-</div>
+<% end %>
+
+<%# ═══════════════════════════════════════════════════════════════════════════
+    PER-COMPANY SECTION  (Scenario 3 — owner_type "Investor")
+    Shows one bar per portfolio company. Each company's value is independent
+    of the other companies selected; only the fund scope affects the result.
+    Only rendered when companies are explicitly selected (investor_ids present).
+══════════════════════════════════════════════════════════════════════════════ %>
+<% if display_mode.in?(["per_company", "both"]) && investor_ids.present? %>
+  <%
+    company_ratios = multi_fund_cross_portfolio_ratios(
+      fund_ids, investor_ids,
+      owner_types: ["Investor"],
+      ratio_names: company_ratio_names,
+      latest: latest,
+      end_date: args[:end_date],
+      scenario: scenario_filter,
+      scenarios: scenarios_filter
+    )
+  %>
+
+  <% if company_ratios.nil? || company_ratios.empty? %>
+    <div class="card shadow-sm mb-3">
+      <div class="card-body text-center py-4">
+        <p class="text-muted mb-1 fw-semibold">No per-company ratio computations found.</p>
+        <p class="text-muted small mb-3">
+          Run a <strong>cross-portfolio</strong> computation for the selected funds &amp; companies.
+        </p>
+        <% if anchor_fund %>
+          <%= link_to "Generate Portfolio Company Ratios",
+                generate_fund_ratios_fund_path(anchor_fund, tab: "cross-portfolio-tab", fund_ids: fund_ids, investor_ids: investor_ids),
+                class: "btn btn-primary btn-sm" %>
+        <% end %>
+      </div>
+    </div>
+  <% else %>
+    <%
+      co_ratios_by_name = build_ratios_by_name.call(company_ratios, company_ratio_names)
+      co_titles = Array.new(company_ratio_names.size) { |i| company_ratio_names[i] }
+    %>
+    <% if display_mode == "both" %>
+      <h5 class="text-muted text-uppercase fw-semibold small mb-2 mt-3">Per-Company Ratios</h5>
+    <% end %>
+    <div class="row g-3 mb-3">
+      <% co_ratios_by_name.each_with_index do |(ratio_name, ratios_data), idx| %>
+        <% next if ratios_data.empty? %>
+        <% col_class = co_ratios_by_name.size == 1 ? 'col-12' : 'col-12 col-lg-6' %>
+        <div class="<%= col_class %>">
+          <div class="card h-100 shadow-sm">
+            <div class="card-body d-flex flex-column gap-3<%= ' p-2' if condensed %>">
+              <h3 class="<%= condensed ? 'h5' : 'h4' %> mb-0 text-gray-800">
+                <%= co_titles[idx] || ratio_name %> <small class="text-muted fw-normal fs-6">per company</small>
+              </h3>
+              <div class="irr-detail-block d-flex flex-column">
+                <% if show_chart %>
+                  <%
+                    suffix  = ratio_name.upcase.include?('IRR') ? ' %' : ' x'
+                    c_color = chart_colors[idx % chart_colors.size]
+                    n_color = negative_colors[idx % negative_colors.size]
+                  %>
+                  <%= column_chart ratios_data, colors: [c_color], library: {
+                    chart: { height: condensed ? 180 : 280 },
+                    plotOptions: { column: {
+                      dataLabels: { enabled: true, format: "{y:.#{decimals}f}#{suffix}" },
+                      negativeColor: n_color, color: c_color
+                    } },
+                    xAxis: { labels: { enabled: true } },
+                    yAxis: { visible: show_y_axis },
+                    legend: { enabled: false },
+                    **chart_theme_color
+                  } %>
+                <% end %>
+                <% if show_table %>
+                  <%= render "fund_ratio_list", fund_ratios: company_ratios.where(name: ratio_name), decimals: decimals %>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+<% end %>

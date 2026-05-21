@@ -110,13 +110,15 @@ class FundRatiosScenarioJob < ApplicationJob
 
     # @funds is the ActiveRecord relation used in calculations; @fund_ids is stored on
     # FundRatioRun for auditing. Both can be nil for cross-portfolio runs.
-    @funds    = Fund.where(id: fund_ids) if fund_ids.present?
-    @fund_ids = fund_ids
+    # Coerce to integers so the JSON column stores numeric values (required for the
+    # CAST(fund_ids AS UNSIGNED ARRAY) multi-valued index used by MEMBER OF queries).
+    @fund_ids = Array(fund_ids).map(&:to_i).reject(&:zero?).presence
+    @funds    = Fund.where(id: @fund_ids) if @fund_ids.present?
 
     # @portfolio_companies seeds the union resolver in FundRatioMultiFundCalcs.
     # Tags and sectors are resolved there so the union happens in one place.
-    @portfolio_companies         = Investor.where(id: portfolio_company_ids) if portfolio_company_ids.present?
-    @portfolio_company_ids       = portfolio_company_ids
+    @portfolio_company_ids = Array(portfolio_company_ids).map(&:to_i).reject(&:zero?).presence
+    @portfolio_companies   = Investor.where(id: @portfolio_company_ids) if @portfolio_company_ids.present?
     @portfolio_companies_tags    = portfolio_companies_tags
     @portfolio_companies_sectors = Array(portfolio_companies_sectors).compact_blank
 
@@ -125,7 +127,10 @@ class FundRatiosScenarioJob < ApplicationJob
   end
 
   def calc_fund_ratios
-    owner = @user
+    # Owner must be a Fund so the portfolio dashboard widget (which filters
+    # owner_type: ["Fund"]) can find these ratios.
+    # Fall back to the first source fund if no anchor fund was set.
+    owner = @fund || @funds&.first
     # Idempotent: wipe only the ratios that belong to this specific run before recomputing,
     # so other runs with different fingerprints on the same date are not affected.
     FundRatio.where(computation_context: @run).delete_all
@@ -134,7 +139,9 @@ class FundRatiosScenarioJob < ApplicationJob
 
     # computation_context replaces fund_ratio_run; scenario is derived from the run's name
     # by FundRatio#set_scenario_if_missing so we do not need to pass it explicitly.
-    shared = { computation_context: @run, owner:, entity_id: owner.entity_id, end_date: @end_date }
+    # latest: true is set directly — update_latest scopes by fund_id which is nil for
+    # cross-fund runs; the delete_all above ensures idempotency so no duplicates arise.
+    shared = { computation_context: @run, owner:, entity_id: @user.entity_id, end_date: @end_date, latest: true }
 
     xirr, cash_flows = calc.xirr(return_cash_flows: false)
     fr = FundRatio.create!(**shared, name: "XIRR", value: xirr, display_value: "#{xirr} %")
@@ -163,7 +170,6 @@ class FundRatiosScenarioJob < ApplicationJob
   end
 
   def calc_portfolio_company_ratios
-    owner = @user
     FundRatio.where(computation_context: @run).delete_all
 
     calc = FundRatioMultiFundCalcs.new(
@@ -175,10 +181,13 @@ class FundRatiosScenarioJob < ApplicationJob
       currency:                    @currency
     )
 
-    shared = { computation_context: @run, entity_id: owner.entity_id, end_date: @end_date }
+    # entity_id falls back to @user.entity_id when no anchor fund was set.
+    shared = { computation_context: @run, entity_id: (@fund&.entity_id || @user.entity_id), end_date: @end_date, latest: true }
 
+    # Aggregate Gross Portfolio IRR stored with Fund owner so aggregate section can show it.
+    aggregate_owner = @fund || @funds&.first
     value = calc.gross_portfolio_irr
-    FundRatio.create!(**shared, owner:, name: "Gross Portfolio IRR", value:, display_value: "#{value} %")
+    FundRatio.create!(**shared, owner: aggregate_owner, name: "Gross Portfolio IRR", value:, display_value: "#{value} %")
 
     calc.portfolio_company_irr(return_cash_flows: false).each do |portfolio_company_id, values|
       fr = FundRatio.create!(**shared, owner_id: portfolio_company_id, owner_type: "Investor",
