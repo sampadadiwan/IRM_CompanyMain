@@ -60,17 +60,17 @@ class FundRatioRun < ApplicationRecord
   # SQLite (used in tests) does not support MEMBER OF — use json_each() instead.
   scope :for_source_fund, ->(id) {
     if connection.adapter_name.downcase.include?("sqlite")
-      where("EXISTS (SELECT 1 FROM json_each(fund_ratio_runs.fund_ids) WHERE value = ?)", id)
+      where("EXISTS (SELECT 1 FROM json_each(fund_ratio_runs.fund_ids) WHERE CAST(value AS INTEGER) = ?)", id.to_i)
     else
-      where("? MEMBER OF (fund_ids)", id)
+      where("JSON_CONTAINS(fund_ids, CAST(? AS JSON))", id.to_i)
     end
   }
 
   scope :for_source_portfolio_company, ->(id) {
     if connection.adapter_name.downcase.include?("sqlite")
-      where("EXISTS (SELECT 1 FROM json_each(fund_ratio_runs.portfolio_company_ids) WHERE value = ?)", id)
+      where("EXISTS (SELECT 1 FROM json_each(fund_ratio_runs.portfolio_company_ids) WHERE CAST(value AS INTEGER) = ?)", id.to_i)
     else
-      where("? MEMBER OF (portfolio_company_ids)", id)
+      where("JSON_CONTAINS(portfolio_company_ids, CAST(? AS JSON))", id.to_i)
     end
   }
 

@@ -31,8 +31,16 @@
       </div>
 
     </div>
-  </div>`
+  </div>
 
-
+  <%# Auto-activate the tab requested via ?tab= param (e.g. from "Generate" button in dashboard widget) %>
+  <% if params[:tab].present? %>
+    <script>
+      document.addEventListener("DOMContentLoaded", function() {
+        var tabEl = document.querySelector('a[href="#<%= j params[:tab] %>"]');
+        if (tabEl) { new bootstrap.Tab(tabEl).show(); }
+      });
+    </script>
+  <% end %>
 
 <% end %>
