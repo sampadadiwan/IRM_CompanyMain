@@ -13,6 +13,23 @@
 # @see SupportAgentReport
 class CallNoticeAgent < SupportAgentService
   DESCRIPTION = "Validates capital call readiness by checking KYC status, document generation, and approval workflow."
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Validates that all prerequisites are in place before capital call notices are sent to investors.
+    Runs against each CapitalCall in the entity and walks through a multi-step checklist,
+    surfacing any blockers in real time via the step progress panel.
+
+    Steps:
+    • KYC Pre-Check — all investors on the call must have a completed KYC record.
+    • Docs Generated — the call notice document must exist and be attached to the call.
+    • Docs Approved — the notice document must be in an approved state.
+    • Notification Configured — at least one notification template or delivery contact must be set up.
+    • Ready to Send — final gate; marks the call ready when all checks pass.
+
+    No LLM calls — entirely deterministic. Results are saved as a SupportAgentReport with
+    per-step pass/fail detail. Blockers appear in the issue list for operations to resolve
+    before notices are dispatched.
+  DESC
   # @return [Hash{Symbol => String}] human-readable labels for each step
   STEP_LABELS = {
     initialize_agent: "Initialize",

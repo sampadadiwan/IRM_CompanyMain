@@ -1,3 +1,8 @@
+<%
+  agent_cls       = support_agent.agent_type.constantize rescue nil
+  short_desc      = (agent_cls.const_get(:DESCRIPTION)      if agent_cls&.const_defined?(:DESCRIPTION))      || support_agent.description
+  long_desc       = (agent_cls.const_get(:LONG_DESCRIPTION) if agent_cls&.const_defined?(:LONG_DESCRIPTION))
+%>
 <table class="table table-bordered dataTable">
   <tr>
     <td>Name</td>
@@ -5,7 +10,16 @@
   </tr>
   <tr>
     <td>Description</td>
-    <td><%= support_agent.description %></td>
+    <td>
+      <%= short_desc %>
+      <% if long_desc.present? %>
+        <div class="mt-3 p-0 rounded overflow-hidden border" style="background:#f8fafc;">
+          <div class="agent-about-panel" style="border-top-width:2px;">
+            <%= format_agent_description(long_desc) %>
+          </div>
+        </div>
+      <% end %>
+    </td>
   </tr>
   <tr>
     <td>Entity</td>

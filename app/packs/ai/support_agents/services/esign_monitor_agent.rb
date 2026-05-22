@@ -14,8 +14,22 @@
 #
 # @see SupportAgentService
 class EsignMonitorAgent < SupportAgentService
-  DESCRIPTION = "Monitors e-signing pipeline: resends stuck requests and flags expired documents. " \
-                "Config: send_reminders, flag_expired (true/false), reminder_after_days (integer, default 3).".freeze
+  DESCRIPTION = "Monitors the e-signing pipeline: resends stuck requests and flags expired or voided documents.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Monitors the e-signature pipeline and takes corrective action on stuck or expired documents.
+    Targets the entity itself and scans all documents currently in "requested" e-sign status.
+
+    Actions:
+    • Send Reminders — if a document has been in "requested" state longer than reminder_after_days
+      (default 3 days), it fires a resend via the existing resend_for_esign path.
+      Controlled by send_reminders (true/false).
+    • Flag Expired — surfaces documents in expired or voided e-sign state for manual ops action.
+      Controlled by flag_expired (true/false).
+
+    No LLM calls — entirely deterministic. Designed to run on a daily schedule. Results are saved
+    as a SupportAgentReport listing each actioned document with its status and outcome.
+  DESC
 
   STEP_LABELS = {
     initialize_agent:     "Initialize",

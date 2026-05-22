@@ -68,6 +68,17 @@ class SupportAgentsController < ApplicationController
                        else
                          SupportAgentReport.none
                        end
+
+    # Load note summaries per investor for NoteSummarizerAgent
+    @note_summaries = if @support_agent.agent_type == "NoteSummarizerAgent"
+                        reports = SupportAgentReport
+                          .where(support_agent: @support_agent, owner_type: "Investor")
+                          .includes(:owner)
+                        reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+                        reports.order(updated_at: :desc)
+                      else
+                        SupportAgentReport.none
+                      end
   end
 
   # Initializes a new support agent for creation.
@@ -118,6 +129,22 @@ class SupportAgentsController < ApplicationController
   def destroy
     @support_agent.destroy!
     redirect_to support_agents_url, notice: "Support agent was successfully destroyed.", status: :see_other
+  end
+
+  # Renders note summaries for the NoteSummarizerAgent via a lazy Turbo Frame.
+  # Used by the dashboard widget on the Portfolio Company and Investor dashboards.
+  #
+  # @return [void]
+  def note_summaries
+    entity_id = params[:entity_id].presence || current_user.entity_id
+    @support_agent = SupportAgent.find_by!(agent_type: "NoteSummarizerAgent", entity_id: entity_id)
+    authorize @support_agent, :show?
+
+    reports = SupportAgentReport
+      .where(support_agent: @support_agent, owner_type: "Investor")
+      .includes(:owner)
+    reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+    @note_summaries = reports.order(updated_at: :desc).limit(20)
   end
 
   # Enqueues a support agent job for execution without step tracking.

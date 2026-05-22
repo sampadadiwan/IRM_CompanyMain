@@ -16,9 +16,23 @@
 # @see SupportAgentService
 # @see CallNoticeAgent
 class DistributionReadinessAgent < SupportAgentService
-  DESCRIPTION = "Validates distribution readiness: KYC, net payable, notices generated/approved, " \
-                "bank details. Config: check_kyc, check_net_payable, check_docs_generated, " \
-                "check_docs_approved, check_bank_details (all true/false).".freeze
+  DESCRIPTION = "Validates distribution readiness: KYC, net payable, notices generated/approved, bank details on file.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Validates that all prerequisites are in place before a capital distribution payment is released.
+    Runs against each CapitalDistribution in the entity and surfaces any blockers before funds are wired.
+
+    Steps:
+    • KYC Check — investor must have a completed KYC record (toggle: check_kyc).
+    • Net Payable — distribution net payable amount must be computed (check_net_payable).
+    • Notices Generated — distribution notice documents must be generated (check_docs_generated).
+    • Docs Approved — notice documents must be in an approved state (check_docs_approved).
+    • Bank Details — investor must have valid bank account details on file (check_bank_details).
+    • Ready to Pay — final gate; marks the distribution ready when all checks pass.
+
+    All checks are independently toggleable via json_fields (true/false). Results are saved as a
+    SupportAgentReport with per-step pass/fail detail for operations to review and action.
+  DESC
 
   STEP_LABELS = {
     initialize_agent:                        "Initialize",

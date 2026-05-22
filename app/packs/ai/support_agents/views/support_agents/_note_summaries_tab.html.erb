@@ -1,0 +1,78 @@
+<% if note_summaries.empty? %>
+  <div class="alert alert-secondary">
+    <i class="ti ti-info-circle"></i> No summaries yet. Run the agent to generate note summaries for your investors.
+  </div>
+<% else %>
+
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Investor</th>
+          <th>Period</th>
+          <th>Notes</th>
+          <th>Status</th>
+          <th>Run Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% note_summaries.each do |report| %>
+          <% data = (report.json_fields || {}).with_indifferent_access %>
+          <% final_status = (data[:final_status].presence || report.status.to_s).downcase %>
+          <% status_color = case final_status
+               when 'ready', 'completed' then 'text-success'
+               when 'running', 'pending' then 'text-primary'
+               when 'failed', 'blocked'  then 'text-danger'
+               else 'text-secondary'
+             end %>
+          <tr>
+            <td>
+              <strong><%= report.owner&.investor_name || report.owner&.name || "N/A" %></strong>
+            </td>
+            <td>
+              <% if data[:period_label].present? && data[:period_start].present? %>
+                <%= data[:period_label] %>
+                <br><small class="text-muted">
+                  <%= Date.parse(data[:period_start]).strftime("%b %d") %> –
+                  <%= Date.parse(data[:period_end]).strftime("%b %d, %Y") %>
+                </small>
+              <% else %>
+                --
+              <% end %>
+            </td>
+            <td class="text-center">
+              <span class="badge bg-secondary"><%= data[:note_count] || "--" %></span>
+            </td>
+            <td class="<%= status_color %> fw-bold">
+              <%= final_status.titleize %>
+            </td>
+            <td>
+              <% run_at = data[:run_at].present? ? (Time.zone.parse(data[:run_at]) rescue nil) : nil %>
+              <%= run_at ? run_at.strftime("%b %d, %Y %I:%M %p") : report.updated_at.strftime("%b %d, %Y") %>
+            </td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#note-summary-detail-<%= report.id %>">
+                <i class="ti ti-chevron-down"></i> Summary
+              </button>
+            </td>
+          </tr>
+          <%# Expandable row with the full summary text %>
+          <tr class="collapse" id="note-summary-detail-<%= report.id %>">
+            <td colspan="6" class="bg-light p-3">
+              <%= render 'support_agents/note_summary_detail', report: report, data: data %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small">
+    <i class="ti ti-calendar"></i>
+    Last updated: <%= note_summaries.first&.updated_at&.strftime("%b %d, %Y at %I:%M %p") %>
+  </p>
+
+<% end %>

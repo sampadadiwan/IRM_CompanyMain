@@ -1,5 +1,22 @@
 class KycOnboardingAgent < SupportAgentService
   DESCRIPTION = "Orchestrates a multi-step verification pipeline for InvestorKYC records, validating fields and documents.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Orchestrates a complete KYC verification pipeline for each InvestorKYC record in the entity.
+    Targets completed KYC records and runs a fixed sequence of validation steps.
+
+    Steps:
+    • Field Completeness — checks that all mandatory fields (defined in FormCustomField) are populated.
+    • Document Presence — verifies required document types (passport, ID, etc.) have been uploaded.
+    • Document Validity — validates document content and labels against expected criteria.
+    • Field-to-Document Consistency — ensures field values match the uploaded document data.
+    • Expiry Status — flags documents approaching or past their expiry date.
+    • Send Reminders — notifies investors about missing or expiring items.
+    • Trigger AML — automatically initiates AML screening once all checks pass.
+
+    Supports both scheduled (daily/weekly) and event-driven runs (on new InvestorKyc, document
+    upload, or field update). Results are saved as SupportAgentReports with per-step issue tracking.
+  DESC
   # KycOnboardingAgent orchestrates a multi-step verification pipeline
   # for InvestorKYC records. It checks fields, validates documents
   # against expected content/labels, ensures consistency, creates reports,

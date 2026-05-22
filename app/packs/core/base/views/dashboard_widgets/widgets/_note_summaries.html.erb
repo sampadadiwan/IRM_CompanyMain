@@ -1,0 +1,33 @@
+<%
+  args      ||= {}
+  entity_id ||= current_user&.entity_id
+  owner_id    = owner.is_a?(Investor) ? owner.id : nil
+  frame_id    = "note_summaries_widget_#{entity_id}_#{owner_id}"
+
+  sa = SupportAgent.find_by(agent_type: "NoteSummarizerAgent", entity_id: entity_id)
+%>
+
+<%= render(
+      WidgetCardComponent.new(
+        widget: widget,
+        args: args,
+        widget_size: widget.widget_size
+      )
+    ) do %>
+
+  <% if sa.nil? %>
+    <div class="alert alert-secondary m-3">
+      <i class="ti ti-info-circle"></i> No Note Summarizer agent configured for this entity.
+    </div>
+  <% else %>
+    <%# Load note summaries asynchronously so the dashboard doesn't block on DB queries %>
+    <%= turbo_frame_tag frame_id,
+          loading: :lazy,
+          src: note_summaries_support_agents_path(entity_id: entity_id, owner_id: owner_id) do %>
+      <div class="text-center p-4 text-muted small">
+        <i class="ti ti-loader-2"></i> Loading note summaries&hellip;
+      </div>
+    <% end %>
+  <% end %>
+
+<% end %>

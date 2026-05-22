@@ -1,5 +1,22 @@
 class PortfolioScoringAgent < SupportAgentService
-  DESCRIPTION = "Scores portfolio companies using sector-specific skill prompts uploaded as custom fields.".freeze
+  DESCRIPTION = "Scores portfolio companies using sector-specific LLM skill prompts uploaded as custom fields.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Scores each portfolio company using sector-specific LLM skill prompts. Uploads documents,
+    KPI data, and valuations as context, then asks the LLM to produce a structured investment score.
+
+    Steps:
+    • Load Skill — reads the sector-specific skill prompt from the agent's custom fields,
+      matched by the portfolio company's sector value.
+    • Gather Data — collects documents (PDF, XLSX, PPTX, DOCX, TXT, MD, CSV), KPI reports,
+      and valuations for the company.
+    • Generate Score — sends all context and the skill prompt to the configured LLM. Expects a
+      JSON response with keys: overall_score, grade, summary, dimensions.
+    • Store Score — persists the structured score to the investor record and saves a SupportAgentReport.
+
+    Companies without a sector set are skipped — a sector is required to match a skill prompt.
+    Batch processing: sequential across all portfolio companies that have a sector.
+  DESC
 
   REQUIRED_SCORE_KEYS = %w[overall_score grade summary dimensions].freeze
   SUPPORTED_DOC_EXTENSIONS = %w[.pdf .txt .md .xlsx .xls .pptx .ppt .docx .doc .csv].freeze

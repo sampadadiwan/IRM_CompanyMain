@@ -1,5 +1,20 @@
 class PortfolioCompanyAgent < SupportAgentService
   DESCRIPTION = "Monitors portfolio companies for KPI submissions, document presence, and valuation accuracy.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Monitors every portfolio company for data health — KPI submissions, required document presence,
+    and valuation accuracy. Runs as a batch across all Portfolio Company investors for the entity.
+
+    Steps:
+    • KPI Submission Check — verifies that each portfolio company has submitted KPI reports for
+      expected periods. Sends a reminder email if a submission is overdue.
+    • Document Presence — checks that all required documents are uploaded for each company.
+    • Valuation Check — flags companies missing a valuation or with a stale valuation date.
+
+    Batch processing: runs sequentially per portfolio company; one failure does not block others.
+    A batch summary notification is sent after all companies are processed (suppressed for scheduled
+    runs). Results are saved as SupportAgentReports and power the portfolio dashboard widget.
+  DESC
   step :initialize_agent
   # == Core Functions ==
   step :check_kpi_submission

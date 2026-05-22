@@ -16,36 +16,45 @@ DEFAULT_LLM_MODEL = "gemini-3-flash-preview"
 # FormType + field definitions (entity-agnostic; IDs are resolved at runtime)
 # ---------------------------------------------------------------------------
 SUPPORT_AGENT_FORM_CONFIGS = [
-  # Existing agent FormTypes that need extra fields added
+  # ── Extend existing agents (FormType already provisioned by the app) ───────
   {
     tag: "KycOnboardingAgent",
-    extend_only: true,  # FormType already exists; only ensure missing fields
+    extend_only: true,  # FormType already exists; only add/update fields
     fields: [
-      { name: "check_expiry",        field_type: "Select",      label: "Check expiry status",
-        meta_data: "Yes,No", position: 8 },
-      { name: "expiry_warning_days", field_type: "TextField",   label: "Expiry warning days",
-        meta_data: "", position: 9,
-        help_text: "Comma-separated day thresholds before expiry to warn, e.g. 60,30,15" }
+      { name: "check_expiry",
+        field_type: "Select", label: "Check KYC expiry status", meta_data: "Yes,No", position: 8,
+        help_text: "When Yes, checks the KYC record's expiry_date and adds a blocking issue if it " \
+                   "is already expired, or a warning if within any expiry_warning_days threshold." },
+      { name: "expiry_warning_days",
+        field_type: "TextField", label: "Expiry warning thresholds (days)", meta_data: "", position: 9,
+        help_text: "Comma-separated day counts before expiry that trigger a warning, e.g. '60,30,15'. " \
+                   "When days_remaining falls at or below any threshold an expiry-alert email is sent. " \
+                   "Leave blank to disable advance warnings (only expired records are flagged)." }
     ]
   },
   {
     tag: "PortfolioCompanyAgent",
     extend_only: true,
     fields: [
-      { name: "send_kpi_reminder", field_type: "Select",    label: "Send KPI reminder",
-        meta_data: "Yes,No", position: 7 },
-      { name: "reminder_days",     field_type: "TextField", label: "Reminder days",
-        meta_data: "", position: 8,
-        help_text: "Comma-separated day offsets from period start to send reminders, e.g. 7,14,21" }
+      { name: "send_kpi_reminder",
+        field_type: "Select", label: "Send KPI submission reminder", meta_data: "Yes,No", position: 7,
+        help_text: "When Yes, sends a reminder email to the portfolio company when KPIs are overdue " \
+                   "for the current period. Emails are only fired on the specific days-elapsed values " \
+                   "configured in 'Reminder days', preventing duplicate sends across daily runs." },
+      { name: "reminder_days",
+        field_type: "TextField", label: "Reminder days (days elapsed in period)", meta_data: "", position: 8,
+        help_text: "Comma-separated number of days elapsed since the period started on which to send " \
+                   "a reminder, e.g. '7,14,21'. The agent checks today's elapsed day count against this " \
+                   "list — no email fires on days not in the list. A reminder already sent today is skipped." }
     ]
   },
 
-  # New agent FormTypes (created fresh when missing)
+  # ── New agent FormTypes (created when missing) ─────────────────────────────
   {
     tag: "DistributionReadinessAgent",
     agent: {
-      name:        "Distribution Readiness",
-      with_steps:  true,
+      name:       "Distribution Readiness",
+      with_steps: true,
       json_fields: {
         "check_kyc"            => "Yes",
         "check_net_payable"    => "Yes",
@@ -55,11 +64,26 @@ SUPPORT_AGENT_FORM_CONFIGS = [
       }
     },
     fields: [
-      { name: "check_kyc",            field_type: "Select", label: "Check investor KYC",         meta_data: "Yes,No", position: 1 },
-      { name: "check_net_payable",    field_type: "Select", label: "Check net payable computed",  meta_data: "Yes,No", position: 2 },
-      { name: "check_docs_generated", field_type: "Select", label: "Check notices generated",     meta_data: "Yes,No", position: 3 },
-      { name: "check_docs_approved",  field_type: "Select", label: "Check notices approved",      meta_data: "Yes,No", position: 4 },
-      { name: "check_bank_details",   field_type: "Select", label: "Check bank details",          meta_data: "Yes,No", position: 5 }
+      { name: "check_kyc",
+        field_type: "Select", label: "Check investor KYC", meta_data: "Yes,No", position: 1,
+        help_text: "When Yes, verifies the investor has a completed KYC record before the " \
+                   "distribution payment is released. Marks the distribution as blocked if KYC is incomplete." },
+      { name: "check_net_payable",
+        field_type: "Select", label: "Check net payable computed", meta_data: "Yes,No", position: 2,
+        help_text: "When Yes, verifies the distribution net payable amount has been calculated. " \
+                   "Blocks payment if the amount is missing or zero." },
+      { name: "check_docs_generated",
+        field_type: "Select", label: "Check notices generated", meta_data: "Yes,No", position: 3,
+        help_text: "When Yes, checks that distribution notice documents have been generated and " \
+                   "are attached to the distribution record." },
+      { name: "check_docs_approved",
+        field_type: "Select", label: "Check notices approved", meta_data: "Yes,No", position: 4,
+        help_text: "When Yes, verifies that the generated distribution notice documents are in an " \
+                   "approved state. Blocks payment if any notice is still pending approval." },
+      { name: "check_bank_details",
+        field_type: "Select", label: "Check bank details on file", meta_data: "Yes,No", position: 5,
+        help_text: "When Yes, verifies the investor has valid bank account details recorded. " \
+                   "Blocks payment if banking information is missing or incomplete." }
     ]
   },
   {
@@ -79,10 +103,19 @@ SUPPORT_AGENT_FORM_CONFIGS = [
       }
     },
     fields: [
-      { name: "send_reminders",      field_type: "Select",      label: "Send e-sign reminders",  meta_data: "Yes,No", position: 1 },
-      { name: "flag_expired",        field_type: "Select",      label: "Flag expired documents",  meta_data: "Yes,No", position: 2 },
-      { name: "reminder_after_days", field_type: "NumberField", label: "Reminder after (days)",   meta_data: "",       position: 3,
-        help_text: "Days a document stays in 'requested' before a resend is triggered (default 3)" }
+      { name: "send_reminders",
+        field_type: "Select", label: "Send e-sign reminders", meta_data: "Yes,No", position: 1,
+        help_text: "When Yes, fires a resend for any document that has been in 'requested' e-sign " \
+                   "status for longer than 'Reminder after (days)'. Uses the document's built-in " \
+                   "resend eligibility check — ineligible documents are logged but not retried." },
+      { name: "flag_expired",
+        field_type: "Select", label: "Flag expired/voided documents", meta_data: "Yes,No", position: 2,
+        help_text: "When Yes, surfaces documents with expired, cancelled, or voided e-sign status " \
+                   "as warning issues in the report for manual ops review and re-initiation." },
+      { name: "reminder_after_days",
+        field_type: "NumberField", label: "Reminder after (days)", meta_data: "", position: 3,
+        help_text: "Number of days a document may remain in 'requested' e-sign status before a " \
+                   "resend is triggered. Measured against the document's updated_at timestamp. Default: 3." }
     ]
   },
   {
@@ -106,16 +139,75 @@ SUPPORT_AGENT_FORM_CONFIGS = [
       }
     },
     fields: [
-      { name: "check_commitment_overflows", field_type: "Select",      label: "Check commitment overflows",  meta_data: "Yes,No", position: 1 },
-      { name: "check_missing_valuations",   field_type: "Select",      label: "Check missing valuations",    meta_data: "Yes,No", position: 2 },
-      { name: "check_stale_fx_rates",       field_type: "Select",      label: "Check stale FX rates",        meta_data: "Yes,No", position: 3 },
-      { name: "send_report",                field_type: "Select",      label: "Send quality report email",   meta_data: "Yes,No", position: 4 },
-      { name: "stale_valuation_days",       field_type: "NumberField", label: "Stale valuation (days)",      meta_data: "",       position: 5,
-        help_text: "Days without a valuation before flagging a portfolio company (default 90)" },
-      { name: "stale_fx_days",              field_type: "NumberField", label: "Stale FX rate (days)",        meta_data: "",       position: 6,
-        help_text: "Days since last FX rate update before flagging (default 30)" },
-      { name: "email",                      field_type: "TextField",   label: "Report recipient email(s)",   meta_data: "",       position: 7,
-        help_text: "Comma-separated email addresses for the quality report" }
+      { name: "check_commitment_overflows",
+        field_type: "Select", label: "Check commitment overflows", meta_data: "Yes,No", position: 1,
+        help_text: "When Yes, flags any LP whose total called capital exceeds their committed amount. " \
+                   "Overflow records appear as blocking issues requiring immediate ops correction." },
+      { name: "check_missing_valuations",
+        field_type: "Select", label: "Check missing/stale valuations", meta_data: "Yes,No", position: 2,
+        help_text: "When Yes, identifies portfolio companies in the fund that have no valuation " \
+                   "updated within 'Stale valuation (days)'. Stale valuations distort fund NAV reporting." },
+      { name: "check_stale_fx_rates",
+        field_type: "Select", label: "Check stale FX rates", meta_data: "Yes,No", position: 3,
+        help_text: "When Yes, flags currencies used in the fund whose exchange rate has not been " \
+                   "updated within 'Stale FX rate (days)'. Stale rates skew multi-currency valuations." },
+      { name: "send_report",
+        field_type: "Select", label: "Email quality report after each run", meta_data: "Yes,No", position: 4,
+        help_text: "When Yes, emails the health score and per-check fix-it list to the addresses in " \
+                   "'Report recipient email(s)'. If that field is blank, the report goes to all active " \
+                   "employees of the entity." },
+      { name: "stale_valuation_days",
+        field_type: "NumberField", label: "Stale valuation threshold (days)", meta_data: "", position: 5,
+        help_text: "Portfolio companies are flagged when their most recent valuation is older than this " \
+                   "many days. Default: 90. Adjust to match your fund's regular valuation cadence." },
+      { name: "stale_fx_days",
+        field_type: "NumberField", label: "Stale FX rate threshold (days)", meta_data: "", position: 6,
+        help_text: "Currency exchange rates are flagged when they have not been updated within this many " \
+                   "days. Default: 30. Match to your FX data provider's update frequency." },
+      { name: "email",
+        field_type: "TextField", label: "Report recipient email(s)", meta_data: "", position: 7,
+        help_text: "Comma-separated email addresses to receive the quality report. " \
+                   "If blank, the report is sent to all active employees of the entity." }
+    ]
+  },
+  {
+    tag: "NoteSummarizerAgent",
+    agent: {
+      name:       "Note Summarizer",
+      with_steps: false,
+      json_fields: {
+        "summary_period" => "Quarter",
+        "tag_filter"     => "",
+        "auto_tag_notes" => "Yes",
+        "available_tags" => "call,meeting,kpi,board-meeting,fundraising,risk,hiring,operations"
+      },
+      schedule: {
+        frequency: "monthly", run_on_day: 1, run_at_time: "06:00", timezone: "Asia/Kolkata",
+        enabled: true, notify_on_failure: true, notify_on_success: false,
+        notify_on_partial_success: true, notify_caphive_on_error: true
+      }
+    },
+    fields: [
+      { name: "summary_period",
+        field_type: "Select", label: "Summary period", meta_data: "Month,Quarter", position: 1,
+        help_text: "Lookback window for note collection. 'Month' summarises the previous complete " \
+                   "calendar month; 'Quarter' summarises the previous complete calendar quarter. " \
+                   "The period is computed relative to the date the agent runs." },
+      { name: "tag_filter",
+        field_type: "TextField", label: "Tag filter", meta_data: "", position: 2,
+        help_text: "Comma-separated note tags to restrict which notes are collected, e.g. 'call,meeting'. " \
+                   "Only notes matching at least one of these tags will be summarised. " \
+                   "Leave blank to include all notes in the period (except prior summary notes)." },
+      { name: "auto_tag_notes",
+        field_type: "Select", label: "Auto-tag untagged notes", meta_data: "Yes,No", position: 3,
+        help_text: "When Yes, any notes in the period that have no tags are sent to the LLM in one " \
+                   "batch call for tag assignment before the summary runs. Tags are saved back to the " \
+                   "Note records. Set to No to leave untagged notes as-is." },
+      { name: "available_tags",
+        field_type: "TextField", label: "Available tags (auto-tagging vocabulary)", meta_data: "", position: 4,
+        help_text: "Comma-separated list of tags the LLM must choose from when auto-tagging notes, " \
+                   "e.g. 'call,meeting,kpi,board-meeting'. The LLM is constrained to this list. " \
+                   "Leave blank to let the LLM assign any concise, fund-relevant tags it deems appropriate." }
     ]
   },
   {
@@ -129,29 +221,43 @@ SUPPORT_AGENT_FORM_CONFIGS = [
         "docs_from_last_n_reports" => 3,
         "document_name_filter"     => ""
       }
-      # No schedule — triggered on-demand or via rake task
+      # No schedule — triggered on-demand or via the agent UI
     },
     fields: [
-      # Skill files are uploaded manually via the agent edit page after seeding.
-      # Add one File field per sector; meta_data drives skill_for_sector matching.
-      { name: "generic_skill_file",       field_type: "File",        label: "Generic Portfolio Skill",
-        position: 1, meta_data: "skill: true, sector: General",
-        help_text: "Fallback skill prompt used when no sector-specific file is configured." },
-      { name: "beauty_skincare_skill",    field_type: "File",        label: "Beauty & Skincare Skill",
-        position: 2, meta_data: "skill: true, sector: Beauty & Skincare",
-        help_text: "Sector skill prompt for Beauty & Skincare portfolio companies." },
-      { name: "min_points_per_section",   field_type: "NumberField", label: "Min Points Per Section",
-        position: 3, meta_data: "",
-        help_text: "Minimum positives/concerns per dimension and minimum items in Strengths, Risks, Recommendations. Default: 3" },
-      { name: "kpi_frequency",            field_type: "Select",      label: "KPI Frequency Filter",
-        position: 4, meta_data: "All,Month,Quarter,Half Year,Year,YTD",
-        help_text: "Filter KPI reports by period type when scoring. 'All' includes every period." },
-      { name: "docs_from_last_n_reports", field_type: "NumberField", label: "Docs From Last N Reports",
-        position: 5, meta_data: "",
-        help_text: "Number of recent Actual KPI reports to pull documents from (default: 1)." },
-      { name: "document_name_filter",     field_type: "TextField",   label: "Document Name Filter",
-        position: 6, meta_data: "",
-        help_text: "Comma-separated document names to include. Leave blank to use all documents from the selected reports." }
+      # Skill files are uploaded via the agent edit page after seeding.
+      # meta_data must follow "skill: true, sector: <SectorName>" — drives skill_for_sector matching.
+      { name: "generic_skill_file",
+        field_type: "File", label: "Generic Portfolio Skill", position: 1,
+        meta_data: "skill: true, sector: General",
+        help_text: "Markdown skill prompt file used as a fallback when no sector-specific skill " \
+                   "is configured for a portfolio company's sector. Upload a .md or .txt file." },
+      { name: "beauty_skincare_skill",
+        field_type: "File", label: "Beauty & Skincare Skill", position: 2,
+        meta_data: "skill: true, sector: Beauty & Skincare",
+        help_text: "Sector-specific skill prompt for Beauty & Skincare portfolio companies. " \
+                   "The agent matches this file when the portfolio company's sector field equals " \
+                   "'Beauty & Skincare'. Upload a .md or .txt file." },
+      { name: "min_points_per_section",
+        field_type: "NumberField", label: "Min points per section", position: 3, meta_data: "",
+        help_text: "Minimum number of bullet points the LLM must produce per scoring dimension " \
+                   "(positives, concerns) and per list section (Strengths, Risks, Recommendations). " \
+                   "Increase for more granular output. Default: 3." },
+      { name: "kpi_frequency",
+        field_type: "Select", label: "KPI frequency filter", position: 4,
+        meta_data: "All,Month,Quarter,Half Year,Year,YTD",
+        help_text: "Restricts which KPI report periods are sent to the LLM as context. " \
+                   "'All' includes every period type. Select a specific period to focus the " \
+                   "score on a single reporting cadence, e.g. 'Quarter' for quarterly KPIs only." },
+      { name: "docs_from_last_n_reports",
+        field_type: "NumberField", label: "Documents from last N KPI reports", position: 5, meta_data: "",
+        help_text: "Number of the most recent Actual KPI report periods from which to pull attached " \
+                   "documents as LLM context. Set to 1 to use only the latest report's attachments; " \
+                   "increase to include historical documents. Default: 1." },
+      { name: "document_name_filter",
+        field_type: "TextField", label: "Document name filter", position: 6, meta_data: "",
+        help_text: "Comma-separated document names (exact match) to include in the LLM context, " \
+                   "e.g. 'Q3 Financials,Board Deck'. All other documents from the selected reports " \
+                   "are ignored. Leave blank to send all documents from the selected KPI reports." }
     ]
   }
 ].freeze
@@ -190,13 +296,25 @@ namespace :support_agents do
         puts "  [#{tag}] FormType exists (ID=#{ft.id})"
       end
 
-      # 2. Ensure each custom field exists on this FormType
+      # 2. Upsert each custom field — create if missing, update label/help_text if changed.
+      #    field_type, meta_data, and position are only written on creation to avoid
+      #    overwriting deliberate UI changes (e.g. re-ordered positions or option lists).
       cfg[:fields].each do |field_attrs|
-        if ft.form_custom_fields.exists?(name: field_attrs[:name])
-          puts "    [fcf] '#{field_attrs[:name]}' — already exists"
-        else
-          ft.form_custom_fields.create!(field_attrs)
+        fcf = ft.form_custom_fields.find_or_initialize_by(name: field_attrs[:name])
+        if fcf.new_record?
+          fcf.assign_attributes(field_attrs)
+          fcf.save!
           puts "    [fcf] '#{field_attrs[:name]}' (#{field_attrs[:field_type]}) — created"
+        else
+          # Only propagate human-readable metadata — never overwrite structural fields set via UI
+          updatable = field_attrs.slice(:label, :help_text)
+          changed   = updatable.any? { |k, v| fcf.send(k) != v }
+          if changed
+            fcf.update!(updatable)
+            puts "    [fcf] '#{field_attrs[:name]}' — updated label/help_text"
+          else
+            puts "    [fcf] '#{field_attrs[:name]}' — up to date"
+          end
         end
       end
 

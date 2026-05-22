@@ -16,10 +16,24 @@
 #
 # @see SupportAgentService
 class DataQualityAgent < SupportAgentService
-  DESCRIPTION = "Nightly data integrity checks per fund: commitment overflows, stale valuations, " \
-                "stale FX rates. Emails a health score and fix-it list. " \
-                "Config: check_commitment_overflows, check_missing_valuations, check_stale_fx_rates, " \
-                "send_report (true/false), stale_valuation_days (default 90), stale_fx_days (default 30).".freeze
+  DESCRIPTION = "Nightly data integrity checks per fund: commitment overflows, stale valuations, stale FX rates. Emails a health score and fix-it list.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Runs deterministic integrity checks across each fund's financial data on a nightly schedule.
+    Targets every Fund in the entity and produces a health score (percentage of active checks passing)
+    along with a fix-it list emailed to configured recipients.
+
+    Checks:
+    • Commitment Overflows — flags any LP whose total called amount exceeds their commitment.
+    • Missing Valuations — identifies portfolio companies without a valuation in the past N days
+      (configurable via stale_valuation_days, default 90).
+    • Stale FX Rates — flags currencies whose exchange rate hasn't been updated in N days
+      (configurable via stale_fx_days, default 30).
+
+    Each check is independently toggleable (check_commitment_overflows, check_missing_valuations,
+    check_stale_fx_rates). Email delivery is controlled by send_report. Health score and
+    per-check results are stored in json_fields on the SupportAgentReport.
+  DESC
 
   STEP_LABELS = {
     initialize_agent:             "Initialize",

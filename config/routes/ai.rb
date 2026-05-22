@@ -5,6 +5,7 @@ end
 resources :support_agents do
   collection do
     post 'run'
+    get  'note_summaries'
   end
   member do
     post 'run_with_steps'

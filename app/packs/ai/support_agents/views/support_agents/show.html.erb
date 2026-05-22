@@ -28,6 +28,11 @@
           Scoring Reports
         </a>
       <% end %>
+      <% if @support_agent.agent_type == "NoteSummarizerAgent" %>
+        <a class="nav-link <%= 'active' if active_tab == 'note_summaries' %>" data-bs-toggle="pill" href="#note-summaries-tab">
+          Note Summaries
+        </a>
+      <% end %>
 
     </nav>
 
@@ -66,6 +71,13 @@
         <%# Scoring Reports Tab %>
         <div id="scoring-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'scoring_reports' %>">
           <%= render 'scoring_reports_tab', support_agent: @support_agent, scoring_reports: @scoring_reports %>
+        </div>
+      <% end %>
+
+      <% if @support_agent.agent_type == "NoteSummarizerAgent" %>
+        <%# Note Summaries Tab %>
+        <div id="note-summaries-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'note_summaries' %>">
+          <%= render 'note_summaries_tab', support_agent: @support_agent, note_summaries: @note_summaries %>
         </div>
       <% end %>
 

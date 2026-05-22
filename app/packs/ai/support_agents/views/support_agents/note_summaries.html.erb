@@ -1,0 +1,6 @@
+<%# Rendered inside a Turbo Frame request from the dashboard widget. %>
+<%= turbo_frame_tag "note_summaries_widget_#{params[:entity_id]}_#{params[:owner_id]}" do %>
+  <%= render "support_agents/note_summaries_tab",
+             support_agent: @support_agent,
+             note_summaries: @note_summaries %>
+<% end %>

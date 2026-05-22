@@ -16,12 +16,13 @@
     </div>
 
     <div class="card-body-custom">
+      <%
+        agent_class        = support_agent.agent_type.constantize rescue nil
+        short_description  = (agent_class.const_get(:DESCRIPTION)      if agent_class&.const_defined?(:DESCRIPTION))      || support_agent.description
+        long_description   = (agent_class.const_get(:LONG_DESCRIPTION) if agent_class&.const_defined?(:LONG_DESCRIPTION))
+      %>
       <p class="description">
-        <%
-          agent_class = support_agent.agent_type.constantize rescue nil
-          description = (agent_class.const_get(:DESCRIPTION) if agent_class&.const_defined?(:DESCRIPTION)) || support_agent.description
-        %>
-        <%= description %>
+        <%= short_description %>
       </p>
 
       <div class="d-flex justify-content-between align-items-center">
@@ -59,6 +60,11 @@
 
     <div class="collapse" id="collapse-<%= dom_id support_agent %>">
       <div class="expandable-details">
+        <% if long_description.present? %>
+          <div class="agent-about-panel">
+            <%= format_agent_description(long_description) %>
+          </div>
+        <% end %>
         <table class="details-table">
           <tr>
             <td>Agent Type</td>

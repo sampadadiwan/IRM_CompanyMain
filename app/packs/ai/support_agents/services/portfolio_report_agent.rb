@@ -2,6 +2,26 @@
 # Generates or refines AI portfolio report sections using document and web context.
 class PortfolioReportAgent < SupportAgentService
   DESCRIPTION = "Generates or refines AI portfolio report sections using document and web context.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Generates or refines individual sections of an AI-powered portfolio report, using uploaded
+    documents and optional web search results as grounding context.
+
+    Supported report sections: Executive Summary, Business Overview, Financial Performance,
+    Market Opportunity, Recent Developments, Charts, Team & Cap Table, Funding History,
+    SWOT Analysis, Competitive Landscape, Market Risks, Operational Risks, Adverse Media,
+    AML/KYB Screening, and Investment Terms.
+
+    Steps:
+    • Load Document Context — reads and indexes uploaded documents for the portfolio company.
+    • Load Web Search Context — optionally fetches recent web results for additional context.
+    • Load Section Template — selects the appropriate prompt template for the requested section.
+    • Determine Action — decides whether to generate new content or refine existing draft.
+    • Generate or Refine — calls the configured LLM with full document + web context.
+    • Save Section — persists the generated section to the ai_portfolio_report record.
+
+    Used interactively from the Portfolio Report UI and via the portfolio report dashboard widget.
+  DESC
   step :initialize_agent
   step :load_document_context
   step :load_web_search_context # NEW: Load web search results

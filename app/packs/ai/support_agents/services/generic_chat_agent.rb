@@ -7,6 +7,24 @@
 # @see AgentChatSession
 
 class GenericChatAgent < SupportAgentService
+  DESCRIPTION = "Provides multi-turn AI chat for any configured support agent using context-aware chat providers.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Orchestrates multi-turn AI chat conversations for any configured support agent.
+    Resolves the appropriate chat provider based on the agent type, builds context from the
+    target record, and persists all messages to an AgentChatSession for resumable conversations.
+
+    Chat providers:
+    • DefaultChatProvider — general-purpose chat with system context from the agent's configuration.
+    • PortfolioCompanyChatProvider — enriches context with portfolio company data and KPI history.
+    • PortfolioAssistantChatProvider — provides portfolio-level analysis and cross-company context.
+    • CashFlowChatProvider — loads cash flow data and fund positions for financial Q&A.
+
+    Steps: Initialize → Resolve Provider → Setup LLM → Execute Chat → Save Messages.
+    Messages are persisted so conversations are resumable across sessions. Used as the backend
+    for the chat panel on the Support Agent show page.
+  DESC
+
   STEP_LABELS = {
     initialize_chat: "Initialize",
     resolve_provider: "Load Provider",

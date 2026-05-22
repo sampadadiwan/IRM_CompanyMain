@@ -11,6 +11,26 @@
 #
 # @see SupportAgentService
 class CashFlowAssistantAgent < SupportAgentService
+  DESCRIPTION = "Analyzes cash flow across configured funds and sends consolidated reports to fund managers.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Analyzes cash flow across a configured set of funds and delivers a consolidated report
+    to fund managers. Targets the entity itself and iterates over the funds listed in json_fields.
+
+    Steps:
+    • Staleness Check — verifies that cash flow data for each fund is current. Funds with stale
+      data are excluded from the report to prevent misleading recommendations.
+    • Cash Flow Calculation — computes cash positions using configured account tags:
+      cash_tags (inflows), expense_tags (outflows), buffer_tags (reserve accounts).
+    • Generate Reports — produces a per-fund report with balance, estimated burn rate,
+      runway, and a narrative summary.
+    • Send Email — delivers the consolidated report to all addresses in report_recipients.
+
+    Configuration: funds (list of fund IDs to include), report_recipients (comma-separated
+    email addresses), cash_tags / expense_tags / buffer_tags (comma-separated account tags).
+    Designed for weekly or monthly scheduled runs.
+  DESC
+
   STEP_LABELS = {
     initialize_agent: "Initialize",
     check_data_staleness: "Staleness Check",
