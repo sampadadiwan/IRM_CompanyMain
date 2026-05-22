@@ -207,7 +207,9 @@ class KpiReportsController < ApplicationController
     # of a silent job failure + error email.
     if params[:as_of].present?
       begin
-        Date.parse(params[:as_of])
+        # Use local_parse so locale-specific formats (DD/MM/YYYY vs MM/DD/YYYY) are
+        # interpreted consistently with the rest of the app rather than Ruby's default.
+        Date.local_parse(params[:as_of])
       rescue Date::Error, ArgumentError
         redirect_to request.referer || kpi_reports_path, alert: "Invalid date format for 'As Of'."
         return

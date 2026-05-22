@@ -39,11 +39,11 @@ class KpiDateUtils
 
     return true if patterns.any? { |pat| normalized =~ pat }
 
-    # Fallback to Date.local_parse
+    # Fallback to Date.local_parse; rescue only date-parsing errors, not programming mistakes.
     begin
       Date.local_parse(normalized)
       true
-    rescue StandardError
+    rescue ArgumentError, Date::Error
       false
     end
   end
@@ -82,11 +82,7 @@ class KpiDateUtils
       return Date.new(year, month, -1)
     end
 
-    if (match = str.match(/\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2})\z/))
-      month = Date::ABBR_MONTHNAMES.index(match[1].capitalize)
-      year = normalize_year(match[2])
-      return Date.new(year, month, -1)
-    end
+    # Removed dead block: \d{2} is already covered by \d{2,4} above.
 
     nil
   end
@@ -157,11 +153,15 @@ class KpiDateUtils
   end
 
   def self.end_of_fiscal_quarter(fiscal_year, quarter, fiscal_year_start_month)
-    # Fiscal year FY21 means starting in April 2020 and ending March 2021
-    # So we shift fiscal year back to get the starting year
-    year = quarter == 4 ? fiscal_year : fiscal_year - 1
-
+    # fiscal_year is the year in which the fiscal year ends (e.g. FY21 → 2021).
+    # For cross-calendar fiscal years (e.g. April-start), quarters 1–3 fall in fiscal_year-1,
+    # and only quarter 4 falls in fiscal_year. We derive the base year from the quarter's
+    # start month: if the start month is before the fiscal year start month the quarter wraps
+    # into fiscal_year, otherwise it sits in fiscal_year-1.
     start_month = ((((quarter - 1) * 3) + fiscal_year_start_month - 1) % 12) + 1
+    # A start month earlier in the calendar than the fiscal year's opening month means the
+    # quarter crosses the fiscal year boundary into fiscal_year; otherwise it's in fiscal_year-1.
+    year = start_month < fiscal_year_start_month ? fiscal_year : fiscal_year - 1
 
     # Move 2 months forward to get the end month of the quarter
     end_month = ((start_month + 2 - 1) % 12) + 1
@@ -261,11 +261,12 @@ class KpiDateUtils
 
       # Always return the end of the month
       date.end_of_month
-    rescue ArgumentError
+    rescue ArgumentError, Date::Error
       if Rails.env.test? || !raise_error
         nil
       else
-        raise "Unrecognized period format: '#{raw_period}'"
+        # Avoid echoing raw user input into the message to keep logs clean.
+        raise "Unrecognized period format"
       end
     end
   end
