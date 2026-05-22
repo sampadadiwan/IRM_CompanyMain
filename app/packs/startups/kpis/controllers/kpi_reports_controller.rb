@@ -121,8 +121,10 @@ class KpiReportsController < ApplicationController
   # PATCH /kpi_reports/:id/mark_reviewed
   def mark_reviewed
     authorize @kpi_report
+    kpi_ids = Kpi.unapproved.where(kpi_report_id: @kpi_report.id).pluck(:id)
+    KpiApproveService.call(kpi_ids, current_user.id) if kpi_ids.any?
     @kpi_report.update(status: 'reviewed')
-    redirect_to edit_kpi_report_url(@kpi_report), notice: "Report marked as reviewed."
+    redirect_to kpi_report_url(@kpi_report), notice: "All KPIs approved and report marked as reviewed."
   end
 
   # GET /kpi_reports/portco_pending — dashboard of outstanding requests for the logged-in portco user

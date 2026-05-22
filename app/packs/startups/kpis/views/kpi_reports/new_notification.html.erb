@@ -1,32 +1,97 @@
 <%= turbo_frame_tag "remote_modal" do %>
   <div class="modal fade" data-controller="modal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
       <div class="modal-content">
         <%= form_with url: send_portco_notification_kpi_reports_path, method: :post do |f| %>
-          <div class="modal-header">
-            <h5 class="modal-title">Send KPI Report Reminder</h5>
+          <div class="modal-header border-bottom-0 pb-0">
+            <div>
+              <h5 class="modal-title fw-semibold">Send KPI Report Reminder</h5>
+              <p class="text-muted small mb-0">Request portfolio companies to upload their KPI data</p>
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body">
+
+          <div class="modal-body pt-2">
+
+            <%# How it works — step flow %>
+            <div class="rounded-3 p-3 mb-4" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+              <p class="text-muted small fw-semibold text-uppercase mb-2" style="letter-spacing: .05em;">How it works</p>
+              <div class="d-flex gap-2 align-items-start flex-wrap">
+
+                <div class="d-flex align-items-start gap-2 flex-grow-1" style="min-width: 130px;">
+                  <span class="badge rounded-pill bg-primary flex-shrink-0 mt-1">1</span>
+                  <div>
+                    <div class="fw-semibold small">Email sent</div>
+                    <div class="text-muted" style="font-size: .8rem;">Each selected company receives a secure magic link — no login required</div>
+                  </div>
+                </div>
+
+                <div class="text-muted align-self-center px-1 d-none d-md-block">›</div>
+
+                <div class="d-flex align-items-start gap-2 flex-grow-1" style="min-width: 130px;">
+                  <span class="badge rounded-pill bg-primary flex-shrink-0 mt-1">2</span>
+                  <div>
+                    <div class="fw-semibold small">Portco uploads</div>
+                    <div class="text-muted" style="font-size: .8rem;">They open the link, fill in KPI data, and submit directly — link valid for 15 days</div>
+                  </div>
+                </div>
+
+                <div class="text-muted align-self-center px-1 d-none d-md-block">›</div>
+
+                <div class="d-flex align-items-start gap-2 flex-grow-1" style="min-width: 130px;">
+                  <span class="badge rounded-pill bg-primary flex-shrink-0 mt-1">3</span>
+                  <div>
+                    <div class="fw-semibold small">You review</div>
+                    <div class="text-muted" style="font-size: .8rem;">You're notified by email when submitted; mark as Reviewed when done</div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+
+            <%# Form fields %>
             <div class="mb-3">
-              <%= f.label :portfolio_company_ids, "Portfolio Companies", class: "form-label" %>
+              <%= f.label :portfolio_company_ids, class: "form-label fw-semibold" do %>
+                Portfolio Companies
+                <span class="text-muted fw-normal small ms-1">— who should receive the reminder?</span>
+              <% end %>
               <%= f.select :portfolio_company_ids,
                            options_for_select([["All Companies", "all"]], @selected_ids.include?("all") ? "all" : nil) +
                            options_from_collection_for_select(@portfolio_companies, :id, :investor_name, @selected_ids),
                            {},
                            { class: "form-select select2", multiple: true, data: { controller: "select2" } } %>
+              <div class="form-text">Companies that have already submitted for this period will be skipped automatically.</div>
             </div>
-            <div class="mb-3">
-              <%= f.label :as_of, "Period Ending Date", class: "form-label" %>
-              <%= f.date_field :as_of, class: "form-control", required: true, value: Date.today.end_of_month %>
+
+            <div class="row g-3 mb-2">
+              <div class="col-sm-6">
+                <%= f.label :as_of, class: "form-label fw-semibold" do %>
+                  Period Ending Date
+                <% end %>
+                <%= f.date_field :as_of, class: "form-control", required: true, value: Date.today.end_of_month %>
+                <div class="form-text">The date the reporting period ends (e.g. 31 Mar 2025).</div>
+              </div>
+              <div class="col-sm-6">
+                <%= f.label :period, class: "form-label fw-semibold" do %>
+                  Period
+                <% end %>
+                <%= f.select :period, KpiReport::PERIODS, { selected: "Month" }, class: "form-control", required: true %>
+                <div class="form-text">Monthly, quarterly, etc.</div>
+              </div>
             </div>
-            <div class="mb-3">
-              <%= f.label :period, "Period", class: "form-label" %>
-              <%= f.select :period, KpiReport::PERIODS, { selected: "Month" }, class: "form-control", required: true %>
+
+            <%# Tips %>
+            <div class="alert alert-info alert-sm d-flex gap-2 align-items-start py-2 mb-0 mt-3" style="font-size: .85rem;">
+              <i class="ti ti-info-circle fs-5 flex-shrink-0 mt-1"></i>
+              <div>
+                <strong>Re-sending is safe.</strong> If a company already has a pending request for this period the existing report is reused — no duplicate is created and the status does not regress.
+              </div>
             </div>
+
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+
+          <div class="modal-footer border-top pt-3">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
             <%= f.submit "Send Reminders", class: "btn btn-primary" %>
           </div>
         <% end %>

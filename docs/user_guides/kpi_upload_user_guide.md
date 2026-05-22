@@ -22,6 +22,7 @@ This guide provides a comprehensive overview of the Key Performance Indicator (K
 *   **Automated Calculations**: Quarterly, YTD, and Annual totals are automatically recalculated upon approval.
 *   **Direct Links**: Portfolio companies should use the link in their reminder email to upload directly to the correct period.
 *   **Save Draft / Submit**: Portfolio companies can save work-in-progress with **Save Draft** and use **Submit Report** when done. The fund is notified automatically upon submission.
+*   **XLSX Validation**: When a portco uploads a workbook, the system immediately checks its structure client-side. If date column headers are missing or invalid, both the **Save Draft** and **Submit Report** buttons are disabled and an error is shown — the portco must fix the file before proceeding.
 *   **Status Tracking**: Every report has a visible status badge — fund admins can see which companies have submitted at a glance.
 *   **Link Expiry**: Magic links are valid for 15 days. The expiry date is shown in the email. Contact your fund manager for a new link if needed.
 
@@ -32,7 +33,7 @@ The KPI system ensures data integrity through role-based access:
 
 | Role | Permissions |
 | :--- | :--- |
-| **Fund Admin / Approver** | Full access. Can create reports, approve staged data, trigger recomputations, send notifications, and mark reports as reviewed. |
+| **Fund Admin / Approver** | Full access. Can create reports, approve staged KPIs, trigger recomputations, send notifications, and mark reports as reviewed. On a submitted report's show page, the **View Including Staged** button links directly to the grid view where staged KPIs can be reviewed and approved. |
 | **Portfolio Company User** | Can save drafts and submit KPI reports for their company via secure email links or the **Pending KPI Reports** dashboard. |
 | **Advisor / Read-Only** | Can view approved reports and dashboards but cannot modify data or approve uploads. |
 
@@ -122,22 +123,30 @@ Portfolio company users can visit **KPI Reports → Pending KPI Requests** to se
 
 ### 4. Fund Admin Review
 *   The fund admin receives a notification email when a portco submits.
-*   They review the data and click **Mark as Reviewed** to advance the report to **Reviewed** status.
-*   **Editing Context**: Clicking **Mark as Reviewed** redirects the admin back to the **Edit** page to keep them in their workflow.
-*   **Clean Layout**: The "Mark as Reviewed" button is located cleanly outside the main form to prevent nested form conflicts.
+*   They open the KPI report **Show page** and click the **View Including Staged** button (outlined green). This button is only shown when the report status is **Submitted**.
+*   The button links directly to the KPI **Grid View** filtered to this portfolio company with staged KPIs visible (highlighted in orange).
+*   From the grid view the admin can approve individual KPIs or use **Actions → Approve All** to promote all staged data in one step. Growth and cumulative recalculations trigger automatically on approval.
 *   **Reviewed** reports are excluded from all future reminder cycles.
+*   The **Trigger Upload Notification** button is hidden for Submitted and Reviewed reports — there is nothing left to request.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor Admin as Fund Admin
-    participant Web as Rails Web App
+    participant Show as KPI Report Show Page
+    participant Grid as KPI Grid View
+    participant Svc as KpiApproveService
     participant DB as Database
+    participant Jobs as Background Jobs
 
-    Admin->>Web: View Submitted KPI Report
-    Admin->>Web: Click "Mark as Reviewed"
-    Web->>DB: Update status to "Reviewed"
-    Web-->>Admin: Redirect to Edit Page with success notice
+    Admin->>Show: Open submitted KPI Report
+    Show-->>Admin: Shows "View Including Staged" button
+    Admin->>Grid: Click button → Grid View (portfolio_company + view_unapproved=true + grid_view=true)
+    Grid-->>Admin: Staged KPIs highlighted in orange
+    Admin->>Grid: Click "Approve All" (Actions menu)
+    Grid->>Svc: KpiApproveService(unapproved_kpi_ids)
+    Svc->>DB: Promote staged KPIs to approved
+    Svc->>Jobs: Trigger KpiPercentageChangeJob + KpiCumulateJob
 ```
 
 ### 5. Staged Import (The Upload)
@@ -245,23 +254,27 @@ After approval, the system automatically triggers several high-impact tasks:
 
 ## 🛠️ Common Pitfalls & Troubleshooting
 
-### 1. "No Date Headers Found"
-*   **Cause**: The system couldn't find at least two date-like values in the first 10 rows.
+### 1. "Please fix these errors before submitting" (Save Draft / Submit Report disabled)
+*   **Cause**: The client-side XLSX validator found a structural problem in your uploaded file — typically the header row contains no recognisable date-like values. Both action buttons are disabled until the issue is resolved.
+*   **Fix**: Re-check your workbook's first row. The first column should be KPI names; every other column from the second onward should be a date period in a supported format (e.g. `Jan 2025`, `Q1FY25`). Upload the corrected file — the buttons re-enable automatically once the validator passes.
+
+### 2. "No Date Headers Found" (server-side import error)
+*   **Cause**: The system couldn't find at least two date-like values in the first 10 rows during the server-side import.
 *   **Fix**: Ensure your headers use supported formats (e.g., "Jan 2024") and are not buried deep in the sheet.
 
-### 2. "KPI Name Not Mapped"
+### 3. "KPI Name Not Mapped"
 *   **Cause**: The KPI name in Excel doesn't match any "Reported KPI Name" in the system.
 *   **Fix**: Check your mapping settings or update the Excel file to use the correct name.
 
-### 3. "Value Skipped (Identical)"
+### 4. "Value Skipped (Identical)"
 *   **Cause**: The value in Excel is exactly the same as the currently approved value.
 *   **Fix**: No action needed. The system does this to save time and avoid redundant approvals.
 
-### 4. "Future Date Skipped"
+### 5. "Future Date Skipped"
 *   **Cause**: You are uploading "Actual" data for a date that hasn't occurred yet.
 *   **Fix**: Use the "Budget" or "Projected" tag if you are uploading future-looking data.
 
-### 5. "This link has expired or is invalid" Error Page
+### 6. "This link has expired or is invalid" Error Page
 *   **Cause**: The magic link you clicked has expired (valid for 15 days) or is invalid.
 *   **Fix**: Contact your fund manager to request a new invitation link. The system will render a friendly, unauthenticated-safe error page with instructions instead of redirecting you to the sign-in page.
 
@@ -270,7 +283,7 @@ After approval, the system automatically triggers several high-impact tasks:
 ## ❓ FAQ
 
 **Q: I uploaded my KPIs, but the dashboard hasn't updated. Why?**
-A: Your data is likely in the **Staged (Unapproved)** state. Dashboards only reflect **Approved** data. Contact your Fund Admin to review and approve the upload.
+A: Your data is likely in the **Staged (Unapproved)** state. Dashboards only reflect **Approved** data. Contact your Fund Admin to open the KPI report show page and click **View Including Staged** to review and approve the uploaded data from the grid view.
 
 **Q: How do I see my "Pending" data?**
 A: In the **KPI Grid View**, authorized users can enable **"View Including Staged"** to see unapproved values highlighted in orange.

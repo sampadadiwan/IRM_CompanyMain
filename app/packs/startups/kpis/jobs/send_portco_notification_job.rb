@@ -58,15 +58,23 @@ class SendPortcoNotificationJob < ApplicationJob
       return
     end
 
-    # 3. Authorization check: Ensure the user still has permission for this PortCo/Report
+    # 3. Authorization check
     policy = KpiReportPolicy.new(user, kpi_report)
     unless policy.send_portco_notification?
-      error_msg = "User does not have permission to send notification for this portfolio company."
-      Rails.logger.debug { "Permission Denied: #{error_msg}" }
       @error_msgs << {
         pc_id: pc_id,
         pc_name: portfolio_company.name,
-        message: error_msg
+        message: "You do not have permission to send notifications for this portfolio company."
+      }
+      return
+    end
+
+    # 3b. Business logic check: portco must have at least one approved portal user to receive the email.
+    unless portfolio_company.investor_accesses.approved.exists?
+      @error_msgs << {
+        pc_id: pc_id,
+        pc_name: portfolio_company.name,
+        message: "No approved portal users found. Add an approved user for this company under Stakeholders before sending a reminder."
       }
       return
     end
@@ -127,21 +135,21 @@ class SendPortcoNotificationJob < ApplicationJob
     end
   end
 
-  # Sends a summary of processing errors to the triggering user.
-  # Matches the implementation in KpiCumulateJob.
+  # Sends a summary of processing errors to the triggering user — both as a
+  # real-time in-app alert and as an email for reference.
   def send_error_email(user)
-    msg = "Errors in sending PortCo KPI notifications."
+    lines = @error_msgs.map { |err| "<strong>#{err[:pc_name]}</strong>: #{err[:message]}" }
+    html = "<strong>Errors sending KPI notifications:</strong><ul>#{lines.map { |l| "<li>#{l}</li>" }.join}</ul>"
 
-    # Convert error messages to a format compatible with the EntityMailer's notify_errors view.
-    # The view expects an Enumerable of key-value pairs where values are strings.
-    formatted_errors = @error_msgs.map.with_index do |err, _idx|
-      ["#{err[:pc_name] || 'Unknown PortCo'} (ID: #{err[:pc_id]})", err[:message]]
-    end
+    # Broadcast inline so the user sees it immediately in the browser.
+    send_notification(html, user.id, "danger")
 
+    # Also email for a persistent record.
+    formatted_errors = @error_msgs.map { |err| ["#{err[:pc_name]} (ID: #{err[:pc_id]})", err[:message]] }
     EntityMailer.with(
       to: user.email,
       error_msg: formatted_errors,
-      subject: msg,
+      subject: "Errors sending PortCo KPI notifications",
       entity_id: user.entity_id
     ).notify_errors.deliver_now
   end

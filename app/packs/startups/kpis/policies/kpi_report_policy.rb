@@ -74,14 +74,12 @@ class KpiReportPolicy < KpiPolicyBase
     user.enable_kpis
   end
 
-  # Allow sending notification reminders if the user can index reports
-  # and the report has self-reporting (portco upload) enabled.
+  # Allow sending notification reminders if the user owns the KPI report's entity.
+  # Whether the portco has approved users is a business-logic concern checked in the job,
+  # not an authorization concern.
   def send_portco_notification?
-    # Fund admin: must belong to the entity that owns the KPI report.
-    # Portco user: must be an approved user of the portfolio company itself.
     user.enable_kpis &&
-      (belongs_to_entity?(user, record) || portfolio_company_user?) &&
-      record.portfolio_company.investor_accesses.approved.exists?
+      (belongs_to_entity?(user, record) || portfolio_company_user?)
   end
 
   def trigger_periodic_reports?

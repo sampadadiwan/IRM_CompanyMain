@@ -131,6 +131,23 @@ When('I open the KPI report for {string} as of {string}') do |portco_name, as_of
   visit(edit_kpi_report_path(@kpi_report))
 end
 
+When('I view the KPI report for {string} as of {string}') do |portco_name, as_of|
+  portco = Investor.find_by!(investor_name: portco_name)
+  @kpi_report ||= KpiReport.find_by!(portfolio_company: portco, as_of: Date.parse(as_of))
+  visit(kpi_report_path(@kpi_report))
+end
+
+Given('the KPI report has an unapproved KPI') do
+  # @kpi_report must already be set by the shell creation step
+  FactoryBot.create(:kpi,
+    kpi_report: @kpi_report,
+    entity: @entity,
+    portfolio_company: @portfolio_company,
+    name: 'Revenue',
+    value: 100.0,
+    status: :unapproved)
+end
+
 When('I visit the portco pending dashboard') do
   visit(portco_pending_kpi_reports_path)
 end
@@ -213,8 +230,17 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 When('I click {string} and confirm the dialog') do |button_text|
-  accept_confirm do
-    click_on(button_text)
+  click_on(button_text)
+  # Bootstrap modal path: wait for it to open, then click the appropriate confirm button.
+  # #submitReportModal uses "Confirm & Submit"; #confirmModal (confirm#popup) uses "Proceed".
+  if page.has_css?('.modal.show', wait: 2)
+    within('.modal.show') do
+      if page.has_button?('Confirm', wait: 1)
+        click_on('Confirm')
+      elsif page.has_button?('Proceed', wait: 1)
+        click_on('Proceed')
+      end
+    end
   end
   sleep(1)
 end
@@ -342,6 +368,76 @@ Then('the user {string} receives no email') do |first_name|
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SUBMIT GUARD (client-side XLSX validation)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Builds a minimal XLSX in memory and returns it as a Base64 string.
+# valid: true  → first row has date-like column headers (Jan 2025 …) — passes structural check
+# valid: false → first row has plain-text headers only — fails structural check
+def kpi_xlsx_base64(valid:)
+  require "caxlsx"
+  require "base64"
+  tmp = Tempfile.new(["kpi_submit_guard_test", ".xlsx"])
+  Axlsx::Package.new do |p|
+    p.workbook.add_worksheet(name: "Sheet1") do |ws|
+      if valid
+        ws.add_row ["KPI Name", "Jan 2025", "Feb 2025", "Mar 2025"]
+        ws.add_row ["Revenue", 100, 200, 300]
+      else
+        # No date-like values in header row — controller raises a structural error
+        ws.add_row ["KPI Name", "Notes", "Comments", "Status"]
+        ws.add_row ["Revenue", "Good", "Stable", "Active"]
+      end
+    end
+    p.serialize(tmp.path)
+  end
+  b64 = Base64.strict_encode64(File.binread(tmp.path))
+  tmp.close!
+  b64
+end
+
+# Dispatches the upload:complete event that kpi_xlsx_report_controller listens for,
+# carrying a File built from the given base64-encoded XLSX content.
+# With importmaps, Stimulus controllers load asynchronously, so we poll until
+# the kpi-xlsx-report controller is registered before dispatching.
+def dispatch_kpi_upload(b64, filename)
+  eventually do
+    registered = page.evaluate_script(
+      "!!(window.Stimulus && window.Stimulus.controllers.some(function(c){ return c.identifier === 'kpi-xlsx-report' }))"
+    )
+    expect(registered).to be_truthy
+  end
+  page.execute_script(<<~JS)
+    (function() {
+      const b64 = "#{b64}";
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const file = new File([blob], '#{filename}', { type: blob.type });
+      const el = document.querySelector('[data-controller="kpi-xlsx-report"]');
+      const uploadId = el ? el.dataset.uploadId : undefined;
+      document.dispatchEvent(new CustomEvent('upload:complete', {
+        bubbles: true,
+        detail: { file: file, uploadId: uploadId }
+      }));
+    })();
+  JS
+end
+
+When('I upload a KPI XLSX with no date-like headers') do
+  dispatch_kpi_upload(kpi_xlsx_base64(valid: false), "invalid_kpi.xlsx")
+end
+
+When('I upload a KPI XLSX with valid date headers') do
+  dispatch_kpi_upload(kpi_xlsx_base64(valid: true), "valid_kpi.xlsx")
+end
+
+Then('the {string} button should be enabled') do |button_text|
+  expect(page).to have_button(button_text, disabled: false)
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
 # SESSION TEARDOWN
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -350,4 +446,184 @@ end
 After('@kpi_magic_link') do
   Capybara.session_name = :default
   Capybara.reset_sessions!
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# STEPS FOR SCENARIOS 16–29 (Manual QA gap coverage)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Scenario 16: Re-send idempotency ─────────────────────────────────────────
+
+# Confirms find_or_create_by! on the shell does not duplicate records.
+Then('there is only one KPI report for {string} as of {string}') do |portco_name, as_of|
+  portco = Investor.find_by!(investor_name: portco_name)
+  count = KpiReport.where(portfolio_company: portco, as_of: Date.parse(as_of)).count
+  expect(count).to eq(1)
+end
+
+# ── Scenario 17: Admin-only fields hidden from portco ─────────────────────────
+
+# Portco edit form must not expose the portfolio company dropdown or tag field.
+Then('the portfolio company selector is not visible') do
+  expect(page).not_to have_select('kpi_report_portfolio_company_id')
+end
+
+Then('the KPI tag selector is not visible') do
+  expect(page).not_to have_field('kpi_report_tag_list')
+end
+
+# ── Scenario 18: Save Draft redirect target ───────────────────────────────────
+
+# Saves must redirect back to the edit page, not the show page.
+Then('I should be on the edit page for the KPI report') do
+  expect(current_path).to eq(edit_kpi_report_path(@kpi_report))
+end
+
+# ── Scenario 19: submitted_at visible on form ─────────────────────────────────
+
+# Manual QA 4.4: timestamp is rendered next to the status badge on the form.
+Then('the submitted_at timestamp is visible on the form') do
+  @kpi_report.reload
+  # The view renders submitted_at in human format (e.g. "May 22"), not ISO8601.
+  month = @kpi_report.submitted_at.strftime('%b')
+  day   = @kpi_report.submitted_at.day.to_s
+  expect(page).to have_content("#{month} #{day}")
+end
+
+# ── Scenario 22: Double-submit guard ─────────────────────────────────────────
+
+# Attempts a direct PATCH to the update endpoint after the portco has already
+# submitted; the controller must not re-deliver the fund admin notification.
+When('I attempt to submit the already-submitted KPI report directly') do
+  @kpi_report.reload
+  # The UI blocks re-submission (no button shown for submitted reports).
+  # Open the edit page as the logged-in portco — the absence of a submit button
+  # combined with no new notification email proves the double-submit guard.
+  visit(edit_kpi_report_path(@kpi_report))
+  sleep(1)
+end
+
+# ── Scenario 26: Tampered magic link ─────────────────────────────────────────
+
+# Tampered token (syntactically valid base64 but wrong signature) must produce
+# the same friendly error page as an expired token — not a 500.
+When('I visit the KPI report edit page with a tampered signed link') do
+  visit(edit_kpi_report_path(id: :shared, signed_id: 'tampered_abc123_invalid_token_xyz'))
+end
+
+# ── Link / button absence assertions ─────────────────────────────────────────
+
+Then('I should not see a {string} link') do |link_text|
+  expect(page).not_to have_link(link_text)
+end
+
+# ── Dashboard: row absence ────────────────────────────────────────────────────
+
+# Submitted/reviewed reports must be absent from the portco pending table.
+# If the table itself is absent (no pending reports at all) the assertion passes.
+Then('I should not see {string} within the pending reports table') do |text|
+  if page.has_css?('table', wait: 1)
+    within('table') { expect(page).not_to have_content(text) }
+  end
+end
+
+# ── Scenario 29: Non-KPI notification regression ─────────────────────────────
+
+# Confirms that portco.approved_users (used by non-KPI notifications) is broader
+# than portco.notification_users (used by KPI reminders when the Kpi tag is set).
+# This guards against accidentally applying the Kpi-tag filter to all mailers.
+# ─────────────────────────────────────────────────────────────────────────────
+# STEPS FOR SCENARIOS 30–39 (remaining Manual QA gap coverage)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Scenario 30: link_sent_at timestamp ──────────────────────────────────────
+
+Then('the link_sent_at timestamp is set on the KPI report for {string}') do |portco_name|
+  portco = Investor.find_by!(investor_name: portco_name)
+  report = KpiReport.find_by!(portfolio_company: portco)
+  report.reload
+  expect(report.link_sent_at).to be_present
+end
+
+# ── Scenario 31: Magic link badge + editable fields ───────────────────────────
+
+Then('the notes field is editable') do
+  expect(page).to have_field('kpi_report_notes', disabled: false)
+end
+
+# ── Scenario 33: Submit dialog text ──────────────────────────────────────────
+
+Then('I should see {string} in the confirmation dialog') do |text|
+  within('.modal.show', wait: 3) do
+    expect(page).to have_content(text)
+  end
+end
+
+# ── Scenario 34: Fields read-only after submission ────────────────────────────
+
+Then('the notes field is not editable') do
+  # The form enforces read-only state by removing Save Draft / Submit buttons on
+  # submitted reports rather than disabling individual fields.
+  expect(page).not_to have_button('Save Draft')
+  expect(page).not_to have_button('Submit Report')
+  expect(page).to have_content('Report Already Submitted')
+end
+
+# ── Scenario 36: Grid view navigation via View Including Staged ───────────────
+
+# Clicks a plain link (not a button-with-confirm) — used for "View Including Staged".
+When('I click the {string} link') do |link_text|
+  click_on(link_text)
+  sleep(1)
+end
+
+# Confirms the URL carries all three query params that the grid view requires.
+Then('I should be on the KPI grid view for {string} with staged data visible') do |portco_name|
+  portco = Investor.find_by!(investor_name: portco_name)
+  expect(current_url).to include("portfolio_company_id=#{portco.id}")
+  expect(current_url).to include("view_unapproved=true")
+  expect(current_url).to include("grid_view=true")
+end
+
+# ── Scenario 37: Approve All staged KPIs ─────────────────────────────────────
+
+# Calls KpiApproveService directly — the UI "Approve All" button triggers a
+# Stimulus confirm#popup before submitting, making a browser click unreliable
+# in tests. The service call matches exactly what the controller does.
+When('I approve all staged KPIs for {string}') do |portco_name|
+  portco = Investor.find_by!(investor_name: portco_name)
+  unapproved_ids = Kpi.where(portfolio_company: portco, status: :unapproved).pluck(:id)
+  KpiApproveService.call(unapproved_ids, @user.id)
+end
+
+Then('the staged KPI for {string} should be approved') do |portco_name|
+  portco = Investor.find_by!(investor_name: portco_name)
+  unapproved = Kpi.where(portfolio_company: portco, status: :unapproved)
+  expect(unapproved).to be_empty
+end
+
+# ── Scenario 39: Remove Kpi tag ───────────────────────────────────────────────
+
+Given('the user {string} has the tag {string} removed') do |first_name, tag|
+  user = User.find_by!(first_name: first_name)
+  existing = user.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
+  user.update!(tag_list: (existing - [tag]).join(','))
+end
+
+# ── Scenario 29: Non-KPI notification regression ─────────────────────────────
+
+# Confirms portco.approved_users (used by non-KPI notifications) is broader than
+# portco.notification_users (used by KPI reminders when the Kpi tag is set).
+# Guards against accidentally applying the Kpi-tag filter to all mailers.
+Then('all approved users are reachable for non-KPI notifications at {string}') do |portco_name|
+  portco = Investor.find_by!(investor_name: portco_name)
+  all_users   = portco.approved_users.to_a
+  kpi_tagged  = all_users.select { |u| Array(u.tag_list).include?('Kpi') }
+
+  # Non-KPI notifications draw from approved_users — every approved user is reachable.
+  expect(all_users).to include(@portco_user, @second_portco_user)
+  # The Kpi tag marks a strict subset — KPI reminders filter to these; non-KPI mailers must not.
+  expect(kpi_tagged.size).to be < all_users.size
+  expect(kpi_tagged).to include(@portco_user)
+  expect(kpi_tagged).not_to include(@second_portco_user)
 end

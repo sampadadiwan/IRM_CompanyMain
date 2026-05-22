@@ -45,8 +45,8 @@ Feature: KPI Workbook Reading
 
     Examples:
       | workbook_file                               | message                 | found_kpis | missing_kpis |
-      | kpi_extraction/validation/all_found.xlsx    | All KPIs found.         | 5          | 0            |
-      | kpi_extraction/validation/missing_kpis.xlsx | Missing KPIs: Returns%  | 4          | 1            |
+      | kpi_extraction/validation/all_found.xlsx    | All 5 KPIs found.      | 5          | 0            |
+      | kpi_extraction/validation/missing_kpis.xlsx | Missing: Returns%.     | 4          | 1            |
 
   Scenario Outline: Handling workbooks with structural errors during client-side validation
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
@@ -61,7 +61,7 @@ Feature: KPI Workbook Reading
 
     Examples:
       | workbook_file                                  | error_message                                                                                                     |
-      | kpi_extraction/validation/invalid_header.xlsx  | Invalid or missing header row in sheet 'MIS'. Expected date-like values (e.g., Jan 24, FY24, Q1FY25, H1FY25).|
+      | kpi_extraction/validation/invalid_header.xlsx  | Invalid or missing header row in sheet 'MIS'. Expected date-like values (e.g. Jan 24, FY24, Q1FY25). |
       | kpi_extraction/validation/empty_sheet.xlsx     | Sheet 'Sheet1' is empty  |
 
   Scenario: Future 'Actual' KPIs should not be imported

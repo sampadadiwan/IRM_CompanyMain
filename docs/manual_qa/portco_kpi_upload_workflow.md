@@ -64,29 +64,44 @@
 
 ---
 
-## 5. Double-Submit Guard
+## 5. XLSX Submit Guard (Client-Side Validation)
+
+> Applies to portco users uploading a workbook via the edit page (magic link or logged-in session).
 
 | # | Action | Expected Result |
 |---|--------|-----------------|
-| 5.1 | After submission, open the original magic link again | Form shows **"Report Already Submitted"** — no submit button present |
-| 5.2 | Submit a second time (e.g. via back button or direct POST) | Record stays **Submitted**; fund team receives **no second notification email** |
+| 5.1 | Upload an XLSX whose first row has **no date-like column headers** (e.g. "Notes", "Comments") | Error panel appears: "Please fix these errors before submitting." Both **Save Draft** and **Submit Report** are disabled |
+| 5.2 | Without uploading a new file, attempt to click the disabled buttons | Buttons remain unresponsive |
+| 5.3 | Upload a corrected XLSX with valid date headers (e.g. `Jan 2025`, `Q1FY25`) | Error panel clears; both buttons re-enable automatically |
+| 5.4 | Upload a valid XLSX, then upload an invalid one | Buttons disable again; error re-appears |
+| 5.5 | Verify the guard only affects portco-facing buttons | Fund admin's own **Save** button (if visible) is unaffected |
 
 ---
 
-## 6. Fund Admin Reviews the Submission
+## 6. Double-Submit Guard
 
 | # | Action | Expected Result |
 |---|--------|-----------------|
-| 6.1 | Log in as Fund Admin, open the submitted report | Status badge shows **Submitted** with submitted_at timestamp |
-| 6.2 | Verify **Mark as Reviewed** button is visible | Button present (outside the main form) |
-| 6.3 | Click **Mark as Reviewed** and confirm | Redirects to Edit page with notice "Report marked as reviewed." |
-| 6.4 | Verify status badge | Shows **Reviewed** |
-| 6.5 | Verify **Mark as Reviewed** button is gone | Button no longer shown for Reviewed reports |
-| 6.6 | As portco user, open the same report via magic link | Still shows "Report Already Submitted" — locked |
+| 6.1 | After submission, open the original magic link again | Form shows **"Report Already Submitted"** — no submit button present |
+| 6.2 | Submit a second time (e.g. via back button or direct POST) | Record stays **Submitted**; fund team receives **no second notification email** |
 
 ---
 
-## 7. Automated Reminders Skip Submitted / Reviewed Reports
+## 7. Fund Admin Reviews the Submission
+
+| # | Action | Expected Result |
+|---|--------|-----------------|
+| 7.1 | Log in as Fund Admin, open the submitted report **show page** (not edit) | Status badge shows **Submitted** with submitted_at timestamp |
+| 7.2 | Verify **View Including Staged** button is visible (outlined green) | Button present; only shown when report status is **Submitted** |
+| 7.3 | Open a reviewed or shell-created report | Button is **not** shown |
+| 7.4 | Click **View Including Staged** | Navigates to the KPI grid view filtered to this portfolio company with `view_unapproved=true` and `grid_view=true` — staged KPIs are highlighted in orange |
+| 7.5 | In the grid view, approve individual KPIs or use **Approve All** from the Actions menu | KPIs move from staged to approved |
+| 7.6 | Return to the KPI report show page and verify **Trigger Upload Notification** is not visible | Button is hidden for submitted and reviewed reports |
+| 7.7 | As portco user, open the same report via magic link | Still shows "Report Already Submitted" — locked |
+
+---
+
+## 8. Automated Reminders Skip Submitted / Reviewed Reports
 
 | # | Action | Expected Result |
 |---|--------|-----------------|
@@ -96,7 +111,7 @@
 
 ---
 
-## 8. Expired / Invalid Magic Link
+## 9. Expired / Invalid Magic Link
 
 | # | Action | Expected Result |
 |---|--------|-----------------|
@@ -105,7 +120,7 @@
 
 ---
 
-## 9. Designated KPI Contact (Kpi Tag)
+## 10. Designated KPI Contact (Kpi Tag)
 
 | # | Action | Expected Result |
 |---|--------|-----------------|
@@ -115,7 +130,7 @@
 
 ---
 
-## 10. Portco Pending Dashboard (Logged-In Portco User)
+## 11. Portco Pending Dashboard (Logged-In Portco User)
 
 | # | Action | Expected Result |
 |---|--------|-----------------|
@@ -126,7 +141,7 @@
 
 ---
 
-## 11. Regression — Non-KPI Notifications Unaffected
+## 12. Regression — Non-KPI Notifications Unaffected
 
 | # | Action | Expected Result |
 |---|--------|-----------------|

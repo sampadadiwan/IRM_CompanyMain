@@ -99,7 +99,7 @@
 
     <%= button_to "Send Notification", send_portco_notification_kpi_reports_path(portfolio_company_id: @kpi_report.portfolio_company_id), method: :post, class: "btn btn-outline-info", data: {action: "click->confirm#popup", msg: "Send a notification reminder to the Portfolio Company to complete this KPI report", method: :post, bs_toggle: "tooltip", bs_title: "Send a notification reminder to the Portfolio Company to complete this KPI report"} if policy(@kpi_report).send_portco_notification? && false  %>
 
-    <% if policy(KpiReport).trigger_periodic_reports? %>
+    <% if policy(KpiReport).trigger_periodic_reports? && !@kpi_report.status_submitted? && !@kpi_report.status_reviewed? %>
       <%
           has_users = @kpi_report.portfolio_company&.notification_users&.any?
           msg = if has_users
@@ -135,6 +135,12 @@
 
 
     <%= button_to t_common(:delete), @kpi_report, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  if policy(@kpi_report).destroy? %>
+
+    <% if policy(@kpi_report).mark_reviewed? && @kpi_report.status_submitted? %>
+      <%= link_to "View Including Staged",
+            kpi_reports_path(portfolio_company_id: @kpi_report.portfolio_company_id, view_unapproved: true, grid_view: true),
+            class: "btn btn-outline-success" %>
+    <% end %>
 
   <% end %>
 </div>

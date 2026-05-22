@@ -283,10 +283,6 @@ class KpiWorkbookReader
     )
 
     if kpi.changed?
-      if existing_approved
-        msg = "New KPI value for #{kpi.name} #{kpi.kpi_report.as_of} pending approval (current: #{existing_approved.value}, new: #{value})"
-        @error_msg << { msg: msg, document: @document.name, document_id: @document.id, portfolio_company: @portfolio_company.name, kpi_name: kpi.name, sheet: sheet, period: period, parsed_period: parsed_period, old_value: existing_approved.value, new_value: value, row: row_index, col: col_index }
-      end
       kpi.save
     end
   end
