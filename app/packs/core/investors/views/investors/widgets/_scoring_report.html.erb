@@ -12,17 +12,19 @@
       .first
   end
 
-  can_run = scoring_agent.present? && policy(@investor).update?
+  can_run  = scoring_agent.present? && policy(@investor).update?
+  can_edit = scoring_agent.present? && policy(@investor).update?
 %>
 
 <%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
 
   <% if latest_report&.completed? %>
     <%= render "investors/widgets/score_display",
-               report:       latest_report,
+               report:        latest_report,
                scoring_agent: scoring_agent,
-               investor:     @investor,
-               can_run:      can_run %>
+               investor:      @investor,
+               can_run:       can_run,
+               can_edit:      can_edit %>
 
   <% elsif latest_report&.failed? %>
     <div class="p-3">

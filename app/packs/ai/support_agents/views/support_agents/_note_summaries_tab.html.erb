@@ -62,7 +62,8 @@
           <%# Expandable row with the full summary text %>
           <tr class="collapse" id="note-summary-detail-<%= report.id %>">
             <td colspan="6" class="bg-light p-3">
-              <%= render 'support_agents/note_summary_detail', report: report, data: data %>
+              <% can_edit = report.owner.present? && policy(report.owner).update? %>
+              <%= render 'support_agents/note_summary_detail', report: report, data: data, can_edit: can_edit %>
             </td>
           </tr>
         <% end %>

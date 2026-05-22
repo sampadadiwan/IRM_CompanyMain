@@ -2,6 +2,7 @@
   score      = report.json_fields["score"] || {}
   sector     = report.json_fields["sector"].presence || investor.sector
   scored_at  = report.created_at
+  can_edit   = local_assigns.fetch(:can_edit, false)
 
   overall    = score["overall_score"].to_i
   grade      = score["grade"].to_s
@@ -28,21 +29,40 @@
                 when 40..49  then "Underperforming"
                 else              "Distressed"
                 end
+
+  manually_edited = report.json_fields["manually_edited"]
+  edited_at       = report.json_fields["edited_at"]
 %>
 
-<div class="p-3">
+<div class="p-3"
+     <% if can_edit %>
+     data-controller="score-editor"
+     data-score-editor-report-id-value="<%= report.id %>"
+     data-score-editor-url-value="<%= update_score_support_agents_path %>"
+     data-score-editor-editable-value="true"
+     <% end %>>
 
   <%# ── Section 1: Overall Score ─────────────────────────────────────────── %>
   <div class="d-flex justify-content-between align-items-start mb-1 flex-wrap gap-2">
     <div class="d-flex align-items-center gap-3">
       <%# Big score number %>
       <div class="text-center rounded border px-3 py-2" style="min-width: 72px; background: #f8f9fa;">
-        <div class="fw-bold" style="font-size: 2rem; line-height: 1.1; letter-spacing: -1px;"><%= overall %></div>
+        <div class="fw-bold" style="font-size: 2rem; line-height: 1.1; letter-spacing: -1px;">
+          <span data-field="overall_score"
+                <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+            <%= overall %>
+          </span>
+        </div>
         <div class="text-muted" style="font-size: 0.7rem;">OUT OF 100</div>
       </div>
       <%# Grade badge + label %>
       <div>
-        <span class="badge fs-4 px-3 py-2 <%= bar_class %>"><%= grade %></span>
+        <span class="badge fs-4 px-3 py-2 <%= bar_class %>">
+          <span data-field="grade"
+                <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+            <%= grade %>
+          </span>
+        </span>
         <div class="text-muted small mt-1"><%= grade_label %></div>
       </div>
     </div>
@@ -50,6 +70,22 @@
     <div class="text-end text-muted small lh-lg">
       <div>Scored <strong><%= scored_at.strftime("%d %b %Y") %></strong></div>
       <div>Sector: <strong><%= sector %></strong></div>
+      <% if manually_edited %>
+        <div class="text-muted" style="font-size: 0.7rem;">
+          <i class="ti ti-edit"></i> Edited <%= edited_at ? Time.parse(edited_at).strftime("%d %b %Y") : "" %>
+        </div>
+      <% end %>
+      <% if can_edit %>
+        <div class="mt-1">
+          <span data-score-editor-target="savedBadge"
+                class="badge bg-success d-none" style="font-size: 0.7rem;">
+            <i class="ti ti-check"></i> Saved
+          </span>
+          <span class="text-muted d-none d-sm-inline" style="font-size: 0.68rem;">
+            <i class="ti ti-pencil" style="opacity: 0.5;"></i> Double-click to edit
+          </span>
+        </div>
+      <% end %>
       <% if coverage.present? %>
         <div class="mt-1">
           <span class="badge bg-light text-dark border"><i class="ti ti-chart-bar"></i> <%= coverage["kpi_periods"].to_i %> KPI periods</span>
@@ -60,7 +96,7 @@
     </div>
   </div>
 
-  <%# Overall score bar %>
+  <%# Overall score bar (reflects overall_score, updated on next page load after edit) %>
   <div class="mb-1 mt-3">
     <div class="mb-1 d-flex justify-content-between align-items-baseline">
       <span class="text-muted small fw-semibold">Overall Score</span>
@@ -75,9 +111,12 @@
   </div>
 
   <%# Summary — hero statement %>
-  <% if summary.present? %>
+  <% if summary.present? || can_edit %>
     <div class="my-3" style="font-size: 1.05rem; font-weight: 500; line-height: 1.5; color: #1a1a2e;">
-      <%= summary %>
+      <span data-field="summary"
+            <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+        <%= summary %>
+      </span>
     </div>
   <% end %>
 
@@ -110,7 +149,7 @@
           </tr>
         </thead>
         <tbody>
-          <% dimensions.each do |dim| %>
+          <% dimensions.each_with_index do |dim, i| %>
             <%
               dim_score    = dim["score"].to_i
               dim_weight   = dim["weight"].to_f
@@ -125,7 +164,10 @@
               dim_concerns  = Array(dim["concerns"])
               has_bullets   = dim_positives.any? || dim_concerns.any?
             %>
-            <tr class="align-middle">
+            <tr class="align-middle"
+                data-dimension-index="<%= i %>"
+                data-dim-name="<%= dim["name"] %>"
+                data-dim-weight="<%= dim_weight %>">
               <td class="py-2">
                 <div class="d-flex align-items-center gap-2 mb-1">
                   <span class="fw-semibold text-nowrap" style="min-width: 170px;"><%= dim["name"] %></span>
@@ -139,28 +181,45 @@
                   </div>
                   <span class="text-muted" style="font-size: 0.65rem;">100</span>
                 </div>
-                <% if dim["rationale"].present? %>
+                <% if dim["rationale"].present? || can_edit %>
                   <div class="text-muted mb-1" style="font-size: 0.76rem; line-height: 1.4;">
-                    <%= dim["rationale"] %>
+                    <span data-dim-field="rationale"
+                          <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                      <%= dim["rationale"] %>
+                    </span>
                   </div>
                 <% end %>
                 <% if has_bullets %>
                   <div class="row g-0 mt-1">
                     <div class="col-6">
-                      <ul class="mb-0 ps-3" style="font-size: 0.8rem; line-height: 1.6; color: #5aab7e;">
-                        <% dim_positives.each do |p| %><li><%= p %></li><% end %>
+                      <ul class="mb-0 ps-3" data-dim-list-container="positives" style="font-size: 0.8rem; line-height: 1.6; color: #5aab7e;">
+                        <% dim_positives.each do |p| %>
+                          <li data-dim-list="positives"
+                              <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                            <%= p %>
+                          </li>
+                        <% end %>
                       </ul>
                     </div>
                     <div class="col-6">
-                      <ul class="mb-0 ps-3" style="font-size: 0.8rem; line-height: 1.6; color: #e07070;">
-                        <% dim_concerns.each do |c| %><li><%= c %></li><% end %>
+                      <ul class="mb-0 ps-3" data-dim-list-container="concerns" style="font-size: 0.8rem; line-height: 1.6; color: #e07070;">
+                        <% dim_concerns.each do |c| %>
+                          <li data-dim-list="concerns"
+                              <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                            <%= c %>
+                          </li>
+                        <% end %>
                       </ul>
                     </div>
                   </div>
                 <% end %>
               </td>
               <td class="text-center align-middle">
-                <span class="badge <%= dim_bar %> fs-6 px-2"><%= dim_score %></span>
+                <span class="badge <%= dim_bar %> fs-6 px-2"
+                      data-dim-field="score"
+                      <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                  <%= dim_score %>
+                </span>
               </td>
               <td class="text-muted fw-bold" style="font-size: 1rem; text-align: center; vertical-align: middle; padding: 0;">×</td>
               <td style="vertical-align: middle;">
@@ -188,7 +247,7 @@
 
       <%# ── Mobile: one card per dimension (hidden on desktop) ── %>
       <div class="d-md-none">
-        <% dimensions.each do |dim| %>
+        <% dimensions.each_with_index do |dim, i| %>
           <%
             dim_score    = dim["score"].to_i
             dim_weight   = dim["weight"].to_f
@@ -202,11 +261,18 @@
             dim_positives = Array(dim["positives"])
             dim_concerns  = Array(dim["concerns"])
           %>
-          <div class="mb-3 p-2 rounded border" style="font-size: 0.83rem;">
+          <div class="mb-3 p-2 rounded border" style="font-size: 0.83rem;"
+               data-dimension-index="<%= i %>"
+               data-dim-name="<%= dim["name"] %>"
+               data-dim-weight="<%= dim_weight %>">
             <%# Name + score badge on one line %>
             <div class="d-flex justify-content-between align-items-center mb-1">
               <span class="fw-semibold"><%= dim["name"] %></span>
-              <span class="badge <%= dim_bar %> ms-2"><%= dim_score %> / 100</span>
+              <span class="badge <%= dim_bar %> ms-2"
+                    data-dim-field="score"
+                    <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                <%= dim_score %> / 100
+              </span>
             </div>
             <%# Progress bar %>
             <div class="progress mb-1" style="height: 14px; border-radius: 4px; background: #e9ecef;">
@@ -220,18 +286,33 @@
               Weight <%= (dim_weight * 100).round %>% &nbsp;·&nbsp; Contribution <strong><%= contribution %></strong>
             </div>
             <%# Rationale %>
-            <% if dim["rationale"].present? %>
-              <div class="text-muted mb-2" style="font-size: 0.76rem; line-height: 1.4;"><%= dim["rationale"] %></div>
+            <% if dim["rationale"].present? || can_edit %>
+              <div class="text-muted mb-2" style="font-size: 0.76rem; line-height: 1.4;">
+                <span data-dim-field="rationale"
+                      <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                  <%= dim["rationale"] %>
+                </span>
+              </div>
             <% end %>
             <%# Positives (green) then concerns (red) stacked on mobile %>
             <% if dim_positives.any? %>
-              <ul class="mb-1 ps-3" style="font-size: 0.78rem; line-height: 1.5; color: #5aab7e;">
-                <% dim_positives.each do |p| %><li><%= p %></li><% end %>
+              <ul class="mb-1 ps-3" data-dim-list-container="positives" style="font-size: 0.78rem; line-height: 1.5; color: #5aab7e;">
+                <% dim_positives.each do |p| %>
+                  <li data-dim-list="positives"
+                      <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                    <%= p %>
+                  </li>
+                <% end %>
               </ul>
             <% end %>
             <% if dim_concerns.any? %>
-              <ul class="mb-0 ps-3" style="font-size: 0.78rem; line-height: 1.5; color: #e07070;">
-                <% dim_concerns.each do |c| %><li><%= c %></li><% end %>
+              <ul class="mb-0 ps-3" data-dim-list-container="concerns" style="font-size: 0.78rem; line-height: 1.5; color: #e07070;">
+                <% dim_concerns.each do |c| %>
+                  <li data-dim-list="concerns"
+                      <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                    <%= c %>
+                  </li>
+                <% end %>
               </ul>
             <% end %>
           </div>
@@ -258,8 +339,14 @@
               <div class="fw-bold small text-success mb-2">
                 <i class="ti ti-circle-check"></i> Strengths
               </div>
-              <ul class="mb-0 ps-3" style="font-size: 0.81rem; line-height: 1.5;">
-                <% strengths.each do |s| %><li class="mb-1"><%= s %></li><% end %>
+              <ul class="mb-0 ps-3" data-list="strengths" style="font-size: 0.81rem; line-height: 1.5;">
+                <% strengths.each do |s| %>
+                  <li class="mb-1"
+                      data-list="strengths"
+                      <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                    <%= s %>
+                  </li>
+                <% end %>
               </ul>
             </div>
           </div>
@@ -271,8 +358,14 @@
               <div class="fw-bold small text-danger mb-2">
                 <i class="ti ti-alert-triangle"></i> Risks
               </div>
-              <ul class="mb-0 ps-3" style="font-size: 0.81rem; line-height: 1.5;">
-                <% risks.each do |r| %><li class="mb-1"><%= r %></li><% end %>
+              <ul class="mb-0 ps-3" data-list="risks" style="font-size: 0.81rem; line-height: 1.5;">
+                <% risks.each do |r| %>
+                  <li class="mb-1"
+                      data-list="risks"
+                      <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                    <%= r %>
+                  </li>
+                <% end %>
               </ul>
             </div>
           </div>
@@ -284,8 +377,14 @@
               <div class="fw-bold small text-primary mb-2">
                 <i class="ti ti-arrow-right"></i> Recommendations
               </div>
-              <ul class="mb-0 ps-3" style="font-size: 0.81rem; line-height: 1.5;">
-                <% recs.each do |r| %><li class="mb-1"><%= r %></li><% end %>
+              <ul class="mb-0 ps-3" data-list="recommendations" style="font-size: 0.81rem; line-height: 1.5;">
+                <% recs.each do |r| %>
+                  <li class="mb-1"
+                      data-list="recommendations"
+                      <% if can_edit %>data-action="dblclick->score-editor#startEdit" title="Double-click to edit"<% end %>>
+                    <%= r %>
+                  </li>
+                <% end %>
               </ul>
             </div>
           </div>

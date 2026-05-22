@@ -77,12 +77,14 @@
           <tr class="collapse" id="score-detail-<%= report.id %>">
             <td colspan="7" class="bg-light p-0">
               <% if report.status.to_s == "completed" && score.present? %>
-                <% can_run = report.owner.present? && policy(report.owner).update? %>
+                <% can_run  = report.owner.present? && policy(report.owner).update? %>
+              <% can_edit = report.owner.present? && policy(report.owner).update? %>
                 <%= render "investors/widgets/score_display",
                            report:        report,
                            scoring_agent: support_agent,
                            investor:      report.owner,
-                           can_run:       can_run %>
+                           can_run:       can_run,
+                           can_edit:      can_edit %>
               <% else %>
                 <div class="p-3">
                   <span class="text-danger small"><%= report.json_fields["error"] %></span>

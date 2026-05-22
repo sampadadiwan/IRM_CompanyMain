@@ -1,4 +1,5 @@
-<% data = (data || {}).with_indifferent_access %>
+<% data     = (data || {}).with_indifferent_access %>
+<% can_edit = local_assigns.fetch(:can_edit, false) %>
 
 <div class="row mb-3">
   <div class="col-md-2">
@@ -34,16 +35,61 @@
   </div>
 </div>
 
-<% if data[:summary_text].present? %>
-  <div class="card border-0 shadow-sm mb-3">
+<% if data[:summary_text].present? || can_edit %>
+  <div class="card border-0 shadow-sm mb-3"
+       <% if can_edit %>
+       data-controller="note-summary-editor"
+       data-note-summary-editor-report-id-value="<%= report.id %>"
+       data-note-summary-editor-url-value="<%= update_note_summary_support_agents_path %>"
+       data-note-summary-editor-editable-value="true"
+       <% end %>>
     <div class="card-body">
-      <h6 class="card-title mb-3">
-        <i class="ti ti-notes text-primary me-1"></i> Summary
-      </h6>
-      <%# summary_text arrives as plain markdown-style text; render line breaks faithfully %>
-      <div class="note-summary-body" style="white-space: pre-wrap; font-size: 0.9rem; line-height: 1.7;">
-        <%= data[:summary_text] %>
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h6 class="card-title mb-0">
+          <i class="ti ti-notes text-primary me-1"></i> Summary
+        </h6>
+        <div class="d-flex align-items-center gap-3">
+          <% if data[:manually_edited] %>
+            <span class="text-muted" style="font-size: 0.72rem;">
+              <i class="ti ti-edit"></i> Edited
+              <%= data[:edited_at] ? (Time.parse(data[:edited_at]) rescue nil)&.strftime("%d %b %Y") : "" %>
+            </span>
+          <% end %>
+          <% if can_edit %>
+            <span data-note-summary-editor-target="savedBadge"
+                  class="badge bg-success d-none" style="font-size: 0.7rem;">
+              <i class="ti ti-check"></i> Saved
+            </span>
+            <span class="text-muted" style="font-size: 0.72rem;">
+              <i class="ti ti-pencil" style="opacity: 0.5;"></i> Double-click to edit
+            </span>
+          <% end %>
+        </div>
       </div>
+
+      <%# Display: rendered markdown HTML. Shown by default, hidden during editing. %>
+      <div class="note-summary-body prose"
+           style="font-size: 0.9rem; line-height: 1.7;"
+           data-note-summary-editor-target="displayArea"
+           <% if can_edit %>
+           data-action="dblclick->note-summary-editor#startEdit"
+           title="Double-click to edit"
+           <% end %>>
+        <%= markdown_to_html(data[:summary_text].to_s) %>
+      </div>
+
+      <%# Edit: raw markdown textarea. Hidden by default, shown during editing. %>
+      <% if can_edit %>
+        <textarea class="form-control d-none note-summary-textarea"
+                  data-note-summary-editor-target="editArea"
+                  rows="20"
+                  placeholder="Enter markdown…"><%= data[:summary_text] %></textarea>
+        <div class="text-muted mt-1 d-none note-summary-edit-hint" style="font-size: 0.72rem;"
+             data-note-summary-editor-target="editArea">
+          <%# This hint is shown alongside the textarea — Ctrl/Cmd+Enter to save, Escape to cancel %>
+        </div>
+      <% end %>
+
     </div>
   </div>
 <% else %>

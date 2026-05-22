@@ -147,6 +147,51 @@ class SupportAgentsController < ApplicationController
     @note_summaries = reports.order(updated_at: :desc).limit(20)
   end
 
+  # Updates the score JSON of a PortfolioScoringAgent report inline.
+  # Authorization is performed against the report's owner (Investor) rather than
+  # the SupportAgent, so any user with investor-edit permission can refine the score.
+  #
+  # @return [void]
+  def update_score
+    report   = SupportAgentReport.find(params[:report_id])
+    investor = report.owner
+    authorize investor, :update?
+
+    updated_score = (report.json_fields["score"] || {}).merge(score_edit_params)
+    report.json_fields = report.json_fields.merge(
+      "score"           => updated_score,
+      "manually_edited" => true,
+      "edited_at"       => Time.current.iso8601
+    )
+    report.save!
+
+    render json: { status: "ok", edited_at: report.json_fields["edited_at"] }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Not found" }, status: :not_found
+  end
+
+  # Updates the summary_text of a NoteSummarizerAgent report inline.
+  # Authorization is performed against the report's owner (Investor).
+  #
+  # @return [void]
+  def update_note_summary
+    report   = SupportAgentReport.find(params[:report_id])
+    investor = report.owner
+    authorize investor, :update?
+
+    summary_text = params.permit(:summary_text)[:summary_text].to_s.strip
+    report.json_fields = report.json_fields.merge(
+      "summary_text"    => summary_text,
+      "manually_edited" => true,
+      "edited_at"       => Time.current.iso8601
+    )
+    report.save!
+
+    render json: { status: "ok", edited_at: report.json_fields["edited_at"] }
+  rescue ActiveRecord::RecordNotFound
+    render json: { error: "Not found" }, status: :not_found
+  end
+
   # Enqueues a support agent job for execution without step tracking.
   #
   # @return [void]
@@ -488,6 +533,15 @@ class SupportAgentsController < ApplicationController
       end
     end
     permitted
+  end
+
+  # Permits score fields submitted from the inline editor.
+  def score_edit_params
+    params.require(:score).permit(
+      :overall_score, :grade, :summary,
+      strengths: [], risks: [], recommendations: [],
+      dimensions: [:name, :score, :weight, :rationale, { positives: [], concerns: [] }]
+    ).to_h
   end
 
   # Infers the target type from the agent's targets method.

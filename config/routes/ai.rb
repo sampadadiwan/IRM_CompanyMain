@@ -4,8 +4,10 @@ end
 
 resources :support_agents do
   collection do
-    post 'run'
-    get  'note_summaries'
+    post  'run'
+    get   'note_summaries'
+    patch 'update_score'
+    patch 'update_note_summary'
   end
   member do
     post 'run_with_steps'

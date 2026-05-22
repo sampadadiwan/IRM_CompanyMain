@@ -75,6 +75,14 @@ class SupportAgentPolicy < ApplicationPolicy
     show?
   end
 
+  def update_score?
+    show?
+  end
+
+  def update_note_summary?
+    show?
+  end
+
   def executions?
     show?
   end
