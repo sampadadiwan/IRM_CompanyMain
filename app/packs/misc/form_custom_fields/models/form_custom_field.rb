@@ -56,7 +56,7 @@ class FormCustomField < ApplicationRecord
 
   has_rich_text :info
 
-  RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select" }.freeze
+  RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select", CheckBox: "/form_custom_fields/display/check_box" }.freeze
 
   scope :writable, -> { where(read_only: false) }
   scope :visible, -> { where.not(field_type: HIDDEN_FIELDS) }

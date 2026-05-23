@@ -11,7 +11,7 @@
                     </td>
                     <td>
                         <% if custom_field.renderer %>
-                            <%= render custom_field.renderer, value: v, model: model %>
+                            <%= render custom_field.renderer, value: v, model: model, custom_field: custom_field %>
                         <% else %>
                             <%= v %>
                         <% end %>
