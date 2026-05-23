@@ -87,7 +87,7 @@ class ApplicationRecord < ActiveRecord::Base
 
   # Models that are permitted to be looked up via a signed access token.
   # Extend this list when adding new shared-link flows.
-  SIGNED_ID_ALLOWED_MODELS = %w[KpiReport].freeze
+  SIGNED_ID_ALLOWED_MODELS = %w[KpiReport InvestorKyc].freeze
 
   # Verifies a signed ID and returns the associated record and user.
   # The signed ID is expected to contain :model, :record_id, and :email.
@@ -113,5 +113,11 @@ class ApplicationRecord < ActiveRecord::Base
     [record, user]
   rescue ActiveSupport::MessageVerifier::InvalidSignature
     nil
+  end
+
+  def self.run_all_jobs
+    Sidekiq::Queue.all.each do |queue|
+      queue.each { |job| job.delete && Object.const_get(job.klass).new.perform(*job.args) }
+    end
   end
 end

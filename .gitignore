@@ -77,6 +77,9 @@ yarn-debug.log*
 /config/credentials/test.key
 
 
+docs/superpowers/**
+.superpowers/**
+
 test_new.xls
 test.xls
 .~lock.*
@@ -129,3 +132,4 @@ opencode.json
 .vscode/mcp.json
 .vscode/mcp.json
 .vscode/mcp.json
+

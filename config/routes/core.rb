@@ -122,12 +122,17 @@ resources :investor_kycs do
   post 'generate_all_docs', on: :collection # Generate docs for entire fund or entity
   post 'bulk_actions', on: :collection
   post 'validate_docs_with_ai', on: :member
+  post 'extract_docs_data', on: :member
+  get  'processing', on: :member
+  patch 'doc_first_upload', on: :member
   post 'create_and_send_kyc_to_investor', on: :collection
   get "download_kra_data", on: :member
   get "fetch_ckyc_data", on: :member
   get 'esign_emails', on: :collection
   get 'edit_reporting_fields', on: :member
   put 'update_reporting_fields', on: :member
+  post 'request_updates', on: :member
+  get  'investor_pending', on: :collection
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
 end

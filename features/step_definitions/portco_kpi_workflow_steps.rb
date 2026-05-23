@@ -230,15 +230,23 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 When('I click {string} and confirm the dialog') do |button_text|
-  click_on(button_text)
-  # Bootstrap modal path: wait for it to open, then click the appropriate confirm button.
-  # #submitReportModal uses "Confirm & Submit"; #confirmModal (confirm#popup) uses "Proceed".
-  if page.has_css?('.modal.show', wait: 2)
-    within('.modal.show') do
-      if page.has_button?('Confirm', wait: 1)
-        click_on('Confirm')
-      elsif page.has_button?('Proceed', wait: 1)
-        click_on('Proceed')
+  # Try window.confirm first (used by interim-save#final); fall back to Bootstrap modal
+  # (used by KpiReport submit and confirm#popup).
+  begin
+    page.accept_confirm { click_on(button_text) }
+  rescue Capybara::ModalNotFound
+    click_on(button_text) unless page.has_css?('.modal.show', wait: 0)
+    if page.has_css?('.modal.show', wait: 2)
+      within('.modal.show') do
+        if page.has_button?('Yes, Submit KYC', wait: 1)
+          click_on('Yes, Submit KYC')
+        elsif page.has_button?('Confirm & Submit', wait: 1)
+          click_on('Confirm & Submit')
+        elsif page.has_button?('Confirm', wait: 1)
+          click_on('Confirm')
+        elsif page.has_button?('Proceed', wait: 1)
+          click_on('Proceed')
+        end
       end
     end
   end

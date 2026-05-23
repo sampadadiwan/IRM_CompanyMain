@@ -99,6 +99,14 @@ class InvestorKycPolicy < ApplicationPolicy
     create?(:investor_kyc_update)
   end
 
+  def extract_docs_data?
+    # Investor filling their own KYC via magic link or logged-in investor, plus fund employees
+    return true if signed_id_access?
+
+    create?(:investor_kyc_update) ||
+      user.entity_id == record.investor&.investor_entity_id
+  end
+
   def download_kra_data?
     create?(:investor_kyc_update) && record.entity.permissions.enable_kra?
   end
@@ -108,6 +116,7 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def update?
+    return true if signed_id_investor?
     (create?(:investor_kyc_update) || support?) && !record.verified
   end
 
@@ -125,6 +134,15 @@ class InvestorKycPolicy < ApplicationPolicy
   end
 
   def edit?
+    # Allow signed-id investors to view the form even after completion (for the locked-state page).
+    signed_id_access? || update?
+  end
+
+  def processing?
+    edit?
+  end
+
+  def doc_first_upload?
     update?
   end
 
@@ -142,7 +160,25 @@ class InvestorKycPolicy < ApplicationPolicy
     create?(:investor_kyc_delete) && !record.verified
   end
 
+  def request_updates?
+    permissioned_employee?(:investor_kyc_update)
+  end
+
+  def investor_pending?
+    user.curr_role == "investor"
+  end
+
   def permissioned_employee?(perm = nil)
     extended_permissioned_employee?(perm)
+  end
+
+  private
+
+  # Returns true when access was granted via a signed magic link token and
+  # the KYC is not yet completed or verified (investor can still edit it).
+  def signed_id_investor?
+    signed_id_access? &&
+      !record.submission_completed? &&
+      !record.submission_verified?
   end
 end

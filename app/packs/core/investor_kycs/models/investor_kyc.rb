@@ -91,6 +91,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   scope :completed, -> { where(completed_by_investor: true) }
   scope :not_completed, -> { where(completed_by_investor: false) }
   scope :unverified, -> { where(verified: false) }
+  scope :pending_investor, -> { where(submission_status: %w[link_sent draft_saved]) }
   scope :expired, -> { where(expiry_date: ..Time.zone.today) }
   scope :not_expired, -> { where('expiry_date IS NULL OR expiry_date >= ?', Time.zone.today) }
 
@@ -118,6 +119,15 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   }
 
   enum :kyc_type, { individual: "Individual", non_individual: "Non Individual" }
+
+  attribute :submission_status, :string, default: "not_sent"
+  enum :submission_status, {
+    not_sent:    "not_sent",
+    link_sent:   "link_sent",
+    draft_saved: "draft_saved",
+    completed:   "completed",
+    verified:    "verified"
+  }, prefix: :submission
 
   include FileUploader::Attachment(:signature)
 
@@ -204,6 +214,11 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   # If not this leads to bugs where the InvestorKycNotification cannot be created when the kyc_type changes
   def send_kyc_form(reminder: false, custom_notification_id: nil)
     if send_kyc_form_to_user || reminder
+      # rubocop:disable Rails/SkipsModelValidations
+      unless submission_completed? || submission_verified?
+        update_columns(submission_status: "link_sent", link_sent_at: Time.current)
+      end
+      # rubocop:enable Rails/SkipsModelValidations
       email_method = :notify_kyc_required
       msg = "Kindly update your KYC details for #{entity.name} by clicking on the button below"
 
@@ -264,6 +279,20 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
     end
   end
 
+  after_save :sync_boolean_fields_from_status
+  # Keeps completed_by_investor and verified booleans in sync with submission_status
+  # so all existing scopes and code continue to work without change.
+  def sync_boolean_fields_from_status
+    expected_completed = submission_completed? || submission_verified?
+    expected_verified  = submission_verified?
+    updates = {}
+    updates[:completed_by_investor] = expected_completed if completed_by_investor != expected_completed
+    updates[:verified] = expected_verified if verified != expected_verified
+    # rubocop:disable Rails/SkipsModelValidations
+    update_columns(updates) if updates.any?
+    # rubocop:enable Rails/SkipsModelValidations
+  end
+
   before_save :set_investor_name
   def set_investor_name
     self.type = type_from_kyc_type
@@ -288,11 +317,9 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   def folder_path
-    if full_name.present?
-      "#{investor.folder_path}/KYC-#{id_or_random_int}/#{full_name.delete('/')}"
-    else
-      "#{investor.folder_path}/KYC-#{id_or_random_int}/#{investor.investor_name.delete('/')}"
-    end
+    base = investor&.folder_path || "KYC"
+    label = full_name.presence || investor&.investor_name || "Unknown"
+    "#{base}/KYC-#{id_or_random_int}/#{label.delete('/')}"
   end
 
   def investor_signatories
@@ -355,7 +382,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[PAN full_name investor_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified completed_by_investor expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed created_at aml_status].sort
+    %w[PAN full_name investor_name kyc_type address bank_name bank_branch bank_account_type bank_account_number ifsc_code birth_date verified completed_by_investor expiry_date collected_amount committed_amount call_amount distribution_amount docs_completed created_at aml_status submission_status].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

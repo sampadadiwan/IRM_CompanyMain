@@ -12,10 +12,12 @@ export default class extends Controller {
         let validateFields = this.validateFields.bind(this);
         let validateSection = this.validateSection.bind(this);
 
-        let submitBtn = $(".wizard_form").find("input[type='submit']");
-        submitBtn.off("click").on("click", function (e) {
+        let submitBtn = $(".wizard_form").find("input[type='submit'], button[type='submit']");
+        submitBtn.off("click").on("click", (e) => {
             console.log("WizardController: submitBtn clicked");
-            validateSection(this, validateFields);
+            if (validateSection(e.currentTarget, validateFields)) {
+                e.preventDefault();
+            }
         });
 
         var navListItems = $('div.setup-panel div a'),
@@ -50,7 +52,6 @@ export default class extends Controller {
     validateSection(elem, validateFields) {
         console.log("WizardController: validateSection called", elem);
         $(".wizard_form").enableClientSideValidations();
-        $(".wizard_form").removeAttr("novalidate");
 
         let isValid = true;
         var curStep = $(elem).closest(".setup-content"),
@@ -88,9 +89,14 @@ export default class extends Controller {
 
         console.log("WizardController: isValid =", isValid);
         if (isValid) {
-            nextStepWizard.removeClass('disabled').trigger('click');
+            if (nextStepWizard.length) {
+                nextStepWizard.removeClass('disabled').trigger('click');
+                return true;
+            }
+            return false;
         } else {
             this.showErrorModal("Please correct the errors on the form before proceeding.");
+            return true;
         }
     }
 
@@ -152,7 +158,7 @@ export default class extends Controller {
                     console.log(`Not valid: ${input_id} ${input_type}`);
                     isValid = false;
                     $(jq_input_id).closest(".form-group").addClass("field_with_errors");
-                    scrollTop: $(jq_input_id).focus();
+                    $(jq_input_id).focus();
                     $('html, body').animate({
                         scrollTop: $(jq_input_id).offset().top - 140
                     }, 100);

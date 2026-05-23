@@ -2,8 +2,11 @@ class InvestorKycsController < ApplicationController
   helper InvestorKycAnalyticsHelper
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields]
-  after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc]
+  # Allow unauthenticated investors to access their KYC via a signed magic link.
+  skip_before_action :authenticate_user!, only: %i[show edit update extract_docs_data doc_first_upload processing], if: -> { params[:signed_id].present? }
+
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
+  after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc investor_pending]
 
   has_scope :uncalled, type: :boolean
   has_scope :unverified, type: :boolean
@@ -60,12 +63,42 @@ class InvestorKycsController < ApplicationController
     redirect_to investor_kyc_url(@investor_kyc), notice: "Document validation in progress. Please check back in a few minutes."
   end
 
+  # POST /investor_kycs/:id/extract_docs_data
+  # Runs KycDocExtractorAgent inline against the uploaded documents and
+  # pre-populates KYC fields. Returns a Turbo Stream that refreshes the form.
+  def extract_docs_data
+    authorize(@investor_kyc)
+
+    agent = @investor_kyc.entity.agents.find_by(agent_type: "KycDocExtractorAgent", enabled: true)
+
+    unless agent
+      return redirect_to edit_investor_kyc_url(@investor_kyc, signed_id: params[:signed_id]),
+                         alert: "Document extractor agent is not configured for this entity."
+    end
+
+    result = KycDocExtractorAgent.call(
+      support_agent_id: agent.id,
+      target:           @investor_kyc
+    )
+
+    extracted = result[:results]&.count { |r| r[:status] == :extracted } || 0
+    skipped   = result[:results]&.count { |r| r[:status] == :skipped }   || 0
+    errors    = result[:results]&.count { |r| r[:status] == :error }     || 0
+
+    notice = "Extracted #{extracted} field(s) from your documents."
+    notice += " #{skipped} skipped (already filled or document not uploaded)." if skipped > 0
+    notice += " #{errors} error(s) — check server logs." if errors > 0
+
+    redirect_to edit_investor_kyc_url(@investor_kyc, signed_id: params[:signed_id]), notice: notice
+  end
+
   # GET /investor_kycs/new
   def new
     kyc_type = investor_kyc_params[:kyc_type] || "Individual"
 
     # Create the appropriate KYC type based on the kyc_type parameter
     @investor_kyc = kyc_type == "Individual" ? IndividualKyc.new(investor_kyc_params) : NonIndividualKyc.new(investor_kyc_params)
+    @investor_kyc.entity_id ||= current_user&.entity_id # needed for Pundit belongs_to_entity? check
     @investor_kyc.type = @investor_kyc.type_from_kyc_type
 
     @bread_crumbs = { KYCs: investor_kycs_path }
@@ -106,8 +139,45 @@ class InvestorKycsController < ApplicationController
     end
   end
 
+  # GET /investor_kycs/:id/processing
+  # Holding page shown while KycDocExtractorJob runs in the background.
+  # The job broadcasts a Turbo Stream that triggers client-side redirect to edit.
+  def processing
+    authorize @investor_kyc
+    # Check the in-process store first (works when Rails.cache is :null_store in test env).
+    redirect_url = KycDocExtractorJob.consume_redirect(@investor_kyc.id)
+    # Fall back to Rails.cache for production environments with a real cache backend.
+    redirect_url ||= Rails.cache.read("kyc_extraction_done_#{@investor_kyc.id}")
+    redirect_to redirect_url if redirect_url.present?
+  end
+
+  # PATCH /investor_kycs/:id/doc_first_upload
+  # Accepts uploaded documents for an existing KYC (investor magic link path), enqueues
+  # the extraction job, then redirects through the processing spinner page.
+  def doc_first_upload
+    authorize @investor_kyc
+    @investor_kyc.assign_attributes(doc_first_upload_params)
+    @investor_kyc.documents.each { |doc| doc.entity_id ||= @investor_kyc.entity_id }
+    @investor_kyc.save(validate: false)
+    enqueue_doc_extraction_for(@investor_kyc, signed_id: params[:signed_id])
+    redirect_to processing_investor_kyc_url(@investor_kyc, signed_id: params[:signed_id])
+  end
+
   # GET /investor_kycs/1/edit
   def edit
+    investor_facing = pundit_user&.curr_role_investor? || params[:signed_id].present?
+    kyc_locked      = @investor_kyc.submission_completed? || @investor_kyc.submission_verified?
+    if investor_facing && kyc_locked
+      return redirect_to investor_kyc_url(@investor_kyc, signed_id: params[:signed_id])
+    end
+
+    # Doc-first wizard for investors: when the entity has kyc_doc_first_wizard enabled,
+    # an active KycDocExtractorAgent, the investor has not yet uploaded any documents,
+    # and the KYC hasn't been through extraction, show the doc upload form first.
+    if doc_first_wizard_for_edit?
+      return render :doc_first_for_edit
+    end
+
     @bread_crumbs[:Edit] = nil
     if params[:kyc_type].present?
       ActiveRecord::Base.connected_to(role: :writing) do
@@ -137,12 +207,22 @@ class InvestorKycsController < ApplicationController
     investor_user = current_user.curr_role_investor?
     # We get this param validate to decide whether to validate or not, if the investor is doing an interim save validate is false, and he will complete the form later.
     validate = params[:validate].present? ? params[:validate] != "false" : investor_user
+
+    # Doc-first wizard: skip validations for the shell, run extraction, then go to edit.
+    doc_first = params[:doc_first] == "true"
+    validate = false if doc_first
+
     @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|
       if InvestorKycCreate.call(investor_kyc: @investor_kyc, investor_user:, validate:, owner_id: params[:owner_id], owner_type: params[:owner_type]).success?
-        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
-        format.json { render :show, status: :created, location: @investor_kyc }
+        if doc_first
+          enqueue_doc_extraction_for(@investor_kyc)
+          format.html { redirect_to processing_investor_kyc_url(@investor_kyc) }
+        else
+          format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
+          format.json { render :show, status: :created, location: @investor_kyc }
+        end
       else
         format.html { render :new, status: :unprocessable_entity }
         format.json { render json: result[:errors], status: :unprocessable_entity }
@@ -177,6 +257,7 @@ class InvestorKycsController < ApplicationController
   end
 
   def send_notification
+    authorize @investor_kyc
     @investor_kyc.updates_requested_notification(msg: params[:message])
     redirect_to investor_kyc_url(@investor_kyc), notice: "Notification sent successfully. Please wait for us to respond to your request."
   end
@@ -186,7 +267,9 @@ class InvestorKycsController < ApplicationController
     @investor_kycs = policy_scope(InvestorKyc)
     authorize(InvestorKyc)
 
-    @investor_kycs.where(entity_id:, verified: false).find_each do |kyc|
+    @investor_kycs.where(entity_id:, verified: false)
+                  .where.not(submission_status: %w[completed verified])
+                  .find_each do |kyc|
       kyc.send_kyc_form(reminder: true, custom_notification_id: params[:custom_notification_id])
     end
     redirect_to investor_kycs_url, notice: "KYC Reminder sent successfully."
@@ -369,21 +452,73 @@ class InvestorKycsController < ApplicationController
 
   # PATCH/PUT /investor_kycs/1 or /investor_kycs/1.json
   def update
-    investor_user = current_user.curr_role_investor?
-    # We get this param validate to decide whether to validate or not, if the investor is doing an interim save validate is false, and he will complete the form later.
+    acting_user = current_user || @signed_id_user
+    investor_user = acting_user&.curr_role_investor? || @signed_id_user.present?
     validate = params[:validate].present? ? params[:validate] != "false" : investor_user
 
-    @investor_kyc.assign_attributes(investor_kyc_params)
+    was_already_completed = @investor_kyc.submission_completed? || @investor_kyc.submission_verified?
+
+    # Guard: investors cannot update a completed/verified KYC (per PRD — fund admin is exempt).
+    if was_already_completed && investor_user
+      return redirect_to investor_kyc_url(@investor_kyc, signed_id: params[:signed_id]),
+        alert: "This KYC has already been submitted and cannot be edited."
+    end
+    status_attrs = resolve_status_transition(params[:submit_action], investor_user:)
+
+    @investor_kyc.assign_attributes(investor_kyc_params.merge(status_attrs))
     @investor_kyc.documents.each(&:validate)
+
     respond_to do |format|
       if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:, validate:).success?
-        format.html { redirect_to investor_kyc_url(@investor_kyc), notice: "Investor kyc was successfully saved." }
+        notify_fund_on_submission(@investor_kyc) if status_attrs[:submission_status] == "completed" && !was_already_completed
+        notice = status_attrs[:submission_status] == "completed" ? "KYC submitted. The fund team has been notified." : "Investor kyc was successfully saved."
+        submitted = status_attrs[:submission_status] == "completed"
+        format.html do
+          redirect_to investor_kyc_url(@investor_kyc, signed_id: params[:signed_id]),
+                      notice: notice
+        end
         format.json { render :show, status: :ok, location: @investor_kyc }
       else
         format.html { render :edit, status: :unprocessable_entity }
-        format.json { render json: result[:errors], status: :unprocessable_entity }
+        format.json { render json: @investor_kyc.errors, status: :unprocessable_entity }
       end
     end
+  end
+
+  # POST /investor_kycs/:id/request_updates
+  # Fund admin requests investor to re-fill. Sends a fresh magic link with an optional message.
+  def request_updates
+    authorize(@investor_kyc)
+    # rubocop:disable Rails/SkipsModelValidations
+    @investor_kyc.update_columns(
+      submission_status: "link_sent",
+      link_sent_at: Time.current,
+      completed_by_investor: false,
+      submitted_at: nil
+    )
+    # rubocop:enable Rails/SkipsModelValidations
+    msg = params[:message].presence
+    @investor_kyc.investor.notification_users.each do |user|
+      InvestorKycNotifier.with(
+        record: @investor_kyc,
+        entity_id: @investor_kyc.entity_id,
+        email_method: :notify_updates_requested,
+        msg: msg,
+        user_id: user.id
+      ).deliver_later(user)
+    end
+    redirect_to investor_kyc_url(@investor_kyc), notice: "Update request sent to investor with a fresh link."
+  end
+
+  # GET /investor_kycs/investor_pending
+  # Dashboard for logged-in investors showing outstanding KYC requests.
+  def investor_pending
+    authorize InvestorKyc, :investor_pending?
+    @investor_kycs = InvestorKyc
+      .pending_investor
+      .for_investor(current_user)
+      .includes(:entity, :investor)
+    @bread_crumbs = { "Pending KYC Requests": investor_pending_investor_kycs_path }
   end
 
   # GET /investor_kycs/1/edit_reporting_fields
@@ -414,9 +549,14 @@ class InvestorKycsController < ApplicationController
 
   def toggle_verified
     investor_user = current_user.curr_role_investor?
-    verified_by_id = @investor_kyc.verified ? nil : current_user.id
-    @investor_kyc.assign_attributes(verified: !@investor_kyc.verified, verified_by_id:)
-    status = @investor_kyc.verified ? "verified" : "unverified"
+    new_verified = !@investor_kyc.verified
+    new_status   = new_verified ? "verified" : "completed"
+    @investor_kyc.assign_attributes(
+      verified: new_verified,
+      verified_by_id: new_verified ? current_user.id : nil,
+      submission_status: new_status
+    )
+    status = new_verified ? "verified" : "unverified"
 
     respond_to do |format|
       if InvestorKycUpdate.call(investor_kyc: @investor_kyc, investor_user:).success?
@@ -480,11 +620,75 @@ class InvestorKycsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_investor_kyc
-    @investor_kyc = InvestorKyc.find(params[:id])
+    if params[:signed_id].present?
+      find_by_signed_id_for_user(params[:signed_id])
+      unless @investor_kyc
+        render inline: <<~HTML, layout: false, status: :gone
+          <!DOCTYPE html><html><body>
+          <div style="font-family:sans-serif;max-width:600px;margin:4rem auto;padding:1rem">
+            <h4>This link has expired or is invalid</h4>
+            <p>Please contact your fund manager to request a new invitation link.</p>
+          </div>
+          </body></html>
+        HTML
+        return
+      end
+    end
+    @investor_kyc ||= InvestorKyc.find(params[:id])
     authorize(@investor_kyc)
     @bread_crumbs = { KYCs: investor_kycs_path }
     @bread_crumbs["#{@investor_kyc.investor.investor_name}"] = investor_path(@investor_kyc.investor) if @investor_kyc.investor.present?
     @bread_crumbs["#{@investor_kyc.full_name}"] = investor_kyc_path(@investor_kyc)
+  end
+
+  # Pundit uses this method to determine the authorizing user.
+  # When a signed magic link is used, @signed_id_user is the investor extracted
+  # from the token — use them instead of current_user (which is nil for unauthenticated requests).
+  def pundit_user
+    @signed_id_user || current_user
+  end
+
+  def enqueue_doc_extraction_for(investor_kyc, signed_id: nil)
+    agent = investor_kyc.entity.agents.find_by(agent_type: "KycDocExtractorAgent", enabled: true)
+    return unless agent
+
+    redirect_url = edit_investor_kyc_url(investor_kyc, doc_first_done: 1, signed_id: signed_id.presence)
+    KycDocExtractorJob.perform_later(investor_kyc.id, agent.id, redirect_url)
+  end
+
+  # Returns true when the investor (magic link or investor-role user) should see
+  # the doc-first upload form instead of the regular KYC edit form.
+  def doc_first_wizard_for_edit?
+    return false if params[:skip_doc_first].present?
+    return false unless params[:signed_id].present? || pundit_user&.curr_role_investor?
+    return false unless @investor_kyc.entity.entity_setting.kyc_doc_first_wizard?
+    return false unless @investor_kyc.entity.agents.exists?(agent_type: "KycDocExtractorAgent", enabled: true)
+    # Only show the upload form when no documents have been attached yet.
+    @investor_kyc.documents.empty?
+  end
+
+  # Accepts only the documents nested attributes from the doc-first upload form.
+  # The param key depends on the KYC subtype (IndividualKyc → :individual_kyc, etc.)
+  def doc_first_upload_params
+    param_name = if params[:individual_kyc].present?
+                   :individual_kyc
+                 elsif params[:non_individual_kyc].present?
+                   :non_individual_kyc
+                 else
+                   :investor_kyc
+                 end
+    return ActionController::Parameters.new.permit! if params[param_name].blank?
+    params.require(param_name).permit(documents_attributes: Document::NESTED_ATTRIBUTES)
+  end
+
+  def resolve_status_transition(submit_action, investor_user:)
+    if submit_action == "final"
+      { submission_status: "completed", submitted_at: Time.current }
+    elsif investor_user && (@investor_kyc.submission_not_sent? || @investor_kyc.submission_link_sent?)
+      { submission_status: "draft_saved" }
+    else
+      {}
+    end
   end
 
   # Only allow a list of trusted parameters through.
@@ -497,10 +701,25 @@ class InvestorKycsController < ApplicationController
                    :investor_kyc
                  end
 
+    return ActionController::Parameters.new.permit! if params[param_name].blank?
+
     params.require(param_name).permit(:id, :investor_id, :entity_id, :user_id, :kyc_data_id, :kyc_type, :full_name, :birth_date, :PAN, :pan_card, :signature, :address, :corr_address, :bank_account_number, :ifsc_code, :bank_branch, :bank_account_type, :bank_name, :bank_verified, :type, :bank_verification_response, :expiry_date, :esign_emails, :bank_verification_status, :pan_verified, :pan_verification_response, :pan_verification_status, :comments, :completed_by_investor, :verified, :phone, :form_type_id, :send_kyc_form_to_user, :agreement_unit_type, :agreement_committed_amount, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 
   def commit_param
     params.require(:commit)
+  end
+
+  def notify_fund_on_submission(investor_kyc)
+    recipients = investor_kyc.entity.employees.active.select { |e| e.enable_kycs && !e.investor_advisor? }
+    recipients.each do |employee|
+      InvestorKycNotifier.with(
+        record: investor_kyc,
+        entity_id: investor_kyc.entity_id,
+        email_method: :notify_kyc_submitted,
+        msg: "KYC submitted by investor: #{investor_kyc.full_name}",
+        user_id: employee.id
+      ).deliver_later(employee)
+    end
   end
 end

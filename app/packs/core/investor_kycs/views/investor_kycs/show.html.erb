@@ -5,6 +5,7 @@
   kra_enabled = @investor_kyc.entity.permissions.enable_kra?
   kra_data = kra_enabled ? @investor_kyc.kra_data : nil
   show_onboarding_agent = @investor_kyc.entity.support_agents.set?(:kyc_onboarding_agent) && @investor_kyc.support_agent_report.present?
+  investor_facing = params[:signed_id].present? || current_user&.curr_role_investor?
 %>
 
 <!-- Show the KYC Onboarding Agent details if set -->
@@ -14,6 +15,23 @@
   <!-- Show the main KYC details -->
   <%= render "investor_kycs/show", investor_kyc: @investor_kyc, ckyc_data: ckyc_data, kra_data: kra_data %>
 
+  <div>
+
+    <% if policy(@investor_kyc).send_notification? %>
+      <%= button_to send_notification_investor_kyc_path(
+                      @investor_kyc,
+                      message: "Investor #{@investor_kyc.investor} has requested updates/changes for KYC: #{@investor_kyc.full_name}"),
+                  id: "investor_kyc_send_notification_btn", method: :put, class: "btn btn-outline-secondary", form_class: "deleteButton",
+                  data: {
+                    action: "click->confirm#popup",
+                    method: :patch,
+                    msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to be made to the KYC #{@investor_kyc.full_name}. Proceed?"
+                  } do %>
+        <i class="ti ti-message-2"></i>Updates Required
+      <% end %>
+    <% end %>
+
+  <% unless investor_facing %>
   <div>
 
     <% if policy(@investor_kyc).update? %>
@@ -38,18 +56,88 @@
       <% end %>
     <% end %>
 
-    <% if policy(@investor_kyc).send_notification? %>
-      <%= button_to send_notification_investor_kyc_path(
-                      @investor_kyc,
-                      message: "Investor #{@investor_kyc.investor}, #{current_user.email} has requested updates/changes for KYC: #{@investor_kyc.full_name}"),
-                  id: "investor_kyc_send_notification_btn", method: :put, class: label_class, form_class: "deleteButton",
-                  data: {
-                    action: "click->confirm#popup",
-                    method: :patch,
-                    msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to be made to the KYC #{@investor_kyc.full_name}. Proceed?"
-                  } do %>
-        <i class="ti ti-message-2"></i>Updates Required
-      <% end %>
+    <% if policy(@investor_kyc).request_updates? %>
+      <button type="button" class="btn btn-outline-warning"
+              data-bs-toggle="modal" data-bs-target="#requestUpdatesModal">
+        <i class="ti ti-refresh"></i> Request Updates
+      </button>
+
+      <div class="modal fade" id="requestUpdatesModal" tabindex="-1" aria-labelledby="requestUpdatesModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="requestUpdatesModalLabel">Request KYC Updates</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <%= form_with url: request_updates_investor_kyc_path(@investor_kyc), method: :post do |f| %>
+              <div class="modal-body">
+                <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+                  <div class="fw-bold text-dark small">Immediate Actions</div>
+                  <div class="text-muted small">The following will happen immediately when you click <strong>Send Update Request</strong>:</div>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mb-3">
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#dbeafe;">
+                      <i class="ti ti-mail fs-5" style="color:#2563eb;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Fresh link emailed to investor</div>
+                      <div class="text-muted small mt-1">A magic link is generated and sent so they can re-open their KYC form without needing a password.</div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#fef3c7;">
+                      <i class="ti ti-refresh fs-5" style="color:#d97706;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Status reset to <span class="badge bg-warning text-dark">Link Sent</span></div>
+                      <div class="text-muted small mt-1">You can track the update request in the KYC status — it resets so the workflow restarts cleanly.</div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#dcfce7;">
+                      <i class="ti ti-file-check fs-5" style="color:#16a34a;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Existing data preserved</div>
+                      <div class="text-muted small mt-1">The investor edits and resubmits — nothing is deleted. All prior data remains intact.</div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#f3e8ff;">
+                      <i class="ti ti-bell-check fs-5" style="color:#9333ea;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">You'll be notified on resubmission</div>
+                      <div class="text-muted small mt-1">Once the investor submits their updated KYC, you will receive a notification to review.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <hr class="my-3">
+                <div class="mb-1">
+                  <%= f.label :message, "Optional message to investor", class: "form-label fw-semibold" %>
+                  <small class="text-muted d-block mb-2">This will be included in the email sent to the investor.</small>
+                  <%= f.text_area :message, rows: 3, class: "form-control",
+                        placeholder: "e.g. Please update your bank details and resubmit." %>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+                <%= f.submit "Send Update Request", class: "btn btn-outline-success" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
     <% end %>
 
     <% if current_user.curr_role != "investor" %>
@@ -195,6 +283,7 @@
     <% end %>
 
   </div>
+  <% end %>
 </div>
 
 <%= render "investor_kycs/details", investor_kyc: @investor_kyc %>

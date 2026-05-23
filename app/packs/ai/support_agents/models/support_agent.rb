@@ -14,12 +14,27 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy
 
   scope :enabled, -> { where(enabled: true) }
+
+  private
+
+  # Override WithCustomField's generic fallback which uses `.last` and picks the wrong form type.
+  # Always resolve by the agent_type tag so each agent type gets its own isolated custom fields.
+  def setup_form_type
+    return if form_type_id.present?
+    return unless agent_type.present? && entity.present?
+
+    self.form_type = entity.form_types
+                           .where(name: "SupportAgent", tag: agent_type)
+                           .first_or_create!(name: "SupportAgent", tag: agent_type)
+  end
+
+  public
 
   validates :name, presence: true
   validates :name, length: { maximum: 30 }

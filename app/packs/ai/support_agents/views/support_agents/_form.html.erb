@@ -27,6 +27,10 @@
     <% if support_agent.agent_type == "CashFlowAssistantAgent" %>
       <%= render "support_agents/cash_flow_config", support_agent: support_agent, form: form %>
     <% end %>
+
+    <% if support_agent.agent_type == "KycDocExtractorAgent" %>
+      <%= render "support_agents/kyc_doc_extractor_config", support_agent: support_agent, form: form %>
+    <% end %>
     
 
 

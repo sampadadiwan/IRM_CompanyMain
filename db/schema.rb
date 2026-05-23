@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_20_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_22_200001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1516,6 +1516,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_200001) do
     t.integer "kpi_reminder_before"
     t.string "kpi_reminder_frequency", limit: 10
     t.string "kyc_bank_account_types"
+    t.boolean "kyc_doc_first_wizard", default: false, null: false
     t.text "kyc_docs_note"
     t.date "last_snapshot_on"
     t.string "mailbox", limit: 30
@@ -2394,6 +2395,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_200001) do
     t.datetime "investor_user_updated_at"
     t.json "json_fields"
     t.string "kyc_type", limit: 15, default: "Individual"
+    t.datetime "link_sent_at"
     t.text "notification_msg"
     t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.text "pan_verification_response"
@@ -2405,6 +2407,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_200001) do
     t.boolean "send_kyc_form_to_user", default: false
     t.text "signature_data"
     t.string "slug"
+    t.string "submission_status", default: "not_sent", null: false
+    t.datetime "submitted_at"
     t.string "type", limit: 20
     t.decimal "uncalled_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
@@ -2417,6 +2421,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_20_200001) do
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
     t.index ["investor_user_id"], name: "index_investor_kycs_on_investor_user_id"
     t.index ["slug"], name: "index_investor_kycs_on_slug", unique: true
+    t.index ["submission_status"], name: "index_investor_kycs_on_submission_status"
     t.index ["verified_by_id"], name: "index_investor_kycs_on_verified_by_id"
   end
 

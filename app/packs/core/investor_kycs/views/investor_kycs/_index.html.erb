@@ -6,9 +6,15 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">KYCs</h1>
   <div class="d-flex flex-wrap align-items-center gap-2">
+    <% if policy(InvestorKyc).investor_pending? %>
+      <%= link_to investor_pending_investor_kycs_path,
+            class: "btn btn-outline-warning d-inline-flex align-items-center" do %>
+        <i class="ti ti-clock"></i> Pending KYC Requests
+      <% end %>
+    <% end %>
     <% if policy(InvestorKyc).analytics? %>
-      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
-              data-bs-toggle="collapse" data-bs-target="#investorKycAnalytics" 
+      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
+              data-bs-toggle="collapse" data-bs-target="#investorKycAnalytics"
               aria-expanded="false" aria-controls="investorKycAnalytics">
         <i class="ti ti-chart-bar"></i> Analytics
       </button>
@@ -82,6 +88,22 @@
                             "custom_notification[for_type]": "Send Document",
                             "custom_notification[entity_id]": entity_id),
                           class: "dropdown-item d-flex align-items-center ti ti-mail-plus" %>
+            <div class="dropdown-divider"></div>
+            <%= link_to "Send Status: Not Sent",
+                            investor_kycs_path(filter: true, q: ransack_query_params("submission_status", :eq, "not_sent")),
+                            class: "dropdown-item d-flex align-items-center ti ti-circle-off" %>
+            <%= link_to "Send Status: Link Sent",
+                            investor_kycs_path(filter: true, q: ransack_query_params("submission_status", :eq, "link_sent")),
+                            class: "dropdown-item d-flex align-items-center ti ti-mail-forward" %>
+            <%= link_to "Send Status: Draft Saved",
+                            investor_kycs_path(filter: true, q: ransack_query_params("submission_status", :eq, "draft_saved")),
+                            class: "dropdown-item d-flex align-items-center ti ti-pencil" %>
+            <%= link_to "Send Status: Completed",
+                            investor_kycs_path(filter: true, q: ransack_query_params("submission_status", :eq, "completed")),
+                            class: "dropdown-item d-flex align-items-center ti ti-circle-check" %>
+            <%= link_to "Send Status: Verified",
+                            investor_kycs_path(filter: true, q: ransack_query_params("submission_status", :eq, "verified")),
+                            class: "dropdown-item d-flex align-items-center ti ti-shield-check" %>
             <div class="dropdown-divider"></div>
             <%= link_to "Onboarding Agent: Completed",
                             investor_kycs_path(filter: true, support_agent_report: true, q: ransack_query_params("support_agent_report_status", :eq, "Completed")),

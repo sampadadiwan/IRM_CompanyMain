@@ -124,7 +124,9 @@ Given('there is an existing investor {string} with {string} users') do |arg1, co
   steps %(
         Given there is an existing investor entity "#{arg1}"
     )
-  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
+  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id, investor_name: @investor_entity.name)
+  key_values(@investor, arg1)
+  @investor.save!
   (1..count.to_i).each do
     @investor_user = FactoryBot.create(:user, entity: @investor_entity)
     @investor_access = InvestorAccess.create!(investor: @investor, user: @investor_user,
@@ -690,12 +692,12 @@ end
 
 Given('each Investor has an approved Investor Kyc') do
   @investor_kycs = @entity.investors.each do |investor|
-    kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: investor, verified: true)
+    kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: investor,
+                           verified: true, completed_by_investor: true, submission_status: "verified")
     kyc.save(validate: false)
   end
   InvestorKyc.all.each do |kyc|
-    kyc.verified = true
-    kyc.save(validate: false)
+    kyc.update_columns(verified: true, completed_by_investor: true, submission_status: "verified")
   end
 end
 

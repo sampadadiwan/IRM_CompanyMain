@@ -449,6 +449,17 @@ FactoryBot.define do
     birth_date { Time.zone.today - rand(36).years }
     expiry_date { Time.zone.today + rand(36).months }
     comments { Faker::Company.buzzword }
+    # Keep submission_status consistent with verified/completed_by_investor so the
+    # sync_boolean_fields_from_status after_save callback doesn't overwrite them.
+    submission_status do
+      if verified
+        "verified"
+      elsif completed_by_investor
+        "completed"
+      else
+        "not_sent"
+      end
+    end
   end
 
   factory :aml_report do

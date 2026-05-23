@@ -121,18 +121,76 @@
                 </div>
                 <div class="modal-body">
                   <%= f.hidden_field :portfolio_company_id, value: investor.id %>
+
+                  <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+                    <div class="fw-bold text-dark small">Immediate Actions</div>
+                    <div class="text-muted small">The following will happen immediately when you click <strong>Send Reminder</strong>:</div>
+                  </div>
+
+                  <div class="d-flex flex-column gap-2 mb-3">
+                    <!-- Step 1: Email -->
+                    <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+                      <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                            style="width:36px;height:36px;background:#dbeafe;">
+                        <i class="ti ti-mail fs-5" style="color:#2563eb;"></i>
+                      </span>
+                      <div>
+                        <div class="fw-semibold text-dark lh-sm">Fresh link emailed to portfolio company</div>
+                        <div class="text-muted small mt-1">A magic link is generated and sent to the company contacts so they can submit data without needing a password.</div>
+                      </div>
+                    </div>
+
+                    <!-- Step 2: Shell -->
+                    <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                      <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                            style="width:36px;height:36px;background:#dcfce7;">
+                        <i class="ti ti-file-plus fs-5" style="color:#16a34a;"></i>
+                      </span>
+                      <div>
+                        <div class="fw-semibold text-dark lh-sm">KPI Report shell created</div>
+                        <div class="text-muted small mt-1">A new report entry is automatically created for the specified period to house the incoming data.</div>
+                      </div>
+                    </div>
+
+                    <!-- Step 3: Status -->
+                    <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+                      <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                            style="width:36px;height:36px;background:#fef3c7;">
+                        <i class="ti ti-refresh fs-5" style="color:#d97706;"></i>
+                      </span>
+                      <div>
+                        <div class="fw-semibold text-dark lh-sm">Status updated to <span class="badge bg-warning text-dark">Link Sent</span></div>
+                        <div class="text-muted small mt-1">The report status is updated to track the request — you can monitor progress in the KPI dashboard.</div>
+                      </div>
+                    </div>
+
+                    <!-- Step 4: Notification -->
+                    <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
+                      <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                            style="width:36px;height:36px;background:#f3e8ff;">
+                        <i class="ti ti-bell-check fs-5" style="color:#9333ea;"></i>
+                      </span>
+                      <div>
+                        <div class="fw-semibold text-dark lh-sm">You'll be notified on submission</div>
+                        <div class="text-muted small mt-1">Once the portfolio company submits their data, you will receive a notification to review and approve the report.</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <hr class="my-3">
+
                   <div class="mb-3">
-                    <%= f.label :as_of, "Period Ending Date", class: "form-label" %>
+                    <%= f.label :as_of, "Period Ending Date", class: "form-label fw-semibold" %>
                     <%= f.date_field :as_of, class: "form-control", required: true, value: Date.today.end_of_month %>
                   </div>
                   <div class="mb-3">
-                    <%= f.label :period, "Period", class: "form-label" %>
+                    <%= f.label :period, "Period", class: "form-label fw-semibold" %>
                     <%= f.select :period, KpiReport::PERIODS, { selected: "Month" }, class: "form-control", required: true %>
                   </div>
                 </div>
                 <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                  <%= f.submit "Send Reminder", class: "btn btn-primary" %>
+                  <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Close</button>
+                  <%= f.submit "Send Reminder", class: "btn btn-outline-primary" %>
                 </div>
               <% end %>
             </div>

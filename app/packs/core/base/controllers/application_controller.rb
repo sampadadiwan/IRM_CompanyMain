@@ -118,9 +118,9 @@ class ApplicationController < ActionController::Base
     # This allows Pundit policies to check if access was granted via a shared link.
     user.define_singleton_method(:signed_id_access?) { true }
 
-    # Dynamically set the instance variable based on the record's class name.
-    # For example, if record is a KpiReport, it sets @kpi_report.
-    instance_variable_set("@#{record.class.name.underscore}", record)
+    # Dynamically set the instance variable based on the record's base class name.
+    # Using base_class handles STI subclasses (e.g., IndividualKyc → @investor_kyc).
+    instance_variable_set("@#{record.class.base_class.name.underscore}", record)
     @signed_id_user = user
   end
   # rubocop:enable Rails/DynamicFindBy

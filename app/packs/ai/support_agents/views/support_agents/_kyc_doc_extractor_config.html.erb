@@ -1,0 +1,125 @@
+<%
+  # Config partial for KycDocExtractorAgent.
+  # Renders per-form-type extraction rule tables and wires up Stimulus to
+  # serialise everything into support_agent[json_fields].
+  config          = support_agent.json_fields || {}
+  extraction_rules = config["extraction_rules"] || {}
+  overwrite_mode   = config["overwrite_mode"] || "blank_only"
+  form_types       = FormType.where(entity_id: current_user.entity_id,
+                                    name: %w[IndividualKyc NonIndividualKyc])
+%>
+
+<div data-controller="kyc-doc-extractor-config">
+  <%= form.hidden_field :json_fields,
+        value: config.to_json,
+        data: { "kyc-doc-extractor-config-target": "jsonField" } %>
+
+  <hr class="my-4">
+  <h5>KYC Document Extractor Configuration</h5>
+
+  <div class="form-group mb-3">
+    <label class="form-label">Overwrite Mode</label>
+    <select class="form-control"
+            data-kyc-doc-extractor-config-target="overwriteMode"
+            data-action="change->kyc-doc-extractor-config#syncConfig">
+      <option value="blank_only" <%= "selected" if overwrite_mode == "blank_only" %>>
+        Blank Only — only fill fields that are currently empty
+      </option>
+      <option value="always" <%= "selected" if overwrite_mode == "always" %>>
+        Always — overwrite existing field values
+      </option>
+    </select>
+  </div>
+
+  <% if form_types.empty? %>
+    <div class="alert alert-warning">No KYC form types found for this entity.</div>
+  <% end %>
+
+  <% form_types.each do |form_type| %>
+    <% rules = extraction_rules[form_type.id.to_s] || [] %>
+    <% template_id = "rule-template-#{form_type.id}" %>
+
+    <div class="card mb-3" data-form-type-section>
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong><%= form_type.name %> <% if form_type.tag.present? %><span class="badge bg-secondary"><%= form_type.tag %></span><% end %></strong>
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-action="click->kyc-doc-extractor-config#addRule">
+          + Add Rule
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-bordered mb-0">
+          <thead>
+            <tr>
+              <th style="width:25%;">Document Label</th>
+              <th>Extraction Prompt</th>
+              <th style="width:20%;">Target Field</th>
+              <th style="width:50px;"></th>
+            </tr>
+          </thead>
+          <tbody data-kyc-doc-extractor-config-target="rulesBody"
+                 data-form-type-id="<%= form_type.id %>"
+                 data-template-id="<%= template_id %>">
+            <% rules.each do |rule| %>
+              <tr data-rule-row>
+                <td>
+                  <input type="text" class="form-control form-control-sm"
+                         value="<%= rule["doc_label"] %>"
+                         placeholder="e.g. PAN Card"
+                         data-field="doc_label"
+                         data-action="input->kyc-doc-extractor-config#syncConfig">
+                </td>
+                <td>
+                  <textarea class="form-control form-control-sm" rows="2"
+                            placeholder="e.g. Extract the PAN number from this document. Reply with just the value."
+                            data-field="prompt"
+                            data-action="input->kyc-doc-extractor-config#syncConfig"><%= rule["prompt"] %></textarea>
+                </td>
+                <td>
+                  <input type="text" class="form-control form-control-sm"
+                         value="<%= rule["target_field"] %>"
+                         placeholder="e.g. PAN or pan_number"
+                         data-field="target_field"
+                         data-action="input->kyc-doc-extractor-config#syncConfig">
+                </td>
+                <td class="text-center">
+                  <button type="button" class="btn btn-sm btn-outline-danger"
+                          data-action="click->kyc-doc-extractor-config#removeRule">
+                    <i class="ti ti-x"></i>
+                  </button>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <template id="<%= template_id %>">
+      <tr data-rule-row>
+        <td>
+          <input type="text" class="form-control form-control-sm" placeholder="e.g. PAN Card"
+                 data-field="doc_label"
+                 data-action="input->kyc-doc-extractor-config#syncConfig">
+        </td>
+        <td>
+          <textarea class="form-control form-control-sm" rows="2"
+                    placeholder="e.g. Extract the PAN number from this document. Reply with just the value."
+                    data-field="prompt"
+                    data-action="input->kyc-doc-extractor-config#syncConfig"></textarea>
+        </td>
+        <td>
+          <input type="text" class="form-control form-control-sm" placeholder="e.g. PAN or pan_number"
+                 data-field="target_field"
+                 data-action="input->kyc-doc-extractor-config#syncConfig">
+        </td>
+        <td class="text-center">
+          <button type="button" class="btn btn-sm btn-outline-danger"
+                  data-action="click->kyc-doc-extractor-config#removeRule">
+            <i class="ti ti-x"></i>
+          </button>
+        </td>
+      </tr>
+    </template>
+  <% end %>
+</div>

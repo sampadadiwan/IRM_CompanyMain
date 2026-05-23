@@ -1149,21 +1149,18 @@ Then('all the investor advisors should be able to receive notifications for the 
     visible_kycs = []
     invisible_kycs = []
 
-    puts "Checking notifications for Investor Advisor #{investor_advisor.email}"
     # For each investor access, check if the advisor is notified for each capital commitment
     InvestorAccess.approved.where(email: investor_advisor.email).all.each do |investor_access|
       investor = investor_access.investor
-      puts "Checking commitments"
       investor.capital_commitments.each do |cc|
-        investor.notification_users(cc).pluck(:email).include?(investor_advisor.email).should == true
+        notif_emails = investor.notification_users(cc).pluck(:email)
+        notif_emails.include?(investor_advisor.email).should == true
       end
 
-      puts "Checking remittances"
       investor.capital_remittances.each do |cr|
         investor.notification_users(cr).pluck(:email).include?(investor_advisor.email).should == true
       end
 
-      puts "Checking distributions"
       investor.capital_distribution_payments.each do |cdp|
         investor.notification_users(cdp).pluck(:email).include?(investor_advisor.email).should == true
       end
@@ -1171,11 +1168,9 @@ Then('all the investor advisors should be able to receive notifications for the 
 
       investor.investor_kycs.each do |kyc|
         if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: true)
-          puts "Checking KYC notifications true"
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == true
           visible_kycs << kyc
         else
-          puts "Checking KYC notifications false"
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == false
           invisible_kycs << kyc
         end
@@ -1350,9 +1345,22 @@ end
 
 
 Given('each investor has a {string} kyc linked to the commitment') do |status|
-  verified = status == "verified"
+  # submission_status must match verified/completed_by_investor booleans so the
+  # sync_boolean_fields_from_status after_save callback does not overwrite them.
+  valid_statuses = %w[not_sent link_sent draft_saved completed verified]
+  submission_status = valid_statuses.include?(status) ? status : "verified"
+  verified = %w[verified].include?(submission_status)
+  completed_by_investor = %w[completed verified].include?(submission_status)
+
   Investor.all.each do |inv|
-    kyc = FactoryBot.build(:investor_kyc, investor: inv, entity: @fund.entity, verified:)
+    kyc = FactoryBot.build(
+      :investor_kyc,
+      investor: inv,
+      entity: @fund.entity,
+      verified:,
+      completed_by_investor:,
+      submission_status:
+    )
     kyc.save(validate: false)
     @fund.capital_commitments.where(investor_id: inv.id).update(investor_kyc_id: kyc.id)
   end
@@ -2612,7 +2620,7 @@ And('The commitments have investor kycs linked') do
   @fund.capital_commitments.each do |cc|
     p "Linking kyc for Commitment #{cc.id}"
     investor = cc.investor
-    kyc = InvestorKyc.new(investor: investor, entity: @fund.entity, verified: true, full_name: investor.investor_name)
+    kyc = InvestorKyc.new(investor: investor, entity: @fund.entity, verified: true, completed_by_investor: true, submission_status: "verified", full_name: investor.investor_name)
     kyc.save(validate: false)
     cc.investor_kyc_id = kyc.id
     cc.save!
@@ -2927,11 +2935,10 @@ Given('We Generate documents for the capital distribution') do
   @capital_distribution_payments.each do |cdp|
     unless cdp.capital_commitment&.investor_kyc&.verified
       if cdp.capital_commitment.investor_kyc.present?
-        cdp.capital_commitment.investor_kyc.verified = true
-        res = cdp.capital_commitment.investor_kyc.save(validate: false)
-        puts "KYC for investor #{cdp.investor_name} verified: #{res}"
+        cdp.capital_commitment.investor_kyc.update_columns(verified: true, completed_by_investor: true, submission_status: "verified")
+        puts "KYC for investor #{cdp.investor_name} verified"
       else
-          investor_kyc = InvestorKyc.new(investor: cdp.capital_commitment.investor, entity: @entity, verified: true, full_name: cdp.investor_name, PAN: Faker::Alphanumeric.alphanumeric(number: 10).upcase, birth_date: Date.today - 18.years)
+          investor_kyc = InvestorKyc.new(investor: cdp.capital_commitment.investor, entity: @entity, verified: true, completed_by_investor: true, submission_status: "verified", full_name: cdp.investor_name, PAN: Faker::Alphanumeric.alphanumeric(number: 10).upcase, birth_date: Date.today - 18.years)
           res = investor_kyc.save(validate:false)
           puts "KYC for investor #{cdp.investor_name} created and verified: #{res}"
           cdp.capital_commitment.investor_kyc = investor_kyc
@@ -3028,7 +3035,7 @@ Given('The multiple commitments have the same investor kycs linked') do
       cc.investor_kyc_id = kyc.id
       cc.save!
     else
-      kyc = InvestorKyc.new(investor: investor, entity: @fund.entity, verified: true, full_name: investor.investor_name)
+      kyc = InvestorKyc.new(investor: investor, entity: @fund.entity, verified: true, completed_by_investor: true, submission_status: "verified", full_name: investor.investor_name)
       kyc.save(validate: false)
       puts "Creating new KYC #{kyc.id} for investor #{investor.id}"
       investors[investor.id] = kyc.id

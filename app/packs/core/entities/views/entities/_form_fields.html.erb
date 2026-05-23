@@ -46,6 +46,11 @@
       <%= entity_setting_subform.rich_text_area :kyc_docs_note, class: "form-control"  %>
       <small>Instructions to users to upload the KYC documents.</small>
     </div>
+    <div class="form-group form-check">
+      <%= entity_setting_subform.check_box :kyc_doc_first_wizard, class: "form-check-input" %>
+      <%= entity_setting_subform.label :kyc_doc_first_wizard, "Enable Document-First KYC Wizard", class: "form-check-label" %>
+      <small class="d-block text-muted">Shows an "Extract from Documents" button on the KYC form. Requires a KycDocExtractorAgent to be configured and enabled.</small>
+    </div>
   <% end %>
   <% if entity.permissions.enable_kpis? %>
     <div class="form-group">

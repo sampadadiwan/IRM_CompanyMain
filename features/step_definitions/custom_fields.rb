@@ -355,7 +355,7 @@ Given('I try to edit the reporting via URL') do
 end
 
 Given('The Kyc is unverified') do
-  @kyc.assign_attributes(verified: false)
+  @kyc.assign_attributes(verified: false, submission_status: "not_sent", completed_by_investor: false)
   @kyc.save(validate: false)
   expect(@kyc.verified).to be_falsey
 end

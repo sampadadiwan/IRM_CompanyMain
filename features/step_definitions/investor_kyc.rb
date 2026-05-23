@@ -109,7 +109,7 @@ end
 
 Given('The KYC is verified') do
   @investor_kyc ||= InvestorKyc.last
-  @investor_kyc.update_columns(verified: true)
+  @investor_kyc.update_columns(verified: true, submission_status: "verified", completed_by_investor: true)
 end
 
 When('I navigate to the KYC page') do

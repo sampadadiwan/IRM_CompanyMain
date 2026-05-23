@@ -196,8 +196,8 @@ Capybara.register_driver(:playwright) do |app|
                                    browser_type: :chromium,
                                    headless: ENV["BROWSER"].blank?,
                                    playwright_cli_executable_path: 'node_modules/.bin/playwright',
-                                   screen_size: { width: 1580, height: 900 },
-                                   viewport: { width: 1580, height: 900 },
+                                   screen_size: { width: 1680, height: 1100 },
+                                   viewport: { width: 1680, height: 1100 },
                                    default_wait_for_load_state: "domcontentloaded",
                                    navigation_timeout: 60_000)
 end

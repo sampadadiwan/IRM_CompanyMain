@@ -1,0 +1,20 @@
+<% if @custom_notification %>
+
+    <%= render "/custom_notifications/mail" %>
+
+<% else %>
+
+    <p>
+        <% if @message.present? %>
+            <%= @message %>
+        <% else %>
+            The investor <strong><%= @investor_kyc.full_name %></strong> has submitted their KYC for review.
+            <% if @investor_kyc.submitted_at.present? %>
+              <br>Submitted on <%= @investor_kyc.submitted_at.strftime('%B %-d, %Y') %>.
+            <% end %>
+        <% end %>
+    </p>
+
+<% end %>
+
+<p class="btn btn-outline-primary"><%= link_to "View KYC", investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) %></p>

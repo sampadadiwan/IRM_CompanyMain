@@ -12,6 +12,18 @@
 
 DEFAULT_LLM_MODEL = "gemini-3-flash-preview"
 
+# Extraction rule templates for KycDocExtractorAgent.
+# Applied dynamically at setup time, keyed by the entity's actual KYC FormType IDs.
+KYC_EXTRACTOR_BASE_RULES = [
+  { "doc_label" => "Upload Tax ID",       "prompt" => "Extract the PAN number from this document. Return only the 10-character alphanumeric PAN (e.g. ABCDE1234F). No explanation.", "target_field" => "PAN" },
+  { "doc_label" => "Upload Address Proof","prompt" => "Extract the full permanent address from this document. Return only the address as plain text, no labels or explanation.",    "target_field" => "address" }
+].freeze
+
+# IndividualKyc/Default also extracts the investor's full name from the Tax ID document.
+KYC_EXTRACTOR_FULL_NAME_RULE = {
+  "doc_label" => "Upload Tax ID", "prompt" => "Extract the Full name from the document", "target_field" => "full_name"
+}.freeze
+
 # ---------------------------------------------------------------------------
 # FormType + field definitions (entity-agnostic; IDs are resolved at runtime)
 # ---------------------------------------------------------------------------
@@ -50,6 +62,21 @@ SUPPORT_AGENT_FORM_CONFIGS = [
   },
 
   # ── New agent FormTypes (created when missing) ─────────────────────────────
+  {
+    tag: "KycDocExtractorAgent",
+    agent: {
+      name:       "KYC Doc Extractor",
+      with_steps: false,
+      json_fields: {
+        "overwrite_mode"   => "blank_only",
+        "extraction_rules" => {}   # populated dynamically by the setup task from the entity's KYC FormTypes
+      }
+      # No schedule — triggered on-demand during KYC document upload
+    },
+    # All runtime config (overwrite_mode + extraction_rules) is managed via the
+    # dedicated _kyc_doc_extractor_config partial; no FormCustomField records needed.
+    fields: []
+  },
   {
     tag: "DistributionReadinessAgent",
     agent: {
@@ -367,6 +394,31 @@ namespace :support_agents do
         puts "  [#{agent_type}] Added json_fields: #{missing.keys.join(', ')}"
       else
         puts "  [#{agent_type}] json_fields already up to date"
+      end
+    end
+
+    # Seed KycDocExtractorAgent extraction_rules using the entity's actual KYC FormType IDs.
+    # Only applied when extraction_rules is empty — existing UI-configured rules are never overwritten.
+    sa = SupportAgent.find_by(entity_id: entity_id, agent_type: "KycDocExtractorAgent")
+    if sa
+      existing_rules = sa.json_fields&.dig("extraction_rules") || {}
+      if existing_rules.empty?
+        kyc_fts = FormType.where(entity_id: entity_id, name: %w[IndividualKyc NonIndividualKyc])
+        if kyc_fts.any?
+          rules = kyc_fts.each_with_object({}) do |ft, hash|
+            # IndividualKyc/Default also extracts full_name; all other KYC types get PAN + address only.
+            entry = KYC_EXTRACTOR_BASE_RULES.dup
+            entry = entry + [KYC_EXTRACTOR_FULL_NAME_RULE] if ft.name == "IndividualKyc" && ft.tag == "Default"
+            hash[ft.id.to_s] = entry
+          end
+          sa.update!(json_fields: sa.json_fields.merge("extraction_rules" => rules))
+          puts "  [KycDocExtractorAgent] Seeded extraction_rules for #{kyc_fts.count} KYC FormTypes: " \
+               "#{kyc_fts.map { |f| "#{f.name}/#{f.tag}(#{f.id})" }.join(', ')}"
+        else
+          puts "  [KycDocExtractorAgent] No IndividualKyc/NonIndividualKyc FormTypes found — extraction_rules not seeded"
+        end
+      else
+        puts "  [KycDocExtractorAgent] extraction_rules already configured (#{existing_rules.size} form types) — skipped"
       end
     end
 

@@ -1,0 +1,111 @@
+<%#
+  Doc-first upload step shown to investors (magic link or investor role) when
+  kyc_doc_first_wizard is enabled and no documents have been uploaded yet.
+  Submits to doc_first_upload (PATCH) which saves docs, enqueues extraction,
+  and redirects through the processing spinner to the pre-filled edit form.
+%>
+<% investor_kyc = @investor_kyc %>
+<div class="container py-4">
+  <div class="row justify-content-center">
+    <div class="col-md-7">
+
+      <div class="card shadow-sm">
+        <div class="card-header bg-white py-3">
+          <h5 class="mb-0"><i class="ti ti-file-upload me-2 text-primary"></i>Upload your KYC Documents</h5>
+        </div>
+
+        <div class="card-body">
+          <div class="d-flex flex-column gap-2 mb-4">
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dbeafe;">
+                <i class="ti ti-upload fs-5" style="color:#2563eb;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Upload your documents</div>
+                <div class="text-muted small mt-1">Provide clear scans or photos of your identity and address proofs.</div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#dcfce7;">
+                <i class="ti ti-robot fs-5" style="color:#16a34a;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Automatic Extraction</div>
+                <div class="text-muted small mt-1">We'll scan your documents and pre-fill the form automatically.</div>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
+              <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                    style="width:36px;height:36px;background:#f3e8ff;">
+                <i class="ti ti-check fs-5" style="color:#9333ea;"></i>
+              </span>
+              <div>
+                <div class="fw-semibold text-dark lh-sm">Review and confirm</div>
+                <div class="text-muted small mt-1">You'll review and confirm everything before final submission.</div>
+              </div>
+            </div>
+          </div>
+          <%= form_with(
+                url: doc_first_upload_investor_kyc_path(investor_kyc, signed_id: params[:signed_id]),
+                method: :patch,
+                html: { multipart: true }
+              ) do |form| %>
+
+            <% pan_label = sys_t('investor_kyc.tax_id') %>
+
+            <div class="mb-4">
+              <div class="fw-semibold small text-uppercase text-muted letter-spacing-1 mb-2">Identity Documents</div>
+
+              <div class="form-group mb-3">
+                <%= file_fields("Upload #{pan_label}", investor_kyc, form, required: false, meta_data: "PAN") %>
+                <small class="text-muted">Upload a clear image or scan of your <%= pan_label %></small>
+              </div>
+
+              <div class="form-group mb-3">
+                <%= file_fields("Upload Address Proof", investor_kyc, form, required: false) %>
+                <small class="text-muted">Passport, utility bill, or bank statement showing your address</small>
+              </div>
+            </div>
+
+            <%# File-type FormCustomFields for this form type %>
+            <% file_cfs = investor_kyc.form_custom_fields.select { |f| f.field_type.downcase == "file" } %>
+            <% if file_cfs.any? %>
+              <div class="mb-4">
+                <div class="fw-semibold small text-uppercase text-muted letter-spacing-1 mb-2">Additional Documents</div>
+                <% file_cfs.each do |cf| %>
+                  <div class="form-group mb-3">
+                    <%= file_fields(cf.label.presence || cf.name, investor_kyc, form, required: false) %>
+                    <% if cf.help_text.present? %>
+                      <small class="text-muted"><%= cf.help_text %></small>
+                    <% end %>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+              <%= link_to edit_investor_kyc_path(investor_kyc, signed_id: params[:signed_id], skip_doc_first: true),
+                    class: "btn btn-outline-secondary" do %>
+                <i class="ti ti-pencil me-1"></i>Fill Form Manually
+              <% end %>
+              <div class="d-flex gap-2">
+                <%= button_to "Extract from Documents",
+                      extract_docs_data_investor_kyc_path(investor_kyc, signed_id: params[:signed_id].presence),
+                      method: :post,
+                      class: "btn btn-outline-secondary btn-sm" %>
+                <%= form.submit "Continue to Fill Form →",
+                      class: "btn btn-outline-primary",
+                      data: { disable_with: "Extracting data from documents…" } %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

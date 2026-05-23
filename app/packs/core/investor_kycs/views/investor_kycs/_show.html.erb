@@ -182,7 +182,28 @@
             <div class="card-header  border-bottom py-3">
             <h6 class="mb-0 fw-bold  d-flex align-items-center"><i class="ti ti-list me-2 text-warning"></i>Attributes</h6>
             </div>
+            <%
+              submission_status_badge_class = {
+                "not_sent"    => "bg-secondary",
+                "link_sent"   => "bg-info",
+                "draft_saved" => "bg-warning text-dark",
+                "completed"   => "bg-success",
+                "verified"    => "bg-dark"
+              }.fetch(investor_kyc.submission_status, "bg-secondary")
+            %>
             <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <span class="text-muted">Send Status</span>
+                    <span class="text-end">
+                        <span class="badge <%= submission_status_badge_class %>"><%= investor_kyc.submission_status.humanize %></span>
+                        <% if investor_kyc.submitted_at.present? %>
+                            <div class="small text-muted">Submitted <%= investor_kyc.submitted_at.strftime('%b %-d, %Y') %></div>
+                        <% end %>
+                        <% if investor_kyc.link_sent_at.present? && !investor_kyc.submission_completed? && !investor_kyc.submission_verified? %>
+                            <div class="small text-muted">Link sent <%= investor_kyc.link_sent_at.strftime('%b %-d, %Y') %></div>
+                        <% end %>
+                    </span>
+                </li>
                 <li class="list-group-item d-flex justify-content-between align-items-center py-3">
                     <span class="text-muted">Expiry Date</span>
                     <span class="fw-bold ">

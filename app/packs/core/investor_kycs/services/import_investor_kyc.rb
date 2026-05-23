@@ -67,6 +67,16 @@ class ImportInvestorKyc < ImportUtil
 
     verified = %w[yes true].include?(user_data["Verified"]&.downcase)
     send_kyc_form_to_user = %w[yes true].include?(user_data["Send Kyc Form To User"]&.downcase)
+    # Keep submission_status consistent with verified so sync_boolean_fields_from_status
+    # does not overwrite the verified flag after save.
+    submission_status = if verified
+                          "verified"
+                        elsif investor_kyc.persisted?
+                          investor_kyc.submission_status
+                        else
+                          "not_sent"
+                        end
+    completed_by_investor = verified || investor_kyc.completed_by_investor
 
     investor_kyc.assign_attributes(investor:, PAN: user_data["Pan/Tax Id"],
                                    agreement_committed_amount: user_data["Agreement Committed Amount"],
@@ -82,8 +92,8 @@ class ImportInvestorKyc < ImportUtil
                                    bank_account_number: user_data["Bank Account Number"]&.to_s,
                                    bank_account_type: user_data["Account Type"],
                                    ifsc_code: user_data["Ifsc Code"],
-                                   verified:, form_type:,
-                                   send_kyc_form_to_user:)
+                                   verified:, completed_by_investor:, submission_status:,
+                                   form_type:, send_kyc_form_to_user:)
 
     # Form Tag is optional, so we remove it from the custom_field_headers, so it does not get saved as a custom field
     custom_field_headers.delete("Form Tag")

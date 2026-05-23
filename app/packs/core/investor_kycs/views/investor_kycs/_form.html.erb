@@ -1,4 +1,4 @@
-<div class="wizard_container" data-controller="wizard">
+<div class="wizard_container" data-controller="wizard interim-save">
   <div class="row justify-content-md-center">
     <div class="stepwizard hidden col-md-6">
         <div class="stepwizard-row setup-panel">
@@ -15,7 +15,7 @@
                 <p>Step 3</p>
             </div>
             <% regulatory_custom_fields = investor_kyc.form_type.present? ? investor_kyc.form_custom_fields.regulatory : [] %>
-            <% show_step_4_for_regulatory_fields = regulatory_custom_fields.present? && !current_user.curr_role_investor? %>
+            <% show_step_4_for_regulatory_fields = regulatory_custom_fields.present? && !(current_user&.curr_role_investor? || params[:signed_id].present?) %>
             <% if show_step_4_for_regulatory_fields %>
             <div class="stepwizard-step">
                 <a href="#step-4" type="button" class="btn disabled btn-outline-primarybtn-outline-circle">4</a>
@@ -26,9 +26,45 @@
     </div>
   </div>
 
-<% is_investor = current_user.curr_role == "investor"%>
+<%
+  is_investor        = current_user&.curr_role == "investor"
+  via_signed_id      = params[:signed_id].present?
+  kyc_locked         = investor_kyc.submission_completed? || investor_kyc.submission_verified?
+  investor_facing    = is_investor || via_signed_id
+  show_investor_btns = investor_facing && !kyc_locked
+%>
 
-<%= form_with(model: investor_kyc, validate: is_investor, class: "wizard_form row justify-content-md-center", data: { controller: "interim-save" }) do |form| %>
+<% if kyc_locked && via_signed_id %>
+  <div class="col-md-6 mx-auto mb-3">
+    <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+      <i class="bi bi-check-circle-fill"></i>
+      <div>
+        <strong>KYC Already Submitted</strong> — your KYC has been received. The fund team will review it shortly.
+        <% if investor_kyc.submitted_at.present? %>
+          <br><small class="text-muted">Submitted on <%= investor_kyc.submitted_at.strftime('%B %-d, %Y') %></small>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>
+
+<% if !kyc_locked &&
+      investor_kyc.entity.entity_setting.kyc_doc_first_wizard? &&
+      investor_kyc.entity.agents.exists?(agent_type: "KycDocExtractorAgent", enabled: true) %>
+  <div class="col-12 mb-2">
+    <div class="col-md-6 mx-auto text-end">
+      <%= button_to "Extract from Documents",
+            extract_docs_data_investor_kyc_path(investor_kyc, signed_id: params[:signed_id].presence),
+            method: :post,
+            class: "btn btn-outline-secondary btn-sm" %>
+    </div>
+  </div>
+<% end %>
+
+<%= form_with(model: investor_kyc, validate: is_investor, class: "wizard_form row justify-content-md-center") do |form| %>
+  <% if via_signed_id %>
+    <input type="hidden" name="signed_id" value="<%= params[:signed_id] %>">
+  <% end %>
   <% if investor_kyc.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(investor_kyc.errors.count, "error") %> prohibited this investor_kyc from being saved:</h2>
@@ -41,6 +77,21 @@
     </div>
   <% end %>
 
+
+  <%# Banner shown after doc-first extraction ran — spans full row width then centres content %>
+  <% if params[:doc_first_done].present? %>
+    <div class="col-12 mb-3">
+      <div class="col-md-6 mx-auto">
+        <div class="alert alert-success d-flex align-items-center gap-2" role="alert">
+          <i class="ti ti-check fs-5"></i>
+          <div>
+            <strong>Fields pre-filled from your documents.</strong>
+            Please review each field, correct anything that looks wrong, and complete any remaining fields before submitting.
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
 
   <div class="col-md-6 setup-content" id="step-1">
     <div class="">
@@ -88,7 +139,7 @@
               <% end %>
             </div>
 
-            <% if investor_kyc.entity.entity_type == "Angel Fund" && investor_kyc.entity_id == current_user.entity_id %>
+            <% if investor_kyc.entity.entity_type == "Angel Fund" && investor_kyc.entity_id == current_user&.entity_id %>
               <div class="form-group">
                 <%= form.label :agreement_committed_amount %>
                 <%= form.text_field :agreement_committed_amount, class: "form-control"  %>
@@ -119,7 +170,7 @@
               <small class="form-text text-muted">Please upload a clear image of your <%=pan_label%></small>
             </div>
 
-            <% if current_user.entity_id == investor_kyc.entity_id %>
+            <% if current_user&.entity_id == investor_kyc.entity_id %>
               <div class="form-group">
                 <%= form.label :pan_verified, "#{pan_label} Verified" %>
                 <%= form.check_box :pan_verified, class: "form-check-input"  %>
@@ -128,12 +179,19 @@
 
             <%= custom_form_fields(investor_kyc, form, step: :one, required: is_investor) %>
 
-            <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
-            <!-- Interim submit: bypass CSV on the client -->
-            <%= form.button "Save Draft",
-              type: "button",
-              class: "btn btn-outline-secondary btn-lg",
-              data: { action: "click->interim-save#interim" } if is_investor %>
+            <div class="d-flex gap-2 flex-wrap mt-2">
+              <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
+              <% if show_investor_btns %>
+                <%= form.button "Save Draft",
+                  type: "button",
+                  class: "btn btn-outline-secondary btn-lg",
+                  data: { action: "click->interim-save#interim" } %>
+                <%= form.button "Submit KYC",
+                  type: "button",
+                  class: "btn btn-primary btn-lg",
+                  data: { action: "click->interim-save#final" } %>
+              <% end %>
+            </div>
 
         </div>
       </div>
@@ -213,7 +271,7 @@
 
           <%= custom_form_fields(investor_kyc, form, step: :two, required: is_investor) %>
 
-          <% if current_user.entity_id == investor_kyc.entity_id  %>
+          <% if current_user&.entity_id == investor_kyc.entity_id  %>
             <div class="form-group">
               <%= form.label :bank_verified %>
               <%= form.check_box :bank_verified, class: "form-check-input"  %>
@@ -222,11 +280,10 @@
 
           <div class="form-group">
             <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
-            <!-- Interim submit: bypass CSV on the client -->
             <%= form.button "Save Draft",
               type: "button",
               class: "btn btn-outline-secondary btn-lg",
-              data: { action: "click->interim-save#interim" } if is_investor%>
+              data: { action: "click->interim-save#interim" } if show_investor_btns %>
           </div>
         </div>
       </div>
@@ -240,7 +297,7 @@
         <div class="card-header"> 3. KYC Details </div>
         <div class="card-body">
 
-          <% if investor_kyc.entity_id == current_user.entity_id %>
+          <% if investor_kyc.entity_id == current_user&.entity_id %>
           <div class="form-group" data-controller="investor-kycs">
             <%= form.label :esign_emails, "Investor Signatory Emails" %>
             <%= form.text_field :esign_emails,
@@ -260,7 +317,7 @@
 
           <%= custom_form_fields(investor_kyc, form, required: is_investor) %>
 
-          <% unless current_user.curr_role == "investor" %>
+          <% unless current_user&.curr_role == "investor" || params[:signed_id].present? %>
             <div class="form-group">
               <%= form.label :expiry_date %>
               <%= form.date_field :expiry_date, class: "form-control"  %>
@@ -285,11 +342,20 @@
           </div>
 
 
-          <div class="form-group">
+          <div class="form-group d-flex gap-2 flex-wrap">
             <% if show_step_4_for_regulatory_fields %>
               <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
+            <% elsif show_investor_btns %>
+              <%= form.button "Save Draft",
+                type: "button",
+                class: "btn btn-outline-secondary btn-lg",
+                data: { action: "click->interim-save#interim" } %>
+              <%= form.button "Submit KYC",
+                type: "button",
+                class: "btn btn-primary btn-lg",
+                data: { action: "click->interim-save#final" } %>
             <% else %>
-              <%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg"}%>
+              <%= form.button t_common(:save), type: "button", class: "btn btn-outline-primary btn-lg", data: { action: "click->interim-save#submit" } %>
             <% end %>
           </div>
 
@@ -314,8 +380,19 @@
               <% end %>
           <% end %>
 
-          <div class="form-group">
-            <%= form.submit t_common(:save), {class: "btn btn-outline-primary btn-lg"}%>
+          <div class="form-group d-flex gap-2 flex-wrap">
+            <% if show_investor_btns %>
+              <%= form.button "Save Draft",
+                type: "button",
+                class: "btn btn-outline-secondary btn-lg",
+                data: { action: "click->interim-save#interim" } %>
+              <%= form.button "Submit KYC",
+                type: "button",
+                class: "btn btn-primary btn-lg",
+                data: { action: "click->interim-save#final" } %>
+            <% else %>
+              <%= form.button t_common(:save), type: "button", class: "btn btn-outline-primary btn-lg", data: { action: "click->interim-save#submit" } %>
+            <% end %>
           </div>
 
         </div>
@@ -325,5 +402,51 @@
   <% end %>
 
 <% end %>
+
+<%# Submit KYC confirmation modal — outside the form to avoid Bootstrap backdrop stacking issues %>
+<div class="modal fade" id="submitKycConfirmModal" tabindex="-1" aria-labelledby="submitKycConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold" id="submitKycConfirmModalLabel">
+          <i class="ti ti-send me-2 text-primary"></i>Submit KYC?
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="text-muted mb-3">Please confirm before submitting. Here's what happens next:</p>
+        <div class="d-flex flex-column gap-2">
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+            <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width:34px;height:34px;background:#dbeafe;">
+              <i class="ti ti-lock fs-5" style="color:#2563eb;"></i>
+            </span>
+            <div>
+              <div class="fw-semibold text-dark lh-sm">Your KYC will be locked</div>
+              <div class="text-muted small mt-1">You will not be able to edit it after submission.</div>
+            </div>
+          </div>
+          <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+            <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width:34px;height:34px;background:#dcfce7;">
+              <i class="ti ti-bell-check fs-5" style="color:#16a34a;"></i>
+            </span>
+            <div>
+              <div class="fw-semibold text-dark lh-sm">The fund team will be notified</div>
+              <div class="text-muted small mt-1">They will review your submission and get back to you.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-1">
+        <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary"
+                data-action="click->interim-save#confirmFinal">
+          <i class="ti ti-send me-1"></i>Yes, Submit KYC
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 </div>

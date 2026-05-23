@@ -8,12 +8,16 @@ class InvestorKycsBulkActionJob < BulkActionJob
 
     when "verify"
       investor_kyc.verified = true
+      investor_kyc.submission_status = "verified"
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
     when "bankverification"
       VerifyBankJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(obj_class: investor_kyc.class.to_s, obj_id: investor_kyc.id)
     when "unverify"
       investor_kyc.verified = false
+      investor_kyc.submission_status = "link_sent"
       InvestorKycUpdate.call(investor_kyc:, investor_user: false)
+    when "sendkyclink"
+      send_kyc_link(investor_kyc, user_id, custom_notification_id: params[:custom_notification_id])
     when "sendreminder"
       send_reminder(investor_kyc, user_id, custom_notification_id: params[:custom_notification_id])
     when "generateamlreports"
@@ -53,13 +57,30 @@ class InvestorKycsBulkActionJob < BulkActionJob
     GenerateAmlReportJob.perform_later(investor_kyc.id, user_id)
   end
 
+  # Initial send — marks KYC as link_sent on first delivery.
+  def send_kyc_link(investor_kyc, user_id, custom_notification_id: nil)
+    if investor_kyc.investor.approved_users.blank?
+      msg = "KYC link could not be sent, no users for investor."
+      send_notification(msg, user_id, "danger")
+      @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
+    elsif investor_kyc.submission_completed? || investor_kyc.submission_verified?
+      msg = "KYC link not sent, KYC already submitted by investor."
+      send_notification(msg, user_id, "danger")
+      @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
+    elsif Rails.env.test?
+      SendKycFormJob.perform_later(investor_kyc.id, reminder: false, custom_notification_id: custom_notification_id)
+    else
+      SendKycFormJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(investor_kyc.id, reminder: false, custom_notification_id: custom_notification_id)
+    end
+  end
+
   def send_reminder(investor_kyc, user_id, custom_notification_id: nil)
     if investor_kyc.investor.approved_users.blank?
       msg = "KYC Reminder could not be sent, no users for investor."
       send_notification(msg, user_id, "danger")
       @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
-    elsif investor_kyc.verified
-      msg = "KYC Reminder could not be sent, KYC is verified and uneditable by user"
+    elsif investor_kyc.verified || investor_kyc.submission_completed? || investor_kyc.submission_verified?
+      msg = "KYC Reminder could not be sent, KYC is already submitted or verified."
       send_notification(msg, user_id, "danger")
       @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
     elsif Rails.env.test?

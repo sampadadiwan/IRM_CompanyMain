@@ -12,10 +12,22 @@ class KycReminderJob < ApplicationJob
                         [InvestorKyc.find(investor_kyc_id)]
                       else
                         InvestorKyc.where(entity_id: @user.entity_id, verified: false)
+                                   .where.not(submission_status: %w[completed verified])
                       end
 
       investor_kycs.each do |investor_kyc|
-        InvestorKycNotifier.with(record: investor_kyc, entity_id: investor_kyc.entity_id, user_id: @user.id).notify_kyc_required_inv_kyc.deliver_later(@user)
+        # Skip any individually-specified KYC that is already completed or verified.
+        next if investor_kyc.submission_completed? || investor_kyc.submission_verified?
+
+        # Send to each investor user so the mailer generates a signed link for the right person.
+        investor_kyc.investor.notification_users.each do |inv_user|
+          InvestorKycNotifier.with(
+            record: investor_kyc,
+            entity_id: investor_kyc.entity_id,
+            email_method: :kyc_required_reminder,
+            user_id: inv_user.id
+          ).deliver_later(inv_user)
+        end
       end
     end
   end

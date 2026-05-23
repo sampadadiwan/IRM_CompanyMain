@@ -1,0 +1,21 @@
+<%
+  # submission_status options for ransack multi-select.
+  # Values match the submission_status enum defined on InvestorKyc.
+  status_options = [
+    ["Not Sent",    "not_sent"],
+    ["Link Sent",   "link_sent"],
+    ["Draft Saved", "draft_saved"],
+    ["Completed",   "completed"],
+    ["Verified",    "verified"]
+  ]
+  selected_statuses = Array(params.dig(:q, :submission_status_in))
+%>
+<div class="form-group d-inline-flex align-items-center gap-2 mt-2">
+  <%= form.label :submission_status_in, "Send Status", class: "form-label mb-0 text-nowrap" %>
+  <%= form.select :submission_status_in,
+        options_for_select(status_options, selected_statuses),
+        { include_blank: "All" },
+        class: "form-select form-select-sm",
+        multiple: true,
+        style: "min-width: 150px;" %>
+</div>

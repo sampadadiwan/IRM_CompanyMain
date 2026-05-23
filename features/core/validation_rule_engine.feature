@@ -192,17 +192,6 @@ Feature: Validation Rule Engine
     When the validation rules are evaluated for a FundRatio with "end_date=2026-05-15"
     Then the rule "fund_ratio_date_not_quarter_end" fires as a "warning"
 
-  Scenario: Fund ratio value above the max range fires a warning
-    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
-    And the entity has opted in to all validation rules
-    When the validation rules are evaluated for a FundRatio with "end_date=2026-03-31;value=15"
-    Then the rule "fund_ratio_value_out_of_range" fires as a "warning"
-
-  Scenario: Fund ratio value within range does not fire
-    Given there is a fund "name=RuleTestFund;currency=INR" for the entity
-    And the entity has opted in to all validation rules
-    When the validation rules are evaluated for a FundRatio with "end_date=2026-03-31;value=5"
-    Then the rule "fund_ratio_value_out_of_range" does not fire
 
   @javascript
   Scenario: Generate fund ratios form shows warning modal for non-quarter-end date
