@@ -25,13 +25,22 @@ module CapitalDistributionFees
     self.expense_with_fees_cents = 0
     self.display_only_with_fees_cents = 0
 
-    capital_distribution.distribution_fees.order(fee_type: :asc).each do |distribution_fee|
+    capital_distribution.distribution_fees.order(fee_type: :asc).each do |distribution_fee| # rubocop:disable Metrics/BlockLength
       Rails.logger.debug { "Processing distribution_fee: #{distribution_fee.name} for capital_distribution_payment: #{id}" }
 
       cd_account_entries = capital_commitment.account_entries.where(
-        "account_entries.reporting_date >=? AND account_entries.reporting_date <=? AND account_entries.name = ? AND cumulative = ?",
-        distribution_fee.start_date, distribution_fee.end_date, distribution_fee.name, false
+        "account_entries.reporting_date >=? AND account_entries.reporting_date <=? AND account_entries.name = ?",
+        distribution_fee.start_date, distribution_fee.end_date, distribution_fee.name
       )
+
+      # cumulative is false by default for backwards compatibility as it was always false before
+      cumulative = distribution_fee.cumulative.presence || false
+      cd_account_entries = cd_account_entries.where(cumulative: cumulative)
+      parent_ids = distribution_fee.parent_ids.to_s.split(",").map(&:strip).compact_blank if distribution_fee.parent_ids.present?
+      entry_types = distribution_fee.entry_type.to_s.split(",").map(&:strip).compact_blank if distribution_fee.entry_type.present?
+      cd_account_entries = cd_account_entries.where(entry_type: entry_types) if entry_types.present?
+      cd_account_entries = cd_account_entries.where(parent_type: distribution_fee.parent_type) if distribution_fee.parent_type.present?
+      cd_account_entries = cd_account_entries.where(parent_id: parent_ids) if parent_ids.present?
       # Sum the amount for the fee for the commitment account_entries
       ae_cents = cd_account_entries.sum(:amount_cents)
       # Get the audit trail to display of the account_entries for the fee

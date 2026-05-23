@@ -1,8 +1,8 @@
-<div class='nested-fields'>
+<div class='nested-fields border-top pt-3'>
   <div class='row'>
-    <% 
+    <%
       capital_distribution = f.object.capital_distribution
-      names = capital_distribution.fee_account_entry_names 
+      names = capital_distribution.fee_account_entry_names
     %>
     <div class="form-group col" data-controller="otherselect" data-otherselect-select-id-value="#distribution_fee_fee_name">
       <%= f.label :name %>
@@ -22,7 +22,35 @@
 
     <div class="form-group col">
       <%= f.label :fee_type %>
-      <%= f.select :fee_type, DistributionFee::TYPES, {include: :blank}, class: "form-control", id: "fee_type" %>
+      <%= f.select :fee_type, DistributionFee::TYPES, {include_blank: true}, class: "form-control", id: "fee_type" %>
+    </div>
+
+    <div class="form-group col-auto d-flex align-items-end">
+      <button type="button" class="btn btn-sm btn-outline-secondary" data-controller="distribution-fee-fields" data-action="click->distribution-fee-fields#toggleAllDetails">
+        <i class="ti ti-caret-down"></i>
+      </button>
+    </div>
+  </div>
+
+  <div class='row collapse'>
+
+    <div class="form-group col">
+      <%= f.label :entry_type %>
+      <%= f.text_field :entry_type, class: "form-control" %>
+    </div>
+
+    <div class="form-group col">
+      <%= f.label :parent_type %>
+      <%= f.text_field :parent_type, class: "form-control"%>
+    </div>
+
+    <div class="form-group col">
+      <%= f.label :parent_ids, "Parent" %>
+      <%= f.text_field :parent_ids, class: "form-control"%>
+    </div>
+    <div class="form-group col">
+      <%= f.label :cumulative %>
+      <%= f.check_box :cumulative, class: "form-check-input" %>
     </div>
   </div>
 
@@ -39,9 +67,10 @@
       <%= f.text_field :notes, class: "form-control", id: "fee_notes" %>
     </div>
 
-    <div class="form-group col-md-1">    
+    <div class="form-group col-md-1 d-flex gap-4 align-items-end">
       <%= f.label :none, "&nbsp;".html_safe %>
-      <%= link_to_remove_association "Delete", f, class: "btn btn-outline-danger" %>
+      <small><a href="#" data-controller="distribution-fee-fields" data-action="click->distribution-fee-fields#copyToAll" class="copy-to-all-link small_text">Copy To All</a></small>
+      <%= link_to_remove_association "Delete", f, class: "btn btn-outline-danger btn-sm" %>
     </div>
   </div>
 </div>

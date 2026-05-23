@@ -1310,13 +1310,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_200001) do
   create_table "distribution_fees", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "capital_distribution_id", null: false
     t.datetime "created_at", null: false
+    t.boolean "cumulative", default: false, null: false
     t.date "end_date"
     t.bigint "entity_id", null: false
+    t.string "entry_type"
     t.string "fee_type", limit: 20
     t.boolean "formula", default: false
     t.bigint "fund_id", null: false
     t.string "name", limit: 50
     t.string "notes"
+    t.string "parent_ids"
+    t.string "parent_type"
     t.date "start_date"
     t.datetime "updated_at", null: false
     t.index ["capital_distribution_id"], name: "index_distribution_fees_on_capital_distribution_id"
