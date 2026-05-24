@@ -33,6 +33,18 @@ module LlmModels
         ["Gemini 3.1 Pro",  "gemini-3.1-pro-preview"],
         ["Gemini 3 Flash",  "gemini-3-flash-preview"]
       ]
+    },
+    openrouter: {
+      key_field: :openrouter_api_key,
+      label: "OpenRouter",
+      models: [
+        ["Kimi K2.6",              "openrouter/moonshotai/kimi-k2.6"],
+        ["Qwen 3.6 Flash",         "openrouter/qwen/qwen3.6-flash"],
+        ["Qwen 3.6 Plus",         "openrouter/qwen/qwen3.6-plus"],
+        ["DeepSeek V4 Flash",          "openrouter/deepseek/deepseek-v4-flash"],
+        ["DeepSeek V4 Pro",          "openrouter/deepseek/deepseek-v4-pro"],
+        ["MiniMax M2.7",           "openrouter/minimax/minimax-m2.7"]
+      ]
     }
   }.freeze
 end
