@@ -3,7 +3,87 @@
 %>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
-  <%= link_to "New Note", new_note_path("note[investor_id]": investor_id, "note[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary ti ti-plus"}  %>
+  <div class="d-flex gap-2">
+    <%= link_to "New Note", new_note_path("note[investor_id]": investor_id, "note[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary ti ti-plus"} %>
+    <% if investor_id.present? && current_user.entity.support_agents.set?(:note_summarization_agent) %>
+      <button type="button" class="btn btn-outline-secondary"
+              data-bs-toggle="modal" data-bs-target="#summarizeNotesModal">
+        <i class="ti ti-brain"></i> Summarise Notes
+      </button>
+
+      <div class="modal fade" id="summarizeNotesModal" tabindex="-1" aria-labelledby="summarizeNotesModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="summarizeNotesModalLabel">Summarise Investor Notes</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <%= form_with url: run_support_agents_path, method: :post do |f| %>
+              <%= f.hidden_field :agent_type, value: "NoteSummarizerAgent" %>
+              <%= f.hidden_field :target_id, value: investor_id %>
+              <%= f.hidden_field :target_type, value: "Investor" %>
+              <div class="modal-body">
+                <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+                  <div class="fw-bold text-dark small">What happens when you run this</div>
+                  <div class="text-muted small">The following will happen immediately when you click <strong>Run Summariser</strong>:</div>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mb-3">
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#dbeafe;">
+                      <i class="ti ti-tags fs-5" style="color:#2563eb;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Untagged notes are auto-tagged</div>
+                      <div class="text-muted small mt-1">Any notes without tags in the period are sent to the AI in one batch to assign concise, relevant tags before summarising.</div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#fef3c7;">
+                      <i class="ti ti-brain fs-5" style="color:#d97706;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">AI generates a structured summary</div>
+                      <div class="text-muted small mt-1">Key Themes, Action Items, and Relationship Status (Active / In Discussion / Dormant) are extracted from all notes in the configured period.</div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#dcfce7;">
+                      <i class="ti ti-file-check fs-5" style="color:#16a34a;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Summary saved as a note</div>
+                      <div class="text-muted small mt-1">The summary is written back as a note tagged <code>summary</code> and appears in this list. Re-running overwrites the previous summary for the same period.</div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#f3e8ff;">
+                      <i class="ti ti-bell-check fs-5" style="color:#9333ea;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">You'll be notified when done</div>
+                      <div class="text-muted small mt-1">The job runs in the background. You will receive a notification once the summary is ready to review.</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+                <%= f.submit "Run Summariser", class: "btn btn-outline-success ms-2" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
 </div>
 
 <%=render SearchComponent.new(data_source: notes_path(params: params.to_unsafe_h), turbo_frame: "notes_frame") %>

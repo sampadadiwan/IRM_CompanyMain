@@ -38,12 +38,17 @@ module LlmModels
       key_field: :openrouter_api_key,
       label: "OpenRouter",
       models: [
-        ["Kimi K2.6",              "openrouter/moonshotai/kimi-k2.6"],
-        ["Qwen 3.6 Flash",         "openrouter/qwen/qwen3.6-flash"],
-        ["Qwen 3.6 Plus",         "openrouter/qwen/qwen3.6-plus"],
-        ["DeepSeek V4 Flash",          "openrouter/deepseek/deepseek-v4-flash"],
-        ["DeepSeek V4 Pro",          "openrouter/deepseek/deepseek-v4-pro"],
-        ["MiniMax M2.7",           "openrouter/minimax/minimax-m2.7"]
+        ["Kimi K2",            "moonshotai/kimi-k2"],
+        ["Kimi K2 Thinking",   "moonshotai/kimi-k2-thinking"],
+        ["Qwen 3.6 Flash",     "qwen/qwen3.6-flash"],
+        ["Qwen 3.6 Plus",      "qwen/qwen3.6-plus"],
+        ["Qwen 3.6 Max",       "qwen/qwen3.6-max-preview"],
+        ["Qwen 3 Max",         "qwen/qwen3-max"],
+        ["Qwen 3 Coder",       "qwen/qwen3-coder"],
+        ["DeepSeek R1",        "deepseek/deepseek-r1"],
+        ["DeepSeek V4 Flash",  "deepseek/deepseek-v4-flash"],
+        ["DeepSeek V4 Pro",    "deepseek/deepseek-v4-pro"],
+        ["MiniMax M2.7",       "minimax/minimax-m2.7"]
       ]
     }
   }.freeze
