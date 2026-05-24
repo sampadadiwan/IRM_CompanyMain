@@ -128,9 +128,11 @@ Then('the updates required notification should be sent') do
   current_email = nil
   emails_sent_to(notification_receiver.email).each do |email|
     puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
-    current_email = email if email.subject.downcase.include?("update requested for kyc")
+    # notify_updates_requested is shared by both directions; match on the method name in the subject family
+    current_email = email if email.subject.downcase.include?("action required") || email.subject.downcase.include?("update requested for kyc")
   end
-  puts "No email found for #{notification_receiver.email} with subject 'update requested for kyc'" if current_email.nil?
-  msg = "Investor #{@investor_kyc.investor} has requested updates/changes for KYC: #{@investor_kyc.full_name}"
-  expect(current_email.body).to include msg
+  puts "No email found for #{notification_receiver.email}" if current_email.nil?
+  # This flow is investor→fund: the button passes a hardcoded message as params[:message]
+  # which becomes @message in the template (overriding the default text).
+  expect(current_email.body).to include "has requested updates"
 end

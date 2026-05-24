@@ -65,6 +65,7 @@ When('I visit the new investor KYC page') do
 end
 
 
+
 # ── Investor selection ────────────────────────────────────────────────────────
 
 # The doc-first upload form shows a Select2 investor dropdown when investor_id is not

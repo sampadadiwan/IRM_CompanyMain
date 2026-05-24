@@ -157,7 +157,13 @@ class InvestorKycsController < ApplicationController
   def doc_first_upload
     authorize @investor_kyc
     @investor_kyc.assign_attributes(doc_first_upload_params)
-    @investor_kyc.documents.each { |doc| doc.entity_id ||= @investor_kyc.entity_id }
+    kyc_folder = @investor_kyc.document_folder
+    # save(validate: false) skips before_validation callbacks including Document#setup_folder,
+    # so folder_id (NOT NULL) would never be set on new documents. Set it explicitly here.
+    @investor_kyc.documents.each do |doc|
+      doc.entity_id ||= @investor_kyc.entity_id
+      doc.folder    ||= kyc_folder if doc.new_record?
+    end
     @investor_kyc.save(validate: false)
     enqueue_doc_extraction_for(@investor_kyc, signed_id: params[:signed_id])
     redirect_to processing_investor_kyc_url(@investor_kyc, signed_id: params[:signed_id])

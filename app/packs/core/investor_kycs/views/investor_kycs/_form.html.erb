@@ -49,6 +49,7 @@
 <% end %>
 
 <% if !kyc_locked &&
+      investor_kyc.persisted? &&
       investor_kyc.entity.entity_setting.kyc_doc_first_wizard? &&
       investor_kyc.entity.agents.exists?(agent_type: "KycDocExtractorAgent", enabled: true) %>
   <div class="col-12 mb-2">
