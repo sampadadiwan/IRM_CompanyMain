@@ -48,6 +48,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     test_account: Field::BooleanEmoji,
     portflio_expense_account_entry_filter: Field::String,
     kyc_bank_account_types: Field::String,
+    kyc_doc_first_wizard: Field::BooleanEmoji,
     openai_api_key: Field::String,
     gemini_api_key: Field::String,
     anthropic_api_key: Field::String,
@@ -127,6 +128,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     value_bridge_cols
     portflio_expense_account_entry_filter
     kyc_bank_account_types
+    kyc_doc_first_wizard
     openai_api_key
     gemini_api_key
     anthropic_api_key
@@ -182,6 +184,7 @@ class EntitySettingDashboard < Administrate::BaseDashboard
     value_bridge_cols
     portflio_expense_account_entry_filter
     kyc_bank_account_types
+    kyc_doc_first_wizard
     openai_api_key
     gemini_api_key
     anthropic_api_key
