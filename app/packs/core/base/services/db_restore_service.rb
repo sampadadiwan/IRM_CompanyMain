@@ -344,7 +344,9 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     # ssh.exec! returns nil when the channel closes without producing output (e.g. auth failure,
     # MySQL not running). A nil.to_s.to_i would silently read as 0 users — catch it explicitly.
     raise "SSH exec returned nil — MySQL may not be running or command failed on #{ip}" if raw.nil?
-    count = raw.strip.to_i
+
+    # Extract numeric value from output (may contain MySQL warnings on first line)
+    count = raw.split("\n").find { |line| line.match?(/^\d+$/) }&.to_i
     if count.positive?
       msg = "✓ Restored DB validated: #{count} users found on #{ip}"
       Rails.logger.info { "[DbRestoreService] #{msg}" }
