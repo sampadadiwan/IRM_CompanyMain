@@ -4,6 +4,9 @@ class UpdatePortfolioInvestmentsJob < ApplicationJob
   def perform(portfolio_investment_ids)
     Chewy.strategy(:sidekiq) do
       portfolio_investments = PortfolioInvestment.where(id: portfolio_investment_ids)
+                                                 .includes(:entity, :fund, :investment_instrument,
+                                                           :aggregate_portfolio_investment, :documents, :form_type,
+                                                           :portfolio_company)
       count = portfolio_investments.count
 
       # Update the portfolio_investments - this will recompute the numbers

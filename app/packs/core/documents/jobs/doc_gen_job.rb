@@ -67,7 +67,8 @@ class DocGenJob < ApplicationJob
 
     # Loop through each template and model and generate the documents
     models.each_with_index do |model, midx|
-      templates_to_use = templates(model)
+      templates_to_use = Array(templates(model))
+      ActiveRecord::Associations::Preloader.new(records: templates_to_use, associations: [:e_signatures, :stamp_papers]).call
       templates_to_use.each_with_index do |template, tidx|
         # Validate the model before generating the document
         valid, msg = validate(model)

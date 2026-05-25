@@ -16,7 +16,7 @@ class FundRatioList < BaseList
     # preload fires separate SELECT * queries for each association, avoiding the
     # eager-load JOIN strategy that would enumerate columns explicitly and break
     # whenever the schema cache is stale after a migration (e.g. portfolio_scenario_id).
-    @fund_ratios = @fund_ratios.preload(:fund, :capital_commitment, :computation_context)
+    @fund_ratios = @fund_ratios.preload(:fund, :capital_commitment, :computation_context, :owner)
 
     @fund_ratios = FundRatioSearch.perform(@fund_ratios, @current_user, @params)
 

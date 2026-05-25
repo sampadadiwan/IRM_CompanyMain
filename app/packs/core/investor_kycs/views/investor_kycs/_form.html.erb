@@ -14,7 +14,7 @@
                 <a href="#step-3" type="button" class="btn disabled btn-outline-primarybtn-outline-circle">3</a>
                 <p>Step 3</p>
             </div>
-            <% regulatory_custom_fields = investor_kyc.form_type.present? ? investor_kyc.form_custom_fields.regulatory : [] %>
+            <% regulatory_custom_fields = investor_kyc.form_type.present? ? investor_kyc.form_custom_fields.regulatory.includes(:rich_text_info) : [] %>
             <% show_step_4_for_regulatory_fields = regulatory_custom_fields.present? && !(current_user&.curr_role_investor? || params[:signed_id].present?) %>
             <% if show_step_4_for_regulatory_fields %>
             <div class="stepwizard-step">

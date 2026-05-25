@@ -31,4 +31,8 @@ class AllocationsBulkActionJob < BulkActionJob
   def get_class
     Allocation
   end
+
+  def record_includes
+    [:offer, :interest, :entity, :secondary_sale, :form_type, :documents]
+  end
 end

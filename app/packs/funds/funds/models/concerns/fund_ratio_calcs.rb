@@ -120,7 +120,7 @@ class FundRatioCalcs
     total_fmv = 0.to_d
 
     # Process portfolio investments up to the end date
-    portfolio_investments.where(portfolio_investments: { investment_date: ..@end_date }).find_each do |pi|
+    portfolio_investments.where(portfolio_investments: { investment_date: ..@end_date }).includes(:fund, :investment_instrument).find_each do |pi|
       pi = pi.as_of(@end_date)
       amount_cents = convert_amount(@model, pi.amount_cents, pi.investment_date, use_tracking_currency)
       if pi.quantity.positive?

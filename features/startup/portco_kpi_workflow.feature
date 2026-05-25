@@ -32,6 +32,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the reminder email body contains the link expiry date
     And the reminder email body contains "Save Draft"
     And the reminder email body contains "Submit Report"
+    And the reminder email body contains "VentureFund"
 
   # ─────────────────────────────────────────────────────────
   # 3. Invalid date → inline error, no job enqueued
@@ -282,16 +283,6 @@ Feature: Portco KPI Self-Reporting Workflow
     And I am logged in as the fund admin
     When I view the KPI report for "TestStartup" as of "2025-03-31"
     Then I should not see a "View Including Staged" link
-
-  # ─────────────────────────────────────────────────────────
-  # 24. Trigger Upload Notification hidden for submitted and reviewed (Manual QA 7.6)
-  # ─────────────────────────────────────────────────────────
-  @kpi_workflow @kpi_reviewed
-  Scenario: Trigger Upload Notification button is hidden for submitted and reviewed reports
-    Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "submitted"
-    And I am logged in as the fund admin
-    When I view the KPI report for "TestStartup" as of "2025-03-31"
-    Then I should not see a "Trigger Upload Notification" button
 
   # ─────────────────────────────────────────────────────────
   # 25. Periodic reminder skips reviewed portcos (Manual QA 8, row 7.2)

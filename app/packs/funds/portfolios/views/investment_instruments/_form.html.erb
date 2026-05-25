@@ -36,7 +36,7 @@
 
   <%= custom_form_fields(investment_instrument, form) %>
 
-  <% regulatory_custom_fields = investment_instrument.form_type.present? ? investment_instrument.form_custom_fields.regulatory : [] %>
+  <% regulatory_custom_fields = investment_instrument.form_type.present? ? investment_instrument.form_custom_fields.regulatory.includes(:rich_text_info) : [] %>
 
   <% if regulatory_custom_fields.present? %>
     <% reg_envs = regulatory_custom_fields.pluck(:reg_env).uniq

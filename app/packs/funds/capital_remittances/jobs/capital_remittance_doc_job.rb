@@ -14,6 +14,8 @@ class CapitalRemittanceDocJob < DocGenJob
       [CapitalRemittance.find(@capital_remittance_id)]
     else
       @capital_call.capital_remittances
+                   .includes(:fund, :entity, :investor, :investor_kyc, { capital_commitment: :fund },
+                             :documents, :form_type, :document_folder)
     end
   end
 

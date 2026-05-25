@@ -8,6 +8,7 @@ class BulkActionJob < ApplicationJob
     @error_msg = []
     Chewy.strategy(:sidekiq) do
       records = get_class.where(id: record_ids)
+      records = records.includes(record_includes) if record_includes.any?
       @user = User.find(user_id)
       # Process each record individually, and perform the action on each record
       records.each do |rec|
@@ -29,5 +30,9 @@ class BulkActionJob < ApplicationJob
 
   def get_class
     raise "Need to override get_class."
+  end
+
+  def record_includes
+    []
   end
 end

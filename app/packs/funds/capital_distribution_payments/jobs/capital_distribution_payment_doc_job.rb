@@ -18,6 +18,8 @@ class CapitalDistributionPaymentDocJob < DocGenJob
       [CapitalDistributionPayment.find(@capital_distribution_payment_id)]
     else
       @capital_distribution.capital_distribution_payments
+                           .includes(:fund, :entity, :investor, :investor_kyc, { capital_commitment: :fund },
+                                     :documents, :form_type, :document_folder)
     end
   end
 

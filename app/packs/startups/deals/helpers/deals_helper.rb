@@ -336,8 +336,8 @@ module DealsHelper
   end
 
   def kanban_funnel_data(deal)
-    deal.kanban_board.kanban_columns.map do |column|
-      [column.name, column.kanban_cards.count]
+    deal.kanban_board.kanban_columns.includes(:kanban_cards).map do |column|
+      [column.name, column.kanban_cards.size]
     end
   end
 

@@ -49,6 +49,27 @@
     </td>
   </tr>
 
+  <% if @kpi_report.status.present? %>
+    <tr>
+      <td>
+        Status
+      </td>
+      <td>
+        <% badge_class = case @kpi_report.status
+           when 'submitted'   then 'bg-success'
+           when 'reviewed'    then 'bg-primary'
+           when 'draft_saved' then 'bg-warning text-dark'
+           when 'link_sent'   then 'bg-info text-dark'
+           else 'bg-secondary'
+           end %>
+        <span class="badge <%= badge_class %>"><%= @kpi_report.status.humanize.titleize %></span>
+        <% if @kpi_report.submitted_at.present? %>
+          <small class="text-muted ms-2">Submitted <%= I18n.l(@kpi_report.submitted_at, format: :short) %></small>
+        <% end %>
+      </td>
+    </tr>
+  <% end %>
+
   <% if @kpi_report.tag_list.present? %>
     <tr>
       <td>
@@ -99,23 +120,7 @@
 
     <%= button_to "Send Notification", send_portco_notification_kpi_reports_path(portfolio_company_id: @kpi_report.portfolio_company_id), method: :post, class: "btn btn-outline-info", data: {action: "click->confirm#popup", msg: "Send a notification reminder to the Portfolio Company to complete this KPI report", method: :post, bs_toggle: "tooltip", bs_title: "Send a notification reminder to the Portfolio Company to complete this KPI report"} if policy(@kpi_report).send_portco_notification? && false  %>
 
-    <% if policy(KpiReport).trigger_periodic_reports? && !@kpi_report.status_submitted? && !@kpi_report.status_reviewed? %>
-      <%
-          has_users = @kpi_report.portfolio_company&.notification_users&.any?
-          msg = if has_users
-                  "Manually trigger the notification to upload KPIs for this company?"
-                else
-                  "No notification users found for this company."
-                end
-      %>
-      <%= button_to "Trigger Upload Notification", trigger_periodic_reports_kpi_report_path(@kpi_report),
-          method: :post,
-          class: "btn btn-outline-success #{'disabled' unless has_users}",
-          disabled: !has_users,
-          data: {bs_toggle: "tooltip", bs_title: msg, action: "click->confirm#popup", turbo: false, method: :post, notification: "yes", msg: msg} %>
-    <% end %>
-
-    <%= link_to  t_common(:edit), edit_kpi_report_path(@kpi_report, signed_id: params[:signed_id]), {class: "btn btn-outline-primary"} %>
+<%= link_to  t_common(:edit), edit_kpi_report_path(@kpi_report, signed_id: params[:signed_id]), {class: "btn btn-outline-primary"} %>
 
     <% msg = "Refreshing will re-run the import which will create and update the KPIs. Do you want to proceed?" %>
     <% if policy(@kpi_report).refresh_import? %>

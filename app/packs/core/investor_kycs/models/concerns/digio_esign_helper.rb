@@ -84,7 +84,7 @@ class DigioEsignHelper
     else
       doc.update(sent_for_esign: true, esign_status: "failed", provider_doc_id: json_res["id"])
 
-      doc.e_signatures.each do |esign|
+      doc.e_signatures.includes(:entity).each do |esign|
         esign.add_api_update(json_res)
         esign.update(status: "failed", api_updates: esign.api_updates)
       end
@@ -196,7 +196,7 @@ class DigioEsignHelper
     if response.success?
       # added transaction to avoid partial updates
       ActiveRecord::Base.transaction do
-        doc.e_signatures.each do |esign|
+        doc.e_signatures.includes(:entity).each do |esign|
           esign.add_api_update(response)
           esign.update(status: "cancelled", api_updates: esign.api_updates)
         end
@@ -234,11 +234,11 @@ class DigioEsignHelper
         # if done here it wont download the signed document
         doc.update(esign_status: overall_status) unless overall_status.casecmp?("completed")
         # Update each esignature's status
+        esigns_by_email = doc.e_signatures.includes(:entity).index_by(&:email)
         response['signing_parties'].each do |signer|
-          # Find esignature for this email
-          esign = doc.e_signatures.find_by(email: signer['identifier'])
+          esign = esigns_by_email[signer['identifier']]
           esign&.update_esign_response(signer['status'], response)
-          esign.save
+          esign&.save
         end
       else
         signatures_failed(doc, JSON.parse(response.body))
@@ -344,7 +344,7 @@ class DigioEsignHelper
     e = StandardError.new("Error getting status for #{doc.name}")
     ExceptionNotifier.notify_exception(e)
     doc.update(esign_status: "failed")
-    doc.e_signatures.each do |esign|
+    doc.e_signatures.includes(:entity).each do |esign|
       esign.add_api_update(response)
       esign.save!
     end

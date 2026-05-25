@@ -90,7 +90,7 @@ class Approval < ApplicationRecord
   def send_notification(reminder: false)
     # Send notification to all investors once its approved
     if approved && !destroyed?
-      approval_responses.pending.each do |ar|
+      approval_responses.pending.includes(investor: :approved_users).each do |ar|
         ar.send_notification(reminder:)
       end
       logger.debug "Approval #{id} send_notification completed"

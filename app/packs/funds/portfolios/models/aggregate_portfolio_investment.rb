@@ -91,7 +91,7 @@ class AggregatePortfolioInvestment < ApplicationRecord
     api = dup
 
     # Fetch PIs before the end_date and calculate their state as of that date
-    pis = portfolio_investments.before(end_date).map { |pi| pi.as_of(end_date) }
+    pis = portfolio_investments.before(end_date).includes(:fund).map { |pi| pi.as_of(end_date) }
     api.portfolio_investments = pis
 
     # Partition into buys and sells for financial calculation

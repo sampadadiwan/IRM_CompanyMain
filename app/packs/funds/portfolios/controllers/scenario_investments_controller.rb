@@ -5,7 +5,7 @@ class ScenarioInvestmentsController < ApplicationController
   def index
     authorize PortfolioScenario
 
-    @scenario_investments = policy_scope(ScenarioInvestment).includes(:portfolio_company, :user).order(transaction_date: :desc)
+    @scenario_investments = policy_scope(ScenarioInvestment).includes(:fund, :portfolio_company, :user).order(transaction_date: :desc)
 
     @scenario_investments = @scenario_investments.where(portfolio_scenario_id: params[:portfolio_scenario_id]) if params[:portfolio_scenario_id].present?
   end

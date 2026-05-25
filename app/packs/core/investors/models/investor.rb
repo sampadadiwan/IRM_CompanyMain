@@ -261,8 +261,9 @@ class Investor < ApplicationRecord
       Rails.logger.debug { "Not updating portfolio investments for synthetic valuation #{valuation.id}" }
     else
       # Ensure the portfolio_investments calculate the fmv
-      pis = entity.portfolio_investments.where(portfolio_company_id: id,
-                                               investment_instrument: valuation.investment_instrument)
+      pis = entity.portfolio_investments
+                  .where(portfolio_company_id: id, investment_instrument: valuation.investment_instrument)
+                  .includes(:fund, :investment_instrument, :aggregate_portfolio_investment, :documents, :form_type, :portfolio_company)
       pis.each do |pi|
         PortfolioInvestmentUpdate.call(portfolio_investment: pi, valuation: valuation)
       end
@@ -299,7 +300,7 @@ class Investor < ApplicationRecord
 
     if model
       # Select all users who have show access to the model
-      approved_users.select do |user|
+      approved_users.includes(:roles).select do |user|
         if user.has_cached_role?(:investor_advisor)
           # Use the original user object directly. dup clears the primary key and association cache,
           # causing has_cached_role? to fail. permissioned_investor_advisor? does not use curr_role.
@@ -311,18 +312,18 @@ class Investor < ApplicationRecord
         end
       end
     else
-      approved_users
+      approved_users.includes(:roles)
     end
   end
 
   def add_to_user_access_rights_cache(access_right)
-    approved_users.each do |user|
+    approved_users.includes(:roles, :form_type, :entity).each do |user|
       user.cache_access_rights(access_right, for_entity_id: investor_entity_id) # unless user.has_cached_role?(:investor_advisor)
     end
   end
 
   def remove_from_user_access_rights_cache(access_right)
-    approved_users.each do |user|
+    approved_users.includes(:roles, :form_type, :entity).each do |user|
       user.remove_access_rights_cache(access_right, for_entity_id: investor_entity_id) # unless user.has_cached_role?(:investor_advisor)
     end
   end

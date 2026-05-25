@@ -10,7 +10,7 @@ class PortfolioScenarioJob < ApplicationJob
 
     fund = portfolio_scenario.fund
     use_tracking_currency = fund.has_tracking_currency?
-    synthetic_investments = portfolio_scenario.scenario_investments.map(&:to_portfolio_investment)
+    synthetic_investments = portfolio_scenario.scenario_investments.includes(:portfolio_company, :fund, :user, :investment_instrument).map(&:to_portfolio_investment)
 
     # Sum the amounts of synthetic investments to adjust cash in hand.
     adjustment_cash = synthetic_investments.inject(0) { |sum, investment| sum + investment.amount_cents }

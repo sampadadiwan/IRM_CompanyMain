@@ -21,7 +21,7 @@ class CapitalCallJob < ApplicationJob
     @capital_call = CapitalCall.find(capital_call_id)
 
     # Some calls are for specific fund closes - so only generate remittances for the commitments in that close
-    capital_commitments = @capital_call.applicable_to
+    capital_commitments = @capital_call.applicable_to.includes(:investor, :investor_kyc)
 
     Rails.logger.debug { "######## applicable_to record count = #{capital_commitments.count}" }
 
@@ -81,8 +81,8 @@ class CapitalCallJob < ApplicationJob
 
   def notify(capital_call_id)
     @capital_call = CapitalCall.find(capital_call_id)
-    @capital_call.capital_remittances.each do |cr|
-      # Send notifications to the LPs only if the CapitalCall has been approved
+    # Preload all associations accessed by send_notification and skip_call_notice? to avoid N+1
+    @capital_call.capital_remittances.includes(:capital_commitment, :capital_call, { investor: :approved_users }, :fund).each do |cr|
       cr.send_notification if @capital_call.approved && @capital_call.send_call_notice_flag && !cr.capital_commitment.skip_call_notice?
     end
   end

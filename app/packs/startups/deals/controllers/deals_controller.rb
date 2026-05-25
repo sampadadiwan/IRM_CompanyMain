@@ -108,7 +108,7 @@ class DealsController < ApplicationController
       end
     else
       @investor_label = @deal.entity.is_fund? ? "Company" : "Investor"
-      @deal_investors = policy_scope(@deal.deal_investors).includes(:investor, :deal, :deal_activities)
+      @deal_investors = policy_scope(@deal.deal_investors).includes(:investor, :deal, :deal_activities, :entity)
       @deal_investors = @deal_investors.not_declined if params[:all].blank?
       @deal_investors = @deal_investors.order("deal_investors.investor_name asc")
       respond_to do |format|

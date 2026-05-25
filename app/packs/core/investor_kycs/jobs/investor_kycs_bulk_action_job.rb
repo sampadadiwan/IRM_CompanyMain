@@ -38,6 +38,10 @@ class InvestorKycsBulkActionJob < BulkActionJob
     InvestorKyc
   end
 
+  def record_includes
+    [:document_folder, :form_type, { investor: [:approved_users, { investor_entity: :entity_setting }] }]
+  end
+
   def validate_docs_with_ai(investor_kyc, user_id)
     if InvestorKycPolicy.new(User.find(user_id), investor_kyc).validate_docs_with_ai? && !investor_kyc.verified
       error_msgs = DocLlmValidationJob.perform_now("InvestorKyc", investor_kyc.id, user_id)

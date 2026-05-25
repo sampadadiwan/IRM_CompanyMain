@@ -20,7 +20,7 @@ class InformationOnInvestmentsJob
     @fund_report = FundReport.find_or_initialize_by(name: REPORT_NAME, name_of_scheme: @fund.name, fund: @fund, entity_id: @fund.entity_id, start_date:, end_date:)
 
     data = hash_tree
-    @fund.aggregate_portfolio_investments.each_with_index do |api, index|
+    @fund.aggregate_portfolio_investments.includes(:fund, :portfolio_company).each_with_index do |api, index|
       inv_instrument = api.investment_instrument
       Rails.logger.info "Skipping #{api.id} as it has no investment instrument"
       next if inv_instrument.blank?
@@ -72,7 +72,7 @@ class InformationOnInvestmentsJob
     funds.each do |fund|
       name_of_scheme = fund.name
       Rails.logger.debug { "InformationOnInvestments for #{name_of_scheme}" }
-      fund.aggregate_portfolio_investments.each_with_index do |api, index|
+      fund.aggregate_portfolio_investments.includes(:fund, :portfolio_company).each_with_index do |api, index|
         investee_company_name = api.portfolio_company_name
         pan = api.portfolio_company.pan
         row_index = index + TABLE_OFFSET

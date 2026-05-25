@@ -374,7 +374,7 @@ class KpiReportsController < ApplicationController
     @q = KpiReport.ransack(params[:q])
     sort_field, sort_direction, sort_query = extract_sorting_params
 
-    @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company)
+    @kpi_reports = policy_scope(@q.result).includes(:entity, :portfolio_company, :kpis)
 
     if params[:tag_list].blank?
       @tag_list = ["Actual"]

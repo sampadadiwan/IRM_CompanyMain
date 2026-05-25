@@ -166,7 +166,13 @@ class TasksController < ApplicationController
   def destroy_series
     authorize @task
     if @task.task_recurrence_rule.present?
-      @task.task_recurrence_rule.destroy
+      rule = @task.task_recurrence_rule
+      tasks = rule.tasks.to_a
+      ActiveRecord::Associations::Preloader.new(
+        records: tasks,
+        associations: [:documents, :folders, :reminders, :noticed_events]
+      ).call
+      rule.destroy
       notice = "Entire task series was successfully destroyed."
     else
       @task.destroy

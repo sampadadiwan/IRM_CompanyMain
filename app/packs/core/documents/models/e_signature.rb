@@ -1,5 +1,6 @@
 class ESignature < ApplicationRecord
-  belongs_to :entity
+  belongs_to :entity, optional: true
+  validates :entity_id, presence: true
   # If the user is nil, then its a template for use, which is filled in by the owner
   belongs_to :user, optional: true
   # self.ignored_columns = ["user_id"]

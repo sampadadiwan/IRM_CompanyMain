@@ -12,8 +12,8 @@ class AccessRightsController < ApplicationController
       @bread_crumbs = { "Access Rights": access_rights_path }
     end
 
-    # Step 1: Apply policy scope and eager load associations
-    @access_rights = policy_scope(AccessRight).includes(:investor, :user)
+    # Step 1: Apply policy scope
+    @access_rights = policy_scope(AccessRight)
     @access_rights = AccessRightSearch.search(@access_rights, params, current_user)
     # Step 2: Apply filters if specific deal or investor access is requested
     @access_rights = filter_params(@access_rights, :owner_type, :owner_id, :user_id, :access_to_investor_id)
@@ -32,8 +32,8 @@ class AccessRightsController < ApplicationController
     # Step 4: Include soft-deleted records if requested
     @access_rights = @access_rights.with_deleted if params[:with_deleted].present?
 
-    # Step 5: Apply pagination
-    @pagy, @access_rights = pagy(@access_rights)
+    # Step 5: Apply pagination — includes here so filters don't strip the eager load
+    @pagy, @access_rights = pagy(@access_rights.includes(:investor, :user))
   end
 
   # GET /access_rights/1 or /access_rights/1.json

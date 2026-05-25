@@ -15,18 +15,6 @@ Feature: KPI Self-Reporting Reminder Email
     And the email should contain a link to "Fill KPI Report"
 
   @javascript
-  Scenario: Manually trigger periodic KPI report from the show page
-    And a KpiReport "as_of=2024-12-31;period=Month;enable_portco_upload=true" exists for the portfolio company "Startup One"
-    Given I log in with email "employee@if.com"
-    And I am on the kpi report show page
-    When I press "Trigger Upload Notification"
-    Then I should see the message "Periodic KPI reports generation triggered"
-    And an email should be sent to "founder@startupone.com" with subject containing "Reminder to report KPIs for Startup One"
-    Given I log out
-    When I follow the "Fill KPI Report" link in the email
-    Then I should see the kpi report details
-
-  @javascript
   Scenario: Manually send KPI reminder with a specific date from grid view
     Given I log in with email "employee@if.com"
     And I am on the kpis page for the portfolio company "Startup One"

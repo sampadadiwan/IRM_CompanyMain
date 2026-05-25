@@ -3,6 +3,10 @@ class CapitalRemittancesBulkActionJob < BulkActionJob
     CapitalRemittance
   end
 
+  def record_includes
+    [:capital_call, { capital_commitment: :investor_kyc }, :entity, :fund, :investor, :form_type, :documents, :capital_remittance_payments]
+  end
+
   def perform_action(capital_remittance, user_id, bulk_action, params: {})
     msg = "Performing #{bulk_action} on remittance #{capital_remittance}"
     Rails.logger.info(msg + " params: #{params}")

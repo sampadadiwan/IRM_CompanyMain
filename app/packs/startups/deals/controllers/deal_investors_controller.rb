@@ -308,7 +308,7 @@ class DealInvestorsController < ApplicationController
 
   # Use callbacks to share common setup or constraints between actions.
   def set_deal_investor
-    @deal_investor = DealInvestor.find(params[:id])
+    @deal_investor = DealInvestor.includes(deal_activities: :rich_text_details).find(params[:id])
     @bread_crumbs = { Deals: deals_path, "#{@deal_investor.deal.name || '-'}": deal_path(@deal_investor.deal), "#{@deal_investor.investor_name || '-'}": deal_investor_path(@deal_investor) }
   end
 

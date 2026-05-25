@@ -78,8 +78,14 @@ class ImportUpload < ApplicationRecord
     (status.nil? || status == "Completed") && total_rows_count == processed_row_count
   end
 
+  IMPORTED_DATA_INCLUDES = {
+    "InvestmentInstrument" => [:portfolio_company]
+  }.freeze
+
   def imported_data
-    model_class.where(import_upload_id: id)
+    records = model_class.where(import_upload_id: id)
+    assocs = IMPORTED_DATA_INCLUDES[import_type]
+    assocs ? records.includes(*assocs) : records
   end
 
   def model_class

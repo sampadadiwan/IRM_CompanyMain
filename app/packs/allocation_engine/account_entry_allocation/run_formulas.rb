@@ -136,7 +136,7 @@ module AccountEntryAllocation
                       else
                         CapitalCommitmentSqlite.where(fund_id: fund.id, commitment_date: ..end_date)
                       end
-        # commitments = commitments.includes(:entity, :fund, :investor_kyc)
+        commitments = commitments.includes(:fund)
         commitments = commitments.limit(3) if sample
         ctx[:commitments] = commitments.to_a # Load into memory since we'll be closing the connection
       end

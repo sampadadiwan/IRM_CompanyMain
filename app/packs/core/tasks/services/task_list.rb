@@ -5,7 +5,7 @@ class TaskList < BaseList
   def call(&)
     @q = Task.ransack(@params[:q])
     @tasks = apply_policy_scope(@q.result, &)
-    @tasks = @tasks.includes(:for_entity, :user, :task_template, :assigned_to, :rich_text_details, :rich_text_response)
+    @tasks = @tasks.includes(:for_entity, :user, :task_template, :assigned_to, :rich_text_details, :rich_text_response, :owner)
 
     # Apply standard filters
     @tasks = filter_params(@tasks, :owner_id, :owner_type, :assigned_to_id)

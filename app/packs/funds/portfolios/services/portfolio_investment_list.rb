@@ -14,7 +14,7 @@ class PortfolioInvestmentList < BaseList
     @portfolio_investments = apply_policy_scope(@q.result, &)
     @portfolio_investments = @portfolio_investments.include_proforma
                                                    .joins(:investment_instrument)
-                                                   .includes(:aggregate_portfolio_investment, :fund, :investment_instrument, :portfolio_company, :valuation)
+                                                   .includes(:aggregate_portfolio_investment, { fund: :entity }, { investment_instrument: :portfolio_company }, :portfolio_company, :valuation)
 
     filter_by_fund
     filter_by_fund_ids

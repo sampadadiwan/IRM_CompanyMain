@@ -23,7 +23,7 @@
         reported_names = kpi_names if reported_names.empty?
         
         kpi_report_ids = kpi_reports.map(&:id)
-        kpis = Kpi.where("LOWER(name) IN (?)", reported_names.map(&:downcase)).where(kpi_report_id: kpi_report_ids)
+        kpis = Kpi.approved.where("LOWER(name) IN (?)", reported_names.map(&:downcase)).where(kpi_report_id: kpi_report_ids)
         kpi_mappings = all_investor_mappings.group_by{|ikm| [ikm.investor_id, ikm.reported_kpi_name.downcase] }
     %>
     <div class="associated_entity mb-4">
@@ -47,7 +47,7 @@
         kpi_names = investor_kpi_mappings.collect(&:standard_kpi_name)
         reported_names = investor_kpi_mappings.collect(&:reported_kpi_name).uniq
         kpi_report_ids = kpi_reports.map(&:id)
-        kpis = Kpi.where("LOWER(name) IN (?)", reported_names.map(&:downcase)).where(kpi_report_id: kpi_report_ids)
+        kpis = Kpi.approved.where("LOWER(name) IN (?)", reported_names.map(&:downcase)).where(kpi_report_id: kpi_report_ids)
         kpi_mappings = all_investor_mappings.group_by{|ikm| [ikm.investor_id, ikm.reported_kpi_name.downcase] }
     %>
     <div class="associated_entity">

@@ -111,6 +111,7 @@ class ValidationRuleEvaluator
     # Fetch all overrides for this entity in one query, keyed by validation_rule_id
     overrides_by_rule_id = ValidationRuleOverride
                            .where(entity: @entity, validation_rule: global_rules)
+                           .includes(:validation_rule) # avoids N+1 when override.resolved_message accesses validation_rule.message_template
                            .index_by(&:validation_rule_id)
 
     global_rules.each do |rule|

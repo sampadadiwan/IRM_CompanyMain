@@ -9,7 +9,7 @@ module FormTypeHelper
     struct = OpenStruct.new(model.properties)
     step = step.present? ? FormCustomField.steps[step.to_sym] : nil
 
-    fields = custom_fields.presence || model.form_type.form_custom_fields.visible.not_regulatory
+    fields = custom_fields.presence || model.form_type.form_custom_fields.includes(:rich_text_info).visible.not_regulatory
 
     fields = fields.where(step: step) if step.present?
 

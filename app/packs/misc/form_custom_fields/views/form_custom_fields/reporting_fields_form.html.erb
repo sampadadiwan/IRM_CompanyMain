@@ -17,7 +17,7 @@
         </div>
     <% end %>
 
-    <% regulatory_custom_fields = object.form_type.present? ? object.form_custom_fields.regulatory : [] %>
+    <% regulatory_custom_fields = object.form_type.present? ? object.form_custom_fields.regulatory.includes(:rich_text_info) : [] %>
 
     <% if regulatory_custom_fields.present? %>
         <% reg_envs = regulatory_custom_fields.pluck(:reg_env).uniq

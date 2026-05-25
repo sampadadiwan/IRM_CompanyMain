@@ -6,7 +6,7 @@ class CapitalRemittancesRecomputeFeesJob < BulkActionJob
     @capital_call = CapitalCall.find(capital_call_id)
     processed_count = 0
     Chewy.strategy(:sidekiq) do
-      @capital_call.capital_remittances.each do |capital_remittance|
+      @capital_call.capital_remittances.includes(:fund, :entity, { investor: :investor_entity }, { capital_commitment: :investor_kyc }, :form_type, :documents).each do |capital_remittance|
         CapitalRemittanceUpdate.call(capital_remittance:, recompute_call_amount: true)
         processed_count += 1
       rescue StandardError => e

@@ -15,7 +15,7 @@ class GenerateCapTable < Trailblazer::Operation
     options[:investments] = Investment.where(
       funding_round: funding_rounds,
       portfolio_company_id: portfolio_company_id
-    )
+    ).includes(portfolio_company: :entity)
   end
 
   def calculate_holdings(options, investments:, group_by_field:, **)

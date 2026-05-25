@@ -13,7 +13,7 @@ class InvestorKycUpdate < InvestorKycAction
     return true if investor_kyc.kyc_datas.blank?
 
     # Update KYC data with the latest information from investor_kyc
-    investor_kyc.kyc_datas.where(PAN: investor_kyc.PAN).find_each do |kyc_data|
+    investor_kyc.kyc_datas.where(PAN: investor_kyc.PAN).includes(:entity).find_each do |kyc_data|
       kyc_data.update(
         PAN: investor_kyc.PAN,
         birth_date: investor_kyc.birth_date

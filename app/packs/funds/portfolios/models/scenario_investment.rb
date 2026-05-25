@@ -18,6 +18,7 @@ class ScenarioInvestment < ApplicationRecord
 
   def to_portfolio_investment
     pi = PortfolioInvestment.new(fund_id:, portfolio_company_id:, portfolio_company_name: portfolio_company.investor_name, investment_date: transaction_date, quantity:, amount_cents:, investment_instrument_id:, created_at: transaction_date)
+    pi.fund = fund if association(:fund).loaded?
     pi.compute_fmv
     pi.readonly!
     pi

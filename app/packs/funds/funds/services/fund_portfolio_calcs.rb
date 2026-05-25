@@ -366,7 +366,7 @@ class FundPortfolioCalcs < FundRatioCalcs
 
   def fmv_on_date(aggregate_portfolio_investment = nil, scenarios: nil)
     total_fmv_on_end_date_cents = 0
-    apis = aggregate_portfolio_investment ? [aggregate_portfolio_investment] : @fund.aggregate_portfolio_investments
+    apis = aggregate_portfolio_investment ? [aggregate_portfolio_investment] : @fund.aggregate_portfolio_investments.includes(:fund)
     apis.each do |api|
       fmv_on_end_date_cents = api.fmv_on_date(@end_date)
       fmv_on_end_date_cents = (fmv_on_end_date_cents * (1 + (scenarios[api.id.to_s]["percentage_change"].to_f / 100))).round(4) if api && scenarios && scenarios[api.id.to_s].present? && scenarios[api.id.to_s]["percentage_change"].present?

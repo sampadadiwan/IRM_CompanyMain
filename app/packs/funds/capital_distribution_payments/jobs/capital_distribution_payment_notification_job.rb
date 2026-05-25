@@ -13,7 +13,7 @@ class CapitalDistributionPaymentNotificationJob < ApplicationJob
     @error_msg = {}
 
     Chewy.strategy(:sidekiq) do
-      @capital_distribution.capital_distribution_payments.each do |cdp|
+      @capital_distribution.capital_distribution_payments.includes(:fund, { investor: :approved_users }, :capital_commitment).each do |cdp|
         result = CapitalDistributionPaymentSendNotification.call(capital_distribution_payment: cdp, force_notification: false)
         success += 1 if result.success?
         failure += 1 unless result.success?

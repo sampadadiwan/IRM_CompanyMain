@@ -1,5 +1,6 @@
 class PortfolioScenariosController < ApplicationController
   before_action :set_portfolio_scenario, only: %i[show edit update destroy run finalize]
+  before_action :preload_scenario_investments, only: %i[show]
   after_action :verify_authorized, except: %i[index simple_scenario], unless: :devise_controller?
 
   # GET /portfolio_scenarios or /portfolio_scenarios.json
@@ -94,6 +95,13 @@ class PortfolioScenariosController < ApplicationController
   def set_portfolio_scenario
     @portfolio_scenario = PortfolioScenario.find(params[:id])
     authorize @portfolio_scenario
+  end
+
+  def preload_scenario_investments
+    ActiveRecord::Associations::Preloader.new(
+      records: [@portfolio_scenario],
+      associations: { scenario_investments: [:fund, :portfolio_company, :user] }
+    ).call
   end
 
   # Only allow a list of trusted parameters through.

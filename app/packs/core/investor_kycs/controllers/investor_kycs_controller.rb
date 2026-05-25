@@ -472,6 +472,11 @@ class InvestorKycsController < ApplicationController
     status_attrs = resolve_status_transition(params[:submit_action], investor_user:)
 
     @investor_kyc.assign_attributes(investor_kyc_params.merge(status_attrs))
+    existing_docs = @investor_kyc.documents.select(&:persisted?)
+    ActiveRecord::Associations::Preloader.new(
+      records: existing_docs,
+      associations: [:folder, :entity, :user, :form_type, :e_signatures, :stamp_papers]
+    ).call if existing_docs.any?
     @investor_kyc.documents.each(&:validate)
 
     respond_to do |format|

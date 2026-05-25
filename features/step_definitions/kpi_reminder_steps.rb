@@ -58,16 +58,9 @@ Then('I should see the kpi report details') do
   expect(page).to have_content(/#{Regexp.escape(localized_date)}|#{Regexp.escape(iso_date)}/)
 end
 
-Given('I am on the kpi report show page') do
-  @kpi_report = KpiReport.last if @kpi_report.blank?
-  visit kpi_report_path(@kpi_report)
-end
-
 When('I press {string}') do |button_text|
   click_on button_text
-  if ["Send Notification", "Trigger Upload Notification"].include?(button_text)
-    click_on "Proceed"
-  end
+  click_on "Proceed" if button_text == "Send Notification"
   sleep(2)
 end
 

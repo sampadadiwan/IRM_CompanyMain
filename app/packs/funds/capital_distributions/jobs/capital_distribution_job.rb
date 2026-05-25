@@ -16,7 +16,7 @@ class CapitalDistributionJob < ApplicationJob
 
   def generate_payments(user_id: nil)
     fund = @capital_distribution.fund
-    capital_commitments = fund.capital_commitments
+    capital_commitments = fund.capital_commitments.includes(:investor_kyc)
     @error_msg = []
 
     # Need to distriute the capital based on the percentage holding of the fund by the investor

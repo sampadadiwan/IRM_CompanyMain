@@ -12,7 +12,7 @@ class CapitalRemittanceList < BaseList
   def call(&)
     @q = CapitalRemittance.ransack(@params[:q])
     @capital_remittances = apply_policy_scope(@q.result, &)
-    @capital_remittances = @capital_remittances.includes(:fund, :investor, :capital_call, :entity, capital_commitment: %i[fund investor_kyc])
+    @capital_remittances = @capital_remittances.includes(:fund, :investor, :capital_call, :entity, :capital_remittance_payments, capital_commitment: %i[fund investor_kyc])
 
     # Special filter for DataTables search
     @capital_remittances = @capital_remittances.where(id: search_ids) if @params.dig(:search, :value).present?
