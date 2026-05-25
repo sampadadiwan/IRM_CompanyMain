@@ -100,7 +100,9 @@ class KpiReportsController < ApplicationController
     merged = kpi_report_params.merge(user_id: acting_user&.id).merge(status_attrs)
 
     Rails.logger.info "=== KPI UPDATE ==="
-    Rails.logger.info "params: #{params.inspect}"
+    # Use filtered_parameters (not params.inspect) so signed_id bearer tokens are
+    # never written to logs in plaintext — raw params.inspect bypasses filter_parameters.
+    Rails.logger.info "params: #{request.filtered_parameters.inspect}"
     Rails.logger.info "merged: #{merged.inspect}"
 
     respond_to do |format|

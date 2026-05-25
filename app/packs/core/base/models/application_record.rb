@@ -109,7 +109,10 @@ class ApplicationRecord < ActiveRecord::Base
 
     model_class = data[:model].constantize
     record = model_class.find_by(id: data[:record_id])
-    user = User.find_by(email: data[:email])
+    # Scope to active users so that deactivating an account immediately revokes all
+    # outstanding magic-link tokens tied to that email — unscoped find_by would leave
+    # deactivated accounts with valid token access for the remaining 15-day TTL.
+    user = User.active.find_by(email: data[:email])
     [record, user]
   rescue ActiveSupport::MessageVerifier::InvalidSignature
     nil
