@@ -68,9 +68,11 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
     Rails.logger.info { "[DbRestoreService] Restore completed for #{ip}" }
 
-    # Verify the timestamp of the restored data.
-    Rails.logger.info { "[DbRestoreService] Starting step: Verify timestamp" }
-    result, msg = verify_timestamp
+    # Verify the restored instance has live data — SSH into the EC2 instance and query MySQL directly.
+    # verify_timestamp (below) reads the live primary DB, not the restored instance, so it cannot
+    # confirm a successful restore.
+    Rails.logger.info { "[DbRestoreService] Starting step: Verify restored instance" }
+    result, msg = verify_restored_instance(ip)
 
     # Clean up temporary files and stop the instance.
     Rails.logger.info { "[DbRestoreService] Starting step: Cleanup and stop instance" }
@@ -329,7 +331,38 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
     end
   end
 
+  # Verifies the restored database by SSHing into the EC2 instance and querying MySQL directly.
+  # This is the authoritative check: it confirms data actually landed on the restored instance.
+  def verify_restored_instance(ip)
+    db_user = Rails.application.credentials['DB_USER']
+    db_pass = Rails.application.credentials['DB_PASS']
+    db_name = ActiveRecord::Base.connection.current_database
+    Rails.logger.info { "[DbRestoreService] Querying restored MySQL on #{ip} (db: #{db_name})" }
+    raw = Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 30) do |ssh|
+      ssh.exec!("mysql -u#{db_user} -p#{db_pass} -sN #{db_name} -e \"SELECT COUNT(*) FROM users\"")
+    end
+    # ssh.exec! returns nil when the channel closes without producing output (e.g. auth failure,
+    # MySQL not running). A nil.to_s.to_i would silently read as 0 users — catch it explicitly.
+    raise "SSH exec returned nil — MySQL may not be running or command failed on #{ip}" if raw.nil?
+    count = raw.strip.to_i
+    if count.positive?
+      msg = "✓ Restored DB validated: #{count} users found on #{ip}"
+      Rails.logger.info { "[DbRestoreService] #{msg}" }
+      [true, msg]
+    else
+      msg = "✗ Restored DB has 0 users — data may not have been restored correctly on #{ip}"
+      Rails.logger.error msg
+      [false, msg]
+    end
+  rescue StandardError => e
+    msg = "✗ Failed to verify restored data on #{ip}: #{e.message}"
+    Rails.logger.error msg
+    raise msg
+  end
+
   # Verifies the timestamp of the restored data to ensure it's recent.
+  # NOTE: This reads ReplicationHealthJob against the live primary DB, not the restored instance.
+  # It is kept for reference but is no longer called from run! — use verify_restored_instance instead.
   def verify_timestamp
     Rails.logger.debug "→ Verifying timestamp from support user"
 
@@ -459,7 +492,11 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
 
   # Drops the MySQL database used for the restore process.
   def drop_mysql_database(ssh)
-    database_name = "IRM_#{Rails.env}"
+    # Prefer the explicit DATABASE_NAME credential (same source the backup script uses).
+    # Fall back to the AR connection name only if the credential is absent.
+    # Do NOT use "IRM_#{Rails.env}" — the MySQL DB name may not match the Rails env string.
+    database_name = Rails.application.credentials['DATABASE_NAME'].presence ||
+                    ActiveRecord::Base.connection.current_database
     Rails.logger.debug { "  → Dropping MySQL database #{database_name} " }
     ssh.exec!("mysql -u #{Rails.application.credentials['DB_USER']} -p#{Rails.application.credentials['DB_PASS']} -e 'DROP DATABASE IF EXISTS #{database_name};' 2>/dev/null || true")
     Rails.logger.debug "    → Database dropped successfully"

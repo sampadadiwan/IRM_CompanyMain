@@ -13,13 +13,11 @@ namespace :db do
   desc "Restore primary database using DbRestoreService"
   task :restore_primary_db => :environment do
     puts "Starting DB restore process..."
-    begin
-      DbRestoreService.run!(instance_name: "DB-Redis-ES", stop_instance_flag: false)
-      puts "DB restore process completed."
-    rescue => e
-      sleep(10)
-      puts User.first
-    end
+    DbRestoreService.run!(instance_name: "DB-Redis-ES", stop_instance_flag: false)
+    # After a primary restore the replica's replication position is stale — reset it
+    # so it re-syncs from the newly restored primary instead of replaying from an old offset.
+    AwsUtils.reset_replication('2')
+    puts "DB restore process completed."
   end
 
   desc "Restore replica database using DbRestoreService"

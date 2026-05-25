@@ -46,6 +46,12 @@ export DATABASE_NAME="__DATABASE_NAME__"
 
 MYSQL_TMPDIR="${MYSQL_TMPDIR:-/tmp}"
 
+# Store LSN checkpoints outside /tmp so they survive a server reboot.
+# /tmp is cleared on reboot, which would cause incr_backup to lose its starting
+# LSN and fall back to downloading the full backup from S3 unnecessarily.
+LSNDIR="/var/lib/xtrabackup/lsndir"
+LSNDIR_INCR="/var/lib/xtrabackup/lsndir-incr"
+
 export AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_REGION MYSQL_PWD="$MYSQL_PASSWORD"
 
 XB_ARGS=(--storage=S3
@@ -77,6 +83,18 @@ retry() {
     sleep $((n * 5))
   done
 }
+
+# Notifies on any unhandled script error. Set NOTIFY_WEBHOOK_URL in the environment
+# to receive alerts (Slack, PagerDuty, etc.) in addition to stderr logging.
+notify_failure() {
+  echo "ERROR: backup script failed at line $1 (command: $2)" >&2
+  if [[ -n "${NOTIFY_WEBHOOK_URL:-}" ]]; then
+    curl -s --max-time 10 -X POST "$NOTIFY_WEBHOOK_URL" \
+      -H 'Content-Type: application/json' \
+      -d "{\"text\": \"DB Backup FAILED on $(hostname) at line $1\"}" || true
+  fi
+}
+trap 'notify_failure "$LINENO" "$BASH_COMMAND"' ERR
 
 # 1. Stream & prepare the full backup
 restore_full() {
@@ -284,9 +302,8 @@ validate_restore() {
   local n=0
   local max_wait=30
   echo "  - Waiting for test server to start (PID: $pid)..."
-  # Note: Assumes the root user has no password or it's set in a .my.cnf readable by the user.
-  # For production, you'd need a more secure way to handle credentials.
-  until mysqladmin --socket="$sock" --user=root ping &>/dev/null; do
+  # MYSQL_PWD is already exported above so mysqladmin picks it up without --password.
+  until mysqladmin --socket="$sock" --user="$MYSQL_USER" ping &>/dev/null; do
     ((n++)) || :
     if (( n >= max_wait )); then
       echo "ERROR: Test MySQL server failed to start after $n seconds." >&2
@@ -297,13 +314,11 @@ validate_restore() {
   done
   echo "  ✓ Test server started successfully."
 
-  # Get table counts from the restored data. Using 'root' as the user for the test instance.
-  get_table_counts "$DATABASE_NAME" "root" "$sock"
+  get_table_counts "$DATABASE_NAME" "$MYSQL_USER" "$sock"
 
-  # Shutdown the test server and capture the exit code.
-  mysqladmin --socket="$sock" --user=root shutdown
-  wait "$pid"
-  return $?
+  # Shut down the test server by PID — $MYSQL_USER lacks the MySQL SHUTDOWN privilege.
+  kill "$pid" 2>/dev/null || true
+  wait "$pid" 2>/dev/null || true
 }
 
 stop_mysql_server() {
@@ -358,13 +373,18 @@ restore_primary_datadir() {
   echo "  - Starting MySQL service..."
   sudo systemctl start mysql
 
-  echo "  - Waiting for service to be up..."
-  sleep 10 # Simple wait, could be improved with a loop
-  if ! mysqladmin --user="$MYSQL_USER" ping; then
-      echo "ERROR: MySQL failed to start after restore." >&2
+  # Poll until MySQL accepts connections (up to 60s) instead of sleeping a fixed interval.
+  local n=0
+  local max_wait=60
+  until mysqladmin --user="$MYSQL_USER" ping &>/dev/null; do
+    ((n++)) || :
+    if (( n >= max_wait )); then
+      echo "ERROR: MySQL failed to start within ${max_wait}s after restore." >&2
       exit 1
-  fi
-  echo "✓ Primary MySQL instance started successfully."
+    fi
+    sleep 1
+  done
+  echo "✓ Primary MySQL instance started successfully (waited ${n}s)."
   get_table_counts "$DATABASE_NAME" "$MYSQL_USER"
 }
 
@@ -374,7 +394,8 @@ full_backup() {
     # Stage the backup to a local file first to isolate issues.
     local backup_file="${TMPDIR}/${FULL_NAME}.xbstream"
     echo "  - Staging backup to local file: ${backup_file}"
-    sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR" --extra-lsndir=/tmp/lsndir > "${backup_file}"
+    sudo mkdir -p "$LSNDIR"
+    sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR" --extra-lsndir="$LSNDIR" > "${backup_file}"
 
     echo "  - Uploading staged backup to S3..."
     cat "${backup_file}" | xbcloud "${XB_ARGS[@]}" put "$FULL_NAME" 2>&1
@@ -382,16 +403,17 @@ full_backup() {
 
 incr_backup() {
     local last_lsn=""
-    if sudo test -f /tmp/lsndir/xtrabackup_checkpoints; then
-        last_lsn=$(sudo grep '^to_lsn' /tmp/lsndir/xtrabackup_checkpoints | awk '{print $3}')
+    if sudo test -f "$LSNDIR/xtrabackup_checkpoints"; then
+        last_lsn=$(sudo grep '^to_lsn' "$LSNDIR/xtrabackup_checkpoints" | awk '{print $3}')
     fi
 
     if [[ -n "$last_lsn" ]]; then
         echo "→ Performing incremental backup using LSN: $last_lsn"
         local incr_backup_file="${TMPDIR}/${INCR_NAME}.xbstream"
         echo "  - Staging incremental backup to local file: ${incr_backup_file}"
+        sudo mkdir -p "$LSNDIR_INCR"
         sudo xtrabackup --backup --compress --stream=xbstream --user="$MYSQL_USER" --password="$MYSQL_PASSWORD" --host="$MYSQL_HOST" --port="$MYSQL_PORT" --target-dir="$TMPDIR/inc" \
-          --incremental-lsn="$last_lsn" --extra-lsndir=/tmp/lsndir-incr > "${incr_backup_file}"
+          --incremental-lsn="$last_lsn" --extra-lsndir="$LSNDIR_INCR" > "${incr_backup_file}"
 
         echo "  - Uploading staged incremental backup to S3..."
         cat "${incr_backup_file}" | xbcloud "${XB_ARGS[@]}" put "$INCR_NAME" 2>&1
