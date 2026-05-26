@@ -33,6 +33,7 @@ Feature: Portco KPI Self-Reporting Workflow
     And the reminder email body contains "Save Draft"
     And the reminder email body contains "Submit Report"
     And the reminder email body contains "VentureFund"
+    And the reminder email subject contains "VentureFund"
 
   # ─────────────────────────────────────────────────────────
   # 3. Invalid date → inline error, no job enqueued
@@ -438,6 +439,21 @@ Feature: Portco KPI Self-Reporting Workflow
       | status      |
       | link_sent   |
       | draft_saved |
+
+  # ─────────────────────────────────────────────────────────
+  # 40. Submission notification goes only to Kpi-tagged fund employees when any exist
+  # ─────────────────────────────────────────────────────────
+  @kpi_workflow @kpi_submit
+  Scenario: Submission notification is sent only to Kpi-tagged fund employees when the tag is set
+    Given a KPI report shell exists for "TestStartup" as of "2025-03-31" with status "link_sent"
+    And there is a second fund employee "first_name=FundEmployee2"
+    And the fund employee "FundEmployee2" has the tag "Kpi"
+    And the email queue is cleared
+    And I am logged in as the portco user
+    When I open the KPI report for "TestStartup" as of "2025-03-31"
+    And I click "Submit Report" and confirm the dialog
+    Then the fund admin receives no submission email
+    And the fund employee "FundEmployee2" receives a submission notification email
 
   # ─────────────────────────────────────────────────────────
   # 39. Removing the Kpi tag means all approved users receive the next reminder (Manual QA 9.3)

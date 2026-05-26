@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_22_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_26_100001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2219,6 +2219,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_22_200001) do
     t.string "last_name"
     t.string "phone", limit: 15
     t.boolean "send_confirmation", default: false
+    t.string "tag_list", limit: 120
     t.datetime "updated_at", null: false
     t.integer "user_id"
     t.boolean "whatsapp_enabled", default: false

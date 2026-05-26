@@ -75,6 +75,13 @@ class ApplicationMailer < ActionMailer::Base
     if @additional_ccs
       @cc.present? ? @cc += ",#{@additional_ccs}" : @cc = @additional_ccs
     end
+
+    # Never CC the recipient on their own email — avoids duplicate delivery when
+    # entity_setting.cc matches a fund employee who is also a direct recipient.
+    if @cc.present? && @user.present?
+      cc_list = @cc.split(",").map(&:strip).reject { |addr| addr.casecmp?(@user.email) }
+      @cc = cc_list.any? ? cc_list.join(", ") : nil
+    end
   end
 
   def sandbox_email(model, emails)

@@ -33,6 +33,8 @@ class InvestorAccess < ApplicationRecord
                                ["investor_accesses.approved=? AND investor_accesses.email_enabled=?", true, true] => 'will_receive_email'
                              }
 
+  scope :with_tag, ->(tag) { where("investor_accesses.tag_list LIKE ?", "%#{tag}%") }
+
   scope :approved_for_user, lambda { |user, across_all_entities: false|
     if across_all_entities && user.has_cached_role?(:investor_advisor)
       where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true).distinct
@@ -139,7 +141,7 @@ class InvestorAccess < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[approved created_at email first_name granted_by last_name phone whatsapp_enabled email_enabled is_investor_advisor].sort
+    %w[approved created_at email first_name granted_by last_name phone whatsapp_enabled email_enabled is_investor_advisor tag_list].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

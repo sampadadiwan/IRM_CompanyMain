@@ -290,12 +290,13 @@ class Investor < ApplicationRecord
 
   # We do this because of advisors
   # We dont want to send notifications to all approved users, we send it only if they have at least show access to the model
-  # with_tag: if provided, restrict recipients to users with that tag (when any exist).
-  # Falls back to the normal access-based logic when no tagged users are found.
+  # with_tag: if provided, restrict recipients to users whose investor_access for this
+  # investor carries that tag (per-relationship, not global on the user).
+  # Falls back to the normal access-based logic when no tagged accesses are found.
   def notification_users(model = nil, with_tag: nil)
     if with_tag.present?
-      tagged = approved_users.with_tag(with_tag)
-      return tagged.to_a if tagged.exists?
+      tagged_accesses = approved_investor_accesses.with_tag(with_tag)
+      return tagged_accesses.includes(:user).map(&:user) if tagged_accesses.exists?
     end
 
     if model

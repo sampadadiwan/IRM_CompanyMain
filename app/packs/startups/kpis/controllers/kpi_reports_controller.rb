@@ -296,10 +296,13 @@ class KpiReportsController < ApplicationController
     end
   end
 
-  # Notifies all fund employees when a portco submits their KPI report.
+  # Notifies fund employees when a portco submits their KPI report.
+  # Sends only to employees tagged "Kpi" if any exist; falls back to all employees.
   def notify_fund_on_submission(kpi_report)
     fund_entity = kpi_report.entity
-    fund_entity.employees.find_each do |employee|
+    recipients = fund_entity.employees.with_tag('Kpi')
+    recipients = fund_entity.employees if recipients.empty?
+    recipients.find_each do |employee|
       KpiReportSubmittedNotifier.with(record: kpi_report, entity_id: fund_entity.id).deliver_later(employee)
     end
   end

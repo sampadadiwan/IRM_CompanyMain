@@ -66,9 +66,11 @@ end
 
 Given('the user {string} has the tag {string}') do |first_name, tag|
   user = User.find_by!(first_name: first_name)
-  # Append the tag without clobbering existing tags
-  existing = user.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
-  user.update!(tag_list: (existing | [tag]).join(','))
+  # Set the tag on the investor_access (per-relationship) rather than globally on the user
+  portco = @portfolio_company || Investor.find_by!(investor_name: 'TestStartup')
+  access = InvestorAccess.find_by!(user: user, investor: portco)
+  existing = access.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
+  access.update_column(:tag_list, (existing | [tag]).join(','))
 end
 
 Given('a KPI report shell exists for {string} as of {string}') do |portco_name, as_of|
@@ -319,6 +321,11 @@ Then('the reminder email body contains {string}') do |text|
   expect(current_email.body).to include(text)
 end
 
+Then('the reminder email subject contains {string}') do |text|
+  open_email(@portco_user.email)
+  expect(current_email.subject).to include(text)
+end
+
 Then('the portco user receives no email') do
   open_email(@portco_user.email)
   expect(current_email).to be_nil
@@ -337,6 +344,30 @@ Then('the portco user for {string} receives no email') do |portco_name|
   user = portco.approved_users.first
   open_email(user.email)
   expect(current_email).to be_nil
+end
+
+# Fund employees carry the Kpi tag on user.tag_list (not on investor_access).
+Given('the fund employee {string} has the tag {string}') do |first_name, tag|
+  user = User.find_by!(first_name: first_name)
+  existing = user.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
+  user.update_column(:tag_list, (existing | [tag]).join(','))
+end
+
+Given('there is a second fund employee {string}') do |attrs|
+  attributes = attrs.split(';').map { |p| p.split('=') }.to_h.with_indifferent_access
+  @second_fund_employee = FactoryBot.create(:user, entity: @entity,
+                                                    first_name: attributes[:first_name] || 'FundEmployee2',
+                                                    last_name: attributes.fetch(:last_name, 'User'),
+                                                    email: attributes.fetch(:email, "#{attributes[:first_name]&.downcase || 'fundemployee2'}@#{@entity.name.downcase.gsub(/\s+/, '')}.com"),
+                                                    active: true)
+end
+
+Then('the fund employee {string} receives a submission notification email') do |first_name|
+  employee = User.find_by!(first_name: first_name)
+  submission_email = ActionMailer::Base.deliveries.find do |mail|
+    mail.to.include?(employee.email) && mail.subject.to_s.downcase.include?('submitted')
+  end
+  expect(submission_email).to be_present
 end
 
 Then('the fund admin receives no submission email') do
@@ -614,8 +645,10 @@ end
 
 Given('the user {string} has the tag {string} removed') do |first_name, tag|
   user = User.find_by!(first_name: first_name)
-  existing = user.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
-  user.update!(tag_list: (existing - [tag]).join(','))
+  portco = @portfolio_company || Investor.find_by!(investor_name: 'TestStartup')
+  access = InvestorAccess.find_by!(user: user, investor: portco)
+  existing = access.tag_list.to_s.split(',').map(&:strip).reject(&:blank?)
+  access.update_column(:tag_list, (existing - [tag]).join(','))
 end
 
 # ── Scenario 29: Non-KPI notification regression ─────────────────────────────
@@ -625,13 +658,15 @@ end
 # Guards against accidentally applying the Kpi-tag filter to all mailers.
 Then('all approved users are reachable for non-KPI notifications at {string}') do |portco_name|
   portco = Investor.find_by!(investor_name: portco_name)
-  all_users   = portco.approved_users.to_a
-  kpi_tagged  = all_users.select { |u| Array(u.tag_list).include?('Kpi') }
+  all_users      = portco.approved_users.to_a
+  # Tag lives on investor_access now, not on user
+  kpi_accesses   = portco.approved_investor_accesses.with_tag('Kpi')
+  kpi_tagged_ids = kpi_accesses.pluck(:user_id)
 
   # Non-KPI notifications draw from approved_users — every approved user is reachable.
   expect(all_users).to include(@portco_user, @second_portco_user)
   # The Kpi tag marks a strict subset — KPI reminders filter to these; non-KPI mailers must not.
-  expect(kpi_tagged.size).to be < all_users.size
-  expect(kpi_tagged).to include(@portco_user)
-  expect(kpi_tagged).not_to include(@second_portco_user)
+  expect(kpi_tagged_ids.size).to be < all_users.size
+  expect(kpi_tagged_ids).to include(@portco_user.id)
+  expect(kpi_tagged_ids).not_to include(@second_portco_user.id)
 end
