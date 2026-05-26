@@ -61,8 +61,17 @@ class PortfolioCompanyAgent < SupportAgentService
     # Sequential processing (no threading) per user requirement
     targets.to_a.each do |target|
       begin
-        support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
-        successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
+        result = support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
+        target_name = target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"
+        # wtf? returns a Trailblazer result object and never raises for step-level failures
+        # (a step returning false routes to the failure track without raising). Inspect
+        # result.failure? so those silent pipeline aborts show up in the errors list.
+        if result.failure?
+          Rails.logger.warn { "PortfolioCompanyAgent.process_batch pipeline failure for Target ID=#{target.id}" }
+          errors << { target_id: target.id, target_name: target_name, error: "Pipeline failure (step returned false)" }
+        else
+          successes << { id: target.id, name: target_name }
+        end
       rescue StandardError => e
         Rails.logger.error { "PortfolioCompanyAgent.process_batch error for Target ID=#{target.id}: #{e.message}" }
         Rails.logger.error { e.backtrace.join("\n") }
@@ -103,8 +112,20 @@ class PortfolioCompanyAgent < SupportAgentService
     ctx[:portfolio_company] = portfolio_company
     Rails.logger.debug { "[#{self.class.name}] Initializing agent for Investor ID=#{portfolio_company.id}" }
     ctx[:issues] = { kpi_issues: [], document_issues: [], valuation_issues: [] }
-    # Only process if this is a portfolio company and the agent is enabled
-    portfolio_company.category == "Portfolio Company" && @support_agent.enabled?
+
+    # Returning false here tells Trailblazer to route to the failure track, skipping all
+    # subsequent steps. Log explicitly so the silent halt is visible in the run log.
+    unless portfolio_company.category == "Portfolio Company"
+      Rails.logger.info { "[#{self.class.name}] Skipping Investor ID=#{portfolio_company.id} — category is '#{portfolio_company.category}', expected 'Portfolio Company'" }
+      return false
+    end
+
+    unless @support_agent.enabled?
+      Rails.logger.info { "[#{self.class.name}] Skipping Investor ID=#{portfolio_company.id} — support agent is disabled" }
+      return false
+    end
+
+    true
   end
 
   # Checks whether the portfolio company has submitted last quarter's KPIs.
@@ -164,12 +185,16 @@ class PortfolioCompanyAgent < SupportAgentService
     due_period    = support_agent.json_fields["due_period"] || "Quarter"
     reminder_days = support_agent.json_fields["reminder_days"]
                                  &.split(",")&.map(&:to_i) || [7, 14, 21]
+    # Use Time.zone.today so period boundaries are evaluated in the Rails application
+    # timezone, not the OS system timezone (Date.today). Avoids off-by-one-day errors
+    # for deployments where server UTC offset differs from the configured app timezone.
+    today         = Time.zone.today
     period_start  = case due_period.downcase
-                    when "month"   then Date.today.beginning_of_month
-                    when "year"    then Date.today.beginning_of_year
-                    else                Date.today.beginning_of_quarter
+                    when "month"   then today.beginning_of_month
+                    when "year"    then today.beginning_of_year
+                    else                today.beginning_of_quarter
                     end
-    days_elapsed  = (Date.today - period_start).to_i
+    days_elapsed  = (today - period_start).to_i
 
     unless reminder_days.include?(days_elapsed)
       ctx[:issues][:kpi_issues] << {
@@ -185,7 +210,7 @@ class PortfolioCompanyAgent < SupportAgentService
       .where(owner: portfolio_company, support_agent: support_agent)
       .order(created_at: :desc).first
     last_sent = last_report&.json_fields&.dig("last_kpi_reminder_sent_at")
-    if last_sent && Date.parse(last_sent) >= Date.today
+    if last_sent && Date.parse(last_sent) >= Time.zone.today
       ctx[:issues][:kpi_issues] << {
         key: :reminder, type: :info, message: "Reminder already sent today", severity: :success
       }
@@ -197,7 +222,7 @@ class PortfolioCompanyAgent < SupportAgentService
       requesting_entity_id: support_agent.entity_id
     ).kpi_reminder.deliver_later
 
-    ctx[:last_kpi_reminder_sent_at] = Date.today.iso8601
+    ctx[:last_kpi_reminder_sent_at] = Time.zone.today.iso8601
     ctx[:issues][:kpi_issues] << {
       key: :reminder, type: :info,
       message: "KPI reminder sent (day #{days_elapsed} of #{due_period})", severity: :success
@@ -209,6 +234,12 @@ class PortfolioCompanyAgent < SupportAgentService
   # Verifies if mandatory documents are present for compliance and operational checks.
   # Adds issues to ctx[:issues][:document_issues] if any required documents are missing or invalid.
   def check_document_presence(ctx, support_agent:, **)
+    # Guard: skip document check when there is no KPI report to check against.
+    # @last_kpi_report is nil when check_kpi_submission found no submission for the
+    # period; passing nil as model: would trigger the base class "No record found"
+    # blocking issue, which is misleading and duplicates the KPI blocking issue.
+    return true if @last_kpi_report.nil?
+
     ctx[:check_all_docs] = true
     super(ctx, model: @last_kpi_report, support_agent: support_agent)
   end
@@ -250,11 +281,21 @@ class PortfolioCompanyAgent < SupportAgentService
   # Called for both single-company (with steps) and batch (adhoc/scheduled) runs.
   # Batch coordination (looping, chart job, notifications) is handled by process_batch.
   def generate_progress_reports(ctx, portfolio_company: nil, support_agent:, **)
-    # Persist last reminder timestamp so the double-send guard works across runs
-    if ctx[:last_kpi_reminder_sent_at]
-      ctx[:issues]["last_kpi_reminder_sent_at"] = ctx[:last_kpi_reminder_sent_at]
-    end
     super(ctx, model: portfolio_company, support_agent: support_agent)
+
+    # Persist the reminder timestamp directly into json_fields AFTER super saves the
+    # report, so it lands at the top level where the duplicate-send guard reads it via
+    # json_fields.dig("last_kpi_reminder_sent_at"). Writing it into ctx[:issues] before
+    # super would add a String-valued key to an Array-valued hash, causing each_value's
+    # reject! cleanup loop in the base class to raise NoMethodError (String#reject!
+    # is not defined in Ruby 3.x).
+    if ctx[:last_kpi_reminder_sent_at]
+      report = ctx[:support_agent_report]
+      report.json_fields["last_kpi_reminder_sent_at"] = ctx[:last_kpi_reminder_sent_at]
+      report.json_fields_will_change!
+      report.save
+    end
+
     broadcast_portco_row(target: portfolio_company)
     # Only enqueue an individual chart job when NOT running inside process_batch.
     # process_batch enqueues a single bulk AgentChartJob for all companies at the end.

@@ -17,7 +17,7 @@
               <i class="<%= card[:icon] %> text-<%= color_class %> fs-4"></i>
             </div>
             <div>
-              <h5 class="mb-0 fw-bold "><%= card[:value] %></h5>
+              <h5 class="mb-0 fw-bold"><%= card[:value] %></h5>
               <small class="text-muted text-uppercase fw-semibold" style="font-size: 0.75rem;">
                 <% if card[:type] == :numeric %>
                   <%= card[:value].to_i == 1 ? card[:subtitle].singularize : card[:subtitle] %>
@@ -31,7 +31,7 @@
       </div>
     <% else %>
       <div class="col-auto">
-        <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm hover-shadow-md" style="cursor:pointer; transition: box-shadow 0.2s;" data-bs-toggle="collapse" data-bs-target="#support_agent_reports" aria-expanded="false" aria-controls="support_agent_reports">
+        <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#support_agent_reports" aria-expanded="false" aria-controls="support_agent_reports">
           <i class="<%= card[:icon] %> text-<%= color_class %> me-2"></i>
           <span class="fw-medium text-secondary me-2">
             <% if card[:type] == :numeric %>
@@ -49,4 +49,4 @@
   <% end %>
 </div>
 
-<%= render partial: "/support_agent_reports/index", locals: { support_agent_reports: SupportAgentReport.where(owner:), hidden: true }  %>
+<%= render partial: "/support_agent_reports/index", locals: { support_agent_reports: SupportAgentReport.where(owner:), hidden: true } %>

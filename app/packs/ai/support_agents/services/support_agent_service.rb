@@ -37,6 +37,8 @@ class SupportAgentService < Trailblazer::Operation
 
   # Verifies all required documents (from form fields and support_agent config)
   # are uploaded by the investor.
+  #
+  # Returns true in all branches so Trailblazer continues to the next step.
   def check_document_presence(ctx, model:, support_agent:, **)
     if enabled?("validate_documents")
       if model.present?
@@ -70,6 +72,10 @@ class SupportAgentService < Trailblazer::Operation
     else
       Rails.logger.debug { "[#{self.class.name}] Document validation is disabled, skipping check." }
     end
+    # Explicit true: Trailblazer treats any falsy step return as failure and
+    # short-circuits the remaining pipeline. Missing issues are recorded above;
+    # the step itself should always succeed so subsequent steps still run.
+    true
   end
 
   # Generates per-investor/fund reports summarizing issues and state.
@@ -84,9 +90,12 @@ class SupportAgentService < Trailblazer::Operation
       issues.reject! { |issue| issue[:message].blank? }
     end
 
-    # Preserve existing metadata (triggered_by, triggered_by_user_id, run_at, etc.) by merging instead of replacing
+    # Preserve existing metadata (triggered_by, triggered_by_user_id, run_at, etc.) by merging instead of replacing.
+    # Stringify ctx[:issues] keys so json_fields stays consistent with string-keyed DB round-trips.
+    # Without this, symbol keys (e.g. :aml_report) merged in-memory would differ from the string
+    # keys ("aml_report") used by callers that read json_fields after a DB reload.
     has_blocking = ctx[:issues].values.flatten.any? { |issue| issue[:severity] == :blocking }
-    report.json_fields = (report.json_fields || {}).merge(ctx[:issues]).merge(
+    report.json_fields = (report.json_fields || {}).merge(ctx[:issues].transform_keys(&:to_s)).merge(
       "final_status" => has_blocking ? "blocked" : "ready",
       "completed_at" => Time.current.iso8601
     )
@@ -96,7 +105,7 @@ class SupportAgentService < Trailblazer::Operation
     report.save
 
     ctx[:support_agent_report] = report
-    Rails.logger.debug { "[self.class.name] Report generated and saved (Report ID=#{report.id})" }
+    Rails.logger.debug { "[#{self.class.name}] Report generated and saved (Report ID=#{report.id})" }
     report.valid?
   end
 

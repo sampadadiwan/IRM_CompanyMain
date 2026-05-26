@@ -62,7 +62,9 @@ class KycOnboardingAgent < SupportAgentService
   # - AML checks auto-triggered on completion
 
   def targets(entity_id)
-    InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor)
+    # Include :entity to avoid an N+1 query when trigger_aml_if_complete
+    # resolves entity.employees.active.first for each KYC record.
+    InvestorKyc.completed.where(entity_id: entity_id).includes(:documents, :investor, :entity)
   end
 
   private
@@ -177,6 +179,7 @@ class KycOnboardingAgent < SupportAgentService
 
   # Uses LLM to validate each uploaded document against its label.
   # Records mismatched or unparsable responses as issues.
+  # Returns true in all branches so Trailblazer continues to the next step.
   def check_document_validity(ctx, investor_kyc:, **)
     if enabled?("validate_documents")
       llm = ctx[:llm]
@@ -215,6 +218,13 @@ class KycOnboardingAgent < SupportAgentService
         rescue Faraday::ResourceNotFound, Faraday::Error => e
           ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible (#{e.class})", severity: :warning }
           Rails.logger.warn("[KycOnboardingAgent] Document file unavailable for #{label}: #{e.message.lines.first.chomp}")
+        rescue Errno::ENOENT => e
+          # doc.file.url returns a web-relative path (/uploads/...) in local/test storage.
+          # RubyLLM treats it as an absolute filesystem path and raises ENOENT when the
+          # file doesn't exist there (the file lives at Rails.root/public/uploads/...).
+          # Log a warning and skip validity checking rather than crashing the pipeline.
+          ctx[:issues][:document_issues] << { type: :document_unavailable, name: doc.name, message: "Document file not accessible locally (#{e.class})", severity: :warning }
+          Rails.logger.warn("[KycOnboardingAgent] Document file not found on filesystem for #{label}: #{e.message.lines.first.chomp}")
         end
       end
 
@@ -222,10 +232,14 @@ class KycOnboardingAgent < SupportAgentService
     else
       Rails.logger.debug { "[KycOnboardingAgent] Document validation is disabled, skipping check." }
     end
+    # Explicit true so Trailblazer does not route to the failure track.
+    # Document issues are collected above; the step itself always succeeds.
+    true
   end
 
   # Delegates consistency verification between documents and fields
   # to the SupportAgent instance already configured.
+  # Returns true in all branches so Trailblazer continues to the next step.
   def check_field_to_document_consistency(ctx, investor_kyc:, support_agent:, **)
     if enabled?("validate_documents")
       support_agent.check_field_to_document_consistency(ctx, investor_kyc)
@@ -233,6 +247,9 @@ class KycOnboardingAgent < SupportAgentService
     else
       Rails.logger.debug { "[KycOnboardingAgent] Document validation is disabled, skipping field-to-document consistency check." }
     end
+    # Explicit true so Trailblazer does not route to the failure track regardless
+    # of what support_agent.check_field_to_document_consistency returns.
+    true
   end
 
   # Generates per-investor/fund reports summarizing issues and state.
@@ -260,7 +277,10 @@ class KycOnboardingAgent < SupportAgentService
       return true
     end
 
-    days_remaining = (expiry_date - Date.today).to_i
+    # Use Time.zone.today so the date is evaluated in the Rails application timezone,
+    # not the OS system timezone. Date.today can be off by a day near midnight
+    # when the server timezone differs from the configured app timezone.
+    days_remaining = (expiry_date - Time.zone.today).to_i
     warning_thresholds = @support_agent.json_fields["expiry_warning_days"]
                                        &.split(",")&.map(&:to_i) || [60, 30, 15]
 
@@ -317,27 +337,42 @@ class KycOnboardingAgent < SupportAgentService
     true
   end
 
-  # Triggers AML workflow if KYC process is complete.
-  # Invokes external AML check integration logic downstream.
+  # Triggers AML workflow if KYC process is complete with no blocking issues.
+  # Skips gracefully when AML is disabled, no active employee exists, or blocking issues remain.
+  # Returns true in all branches so Trailblazer marks the operation as successful.
   def trigger_aml_if_complete(ctx, investor_kyc:, support_agent:, **)
-    if enabled?("trigger_aml")
-
-      Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
-      if ctx[:issues][:field_issues].none? { |i| i[:severity] == :blocking } && ctx[:issues][:document_issues].none? { |i| i[:severity] == :blocking }
-        Rails.logger.info { "[KycOnboardingAgent] KYC complete with no blocking issues, triggering AML check for InvestorKyc ID=#{investor_kyc.id}" }
-        # TODO: - which user should be passed into triggering the AML?
-        GenerateAmlReportJob.perform_later(investor_kyc.id, investor_kyc.entity.employees.active.first.id)
-        report = ctx[:support_agent_report]
-        report.json_fields["aml_report"] << { message: "Triggered", triggered_at: Time.current, type: "completed" }
-        report.save
-      else
-        report = ctx[:support_agent_report]
-        report.json_fields["aml_report"] << { message: "Not triggered - KYC incomplete or blocking issues present", type: "skipped" }
-        report.save
-        Rails.logger.info { "[KycOnboardingAgent] KYC not complete or has blocking issues, skipping AML trigger for InvestorKyc ID=#{investor_kyc.id}" }
-      end
-    else
+    unless enabled?("trigger_aml")
       Rails.logger.debug { "[KycOnboardingAgent] AML triggering is disabled, skipping." }
+      return true
     end
+
+    Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
+
+    report = ctx[:support_agent_report]
+
+    # Guard: entity must have at least one active employee to act as the AML requestor.
+    # entity is eager-loaded via targets; employees.active is a filtered query.
+    employee = investor_kyc.entity&.employees&.active&.first
+    if employee.nil?
+      Rails.logger.warn { "[KycOnboardingAgent] No active employee found for entity — skipping AML trigger for InvestorKyc ID=#{investor_kyc.id}" }
+      report.json_fields["aml_report"] << { message: "Not triggered - no active entity employee found", type: "skipped" }
+      report.save
+      return true
+    end
+
+    if ctx[:issues][:field_issues].none? { |i| i[:severity] == :blocking } && ctx[:issues][:document_issues].none? { |i| i[:severity] == :blocking }
+      Rails.logger.info { "[KycOnboardingAgent] KYC complete with no blocking issues, triggering AML check for InvestorKyc ID=#{investor_kyc.id}" }
+      GenerateAmlReportJob.perform_later(investor_kyc.id, employee.id)
+      # "aml_report" uses a string key to match generate_progress_reports, which stringifies
+      # ctx[:issues] keys before merging into json_fields (ensuring DB/in-memory consistency).
+      report.json_fields["aml_report"] << { message: "Triggered", triggered_at: Time.current, type: "completed" }
+      report.save
+    else
+      report.json_fields["aml_report"] << { message: "Not triggered - KYC incomplete or blocking issues present", type: "skipped" }
+      report.save
+      Rails.logger.info { "[KycOnboardingAgent] KYC not complete or has blocking issues, skipping AML trigger for InvestorKyc ID=#{investor_kyc.id}" }
+    end
+
+    true
   end
 end
