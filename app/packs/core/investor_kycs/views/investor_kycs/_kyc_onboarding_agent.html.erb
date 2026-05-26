@@ -1,30 +1,31 @@
 <%
-  return if investor_kyc.support_agent_report.blank?
   display_type ||= "card"
+  report = investor_kyc.support_agent_report
+  return if report.blank?
 %>
 <div class="row g-3 mb-3">
 <% cards = [
   {
     icon: "ti ti-notes",
-    value: investor_kyc.support_agent_report.json_fields["field_issues"]&.size,
+    value: report.json_fields["field_issues"]&.size,
     type: :numeric,
     subtitle: "Missing Fields"
   },
   {
     icon: "ti ti-files",
-    value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "missing" },
+    value: report.json_fields["document_issues"]&.count { |doc| doc["type"] == "missing" },
     type: :numeric,
     subtitle: "Missing Docs"
   },
   {
     icon: "ti ti-files",
-    value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "mismatched_document" },
+    value: report.json_fields["document_issues"]&.count { |doc| doc["type"] == "mismatched_document" },
     type: :numeric,
     subtitle: "Invalid Docs"
   },
   {
     icon: "ti ti-cancel",
-    value: investor_kyc.support_agent_report.json_fields["document_issues"]&.count { |doc| doc["type"] == "field_mismatch" },
+    value: report.json_fields["document_issues"]&.count { |doc| doc["type"] == "field_mismatch" },
     type: :numeric,
     subtitle: "Mismatched"
   },
@@ -37,4 +38,8 @@
   }
 ] %>
 
-<%= render partial: "/support_agents/report", locals: { cards:, owner: investor_kyc, display_type:  } %>
+<% if display_type == "badge" %>
+  <%= render partial: "/support_agents/report_grid", locals: { cards:, owner: investor_kyc, report: } %>
+<% else %>
+  <%= render partial: "/support_agents/report", locals: { cards:, owner: investor_kyc, display_type: } %>
+<% end %>

@@ -181,7 +181,7 @@ class InvestorsController < ApplicationController
       @investor = Investor.find(params[:investor_id])
       authorize @investor
       @report_type = params[:report_type] # 'kpi', 'valuation', or 'document'
-      @report = SupportAgentReport.find_by(owner: @investor)
+      @report = SupportAgentReport.latest_only.find_by(owner: @investor)
     rescue StandardError => e
       Rails.logger.error "Error in report_detail: #{e.message}"
       Rails.logger.error e.backtrace.join("\n")

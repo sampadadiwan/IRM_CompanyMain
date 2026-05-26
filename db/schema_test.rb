@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_26_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3377,6 +3377,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_100001) do
   create_table "support_agent_reports", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.json "json_fields"
+    t.boolean "latest", default: false, null: false
     t.bigint "owner_id", null: false
     t.string "owner_name", limit: 50
     t.string "owner_type", null: false

@@ -1,0 +1,62 @@
+<%# Compact badge row for grid view — each badge triggers a per-owner modal showing the same report the badges reflect %>
+<%# `report` should be passed in by the caller so badges and modal are consistent; fall back to latest if not provided %>
+<% latest_report = local_assigns[:report] || SupportAgentReport.latest_only.find_by(owner: owner) %>
+<% modal_id = "sar_modal_#{dom_id(owner)}" %>
+
+<div class="row g-3 mb-3 justify-content-center">
+  <% cards.each do |card| %>
+    <%
+      color_class = if card[:type] == :numeric
+                      card[:value].to_i == 0 ? "success" : "danger"
+                    else
+                      card[:value] == "Yes" ? "success" : "danger"
+                    end
+    %>
+    <div class="col-auto">
+      <div class="d-inline-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm"
+           style="cursor:pointer;"
+           data-bs-toggle="modal"
+           data-bs-target="#<%= modal_id %>">
+        <i class="<%= card[:icon] %> text-<%= color_class %> me-2"></i>
+        <span class="fw-medium text-secondary me-2">
+          <% if card[:type] == :numeric %>
+            <%= card[:value].to_i == 1 ? card[:subtitle].singularize : card[:subtitle] %>
+          <% else %>
+            <%= card[:subtitle] %>
+          <% end %>
+        </span>
+        <span class="badge bg-<%= color_class %>-subtle text-<%= color_class %> rounded-pill px-2">
+          <%= card[:value] %>
+        </span>
+      </div>
+    </div>
+  <% end %>
+</div>
+
+<div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header py-2 bg-light">
+        <h6 class="modal-title fw-semibold mb-0">
+          <i class="ti ti-robot me-1 text-primary"></i>
+          Agent Report — <%= owner.try(:investor_name) || owner.try(:name) || owner.to_s %>
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-3">
+        <% if latest_report.present? %>
+          <%= render partial: "/support_agent_reports/support_agent_report",
+                     locals: { support_agent_report: latest_report } %>
+        <% else %>
+          <p class="text-muted mb-0"><i class="ti ti-alert-circle me-1"></i>No report available.</p>
+        <% end %>
+      </div>
+      <div class="modal-footer py-1 border-top">
+        <small class="text-muted me-auto">
+          <% if latest_report %>Updated <%= time_ago_in_words(latest_report.updated_at) %> ago<% end %>
+        </small>
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>

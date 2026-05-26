@@ -1,0 +1,50 @@
+<%# Compact modal body for a single SupportAgentReport %>
+<% json_data = support_agent_report.json_fields.with_indifferent_access %>
+<% issue_keys = %w[kpi_issues document_issues valuation_issues] %>
+
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <span class="badge <%= support_agent_report.status == 'completed' ? 'bg-success' : 'bg-warning text-dark' %>">
+    <%= support_agent_report.status&.humanize %>
+  </span>
+  <small class="text-muted">Updated: <%= l(support_agent_report.updated_at) %></small>
+  <small class="text-muted">Agent: <%= support_agent_report.support_agent&.name %></small>
+</div>
+
+<% has_issues = false %>
+<% issue_keys.each do |key| %>
+  <% issues = json_data[key] %>
+  <% next unless issues.is_a?(Array) && issues.any? %>
+  <% has_issues = true %>
+
+  <p class="text-uppercase fw-semibold small text-muted mb-1 mt-2"><%= key.humanize %></p>
+  <table class="table table-sm table-bordered mb-2" style="font-size:0.82rem;">
+    <thead class="table-light">
+      <tr>
+        <th style="width:18%">Type</th>
+        <th>Message</th>
+        <th style="width:15%">Severity</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% issues.each do |issue| %>
+        <% next unless issue.is_a?(Hash) %>
+        <%
+          badge_color = case issue["severity"]&.downcase
+                        when "blocking" then "bg-danger text-white"
+                        when "success"  then "bg-success-subtle text-success"
+                        else                 "bg-warning-subtle text-warning"
+                        end
+        %>
+        <tr>
+          <td><%= issue["type"]&.humanize %></td>
+          <td><%= issue["message"] %></td>
+          <td><span class="badge <%= badge_color %>"><%= issue["severity"]&.humanize %></span></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% end %>
+
+<% unless has_issues %>
+  <p class="text-muted mb-0 small"><i class="ti ti-check text-success me-1"></i>No issues found.</p>
+<% end %>

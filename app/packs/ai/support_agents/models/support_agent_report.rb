@@ -4,6 +4,22 @@ class SupportAgentReport < ApplicationRecord
 
   enum :status, { pending: "Pending", completed: "Completed", failed: "Failed" }
 
+  scope :latest_only, -> { where(latest: true) }
+
+  after_create :mark_as_latest!
+
+  # Atomically marks this record as latest and clears the flag on any prior report
+  # for the same (owner, support_agent) pair.
+  def mark_as_latest!
+    self.class.transaction do
+      self.class
+          .where(owner: owner, support_agent: support_agent)
+          .where.not(id: id)
+          .update_all(latest: false)
+      update_column(:latest, true)
+    end
+  end
+
   # Step helper methods
   def steps
     json_fields["steps"] || []

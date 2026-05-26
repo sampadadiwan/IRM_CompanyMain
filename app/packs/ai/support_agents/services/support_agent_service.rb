@@ -103,6 +103,7 @@ class SupportAgentService < Trailblazer::Operation
     report.json_fields_will_change!
     report.status = has_blocking ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
     report.save
+    report.mark_as_latest!
 
     ctx[:support_agent_report] = report
     Rails.logger.debug { "[#{self.class.name}] Report generated and saved (Report ID=#{report.id})" }
@@ -136,6 +137,7 @@ class SupportAgentService < Trailblazer::Operation
     }
     report.status = :pending
     report.save!
+    report.mark_as_latest!
 
     ctx[:support_agent_report] = report
     report

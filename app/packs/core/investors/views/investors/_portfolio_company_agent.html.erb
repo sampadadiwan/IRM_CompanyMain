@@ -1,23 +1,28 @@
 <% display_type ||= "card" %>
+<% report = investor.support_agent_report %>
 <% cards = [
   {
     icon: "ti ti-chart-histogram",
-    value: (investor.support_agent_report.json_fields["kpi_issues"] || []).count { |issue| issue["severity"] == "blocking" },
+    value: (report.json_fields["kpi_issues"] || []).count { |issue| issue["severity"] == "blocking" },
     type: :numeric,
     subtitle: "Missing KPIs"
   },
   {
     icon: "ti ti-device-analytics",
-    value: (investor.support_agent_report.json_fields["valuation_issues"] || []).count { |issue| issue["severity"] == "blocking" },
+    value: (report.json_fields["valuation_issues"] || []).count { |issue| issue["severity"] == "blocking" },
     type: :numeric,
     subtitle: "Missing Valuations"
   },
   {
     icon: "ti ti-files",
-    value: (investor.support_agent_report.json_fields["document_issues"] || []).count { |doc| doc["type"] == "missing" },
+    value: (report.json_fields["document_issues"] || []).count { |doc| doc["type"] == "missing" },
     type: :numeric,
     subtitle: "Missing Documents"
   },
 ] %>
 
-<%= render partial: "/support_agents/report", locals: { cards:, owner: investor, display_type: } %>
+<% if display_type == "badge" %>
+  <%= render partial: "/support_agents/report_grid", locals: { cards:, owner: investor, report: } %>
+<% else %>
+  <%= render partial: "/support_agents/report", locals: { cards:, owner: investor, display_type: } %>
+<% end %>
