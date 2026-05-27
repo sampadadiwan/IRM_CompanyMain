@@ -52,8 +52,8 @@ class KycDocExtractorAgent < SupportAgentService
     true
   end
 
-  # For each extraction rule matching this KYC's form_type, find the uploaded
-  # document with the matching label, send it to the LLM, and write the result.
+  # Groups rules by document label and sends one LLM call per document,
+  # extracting all fields for that document in a single JSON-structured response.
   def extract_and_populate(ctx, investor_kyc:, **)
     rules = rules_for(investor_kyc)
 
@@ -62,42 +62,68 @@ class KycDocExtractorAgent < SupportAgentService
       return true
     end
 
-    overwrite = (@support_agent.json_fields["overwrite_mode"] || "blank_only") == "always"
-    llm       = ctx[:llm]
+    overwrite    = (@support_agent.json_fields["overwrite_mode"] || "blank_only") == "always"
+    llm          = ctx[:llm]
+    rules_by_doc = rules.group_by { |r| r["doc_label"].to_s.strip }
 
-    rules.each do |rule|
-      doc_label    = rule["doc_label"].to_s.strip
-      prompt_text  = rule["prompt"].to_s.strip
-      target_field = rule["target_field"].to_s.strip
-
-      next if doc_label.blank? || prompt_text.blank? || target_field.blank?
+    rules_by_doc.each do |doc_label, doc_rules|
+      next if doc_label.blank?
 
       doc = investor_kyc.documents.find { |d| d.name.to_s.strip == doc_label }
 
       unless doc&.file.present?
-        ctx[:results] << { status: :skipped, field: target_field, message: "Document '#{doc_label}' not uploaded." }
+        # All fields for this doc are skipped together
+        doc_rules.each do |rule|
+          target_field = rule["target_field"].to_s.strip
+          ctx[:results] << { status: :skipped, field: target_field, message: "Document '#{doc_label}' not uploaded." }
+        end
         next
       end
 
-      # Skip if overwrite_mode is blank_only and field already has a value
-      unless overwrite
+      # Drop rules whose field already has a value when in blank_only mode
+      extractable_rules = doc_rules.reject do |rule|
+        target_field = rule["target_field"].to_s.strip
+        next false if overwrite
+
         existing = read_field(investor_kyc, target_field)
         if existing.present?
           ctx[:results] << { status: :skipped, field: target_field, message: "Field already has a value." }
-          next
+          true
+        else
+          false
         end
       end
 
-      begin
-        raw = llm.ask(prompt_text, with: [doc.file.url])
-        value = extract_plain_text(raw)
+      next if extractable_rules.empty?
 
-        write_field(investor_kyc, target_field, value)
-        ctx[:results] << { status: :extracted, field: target_field, value: value }
-        Rails.logger.info("[KycDocExtractorAgent] Extracted #{target_field}=#{value.inspect} from '#{doc_label}'")
+      # Build field_map: { target_field => prompt } for all extractable rules
+      field_map = extractable_rules.each_with_object({}) do |rule, h|
+        tf = rule["target_field"].to_s.strip
+        pr = rule["prompt"].to_s.strip
+        h[tf] = pr unless tf.blank? || pr.blank?
+      end
+
+      begin
+        extracted = extract_json_from_document(llm, doc, field_map)
+
+        extractable_rules.each do |rule|
+          target_field = rule["target_field"].to_s.strip
+          value        = extracted[target_field].to_s.strip
+
+          write_field(investor_kyc, target_field, value)
+          ctx[:results] << { status: :extracted, field: target_field, value: value }
+          Rails.logger.info("[KycDocExtractorAgent] Extracted #{target_field}=#{value.inspect} from '#{doc_label}'")
+        end
+      rescue JSON::ParserError => e
+        extractable_rules.each do |rule|
+          ctx[:results] << { status: :error, field: rule["target_field"].to_s.strip, message: "JSON parse error: #{e.message}" }
+        end
+        Rails.logger.warn("[KycDocExtractorAgent] JSON parse error for '#{doc_label}': #{e.message}")
       rescue StandardError => e
-        ctx[:results] << { status: :error, field: target_field, message: e.message }
-        Rails.logger.warn("[KycDocExtractorAgent] Error extracting #{target_field} from '#{doc_label}': #{e.message}")
+        extractable_rules.each do |rule|
+          ctx[:results] << { status: :error, field: rule["target_field"].to_s.strip, message: e.message }
+        end
+        Rails.logger.warn("[KycDocExtractorAgent] Error extracting from '#{doc_label}': #{e.message}")
       end
     end
 
@@ -133,6 +159,24 @@ class KycDocExtractorAgent < SupportAgentService
       investor_kyc.json_fields[field] = value
       investor_kyc.json_fields_will_change!
     end
+  end
+
+  # Sends one LLM call with a JSON prompt covering all fields in field_map,
+  # then parses and returns the resulting Hash. Raises JSON::ParserError on bad output.
+  def extract_json_from_document(llm, doc, field_map)
+    prompt = <<~PROMPT
+      Extract the following fields from the document:
+      #{field_map.map { |field, extraction_prompt| "#{field}: #{extraction_prompt}" }.join("\n")}
+
+      Reply strictly in JSON with the format:
+      {"field1": "value1", "field2": "value2", ...}
+    PROMPT
+
+    raw     = llm.ask(prompt, with: [doc.file.url])
+    content = extract_plain_text(raw)
+    # Strip markdown code fences the LLM may wrap around the JSON block
+    content = content.sub(/\A```(?:json)?/i, "").sub(/```$/, "").strip
+    JSON.parse(content)
   end
 
   # Unwrap RubyLLM::Message or plain string response.

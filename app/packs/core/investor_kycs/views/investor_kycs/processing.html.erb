@@ -1,27 +1,66 @@
 <%= turbo_stream_from "kyc_extraction_#{@investor_kyc.id}" %>
 
-<div class="container py-5">
+<style>
+  @keyframes scan-line {
+    0%   { top: 12%; opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { top: 82%; opacity: 0; }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(37,99,235,0.15); }
+    50%       { box-shadow: 0 0 0 14px rgba(37,99,235,0); }
+  }
+  .doc-icon-wrap {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 88px; height: 88px;
+    border-radius: 24px;
+    background: #eff6ff;
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+  .scan-line {
+    position: absolute;
+    left: 16px; right: 16px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #2563eb, transparent);
+    border-radius: 2px;
+    animation: scan-line 2s ease-in-out infinite;
+  }
+</style>
+
+<%# id="extraction_processing" is the Turbo Stream target replaced by KycDocExtractorJob on completion %>
+<div id="extraction_processing" class="container py-5">
   <div class="row justify-content-center">
-    <div class="col-md-6 text-center">
+    <div class="col-md-6 col-lg-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-body p-5 text-center">
 
-      <div id="extraction_processing">
-        <div class="mb-4">
-          <div class="spinner-border text-primary" style="width:3rem;height:3rem;" role="status">
-            <span class="visually-hidden">Processing…</span>
+          <div class="d-flex justify-content-center mb-4">
+            <div class="doc-icon-wrap">
+              <i class="ti ti-file-text" style="font-size:2.5rem;color:#2563eb;"></i>
+              <div class="scan-line"></div>
+            </div>
           </div>
-        </div>
 
-        <h4 class="mb-2">Reading your documents…</h4>
-        <p class="text-muted">
-          We're extracting your details from the uploaded documents.<br>
-          This usually takes a few seconds.
-        </p>
+          <h5 class="fw-bold mb-1">Reading your documents…</h5>
+          <p class="text-muted small mb-4">
+            We're scanning your uploads and extracting details<br>to pre-fill your KYC form.
+          </p>
 
-        <div class="progress mt-4" style="height:6px;">
-          <div class="progress-bar progress-bar-striped progress-bar-animated w-100"></div>
+          <div class="progress" style="height:5px;border-radius:99px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated w-100"
+                 style="background:linear-gradient(90deg,#2563eb,#7c3aed);"></div>
+          </div>
+
+          <p class="text-muted mt-4 mb-0" style="font-size:0.75rem;">
+            <i class="ti ti-clock me-1"></i>This usually takes a few seconds. Please don't close this tab.
+          </p>
+
         </div>
       </div>
-
     </div>
   </div>
 </div>
