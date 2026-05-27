@@ -25,6 +25,13 @@
                   data: { turbo: false } do %>
         <i class="ti ti-brand-github-copilot"></i> AI Assistant
       <% end %>
+    <% else %>
+      <!-- folio_assistant disabled: visible but non-functional -->
+      <span data-bs-toggle="tooltip" title="Folio Assistant is disabled. Contact support to enable it">
+        <button class="btn btn-outline-secondary" style="filter:grayscale(100%) opacity(0.7); pointer-events:none;">
+          <i class="ti ti-brand-github-copilot"></i> AI Assistant <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+        </button>
+      </span>
     <% end %>
 
     <% if policy(@capital_commitment).update? %>

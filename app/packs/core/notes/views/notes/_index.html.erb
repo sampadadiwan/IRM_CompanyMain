@@ -5,11 +5,21 @@
   <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
   <div class="d-flex gap-2">
     <%= link_to "New Note", new_note_path("note[investor_id]": investor_id, "note[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary ti ti-plus"} %>
-    <% if investor_id.present? && current_user.entity.support_agents.set?(:note_summarization_agent) %>
+    <% if investor_id.present? %>
+      <% if current_user.entity.support_agents.set?(:note_summarization_agent) %>
       <button type="button" class="btn btn-outline-secondary"
               data-bs-toggle="modal" data-bs-target="#summarizeNotesModal">
         <i class="ti ti-brain"></i> Summarise Notes
       </button>
+      <% else %>
+        <!-- note_summarization_agent disabled: show greyed-out button -->
+        <span data-bs-toggle="tooltip" title="Note Summarisation Agent is disabled. Contact support to enable it">
+          <button type="button" class="btn btn-outline-secondary"
+                  style="filter:grayscale(100%) opacity(0.7); pointer-events:none;">
+            <i class="ti ti-brain"></i> Summarise Notes <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+          </button>
+        </span>
+      <% end %>
 
       <div class="modal fade" id="summarizeNotesModal" tabindex="-1" aria-labelledby="summarizeNotesModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">

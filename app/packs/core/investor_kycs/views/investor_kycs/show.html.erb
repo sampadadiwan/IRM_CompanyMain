@@ -221,6 +221,12 @@
               <%= button_to run_support_agents_path(agent_type: "KycOnboardingAgent", target_id: @investor_kyc.id, method: :post), class: "dropdown-item" do %>
                 <i class="ti ti-robot"></i> Run Kyc Onboarding Agent
               <% end %>
+            <% else %>
+              <!-- kyc_onboarding_agent disabled: show greyed-out item so users know the feature exists -->
+              <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="KYC Onboarding Agent is disabled. Contact support to enable it">
+                <i class="ti ti-robot"></i> Run Kyc Onboarding Agent
+                <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+              </span>
             <% end %>
 
           </div>

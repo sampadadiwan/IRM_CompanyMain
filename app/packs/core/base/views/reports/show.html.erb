@@ -185,6 +185,13 @@
               </li>
           </ul>
       </div>
+    <% else %>
+      <!-- report_analysis_agent disabled: visible but non-functional -->
+      <span data-bs-toggle="tooltip" title="Report Analysis Agent is disabled. Contact support to enable it">
+        <button class="btn btn-outline-primary" style="filter:grayscale(100%) opacity(0.7); pointer-events:none;">
+          <i class="ti ti-robot"></i> AI Analyses <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+        </button>
+      </span>
     <% end %>
 
   <% end %>

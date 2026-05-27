@@ -85,7 +85,8 @@
 
           <div class="dropdown-divider"></div>
 
-          <% if @investor.entity.support_agents.set?(:portfolio_company_agent) && @investor.category == "Portfolio Company" %>
+          <% if @investor.category == "Portfolio Company" %>
+            <% if @investor.entity.support_agents.set?(:portfolio_company_agent) %>
               <%= button_to run_support_agents_path(agent_type: "PortfolioCompanyAgent", target_id: @investor.id, method: :post), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Checks the portfolio company data and generates updated AI charts based on prompts which have been set up"} do %>
                 <i class="ti ti-robot"></i> Run Portfolio Company Agent
               <% end %>
@@ -95,13 +96,28 @@
                           data: { turbo: false, bs_toggle: "tooltip", bs_title: "Launch AI Assistant for this Portfolio Company" } do %>
                 <i class="ti ti-brand-github-copilot"></i> AI Assistant
               <% end %>
-          <% end %>
+            <% else %>
+              <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Portfolio Company Agent is disabled. Contact support to enable it">
+                <i class="ti ti-robot"></i> Run Portfolio Company Agent
+                <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+              </span>
+              <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Portfolio Company Agent is disabled. Contact support to enable it">
+                <i class="ti ti-brand-github-copilot"></i> AI Assistant
+                <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+              </span>
+            <% end %>
 
-          <% if @investor.entity.support_agents.set?(:portfolio_scoring_agent) && @investor.category == "Portfolio Company" %>
-            <%= button_to run_support_agents_path(agent_type: "PortfolioScoringAgent", target_id: @investor.id, method: :post),
-                          class: "dropdown-item",
-                          data: { bs_toggle: "tooltip", bs_title: "Scores this portfolio company using the configured skill for its sector (#{@investor.sector.presence || 'sector not set'})" } do %>
-              <i class="ti ti-chart-bar"></i> Run Scoring Agent
+            <% if @investor.entity.support_agents.set?(:portfolio_scoring_agent) %>
+              <%= button_to run_support_agents_path(agent_type: "PortfolioScoringAgent", target_id: @investor.id, method: :post),
+                            class: "dropdown-item",
+                            data: { bs_toggle: "tooltip", bs_title: "Scores this portfolio company using the configured skill for its sector (#{@investor.sector.presence || 'sector not set'})" } do %>
+                <i class="ti ti-chart-bar"></i> Run Scoring Agent
+              <% end %>
+            <% else %>
+              <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Portfolio Scoring Agent is disabled. Contact support to enable it">
+                <i class="ti ti-chart-bar"></i> Run Scoring Agent
+                <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+              </span>
             <% end %>
           <% end %>
 

@@ -33,6 +33,13 @@
         <%= button_to run_support_agents_path(agent_type: "FundStatsAgent", target_id: current_user.entity.id, method: :post), class: "btn btn-outline-info" do %>
           <i class="ti ti-robot"></i> Run Fund Stats Agent
         <% end %>
+      <% else %>
+        <!-- fund_stats_agent disabled: visible but non-functional -->
+        <span data-bs-toggle="tooltip" title="Fund Stats Agent is disabled. Contact support to enable it">
+          <button class="btn btn-outline-info" style="filter:grayscale(100%) opacity(0.7); pointer-events:none;">
+            <i class="ti ti-robot"></i> Run Fund Stats Agent <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+          </button>
+        </span>
       <% end %>
       <% if current_user.curr_role == "employee" %>
         <a  class="p-8 bg-primary-subtle rounded-1 me-3 d-inline-flex align-middle align-items-center justify-content-center"
