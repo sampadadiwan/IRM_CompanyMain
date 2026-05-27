@@ -1,3 +1,4 @@
+@doc_gen
 Feature: KYC DOC Generation
   Can Generate documents for a KYC
 

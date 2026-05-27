@@ -1,3 +1,4 @@
+@doc_gen
 Feature: KYC level Call and Dist Payment notice generation and notification
 
 

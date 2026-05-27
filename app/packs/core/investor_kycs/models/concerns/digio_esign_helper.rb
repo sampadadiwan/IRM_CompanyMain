@@ -2,6 +2,13 @@ require 'base64'
 
 # rubocop:disable Metrics/ClassLength
 class DigioEsignHelper
+  # Fixed-shape result returned by sign/validate_doc_size/update_document.
+  # Callers access .success?, [:errors], and [:message] — Struct covers all three:
+  # method access (.success, .errors, .message), predicate via the explicit success?
+  # method, and symbol bracket access (Struct#[] already supports this).
+  DigioResult = Struct.new(:success, :errors, :message) do
+    def success? = success
+  end
   include HTTParty
 
   MAX_SIZE_MB = 25
@@ -36,9 +43,9 @@ class DigioEsignHelper
       msg = "❌ Document size #{(file_size / 1024.0 / 1024.0).round(2)} MB exceeds size limit of #{MAX_SIZE_MB} MB."
       Rails.logger.error msg
       UserAlert.new(message: msg, user_id: user_id, level: :danger).broadcast if user_id.present?
-      OpenStruct.new({ success: false, errors: msg })
+      DigioResult.new(false, msg, nil)
     else
-      OpenStruct.new({ success: true, message: "Document size is within the limit." })
+      DigioResult.new(true, nil, "Document size is within the limit.")
     end
   end
 
@@ -80,7 +87,7 @@ class DigioEsignHelper
     if response.success?
       doc.update(sent_for_esign: true, sent_for_esign_date: Time.zone.now, provider_doc_id: json_res["id"], esign_status: "requested")
       EsignUpdateJob.perform_later(doc.id, user_id) if doc.eligible_for_esign_update?
-      OpenStruct.new({ success: true, message: "Document - #{doc.name} sent for eSigning" })
+      DigioResult.new(true, nil, "Document - #{doc.name} sent for eSigning")
     else
       doc.update(sent_for_esign: true, esign_status: "failed", provider_doc_id: json_res["id"])
 
@@ -91,14 +98,14 @@ class DigioEsignHelper
       msg = "Error sending #{doc.name} for eSigning - #{json_res['message']}"
       ExceptionNotifier.notify_exception(StandardError.new(msg))
       Rails.logger.error msg
-      OpenStruct.new({ success: false, errors: msg })
+      DigioResult.new(false, msg, nil)
     end
   rescue JSON::ParserError => e
     # 502 bad gateway response cannot be parsed
     msg = "Error sending #{doc.name} for eSigning - #{e.message}"
     ExceptionNotifier.notify_exception(StandardError.new(msg))
     Rails.logger.error msg
-    OpenStruct.new({ success: false, errors: msg })
+    DigioResult.new(false, msg, nil)
   end
 
   def retrieve_signed(esign_doc_id, auth_token)

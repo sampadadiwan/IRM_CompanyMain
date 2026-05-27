@@ -6,7 +6,7 @@ module FormTypeHelper
   def custom_form_fields(model, form, step: "end", required: nil, custom_fields: [])
     return if model.form_type.blank?
 
-    struct = OpenStruct.new(model.properties)
+    struct = CustomFieldsProxy.new(model.properties) # model.properties aliases json_fields; proxy avoids OpenStruct method churn in form rendering
     step = step.present? ? FormCustomField.steps[step.to_sym] : nil
 
     fields = custom_fields.presence || model.form_type.form_custom_fields.includes(:rich_text_info).visible.not_regulatory

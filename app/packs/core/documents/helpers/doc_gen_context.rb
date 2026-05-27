@@ -59,7 +59,8 @@ class DocGenContext
       (defined?(Draper::CollectionDecorator) && data.is_a?(Draper::CollectionDecorator)) ||
       (defined?(Draper::Decorator) && data.is_a?(Draper::Decorator)) ||
       data.is_a?(OpenStruct) ||
-      data.is_a?(Struct)
+      data.is_a?(Struct) ||
+      data.is_a?(Data) # covers Data.define value objects (e.g. SoaGenerator::CommittedAmounts)
 
     if is_container
       # If we've already seen this container, bail out to prevent infinite loops
@@ -98,7 +99,7 @@ class DocGenContext
     when Draper::Decorator
       # Decorators proxy to their underlying `object`.
       keys.concat(all_keys(data.object, prefix, visited))
-    when OpenStruct, Struct
+    when OpenStruct, Struct, Data # Data.define instances support to_h natively
       data.to_h.each do |key, value|
         current_key = prefix ? "#{prefix}.#{key}" : key.to_s
         if value.nil?

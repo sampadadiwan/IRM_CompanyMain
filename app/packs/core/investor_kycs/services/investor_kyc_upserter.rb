@@ -1,6 +1,12 @@
 # Service object that either updates or creates an InvestorKyc record,
 # depending on whether an ID is passed in the params.
 class InvestorKycUpserter
+  # Callers access .success?, .investor_kyc, .errors, and also result[:errors] (bracket form).
+  # Struct covers all: method readers, symbol bracket access via Struct#[], and success?
+  # is defined explicitly because Struct doesn't generate ? predicates for boolean members.
+  KycUpsertResult = Struct.new(:success, :investor_kyc, :errors) do
+    def success? = success
+  end
   # Entry point to the service
   # @param params [Hash] - the parameters for the KYC (may contain :id for update)
   # @param current_user [User] - the currently signed-in user
@@ -45,6 +51,6 @@ class InvestorKycUpserter
 
       # Return result using OpenStruct
     end
-    OpenStruct.new(success?: result.success?, investor_kyc: investor_kyc, errors: result[:errors])
+    KycUpsertResult.new(result.success?, investor_kyc, result[:errors])
   end
 end

@@ -45,6 +45,7 @@ Scenario Outline: Create new capital distrbution
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
     |  	        |entity_type=Investment Fund;enable_funds=true  |name=Merger Fund    |Fund was successfully created|
 
+@doc_gen
 Scenario Outline: Capital Distribution Payment Doc Gen
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -73,6 +74,7 @@ Scenario Outline: Capital Distribution Payment Doc Gen
   	|user	    |entity                                 |fund                 |msg	|
   	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
 
+@doc_gen
 Scenario Outline: Capital Distribution Payment custom notification
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

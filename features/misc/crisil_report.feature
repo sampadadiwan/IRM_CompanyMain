@@ -1,3 +1,4 @@
+@doc_gen
 Feature: Crisil Report
   Test Crisil Report generation
 

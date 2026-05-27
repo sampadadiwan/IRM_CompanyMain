@@ -1,4 +1,8 @@
 class AccountEntryPivot
+  # Mutable value object for a single cell in the pivot grid.
+  # Struct (not Data.define) because .amount is mutated with += when accumulating
+  # multiple account entries into the same cell during the build pass.
+  PivotEntry = Struct.new(:amount, :reporting_date, :commitment_name, :capital_commitment_id)
   attr_reader :rows, :groups, :dates_by_group, :structured_data, :pagy, :row_limit_exceeded
 
   # Strip characters that XML 1.0 forbids (axlsx/libxml raises "out of char range"
@@ -92,10 +96,10 @@ class AccountEntryPivot
         amount = amount_cents.to_f / 100.0
 
         if @show_breakdown
-          @structured_data[key][group_val][date] = OpenStruct.new(amount: amount, reporting_date: date)
+          @structured_data[key][group_val][date] = PivotEntry.new(amount, date, nil, nil)
         else
-          @structured_data[key][group_val][date] ||= OpenStruct.new(amount: 0, reporting_date: date, commitment_name: c_name, capital_commitment_id: c_id)
-          @structured_data[key][group_val][date].amount += amount
+          @structured_data[key][group_val][date] ||= PivotEntry.new(0, date, c_name, c_id)
+          @structured_data[key][group_val][date].amount += amount  # Struct accessor allows mutation
         end
       end
     end

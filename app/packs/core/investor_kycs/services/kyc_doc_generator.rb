@@ -1,4 +1,10 @@
 class KycDocGenerator
+  # Fixed-shape value objects for amounts/units passed to TemplateDecorator and Sablon templates.
+  KycAmounts = Data.define(:committed_amount, :call_amount, :collected_amount, :distribution_amount,
+                           :due_amount, :uncalled_amount, :face_value_for_redemption, :custom_uncalled_amount)
+  KycFundUnitsContext = Data.define(:current, :before_end_date, :between_dates)
+  # Mutable Struct because totals are accumulated with += across multiple fund_unit records.
+  AggregatedFundUnit = Struct.new(:unit_type, :total_quantity, :before_end_date_quantity, :between_dates_quantity)
   include CurrencyHelper
   include DocumentGeneratorBase
 
@@ -212,16 +218,16 @@ class KycDocGenerator
 
     distribution_amount_cents = distributions.sum(:gross_payable_cents)
 
-    OpenStruct.new({
-                     committed_amount: Money.new(committed_amount_cents, currency),
-                     call_amount: Money.new(call_amount_cents, currency),
-                     collected_amount: Money.new(collected_amount_cents, currency),
-                     distribution_amount: Money.new(distribution_amount_cents, currency),
-                     due_amount: Money.new(call_amount_cents - collected_amount_cents, currency),
-                     uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency),
-                     face_value_for_redemption: Money.new(investor_kyc.face_value_for_redemption(start_date:, end_date:).cents, currency),
-                     custom_uncalled_amount: Money.new(investor_kyc.custom_committed_amount.cents - call_amount_cents + investor_kyc.face_value_for_redemption(start_date:, end_date:).cents, currency)
-                   })
+    KycAmounts.new(
+      committed_amount: Money.new(committed_amount_cents, currency),
+      call_amount: Money.new(call_amount_cents, currency),
+      collected_amount: Money.new(collected_amount_cents, currency),
+      distribution_amount: Money.new(distribution_amount_cents, currency),
+      due_amount: Money.new(call_amount_cents - collected_amount_cents, currency),
+      uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency),
+      face_value_for_redemption: Money.new(investor_kyc.face_value_for_redemption(start_date:, end_date:).cents, currency),
+      custom_uncalled_amount: Money.new(investor_kyc.custom_committed_amount.cents - call_amount_cents + investor_kyc.face_value_for_redemption(start_date:, end_date:).cents, currency)
+    )
   end
 
   def add_fund_units_context(investor_kyc, start_date, end_date, fund_id, context)
@@ -229,11 +235,11 @@ class KycDocGenerator
     fund_units = fund_units.where(fund_id: fund_id).order(issue_date: :asc) if fund_id
 
     context[:fund_units] = TemplateDecorator.new(
-      OpenStruct.new({
-                       current: fund_units.sum(:quantity),
-                       before_end_date: fund_units.where(issue_date: ..end_date).sum(:quantity),
-                       between_dates: fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity)
-                     })
+      KycFundUnitsContext.new(
+        current: fund_units.sum(:quantity),
+        before_end_date: fund_units.where(issue_date: ..end_date).sum(:quantity),
+        between_dates: fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity)
+      )
     )
 
     start_date = Time.zone.parse(start_date) unless start_date.is_a?(Date)
@@ -242,7 +248,7 @@ class KycDocGenerator
 
     fund_units.each do |fu|
       key = fu.unit_type
-      aggregated_entry = fund_units_map[key] || OpenStruct.new(unit_type: fu.unit_type, total_quantity: 0, before_end_date_quantity: 0, between_dates_quantity: 0)
+      aggregated_entry = fund_units_map[key] || AggregatedFundUnit.new(fu.unit_type, 0, 0, 0) # mutable Struct — totals accumulated with +=
       aggregated_entry.total_quantity += fu.quantity
       aggregated_entry.before_end_date_quantity += fu.issue_date <= end_date ? fu.quantity : 0
       aggregated_entry.between_dates_quantity += fu.issue_date.between?(start_date, end_date) ? fu.quantity : 0
@@ -278,7 +284,7 @@ class KycDocGenerator
   end
 
   def portfolio_company_cumulative_folio_entries(investor_kyc, _start_date, end_date, fund_id, entry_types: ["Portfolio Allocation"])
-    return OpenStruct.new if fund_id.blank?
+    return [] if fund_id.blank? # result goes to decorate_collection — empty array is correct
 
     raes = investor_kyc.account_entries.for_portfolio_companies.where(reporting_date: end_date, rule_for: "Reporting", entry_type: entry_types, fund_id: fund_id).includes(:parent)
 

@@ -1,3 +1,4 @@
+@doc_gen
 Feature: Call Notice Agent
   As a fund administrator
   I want to validate capital call readiness before sending notices

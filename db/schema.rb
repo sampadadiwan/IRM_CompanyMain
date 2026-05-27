@@ -432,6 +432,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
     t.string "rule_for", limit: 10, default: "Accounting"
     t.boolean "run_allocations", default: true
     t.date "start_date"
+    t.string "statement_for", limit: 20
     t.text "status"
     t.string "tag_list"
     t.string "template_name", limit: 50

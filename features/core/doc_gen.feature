@@ -1,3 +1,4 @@
+@doc_gen
 Feature: Investor Statement Generation
   Can create a Investor Statement for Capital Commitment
 

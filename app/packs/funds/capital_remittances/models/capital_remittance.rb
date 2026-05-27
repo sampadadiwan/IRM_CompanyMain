@@ -1,4 +1,11 @@
 class CapitalRemittance < ApplicationRecord
+  # Value objects for fee breakdown data passed to Sablon document templates.
+  FeeEntry = Data.define(:name, :date, :amount)    # one raw fee line from the fee audit JSON — immutable, fully known at construction
+  # Struct (not Data.define) because total_amount_across_folios is annotated in a second pass
+  # by the doc generator after consolidation, so the object must be mutable.
+  ConsolidatedFee = Struct.new(:name, :amount, :date, :total_amount_across_folios, keyword_init: true) do
+    def initialize(name:, amount:, date:, total_amount_across_folios: nil) = super
+  end
   include Trackable.new
   include ForInvestor
   include WithFolder
@@ -260,11 +267,7 @@ class CapitalRemittance < ApplicationRecord
     return [] if fee_data.blank?
 
     fee_data.flatten(1).map do |(name, date, amount)|
-      OpenStruct.new(
-        name: name,
-        date: Date.parse(date),
-        amount: amount.to_f
-      )
+      FeeEntry.new(name:, date: Date.parse(date), amount: amount.to_f)
     end.sort_by(&:name)
   end
 
@@ -272,11 +275,7 @@ class CapitalRemittance < ApplicationRecord
     grouped = fees.group_by(&:name)
 
     grouped.sort.map do |name, rows|
-      OpenStruct.new(
-        name: name,
-        amount: Money.new(rows.sum(&:amount)),
-        date: nil # or pick earliest/latest (see below)
-      )
+      ConsolidatedFee.new(name:, amount: Money.new(rows.sum(&:amount)), date: nil) # or pick earliest/latest (see below)
     end
   end
 end

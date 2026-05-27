@@ -1,4 +1,14 @@
 class SoaGenerator
+  # Fixed-shape value objects for amounts passed to TemplateDecorator and then into Sablon
+  # Word templates. Data.define is used instead of OpenStruct — keys are known at definition
+  # time, no singleton-class method churn, and immutability fits these read-only contexts.
+  CommittedAmounts = Data.define(:before_start_date, :before_end_date, :between_dates)
+  RemittanceAmounts = Data.define(:committed_amount, :call_amount, :collected_amount, :uncalled_amount)
+  RemittancePaymentsAmounts = Data.define(:amount, :folio_amount)
+  DistributionAmounts = Data.define(:amount)
+  # transfer_* fields are only present for the soa fund_units context, not the kyc variant
+  SoaFundUnits = Data.define(:current, :before_end_date, :between_dates,
+                             :transfer_in_amount, :transfer_out_amount, :transfer_amount)
   include CurrencyHelper
   include DocumentGeneratorBase
 
@@ -74,12 +84,12 @@ class SoaGenerator
       format_end_date: Time.zone.parse(end_date).strftime("%d %B %Y"),
       capital_commitment: CapitalCommitmentTemplateDecorator.decorate(capital_commitment),
       # Sometimes we need committed_amounts before start and end date
-      committed_amounts: TemplateDecorator.decorate(OpenStruct.new(
+      committed_amounts: TemplateDecorator.decorate(CommittedAmounts.new(
                                                       before_start_date: committed_amounts_before_start_date,
                                                       before_end_date: committed_amounts_before_end_date,
                                                       between_dates: committed_amounts_between_dates
                                                     )),
-      committed_folio_amounts: TemplateDecorator.decorate(OpenStruct.new(
+      committed_folio_amounts: TemplateDecorator.decorate(CommittedAmounts.new(
                                                             before_start_date: committed_folio_amounts_before_start_date,
                                                             before_end_date: committed_folio_amounts_before_end_date,
                                                             between_dates: committed_folio_amounts_between_dates
@@ -244,28 +254,26 @@ class SoaGenerator
     call_amount_cents = remittances.sum(:call_amount_cents)
     collected_amount_cents = remittances.sum(:collected_amount_cents)
     committed_amount_cents = remittances.last&.committed_amount_cents || 0
-    OpenStruct.new({
-                     committed_amount: Money.new(remittances.sum(:committed_amount_cents), currency),
-                     call_amount: Money.new(call_amount_cents, currency),
-                     collected_amount: Money.new(collected_amount_cents, currency),
-                     uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency)
-                   })
+    RemittanceAmounts.new(
+      committed_amount: Money.new(remittances.sum(:committed_amount_cents), currency),
+      call_amount: Money.new(call_amount_cents, currency),
+      collected_amount: Money.new(collected_amount_cents, currency),
+      uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency)
+    )
   end
 
   def remittance_payments_amounts(remittance_payments, currency)
     amount_cents = remittance_payments.sum(:amount_cents)
     folio_amount_cents = remittance_payments.sum(:folio_amount_cents)
-    OpenStruct.new({
-                     amount: Money.new(amount_cents, currency),
-                     folio_amount: Money.new(folio_amount_cents, currency)
-                   })
+    RemittancePaymentsAmounts.new(
+      amount: Money.new(amount_cents, currency),
+      folio_amount: Money.new(folio_amount_cents, currency)
+    )
   end
 
   def distribution_amounts(capital_distribution_payments, currency)
     amount_cents = capital_distribution_payments.sum(:net_payable_cents)
-    OpenStruct.new({
-                     amount: Money.new(amount_cents, currency)
-                   })
+    DistributionAmounts.new(amount: Money.new(amount_cents, currency))
   end
 
   def fund_units(capital_commitment, start_date, end_date)
@@ -280,14 +288,14 @@ class SoaGenerator
         transfer_out_amount += fu.amount
       end
     end
-    OpenStruct.new({
-                     current: capital_commitment.fund_units.sum(:quantity),
-                     before_end_date: capital_commitment.fund_units.where(issue_date: ..end_date).sum(:quantity),
-                     between_dates: capital_commitment.fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity),
-                     transfer_in_amount:,
-                     transfer_out_amount:,
-                     transfer_amount:
-                   })
+    SoaFundUnits.new(
+      current: capital_commitment.fund_units.sum(:quantity),
+      before_end_date: capital_commitment.fund_units.where(issue_date: ..end_date).sum(:quantity),
+      between_dates: capital_commitment.fund_units.where(issue_date: ..end_date).where(issue_date: start_date..).sum(:quantity),
+      transfer_in_amount:,
+      transfer_out_amount:,
+      transfer_amount:
+    )
   end
 
   def add_reporting_entries(context, capital_commitment, _start_date, end_date)

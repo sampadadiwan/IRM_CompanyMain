@@ -4,8 +4,10 @@ class ApplicationRecordSqlite < ApplicationRecord
   attribute :json_fields, :json, default: {}
 
   def custom_fields
-    @cached_custom_fields ||= OpenStruct.new(json_fields)
-    @cached_custom_fields
+    # Mirrors the WithCustomField concern's implementation. SQLite models (used by the
+    # allocation engine) also expose custom_fields, so they get the same proxy wrapper
+    # instead of OpenStruct to avoid the same per-record method-definition overhead.
+    @cached_custom_fields ||= CustomFieldsProxy.new(json_fields)
   end
 
   # This is used to calculate the start of financial year based on the month offset set in models json fields

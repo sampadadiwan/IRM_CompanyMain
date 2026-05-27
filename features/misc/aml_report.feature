@@ -1,4 +1,5 @@
 
+@doc_gen
 Feature: Aml Report Generation
   Can access models as a company
 

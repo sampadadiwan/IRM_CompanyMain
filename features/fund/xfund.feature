@@ -55,6 +55,7 @@ Scenario Outline: View fund - without employee access
 
 
 
+@doc_gen
 Scenario Outline: Create new capital commitment
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

@@ -166,8 +166,10 @@ module WithCustomField
   end
 
   def custom_fields
-    @cached_custom_fields ||= OpenStruct.new(json_fields)
-    @cached_custom_fields
+    # Memoised per record instance. CustomFieldsProxy is cheap to build (no method
+    # definitions), but we still cache it so repeated calls within a request don't
+    # allocate a new wrapper object each time.
+    @cached_custom_fields ||= CustomFieldsProxy.new(json_fields)
   end
 
   def custom_fields_with_td
@@ -182,7 +184,9 @@ module WithCustomField
         struct[cf.name] = json_fields[cf.name]
       end
     end
-    TemplateDecorator.decorate(OpenStruct.new(struct))
+    # struct keys are dynamic (come from form_custom_fields at runtime), so CustomFieldsProxy
+    # is used here for the same reason as custom_fields — Data.define requires fixed keys.
+    TemplateDecorator.decorate(CustomFieldsProxy.new(struct))
   end
 
   # rubocop:enable Style/OpenStructUse
@@ -413,6 +417,64 @@ module WithCustomField
     else
       false
     end
+  end
+end
+
+# CustomFieldsProxy wraps the json_fields Hash to provide attribute-style access
+# (e.g. record.custom_fields.some_field) without the cost of OpenStruct.
+#
+# Why not OpenStruct?
+#   OpenStruct.new(hash) defines a getter/setter method on the instance's singleton
+#   class for every key in the hash. With 200+ custom fields per KYC record, loading
+#   a list page creates thousands of singleton-class method definitions — one for every
+#   key on every record. These linger in memory and slow down method dispatch globally.
+#
+# Why not Struct or Data?
+#   Both require all member names to be fixed at class-definition time, but json_fields
+#   keys come from form_custom_fields at runtime and vary per entity. A dynamically
+#   created Struct.new(*keys) would allocate a new anonymous class per record, which is
+#   even worse. Unknown keys also raise NameError instead of returning nil.
+#
+# This proxy uses method_missing instead, so no methods are pre-defined. Access patterns
+# supported across the codebase:
+#   .field_name          — mailers, jobs, doc generators (method_missing)
+#   .send(variable)      — capital_commitment_shared, portfolio_computations (method_missing)
+#   [:symbol_key]        — fund_formula, run_formulas ([] with to_s normalisation)
+#   ["string_key"]       — generate_aml_report_job ([] directly)
+#   .present? / .blank?  — secondary_sales, offer jobs (explicit delegation to @hash)
+#
+# Unknown keys return nil, matching OpenStruct behaviour, so callers using &. or .present?
+# guards continue to work without change.
+class CustomFieldsProxy
+  def initialize(hash)
+    @hash = hash || {} # guard against nil json_fields on new records before before_save runs
+  end
+
+  # Normalise symbol keys to strings so [:nationality] and ["nationality"] both work.
+  # json_fields is always stored and returned as a string-keyed Hash by ActiveRecord.
+  def [](key)
+    @hash[key.to_s]
+  end
+
+  # Explicit delegation — without these, present?/blank? would fall through to
+  # method_missing and return nil, making .present? always truthy (non-nil).
+  def present?
+    @hash.present?
+  end
+
+  def blank?
+    @hash.blank?
+  end
+
+  # Lets callers use respond_to? guards before .send(variable_field_name).
+  def respond_to_missing?(name, include_private = false)
+    @hash.key?(name.to_s) || super
+  end
+
+  # Core of the proxy: look up the field name in the hash rather than defining a method.
+  # Returns nil for unknown keys (OpenStruct parity) — no NoMethodError.
+  def method_missing(name, *_args)
+    @hash[name.to_s]
   end
 end
 

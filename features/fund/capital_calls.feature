@@ -23,6 +23,7 @@ Examples:
     |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=USD  |name=Merger;unit_types=Series A,Series B| percentage_called=20;generate_remittances_verified=true |
 
 
+@doc_gen
 Scenario Outline: Create new capital call
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"

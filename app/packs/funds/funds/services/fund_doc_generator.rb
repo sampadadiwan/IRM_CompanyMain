@@ -1,4 +1,7 @@
 class FundDocGenerator
+  # Fixed-shape amounts object passed to TemplateDecorator and Sablon fund-level templates.
+  FundAmounts = Data.define(:committed_amount, :call_amount, :collected_amount,
+                            :distribution_amount, :due_amount, :uncalled_amount)
   include CurrencyHelper
   include DocumentGeneratorBase
 
@@ -104,13 +107,13 @@ class FundDocGenerator
     distributions = distributions.where(payment_date: ..end_date) if end_date
     distribution_amount_cents = distributions.sum(:net_payable_cents)
 
-    OpenStruct.new({
-                     committed_amount: Money.new(committed_amount_cents, currency),
-                     call_amount: Money.new(call_amount_cents, currency),
-                     collected_amount: Money.new(collected_amount_cents, currency),
-                     distribution_amount: Money.new(distribution_amount_cents, currency),
-                     due_amount: Money.new(call_amount_cents - collected_amount_cents, currency),
-                     uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency)
-                   })
+    FundAmounts.new(
+      committed_amount: Money.new(committed_amount_cents, currency),
+      call_amount: Money.new(call_amount_cents, currency),
+      collected_amount: Money.new(collected_amount_cents, currency),
+      distribution_amount: Money.new(distribution_amount_cents, currency),
+      due_amount: Money.new(call_amount_cents - collected_amount_cents, currency),
+      uncalled_amount: Money.new(committed_amount_cents - call_amount_cents, currency)
+    )
   end
 end
