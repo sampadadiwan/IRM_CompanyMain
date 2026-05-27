@@ -175,7 +175,7 @@ class FundRatiosScenarioJob < ApplicationJob
       currency:                    @currency
     )
 
-    shared = { computation_context: @run, entity_id: @fund.entity_id, end_date: @end_date }
+    shared = { computation_context: @run, entity_id: owner.entity_id, end_date: @end_date }
 
     value = calc.gross_portfolio_irr
     FundRatio.create!(**shared, owner:, name: "Gross Portfolio IRR", value:, display_value: "#{value} %")
