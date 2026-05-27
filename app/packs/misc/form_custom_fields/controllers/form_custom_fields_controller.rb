@@ -67,6 +67,6 @@ class FormCustomFieldsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def form_custom_field_params
     vr_keys = FormCustomField::VALIDATION_RULE_KEYS.map { |k| :"vr_#{k}" }
-    params.require(:form_custom_field).permit(:name, :field_type, :required, :read_only, :form_type_id, :info, :reg_env, :meta_data, :label, :help_text, :position, :step, :show_user_ids, :condition_on, :condition_criteria, :condition_params, :condition_state, *vr_keys)
+    params.require(:form_custom_field).permit(:name, :field_type, :required, :read_only, :form_type_id, :info, :reg_env, :meta_data, :label, :help_text, :position, :step, :show_user_ids, :condition_on, :condition_criteria, :condition_params, :condition_state, :filter_in_search, *vr_keys)
   end
 end

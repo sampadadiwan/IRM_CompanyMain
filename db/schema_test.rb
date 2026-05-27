@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1686,6 +1686,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
     t.string "condition_state", limit: 5, default: "show"
     t.datetime "created_at", null: false
     t.string "field_type", limit: 20
+    t.boolean "filter_in_search", default: false, null: false
     t.bigint "form_type_id", null: false
     t.boolean "has_attachment", default: false
     t.text "help_text"

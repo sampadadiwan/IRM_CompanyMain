@@ -1,4 +1,5 @@
 class PortfolioInvestmentsController < ApplicationController
+  include WithCustomFieldFilter
   before_action :set_portfolio_investment, only: %i[show edit update destroy]
 
   # GET /portfolio_investments or /portfolio_investments.json

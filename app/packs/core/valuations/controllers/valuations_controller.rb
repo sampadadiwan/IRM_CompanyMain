@@ -1,4 +1,5 @@
 class ValuationsController < ApplicationController
+  include WithCustomFieldFilter
   helper ValuationsHelper
   before_action :set_valuation, only: %i[show edit update destroy]
   skip_after_action :verify_policy_scoped, only: :index

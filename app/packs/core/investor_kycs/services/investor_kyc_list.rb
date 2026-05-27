@@ -17,7 +17,7 @@ class InvestorKycList < BaseList
   Result = Struct.new(:q, :investor_kycs, keyword_init: true)
 
   def call(&)
-    @params[:q] = InvestorKyc.json_fields_query(@params[:q]) if @params[:q].present?
+    translate_json_fields_params(InvestorKyc)
     @q = InvestorKyc.ransack(@params[:q])
     @investor_kycs = apply_policy_scope(@q.result, &)
 

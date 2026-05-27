@@ -6,6 +6,23 @@ module WithCustomField
     # This is used to skip the before_save callback, used when we are generating thousands of account_entries as this slows it down considerably
     attr_accessor :skip_cf_before_save
 
+    # Tracks ransacker names dynamically registered for filterable custom fields.
+    # class_attribute ensures each model class gets its own mutable copy.
+    class_attribute :_cf_ransacker_names, default: []
+    class_attribute :_cf_ransacker_labels, default: {}
+
+    # Prepend a singleton wrapper so ransackable_attributes and human_attribute_name
+    # automatically include any dynamically registered CF ransackers.
+    singleton_class.prepend(Module.new do
+      def ransackable_attributes(auth_object = nil)
+        (defined?(super) ? super : []) + Array(_cf_ransacker_names)
+      end
+
+      def human_attribute_name(attribute, options = {})
+        _cf_ransacker_labels[attribute.to_s] || super
+      end
+    end)
+
     attribute :json_fields, :json, default: {}
     def json_fields
       super || {}
@@ -80,6 +97,23 @@ module WithCustomField
       end
       # Reset the cached custom fields, so that when custom_fields is called, it will use the latest calculations
       @cached_custom_fields = nil
+    end
+
+    # Registers a named ransacker for a filterable custom field so it appears in
+    # the Ransack attribute dropdown alongside standard attributes.
+    # Idempotent — calling twice with the same name is a no-op.
+    def self.register_cf_ransacker(field_name, label: nil)
+      name = field_name.to_s
+      unless _ransackers.key?(name)
+        # Use parent.table[:json_fields] so the column is fully qualified with the
+        # model's table name — prevents "ambiguous column" errors when the query
+        # JOINs other tables that also have a json_fields column (e.g. investor_kycs).
+        ransacker(name.to_sym) do |parent|
+          Arel::Nodes::InfixOperation.new('->>', parent.table[:json_fields], Arel::Nodes.build_quoted("$.#{name}"))
+        end
+      end
+      self._cf_ransacker_names = (_cf_ransacker_names + [name]).uniq
+      self._cf_ransacker_labels = _cf_ransacker_labels.merge(name => label) if label
     end
 
     # This is used to create the query for json fields, used in the above ransacker

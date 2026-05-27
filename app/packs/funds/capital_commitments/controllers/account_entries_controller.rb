@@ -1,5 +1,6 @@
 class AccountEntriesController < ApplicationController
   include FundsHelper
+  include WithCustomFieldFilter
 
   after_action :verify_authorized, except: %i[index delete_all]
   before_action :set_account_entry, only: %i[show edit update destroy]

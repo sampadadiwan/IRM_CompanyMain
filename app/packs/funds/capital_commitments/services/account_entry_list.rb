@@ -25,6 +25,7 @@ class AccountEntryList < BaseList
 
   def call(&)
     ensure_default_filters
+    translate_json_fields_params(AccountEntry)
     @q = AccountEntry.ransack(@params[:q])
 
     @account_entries = apply_policy_scope(@q.result, &)

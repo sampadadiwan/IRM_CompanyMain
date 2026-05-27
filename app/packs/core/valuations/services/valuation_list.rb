@@ -12,6 +12,7 @@ class ValuationList < BaseList
   Result = Struct.new(:q, :valuations, :owner, keyword_init: true)
 
   def call(&)
+    translate_json_fields_params(Valuation)
     @q = Valuation.with_synthetic.ransack(@params[:q])
     @valuations = apply_policy_scope(@q.result, &)
 

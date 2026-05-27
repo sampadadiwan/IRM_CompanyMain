@@ -1,4 +1,5 @@
 class InvestorKycsController < ApplicationController
+  include WithCustomFieldFilter
   helper InvestorKycAnalyticsHelper
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
 

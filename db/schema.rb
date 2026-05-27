@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -31,12 +31,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
     t.bigint "user_id"
     t.index ["access_to_investor_id"], name: "index_access_rights_on_access_to_investor_id"
     t.index ["deleted_at"], name: "index_access_rights_on_deleted_at"
-    t.index ["entity_id", "access_to_category"], name: "index_access_rights_on_entity_id_and_category"
-    t.index ["entity_id", "user_id"], name: "index_access_rights_on_entity_id_and_user_id"
     t.index ["entity_id"], name: "index_access_rights_on_entity_id"
     t.index ["granted_by_id"], name: "index_access_rights_on_granted_by_id"
-    t.index ["owner_type", "owner_id", "access_to_investor_id"], name: "index_access_rights_on_owner_and_investor"
-    t.index ["owner_type", "owner_id", "user_id"], name: "index_access_rights_on_owner_and_user"
     t.index ["owner_type", "owner_id"], name: "index_access_rights_on_owner"
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
@@ -1061,50 +1057,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
     t.index ["owner_type", "owner_id"], name: "index_commitment_adjustments_on_owner"
   end
 
-  create_table "compliance_rule_overrides", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.bigint "compliance_rule_id", null: false
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.boolean "enabled", default: true, null: false
-    t.bigint "entity_id", null: false
-    t.text "message_override"
-    t.json "param_overrides", null: false
-    t.string "severity_override"
-    t.datetime "updated_at", null: false
-    t.index ["compliance_rule_id", "entity_id"], name: "idx_compliance_rule_overrides_unique", unique: true
-    t.index ["compliance_rule_id"], name: "index_compliance_rule_overrides_on_compliance_rule_id"
-    t.index ["created_by_id"], name: "index_compliance_rule_overrides_on_created_by_id"
-    t.index ["entity_id"], name: "index_compliance_rule_overrides_on_entity_id"
-  end
-
-  create_table "compliance_rules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.bigint "created_by_id"
-    t.boolean "enabled", default: false, null: false
-    t.text "english_text", null: false
-    t.bigint "entity_id"
-    t.boolean "is_default", default: false, null: false
-    t.datetime "last_evaluated_at"
-    t.string "name", null: false
-    t.json "params", null: false
-    t.boolean "parse_confirmed", default: false, null: false
-    t.text "parse_summary"
-    t.string "parsed_by_model"
-    t.string "rule_class"
-    t.string "schedule", default: "end_of_day", null: false
-    t.string "severity", default: "warning", null: false
-    t.json "structured_plan"
-    t.json "target_models", null: false
-    t.string "tier", default: "semantic", null: false
-    t.datetime "updated_at", null: false
-    t.index ["created_by_id"], name: "index_compliance_rules_on_created_by_id"
-    t.index ["entity_id"], name: "index_compliance_rules_on_entity_id"
-    t.index ["name", "entity_id"], name: "idx_compliance_rules_unique_name", unique: true
-    t.index ["rule_class"], name: "index_compliance_rules_on_rule_class"
-    t.index ["schedule"], name: "index_compliance_rules_on_schedule"
-    t.index ["tier"], name: "index_compliance_rules_on_tier"
-  end
-
   create_table "custom_grid_views", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.bigint "owner_id", null: false
@@ -1740,6 +1692,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
     t.string "condition_state", limit: 5, default: "show"
     t.datetime "created_at", null: false
     t.string "field_type", limit: 20
+    t.boolean "filter_in_search", default: false, null: false
     t.bigint "form_type_id", null: false
     t.boolean "has_attachment", default: false
     t.text "help_text"
@@ -2496,7 +2449,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
     t.boolean "is_holdings_entity", default: false
     t.boolean "is_trust", default: false
     t.json "json_fields"
-    t.bigint "kpi_contact_id"
     t.date "last_interaction_date"
     t.string "pan", limit: 40
     t.string "primary_email"
@@ -2513,7 +2465,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
     t.index ["investor_entity_id", "entity_id", "deleted_at"], name: "idx_on_investor_entity_id_entity_id_deleted_at_983d7c8e7a", unique: true
     t.index ["investor_entity_id"], name: "index_investors_on_investor_entity_id"
     t.index ["investor_name", "entity_id"], name: "index_investors_on_investor_name_and_entity_id", unique: true
-    t.index ["kpi_contact_id"], name: "index_investors_on_kpi_contact_id"
     t.index ["pan"], name: "index_investors_on_pan"
     t.index ["slug"], name: "index_investors_on_slug", unique: true
     t.index ["tag_list"], name: "index_investors_on_tag_list", type: :fulltext
@@ -3635,6 +3586,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
   create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.boolean "accept_terms", default: false
     t.timestamp "accepted_terms_on"
+    t.text "access_rights_cache"
+    t.integer "access_rights_cached_permissions"
     t.boolean "active", default: true
     t.bigint "advisor_entity_id"
     t.string "advisor_entity_roles", limit: 100
@@ -3912,11 +3865,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
   add_foreign_key "commitment_adjustments", "entities"
   add_foreign_key "commitment_adjustments", "exchange_rates"
   add_foreign_key "commitment_adjustments", "funds"
-  add_foreign_key "compliance_rule_overrides", "compliance_rules", name: "fk_compliance_rule_overrides_rule"
-  add_foreign_key "compliance_rule_overrides", "entities", name: "fk_compliance_rule_overrides_entity"
-  add_foreign_key "compliance_rule_overrides", "users", column: "created_by_id", name: "fk_compliance_rule_overrides_created_by"
-  add_foreign_key "compliance_rules", "entities", name: "fk_compliance_rules_entity"
-  add_foreign_key "compliance_rules", "users", column: "created_by_id", name: "fk_compliance_rules_created_by"
   add_foreign_key "custom_notifications", "entities"
   add_foreign_key "custom_notifications", "folders", column: "document_folder_id"
   add_foreign_key "dashboard_widgets", "entities"
@@ -4059,7 +4007,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_26_200001) do
   add_foreign_key "investor_notices", "entities"
   add_foreign_key "investors", "folders", column: "document_folder_id"
   add_foreign_key "investors", "form_types"
-  add_foreign_key "investors", "users", column: "kpi_contact_id"
   add_foreign_key "kanban_boards", "entities"
   add_foreign_key "kanban_cards", "entities"
   add_foreign_key "kanban_cards", "kanban_boards"

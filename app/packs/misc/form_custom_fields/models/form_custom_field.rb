@@ -58,6 +58,8 @@ class FormCustomField < ApplicationRecord
 
   RENDERERS = { Money: "/form_custom_fields/display/money", DateField: "/form_custom_fields/display/date", MultiSelect: "/form_custom_fields/display/multi_select", CheckBox: "/form_custom_fields/display/check_box" }.freeze
 
+  UNFILTERABLE_TYPES = %w[File Header GridColumns Calculation].freeze
+
   scope :writable, -> { where(read_only: false) }
   scope :visible, -> { where.not(field_type: HIDDEN_FIELDS) }
   scope :calculations, -> { where(field_type: "Calculation") }
@@ -68,6 +70,7 @@ class FormCustomField < ApplicationRecord
   scope :regulatory, -> { where.not(reg_env: [nil, ""]) }
   scope :not_regulatory, -> { where(reg_env: [nil, ""]) }
   scope :for_env, ->(env) { where(reg_env: env) }
+  scope :filterable, -> { where(filter_in_search: true).where.not(field_type: UNFILTERABLE_TYPES) }
 
   validate :meta_data_kosher?, if: -> { field_type == "Calculation" }
   validate :meta_data_present_for_option_types

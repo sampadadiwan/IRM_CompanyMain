@@ -43,6 +43,7 @@ class PortfolioInvestmentList < BaseList
   end
 
   def initialize_query
+    translate_json_fields_params(PortfolioInvestment)
     model_class = PortfolioInvestment
     model_class = model_class.with_snapshots if @params[:snapshot].present?
 
