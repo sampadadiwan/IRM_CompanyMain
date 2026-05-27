@@ -108,4 +108,8 @@ class DocumentPolicy < ApplicationPolicy
   def show_email_list?
     update?
   end
+
+  def verify_accessibility?
+    show?
+  end
 end

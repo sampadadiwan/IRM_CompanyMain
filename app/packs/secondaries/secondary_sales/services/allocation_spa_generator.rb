@@ -59,7 +59,7 @@ class AllocationSpaGenerator
     add_image(context, :interest_signature, allocation.interest.signature)
 
     file_name = generated_file_name(allocation)
-    convert(template, context, file_name)
+    convert(template, context, file_name, template_name: template_document.name)
 
     additional_footers = []
     additional_headers = []

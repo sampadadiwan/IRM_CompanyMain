@@ -83,11 +83,11 @@ class FundDocGenerator
     Rails.logger.debug { "Using context #{context} to render template" }
 
     file_name = generated_file_name(fund)
-    convert(template, context, file_name)
+    convert(template, context, file_name, template_name: @fund_doc_template_name)
 
     additional_footers = fund.documents.where(name: ["#{@fund_doc_template_name} Footer", "#{@fund_doc_template_name} Signature"])
     additional_headers = fund.documents.where(name: ["#{@fund_doc_template_name} Header", "#{@fund_doc_template_name} Stamp Paper"])
-    add_header_footers(fund, file_name, additional_headers, additional_footers)
+    add_header_footers(fund, file_name, additional_headers, additional_footers, nil, file_name: @fund_doc_template_name)
   end
 
   def amounts(fund, currency, start_date, end_date)

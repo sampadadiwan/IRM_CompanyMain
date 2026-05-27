@@ -1,16 +1,19 @@
 require "hexapdf"
+require "open3"
+require "json"
+require "fileutils"
 
-module DocumentGeneratorBase
+module DocumentGeneratorBase # rubocop:disable Metrics/ModuleLength
   IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .gif].freeze
 
-  def convert(template, context, file_name, to_pdf: true)
+  def convert(template, context, file_name, to_pdf: true, template_name: nil)
     # Mail Merge
     file_path = File.expand_path("#{file_name}.docx")
     Rails.logger.debug { "#{self.class} Generating document at #{file_path}" }
     template.render_to_file(file_path, context)
     if to_pdf
-      # Convert to PDF
-      Libreconv.convert("#{file_name}.docx", "#{file_name}.pdf")
+      # Convert to PDF with accessibility tags
+      convert_to_accessible_pdf(file_name, template_name)
     end
   end
 
@@ -43,10 +46,17 @@ module DocumentGeneratorBase
     end
   end
 
-  def add_header_footers(model, spa_path, additional_headers = nil, additional_footers = nil, template_name = nil)
+  def add_header_footers(model, spa_path, additional_headers = nil, additional_footers = nil, template_name = nil, file_name: nil)
     header_footer_download_path = []
 
+    # Open the SPA PDF first to capture accessibility metadata
+    spa_doc = HexaPDF::Document.open("#{spa_path}.pdf")
+
+    # Create a new document and preserve accessibility metadata from SPA
     combined_pdf = HexaPDF::Document.new
+    preserve_accessibility_metadata(combined_pdf, spa_doc)
+    set_pdf_metadata(combined_pdf, model, template_name, file_name)
+
     generate_headers(model, additional_headers, combined_pdf, header_footer_download_path, template_name)
 
     # Combine the SPA PDF
@@ -124,6 +134,23 @@ module DocumentGeneratorBase
     src.pages.each { |page| dest_doc.pages << dest_doc.import(page) }
   end
 
+  def preserve_accessibility_metadata(dest_doc, src_doc)
+    # Copy language setting if present
+    dest_doc.catalog[:Lang] = dest_doc.import(src_doc.catalog[:Lang]) if src_doc.catalog[:Lang]
+
+    # Copy MarkInfo if present
+    dest_doc.catalog[:MarkInfo] = dest_doc.import(src_doc.catalog[:MarkInfo]) if src_doc.catalog[:MarkInfo]
+
+    # Copy StructTreeRoot if present (structure tree for tagged PDF)
+    dest_doc.catalog[:StructTreeRoot] = dest_doc.import(src_doc.catalog[:StructTreeRoot]) if src_doc.catalog[:StructTreeRoot]
+
+    # Copy ViewerPreferences if present (document display settings)
+    dest_doc.catalog[:ViewerPreferences] = dest_doc.import(src_doc.catalog[:ViewerPreferences]) if src_doc.catalog[:ViewerPreferences]
+
+    # Ensure language is set (required for PDF/UA)
+    dest_doc.catalog[:Lang] = "en-US" unless dest_doc.catalog[:Lang]
+  end
+
   # Converts images to PDFs
   def get_doc_pdf_path(document)
     file = document.file.download
@@ -139,6 +166,73 @@ module DocumentGeneratorBase
     footers = model.documents.where(name: ["Footer", "#{template_name} Footer", "#{template_name} Signature"]).to_a
     footers += additional_footers if additional_footers.present?
     footers
+  end
+
+  # --------------------------
+  # PDF METADATA & SETTINGS
+  # --------------------------
+
+  def set_pdf_metadata(pdf_doc, model = nil, template_name = nil, file_name = nil)
+    # Set document information dictionary with required metadata
+    # Works for both model-aware (header/footer) and generic (standalone PDF) scenarios
+    info = pdf_doc.trailer[:Info] || {}
+
+    # Determine author
+    author = if model
+               model.entity&.to_s || model.to_s
+             else
+               "Caphive Document Generator"
+             end
+
+    # Title: Use template name or file_name or model identifier
+    info[:Title] = if template_name.present?
+                     template_name.to_s
+                   elsif file_name.present?
+                     File.basename(file_name, ".pdf")
+                   elsif model
+                     "Generated document for #{model}"
+                   else
+                     "Generated Document"
+                   end
+
+    info[:Author] = author
+
+    # Subject: Include context if available (clean up empty template names)
+    template_name_str = template_name.to_s.strip
+    info[:Subject] = if template_name_str.present?
+                       "Generated document: #{template_name_str}"
+                     elsif model
+                       "Generated document for #{model}"
+                     else
+                       "Generated document"
+                     end
+
+    # Keywords: For searchability
+    keywords_parts = %w[Generated document]
+    keywords_parts << template_name_str.downcase if template_name_str.present?
+    keywords_parts << model.class.name.downcase if model
+    info[:Keywords] = keywords_parts.join(", ")
+
+    # Creator: Application that created the document
+    info[:Creator] = "HexaPDF for #{author}"
+
+    # Producer: PDF library being used
+    info[:Producer] = "HexaPDF #{HexaPDF::VERSION}"
+
+    # Creation and modification timestamps (convert to PDF date format)
+    now = Time.current
+    pdf_date = format_pdf_date(now)
+    info[:CreationDate] = pdf_date
+    info[:ModDate] = pdf_date
+
+    pdf_doc.trailer[:Info] = info
+
+    # Set viewer preferences for better accessibility
+    pdf_doc.catalog[:ViewerPreferences] ||= {}
+    pdf_doc.catalog[:ViewerPreferences][:DisplayDocTitle] = true
+
+    # Add XMP metadata stream (required for PDF/UA-1)
+    add_xmp_metadata(pdf_doc, info[:Title].to_s, author, info[:Subject].to_s)
   end
 
   # --------------------------
@@ -191,5 +285,152 @@ module DocumentGeneratorBase
     generated_document.as_of = as_of
 
     generated_document.save!
+  end
+
+  def convert_to_accessible_pdf(file_name, template_name = nil)
+    docx_path = "#{file_name}.docx"
+    pdf_dir   = File.dirname(File.expand_path(docx_path))
+    pdf_path  = "#{file_name}.pdf"
+
+    pdf_options = {
+      "UseTaggedPDF" => {
+        "type" => "boolean",
+        "value" => "true"
+      },
+      "PDFUACompliance" => {
+        "type" => "boolean",
+        "value" => "true"
+      },
+      "ExportBookmarks" => {
+        "type" => "boolean",
+        "value" => "true"
+      },
+      "UseLosslessCompression" => {
+        "type" => "boolean",
+        "value" => "true"
+      },
+      "SignPDF" => {
+        "type" => "boolean",
+        "value" => "false"
+      }
+    }
+
+    filter = "pdf:writer_pdf_Export:#{JSON.generate(pdf_options)}"
+
+    cmd = [
+      "soffice",
+      "--headless",
+      "--convert-to", filter,
+      "--outdir", pdf_dir,
+      docx_path
+    ]
+
+    stdout, stderr, status = Open3.capture3(*cmd)
+
+    raise "LibreOffice PDF conversion failed\nSTDOUT: #{stdout}\nSTDERR: #{stderr}" unless status.success?
+
+    # Post-process the generated PDF to add required metadata
+    pdf = HexaPDF::Document.open(pdf_path)
+
+    # Ensure language is set (required for PDF/UA)
+    pdf.catalog[:Lang] ||= "en-US"
+
+    # Ensure MarkInfo is set (indicates tagged PDF)
+    pdf.catalog[:MarkInfo] ||= { Marked: true }
+
+    # Use set_pdf_metadata for consistent metadata across all PDFs
+    set_pdf_metadata(pdf, nil, template_name, file_name)
+
+    # Write to a temp file first to avoid overwriting the source file (pdf_path)
+    # while it is still being read by HexaPDF (lazy loading).
+    temp_output_path = "#{pdf_path}.tmp"
+    pdf.write(temp_output_path, optimize: true)
+    FileUtils.mv(temp_output_path, pdf_path)
+  end
+
+  # --------------------------
+  # HELPER METHODS
+  # --------------------------
+
+  def format_pdf_date(time_obj)
+    # PDF date format: D:YYYYMMDDHHmmSSOHH'mm'
+    # Example: D:20260525121630+05'30'
+    # %z produces +0530, but we need +05'30' with apostrophes
+    base = time_obj.strftime("D:%Y%m%d%H%M%S")
+    tz_offset = time_obj.strftime("%z")
+
+    # Convert +0530 to +05'30'
+    tz_formatted = if tz_offset.match?(/^[+-]\d{4}$/)
+                     "#{tz_offset[0..2]}'#{tz_offset[3..-1]}'"
+                   else
+                     "+00'00'"
+                   end
+
+    "#{base}#{tz_formatted}"
+  end
+
+  def add_xmp_metadata(pdf_doc, title, author, subject) # rubocop:disable Metrics/MethodLength
+    # Create XMP metadata stream (required for PDF/UA-1)
+    # XMP is an XML-based metadata format embedded in PDFs
+    now = Time.current.iso8601
+
+    xmp_content = <<~XMP
+      <?xml version="1.0" encoding="UTF-8"?>
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+               xmlns:dc="http://purl.org/dc/elements/1.1/"
+               xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+               xmlns:pdf="http://ns.adobe.com/pdf/1.3/"
+               xmlns:pdfuaid="http://www.aiim.org/pdfua/ns/id/">
+        <rdf:Description rdf:about=""
+                         xmp:CreatorTool="HexaPDF"
+                         pdf:Producer="HexaPDF #{HexaPDF::VERSION}"
+                         pdfuaid:part="1"
+                         pdfuaid:conformance="a">
+          <dc:title>
+            <rdf:Alt>
+              <rdf:li xml:lang="x-default">#{escape_xml(title)}</rdf:li>
+            </rdf:Alt>
+          </dc:title>
+          <dc:creator>
+            <rdf:Seq>
+              <rdf:li>#{escape_xml(author)}</rdf:li>
+            </rdf:Seq>
+          </dc:creator>
+          <dc:subject>
+            <rdf:Seq>
+              <rdf:li>#{escape_xml(subject)}</rdf:li>
+            </rdf:Seq>
+          </dc:subject>
+          <dc:date>
+            <rdf:Seq>
+              <rdf:li>#{now}</rdf:li>
+            </rdf:Seq>
+          </dc:date>
+        </rdf:Description>
+      </rdf:RDF>
+    XMP
+
+    # Create metadata stream object using HexaPDF's proper API
+    # Stream dictionary defines the stream's properties, stream: parameter contains the actual content
+    metadata_dict = {
+      Type: :Metadata,
+      Subtype: :XML,
+      Length: xmp_content.bytesize
+    }
+
+    metadata_stream = pdf_doc.add(metadata_dict, stream: xmp_content)
+
+    # Attach to catalog
+    pdf_doc.catalog[:Metadata] = metadata_stream
+  end
+
+  def escape_xml(text)
+    # Escape XML special characters
+    text.to_s
+        .gsub("&", "&amp;")
+        .gsub("<", "&lt;")
+        .gsub(">", "&gt;")
+        .gsub('"', "&quot;")
+        .gsub("'", "&apos;")
   end
 end

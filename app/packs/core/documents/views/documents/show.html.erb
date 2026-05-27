@@ -243,6 +243,7 @@
 
          <%= button_to "UnApprove", document_path(@document, "document[approved]": false, "document[approved_by_id]": current_user.id, redirect_to: document_path(@document)), {class: "btn btn-outline-success ti ti-cross", method: :patch} if policy(@document).unapprove? %>
 
+         <%= button_to "Check Accessibility", verify_accessibility_document_path(@document), method: :get, class: "btn btn-outline-primary ti ti-check" if params[:debug].present? && policy(@document).verify_accessibility? %>
          <%#= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %>
          <%= button_to t_common(:delete), @document, method: :delete, class: "btn btn-outline-danger ti ti-trash", form_class: "deleteButton", data: {action: "click->confirm#popup",turbo:false} if policy(@document).destroy? %>
 

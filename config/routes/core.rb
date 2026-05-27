@@ -243,6 +243,7 @@ resources :documents do
   get 'show_email_list', on: :member # New route for showing email list
   put 'restore_deleted', on: :member
   get 'show_deleted', on: :collection
+  get 'verify_accessibility', on: :member # New route for verifying PDF accessibility
 end
 
 # Top-level route for viewing shared documents

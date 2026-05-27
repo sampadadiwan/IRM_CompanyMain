@@ -53,10 +53,10 @@ class EoiDocGenerator
     add_image(context, :investor_signature, expression_of_interest.investor_kyc.signature)
 
     file_name = generated_file_name(expression_of_interest)
-    convert(template, context, file_name)
+    convert(template, context, file_name, template_name: @io_doc_template_name)
 
     additional_footers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Footer" + "#{@io_doc_template_name} Signature"])
     additional_headers = expression_of_interest.documents.where(name: ["#{@io_doc_template_name} Header", "#{@io_doc_template_name} Stamp Paper"])
-    add_header_footers(expression_of_interest, file_name, additional_headers, additional_footers)
+    add_header_footers(expression_of_interest, file_name, additional_headers, additional_footers, nil, file_name: @io_doc_template_name)
   end
 end

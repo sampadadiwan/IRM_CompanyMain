@@ -4,7 +4,7 @@ class DocumentsController < ApplicationController
   include DocumentHelper
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, :set_current_entity, only: %i[signature_progress]
-  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list]
+  before_action :set_document, only: %w[show update destroy edit send_for_esign fetch_esign_updates force_send_for_esign cancel_esign send_document_notification resend_for_esign show_email_list verify_accessibility]
   after_action :verify_authorized, except: %i[index search investor folder signature_progress approve bulk_actions download show_email_list]
   after_action :verify_policy_scoped, only: []
 
@@ -73,6 +73,15 @@ class DocumentsController < ApplicationController
 
     @no_folders = false
     render "index"
+  end
+
+  def verify_accessibility
+    if @document.file.present?
+      PdfAccessibilityCheckJob.perform_later(@document.id, current_user.id)
+      redirect_to document_url(@document), notice: "PDF accessibility verification enqueued. You will receive an alert with the results shortly."
+    else
+      redirect_to document_url(@document), alert: "Document does not have an attached file to verify."
+    end
   end
 
   def investor

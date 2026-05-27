@@ -19,6 +19,7 @@ class PortfolioReportDocGenerator
 
     portfolio_report_extract = PortfolioReportExtract.find(@options[:portfolio_report_extract_id])
 
+    @template_name = @template.name
     # Download the template file - block keeps temp file available throughout
     @template.file.download do |tempfile|
       template_path = tempfile.path
@@ -77,7 +78,7 @@ class PortfolioReportDocGenerator
     context.store :context, DocGenContext.new(context)
 
     file_name = generated_file_name(portfolio_company)
-    convert(template, context, file_name, to_pdf: false)
+    convert(template, context, file_name, to_pdf: false, template_name: @template_name)
   end
 
   def cap_table(portfolio_company, end_date)

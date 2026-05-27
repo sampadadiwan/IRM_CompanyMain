@@ -17,6 +17,8 @@ class SoaGenerator
   def initialize(capital_commitment, fund_doc_template, start_date, end_date, user_id = nil, options: nil)
     Rails.logger.debug { "SoaGenerator #{capital_commitment.id}, #{fund_doc_template.name}, #{start_date}, #{end_date}, #{user_id}, #{options} " }
 
+    @fund_doc_template_name = fund_doc_template.name
+
     if capital_commitment.investor_kyc
       # Download the fund document template file
       fund_doc_template.file.download do |tempfile|
@@ -176,7 +178,7 @@ class SoaGenerator
     Rails.logger.debug "Rendering template"
 
     file_name = generated_file_name(capital_commitment)
-    convert(template, context, file_name)
+    convert(template, context, file_name, template_name: @fund_doc_template_name)
   end
 
   # This method is used to generate the portfolio allocation related data by portfolio company

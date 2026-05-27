@@ -5,6 +5,7 @@ class SecondarySaleDocGenerator
   attr_accessor :working_dir
 
   def initialize(secondary_sale, template, _start_date, _end_date, user_id)
+    @template_name = template.name
     template.file.download do |tempfile|
       template_path = tempfile.path
 
@@ -41,7 +42,7 @@ class SecondarySaleDocGenerator
     context.store :context, DocGenContext.new(context)
 
     file_name = generated_file_name(secondary_sale)
-    convert(template, context, file_name)
+    convert(template, context, file_name, template_name: @template_name)
   end
 
   def pivot_for_investors

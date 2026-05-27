@@ -67,7 +67,7 @@ class CapitalDistributionPaymentDocGenerator
     context.merge!(distribution_context(capital_distribution_payment, fund_as_of, fund_as_of_commitments_lp, fund_as_of_commitments_gp))
     context.merge!(amounts_context(fund_as_of))
 
-    convert(template, context, generated_file_name(capital_distribution_payment))
+    convert(template, context, generated_file_name(capital_distribution_payment), template_name: @fund_doc_template_name)
   end
 
   # Core data required for template substitution

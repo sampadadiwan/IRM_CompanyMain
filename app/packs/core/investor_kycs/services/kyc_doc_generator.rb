@@ -180,7 +180,7 @@ class KycDocGenerator
     Rails.logger.debug "Rendering template"
 
     file_name ||= generated_file_name(investor_kyc)
-    convert(template, context, file_name)
+    convert(template, context, file_name, template_name: doc_template.name)
 
     additional_footers = []
     if doc_template.template_docs_to_append.present?
@@ -197,7 +197,7 @@ class KycDocGenerator
     additional_footers += investor_kyc.documents.where(name: ["#{doc_template.name} Footer", "#{doc_template.name} Signature"])
     additional_headers = investor_kyc.documents.where(name: ["#{doc_template.name} Header", "#{doc_template.name} Stamp Paper"])
 
-    add_header_footers(investor_kyc, file_name, additional_headers, additional_footers)
+    add_header_footers(investor_kyc, file_name, additional_headers, additional_footers, nil, file_name: doc_template.name)
   end
   # rubocop:enable Metrics/ParameterLists
 
