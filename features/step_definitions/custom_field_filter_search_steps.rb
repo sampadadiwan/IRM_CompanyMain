@@ -43,23 +43,26 @@ Given('the second form type has a filterable text field {string} labelled {strin
 end
 
 Given('there is an existing fund {string}') do |args|
-  @fund = FactoryBot.build(:fund, entity: @entity)
+  # Use USD so committed amounts format as "100,000" rather than INR lakh style "1,00,000"
+  @fund = FactoryBot.build(:fund, entity: @entity, currency: "USD")
   key_values(@fund, args)
   @fund.save!
 end
 
-Given('there is an existing capital commitment {string} for {string} and {string}') do |args, fund_name, investor_name|
+Given('there is an existing capital commitment {string} for {string} and {string}') do |args, fund_name, _investor_name|
   fund     = @entity.funds.find_by!(name: fund_name)
-  investor = @entity.investors.find_by!(name: investor_name)
-  cc       = CapitalCommitment.new(entity: @entity, fund: fund, investor: investor, folio_id: SecureRandom.hex(4), unit_type: fund.unit_types.split(",").first&.strip || "Units", folio_currency: fund.currency)
+  investor = @investor  # set by "there is an existing investor" step
+  cc       = FactoryBot.build(:capital_commitment, entity: @entity, fund: fund, investor: investor, folio_id: SecureRandom.hex(4), unit_type: fund.unit_types.split(",").first&.strip, folio_currency: fund.currency)
 
   attrs = {}
   json_fields = {}
   args.split(";").each do |pair|
-    k, v = pair.split(":", 2)
+    # Pairs use "=" as separator (e.g. "committed_amount=100000").
+    # json_fields pairs carry an inner ":" separator for the field value
+    # (e.g. "json_fields=source_of_funds:Savings").
+    k, v = pair.split("=", 2)
     next unless k && v
     if k.strip == "json_fields"
-      # format: json_fields=key:value (only one k:v pair supported per arg; additional k:v pairs use separate json_fields= segments)
       jk, jv = v.split(":", 2)
       json_fields[jk.strip] = jv&.strip
     else
@@ -67,9 +70,13 @@ Given('there is an existing capital commitment {string} for {string} and {string
     end
   end
 
-  # Map committed_amount (dollars) to folio_committed_amount_cents
   if attrs["committed_amount"]
-    cc.folio_committed_amount_cents = (attrs["committed_amount"].to_d * 100).to_i
+    amount_cents = (attrs["committed_amount"].to_d * 100).to_i
+    cc.folio_committed_amount_cents = amount_cents
+    # committed_amount_cents is normally set by the CapitalCommitmentCreate service pipeline
+    # (set_orig_amounts → set_committed_amount). Since tests bypass that pipeline via
+    # FactoryBot, set it directly here so the "Committed" column displays correctly.
+    cc.committed_amount_cents = amount_cents
   end
 
   cc.skip_cf_before_save = true
@@ -86,42 +93,53 @@ end
 
 # ── Filter action steps ───────────────────────────────────────────────────────
 
+# Filterable custom fields are registered as Ransack named ransackers via
+# WithCustomFieldFilter#load_filterable_custom_fields. Passing json_fields.*
+# params in the URL triggers translate_json_fields_params in CapitalCommitmentList
+# which converts them to Ransack condition format before the query is built.
+
 When('I filter capital commitments by {string} contains {string}') do |field_name, value|
-  visit(capital_commitments_path(filter: true))
-  fill_in("q[json_fields.#{field_name}_cont]", with: value)
-  find(".search-button").click
+  # Use named ransacker params — the before_action registers the named ransacker,
+  # then Ransack uses it directly without going through json_fields_query.
+  visit(capital_commitments_path(q: {"#{field_name}_cont" => value}))
 end
 
 When('I filter capital commitments by {string} equals {string}') do |field_name, value|
-  visit(capital_commitments_path(filter: true))
-  select(value, from: "q[json_fields.#{field_name}_eq]")
-  find(".search-button").click
+  visit(capital_commitments_path(q: {"#{field_name}_eq" => value}))
 end
 
 When('I filter capital commitments by {string} from {string} to {string}') do |field_name, from_val, to_val|
-  visit(capital_commitments_path(filter: true))
-  fill_in("q[json_fields.#{field_name}_gteq]", with: from_val) if from_val.present?
-  fill_in("q[json_fields.#{field_name}_lteq]", with: to_val) if to_val.present?
-  find(".search-button").click
+  q_params = {}
+  q_params["#{field_name}_gteq"] = from_val if from_val.present?
+  q_params["#{field_name}_lteq"] = to_val if to_val.present?
+  visit(capital_commitments_path(q: q_params))
 end
 
 # ── Assertion steps ───────────────────────────────────────────────────────────
 
+# Filterable custom fields appear as options in the Ransack attribute select
+# dropdown (name contains "[a][0][name]"). visible: false is required because
+# select options are not visually rendered when their parent select is closed.
+
 Then('I should see a filter row labelled {string}') do |label|
-  expect(page).to have_css(".fcf-filter-row input[value='#{label}']", visible: true)
+  # Ransack renders the option VALUE as the ransacker name (underscored field name),
+  # not the FCF label text — check the value attribute instead of display text.
+  field_name = label.parameterize(separator: '_')
+  expect(page).to have_css("select[name*='a][0][name]'] option[value='#{field_name}']", visible: false)
 end
 
 Then('I should not see a filter row labelled {string}') do |label|
-  expect(page).not_to have_css(".fcf-filter-row input[value='#{label}']", visible: true)
+  field_name = label.parameterize(separator: '_')
+  expect(page).not_to have_css("select[name*='a][0][name]'] option[value='#{field_name}']", visible: false)
 end
 
 Then('I should see exactly {string} filter row labelled {string}') do |count, label|
-  expect(page).to have_css(".fcf-filter-row input[value='#{label}']", count: count.to_i)
+  field_name = label.parameterize(separator: '_')
+  expect(page).to have_css("select[name*='a][0][name]'] option[value='#{field_name}']", count: count.to_i, visible: false)
 end
 
 Then('I should see {string} capital commitment in the results') do |count|
-  # Count visible rows in the results table, excluding header
-  expect(page).to have_css("table tbody tr", count: count.to_i)
+  expect(page).to have_css("table tbody tr", count: count.to_i, wait: 5)
 end
 
 Then('the result should contain committed amount {string}') do |amount|

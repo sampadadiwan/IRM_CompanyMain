@@ -82,13 +82,7 @@
               display_value = number_with_precision(value.amount.to_d, precision: 2, delimiter: ',') if value&.amount.present?
             %>
             <td>
-              <% if value.is_a?(OpenStruct) %>
-                <%= display_value || "-" %>
-              <% elsif display_value.present? %>
-                <%= link_to display_value, value %>
-              <% else %>
-                -
-              <% end %>
+              <%= display_value.present? ? display_value : "-" %>
             </td>
           <% end %>
         <% end %>

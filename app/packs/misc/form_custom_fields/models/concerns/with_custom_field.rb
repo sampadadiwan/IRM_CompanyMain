@@ -128,15 +128,15 @@ module WithCustomField
 
           raise ArgumentError, "No valid predicate for #{field}" unless operation
 
-          (obj[:c] ||= []) << {
-            a: {
-              '0' => {
-                name: 'json_fields',
-                ransacker_args: field
+          (obj["c"] ||= []) << {
+            "a" => {
+              "0" => {
+                "name" => "json_fields",
+                "ransacker_args" => field
               }
             },
-            p: operation,
-            v: [v]
+            "p" => operation,
+            "v" => { "0" => { "value" => v } }
           }
         else
           obj[k] = v
