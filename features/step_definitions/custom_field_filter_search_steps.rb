@@ -42,6 +42,12 @@ Given('the second form type has a filterable text field {string} labelled {strin
   fcf.save!
 end
 
+Given('there is an existing fund {string}') do |args|
+  @fund = FactoryBot.build(:fund, entity: @entity)
+  key_values(@fund, args)
+  @fund.save!
+end
+
 Given('there is an existing capital commitment {string} for {string} and {string}') do |args, fund_name, investor_name|
   fund     = @entity.funds.find_by!(name: fund_name)
   investor = @entity.investors.find_by!(name: investor_name)
