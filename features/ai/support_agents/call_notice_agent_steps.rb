@@ -142,10 +142,12 @@ end
 
 # Agent execution
 When('I run the call notice agent') do
-  # Mock LLM to avoid API key requirement
-  mock_chat = double('chat')
-  allow(RubyLLM).to receive(:chat).and_return(mock_chat)
-  allow(mock_chat).to receive(:ask).and_return(double(content: 'mocked response'))
+  # CallNoticeAgent is deterministic and never uses the LLM, but SupportAgentService#initialize_agent
+  # calls LlmService.ruby_llm_chat which requires API keys. Stub at the service layer, not RubyLLM directly.
+  mock_chat = double('chat', ask: double(content: 'mocked response'))
+  allow(LlmService).to receive(:ruby_llm_chat).and_return(mock_chat)
+  # broadcast_step calls Turbo::StreamsChannel.broadcast_replace_to which requires ActionCable.
+  allow(Turbo::StreamsChannel).to receive(:broadcast_replace_to)
 
   @support_agent = SupportAgent.find_or_create_by!(
     agent_type: 'CallNoticeAgent',
