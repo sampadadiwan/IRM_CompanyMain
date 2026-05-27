@@ -124,10 +124,12 @@ module CapitalCommitmentShared
   # @param use_tracking_currency [Boolean] Whether to use tracking currency instead of the base currency.
   # @param use_distributions [Boolean] Whether to subtract the hurdle calculated on distributions.
   # @param skip_distribution_for_hurdle [Boolean] If true, ignore distributions where the parent capital_distribution is flagged to skip.
-  def compute_hurdle(end_date, use_tracking_currency: false, use_distributions: false, skip_distribution_for_hurdle: false)
+  def compute_hurdle(end_date, use_tracking_currency: false, use_distributions: false, skip_distribution_for_hurdle: false, data_csv: false)
     # Ensure end_date is a Date object for calculations
     end_date = end_date.to_date
     hurdle_rate = fund_unit_setting.json_fields['hurdle_rate'].to_d
+    # Collects per-payment rows for CSV export; nil when data_csv is false (no overhead)
+    csv_rows = data_csv ? [] : nil
 
     Rails.logger.debug "[Hurdle] Computing hurdle for commitment #{id} as of #{end_date}"
     Rails.logger.debug "[Hurdle] Hurdle rate: #{hurdle_rate}"
@@ -183,7 +185,8 @@ module CapitalCommitmentShared
       effective_end_date,
       hurdle_rate,
       amount_column: remittance_col,
-      label: "Contributions"
+      label: "Remittance Payment",
+      csv_rows: csv_rows
     )
 
     if use_distributions
@@ -205,13 +208,15 @@ module CapitalCommitmentShared
         effective_end_date,
         hurdle_rate,
         amount_column: distribution_col,
-        label: "Distributions",
-        cap_amount_cents: total_remittance_cents
+        label: "Distribution Payment",
+        cap_amount_cents: total_remittance_cents,
+        csv_rows: csv_rows
       )
       hurdle_amount -= dist_hurdle
     end
 
     Rails.logger.debug "[Hurdle] Final calculated hurdle amount: #{hurdle_amount}"
+    save_hurdle_csv(csv_rows, end_date, effective_end_date, hurdle_rate, hurdle_amount, use_distributions) if data_csv
     hurdle_amount
   end
 
@@ -220,7 +225,7 @@ module CapitalCommitmentShared
   # Helper to calculate hurdle for a collection of payments
   # @param cap_amount_cents [Integer] If provided, only calculate hurdle for payments up to this cumulative amount.
   # This is used for distributions to ensure we only offset hurdle up to the principal amount.
-  def calculate_hurdle_for_payments(payments, end_date, hurdle_rate, amount_column:, label: "Payments", cap_amount_cents: nil)
+  def calculate_hurdle_for_payments(payments, end_date, hurdle_rate, amount_column:, label: "Payments", cap_amount_cents: nil, csv_rows: nil)
     Rails.logger.debug "[Hurdle] Processing #{label} (#{payments.count} records) with cap: #{cap_amount_cents || 'None'}"
 
     cumulative_amount_cents = 0
@@ -260,9 +265,87 @@ module CapitalCommitmentShared
 
       total_hurdle += calculation
       cumulative_amount_cents += amount
+
+      # Append row data for CSV export when requested
+      csv_rows&.push(
+        section:                label,
+        payment_id:             payment.id,
+        payment_date:           payment_date,
+        raw_amount_cents:       payment.send(amount_column), # original value before any cap
+        effective_amount_cents: amount,                      # after principal-cap truncation
+        days:                   days,
+        hurdle_calculation:     calculation.to_f,
+        running_total_cents:    cumulative_amount_cents       # cumulative total after this payment
+      )
     end
 
     Rails.logger.debug "[Hurdle] Total hurdle for #{label}: #{total_hurdle.to_f}"
     total_hurdle
+  end
+
+  # Generates a CSV of all input data used in compute_hurdle and saves it as a Document
+  # under the entity's root_folder/tmp, owned by this commitment.
+  def save_hurdle_csv(csv_rows, end_date, effective_end_date, hurdle_rate, hurdle_amount, use_distributions)
+    require 'csv'
+
+    csv_data = CSV.generate do |csv|
+      # Metadata header block
+      csv << ["Commitment ID",      id]
+      csv << ["Fund",               fund.name]
+      csv << ["Investor",           investor_name]
+      csv << ["End Date",           end_date]
+      csv << ["Effective End Date", effective_end_date]
+      csv << ["Hurdle Rate",        hurdle_rate]
+      csv << ["Use Distributions",  use_distributions]
+      csv << []
+
+      # Per-payment detail rows
+      csv << ["Section", "Payment ID", "Payment Date",
+              "Raw Amount Cents", "Effective Amount Cents",
+              "Days", "Hurdle Calculation", "Running Total Cents"]
+      csv_rows.each do |row|
+        csv << [
+          row[:section],
+          row[:payment_id],
+          row[:payment_date],
+          row[:raw_amount_cents],
+          row[:effective_amount_cents],
+          row[:days],
+          row[:hurdle_calculation],
+          row[:running_total_cents]
+        ]
+      end
+
+      # Summary
+      csv << []
+      csv << ["Net Hurdle Amount (cents)", hurdle_amount.to_f]
+    end
+
+    # "tmp" folder is a direct child of the entity's root_folder
+    folder = entity.root_folder.children
+                   .where(name: "tmp", entity_id: entity_id)
+                   .first_or_create!(entity_id: entity_id)
+
+    # Use the first admin user of this entity as the document owner
+    uid = User.where(entity_id: entity_id).first&.id
+
+    temp_file = Tempfile.new(["hurdle_computation_#{id}", ".csv"])
+    temp_file.write(csv_data)
+    temp_file.rewind
+
+    begin
+      Document.create!(
+        name:      "Hurdle Computation - #{investor_name} - #{id} - #{end_date}.csv",
+        file:      temp_file,
+        user_id:   uid,
+        owner:     self,
+        folder:    folder,
+        entity_id: entity_id,
+        orignal:   true
+      )
+    ensure
+      temp_file.close
+      temp_file.unlink
+    end
   end
 end
