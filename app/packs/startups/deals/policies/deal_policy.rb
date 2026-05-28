@@ -25,8 +25,9 @@ class DealPolicy < ApplicationPolicy
     index?
   end
 
+  # Investors access deals via overview?, not show? — see commit 068e7a711.
   def show?
-    (permissioned_employee? || permissioned_investor?) && user.enable_deals
+    permissioned_employee? && user.enable_deals
   end
 
   def consolidated_access_rights?

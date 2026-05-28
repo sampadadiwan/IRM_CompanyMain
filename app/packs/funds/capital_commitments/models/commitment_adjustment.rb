@@ -18,6 +18,8 @@ class CommitmentAdjustment < ApplicationRecord
   belongs_to :fund
   belongs_to :capital_commitment
   belongs_to :owner, polymorphic: true, optional: true
+  # Exposes investor for policy entity-scoping (permissioned_investor? checks record.investor)
+  delegate :investor, to: :capital_commitment
 
   # Dedicated association for counting
   belongs_to :capital_remittance,

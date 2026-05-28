@@ -6,6 +6,8 @@ class ExcusedInvestor < ApplicationRecord
 
   # The investor / folio that is excused
   belongs_to :capital_commitment
+  # Exposes investor for policy entity-scoping (permissioned_investor? checks record.investor)
+  delegate :investor, to: :capital_commitment
 
   # Excused from either all investments in the portfolio_company
   belongs_to :portfolio_company, class_name: "Investor", optional: true

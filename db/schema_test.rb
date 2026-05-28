@@ -31,9 +31,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
     t.bigint "user_id"
     t.index ["access_to_investor_id"], name: "index_access_rights_on_access_to_investor_id"
     t.index ["deleted_at"], name: "index_access_rights_on_deleted_at"
+    t.index ["entity_id", "access_to_category"], name: "index_access_rights_on_entity_id_and_category"
+    t.index ["entity_id", "user_id"], name: "index_access_rights_on_entity_id_and_user_id"
     t.index ["entity_id"], name: "index_access_rights_on_entity_id"
     t.index ["granted_by_id"], name: "index_access_rights_on_granted_by_id"
-    t.index %w[owner_type owner_id], name: "index_access_rights_on_owner"
+    t.index ["owner_type", "owner_id", "access_to_investor_id"], name: "index_access_rights_on_owner_and_investor"
+    t.index ["owner_type", "owner_id", "user_id"], name: "index_access_rights_on_owner_and_user"
+    t.index ["owner_type", "owner_id"], name: "index_access_rights_on_owner"
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
@@ -3579,8 +3583,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
   create_table "users", force: :cascade do |t|
     t.boolean "accept_terms", default: false
     t.timestamp "accepted_terms_on"
-    t.text "access_rights_cache"
-    t.integer "access_rights_cached_permissions"
     t.boolean "active", default: true
     t.bigint "advisor_entity_id"
     t.string "advisor_entity_roles", limit: 100
@@ -3746,7 +3748,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
     t.datetime "updated_at", null: false
     t.bigint "user_id"
     t.index ["entity_id"], name: "index_viewed_bies_on_entity_id"
-    t.index %w[owner_type owner_id], name: "index_viewed_bies_on_owner"
+    t.index ["owner_type", "owner_id"], name: "index_viewed_bies_on_owner"
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
   end
 
@@ -3757,6 +3759,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
+  add_foreign_key "agent_chat_messages", "agent_chat_sessions"
+  add_foreign_key "agent_chat_sessions", "support_agents"
+  add_foreign_key "agent_chat_sessions", "users", column: "analyst_id"
+  add_foreign_key "agent_execution_logs", "agent_schedules"
+  add_foreign_key "agent_execution_logs", "entities"
+  add_foreign_key "agent_execution_logs", "support_agents"
+  add_foreign_key "agent_execution_logs", "users", column: "triggered_by_id"
+  add_foreign_key "agent_schedules", "entities"
+  add_foreign_key "agent_schedules", "support_agents"
+  add_foreign_key "agent_schedules", "users", column: "created_by_id"
   add_foreign_key "aggregate_portfolio_investments", "entities"
   add_foreign_key "aggregate_portfolio_investments", "folders", column: "document_folder_id"
   add_foreign_key "aggregate_portfolio_investments", "form_types"
@@ -3765,7 +3777,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
+  add_foreign_key "ai_kpi_shadow_runs", "documents"
+  add_foreign_key "ai_kpi_shadow_runs", "entities"
   add_foreign_key "ai_portfolio_reports", "folders"
+  add_foreign_key "ai_portfolio_reports", "investment_criteria_templates"
   add_foreign_key "ai_presentations", "entities"
   add_foreign_key "ai_report_sections", "ai_portfolio_reports"
   add_foreign_key "ai_rules", "entities"

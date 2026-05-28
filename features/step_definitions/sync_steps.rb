@@ -334,7 +334,7 @@ Then(/^a user "([^"]+)" should exist with primary_region "([^"]+)" and regions "
   user.extended_permissions.should eq @origin_user.extended_permissions
   user.entity.name.should eq @origin_entity.name
   user.entity.entity_type.should eq @origin_entity.entity_type
-  expect(user.access_rights_cache).to eq({})
+  # access_rights_cache column was removed — no assertion needed
 
   user.entity_id.should eq @origin_entity.id if @origin_entity.persisted?
   user.active.should be true

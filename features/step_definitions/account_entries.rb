@@ -174,3 +174,160 @@ Then('the AllocationRun status is set to {string}') do |status|
 	allocation_run = AllocationRun.last
 	expect(allocation_run.status).to(eq(status))
 end
+
+
+Then('Given I upload {string} file for Account Entries') do |file|
+  @import_file = file
+  visit(capital_commitment_path(@fund.capital_commitments.first))
+  click_on("Account Entries")
+  #sleep((1)
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  expect(page).to have_content("Upload", wait:5)
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  #sleep((1)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  # sleep(2)
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  # sleep(4)
+  # binding.pry if ImportUpload.last.failed_row_count > 0
+  ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
+end
+
+Then('There should be {string} account_entries created') do |count|
+  AccountEntry.count.should == count.to_i
+end
+
+Given('Given I upload {string} {string} error file for Account Entries') do |file, err_count|
+  @import_file = file
+  visit(capital_commitment_path(@fund.capital_commitments.first))
+  click_tab("Account Entries")
+  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+  expect(page).to have_content("Upload", wait: 10)
+  click_on("Upload")
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  #sleep((2)
+  click_on("Save")
+  #sleep((2)
+  expect(page).to have_content("Import Upload:")
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  #sleep((4)
+  ImportUpload.last.failed_row_count.should == err_count.to_i
+end
+
+Then('I should see that the duplicate account entries are not uploaded') do
+  # last 5 account entries are duped
+  file = ImportUpload.last.import_results.download
+  data = Roo::Spreadsheet.open(file.path)
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+  # data from 21st row should have error "Duplicate, already present"
+  data.each_with_index do |row, idx|
+    next if idx < 21 # skip rows
+    # column after headers should have error "Duplicate, already present"
+    row[headers.length].include?("Duplicate Account Entry").should == true
+  end
+end
+
+Then('the account_entries must have the data in the sheet') do
+    file = File.open("./public/sample_uploads/#{@import_file}", "r")
+    data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+    headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+    account_entries = @fund.account_entries.order(id: :asc).to_a
+    data.each_with_index do |row, idx|
+      next if idx.zero? # skip header row
+
+      # create hash from headers and cells
+      user_data = [headers, row].transpose.to_h
+      ap user_data
+      cc = account_entries[idx-1]
+      ap cc
+
+      puts "Checking import of #{cc.name}"
+      cc.name.should == user_data["Name"].strip
+      cc.fund.name.should == user_data["Fund"]
+      cc.investor.investor_name.should == user_data["Investor"]
+      cc.folio_id.should == user_data["Folio No"].to_s
+      cc.amount_cents.should == user_data["Amount (Fund Currency)"].to_f * 100
+      cc.folio_amount_cents.should == user_data["Amount (Folio Currency)"].to_f * 100 if user_data["Amount (Folio Currency)"].present?
+      cc.entry_type.should == user_data["Entry Type"]
+      cc.reporting_date.should == Date.local_parse(user_data["Reporting Date"]) if user_data["Reporting Date"].present?
+      cc.notes.should == user_data["Notes"]
+      cc.import_upload_id.should == ImportUpload.where(import_type: "AccountEntry").last.id
+    end
+
+end
+
+Then('the account_entries must visible for each commitment') do
+  @fund.account_entries.each do |ae|
+    visit(capital_commitment_path(ae.capital_commitment))
+    click_on "Account Entries"
+    expect(page).to have_content(ae.name)
+    expect(page).to have_content(ae.entry_type)
+    if ae.name.include?("Percentage")
+      expect(page).to have_content("#{ae.amount_cents} %")
+    else
+      expect(page).to have_content(money_to_currency(ae.amount, {}))
+    end
+    expect(page).to have_content(ae.capital_commitment.folio_id)
+    expect(page).to have_content(ae.reporting_date.strftime("%d/%m/%Y"))
+  end
+end
+
+Then('the account entries are adjusted upon fund unit transfer') do
+
+  transfer_ratio = @transfer_ratio
+  retained_ratio = 1 - transfer_ratio
+
+  @from_cc.account_entries.each do |entry|
+    if entry.json_fields["transfer_id"].present?
+      puts "Checking account entry for #{entry.id} for #{@from_cc.folio_id} to contain transfer_id #{@transfer_token}"
+      entry.json_fields["transfer_id"].should == @transfer_token
+      # entry.json_fields["orig_amount"].should == entry.amount_cents / retained_ratio
+      entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * retained_ratio).round(0)
+    end
+  end
+
+  @to_cc.account_entries.each do |entry|
+    if entry.json_fields["transfer_id"].present?
+      puts "Checking account entry for #{entry.id} for #{@to_cc.folio_id} to contain transfer_id #{@transfer_token}"
+      entry.json_fields["transfer_id"].should == @transfer_token
+      entry.investor_id.should == @to_cc.investor_id
+      entry.folio_id.should == @to_cc.folio_id
+      entry.commitment_name.should == @to_cc.to_s
+      # entry.json_fields["orig_amount"].should == entry.amount_cents / transfer_ratio
+      entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * transfer_ratio).round(0)
+    end
+  end
+end
+
+Then('account entries are not affected by the transfer') do
+  @from_cc.reload
+  @to_cc.reload
+
+  @from_cc.account_entries.each do |entry|
+    entry.json_fields["transfer_id"].should be_nil
+  end
+
+  @to_cc.account_entries.select { |e| e.json_fields["transfer_id"].present? }.should be_empty
+end
+
+Then('the other account entries are pro-rated') do
+  retained = 1 - @transfer_ratio
+
+  @from_cc.account_entries.each do |entry|
+    next unless entry.json_fields["transfer_id"] == @transfer_token
+    next if entry.name == @excluded_ae_name
+    entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * retained).round(0)
+  end
+
+  @to_cc.account_entries.each do |entry|
+    next unless entry.json_fields["transfer_id"] == @transfer_token
+    next if entry.name == @excluded_ae_name
+    entry.amount_cents.round(0).should == (entry.json_fields["orig_amount"].to_f * @transfer_ratio).round(0)
+  end
+end

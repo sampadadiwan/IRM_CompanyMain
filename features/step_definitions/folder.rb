@@ -105,12 +105,11 @@ Then('the documents should have the same access rights') do
 end
 
 Then('the user should have the access_rights in their cache') do
-  @user.reload
-  # Note: Folder access rights are NOT cached (see AccessRight model line 182 and 202)
-  # But Document access rights ARE cached.
+  # Verify at the DB level that cascaded document access rights exist for this user.
+  # (Cache was removed; documents inherit their folder's AR via replicate_to.)
   Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
-    # Structure: {entity_id: {owner_type: {owner_id: "permissions, metadata"}}}
-    @user.access_rights_cache[@user.entity_id]["Document"][doc.id].should_not be_nil
+    expect(doc.access_rights.where(user_id: @user.id).exists?).to be_truthy,
+      "expected user to have an access right for document #{doc.name} but none found"
   end
 end
 
@@ -153,12 +152,11 @@ Then('the documents access_rights should be deleted') do
 end
 
 Then('the user should have no cascading access_rights in their cache') do
-  @user.reload
-  # Documents should be removed from cache
+  # Verify at the DB level that no cascaded document access rights remain for this user.
+  # (Cache was removed; AccessRightsDeletedJob handles cascade deletion.)
   Document.where(folder_id: @folder.reload.descendant_ids).each do |doc|
-    # If the hash or the ID is missing, it's considered deleted from cache
-    next if @user.access_rights_cache.dig(@user.entity_id, "Document").nil?
-    @user.access_rights_cache[@user.entity_id]["Document"][doc.id].should be_nil
+    expect(doc.access_rights.where(user_id: @user.id).exists?).to be_falsey,
+      "expected user to have no access right for document #{doc.name} but one was found"
   end
 end
 

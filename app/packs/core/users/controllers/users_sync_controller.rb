@@ -12,7 +12,7 @@ class UsersSyncController < ActionController::API
     reset_password_token reset_password_sent_at
     encrypted_password password_digest otp_secret otp_backup_codes
     api_token api_tokens invitation_token
-    last_synced_ccf_hex last_synced_at access_rights_cache entity_id
+    last_synced_ccf_hex last_synced_at entity_id
   ].freeze
 
   EXCLUDED_ENTITY_ATTRS = %w[id created_at updated_at].freeze

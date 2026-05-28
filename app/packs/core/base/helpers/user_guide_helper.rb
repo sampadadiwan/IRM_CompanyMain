@@ -104,7 +104,6 @@ module UserGuideHelper
     # Settings & Utilities
     'exchange_rates' => 'tracking_currency_guide.md',
     'db_dumps' => 'db_dumps_user_guide.md',
-    'access_rights' => 'reset_access_rights_cache_user_guide.md',
     'outlook_addin' => 'outlook_setup_user_guide.md'
   }.freeze
 

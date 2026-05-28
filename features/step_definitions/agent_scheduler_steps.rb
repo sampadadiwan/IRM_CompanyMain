@@ -53,10 +53,29 @@ Given("the schedule's run_at_time is in the future") do
   @schedule.update!(run_at_time: Time.current.advance(minutes: 5))
 end
 
+# Forces next_run_at into the past so SchedulerPollingJob's .due scope picks it up
+Given("the schedule's next_run_at is in the past") do
+  @schedule.update_column(:next_run_at, 1.hour.ago)
+end
+
 # Runs AgentDailySchedulerService directly (same thing DailyMorningJob calls at line 47)
 When('the daily morning job runs') do
   @execution_log_count_before = AgentExecutionLog.count
   AgentDailySchedulerService.new.call
+end
+
+# Runs SchedulerPollingJob directly — picks up schedules where next_run_at <= now
+When('the scheduler polling job runs') do
+  @execution_log_count_before = AgentExecutionLog.count
+  SchedulerPollingJob.new.perform
+end
+
+Then("the schedule's next_run_at should be in the future") do
+  expect(@schedule.reload.next_run_at).to be > Time.current
+end
+
+Then('no execution log should be created') do
+  expect(AgentExecutionLog.count).to eq(@execution_log_count_before)
 end
 
 

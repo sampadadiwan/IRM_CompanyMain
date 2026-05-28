@@ -168,8 +168,14 @@ Then('the AccessRight for the advisor must be added for the fund') do
 end
 
 Then('the AccessRights Cache for the advisor must not have the fund') do
-  @investor_advisor.user.reload
-  expect(@investor_advisor.user.access_rights_cache[@investor_advisor.entity_id]["Fund"]).to eq({})
+  # Cache was removed — verify at the DB level that no AR exists for this advisor on the fund
+  user = @investor_advisor.user.reload
+  ar_count = AccessRight.where(
+    entity_id: @investor_advisor.entity_id,
+    owner_type: 'Fund',
+    user_id: user.id
+  ).count
+  expect(ar_count).to eq(0)
 end
 
 

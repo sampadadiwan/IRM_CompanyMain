@@ -42,13 +42,24 @@ module ForInvestor
                       joins(parent_class_type.name.underscore.to_sym)
                     end
 
-      # This is the list of ids for which the user has been granted specific access
-      cached_ids = user.get_cached_ids(user.entity_id, parent_class_type.name)
+      # Live join against access_rights — replaces the former cache-based id lookup.
+      # Indexed on (entity_id, user_id) and (owner_type, owner_id, user_id).
+      # user.id and parent_class_type.name are server-controlled values (integer ID and constant class name).
+      join_clause = join_clause.joins(
+        "INNER JOIN access_rights ar_emp ON ar_emp.owner_type = '#{parent_class_type.name}'
+           AND ar_emp.owner_id = #{table_name}.id
+           AND ar_emp.user_id = #{user.id}
+           AND ar_emp.deleted_at IS NULL"
+      )
 
       if user.entity_type == "Group Company"
-        join_clause.where("#{table_name}": { entity_id: user.entity.child_ids, id: cached_ids })
+        join_clause
+          .where("ar_emp.entity_id IN (?)", user.entity.child_ids)
+          .where("#{table_name}": { entity_id: user.entity.child_ids })
       else
-        join_clause.where("#{table_name}": { entity_id: user.entity_id, id: cached_ids })
+        join_clause
+          .where("ar_emp.entity_id = ?", user.entity_id)
+          .where("#{table_name}": { entity_id: user.entity_id })
       end
     }
 
@@ -134,7 +145,7 @@ module ForInvestor
   end
 
   def model_with_access_rights
-    if %w[CapitalCommitment CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalCall CapitalDistributionPayment FundRatio FundUnit FundUnitSetting PortfolioInvestment AggregatePortfolioInvestment FundFormula FundReport PortfolioScenario CommitmentAdjustment AccountEntry RatioFormula].include?(self.class.name)
+    if %w[CapitalCommitment CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalCall CapitalDistributionPayment FundRatio FundUnit FundUnitSetting PortfolioInvestment AggregatePortfolioInvestment FundFormula FundReport PortfolioScenario CommitmentAdjustment AccountEntry RatioFormula ExcusedInvestor].include?(self.class.name)
       fund
     elsif %w[ExpressionOfInterest].include?(self.class.name)
       investment_opportunity

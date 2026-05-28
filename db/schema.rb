@@ -31,8 +31,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
     t.bigint "user_id"
     t.index ["access_to_investor_id"], name: "index_access_rights_on_access_to_investor_id"
     t.index ["deleted_at"], name: "index_access_rights_on_deleted_at"
+    t.index ["entity_id", "access_to_category"], name: "index_access_rights_on_entity_id_and_category"
+    t.index ["entity_id", "user_id"], name: "index_access_rights_on_entity_id_and_user_id"
     t.index ["entity_id"], name: "index_access_rights_on_entity_id"
     t.index ["granted_by_id"], name: "index_access_rights_on_granted_by_id"
+    t.index ["owner_type", "owner_id", "access_to_investor_id"], name: "index_access_rights_on_owner_and_investor"
+    t.index ["owner_type", "owner_id", "user_id"], name: "index_access_rights_on_owner_and_user"
     t.index ["owner_type", "owner_id"], name: "index_access_rights_on_owner"
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
@@ -3587,8 +3591,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
   create_table "users", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.boolean "accept_terms", default: false
     t.timestamp "accepted_terms_on"
-    t.text "access_rights_cache"
-    t.integer "access_rights_cached_permissions"
     t.boolean "active", default: true
     t.bigint "advisor_entity_id"
     t.string "advisor_entity_roles", limit: 100

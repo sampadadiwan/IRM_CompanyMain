@@ -104,15 +104,8 @@ class InvestorAdvisor < ApplicationRecord
   # Set by import_upload, to indicate where this advisor was added
   attr_accessor :owner_name
 
+  # refresh_user_cache callback removed: live DB queries in ApplicationPolicy replace the cache.
   after_create :notify_investor_team
-  after_commit :refresh_user_cache, on: :create
-
-  def refresh_user_cache
-    # When an advisor record is created, we need to refresh the user's cache
-    # for this entity so any pre-existing AccessRights are picked up.
-    user.reset_access_rights_cache
-  end
-
   def notify_investor_team
     entity.employees.active.company_admins.each do |employee|
       InvestorAdvisorNotifier.with(record: self, entity_id:, owner_name:, email_method: :notify_investor_advisor_addition, msg: "Investor Advisor #{user.full_name} has been added").deliver_later(employee)

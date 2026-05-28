@@ -54,8 +54,4 @@ class UserPolicy < ApplicationPolicy
   def cross_site_link?
     user.regions.present?
   end
-
-  def reset_access_rights_cache?
-    (belongs_to_entity?(user, record) && user.has_cached_role?(:company_admin)) || support?
-  end
 end

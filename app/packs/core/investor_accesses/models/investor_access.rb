@@ -152,15 +152,34 @@ class InvestorAccess < ApplicationRecord
     cc&.scan(%r{\b[a-zA-Z0-9.!\#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\b})&.join(",")
   end
 
-  after_commit :add_to_user_access_rights_cache, unless: -> { destroyed? || deleted_at.present? }
-  def add_to_user_access_rights_cache
-    # Refresh the users access_rights_cache, for the investor_entity as this is associated with an investor
-    user.refresh_access_rights_cache(self, add: approved)
-  end
+  # When an advisor's InvestorAccess is destroyed, revoke their fund-level AccessRight for any
+  # fund where they no longer have another active InvestorAccess (i.e. no remaining approved
+  # InvestorAccess for investors in that fund via this user).  Previously the cache rebuild
+  # handled this; now we clean the AR directly.
+  after_commit :remove_advisor_fund_access_rights, on: :destroy, if: :is_investor_advisor?
 
-  after_destroy :remove_from_user_access_rights_cache
-  def remove_from_user_access_rights_cache
-    # Refresh the users access_rights_cache, for the investor_entity as this is associated with an investor, force clear the cache
-    user.refresh_access_rights_cache(self, add: false)
+  def remove_advisor_fund_access_rights
+    fund_ids = investor.capital_commitments.pluck(:fund_id).uniq
+    return if fund_ids.empty?
+
+    fund_ids.each do |fund_id|
+      # Check whether any other approved InvestorAccess still links this user to an investor
+      # in this fund.  If none remain, the user's AR on the fund should be revoked.
+      still_has_access = InvestorAccess
+        .joins(investor: :capital_commitments)
+        .where(user_id: user_id, approved: true, is_investor_advisor: true)
+        .where("capital_commitments.fund_id = ?", fund_id)
+        .where.not(id: id)
+        .exists?
+
+      next if still_has_access
+
+      AccessRight.where(
+        entity_id: investor.investor_entity_id,
+        owner_type: "Fund",
+        owner_id:   fund_id,
+        user_id:    user_id
+      ).destroy_all
+    end
   end
 end

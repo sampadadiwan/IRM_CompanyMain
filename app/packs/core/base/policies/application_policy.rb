@@ -120,18 +120,18 @@ class ApplicationPolicy
         # Can see everything
         true
       else
-        # Get the model to wich the access_rights are attached, for the policy record
-        # Example for an offer its the associated secondary_sale,
-        # for the commitment its the fund etc
-        # But for a sale its the sale itself, likewise for fund
         model_with_access_rights = get_model_with_access_rights(owner:)
+        return false unless model_with_access_rights.present?
 
-        # Get the cached_permissions and metadata from the users access_rights_cache
-        cached_permissions = nil
-        cached_permissions, _metadata = user.get_cached_access_rights_permissions(model_with_access_rights.entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+        # Live DB lookup — indexed on (owner_type, owner_id, user_id)
+        ar = AccessRight.where(
+          entity_id: model_with_access_rights.entity_id,
+          owner_type: model_with_access_rights.class.name,
+          owner_id: model_with_access_rights.id,
+          user_id: user.id
+        ).first
 
-        # If the user has access rights for the record and the permission is nil or read or the user has the permission
-        cached_permissions.present? && (perm.nil? || perm == :read || user.access_rights_cached_permissions.set?(perm))
+        ar.present? && (perm.nil? || perm == :read || ar.permissions.set?(perm))
       end
     else
       support?
@@ -160,23 +160,32 @@ class ApplicationPolicy
     if %w[investor].include?(user.curr_role) &&
        !belongs_to_entity?(user, record)
 
-      # Get the model to wich the access_rights are attached, for the policy record
-      # Example for an offer its the associated secondary_sale,
-      # for the commitment its the fund etc
-      # But for a sale its the sale itself, likewise for fund
       model_with_access_rights = get_model_with_access_rights(owner:)
+      return false unless model_with_access_rights.present?
 
-      # Get the cached_permissions and metadata from the users access_rights_cache
-      cached_permissions = nil
-      cached_permissions, cached_metadata = user.get_cached_access_rights_permissions(user.entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+      # Find ARs for this user via their approved investor accesses.
+      # access_to_category is never stored in production (the UI always expands category → per-investor ARs),
+      # so matching by access_to_investor_id is sufficient.
+      approved_investor_ids = InvestorAccess.approved.where(user_id: user.id).pluck(:investor_id)
+      return false if approved_investor_ids.empty?
 
-      # If the user has access rights for the record and the permission is nil or read or the user has the permission
-      # binding.pry
-      permission_metadata_ok = cached_permissions.present? && (metadata == "none" || metadata.to_s.downcase == cached_metadata.to_s.downcase)
+      ar = AccessRight.where(
+        owner_type: model_with_access_rights.class.name,
+        owner_id:   model_with_access_rights.id,
+        access_to_investor_id: approved_investor_ids
+      ).first
+
+      return false unless ar
+
+      permission_metadata_ok = metadata == "none" || metadata.to_s.downcase == ar.metadata.to_s.downcase.strip
       if model_with_access_rights == record
         permission_metadata_ok
       else
-        permission_metadata_ok && record.investor.investor_entity_id == user.entity_id
+        # Some fund-child models (e.g. PortfolioScenario, FundRatio) have no direct
+        # investor association; for those the fund-level AR is sufficient.
+        investor_check = !record.respond_to?(:investor) || record.investor.nil? ||
+                         record.investor.investor_entity_id == user.entity_id
+        permission_metadata_ok && investor_check
       end
     else
       # Not an investor
@@ -185,31 +194,33 @@ class ApplicationPolicy
   end
 
   def permissioned_investor_advisor?(metadata = "none", owner: nil, as_entity_id: nil)
-    # Is the user an investor
-    if user.has_cached_role?(:investor_advisor) # && !belongs_to_entity?(user, record)
-
-      # Get the model to wich the access_rights are attached, for the policy record
-      # Example for an offer its the associated secondary_sale,
-      # for the commitment its the fund etc
-      # But for a sale its the sale itself, likewise for fund
+    if user.has_cached_role?(:investor_advisor)
       model_with_access_rights = get_model_with_access_rights(owner:)
+      return false unless model_with_access_rights.present?
 
-      # Get the cached_permissions and metadata from the users access_rights_cache for the model_with_access_rights
-      cached_permissions = nil
+      # Live DB lookup — indexed on (owner_type, owner_id, user_id)
       entity_id = as_entity_id.presence || user.entity_id
-      # Here we check the access_rights_cache without an entity_id, so it scans thru all entities the user has access to
-      cached_permissions, cached_metadata = user.get_cached_access_rights_permissions(entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+      ar = AccessRight.where(
+        entity_id: entity_id,
+        owner_type: model_with_access_rights.class.name,
+        owner_id: model_with_access_rights.id,
+        user_id: user.id
+      ).first
 
-      # If the user has access rights for the record and the permission is nil or read or the user has the permission
-      permission_metadata_ok = cached_permissions.present? && (metadata == "none" || metadata.to_s.downcase == cached_metadata.to_s.downcase)
+      return false unless ar
+
+      permission_metadata_ok = metadata == "none" || metadata.to_s.downcase == ar.metadata.to_s.downcase.strip
       Rails.logger.debug { "Permission metadata ok: #{permission_metadata_ok}, for user: #{user.email}, record: #{record.class.name}##{record.id}, metadata: #{metadata}" }
       if model_with_access_rights == record
         permission_metadata_ok
       else
-        permission_metadata_ok && (as_entity_id.present? || record.investor.investor_entity_id == user.entity_id)
+        # Some fund-child models have no direct investor association; skip entity check for those.
+        investor_check = as_entity_id.present? ||
+                         !record.respond_to?(:investor) || record.investor.nil? ||
+                         record.investor.investor_entity_id == user.entity_id
+        permission_metadata_ok && investor_check
       end
     else
-      # Not an investor
       false
     end
   end
@@ -225,23 +236,36 @@ class ApplicationPolicy
   # Permissioned for Relationship Manager
   def permissioned_rm?(metadata = "none", owner: nil)
     if user.has_cached_role?(:rm)
-      # Get the model to wich the access_rights are attached, for the policy record
-      # Example for an offer its the associated secondary_sale,
-      # for the commitment its the fund etc
-      # But for a sale its the sale itself, likewise for fund
       model_with_access_rights = get_model_with_access_rights(owner:)
+      return false unless model_with_access_rights.present?
 
-      # Get the cached_permissions and metadata from the users access_rights_cache
-      cached_permissions = nil
-      cached_permissions, cached_metadata = user.get_cached_access_rights_permissions(user.entity_id, model_with_access_rights.class.name, model_with_access_rights.id) if model_with_access_rights.present?
+      # Live DB lookup — RM ARs can be granted three ways:
+      #   1. access_to_category = 'RM'  (categorical grant to all RMs)
+      #   2. user_id = user.id          (direct user grant)
+      #   3. access_to_investor_id IN (approved investor IDs) — used for models like SecondarySale
+      #      where access is granted per investor and RM users hold InvestorAccess records.
+      base_scope = AccessRight.where(
+        entity_id: model_with_access_rights.entity_id,
+        owner_type: model_with_access_rights.class.name,
+        owner_id:   model_with_access_rights.id
+      )
+      approved_investor_ids = InvestorAccess.approved.where(user_id: user.id).pluck(:investor_id)
+      ar = if approved_investor_ids.any?
+        base_scope.where(
+          "access_to_category = 'RM' OR user_id = ? OR access_to_investor_id IN (?)",
+          user.id, approved_investor_ids
+        ).first
+      else
+        base_scope.where("access_to_category = 'RM' OR user_id = ?", user.id).first
+      end
 
-      # If the user has access rights for the record and the permission is nil or read or the user has the permission
-      permission_metadata_ok = cached_permissions.present? && (metadata == "none" || metadata.to_s.downcase == cached_metadata.to_s.downcase)
+      return false unless ar
+
+      permission_metadata_ok = metadata == "none" || metadata.to_s.downcase == ar.metadata.to_s.downcase.strip
       if model_with_access_rights == record
         permission_metadata_ok
       elsif record.new_record?
         permission_metadata_ok && record.entity.rm_mappings.exists?(rm_entity_id: user.entity_id)
-      # We may not have the investor_id yet, see the UI for offers and interests for RMs where they select the investor
       else
         permission_metadata_ok && record.entity.rm_mappings.exists?(rm_entity_id: user.entity_id, investor_id: record.investor_id)
       end

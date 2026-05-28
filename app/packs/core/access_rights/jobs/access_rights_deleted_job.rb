@@ -74,7 +74,6 @@ class AccessRightsDeletedJob < ApplicationJob
     Rails.logger.info "[AccessRightsDeletedJob] Destroying Folder AccessRights for entity_id: #{access_right.entity_id}, folder_ids: #{folder_ids}"
 
     to_delete = folder_access_rights_scope(folder_ids)
-    to_delete.each(&:remove_from_user_access_rights_cache)
     to_delete.delete_all
   end
 
@@ -86,7 +85,6 @@ class AccessRightsDeletedJob < ApplicationJob
     Rails.logger.info "[AccessRightsDeletedJob] Identified Document IDs: #{document_ids}"
 
     to_delete = document_access_rights_scope(document_ids)
-    to_delete.each(&:remove_from_user_access_rights_cache)
     to_delete.delete_all
   end
 

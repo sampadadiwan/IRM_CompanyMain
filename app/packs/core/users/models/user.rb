@@ -2,7 +2,8 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
   include UserEnabled
   include WithCustomField
   include Memoized
-  include AccessRightsCache
+  # AccessRightsCache removed: permission checks now use live DB queries (ApplicationPolicy)
+  # instead of the serialized access_rights_cache column on users.
   include CanonicalFingerprint
 
   include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions])

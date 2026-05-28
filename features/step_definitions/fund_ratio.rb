@@ -359,3 +359,117 @@ Then('the cashflow CSV documents should be created for the fund ratios') do
     expect(doc.folder.parent.name).to eq(@fund.name)
   end
 end
+
+
+Given('the fund has {string} Fund Formulas') do |count|
+  (1..count.to_i).each do |i|
+    ff = FactoryBot.create(:fund_formula, fund: @fund, entity_id: @fund.entity_id)
+    puts "\n####FundFormula####\n"
+    puts ff.to_json
+  end
+end
+
+Given('the fund has fund ratios') do
+    FundRatiosJob.perform_now(@fund.id, nil, Time.zone.now + 2.days, @user.id, true, return_cash_flows: true)
+end
+
+Given('Given I upload fund formulas update only sheet for the fund') do
+  visit(fund_url(@fund))
+  click_on("Actions")
+  menu = find('#basic_reports', text: "Account Entries")  # Replace with actual selector
+  menu.hover
+  click_on("Allocation Formulas")
+  sleep(1)
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Test Fund Formulas Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/fund_formulas_update_only.xlsx"), make_visible: true)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
+end
+
+Given('Given I upload fund formulas for the fund') do
+  @user.add_role :support # only support user can upload fund formulas
+  @user.save!
+  visit(fund_url(@fund))
+  click_on("Actions")
+  menu = find('#basic_reports', text: "Account Entries")  # Replace with actual selector
+  menu.hover
+  click_on("Allocation Formulas")
+  sleep(1)
+  click_on("Upload")
+  sleep(2)
+  fill_in('import_upload_name', with: "Test Fund Formulas Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/fund_formulas.xlsx"), make_visible: true)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.status.should == "Completed"
+end
+
+Then('There should be {string} fund formulas created') do |string|
+  @import_upload = ImportUpload.last
+  expect(FundFormula.where(import_upload_id: @import_upload.id).count).to eq(string.to_i)
+end
+
+Then('the fund formulas must have the data in the sheet') do
+  ffs = FundFormula.where(import_upload_id: @import_upload.id).order(:sequence).to_a
+  file = File.open("./public/sample_uploads/fund_formulas.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+    ff = ffs[idx-1]
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    ff.fund.should == @fund
+    ff.name.should == user_data["Name"]
+    ff.rule_for.should == user_data["Rule For"]
+    ff.description.should == user_data["Description"]
+    ff.generate_ytd_qtly.should == (user_data["Generate Ytd, Quarterly, Since Inception Numbers"]&.downcase == "yes")
+    ff.tag_list.should == user_data["Tag List"].split(",").map(&:strip)
+    ff.rule_type.should == user_data["Rule Type"]
+    ff.formula.should == user_data["Formula"]
+  end
+end
+
+Then('the fund formulas must have the data in the update only sheet') do
+  file = File.open("./public/sample_uploads/fund_formulas_update_only.xlsx", "r")
+  data = Roo::Spreadsheet.open(file.path) # open spreadsheet
+  headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
+
+  data.each_with_index do |row, idx|
+    next if idx.zero? # skip header row
+    # create hash from headers and cells
+    user_data = [headers, row].transpose.to_h
+    ff = @fund.fund_formulas.find(user_data['Id'])
+    p "VALIDATING FUND FORMULA #{ff.id}"
+    p [ff.id, ff.sequence, ff.name]
+
+    ff.name.should == user_data["Name"]
+    ff.rule_for.should == user_data["Rule For"]
+    ff.description.should == user_data["Description"]
+    ff.generate_ytd_qtly.should == (user_data["Generate Ytd, Quarterly, Since Inception Numbers"]&.downcase == "yes")
+    ff.tag_list.should == user_data["Tag List"].split(",").map(&:strip)
+    ff.rule_type.should == user_data["Rule Type"]
+    ff.formula.should == user_data["Formula"]
+    ff.meta_data.should == user_data["Metadata"]
+    ff.enabled.should == (user_data["Enabled"]&.downcase == "yes")
+    ff.roll_up.should == (user_data["Rollup"]&.downcase == "yes")
+    ff.sequence.should == user_data["Sequence"].to_i
+  end
+end
+
+
+Given('the fund has {string} Fund Ratios') do |count|
+  (1..count.to_i).each do |i|
+    fr = FactoryBot.create(:fund_ratio, fund: @fund, entity_id: @fund.entity_id)
+    puts "\n####FundRatio####\n"
+    puts fr.to_json
+  end
+end
