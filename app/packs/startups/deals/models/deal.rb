@@ -59,6 +59,10 @@ class Deal < ApplicationRecord
     name
   end
 
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[name status tags start_date end_date amount_cents currency archived created_at]
+  end
+
   def self.ransackable_associations(_auth_object = nil)
     %w[deal_activities deal_investors investors]
   end

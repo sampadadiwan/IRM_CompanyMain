@@ -213,50 +213,48 @@ export default class extends BaseAgGrid {
           field: `activity_${template.id}`,
           headerName: template.title,
           enableRowGroup: true,
-          editable: true,
-          cellEditor: 'agSelectCellEditor',
-          cellEditorParams: {
-            values: ['Complete', 'Incomplete', 'Skip']
-          },
+          filter: 'agSetColumnFilter',
           cellRenderer: (params) => {
-            const getBadge = (status, details = null) => {
-              if (status === '-' || status === 'Template' || !status) return '-';
-
-              let badgeClass = 'bg-secondary-light';
-              if (status === 'Complete') badgeClass = 'bg-success-light';
-              if (status === 'Incomplete') badgeClass = 'bg-danger-light';
-              if (status === 'Skip') badgeClass = 'bg-warning-light';
-
-              const tooltipAttr = details ? `data-bs-toggle="tooltip" data-bs-html="true" title="${details.replace(/"/g, '"')}"` : '';
-              return `<span class="badge ${badgeClass}" style="font-size: 0.85rem;" ${tooltipAttr}>${status}</span>`;
-            };
-
+            // Group rows — plain badge only
             if (params.node.group) {
-              return getBadge(params.value);
+              const s = params.value;
+              if (!s || s === '-' || s === 'Template') return '-';
+              let bc = 'bg-secondary-light';
+              if (s === 'Complete') bc = 'bg-success-light';
+              if (s === 'Incomplete') bc = 'bg-danger-light';
+              if (s === 'Skip') bc = 'bg-warning-light';
+              return `<span class="badge ${bc}" style="font-size:0.85rem;">${s}</span>`;
             }
 
-            if (params.data && params.data.activities) {
-              const activity = params.data.activities.find(a => a.template_id === template.id);
-              const status = params.value || (activity ? activity.status : '-');
-              return getBadge(status, activity ? activity.details : null);
-            }
-            return '-';
+            if (!params.data || !params.data.activities) return '-';
+
+            const activity = params.data.activities.find(a => a.template_id === template.id);
+            if (!activity) return '-';
+
+            const status = activity.status || 'Incomplete';
+            const id = activity.id;
+
+            let badgeClass = 'bg-secondary-light';
+            if (status === 'Complete') badgeClass = 'bg-success-light';
+            if (status === 'Incomplete') badgeClass = 'bg-danger-light';
+            if (status === 'Skip') badgeClass = 'bg-warning-light';
+
+            // Render a plain badge with data attributes — the floating menu
+            // (appended to document.body) handles clicks via setupActivityMenu().
+            const entityId = params.data.entity_id || '';
+            return `<span class="badge ${badgeClass} activity-badge"
+                          style="cursor:pointer; font-size:0.85rem;"
+                          data-activity-id="${id}"
+                          data-activity-status="${status}"
+                          data-entity-id="${entityId}">
+                      ${status} <i class="ti ti-chevron-down" style="font-size:0.7rem; vertical-align:middle;"></i>
+                    </span>`;
           },
           valueGetter: (params) => {
             if (params.data && params.data.activities) {
               const activity = params.data.activities.find(a => a.template_id === template.id);
               return activity ? activity.status : '-';
             }
-          },
-          valueSetter: (params) => {
-            if (params.data && params.data.activities) {
-              const activity = params.data.activities.find(a => a.template_id === template.id);
-              if (activity) {
-                activity.status = params.newValue;
-                return true;
-              }
-            }
-            return false;
           }
         });
       });
@@ -556,6 +554,34 @@ export default class extends BaseAgGrid {
     });
   }
 
+  // Called from the inline dropdown in activity cells.
+  updateActivityStatus(id, newStatus) {
+    const formData = new FormData();
+    formData.append('deal_activity[status]', newStatus);
+
+    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+    const headers = { 'Accept': 'application/json' };
+    if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
+    fetch(`/deal_activities/${id}.json`, {
+      method: 'PATCH',
+      headers,
+      body: formData
+    })
+    .then(r => r.json())
+    .then(() => {
+      // Refresh the row that owns this activity
+      if (this.gridOptions && this.gridOptions.api) {
+        this.gridOptions.api.forEachNode(node => {
+          if (node.data && node.data.activities && node.data.activities.find(a => a.id === id)) {
+            this.refreshRowData(node);
+          }
+        });
+      }
+    })
+    .catch(err => console.error('Activity status update failed:', err));
+  }
+
   refreshRowData(rowNode) {
     fetch(`/deal_investors/${rowNode.data.id}.json`)
       .then(response => response.json())
@@ -747,6 +773,7 @@ export default class extends BaseAgGrid {
   gridReady() {
     console.log("Deals List AG Grid Ready with Enhanced Features");
     this.initTooltips();
+    this.setupActivityMenu();
     this.updateFilterVisuals();
     setTimeout(() => this.bindChartEvents(), 1000);
 
@@ -816,6 +843,84 @@ export default class extends BaseAgGrid {
       this.retryBinding = true;
       setTimeout(() => this.bindChartEvents(), 2000);
     }
+  }
+
+  // Build a single floating menu appended to document.body so it is never clipped
+  // by AG Grid's overflow:hidden cells or the horizontal-scroll viewport.
+  setupActivityMenu() {
+    // Reuse an existing menu if the controller is re-initialized (turbo navigation)
+    let menu = document.getElementById('deals-activity-floating-menu');
+    if (!menu) {
+      menu = document.createElement('div');
+      menu.id = 'deals-activity-floating-menu';
+      menu.className = 'dropdown-menu shadow-sm show';
+      menu.style.cssText = 'position:fixed;z-index:99999;display:none;min-width:150px;';
+      menu.innerHTML = `
+        <button class="dropdown-item" type="button" data-status="complete">
+          <i class="ti ti-circle-check text-success me-2"></i>Complete
+        </button>
+        <button class="dropdown-item" type="button" data-status="incomplete">
+          <i class="ti ti-circle-x text-danger me-2"></i>Incomplete
+        </button>
+        <button class="dropdown-item" type="button" data-status="skip">
+          <i class="ti ti-minus text-warning me-2"></i>Skip
+        </button>
+        <hr class="dropdown-divider">
+        <a class="dropdown-item" id="deals-activity-menu-show" href="#">
+          <i class="ti ti-eye me-2"></i>View Activity
+        </a>
+        <a class="dropdown-item" id="deals-activity-menu-docs" href="#">
+          <i class="ti ti-upload me-2"></i>Upload Docs
+        </a>
+      `;
+      document.body.appendChild(menu);
+
+      // Status button clicks
+      menu.querySelectorAll('[data-status]').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = parseInt(menu.dataset.activityId);
+          if (id) this.updateActivityStatus(id, btn.dataset.status);
+          menu.style.display = 'none';
+        });
+      });
+    }
+
+    // Delegate: open menu when any .activity-badge is clicked
+    document.addEventListener('click', (e) => {
+      const badge = e.target.closest('.activity-badge');
+
+      if (badge) {
+        e.stopPropagation();
+        const id = parseInt(badge.dataset.activityId);
+        const backTo = encodeURIComponent(window.location.href);
+
+        menu.dataset.activityId = id;
+        menu.querySelector('#deals-activity-menu-show').href = `/deal_activities/${id}`;
+        const entityId = badge.dataset.entityId;
+        menu.querySelector('#deals-activity-menu-docs').href = `/documents/new?document[owner_id]=${id}&document[owner_type]=DealActivity&document[entity_id]=${entityId}&back_to=${backTo}`;
+
+        // Position menu below the badge using viewport coordinates
+        const rect = badge.getBoundingClientRect();
+        let left = rect.left;
+        let top = rect.bottom + 4;
+
+        // Prevent overflow off right edge
+        if (left + 180 > window.innerWidth) left = window.innerWidth - 185;
+        // Prevent overflow off bottom edge
+        if (top + 220 > window.innerHeight) top = rect.top - 224;
+
+        menu.style.left = `${left}px`;
+        menu.style.top = `${top}px`;
+        menu.style.display = 'block';
+        return;
+      }
+
+      // Click anywhere outside the menu closes it
+      if (!menu.contains(e.target)) {
+        menu.style.display = 'none';
+      }
+    });
   }
 
   initTooltips() {

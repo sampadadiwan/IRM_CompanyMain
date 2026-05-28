@@ -19,9 +19,9 @@ class DealsController < ApplicationController
 
   # GET /deals or /deals.json
   def index
-    @deals = policy_scope(Deal)
-    @deals = @deals.where("tags like ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:tag])}%") if params[:tag].present?
     @bread_crumbs = { Deals: deals_path }
+    @deals = ransack_with_snapshot
+    @deals = @deals.where("tags like ?", "%#{ActiveRecord::Base.sanitize_sql_like(params[:tag])}%") if params[:tag].present?
     @deals = @deals.where("deals.archived=?", false) if params[:include_archived].blank?
     @units = params[:units]
   end
