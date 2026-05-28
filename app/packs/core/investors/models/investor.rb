@@ -308,8 +308,10 @@ class Investor < ApplicationRecord
           policy = Pundit.policy(user, model)
           policy.permissioned_investor_advisor?(as_entity_id: investor_entity_id) || policy.show?
         else
-          # For normal users, we check if they have show access to the model
-          Pundit.policy(user, model).show?
+          # For normal users, check show? first; fall back to overview? for models
+          # (like Deal) where investors access via overview? rather than show?.
+          policy = Pundit.policy(user, model)
+          policy.show? || (policy.respond_to?(:overview?) && policy.overview?)
         end
       end
     else

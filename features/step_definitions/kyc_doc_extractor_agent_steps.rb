@@ -132,9 +132,14 @@ end
 # ── LLM stub ─────────────────────────────────────────────────────────────────
 
 Given('the LLM returns {string} for the extraction prompt') do |value|
-  # KycDocExtractorAgent calls extract_plain_text(raw) which falls through to raw.to_s
-  # for non-RubyLLM::Message objects, so returning the plain string works correctly.
-  fake_chat = double("llm_chat", ask: value)
+  # extract_json_from_document builds a multi-field JSON prompt and parses the response as JSON.
+  # Intercept ask() to infer field names from the prompt (lines matching "FIELDNAME: ...") and
+  # return a valid JSON object mapping each field to the expected value.
+  fake_chat = double("llm_chat")
+  allow(fake_chat).to receive(:ask) do |prompt, **_|
+    fields = prompt.scan(/^(\w+):/).flatten
+    fields.each_with_object({}) { |f, h| h[f] = value }.to_json
+  end
   allow(LlmService).to receive(:ruby_llm_chat).and_return(fake_chat)
 end
 
