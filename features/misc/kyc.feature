@@ -80,6 +80,7 @@ Scenario Outline: Import investor kycs
   And Given import file "import_kyc_docs/test.zip" for "KycDocs"
   Then I should see the documents attached to the correct kycs
 
+@notification
 Scenario Outline: Bulk Actions on kycs
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

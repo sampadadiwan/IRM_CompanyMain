@@ -3,6 +3,7 @@
 Feature: Aml Report Generation
   Can access models as a company
 
+@notification
 Scenario Outline: Dont Generate AML report and Bulk Generate Aml Report
   Given Im logged in as a user "first_name=Testuser" for an entity "name=Urban1;entity_type=Investment Fund"
   Given the user has role "company_admin"

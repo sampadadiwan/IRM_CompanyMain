@@ -141,7 +141,7 @@ class InvestmentOpportunitiesController < ApplicationController
   def show_email_list
     @notification_users = []
     @investment_opportunity.investors.each do |investor|
-      @notification_users += investor.notification_users
+      @notification_users += investor.notification_users(with_tag: 'InvestmentOpportunity')
     end
   end
 

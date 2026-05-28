@@ -20,7 +20,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 2. Send KYC link → link_sent + email
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_notification
+  @kyc_workflow @kyc_notification @notification
   Scenario: Sending the KYC form link advances status to link_sent and emails the investor
     Given there is a KYC for the investor with submission_status "not_sent"
     When the fund admin sends the KYC form to the investor
@@ -41,7 +41,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 4. Save Draft via magic link → draft_saved, fund not notified
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_magic_link
+  @kyc_workflow @kyc_magic_link @notification
   Scenario: Investor saves a draft via magic link — status advances to draft_saved, fund not notified
     Given there is a KYC for the investor with submission_status "link_sent"
     And the email queue is cleared
@@ -53,7 +53,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 5. Submit KYC via magic link → completed, redirected to show, fund notified
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_magic_link
+  @kyc_workflow @kyc_magic_link @notification
   Scenario: Investor submits KYC via magic link — status advances to completed and fund is notified
     Given there is a KYC for the investor with submission_status "link_sent"
     And the email queue is cleared
@@ -107,7 +107,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 9. Request Updates — resets to link_sent, emails investor with custom message
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_request_updates
+  @kyc_workflow @kyc_request_updates @notification
   Scenario: Fund admin requests updates — KYC reverts to link_sent and investor is emailed
     Given there is a KYC for the investor with submission_status "completed"
     And the email queue is cleared
@@ -120,7 +120,7 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 10. Request Updates without message — uses default message
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_request_updates
+  @kyc_workflow @kyc_request_updates @notification
   Scenario: Fund admin requests updates without a custom message — default text is sent
     Given there is a KYC for the investor with submission_status "completed"
     And the email queue is cleared
@@ -130,21 +130,21 @@ Feature: Investor KYC Send Workflow
   # ─────────────────────────────────────────────────────────────────────────────
   # 11. KycReminderJob skips completed and verified KYCs
   # ─────────────────────────────────────────────────────────────────────────────
-  @kyc_workflow @kyc_reminder
+  @kyc_workflow @kyc_reminder @notification
   Scenario: KycReminderJob does not email investors whose KYC is already completed or verified
     Given there is a KYC for the investor with submission_status "completed"
     And the email queue is cleared
     When the KYC reminder job runs for the entity
     Then the investor user receives no email
 
-  @kyc_workflow @kyc_reminder
+  @kyc_workflow @kyc_reminder @notification
   Scenario: KycReminderJob does not email investors whose KYC is verified
     Given there is a KYC for the investor with submission_status "verified"
     And the email queue is cleared
     When the KYC reminder job runs for the entity
     Then the investor user receives no email
 
-  @kyc_workflow @kyc_reminder
+  @kyc_workflow @kyc_reminder @notification
   Scenario: KycReminderJob does email investors whose KYC is still pending
     Given there is a KYC for the investor with submission_status "link_sent"
     And the email queue is cleared

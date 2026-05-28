@@ -66,7 +66,7 @@ class PerformActivityAction < Trailblazer::Operation
     end
 
     if target_activity.notify_investor
-      users = deal_investor.investor.notification_users(deal_investor.deal)
+      users = deal_investor.investor.notification_users(deal_investor.deal, with_tag: 'Deal')
       users.each do |user|
         DealActivityMoveNotifier.with(
           record: deal_investor,

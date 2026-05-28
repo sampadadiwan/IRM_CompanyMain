@@ -11,6 +11,7 @@ Feature: Entity Database Dump
     And the entity has database dumps enabled
     And the email queue is cleared
 
+  @notification
   Scenario: Manually triggering a database dump from the UI
     Given I am at the entity page for "Test Entity"
     Given the user has the tag "db_dump_notification"

@@ -1,3 +1,4 @@
+@notification
 Feature: ReportMailer — scheduled report email delivery
 
   Background:

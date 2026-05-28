@@ -99,6 +99,7 @@ Scenario Outline: Edit Account Entry parent
       |           |entity_type=Investment Fund;enable_funds=true  |name=Test  |
 
 
+@notification
 Scenario Outline: AE download in a job
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

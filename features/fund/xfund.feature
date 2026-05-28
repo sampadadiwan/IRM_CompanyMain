@@ -1,6 +1,7 @@
 Feature: Fund
   Can create and view a fund as a company
 
+@notification
 Scenario Outline: Create new fund
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"

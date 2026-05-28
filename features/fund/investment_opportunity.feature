@@ -25,6 +25,7 @@ Scenario Outline: Create new investment_opportunity
     |company_name=IO 2   |subject=IO2 is now open;email_method=notify_open_for_interests | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
 
 
+@notification
 Scenario Outline: Create new document for an investment_opportunity
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"

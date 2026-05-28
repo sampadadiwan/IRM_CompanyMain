@@ -129,7 +129,7 @@ class Interest < ApplicationRecord
 
   def send_notification(email_method, msg)
     # Notifiy the investor
-    investor.notification_users.each do |user|
+    investor.notification_users(with_tag: 'SecondarySale').each do |user|
       InterestNotifier.with(record: self, entity_id:, email_method:, msg:).deliver_later(user)
     end
     # Notify the RM

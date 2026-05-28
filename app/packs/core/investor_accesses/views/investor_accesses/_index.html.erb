@@ -8,6 +8,8 @@
 
     <div class="d-flex flex-wrap align-items-center gap-2">
 
+        <%= user_guide_icon_for('investor_accesses', tooltip: 'Investor Access Guide') %>
+
         <% if investor %>
             <%= link_to new_investor_access_path(
                         "investor_access[investor_id]": investor.id,

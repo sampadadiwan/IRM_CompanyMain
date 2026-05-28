@@ -1,3 +1,4 @@
+@notification
 Feature: Report Insight Agent
   Tests to check Report insight generation and notification
 

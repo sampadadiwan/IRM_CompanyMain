@@ -88,7 +88,7 @@ class ExpressionOfInterest < ApplicationRecord
   def notify_approved
     return unless approved && approved_changed?
 
-    investor.notification_users.each do |user|
+    investor.notification_users(with_tag: 'InvestmentOpportunity').each do |user|
       ExpressionOfInterestNotifier.with(record: self, entity_id:).deliver_later(user)
     end
   end

@@ -129,7 +129,7 @@ class CapitalDistributionPayment < ApplicationRecord
       if completed && capital_distribution.send_notification_on_complete &&
          capital_distribution.approved && !capital_distribution.manual_generation && !capital_commitment.skip_call_notice?
 
-        investor.notification_users(fund).each do |user|
+        investor.notification_users(fund, with_tag: 'Distribution').each do |user|
           CapitalDistributionPaymentNotifier.with(record: self, entity_id:, email_method: :send_notification).deliver_later(user)
         end
 

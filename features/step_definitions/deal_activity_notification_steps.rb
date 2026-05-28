@@ -141,3 +141,36 @@ Given('there is a custom notification for the deal with method {string} and subj
     enabled: true
   )
 end
+
+# Variant of 'the investor ... has an approved user ...' that also sets a tag_list
+# on the InvestorAccess so tag-based notification filtering can be tested.
+Given('the investor {string} has an approved user {string} with tag_list {string}') do |investor_name, email, tag|
+  investor = Investor.find_by!(investor_name: investor_name)
+  user = User.find_by(email: email) || FactoryBot.create(:user, email: email, entity: investor.investor_entity)
+
+  ia = InvestorAccess.find_or_initialize_by(
+    investor: investor,
+    user: user,
+    entity_id: investor.entity_id,
+    email: email
+  )
+  ia.assign_attributes(
+    first_name: user.first_name,
+    last_name: user.last_name,
+    approved: true,
+    tag_list: tag
+  )
+  ia.save!
+
+  AccessRight.find_or_create_by!(
+    owner: @deal,
+    entity_id: @deal.entity_id,
+    access_to_investor_id: investor.id
+  )
+end
+
+Then('no deal notification email should be sent to {string}') do |email|
+  matching = emails_sent_to(email).select { |m| m.subject.to_s.include?("Deal Update:") }
+  expect(matching).to be_empty,
+    "Expected no deal notification email to #{email} but found: #{matching.map(&:subject)}"
+end

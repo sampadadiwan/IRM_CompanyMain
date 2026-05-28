@@ -29,6 +29,14 @@
   </td>
   <td class="text-col">
     <%= display_boolean investor_access.email_enabled %>
+    <% if investor_access.tag_list.present? %>
+      <br>
+      <% investor_access.tag_list.split(',').map(&:strip).each do |tag| %>
+        <span class="badge bg-primary-subtle text-primary me-1"><%= tag %></span>
+      <% end %>
+    <% else %>
+      <br><span class="badge bg-secondary-subtle text-secondary">all topics</span>
+    <% end %>
   </td>
   <td class="text-col">
     <%= "(#{investor_access.user.call_code})#{investor_access.user.phone}" %>

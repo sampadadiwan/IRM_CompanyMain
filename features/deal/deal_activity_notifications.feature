@@ -1,3 +1,4 @@
+@notification
 Feature: Deal Activity Move Notifications
   As a deal manager
   I want to receive notifications when a deal moves to a new stage
@@ -37,3 +38,17 @@ Feature: Deal Activity Move Notifications
     And the deal activity "Financial DD" has "notify_investor" enabled
     When I move the deal investor "Global VC" to stage "Financial DD"
     Then a deal notification email should be sent to "investor@vc.com" with subject "Deal Update: Series B moved to stage: Financial DD"
+
+  @javascript
+  Scenario: Tag-matching investor contact receives deal activity notification
+    Given the investor "Global VC" has an approved user "investor@vc.com" with tag_list "Deal"
+    And the deal activity "Financial DD" has "notify_investor" enabled
+    When I move the deal investor "Global VC" to stage "Financial DD"
+    Then a deal notification email should be sent to "investor@vc.com" with subject "Deal Update: Series B moved to stage: Financial DD"
+
+  @javascript
+  Scenario: Non-matching tag excludes investor contact from deal activity notification
+    Given the investor "Global VC" has an approved user "investor@vc.com" with tag_list "KYC"
+    And the deal activity "Financial DD" has "notify_investor" enabled
+    When I move the deal investor "Global VC" to stage "Financial DD"
+    Then no deal notification email should be sent to "investor@vc.com"

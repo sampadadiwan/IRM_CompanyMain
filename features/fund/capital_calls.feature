@@ -23,7 +23,7 @@ Examples:
     |entity_type=Investment Fund;enable_funds=true;enable_units=true;currency=USD  |name=Merger;unit_types=Series A,Series B| percentage_called=20;generate_remittances_verified=true |
 
 
-@doc_gen
+@doc_gen @notification
 Scenario Outline: Create new capital call
   Given Im logged in as a user "" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -137,6 +137,7 @@ Scenario Outline: Create a capital call with Upload call basis
     | user             | entity                           |
     | first_name=Test  | name=Urban;entity_type=Investment Fund |
 
+@notification
 Scenario Outline: Generate fund units from capital call
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

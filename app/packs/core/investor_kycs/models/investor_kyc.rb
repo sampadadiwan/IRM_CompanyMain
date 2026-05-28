@@ -244,7 +244,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   end
 
   def notification_users
-    investor.notification_users.select do |user|
+    investor.notification_users(with_tag: 'KYC').select do |user|
       # Check if the user has access to this KYC
       # For investor advisors, check if they have access to the kyc across all the entities they are advisors for
       across_all_entities = user.has_cached_role?(:investor_advisor)

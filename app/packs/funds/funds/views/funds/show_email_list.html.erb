@@ -111,7 +111,7 @@
         { path: "#email-disabled", key: :email_disabled_investor_accesses, subtitle: "Email Disabled", progress_bar_color: "warning", text_info: "mailbox-off" },
         { path: "#no-access-rights", key: :commitments_wo_access_rights, subtitle: "No Access Rights", progress_bar_color: "danger", text_info: "key-off" },
         { path: "#no-investor-access", key: :commitment_wo_investor_accesses, subtitle: "No Investor Access", progress_bar_color: "warning", text_info: "cancel" },
-
+        { path: "#tag-excluded", key: :tag_excluded_investor_accesses, subtitle: "Not Subscribed to Topic", progress_bar_color: "secondary", text_info: "tag-off" },
     ]) %>
     <% if @results_map[:unapproved_investor_accesses].present? %>
         <div class="card" id="unapproved-investors">
@@ -192,7 +192,32 @@
         </div>
     <% end %>
 
-    <% if @results_map[:unapproved_investor_accesses].blank? && @results_map[:email_disabled_investor_accesses].blank? && @results_map[:commitments_wo_access_rights].blank? && @results_map[:commitment_wo_investor_accesses].blank? %>
+    <% if @results_map[:tag_excluded_investor_accesses].present? %>
+        <div class="card" id="tag-excluded">
+            <div class="card-header">
+                <h3 class="card-title">
+                    Not Subscribed to "<%= @results_map[:notification_tag] %>"
+                    <%= tag.i "",
+                        class:    "ti ti-info-circle text-secondary ms-1",
+                        role:     "button",
+                        tabindex: 0,
+                        data: {
+                          bs_toggle:       "tooltip",
+                          bs_html:         true,
+                          bs_custom_class: "wide-tooltip",
+                          bs_title:        "These contacts have a tag_list set that does not include \"#{@results_map[:notification_tag]}\". " \
+                                           "They will not receive this notification but will continue to receive notifications for their subscribed topics."
+                        }
+                    %>
+                </h3>
+            </div>
+            <div class="card-body">
+                <%= render "/investor_accesses/table", investor_accesses: @results_map[:tag_excluded_investor_accesses], table_id: "tag_excluded_investor_accesses" %>
+            </div>
+        </div>
+    <% end %>
+
+    <% if @results_map[:unapproved_investor_accesses].blank? && @results_map[:email_disabled_investor_accesses].blank? && @results_map[:commitments_wo_access_rights].blank? && @results_map[:commitment_wo_investor_accesses].blank? && @results_map[:tag_excluded_investor_accesses].blank? %>
 
         <div class="card">
             <div class="card-header">

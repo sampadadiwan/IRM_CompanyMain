@@ -1,3 +1,4 @@
+@notification
 Feature: CustomNotifications
   Test behavior of the Custom Notifications
 

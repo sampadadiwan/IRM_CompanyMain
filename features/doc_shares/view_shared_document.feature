@@ -35,6 +35,7 @@ Feature: View Shared Document
     When I visit the view link for the doc share with token "invalid_token"
     Then I should see a "Not Found" page with status 404
 
+  @notification
   Scenario: Successfully sending a document share email
     Given a document named "Email Test Document" exists for "Test Entity"
     And a doc share exists for "Email Test Document" with email "recipient@example.com"

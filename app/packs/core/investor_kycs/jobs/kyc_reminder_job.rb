@@ -20,7 +20,7 @@ class KycReminderJob < ApplicationJob
         next if investor_kyc.submission_completed? || investor_kyc.submission_verified?
 
         # Send to each investor user so the mailer generates a signed link for the right person.
-        investor_kyc.investor.notification_users.each do |inv_user|
+        investor_kyc.investor.notification_users(with_tag: 'KYC').each do |inv_user|
           InvestorKycNotifier.with(
             record: investor_kyc,
             entity_id: investor_kyc.entity_id,

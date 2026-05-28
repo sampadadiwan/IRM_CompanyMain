@@ -43,10 +43,18 @@ module FundsHelper
                  }
   end
 
+  # Maps each model class that has a dedicated notification topic to its canonical tag name.
+  # Contacts whose tag_list intersects this tag (or have no tag) receive the notification.
+  NOTIFICATION_TAG_FOR_MODEL = {
+    "CapitalCall"               => "CapitalCall",
+    "CapitalDistribution"       => "Distribution",
+    "CapitalDistributionPayment" => "CapitalCall",
+  }.freeze
+
   # Provides a comprehensive list of email-related statistics and investor access details
   # for a given model (Fund, CapitalCall, or CapitalDistribution).
   #
-  # @param model [Object] An instance of Fund, CapitalCall, or CapitalDistribution.
+  # @param model [Object] An instance of Fund, CapitalCall, CapitalDistribution, or CapitalDistributionPayment.
   # @return [Hash] A hash containing various counts and collections related to folios,
   #   investors, and user access rights for email communication.
   def email_list_for(model)
@@ -57,6 +65,9 @@ module FundsHelper
     investors = data[:investors]
     investor_accesses = data[:investor_accesses]
 
+    # Derive the notification topic tag for this model so we can reflect subscription filtering.
+    tag = NOTIFICATION_TAG_FOR_MODEL[model.class.name]
+
     # Calculate statistics related to folios (capital commitments)
     folio_stats = calculate_folio_stats(capital_commitments, access_rights, investors)
 
@@ -64,10 +75,11 @@ module FundsHelper
     investor_stats = calculate_investor_stats(investors)
 
     # Calculate statistics and filter investor accesses related to user email permissions
-    user_access_stats = calculate_user_access_stats(model, investor_accesses)
+    user_access_stats = calculate_user_access_stats(model, investor_accesses, tag:)
 
     # Combine all calculated statistics into a single hash for return
     {
+      notification_tag: tag,
       no_of_folios: folio_stats[:no_of_folios],
       no_of_folios_no_email: folio_stats[:no_of_folios_no_email],
       no_of_folios_with_email: folio_stats[:no_of_folios_with_email],
@@ -84,7 +96,8 @@ module FundsHelper
       approved_investor_access_count: user_access_stats[:approved_investor_access_count],
       approved_investor_access_ia: user_access_stats[:approved_investor_access_ia],
       approved_investor_access_ia_count: user_access_stats[:approved_investor_access_ia_count],
-      email_disabled_investor_accesses: user_access_stats[:email_disabled_investor_accesses]
+      email_disabled_investor_accesses: user_access_stats[:email_disabled_investor_accesses],
+      tag_excluded_investor_accesses: user_access_stats[:tag_excluded_investor_accesses]
     }
   end
 
@@ -180,23 +193,45 @@ module FundsHelper
   end
 
   # Calculates statistics and filters investor accesses related to user email permissions.
+  # When a notification tag is supplied, the approved lists are restricted to contacts
+  # that are subscribed to that topic (no tag_list = subscribed to all; tag_list present =
+  # subscribed only to intersecting topics). Contacts excluded by tag are surfaced separately.
   #
   # @param model [Object] An instance of Fund, CapitalCall, or CapitalDistribution (used for FundPolicy).
   # @param investor_accesses [ActiveRecord::Relation] Collection of investor accesses.
+  # @param tag [String, nil] Notification topic tag (e.g. "CapitalCall"); nil means no filtering.
   # @return [Hash] A hash containing user access counts and specific investor access collections.
-  def calculate_user_access_stats(model, investor_accesses)
+  def calculate_user_access_stats(model, investor_accesses, tag: nil)
     # Investor accesses that are not approved
     unapproved_investor_accesses = investor_accesses.unapproved.includes(:user, :granter).distinct
+
+    approved_email_enabled = investor_accesses.approved.email_enabled
+
+    if tag.present?
+      # Subscribed: no tag_list at all, or tag_list contains the notification topic
+      subscribed_sql = "investor_accesses.tag_list IS NULL OR investor_accesses.tag_list = '' " \
+                       "OR investor_accesses.tag_list LIKE ?"
+      subscribed      = approved_email_enabled.where(subscribed_sql, "%#{tag}%")
+      # Tag-excluded: has a tag_list but it doesn't include this topic — won't receive the notification
+      tag_excluded    = approved_email_enabled.where.not(subscribed_sql, "%#{tag}%")
+    else
+      subscribed   = approved_email_enabled
+      tag_excluded = investor_accesses.none
+    end
+
     # Investor accesses that are approved, have email enabled, and are not investor advisors
-    approved_investor_access = investor_accesses.approved.email_enabled.not_investor_advisors.includes(:user, :granter).distinct
+    approved_investor_access = subscribed.not_investor_advisors.includes(:user, :granter).distinct
     # Investor accesses that are approved, have email enabled, and are investor advisors
-    approved_investor_access_ia = investor_accesses.approved.email_enabled.investor_advisors.includes(:user, :granter).distinct
+    approved_investor_access_ia = subscribed.investor_advisors.includes(:user, :granter).distinct
 
     # Filter Investor Advisors to ensure they have permission to the fund
     approved_investor_access_ia = approved_investor_access_ia.filter do |ia|
       policy = Pundit.policy(ia.user, model)
       policy.permissioned_investor_advisor?(as_entity_id: model.entity_id) || policy.show?
     end
+
+    # Tag-excluded contacts (both regular and IA) shown as a single "not subscribed" list
+    tag_excluded_investor_accesses = tag_excluded.includes(:user, :granter).distinct
 
     # Number of users who either have email disabled or are not approved
     no_of_users_no_email = investor_accesses.where("email_enabled=? or approved = ?", false, false).count
@@ -217,7 +252,8 @@ module FundsHelper
       no_of_users_no_email: no_of_users_no_email,
       no_of_users: no_of_users,
       no_of_users_with_email: no_of_users_with_email,
-      email_disabled_investor_accesses: email_disabled_investor_accesses
+      email_disabled_investor_accesses: email_disabled_investor_accesses,
+      tag_excluded_investor_accesses: tag_excluded_investor_accesses
     }
   end
 

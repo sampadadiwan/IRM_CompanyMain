@@ -1,3 +1,4 @@
+@notification
 Feature: Outlook Email Matcher
   As a fund manager
   I want to automatically match emails to investors

@@ -43,14 +43,14 @@ module SecondarySaleNotifiers
   # Notify only verified offers and shortlisted interests
   def notify_allocation
     offers.verified.each do |offer|
-      email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.notification_users]
+      email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users(with_tag: 'SecondarySale')
       email_users.each do |user|
         SecondarySaleNotifier.with(record: self, entity_id:, email_method: :notify_allocation_offers, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
       end
     end
 
     interests.short_listed.includes(investor: :approved_users).each do |interest|
-      interest.investor.notification_users.each do |user|
+      interest.investor.notification_users(with_tag: 'SecondarySale').each do |user|
         SecondarySaleNotifier.with(record: self, entity_id:, email_method: :notify_allocation_interests, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
       end
     end
@@ -67,7 +67,7 @@ module SecondarySaleNotifiers
   def notify_spa_sellers
     # Send email to only those who are verified but not confirmed SPA
     offers.verified.not_final_agreement.each do |offer|
-      email_users = offer.offer_type == "Employee" ? [offer.user] : [offer.investor.notification_users]
+      email_users = offer.offer_type == "Employee" ? [offer.user] : offer.investor.notification_users(with_tag: 'SecondarySale')
       email_users.each do |user|
         SecondarySaleNotifier.with(record: self, entity_id:, email_method: :notify_spa_offers, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
       end
@@ -81,7 +81,7 @@ module SecondarySaleNotifiers
     when "All Sellers"
       # Get all emails of investors
       offers.each do |offer|
-        email_users = offer.investor.notification_users
+        email_users = offer.investor.notification_users(with_tag: 'SecondarySale')
         email_users.each do |user|
           adhoc_offer(user, custom_notification, offer)
         end
@@ -89,7 +89,7 @@ module SecondarySaleNotifiers
 
     when "Verified Sellers"
       offers.verified.each do |offer|
-        email_users = offer.investor.notification_users
+        email_users = offer.investor.notification_users(with_tag: 'SecondarySale')
         email_users.each do |user|
           adhoc_offer(user, custom_notification, offer)
         end
@@ -97,7 +97,7 @@ module SecondarySaleNotifiers
 
     when "Approved Sellers"
       offers.approved.each do |offer|
-        email_users = offer.investor.notification_users
+        email_users = offer.investor.notification_users(with_tag: 'SecondarySale')
         email_users.each do |user|
           adhoc_offer(user, custom_notification, offer)
         end

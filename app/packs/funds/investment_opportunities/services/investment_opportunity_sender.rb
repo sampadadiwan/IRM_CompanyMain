@@ -4,7 +4,7 @@ class InvestmentOpportunitySender
       investment_opportunity.send(params[:notification])
     elsif params[:custom_notification_id].present?
       investment_opportunity.investors.each do |investor|
-        investor.notification_users.each do |user|
+        investor.notification_users(with_tag: 'InvestmentOpportunity').each do |user|
           InvestmentOpportunityNotifier.with(record: investment_opportunity, investor_id: investor.id, entity_id: investment_opportunity.entity_id, email_method: params[:email_method], custom_notification_id: params[:custom_notification_id]).deliver_later(user)
         rescue StandardError => e
           msg = "Error sending #{investment_opportunity.name} to #{user.email} #{e.message}"

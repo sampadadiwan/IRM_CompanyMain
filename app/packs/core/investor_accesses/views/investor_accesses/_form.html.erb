@@ -49,6 +49,15 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :tag_list, "Notification Topics (tag_list)" %>
+      <%= form.text_field :tag_list, class: "form-control", placeholder: "e.g. CapitalCall,KYC" %>
+      <small class="text-muted">
+        Comma-separated topics this contact subscribes to (e.g. <code>CapitalCall</code>, <code>KYC</code>, <code>Approval</code>, <code>Distribution</code>, <code>Deal</code>, <code>InvestmentOpportunity</code>, <code>SecondarySale</code>, <code>Kpi</code>).
+        Leave blank to receive all notifications.
+      </small>
+    </div>
+
+    <div class="form-group">
       <%= form.label :cc %>
       <%= form.text_field :cc, class: "form-control"  %>
       <small class="text-muted">Cc on emails sent to this user. Comma separated emails.</small>

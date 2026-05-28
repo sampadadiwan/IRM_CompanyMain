@@ -510,7 +510,7 @@ class InvestorKycsController < ApplicationController
     )
     # rubocop:enable Rails/SkipsModelValidations
     msg = params[:message].presence
-    @investor_kyc.investor.notification_users.each do |user|
+    @investor_kyc.investor.notification_users(with_tag: 'KYC').each do |user|
       InvestorKycNotifier.with(
         record: @investor_kyc,
         entity_id: @investor_kyc.entity_id,

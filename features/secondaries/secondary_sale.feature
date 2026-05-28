@@ -17,7 +17,8 @@ Scenario Outline: Create new sale
     |  	        |entity_type=Company  |name=Winter Sale |Secondary sale was successfully created|
 
 
-Scenario Outline: Sale Notifications 
+@notification
+Scenario Outline: Sale Notifications
   Given Im logged in as a user "first_name=Emp1" for an entity "entity_type=Company"
   Given the user has role "company_admin"
   Given there is a sale "<sale>"

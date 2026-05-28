@@ -288,20 +288,28 @@ class Investor < ApplicationRecord
     InvestorKyc.where(investor_id: id).update_all(investor_name:)
   end
 
-  # We do this because of advisors
-  # We dont want to send notifications to all approved users, we send it only if they have at least show access to the model
-  # with_tag: if provided, restrict recipients to users whose investor_access for this
-  # investor carries that tag (per-relationship, not global on the user).
-  # Falls back to the normal access-based logic when no tagged accesses are found.
+  # Returns users who should receive a notification for this investor.
+  #
+  # model     – when present, restricts to users whose Pundit policy grants show?/overview? access.
+  # with_tag: – subscription semantics: a contact with no tag_list is subscribed to ALL topics;
+  #             a contact with tags is subscribed ONLY to topics whose tag is in their list.
+  #             Contacts whose tag_list does not intersect with_tag are excluded.
   def notification_users(model = nil, with_tag: nil)
+    accesses = approved_investor_accesses.includes(user: :roles)
+
     if with_tag.present?
-      tagged_accesses = approved_investor_accesses.with_tag(with_tag)
-      return tagged_accesses.includes(:user).map(&:user) if tagged_accesses.exists?
+      # Include access records that have no tag (subscribed to all) OR whose tag_list contains the topic.
+      accesses = accesses.where(
+        "investor_accesses.tag_list IS NULL OR investor_accesses.tag_list = '' " \
+        "OR investor_accesses.tag_list LIKE ?",
+        "%#{with_tag}%"
+      )
     end
 
+    users = accesses.map(&:user)
+
     if model
-      # Select all users who have show access to the model
-      approved_users.includes(:roles).select do |user|
+      users.select do |user|
         if user.has_cached_role?(:investor_advisor)
           # Use the original user object directly. dup clears the primary key and association cache,
           # causing has_cached_role? to fail. permissioned_investor_advisor? does not use curr_role.
@@ -315,7 +323,7 @@ class Investor < ApplicationRecord
         end
       end
     else
-      approved_users.includes(:roles)
+      users
     end
   end
 

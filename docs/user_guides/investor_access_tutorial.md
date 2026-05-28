@@ -8,8 +8,9 @@ Managing who can see what in CapHive is handled through a simple "Two-Key" syste
 3. [Step 1: Granting Entry (Investor Access)](#2-step-1-granting-entry-investor-access)
 4. [Step 2: Sharing Content (Access Rights)](#3-step-2-sharing-content-access-rights)
 5. [Managing Visibility & Folders](#4-managing-visibility--folders)
-6. [The Investor Experience](#5-the-investor-experience)
-7. [FAQ](#6-frequently-asked-questions-faq)
+6. [Notification Topic Subscriptions (Tags)](#5-notification-topic-subscriptions-tags)
+7. [The Investor Experience](#6-the-investor-experience)
+8. [FAQ](#7-frequently-asked-questions-faq)
 
 ---
 
@@ -19,6 +20,7 @@ Managing who can see what in CapHive is handled through a simple "Two-Key" syste
 *   **Inheritance Saves Time**: Sharing a folder automatically shares all current and future documents inside it.
 *   **Immediate Revocation**: Unapproving a user instantly blocks their view of all data.
 *   **Multi-Firm Support**: Users representing multiple firms can switch between them seamlessly.
+*   **Notification Topics**: Tag a contact with specific topics (e.g. `CapitalCall`, `KYC`) so they only receive relevant emails. Contacts with no tags receive everything.
 
 ---
 
@@ -93,13 +95,98 @@ If you share a **Folder** with an investor, they automatically get access to:
 
 ---
 
-## 5. The Investor Experience
+## 5. Notification Topic Subscriptions (Tags)
+
+By default, every approved investor contact receives **all** email notifications. If a contact only wants to hear about specific topics — or if your fund has contacts who manage different areas (e.g. one person handles capital calls, another handles KYC) — you can use **Notification Topics** to filter what each person receives.
+
+### How it works
+
+Set a comma-separated list of topic names in the **Notification Topics** field on the Investor Access form. The contact will then receive **only** emails matching those topics. Leave the field blank to receive everything.
+
+| `Notification Topics` field | What the contact receives |
+|---|---|
+| *(blank)* | All notifications — subscribed to everything |
+| `CapitalCall` | Only capital call and remittance notices |
+| `KYC` | Only KYC-related emails |
+| `CapitalCall,Approval` | Capital calls and approval requests only |
+
+> **Rule:** A contact with **no topics** gets all notifications. A contact with **any topics** gets only those topics and nothing else.
+
+### Available topics
+
+| Topic | Covers |
+|---|---|
+| `Approval` | Approval requests sent to investors |
+| `CapitalCall` | Capital call notices and remittance confirmations |
+| `Distribution` | Capital distribution payment notices |
+| `InvestmentOpportunity` | New deal / investment opportunity alerts |
+| `KYC` | KYC submission requests and reminders |
+| `SecondarySale` | Secondary sale interest and SPA notifications |
+| `Deal` | Deal stage-move notifications |
+
+### How to set topics for a contact
+
+1. Navigate to the **Investor** record.
+2. Go to the **Stakeholders / Access** tab.
+3. Click **Edit** next to the contact's Investor Access record.
+4. Fill in the **Notification Topics** field with the relevant topic names, separated by commas (e.g. `CapitalCall,KYC`).
+5. Click **Save**.
+
+> **Note:** Topic names are case-sensitive. Use the exact names from the table above.
+
+### Example scenario
+
+Your fund has three contacts at Apex Capital:
+
+| Contact | Role | `Notification Topics` |
+|---|---|---|
+| alice@apex.com | CFO — handles all calls | *(blank)* |
+| bob@apex.com | Operations — capital calls only | `CapitalCall` |
+| carol@apex.com | Legal — KYC and approvals only | `KYC,Approval` |
+
+When a capital call is issued:
+- Alice receives it (no topics = receives all).
+- Bob receives it (`CapitalCall` matches).
+- Carol does **not** receive it (`KYC,Approval` has no `CapitalCall` topic).
+
+When a KYC request is sent:
+- Alice receives it.
+- Bob does **not** receive it (`CapitalCall` only).
+- Carol receives it (`KYC` matches).
+
+### How the filtering works
+
+```mermaid
+sequenceDiagram
+    participant FM as Fund Manager
+    participant System as CapHive
+    participant DB as investor_accesses
+    participant Alice as alice@apex.com (no tags)
+    participant Bob as bob@apex.com (CapitalCall)
+    participant Carol as carol@apex.com (KYC,Approval)
+
+    FM->>System: Capital call approved
+    System->>DB: SELECT contacts WHERE<br/>tag_list IS NULL<br/>OR tag_list LIKE '%CapitalCall%'
+    DB-->>System: Alice (no tags), Bob (CapitalCall match)
+    Note over DB,System: Carol excluded — has tags, none match CapitalCall
+    System-->>Alice: Capital call email
+    System-->>Bob: Capital call email
+    Note over Carol: No email sent
+```
+
+### Employee notifications are unaffected
+
+Topic filtering applies **only to investor contacts** (entries in Investor Access). Your internal team members receive notifications through a separate path and are never filtered by `Notification Topics`.
+
+---
+
+## 6. The Investor Experience
 
 When an investor logs in, they see a simplified dashboard tailored to them:
 *   **Investments**: Details of the funds they have invested in.
 *   **Documents**: A library of reports, tax forms, and notices shared with them.
 *   **Deals**: Information on active or past investment opportunities.
-*   **Notifications**: They receive an email alert whenever you share a new document or fund with them (if "Notify" is checked).
+*   **Notifications**: They receive an email alert whenever you share a new document or fund with them (if "Notify" is checked), subject to any Notification Topics they have set.
 
 ```
 sequenceDiagram
@@ -117,7 +204,7 @@ sequenceDiagram
 
 ---
 
-## 6. Frequently Asked Questions (FAQ)
+## 7. Frequently Asked Questions (FAQ)
 
 **Q: My investor says they can't see the fund details.**
 Check three things:
@@ -133,6 +220,15 @@ Yes. Administrators can use the "Impersonate" or "View As" feature (if enabled) 
 
 **Q: What if an investor works for multiple firms?**
 The system handles this automatically. When they log in, they can switch between the different firms they advise or represent using the entity switcher in the top navigation.
+
+**Q: A contact says they stopped receiving capital call emails after I tagged them.**
+Once any topics are added to a contact's **Notification Topics** field, they only receive emails for those topics. If you tagged them with `KYC` but not `CapitalCall`, they will no longer receive capital call notices. Either add `CapitalCall` to their topics, or clear the field entirely so they receive all notifications again.
+
+**Q: Do tags affect what the investor can see in the portal?**
+No. Notification Topics only control which automated **emails** are delivered. They have no effect on what data the investor can see when logged in — that is controlled by Access Rights.
+
+**Q: Can investor advisors also be tagged?**
+Yes. Investor advisors are stored in Investor Access records and follow exactly the same subscription rules as regular investor contacts.
 
 ---
 *For technical troubleshooting or advanced permission setups, please refer to the Administrator Guide or contact support.*

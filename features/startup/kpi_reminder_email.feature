@@ -1,3 +1,4 @@
+@notification
 Feature: KPI Self-Reporting Reminder Email
 
   Background:

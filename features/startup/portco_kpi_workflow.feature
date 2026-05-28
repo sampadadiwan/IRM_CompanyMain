@@ -143,6 +143,7 @@ Feature: Portco KPI Self-Reporting Workflow
     Given a KPI report shell exists for "TestStartup" as of "2025-03-31"
     And the portfolio company has a second approved portco user "first_name=OtherContact"
     And the user "PortCoUser" has the tag "Kpi"
+    And the user "OtherContact" has the tag "Approval"
     When the portco notification service runs for the report
     Then the portco user "PortCoUser" receives a reminder email
     And the user "OtherContact" receives no email

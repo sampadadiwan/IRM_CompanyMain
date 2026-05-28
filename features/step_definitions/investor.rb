@@ -149,7 +149,9 @@ Given('there is an existing investor {string} with {string} users and investor_a
   steps %(
     Given there is an existing investor "#{arg1}" with "#{count}" users
   )
-  @investor.investor_accesses.update_all(tags: tags)
+  # tag_list is the correct column name on investor_accesses (not tags)
+  @investor.investor_accesses.update_all(tag_list: tags)
+  @investor_access.reload
 end
 
 Given('the investor users have the role {string}') do |role|

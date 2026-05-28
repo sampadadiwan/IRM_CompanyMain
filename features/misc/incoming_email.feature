@@ -1,3 +1,4 @@
+@notification
 Feature: Incoming Email
   Can receive incoming emails and log them to the DB
 
