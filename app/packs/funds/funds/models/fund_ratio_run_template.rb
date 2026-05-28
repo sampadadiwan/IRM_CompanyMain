@@ -77,7 +77,7 @@ class FundRatioRunTemplate < ApplicationRecord
         fund_ids:              fund_ids,
         portfolio_company_ids: portfolio_company_ids,
         tags:                  portfolio_companies_tags,
-        sectors:               sectors
+        sectors:               sectors,
       )
     ).order(end_date: :desc)
   end

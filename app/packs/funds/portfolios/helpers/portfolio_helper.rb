@@ -85,20 +85,26 @@ module PortfolioHelper
     fund_ratios
   end
 
-  def multi_fund_cross_portfolio_ratios(fund_ids, investor_ids, owner_types: ["Fund"], ratio_names: %w[IRR], latest: true, latest_run_only: false, end_date: nil, scenario: nil, scenarios: nil)
-    runs = cross_portfolio_runs_for(fund_ids, investor_ids, current_user.entity_id)
-
+  def multi_fund_cross_portfolio_ratios(fund_ids, investor_ids, sectors, tags, owner_types: ["Fund"], ratio_names: %w[IRR], latest: true, latest_run_only: false, end_date: nil, scenario: nil, scenarios: nil)
+    runs = cross_fund_runs_for(fund_ids, investor_ids, current_user.entity_id, sectors, tags)
+    byebug
     # No runs computed yet — return nil so the caller can render a "Generate" prompt.
     return nil if runs.none?
 
-    fund_ratios = FundRatio.where(
-      entity_id:                current_user.entity_id,
-      computation_context_type: "FundRatioRun",
-      computation_context_id:   runs.ids,
-      owner_type:               owner_types,
-      name:                     ratio_names
-    )
-
+    if owner_types.include?("Investor")
+      fund_ratios = FundRatio.where(
+        entity_id:                current_user.entity_id,
+        computation_context_type: "FundRatioRun",
+        computation_context_id:   runs.ids,
+        owner_type:               owner_types
+      )
+    else
+      fund_ratios = FundRatio.where(
+        entity_id:                current_user.entity_id,
+        computation_context_type: "FundRatioRun",
+        computation_context_id:   runs.ids
+      )
+    end
     fund_ratios = fund_ratios.where(latest: true) if latest
     fund_ratios = fund_ratios.where(end_date:) if end_date.present?
 
@@ -118,16 +124,14 @@ module PortfolioHelper
 
     fund_ratios.order(end_date: :desc)
   end
-
   # Finds FundRatioRun records that exactly match the supplied fund combination
   # using the SHA-256 fingerprint stored in the `name` column.
   # Returns none if no exact run exists — no broad/fuzzy fallback.
-  def cross_portfolio_runs_for(fund_ids, investor_ids, entity_id)
+  def cross_fund_runs_for(fund_ids, investor_ids, entity_id, sectors, tags)
     fund_ids     = Array(fund_ids).map(&:to_i).reject(&:zero?)
     investor_ids = Array(investor_ids).map(&:to_i).reject(&:zero?)
-
     FundRatioRun.where(entity_id:)
-                .where(name: FundRatioRun.fingerprint(fund_ids:, portfolio_company_ids: investor_ids))
+                .where(name: FundRatioRun.fingerprint(fund_ids: fund_ids, portfolio_company_ids: investor_ids, sectors: sectors, tags: tags))
                 .order(end_date: :desc)
   end
 

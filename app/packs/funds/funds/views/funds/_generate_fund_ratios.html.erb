@@ -33,10 +33,29 @@
     </div>
     <div class="form-group">
         <%= form.label :fund_ids, "Select the funds" %>
-        <%= form.select :fund_ids, policy_scope(Fund).map{|f| [f.name, f.id]}, {include_blank: false, include_hidden: false}, class: "form-control select2", name: "fund_ids[]", multiple: true %>
+        <%= select_tag "fund_ids[]", options_for_select(policy_scope(Fund).map{|f| [f.name, f.id]}, params[:fund_ids] || []), id: "cross_fund_fund_ids", include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
         <small class="text-muted">Select the funds across which you want to generate ratios</small>
     </div>
-
+    <div class="form-group">
+        <%= form.label :portfolio_companies_tags, "Tags (comma separated)" %>
+        <%= text_field_tag "portfolio_companies_tags", params[:portfolio_companies_tags], class: "form-control", placeholder: "e.g. growth, fintech, saas" %>
+        <small class="text-muted">Enter a comma separated list of tags to filter portfolio companies.</small>
+    </div>
+    <div class="form-group">
+        <%
+          sectors_for_select = policy_scope(Investor).portfolio_companies
+                                 .where.not(sector: [nil, ""])
+                                 .pluck(:sector)
+                                 .flat_map { |s| s.split(",") }
+                                 .map(&:strip)
+                                 .uniq
+                                 .compact_blank
+                                 .sort
+        %>
+        <%= form.label :portfolio_companies_sectors, "Filter by Sector" %>
+        <%= select_tag "portfolio_companies_sectors[]", options_for_select(sectors_for_select, params[:portfolio_companies_sectors] || []), include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
+        <small class="text-muted">Include all portfolio companies in any of these sectors. Combined with the explicit selection and tags above.</small>
+    </div>
 
     <% elsif type == "cross-portfolio" %>
     <div class="alert alert-info py-2 px-3 mb-3" style="font-size:0.85rem">
@@ -44,7 +63,7 @@
     </div>
     <div class="form-group">
         <%= form.label :fund_ids, "Filter by Funds (optional)" %>
-        <%= select_tag "fund_ids[]", options_for_select(policy_scope(Fund).map{|f| [f.name, f.id]}, params[:fund_ids] || []), include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
+        <%= select_tag "fund_ids[]", options_for_select(policy_scope(Fund).map{|f| [f.name, f.id]}, params[:fund_ids] || []), id: "cross_portfolio_fund_ids", include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
         <small class="text-muted">Limit the calculation to these funds only. Leave blank to include all entity funds.</small>
     </div>
     <div class="form-group">
@@ -53,9 +72,9 @@
         <small class="text-muted">Select specific portfolio companies, or leave blank and use tags / sectors below.</small>
     </div>
     <div class="form-group">
-        <%= form.label :portfolio_companies_tags %>
-        <%= form.text_field :portfolio_companies_tags, class: "form-control", name: "portfolio_companies_tags" %>
-        <small class="text-muted">Select portfolio companies having any one of the tags in this comma seaparated list.</small>
+        <%= form.label :portfolio_companies_tags, "Tags (comma separated)" %>
+        <%= text_field_tag "portfolio_companies_tags", params[:portfolio_companies_tags], class: "form-control", placeholder: "e.g. growth, fintech, saas" %>
+        <small class="text-muted">Enter a comma separated list of tags to filter portfolio companies.</small>
     </div>
     <div class="form-group">
         <%
