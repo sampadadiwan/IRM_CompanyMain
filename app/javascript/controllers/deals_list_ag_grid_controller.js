@@ -242,11 +242,15 @@ export default class extends BaseAgGrid {
             // Render a plain badge with data attributes — the floating menu
             // (appended to document.body) handles clicks via setupActivityMenu().
             const entityId = params.data.entity_id || '';
+            const dealInvestorId = params.data.id || '';
+            const activityName = encodeURIComponent(activity.title || '');
             return `<span class="badge ${badgeClass} activity-badge"
                           style="cursor:pointer; font-size:0.85rem;"
                           data-activity-id="${id}"
                           data-activity-status="${status}"
-                          data-entity-id="${entityId}">
+                          data-entity-id="${entityId}"
+                          data-deal-investor-id="${dealInvestorId}"
+                          data-activity-name="${activityName}">
                       ${status} <i class="ti ti-chevron-down" style="font-size:0.7rem; vertical-align:middle;"></i>
                     </span>`;
           },
@@ -898,7 +902,10 @@ export default class extends BaseAgGrid {
         menu.dataset.activityId = id;
         menu.querySelector('#deals-activity-menu-show').href = `/deal_activities/${id}`;
         const entityId = badge.dataset.entityId;
-        menu.querySelector('#deals-activity-menu-docs').href = `/documents/new?document[owner_id]=${id}&document[owner_type]=DealActivity&document[entity_id]=${entityId}&back_to=${backTo}`;
+        const dealInvestorId = badge.dataset.dealInvestorId;
+        const activityName = badge.dataset.activityName || '';
+        // Upload doc owner is DealInvestor; name preset to the deal activity title
+        menu.querySelector('#deals-activity-menu-docs').href = `/documents/new?document[owner_id]=${dealInvestorId}&document[owner_type]=DealInvestor&document[entity_id]=${entityId}&document[name]=${activityName}&back_to=${backTo}`;
 
         // Position menu below the badge using viewport coordinates
         const rect = badge.getBoundingClientRect();

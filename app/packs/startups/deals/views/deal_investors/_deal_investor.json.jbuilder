@@ -9,7 +9,7 @@ json.primary_amount deal_investor.primary_amount.to_f
 json.secondary_investment deal_investor.secondary_investment.to_f
 json.pre_money_valuation deal_investor.pre_money_valuation.to_f
 json.activities deal_investor.deal_activities do |activity|
-  json.extract! activity, :id, :template_id, :status
+  json.extract! activity, :id, :template_id, :status, :title
   json.details activity.details.to_plain_text if activity.details.present?
 end
 json.url deal_investor_url(deal_investor, format: :json)

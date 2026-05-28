@@ -16,7 +16,7 @@
 </div>
 <%= render "deals/analytics" %>
 <%= turbo_frame_tag with_frame("deals_frame"), target: "_top" do %>
-  <%= render "/layouts/filter", associations: [:investors, :deal_investors], include_template: "deals/filter" %>
+  <%= render "/layouts/filter", associations: [:deal_investors], include_template: "deals/filter" %>
   <%= render "/layouts/steps", steps: ["Setup Deal Details", "Upload Deal Docs", "Add Investments",
               "Customize Deal Steps", "Setup Access Rights", "Start Deal"].freeze unless @deals.present? %>
   <% units ||= params[:units].presence || (cookies && cookies[:currency_units]) %>
