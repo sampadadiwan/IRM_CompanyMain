@@ -3645,7 +3645,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
     t.bigint "role_id"
     t.bigint "user_id"
     t.index ["role_id"], name: "index_users_roles_on_role_id"
-    t.index %w[user_id role_id], name: "index_users_roles_on_user_id_and_role_id"
+    t.index ["user_id", "role_id"], name: "index_users_roles_on_user_id_and_role_id"
     t.index ["user_id"], name: "index_users_roles_on_user_id"
   end
 
@@ -3780,7 +3780,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
   add_foreign_key "ai_kpi_shadow_runs", "documents"
   add_foreign_key "ai_kpi_shadow_runs", "entities"
   add_foreign_key "ai_portfolio_reports", "folders"
-  add_foreign_key "ai_portfolio_reports", "investment_criteria_templates"
   add_foreign_key "ai_presentations", "entities"
   add_foreign_key "ai_report_sections", "ai_portfolio_reports"
   add_foreign_key "ai_rules", "entities"
