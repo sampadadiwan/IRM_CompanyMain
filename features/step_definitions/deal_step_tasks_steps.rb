@@ -158,40 +158,16 @@ When('I mark the activity {string} as completed for investor {string} in the gri
   col_selector = "[col-id='activity_#{@deal_activity.template_id}']"
   cell = find("#{row_selector} #{col_selector}")
 
-  # 3. Simulate clicks to open dropdown as per user instruction:
-  # "double click to enable inline editing, then click to open and then click to select Complete"
-  target = cell.all(".badge").first || cell
+  # Click the activity badge to open the floating menu (new floating-menu UI)
+  badge = cell.find(".activity-badge", wait: 5)
+  badge.click
 
-  # 1. Double click to enable inline editing (as per user instruction)
-  target.double_click
+  # Wait for the floating menu to appear and click "Complete"
+  floating_menu = find("#deals-activity-floating-menu", wait: 5)
+  floating_menu.find("[data-status='complete']", wait: 5).click
 
-  # 2. Find the ag-grid select editor wrapper (it's not a native select)
-  # Based on the provided HTML, it has class 'ag-picker-field-wrapper'
-  picker_wrapper = cell.find(".ag-picker-field-wrapper", wait: 5)
-
-  # 3. Click the wrapper to open the dropdown list
-  picker_wrapper.click
-  sleep 0.5
-
-  # 4. Click "Complete" from the dropdown list
-  # ag-grid portals these to an .ag-popup container
-  begin
-    # Search for the "Complete" option in common ag-grid popup classes
-    dropdown_item = find(".ag-popup .ag-virtual-list-item, .ag-popup .ag-select-list-item, .ag-popup [role='option']", text: "Complete", wait: 5)
-    dropdown_item.click
-  rescue Capybara::ElementNotFound
-    # Fallback: find any element with text "Complete" inside a popup
-    find(".ag-popup", wait: 2).find("*", text: "Complete", match: :prefer_exact).click
-  end
-
-  # Wait for the dropdown popup to disappear
-  expect(page).to have_no_selector(".ag-popup", wait: 5)
-
-  # Only press Enter if the row is still in edit mode
-  page.send_keys(:enter) if page.has_selector?(".ag-row-editing", wait: 1)
-
-  # Wait for the editor to close completely
-  expect(page).to have_no_selector(".ag-row-editing", wait: 5)
+  # Wait for the floating menu to hide
+  expect(page).to have_no_selector("#deals-activity-floating-menu[style*='display: block']", wait: 5)
 
   # Wait for the UI to reflect the change visually
   within(row_selector) do
