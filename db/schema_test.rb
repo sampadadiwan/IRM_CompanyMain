@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_30_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_30_200001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1858,6 +1858,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_30_100001) do
   create_table "fund_unit_settings", force: :cascade do |t|
     t.decimal "carry", precision: 24, scale: 8, default: "0.0"
     t.datetime "created_at", null: false
+    t.datetime "deleted_at"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.bigint "fund_id", null: false

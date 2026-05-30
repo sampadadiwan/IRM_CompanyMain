@@ -1,6 +1,7 @@
 class FundUnitSetting < ApplicationRecord
   include WithCustomField
   include ForInvestor
+  include Trackable.new
   include FundUnitSettingShared
 
   belongs_to :entity
