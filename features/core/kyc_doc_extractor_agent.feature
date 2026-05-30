@@ -35,7 +35,7 @@ Feature: KYC Document Extractor Agent
   Scenario: Doc-first upload screen is shown when wizard is enabled and no documents uploaded
     Given there is a KYC for the investor with submission_status "link_sent"
     When I visit the KYC edit page as the fund admin
-    Then I should see "Upload your KYC Documents"
+    Then I should see "Upload KYC Documents"
     And I should see "Upload Tax ID"
     And I should see "Upload Address Proof"
 
@@ -105,7 +105,7 @@ Feature: KYC Document Extractor Agent
   Scenario: An investor via magic link sees the doc-first upload screen
     Given there is a KYC for the investor with submission_status "link_sent"
     When I open the KYC edit page as the investor via a valid signed link for doc extraction
-    Then I should see "Upload your KYC Documents"
+    Then I should see "Upload KYC Documents"
     And I should see "Continue to Fill Form"
 
   @kyc_doc_extractor @policy

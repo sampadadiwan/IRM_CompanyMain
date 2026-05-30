@@ -17,7 +17,7 @@ Feature: Doc-First KYC Wizard
   @doc_wizard
   Scenario: Company admin sees the document upload form instead of the regular KYC form
     When I visit the new investor KYC page
-    Then I should see "Upload your KYC Documents"
+    Then I should see "Upload KYC Documents"
     And I should see "Upload PAN / Tax ID"
     And I should see "Upload Address Proof"
     And I should see "Fill Form Manually"
@@ -30,7 +30,7 @@ Feature: Doc-First KYC Wizard
   Scenario: Clicking "Fill Form Manually" bypasses the doc-first upload step
     When I visit the new investor KYC page
     And I click "Fill Form Manually"
-    Then I should not see "Upload your KYC Documents"
+    Then I should not see "Upload KYC Documents"
 
   # ─────────────────────────────────────────────────────────────────────────────
   # 3. Company admin: full wizard flow — upload docs → extraction → pre-filled form
@@ -54,7 +54,7 @@ Feature: Doc-First KYC Wizard
   Scenario: Investor opens magic link and sees the doc-first upload form first
     Given there is a KYC for the investor with submission_status "link_sent"
     When I open the KYC edit page as the investor via a valid signed link
-    Then I should see "Upload your KYC Documents"
+    Then I should see "Upload KYC Documents"
     And I should see "Upload PAN / Tax ID"
     And I should see "Upload Address Proof"
 
