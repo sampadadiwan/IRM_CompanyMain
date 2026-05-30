@@ -1,0 +1,32 @@
+<%#
+  Locals:
+    form_type – the FormType record
+%>
+<div class="d-flex justify-content-between align-items-center mb-2">
+  <h5 class="mb-0">Step Labels</h5>
+  <%# Edit button loads the inline form into the step_labels_panel turbo-frame %>
+  <%= link_to edit_step_labels_form_type_path(form_type),
+              class: "btn btn-sm btn-outline-primary",
+              data: { turbo_frame: "step_labels_panel" } do %>
+    <i class="ti ti-edit"></i> Edit
+  <% end %>
+</div>
+
+<%
+  labels = (form_type.step_labels.presence || {})
+           .select { |_, v| v.present? }
+           .sort_by { |k, _| k.to_i }
+%>
+
+<% if labels.any? %>
+  <ul class="list-unstyled mb-0">
+    <% labels.each do |n, label| %>
+      <li><span class="text-muted">Step <%= n %>:</span> <%= label %></li>
+    <% end %>
+  </ul>
+<% else %>
+  <p class="text-muted small mb-0">No custom step labels set.</p>
+<% end %>
+
+<%# Frame must live here so it survives turbo stream replacements of step_labels_section %>
+<turbo-frame id="step_labels_panel" class="d-block mt-2"></turbo-frame>

@@ -15,15 +15,17 @@ Custom fields allow you to extend any standard model in CapHive with additional 
 7. [Field Types](#field-types)
 8. [Field Ordering (Position)](#field-ordering-position)
 9. [Multi-Step Forms](#multi-step-forms)
-10. [Required and Read-Only Fields](#required-and-read-only-fields)
-11. [Conditional Visibility](#conditional-visibility)
-12. [Regulatory Fields](#regulatory-fields)
-13. [Field Visibility by User](#field-visibility-by-user)
-14. [How Field Data is Stored](#how-field-data-is-stored)
-15. [Renaming a Field](#renaming-a-field)
-16. [Importing Custom Field Data](#importing-custom-field-data)
-17. [Key Fields Reference](#key-fields-reference)
-18. [Frequently Asked Questions](#frequently-asked-questions)
+10. [Dynamic Extra Steps for InvestorKyc (Steps 4–9)](#dynamic-extra-steps-for-investorkyc-steps-49)
+11. [Reviewing Form Types: Tabbed View and Inline Edit](#reviewing-form-types-tabbed-view-and-inline-edit)
+12. [Required and Read-Only Fields](#required-and-read-only-fields)
+13. [Conditional Visibility](#conditional-visibility)
+14. [Regulatory Fields](#regulatory-fields)
+15. [Field Visibility by User](#field-visibility-by-user)
+16. [How Field Data is Stored](#how-field-data-is-stored)
+17. [Renaming a Field](#renaming-a-field)
+18. [Importing Custom Field Data](#importing-custom-field-data)
+19. [Key Fields Reference](#key-fields-reference)
+20. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -142,23 +144,93 @@ Fields are ordered by `position` within a form type (managed via `acts_as_list`)
 
 ## Multi-Step Forms
 
-Custom fields can be assigned to one of four steps:
+Custom fields can be assigned to one of the standard steps, or to extra steps 4–9 (InvestorKyc only):
 
 ```mermaid
 graph LR
     Step1[Step 1\nBasic Info] --> Step2[Step 2\nAdditional Details]
     Step2 --> Step3[Step 3\nCompliance]
-    Step3 --> StepEnd[Step End\nReview & Submit]
+    Step3 --> StepEnd[End\nReview & Submit]
+    StepEnd --> Step4[Step 4\nExtra ①]
+    Step4 --> StepN[Steps 5–9\nExtra ②–⑥]
 ```
 
-| Step | Enum Value | Use |
-|---|---|---|
-| `one` | 1 | First step (basic/required fields) |
-| `two` | 2 | Additional details |
-| `three` | 3 | Compliance or supplementary |
-| `end` | 100 | Final step (review, signatures, etc.) |
+| Step | Enum key | Enum value | Use |
+|---|---|---|---|
+| Step 1 | `one` | 1 | First step (basic/required fields) |
+| Step 2 | `two` | 2 | Additional details |
+| Step 3 | `three` | 3 | Compliance or supplementary |
+| End | `end` | 100 | Final fixed step (review, sign-off) |
+| Step 4–9 | `four`–`nine` | 4–9 | Extra dynamic steps (InvestorKyc only) |
 
 Multi-step forms are used in investor onboarding and KYC workflows where all fields cannot be presented on a single page.
+
+---
+
+## Dynamic Extra Steps for InvestorKyc (Steps 4–9)
+
+For **InvestorKyc** form types, the wizard supports up to nine pages. Extra pages (steps 4–9) are rendered automatically whenever at least one custom field is assigned to that step — no code change needed.
+
+### Setting up extra steps
+
+1. Open the InvestorKyc Form Type for editing.
+2. For each field you want on an extra page, set its **Step** dropdown to the target step (*Step 4 (Extra)* … *Step 9 (Extra)*).
+3. Optionally fill in the **Extra Step Labels** section to give each step a meaningful title (e.g. *Beneficial Ownership*, *FATCA Declarations*). Blank entries default to *Step 4*, *Step 5*, etc.
+4. Save the Form Type.
+
+The KYC wizard now shows additional navigation circles and renders the extra pages in order. Steps with no fields are skipped entirely.
+
+### Step labels
+
+The **Extra Step Labels** section in the Form Type edit page lets you set a custom card-header label for each extra step:
+
+| Input | Applied to | Default if blank |
+|---|---|---|
+| Step 4 Label | Page 4 card header | "Step 4" |
+| Step 5 Label | Page 5 card header | "Step 5" |
+| … | … | … |
+| Step 9 Label | Page 9 card header | "Step 9" |
+
+Labels are stored as a JSON hash on the Form Type and are **entity-specific** — different fund entities can have different labels for the same step numbers.
+
+### Step ordering in the wizard
+
+```mermaid
+sequenceDiagram
+    participant A as Admin/Investor
+    participant W as KYC Wizard
+
+    A->>W: Open KYC edit
+    W-->>A: Show N nav circles (3 fixed + extras)
+    loop Steps 1–3 (fixed)
+        A->>W: Fill + Next
+    end
+    loop Steps 4–9 (only those with fields)
+        A->>W: Fill + Next
+    end
+    A->>W: Save on final step
+```
+
+---
+
+## Reviewing Form Types: Tabbed View and Inline Edit
+
+The **Form Type show page** (`/form_types/:id`) has two view modes and a quick-edit shortcut.
+
+### Tabbed view
+
+Click **Tabs by Step** at the top of the show page to switch from the flat table to a tab-per-step layout. Each tab shows only the fields assigned to that step, with a count badge. Click **Flat List** to return.
+
+Use the tabbed view to:
+- Quickly audit what the investor sees on each wizard page.
+- Spot fields that may have been assigned to the wrong step.
+- Compare field counts across steps.
+
+### Inline field edit
+
+Every row in both views has an **Edit** button in the Actions column. Clicking it opens that field's edit form with a **Cancel** link that returns you to the Form Type show page. This is the fastest way to correct a label, change a step assignment, or toggle the required flag for a single field.
+
+Fields edited inline go through the same validation as the full Form Type edit — you cannot save an invalid field.
 
 ---
 
@@ -264,6 +336,7 @@ Navigate to **Import Uploads** to review what custom fields were created during 
 | `name` | Rails model class name (e.g. `InvestorKyc`) |
 | `tag` | Sub-type label (for models allowing multiple form types) |
 | `entity_id` | Owning entity |
+| `step_labels` | JSON hash mapping step numbers 4–9 to custom card-header labels (InvestorKyc only) |
 
 ### FormCustomField
 
@@ -272,7 +345,7 @@ Navigate to **Import Uploads** to review what custom fields were created during 
 | `name` | Internal identifier (snake_case, unique per form type) |
 | `label` | UI display label |
 | `field_type` | TextField / Money / DateField / MultiSelect / Calculation / GridColumns |
-| `step` | one / two / three / end |
+| `step` | one / two / three / end / four / five / six / seven / eight / nine |
 | `position` | Display order within the step |
 | `required` | Whether field must be filled |
 | `read_only` | Whether field is editable |
@@ -308,3 +381,12 @@ Yes. Create multiple Form Types for the same model using the `tag` field to diff
 
 **Q: How do Calculation fields work?**
 Calculation fields use a formula in `meta_data` to compute a value from other field values. The formula is evaluated server-side. CRUD operations (creating/deleting records) are blocked in formulas for safety.
+
+**Q: Can I add more than four steps to the InvestorKyc wizard?**
+Yes — up to nine total wizard pages. Assign fields to steps 4–9 in the Form Type editor. Each step with at least one field becomes a live wizard page. See [Dynamic Extra Steps for InvestorKyc](#dynamic-extra-steps-for-investorkyc-steps-49).
+
+**Q: I see "Step 4", "Step 5", etc. in the wizard header but want meaningful names.**
+Fill in the **Extra Step Labels** section on the Form Type edit page. Enter a label for each step number and save.
+
+**Q: The Form Type show page has too many fields to scroll through — can I filter by step?**
+Switch to **Tabs by Step** using the toggle button at the top of the show page. Each tab shows only the fields for one wizard step.

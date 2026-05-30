@@ -81,6 +81,8 @@ resources :form_types do
   patch 'rename_fcf', on: :member
   patch 'add_regulatory_fields', on: :member
   get 'generate_upload_xlsx', on: :member
+  get 'edit_step_labels', on: :member
+  patch 'update_step_labels', on: :member
 end
 
 resources :e_signatures

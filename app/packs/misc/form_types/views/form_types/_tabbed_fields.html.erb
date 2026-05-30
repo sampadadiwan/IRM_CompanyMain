@@ -1,0 +1,54 @@
+<%#
+  Locals:
+    form_custom_fields – ordered collection of FormCustomField records
+    form_type          – the parent FormType (used for extra-step labels)
+%>
+<%
+  grouped   = form_custom_fields.group_by(&:step)
+  tab_order = FormCustomField.steps.sort_by { |_, v| v }.map(&:first).select { |s| grouped[s].present? }
+%>
+
+<%# nav-fill gives every tab equal share of the row width %>
+<ul class="nav nav-tabs nav-fill mb-3" id="fcfStepTabs" role="tablist">
+  <% tab_order.each_with_index do |step_name, idx| %>
+    <li class="nav-item" role="presentation">
+      <button class="nav-link <%= idx == 0 ? 'active' : '' %>"
+              id="tab-<%= step_name %>"
+              data-bs-toggle="tab"
+              data-bs-target="#pane-<%= step_name %>"
+              type="button"
+              role="tab">
+        <%= step_tab_label(step_name, form_type) %>
+        <span class="badge bg-secondary ms-1"><%= grouped[step_name].size %></span>
+      </button>
+    </li>
+  <% end %>
+</ul>
+
+<div class="tab-content" id="fcfStepTabsContent">
+  <% tab_order.each_with_index do |step_name, idx| %>
+    <div class="tab-pane fade <%= idx == 0 ? 'show active' : '' %>"
+         id="pane-<%= step_name %>"
+         role="tabpanel">
+      <table class="table table-bordered table-sm">
+        <thead class="table-light">
+          <tr>
+            <th>Position</th>
+            <th>Import Column Name</th>
+            <th>Label</th>
+            <th>Type</th>
+            <th>Properties</th>
+            <th>Condition</th>
+            <th>Step</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% grouped[step_name].each do |f| %>
+            <%= render "/form_custom_fields/form_custom_field", f: f %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
+</div>

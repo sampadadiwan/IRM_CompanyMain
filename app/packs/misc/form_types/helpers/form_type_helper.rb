@@ -7,11 +7,17 @@ module FormTypeHelper
     return if model.form_type.blank?
 
     struct = CustomFieldsProxy.new(model.properties) # model.properties aliases json_fields; proxy avoids OpenStruct method churn in form rendering
-    step = step.present? ? FormCustomField.steps[step.to_sym] : nil
+    # Always resolve to the enum name string so where(step:) works consistently across Rails versions.
+    # In Rails 7.1+ passing an integer to where() on an enum column is unreliable; strings are safe.
+    step_name = if step.is_a?(Integer)
+                  FormCustomField.steps.key(step)   # e.g. 4 → "four", 8 → "eight"
+                elsif step.present?
+                  step.to_s                          # :one → "one", "end" → "end"
+                end
 
     fields = custom_fields.presence || model.form_type.form_custom_fields.includes(:rich_text_info).visible.not_regulatory
 
-    fields = fields.where(step: step) if step.present?
+    fields = fields.where(step: step_name) if step_name.present?
 
     render partial: "/form_types/custom_form_fields", locals: { model:, form:, required:, struct:, fields: }
   end
@@ -30,6 +36,20 @@ module FormTypeHelper
                          end
 
     render partial: "/form_types/display_custom_fields", locals: { model:, collapsed:, form_custom_fields: form_custom_fields, timestamps_and_snapshot: }
+  end
+
+  # Human-readable tab label for a given step enum name string (e.g. "four") and optional form_type.
+  # Fixed infrastructure steps get fixed names; extra steps (four–nine) use form_type.label_for_step when available.
+  def step_tab_label(step_name, form_type = nil)
+    step_int = FormCustomField.steps[step_name.to_s]
+    case step_name.to_s
+    when "one"   then "Step 1"
+    when "two"   then "Step 2"
+    when "three" then "Step 3"
+    when "end"   then "End"
+    else
+      form_type ? form_type.label_for_step(step_int) : "Step #{step_int}"
+    end
   end
 
   def get_form_type(name, entity_id: nil, form_type_id: nil)

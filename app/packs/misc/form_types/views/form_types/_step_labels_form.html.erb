@@ -1,0 +1,33 @@
+<%= form_with url: update_step_labels_form_type_path(form_type), method: :patch do |form| %>
+  <% if form_type.errors[:step_labels].any? %>
+    <div class="alert alert-danger">
+      <% form_type.errors[:step_labels].each do |msg| %>
+        <p class="mb-0"><%= msg %></p>
+      <% end %>
+    </div>
+  <% end %>
+
+  <p class="text-muted small mb-3">Labels shown in the card header for wizard steps 4–9. Leave blank to use the default "Step N" label.</p>
+
+  <div class="row">
+    <% (4..9).each do |n| %>
+      <div class="col-md-4 form-group mb-2">
+        <label for="form_type_step_labels_<%= n %>">Step <%= n %> Label</label>
+        <input type="text"
+               id="form_type_step_labels_<%= n %>"
+               name="form_type[step_labels][<%= n %>]"
+               value="<%= form_type.step_labels&.fetch(n.to_s, '') %>"
+               class="form-control"
+               placeholder="Step <%= n %>">
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-3 d-flex gap-2">
+    <%= form.button "Save Labels", class: "btn btn-outline-primary" %>
+    <button type="button" class="btn btn-outline-secondary"
+            onclick="var p=document.getElementById('step_labels_panel'); p ? p.innerHTML='' : window.history.back();">
+      Cancel
+    </button>
+  </div>
+<% end %>

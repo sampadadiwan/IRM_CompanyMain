@@ -111,6 +111,33 @@ class FormType < ApplicationRecord
     name.constantize
   end
 
+  # Returns sorted integer list of extra step values (4–9) that have at least one visible, non-regulatory field.
+  # Queries by enum name strings so behavior is consistent across Rails versions — pluck(:step) returns
+  # enum name strings ("four", "five"...) in Rails 7.1+ rather than raw integers, so we normalise
+  # the result back to integers before sorting to avoid alphabetical ordering ("eight" < "five" < "four"...).
+  def extra_step_numbers
+    extra_names = FormCustomField.steps.filter_map { |k, v| k if FormCustomField::EXTRA_STEP_RANGE.include?(v) }
+    form_custom_fields
+      .not_regulatory
+      .visible
+      .where(step: extra_names)
+      .pluck(:step)
+      .map { |s| s.is_a?(Integer) ? s : FormCustomField.steps[s.to_s] }
+      .uniq
+      .sort
+  end
+
+  # Strip blank values so saving the form with empty label fields doesn't store empty strings in JSON.
+  def step_labels=(val)
+    write_attribute(:step_labels, val.present? ? val.reject { |_, v| v.blank? }.presence : nil)
+  end
+
+  # Human-readable label for a given step integer (4–9).
+  # Falls back to "Step N" when no label is configured in step_labels (column may be NULL in MySQL).
+  def label_for_step(step_num)
+    (step_labels.presence || {}).fetch(step_num.to_s, "Step #{step_num}")
+  end
+
   def to_s
     if tag.blank?
       name

@@ -1,0 +1,17 @@
+<% if @form_type.errors.any? %>
+  <%# Re-render the form with errors inside the inline panel %>
+  <%= turbo_stream.replace "step_labels_panel" do %>
+    <turbo-frame id="step_labels_panel">
+      <%= render FormCard.new(title: "Step Labels: #{@form_type.name} #{@form_type.tag}") do %>
+        <%= render "step_labels_form", form_type: @form_type %>
+      <% end %>
+    </turbo-frame>
+  <% end %>
+<% else %>
+  <%# Replace the section with the updated read view; the panel partial re-renders the empty frame too %>
+  <%= turbo_stream.replace "step_labels_section" do %>
+    <div id="step_labels_section" class="mb-3 border rounded p-3">
+      <%= render "step_labels_panel", form_type: @form_type %>
+    </div>
+  <% end %>
+<% end %>

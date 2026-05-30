@@ -9,19 +9,25 @@ class FormCustomFieldsController < ApplicationController
   end
 
   # GET /form_custom_fields/1 or /form_custom_fields/1.json
-  def show; end
+  def show
+    authorize @form_custom_field
+  end
 
   # GET /form_custom_fields/new
   def new
     @form_custom_field = FormCustomField.new
+    authorize @form_custom_field
   end
 
   # GET /form_custom_fields/1/edit
-  def edit; end
+  def edit
+    authorize @form_custom_field
+  end
 
   # POST /form_custom_fields or /form_custom_fields.json
   def create
     @form_custom_field = FormCustomField.new(form_custom_field_params)
+    authorize @form_custom_field
 
     respond_to do |format|
       if @form_custom_field.save
@@ -36,12 +42,20 @@ class FormCustomFieldsController < ApplicationController
 
   # PATCH/PUT /form_custom_fields/1 or /form_custom_fields/1.json
   def update
+    authorize @form_custom_field
+
     respond_to do |format|
       if @form_custom_field.update(form_custom_field_params)
-        format.html { redirect_to form_custom_field_url(@form_custom_field), notice: "Form custom field was successfully updated." }
+        # back_to is a plain param set when editing from a parent page (e.g. FormType show).
+        # Only accept relative paths to prevent open redirect.
+        back_to     = params[:back_to].presence
+        destination = (back_to&.start_with?("/") ? back_to : nil) || form_custom_field_url(@form_custom_field)
+        format.html { redirect_to destination, notice: "Form custom field was successfully updated." }
+        format.turbo_stream  # renders update.turbo_stream.erb: replaces row + clears panel
         format.json { render :show, status: :ok, location: @form_custom_field }
       else
         format.html { render :edit, status: :unprocessable_entity }
+        format.turbo_stream  # renders update.turbo_stream.erb: shows errors in panel
         format.json { render json: @form_custom_field.errors, status: :unprocessable_entity }
       end
     end
@@ -49,6 +63,7 @@ class FormCustomFieldsController < ApplicationController
 
   # DELETE /form_custom_fields/1 or /form_custom_fields/1.json
   def destroy
+    authorize @form_custom_field
     @form_custom_field.destroy
 
     respond_to do |format|

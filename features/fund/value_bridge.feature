@@ -1,3 +1,4 @@
+@form_custom_fields
 Feature: Value Bridge Calculation
   As a user
   I want to see the value bridge calculation

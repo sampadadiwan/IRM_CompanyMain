@@ -1,3 +1,4 @@
+@form_custom_fields
 Feature: CustomFields
   Test behavior of the CustomFields
 

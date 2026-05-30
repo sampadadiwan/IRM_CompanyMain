@@ -2,7 +2,46 @@
 
 <%= render FormCard.new(title: "#{@form_type.name} #{@form_type.tag}") do %>
 
-  <%= render "form_custom_fields/index", form_custom_fields: @form_type.form_custom_fields, form_type: @form_type %>
+  <%# Ordered collection used by both views — computed first so multi_step is available %>
+  <% ordered_fields = @form_type.form_custom_fields.reorder(:step, :position) %>
+  <% multi_step = ordered_fields.map(&:step).uniq.compact.size > 1 %>
+
+  <%# Step labels section: shows current labels + inline edit via turbo-frame %>
+  <% if multi_step %>
+    <div id="step_labels_section" class="mb-3 border rounded p-3">
+      <%= render "step_labels_panel", form_type: @form_type %>
+    </div>
+  <% end %>
+
+  <%# Inline FCF edit panel — populated via turbo frame when a field's Edit is clicked %>
+  <turbo-frame id="fcf_edit_panel" class="mb-3 d-block"></turbo-frame>
+
+  <%# View toggle: only shown when fields span multiple steps %>
+  <% if multi_step %>
+    <div class="mb-3 d-flex gap-2">
+      <% if params[:view] == "tabs" %>
+        <%= link_to form_type_path(@form_type), class: "btn btn-sm btn-outline-secondary" do %>
+          <i class="ti ti-list"></i> Flat List
+        <% end %>
+        <%= link_to form_type_path(@form_type, view: "tabs"), class: "btn btn-sm btn-primary" do %>
+          <i class="ti ti-layout-navbar"></i> Tabs by Step
+        <% end %>
+      <% else %>
+        <%= link_to form_type_path(@form_type), class: "btn btn-sm btn-primary" do %>
+          <i class="ti ti-list"></i> Flat List
+        <% end %>
+        <%= link_to form_type_path(@form_type, view: "tabs"), class: "btn btn-sm btn-outline-secondary" do %>
+          <i class="ti ti-layout-navbar"></i> Tabs by Step
+        <% end %>
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if params[:view] == "tabs" %>
+    <%= render "tabbed_fields", form_custom_fields: ordered_fields, form_type: @form_type %>
+  <% else %>
+    <%= render "form_custom_fields/index", form_custom_fields: ordered_fields, form_type: @form_type %>
+  <% end %>
 
 
   <div>

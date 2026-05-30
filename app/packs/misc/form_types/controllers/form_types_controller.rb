@@ -1,14 +1,17 @@
 class FormTypesController < ApplicationController
-  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf configure_grids add_regulatory_fields generate_upload_xlsx]
+  before_action :set_form_type, only: %i[show edit update destroy clone rename_fcf configure_grids add_regulatory_fields generate_upload_xlsx edit_step_labels update_step_labels]
 
   # GET /form_types or /form_types.json
   def index
     authorize(FormType)
     @form_types = policy_scope(FormType)
+    @bread_crumbs = { "Custom Forms": nil }
   end
 
   # GET /form_types/1 or /form_types/1.json
-  def show; end
+  def show
+    @bread_crumbs = { "Custom Forms": form_types_path, "#{@form_type.name} #{@form_type.tag}": nil }
+  end
 
   def generate_upload_xlsx
     respond_to do |format|
@@ -35,10 +38,13 @@ class FormTypesController < ApplicationController
     @form_type.entity_id ||= current_user.entity_id
     @form_type.tag ||= "Default"
     authorize(@form_type)
+    @bread_crumbs = { "Custom Forms": form_types_path, New: nil }
   end
 
   # GET /form_types/1/edit
-  def edit; end
+  def edit
+    @bread_crumbs = { "Custom Forms": form_types_path, "#{@form_type.name} #{@form_type.tag}": form_type_path(@form_type), Edit: nil }
+  end
 
   # POST /form_types or /form_types.json
   def create
@@ -103,6 +109,26 @@ class FormTypesController < ApplicationController
     end
   end
 
+  # GET /form_types/1/edit_step_labels
+  def edit_step_labels
+    @bread_crumbs = { "Custom Forms": form_types_path, "#{@form_type.name} #{@form_type.tag}": form_type_path(@form_type), "Step Labels": nil }
+  end
+
+  # PATCH /form_types/1/update_step_labels
+  def update_step_labels
+    if @form_type.update(step_labels_params)
+      respond_to do |format|
+        format.turbo_stream  # renders update_step_labels.turbo_stream.erb
+        format.html { redirect_to form_type_path(@form_type), notice: "Step labels updated." }
+      end
+    else
+      respond_to do |format|
+        format.turbo_stream  # re-renders form with errors in the panel
+        format.html { render :edit_step_labels, status: :unprocessable_entity }
+      end
+    end
+  end
+
   def add_regulatory_fields
     reg_env = params[:reg_env]
     back_to = params[:back_to] || form_type_path(@form_type)
@@ -160,9 +186,13 @@ class FormTypesController < ApplicationController
     authorize(@form_type)
   end
 
+  def step_labels_params
+    params.require(:form_type).permit(step_labels: {})
+  end
+
   # Only allow a list of trusted parameters through.
   def form_type_params
     vr_keys = FormCustomField::VALIDATION_RULE_KEYS.map { |k| :"vr_#{k}" }
-    params.require(:form_type).permit(:name, :tag, :entity_id, :reg_env, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment show_user_ids step label _destroy condition_on condition_criteria condition_params condition_state internal info reg_env filter_in_search] + vr_keys)
+    params.require(:form_type).permit(:name, :tag, :entity_id, :reg_env, step_labels: {}, form_custom_fields_attributes: %i[id name position help_text field_type meta_data required read_only has_attachment show_user_ids step label _destroy condition_on condition_criteria condition_params condition_state internal info reg_env filter_in_search] + vr_keys)
   end
 end

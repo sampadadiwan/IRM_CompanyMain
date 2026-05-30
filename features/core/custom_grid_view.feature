@@ -1,3 +1,4 @@
+@form_custom_fields
 Feature: Grid View Preferences
   Can create custom grid views
 

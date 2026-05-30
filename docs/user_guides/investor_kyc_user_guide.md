@@ -12,23 +12,25 @@ This guide covers the full lifecycle of Know Your Customer (KYC) records in CapH
 4. [Creating a KYC Record](#creating-a-kyc-record)
 5. [Core Fields](#core-fields)
 6. [Custom Fields and Form Types](#custom-fields-and-form-types)
-7. [Jurisdiction-Specific Forms: Tags (SEBI, GIFT, Default)](#jurisdiction-specific-forms-tags-sebi-gift-default)
-8. [Sending the KYC Form to the Investor](#sending-the-kyc-form-to-the-investor)
-9. [Investor Self-Completion](#investor-self-completion)
-10. [PAN Verification](#pan-verification)
-11. [Bank Account Verification](#bank-account-verification)
-12. [CKYC Integration](#ckyc-integration)
-13. [KRA Integration](#kra-integration)
-14. [Assigning KYC Data from CKYC or KRA](#assigning-kyc-data-from-ckyc-or-kra)
-15. [SEBI Investor Category and Sub-Category](#sebi-investor-category-and-sub-category)
-16. [Document Requirements and Upload](#document-requirements-and-upload)
-17. [Admin Verification](#admin-verification)
-18. [KYC Expiry](#kyc-expiry)
-19. [AML Reports](#aml-reports)
-20. [Notifications](#notifications)
-21. [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records)
-22. [Importing KYC Records](#importing-kyc-records)
-23. [Frequently Asked Questions](#frequently-asked-questions)
+7. [Dynamic Wizard Steps (Steps 4–9)](#dynamic-wizard-steps-steps-49)
+8. [Managing Form Types: Tabbed View and Inline Edit](#managing-form-types-tabbed-view-and-inline-edit)
+9. [Jurisdiction-Specific Forms: Tags (SEBI, GIFT, Default)](#jurisdiction-specific-forms-tags-sebi-gift-default)
+10. [Sending the KYC Form to the Investor](#sending-the-kyc-form-to-the-investor)
+11. [Investor Self-Completion](#investor-self-completion)
+12. [PAN Verification](#pan-verification)
+13. [Bank Account Verification](#bank-account-verification)
+14. [CKYC Integration](#ckyc-integration)
+15. [KRA Integration](#kra-integration)
+16. [Assigning KYC Data from CKYC or KRA](#assigning-kyc-data-from-ckyc-or-kra)
+17. [SEBI Investor Category and Sub-Category](#sebi-investor-category-and-sub-category)
+18. [Document Requirements and Upload](#document-requirements-and-upload)
+19. [Admin Verification](#admin-verification)
+20. [KYC Expiry](#kyc-expiry)
+21. [AML Reports](#aml-reports)
+22. [Notifications](#notifications)
+23. [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records)
+24. [Importing KYC Records](#importing-kyc-records)
+25. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -153,6 +155,90 @@ Form Types are scoped to KYC type — an Individual Form Type will not appear on
 
 - **Individual examples:** Occupation, Income Range, Politically Exposed Person (PEP) status, source of funds declaration
 - **Non-Individual examples:** Entity type, date of incorporation, registered address, authorised signatory details, beneficial ownership declarations, FATCA/CRS classification
+
+---
+
+## Dynamic Wizard Steps (Steps 4–9)
+
+By default the KYC wizard has three fixed steps (KYC Details, Bank Details, Confirmation) plus an optional regulatory step. You can extend the wizard to up to **nine steps** by assigning custom fields to extra steps (4–9) in the Form Type configuration.
+
+### How it works
+
+Each `FormCustomField` has a **Step** attribute that controls where on the wizard it appears:
+
+| Step value | Wizard position | Notes |
+|---|---|---|
+| Step 1 | Page 1 — KYC Details | Identity, PAN, date of birth |
+| Step 2 | Page 2 — Bank Details | Bank account, IFSC, address |
+| Step 3 (End) | Page 3 — Confirmation | Sign-off, comments, expiry |
+| Step 4 | Page 4 (extra) | Only shown when fields are assigned |
+| Step 5–9 | Pages 5–9 (extra) | Only shown when fields are assigned |
+
+Extra steps appear **only when at least one custom field is assigned to that step**. If no fields are assigned to step 5, page 5 is not rendered and the investor never sees it. The wizard automatically adjusts the number of navigation circles to match the configured steps.
+
+### Assigning a custom field to an extra step
+
+1. Navigate to **Settings → Form Types** and open the InvestorKyc Form Type you want to configure.
+2. Click **Edit**.
+3. For each custom field you want on an extra step, change its **Step** dropdown to the target step (e.g. *Step 4 (Extra)*, *Step 5 (Extra)*, …).
+4. Click **Save**.
+
+The wizard will now display that many extra pages when an investor or admin opens the KYC edit form.
+
+### Naming extra steps
+
+By default extra steps are labelled *Step 4*, *Step 5*, etc. in the wizard card header. You can replace these with meaningful names:
+
+1. Open the InvestorKyc Form Type for editing.
+2. Find the **Extra Step Labels** section (appears below the Tag field).
+3. Enter a label for each step you want to rename (e.g. *Beneficial Ownership*, *FATCA Declarations*).
+4. Leave a field blank to keep the default *Step N* label.
+5. Click **Save**.
+
+The labels appear in the step card header when the investor fills in the form.
+
+### Wizard navigation flow
+
+```mermaid
+sequenceDiagram
+    participant I as Investor
+    participant W as KYC Wizard
+    participant S as Server
+
+    I->>W: Open KYC edit link
+    W->>S: Load form (investor_kycs#edit)
+    S-->>W: Render wizard with N nav circles<br/>(3 fixed + extra steps + regulatory if present)
+
+    loop For each step 1 to N-1
+        I->>W: Fill fields on current step
+        I->>W: Click Next
+        W->>W: Validate current step (client-side)
+        W->>W: Show next step panel
+    end
+
+    I->>W: Fill fields on final step
+    I->>W: Click Save / Submit KYC
+    W->>S: POST all fields (interim-save or full submit)
+    S-->>I: Redirect / confirmation
+```
+
+---
+
+## Managing Form Types: Tabbed View and Inline Edit
+
+The **Form Type show page** (`/form_types/:id`) gives you two ways to review and maintain custom fields.
+
+### Tabbed view
+
+Click **Tabs by Step** at the top of the show page to switch from the flat table to a step-grouped tab view. Each tab shows only the fields assigned to that step, with a count badge. Click **Flat List** to return to the single table.
+
+This is useful when a form type has many fields spread across multiple steps — you can quickly check what the investor will see on each page of the wizard.
+
+### Inline edit of a single custom field
+
+Every row in both views has an **Edit** button (pencil icon) in the Actions column. Clicking it opens the field's edit page pre-loaded with a *Cancel* link that returns you straight back to the Form Type show page — no need to navigate through the full Form Type edit form.
+
+Use inline edit for quick changes to a single field's label, step assignment, required flag, or help text without disturbing the rest of the form type.
 
 ---
 
@@ -642,3 +728,12 @@ AML reports are auto-attached to the KYC record's document folder. Open the KYC 
 
 **How do I renew an expired KYC?**
 Create a new KYC record for the same investor with the updated information. The old expired record is retained for audit purposes. You can reference the previous KYC data when filling in the new one.
+
+**How do I add more pages to the KYC wizard?**
+Assign custom fields to steps 4–9 in the Form Type configuration. The wizard automatically adds a navigation circle and page for each step that has at least one field. See [Dynamic Wizard Steps](#dynamic-wizard-steps-steps-49) for the full walk-through.
+
+**Can I give the extra wizard steps meaningful names instead of "Step 4", "Step 5", etc.?**
+Yes. Open the InvestorKyc Form Type for editing and fill in the **Extra Step Labels** section. Enter a label for each numbered step you want to rename. Blank entries fall back to the default *Step N* label.
+
+**I assigned a field to Step 5 but the wizard only shows 4 pages.**
+Check that the step was saved correctly by opening the Form Type show page and switching to the **Tabs by Step** view. If the field does not appear under the Step 5 tab, re-edit the field and confirm the Step dropdown is set to *Step 5 (Extra)*.

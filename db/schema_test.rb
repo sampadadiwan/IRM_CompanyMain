@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_29_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_30_100001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1717,6 +1717,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_100001) do
     t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
     t.string "name"
+    t.json "step_labels"
     t.string "tag", limit: 50, default: "Default", null: false
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_form_types_on_entity_id"
@@ -1728,9 +1729,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_29_100001) do
     t.string "slug", null: false
     t.integer "sluggable_id", null: false
     t.string "sluggable_type", limit: 50
-    t.index %w[slug sluggable_type scope], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true, length: { slug: 70, scope: 70 }
-    t.index %w[slug sluggable_type], name: "index_friendly_id_slugs_on_slug_and_sluggable_type", length: { slug: 140 }
-    t.index %w[sluggable_type sluggable_id], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
+    t.index ["slug", "sluggable_type", "scope"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type_and_scope", unique: true
+    t.index ["slug", "sluggable_type"], name: "index_friendly_id_slugs_on_slug_and_sluggable_type"
+    t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
 
   create_table "fund_formulas", force: :cascade do |t|

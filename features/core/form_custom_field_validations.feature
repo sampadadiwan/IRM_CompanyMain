@@ -1,3 +1,4 @@
+@form_custom_fields
 Feature: FormCustomField Validations
   Browser-based end-to-end tests for custom field validation rules,
   covering both the admin setup UI and the data-capture forms.

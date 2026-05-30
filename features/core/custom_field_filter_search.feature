@@ -1,3 +1,4 @@
+@form_custom_fields
 Feature: Custom Field Filter Search
   Entity admins can mark FormCustomFields as "Show in Filter" so users can
   search records by their custom field values directly in the filter panel.

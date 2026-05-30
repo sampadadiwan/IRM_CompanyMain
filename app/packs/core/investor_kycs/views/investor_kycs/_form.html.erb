@@ -1,4 +1,14 @@
 <div class="wizard_container" data-controller="wizard interim-save">
+<%
+  # Compute dynamic step layout upfront so it can be used in both the nav and the form panels.
+  # extra_step_numbers: sorted integers 4–9 for any non-regulatory custom fields assigned to those steps.
+  # regulatory step is always last when present.
+  regulatory_custom_fields          = investor_kyc.form_type.present? ? investor_kyc.form_custom_fields.regulatory.includes(:rich_text_info) : []
+  show_regulatory_step              = regulatory_custom_fields.present? && !(current_user&.curr_role_investor? || params[:signed_id].present?)
+  extra_step_numbers                = investor_kyc.form_type&.extra_step_numbers || []
+  regulatory_display_step           = 3 + extra_step_numbers.count + 1
+  last_non_regulatory_display_step  = 3 + extra_step_numbers.count
+%>
   <div class="row justify-content-md-center">
     <div class="stepwizard hidden col-md-6">
         <div class="stepwizard-row setup-panel">
@@ -14,12 +24,18 @@
                 <a href="#step-3" type="button" class="btn disabled btn-outline-primarybtn-outline-circle">3</a>
                 <p>Step 3</p>
             </div>
-            <% regulatory_custom_fields = investor_kyc.form_type.present? ? investor_kyc.form_custom_fields.regulatory.includes(:rich_text_info) : [] %>
-            <% show_step_4_for_regulatory_fields = regulatory_custom_fields.present? && !(current_user&.curr_role_investor? || params[:signed_id].present?) %>
-            <% if show_step_4_for_regulatory_fields %>
+            <%# Extra dynamic steps — one nav circle per extra step number %>
+            <% extra_step_numbers.each_with_index do |_, idx| %>
+            <% display_num = 3 + idx + 1 %>
             <div class="stepwizard-step">
-                <a href="#step-4" type="button" class="btn disabled btn-outline-primarybtn-outline-circle">4</a>
-                <p>Step 4</p>
+                <a href="#step-<%= display_num %>" type="button" class="btn disabled btn-outline-primarybtn-outline-circle"><%= display_num %></a>
+                <p>Step <%= display_num %></p>
+            </div>
+            <% end %>
+            <% if show_regulatory_step %>
+            <div class="stepwizard-step">
+                <a href="#step-<%= regulatory_display_step %>" type="button" class="btn disabled btn-outline-primarybtn-outline-circle"><%= regulatory_display_step %></a>
+                <p>Step <%= regulatory_display_step %></p>
             </div>
             <% end %>
         </div>
@@ -344,7 +360,8 @@
 
 
           <div class="form-group d-flex gap-2 flex-wrap">
-            <% if show_step_4_for_regulatory_fields %>
+            <%# Show "Next" if there are extra dynamic steps or a regulatory step after this %>
+            <% if extra_step_numbers.any? || show_regulatory_step %>
               <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
             <% elsif show_investor_btns %>
               <%= form.button "Save Draft",
@@ -365,11 +382,48 @@
     </div>
   </div>
 
-  <% if show_step_4_for_regulatory_fields %>
-  <div class="col-md-6 setup-content" id="step-4">
+  <%# Extra dynamic steps — rendered for each extra step integer (4–9) with custom fields only %>
+  <% extra_step_numbers.each_with_index do |step_num, idx| %>
+  <% display_step = 3 + idx + 1 %>
+  <% is_last_extra = idx == extra_step_numbers.count - 1 %>
+  <div class="col-md-6 setup-content" id="step-<%= display_step %>">
     <div class="">
       <div class="card">
-        <div class="card-header"> 4. Reporting Fields </div>
+        <div class="card-header"> <%= display_step %>. <%= investor_kyc.form_type.label_for_step(step_num) %> </div>
+        <div class="card-body">
+
+          <%= custom_form_fields(investor_kyc, form, step: step_num, required: is_investor) %>
+
+          <div class="form-group d-flex gap-2 flex-wrap">
+            <%# Show "Next" unless this is the last extra step with no regulatory step following %>
+            <% if !is_last_extra || show_regulatory_step %>
+              <button class="btn btn-outline-primary nextBtn btn-lg pull-right" type="button"><%= t_common(:next) %></button>
+            <% elsif show_investor_btns %>
+              <%= form.button "Save Draft",
+                type: "button",
+                class: "btn btn-outline-secondary btn-lg",
+                data: { action: "click->interim-save#interim" } %>
+              <%= form.button "Submit KYC",
+                type: "button",
+                class: "btn btn-primary btn-lg",
+                data: { action: "click->interim-save#final" } %>
+            <% else %>
+              <%= form.button t_common(:save), type: "button", class: "btn btn-outline-primary btn-lg", data: { action: "click->interim-save#submit" } %>
+            <% end %>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+  <% end %>
+
+  <%# Regulatory step — always last, only shown for non-investors when regulatory fields exist %>
+  <% if show_regulatory_step %>
+  <div class="col-md-6 setup-content" id="step-<%= regulatory_display_step %>">
+    <div class="">
+      <div class="card">
+        <div class="card-header"> <%= regulatory_display_step %>. Reporting Fields </div>
         <div class="card-body">
 
           <% if regulatory_custom_fields.present? %>

@@ -37,6 +37,14 @@ class FormTypePolicy < ApplicationPolicy
     update?
   end
 
+  def edit_step_labels?
+    update?
+  end
+
+  def update_step_labels?
+    update?
+  end
+
   def edit?
     update?
   end

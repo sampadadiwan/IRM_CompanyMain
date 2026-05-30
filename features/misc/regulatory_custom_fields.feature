@@ -1,3 +1,4 @@
+@form_custom_fields
 Feature: RegulatoryCustomFields
   Test behavior of the RegulatoryCustomFields
 

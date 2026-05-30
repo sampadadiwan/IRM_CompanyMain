@@ -1,3 +1,7 @@
-<h1>Editing Form Custom Field</h1>
-
-<%=render "form", form_custom_field: @form_custom_field %>
+<%# turbo-frame wraps everything so clicking Edit from the FormType show page
+    loads only this frame content into the inline panel (no full-page reload). %>
+<%= turbo_frame_tag "fcf_edit_panel" do %>
+  <%= render FormCard.new(title: "Edit Custom Field: #{@form_custom_field.human_label}") do %>
+    <%= render "form", form_custom_field: @form_custom_field, back_to: params[:back_to] %>
+  <% end %>
+<% end %>

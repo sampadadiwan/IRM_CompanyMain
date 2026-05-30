@@ -64,7 +64,8 @@
 
       <h1>Custom Fields</h1>
       <div id='form_custom_fields'>
-        <%= form.fields_for :form_custom_fields do |field| %>
+        <%# reorder replaces the default position-only scope so fields group by wizard step then position %>
+        <%= form.fields_for :form_custom_fields, form_type.form_custom_fields.reorder(:step, :position) do |field| %>
           <%# Calculation/GridColumns are always hidden from non-support users, regardless of debug params %>
           <% next if field.object.field_type.in?(FormCustomField::HIDDEN_FIELDS) && !current_user.support? %>
           <%# Other internal fields are hidden unless support/debug/internal params %>

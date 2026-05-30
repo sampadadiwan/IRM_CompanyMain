@@ -8,4 +8,28 @@ class FormCustomFieldPolicy < ApplicationPolicy
   def index?
     user.enable_form_types
   end
+
+  def show?
+    user.enable_form_types && record.form_type.entity_id == user.entity_id
+  end
+
+  def new?
+    user.enable_form_types
+  end
+
+  def create?
+    new?
+  end
+
+  def edit?
+    show?
+  end
+
+  def update?
+    show?
+  end
+
+  def destroy?
+    show?
+  end
 end

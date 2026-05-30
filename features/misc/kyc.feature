@@ -1,3 +1,4 @@
+@form_custom_fields
 Feature: Kyc imports and such
 
 @import

@@ -72,7 +72,20 @@
 
         <div class="form-group col-md-1">
             <%= f.label :step %>
-            <%= f.select :step, FormCustomField.steps.keys, {}, class: "form-control" %>
+            <%# Map enum keys to human-readable labels; extra steps (4–9) appear as "Step N (Extra)" %>
+            <% step_options = {
+                 "one"   => "Step 1",
+                 "two"   => "Step 2",
+                 "three" => "Step 3",
+                 "end"   => "Step 3 (Default)",
+                 "four"  => "Step 4 (Extra)",
+                 "five"  => "Step 5 (Extra)",
+                 "six"   => "Step 6 (Extra)",
+                 "seven" => "Step 7 (Extra)",
+                 "eight" => "Step 8 (Extra)",
+                 "nine"  => "Step 9 (Extra)"
+               }.map { |k, label| [label, k] } %>
+            <%= f.select :step, step_options, {}, class: "form-control" %>
         </div>
 
         <% if params[:debug].present? %>

@@ -41,7 +41,11 @@ class FormCustomField < ApplicationRecord
   belongs_to :form_type
   acts_as_list scope: :form_type
 
-  enum :step,  { one: 1, two: 2, three: 3, end: 100 }
+  # Values 4–9 are extra dynamic steps used in multi-step forms (e.g. investor_kyc).
+  # Values 1–3 map to the fixed infra steps; 100 (end) is the default "append to last fixed step".
+  enum :step,  { one: 1, two: 2, three: 3, end: 100, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 }
+
+  EXTRA_STEP_RANGE = (4..9).freeze
 
   validates :name, :show_user_ids, length: { maximum: 100 }
   validates :label, length: { maximum: 254 }

@@ -1,4 +1,4 @@
-<tr>
+<tr id="fcf_row_<%= f.id %>">
     <td>
         <%= f.position %>
     </td>
@@ -47,6 +47,14 @@
     </td>
     <td>
         <%= f.step&.humanize %>
+    </td>
+    <td>
+        <%# data-turbo-frame targets the inline panel on the FormType show page %>
+        <%= link_to edit_form_custom_field_path(f),
+                    class: "btn btn-sm btn-outline-primary",
+                    data: { turbo_frame: "fcf_edit_panel" } do %>
+          <i class="ti ti-edit"></i>
+        <% end %>
     </td>
 
 </tr>

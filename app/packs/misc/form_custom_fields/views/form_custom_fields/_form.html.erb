@@ -1,0 +1,122 @@
+<%= form_with(model: form_custom_field) do |form| %>
+  <% if form_custom_field.errors.any? %>
+    <div class="alert alert-danger">
+      <ul class="mb-0">
+        <% form_custom_field.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# back_to is passed as a plain param (not inside the model namespace) so the controller can redirect there after save %>
+  <input type="hidden" name="back_to" value="<%= local_assigns[:back_to] %>">
+
+  <div class="row">
+    <div class="form-group col-md-1">
+      <%= form.label :position %>
+      <%= form.text_field :position, class: "form-control" %>
+    </div>
+
+    <div class="form-group col-md-2">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "form-control", disabled: form_custom_field.persisted? %>
+    </div>
+
+    <div class="form-group col-md-3">
+      <%= form.label :label %>
+      <%= form.text_field :label, class: "form-control" %>
+      <small class="form-text text-muted">Displayed label; leave blank to derive from name.</small>
+    </div>
+
+    <div class="form-group col-md-3">
+      <%= form.label :field_type %>
+      <%
+        field_types = FormCustomField::VALID_FIELD_TYPES.sort
+        field_types.concat(%w[Calculation]) if current_user.support? || Rails.env.local?
+      %>
+      <%= form.select :field_type, field_types, {}, class: "form-control" %>
+    </div>
+
+    <div class="form-group col-md-2">
+      <%= form.label :step %>
+      <% step_options = {
+           "one"   => "Step 1",
+           "two"   => "Step 2",
+           "three" => "Step 3",
+           "end"   => "Step 3 (Default)",
+           "four"  => "Step 4 (Extra)",
+           "five"  => "Step 5 (Extra)",
+           "six"   => "Step 6 (Extra)",
+           "seven" => "Step 7 (Extra)",
+           "eight" => "Step 8 (Extra)",
+           "nine"  => "Step 9 (Extra)"
+         }.map { |k, label| [label, k] } %>
+      <%= form.select :step, step_options, {}, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="row mt-2">
+    <div class="form-group col-md-1">
+      <%= form.label :required %>
+      <%= form.check_box :required, class: "form-check-input mt-3" %>
+    </div>
+
+    <div class="form-group col-md-1">
+      <%= form.label :read_only %>
+      <%= form.check_box :read_only, class: "form-check-input mt-3" %>
+    </div>
+
+    <div class="form-group col-md-2">
+      <%= form.label :filter_in_search, "Show in Filter" %>
+      <%= form.check_box :filter_in_search, class: "form-check-input mt-3" %>
+    </div>
+
+    <div class="form-group col-md-3">
+      <%= form.label :meta_data %>
+      <%= form.text_field :meta_data, class: "form-control" %>
+      <small class="form-text text-muted">CSV options for selects, checkboxes etc.</small>
+    </div>
+
+    <div class="form-group col-md-4">
+      <%= form.label :help_text %>
+      <%= form.text_field :help_text, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="row mt-2">
+    <div class="col-12"><strong>Conditional visibility</strong></div>
+
+    <div class="form-group col-md-2">
+      <%= form.label :condition_on, "Show when field" %>
+      <%= form.text_field :condition_on, class: "form-control", placeholder: "field name" %>
+    </div>
+
+    <div class="form-group col-md-2">
+      <%= form.label :condition_criteria, "Criteria" %>
+      <%= form.select :condition_criteria, [["—", nil]] + FormCustomField::VALID_CONDITION_CRITERIAS, {}, class: "form-control" %>
+    </div>
+
+    <div class="form-group col-md-3">
+      <%= form.label :condition_params, "Match value" %>
+      <%= form.text_field :condition_params, class: "form-control" %>
+    </div>
+
+    <div class="form-group col-md-2">
+      <%= form.label :condition_state, "Then" %>
+      <%= form.select :condition_state, [["—", nil]] + FormCustomField::VALID_CONDITION_STATES, {}, class: "form-control" %>
+    </div>
+  </div>
+
+  <div class="mt-3 d-flex gap-2">
+    <%= form.button t_common(:save), class: "btn btn-outline-primary" %>
+    <%# Cancel clears the inline panel when present; falls back to back_to or browser history %>
+    <button type="button" class="btn btn-outline-secondary"
+            data-back-to="<%= local_assigns[:back_to] %>"
+            onclick="(function(btn){
+              var panel = document.getElementById('fcf_edit_panel');
+              if (panel && panel.innerHTML.trim().length > 0) { panel.innerHTML = ''; }
+              else { var back = btn.dataset.backTo; back ? window.location = back : window.history.back(); }
+            })(this)">Cancel</button>
+  </div>
+<% end %>

@@ -1,0 +1,6 @@
+<%# turbo-frame wraps so clicking Edit from the show page loads only this into the inline panel %>
+<%= turbo_frame_tag "step_labels_panel" do %>
+  <%= render FormCard.new(title: "Step Labels: #{@form_type.name} #{@form_type.tag}") do %>
+    <%= render "step_labels_form", form_type: @form_type %>
+  <% end %>
+<% end %>
