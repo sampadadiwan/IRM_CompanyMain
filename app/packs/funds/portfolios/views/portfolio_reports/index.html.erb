@@ -1,6 +1,14 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Portfolio Reports</h1>
-  <%= link_to "New Portfolio Report", new_portfolio_report_path, {class: "btn btn-outline-primary"}  %>
+  <div class="d-flex align-items-center gap-2">
+    <%= user_guide_info_icon %>
+    <% if policy(PortfolioReport.new(entity_id: current_user.entity_id)).bulk_generate? %>
+      <%= link_to bulk_generate_portfolio_reports_path, class: "btn btn-outline-secondary" do %>
+        <i class="ti ti-copy me-1"></i>Bulk Generate Drafts
+      <% end %>
+    <% end %>
+    <%= link_to "New Portfolio Report", new_portfolio_report_path, class: "btn btn-outline-primary" %>
+  </div>
 </div>
 
 <div class="table-responsive" data-controller="datatable">
@@ -23,6 +31,9 @@
         </th>
         <th>
           Include Portfolio Investments
+        </th>
+        <th>
+          Setup Complete
         </th>
         <th>
         </th>

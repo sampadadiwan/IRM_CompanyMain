@@ -1,0 +1,430 @@
+<% require 'cgi' %>
+<div class="container-fluid p-3">
+
+  <%# ── Header ──────────────────────────────────────────────────────────── %>
+  <div class="d-flex align-items-start justify-content-between mb-3 flex-wrap gap-2">
+    <div>
+      <h4 class="mb-1"><%= @draft.portfolio_company %> — <%= @draft.portfolio_report_template.name %></h4>
+      <p class="text-muted mb-0 small">
+        <%= @draft.kpi_period_type %> <%= @draft.kpi_tag %> &middot;
+        <%= @draft.start_date.strftime("%b %Y") %> to <%= @draft.end_date.strftime("%b %Y") %>
+        &middot; <%= @draft.n_periods %> periods
+      </p>
+    </div>
+
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <%
+        status_colors = {
+          "configuring" => "secondary",
+          "generating"  => "warning text-dark",
+          "review"      => "info text-dark",
+          "approved"    => "success",
+          "exporting"   => "warning text-dark",
+          "exported"    => "primary"
+        }
+      %>
+      <span class="badge bg-<%= status_colors.fetch(@draft.status, "secondary") %> fs-6">
+        <%= @draft.status.humanize %>
+      </span>
+
+      <% if @draft.review? && policy(@draft).approve? %>
+        <button type="button" class="btn btn-success"
+                data-bs-toggle="modal" data-bs-target="#approveDraftModal">
+          <i class="ti ti-circle-check me-1"></i>Approve Draft
+        </button>
+
+        <%# ── Approve Draft modal ─────────────────────────────────────── %>
+        <div class="modal fade" id="approveDraftModal" tabindex="-1"
+             aria-labelledby="approveDraftModalLabel" aria-hidden="true">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="approveDraftModalLabel">
+                  <i class="ti ti-circle-check me-2 text-success"></i>Approve Draft
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+
+              <div class="modal-body">
+                <div class="border-start border-4 border-success ps-3 py-1 mb-3">
+                  <div class="fw-bold text-dark small">What happens when you approve</div>
+                  <div class="text-muted small">
+                    Review the steps below before confirming.
+                  </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mb-3">
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#dcfce7;">
+                      <i class="ti ti-circle-check fs-5" style="color:#16a34a;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">
+                        Status moves to <span class="badge bg-success">Approved</span>
+                      </div>
+                      <div class="text-muted small mt-1">
+                        The draft is locked for editing. You can still view all KPI data and section narratives.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#dbeafe;">
+                      <% if @draft.portfolio_report_template.output_format == "ppt" %>
+                        <i class="ti ti-presentation fs-5" style="color:#2563eb;"></i>
+                      <% else %>
+                        <i class="ti ti-file-type-doc fs-5" style="color:#2563eb;"></i>
+                      <% end %>
+                    </span>
+                    <div>
+                      <% if @draft.portfolio_report_template.output_format == "ppt" %>
+                        <div class="fw-semibold text-dark lh-sm">Export to PowerPoint becomes available</div>
+                        <div class="text-muted small mt-1">
+                          Use the <strong>Export to PPT</strong> button to generate a <code>.pptx</code> slide deck.
+                          The file will appear in the portco's Docs tab and a Download button will appear here.
+                        </div>
+                      <% else %>
+                        <div class="fw-semibold text-dark lh-sm">Export to Word becomes available</div>
+                        <div class="text-muted small mt-1">
+                          Use the <strong>Export to Word</strong> button to generate a <code>.docx</code> using your
+                          template's style file. The document will appear in the portco's Docs tab.
+                        </div>
+                      <% end %>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#fef3c7;">
+                      <i class="ti ti-edit-off fs-5" style="color:#d97706;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Inline editing is disabled</div>
+                      <div class="text-muted small mt-1">
+                        KPI cells and section narratives can no longer be edited in-place.
+                        To make changes, re-generate a new draft.
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#f3e8ff;">
+                      <i class="ti ti-bell-check fs-5" style="color:#9333ea;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">This page auto-refreshes when export completes</div>
+                      <div class="text-muted small mt-1">
+                        Export runs in the background. The page will show a spinner and refresh automatically —
+                        a <strong>Download</strong> button will appear once the file is ready.
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger"
+                        data-bs-dismiss="modal">Cancel</button>
+                <%= button_to "Approve Draft",
+                              approve_portfolio_report_draft_path(@draft),
+                              method: :patch,
+                              class: "btn btn-success",
+                              data: { turbo: false } %>
+                <%= button_to "Approve & Export Now",
+                              approve_and_export_portfolio_report_draft_path(@draft),
+                              method: :patch,
+                              class: "btn btn-primary",
+                              data: { turbo: false } %>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <% if (@draft.approved? || @draft.exporting? || @draft.exported?) && policy(@draft).reopen? %>
+        <%= button_to "Reopen for Editing",
+                      reopen_portfolio_report_draft_path(@draft),
+                      method: :patch,
+                      class: "btn btn-outline-warning",
+                      data: { turbo: false, action: "click->confirm#popup",
+                              method: "patch",
+                              msg: "Move this draft back to Review so you can edit KPI cells and narratives again?" } %>
+      <% end %>
+
+      <% if @draft.approved? && policy(@draft).export? %>
+        <% export_label = @draft.portfolio_report_template.output_format == "ppt" ? "Export to PPT" : "Export to Word" %>
+        <%= button_to export_label,
+                      export_portfolio_report_draft_path(@draft),
+                      method: :post,
+                      class: "btn btn-primary",
+                      data: { turbo: false } %>
+      <% end %>
+
+      <% if @draft.generated_document.present? %>
+        <% dl_label = @draft.portfolio_report_template.output_format == "ppt" ? "Download PPTX" : "Download DOCX" %>
+        <%= link_to dl_label,
+                    @draft.generated_document.file_url,
+                    class: "btn btn-outline-success",
+                    target: "_blank",
+                    rel: "noopener" %>
+      <% end %>
+
+      <% if !@draft.configuring? && !@draft.generating? && !@draft.exporting? && policy(@draft).preview? %>
+        <%= link_to preview_portfolio_report_draft_path(@draft),
+                    class: "btn btn-outline-info",
+                    target: "_blank",
+                    rel: "noopener",
+                    title: "Open a styled HTML preview of the Word document layout" do %>
+          <i class="ti ti-eye me-1"></i>Preview
+        <% end %>
+      <% end %>
+
+      <%= link_to "Back to portco",
+                  investor_path(@draft.portfolio_company),
+                  class: "btn btn-outline-secondary" %>
+
+      <span class="align-self-center"><%= user_guide_info_icon %></span>
+    </div>
+  </div>
+
+  <%# ── Generating spinner ──────────────────────────────────────────────── %>
+  <% if @draft.generating? %>
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary mb-3" role="status"></div>
+      <p class="text-muted mb-1">Generating your report draft…</p>
+      <small class="text-muted">Pulling KPI data and generating narrative for each section. Takes about 30–60 seconds.</small>
+    </div>
+    <meta http-equiv="refresh" content="8">
+
+  <% elsif @draft.exporting? %>
+    <%# Export job is running — spinner + auto-refresh so Download button appears on completion %>
+    <% fmt = @draft.portfolio_report_template.output_format == "ppt" ? "PowerPoint" : "Word" %>
+    <div class="text-center py-5">
+      <div class="spinner-border text-warning mb-3" role="status"></div>
+      <p class="text-muted mb-1">Exporting to <%= fmt %>…</p>
+      <small class="text-muted">Building your document in the background. This page will refresh automatically.</small>
+    </div>
+    <meta http-equiv="refresh" content="5">
+
+  <% elsif @draft.configuring? %>
+    <% if @draft.created_at > 30.seconds.ago %>
+      <%# Draft just created — Sidekiq may not have picked it up yet %>
+      <div class="text-center py-5">
+        <div class="spinner-border text-secondary mb-3" role="status"></div>
+        <p class="text-muted mb-1">Starting draft generation…</p>
+        <small class="text-muted">Waiting for a background worker to pick up the job.</small>
+      </div>
+      <meta http-equiv="refresh" content="3">
+    <% else %>
+      <div class="alert alert-warning text-center">
+        Draft generation failed or was not started.
+        <%= link_to "Re-configure and retry", generate_reports_investor_path(@draft.portfolio_company) %>
+      </div>
+    <% end %>
+
+  <% else %>
+
+    <%# ── Editable content wrapper ──────────────────────────────────────── %>
+    <div data-controller="draft-editor"
+         data-draft-editor-kpi-cell-url-value="<%= update_kpi_cell_portfolio_report_draft_path(@draft) %>"
+         data-draft-editor-section-url-value="<%= update_section_portfolio_report_draft_path(@draft) %>"
+         data-draft-editor-editable-value="<%= @draft.review? %>">
+
+      <%# Saved toast %>
+      <span data-draft-editor-target="savedBadge"
+            class="badge bg-success position-fixed bottom-0 end-0 m-3 d-none"
+            style="z-index:9999;">
+        Saved
+      </span>
+
+      <% if @draft.review? %>
+        <div class="alert alert-info py-2 small mb-3">
+          <i class="ti ti-pencil me-1"></i>
+          <strong>Review mode</strong> — click any KPI cell to edit its value; double-click a section narrative to open the rich-text editor.
+          Click <strong>Save</strong> to apply changes. Approve when satisfied.
+        </div>
+      <% end %>
+
+      <%# ── Tab nav ──────────────────────────────────────────────────────── %>
+      <%
+        section_list = @draft.portfolio_report_template.ordered_section_ids
+          .filter_map { |sid| @sections.find { |s| s.id == sid } }
+      %>
+      <ul class="nav nav-pills mb-3" id="draftTabs">
+        <% if @kpi_mappings.any? || @period_labels.any? %>
+          <li class="nav-item">
+            <a class="nav-link active" data-bs-toggle="pill" href="#tab-kpi">
+              <i class="ti ti-table me-1"></i>KPI Data
+            </a>
+          </li>
+        <% end %>
+        <% section_list.each_with_index do |section, idx| %>
+          <%
+            narrative = @draft.narrative_for(section.id)
+            quality_dot, quality_title =
+              if narrative.blank?
+                ["bg-danger",  "No content generated"]
+              elsif narrative.length < 150
+                ["bg-warning", "Short content — consider regenerating"]
+              else
+                ["bg-success", "Content looks good"]
+              end
+          %>
+          <li class="nav-item">
+            <a class="nav-link <%= "active" if idx == 0 && @kpi_mappings.empty? %>"
+               data-bs-toggle="pill"
+               href="#tab-section-<%= section.id %>">
+              <% if section.icon.present? %>
+                <i class="ti ti-<%= section.icon %> me-1"></i>
+              <% end %>
+              <%= section.name %>
+              <%
+                dot_color = narrative.blank? ? "#dc3545" : (narrative.length < 150 ? "#ffc107" : "#198754")
+              %>
+              <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:<%= dot_color %>;vertical-align:middle;margin-left:4px;"
+                    title="<%= quality_title %>"
+                    data-bs-toggle="tooltip"></span>
+            </a>
+          </li>
+        <% end %>
+      </ul>
+
+      <%# ── Tab panes ────────────────────────────────────────────────────── %>
+      <div class="tab-content">
+
+        <%# KPI Data tab %>
+        <% if @kpi_mappings.any? || @period_labels.any? %>
+          <div id="tab-kpi" class="tab-pane fade in show active">
+            <% if @kpi_mappings.any? && @period_labels.any? %>
+              <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                  <h6 class="mb-0">KPI Data</h6>
+                  <small class="text-muted"><%= @draft.kpi_period_type %> <%= @draft.kpi_tag %></small>
+                </div>
+                <div class="card-body p-0">
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-sm mb-0">
+                      <thead class="table-dark">
+                        <tr>
+                          <th>Metric</th>
+                          <% @period_labels.each do |label| %>
+                            <th class="text-end"><%= label %></th>
+                          <% end %>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% @kpi_mappings.each do |category, mappings| %>
+                          <tr class="table-light">
+                            <td colspan="<%= @period_labels.length + 1 %>"
+                                class="fw-semibold small text-uppercase text-muted py-1 px-3">
+                              <%= category.presence || "Other" %>
+                            </td>
+                          </tr>
+                          <% mappings.each do |ikm| %>
+                            <tr>
+                              <td class="ps-4">
+                                <%= ikm.reported_kpi_name %>
+                                <% if ikm.denomination.present? %>
+                                  <small class="text-muted">(<%= ikm.denomination %>)</small>
+                                <% end %>
+                              </td>
+                              <% @period_labels.each do |label| %>
+                                <td class="text-end <%= "cursor-pointer" if @draft.review? %>"
+                                    data-action="<%= "click->draft-editor#editKpiCell" if @draft.review? %>"
+                                    data-metric-id="<%= ikm.id %>"
+                                    data-period-label="<%= label %>"
+                                    title="<%= "Click to edit" if @draft.review? %>">
+                                  <%= @draft.effective_kpi_table.dig(ikm.id.to_s, label) || "—" %>
+                                </td>
+                              <% end %>
+                            </tr>
+                          <% end %>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            <% elsif @draft.kpi_table_data.blank? %>
+              <div class="alert alert-secondary">No KPI data — either no KPI reports were found for the selected period, or the draft is still generating.</div>
+            <% end %>
+          </div>
+        <% end %>
+
+        <%# Section narrative tabs %>
+        <% section_list.each_with_index do |section, idx| %>
+          <% narrative = @draft.narrative_for(section.id) %>
+          <div id="tab-section-<%= section.id %>"
+               class="tab-pane fade <%= "in show active" if idx == 0 && @kpi_mappings.empty? %>">
+            <div class="card">
+              <div class="card-header d-flex align-items-center gap-2">
+                <% if section.icon.present? %>
+                  <i class="ti ti-<%= section.icon %> text-primary"></i>
+                <% end %>
+                <h6 class="mb-0"><%= section.name %></h6>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                  <% if @draft.review? %>
+                    <small class="text-muted text-nowrap">
+                      <i class="ti ti-pencil me-1"></i> Double-click to edit (rich text)
+                    </small>
+                    <% if policy(@draft).regenerate_section? %>
+                      <%= button_to "Regenerate",
+                                    regenerate_section_portfolio_report_draft_path(@draft),
+                                    params: { section_id: section.id },
+                                    method: :post,
+                                    class: "btn btn-sm btn-outline-secondary",
+                                    title: "Re-run LLM for this section only",
+                                    data: { turbo: false,
+                                            action: "click->confirm#popup",
+                                            method: "post",
+                                            msg: "Regenerate the \"#{section.name}\" section? This will overwrite the current content." } %>
+                    <% end %>
+                  <% end %>
+                </div>
+              </div>
+              <div class="card-body">
+                <% if narrative.present? %>
+                  <%# Display div — shows rendered HTML; hidden while Trix editor is open %>
+                  <div class="narrative-display <%= "cursor-text" if @draft.review? %>"
+                       data-action="<%= "dblclick->draft-editor#editSection" if @draft.review? %>"
+                       data-section-id="<%= section.id %>"
+                       style="min-height: 2.5rem; line-height: 1.7;">
+                    <%= sanitize narrative, tags: %w[ul ol li p b i strong em br blockquote h1 h2 h3], attributes: %w[href] %>
+                  </div>
+
+                  <%# Trix editor — hidden by default, shown on double-click %>
+                  <% if @draft.review? %>
+                    <div class="narrative-editor d-none" data-section-id="<%= section.id %>">
+                      <input id="trix-input-<%= section.id %>" type="hidden"
+                             value="<%= CGI.escapeHTML(narrative.to_s) %>">
+                      <trix-editor input="trix-input-<%= section.id %>"
+                                   class="trix-content border rounded"
+                                   style="min-height: 8rem;">
+                      </trix-editor>
+                      <div class="mt-2 d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-primary"
+                                data-action="click->draft-editor#saveSection"
+                                data-section-id="<%= section.id %>">Save</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                data-action="click->draft-editor#cancelSection"
+                                data-section-id="<%= section.id %>">Cancel</button>
+                      </div>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <p class="text-muted fst-italic mb-0">No content generated for this section.</p>
+                <% end %>
+              </div>
+            </div>
+          </div>
+        <% end %>
+
+      </div><%# /tab-content %>
+    </div><%# /draft-editor %>
+
+  <% end %>
+
+</div><%# /container-fluid %>

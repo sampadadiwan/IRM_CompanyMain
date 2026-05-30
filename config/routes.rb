@@ -2,7 +2,31 @@ Rails.application.routes.draw do
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
 
-  resources :portfolio_reports
+  resources :portfolio_reports do
+    resources :portfolio_report_templates, shallow: true
+    member do
+      post :clone
+      post :suggest_sections    # AI-suggested section names + instructions
+    end
+    collection do
+      get  :bulk_generate       # form: select portcos + template
+      post :bulk_generate       # submit: queue a draft job per portco
+    end
+  end
+
+  resources :portfolio_report_drafts do
+    member do
+      patch :approve
+      patch :approve_and_export        # approve then immediately queue export
+      patch :reopen                    # revert approved/exported → review for further editing
+      post  :export
+      get   :preview                   # styled HTML preview of the Word doc layout
+      patch :update_kpi_cell           # inline KPI cell edit
+      patch :update_section            # inline narrative section edit
+      post  :regenerate_section        # re-run LLM for a single section
+    end
+  end
+
   resources :portfolio_report_extracts do
     member do
       get :generate_tear_sheet

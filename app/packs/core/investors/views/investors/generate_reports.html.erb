@@ -1,84 +1,167 @@
-<% 
-  template_names = @investor.entity.documents.where(owner_type: "PortfolioReport").map{|d| ["#{d.name} - #{d.owner}", d.id]}
-  start_date ||= params[:start_date] || (Date.today - 3.months).beginning_of_month
-  end_date ||= params[:end_date] || Date.today.end_of_month
-%>
+<%= render NewCard.new(col_md: "col-md-10") do %>
 
-<%= render NewCard.new do %>
+  <%= render FormCard.new(title: "<span class='d-flex align-items-center gap-2'>Generate New Draft for #{@investor} #{user_guide_icon_for('portfolio_report_drafts', tooltip: 'Portfolio Report Drafts User Guide')}</span>") do %>
 
-  <%= render FormCard.new(title: "Generate Reports for #{@investor}") do %>
+    <% if @ready_portfolio_reports.empty? %>
+      <%# No usable report types yet — show a clear CTA instead of an empty form %>
+      <div class="text-center py-4">
+        <i class="ti ti-file-report display-4 text-muted mb-3 d-block"></i>
+        <h5 class="mb-2">No report types are ready yet</h5>
+        <p class="text-muted mb-4">
+          You need at least one Portfolio Report with sections and an output template
+          before you can generate a draft.
+        </p>
+        <%= link_to new_portfolio_report_path, class: "btn btn-primary me-2", target: "_blank", rel: "noopener" do %>
+          <i class="ti ti-plus me-1"></i>Create a Report Type
+        <% end %>
+        <%= link_to portfolio_reports_path, class: "btn btn-outline-secondary", target: "_blank", rel: "noopener" do %>
+          <i class="ti ti-list me-1"></i>View All Report Types
+        <% end %>
+      </div>
+    <% else %>
 
-    <div class=" alert alert-danger text-center text-danger">
-        Note that the data will be sent to an external LLM for report generation
+    <div class="alert alert-warning text-center mb-4">
+      Data will be sent to an external LLM for narrative generation.
     </div>
 
-    <div data-controller="generatereports">
-    <%= form_with(model: @investor, url: generate_reports_investor_path(@investor), method: :post) do |form| %>
-            
-      <div class="form-group">
-        <%= form.label :portfolio_report_id %>
-        <%= form.select :portfolio_report_id, @investor.entity.portfolio_reports.map{|pr| [pr.name, pr.id]}, {}, class: "form-control", name: "portfolio_report_id"  %>
-        <small class="form-text text-muted">Select the reports to generate. <%= link_to "Click Here", portfolio_reports_path, target: "_blank", rel: "noopener" %> to setup a report</small>
-      </div>
+    <%= form_with url: generate_reports_investor_path(@investor), method: :post,
+                  data: { controller: "generate-reports",
+                          "generate-reports-preview-url-value": kpi_data_preview_investor_path(@investor) } do |f| %>
 
-      <div class="form-group">
-        <%= form.label :report_template_id %>
-        <%= form.select :report_template_id, template_names, {}, class: "form-control", name: "report_template_id"  %>
-        <small class="form-text text-muted">Select the template to use for the report. (Templates must be uploaded under the selected 'Portfolio Report')</small>
-      </div>
+      <%# ── Report type & template ── %>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <%= f.label :portfolio_report_id, "Report type" %>
+          <%= f.select :portfolio_report_id,
+                @portfolio_reports.map { |r| [r.name, r.id] },
+                { prompt: "Select report type" },
+                class: "form-control",
+                data: { action: "change->generate-reports#reportChanged" } %>
+          <small class="form-text text-muted">
+            <%= link_to "Manage report types", portfolio_reports_path, target: "_blank", rel: "noopener" %>
+            &middot;
+            <%= link_to "Create new", new_portfolio_report_path, target: "_blank", rel: "noopener" %>
+          </small>
+        </div>
 
-      <div class="form-group">
-        <%= form.label :start_date %>
-        <%= form.date_field :start_date, class: "form-control", name: "start_date", value: start_date  %>
-        <small class="form-text text-muted">Select the start date.</small>
-      </div>
-
-      <div class="form-group">
-        <%= form.label :end_date %>
-        <%= form.date_field :end_date, class: "form-control", name: "end_date", value: end_date  %>
-        <small class="form-text text-muted">Select the end date.</small>
-      </div>
-
-      <!-- Period & As Of Section -->
-      <div id="period-container" data-generatereports-target="periodContainer">
-        <div class="row">
-          
-          <div class="col-md-3">
-            <div class="form-group">
-              <%= form.label :period %>
-              <%= form.select :period, KpiReport::PERIODS, {}, class: "form-control", name: "kpi_report[period][]", value: "Monthly"  %>
-              <small class="form-text text-muted">Select the KPI Report Period.</small>
-            </div>
-          </div>
-
-          <div class="col-md-4">
-            <div class="form-group">
-              <%= form.label :as_of %>
-              <%= form.date_field :as_of, class: "form-control", name: "kpi_report[as_of][]", value: Date.today  %>
-              <small class="form-text text-muted">Select the date of the KPI report.</small>
-            </div>
-          </div>
-
-          <div class="col-md-3">
-            <div class="form-group">
-              <%= form.label :add_docs %>
-              <%= form.check_box :add_docs, class: "form-check-input mt-2", name: "kpi_report[add_docs][]", value: true  %>
-            </div>
-          </div>        
+        <div class="col-md-6">
+          <%= f.label :portfolio_report_template_id, "Output template" %>
+          <select name="portfolio_report_template_id" id="portfolio_report_template_id" class="form-control"
+                  data-generate-reports-target="templateSelect">
+            <option value="">— select a report type first —</option>
+          </select>
+          <small class="form-text text-muted">Word or PPT style reference</small>
         </div>
       </div>
 
-      
-      
+      <%# Last-settings banner %>
+      <% if @last_draft %>
+        <div class="alert alert-secondary py-2 small mb-3">
+          <i class="ti ti-history me-1"></i>
+          Settings pre-filled from last draft
+          (<%= @last_draft.portfolio_report_template.name %>,
+          <%= @last_draft.start_date.strftime("%b %Y") %> – <%= @last_draft.end_date.strftime("%b %Y") %>).
+          Adjust as needed.
+        </div>
+      <% end %>
+
+      <%# ── Reporting period ── %>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <%= f.label :start_date, "Start date" %>
+          <%= f.date_field :start_date, class: "form-control", value: @start_date %>
+        </div>
+        <div class="col-md-4">
+          <%= f.label :end_date, "End date" %>
+          <%= f.date_field :end_date, class: "form-control", value: @end_date,
+                           data: { action: "change->generate-reports#previewChanged" } %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :kpi_period_type, "KPI period" %>
+          <%= f.select :kpi_period_type, KpiReport::PERIODS,
+                       { selected: @default_kpi_period_type },
+                       class: "form-control",
+                       data: { action: "change->generate-reports#previewChanged" } %>
+        </div>
+        <div class="col-md-2">
+          <%= f.label :n_periods, "Last N periods" %>
+          <%= f.number_field :n_periods, class: "form-control", value: @default_n_periods, min: 1, max: 24,
+                             data: { action: "change->generate-reports#previewChanged" } %>
+        </div>
+      </div>
+
+      <%# ── KPI tag ── %>
+      <div class="row mb-3">
+        <div class="col-md-4">
+          <%= f.label :kpi_tag, "KPI data type" %>
+          <%= f.select :kpi_tag, KpiReport::TAG_LIST.map { |k, v| [k, v] },
+                       { selected: @default_kpi_tag },
+                       class: "form-control",
+                       data: { action: "change->generate-reports#previewChanged" } %>
+        </div>
+        <div class="col-md-8 d-flex align-items-end pb-1">
+          <div data-generate-reports-target="kpiPreview"></div>
+        </div>
+      </div>
+
+      <%# ── KPI metric selection ── %>
+      <div class="mb-4">
+        <label class="form-label fw-semibold">KPI metrics to include</label>
+        <small class="d-block text-muted mb-2">Pre-selected from metrics marked "show in report". Uncheck any you want to exclude.</small>
+
+        <% @kpi_mappings.each do |category, mappings| %>
+          <div class="mb-3">
+            <div class="fw-semibold text-muted small text-uppercase mb-1"><%= category.presence || "Other" %></div>
+            <div class="row">
+              <% mappings.each do |ikm| %>
+                <div class="col-md-4 col-sm-6">
+                  <div class="form-check">
+                    <%
+                      checked = @default_kpi_mapping_ids.empty? ||
+                                @default_kpi_mapping_ids.map(&:to_i).include?(ikm.id)
+                    %>
+                    <%= check_box_tag "selected_kpi_mapping_ids[]", ikm.id, checked,
+                          id: "kpi_mapping_#{ikm.id}", class: "form-check-input" %>
+                    <%= label_tag "kpi_mapping_#{ikm.id}", ikm.reported_kpi_name, class: "form-check-label" %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
 
       <div class="form-group">
-        <button type="button" class="btn btn-outline-secondary" data-action="click->generatereports#addPeriod">+ Add Period</button>
-        <%= form.submit "Generate Report Now", {class: "btn btn-outline-primary"}%>        
+        <%= f.submit "Generate Report Draft", class: "btn btn-primary" %>
+        <%= link_to "Cancel", investor_path(@investor), class: "btn btn-outline-secondary ms-2" %>
       </div>
 
     <% end %>
-    </div>
-
+    <% end %><%# /if @ready_portfolio_reports.empty? %>
   <% end %>
-  
+
+  <%# ── Recent drafts for this portco ─────────────────────────────────────── %>
+  <%= render "investors/draft_history", investor: @investor, portfolio_reports: @ready_portfolio_reports %>
+
+  <%# ── Incomplete report types — shown at bottom for reference ────────────── %>
+  <% if @incomplete_portfolio_reports.any? %>
+    <div class="mt-4">
+      <p class="text-muted small mb-2">
+        <i class="ti ti-alert-circle text-warning me-1"></i>
+        <strong><%= @incomplete_portfolio_reports.count %> report <%= "type".pluralize(@incomplete_portfolio_reports.count) %></strong>
+        not yet usable — finish setup to make them available in the dropdown above.
+      </p>
+      <% @incomplete_portfolio_reports.each do |pr| %>
+        <%= render "portfolio_reports/setup_roadmap", portfolio_report: pr %>
+      <% end %>
+    </div>
+  <% end %>
+
 <% end %>
+
+<%# Inline template data so the Stimulus controller can populate the template dropdown without a round-trip %>
+<script type="application/json" id="report-templates-data">
+  <%= @portfolio_reports.each_with_object({}) { |r, h|
+        h[r.id] = r.portfolio_report_templates.map { |t| { id: t.id, name: t.name } }
+      }.to_json.html_safe %>
+</script>

@@ -3,8 +3,10 @@ class PortfolioReport < ApplicationRecord
   include WithFolder
 
   belongs_to :entity
-  has_many :portfolio_report_sections, dependent: :destroy
-  has_many :portfolio_report_extracts, dependent: :destroy
+  has_many :portfolio_report_sections,  dependent: :destroy
+  has_many :portfolio_report_extracts,  dependent: :destroy
+  has_many :portfolio_report_templates, dependent: :destroy
+  has_many :portfolio_report_drafts,    dependent: :destroy
   accepts_nested_attributes_for :portfolio_report_sections, allow_destroy: true
 
   def to_s

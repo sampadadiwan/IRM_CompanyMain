@@ -1,4 +1,20 @@
 <%= render FormCard.new(title: "Portfolio Reports : #{portfolio_report.to_s || 'New'}") do %>
+  <% if !portfolio_report.new_record? && policy(portfolio_report).suggest_sections? %>
+    <div data-controller="suggest-sections"
+         data-suggest-sections-url-value="<%= suggest_sections_portfolio_report_path(portfolio_report) %>">
+      <div class="alert alert-info py-2 small d-flex align-items-center gap-3 mb-3">
+        <i class="ti ti-wand fs-5 text-primary"></i>
+        <div class="flex-grow-1">
+          <strong>AI Section Suggestions</strong> — let the AI suggest section names and instructions based on this report's name.
+          Existing sections won't be removed; new ones will be appended.
+        </div>
+        <button class="btn btn-sm btn-outline-primary flex-shrink-0"
+                data-action="click->suggest-sections#suggest">
+          <i class="ti ti-wand me-1"></i>Suggest Sections (AI)
+        </button>
+      </div>
+    </div>
+  <% end %>
   <%= form_with(model: portfolio_report, validate: true) do |form| %>
     <% if portfolio_report.errors.any? %>
       <div class="alert alert-danger">

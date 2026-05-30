@@ -1,6 +1,6 @@
 class InvestorsController < ApplicationController
   helper InvestorAnalyticsHelper
-  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports portfolio_investments_report generate_agent_charts portfolio_analytics]
+  before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports kpi_data_preview portfolio_investments_report generate_agent_charts portfolio_analytics]
   after_action :verify_authorized, except: %i[merge portfolio_investments_report_all]
 
   # GET /investors or /investors.json
@@ -118,22 +118,73 @@ class InvestorsController < ApplicationController
     end
   end
 
+  # GET /investors/:id/kpi_data_preview — AJAX: returns how many KPI periods exist for the
+  # chosen period_type / kpi_tag / end_date combination, so the form can warn before submit.
+  def kpi_data_preview
+    authorize @investor, :kpi_data_preview?
+    period_type = params[:kpi_period_type].presence || "Monthly"
+    kpi_tag     = params[:kpi_tag].presence         || "Actual"
+    end_date    = Date.parse(params[:end_date]) rescue Date.today
+    n_requested = params[:n_periods].to_i.clamp(1, 24)
+
+    reports = KpiReport
+                .where(portfolio_company: @investor,
+                       entity:            @investor.entity,
+                       period:            period_type,
+                       tag_list:          kpi_tag)
+                .where("as_of <= ?", end_date)
+                .order(as_of: :desc)
+                .limit(n_requested)
+                .pluck(:as_of)
+
+    labels = reports.reverse.map { |d|
+      period_type == "Monthly" ? d.strftime("%b %Y") : "Q#{((d.month - 1) / 3) + 1} #{d.year}"
+    }
+
+    render json: { count: reports.length, requested: n_requested, labels: labels }
+  end
+
   def generate_reports
+    authorize @investor, :generate_reports?
+
     if request.post?
+      template = PortfolioReportTemplate.find(params[:portfolio_report_template_id])
 
-      if params[:kpi_report].present?
-        kpi_report = params[:kpi_report]
-        # This come as a set of arrays of periods and dates, we convert it to a hash
-        kpi_reports_map = kpi_report["period"].each_with_index.map do |period, index|
-          { period: period, as_of: kpi_report["as_of"][index], add_docs: kpi_report["add_docs"][index] }
-        end
-      end
-      # Generate the report if this is a post request
-      PortfolioReportJob.perform_later(params[:portfolio_report_id], params[:start_date], params[:end_date], current_user.id, portfolio_company_id: @investor.id, kpi_reports_map: kpi_reports_map)
+      draft = PortfolioReportDraft.create!(
+        portfolio_company:          @investor,
+        portfolio_report:           template.portfolio_report,
+        portfolio_report_template:  template,
+        user:                       current_user,
+        start_date:                 params[:start_date],
+        end_date:                   params[:end_date],
+        kpi_period_type:            params[:kpi_period_type],
+        kpi_tag:                    params[:kpi_tag],
+        n_periods:                  params[:n_periods],
+        selected_kpi_mapping_ids:   params[:selected_kpi_mapping_ids],
+        status:                     :configuring
+      )
 
-      redirect_to investor_path(@investor, tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
+      PortfolioReportDraftJob.perform_later(draft.id)
+
+      redirect_to portfolio_report_draft_path(draft), notice: "Generating your report draft — we'll notify you when it's ready to review."
     else
-      # Show the form to generate the report
+      all_reports             = @investor.entity.portfolio_reports
+                                          .includes(portfolio_report_templates: :style_document,
+                                                    portfolio_report_sections:  [])
+      # Split into ready (sections + at least one template) vs incomplete (shown in setup roadmap only)
+      @ready_portfolio_reports    = all_reports.select { |r| r.portfolio_report_sections.any? && r.portfolio_report_templates.any? }
+      @incomplete_portfolio_reports = all_reports.reject { |r| r.portfolio_report_sections.any? && r.portfolio_report_templates.any? }
+      @portfolio_reports          = @ready_portfolio_reports   # used by the Stimulus template-dropdown script
+      @kpi_mappings               = @investor.investor_kpi_mappings.show_in_report.group_by(&:category)
+      # Pre-fill dates/settings from the most recent draft for this portco
+      @last_draft                 = PortfolioReportDraft.where(portfolio_company: @investor)
+                                                        .order(created_at: :desc).first
+      @start_date                 = @last_draft&.start_date  || (Date.today - 3.months).beginning_of_month
+      @end_date                   = @last_draft&.end_date    || Date.today.end_of_month
+      @default_n_periods          = @last_draft&.n_periods   || 6
+      @default_kpi_period_type    = @last_draft&.kpi_period_type
+      @default_kpi_tag            = @last_draft&.kpi_tag
+      @default_kpi_mapping_ids    = @last_draft&.selected_kpi_mapping_ids || []
       render "generate_reports"
     end
   end

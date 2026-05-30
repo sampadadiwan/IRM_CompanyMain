@@ -1,0 +1,137 @@
+<%#
+  Renders a collapsible setup checklist for a PortfolioReport.
+  Shows live status for sections, templates, and style documents with direct action links.
+  Locals: portfolio_report
+%>
+<%
+  sections_ok  = portfolio_report.portfolio_report_sections.any?
+  templates    = portfolio_report.portfolio_report_templates.to_a
+  templates_ok = templates.any?
+  all_styled   = templates.any? && templates.all? { |t| t.style_document.present? }
+  setup_done   = sections_ok && templates_ok && all_styled
+
+  def roadmap_icon(done)
+    done ? '<i class="ti ti-circle-check text-success fs-5"></i>' \
+         : '<i class="ti ti-circle-dashed text-muted fs-5"></i>'
+  end
+%>
+
+<div class="card mb-4 border-<%= setup_done ? "success" : "warning" %>">
+  <div class="card-header d-flex align-items-center gap-2 py-2">
+    <div class="d-flex align-items-center gap-2 flex-grow-1"
+         style="cursor:pointer;"
+         data-bs-toggle="collapse"
+         data-bs-target="#reportRoadmap-<%= portfolio_report.id %>"
+         aria-expanded="<%= setup_done ? "false" : "true" %>">
+      <% if setup_done %>
+        <i class="ti ti-circle-check text-success"></i>
+        <span class="fw-semibold small text-success"><%= portfolio_report.name %> — Setup complete</span>
+      <% else %>
+        <i class="ti ti-alert-circle text-warning"></i>
+        <span class="fw-semibold small text-warning"><%= portfolio_report.name %> — Setup incomplete</span>
+      <% end %>
+      <i class="ti ti-chevron-down ms-auto text-muted"></i>
+    </div>
+    <%= link_to portfolio_report_path(portfolio_report),
+                class: "btn btn-sm btn-outline-secondary ms-2",
+                target: "_blank", rel: "noopener" do %>
+      <i class="ti ti-external-link me-1"></i>Go to report
+    <% end %>
+  </div>
+
+  <div id="reportRoadmap-<%= portfolio_report.id %>"
+       class="collapse <%= "show" unless setup_done %>">
+    <div class="card-body p-0">
+
+      <%# ── Step 1: Sections ─────────────────────────────────────────────────── %>
+      <div class="d-flex align-items-start gap-3 p-3 border-bottom">
+        <%== roadmap_icon(sections_ok) %>
+        <div class="flex-grow-1">
+          <div class="fw-semibold small">
+            Step 1 — Add report sections
+            <% if sections_ok %>
+              <span class="badge bg-success-subtle text-success ms-1">
+                <%= portfolio_report.portfolio_report_sections.count %> sections
+              </span>
+            <% end %>
+          </div>
+          <div class="text-muted small mt-1">
+            Sections define the content blocks the LLM will write (e.g. Financial Highlights, Risks & Outlook).
+            Each section has a name and LLM instructions.
+          </div>
+          <% unless sections_ok %>
+            <div class="mt-2">
+              <%= link_to "Add sections",
+                          edit_portfolio_report_path(portfolio_report, anchor: "sections"),
+                          class: "btn btn-sm btn-outline-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Step 2: Output templates ─────────────────────────────────────────── %>
+      <div class="d-flex align-items-start gap-3 p-3 border-bottom">
+        <%== roadmap_icon(templates_ok) %>
+        <div class="flex-grow-1">
+          <div class="fw-semibold small">
+            Step 2 — Create an output template
+            <% if templates_ok %>
+              <span class="badge bg-success-subtle text-success ms-1">
+                <%= templates.count %> <%= "template".pluralize(templates.count) %>
+              </span>
+            <% end %>
+          </div>
+          <div class="text-muted small mt-1">
+            A template selects which sections appear and in what order.
+            One report can have multiple templates (e.g. LP summary vs internal).
+          </div>
+          <% if templates_ok %>
+            <div class="mt-2 d-flex flex-wrap gap-2">
+              <% templates.each do |t| %>
+                <%= link_to t.name, edit_portfolio_report_template_path(t),
+                            class: "btn btn-sm btn-outline-secondary" %>
+              <% end %>
+              <%= link_to "New template",
+                          new_portfolio_report_portfolio_report_template_path(portfolio_report),
+                          class: "btn btn-sm btn-outline-primary" %>
+            </div>
+          <% else %>
+            <div class="mt-2">
+              <%= link_to "Create first template",
+                          new_portfolio_report_portfolio_report_template_path(portfolio_report),
+                          class: "btn btn-sm btn-outline-primary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+      <%# ── Step 3: Style document ───────────────────────────────────────────── %>
+      <div class="d-flex align-items-start gap-3 p-3">
+        <%== roadmap_icon(all_styled) %>
+        <div class="flex-grow-1">
+          <div class="fw-semibold small">Step 3 — Upload a style document (optional)</div>
+          <div class="text-muted small mt-1">
+            A <code>.docx</code> whose named paragraph/table styles are applied when exporting.
+            Upload on each template's edit page. Exports still work without one.
+          </div>
+          <% if templates.any? %>
+            <div class="mt-2 d-flex flex-wrap gap-2">
+              <% templates.each do |t| %>
+                <% has_style = t.style_document.present? %>
+                <%= link_to edit_portfolio_report_template_path(t),
+                            class: "btn btn-sm #{has_style ? "btn-outline-success" : "btn-outline-warning"}" do %>
+                  <% if has_style %>
+                    <i class="ti ti-file-check me-1"></i><%= t.name %>
+                  <% else %>
+                    <i class="ti ti-upload me-1"></i><%= t.name %> — upload style
+                  <% end %>
+                <% end %>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

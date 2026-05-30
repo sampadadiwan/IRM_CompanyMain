@@ -32,4 +32,16 @@ class PortfolioReportPolicy < FundBasePolicy
   def destroy?
     create?
   end
+
+  def clone?
+    create?
+  end
+
+  def suggest_sections?
+    create?
+  end
+
+  def bulk_generate?
+    create?
+  end
 end

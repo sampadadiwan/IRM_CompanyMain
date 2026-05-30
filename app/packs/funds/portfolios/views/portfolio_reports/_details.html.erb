@@ -1,22 +1,83 @@
+<%= render "portfolio_reports/setup_roadmap", portfolio_report: portfolio_report %>
+
 <div class="associated_entity" data-controller="tabs tabdetails">
 
-  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row"  role="tablist">
-    <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Templates</a>
-
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#portfolio-report-extracts-tab">Extracts</a>
+  <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
+    <a class="nav-link active" data-bs-toggle="pill" href="#output-templates-tab">Output Templates</a>
+    <a class="nav-link"        data-bs-toggle="pill" href="#portfolio-report-extracts-tab">Extracts</a>
   </nav>
 
-  <div class="tab-content" data-controller="datatable">
-    <div id="docs-tab" class="tab-pane fade in show active">
-      <div id="docs" class="associated_entity">
-        <%= render "/documents/index", documents: portfolio_report.documents, owner: portfolio_report,
-                entity: portfolio_report.entity %>
+  <div class="tab-content">
+
+    <%# ── Output Templates tab ─────────────────────────────────────────────── %>
+    <div id="output-templates-tab" class="tab-pane fade in show active">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="mb-0 fw-semibold">Output Templates</h6>
+        <% if policy(PortfolioReportTemplate.new).create? %>
+          <%= link_to "New Template",
+                      new_portfolio_report_portfolio_report_template_path(portfolio_report),
+                      class: "btn btn-sm btn-outline-primary" %>
+        <% end %>
       </div>
+
+      <% if portfolio_report.portfolio_report_templates.any? %>
+        <table class="table table-bordered dataTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Format</th>
+              <th>Periods</th>
+              <th>Tags</th>
+              <th>Style file</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% portfolio_report.portfolio_report_templates.each do |t| %>
+              <tr>
+                <td><%= t.name %></td>
+                <td><span class="badge bg-secondary"><%= t.output_format.upcase %></span></td>
+                <td><%= t.kpi_config[:n_periods] %> × <%= Array(t.kpi_config[:tags]).join(', ') %></td>
+                <td><%= Array(t.kpi_config[:categories]).presence&.join(', ') || "All" %></td>
+                <td>
+                  <% if t.style_document %>
+                    <i class="ti ti-file-check text-success"></i> <%= t.style_document.name %>
+                  <% else %>
+                    <span class="text-muted fst-italic">None — edit template to upload</span>
+                  <% end %>
+                </td>
+                <td class="text-end">
+                  <% if policy(t).update? %>
+                    <%= link_to "Edit", edit_portfolio_report_template_path(t),
+                                class: "btn btn-sm btn-outline-secondary me-1" %>
+                  <% end %>
+                  <% if policy(t).destroy? %>
+                    <%= button_to "Delete", portfolio_report_template_path(t),
+                                  method: :delete,
+                                  class: "btn btn-sm btn-outline-danger",
+                                  form_class: "deleteButton",
+                                  data: { action: "click->confirm#popup", turbo: false } %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="text-muted fst-italic">
+          No output templates yet.
+          <% if policy(PortfolioReportTemplate.new).create? %>
+            <%= link_to "Create the first one", new_portfolio_report_portfolio_report_template_path(portfolio_report) %>.
+          <% end %>
+        </p>
+      <% end %>
     </div>
 
+    <%# ── Extracts tab ─────────────────────────────────────────────────────── %>
     <div id="portfolio-report-extracts-tab" class="tab-pane fade in">
-      <div id="portfolio_extracts" class="associated_entity">
-        <%= turbo_frame_tag with_frame("portfolio_report_extracts_frame"), target: "_top", loading: :lazy, src: portfolio_report_extracts_path(portfolio_report_id: portfolio_report.id) do %>
+      <div class="associated_entity">
+        <%= turbo_frame_tag with_frame("portfolio_report_extracts_frame"), target: "_top", loading: :lazy,
+                            src: portfolio_report_extracts_path(portfolio_report_id: portfolio_report.id) do %>
           <%= render "/layouts/loading" %>
         <% end %>
       </div>

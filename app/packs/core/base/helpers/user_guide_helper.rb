@@ -33,6 +33,11 @@ module UserGuideHelper
     'users' => 'user_role_management_user_guide.md',
     'roles' => 'user_role_management_user_guide.md',
 
+    # Portfolio Report Generation
+    'portfolio_reports'          => 'portfolio_report_drafts_user_guide.md',
+    'portfolio_report_templates' => 'portfolio_report_drafts_user_guide.md',
+    'portfolio_report_drafts'    => 'portfolio_report_drafts_user_guide.md',
+
     # Portfolio & Valuations
     'portfolio_investments' => 'portfolio_investments_user_guide.md',
     'aggregate_portfolio_investments' => 'portfolio_investments_user_guide.md',

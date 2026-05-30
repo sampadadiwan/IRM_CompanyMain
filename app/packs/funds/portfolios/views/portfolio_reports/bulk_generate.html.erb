@@ -1,0 +1,111 @@
+<%= render NewCard.new(col_md: "col-md-10") do %>
+  <%= render FormCard.new(title: "<span class='d-flex align-items-center gap-2'>Bulk Generate Portfolio Report Drafts #{user_guide_icon_for('portfolio_report_drafts', tooltip: 'Portfolio Report Drafts User Guide')}</span>") do %>
+
+    <div class="alert alert-warning small mb-4">
+      <i class="ti ti-alert-triangle me-1"></i>
+      This will queue one report draft per selected portfolio company.
+      Data will be sent to an external LLM for narrative generation.
+    </div>
+
+    <% if @ready_reports.empty? %>
+      <div class="text-center py-4">
+        <i class="ti ti-file-report display-4 text-muted mb-3 d-block"></i>
+        <h5 class="mb-2">No report types are ready yet</h5>
+        <p class="text-muted mb-4">You need at least one Portfolio Report with sections and an output template.</p>
+        <%= link_to new_portfolio_report_path, class: "btn btn-primary me-2", target: "_blank", rel: "noopener" do %>
+          <i class="ti ti-plus me-1"></i>Create a Report Type
+        <% end %>
+      </div>
+    <% else %>
+
+      <%= form_with url: bulk_generate_portfolio_reports_path, method: :post, data: { controller: "bulk-generate" } do |f| %>
+
+        <%# ── Template selection ── %>
+        <div class="row mb-4">
+          <div class="col-md-5">
+            <%= label_tag :portfolio_report_template_id, "Output template" %>
+            <select name="portfolio_report_template_id" class="form-control" required
+                    data-action="change->bulk-generate#templateChanged"
+                    data-bulk-generate-target="templateSelect">
+              <option value="">— select a template —</option>
+              <% @ready_reports.each do |report| %>
+                <optgroup label="<%= report.name %>">
+                  <% report.portfolio_report_templates.each do |tpl| %>
+                    <option value="<%= tpl.id %>"><%= tpl.name %></option>
+                  <% end %>
+                </optgroup>
+              <% end %>
+            </select>
+          </div>
+
+          <%# ── Period settings ── %>
+          <div class="col-md-2">
+            <%= label_tag :kpi_period_type, "KPI period" %>
+            <%= select_tag :kpi_period_type, options_for_select(KpiReport::PERIODS), class: "form-control" %>
+          </div>
+          <div class="col-md-2">
+            <%= label_tag :kpi_tag, "KPI data tag" %>
+            <%= select_tag :kpi_tag, options_for_select(KpiReport::TAG_LIST.map { |k, v| [k, v] }), class: "form-control" %>
+          </div>
+          <div class="col-md-1">
+            <%= label_tag :n_periods, "N periods" %>
+            <%= number_field_tag :n_periods, 6, class: "form-control", min: 1, max: 24 %>
+          </div>
+        </div>
+
+        <%# ── Date range ── %>
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <%= label_tag :start_date, "Start date" %>
+            <%= date_field_tag :start_date, (Date.today - 3.months).beginning_of_month, class: "form-control" %>
+          </div>
+          <div class="col-md-3">
+            <%= label_tag :end_date, "End date" %>
+            <%= date_field_tag :end_date, Date.today.end_of_month, class: "form-control" %>
+          </div>
+        </div>
+
+        <%# ── Portfolio company selection ── %>
+        <div class="mb-4">
+          <div class="d-flex align-items-center justify-content-between mb-2">
+            <label class="form-label fw-semibold mb-0">Portfolio companies to generate for</label>
+            <div class="d-flex gap-2">
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      data-action="click->bulk-generate#selectAll">Select all</button>
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      data-action="click->bulk-generate#clearAll">Clear all</button>
+            </div>
+          </div>
+
+          <% if @portfolio_companies.empty? %>
+            <div class="alert alert-secondary">No portfolio companies found for your entity.</div>
+          <% else %>
+            <div class="row" data-bulk-generate-target="companyList">
+              <% @portfolio_companies.each do |pc| %>
+                <div class="col-md-4 col-sm-6 mb-1">
+                  <div class="form-check">
+                    <%= check_box_tag "portfolio_company_ids[]", pc.id, false,
+                          id: "pc_#{pc.id}", class: "form-check-input pc-checkbox" %>
+                    <%= label_tag "pc_#{pc.id}", pc.investor_name, class: "form-check-label" %>
+                  </div>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+
+        <%# ── Submit ── %>
+        <div class="d-flex align-items-center gap-3">
+          <%= f.submit "Queue Drafts for Selected Companies",
+                       class: "btn btn-primary",
+                       data: { disable_with: "Queuing…" } %>
+          <%= link_to "Cancel", portfolio_reports_path, class: "btn btn-outline-secondary" %>
+          <small class="text-muted">One draft job per company will be queued. You'll receive a notification as each finishes.</small>
+        </div>
+
+      <% end %>
+    <% end %>
+
+  <% end %>
+<% end %>
+

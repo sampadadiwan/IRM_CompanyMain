@@ -1,0 +1,82 @@
+<%#
+  Recent draft history for a portco on the generate_reports page.
+  Locals: investor (the portco), portfolio_reports (already loaded)
+%>
+<%
+  recent_drafts = PortfolioReportDraft
+    .where(portfolio_company: investor)
+    .order(created_at: :desc)
+    .limit(10)
+    .includes(:portfolio_report_template)
+%>
+<% if recent_drafts.any? %>
+<div class="card mb-4">
+  <div class="card-header d-flex align-items-center justify-content-between py-2">
+    <span class="fw-semibold small"><i class="ti ti-history me-1"></i>Recent Drafts</span>
+    <span class="badge bg-secondary"><%= recent_drafts.count %></span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-sm table-hover mb-0">
+      <thead class="table-light">
+        <tr>
+          <th>Template</th>
+          <th>Period</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% recent_drafts.each do |draft| %>
+          <%
+            status_badge = {
+              "configuring" => "secondary",
+              "generating"  => "warning text-dark",
+              "review"      => "info text-dark",
+              "approved"    => "primary",
+              "exported"    => "success"
+            }.fetch(draft.status, "secondary")
+          %>
+          <tr>
+            <td><%= draft.portfolio_report_template.name %></td>
+            <td class="small text-muted">
+              <%= draft.start_date.strftime("%b %Y") %> – <%= draft.end_date.strftime("%b %Y") %>
+            </td>
+            <td>
+              <span class="badge bg-<%= status_badge %>"><%= draft.status.humanize %></span>
+            </td>
+            <td class="small text-muted"><%= draft.created_at.strftime("%d %b %Y") %></td>
+            <td class="text-end">
+              <%# Primary action depends on status %>
+              <% if draft.review? %>
+                <%= link_to "Review & Edit",
+                            portfolio_report_draft_path(draft),
+                            class: "btn btn-sm btn-outline-info me-1" %>
+              <% elsif draft.approved? %>
+                <%= link_to "Export to Word",
+                            portfolio_report_draft_path(draft),
+                            class: "btn btn-sm btn-outline-primary me-1" %>
+              <% elsif draft.exported? %>
+                <% if draft.generated_document.present? %>
+                  <%= link_to "Download",
+                              draft.generated_document.file_url,
+                              class: "btn btn-sm btn-outline-success me-1",
+                              target: "_blank", rel: "noopener" %>
+                <% end %>
+              <% elsif draft.generating? %>
+                <span class="spinner-border spinner-border-sm text-warning me-1" role="status"></span>
+                <span class="small text-muted">Generating…</span>
+              <% elsif draft.configuring? %>
+                <span class="small text-muted fst-italic">Failed — regenerate below</span>
+              <% end %>
+              <%# Always show a View link %>
+              <%= link_to "View", portfolio_report_draft_path(draft),
+                          class: "btn btn-sm btn-outline-secondary" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% end %>

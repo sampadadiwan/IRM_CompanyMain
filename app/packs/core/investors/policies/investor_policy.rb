@@ -69,6 +69,10 @@ class InvestorPolicy < ApplicationPolicy
     update?
   end
 
+  def kpi_data_preview?
+    update?
+  end
+
   # Permission to generate agent charts for this portfolio company. Requires update permissions.
   def generate_agent_charts?
     update?

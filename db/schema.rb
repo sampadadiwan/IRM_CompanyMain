@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_29_100001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3034,6 +3034,31 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
     t.index ["valuation_id"], name: "index_portfolio_investments_on_valuation_id"
   end
 
+  create_table "portfolio_report_drafts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.date "end_date", null: false
+    t.bigint "generated_document_id"
+    t.string "kpi_period_type", null: false
+    t.json "kpi_table_data"
+    t.string "kpi_tag", null: false
+    t.integer "n_periods", default: 6, null: false
+    t.bigint "portfolio_company_id", null: false
+    t.bigint "portfolio_report_id", null: false
+    t.bigint "portfolio_report_template_id", null: false
+    t.json "section_data"
+    t.json "selected_kpi_mapping_ids"
+    t.date "start_date", null: false
+    t.string "status", default: "configuring", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["generated_document_id"], name: "index_portfolio_report_drafts_on_generated_document_id"
+    t.index ["portfolio_company_id"], name: "index_portfolio_report_drafts_on_portfolio_company_id"
+    t.index ["portfolio_report_id"], name: "index_portfolio_report_drafts_on_portfolio_report_id"
+    t.index ["portfolio_report_template_id"], name: "index_portfolio_report_drafts_on_portfolio_report_template_id"
+    t.index ["status"], name: "index_portfolio_report_drafts_on_status"
+    t.index ["user_id"], name: "index_portfolio_report_drafts_on_user_id"
+  end
+
   create_table "portfolio_report_extracts", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.json "data"
@@ -3061,6 +3086,24 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
     t.string "tags", limit: 100
     t.datetime "updated_at", null: false
     t.index ["portfolio_report_id"], name: "index_portfolio_report_sections_on_portfolio_report_id"
+  end
+
+  create_table "portfolio_report_templates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.integer "auto_generate_day", default: 1
+    t.boolean "auto_generate_enabled", default: false, null: false
+    t.string "auto_generate_frequency"
+    t.datetime "auto_generate_last_run_at"
+    t.json "branding"
+    t.datetime "created_at", null: false
+    t.json "kpi_layout"
+    t.string "name", null: false
+    t.string "output_format", null: false
+    t.bigint "portfolio_report_id", null: false
+    t.json "section_order"
+    t.bigint "style_document_id"
+    t.datetime "updated_at", null: false
+    t.index ["portfolio_report_id"], name: "index_portfolio_report_templates_on_portfolio_report_id"
+    t.index ["style_document_id"], name: "index_portfolio_report_templates_on_style_document_id"
   end
 
   create_table "portfolio_reports", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -4074,11 +4117,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_27_100001) do
   add_foreign_key "portfolio_investments", "investment_instruments"
   add_foreign_key "portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_investments", "valuations"
+  add_foreign_key "portfolio_report_drafts", "documents", column: "generated_document_id"
+  add_foreign_key "portfolio_report_drafts", "investors", column: "portfolio_company_id"
+  add_foreign_key "portfolio_report_drafts", "portfolio_report_templates"
+  add_foreign_key "portfolio_report_drafts", "portfolio_reports"
+  add_foreign_key "portfolio_report_drafts", "users"
   add_foreign_key "portfolio_report_extracts", "entities"
   add_foreign_key "portfolio_report_extracts", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_report_extracts", "portfolio_report_sections"
   add_foreign_key "portfolio_report_extracts", "portfolio_reports"
   add_foreign_key "portfolio_report_sections", "portfolio_reports"
+  add_foreign_key "portfolio_report_templates", "documents", column: "style_document_id"
+  add_foreign_key "portfolio_report_templates", "portfolio_reports"
   add_foreign_key "portfolio_reports", "entities"
   add_foreign_key "portfolio_reports", "folders", column: "document_folder_id"
   add_foreign_key "portfolio_scenarios", "entities"

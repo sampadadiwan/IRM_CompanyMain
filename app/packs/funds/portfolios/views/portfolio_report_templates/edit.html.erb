@@ -1,0 +1,18 @@
+<%= render "form", portfolio_report_template: @template, portfolio_report: @portfolio_report %>
+
+<%# ── Style Files ────────────────────────────────────────────────────────── %>
+<%# Documents are owned by this template; uploaded here and selected above.   %>
+<div class="card mt-4">
+  <div class="card-body">
+    <h6 class="fw-semibold mb-1">Style Files</h6>
+    <p class="text-muted small mb-3">
+      Upload a <code>.docx</code> (Word) or <code>.pptx</code> (PPT) file that contains only
+      styles — no content or placeholders. After uploading, select it as the style reference file
+      in the form above.
+    </p>
+    <%= render "/documents/index",
+               documents: @template.documents.order(created_at: :desc),
+               owner: @template,
+               entity: @template.entity %>
+  </div>
+</div>
