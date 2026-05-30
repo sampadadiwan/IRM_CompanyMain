@@ -1,7 +1,7 @@
 wb = xlsx_package.workbook
 
 if params[:form_type_name] == "IndividualKyc"
-  form_type, custom_field_names, custom_headers = get_form_type("IndividualKyc", form_type_id: params[:form_type_id])
+  form_type, custom_field_names, custom_headers, _calcs, _calc_headers, field_types = get_form_type("IndividualKyc", form_type_id: params[:form_type_id])
 
   wb.add_worksheet(name: "IndividualKyc") do |sheet|
     # Create the header row
@@ -9,7 +9,7 @@ if params[:form_type_name] == "IndividualKyc"
 
     # Create entries for each item
     @investor_kycs.individual.each do |cc|
-      custom_field_values = get_custom_values(cc, form_type, custom_field_names)
+      custom_field_values = get_custom_values(cc, form_type, custom_field_names, field_types: field_types)
       custom_field_values = custom_field_values.map { |v| excel_text_if_numeric(v) }
 
       bank_verified = cc.bank_verified ? "Yes" : "No"
@@ -22,7 +22,7 @@ if params[:form_type_name] == "IndividualKyc"
 end
 
 if params[:form_type_name] == "NonIndividualKyc"
-  form_type, custom_field_names, custom_headers = get_form_type("NonIndividualKyc", form_type_id: params[:form_type_id])
+  form_type, custom_field_names, custom_headers, _calcs, _calc_headers, field_types = get_form_type("NonIndividualKyc", form_type_id: params[:form_type_id])
 
   wb.add_worksheet(name: "NonIndividualKyc") do |sheet|
     # Create the header row
@@ -30,7 +30,7 @@ if params[:form_type_name] == "NonIndividualKyc"
 
     # Create entries for each item
     @investor_kycs.non_individual.each do |cc|
-      custom_field_values = get_custom_values(cc, form_type, custom_field_names)
+      custom_field_values = get_custom_values(cc, form_type, custom_field_names, field_types: field_types)
       custom_field_values = custom_field_values.map { |v| excel_text_if_numeric(v) }
 
       bank_verified = cc.bank_verified ? "Yes" : "No"

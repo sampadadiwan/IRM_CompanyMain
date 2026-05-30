@@ -55,17 +55,29 @@ module FormTypeHelper
   def get_form_type(name, entity_id: nil, form_type_id: nil)
     entity_id ||= current_user.entity_id
     form_type = form_type_id.present? ? FormType.find(form_type_id) : FormType.where(entity_id:, name:).first
-    custom_field_names = form_type ? form_type.form_custom_fields.visible.collect(&:name) : []
+    custom_fields = form_type ? form_type.form_custom_fields.visible.to_a : []
+    custom_field_names = custom_fields.map(&:name)
     custom_headers = custom_field_names.map(&:titleize)
     custom_calcs = form_type ? form_type.form_custom_fields.calculations : []
     custom_calc_headers = form_type ? form_type.form_custom_fields.calculations.collect(&:human_label) : []
+    # hash of field_name => field_type, used by callers that need type-aware value formatting (e.g. DateField → Date object)
+    custom_field_types = custom_fields.each_with_object({}) { |f, h| h[f.name] = f.field_type }
 
-    [form_type, custom_field_names, custom_headers, custom_calcs, custom_calc_headers]
+    [form_type, custom_field_names, custom_headers, custom_calcs, custom_calc_headers, custom_field_types]
   end
 
-  def get_custom_values(model, form_type, custom_field_names)
+  # field_types: hash of field_name => field_type (from get_form_type's 6th return value).
+  # When provided, DateField values are parsed to Date objects so Excel treats them as date cells
+  # and applies locale-sensitive formatting, matching how native date DB columns behave.
+  def get_custom_values(model, form_type, custom_field_names, field_types: {})
     if form_type && model&.properties
-      model.properties.values_at(*custom_field_names).map(&:to_s)
+      model.properties.values_at(*custom_field_names).each_with_index.map do |v, i|
+        if field_types[custom_field_names[i]] == "DateField" && v.present?
+          Date.parse(v.to_s) rescue v.to_s
+        else
+          v.to_s
+        end
+      end
     else
       []
     end
