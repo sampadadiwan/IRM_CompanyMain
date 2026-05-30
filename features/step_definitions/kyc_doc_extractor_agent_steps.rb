@@ -25,6 +25,9 @@ Given('there is a KycDocExtractorAgent configured for the entity') do
       "extraction_rules" => {}
     }
   )
+  # Set the support_agents bitflag so entity.support_agents.kyc_doc_extractor_agent? returns true
+  @entity.support_agents.set(:kyc_doc_extractor_agent)
+  @entity.save!
 end
 
 Given('the entity has NO KycDocExtractorAgent configured') do

@@ -11,7 +11,7 @@
 
       <div class="card shadow-sm">
         <div class="card-header bg-white py-3">
-          <h5 class="mb-0"><i class="ti ti-file-upload me-2 text-primary"></i>Upload your KYC Documents</h5>
+          <h5 class="mb-0"><i class="ti ti-file-upload me-2 text-primary"></i>Upload KYC Documents</h5>
         </div>
 
         <div class="card-body">
@@ -92,15 +92,9 @@
                     class: "btn btn-outline-secondary" do %>
                 <i class="ti ti-pencil me-1"></i>Fill Form Manually
               <% end %>
-              <div class="d-flex gap-2">
-                <%= button_to "Extract from Documents",
-                      extract_docs_data_investor_kyc_path(investor_kyc, signed_id: params[:signed_id].presence),
-                      method: :post,
-                      class: "btn btn-outline-secondary btn-sm" %>
-                <%= form.submit "Continue to Fill Form →",
-                      class: "btn btn-outline-primary",
-                      data: { disable_with: "Extracting data from documents…" } %>
-              </div>
+              <%= form.submit "Continue to Fill Form →",
+                    class: "btn btn-outline-primary",
+                    data: { disable_with: "Extracting data from documents…" } %>
             </div>
           <% end %>
         </div>

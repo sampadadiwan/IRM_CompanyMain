@@ -43,6 +43,9 @@ Given('there is a KycDocExtractorAgent with PAN and address extraction rules for
     }
   )
   @doc_extractor_agent.save!
+  # Set the support_agents bitflag so entity.support_agents.kyc_doc_extractor_agent? returns true
+  @entity.support_agents.set(:kyc_doc_extractor_agent)
+  @entity.save!
 end
 
 # ── LLM stub ─────────────────────────────────────────────────────────────────

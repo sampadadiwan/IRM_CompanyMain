@@ -32,10 +32,12 @@ Feature: KYC Document Extractor Agent
   # ─────────────────────────────────────────────────────────────────────────────
 
   @kyc_doc_extractor @form_ui
-  Scenario: Extract from Documents button is visible when wizard is enabled
+  Scenario: Doc-first upload screen is shown when wizard is enabled and no documents uploaded
     Given there is a KYC for the investor with submission_status "link_sent"
     When I visit the KYC edit page as the fund admin
-    Then I should see an "Extract from Documents" button
+    Then I should see "Upload your KYC Documents"
+    And I should see "Upload Tax ID"
+    And I should see "Upload Address Proof"
 
   @kyc_doc_extractor @form_ui
   Scenario: Extract button is NOT shown when kyc_doc_first_wizard is disabled
@@ -100,10 +102,11 @@ Feature: KYC Document Extractor Agent
   # ─────────────────────────────────────────────────────────────────────────────
 
   @kyc_doc_extractor @policy
-  Scenario: An investor via magic link can trigger extraction on their own KYC
+  Scenario: An investor via magic link sees the doc-first upload screen
     Given there is a KYC for the investor with submission_status "link_sent"
     When I open the KYC edit page as the investor via a valid signed link for doc extraction
-    Then I should see an "Extract from Documents" button
+    Then I should see "Upload your KYC Documents"
+    And I should see "Continue to Fill Form"
 
   @kyc_doc_extractor @policy
   Scenario: Agent not configured returns a redirect with an alert

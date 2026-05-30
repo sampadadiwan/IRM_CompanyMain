@@ -2,7 +2,7 @@
 <% form = "initial_form" if policy(@investor_kyc).ckyc_or_kra_enabled? %>
 
 <% doc_first = @investor_kyc.entity.entity_setting.kyc_doc_first_wizard? &&
-               @investor_kyc.entity.agents.exists?(agent_type: "KycDocExtractorAgent", enabled: true) &&
+               @investor_kyc.entity.support_agents.kyc_doc_extractor_agent? &&
                !params[:skip_doc_first] %>
 
 <% if doc_first %>

@@ -668,13 +668,12 @@ class InvestorKycsController < ApplicationController
     KycDocExtractorJob.perform_later(investor_kyc.id, agent.id, redirect_url)
   end
 
-  # Returns true when the investor (magic link or investor-role user) should see
-  # the doc-first upload form instead of the regular KYC edit form.
+  # Returns true when the doc-first upload form should be shown instead of the regular KYC edit form.
   def doc_first_wizard_for_edit?
     return false if params[:skip_doc_first].present?
-    return false unless params[:signed_id].present? || pundit_user&.curr_role_investor?
+    return false if @investor_kyc.submission_completed? || @investor_kyc.submission_verified?
     return false unless @investor_kyc.entity.entity_setting.kyc_doc_first_wizard?
-    return false unless @investor_kyc.entity.agents.exists?(agent_type: "KycDocExtractorAgent", enabled: true)
+    return false unless @investor_kyc.entity.support_agents.kyc_doc_extractor_agent?
     # Only show the upload form when no documents have been attached yet.
     @investor_kyc.documents.empty?
   end
