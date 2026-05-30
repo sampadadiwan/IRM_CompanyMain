@@ -36,7 +36,7 @@ Feature: KYC Document Extractor Agent
     Given there is a KYC for the investor with submission_status "link_sent"
     When I visit the KYC edit page as the fund admin
     Then I should see "Upload KYC Documents"
-    And I should see "Upload Tax ID"
+    And I should see "Upload PAN / Tax ID"
     And I should see "Upload Address Proof"
 
   @kyc_doc_extractor @form_ui
@@ -106,7 +106,7 @@ Feature: KYC Document Extractor Agent
     Given there is a KYC for the investor with submission_status "link_sent"
     When I open the KYC edit page as the investor via a valid signed link for doc extraction
     Then I should see "Upload KYC Documents"
-    And I should see "Continue to Fill Form"
+    And I should see an "Continue to Fill Form →" button
 
   @kyc_doc_extractor @policy
   Scenario: Agent not configured returns a redirect with an alert
