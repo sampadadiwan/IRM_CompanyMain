@@ -18,8 +18,9 @@ class DocumentPolicy < ApplicationPolicy
   end
 
   def not_generated_or_approved
-    # Either is is not a generated doc or it is generated but approved
-    record.from_template_id.nil? || record.approved
+    # Signed docs (completed esign flow) are never "pending approval" even though they have from_template_id set.
+    # Use subject_to_approval? which already excludes signed docs, instead of checking from_template_id directly.
+    !record.subject_to_approval? || record.approved
   end
 
   def create?
