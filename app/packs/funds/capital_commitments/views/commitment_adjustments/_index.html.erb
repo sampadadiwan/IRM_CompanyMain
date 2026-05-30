@@ -1,3 +1,7 @@
+<%
+  xl_data_source = commitment_adjustments_path(q: params.to_unsafe_h[:q], params: params.to_unsafe_h.except(:q), format: :json, all: true)
+  xl_link = download_xl_link(xl_data_source)
+%>
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Adjustments</h1>
   <div class="d-flex gap-2">
@@ -5,9 +9,35 @@
           new_commitment_adjustment_path("commitment_adjustment[capital_commitment_id]": params[:capital_commitment_id]),
           {class: "btn btn-outline-primary"} if params[:capital_commitment_id].present? %>
 
-    <%= link_to commitment_adjustments_path(params: params.to_unsafe_h, format: :xlsx, all: true), class: "btn btn-outline-success" do %>
-      <i class="ti ti-download"></i> <%= t_common(:download) %>
+    <%# Filter button — activates the Ransack filter panel %>
+    <%= link_to commitment_adjustments_path(params.to_unsafe_h.merge(filter: '1')),
+          class: "btn btn-outline-info d-inline-flex align-items-center" do %>
+      <i class="ti ti-filter"></i>&nbsp;Filter
     <% end %>
+
+    <%# Download dropdown — Export All (XLSX) or Export Visible (table rows) %>
+    <div class="btn-group">
+      <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center"
+              type="button" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="ti ti-download"></i>&nbsp;<%= t_common(:download) %>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li>
+          <%= link_to xl_link, class: "dropdown-item", data: { turbo: false } do %>
+            <i class="ti ti-file-spreadsheet"></i> <%= t_common(:export_all) %>
+          <% end %>
+        </li>
+        <li>
+          <button class="dropdown-item"
+                  data-controller="export-xl"
+                  data-action="click->export-xl#export"
+                  data-tableid="commitment_adjustments"
+                  data-filename="Commitment Adjustments">
+            <i class="ti ti-table-export"></i> <%= t_common(:export_visible) %>
+          </button>
+        </li>
+      </ul>
+    </div>
   </div>
 </div>
 
