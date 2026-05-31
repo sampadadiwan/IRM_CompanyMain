@@ -1,0 +1,82 @@
+<div class="card bg-info-subtle shadow-none position-relative overflow-hidden mb-4">
+  <div class="card-body px-4 py-3">
+    <div class="row align-items-center">
+      <div class="col-9">
+        <h4 class="fw-semibold mb-8"><%= t('top_menus.features') %></h4>
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+              <a class="text-muted text-decoration-none" href="/">Home</a>
+            </li>
+            <li class="breadcrumb-item" aria-current="page"><%= t('top_menus.features') %></li>
+          </ol>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div data-controller="list-filter">
+  <ul class="nav nav-pills p-3 mb-3 rounded align-items-center card flex-row">
+    <li class="nav-item flex-grow-1 me-3">
+      <div class="input-group">
+        <span class="input-group-text bg-transparent border-0">
+          <i class="ti ti-search fs-4"></i>
+        </span>
+        <input type="text" class="form-control border-0 ps-0" placeholder="<%= t('top_menus.features') %>..."
+               data-action="input->list-filter#filter" data-list-filter-target="input">
+        <button class="btn btn-link text-muted d-none" type="button" data-action="click->list-filter#clear" data-list-filter-target="clearButton">
+          <i class="ti ti-x fs-4"></i>
+        </button>
+      </div>
+    </li>
+    <li class="nav-item ms-auto">
+      <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
+        <%= @features.count %> Features Available
+      </span>
+    </li>
+  </ul>
+
+  <div class="tab-content">
+    <div data-list-filter-target="noResults" class="alert alert-warning d-none mx-3">
+      No features found matching your search.
+    </div>
+
+    <% @grouped_features.each do |group, features| %>
+      <% if group.present? %>
+        <h5 class="px-2 mt-3 mb-2 text-muted fw-semibold">
+          <i class="ti ti-folder me-1"></i><%= group %>
+        </h5>
+      <% end %>
+      <div class="note-has-grid row">
+        <% features.each do |feature| %>
+          <% type = ["note-social", "note-important", "note-business"].sample %>
+          <div class="col-md-4 single-note-item all-category mb-4 <%= type %>" data-list-filter-target="item">
+            <div class="card card-body h-100 mb-0 shadow-sm border-0">
+              <span class="side-stick"></span>
+              <h6 class="note-title text-truncate w-75 mb-0">
+                <%= link_to feature[:title], feature_path(id: feature[:id]), class: "fw-bolder text-dark", target: "_blank" %>
+              </h6>
+              <p class="note-date fs-2 text-muted mb-3">
+                <%= group.present? ? group : "Feature Documentation" %>
+              </p>
+              <div class="note-content">
+                <p class="note-inner-content text-muted mb-4" style="min-height:50px;">
+                  <%= feature[:description] %>
+                </p>
+              </div>
+              <div class="d-flex align-items-center mt-auto pt-3 border-top">
+                <%= link_to feature_path(id: feature[:id]), class: "btn btn-sm btn-primary rounded-pill px-3", target: "_blank" do %>
+                  View Feature
+                <% end %>
+                <div class="ms-auto">
+                  <i class="ti ti-flag fs-5 text-muted"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

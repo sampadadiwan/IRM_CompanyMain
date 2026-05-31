@@ -90,6 +90,8 @@ Rails.application.routes.draw do
 
   resources :user_guides, only: %i[index show]
   resources :release_notes, only: %i[index show], constraints: { id: /[^\/]+/ }
+  resources :features, only: [:index]
+  get 'features/*id', to: 'features#show', as: :feature, format: false
 
   get 'outlook_addin/taskpane', to: 'outlook_addin#taskpane'
   get 'outlook_addin/investors', to: 'outlook_addin#investors'

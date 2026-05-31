@@ -240,6 +240,14 @@
           </a>
         </li>
       <% end %>
+      <% if current_user&.support? %>
+        <li class="sidebar-item">
+          <a class="sidebar-link" href="/features">
+            <span><i class="ti ti-flag"></i></span>
+            <span class="hide-menu"><%= t('top_menus.features') %></span>
+          </a>
+        </li>
+      <% end %>
     </ul>
     <!-- End of Sidebar -->
 
