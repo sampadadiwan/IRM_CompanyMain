@@ -20,6 +20,14 @@ class FundRatio < ApplicationRecord
   # (e.g. fund_ratio_run_name_cont) without relying on the polymorphic path.
   belongs_to :fund_ratio_run, foreign_key: :computation_context_id, optional: true
   belongs_to :capital_commitment, optional: true
+
+  # Returns the polymorphic owner when present; falls back to the FundRatioRun
+  # for rows that have no owner (e.g. tag/sector-aggregated cross-portfolio runs
+  # where owner_type/owner_id are nil).  Callers should use this instead of
+  # accessing `owner` directly so nil-owner rows are still labelled meaningfully.
+  def display_owner
+    owner.presence || fund_ratio_run
+  end
   belongs_to :valuation, optional: true
   belongs_to :owner, polymorphic: true, optional: true
 

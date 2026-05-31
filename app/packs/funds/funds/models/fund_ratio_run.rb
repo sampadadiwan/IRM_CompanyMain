@@ -126,6 +126,20 @@ class FundRatioRun < ApplicationRecord
     Investor.where(id: portfolio_company_ids)
   end
 
+  # Finds the FundRatioRunTemplate that produced this run by matching its
+  # fingerprint. Returns nil if no template matches (e.g. ad-hoc runs).
+  def template
+    FundRatioRunTemplate.where(entity_id: entity_id).find do |t|
+      FundRatioRun.fingerprint(
+        fund_ids:              t.fund_ids,
+        portfolio_company_ids: t.portfolio_company_ids,
+        tags:                  t.portfolio_companies_tags,
+        sectors:               t.sectors,
+        type:                  t.run_type
+      ) == name
+    end
+  end
+
   private
 
   def set_name
@@ -133,7 +147,8 @@ class FundRatioRun < ApplicationRecord
       fund_ids:              fund_ids,
       portfolio_company_ids: portfolio_company_ids,
       tags:                  portfolio_companies_tags,
-      sectors:               sectors
+      sectors:               sectors,
+      type:                  run_type
     )
   end
 end

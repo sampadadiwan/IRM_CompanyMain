@@ -85,9 +85,27 @@ module PortfolioHelper
     fund_ratios
   end
 
-  def multi_fund_cross_portfolio_ratios(fund_ids, investor_ids, sectors, tags, owner_types: ["Fund"], ratio_names: %w[IRR], latest: true, latest_run_only: false, end_date: nil, scenario: nil, scenarios: nil)
-    runs = cross_fund_runs_for(fund_ids, investor_ids, current_user.entity_id, sectors, tags)
-    byebug
+  def multi_fund_cross_portfolio_ratios(fund_ids, investor_ids, sectors, tags, owner_types: ["Fund"], ratio_names: %w[IRR], latest: true, latest_run_only: false, end_date: nil, scenario: nil, scenarios: nil, template_ids: nil)
+
+    if Array(fund_ids).reject(&:zero?).blank? && sectors.blank? && tags.blank?
+      templates = FundRatioRunTemplate.for_entity(current_user.entity_id)
+      templates = templates.where(id: Array(template_ids)) if template_ids.present?
+      template_fingerprints = templates.map do |t|
+        FundRatioRun.fingerprint(
+          fund_ids:              t.fund_ids,
+          portfolio_company_ids: t.portfolio_company_ids,
+          tags:                  t.portfolio_companies_tags,
+          sectors:               t.sectors
+        )
+      end
+
+      runs = FundRatioRun.where(entity_id: current_user.entity_id, name: template_fingerprints).order(end_date: :desc)
+    else
+      runs = cross_fund_runs_for(fund_ids, investor_ids, current_user.entity_id, sectors, tags)
+    end
+
+    # Fallback: if no filters are set (blank fund_ids, no sectors, no tags), return
+    # the latest ratios across all template-linked runs for this entity.
     # No runs computed yet — return nil so the caller can render a "Generate" prompt.
     return nil if runs.none?
 
@@ -103,10 +121,13 @@ module PortfolioHelper
         entity_id:                current_user.entity_id,
         computation_context_type: "FundRatioRun",
         computation_context_id:   runs.ids
-      )
+      ).where(owner_type: owner_types + [nil])
+       .includes(:fund_ratio_run)
     end
     fund_ratios = fund_ratios.where(latest: true) if latest
     fund_ratios = fund_ratios.where(end_date:) if end_date.present?
+    # For fund_ratios where the owner_id is nill in case of sector or tag based filtering
+
 
     # For aggregate (Fund-owner) ratios, keep only the most recently computed
     # end_date so historical re-runs don't produce duplicate rows.

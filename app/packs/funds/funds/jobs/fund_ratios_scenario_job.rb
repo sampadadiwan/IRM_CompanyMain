@@ -20,7 +20,6 @@ class FundRatiosScenarioJob < ApplicationJob
   # type                        — "cross-fund" or "cross-portfolio"
   def perform(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil, type: "cross-fund")
     setup(fund_id, end_date, user_id, fund_ids:, portfolio_company_ids:, portfolio_companies_tags:, portfolio_companies_sectors:, currency:)
-    byebug
     # find_or_initialize_by: re-running the same inputs on the same date reuses the
     # existing run record (unique index on entity + end_date + name prevents duplicates).
     @run = FundRatioRun.find_or_initialize_by(
