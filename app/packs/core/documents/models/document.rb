@@ -306,7 +306,8 @@ class Document < ApplicationRecord
 
   def subject_to_approval?
     # It was generated from some template, but is not a signed doc.
-    from_template_id.present? && owner_tag&.exclude?("Signed")
+    # Use != instead of safe-navigation exclude? to avoid nil returning falsy when owner_tag is nil.
+    from_template_id.present? && owner_tag != "Signed"
   end
 
   def self.ransackable_attributes(_auth_object = nil)

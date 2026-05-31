@@ -44,6 +44,13 @@ export default class extends Controller {
 
       });
 
+      // Use position:fixed strategy so dropdowns inside the table escape overflow clipping
+      this.element.querySelectorAll('[data-bs-toggle="dropdown"]').forEach(toggle => {
+        new bootstrap.Dropdown(toggle, {
+          popperConfig: { strategy: 'fixed' }
+        });
+      });
+
       // Ensure DataTable is destroyed, else it gets duplicated
       $(document).on('turbo:before-cache', function() {
         $.each( table, function( key, value ) {
