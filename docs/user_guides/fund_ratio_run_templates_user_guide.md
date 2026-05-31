@@ -43,7 +43,7 @@ When you trigger a template you supply only the **end date**. Everything else co
    - **Tags** — optional grouping labels (Select2, free-text or existing tags). Multiple tags allowed.
    - **Anchor Fund** — the fund used for document storage. Leave blank for cross-portfolio runs that span all funds.
    - **Source Funds** — the funds whose data feeds the calculation. Leave blank to include all entity funds.
-   - **Portfolio Companies / Tags / Sectors** — leave all blank for a cross-fund run; fill any one for a cross-portfolio run.
+   - **Portfolio Companies / Tags / Sectors** — leave all blank for a cross-fund run; fill any one (or more) for a cross-portfolio run. When both **Portfolio Company Tags** and **Sectors** are set, only companies that match **both** filters are included (AND logic). Setting only one of the two keeps all companies that match that filter.
    - **Display Order** — controls the order templates appear in the index.
 4. Click **Save**. The **run type** (cross-fund or cross-portfolio) is inferred automatically from the filter fields — you do not set it manually.
 
@@ -119,3 +119,9 @@ Yes. Deleting a template does not delete the `FundRatioRun` records or `FundRati
 
 **The run type shows "cross-fund" but I expected "cross-portfolio". Why?**
 The run type is inferred: unless at least one portfolio company filter (explicit IDs, tags, or sectors) is set, the template is treated as cross-fund. Add a portfolio company tag or sector filter to switch it to cross-portfolio.
+
+**What happens when both Portfolio Company Tags and Sectors are set?**
+The two filters are intersected — only companies that satisfy **both** conditions are included. For example, if Tags = `growth` and Sectors = `Ecommerce`, only companies tagged `growth` **and** in the `Ecommerce` sector appear in the calculation. Companies that have the tag but belong to a different sector (or vice versa) are excluded. If you want a broader union, create two separate templates — one per filter — and trigger both for the same date.
+
+**What if I set explicit Portfolio Companies alongside Tags and Sectors?**
+Explicitly selected companies are always included regardless of the tag/sector filters. The AND intersection applies only to companies resolved through the tag and sector fields.

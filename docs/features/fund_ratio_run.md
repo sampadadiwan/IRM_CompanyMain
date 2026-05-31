@@ -29,7 +29,7 @@ belongs_to :computation_context, polymorphic: true, optional: true
 
 | Context type | Created by | What it records |
 |---|---|---|
-| `FundRatioRun` | `FundRatiosScenarioJob` | which funds / companies / tags / sectors fed a cross-run |
+| `FundRatioRun` | `FundRatiosScenarioJob` | which funds / companies / tags / sectors fed a cross-run (tags ∩ sectors when both set) |
 | `PortfolioScenario` | user / import | a named scenario used for scenario-analysis ratios |
 
 Single-fund ratios (via `FundRatiosJob`) keep their `fund_id` and have no `computation_context`.
