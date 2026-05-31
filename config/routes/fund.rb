@@ -72,7 +72,7 @@ resources :fund_ratios do
   post 'generate', on: :collection
 end
 
-resources :fund_ratio_runs, only: %i[show]
+resources :fund_ratio_runs, only: %i[index show]
 
 resources :fund_ratio_run_templates do
   post 'trigger_all',    on: :collection

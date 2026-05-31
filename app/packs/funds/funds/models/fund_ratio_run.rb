@@ -96,6 +96,27 @@ class FundRatioRun < ApplicationRecord
 
   # Convenience — resolves the stored IDs back to ActiveRecord relations.
   # Note: these are not associations, so they won't be eager-loadable via includes.
+  # Human-readable summary of the scope/filter inputs that produced this run.
+  # Uses only stored columns so it is safe to call in a loop without N+1 queries.
+  # Example: "Cross-portfolio · 3 funds · growth, tech · FinTech"
+  def to_s
+    scope = []
+    scope << "#{fund_ids.size} #{'fund'.pluralize(fund_ids.size)}"                         if fund_ids.any?
+    scope << "#{portfolio_company_ids.size} #{'company'.pluralize(portfolio_company_ids.size)}" if portfolio_company_ids.any?
+    scope << portfolio_companies_tags                                                        if portfolio_companies_tags.present?
+    scope << sectors.join(", ")                                                              if sectors.any?
+    scope = ["All"] if scope.empty?
+    "#{run_type.humanize} · #{scope.join(' · ')}"
+  end
+
+  def self.ransackable_attributes(_auth_object = nil)
+    %w[end_date run_type currency portfolio_companies_tags fund_ids portfolio_company_ids sectors created_at anchor_fund_id user_id entity_id].sort
+  end
+
+  def self.ransackable_associations(_auth_object = nil)
+    %w[anchor_fund user]
+  end
+
   def source_funds
     Fund.where(id: fund_ids)
   end

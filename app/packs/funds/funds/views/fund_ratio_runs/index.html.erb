@@ -1,0 +1,80 @@
+<%= render NewCard.new(col_md: "col-md-12") do %>
+  <%# ── Toolbar ──────────────────────────────────────────────────────────── %>
+  <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">Ratio Runs</h1>
+    <div class="d-flex align-items-center gap-2">
+      <%= link_to fund_ratio_runs_path(filter: true, q: params[:q]&.to_unsafe_h),
+                  class: "btn btn-outline-primary" do %>
+        <i class="ti ti-filter"></i> Filter
+      <% end %>
+      <%= link_to fund_ratio_run_templates_path, class: "btn btn-outline-secondary" do %>
+        <i class="ti ti-template"></i> Templates
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Ransack filter panel (shown when ?filter=true or ?q=... is present) ── %>
+  <%= render "layouts/filter", associations: [:anchor_fund, :user] %>
+
+
+  <%# ── Table ───────────────────────────────────────────────────────────── %>
+  <div class="table-responsive" style="overflow: visible">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>End Date</th>
+          <th>Scope</th>
+          <th>Sectors</th>
+          <th>Tags</th>
+          <th>Currency</th>
+          <th>Run By</th>
+          <th>Created At</th>
+          <th class="action-col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @runs.each do |run| %>
+          <tr>
+            <td><%= l run.end_date %></td>
+            <td class="text-muted small"><%= run %></td>
+            <td>
+              <% run.sectors.each do |s| %>
+                <span class="badge bg-info-subtle text-info me-1"><%= s %></span>
+              <% end %>
+              <%= "—" if run.sectors.empty? %>
+            </td>
+            <td>
+              <% if run.portfolio_companies_tags.present? %>
+                <% run.portfolio_companies_tags.split(",").map(&:strip).each do |tag| %>
+                  <span class="badge bg-secondary me-1"><%= tag %></span>
+                <% end %>
+              <% else %>
+                —
+              <% end %>
+            </td>
+            <td><%= run.currency.presence || "—" %></td>
+            <td><%= run.user&.full_name || "—" %></td>
+            <td><%= l run.created_at %></td>
+            <td class="text-end">
+              <%= link_to "View", fund_ratio_run_path(run), class: "btn btn-sm btn-outline-secondary" %>
+            </td>
+          </tr>
+        <% end %>
+        <% if @runs.empty? %>
+          <tr>
+            <td colspan="8" class="text-muted text-center py-4">
+              No ratio runs found. Trigger a template to generate one.
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <%# ── Pagy pagination ─────────────────────────────────────────────────── %>
+  <% if @pagy&.pages.to_i > 1 %>
+    <div class="d-flex justify-content-center mt-3">
+      <%= raw pagy_bootstrap_nav(@pagy) %>
+    </div>
+  <% end %>
+<% end %>
