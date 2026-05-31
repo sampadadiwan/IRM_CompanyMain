@@ -60,10 +60,26 @@
                    class: "form-control select2", name: "fund_ratio_run_template[portfolio_company_ids][]", multiple: true %>
     </div>
 
+    <%
+      # Collect all distinct tags from portfolio company tag_list values (comma-separated strings).
+      pc_tag_options = policy_scope(Investor).portfolio_companies
+                         .where.not(tag_list: [nil, ""])
+                         .pluck(:tag_list)
+                         .flat_map { |tl| tl.split(",") }
+                         .map(&:strip)
+                         .reject(&:blank?)
+                         .uniq
+                         .sort
+      pc_tags_selected = template.portfolio_companies_tags.to_s.split(",").map(&:strip).reject(&:blank?)
+    %>
     <div class="form-group">
       <%= f.label :portfolio_companies_tags, "Portfolio Company Tags" %>
-      <%= f.text_field :portfolio_companies_tags, class: "form-control",
-                       placeholder: "comma-separated tags" %>
+      <%= f.select :portfolio_companies_tags, pc_tag_options,
+                   { include_blank: false, include_hidden: false, selected: pc_tags_selected },
+                   class: "form-control select2",
+                   name: "fund_ratio_run_template[portfolio_companies_tags][]",
+                   multiple: true,
+                   data: { tags: "true" } %>
       <small class="text-muted">Select companies with any of these tags (combined with explicit selection above).</small>
     </div>
 

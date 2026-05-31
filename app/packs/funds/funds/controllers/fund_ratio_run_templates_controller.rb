@@ -5,6 +5,7 @@
 # They do NOT create or mutate template records.
 class FundRatioRunTemplatesController < ApplicationController
   before_action :set_template, only: %i[show edit update destroy trigger_one runs]
+  before_action :coerce_portfolio_companies_tags, only: %i[create update]
   after_action  :verify_authorized
 
   # GET /fund_ratio_run_templates
@@ -149,6 +150,13 @@ class FundRatioRunTemplatesController < ApplicationController
     raw.present? ? Date.local_parse(raw) : nil
   rescue ArgumentError
     nil
+  end
+
+  # Select2 submits portfolio_companies_tags as an array; join to comma-separated string for storage.
+  def coerce_portfolio_companies_tags
+    p = params[:fund_ratio_run_template]
+    return unless p&.key?(:portfolio_companies_tags)
+    p[:portfolio_companies_tags] = Array(p[:portfolio_companies_tags]).map(&:strip).reject(&:blank?).join(",")
   end
 
   def template_params

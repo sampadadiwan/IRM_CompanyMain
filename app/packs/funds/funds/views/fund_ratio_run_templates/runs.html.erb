@@ -11,9 +11,8 @@
         <thead>
           <tr>
             <th class="date-col">End Date</th>
-            <th class="text-col">Run Type</th>
+            <th class="text-col">Scope</th>
             <th class="text-col">Currency</th>
-            <th class="num-col">Ratios</th>
             <th class="date-col">Run at</th>
             <th class="action-col"></th>
           </tr>
@@ -23,9 +22,8 @@
             <% @runs.each do |run| %>
               <tr>
                 <td><%= l run.end_date %></td>
-                <td><%= run.run_type.humanize %></td>
+                <td class="text-muted small"><%= run %></td>
                 <td><%= run.currency %></td>
-                <td><%= run.fund_ratios.count %></td>
                 <td><%= l run.created_at, format: :short %></td>
                 <td>
                   <%= link_to "View Inputs", fund_ratio_run_path(run),
@@ -45,7 +43,7 @@
             <% end %>
           <% else %>
             <tr>
-              <td colspan="6" class="text-muted text-center">
+              <td colspan="5" class="text-muted text-center">
                 No runs yet — trigger this template with an end date to generate one.
               </td>
             </tr>
