@@ -23,7 +23,7 @@
               <tr>
                 <td><%= l run.end_date %></td>
                 <td class="text-muted small"><%= run %></td>
-                <td><%= run.currency %></td>
+                <td><%= run.currency.presence || content_tag(:span, "Entity default", class: "fst-italic text-muted") %></td>
                 <td><%= l run.created_at, format: :short %></td>
                 <td>
                   <%= link_to "View Inputs", fund_ratio_run_path(run),

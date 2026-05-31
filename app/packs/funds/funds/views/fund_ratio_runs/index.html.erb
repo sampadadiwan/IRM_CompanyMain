@@ -52,7 +52,7 @@
                 —
               <% end %>
             </td>
-            <td><%= run.currency.presence || "—" %></td>
+            <td><%= run.currency.presence || content_tag(:span, "Entity default", class: "fst-italic text-muted") %></td>
             <td><%= run.user&.full_name || "—" %></td>
             <td><%= l run.created_at %></td>
             <td class="text-end">

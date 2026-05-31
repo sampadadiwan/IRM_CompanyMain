@@ -13,6 +13,15 @@
       </div>
     <% end %>
 
+    <%# How run type is inferred %>
+    <div class="border-start border-4 border-primary ps-3 py-2 mb-4 bg-light rounded-end">
+      <div class="fw-bold text-dark small mb-1">How run type is determined automatically</div>
+      <div class="text-muted small">
+        <strong>Cross-fund</strong> — source funds are selected; ratios are computed per fund pair.<br>
+        <strong>Cross-portfolio</strong> — no source funds selected; ratios span all matching portfolio companies across the entity.
+      </div>
+    </div>
+
     <div class="form-group">
       <%= f.label :name %>
       <%= f.text_field :name, class: "form-control", placeholder: "e.g. Benchmark Group A" %>
@@ -32,7 +41,7 @@
                    name: "fund_ratio_run_template[tags][]",
                    multiple: true,
                    data: { tags: "true" } %>
-      <small class="text-muted">Select existing tags or type a new one and press Enter.</small>
+      <small class="text-muted">Select existing tags or type a new one and press Enter. Use <strong>Run by Tag</strong> on the index to trigger all templates sharing a tag at once.</small>
     </div>
 
     <div class="form-group">
@@ -41,7 +50,8 @@
                    policy_scope(Fund).map { |fund| [fund.name, fund.id] },
                    { include_blank: "— none —" },
                    class: "form-control select2" %>
-      <small class="text-muted">Used for document storage and policy scoping. Required if no source funds are selected.</small>
+      <small class="text-muted">Determines where generated documents are stored and which policy scope applies.</small>
+      <small class="text-muted d-block">Required if no source funds are selected below.</small>
     </div>
 
     <div class="form-group">
@@ -50,6 +60,7 @@
                    policy_scope(Fund).map { |fund| [fund.name, fund.id] },
                    { include_blank: false, include_hidden: false },
                    class: "form-control select2", name: "fund_ratio_run_template[fund_ids][]", multiple: true %>
+      <small class="text-muted">Leave empty to include all entity funds, or select specific funds to restrict this template. Selecting funds switches the run type to <strong>Cross-fund</strong>.</small>
     </div>
 
     <div class="form-group">
@@ -58,6 +69,7 @@
                    policy_scope(Investor).portfolio_companies.map { |pc| [pc.investor_name, pc.id] },
                    { include_blank: false, include_hidden: false },
                    class: "form-control select2", name: "fund_ratio_run_template[portfolio_company_ids][]", multiple: true %>
+      <small class="text-muted">Explicitly include these companies regardless of tag or sector filters below. They are always added to the scope.</small>
     </div>
 
     <%
@@ -80,7 +92,7 @@
                    name: "fund_ratio_run_template[portfolio_companies_tags][]",
                    multiple: true,
                    data: { tags: "true" } %>
-      <small class="text-muted">Select companies with any of these tags (combined with explicit selection above).</small>
+      <small class="text-muted">Include companies with any of these tags (combined with explicit selection above).</small>
     </div>
 
     <%
@@ -98,11 +110,16 @@
       <%= f.select :sectors, sectors_for_select,
                    { include_blank: false, include_hidden: false },
                    class: "form-control select2", name: "fund_ratio_run_template[sectors][]", multiple: true %>
+      <small class="text-muted">
+        Filter by sector. Used alone: includes all companies in any selected sector.
+        <strong>Combined with Portfolio Company Tags: only companies matching both a tag AND a sector are included (intersection).</strong>
+      </small>
     </div>
 
     <div class="form-group">
       <%= f.label :position, "Display Order" %>
       <%= f.number_field :position, class: "form-control", min: 1 %>
+      <small class="text-muted">Controls the order templates appear in the list. Lower numbers appear first.</small>
     </div>
 
     <div class="form-group">

@@ -3,10 +3,21 @@
   # we eager-load them here in the view rather than the controller to keep it thin.
   source_funds        = Fund.where(id: @run.fund_ids).index_by(&:id)
   source_companies    = Investor.where(id: @run.portfolio_company_ids).index_by(&:id)
+  both_filters_active = @run.portfolio_companies_tags.present? && @run.sectors.any?
 %>
 
 <div class="container-fluid">
   <%= render FormCard.new(title: "Run Parameters — #{@run.run_type.humanize}") do %>
+
+    <%# Intersection callout when both tag and sector filters were active %>
+    <% if both_filters_active %>
+      <div class="alert alert-info py-2 px-3 mb-3 small">
+        <i class="ti ti-info-circle me-1"></i>
+        This run used an <strong>intersection filter</strong> — only portfolio companies matching
+        <strong>both</strong> a tag filter <strong>and</strong> a sector were included.
+      </div>
+    <% end %>
+
     <table class="table table-bordered table-sm">
 
       <tr>
@@ -26,11 +37,19 @@
 
       <tr>
         <th>Currency</th>
-        <td><%= @run.currency.presence || "—" %></td>
+        <td>
+          <% if @run.currency.present? %>
+            <%= @run.currency %>
+          <% else %>
+            <span class="fst-italic text-muted">Entity default</span>
+          <% end %>
+        </td>
       </tr>
 
       <tr>
-        <th>Fingerprint</th>
+        <th>
+          <abbr title="A unique hash of this run's inputs. Re-running with identical parameters returns this same run — no duplicate is ever created.">Fingerprint</abbr>
+        </th>
         <td><code class="text-muted" style="font-size:0.8rem"><%= @run.name %></code></td>
       </tr>
 
@@ -75,7 +94,12 @@
       <%# ── Tag Filter ────────────────────────────────────────────────────── %>
       <% if @run.portfolio_companies_tags.present? %>
         <tr>
-          <th>Tag Filter</th>
+          <th>
+            Tag Filter
+            <% if both_filters_active %>
+              <small class="text-warning fw-normal" title="AND filter: combined with sector filter below">(∩ AND)</small>
+            <% end %>
+          </th>
           <td>
             <% @run.portfolio_companies_tags.split(",").map(&:strip).each do |tag| %>
               <span class="badge bg-secondary me-1"><%= tag %></span>
@@ -87,7 +111,12 @@
       <%# ── Sector Filter ──────────────────────────────────────────────────  %>
       <% if @run.sectors.any? %>
         <tr>
-          <th>Sectors</th>
+          <th>
+            Sectors
+            <% if both_filters_active %>
+              <small class="text-warning fw-normal" title="AND filter: combined with tag filter above">(∩ AND)</small>
+            <% end %>
+          </th>
           <td>
             <% @run.sectors.each do |s| %>
               <span class="badge bg-info-subtle text-info me-1"><%= s %></span>
@@ -100,7 +129,7 @@
       <tr>
         <th>Ratios</th>
         <td>
-          <%= link_to "View #{@run.fund_ratios.count} ratios",
+          <%= link_to "View #{@run.fund_ratios.count} ratios from this run →",
                 fund_ratios_path(
                   filter: true,
                   q: ransack_query_params_multiple([
