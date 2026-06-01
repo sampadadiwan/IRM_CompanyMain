@@ -160,9 +160,10 @@ Given('a cross-portfolio ratio run for tag {string} exists') do |tag|
     end_date:                 Date.today - 6.months,
     name:                     FundRatioRun.fingerprint(tags: tag)
   ) do |run|
-    run.user                    = @user
+    run.user                     = @user
     run.portfolio_companies_tags = tag
-    run.fund_ids                = []
+    run.fund_ids                 = []
+    run.run_type                 = "cross-fund"
   end
 end
 
