@@ -485,3 +485,96 @@ Scenario Outline: Generated Investor Statement has as_of set to the statement en
   Examples:
     |user      |entity                       |role     |given |access                       | crud                       |
     |          |entity_type=Investment Fund  |investor |yes   |show,edit,update,destroy     | create,read,update,destroy |
+
+Scenario Outline: Bulk Generate Investor Statement for all commitments of fund
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    Given there is an existing investor "entity_type=Family Office"
+    Given there is a fund "name=Test fund828" for the entity
+    Given the fund has "3" capital commitments from each investor
+    Given the commitments from each investor have the same KYC
+    Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+    And we Generate Investor Statements from commitments index page
+    Then the "Investor Statement Template" is successfully generated for all intended commitments
+    Then the investment statement email is sent
+
+
+    Examples:
+      |user	    |entity                         |role       |given  |should	|access | crud |
+      |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
+
+Scenario Outline: Bulk Generate Investor Statement for all but first commitments
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    Given there is an existing investor "entity_type=Family Office"
+    Given there is a fund "name=Test fund828" for the entity
+    Given the fund has "3" capital commitments from each investor
+    Given the commitments from each investor have the same KYC
+    Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+    Given I update the "1" commitments belonging to the same kyc custom fields "skip_doc_gen:Yes"
+
+    And we Generate Investor Statements from commitments index page
+    Then the "Investor Statement Template" is successfully generated for all intended commitments
+    Then the investment statement email is sent
+
+
+    Examples:
+      |user	    |entity                         |role       |given  |should	|access | crud |
+      |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
+
+Scenario Outline: Bulk Generate Investor Statement for only latest commitments of KYC
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    Given there is an existing investor "entity_type=Family Office"
+    Given there is a fund "name=Test fund828" for the entity
+    Given the fund has "3" capital commitments from each investor
+    Given the commitments from each investor have the same KYC
+    Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+    Given I update the "1,2" commitments belonging to the same kyc custom fields "skip_doc_gen:Yes"
+
+    And we Generate Investor Statements from commitments index page
+    Then the "Investor Statement Template" is successfully generated for all intended commitments
+    Then the investment statement email is sent
+
+    Examples:
+      |user	    |entity                         |role       |given  |should	|access | crud |
+      |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
+
+
+Scenario Outline: Bulk Generate Investor Statement for only latest commitments of KYC
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    Given there is an existing investor "entity_type=Family Office"
+    Given there is a fund "name=Test fund828" for the entity
+    Given the fund has "3" capital commitments from each investor
+    Given the commitments from each investor have the same KYC
+    Given the "1" commitment from each investor has no KYC
+    Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+    Given I update the "2" commitments belonging to the same kyc custom fields "skip_doc_gen:Yes"
+
+    And we Generate Investor Statements from commitments index page
+    Then the "Investor Statement Template" is successfully generated for all intended commitments
+    Then the investment statement email is sent
+
+    Examples:
+      |user	    |entity                         |role       |given  |should	|access | crud |
+      |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |
+
+Scenario Outline: Bulk Generate Investor Statement for only latest commitments of KYC
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    Given the user has role "company_admin"
+    Given there is an existing investor "entity_type=Family Office"
+    Given there is a fund "name=Test fund828" for the entity
+    Given the fund has "3" capital commitments from each investor
+    Given the commitments from each investor have the same KYC
+    Given the "1" commitment from each investor has unverified KYC
+    Given the fund has a template "Investor Statement Template" of type "Investor Statement Template"
+    Given I update the "2" commitments belonging to the same kyc custom fields "skip_doc_gen:Yes"
+
+    And we Generate Investor Statements from commitments index page
+    Then the "Investor Statement Template" is successfully generated for all intended commitments
+    Then the investment statement email is sent
+
+    Examples:
+      |user	    |entity                         |role       |given  |should	|access | crud |
+      |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |

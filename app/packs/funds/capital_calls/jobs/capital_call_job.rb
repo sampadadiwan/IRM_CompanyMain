@@ -83,7 +83,7 @@ class CapitalCallJob < ApplicationJob
     @capital_call = CapitalCall.find(capital_call_id)
     # Preload all associations accessed by send_notification and skip_call_notice? to avoid N+1
     @capital_call.capital_remittances.includes(:capital_commitment, :capital_call, { investor: :approved_users }, :fund).each do |cr|
-      cr.send_notification if @capital_call.approved && @capital_call.send_call_notice_flag && !cr.capital_commitment.skip_call_notice?
+      cr.send_notification if @capital_call.approved && @capital_call.send_call_notice_flag && !cr.capital_commitment.skip_doc_gen?
     end
   end
 end

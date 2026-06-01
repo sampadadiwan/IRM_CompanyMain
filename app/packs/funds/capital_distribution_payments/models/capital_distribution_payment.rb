@@ -127,7 +127,7 @@ class CapitalDistributionPayment < ApplicationRecord
     if force || !notification_sent
       # Dont send notification if notice generation is skipped
       if completed && capital_distribution.send_notification_on_complete &&
-         capital_distribution.approved && !capital_distribution.manual_generation && !capital_commitment.skip_call_notice?
+         capital_distribution.approved && !capital_distribution.manual_generation && !capital_commitment.skip_doc_gen?
 
         investor.notification_users(fund, with_tag: 'Distribution').each do |user|
           CapitalDistributionPaymentNotifier.with(record: self, entity_id:, email_method: :send_notification).deliver_later(user)
@@ -141,7 +141,7 @@ class CapitalDistributionPayment < ApplicationRecord
         msg += " (notification on complete not set)" unless capital_distribution.send_notification_on_complete
         msg += " (capital distribution not approved)" unless capital_distribution.approved
         msg += " (manual generation)" if capital_distribution.manual_generation
-        msg += " (skip call notice)" if capital_commitment.skip_call_notice?
+        msg += " (skip document generation)" if capital_commitment.skip_doc_gen?
       end
     else
       msg = "Skipping notification for Distribution Payment #{id} as it is already sent."

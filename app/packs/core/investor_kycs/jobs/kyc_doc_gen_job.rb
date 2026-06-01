@@ -42,7 +42,7 @@ class KycDocGenJob < DocGenJob
   end
 
   def generate_doc_name(model, template, start_date, end_date)
-    is_soa_doc = template.tag_list.downcase =~ /\b#{Regexp.escape('soa')}\b/
+    is_soa_doc = template.is_soa_template?
 
     if is_soa_doc && start_date && end_date
       "#{template.name} #{start_date} to #{end_date} - #{model}"

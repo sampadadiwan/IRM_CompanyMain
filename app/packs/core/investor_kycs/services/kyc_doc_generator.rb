@@ -40,7 +40,7 @@ class KycDocGenerator
       generate(investor_kyc, start_date, end_date, doc_template, doc_template_path, fund_id, file_name:)
 
       # Use a regular expression to check if this is an Investor Statement template
-      is_soa_template = (doc_template.tag_list&.downcase =~ /\b#{Regexp.escape('soa')}\b/) || (doc_template.owner_tag&.downcase =~ /\b#{Regexp.escape('soa')}\b/) || (doc_template.tag_list&.downcase =~ /\b#{Regexp.escape('investor statement')}\b/) || (doc_template.owner_tag&.downcase =~ /\b#{Regexp.escape('investor statement')}\b/)
+      is_soa_template = doc_template.is_soa_template?
 
       if is_soa_template
         # Now in certain cases the doc is generated for a KYC and in certain cases for a commitment
@@ -308,7 +308,7 @@ class KycDocGenerator
 
     fund_entries = first_commitment&.fund&.account_entries&.for_portfolio_companies&.cumulative
                                    &.where(entry_type: entry_types, reporting_date: end_date, capital_commitment_id: nil, folio_id: nil, fund_id: fund_id)
-                                   &.includes(:parent)
+                                   &.includes(:parent) || []
 
     fund_entries.each do |entry|
       portfolio_company = entry.parent

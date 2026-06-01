@@ -109,14 +109,14 @@ Given('no email notification template is configured') do
 end
 
 # Skip call notice steps
-Given('a commitment has skip_call_notice enabled') do
+Given('a commitment has skip_doc_gen enabled') do
   @skip_commitment = FactoryBot.create(:capital_commitment,
     fund: @fund,
     entity: @entity,
     investor: @investor,
-    skip_call_notice: true
+    skip_doc_gen: true
   )
-  @skip_commitment.update!(json_fields: { "skip_call_notice" => "yes" })
+  @skip_commitment.update!(json_fields: { "skip_doc_gen" => "yes" })
   @skip_remittance = FactoryBot.create(:capital_remittance,
     capital_call: @capital_call,
     capital_commitment: @skip_commitment,
@@ -128,7 +128,7 @@ end
 
 Given('all other remittances have generated and approved documents') do
   @capital_call.capital_remittances.each do |remittance|
-    next if remittance.capital_commitment.skip_call_notice?
+    next if remittance.capital_commitment.skip_doc_gen?
 
     doc = FactoryBot.create(:document,
       owner: remittance,

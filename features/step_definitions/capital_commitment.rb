@@ -368,3 +368,154 @@ Then('the collected amounts must be computed properly') do
   @capital_commitment.collected_amount_cents.should == @capital_commitment.capital_remittances.sum(:collected_amount_cents)
   @capital_commitment.folio_collected_amount_cents.should == @capital_commitment.capital_remittances.sum(:folio_collected_amount_cents)
 end
+
+
+Given('the fund has {string} capital commitments from each investor') do |string|
+  Investor.all.each do |inv|
+    puts "inv - \n\n#{inv.inspect}"
+    next unless inv.entity_id == @entity.id
+    if inv.investor_entity.entity_type != "Investor Advisor" # IAs cannot have commitments
+      string.to_i.times do |i|
+
+      cc = FactoryBot.create(:capital_commitment,
+        fund: @fund,
+        entity: @entity,
+        investor: inv
+      )
+      puts "\n####CapitalCommitment ##{i + 1}####\n"
+      puts cc.to_json
+
+      ap cc.reload.investor = inv
+
+      # cc.document_folder_id = Folder.create(name: "Commitment #{cc.id} Documents", entity: @entity, owner: cc,  folder_type: :regular).id
+
+      # cc.soa_folder
+      end
+    end
+  end
+  Entity.all.each do |e|
+    EntitySetting.create!(entity: e, from_email: "test@email.com")
+  end
+  @fund.reload
+end
+
+Given('the commitments from each investor have the same KYC') do
+  @fund.capital_commitments.each do |cc|
+    p "Linking kyc for Commitment #{cc.id}"
+    investor = cc.investor
+    kyc = InvestorKyc.find_or_initialize_by(investor: investor, entity: @fund.entity, verified: true, full_name: investor.investor_name)
+    kyc.save(validate: false)
+    kyc.update_columns(verified: true)
+    puts "Assigning KYC #{kyc.id} to commitment #{cc.id} for investor #{investor.id}"
+    cc.investor_kyc_id = kyc.id
+    cc.save!
+  end
+end
+
+
+Given('the {string} commitment from each investor has no KYC') do |ids|
+  ids.split(",").map(&:strip).each do |id|
+    cc = @fund.capital_commitments[id.to_i]
+    puts "Removing KYC for Commitment #{cc.id}"
+    cc.investor_kyc_id = nil
+    cc.save!
+  end
+end
+
+
+Given('the {string} commitment from each investor has unverified KYC') do |ids|
+  ids.split(",").map(&:strip).each do |id|
+    cc = @fund.capital_commitments[id.to_i]
+    puts "Un verifying KYC for Commitment #{cc.id}"
+    kyc = cc.investor_kyc
+    kyc.verified = false
+    kyc.save!(validate: false)
+  end
+end
+
+
+Given('we Generate Investor Statements from commitments index page') do
+  @doc_count = Document.count
+  visit(fund_path(@fund))
+  expect(page).to have_content("New Commitment", wait: 5)
+  click_on("Generate")
+  click_on("Generate Investor Statement")
+  expect(page).to have_content("Generate Investor Statements For : #{@fund.name}")
+  sleep(0.5)
+  @start_date = Time.zone.parse("01/01/2022")
+  @end_date = Time.zone.parse("31/12/2022")
+  fill_in("fund_start_date", with: @start_date)
+  fill_in("fund_end_date", with: @end_date)
+  select("Investing Entity", from: "fund_statement_for")
+  @template = @fund.documents.templates.where(name: @template_name, owner_tag: "Investor Statement Template").last
+  expect(@template).to be_present
+  select(@template.name, from: "fund_template_name")
+  click_on("Submit")
+  expect(page).to have_content("Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", wait: 10)
+end
+
+Then('the {string} is successfully generated for all intended commitments') do |template_name|
+  @errors = {skip_doc_gen: 0, no_kyc: 0, unverified_kyc: 0}
+  @fund.capital_commitments.each do |cc|
+    doc_name = "#{template_name} #{@start_date.strftime("%d %B,%Y")} to #{@end_date.strftime("%d %B,%Y")} - #{cc.to_s}"
+    puts "Checking document #{doc_name} for commitment #{cc.id}"
+    cc.reload
+    cc.documents.reload
+    if cc.skip_doc_gen?
+      puts "Commitment #{cc.id} is marked to SKIP"
+      puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
+      @errors[:skip_doc_gen] += 1
+      expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
+    else
+      if cc.investor_kyc.nil?
+        puts "Commitment #{cc.id} has no KYC, should be skipped for statement generation"
+        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
+        @errors[:no_kyc] += 1
+        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
+      elsif !cc.investor_kyc.verified
+        puts "Commitment #{cc.id} has unverified KYC, should be skipped for statement generation"
+        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
+        @errors[:unverified_kyc] += 1
+        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).to eq(0)
+      else
+        puts "Commitment #{cc.id} should have the statement generated"
+        puts "All Commitment #{cc.id} DOCS - #{cc.documents.pluck(:name)}"
+        expect(cc.documents.where(owner_tag: "Generated", name: doc_name).count).not_to eq(0)
+      end
+    end
+  end
+end
+
+Then('the investment statement email is sent') do
+  if @errors.values.any?(&:positive?)
+    @user ||= User.last
+    current_email = nil
+    subject = "Investor Statement"
+    emails_sent_to(@user.email).each do |email|
+      puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
+      current_email = email if email.subject.downcase.include?(subject.downcase)
+    end
+    puts "No email found for #{@user.email} with subject '#{subject}'" if current_email.nil?
+    @errors.each do |error_type, count|
+      next if count.zero?
+      puts "Error Type: #{error_type}, Count: #{count}"
+      expect(current_email).not_to be_nil
+      expect(current_email.body).to include("skip document generation") if error_type == :skip_doc_gen
+      expect(current_email.body).to include("no associated investor KYC") if error_type == :no_kyc
+      expect(current_email.body).to include("investor KYC that is not verified") if error_type == :unverified_kyc
+    end
+  end
+end
+
+Given('I update the {string} commitments belonging to the same kyc custom fields {string}') do |indices, custom_fields|
+  indices.split(",").map(&:strip).each do |index|
+    cc = @fund.capital_commitments[index.to_i]
+    puts "Updating Commitment #{cc.id} with KYC fields: #{custom_fields}"
+    # Here you would add the logic to update the custom fields for the KYC
+    custom_fields.split(",").each do |cf|
+      k, v = cf.split(":").map(&:strip)
+      cc.json_fields[k] = v
+    end
+    cc.save!
+  end
+end

@@ -42,8 +42,8 @@ class CapitalRemittancesController < ApplicationController
   end
 
   def send_notification
-    if @capital_remittance.capital_commitment.skip_call_notice?
-      redirect_to capital_remittance_path(@capital_remittance), alert: "Notification cannot be sent as skip_call_notice is set to Yes in the Commitment"
+    if @capital_remittance.capital_commitment.skip_doc_gen?
+      redirect_to capital_remittance_path(@capital_remittance), alert: "Notification cannot be sent as skip_doc_gen is set to Yes in the Commitment"
     else
       reminder = @capital_remittance.notification_sent
       @capital_remittance.send_notification(reminder:)

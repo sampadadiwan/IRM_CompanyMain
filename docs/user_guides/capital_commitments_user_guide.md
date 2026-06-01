@@ -29,18 +29,18 @@ A capital commitment records an investor's legal obligation to contribute a spec
 
 ## Key Concepts
 
-| Term | Meaning |
-|---|---|
-| **Folio ID** | Unique alphanumeric identifier for this investor-fund pair (e.g. `INV-001-A`) |
-| **Fund Close** | The tranche or closing round the investor joined (e.g. `First Close`, `Second Close`) |
-| **Unit Type** | Class of fund units issued to this investor (e.g. `Class A`, `Class B`) |
-| **Folio Currency** | The currency in which the investor committed and pays (may differ from the fund's base currency) |
-| **Committed Amount** | The total obligation in the fund's base currency after all adjustments |
-| **Called Amount** | Amount called from the investor via capital calls |
-| **Collected Amount** | Amount actually received (verified remittances) |
-| **Distribution Amount** | Amount returned to the investor via distributions |
-| **Tracking Amount** | Amounts restated in the entity's tracking/reporting currency |
-| **Account Entry** | A line-item allocation (e.g. Portfolio FMV, Cash In Hand) computed per commitment |
+| Term                    | Meaning                                                                                          |
+| ----------------------- | ------------------------------------------------------------------------------------------------ |
+| **Folio ID**            | Unique alphanumeric identifier for this investor-fund pair (e.g. `INV-001-A`)                    |
+| **Fund Close**          | The tranche or closing round the investor joined (e.g. `First Close`, `Second Close`)            |
+| **Unit Type**           | Class of fund units issued to this investor (e.g. `Class A`, `Class B`)                          |
+| **Folio Currency**      | The currency in which the investor committed and pays (may differ from the fund's base currency) |
+| **Committed Amount**    | The total obligation in the fund's base currency after all adjustments                           |
+| **Called Amount**       | Amount called from the investor via capital calls                                                |
+| **Collected Amount**    | Amount actually received (verified remittances)                                                  |
+| **Distribution Amount** | Amount returned to the investor via distributions                                                |
+| **Tracking Amount**     | Amounts restated in the entity's tracking/reporting currency                                     |
+| **Account Entry**       | A line-item allocation (e.g. Portfolio FMV, Cash In Hand) computed per commitment                |
 
 ---
 
@@ -68,18 +68,19 @@ Navigate to **Fund → Capital Commitments → New**.
 
 Required fields:
 
-| Field | Notes |
-|---|---|
-| **Investor** | The LP whose commitment this is |
-| **Investor KYC** | KYC record used as the investing entity (optional but recommended) |
-| **Folio ID** | Must be unique within the fund. Max 40 characters |
-| **Fund Close** | Free text identifying the closing round |
-| **Commitment Date** | Date the legal commitment was made |
-| **Unit Type** | Must be one of the unit types configured on the fund |
-| **Folio Committed Amount** | Amount in the folio currency |
-| **Folio Currency** | Leave blank to use the fund's base currency |
+| Field                      | Notes                                                              |
+| -------------------------- | ------------------------------------------------------------------ |
+| **Investor**               | The LP whose commitment this is                                    |
+| **Investor KYC**           | KYC record used as the investing entity (optional but recommended) |
+| **Folio ID**               | Must be unique within the fund. Max 40 characters                  |
+| **Fund Close**             | Free text identifying the closing round                            |
+| **Commitment Date**        | Date the legal commitment was made                                 |
+| **Unit Type**              | Must be one of the unit types configured on the fund               |
+| **Folio Committed Amount** | Amount in the folio currency                                       |
+| **Folio Currency**         | Leave blank to use the fund's base currency                        |
 
 On save, the system automatically:
+
 - Converts the folio amount to the fund's base currency using the exchange rate on the commitment date
 - Sets `orig_committed_amount` (the locked original base-currency value)
 - Computes `percentage` ownership across all commitments in the fund
@@ -104,6 +105,7 @@ The **Unit Type** must match one of the comma-separated values in the fund's **U
 ## Fund Close
 
 The Fund Close field identifies which closing round this investor joined. It is free text (e.g. `First Close`, `Second Close`, `Tranche 1`). It is used:
+
 - In reports and statements
 - When calculating close-specific capital call percentages (see the Capital Calls guide)
 
@@ -119,6 +121,7 @@ Folio Currency (GBP)  →  fund.currency (USD)
 ```
 
 The system stores both:
+
 - `folio_committed_amount` — the original amount in the investor's currency
 - `committed_amount` — the equivalent in the fund's base currency
 
@@ -145,6 +148,7 @@ percentage = (committed_amount / total_committed_amount_in_fund) × 100
 ```
 
 This is **auto-recomputed** every time:
+
 - A commitment is created or destroyed
 - The committed amount changes (via adjustment)
 
@@ -173,6 +177,7 @@ flowchart TD
 ### Top Up
 
 Use when an investor increases their commitment. Provide:
+
 - **Folio Amount** — the increase in folio currency
 - **As Of** — must be on or after the original commitment date
 - **Reason** — description of why the top-up occurred
@@ -199,14 +204,15 @@ Records an amount owed by the investor that is tracked separately from the main 
 
 Account entries are financial line items allocated to a commitment, typically generated by a **Fund Formula** run. They represent things like:
 
-| Entry Name | What it represents |
-|---|---|
-| `Portfolio FMV` | Current fair market value of portfolio allocated to this investor |
-| `Cash In Hand` | Cash held in the fund allocated pro-rata |
-| `Net Current Assets` | Other current assets |
-| `Estimated Carry` | Projected carry charged to this investor |
+| Entry Name           | What it represents                                                |
+| -------------------- | ----------------------------------------------------------------- |
+| `Portfolio FMV`      | Current fair market value of portfolio allocated to this investor |
+| `Cash In Hand`       | Cash held in the fund allocated pro-rata                          |
+| `Net Current Assets` | Other current assets                                              |
+| `Estimated Carry`    | Projected carry charged to this investor                          |
 
 Account entries have:
+
 - **Reporting Date** — the as-of date
 - **Entry Type** — categorisation (e.g. `Income`, `Expense`, `Asset`)
 - **Cumulative** flag — whether the amount is cumulative to date or for the period
@@ -222,13 +228,13 @@ All metrics are computed as of a given date using the `CapitalCommitmentCalcs` e
 
 ### Base Inputs
 
-| Input | Source |
-|---|---|
-| `collected` | Sum of verified remittance `collected_amount` on or before the date |
-| `distribution` | Sum of completed distribution payment `net_payable` on or before the date |
-| `fmv` | Latest `Portfolio FMV` account entry on or before the date |
-| `cash_in_hand` | Latest `Cash In Hand` account entry |
-| `net_current_assets` | Latest `Net Current Assets` account entry |
+| Input                | Source                                                                    |
+| -------------------- | ------------------------------------------------------------------------- |
+| `collected`          | Sum of verified remittance `collected_amount` on or before the date       |
+| `distribution`       | Sum of completed distribution payment `net_payable` on or before the date |
+| `fmv`                | Latest `Portfolio FMV` account entry on or before the date                |
+| `cash_in_hand`       | Latest `Cash In Hand` account entry                                       |
+| `net_current_assets` | Latest `Net Current Assets` account entry                                 |
 
 ### Formulas
 
@@ -283,7 +289,7 @@ The `esign_emails` field stores a comma-separated list of email addresses to use
 
 ## Skipping Call Notices
 
-Setting `json_fields["skip_call_notice"] = "yes"` on a commitment causes the capital call notice generation job to skip this folio. Useful when a co-investor arrangement requires direct billing outside the system.
+Setting `json_fields["skip_doc_gen"] = "yes"` on a commitment causes the capital call notice generation job to skip this folio. Useful when a co-investor arrangement requires direct billing outside the system.
 
 ---
 
@@ -295,26 +301,26 @@ Commitments can be bulk-imported via an import file. During import, the `importe
 
 ## Key Fields Reference
 
-| Field | Type | Description |
-|---|---|---|
-| `folio_id` | String | Unique investor identifier in this fund |
-| `fund_close` | String | Closing round name |
-| `unit_type` | String | Class of units issued |
-| `commitment_date` | Date | Date of legal commitment |
-| `folio_currency` | String | Currency of investor's payment obligation |
-| `folio_committed_amount` | Money | Committed amount in folio currency |
-| `orig_folio_committed_amount` | Money | Folio amount before adjustments |
-| `committed_amount` | Money | Committed amount in fund currency (after adjustments) |
-| `orig_committed_amount` | Money | Locked base-currency amount at commitment date FX |
-| `collected_amount` | Money | Verified remittances received |
-| `call_amount` | Money | Amount called via capital calls |
-| `distribution_amount` | Money | Distributions paid |
-| `adjustment_amount` | Money | Cumulative Top Up / Exchange Rate / Transfer adjustments |
-| `arrear_amount` | Money | Cumulative Arrear adjustments |
-| `total_units_amount` | Money | Total value of issued fund units |
-| `percentage` | Decimal | % ownership of fund |
-| `onboarding_completed` | Boolean | All onboarding steps done |
-| `esign_emails` | String | Comma-separated signatory emails |
+| Field                         | Type    | Description                                              |
+| ----------------------------- | ------- | -------------------------------------------------------- |
+| `folio_id`                    | String  | Unique investor identifier in this fund                  |
+| `fund_close`                  | String  | Closing round name                                       |
+| `unit_type`                   | String  | Class of units issued                                    |
+| `commitment_date`             | Date    | Date of legal commitment                                 |
+| `folio_currency`              | String  | Currency of investor's payment obligation                |
+| `folio_committed_amount`      | Money   | Committed amount in folio currency                       |
+| `orig_folio_committed_amount` | Money   | Folio amount before adjustments                          |
+| `committed_amount`            | Money   | Committed amount in fund currency (after adjustments)    |
+| `orig_committed_amount`       | Money   | Locked base-currency amount at commitment date FX        |
+| `collected_amount`            | Money   | Verified remittances received                            |
+| `call_amount`                 | Money   | Amount called via capital calls                          |
+| `distribution_amount`         | Money   | Distributions paid                                       |
+| `adjustment_amount`           | Money   | Cumulative Top Up / Exchange Rate / Transfer adjustments |
+| `arrear_amount`               | Money   | Cumulative Arrear adjustments                            |
+| `total_units_amount`          | Money   | Total value of issued fund units                         |
+| `percentage`                  | Decimal | % ownership of fund                                      |
+| `onboarding_completed`        | Boolean | All onboarding steps done                                |
+| `esign_emails`                | String  | Comma-separated signatory emails                         |
 
 ---
 
@@ -342,4 +348,4 @@ Account entries are created by running a **Fund Formula** (via Allocation Run). 
 Any save that changes `committed_amount_cents`, or any commitment being destroyed. The recompute updates all commitments in the fund in a single SQL statement.
 
 **Q: Can I skip a capital call notice for one investor?**
-Yes. Set `skip_call_notice` to `yes` in the commitment's JSON fields. The call notice generation job will exclude this folio.
+Yes. Set `skip_doc_gen` to `yes` in the commitment's JSON fields. The call notice generation job will exclude this folio.

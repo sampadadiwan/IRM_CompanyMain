@@ -13,11 +13,11 @@ module AccountEntryAllocation
   # your entire allocation sequence, calling the sub-operations in order.
   class Engine
     attr_accessor :fund, :start_date, :end_date, :user_id, :rule_for, :tag_list,
-                  :run_allocations, :explain, :generate_soa, :template_id, :fund_ratios,
+                  :run_allocations, :explain, :generate_soa, :statement_for, :template_id, :fund_ratios,
                   :sample, :allocation_run_id, :allocation_run, :formula_count, :formula_index
 
     def initialize(fund, start_date, end_date, user_id: nil, rule_for: nil, tag_list: nil,
-                   run_allocations: true, explain: false, generate_soa: false,
+                   run_allocations: true, explain: false, generate_soa: false, statement_for: "commitment",
                    template_id: nil, fund_ratios: false, sample: false, allocation_run_id: nil, timing: false)
       @fund            = fund
       @start_date      = start_date
@@ -28,6 +28,7 @@ module AccountEntryAllocation
       @run_allocations = run_allocations
       @explain         = explain
       @generate_soa    = generate_soa
+      @statement_for   = statement_for
       @template_id     = template_id
       @fund_ratios     = fund_ratios
       @sample          = sample
@@ -56,6 +57,7 @@ module AccountEntryAllocation
         run_allocations: run_allocations,
         explain: explain,
         generate_soa: generate_soa,
+        statement_for: statement_for,
         template_id: template_id,
         fund_ratios: fund_ratios,
         sample: sample,

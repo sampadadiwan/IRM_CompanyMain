@@ -10,7 +10,7 @@ In such a case the
 
 **Fund** will have a custom field **call_notice_on** that will have the value **kyc** - so the kyc level context is added in doc gen and
 
-**Other Folios (Capital Commitments)** will have a custom field **skip_call_notice** set to **Yes** - so only one document is generated at the kyc level
+**Other Folios (Capital Commitments)** will have a custom field **skip_doc_gen** set to **Yes** - so only one document is generated at the kyc level
 
 This custom field must be added manually by the business team and the user can then change its value as needed for doc gen
 
@@ -116,4 +116,4 @@ In addition to the folio-level keys above, the following are added:
 
 1. **`total_amount_across_folios`:** On each breakdown entry, this field is set to the call-wide total for the same fee name, enabling "your KYC share / full call total" comparisons in templates.
 
-2. **`skip_call_notice?`:** If `capital_commitment.json_fields["skip_call_notice"] == "yes"`, document generation is aborted before any file I/O.
+2. **`skip_doc_gen?`:** If `capital_commitment.json_fields["skip_doc_gen"] == "yes"`, document generation is aborted before any file I/O.

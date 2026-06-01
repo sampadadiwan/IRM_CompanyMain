@@ -204,11 +204,12 @@ class FundsController < ApplicationController
       start_date = Date.local_parse(params[:start_date])
       end_date = Date.local_parse(params[:end_date])
       template_id = params[:template_id]
-      generate_soa = params[:generate_soa] == "1"
-      fund_ratios = params[:fund_ratios] == "1"
-      run_allocations = params[:run_allocations] == "1"
-      explain = params[:explain] == "1"
-      sample = params[:sample] == "true"
+      generate_soa = %w[1 true].include?(params[:generate_soa].to_s)
+      statement_for = params[:statement_for]
+      fund_ratios = %w[1 true].include?(params[:fund_ratios].to_s)
+      run_allocations = %w[1 true].include?(params[:run_allocations].to_s)
+      explain = %w[1 true].include?(params[:explain].to_s)
+      sample = %w[1 true].include?(params[:sample].to_s)
       rule_for = params[:rule_for]
       tag_list = nil
       tag_list = params[:tag_list].join(",") if params[:tag_list].present? && params[:tag_list].is_a?(Array)
@@ -238,7 +239,7 @@ class FundsController < ApplicationController
       # Blocker check above confirmed no rules fire — skip the model-level re-evaluation
       # to avoid running the rule engine twice on the same record.
       allocation_run = WithValidationRules.skip do
-        AllocationRun.create!(entity_id: @fund.entity_id, fund_id: @fund.id, start_date:, end_date:, run_allocations:, generate_soa:, template_name:, fund_ratios:, user_id: current_user.id, rule_for:, tag_list:)
+        AllocationRun.create!(entity_id: @fund.entity_id, fund_id: @fund.id, start_date:, end_date:, run_allocations:, generate_soa:, statement_for:, template_name:, fund_ratios:, user_id: current_user.id, rule_for:, tag_list:)
       end
     rescue StandardError => e
       Rails.logger.debug { "allocate: Errors #{e.message}" }
@@ -248,7 +249,7 @@ class FundsController < ApplicationController
     end
 
     if start_date.present? && end_date.present?
-      AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date, rule_for:, tag_list:, run_allocations:, explain:, user_id:, generate_soa:, template_id:, fund_ratios:, sample:, allocation_run_id: allocation_run.id)
+      AccountEntryAllocationJob.perform_later(@fund.id, start_date, end_date, rule_for:, tag_list:, run_allocations:, explain:, user_id:, generate_soa:, statement_for:, template_id:, fund_ratios:, sample:, allocation_run_id: allocation_run.id)
       redirect_to(@fund, notice: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.")
     else
       redirect_back_or_to(root_path, alert: "Please specify the start_date and end_date for allocation.")

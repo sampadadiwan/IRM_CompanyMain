@@ -255,24 +255,30 @@ module AccountEntryAllocation
     # rubocop:enable Lint/RescueException
 
     # rubocop:disable Lint/RescueException
-    def generate_soa(ctx, fund:, start_date:, end_date:, user_id:, template_id:, **)
-      if ctx[:generate_soa]
-        begin
-          CapitalCommitmentSoaJob.perform_later(fund.id, nil, start_date.to_s, end_date.to_s, user_id, template_id:)
-          msg = "Done generating Investor Statement for #{start_date} - #{end_date}"
-          Rails.logger.debug msg
-          notify(msg, :success, user_id)
-          true
-        rescue Exception => e
-          Rails.logger.error e.backtrace
-          msg = "Error generating Investor Statement for #{start_date} - #{end_date}: #{e.message}"
-          Rails.logger.error msg
-          notify(msg, :danger, user_id)
-          false
-        end
-      else
+    def generate_soa(ctx, fund:, start_date:, end_date:, user_id:, template_id:, statement_for:, **)
+      unless ctx[:generate_soa]
         Rails.logger.debug "Skipping Investor Statement generation"
+        return true
+      end
+
+      begin
+        msg = nil
+        if statement_for.to_s.downcase == "investing entity"
+          # investing_entity lvl / kyc level soa gen for each commitment
+          KycLevelSoaGenJob.perform_now(commitment_ids: fund.capital_commitment_ids, template_id:, start_date: start_date.to_s, end_date: end_date.to_s, user_id:)
+        else
+          CapitalCommitmentSoaJob.perform_now(fund.id, nil, start_date.to_s, end_date.to_s, user_id, template_id:)
+          msg = "Done generating Investor Statement for #{start_date} - #{end_date}"
+        end
+        Rails.logger.debug msg
+        notify(msg, :success, user_id) if msg.present?
         true
+      rescue Exception => e
+        Rails.logger.error e.backtrace
+        msg = "Error generating Investor Statement for #{start_date} - #{end_date}: #{e.message}"
+        Rails.logger.error msg
+        notify(msg, :danger, user_id)
+        false
       end
     end
     # rubocop:enable Lint/RescueException

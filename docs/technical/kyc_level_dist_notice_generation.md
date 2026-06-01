@@ -6,11 +6,11 @@ By default, a distribution notice document is generated **per folio** (i.e. one 
 
 This is useful when a single investor KYC has multiple folios in the same fund and the notice needs to show both their individual folio amounts and the combined KYC-level totals side-by-side.
 
-In such a case the other folio (Capital commitment) will have a custom field skip_call_notice set to `Yes` so only one document is generated at the kyc level
+In such a case the other folio (Capital commitment) will have a custom field skip_doc_gen set to `Yes` so only one document is generated at the kyc level
 
 **Fund** will have a custom field **call_notice_on** that will have the value **kyc** - so the kyc level context is added in doc gen and
 
-**Other Folios (Capital Commitments)** will have a custom field **skip_call_notice** set to **Yes** - so only one document is generated at the kyc level
+**Other Folios (Capital Commitments)** will have a custom field **skip_doc_gen** set to **Yes** - so only one document is generated at the kyc level
 
 This custom field must be added manually by the business team and the user can then change its value as needed for doc gen
 
@@ -127,4 +127,4 @@ Each `kyc_*_breakdown` entry also carries `total_amount_across_folios` set to th
 
 1. **Single DB query:** `all_payments` is fetched once with `.includes(:capital_commitment).to_a` in `base_context`. The KYC subset is derived via `Array#select` in Ruby — no second query is issued.
 
-2. **`skip_call_notice?`:** If `capital_commitment.json_fields["skip_call_notice"] == "yes"`, document generation is aborted with a logged message before any file I/O occurs.
+2. **`skip_doc_gen?`:** If `capital_commitment.json_fields["skip_doc_gen"] == "yes"`, document generation is aborted with a logged message before any file I/O occurs.

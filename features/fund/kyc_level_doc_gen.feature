@@ -62,7 +62,7 @@ Scenario Outline: Call Notice generation and notification for only the latest on
   Given the fund has capital call template
   Given the remittances have proper notification users
   Given I update the fund custom fields "call_notice_on:kyc"
-  Given I update the remittances commitments custom fields with the same kyc and earlier remittance date "skip_call_notice:Yes"
+  Given I update the remittances commitments custom fields with the same kyc and earlier remittance date "skip_doc_gen:Yes"
   Then call notice is generated for the remittances
 
   # Now notice is generated at the kyc level but we have set skip call notice in the commitment that are from the same kyc and earlier i.e. only the latest remittance for the kyc should have notice generated
@@ -145,7 +145,7 @@ Scenario Outline: DIST Notice generation and notification for only the latest on
 
   Given I update the fund custom fields "call_notice_on:kyc"
   # Now notice is generated at the kyc level but we have set skip dist notice in the commitment that are from the same kyc and earlier i.e. only the latest dist payment for the kyc should have notice generated
-  Given I update the dist payments commitments custom fields with the same kyc and earlier payment date "skip_call_notice:Yes"
+  Given I update the dist payments commitments custom fields with the same kyc and earlier payment date "skip_doc_gen:Yes"
   Given dist notice is generated for the dist payments
 
   And dist notice must be generated for the latest dist payment for each kyc

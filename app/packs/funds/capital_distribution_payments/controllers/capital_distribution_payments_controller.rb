@@ -67,10 +67,10 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   # Generated Distribution Notice For all thhe payment
   def generate_docs
-    # If skip_call_notice is set to yes in the folio then notice will not be generated for this dist payment
-    # skip_call_notice is used and not skip_dist notice to keep things simple
-    if @capital_distribution_payment.capital_commitment.skip_call_notice?
-      redirect_to capital_distribution_payment_path(@capital_distribution_payment), alert: "Notice cannot be generated as skip_call_notice is set to Yes in the Commitment"
+    # If skip_doc_gen is set to yes in the folio then notice will not be generated for this dist payment
+    # skip_doc_gen is used and not skip_dist notice to keep things simple
+    if @capital_distribution_payment.capital_commitment.skip_doc_gen?
+      redirect_to capital_distribution_payment_path(@capital_distribution_payment), alert: "Notice cannot be generated as skip_doc_gen is set to Yes in the Commitment"
     else
       # If call_notice_on is set to kyc in the fund json_fields then notice will be generated with KYC level data
       dist_notice_per_kyc = @capital_distribution_payment.fund.json_fields["call_notice_on"].to_s.strip.downcase == "kyc"
@@ -81,8 +81,8 @@ class CapitalDistributionPaymentsController < ApplicationController
 
   def send_notification
     # If dist notice generation is skipped then notification should also be skipped
-    if @capital_distribution_payment.capital_commitment.skip_call_notice?
-      redirect_to capital_distribution_payment_path(@capital_distribution_payment), alert: "Notification cannot be sent as skip_call_notice is set to Yes in the Commitment"
+    if @capital_distribution_payment.capital_commitment.skip_doc_gen?
+      redirect_to capital_distribution_payment_path(@capital_distribution_payment), alert: "Notification cannot be sent as skip_doc_gen is set to Yes in the Commitment"
     else
       result = CapitalDistributionPaymentSendNotification.call(capital_distribution_payment: @capital_distribution_payment, force_notification: true)
       msg = result[:notification_message]

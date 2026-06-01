@@ -317,4 +317,11 @@ class Document < ApplicationRecord
   def self.ransackable_associations(_auth_object = nil)
     %w[approved_by folder e_signatures capital_commitment investor_kyc]
   end
+
+  def is_soa_template?
+    !!((tag_list&.downcase =~ /\b#{Regexp.escape('soa')}\b/) ||
+    (owner_tag&.downcase =~ /\b#{Regexp.escape('soa')}\b/) ||
+    (tag_list&.downcase =~ /\b#{Regexp.escape('investor statement')}\b/) ||
+    (owner_tag&.downcase =~ /\b#{Regexp.escape('investor statement')}\b/))
+  end
 end

@@ -66,16 +66,25 @@
     </div>
     <% end %>
 
-    <div class="form-group">
-      <%= form.label :generate_soa, "Generate Investor Statements" %>
-      <%= form.check_box :generate_soa, class: "form-check-input", name: "generate_soa", value: true, checked: generate_soa %>
-      <small class="text-muted">Check if the Investor Statement for each LP should be generated post the allocation process</small>
-    </div>
+    <div data-controller="conditional-visibility">
+      <div class="form-group">
+        <%= form.label :generate_soa, "Generate Investor Statements" %>
+        <%= form.check_box :generate_soa, class: "form-check-input", name: "generate_soa", value: true, checked: generate_soa, "data-action": "conditional-visibility#toggle", "data-conditional-visibility-target": "source" %>
+        <small class="text-muted">Check if the Investor Statement for each LP should be generated post the allocation process</small>
+      </div>
 
-    <div class="form-group">
-      <%= form.label :template_name, "Investor Statement Template" %>
-      <%= form.select :template_name, @fund.capital_commitments.first.templates(["SOA Template", "Investor Statement Template"]).map{|d| [d.name, d.id]}, {}, class: "form-control", name: "template_id"  %>
-      <small class="text-muted">Select the template to be used for Investor Statement generation. </small>
+      <div data-conditional-visibility-target="conditional">
+        <div class="form-group">
+          <%= form.label :statement_for %>
+          <%= form.select :statement_for, ["Commitment", "Investing Entity"], {}, class: "form-control", name: "statement_for"  %>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :template_name, "Investor Statement Template" %>
+          <%= form.select :template_name, @fund.capital_commitments.first.templates(["SOA Template", "Investor Statement Template"]).map{|d| [d.name, d.id]}, {}, class: "form-control", name: "template_id"  %>
+          <small class="text-muted">Select the template to be used for Investor Statement generation. </small>
+        </div>
+      </div>
     </div>
 
     <div class="form-group">
@@ -93,7 +102,7 @@
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Previous Runs</h1>
-    <% if policy(AllocationRun).unlock_all? && @fund.present? %>
+      <% if policy(AllocationRun).unlock_all? && @fund.present? %>
       <%= button_to "Unlock All", unlock_all_allocation_runs_path(fund_id: @fund.id), class: "btn btn-sm btn-outline-warning", method: :patch, form_class: "deleteButton", data: { action: "click->confirm#popup", method: :patch, msg: "Are you sure you want to unlock all AllocationRuns?" } %>
     <% end %>
   </div>

@@ -1,6 +1,6 @@
 class CapitalRemittance < ApplicationRecord
   # Value objects for fee breakdown data passed to Sablon document templates.
-  FeeEntry = Data.define(:name, :date, :amount)    # one raw fee line from the fee audit JSON — immutable, fully known at construction
+  FeeEntry = Data.define(:name, :date, :amount) # one raw fee line from the fee audit JSON — immutable, fully known at construction
   # Struct (not Data.define) because total_amount_across_folios is annotated in a second pass
   # by the doc generator after consolidation, so the object must be mutable.
   ConsolidatedFee = Struct.new(:name, :amount, :date, :total_amount_across_folios, keyword_init: true) do
@@ -98,16 +98,16 @@ class CapitalRemittance < ApplicationRecord
     self.call_basis ||= capital_call.call_basis
 
     # Case where we allocate based on percentage of commitment
-    if self.call_basis == "Percentage of Commitment" && (call_amount_cents.zero? || recompute_call_amount)
+    if call_basis == "Percentage of Commitment" && (call_amount_cents.zero? || recompute_call_amount)
       call_basis_percentage_commitment
 
     # Case where the capital remittances will be uploaded manually
-    elsif self.call_basis == "Upload"
+    elsif call_basis == "Upload"
       call_basis_upload
 
     # Special case where the call_basis is Investable Capital Percentage or Foreign Investable Capital Percentage
     elsif call_amount_cents.zero? || recompute_call_amount
-      call_basis_account_entry(self.call_basis) && (call_amount_cents.zero? || recompute_call_amount)
+      call_basis_account_entry(call_basis) && (call_amount_cents.zero? || recompute_call_amount)
     end
   end
 
@@ -116,7 +116,7 @@ class CapitalRemittance < ApplicationRecord
   end
 
   def send_notification(reminder: false)
-    if capital_call.send_call_notice_flag && capital_call.approved && !capital_commitment.skip_call_notice? # skip sending notification if skip_call_notice is set to yes
+    if capital_call.send_call_notice_flag && capital_call.approved && !capital_commitment.skip_doc_gen? # skip sending notification if skip_doc_gen is set to yes
       investor.notification_users(fund, with_tag: 'CapitalCall').each do |user|
         email_method = reminder ? :reminder_capital_remittance : :notify_capital_remittance
         CapitalRemittanceNotifier.with(record: self, entity_id:, email_method:).deliver_later(user)

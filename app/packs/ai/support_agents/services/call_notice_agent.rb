@@ -161,7 +161,7 @@ class CallNoticeAgent < SupportAgentService
   # Verifies that call notice documents have been generated for all remittances.
   #
   # Checks that the fund has call templates configured and that each remittance
-  # (excluding those with skip_call_notice) has generated documents.
+  # (excluding those with skip_doc_gen) has generated documents.
   #
   # @param ctx [Hash] the Trailblazer context
   # @param target [CapitalCall] the capital call being validated
@@ -196,8 +196,8 @@ class CallNoticeAgent < SupportAgentService
     failed_records = []
 
     remittances.each do |remittance|
-      # Skip remittances where skip_call_notice is set on the commitment
-      next if remittance.capital_commitment.skip_call_notice?
+      # Skip remittances where skip_doc_gen is set on the commitment
+      next if remittance.capital_commitment.skip_doc_gen?
 
       # Check if documents have been generated for this remittance
       generated_docs = remittance.documents.not_templates
@@ -250,8 +250,8 @@ class CallNoticeAgent < SupportAgentService
     failed_records = []
 
     remittances.each do |remittance|
-      # Skip remittances where skip_call_notice is set on the commitment
-      next if remittance.capital_commitment.skip_call_notice?
+      # Skip remittances where skip_doc_gen is set on the commitment
+      next if remittance.capital_commitment.skip_doc_gen?
 
       # Check if all generated documents are approved
       generated_docs = remittance.documents.not_templates
@@ -277,7 +277,7 @@ class CallNoticeAgent < SupportAgentService
       finalize_report(report, status: "blocked", failed_step: 4)
       false
     else
-      approved_count = remittances.count { |r| !r.capital_commitment.skip_call_notice? }
+      approved_count = remittances.count { |r| !r.capital_commitment.skip_doc_gen? }
       mark_step_success(
         report,
         :check_documents_approved,

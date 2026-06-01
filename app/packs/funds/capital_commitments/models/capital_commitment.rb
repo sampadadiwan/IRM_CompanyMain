@@ -295,7 +295,7 @@ class CapitalCommitment < ApplicationRecord
     AccessRight.create(entity_id:, owner: fund, investor:, access_type: "Fund", metadata: "Investor")
   end
 
-  def skip_call_notice?
-    json_fields["skip_call_notice"].to_s.strip.downcase == "yes"
+  def skip_doc_gen?
+    json_fields["skip_doc_gen"].to_s.strip.downcase == "yes"
   end
 end

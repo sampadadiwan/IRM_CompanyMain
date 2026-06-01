@@ -20,9 +20,9 @@ class CapitalRemittanceDocGenerator
 
     # Download the Word template and run the document generation pipeline
     fund_doc_template.file.download do |tempfile|
-      # skip generation if skip_call_notice is set to yes in capital commitment custom field
-      if capital_remittance.capital_commitment.skip_call_notice?
-        msg = "Skipping Document Generation for CapitalRemittance as skip_call_notice is set to Yes in the Commitment"
+      # skip generation if skip_doc_gen is set to yes in capital commitment custom field
+      if capital_remittance.capital_commitment.skip_doc_gen?
+        msg = "Skipping Document Generation for CapitalRemittance as skip_doc_gen is set to Yes in the Commitment"
         Rails.logger.info msg
         raise msg
       else
