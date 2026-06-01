@@ -181,13 +181,10 @@ end
 ### Trigger — all ##############################################################
 
 When('I trigger all templates for end_date {string}') do |date_str|
-  end_date = Date.local_parse(date_str)
-  allow(FundRatiosScenarioJob).to receive(:perform_later) do |*args, **kwargs|
-    FundRatiosScenarioJob.perform_now(*args, **kwargs)
-  end
-  FundRatioRunTemplate.for_entity(@entity.id).ordered.each do |tmpl|
-    tmpl.enqueue(end_date: end_date, user_id: @user.id)
-  end
+  end_date     = Date.local_parse(date_str)
+  template_ids = FundRatioRunTemplate.for_entity(@entity.id).ordered.pluck(:id)
+  # Run the batch job synchronously so FundRatioRuns are available for assertions.
+  FundRatioRunTemplateBatchJob.perform_now(template_ids, end_date, @user.id)
   @end_date = end_date
 end
 
@@ -199,13 +196,10 @@ end
 ### Trigger — by tag ###########################################################
 
 When('I trigger templates by tag {string} for end_date {string}') do |tag, date_str|
-  end_date = Date.local_parse(date_str)
-  allow(FundRatiosScenarioJob).to receive(:perform_later) do |*args, **kwargs|
-    FundRatiosScenarioJob.perform_now(*args, **kwargs)
-  end
-  FundRatioRunTemplate.for_entity(@entity.id).for_tag(tag).ordered.each do |tmpl|
-    tmpl.enqueue(end_date: end_date, user_id: @user.id)
-  end
+  end_date     = Date.local_parse(date_str)
+  template_ids = FundRatioRunTemplate.for_entity(@entity.id).for_tag(tag).ordered.pluck(:id)
+  # Run the batch job synchronously so FundRatioRuns are available for assertions.
+  FundRatioRunTemplateBatchJob.perform_now(template_ids, end_date, @user.id)
   @end_date = end_date
 end
 
@@ -220,6 +214,39 @@ When('the validation rules are evaluated for a FundRatioRunTemplate {string} wit
   @rule_results = WithValidationRules.skip do
     ValidationRuleEvaluator.call(record: template, entity: @entity)
   end
+end
+
+### UI — modal interaction #####################################################
+
+When('I visit the ratio run templates index') do
+  visit(fund_ratio_run_templates_path)
+end
+
+# Opens the Actions dropdown for the given template row and clicks Run.
+# The modal must be outside the <table> for Bootstrap to find it by data-bs-target.
+When('I open the Run modal for template {string}') do |name|
+  tmpl = find_template!(name)
+  within("tr", text: name) do
+    find(".dropdown-toggle").click
+  end
+  # Click the Run item inside the now-open dropdown menu (exact match avoids "View Runs").
+  find(".dropdown-item", text: "Run", exact_text: true).click
+  # Wait until the modal is visible in the DOM.
+  expect(page).to have_css("#runModal-#{tmpl.id}.show", wait: 5)
+end
+
+When('I fill in the run end date {string} and submit') do |date_str|
+  # Stub perform_later so the inline test adapter doesn't run the job during the
+  # HTTP request — this test covers DOM/form-submission, not job computation.
+  allow(FundRatiosScenarioJob).to receive(:perform_later)
+  within(".modal.show") do
+    fill_in("end_date", with: date_str)
+    click_on("Run")
+  end
+end
+
+Then('I should see a flash notice containing {string}') do |text|
+  expect(page).to have_text(text, wait: 5)
 end
 
 ### Idempotency ################################################################

@@ -2,11 +2,11 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
   # See docs/features/fund_ratio_run.md for full parameter documentation.
   #
   # portfolio_companies, portfolio_companies_tags, and portfolio_companies_sectors are
-  # all optional. Explicit IDs are always additive. Tags and sectors are intersected
-  # (AND) when both are present — a company must match both to be included. When only
-  # one of tags/sectors is present the original inclusive behaviour is preserved.
-  # The result is resolved here so the rest of the class works with a single
-  # @portfolio_companies relation regardless of how companies were selected.
+  # all optional. All three filter types are unioned: each contributes independently
+  # to the pool of companies. Explicit IDs are always included; tags and sectors each
+  # add any companies they match. The result is resolved here so the rest of the class
+  # works with a single @portfolio_companies relation regardless of how companies
+  # were selected.
   def initialize(scenario, end_date, entity, funds: nil, portfolio_companies: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil)
     @scenario = scenario
     # All funds must belong to the same entity.
@@ -19,19 +19,10 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
     pc_ids = Set.new
     # 1. Explicitly selected company IDs are always additive.
     pc_ids.merge(portfolio_companies.pluck(:id)) if portfolio_companies.present?
-    # 2+3. Tags and sectors: intersect (AND) when both are present so that only
-    # companies matching *both* filters are included. Single-filter paths keep the
-    # original inclusive behaviour.
-    if portfolio_companies_tags.present? && portfolio_companies_sectors.present?
-      matched = entity.investors.portfolio_companies
-                      .with_any_tags(portfolio_companies_tags)
-                      .in_sector(portfolio_companies_sectors)
-      pc_ids.merge(matched.pluck(:id))
-    elsif portfolio_companies_tags.present?
-      pc_ids.merge(entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags).pluck(:id))
-    elsif portfolio_companies_sectors.present?
-      pc_ids.merge(entity.investors.portfolio_companies.in_sector(portfolio_companies_sectors).pluck(:id))
-    end
+    # 2. Tags contribute independently — all companies matching any tag are unioned in.
+    pc_ids.merge(entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags).pluck(:id)) if portfolio_companies_tags.present?
+    # 3. Sectors contribute independently — all companies in any sector are unioned in.
+    pc_ids.merge(entity.investors.portfolio_companies.in_sector(portfolio_companies_sectors).pluck(:id)) if portfolio_companies_sectors.present?
 
     # If no filter produced any IDs, fall back to the raw relation (may be nil,
     # meaning "no portfolio-company filter — use all companies").

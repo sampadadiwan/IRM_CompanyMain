@@ -1,8 +1,8 @@
 # Manages FundRatioRunTemplate records and their trigger actions.
 #
-# Trigger actions (trigger_all, trigger_by_tag, trigger_one) enqueue
-# FundRatiosScenarioJob for the matched templates and redirect back.
-# They do NOT create or mutate template records.
+# trigger_all / trigger_by_tag enqueue one FundRatioRunTemplateBatchJob so
+# matched templates run sequentially (not concurrently). trigger_one enqueues
+# FundRatiosScenarioJob directly. None of these actions mutate template records.
 class FundRatioRunTemplatesController < ApplicationController
   before_action :set_template, only: %i[show edit update destroy trigger_one runs]
   before_action :coerce_portfolio_companies_tags, only: %i[create update]
@@ -69,20 +69,23 @@ class FundRatioRunTemplatesController < ApplicationController
   end
 
   # POST /fund_ratio_run_templates/trigger_all
-  # Enqueues every entity template with the given end_date.
+  # Enqueues a single FundRatioRunTemplateBatchJob that runs every entity template
+  # sequentially — templates execute one after another, not concurrently.
   def trigger_all
     authorize FundRatioRunTemplate, :trigger?
     end_date = parse_end_date(params[:end_date])
     return redirect_back_or_to(fund_ratio_run_templates_path), alert: "end_date is required" if end_date.nil?
 
-    templates = policy_scope(FundRatioRunTemplate).ordered
-    count, _warnings = enqueue_templates(templates, end_date)
+    templates  = policy_scope(FundRatioRunTemplate).ordered
+    valid_ids  = collect_valid_ids(templates, end_date)
+    FundRatioRunTemplateBatchJob.perform_later(valid_ids, end_date, current_user.id) if valid_ids.any?
     redirect_to fund_ratio_run_templates_path,
-                notice: "Enqueued #{count} ratio #{"calculation".pluralize(count)} for #{end_date}."
+                notice: "Enqueued #{valid_ids.size} ratio #{"calculation".pluralize(valid_ids.size)} for #{end_date} — running sequentially."
   end
 
   # POST /fund_ratio_run_templates/trigger_by_tag
-  # Enqueues only templates whose tag matches params[:tag].
+  # Enqueues a single FundRatioRunTemplateBatchJob for templates matching the tag,
+  # running them sequentially.
   def trigger_by_tag
     authorize FundRatioRunTemplate, :trigger?
     end_date = parse_end_date(params[:end_date])
@@ -90,10 +93,11 @@ class FundRatioRunTemplatesController < ApplicationController
     return redirect_back_or_to(fund_ratio_run_templates_path), alert: "end_date is required" if end_date.nil?
     return redirect_back_or_to(fund_ratio_run_templates_path), alert: "tag is required"      if tag.blank?
 
-    templates = policy_scope(FundRatioRunTemplate).for_tag(tag).ordered
-    count, _warnings = enqueue_templates(templates, end_date)
+    templates  = policy_scope(FundRatioRunTemplate).for_tag(tag).ordered
+    valid_ids  = collect_valid_ids(templates, end_date)
+    FundRatioRunTemplateBatchJob.perform_later(valid_ids, end_date, current_user.id) if valid_ids.any?
     redirect_to fund_ratio_run_templates_path,
-                notice: "Enqueued #{count} ratio #{"calculation".pluralize(count)} for tag '#{tag}' on #{end_date}."
+                notice: "Enqueued #{valid_ids.size} ratio #{"calculation".pluralize(valid_ids.size)} for tag '#{tag}' on #{end_date} — running sequentially."
   end
 
   # POST /fund_ratio_run_templates/:id/trigger_one
@@ -121,28 +125,22 @@ class FundRatioRunTemplatesController < ApplicationController
     @template = FundRatioRunTemplate.find(params[:id])
   end
 
-  # Validates and enqueues each template. Returns [count_enqueued, warning_messages].
-  # Templates with blocker violations are skipped; warnings are collected and surfaced.
-  def enqueue_templates(templates, end_date)
-    count    = 0
-    warnings = []
-
-    templates.each do |t|
+  # Validates each template and returns IDs of those that pass (no blockers).
+  # Templates with blocker violations are skipped and logged; the rest are
+  # returned in the same order they were supplied so position-based sequencing
+  # is preserved when passed to FundRatioRunTemplateBatchJob.
+  def collect_valid_ids(templates, end_date)
+    templates.each_with_object([]) do |t, ids|
       t.trigger_end_date = end_date
       violations = ValidationRuleEvaluator.call(record: t, entity: current_user.entity)
 
       if violations.select(&:blocker?).any?
-        # Log blocker violations but do not halt the entire batch — skip this template.
         Rails.logger.warn("[FundRatioRunTemplates] Skipped '#{t.name}': #{violations.select(&:blocker?).map(&:message).join("; ")}")
         next
       end
 
-      warnings.concat(violations.select(&:warning?).map { |v| "#{t.name}: #{v.message}" })
-      t.enqueue(end_date: end_date, user_id: current_user.id)
-      count += 1
+      ids << t.id
     end
-
-    [count, warnings]
   end
 
   # Returns a Date or nil — never raises so the controller can give a clean error.

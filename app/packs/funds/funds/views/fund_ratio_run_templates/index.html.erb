@@ -11,7 +11,7 @@
               type="button"
               data-bs-toggle="modal"
               data-bs-target="#runAllModal"
-              title="Run every template for a chosen end date. Safe to re-run — identical inputs return the existing result without creating duplicates.">
+              title="Run every template in position order. Safe to re-run — identical inputs return the existing result without creating duplicates.">
         <i class="ti ti-player-play"></i> Run All
       </button>
       <% if @distinct_tags.any? %>
@@ -55,8 +55,8 @@
                     <i class="ti ti-cpu fs-5" style="color:#16a34a;"></i>
                   </span>
                   <div>
-                    <div class="fw-semibold text-dark lh-sm">Computation job queued per template</div>
-                    <div class="text-muted small mt-1">Fund ratios are calculated as of the end date you select, using each template's configured scope (funds, companies, filters).</div>
+                    <div class="fw-semibold text-dark lh-sm">Templates run sequentially in position order</div>
+                    <div class="text-muted small mt-1">Fund ratios are calculated as of the end date you select. Each template runs one after another in <strong>position order</strong> — the next starts only when the previous finishes.</div>
                   </div>
                 </div>
                 <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
@@ -125,8 +125,8 @@
                     <i class="ti ti-cpu fs-5" style="color:#16a34a;"></i>
                   </span>
                   <div>
-                    <div class="fw-semibold text-dark lh-sm">Computation jobs queued for matching templates only</div>
-                    <div class="text-muted small mt-1">Only templates tagged with your selection will run — a precise way to trigger a named group without running everything.</div>
+                    <div class="fw-semibold text-dark lh-sm">Matching templates run sequentially in position order</div>
+                    <div class="text-muted small mt-1">Only templates tagged with your selection will run — one after another in <strong>position order</strong>.</div>
                   </div>
                 </div>
                 <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
@@ -169,6 +169,7 @@
     <table class="table table-bordered dataTable jqDataTable">
       <thead>
         <tr>
+          <th class="num-col" title="Run order when using Run All or Run by Tag">Position</th>
           <th class="text-col">Name</th>
           <th class="text-col">Tags</th>
           <th class="text-col">Type</th>
@@ -179,6 +180,7 @@
       <tbody>
         <% @templates.each do |tmpl| %>
           <tr>
+            <td class="text-center"><%= tmpl.position || "—" %></td>
             <td><%= tmpl.name %></td>
             <td>
               <% if tmpl.tags.any? %>
@@ -231,105 +233,107 @@
               </div>
             </td>
           </tr>
-
-          <%# ── Per-template Run confirmation modal ─────────────────────── %>
-          <div class="modal fade" id="runModal-<%= tmpl.id %>" tabindex="-1" aria-labelledby="runModalLabel-<%= tmpl.id %>" aria-hidden="true">
-            <div class="modal-dialog" role="document">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title" id="runModalLabel-<%= tmpl.id %>">
-                    <i class="ti ti-player-play me-2"></i>Run: <strong><%= tmpl.name %></strong>
-                  </h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div data-controller="rule-validation"
-                     data-rule-validation-target-model-value="FundRatioRunTemplate"
-                     data-rule-validation-record-id-value="<%= tmpl.id %>"
-                     data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>">
-                  <%= form_with url: trigger_one_fund_ratio_run_template_path(tmpl), method: :post do |f| %>
-                    <div class="modal-body">
-                      <div class="border-start border-4 border-secondary ps-3 py-1 mb-3">
-                        <div class="fw-bold text-dark small">What will happen</div>
-                        <div class="text-muted small">The following will occur when you click <strong>Run</strong>:</div>
-                      </div>
-                      <div class="d-flex flex-column gap-2 mb-3">
-                        <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
-                          <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                style="width:36px;height:36px;background:#dcfce7;">
-                            <i class="ti ti-cpu fs-5" style="color:#16a34a;"></i>
-                          </span>
-                          <div>
-                            <div class="fw-semibold text-dark lh-sm">Computation job queued</div>
-                            <div class="text-muted small mt-1">
-                              Fund ratios computed as of your chosen end date for
-                              <% if Array(tmpl.fund_ids).any? %>
-                                <%= pluralize(tmpl.fund_ids.count, 'source fund') %>.
-                              <% else %>
-                                all portfolio companies matching this template's filters.
-                              <% end %>
-                            </div>
-                          </div>
-                        </div>
-                        <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
-                          <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                style="width:36px;height:36px;background:#dbeafe;">
-                            <i class="ti ti-fingerprint fs-5" style="color:#2563eb;"></i>
-                          </span>
-                          <div>
-                            <div class="fw-semibold text-dark lh-sm">Safe to re-run — no duplicates created</div>
-                            <div class="text-muted small mt-1">Re-running with the same end date returns the existing run. No duplicate runs are ever created.</div>
-                          </div>
-                        </div>
-                        <% if Array(tmpl.tags).any? || Array(tmpl.sectors).any? %>
-                          <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
-                            <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                  style="width:36px;height:36px;background:#fef3c7;">
-                              <i class="ti ti-filter fs-5" style="color:#d97706;"></i>
-                            </span>
-                            <div>
-                              <div class="fw-semibold text-dark lh-sm">Active company filters</div>
-                              <div class="text-muted small mt-1">
-                                <% if Array(tmpl.tags).any? && Array(tmpl.sectors).any? %>
-                                  Companies matching <strong>both</strong> a portfolio tag <strong>and</strong> a sector (intersection — AND logic).
-                                <% elsif Array(tmpl.tags).any? %>
-                                  Companies with any of the configured portfolio tags.
-                                <% else %>
-                                  Companies in any of the configured sectors.
-                                <% end %>
-                              </div>
-                            </div>
-                          </div>
-                        <% end %>
-                        <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
-                          <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
-                                style="width:36px;height:36px;background:#f3e8ff;">
-                            <i class="ti ti-history fs-5" style="color:#9333ea;"></i>
-                          </span>
-                          <div>
-                            <div class="fw-semibold text-dark lh-sm">Results available in View Runs</div>
-                            <div class="text-muted small mt-1">Open <strong>View Runs</strong> from the Actions menu after completion to inspect generated ratios.</div>
-                          </div>
-                        </div>
-                      </div>
-                      <hr class="my-3">
-                      <div class="mb-1">
-                        <%= f.label :end_date, "End Date", class: "form-label fw-semibold" %>
-                        <small class="text-muted d-block mb-2">Ratios will be computed as of this date.</small>
-                        <%= f.date_field :end_date, class: "form-control", required: true %>
-                      </div>
-                    </div>
-                    <div class="modal-footer">
-                      <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
-                      <%= f.submit "Run", class: "btn btn-outline-success" %>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            </div>
-          </div>
         <% end %>
       </tbody>
     </table>
   </div>
+
+  <%# ── Per-template Run modals — rendered outside the table so the DOM is valid ── %>
+  <% @templates.each do |tmpl| %>
+    <div class="modal fade" id="runModal-<%= tmpl.id %>" tabindex="-1" aria-labelledby="runModalLabel-<%= tmpl.id %>" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="runModalLabel-<%= tmpl.id %>">
+              <i class="ti ti-player-play me-2"></i>Run: <strong><%= tmpl.name %></strong>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div data-controller="rule-validation"
+               data-rule-validation-target-model-value="FundRatioRunTemplate"
+               data-rule-validation-record-id-value="<%= tmpl.id %>"
+               data-rule-validation-evaluate-url-value="<%= evaluate_validation_rules_path %>">
+            <%= form_with url: trigger_one_fund_ratio_run_template_path(tmpl), method: :post do |f| %>
+              <div class="modal-body">
+                <div class="border-start border-4 border-secondary ps-3 py-1 mb-3">
+                  <div class="fw-bold text-dark small">What will happen</div>
+                  <div class="text-muted small">The following will occur when you click <strong>Run</strong>:</div>
+                </div>
+                <div class="d-flex flex-column gap-2 mb-3">
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#dcfce7;">
+                      <i class="ti ti-cpu fs-5" style="color:#16a34a;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Computation job queued</div>
+                      <div class="text-muted small mt-1">
+                        Fund ratios computed as of your chosen end date for
+                        <% if Array(tmpl.fund_ids).any? %>
+                          <%= pluralize(tmpl.fund_ids.count, 'source fund') %>.
+                        <% else %>
+                          all portfolio companies matching this template's filters.
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#dbeafe;">
+                      <i class="ti ti-fingerprint fs-5" style="color:#2563eb;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Safe to re-run — no duplicates created</div>
+                      <div class="text-muted small mt-1">Re-running with the same end date returns the existing run. No duplicate runs are ever created.</div>
+                    </div>
+                  </div>
+                  <% if Array(tmpl.tags).any? || Array(tmpl.sectors).any? %>
+                    <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+                      <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                            style="width:36px;height:36px;background:#fef3c7;">
+                        <i class="ti ti-filter fs-5" style="color:#d97706;"></i>
+                      </span>
+                      <div>
+                        <div class="fw-semibold text-dark lh-sm">Active company filters</div>
+                        <div class="text-muted small mt-1">
+                          <% if Array(tmpl.tags).any? && Array(tmpl.sectors).any? %>
+                            Companies matching any portfolio tag <strong>or</strong> any sector — each filter contributes independently.
+                          <% elsif Array(tmpl.tags).any? %>
+                            Companies with any of the configured portfolio tags.
+                          <% else %>
+                            Companies in any of the configured sectors.
+                          <% end %>
+                        </div>
+                      </div>
+                    </div>
+                  <% end %>
+                  <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fdf4ff;">
+                    <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                          style="width:36px;height:36px;background:#f3e8ff;">
+                      <i class="ti ti-history fs-5" style="color:#9333ea;"></i>
+                    </span>
+                    <div>
+                      <div class="fw-semibold text-dark lh-sm">Results available in View Runs</div>
+                      <div class="text-muted small mt-1">Open <strong>View Runs</strong> from the Actions menu after completion to inspect generated ratios.</div>
+                    </div>
+                  </div>
+                </div>
+                <hr class="my-3">
+                <div class="mb-1">
+                  <%= f.label :end_date, "End Date", class: "form-label fw-semibold" %>
+                  <small class="text-muted d-block mb-2">Ratios will be computed as of this date.</small>
+                  <%= f.date_field :end_date, class: "form-control", required: true %>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+                <%= f.submit "Run", class: "btn btn-outline-success" %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% end %>
 
 <% end %>

@@ -91,6 +91,18 @@ Feature: Fund Ratio Run Templates — configuration, bulk trigger, tag trigger
     When the validation rules are evaluated for a FundRatioRunTemplate "VR-QE-Template" with trigger_end_date "2024-03-31"
     Then the rule "fund_ratio_run_template_date_not_quarter_end" does not fire
 
+  # ── UI — modal interaction ────────────────────────────────────────────────────
+
+  @javascript
+  Scenario: Run modal for a specific template opens and submits to the server
+    Given I am at the login page
+    When I fill and submit the login page
+    And there is a template "name=Modal-Test;run_type=cross-fund" for the entity
+    When I visit the ratio run templates index
+    And I open the Run modal for template "Modal-Test"
+    And I fill in the run end date "2024-03-31" and submit
+    Then I should see a flash notice containing "Enqueued"
+
   # ── Idempotency ──────────────────────────────────────────────────────────────
 
   Scenario: Triggering the same template twice for the same end_date reuses the FundRatioRun
