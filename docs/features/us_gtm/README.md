@@ -26,3 +26,6 @@ This folder contains feature specifications for every capability required to sup
 | [compliance_evidence_binder.md](compliance_evidence_binder.md) | Per-investor compliance summary and audit-ready evidence package | Build | P1/P2 |
 | [ai_subscription_review.md](ai_subscription_review.md) | AI-powered subscription document exception detection | Build | P2 |
 | [ai_document_intelligence.md](ai_document_intelligence.md) | LPA / side letter AI term extraction, source-cited answers | Build | P2 |
+| [private_credit_funds.md](private_credit_funds.md) | Loan-level tracking, interest accrual, covenant monitoring, fund NAV, credit-specific LP reporting for private credit funds | Build | P1/P2 |
+| [evergreen_fund_structures.md](evergreen_fund_structures.md) | NAV-per-unit pricing, rolling subscriptions, redemption queues, gate mechanism, and evergreen-specific reporting for perpetual capital vehicles | Build | P2 |
+| [continuation_fund_fee_alignment.md](continuation_fund_fee_alignment.md) | Continuation vehicle creation, LP election workflow, carry crystallization, management fee step-downs, and performance hurdle configuration | Build | P2 |
