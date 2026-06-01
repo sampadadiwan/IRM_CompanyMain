@@ -32,7 +32,7 @@ class CapitalCallPolicy < FundBasePolicy
   end
 
   def generate_docs?
-    update?
+    !record.approved && update?
   end
 
   def allocate_units?

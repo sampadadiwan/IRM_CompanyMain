@@ -170,7 +170,7 @@ CapHive should not enter the US market as "fund administration software." That p
 
 Instead, CapHive enters as:
 
-> **An AI-native operating layer for private fund workflows — the connective tissue between the GP, fund administrator, legal counsel, tax team, bank, and LP.**
+> **CapHive is the full operating stack for private fund workflows: a purpose-built System of Record with fine-grained access control, a deep computation engine covering Fund Ratios, cash flows, and fund formulas, structured workflows for capital calls, distributions, and document e-signing — all unified by an AI agent layer that automates what used to be manual coordination.**
 
 This position is stronger for three reasons:
 1. It works *with* existing fund administrators rather than replacing them — removing the biggest objection in a first sales call
