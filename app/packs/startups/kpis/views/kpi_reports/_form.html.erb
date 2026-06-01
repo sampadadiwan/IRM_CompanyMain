@@ -36,7 +36,7 @@
            end %>
         <span class="badge <%= badge_class %>"><%= @kpi_report.status.humanize.titleize %></span>
         <% if @kpi_report.submitted_at.present? %>
-          <small class="text-muted ms-2">Submitted <%= I18n.l(@kpi_report.submitted_at, format: :short) %></small>
+          <small class="text-muted ms-2">Submitted <%= @kpi_report.submitted_at.strftime('%b %-d') %></small>
         <% end %>
       </div>
     <% end %>

@@ -67,6 +67,7 @@ Feature: Cross Portfolio Dashboard
     Given there is a fund "name=Beta Fund;currency=INR" for the entity
     And I am "yes" employee access to the fund
 
+    Given a cross-portfolio ratio run for tag "AI" exists
     Given fund ratio "Gross Portfolio IRR" for fund "Alpha Fund" exist
     Given fund ratio "Gross Portfolio MOIC" for fund "Alpha Fund" exist
 

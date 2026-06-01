@@ -114,7 +114,7 @@ When("I fill the new dashboard widget form with data 5") do
   # fill_in "dashboard_widget_metadata", with: "{show_table: true, show_chart: true, ratio_names: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'], titles: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'],chart_colors: ['#00c49a', '#ff8042']}"
   select "ON", from: "metadata_show_table"
   select "ON", from: "metadata_show_chart"
-  fill_in "metadata_ratio_names", with: "Gross Portfolio IRR, Gross Portfolio MOIC"
+  fill_in "metadata_aggregate_ratio_names", with: "Gross Portfolio IRR, Gross Portfolio MOIC"
   fill_in "metadata_titles", with: "Gross Portfolio IRR, Gross Portfolio MOIC"
   fill_in "metadata_chart_colors", with: "#00c49a, #ff8042"
   check "dashboard_widget_enabled"
@@ -152,20 +152,34 @@ Given('the portfolio companies belong to sectors {string}') do |sectors|
   end
 end
 
+# Creates (or reuses) a FundRatioRun scoped to a tag so the fund_ratio_aggregate
+# widget can find the ratios. Stored in @fund_ratio_run for subsequent ratio steps.
+Given('a cross-portfolio ratio run for tag {string} exists') do |tag|
+  @fund_ratio_run = FundRatioRun.find_or_create_by!(
+    entity:                   @entity,
+    end_date:                 Date.today - 6.months,
+    name:                     FundRatioRun.fingerprint(tags: tag)
+  ) do |run|
+    run.user                    = @user
+    run.portfolio_companies_tags = tag
+    run.fund_ids                = []
+  end
+end
+
 Given('fund ratio {string} for fund {string} exist') do |ratio_name, fund_name|
   fund = Fund.includes(:entity).find_by!(name: fund_name)
 
-  # Create some dummy ratios for the fund
-
-    FundRatio.create!(
-      entity: fund.entity,
-      fund: fund,
-      owner: fund,
-      name: ratio_name,
-      end_date: Date.today - (6).months,
-      latest: true,
-      value: rand(5.0..25.0).round(2)
-    )
+  FundRatio.create!(
+    entity:                   fund.entity,
+    fund:                     fund,
+    owner:                    fund,
+    name:                     ratio_name,
+    end_date:                 Date.today - 6.months,
+    latest:                   true,
+    value:                    rand(5.0..25.0).round(2),
+    computation_context_type: @fund_ratio_run ? "FundRatioRun" : nil,
+    computation_context_id:   @fund_ratio_run&.id
+  )
 end
 
 Then('the fund ratios for funds with tables and chart are shown') do
