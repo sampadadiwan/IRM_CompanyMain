@@ -91,12 +91,13 @@ class FundRatioRunTemplate < ApplicationRecord
       anchor_fund_id,
       end_date,
       user_id,
-      fund_ids:                 fund_ids.presence,
-      portfolio_company_ids:    portfolio_company_ids.presence,
-      portfolio_companies_tags: portfolio_companies_tags.presence,
+      fund_ids:                    fund_ids.presence,
+      portfolio_company_ids:       portfolio_company_ids.presence,
+      portfolio_companies_tags:    portfolio_companies_tags.presence,
       portfolio_companies_sectors: sectors.presence,
-      currency:                 currency.presence,
-      type:                     run_type
+      currency:                    currency.presence,
+      type:                        run_type,
+      template_id:                 id
     )
   end
 end

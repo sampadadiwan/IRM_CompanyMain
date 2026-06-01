@@ -16,6 +16,7 @@ class FundRatioRun < ApplicationRecord
   # folder resolution and policy scoping — it does not limit which data feeds the calc.
   belongs_to :anchor_fund, class_name: "Fund", optional: true
   belongs_to :user
+  belongs_to :fund_ratio_run_template, optional: true
   # Polymorphic parent side — nullify so FundRatio rows survive if the run is deleted.
   has_many :fund_ratios, as: :computation_context, dependent: :nullify
 

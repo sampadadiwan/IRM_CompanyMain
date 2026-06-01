@@ -18,7 +18,7 @@
       </div>
     <% end %>
 
-    <table class="table table-bordered table-sm">
+    <table class="table table-bordered table-sm align-middle">
 
       <tr>
         <th class="w-25">Run Type</th>
@@ -47,10 +47,14 @@
       </tr>
 
       <tr>
-        <th>
-          <abbr title="A unique hash of this run's inputs. Re-running with identical parameters returns this same run — no duplicate is ever created.">Fingerprint</abbr>
-        </th>
-        <td><code class="text-muted" style="font-size:0.8rem"><%= @run.name %></code></td>
+        <th>Template</th>
+        <td>
+          <% if @run.fund_ratio_run_template %>
+            <%= link_to @run.fund_ratio_run_template.name, fund_ratio_run_template_path(@run.fund_ratio_run_template) %>
+          <% else %>
+            <span class="fst-italic text-muted">Ad hoc</span>
+          <% end %>
+        </td>
       </tr>
 
       <tr>

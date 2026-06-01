@@ -36,7 +36,14 @@
         <% @runs.each do |run| %>
           <tr>
             <td><%= l run.end_date %></td>
-            <td class="text-muted small"><%= run %></td>
+            <td class="small">
+              <% if run.fund_ratio_run_template %>
+                <%= link_to run.fund_ratio_run_template.name, fund_ratio_run_template_path(run.fund_ratio_run_template) %>
+                <div class="text-muted"><%= run %></div>
+              <% else %>
+                <span class="text-muted"><%= run %></span>
+              <% end %>
+            </td>
             <td>
               <% run.sectors.each do |s| %>
                 <span class="badge bg-info-subtle text-info me-1"><%= s %></span>

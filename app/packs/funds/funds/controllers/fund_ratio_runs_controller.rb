@@ -6,7 +6,7 @@ class FundRatioRunsController < ApplicationController
   def index
     authorize FundRatioRun
     @q = policy_scope(FundRatioRun).ransack(params[:q])
-    @runs = @q.result.includes(:user).order(created_at: :desc)
+    @runs = @q.result.includes(:user, :fund_ratio_run_template).order(created_at: :desc)
     @pagy, @runs = pagy(@runs, limit: params[:per_page] || 25)
   end
 
@@ -18,6 +18,6 @@ class FundRatioRunsController < ApplicationController
   private
 
   def set_run
-    @run = FundRatioRun.find(params[:id])
+    @run = FundRatioRun.includes(:fund_ratio_run_template).find(params[:id])
   end
 end

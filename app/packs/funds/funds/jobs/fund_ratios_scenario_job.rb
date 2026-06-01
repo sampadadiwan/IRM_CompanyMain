@@ -18,7 +18,9 @@ class FundRatiosScenarioJob < ApplicationJob
   # portfolio_companies_tags    — tag filter; resolves to companies and unions with IDs/sectors.
   # portfolio_companies_sectors — sector filter; resolves to companies and unions with IDs/tags.
   # type                        — "cross-fund" or "cross-portfolio"
-  def perform(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil, type: "cross-fund")
+  # suppress_notification: true skips the per-run success alert so a batch caller
+  # can send one consolidated notification after all runs complete.
+  def perform(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil, type: "cross-fund", suppress_notification: false, template_id: nil)
     setup(fund_id, end_date, user_id, fund_ids:, portfolio_company_ids:, portfolio_companies_tags:, portfolio_companies_sectors:, currency:)
     # find_or_initialize_by: re-running the same inputs on the same date reuses the
     # existing run record (unique index on entity + end_date + name prevents duplicates).
@@ -40,7 +42,8 @@ class FundRatiosScenarioJob < ApplicationJob
       fund_ids:                 Array(@fund_ids),
       portfolio_company_ids:    Array(@portfolio_company_ids),
       portfolio_companies_tags: @portfolio_companies_tags,
-      sectors:                  Array(@portfolio_companies_sectors)
+      sectors:                  Array(@portfolio_companies_sectors),
+      fund_ratio_run_template_id: template_id
     )
     begin
       @run.save!
@@ -95,11 +98,13 @@ class FundRatiosScenarioJob < ApplicationJob
         ]
       end.join
 
-      notify("#{@run.run_type.humanize} ratio calculations are now complete.<br> #{links_html}", user_id)
+      notify("#{@run.run_type.humanize} ratio calculations are now complete.<br> #{links_html}", user_id) unless suppress_notification
     rescue StandardError => e
       notify("Error in fund ratios: #{e.message}", user_id, level: "danger")
       raise e
     end
+
+    @run  # return run so batch callers can collect it for a consolidated notification
   end
 
   def setup(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil)
