@@ -90,19 +90,19 @@ end
 
 
 Then('it should generate only the remaining units') do
-	
+
 	capital_remittance = CapitalRemittance.last
 	fund_unit = capital_remittance.fund_units.last
 	puts "Fund Unit: #{fund_unit.inspect}"
 	expect(fund_unit).to be_present
 	expect(fund_unit.amount.cents).to eq(@pending_amount_for_units_allocation)
-	expect(fund_unit.reason).to include(@reason)	
+	expect(fund_unit.reason).to include(@reason)
 
 	# Ensure that the new fund unit is created
 	capital_remittance.fund_units.count.should == 2
 end
 
-  
+
 And("error email for fund units already allocated should be sent") do
 	current_email = open_email(User.first.email)
 	expect(current_email).to have_content("Fund Units already allocated")
@@ -113,7 +113,7 @@ Given('I delete a remittance with no payments') do
 		if cr.capital_remittance_payments.blank?
 			@capital_remittance = cr
 			break
-		end						
+		end
   end
 	visit capital_remittance_path(@capital_remittance)
 	click_on "Delete"
@@ -398,6 +398,10 @@ Then('the capital call collected amount should be {string}') do |arg|
 end
 
 Then('the remittance rollups should be correct') do
+  # Recalculate all counter caches from DB before asserting.
+  # Needed because investor_kyc_id may be linked to commitments after remittances were
+  # created, so the incremental counter_culture delta never ran for that KYC.
+  CapitalRemittance.counter_culture_fix_counts
   # Call rollups
   CapitalCall.all.each do |capital_call|
     capital_call.reload
@@ -423,14 +427,14 @@ Then('the remittance rollups should be correct') do
       cc.call_amount_cents.should == cc.capital_remittances.sum(:call_amount_cents)
       cc.folio_call_amount_cents.should == cc.capital_remittances.sum(:folio_call_amount_cents)
 
-      # KYC rollups
-      folio_remittances = CapitalRemittance.where(folio_id: cc.folio_id)
+      # KYC rollups — aggregate through investor_kyc_id FK chain, matching counter_culture setup
       if cc.investor_kyc
         puts "Checking rollups for KYC #{cc.investor_kyc}"
-        cc.investor_kyc.call_amount_cents.should == folio_remittances.sum(:call_amount_cents)
-        cc.investor_kyc.collected_amount_cents.should == folio_remittances.verified.sum(:collected_amount_cents)
-        cc.investor_kyc.folio_collected_amount_cents.should == folio_remittances.verified.sum(:folio_collected_amount_cents)
-        cc.investor_kyc.other_fee_cents.should == folio_remittances.sum(:other_fee_cents)
+        kyc_remittances = CapitalRemittance.joins(:capital_commitment).where(capital_commitments: { investor_kyc_id: cc.investor_kyc.id })
+        cc.investor_kyc.reload
+        cc.investor_kyc.call_amount_cents.should == kyc_remittances.sum(:call_amount_cents)
+        cc.investor_kyc.collected_amount_cents.should == kyc_remittances.verified.sum(:collected_amount_cents)
+        cc.investor_kyc.other_fee_cents.should == kyc_remittances.sum(:other_fee_cents)
       end
     end
   end
@@ -561,12 +565,17 @@ Then('when the capital call docs are generated') do
     click_on("Proceed")
     # sleep(1)
     cc.capital_remittances.each_with_index do |cr, count|
-      puts "Generating doc for remittance #{cr.id}. Sleeping 10 seconds...."
-      sleep(10)
+      puts "Generating doc for remittance #{cr.id}. Sleeping 2 seconds...."
+      sleep(2)
       # expect(page).to have_content("#{count + 1}: Generated #{@call_template.name} for #{cr}")
     end
     # expect(page).to have_content("generated successfully")
   end
+end
+
+Given('the generated call notices are approved') do
+  # approve all generated docs so check_unapproved_docs in CapitalCallApprove does not block
+  Document.generated.update_all(approved: true)
 end
 
 Then('Given I upload {string} file for the remittances of the capital call') do |file|

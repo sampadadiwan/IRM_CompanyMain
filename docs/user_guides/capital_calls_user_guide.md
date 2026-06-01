@@ -84,22 +84,29 @@ Team verifies receipt → Remittance marked Paid
   │     One remittance created per eligible commitment      │
   │                    │                                    │
   │                    ▼                                    │
-  │  3. APPROVE                                             │
-  │     Fund manager approves the call                      │
-  │     ─ Validates no unapproved documents exist           │
-  │     ─ Triggers notification emails (if enabled)         │
+  │  3. GENERATE & APPROVE CALL NOTICE DOCUMENTS            │
+  │     Generate personalised notices per remittance        │
+  │     Approve each document before proceeding             │
+  │     ─ Call is LOCKED for edits after approval ─         │
   │                    │                                    │
   │                    ▼                                    │
-  │  4. INVESTORS PAY                                       │
+  │  4. APPROVE                                             │
+  │     Fund manager approves the call                      │
+  │     ─ Validates all generated documents are approved    │
+  │     ─ Triggers notification emails (if enabled)         │
+  │     ─ Call, edit, and recompute actions disabled        │
+  │                    │                                    │
+  │                    ▼                                    │
+  │  5. INVESTORS PAY                                       │
   │     Payments recorded as Remittance Payments            │
   │                    │                                    │
   │                    ▼                                    │
-  │  5. VERIFY REMITTANCES                                  │
+  │  6. VERIFY REMITTANCES                                  │
   │     Team marks each remittance as Verified              │
   │     Status changes to Paid / Overdue / Overpaid         │
   │                    │                                    │
   │                    ▼                                    │
-  │  6. CLOSE (optional)                                    │
+  │  7. CLOSE (optional)                                    │
   │     Allocate fund units; send payment notifications     │
   └─────────────────────────────────────────────────────────┘
 ```
@@ -251,24 +258,34 @@ A commitment is eligible if:
 
 ## Approving a Capital Call
 
-Approval is a formal step that locks the call and triggers notifications.
+Approval is a formal, one-way step that triggers notifications and locks the call against further changes.
+
+### Pre-Approval Checklist
+
+Before clicking Approve, complete these steps in order:
+
+1. **Generate Documents** — use the Generate Documents action to create personalised call notices for each remittance.
+2. **Review and approve notices** — open each remittance's Documents tab and approve the generated call notice. Unapproved notices block approval.
+3. Confirm the due date, call amount, and investor list are correct. These cannot be changed after approval.
 
 ### Approval Steps
 
 1. Open the capital call.
-2. Click **Approve**.
-3. The system checks that **no generated documents are awaiting approval** (unapproved call notices on remittances will block approval).
+2. Click **Actions → Approve**.
+3. The system checks that **all generated documents are approved** (any unapproved call notice on a remittance will block approval with an error).
 4. Once approved, the capital call is locked and the `Approved By` user is recorded.
 
 ### What Happens After Approval
 
 - If **Send Call Notice** is enabled, notification emails are sent to all investors with pending remittances (whose commitments do not have "Skip Call Notice" set).
+- Approved call notice documents are attached to the email.
 - The approved status is visible to investors in their portal.
+- **Edit, Delete, Recompute Fees, and Generate Documents actions are all disabled** on an approved call. Unit Allocation remains available.
 
 ### Business Rule: Approval Cannot Proceed If
 
-- There are generated (but not yet approved) documents attached to the remittances of this call.
-- You must approve those documents first (or delete them).
+- Any generated document attached to a remittance of this call has not yet been approved.
+- You must approve (or delete) those documents first.
 
 ---
 
@@ -500,14 +517,15 @@ Set **Skip Call Notice = Yes** on a capital commitment to permanently exclude th
 
 ## Document Generation
 
-CapHive can automatically generate a personalised call notice document for each remittance.
+CapHive can automatically generate a personalised call notice document for each remittance. Document generation must be completed **before** the capital call is approved — the Generate Documents action is disabled on an approved call.
 
 ### How to Generate Documents
 
 **For all remittances in a call:**
 1. Open the Capital Call.
-2. Click **Generate Docs**.
+2. Click **Actions → Generate Documents**.
 3. CapHive queues a background job that creates a document for each remittance using the **"Call Template"** template.
+4. Refresh the page after a few minutes and review the generated documents on each remittance.
 
 **For a single remittance:**
 1. Open the Capital Remittance.
@@ -523,9 +541,20 @@ CapHive can automatically generate a personalised call notice document for each 
 
 If the fund's `call_notice_on` setting is "kyc", a single document is generated per KYC (rather than per folio). This is useful when one investor has multiple commitments but should receive a single combined notice.
 
-### Approving Documents Before Sending
+### Approving Generated Documents
 
-Generated documents must be **approved** before the capital call can be approved (the approval check prevents sending unapproved documents to investors). Approve documents from the remittance's document tab.
+After generation, each document must be individually **approved** before the capital call itself can be approved. Unapproved generated documents block the capital call approval step.
+
+1. Open a Capital Remittance.
+2. Click the **Documents** tab.
+3. Review the generated call notice and click **Approve**.
+4. Repeat for every remittance. Once all notices are approved, the capital call's Approve action will proceed.
+
+> **Why this matters:** Only approved documents are attached to the investor notification email. Requiring explicit approval ensures the fund team has reviewed every notice before it reaches investors.
+
+### No Re-Generation After Approval
+
+Once a capital call is approved, the Generate Documents action is permanently disabled for that call. If a notice needs to be corrected after approval, the correction must be handled outside CapHive (e.g. a separate communication to the investor).
 
 ---
 
@@ -754,6 +783,15 @@ No. The call notice is sent only when the capital call is approved (or when you 
 **Q: What does "Skip Call Notice" on a commitment do?**
 It permanently suppresses call notice and reminder emails for that specific commitment. This is useful for internal or fund-of-funds investors who do not need investor communications.
 
+**Q: Can I edit a capital call after it has been approved?**
+No. Once approved, the capital call is fully locked. Edit, Delete, Recompute Fees, and Generate Documents are all disabled. This protects the integrity of the amounts and notices already sent to investors. If a correction is needed after approval, contact your administrator.
+
+**Q: Can I generate documents after the call is approved?**
+No. Document generation is only available before approval. The intended workflow is: generate documents → approve each notice → then approve the capital call. Once approved, any corrections to notices must be handled outside CapHive.
+
+**Q: What if I forget to approve the documents before approving the call?**
+The system will block the approval and display an error: "There are unapproved documents for the remittances of this call. Please approve them first." Open each remittance's Documents tab, approve the notice, and try again.
+
 **Q: Can I edit a remittance after it is verified?**
 Yes, but editing will typically trigger a re-verification step (the unverify-on-change logic applies to payment changes, not manual edits). Always re-verify after making changes to ensure the status reflects the current state.
 
@@ -762,7 +800,7 @@ Yes, but editing will typically trigger a re-verification step (the unverify-on-
 - **Due Date** is the payment deadline. Remittances become "Overdue" if unpaid after this date.
 
 **Q: Can I delete a capital call?**
-Yes, unless it has remittances with allocated fund units. You must remove unit allocations first.
+Only if the call has not been approved. Approved calls are locked and cannot be deleted. For unapproved calls, deletion is also blocked if any remittance has allocated fund units — remove unit allocations first.
 
 **Q: What does "Recompute Fees" do exactly?**
-It re-reads all account entries within the call fee date ranges and recalculates each investor's capital_fee, other_fee, and investment_amount. Call amounts, folio amounts, and statuses are all updated. Use this after correcting or backdating fee entries.
+It re-reads all account entries within the call fee date ranges and recalculates each investor's capital_fee, other_fee, and investment_amount. Call amounts, folio amounts, and statuses are all updated. Use this after correcting or backdating fee entries. Note: Recompute Fees is not available on an approved call.

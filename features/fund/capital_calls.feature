@@ -41,6 +41,12 @@ Scenario Outline: Create new capital call
   Then I should see the remittances
   Given the remittance have a document "Sample" from "public/sample_uploads/sample_kyc1.pdf" attached
   Given there is a custom notification for the capital call with subject "<subject>" with email_method "notify_capital_remittance"
+  Given each investor has a "verified" kyc linked to the commitment
+  Given the fund has capital call template
+  And when the capital call docs are generated
+  Then the generated doc must be attached to the capital remittances
+  And the generated call notices have as_of set to the remittance date
+  Given the generated call notices are approved
   Then when the capital call is approved
   And the investors must receive email with subject "<subject>" with the document "Sample.pdf" attached
   And the remittances must be marked with notification sent
@@ -52,11 +58,6 @@ Scenario Outline: Create new capital call
   Then I should see the remittances
   And the capital call collected amount should be "<collected_amount>"
   And the remittance rollups should be correct
-  Given each investor has a "verified" kyc linked to the commitment
-  Given the fund has capital call template
-  And when the capital call docs are generated
-  Then the generated doc must be attached to the capital remittances
-  And the generated call notices have as_of set to the remittance date
 
 
   Examples:
