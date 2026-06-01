@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_30_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_01_100001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1792,6 +1792,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_30_200001) do
     t.date "end_date", null: false
     t.bigint "entity_id", null: false
     t.json "fund_ids", null: false
+    t.bigint "fund_ratio_run_template_id"
     t.string "name", null: false
     t.string "portfolio_companies_tags"
     t.json "portfolio_company_ids", null: false
@@ -1804,6 +1805,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_30_200001) do
     t.index ["anchor_fund_id"], name: "index_fund_ratio_runs_on_anchor_fund_id"
     t.index ["entity_id", "end_date", "name"], name: "idx_frr_unique_fingerprint", unique: true
     t.index ["entity_id"], name: "index_fund_ratio_runs_on_entity_id"
+    t.index ["fund_ratio_run_template_id"], name: "index_fund_ratio_runs_on_fund_ratio_run_template_id"
     t.index ["user_id"], name: "index_fund_ratio_runs_on_user_id"
   end
 
