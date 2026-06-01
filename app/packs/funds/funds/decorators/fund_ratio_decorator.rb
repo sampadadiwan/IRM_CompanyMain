@@ -12,11 +12,17 @@ class FundRatioDecorator < ApplicationDecorator
   end
 
   def scenario
-    # Link to the PortfolioScenario when the ratio belongs to one; plain text otherwise.
-    if object.computation_context_type == "PortfolioScenario"
+    case object.computation_context_type
+    when "PortfolioScenario"
       h.link_to(
         object.scenario,
         h.portfolio_scenario_path(object.computation_context_id),
+        class: 'mb-1 badge bg-primary-subtle text-primary'
+      )
+    when "FundRatioRun"
+      h.link_to(
+        object.computation_context.to_s,
+        h.fund_ratio_run_path(object.computation_context_id),
         class: 'mb-1 badge bg-primary-subtle text-primary'
       )
     else
