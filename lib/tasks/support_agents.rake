@@ -238,6 +238,104 @@ SUPPORT_AGENT_FORM_CONFIGS = [
     ]
   },
   {
+    tag: "DealManagementAgent",
+    agent: {
+      name:       "Deal Management",
+      with_steps: false,
+      json_fields: {
+        "check_progress"         => "Yes",
+        "stagnant_days"          => "7",
+        "send_reminders"         => "Yes",
+        "reminder_days"          => "7,3,1",
+        "check_documents"        => "Yes",
+        "required_docs"          => "",
+        "extract_terms"          => "Yes",
+        "term_extraction_prompt" => "",
+        "summarize_notes"        => "Yes",
+        "note_period"            => "Quarter",
+        "score_investors"        => "No",
+        "min_points_per_section" => "3",
+        "notify_email"           => ""
+      },
+      schedule: {
+        frequency: "weekly", run_on_day: 1, run_at_time: "07:00", timezone: "Asia/Kolkata",
+        enabled: false, notify_on_failure: true, notify_on_success: false,
+        notify_on_partial_success: false, notify_caphive_on_error: true
+      }
+    },
+    fields: [
+      { name: "check_progress",
+        field_type: "Select", label: "Check deal progress", meta_data: "Yes,No", position: 1,
+        help_text: "When Yes, flags investors with no update or activity completion within 'Stagnant days' " \
+                   "as stagnant (blocking), and surfaces overdue DealActivity steps as blocking issues." },
+      { name: "stagnant_days",
+        field_type: "NumberField", label: "Stagnant threshold (days)", meta_data: "", position: 2,
+        help_text: "A DealInvestor is flagged stagnant when both the investor record and all linked " \
+                   "DealActivity rows have not been updated within this many days. Default: 7." },
+      { name: "send_reminders",
+        field_type: "Select", label: "Send activity reminders", meta_data: "Yes,No", position: 3,
+        help_text: "When Yes, emails notify_email for incomplete DealActivities that are overdue or " \
+                   "whose due date falls within the 'Reminder days' window. Deduplicates within a calendar " \
+                   "day via last_reminded_on on the activity record." },
+      { name: "reminder_days",
+        field_type: "TextField", label: "Reminder days", meta_data: "", position: 4,
+        help_text: "Comma-separated day offsets before a DealActivity's by_date that trigger a reminder, " \
+                   "e.g. '7,3,1'. '0' means on the due date. Overdue activities (past due date) always " \
+                   "fire regardless of this list." },
+      { name: "check_documents",
+        field_type: "Select", label: "Check document checklist", meta_data: "Yes,No", position: 5,
+        help_text: "When Yes, verifies that each document name in 'Required documents' exists in the " \
+                   "deal data room. Missing documents produce blocking issues; present ones produce " \
+                   "success issues. Name matching is case-insensitive." },
+      { name: "required_docs",
+        field_type: "TextField", label: "Required documents", meta_data: "", position: 6,
+        help_text: "Comma-separated document names that must be present in the deal data room before " \
+                   "the deal advances, e.g. 'NDA, Term Sheet, Financial Model'. Blank = no check." },
+      { name: "extract_terms",
+        field_type: "Select", label: "Extract deal terms", meta_data: "Yes,No", position: 7,
+        help_text: "When Yes, sends all documents in the deal data room to the LLM and stores the " \
+                   "extracted JSON in the deal-level report. The extraction is cached — re-runs only " \
+                   "when documents or the extraction prompt change." },
+      { name: "term_extraction_prompt",
+        field_type: "TextArea", label: "Term extraction prompt", meta_data: "", position: 8,
+        help_text: "Custom instructions for term extraction, e.g. 'Extract: valuation, equity %, " \
+                   "board seats'. The LLM returns a JSON object with your fields. " \
+                   "Leave blank to use the default common deal terms (valuation, instrument, closing date, etc.)." },
+      { name: "summarize_notes",
+        field_type: "Select", label: "Summarize investor notes & docs", meta_data: "Yes,No", position: 9,
+        help_text: "When Yes, the LLM produces a three-section summary (Key Themes, Action Items, " \
+                   "Investor Engagement) for each active investor from their document folder and " \
+                   "completed DealActivity attachments within the Note period. " \
+                   "Investors with no documents are saved as 'skipped' at zero LLM cost." },
+      { name: "note_period",
+        field_type: "Select", label: "Note period", meta_data: "Month,Quarter", position: 10,
+        help_text: "Lookback window for collecting investor documents and completed activity attachments. " \
+                   "'Month' = previous calendar month; 'Quarter' = previous calendar quarter. " \
+                   "Does not apply to deal-level term extraction, which always reads all data-room documents." },
+      { name: "score_investors",
+        field_type: "Select", label: "Score investors", meta_data: "Yes,No", position: 11,
+        help_text: "When Yes, the LLM scores each active investor 0–100 using the uploaded skill file " \
+                   "as the rubric. Requires a scoring_skill_file to be uploaded. Disabled by default — " \
+                   "turn on only after uploading the skill file. Scores are written back to " \
+                   "DealInvestor.ai_score and ai_grade." },
+      { name: "scoring_skill_file",
+        field_type: "File", label: "Scoring Skill File", meta_data: "", position: 12,
+        help_text: "Markdown file defining the investor scoring rubric — dimensions, weights, and " \
+                   "benchmarks. Upload a .md or .txt file. The LLM uses this as its scoring instructions. " \
+                   "Same pattern as the PortfolioScoringAgent skill files." },
+      { name: "min_points_per_section",
+        field_type: "NumberField", label: "Min points per scoring section", meta_data: "", position: 13,
+        help_text: "Minimum number of bullet points the LLM must produce per scoring dimension " \
+                   "(positives, concerns) and per top-level list (Strengths, Risks, Recommendations). " \
+                   "Increase for more granular output. Default: 3." },
+      { name: "notify_email",
+        field_type: "TextField", label: "Notify email", meta_data: "", position: 14,
+        help_text: "Email address for all agent notifications: pipeline digest, activity reminders, " \
+                   "and blocker alerts. All v1 notifications go to this single address. " \
+                   "Leave blank to suppress all outbound email from this agent." }
+    ]
+  },
+  {
     tag: "PortfolioScoringAgent",
     agent: {
       name:       "Portfolio Scoring Agent",
@@ -466,7 +564,7 @@ namespace :support_agents do
     flag_names = %i[
       kyc_onboarding_agent portfolio_company_agent fund_stats_agent
       folio_assistant portfolio_assistant fund_assistant
-      report_analysis_agent portfolio_scoring_agent
+      report_analysis_agent portfolio_scoring_agent deal_management_agent
     ]
 
     changed = false

@@ -79,6 +79,16 @@ class SupportAgentsController < ApplicationController
                       else
                         SupportAgentReport.none
                       end
+
+    # Load deal-level and investor-level reports for DealManagementAgent
+    @deal_reports = if @support_agent.agent_type == "DealManagementAgent"
+                      SupportAgentReport
+                        .where(support_agent: @support_agent, owner_type: "Deal")
+                        .includes(:owner)
+                        .order(updated_at: :desc)
+                    else
+                      SupportAgentReport.none
+                    end
   end
 
   # Initializes a new support agent for creation.

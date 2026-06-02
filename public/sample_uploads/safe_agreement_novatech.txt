@@ -1,0 +1,105 @@
+SIMPLE AGREEMENT FOR FUTURE EQUITY (SAFE)
+NovaTech Ventures Inc. — Seed Round
+
+This SAFE Agreement ("Agreement") is entered into as of April 18, 2026, by and between
+NovaTech Ventures Inc., a Delaware corporation (the "Company"), and the undersigned investor.
+
+────────────────────────────────────────────────────────────────
+1. INVESTMENT TERMS
+────────────────────────────────────────────────────────────────
+
+Investment Amount:         USD 3,500,000 (Three Million Five Hundred Thousand US Dollars)
+Instrument Type:           Equity Shares (Series Seed Preferred)
+Pre-Money Valuation:       USD 12,000,000 (Twelve Million US Dollars)
+Post-Money Valuation:      USD 15,500,000 (Fifteen Million Five Hundred Thousand US Dollars)
+Equity Percentage:         22.6% (fully diluted, post-round)
+Closing Date:              May 15, 2026
+
+────────────────────────────────────────────────────────────────
+2. GOVERNANCE
+────────────────────────────────────────────────────────────────
+
+Board Seats:
+  - Lead Investor shall have the right to appoint one (1) Board Director.
+  - The Company's Founders shall retain two (2) Board seats.
+  - One (1) independent Director to be mutually agreed within 90 days of closing.
+  - Total Board composition post-closing: 4 Directors.
+
+────────────────────────────────────────────────────────────────
+3. INVESTOR RIGHTS
+────────────────────────────────────────────────────────────────
+
+Anti-Dilution:
+  The Series Seed Preferred Shares shall carry broad-based weighted-average anti-dilution
+  protection. In the event of a down-round financing, the conversion price shall be adjusted
+  using the weighted-average formula as defined in Schedule A.
+
+Pro-Rata Rights:
+  Each investor holding more than 5% of outstanding shares on a fully diluted basis shall have
+  the right to participate in any future equity financing on a pro-rata basis up to their then-
+  current percentage ownership. This right shall be exercisable within 20 business days of the
+  Company's written notice of a new round.
+
+Right of First Refusal (ROFR):
+  The Company and Investors (in that order of priority) shall have a right of first refusal on
+  any proposed transfer of shares by existing shareholders. The ROFR shall be exercisable within
+  30 days of receipt of a transfer notice specifying the proposed transferee and price.
+
+Drag-Along Rights:
+  If holders of 65% or more of outstanding Series Seed Preferred Shares approve a proposed
+  Acquisition Event, all other holders of Series Seed Preferred shall be obligated to consent
+  to and raise no objection to such transaction (drag-along obligation).
+
+────────────────────────────────────────────────────────────────
+4. LOCK-UP AND TRANSFER RESTRICTIONS
+────────────────────────────────────────────────────────────────
+
+Lock-Up Period:
+  All shares issued under this Agreement shall be subject to a lock-up period of twelve (12)
+  months from the Closing Date. During the lock-up period, no shareholder may sell, transfer,
+  pledge, or otherwise dispose of any shares without prior written consent of the Board.
+
+────────────────────────────────────────────────────────────────
+5. USE OF PROCEEDS
+────────────────────────────────────────────────────────────────
+
+  - Product Development & Engineering:    40% (USD 1,400,000)
+  - Sales & Marketing:                    30% (USD 1,050,000)
+  - Operations & Working Capital:         20% (USD   700,000)
+  - Legal, Compliance & G&A:             10% (USD   350,000)
+
+────────────────────────────────────────────────────────────────
+6. CONDITIONS TO CLOSING
+────────────────────────────────────────────────────────────────
+
+  a) Execution of this Agreement by all parties.
+  b) Receipt of all required Board and shareholder approvals.
+  c) Completion of legal due diligence to investors' satisfaction.
+  d) Delivery of updated capitalisation table and financial projections.
+  e) Wire transfer of Investment Amount to the Company's designated account by Closing Date.
+
+────────────────────────────────────────────────────────────────
+7. REPRESENTATIONS AND WARRANTIES
+────────────────────────────────────────────────────────────────
+
+The Company represents that:
+  - It is duly incorporated and in good standing.
+  - The shares to be issued are duly authorised and will be validly issued.
+  - There is no outstanding litigation that would materially affect this transaction.
+  - Intellectual property rights are fully owned by the Company with no encumbrances.
+
+────────────────────────────────────────────────────────────────
+8. SIGNATURES
+────────────────────────────────────────────────────────────────
+
+NovaTech Ventures Inc.
+By: _______________________
+Name: Rohan Menon
+Title: Chief Executive Officer
+Date: ____________________
+
+Lead Investor
+By: _______________________
+Name: ____________________
+Title: ___________________
+Date: ____________________

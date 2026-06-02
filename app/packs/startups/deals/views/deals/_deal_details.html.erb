@@ -19,6 +19,9 @@
     <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">Custom Notifications</a>
+    <% if current_user.entity_id == deal.entity_id && deal.entity.support_agents.set?(:deal_management_agent) %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#ai-agent-tab"><i class="ti ti-robot me-1"></i>AI Agent</a>
+    <% end %>
   </nav>
   <div class="tab-content">
     <div id="charts-tab" class="tab-pane fade in show active">
@@ -91,5 +94,29 @@
         <% end %>
       </div>
     </div>
+    <% if current_user.entity_id == deal.entity_id && deal.entity.support_agents.set?(:deal_management_agent) %>
+      <div id="ai-agent-tab" class="tab-pane fade">
+        <% deal_agent   = SupportAgent.find_by(entity_id: deal.entity_id, agent_type: "DealManagementAgent", enabled: true) %>
+        <% deal_reports = deal_agent ? SupportAgentReport.where(support_agent: deal_agent, owner: deal).order(updated_at: :desc) : [] %>
+
+        <%# ── Toolbar: last run + Run Now ── %>
+        <div class="d-flex align-items-center justify-content-between mt-3 mb-2">
+          <span class="fw-semibold"><i class="ti ti-robot me-1"></i> Deal Management Agent</span>
+          <div class="d-flex align-items-center gap-2">
+            <% if deal_reports.any? %>
+              <span class="text-muted small">Last run: <%= deal_reports.first.updated_at.strftime("%d %b %Y, %H:%M") %></span>
+            <% end %>
+            <%= button_to "Run Now",
+                  run_support_agents_path(agent_type: "DealManagementAgent", target_type: "Deal", target_id: deal.id),
+                  method: :post, class: "btn btn-sm btn-primary", data: { turbo: false } %>
+          </div>
+        </div>
+
+        <%# ── Full report (same partial as the SupportAgent Deal Reports tab) ── %>
+        <%= render "/support_agents/deal_reports_tab",
+                   support_agent: deal_agent,
+                   deal_reports:  deal_reports %>
+      </div>
+    <% end %>
   </div>
 </div>

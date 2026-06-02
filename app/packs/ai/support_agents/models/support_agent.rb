@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealManagementAgent].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy

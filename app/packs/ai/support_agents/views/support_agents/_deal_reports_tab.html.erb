@@ -1,0 +1,254 @@
+<% if deal_reports.empty? %>
+  <div class="alert alert-secondary">
+    <i class="ti ti-info-circle"></i>
+    No deal reports yet. Run the agent from a Deal page or via the console to generate a report.
+  </div>
+<% else %>
+  <% deal_reports.each do |report| %>
+    <% deal       = report.owner %>
+    <% jf         = report.json_fields || {} %>
+    <% progress   = jf["progress_issues"]  || [] %>
+    <% doc_issues = jf["document_issues"]  || [] %>
+    <% terms      = jf["extracted_terms"]  || {} %>
+    <% leaderboard = jf["score_leaderboard"] || [] %>
+    <% has_blocking = (progress + doc_issues).any? { |i| (i["severity"] || i[:severity]).to_s == "blocking" } %>
+    <% investor_reports = SupportAgentReport.where(support_agent: support_agent, owner_type: "DealInvestor")
+                                             .joins("INNER JOIN deal_investors ON deal_investors.id = support_agent_reports.owner_id")
+                                             .where("deal_investors.deal_id = ?", deal&.id)
+                                             .includes(:owner)
+                                             .order(updated_at: :desc) %>
+
+    <div class="card mb-4">
+      <%# ── Deal header ──────────────────────────────────────────────────── %>
+      <div class="card-header d-flex align-items-center justify-content-between">
+        <div>
+          <% if deal %>
+            <strong><%= link_to deal.name, deal_path(deal), data: { turbo: false } %></strong>
+          <% else %>
+            <strong class="text-muted">Deal removed</strong>
+          <% end %>
+          <% if has_blocking %>
+            <span class="badge bg-danger ms-2"><i class="ti ti-alert-triangle"></i> Blockers</span>
+          <% else %>
+            <span class="badge bg-success ms-2"><i class="ti ti-check"></i> Ready</span>
+          <% end %>
+        </div>
+        <span class="text-muted small">
+          Last run: <%= report.updated_at.strftime("%d %b %Y, %H:%M") %>
+        </span>
+      </div>
+
+      <div class="card-body">
+        <div class="row g-3">
+
+          <%# ── Progress issues ──────────────────────────────────────────── %>
+          <div class="col-md-6">
+            <h6 class="text-uppercase text-muted small mb-2">
+              <i class="ti ti-activity"></i> Deal Progress
+            </h6>
+            <% stagnant = progress.select { |i| i["type"] == "stagnant" } %>
+            <% overdue  = progress.select { |i| i["type"] == "overdue"  } %>
+            <% if stagnant.empty? && overdue.empty? %>
+              <span class="text-success small"><i class="ti ti-check"></i> No stagnant investors or overdue activities</span>
+            <% else %>
+              <% stagnant.each do |i| %>
+                <div class="d-flex align-items-start gap-1 mb-1">
+                  <i class="ti ti-clock text-danger mt-1" style="flex-shrink:0;"></i>
+                  <span class="small"><%= i["message"] %></span>
+                </div>
+              <% end %>
+              <% overdue.each do |i| %>
+                <div class="d-flex align-items-start gap-1 mb-1">
+                  <i class="ti ti-calendar-x text-warning mt-1" style="flex-shrink:0;"></i>
+                  <span class="small"><%= i["message"] %></span>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+
+          <%# ── Document checklist ───────────────────────────────────────── %>
+          <div class="col-md-6">
+            <h6 class="text-uppercase text-muted small mb-2">
+              <i class="ti ti-file-check"></i> Document Checklist
+            </h6>
+            <% if doc_issues.empty? %>
+              <span class="text-muted small">No checklist configured</span>
+            <% else %>
+              <% doc_issues.each do |i| %>
+                <% present = (i["type"] || i[:type]).to_s == "present" %>
+                <div class="d-flex align-items-center gap-1 mb-1">
+                  <i class="ti <%= present ? 'ti-circle-check text-success' : 'ti-circle-x text-danger' %>"></i>
+                  <span class="small"><%= i["document_name"] || i["message"] %></span>
+                </div>
+              <% end %>
+            <% end %>
+          </div>
+
+          <%# ── Extracted terms ─────────────────────────────────────────── %>
+          <% if terms.present? %>
+            <div class="col-12">
+              <h6 class="text-uppercase text-muted small mb-2">
+                <i class="ti ti-file-text"></i> Extracted Deal Terms
+              </h6>
+              <div class="row g-2">
+                <% terms.compact.each do |key, value| %>
+                  <div class="col-sm-4 col-md-3">
+                    <div class="border rounded p-2">
+                      <div class="text-muted" style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.05em;">
+                        <%= key.to_s.humanize %>
+                      </div>
+                      <div class="fw-semibold small"><%= value %></div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+          <%# ── Investor score leaderboard ───────────────────────────────── %>
+          <% if leaderboard.any? %>
+            <div class="col-12">
+              <h6 class="text-uppercase text-muted small mb-2">
+                <i class="ti ti-trophy"></i> Investor Scores
+              </h6>
+              <table class="table table-sm table-bordered align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>#</th>
+                    <th>Investor</th>
+                    <th>Status</th>
+                    <th style="width:180px;">Score</th>
+                    <th>Grade</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% leaderboard.each_with_index do |row, idx| %>
+                    <% score = (row["ai_score"] || row[:ai_score]).to_i %>
+                    <% grade = (row["ai_grade"] || row[:ai_grade]).to_s %>
+                    <% bar_class = score >= 80 ? "bg-success" : score >= 60 ? "bg-primary" : score >= 40 ? "bg-warning" : "bg-danger" %>
+                    <tr>
+                      <td class="text-muted small"><%= idx + 1 %></td>
+                      <td class="small"><%= row["investor_name"] || row[:investor_name] %></td>
+                      <td><span class="badge bg-secondary"><%= row["status"] || row[:status] %></span></td>
+                      <td>
+                        <div class="d-flex align-items-center gap-2">
+                          <div class="progress flex-grow-1" style="height:6px;">
+                            <div class="progress-bar <%= bar_class %>" style="width:<%= score %>%;"></div>
+                          </div>
+                          <span class="small fw-bold"><%= score %></span>
+                        </div>
+                      </td>
+                      <td>
+                        <% if grade.present? %>
+                          <span class="badge <%= bar_class %>"><%= grade %></span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          <% end %>
+
+          <%# ── Per-investor reports ─────────────────────────────────────── %>
+          <% if investor_reports.any? %>
+            <div class="col-12">
+              <h6 class="text-uppercase text-muted small mb-2">
+                <i class="ti ti-users"></i> Investor Reports
+              </h6>
+              <div class="accordion" id="inv-reports-<%= report.id %>">
+                <% investor_reports.each do |inv_report| %>
+                  <% di     = inv_report.owner %>
+                  <% ijf    = inv_report.json_fields || {} %>
+                  <% status = ijf["final_status"].to_s %>
+                  <div class="accordion-item">
+                    <h2 class="accordion-header">
+                      <button class="accordion-button collapsed py-2" type="button"
+                              data-bs-toggle="collapse"
+                              data-bs-target="#inv-report-<%= inv_report.id %>">
+                        <span class="me-2">
+                          <% if status == "skipped" %>
+                            <span class="badge bg-secondary">Skipped</span>
+                          <% elsif status == "failed" %>
+                            <span class="badge bg-danger">Failed</span>
+                          <% else %>
+                            <span class="badge bg-success">Ready</span>
+                          <% end %>
+                        </span>
+                        <strong class="small"><%= di&.investor_name || "Investor removed" %></strong>
+                        <span class="text-muted small ms-2">
+                          <%= ijf["document_count"].to_i %> docs &middot;
+                          <%= ijf["activity_count"].to_i %> steps &middot;
+                          <%= ijf["period_label"] %>
+                        </span>
+                        <% if (score_data = ijf["score"]).present? %>
+                          <span class="ms-auto me-3 small fw-bold">
+                            <%= score_data["overall_score"] %> <%= score_data["grade"] %>
+                          </span>
+                        <% end %>
+                      </button>
+                    </h2>
+                    <div id="inv-report-<%= inv_report.id %>" class="accordion-collapse collapse">
+                      <div class="accordion-body py-2">
+                        <% if ijf["summary_text"].present? %>
+                          <h6 class="small text-muted text-uppercase">Summary</h6>
+                          <div class="small mb-3" style="white-space:pre-wrap;"><%= ijf["summary_text"] %></div>
+                        <% end %>
+                        <% if (score_data = ijf["score"]).present? %>
+                          <%# ── Score narrative ── %>
+                          <h6 class="small text-muted text-uppercase mb-1">Score breakdown</h6>
+                          <p class="small mb-3"><%= score_data["summary"] %></p>
+
+                          <%# ── Dimension bars (each out of 20) ── %>
+                          <% dims = Array(score_data["dimensions"]) %>
+                          <% dims.each do |dim| %>
+                            <% dim_score = dim["score"].to_i %>
+                            <% bar_pct   = (dim_score / 20.0 * 100).round %>
+                            <% dim_class = dim_score >= 17 ? "bg-success" : dim_score >= 13 ? "bg-primary" : dim_score >= 9 ? "bg-warning" : "bg-danger" %>
+                            <div class="mb-3">
+                              <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="small fw-semibold"><%= dim["name"] %></span>
+                                <span class="badge <%= dim_class %>"><%= dim_score %> / 20</span>
+                              </div>
+                              <div class="progress mb-1" style="height:5px;">
+                                <div class="progress-bar <%= dim_class %>" style="width:<%= bar_pct %>%;"></div>
+                              </div>
+                              <p class="small text-muted mb-0"><%= dim["rationale"] %></p>
+                            </div>
+                          <% end %>
+
+                          <%# ── Sum formula ── %>
+                          <% if dims.any? %>
+                            <% overall = score_data["overall_score"].to_i %>
+                            <% grade   = score_data["grade"].to_s %>
+                            <% grade_class = overall >= 85 ? "bg-success" : overall >= 70 ? "bg-primary" : overall >= 55 ? "bg-warning" : "bg-danger" %>
+                            <div class="border-top pt-2 mt-1">
+                              <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="small text-muted">
+                                  <%= dims.map { |d| d["score"].to_i }.join(" + ") %> =
+                                </span>
+                                <span class="fw-bold"><%= overall %> / 100</span>
+                                <span class="badge <%= grade_class %> ms-1"><%= grade %></span>
+                                <span class="text-muted small ms-2">
+                                  (A ≥ 85 &nbsp;·&nbsp; B ≥ 70 &nbsp;·&nbsp; C ≥ 55 &nbsp;·&nbsp; D ≥ 40 &nbsp;·&nbsp; F &lt; 40)
+                                </span>
+                              </div>
+                            </div>
+                          <% end %>
+                        <% end %>
+                        <% if ijf["error"].present? %>
+                          <div class="alert alert-danger py-1 small mb-0"><%= ijf["error"] %></div>
+                        <% end %>
+                      </div>
+                    </div>
+                  </div>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+
+        </div><%# /row %>
+      </div><%# /card-body %>
+    </div><%# /card %>
+  <% end %>
+<% end %>

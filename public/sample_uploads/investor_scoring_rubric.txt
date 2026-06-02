@@ -1,0 +1,104 @@
+# Investor Scoring Rubric — Deal Management Agent
+
+## Overview
+Score each active deal investor on a scale of 0–100 across the five dimensions below.
+Each dimension is worth up to 20 points. Sum them for `overall_score`.
+Assign a letter grade: A (≥85), B (70–84), C (55–69), D (40–54), F (<40).
+
+---
+
+## Dimension 1: Engagement Quality (0–20 pts)
+Assess how actively the investor has engaged in the deal process.
+
+| Score | Criteria |
+|-------|----------|
+| 17–20 | Attended all meetings, responded to all communications within 48h, asked substantive questions |
+| 13–16 | Attended most meetings, responsive, showed genuine interest |
+| 9–12  | Attended some meetings, occasionally slow to respond |
+| 5–8   | Minimal attendance, rarely responds, requires chasing |
+| 0–4   | Non-responsive, missed key meetings, stagnant for weeks |
+
+Key signals from notes: mentions of "engaged", "responsive", "attended presentations", "quick decision-maker" → higher score.
+Red flags: "not responded", "last contact was weeks ago", "requires chasing" → lower score.
+
+---
+
+## Dimension 2: Process Completion (0–20 pts)
+Assess how far the investor has progressed through deal steps (NDA, diligence, term sheet, etc.).
+
+| Score | Criteria |
+|-------|----------|
+| 17–20 | All scheduled steps complete or on track; no overdue activities |
+| 13–16 | Most steps complete; 1–2 minor delays |
+| 9–12  | Mid-process; some steps overdue by ≤14 days |
+| 5–8   | Early-stage only (NDA not yet signed); multiple overdue steps |
+| 0–4   | No meaningful progress; only initial contact made |
+
+Key signals: count of completed activities vs total, overdue by_date values.
+
+---
+
+## Dimension 3: Commitment Strength (0–20 pts)
+How committed is the investor based on their stated intent and behaviour?
+
+| Score | Criteria |
+|-------|----------|
+| 17–20 | Verbal or written commitment to invest; term sheet accepted or issued |
+| 13–16 | Strong positive signals; mentioned timeline to decision |
+| 9–12  | Interested but non-committal; in diligence phase |
+| 5–8   | Lukewarm; expressed concerns about valuation or structure |
+| 0–4   | Likely to pass; major concerns unresolved |
+
+Key signals from notes: "committed", "expects term sheet", "bullish", "concerned", "pass".
+
+---
+
+## Dimension 4: Strategic Fit (0–20 pts)
+How well does this investor's profile, thesis, and network align with the company's needs?
+
+| Score | Criteria |
+|-------|----------|
+| 17–20 | Perfect thesis fit; brings value-add (network, expertise, follow-on capacity) |
+| 13–16 | Good fit; some value-add beyond capital |
+| 9–12  | Adequate fit; primarily financial investor |
+| 5–8   | Marginal fit; ticket size or focus area misaligned |
+| 0–4   | Poor fit; investor expressed mismatch concerns |
+
+Key signals: tags like "strategic", "lead", "deep-tech", "angel-network"; tier (Lead vs Co-investor vs Minority).
+
+---
+
+## Dimension 5: Documentation Readiness (0–20 pts)
+Has the investor provided / signed the required documents?
+
+| Score | Criteria |
+|-------|----------|
+| 17–20 | All required docs signed (NDA, term sheet, side letters) |
+| 13–16 | NDA signed; diligence docs under review |
+| 9–12  | NDA signed; other docs pending |
+| 5–8   | NDA not yet signed; only soft materials shared |
+| 0–4   | No documents signed; investor has not provided any materials |
+
+Key signals: count of investor-owned documents, NDA activity status.
+
+---
+
+## Output Format (strict JSON — no prose outside the block)
+
+```json
+{
+  "overall_score": 74,
+  "grade": "B",
+  "summary": "One paragraph summarising the investor's overall standing, key strengths, and main risks.",
+  "dimensions": [
+    { "name": "Engagement Quality",    "score": 16, "rationale": "..." },
+    { "name": "Process Completion",    "score": 12, "rationale": "..." },
+    { "name": "Commitment Strength",   "score": 14, "rationale": "..." },
+    { "name": "Strategic Fit",         "score": 17, "rationale": "..." },
+    { "name": "Documentation Readiness","score": 15, "rationale": "..." }
+  ]
+}
+```
+
+Scores must sum to `overall_score`. Each dimension score must be 0–20.
+Do not add commentary outside the JSON block.
