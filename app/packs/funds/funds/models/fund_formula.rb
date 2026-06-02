@@ -131,6 +131,36 @@ class FundFormula < ApplicationRecord
     expression_map
   end
 
+  # Re-evaluates the formula breakdown for a given account_entry and saves it back.
+  # Pins the result key to account_entry.amount_cents so the breakdown stays
+  # consistent with the stored value regardless of current DB state.
+  def reparse_and_save(account_entry)
+    capital_commitment = account_entry.capital_commitment
+    fund_formula       = self
+    @fund              = account_entry.fund
+    @end_date          = account_entry.reporting_date
+
+    quarter, year = account_entry.period.split('-')
+    q             = quarter.delete('Q').to_i
+    @start_date   = Date.new(year.to_i, (q - 1) * 3 + 1, 1)
+
+    formula = account_entry.explanation.first
+    return false if formula.blank?
+
+    bdg = binding
+    # rubocop:disable Security/Eval
+    eval(formula, bdg)
+    # rubocop:enable Security/Eval
+
+    breakdown    = parse_statement(bdg, external_formula: formula)
+    result_key   = breakdown.max_by { |k, _| k.length }&.first
+    breakdown[result_key] = account_entry.amount_cents.to_s if result_key
+
+    account_entry.explanation[2] = breakdown.to_json
+    account_entry.save!(validate: false)
+    breakdown
+  end
+
   def skip_statement(exp, val)
     val.is_a?(ApplicationRecord) || val.is_a?(OpenStruct) || val.is_a?(CustomFieldsProxy) ||
       val.is_a?(ActiveRecord::Relation) || val.is_a?(ActiveRecord::QueryMethods::WhereChain) ||
