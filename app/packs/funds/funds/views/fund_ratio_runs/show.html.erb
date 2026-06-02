@@ -50,7 +50,7 @@
         <th>Template</th>
         <td>
           <% if @run.fund_ratio_run_template %>
-            <%= link_to @run.fund_ratio_run_template.name, fund_ratio_run_template_path(@run.fund_ratio_run_template) %>
+            <%= link_to @run.fund_ratio_run_template.name, runs_fund_ratio_run_template_path(@run.fund_ratio_run_template) %>
           <% else %>
             <span class="fst-italic text-muted">Ad hoc</span>
           <% end %>

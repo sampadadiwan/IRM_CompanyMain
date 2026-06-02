@@ -37,6 +37,11 @@ class FundRatioRunTemplatesController < ApplicationController
     end
   end
 
+  # GET /fund_ratio_run_templates/:id
+  def show
+    authorize @template
+  end
+
   # GET /fund_ratio_run_templates/:id/edit
   def edit
     authorize @template

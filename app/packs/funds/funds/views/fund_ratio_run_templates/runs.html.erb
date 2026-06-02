@@ -18,33 +18,25 @@
           </tr>
         </thead>
         <tbody>
-          <% if @runs.any? %>
-            <% @runs.each do |run| %>
-              <tr>
-                <td><%= l run.end_date %></td>
-                <td class="text-muted small"><%= run %></td>
-                <td><%= run.currency.presence || content_tag(:span, "Entity default", class: "fst-italic text-muted") %></td>
-                <td><%= l run.created_at, format: :short %></td>
-                <td>
-                  <%= link_to "View Inputs", fund_ratio_run_path(run),
-                              class: "btn btn-sm btn-outline-secondary" %>
-                  <%= link_to "View Ratios",
-                              fund_ratios_path(
-                                filter: true,
-                                q: ransack_query_params_multiple([
-                                  [:computation_context_id,   :eq, run.id],
-                                  [:computation_context_type, :eq, "FundRatioRun"],
-                                  [:end_date,                 :eq, run.end_date]
-                                ])
-                              ),
-                              class: "btn btn-sm btn-outline-primary ms-1" %>
-                </td>
-              </tr>
-            <% end %>
-          <% else %>
+          <% @runs.each do |run| %>
             <tr>
-              <td colspan="5" class="text-muted text-center">
-                No runs yet — trigger this template with an end date to generate one.
+              <td><%= l run.end_date %></td>
+              <td class="text-muted small"><%= run %></td>
+              <td><%= run.currency.presence || content_tag(:span, "Entity default", class: "fst-italic text-muted") %></td>
+              <td><%= l run.created_at, format: :short %></td>
+              <td>
+                <%= link_to "View Inputs", fund_ratio_run_path(run),
+                            class: "btn btn-sm btn-outline-secondary" %>
+                <%= link_to "View Ratios",
+                            fund_ratios_path(
+                              filter: true,
+                              q: ransack_query_params_multiple([
+                                [:computation_context_id,   :eq, run.id],
+                                [:computation_context_type, :eq, "FundRatioRun"],
+                                [:end_date,                 :eq, run.end_date]
+                              ])
+                            ),
+                            class: "btn btn-sm btn-outline-primary ms-1" %>
               </td>
             </tr>
           <% end %>

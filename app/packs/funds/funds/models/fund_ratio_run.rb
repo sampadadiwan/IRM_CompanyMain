@@ -112,7 +112,7 @@ class FundRatioRun < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[end_date run_type currency portfolio_companies_tags fund_ids portfolio_company_ids sectors created_at anchor_fund_id user_id entity_id].sort
+    %w[end_date run_type currency portfolio_companies_tags fund_ids portfolio_company_ids sectors created_at anchor_fund_id user_id entity_id fund_ratio_run_template_id].sort
   end
 
   def self.ransackable_associations(_auth_object = nil)

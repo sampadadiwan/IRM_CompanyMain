@@ -23,6 +23,7 @@ class FundRatioRunTemplate < ApplicationRecord
   # anchor_fund mirrors FundRatioRun#anchor_fund — used for document folder
   # resolution and policy scoping only; does not limit which data feeds the calc.
   belongs_to :anchor_fund, class_name: "Fund", optional: true
+  has_many :fund_ratio_runs, dependent: :nullify
 
   VALID_RUN_TYPES = %w[cross-fund cross-portfolio].freeze
 
@@ -71,16 +72,7 @@ class FundRatioRunTemplate < ApplicationRecord
   public
 
   def runs
-    FundRatioRun.where(
-      entity_id: entity_id,
-      name:      FundRatioRun.fingerprint(
-        fund_ids:              fund_ids,
-        portfolio_company_ids: portfolio_company_ids,
-        tags:                  portfolio_companies_tags,
-        sectors:               sectors,
-        type:                  run_type
-      )
-    ).order(end_date: :desc)
+    fund_ratio_runs.order(end_date: :desc)
   end
 
   # Enqueues FundRatiosScenarioJob for this template with the given end_date.

@@ -37,7 +37,11 @@
             <td><%= l run.end_date %></td>
             <td class="small">
               <% if run.fund_ratio_run_template %>
-                <%= link_to run.fund_ratio_run_template.name, fund_ratio_run_template_path(run.fund_ratio_run_template) %>
+                <%= link_to run.fund_ratio_run_template.name,
+                            fund_ratio_runs_path(
+                              filter: true,
+                              q: ransack_query_params_multiple([[:fund_ratio_run_template_id, :eq, run.fund_ratio_run_template_id]])
+                            ) %>
                 <div class="text-muted"><%= run %></div>
               <% else %>
                 <span class="text-muted"><%= run %></span>

@@ -211,6 +211,11 @@
                     </button>
                   </li>
                   <li>
+                    <%= link_to fund_ratio_run_template_path(tmpl), class: "dropdown-item d-flex align-items-center gap-2" do %>
+                      <i class="ti ti-eye"></i> View
+                    <% end %>
+                  </li>
+                  <li>
                     <%= link_to edit_fund_ratio_run_template_path(tmpl), class: "dropdown-item d-flex align-items-center gap-2" do %>
                       <i class="ti ti-pencil"></i> Edit
                     <% end %>
