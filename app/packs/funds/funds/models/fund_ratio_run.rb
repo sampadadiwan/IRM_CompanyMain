@@ -127,16 +127,30 @@ class FundRatioRun < ApplicationRecord
     Investor.where(id: portfolio_company_ids)
   end
 
-  # Returns the full union of portfolio companies that a run actually processes:
-  # explicit IDs, companies matching any stored tag, and companies in any stored sector.
-  # Rules: IDs | tags | sectors are all OR'd (unioned); the fund filter is AND'd on top
-  # separately inside FundRatioMultiFundCalcs. Returns nil when no filter is set,
-  # meaning "no company scoping — include all portfolio companies in the entity".
+  # Returns the resolved set of portfolio companies a run processes.
+  #
+  # Rules:
+  #   - Explicit IDs are always included regardless of other filters.
+  #   - Tags alone  → union in all companies matching any tag.
+  #   - Sectors alone → union in all companies matching any sector.
+  #   - Tags AND sectors together → intersect: company must match at least one tag AND be in at least one sector.
+  #   - All of the above are OR'd with the explicit ID set.
+  #   - Returns nil when no filter is set (meaning "all portfolio companies — no scoping").
   def resolved_portfolio_companies
     pc_ids = Set.new
-    pc_ids.merge(portfolio_company_ids.map(&:to_i))                                                    if portfolio_company_ids.any?
-    pc_ids.merge(entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags).pluck(:id)) if portfolio_companies_tags.present?
-    pc_ids.merge(entity.investors.portfolio_companies.in_sector(sectors).pluck(:id))                   if sectors.any?
+    pc_ids.merge(portfolio_company_ids.map(&:to_i)) if portfolio_company_ids.any?
+
+    if portfolio_companies_tags.present? && sectors.any?
+      # AND: company must satisfy both the tag filter and the sector filter.
+      tag_ids    = entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags).pluck(:id)
+      sector_ids = entity.investors.portfolio_companies.in_sector(sectors).pluck(:id)
+      pc_ids.merge(tag_ids & sector_ids)
+    elsif portfolio_companies_tags.present?
+      pc_ids.merge(entity.investors.portfolio_companies.with_any_tags(portfolio_companies_tags).pluck(:id))
+    elsif sectors.any?
+      pc_ids.merge(entity.investors.portfolio_companies.in_sector(sectors).pluck(:id))
+    end
+
     pc_ids.any? ? entity.investors.where(id: pc_ids.to_a) : nil
   end
 
