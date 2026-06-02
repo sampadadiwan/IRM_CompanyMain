@@ -151,7 +151,13 @@ class FundRatioRun < ApplicationRecord
       pc_ids.merge(entity.investors.portfolio_companies.in_sector(sectors).pluck(:id))
     end
 
-    pc_ids.any? ? entity.investors.where(id: pc_ids.to_a) : nil
+    return entity.investors.where(id: pc_ids.to_a) if pc_ids.any?
+
+    # Filters were specified but nothing matched (e.g. tags ∩ sectors is empty, or tag
+    # has no matching companies). Return an empty relation — NOT nil — so callers get
+    # zero results rather than silently falling back to "all portfolio companies".
+    filters_specified = portfolio_company_ids.any? || portfolio_companies_tags.present? || sectors.any?
+    filters_specified ? entity.investors.none : nil
   end
 
   # Finds the FundRatioRunTemplate that produced this run by matching its

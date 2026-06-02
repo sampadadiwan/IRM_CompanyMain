@@ -128,21 +128,25 @@ Feature: Fund Ratio Run — Cross-Fund and Cross-Portfolio Computations
     Then FundRatioRun.for_source_portfolio_company should return the run for each selected company
     And FundRatioRun.for_source_portfolio_company should not return the run for an unrelated company
 
-  # ─── Cross-portfolio — union of all three filters ─────────────────────────────
+  # ─── Cross-portfolio — explicit IDs bypass tag+sector AND ────────────────────
+  # Tags and sectors are AND'd when both are supplied. Explicit portfolio_company_ids
+  # are always included regardless of the tag/sector filters.
 
-  Scenario: IDs, tags, and sectors are unioned when all three are provided
+  Scenario: Explicit IDs always included; tags and sectors that share no common company both exclude non-matching companies
     Given there are portfolio companies with sectors for cross-portfolio testing:
       | name     | sector     | tag_list |
       | Alpha Co | Fintech    | growth   |
       | Beta Co  | Healthcare | stable   |
       | Gamma Co | SaaS       | growth   |
-    And the cross-portfolio ratios are computed for scenario "Union-Test" on "31-03-2024" with:
+    And the cross-portfolio ratios are computed for scenario "ExplicitBypass-Test" on "31-03-2024" with:
       | filter              | value      |
       | portfolio_company   | Alpha Co   |
       | tag                 | stable     |
       | sector              | SaaS       |
-    Then per-company FundRatios should exist for "Alpha Co", "Beta Co", and "Gamma Co" in scenario "Union-Test"
-    And the FundRatioRun for scenario "Union-Test" should store sector "SaaS"
+    Then per-company FundRatios should exist for "Alpha Co"
+    And no FundRatios should exist for "Beta Co" in scenario "ExplicitBypass-Test"
+    And no FundRatios should exist for "Gamma Co" in scenario "ExplicitBypass-Test"
+    And the FundRatioRun for scenario "ExplicitBypass-Test" should store sector "SaaS"
 
   # ─── Cross-portfolio — fund_ids filter ────────────────────────────────────────
 
