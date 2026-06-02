@@ -57,8 +57,10 @@ class AccountEntryExplainerService
       Reporting date:  #{@account_entry.reporting_date}
       Fund currency:   #{currency}
 
-      IMPORTANT: All monetary amounts in this entry are denominated in #{currency}, stored as cents.
-      When referencing amounts, always use #{currency} — never assume USD unless that is the fund currency.
+      IMPORTANT: Monetary amounts in this entry are stored as integer values in the database.
+      When referencing any monetary amount, always show both the raw value AND the #{currency} equivalent
+      (e.g. "1,000,000,000 (#{currency} 10,000,000)") by dividing the raw value by 100 for the currency amount.
+      Never use the words cents, paise, or any minor-unit name — just show the number and its #{currency} equivalent.
 
       --- Formula ---
       #{formula.presence || '(not available)'}
@@ -88,7 +90,7 @@ class AccountEntryExplainerService
           },
           ...one object per step, in the same order as above...
         ],
-        "conclusion": "<3 sentences that close the loop: (1) restate what the final computed value represents — include units, e.g. cents vs dollars, percentage vs absolute amount, (2) explain how to interpret the magnitude — is this the expected order of magnitude given the inputs? what does it mean for the LP or the fund? (3) describe what happens with this number next — e.g. it will be debited from the investor account, it feeds into the NAV calculation, it is compared against a hurdle rate>"
+        "conclusion": "<2 sentences strictly derived from the formula above: (1) restate what the final computed value represents — show both the raw value and its #{currency} equivalent (raw ÷ 100), never using the words cents or paise, (2) explain what the magnitude means in terms of the inputs actually visible above — do NOT infer or speculate about downstream accounting treatment, journal entries, NAV impact, or anything not explicitly present in the formula and steps>"
       }
 
       Guidelines for all text:
@@ -97,6 +99,9 @@ class AccountEntryExplainerService
       - Never use technical terms: eval, method, object, Ruby syntax, or implementation details.
       - Step meanings must build on each other — if step 4 uses the result of step 3, say so explicitly.
       - Be specific and concrete; avoid vague phrases like "this is used in the calculation".
+      - STRICT: only explain what is explicitly present in the formula and steps above. Do NOT infer downstream
+        accounting effects, journal entries, NAV impact, capital account treatment, or any other consequences
+        that are not directly derivable from the data provided.
     PROMPT
   end
 
