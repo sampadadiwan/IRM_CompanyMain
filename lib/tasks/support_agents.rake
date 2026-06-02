@@ -244,18 +244,21 @@ SUPPORT_AGENT_FORM_CONFIGS = [
       with_steps: false,
       json_fields: {
         "check_progress"         => "Yes",
-        "stagnant_days"          => "7",
-        "send_reminders"         => "Yes",
-        "reminder_days"          => "7,3,1",
+        "stagnant_days"          => "14",
         "check_documents"        => "Yes",
-        "required_docs"          => "",
+        "required_docs"          => "NDA, Term Sheet, Pitch Deck",
         "extract_terms"          => "Yes",
         "term_extraction_prompt" => "",
         "summarize_notes"        => "Yes",
         "note_period"            => "Quarter",
-        "score_investors"        => "No",
+        "score_investors"        => "Yes",
         "min_points_per_section" => "3",
         "notify_email"           => ""
+      },
+      # Bundled seed file for the scoring rubric — uploaded automatically on first setup.
+      # Path is relative to Rails.root. Skipped silently if the file is absent.
+      skill_files: {
+        "scoring_skill_file" => "public/sample_uploads/investor_scoring_rubric.txt"
       },
       schedule: {
         frequency: "weekly", run_on_day: 1, run_at_time: "07:00", timezone: "Asia/Kolkata",
@@ -271,67 +274,55 @@ SUPPORT_AGENT_FORM_CONFIGS = [
       { name: "stagnant_days",
         field_type: "NumberField", label: "Stagnant threshold (days)", meta_data: "", position: 2,
         help_text: "A DealInvestor is flagged stagnant when both the investor record and all linked " \
-                   "DealActivity rows have not been updated within this many days. Default: 7." },
-      { name: "send_reminders",
-        field_type: "Select", label: "Send activity reminders", meta_data: "Yes,No", position: 3,
-        help_text: "When Yes, emails notify_email for incomplete DealActivities that are overdue or " \
-                   "whose due date falls within the 'Reminder days' window. Deduplicates within a calendar " \
-                   "day via last_reminded_on on the activity record." },
-      { name: "reminder_days",
-        field_type: "TextField", label: "Reminder days", meta_data: "", position: 4,
-        help_text: "Comma-separated day offsets before a DealActivity's by_date that trigger a reminder, " \
-                   "e.g. '7,3,1'. '0' means on the due date. Overdue activities (past due date) always " \
-                   "fire regardless of this list." },
+                   "DealActivity rows have not been updated within this many days. Default: 14." },
       { name: "check_documents",
-        field_type: "Select", label: "Check document checklist", meta_data: "Yes,No", position: 5,
+        field_type: "Select", label: "Check document checklist", meta_data: "Yes,No", position: 3,
         help_text: "When Yes, verifies that each document name in 'Required documents' exists in the " \
                    "deal data room. Missing documents produce blocking issues; present ones produce " \
                    "success issues. Name matching is case-insensitive." },
       { name: "required_docs",
-        field_type: "TextField", label: "Required documents", meta_data: "", position: 6,
-        help_text: "Comma-separated document names that must be present in the deal data room before " \
-                   "the deal advances, e.g. 'NDA, Term Sheet, Financial Model'. Blank = no check." },
+        field_type: "TextField", label: "Required documents", meta_data: "", position: 4,
+        help_text: "Comma-separated document names that must be present in the deal data room, " \
+                   "e.g. 'NDA, Term Sheet, Pitch Deck, Financial Model'. Blank = no check." },
       { name: "extract_terms",
-        field_type: "Select", label: "Extract deal terms", meta_data: "Yes,No", position: 7,
+        field_type: "Select", label: "Extract deal terms", meta_data: "Yes,No", position: 5,
         help_text: "When Yes, sends all documents in the deal data room to the LLM and stores the " \
                    "extracted JSON in the deal-level report. The extraction is cached — re-runs only " \
                    "when documents or the extraction prompt change." },
       { name: "term_extraction_prompt",
-        field_type: "TextArea", label: "Term extraction prompt", meta_data: "", position: 8,
+        field_type: "TextArea", label: "Term extraction prompt", meta_data: "", position: 6,
         help_text: "Custom instructions for term extraction, e.g. 'Extract: valuation, equity %, " \
                    "board seats'. The LLM returns a JSON object with your fields. " \
                    "Leave blank to use the default common deal terms (valuation, instrument, closing date, etc.)." },
       { name: "summarize_notes",
-        field_type: "Select", label: "Summarize investor notes & docs", meta_data: "Yes,No", position: 9,
+        field_type: "Select", label: "Summarize investor notes & docs", meta_data: "Yes,No", position: 7,
         help_text: "When Yes, the LLM produces a three-section summary (Key Themes, Action Items, " \
                    "Investor Engagement) for each active investor from their document folder and " \
                    "completed DealActivity attachments within the Note period. " \
                    "Investors with no documents are saved as 'skipped' at zero LLM cost." },
       { name: "note_period",
-        field_type: "Select", label: "Note period", meta_data: "Month,Quarter", position: 10,
+        field_type: "Select", label: "Note period", meta_data: "Month,Quarter", position: 8,
         help_text: "Lookback window for collecting investor documents and completed activity attachments. " \
                    "'Month' = previous calendar month; 'Quarter' = previous calendar quarter. " \
                    "Does not apply to deal-level term extraction, which always reads all data-room documents." },
       { name: "score_investors",
-        field_type: "Select", label: "Score investors", meta_data: "Yes,No", position: 11,
-        help_text: "When Yes, the LLM scores each active investor 0–100 using the uploaded skill file " \
-                   "as the rubric. Requires a scoring_skill_file to be uploaded. Disabled by default — " \
-                   "turn on only after uploading the skill file. Scores are written back to " \
-                   "DealInvestor.ai_score and ai_grade." },
+        field_type: "Select", label: "Score investors", meta_data: "Yes,No", position: 9,
+        help_text: "When Yes, the LLM scores each active investor 0–100 using the Scoring Skill File " \
+                   "as the rubric. A default rubric is seeded automatically by the setup task. " \
+                   "Scores are written to the investor report; dimensions shown 0–20 each." },
       { name: "scoring_skill_file",
-        field_type: "File", label: "Scoring Skill File", meta_data: "", position: 12,
-        help_text: "Markdown file defining the investor scoring rubric — dimensions, weights, and " \
-                   "benchmarks. Upload a .md or .txt file. The LLM uses this as its scoring instructions. " \
-                   "Same pattern as the PortfolioScoringAgent skill files." },
+        field_type: "File", label: "Scoring Skill File", meta_data: "", position: 10,
+        help_text: "Text or Markdown file defining the investor scoring rubric — 5 dimensions scored " \
+                   "0–20 each (total 100). A default rubric is uploaded automatically by the setup task. " \
+                   "Replace it with a custom file to tune scoring to your fund's criteria." },
       { name: "min_points_per_section",
-        field_type: "NumberField", label: "Min points per scoring section", meta_data: "", position: 13,
-        help_text: "Minimum number of bullet points the LLM must produce per scoring dimension " \
-                   "(positives, concerns) and per top-level list (Strengths, Risks, Recommendations). " \
+        field_type: "NumberField", label: "Min bullet points per section", meta_data: "", position: 11,
+        help_text: "Minimum bullet points the LLM must produce per scoring dimension rationale. " \
                    "Increase for more granular output. Default: 3." },
       { name: "notify_email",
-        field_type: "TextField", label: "Notify email", meta_data: "", position: 14,
-        help_text: "Email address for all agent notifications: pipeline digest, activity reminders, " \
-                   "and blocker alerts. All v1 notifications go to this single address. " \
+        field_type: "TextField", label: "Notify email", meta_data: "", position: 12,
+        help_text: "Email address for the pipeline digest sent after every agent run. " \
+                   "Includes overdue activities, document gaps, investor scores, and extracted terms. " \
                    "Leave blank to suppress all outbound email from this agent." }
     ]
   },
@@ -477,6 +468,20 @@ namespace :support_agents do
       puts "    [schedule] #{agent_cfg[:schedule][:frequency]} at #{agent_cfg[:schedule][:run_at_time]} #{agent_cfg[:schedule][:timezone]}"
     end
 
+    # Remove deprecated json_fields keys from DealManagementAgent
+    # (send_reminders and reminder_days were removed when per-activity emails were consolidated into the digest)
+    dma = SupportAgent.find_by(entity_id: entity_id, agent_type: "DealManagementAgent")
+    if dma
+      stale_keys = %w[send_reminders reminder_days]
+      present    = stale_keys.select { |k| dma.json_fields&.key?(k) }
+      if present.any?
+        dma.update!(json_fields: dma.json_fields.except(*present))
+        puts "  [DealManagementAgent] Removed deprecated json_fields: #{present.join(', ')}"
+      else
+        puts "  [DealManagementAgent] No deprecated json_fields to remove"
+      end
+    end
+
     # Extend existing agents' json_fields with defaults for newly added fields
     {
       "KycOnboardingAgent"      => { "check_expiry" => "Yes", "expiry_warning_days" => "60,30,15" },
@@ -517,6 +522,56 @@ namespace :support_agents do
         end
       else
         puts "  [KycDocExtractorAgent] extraction_rules already configured (#{existing_rules.size} form types) — skipped"
+      end
+    end
+
+    # Upload bundled skill files declared in each agent's skill_files hash.
+    # Idempotent: skips if the document already exists on the agent.
+    puts ""
+    puts "=== Seeding skill files ==="
+    user = User.where(entity_id: entity_id).first
+
+    SUPPORT_AGENT_FORM_CONFIGS.each do |cfg|
+      next unless cfg.dig(:agent, :skill_files)&.any?
+
+      sa = SupportAgent.find_by(entity_id: entity_id, agent_type: cfg[:tag])
+      next puts "  [#{cfg[:tag]}] agent not found — skipping skill files" unless sa
+
+      cfg[:agent][:skill_files].each do |field_name, relative_path|
+        fcf = sa.form_custom_fields.find { |f| f.name == field_name && f.field_type == "File" }
+        unless fcf
+          puts "  [#{cfg[:tag]}] FormCustomField '#{field_name}' not found — skipping"
+          next
+        end
+
+        doc_name = fcf.human_label
+
+        if sa.documents.find_by(name: doc_name)
+          puts "  [#{cfg[:tag]}] '#{doc_name}' already uploaded — skipped"
+          next
+        end
+
+        file_path = Rails.root.join(relative_path)
+        unless File.exist?(file_path)
+          puts "  [#{cfg[:tag]}] seed file not found at #{file_path} — skipped"
+          next
+        end
+
+        begin
+          doc = Document.new(
+            owner:      sa,
+            name:       doc_name,
+            entity_id:  entity_id,
+            user_id:    user&.id,
+            send_email: false,
+            folder:     sa.document_folder
+          )
+          doc.file = File.open(file_path)
+          doc.save!
+          puts "  [#{cfg[:tag]}] Uploaded '#{doc_name}' → Document##{doc.id}"
+        rescue StandardError => e
+          puts "  [#{cfg[:tag]}] ERROR uploading '#{doc_name}': #{e.message}"
+        end
       end
     end
 

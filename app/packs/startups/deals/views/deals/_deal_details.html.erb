@@ -99,23 +99,11 @@
         <% deal_agent   = SupportAgent.find_by(entity_id: deal.entity_id, agent_type: "DealManagementAgent", enabled: true) %>
         <% deal_reports = deal_agent ? SupportAgentReport.where(support_agent: deal_agent, owner: deal).order(updated_at: :desc) : [] %>
 
-        <%# ── Toolbar: last run + Run Now ── %>
-        <div class="d-flex align-items-center justify-content-between mt-3 mb-2">
-          <span class="fw-semibold"><i class="ti ti-robot me-1"></i> Deal Management Agent</span>
-          <div class="d-flex align-items-center gap-2">
-            <% if deal_reports.any? %>
-              <span class="text-muted small">Last run: <%= deal_reports.first.updated_at.strftime("%d %b %Y, %H:%M") %></span>
-            <% end %>
-            <%= button_to "Run Now",
-                  run_support_agents_path(agent_type: "DealManagementAgent", target_type: "Deal", target_id: deal.id),
-                  method: :post, class: "btn btn-sm btn-primary", data: { turbo: false } %>
-          </div>
-        </div>
-
-        <%# ── Full report (same partial as the SupportAgent Deal Reports tab) ── %>
+        <%# ── Full report with Run Now wired into the card header ── %>
         <%= render "/support_agents/deal_reports_tab",
                    support_agent: deal_agent,
-                   deal_reports:  deal_reports %>
+                   deal_reports:  deal_reports,
+                   run_path:      run_support_agents_path(agent_type: "DealManagementAgent", target_type: "Deal", target_id: deal.id) %>
       </div>
     <% end %>
   </div>
