@@ -118,10 +118,9 @@ class FundRatiosScenarioJob < ApplicationJob
     # CAST(fund_ids AS UNSIGNED ARRAY) multi-valued index used by MEMBER OF queries).
     @fund_ids = Array(fund_ids).map(&:to_i).reject(&:zero?).presence
     @funds    = Fund.where(id: @fund_ids) if @fund_ids.present?
-    # @portfolio_companies seeds the union resolver in FundRatioMultiFundCalcs.
-    # Tags and sectors are resolved there so the union happens in one place.
-    @portfolio_company_ids = Array(portfolio_company_ids).map(&:to_i).reject(&:zero?).presence
-    @portfolio_companies   = Investor.where(id: @portfolio_company_ids) if @portfolio_company_ids.present?
+    # Raw inputs stored on FundRatioRun for auditing and fingerprinting.
+    # Resolution (IDs ∪ tags ∪ sectors) happens via @run.resolved_portfolio_companies.
+    @portfolio_company_ids       = Array(portfolio_company_ids).map(&:to_i).reject(&:zero?).presence
     @portfolio_companies_tags    = portfolio_companies_tags
     @portfolio_companies_sectors = Array(portfolio_companies_sectors).compact_blank
 
@@ -177,11 +176,9 @@ class FundRatiosScenarioJob < ApplicationJob
 
     calc = FundRatioMultiFundCalcs.new(
       @run.name, @end_date, @user.entity,
-      funds:                       @funds,
-      portfolio_companies:         @portfolio_companies,
-      portfolio_companies_tags:    @portfolio_companies_tags,
-      portfolio_companies_sectors: @portfolio_companies_sectors,
-      currency:                    @currency
+      funds:               @funds,
+      portfolio_companies: @run.resolved_portfolio_companies,
+      currency:            @currency
     )
 
     # entity_id falls back to @user.entity_id when no anchor fund was set.
