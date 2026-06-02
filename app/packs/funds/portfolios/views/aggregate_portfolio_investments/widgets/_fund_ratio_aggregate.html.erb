@@ -134,7 +134,7 @@
   # template_names — optional list of FundRatioRunTemplate names to restrict the
   # fallback query when no fund/sector/tag filters are active.
   # Names are resolved to IDs once here so the helper receives a simple id array.
-  template_names = args[:template_names].presence && Array(args[:template_names]).map(&:to_s).reject(&:blank?)
+  template_names = args[:template_names].present? ? args[:template_names].split(",").map(&:strip) : nil
   template_ids   = if template_names.present?
     FundRatioRunTemplate.where(entity_id: current_user.entity_id, name: template_names).pluck(:id)
   end
