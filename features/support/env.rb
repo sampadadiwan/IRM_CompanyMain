@@ -53,8 +53,6 @@ rescue NameError => e
 end
 
 Before do |scenario|
-  # Clear uploaded files before each scenario to ensure a clean state
-  FileUtils.rm_rf(Dir.glob(Rails.root.join('public', 'uploads', '*')))
   puts "Starting scenario: #{scenario.name}"
   puts "Capybara.app_host: #{Capybara.app_host}"
   puts "Capybara.server_host: #{Capybara.server_host}"
@@ -264,3 +262,7 @@ module IRMUtils
 end
 
 World(IRMUtils)
+
+AfterAll do
+  FileUtils.rm_rf(Dir.glob(Rails.root.join('public', 'uploads', '*')))
+end
