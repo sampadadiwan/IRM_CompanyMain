@@ -46,6 +46,8 @@ class AccountEntryExplainerService
       "  #{i + 1}. expression: #{k.inspect}\n     value: #{v}"
     }.join("\n\n")
 
+    currency = @account_entry.fund.currency.presence || "USD"
+
     <<~PROMPT
       You are an expert fund accountant explaining a calculated account entry to a finance team.
 
@@ -53,6 +55,10 @@ class AccountEntryExplainerService
       Entry type:      #{@account_entry.entry_type}
       Reporting period: #{@account_entry.period}
       Reporting date:  #{@account_entry.reporting_date}
+      Fund currency:   #{currency}
+
+      IMPORTANT: All monetary amounts in this entry are denominated in #{currency}, stored as cents.
+      When referencing amounts, always use #{currency} — never assume USD unless that is the fund currency.
 
       --- Formula ---
       #{formula.presence || '(not available)'}
