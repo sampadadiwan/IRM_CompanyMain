@@ -268,6 +268,30 @@ Use this when you want to understand the performance of a **specific company** (
 **Summary ratios produced:**
 - Gross Portfolio IRR (for the combined selection)
 
+### Filter combination logic
+
+The three portfolio company filters (explicit IDs, tags, and sectors) are **OR'd (unioned)** with each other. The fund filter is **AND'd** on top of the resulting company set.
+
+| fund_ids | sectors | portfolio_company_ids | Effective filter |
+|---|---|---|---|
+| [1, 2, 3] | — | — | Investments where `fund_id IN (1,2,3)` |
+| — | [A, B] | — | Investments where `portfolio_company_id IN (companies in A ∪ B)` |
+| [1, 2, 3] | [A, B] | — | `fund_id IN (1,2,3)` **AND** `portfolio_company_id IN (companies in A ∪ B)` |
+| — | — | [X, Y] | Investments where `portfolio_company_id IN (X, Y)` |
+| [1, 2, 3] | — | [X, Y] | `fund_id IN (1,2,3)` **AND** `portfolio_company_id IN (X, Y)` |
+| — | [A] | [X] | `portfolio_company_id IN (X ∪ companies in A)` — IDs and sectors unioned |
+| [1, 2, 3] | [A] | [X] | `fund_id IN (1,2,3)` **AND** `portfolio_company_id IN (X ∪ companies in A)` |
+| — | — | — | No company filter — all portfolio companies in the entity |
+
+**Rules in plain language:**
+
+| Combination | Operator |
+|---|---|
+| Multiple values within `fund_ids` | OR (`fund_id IN (...)`) |
+| Multiple sectors | OR (companies from all selected sectors are unioned) |
+| `sectors` + explicit `portfolio_company_ids` | OR (both sets unioned into one company pool) |
+| `fund_ids` vs the company pool | AND (both conditions must hold) |
+
 ### Re-running and idempotency
 
 Like cross-fund runs, each cross-portfolio run is identified by a fingerprint of the selected company IDs, tags, and sectors. Re-running the same selection and date recalculates in place.
