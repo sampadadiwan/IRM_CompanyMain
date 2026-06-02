@@ -1047,6 +1047,10 @@ h6 {
 
 .blink {
   animation: blinker 1s step-start infinite;
+  // Promote to own GPU compositing layer so the blink repaint never
+  // dirty the main page layer (which includes the modal backdrop).
+  will-change: opacity;
+  isolation: isolate;
 }
 
 @keyframes blinker {

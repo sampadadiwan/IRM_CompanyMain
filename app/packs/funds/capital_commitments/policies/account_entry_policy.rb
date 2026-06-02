@@ -37,4 +37,9 @@ class AccountEntryPolicy < FundBasePolicy
   def destroy?
     permissioned_employee?(:destroy)
   end
+
+  def explain?
+    show?
+  end
+
 end

@@ -13,34 +13,34 @@
         <div class="card-body">
           <div class="row g-4">
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Fund</label>
+              <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Fund</label>
               <div class="fs-4"><%= link_to @account_entry.fund.name, @account_entry.fund, class: "text-decoration-none fw-bold text-primary" %></div>
             </div>
 
             <% if @account_entry.capital_commitment %>
               <div class="col-md-6">
-                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Capital Commitment</label>
+                <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Capital Commitment</label>
                 <div class="fs-4"><%= link_to @account_entry.capital_commitment, @account_entry.capital_commitment, class: "text-decoration-none fw-bold text-primary" %></div>
               </div>
 
               <div class="col-md-6">
-                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Folio</label>
+                <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Folio</label>
                 <div class="fs-4 fw-medium"><%= @account_entry.folio_id %></div>
               </div>
             <% end %>
 
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Reporting Date</label>
+              <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Reporting Date</label>
               <div class="fs-4 fw-medium"><%= l @account_entry.reporting_date %></div>
             </div>
 
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Period</label>
+              <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Period</label>
               <div class="fs-4 fw-medium"><%= @account_entry.period %></div>
             </div>
 
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Entry Type</label>
+              <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Entry Type</label>
               <div class="fs-4 fw-medium">
                 <%= @account_entry.entry_type %>
                 <% if @account_entry.cumulative %>
@@ -50,7 +50,7 @@
             </div>
 
             <div class="col-md-6">
-              <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Name</label>
+              <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Name</label>
               <div class="fs-4 fw-medium">
                 <%= @account_entry.name %>
                 <span class="badge bg-success ms-2"><%= @account_entry.rule_for %></span>
@@ -59,28 +59,28 @@
 
             <% if @account_entry.parent %>
               <div class="col-md-6">
-                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Parent</label>
+                <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Parent</label>
                 <div class="fs-4"><%= link_to @account_entry.parent, @account_entry.parent, class: "text-decoration-none text-primary" %></div>
               </div>
             <% end %>
 
             <% if @account_entry.fund_formula %>
               <div class="col-md-6">
-                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Formula</label>
+                <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Formula</label>
                 <div class="fs-4"><%= link_to @account_entry.fund_formula, @account_entry.fund_formula, class: "text-decoration-none text-primary" %></div>
               </div>
             <% end %>
 
             <% if @account_entry.exchange_rate %>
               <div class="col-md-6">
-                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Exchange Rate</label>
+                <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Exchange Rate</label>
                 <div class="fs-4"><%= link_to @account_entry.exchange_rate, @account_entry.exchange_rate, class: "text-decoration-none text-primary" %></div>
               </div>
             <% end %>
 
             <% if @account_entry.notes.present? %>
               <div class="col-12">
-                <label class="text-muted text-uppercase fw-bold fs-1 mb-1">Notes</label>
+                <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Notes</label>
                 <div class="fs-4 fw-medium"><%= @account_entry.notes %></div>
               </div>
             <% end %>
@@ -163,27 +163,337 @@
 
   <!-- Explanation Card -->
   <% if @account_entry.explanation.present? %>
+    <%
+      # Separate formula/description strings from the JSON breakdown
+      exp_formula      = nil
+      exp_description  = nil
+      exp_breakdown    = nil
+      non_json_count   = 0
+
+      @account_entry.explanation.each do |exp|
+        parsed = parse_json(exp)
+        if parsed.is_a?(Hash)
+          exp_breakdown = parsed
+        elsif exp.present?
+          non_json_count += 1
+          # By convention: first string = formula, second = description
+          if non_json_count == 1
+            exp_formula = exp
+          else
+            exp_description = exp
+          end
+        end
+      end
+
+      # Split breakdown into @variables vs sub-expressions vs the final result.
+      # The final result key equals the formula string (possibly with spacing differences),
+      # so we treat the longest key as the "result" entry.
+      if exp_breakdown
+        variables     = exp_breakdown.select { |k, _| k.start_with?('@') && !k.include?(' ') }
+        other_entries = exp_breakdown.reject { |k, _| k.start_with?('@') && !k.include?(' ') }
+        # The result row is the one matching the full formula (longest key).
+        result_row    = other_entries.max_by { |k, _| k.length }
+        # Sort longest (most complex) first so the table reads top-to-bottom
+        # from the near-final expression down to the simplest building block.
+        steps         = other_entries.reject { |k, _| k == result_row&.first }
+                                     .sort_by { |k, _| -k.length }
+        result_key, result_val = result_row || [nil, nil]
+      end
+    %>
+    <%
+      # fmt_val: round long decimals, format rationals, add thousands separators.
+      # Leaves dates and non-numeric strings untouched.
+      fmt_val = ->(v) {
+        s = v.to_s.strip
+        if s.match?(/\A-?\d+\/\d+\z/)                   # rational e.g. "89/1"
+          n, d = s.split('/').map(&:to_f)
+          r = n / d
+          r == r.to_i ? number_with_delimiter(r.to_i) : number_with_precision(r, precision: 2, delimiter: ',')
+        elsif s.match?(/\A-?\d+(\.\d+)?\z/)               # numeric (exactly one optional decimal point)
+          f = s.to_f
+          f == f.to_i ? number_with_delimiter(f.to_i) : number_with_precision(f, precision: 2, delimiter: ',')
+        else
+          s  # dates, strings, errors
+        end
+      }
+
+      # Build walkthrough steps for the inline panel (simplest → most complex)
+      ai_wt_data  = @account_entry.json_fields["ai_explanation_data"]
+      wt_steps    = []
+      if ai_wt_data.is_a?(Hash) && ai_wt_data["steps"].is_a?(Array) && exp_breakdown
+        meaning_by_expr = ai_wt_data["steps"].index_by { |s| s["expression"] }
+                            .transform_values { |s| s["meaning"] }
+        calc_steps = exp_breakdown
+          .reject { |k, _| k.start_with?('@') && !k.include?(' ') }
+          .reject { |k, _| k == result_key }
+          .sort_by { |k, _| k.length }
+          .map { |(key, val)| { "type" => "step", "expression" => key,
+                                "value" => fmt_val.call(val),
+                                "meaning" => meaning_by_expr[key].to_s } }
+        # Bookend with summary (first) and conclusion (last) so the walkthrough
+        # tells the full story: context → steps → outcome.
+        wt_steps = []
+        wt_steps << { "type" => "summary",    "expression" => "", "value" => "", "meaning" => ai_wt_data["summary"].to_s }    if ai_wt_data["summary"].present?
+        wt_steps.concat(calc_steps)
+        wt_steps << { "type" => "conclusion", "expression" => "", "value" => "", "meaning" => ai_wt_data["conclusion"].to_s } if ai_wt_data["conclusion"].present?
+      end
+    %>
     <div class="row">
       <div class="col-12">
-        <div class="card shadow-sm border-0 mb-4">
-          <div class="card-header border-bottom py-3">
-            <h5 class="mb-0 fw-bold"><i class="ti ti-info-circle me-2 text-info"></i>Explanation</h5>
-          </div>
-          <div class="card-body">
-            <% @account_entry.explanation.each do |exp| %>
-              <% if parse_json(exp) %>
-                <div class="hscrollable mb-3">
-                  <pre class="text-primary bg-light p-3 rounded"><%= raw JSON.pretty_generate(parse_json(exp.presence), options = {}) %></pre>
-                </div>
+        <%# data-controller lives on the card so the walkthrough panel and steps table are siblings %>
+        <div class="card shadow-sm border-0 mb-4"
+             data-controller="formula-walkthrough"
+             data-formula-walkthrough-steps-value="<%= html_escape(wt_steps.to_json) %>"
+             data-formula-walkthrough-formula-value="<%= html_escape(exp_formula.to_s) %>"
+             data-formula-walkthrough-summary-value="<%= html_escape(ai_wt_data.is_a?(Hash) ? ai_wt_data["summary"].to_s : "") %>"
+             data-formula-walkthrough-conclusion-value="<%= html_escape(ai_wt_data.is_a?(Hash) ? ai_wt_data["conclusion"].to_s : "") %>">
+          <div class="card-header border-bottom py-3 d-flex align-items-center justify-content-between">
+            <h5 class="mb-0 fw-bold"><i class="ti ti-calculator me-2 text-info"></i>Explanation</h5>
+            <%# AI explain button — only shown when there's a structured breakdown to explain %>
+            <% if exp_breakdown && policy(@account_entry).explain? %>
+              <% ai_status = @account_entry.json_fields["ai_explanation_status"] %>
+              <% if ai_status == "pending" %>
+                <button class="btn btn-sm btn-outline-secondary" disabled>
+                  <span class="spinner-border spinner-border-sm me-1"></span>Generating...
+                </button>
               <% else %>
-                <div class="mb-2"><%= exp %></div>
+                <%= button_to ai_status == "complete" ? "Regenerate AI Explanation" : "Get AI Explanation",
+                              explain_account_entry_path(@account_entry, reporting_date: @account_entry.reporting_date),
+                              method: :post,
+                              class: "btn btn-sm #{ai_status == 'complete' ? 'btn-outline-info' : 'btn-info'}",
+                              data: { turbo: false } %>
               <% end %>
             <% end %>
           </div>
+          <div class="card-body pt-4">
+
+            <% if exp_breakdown %>
+              <div class="row g-4">
+
+                <%# ── 1. Input Parameters (first — gives context before reading the formula) %>
+                <% if variables.any? %>
+                  <div class="col-12">
+                    <p class="text-muted text-uppercase fw-semibold fs-1 mb-2"><i class="ti ti-variable me-1"></i>Input Parameters</p>
+                    <table class="table table-sm table-hover mb-0">
+                      <thead style="background:#5d87ff;">
+                        <tr>
+                          <th class="fw-semibold py-2" style="color:#fff;">Variable</th>
+                          <th class="fw-semibold py-2" style="color:#fff;">Value</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <% variables.sort_by { |k, _| k }.each do |key, val| %>
+                          <tr>
+                            <td><code class="text-primary"><%= key %></code></td>
+                            <td class="fw-medium text-end"><%= val %></td>
+                          </tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                <% end %>
+
+                <%# ── 2. Formula ──────────────────────────────────────────── %>
+                <% if exp_formula.present? %>
+                  <div class="col-12">
+                    <p class="text-muted text-uppercase fw-semibold fs-1 mb-2">Formula</p>
+                    <div class="bg-body-secondary border rounded p-3" style="overflow-x:auto;">
+                      <code class="text-primary" style="white-space:pre-wrap;word-break:break-all;font-size:0.8rem;"><%= exp_formula %></code>
+                    </div>
+                  </div>
+                <% end %>
+
+                <%# ── 3. Description ──────────────────────────────────────── %>
+                <% if exp_description.present? %>
+                  <div class="col-12">
+                    <div class="alert alert-info d-flex align-items-start mb-0 py-2">
+                      <i class="ti ti-info-circle me-2 mt-1 flex-shrink-0"></i>
+                      <span><%= exp_description %></span>
+                    </div>
+                  </div>
+                <% end %>
+
+                <%# ── 5. Calculation Steps (with optional AI meaning column) ── %>
+                <%
+                  ai_data        = @account_entry.json_fields["ai_explanation_data"]
+                  ai_status      = @account_entry.json_fields["ai_explanation_status"]
+                  ai_generated_at = @account_entry.json_fields["ai_explanation_at"]
+
+                  # Build a lookup: expression → meaning from structured AI data
+                  meaning_by_expr = {}
+                  if ai_data.is_a?(Hash) && ai_data["steps"].is_a?(Array)
+                    ai_data["steps"].each { |s| meaning_by_expr[s["expression"]] = s["meaning"] }
+                  end
+                  has_meanings = meaning_by_expr.any?
+
+                %>
+
+                <% if steps.any? %>
+                  <div class="col-12">
+                    <%# Flex row: table scrolls independently on the left; walkthrough panel
+                        stays at its natural height on the right — no sticky needed. %>
+                    <div style="display:flex;gap:20px;align-items:flex-start;">
+
+                      <%# ── Left: steps table — capped height, scrolls on its own ── %>
+                      <div style="flex:1;min-width:0;max-height:70vh;overflow-y:auto;">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                          <p class="text-muted text-uppercase fw-semibold fs-1 mb-0">
+                            <i class="ti ti-list-numbers me-1"></i>Calculation Steps
+                          </p>
+                          <%# Hidden on mobile — the walkthrough panel is desktop-only %>
+                          <% if wt_steps.any? %>
+                            <button class="btn btn-sm btn-outline-warning d-none d-lg-inline-flex"
+                                    data-action="click->formula-walkthrough#toggle">
+                              <i class="ti ti-player-play me-1"></i>Walk me through it
+                            </button>
+                          <% end %>
+                        </div>
+
+                        <% if ai_data.is_a?(Hash) && ai_data["summary"].present? %>
+                          <div class="alert alert-info py-2 d-flex align-items-start mb-3">
+                            <i class="ti ti-sparkles me-2 mt-1 flex-shrink-0 text-warning"></i>
+                            <span><%= ai_data["summary"] %></span>
+                          </div>
+                        <% end %>
+
+                        <table class="table table-sm table-hover mb-0">
+                          <thead style="position:sticky;top:0;z-index:1;background:#5d87ff;">
+                            <tr>
+                              <th class="fw-semibold py-2" style="color:#fff;width:2rem;">#</th>
+                              <th class="fw-semibold py-2" style="color:#fff;">Expression</th>
+                              <th class="fw-semibold py-2 text-end" style="color:#fff;width:10rem;">Value</th>
+                              <% if has_meanings %>
+                                <th class="fw-semibold py-2" style="color:#fff;width:35%;">What this means</th>
+                              <% end %>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% steps.each_with_index do |(key, val), i| %>
+                              <tr data-step-expr="<%= key %>">
+                                <td class="text-muted align-top pt-2"><%= i + 1 %></td>
+                                <td class="align-top pt-2">
+                                  <code class="text-secondary small" style="white-space:normal;word-break:break-word;"><%= key %></code>
+                                </td>
+                                <td class="fw-medium text-end align-top pt-2 text-nowrap"><%= fmt_val.call(val) %></td>
+                                <% if has_meanings %>
+                                  <td class="text-muted small align-top pt-2" style="line-height:1.5;">
+                                    <%= meaning_by_expr[key] %>
+                                  </td>
+                                <% end %>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+
+                        <% if ai_data.is_a?(Hash) && ai_data["conclusion"].present? %>
+                          <div class="mt-3 p-3 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10">
+                            <i class="ti ti-check-circle me-1 text-success"></i>
+                            <span class="fw-medium"><%= ai_data["conclusion"] %></span>
+                            <% if ai_generated_at.present? %>
+                              <% generated_at = begin; Time.parse(ai_generated_at); rescue ArgumentError; Time.current; end %>
+                              <span class="text-muted ms-2 fs-1">· AI generated <%= time_ago_in_words(generated_at) %> ago</span>
+                            <% end %>
+                          </div>
+                        <% end %>
+                      </div><%# /left %>
+
+                      <%# ── Right: walkthrough panel (sticky, hidden until toggled) ── %>
+                      <% if wt_steps.any? %>
+                        <div class="d-none border rounded-3 bg-body shadow-sm"
+                             style="width:420px;flex-shrink:0;"
+                             data-formula-walkthrough-target="panel">
+
+                          <%# Header: title · step counter · Prev/Next (fixed at top, never moves) %>
+                          <div class="border-bottom px-3 py-2">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                              <span class="fw-semibold">
+                                <i class="ti ti-player-play me-1 text-warning"></i>Walkthrough
+                              </span>
+                              <%# Prev/Next live in the header so pressing them never shifts layout %>
+                              <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-secondary"
+                                        data-action="click->formula-walkthrough#prev"
+                                        data-formula-walkthrough-target="prevBtn">
+                                  <i class="ti ti-chevron-left me-1"></i>Prev
+                                </button>
+                                <button class="btn btn-sm btn-warning"
+                                        data-action="click->formula-walkthrough#next"
+                                        data-formula-walkthrough-target="nextBtn">
+                                  Next<i class="ti ti-chevron-right ms-1"></i>
+                                </button>
+                              </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                              <span class="text-muted small">
+                                Step <strong data-formula-walkthrough-target="stepNum">1</strong>
+                                of <span data-formula-walkthrough-target="stepTotal"><%= wt_steps.length %></span>
+                              </span>
+                              <div class="progress flex-grow-1" style="height:4px;">
+                                <div class="progress-bar bg-warning"
+                                     data-formula-walkthrough-target="progressBar"
+                                     role="progressbar" style="width:0%;"
+                                     aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div class="p-3 d-flex flex-column gap-3">
+
+                            <%# Expression — hidden for summary/conclusion steps %>
+                            <div data-formula-walkthrough-target="expressionSection">
+                              <p class="text-muted text-uppercase fw-semibold mb-1" style="font-size:0.65rem;">Expression</p>
+                              <code class="text-secondary"
+                                    style="font-size:0.82rem;white-space:normal;word-break:break-word;line-height:1.5;"
+                                    data-formula-walkthrough-target="expression"></code>
+                            </div>
+
+                            <%# Value — hidden for summary/conclusion steps %>
+                            <div data-formula-walkthrough-target="valueSection">
+                              <p class="text-muted text-uppercase fw-semibold mb-1" style="font-size:0.65rem;">Value</p>
+                              <span class="fw-bold fs-4 text-body"
+                                    data-formula-walkthrough-target="value"></span>
+                            </div>
+
+                            <%# Meaning — label changes for summary/conclusion %>
+                            <div class="bg-body-secondary border rounded p-3" style="min-height:6rem;">
+                              <p class="text-muted text-uppercase fw-semibold mb-2" style="font-size:0.65rem;">
+                                <i class="ti ti-sparkles text-warning me-1"></i>
+                                <span data-formula-walkthrough-target="meaningLabel">What this means</span>
+                              </p>
+                              <p class="mb-0 lh-lg"
+                                 data-formula-walkthrough-target="meaning"></p>
+                            </div>
+
+                          </div><%# /p-3 gap-3 %>
+                        </div><%# /panel %>
+                      <% end %>
+
+                    </div><%# /flex row %>
+                  </div>
+                <% end %>
+
+              </div><%# /row %>
+            <% end %><%# /if exp_breakdown %>
+
+            <%# ── 6b. Status banners (pending / error) ────────────────────── %>
+            <% ai_status_outer = @account_entry.json_fields["ai_explanation_status"] %>
+            <% if ai_status_outer == "pending" %>
+              <div class="alert alert-info d-flex align-items-center mt-4 mb-0">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                AI explanation is being generated in the background. Refresh or wait for a notification.
+              </div>
+            <% elsif ai_status_outer == "error" %>
+              <div class="alert alert-danger mt-4 mb-0">
+                <i class="ti ti-alert-circle me-1"></i>AI explanation failed. Click "Get AI Explanation" to retry.
+              </div>
+            <% end %>
+
+          </div><%# /card-body %>
         </div>
       </div>
     </div>
   <% end %>
+
 
 <% end %>
 

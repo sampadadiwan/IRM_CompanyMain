@@ -3,7 +3,7 @@ class AccountEntriesController < ApplicationController
   include WithCustomFieldFilter
 
   after_action :verify_authorized, except: %i[index delete_all]
-  before_action :set_account_entry, only: %i[show edit update destroy]
+  before_action :set_account_entry, only: %i[show edit update destroy explain]
   # around_action :log_memory_delta if Rails.env.development?
 
   def adhoc
@@ -133,6 +133,18 @@ class AccountEntriesController < ApplicationController
       format.html { redirect_to account_entries_url, notice: "Account entry was successfully destroyed." }
       format.json { head :no_content }
     end
+  end
+
+  # POST /account_entries/:id/explain
+  # Enqueues a background job that calls the LLM and stores the result in json_fields.
+  def explain
+    # Mark as pending immediately so the button reflects in-progress state
+    @account_entry.update_columns(
+      json_fields: @account_entry.json_fields.merge("ai_explanation_status" => "pending")
+    )
+    AccountEntryExplainJob.perform_later(@account_entry.id, current_user.id, @account_entry.reporting_date.to_s)
+    redirect_to account_entry_path(@account_entry, reporting_date: @account_entry.reporting_date),
+                notice: "AI explanation is being generated. You'll receive a notification when it's ready."
   end
 
   def delete_all

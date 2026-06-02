@@ -15,6 +15,8 @@ class LlmService
   # @param llm_model [String, nil] The specific model to use.
   #   Defaults to the `AI_CHECKS_MODEL` environment variable or a specific Gemini model.
   # @return [String] The text content of the LLM's response.
+
+  # Deprecated - use ruby_llm_chat
   def self.chat(prompt:, provider: nil, llm_model: nil, format: :text)
     # Set default provider and model from environment variables if not explicitly provided.
     # This allows for easy configuration in different environments (development, production).
@@ -40,6 +42,7 @@ class LlmService
     response.chat_completion
   end
 
+  # This is the new way to do it
   def self.ruby_llm_chat(entity: nil, model: nil)
     if entity
       custom_context = RubyLLM.context do |config|
