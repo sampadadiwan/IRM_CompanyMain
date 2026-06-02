@@ -88,7 +88,18 @@
       <% if @support_agent.agent_type == "DealManagementAgent" %>
         <%# Deal Reports Tab %>
         <div id="deal-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'deal_reports' %>">
-          <%= render 'deal_reports_tab', support_agent: @support_agent, deal_reports: @deal_reports %>
+          <% if @filtered_deal %>
+            <div class="d-flex align-items-center gap-2 mt-2 mb-1">
+              <%= link_to deal_path(@filtered_deal, anchor: "ai-agent-tab"),
+                    class: "btn btn-sm btn-outline-secondary", data: { turbo: false } do %>
+                <i class="ti ti-arrow-left me-1"></i> Back to <%= @filtered_deal.name %>
+              <% end %>
+              <span class="text-muted" style="font-size:0.85rem;">
+                All runs for <strong><%= @filtered_deal.name %></strong>
+              </span>
+            </div>
+          <% end %>
+          <%= render 'deal_reports_tab', support_agent: @support_agent, deal_reports: @deal_reports, pagy: @pagy_deal_reports %>
         </div>
       <% end %>
 

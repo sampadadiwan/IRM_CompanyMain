@@ -249,8 +249,11 @@ class DealManagementAgent < SupportAgentService
     current_fingerprint = compute_doc_fingerprint(docs)
     current_prompt      = @support_agent.json_fields["term_extraction_prompt"].to_s.strip
 
-    # Check cache on the existing deal-level report (if any from a prior run)
-    existing_report = SupportAgentReport.find_by(owner: deal, support_agent: @support_agent)
+    # Check cache on the latest previous report (if any) — new records are created each run
+    existing_report = SupportAgentReport
+                        .where(owner: deal, support_agent: @support_agent)
+                        .latest_only
+                        .first
     if existing_report
       jf = existing_report.json_fields || {}
       if jf["term_extraction_fingerprint"] == current_fingerprint &&
@@ -373,24 +376,36 @@ class DealManagementAgent < SupportAgentService
 
   # ── Step 7 ── Save deal-level SupportAgentReport. Always runs.
   # Extends base class report with extracted_terms, leaderboard, and cache fields.
+  # Creates a new report each run (not upsert) so history accumulates.
+  # mark_as_latest! flips the latest flag on the new record and clears it on all prior ones.
   def generate_progress_reports(ctx, deal: nil, support_agent:, **)
     alert_user(ctx, "Saving report for '#{deal&.name}'…", :info)
-    super(ctx, model: deal, support_agent: support_agent)
 
-    report = ctx[:support_agent_report]
-    return true unless report
+    ctx[:issues].each_value { |issues| issues.reject! { |i| i[:message].blank? } }
 
-    report.json_fields = (report.json_fields || {}).merge(
+    has_blocking = ctx[:issues].values.flatten.any? { |i| i[:severity] == :blocking }
+
+    report = SupportAgentReport.new(owner: deal, support_agent: support_agent)
+    report.status = has_blocking ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
+    report.json_fields = ctx[:issues].transform_keys(&:to_s).merge(
+      "final_status"                => has_blocking ? "blocked" : "ready",
+      "completed_at"                => Time.current.iso8601,
+      "run_at"                      => ctx[:run_at] || Time.current.iso8601,
       "extracted_terms"             => ctx[:extracted_terms],
       "term_extraction_fingerprint" => ctx[:term_extraction_fingerprint],
       "term_extraction_prompt_used" => ctx[:term_extraction_prompt_used],
       "score_leaderboard"           => ctx[:score_leaderboard] || [],
       "health_scores"               => ctx[:health_scores] || {}
     )
-    report.json_fields_will_change!
     report.save!
-    has_blocking = ctx[:issues].values.flatten.any? { |i| i[:severity] == :blocking }
+    report.mark_as_latest!
+
+    ctx[:support_agent_report] = report
+    Rails.logger.info { "[DealManagementAgent] Report ##{report.id} saved (latest=true) for Deal##{deal&.id}" }
     alert_user(ctx, "Deal Management Agent complete#{has_blocking ? ' — blockers found, check the report' : ' ✓'}", has_blocking ? :warning : :success)
+    true
+  rescue StandardError => e
+    Rails.logger.error { "[DealManagementAgent] Failed to save report: #{e.message}" }
     true
   end
 
@@ -555,7 +570,7 @@ class DealManagementAgent < SupportAgentService
 
   # Upserts the per-investor SupportAgentReport (overwrites on re-run).
   def save_investor_report(di, score_data, final_status, period_label, **extra)
-    report        = SupportAgentReport.find_or_initialize_by(owner: di, support_agent: @support_agent)
+    report        = SupportAgentReport.new(owner: di, support_agent: @support_agent)
     report.status = final_status == "failed" ? :failed : :completed
     report.json_fields = {
       "final_status"   => final_status,

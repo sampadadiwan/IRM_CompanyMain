@@ -80,15 +80,19 @@ class SupportAgentsController < ApplicationController
                         SupportAgentReport.none
                       end
 
-    # Load deal-level and investor-level reports for DealManagementAgent
-    @deal_reports = if @support_agent.agent_type == "DealManagementAgent"
-                      SupportAgentReport
-                        .where(support_agent: @support_agent, owner_type: "Deal")
-                        .includes(:owner)
-                        .order(updated_at: :desc)
-                    else
-                      SupportAgentReport.none
-                    end
+    # Load all deal-level reports for DealManagementAgent, paginated newest-first.
+    # When deal_id param is present, filter to that deal (history view from deal page).
+    if @support_agent.agent_type == "DealManagementAgent"
+      all_deal_reports = SupportAgentReport
+                           .where(support_agent: @support_agent, owner_type: "Deal")
+                           .includes(:owner)
+                           .order(updated_at: :desc)
+      all_deal_reports = all_deal_reports.where(owner_id: params[:deal_id]) if params[:deal_id].present?
+      @filtered_deal   = Deal.find_by(id: params[:deal_id]) if params[:deal_id].present?
+      @pagy_deal_reports, @deal_reports = pagy(all_deal_reports, limit: 10)
+    else
+      @deal_reports = SupportAgentReport.none
+    end
   end
 
   # Initializes a new support agent for creation.

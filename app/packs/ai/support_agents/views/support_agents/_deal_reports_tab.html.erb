@@ -1,4 +1,5 @@
 <% run_path ||= nil %>
+<% pagy ||= nil %>
 <% if deal_reports.empty? %>
   <div class="card mt-3">
     <div class="card-header d-flex align-items-center justify-content-between py-2">
@@ -26,6 +27,7 @@
     <%# Build investor_id → inv_report lookup so score rows can expand inline %>
     <% inv_report_map = SupportAgentReport
          .where(support_agent: support_agent, owner_type: "DealInvestor")
+         .latest_only
          .joins("INNER JOIN deal_investors ON deal_investors.id = support_agent_reports.owner_id")
          .where("deal_investors.deal_id = ?", deal&.id)
          .includes(:owner)
@@ -252,5 +254,11 @@
 
       </div><%# /card-body %>
     </div><%# /card %>
+  <% end %>
+
+  <% if pagy && pagy.pages > 1 %>
+    <div class="d-flex justify-content-center mt-3">
+      <%= raw pagy_bootstrap_nav(pagy) %>
+    </div>
   <% end %>
 <% end %>
