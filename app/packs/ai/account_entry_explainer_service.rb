@@ -75,6 +75,11 @@ class AccountEntryExplainerService
       --- Final Result ---
       #{result_val.presence || '(not available)'}
 
+      --- Authoritative Stored Amount ---
+      The actual amount recorded in the database for this account entry is
+      #{@account_entry.amount_cents} (#{currency} #{format('%.10g', @account_entry.amount_cents.to_f / 100)}).
+      Your conclusion MUST reference this exact stored amount, not any value derived from the steps above.
+
       ---
       Return ONLY a JSON object — no markdown, no prose outside the JSON.
 

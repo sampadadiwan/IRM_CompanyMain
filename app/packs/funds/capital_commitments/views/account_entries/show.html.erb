@@ -330,6 +330,14 @@
 
                 <% if steps.any? %>
                   <div class="col-12">
+
+                    <% if ai_data.is_a?(Hash) && ai_data["summary"].present? %>
+                      <div class="alert alert-info py-2 d-flex align-items-start mb-3">
+                        <i class="ti ti-sparkles me-2 mt-1 flex-shrink-0 text-warning"></i>
+                        <span><%= ai_data["summary"] %></span>
+                      </div>
+                    <% end %>
+
                     <%# Flex row: table scrolls independently on the left; walkthrough panel
                         stays at its natural height on the right — no sticky needed. %>
                     <div style="display:flex;gap:20px;align-items:flex-start;">
@@ -349,13 +357,6 @@
                           <% end %>
                         </div>
 
-                        <% if ai_data.is_a?(Hash) && ai_data["summary"].present? %>
-                          <div class="alert alert-info py-2 d-flex align-items-start mb-3">
-                            <i class="ti ti-sparkles me-2 mt-1 flex-shrink-0 text-warning"></i>
-                            <span><%= ai_data["summary"] %></span>
-                          </div>
-                        <% end %>
-
                         <table class="table table-sm table-hover mb-0">
                           <thead style="position:sticky;top:0;z-index:1;background:#5d87ff;">
                             <tr>
@@ -372,7 +373,7 @@
                               <tr data-step-expr="<%= key %>">
                                 <td class="text-muted align-top pt-2"><%= i + 1 %></td>
                                 <td class="align-top pt-2">
-                                  <code class="text-secondary small" style="white-space:normal;word-break:break-word;"><%= key %></code>
+                                  <span style="white-space:normal;word-break:break-word;"><%= key %></span>
                                 </td>
                                 <td class="fw-medium text-end align-top pt-2 text-nowrap"><%= fmt_val.call(val) %></td>
                                 <% if has_meanings %>
@@ -385,16 +386,6 @@
                           </tbody>
                         </table>
 
-                        <% if ai_data.is_a?(Hash) && ai_data["conclusion"].present? %>
-                          <div class="mt-3 p-3 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10">
-                            <i class="ti ti-check-circle me-1 text-success"></i>
-                            <span class="fw-medium"><%= ai_data["conclusion"] %></span>
-                            <% if ai_generated_at.present? %>
-                              <% generated_at = begin; Time.parse(ai_generated_at); rescue ArgumentError; Time.current; end %>
-                              <span class="text-muted ms-2 fs-1">· AI generated <%= time_ago_in_words(generated_at) %> ago</span>
-                            <% end %>
-                          </div>
-                        <% end %>
                       </div><%# /left %>
 
                       <%# ── Right: walkthrough panel (sticky, hidden until toggled) ── %>
@@ -469,6 +460,17 @@
                       <% end %>
 
                     </div><%# /flex row %>
+
+                    <% if ai_data.is_a?(Hash) && ai_data["conclusion"].present? %>
+                      <div class="mt-3 p-3 rounded-3 border border-success border-opacity-25 bg-success bg-opacity-10">
+                        <i class="ti ti-check-circle me-1 text-success"></i>
+                        <span class="fw-medium"><%= ai_data["conclusion"] %></span>
+                        <% if ai_generated_at.present? %>
+                          <% generated_at = begin; Time.parse(ai_generated_at); rescue ArgumentError; Time.current; end %>
+                          <span class="text-muted ms-2 fs-1">· AI generated <%= time_ago_in_words(generated_at) %> ago</span>
+                        <% end %>
+                      </div>
+                    <% end %>
                   </div>
                 <% end %>
 

@@ -117,6 +117,9 @@ class FundFormula < ApplicationRecord
       # rubocop:disable Style/RescueStandardError
       begin
         val = eval(exp, binding)
+        # Summarise arrays so they appear in the breakdown rather than being silently dropped.
+        # Shows count + first 5 elements so the LLM knows what the variable holds.
+        val = "#{val.length} IDs: #{val.first(5).inspect}#{val.length > 5 ? ' ...' : ''}" if val.is_a?(Array)
       rescue
         logger.error "Error evaluating expression '#{exp}'"
         val = "Unable to evaluate"
@@ -131,7 +134,7 @@ class FundFormula < ApplicationRecord
   def skip_statement(exp, val)
     val.is_a?(ApplicationRecord) || val.is_a?(OpenStruct) || val.is_a?(CustomFieldsProxy) ||
       val.is_a?(ActiveRecord::Relation) || val.is_a?(ActiveRecord::QueryMethods::WhereChain) ||
-      val.is_a?(Array) || exp.delete("\"").strip == val
+      exp.delete("\"").strip == val
   end
 
   def find_expressions(node, expressions)
