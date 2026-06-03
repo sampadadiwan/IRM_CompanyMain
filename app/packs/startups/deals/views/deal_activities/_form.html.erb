@@ -29,6 +29,10 @@
           </div>
         <% end %>
         <div class="form-group">
+          <%= form.label :sequence, "Sequence / Order" %>
+          <%= form.number_field :sequence, class: "form-control", min: 1 %>
+        </div>
+        <div class="form-group">
           <%= form.label :title %>
           <%= form.text_field :title, class: "form-control"  %>
         </div>

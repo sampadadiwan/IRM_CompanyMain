@@ -12,10 +12,14 @@
   committed_display = money_to_currency(Money.new(active_total_cents, deal.currency), { units: currency_units, decimals: 1 })
 
   stats_cards = [
-    { title: target_display, subtitle: "Total Target", color: "primary", icon: "ti ti-currency-dollar", action: "clearFilters" },
-    { title: committed_display, subtitle: "Committed (Active)", color: "success", icon: "ti ti-chart-pie-2", action: "filterActive" },
-    { title: "#{conversion}%", subtitle: "Conversion Rate", color: "info", icon: "ti ti-users-group", action: "clearFilters" },
-    { title: stagnant_count, subtitle: "Stagnant Leads (>7d)", color: "warning", icon: "ti ti-alert-triangle", action: "filterStagnant" }
+    { title: target_display, subtitle: "Total Target", color: "primary", icon: "ti ti-currency-dollar", action: "clearFilters",
+      explanation: "The deal's total fundraising target. Set when the deal is created and represents the full capital amount you are seeking to raise." },
+    { title: committed_display, subtitle: "Committed (Active)", color: "success", icon: "ti ti-chart-pie-2", action: "filterActive",
+      explanation: "Sum of investment amounts from all investors currently in Active status. Click to filter the table to Active investors only." },
+    { title: "#{conversion}%", subtitle: "Conversion Rate", color: "info", icon: "ti ti-users-group", action: "clearFilters",
+      explanation: "Active investors ÷ Total investors × 100. Measures what share of all investors in this deal have converted to Active (committed) status." },
+    { title: stagnant_count, subtitle: "Stagnant Leads (>7d)", color: "warning", icon: "ti ti-alert-triangle", action: "filterStagnant",
+      explanation: "Count of investors whose status has not changed in more than 7 days. These leads may need a follow-up nudge. Click to filter to stagnant investors." }
   ]
 %>
 <div class="row mb-4">
@@ -48,6 +52,7 @@
               </span>
             </div>
           </div>
+          <p class="text-muted small mt-3 mb-0"><%= card[:explanation] %></p>
         </div>
         <div style="height: 4px; width: 100%; background-color: <%=
           case card[:color]

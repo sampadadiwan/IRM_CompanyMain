@@ -39,7 +39,8 @@
               
               changes.each do |k, v|
                   next unless v.is_a?(Array)
-                  
+                  next if k == "status" # skip incomplete→complete noise; only show step movements
+
                   # Humanize IDs for graphical view too
                   val_old = v[0]
                   val_new = v[1]
@@ -66,14 +67,14 @@
               <span class="timeline-badge-border d-block flex-shrink-0"></span>
             </div>
             <div class="timeline-desc fs-3 text-dark mt-n1 ps-3">
-              <span class="fw-semibold text-primary"><%= (audit.user ? audit.user : "System") %></span>
-              <div class="mt-1 d-flex align-items-center flex-wrap gap-2">
+              <div class="d-flex align-items-center flex-wrap gap-2">
                 <% if val_old.present? && val_old != "None" %>
                   <span class="badge bg-light text-muted border fw-normal"><%= val_old %></span>
                   <i class="ti ti-arrow-right text-muted fs-2"></i>
                 <% end %>
                 <span class="badge bg-<%= color %>-subtle text-<%= color %> border border-<%= color %> fw-bold"><%= val_new %></span>
               </div>
+              <small class="text-muted mt-1 d-block"><%= (audit.user ? audit.user : "System") %></small>
             </div>
           </li>
           <% 

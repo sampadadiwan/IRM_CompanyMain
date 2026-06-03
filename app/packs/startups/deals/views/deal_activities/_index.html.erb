@@ -56,10 +56,8 @@
 
   
   <% if params[:template].present? %>
-      <%= link_to "Change Sequence", update_sequence_deal_activity_path( id: 0, sequence: 0), id: "sort_link", hidden: true %>
-      <div data-controller="activitytemplatesort"></div>
       <div class="info text-center alert alert-info">
-        The deal steps are generated based on the templates here. Modify/Add/Reorder these templates before starting the deal.        
+        The deal steps are generated based on the templates here. Modify/Add/Reorder these templates before starting the deal.
       </div>
   <% end %>
 

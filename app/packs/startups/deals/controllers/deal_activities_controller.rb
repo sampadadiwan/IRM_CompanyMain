@@ -187,7 +187,7 @@ class DealActivitiesController < ApplicationController
   def deal_activity_params
     params.require(:deal_activity).permit(:deal_id, :deal_investor_id, :by_date, :status,
                                           :title, :details, :completed, :entity_id, :days, :tasks_csv,
-                                          :notify_employees, :notify_investor,
+                                          :notify_employees, :notify_investor, :sequence,
                                           documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end
