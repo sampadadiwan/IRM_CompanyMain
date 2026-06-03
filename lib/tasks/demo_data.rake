@@ -677,7 +677,336 @@ namespace :irm do
   end
 
   task :generateAll => [:generateFakeEntities, :generateFakeInvestors, :generateFakeDocuments, :generateFakeNotes, :generateFakeSales, :generateFakeOffers, :generateFakeFunds, :generateFakePortfolios] do
-    puts "Generating all Fake Data"    
+    puts "Generating all Fake Data"
+  end
+
+  desc "Seeds two fully-populated demo deals for DealManagementAgent testing. " \
+       "Idempotent — tears down and recreates only the two demo deals by name. " \
+       "Usage: rake 'irm:seed_demo_deals[ENTITY_ID]'"
+  task :seed_demo_deals, [:entity_id] => :environment do |_, args|
+    require "faker"
+
+    entity_id = args[:entity_id].to_i
+    abort "Usage: rake 'irm:seed_demo_deals[ENTITY_ID]'" if entity_id.zero?
+
+    entity = Entity.find_by(id: entity_id) || abort("Entity #{entity_id} not found")
+    admin  = entity.employees.first
+    abort "No employees for entity #{entity_id}" if admin.nil?
+
+    puts "[deal_demo] Entity: #{entity.name} (id=#{entity_id}), admin=#{admin.email}"
+
+    demo_deals = [
+      "Series B — Horizon Analytics (Demo)",
+      "Seed Round — NovaTech Ventures (Demo)"
+    ]
+
+    deal_steps = [
+      ["Info Deck Sent",                   5],
+      ["NDA Executed",                    10],
+      ["Management Presentation",         20],
+      ["Financial Due Diligence",         35],
+      ["Legal Due Diligence",             50],
+      ["Term Sheet Issued",               60],
+      ["Term Sheet Countersigned",        70],
+      ["Board Approval",                  80],
+      ["Definitive Docs (SHA/SSA/SPA)",   90],
+      ["Remittance & Closing",           100],
+    ]
+
+    log = ->(msg) { puts "[deal_demo] #{msg}" }
+
+    sample_file = ->(filename) {
+      path = Rails.root.join("public/sample_uploads/#{filename}")
+      abort "Sample file not found: #{path}" unless File.exist?(path)
+      File.open(path, "r")
+    }
+
+    attach_doc = ->(owner:, name:, filename:, folder: nil) {
+      doc = Document.new(entity: entity, owner: owner, name: name, user: admin, send_email: false)
+      doc.folder = folder || owner.document_folder
+      doc.file   = sample_file.call(filename)
+      doc.save!
+      log.call("    doc '#{name}' → #{owner.class}##{owner.id}")
+      doc
+    rescue StandardError => e
+      log.call("    WARN: could not attach '#{name}': #{e.message}")
+      nil
+    }
+
+    create_activity_templates = ->(deal) {
+      deal.deal_activities.where(deal_investor_id: nil).destroy_all
+      deal_steps.each_with_index do |(title, days), idx|
+        DealActivity.create!(
+          deal:             deal,
+          deal_investor_id: nil,
+          entity:           entity,
+          status:           "Template",
+          title:            title,
+          sequence:         idx + 1,
+          days:             days
+        )
+      end
+      log.call("  #{deal_steps.size} activity templates created")
+    }
+
+    create_investor = ->(deal:, investor:, status:, amount:, tier:, lead:, source:, tags:, notes:) {
+      di = DealInvestor.new(
+        deal:                      deal,
+        investor:                  investor,
+        entity:                    entity,
+        status:                    status,
+        primary_amount_cents:      amount,
+        pre_money_valuation_cents: 200_000_000_00,
+        tier:                      tier,
+        deal_lead:                 lead,
+        source:                    source,
+        tags:                      tags
+      )
+      di.save!
+      di.notes = notes
+      di.save!
+      di.create_activities
+      di.reload
+      log.call("  DealInvestor##{di.id} #{investor.investor_name} [#{status}] — #{di.deal_activities.count} activities")
+      di
+    }
+
+    complete_steps = ->(di, deal, titles) {
+      titles.each do |title|
+        act = di.deal_activities.find_by(title: title)
+        next unless act
+        act.update!(status: "Complete", by_date: deal.start_date + act.days)
+        log.call("    ✓ #{title}")
+      end
+    }
+
+    set_by_dates = ->(di, deal) {
+      di.deal_activities.where.not(status: %w[Complete complete]).each do |act|
+        act.update!(by_date: deal.start_date + act.days)
+      end
+    }
+
+    backdate_stagnant = ->(di, days) {
+      DealInvestor.where(id: di.id).update_all(updated_at: days.days.ago)
+      DealActivity.where(deal_investor_id: di.id).update_all(updated_at: days.days.ago)
+      log.call("  Backdated #{di.investor_name} (stagnant: #{days}d)")
+    }
+
+    make_overdue = ->(di, title, days_ago) {
+      act = di.deal_activities.find_by(title: title)
+      return unless act
+      act.update!(status: "Incomplete", by_date: days_ago.days.ago.to_date)
+      log.call("    ⚠ #{title} overdue by #{days_ago}d")
+    }
+
+    make_upcoming = ->(di, title, days_from_now) {
+      act = di.deal_activities.find_by(title: title)
+      return unless act
+      act.update!(status: "Incomplete", by_date: days_from_now.days.from_now.to_date)
+      log.call("    ⏰ #{title} due in #{days_from_now}d")
+    }
+
+    Chewy.strategy(:bypass) do
+
+      # Tear down previous demo runs
+      demo_deals.each do |deal_name|
+        Deal.unscoped.where(entity_id: entity_id, name: deal_name).each do |d|
+          log.call("Destroying existing deal '#{d.name}' (id=#{d.id})")
+          d.deal_investors.each(&:destroy!)
+          d.destroy!
+        end
+      end
+
+      # Need at least 7 investors (4 for deal 1 + 3 for deal 2)
+      available_investors = entity.investors
+                                  .not_portfolio_companies
+                                  .not_advisors
+                                  .not_rms
+                                  .limit(20)
+                                  .to_a
+      abort "Need ≥7 LP/VC investors in entity #{entity_id} — found #{available_investors.size}" if available_investors.size < 7
+
+      # ── Deal 1: Series B ───────────────────────────────────────────────────────
+      log.call("\n═══ Deal 1: Series B — Horizon Analytics ═══")
+
+      deal1 = Deal.new(
+        entity:       entity,
+        name:         demo_deals[0],
+        status:       "Open",
+        amount_cents: 50_000_000_00,
+        currency:     "USD",
+        start_date:   90.days.ago.to_date,
+        end_date:     60.days.from_now.to_date,
+        tags:         "SaaS,B2B,Series B",
+        units:        "shares"
+      )
+      CreateDeal.wtf?(deal: deal1)
+      abort "CreateDeal failed: #{deal1.errors.full_messages.join(', ')}" unless deal1.persisted?
+      log.call("Created Deal##{deal1.id}: #{deal1.name}")
+
+      create_activity_templates.call(deal1)
+
+      data_room1 = deal1.deal_documents_folder
+      [
+        ["Information Memorandum",  "Offer_1_SPA.pdf"                    ],
+        ["Financial Model",         "CashFlow.xlsx"                       ],
+        ["Cap Table",               "CRISIL Report.xlsx"                  ],
+        ["NDA Template",            "Mutual-Confidentiality-Agreement.docx"],
+        ["Draft Term Sheet",        "SPA.docx"                           ],
+      ].each { |(name, file)| attach_doc.call(owner: deal1, name: name, filename: file, folder: data_room1) }
+
+      inv1a, inv1b, inv1c, inv1d = available_investors[0..3]
+
+      log.call("\n  Investor A — Active & Progressing")
+      di1a = create_investor.call(
+        deal: deal1, investor: inv1a, status: "Active", amount: 10_000_000_00, tier: "Lead",
+        lead: "Priya Sharma", source: "Warm Intro", tags: "strategic,lead",
+        notes: "Anchor investor. Very engaged — attended all management presentations. " \
+               "Key concern: board seat composition. Positive on the product roadmap. " \
+               "Committed to term sheet by end of quarter."
+      )
+      complete_steps.call(di1a, deal1, ["Info Deck Sent", "NDA Executed", "Management Presentation"])
+      set_by_dates.call(di1a, deal1)
+      attach_doc.call(owner: di1a, name: "Horizon NDA Signed",       filename: "Mutual-Confidentiality-Agreement.docx")
+      attach_doc.call(owner: di1a, name: "Horizon Term Sheet Draft", filename: "SPA.docx")
+      attach_doc.call(owner: di1a, name: "Horizon Financial Model",  filename: "CashFlow.xlsx")
+      mgmt_act1a = di1a.deal_activities.find_by(title: "Management Presentation")
+      attach_doc.call(owner: mgmt_act1a, name: "Mgmt Pres Deck", filename: "Offer_1_SPA.pdf") if mgmt_act1a
+
+      log.call("\n  Investor B — Stagnant & Overdue")
+      di1b = create_investor.call(
+        deal: deal1, investor: inv1b, status: "Active", amount: 5_000_000_00, tier: "Follow-on",
+        lead: "Karan Mehta", source: "Cold Outreach", tags: "at-risk",
+        notes: "Has not responded to last two emails. Last contact was 3 weeks ago after " \
+               "the management presentation. Possible concerns about burn rate. " \
+               "Need to schedule follow-up call urgently."
+      )
+      complete_steps.call(di1b, deal1, ["Info Deck Sent"])
+      set_by_dates.call(di1b, deal1)
+      make_overdue.call(di1b, "NDA Executed",           14)
+      make_overdue.call(di1b, "Management Presentation", 5)
+      backdate_stagnant.call(di1b, 20)
+      attach_doc.call(owner: di1b, name: "Vertex NDA Signed", filename: "Mutual-Confidentiality-Agreement.docx")
+
+      log.call("\n  Investor C — Upcoming Due Dates")
+      di1c = create_investor.call(
+        deal: deal1, investor: inv1c, status: "Pending", amount: 8_000_000_00, tier: "Co-investor",
+        lead: "Ananya Rao", source: "LP Network", tags: "family-office,co-invest",
+        notes: "In diligence phase. Scheduled a call with their IC next week. " \
+               "Expects draft SHA by end of month. Supportive on valuation. " \
+               "Wants to understand exit mechanics before committing."
+      )
+      complete_steps.call(di1c, deal1, ["Info Deck Sent", "NDA Executed"])
+      set_by_dates.call(di1c, deal1)
+      make_upcoming.call(di1c, "Financial Due Diligence", 2)
+      make_upcoming.call(di1c, "Term Sheet Issued",        6)
+      attach_doc.call(owner: di1c, name: "Bansal NDA Executed",     filename: "Mutual-Confidentiality-Agreement.docx")
+      attach_doc.call(owner: di1c, name: "Bansal Diligence Report", filename: "CRISIL Report.xlsx")
+
+      log.call("\n  Investor D — Declined")
+      di1d = create_investor.call(
+        deal: deal1, investor: inv1d, status: "Declined", amount: 2_000_000_00, tier: "Minority",
+        lead: "Priya Sharma", source: "Conference", tags: "declined",
+        notes: "Passed due to allocation constraints for the quarter. May revisit in Series C."
+      )
+      complete_steps.call(di1d, deal1, ["Info Deck Sent"])
+      set_by_dates.call(di1d, deal1)
+
+      # ── Deal 2: Seed Round ─────────────────────────────────────────────────────
+      log.call("\n═══ Deal 2: Seed Round — NovaTech Ventures ═══")
+
+      deal2 = Deal.new(
+        entity:       entity,
+        name:         demo_deals[1],
+        status:       "Open",
+        amount_cents: 5_000_000_00,
+        currency:     "USD",
+        start_date:   45.days.ago.to_date,
+        end_date:     90.days.from_now.to_date,
+        tags:         "DeepTech,AI,Seed",
+        units:        "shares"
+      )
+      CreateDeal.wtf?(deal: deal2)
+      abort "CreateDeal failed: #{deal2.errors.full_messages.join(', ')}" unless deal2.persisted?
+      log.call("Created Deal##{deal2.id}: #{deal2.name}")
+
+      create_activity_templates.call(deal2)
+
+      data_room2 = deal2.deal_documents_folder
+      [
+        ["Pitch Deck",              "Offer_1_SPA.pdf"],
+        ["Financial Projections",   "CashFlow.xlsx"  ],
+        ["SAFE Agreement Draft",    "SPA.docx"       ],
+      ].each { |(name, file)| attach_doc.call(owner: deal2, name: name, filename: file, folder: data_room2) }
+
+      inv2a, inv2b, inv2c = available_investors[4..6]
+
+      log.call("\n  Investor E — Active & Progressing")
+      di2a = create_investor.call(
+        deal: deal2, investor: inv2a, status: "Active", amount: 2_000_000_00, tier: "Lead",
+        lead: "Vikram Nair", source: "Angel Network", tags: "strategic,deep-tech",
+        notes: "Very bullish on the AI angle. Has invested in 3 similar seed rounds this year. " \
+               "Wants co-investor rights on Series A. Quick decision-maker — expects term sheet in 2 weeks."
+      )
+      complete_steps.call(di2a, deal2, ["Info Deck Sent", "NDA Executed"])
+      set_by_dates.call(di2a, deal2)
+      attach_doc.call(owner: di2a, name: "NovaTech NDA Signed",  filename: "Mutual-Confidentiality-Agreement.docx")
+      attach_doc.call(owner: di2a, name: "Investment Memo Draft", filename: "SPA.docx")
+
+      log.call("\n  Investor F — Overdue NDA")
+      di2b = create_investor.call(
+        deal: deal2, investor: inv2b, status: "Active", amount: 1_500_000_00, tier: "Co-investor",
+        lead: "Siddharth Rao", source: "Referral", tags: "fintech-focused",
+        notes: "Interested but slow on legal. NDA was supposed to be signed last week. " \
+               "Their counsel requested minor changes to confidentiality clause."
+      )
+      complete_steps.call(di2b, deal2, ["Info Deck Sent"])
+      set_by_dates.call(di2b, deal2)
+      make_overdue.call(di2b, "NDA Executed", 7)
+      attach_doc.call(owner: di2b, name: "Redlined NDA", filename: "Mutual-Confidentiality-Agreement.docx")
+
+      log.call("\n  Investor G — Declined")
+      di2c = create_investor.call(
+        deal: deal2, investor: inv2c, status: "Declined", amount: 500_000_00, tier: "Minority",
+        lead: "Vikram Nair", source: "Cold Outreach", tags: "declined",
+        notes: "Ticket size too small for their fund mandate. Suggested two other funds to approach."
+      )
+      complete_steps.call(di2c, deal2, ["Info Deck Sent"])
+      set_by_dates.call(di2c, deal2)
+
+      # ── Summary ────────────────────────────────────────────────────────────────
+      log.call("\n════════════════════════════════════════════")
+      log.call("Demo deals seeded for entity #{entity_id}")
+      log.call("════════════════════════════════════════════")
+
+      [deal1, deal2].each do |deal|
+        deal.reload
+        log.call("\n#{deal.name} (Deal##{deal.id})")
+        log.call("  Status: #{deal.status}  |  Data room: #{deal.deal_documents_folder.documents.count} docs")
+        deal.deal_investors.includes(:deal_activities).each do |di|
+          log.call("  [#{di.status.ljust(9)}] #{di.investor_name.ljust(42)} " \
+                   "| #{di.deal_activities.count} activities " \
+                   "| #{Document.where(owner_type: 'DealInvestor', owner_id: di.id).count} docs " \
+                   "| stagnant=#{di.stagnant?}")
+        end
+      end
+
+      agent = SupportAgent.find_by(entity_id: entity_id, agent_type: "DealManagementAgent")
+      if agent
+        log.call("\n── Agent ready ─────────────────────────────────────────────────────────")
+        log.call("SupportAgent##{agent.id} DealManagementAgent (enabled=#{agent.enabled})")
+        log.call("")
+        log.call("Run against Deal 1:")
+        log.call("  DealManagementAgent.wtf?(support_agent_id: #{agent.id}, target: Deal.find(#{deal1.id}))")
+        log.call("")
+        log.call("Run against Deal 2:")
+        log.call("  DealManagementAgent.wtf?(support_agent_id: #{agent.id}, target: Deal.find(#{deal2.id}))")
+      else
+        log.call("\nWARN: DealManagementAgent not found for entity #{entity_id}.")
+        log.call("Run first:  rake 'support_agents:setup[#{entity_id}]'")
+      end
+
+    end # Chewy.strategy(:bypass)
   end
 
 end
