@@ -374,11 +374,18 @@ class FundFormula < ApplicationRecord
       exprs << node.loc.name.source
     when :send
       if node.children[0]&.type == :ivar
-        exprs << node.loc.expression.source   # e.g. "@fund.id"
-        return                                # captured — no need to recurse deeper
+        method_name = node.children[1].to_s
+        if method_name.match?(/\A[a-zA-Z_]\w*[?!]?\z/)
+          # Attribute/method access like @fund.id or @api.amount_cents — capture as a
+          # meaningful unit and stop recursing (the @ivar itself is too coarse here).
+          exprs << node.loc.expression.source
+          return
+        end
+        # Operator call like @v1 - @v2 or @v1 * factor — fall through so each
+        # operand @ivar is captured individually rather than the whole expression.
       end
-      # Receiver is not an @ivar (e.g. an array literal, another send) — keep
-      # recursing so nested @ivar reads inside compound expressions are found.
+      # Receiver is not a bare @ivar (e.g. an array literal, a chain) — recurse to
+      # find any nested @ivar reads inside compound expressions.
     end
     node.children.each { |c| collect_ivar_expressions(c, exprs) if c.is_a?(Parser::AST::Node) }
   end
@@ -418,10 +425,18 @@ class FundFormula < ApplicationRecord
             when /fund/i              then "funds"
             else                           "items"
             end
-    "#{arr.length} #{label}: #{arr.first(5).inspect}#{arr.length > 5 ? ' ...' : ''}"
+    "#{arr.length} #{label}: #{arr.inspect}"
   end
 
   def find_expressions(node, expressions)
+    # Post-order: recurse into children first so leaf/simpler expressions are
+    # inserted before their composites. This gives a natural build-up order —
+    # operands appear before the expression that combines them — without needing
+    # a length-based sort in the display layer.
+    node.children.each do |child|
+      find_expressions(child, expressions) if child.is_a?(Parser::AST::Node)
+    end
+
     case node.type
     when :send
       expressions << node.loc.expression.source
@@ -429,10 +444,6 @@ class FundFormula < ApplicationRecord
       expressions << node.loc.name.source
     when :str
       expressions << node.loc.expression.source
-    end
-
-    node.children.each do |child|
-      find_expressions(child, expressions) if child.is_a?(Parser::AST::Node)
     end
   end
 

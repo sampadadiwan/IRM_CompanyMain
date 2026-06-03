@@ -61,6 +61,22 @@ Feature: FundFormula parse_statement explanation breakdown
     And the breakdown does not include the key "85.0"
 
 
+  Scenario: Multi-statement formula — operand @ivars are visible when used in arithmetic
+    # When an assignment RHS is "@v1 - @v2", collect_ivar_expressions previously
+    # treated the whole expression as a single @ivar attribute-access and early-returned,
+    # so "@v1" and "@v2" never appeared individually in the breakdown.
+    # Now operator calls (-, +, *, /, etc.) fall through to recurse, capturing each operand.
+    Given a multi-statement formula with bindings "committed=500000;called=150000":
+      """
+      uncalled = @committed - @called;
+      uncalled
+      """
+    When parse_statement is run on the formula
+    Then the breakdown includes the key "@committed" with numeric value 500000.0
+    And the breakdown includes the key "@called" with numeric value 150000.0
+    And the breakdown includes the key "uncalled" with numeric value 350000.0
+
+
   # ─── Array values ───────────────────────────────────────────────────────────
 
   Scenario: Array variables are summarised with a count and a contextual label
@@ -75,14 +91,16 @@ Feature: FundFormula parse_statement explanation breakdown
     Then the breakdown includes the key "portfolio_company_ids" with string value "3 portfolio companies: [100, 200, 300]"
     And the breakdown includes the key "portfolio_company_ids.length" with numeric value 3.0
 
-  Scenario: Large arrays show only the first five elements with an ellipsis
+  Scenario: Large arrays are stored in full (truncation happens only in the LLM prompt)
+    # The full list is preserved in the breakdown so the UI can display all IDs.
+    # AccountEntryExplainerService truncates long values before building the prompt.
     Given a multi-statement formula with no bindings:
       """
       investor_ids = [1, 2, 3, 4, 5, 6, 7];
       investor_ids.length
       """
     When parse_statement is run on the formula
-    Then the breakdown includes the key "investor_ids" with string value "7 investors: [1, 2, 3, 4, 5] ..."
+    Then the breakdown includes the key "investor_ids" with string value "7 investors: [1, 2, 3, 4, 5, 6, 7]"
 
 
   # ─── Noise filtering ────────────────────────────────────────────────────────

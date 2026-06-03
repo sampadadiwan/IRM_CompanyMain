@@ -193,11 +193,10 @@
         other_entries = exp_breakdown.reject { |k, _| k.start_with?('@') && !k.include?(' ') }
         result_row    = other_entries.max_by { |k, _| k.length }
         steps_raw     = other_entries.reject { |k, _| k == result_row&.first }
-        # Multi-statement formulas are stored in formula order — preserve it so the
-        # table reads top-to-bottom as the formula was written.
-        # Single-expression formulas store sub-expressions deepest-first, so sort
-        # most-complex-first to show the near-final result at the top.
-        steps         = exp_formula.to_s.match?(/[;\n]/) ? steps_raw.to_a : steps_raw.sort_by { |k, _| -k.length }
+        # find_expressions uses post-order traversal, so simpler/leaf expressions are
+        # always inserted before the composites that depend on them — insertion order
+        # is already the correct build-up order for both single and multi-statement.
+        steps         = steps_raw.to_a
         result_key, result_val = result_row || [nil, nil]
       end
     %>
@@ -227,7 +226,7 @@
         wt_raw = exp_breakdown
           .reject { |k, _| k.start_with?('@') && !k.include?(' ') }
           .reject { |k, _| k == result_key }
-        wt_ordered = exp_formula.to_s.match?(/[;\n]/) ? wt_raw.to_a : wt_raw.sort_by { |k, _| k.length }
+        wt_ordered = wt_raw.to_a
         calc_steps = wt_ordered
           .map { |(key, val)| { "type" => "step", "expression" => key,
                                 "value" => fmt_val.call(val),
@@ -272,30 +271,7 @@
             <% if exp_breakdown %>
               <div class="row g-4">
 
-                <%# ── 1. Input Parameters (first — gives context before reading the formula) %>
-                <% if variables.any? %>
-                  <div class="col-12">
-                    <p class="text-muted text-uppercase fw-semibold fs-1 mb-2"><i class="ti ti-variable me-1"></i>Input Parameters</p>
-                    <table class="table table-sm table-hover mb-0">
-                      <thead style="background:#5d87ff;">
-                        <tr>
-                          <th class="fw-semibold py-2" style="color:#fff;">Variable</th>
-                          <th class="fw-semibold py-2" style="color:#fff;">Value</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <% variables.sort_by { |k, _| k }.each do |key, val| %>
-                          <tr>
-                            <td><code class="text-primary"><%= key %></code></td>
-                            <td class="fw-medium text-end"><%= val %></td>
-                          </tr>
-                        <% end %>
-                      </tbody>
-                    </table>
-                  </div>
-                <% end %>
-
-                <%# ── 2. Formula ──────────────────────────────────────────── %>
+                <%# ── 1. Formula ──────────────────────────────────────────── %>
                 <% if exp_formula.present? %>
                   <div class="col-12">
                     <p class="text-muted text-uppercase fw-semibold fs-1 mb-2">Formula</p>
@@ -364,7 +340,7 @@
                             <tr>
                               <th class="fw-semibold py-2" style="color:#fff;width:2rem;">#</th>
                               <th class="fw-semibold py-2" style="color:#fff;">Expression</th>
-                              <th class="fw-semibold py-2 text-end" style="color:#fff;width:10rem;">Value</th>
+                              <th class="fw-semibold py-2 text-end" style="color:#fff;width:40%;max-width:40%;">Value</th>
                               <% if has_meanings %>
                                 <th class="fw-semibold py-2" style="color:#fff;width:35%;">What this means</th>
                               <% end %>
@@ -377,7 +353,7 @@
                                 <td class="align-top pt-2">
                                   <span style="white-space:normal;word-break:break-word;"><%= key %></span>
                                 </td>
-                                <td class="fw-medium text-end align-top pt-2 text-nowrap"><%= fmt_val.call(val) %></td>
+                                <td class="fw-medium text-end align-top pt-2" style="word-break:break-word;"><%= fmt_val.call(val) %></td>
                                 <% if has_meanings %>
                                   <td class="text-muted small align-top pt-2" style="line-height:1.5;">
                                     <%= meaning_by_expr[key] %>

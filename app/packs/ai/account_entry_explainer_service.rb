@@ -35,19 +35,17 @@ class AccountEntryExplainerService
     other        = breakdown.reject { |k, _| k.start_with?('@') && !k.include?(' ') }
     result_row   = other.max_by { |k, _| k.length }
     steps_raw    = other.reject { |k, _| k == result_row&.first }
-    # Multi-statement formulas (contain newlines/semicolons) are stored in formula
-    # order — preserve that order so the LLM sees steps as they build on each other.
-    # Single-expression formulas store sub-expressions deepest-first, so sort
-    # shortest→longest to present simplest building blocks first.
-    steps        = formula.to_s.match?(/[;\n]/) ? steps_raw.to_a : steps_raw.sort_by { |k, _| k.length }
+    # find_expressions uses post-order traversal so insertion order is already
+    # build-up order (leaves before composites) for all formula shapes.
+    steps        = steps_raw.to_a
     result_val   = result_row&.last
 
-    var_lines    = variables.map { |k, v| "  #{k} = #{v}" }.join("\n")
+    var_lines    = variables.map { |k, v| "  #{k} = #{truncate_for_llm(v)}" }.join("\n")
 
     # Build the numbered step list we send to the LLM; it must return them in
     # the same order so we can match meanings back by index.
     step_lines   = steps.each_with_index.map { |(k, v), i|
-      "  #{i + 1}. expression: #{k.inspect}\n     value: #{v}"
+      "  #{i + 1}. expression: #{k.inspect}\n     value: #{truncate_for_llm(v)}"
     }.join("\n\n")
 
     currency = @account_entry.fund.currency.presence || "USD"
@@ -126,6 +124,16 @@ class AccountEntryExplainerService
   def extract_breakdown
     json_entry = @account_entry.explanation.find { |e| parse_json(e).is_a?(Hash) }
     json_entry ? parse_json(json_entry) : {}
+  end
+
+  # Truncates a value string that would otherwise blow up the LLM prompt.
+  # Array summaries like "200 portfolio companies: [1, 2, 3, ...]" are the main
+  # offender — the count and label are all the LLM needs; the full ID list adds
+  # token cost without analytical value.
+  def truncate_for_llm(value, max_chars: 150)
+    str = value.to_s
+    return str if str.length <= max_chars
+    "#{str[0, max_chars]}... [list truncated]"
   end
 
   def parse_json(obj)
