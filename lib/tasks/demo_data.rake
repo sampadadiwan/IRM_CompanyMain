@@ -721,7 +721,7 @@ namespace :irm do
       File.open(path, "r")
     }
 
-    attach_doc = ->(owner:, name:, filename:, folder: nil) {
+    attach_doc = ->(owner:, name:, filename:, folder: nil) do
       doc = Document.new(entity: entity, owner: owner, name: name, user: admin, send_email: false)
       doc.folder = folder || owner.document_folder
       doc.file   = sample_file.call(filename)
@@ -731,7 +731,7 @@ namespace :irm do
     rescue StandardError => e
       log.call("    WARN: could not attach '#{name}': #{e.message}")
       nil
-    }
+    end
 
     create_activity_templates = ->(deal) {
       deal.deal_activities.where(deal_investor_id: nil).destroy_all
