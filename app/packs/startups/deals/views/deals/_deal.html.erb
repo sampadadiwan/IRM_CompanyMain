@@ -1,12 +1,7 @@
 <tr id="<%= dom_id deal %>">
   <td class="text-col">
     <% if current_user.entity_id == deal.entity_id %>
-      <%= link_to deal.name, deal_path(deal, grid_view: true) %>
-      <% if deal.kanban_board.present? %>
-        <%= link_to board_path(deal.kanban_board) do%>
-          <i class="ti ti-brand-trello icon-large"></i>
-        <% end %>
-      <% end %>
+      <%= link_to deal.name, deal_path(deal) %>
     <% else %>
       <%= link_to deal.name, deal_path(deal) %>
     <% end %>

@@ -8,9 +8,6 @@
 
 
       <a class="nav-link active" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-tab">Documents</a>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#widgets-tab">Widgets</a>
-      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#track-records-tab">Track Record</a>
-
       <% if show_deal == "Yes" %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#deal-tab" id="deal_tab">Deal</a>
       <% end %>
@@ -42,18 +39,6 @@
             <%= turbo_frame_tag "documents_tree_frame", target: "_top", src: folder_documents_path(entity_id: deal.entity_id, folder_id: deal.document_folder.id), loading: :lazy do %>
               <%= render "/layouts/loading" %>
             <% end %>
-        </div>
-      </div>
-
-      <div id="widgets-tab" class="tab-pane fade">
-        <div id="widgets" class="associated_entity">
-          <%= render "/ci_widgets/index", ci_widgets: deal.ci_widgets, owner: deal, target: "_top" %>
-        </div>
-      </div>
-
-      <div id="track-records-tab" class="tab-pane fade">
-        <div id="track_records" class="associated_entity">
-          <%= render "/ci_track_records/index", ci_track_records: deal.ci_track_records, owner: deal, target: "_top" %>
         </div>
       </div>
 

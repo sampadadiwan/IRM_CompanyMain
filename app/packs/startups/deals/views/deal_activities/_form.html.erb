@@ -58,7 +58,8 @@
         </div>
         <div class="form-group">
           <%= form.label :status %>
-          <%= form.text_field :status, class: "form-control"  %>
+          <% status_options = deal_activity.deal_investor_id.present? ? ["Incomplete", "Complete", "Skip"] : ["Template"] %>
+          <%= form.select :status, status_options, {}, class: "form-control" %>
         </div>
         <% if deal_activity.deal_investor_id.present? %>
           <div class="form-group">

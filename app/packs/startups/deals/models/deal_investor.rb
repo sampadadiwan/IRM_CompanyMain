@@ -71,9 +71,16 @@ class DealInvestor < ApplicationRecord
 
   before_validation :calc_total_amount
   before_save :set_investor_entity_id
+  before_save :track_status_change
+
   def set_investor_entity_id
     self.investor_entity_id = investor.investor_entity_id
     self.investor_name = investor.investor_name
+  end
+
+  def track_status_change
+    return unless self.class.column_names.include?('status_changed_at')
+    self.status_changed_at = Time.current if status_changed?
   end
 
   def calc_total_amount

@@ -10,6 +10,9 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_investor_concentration(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Donut chart showing the share of total committed capital by how each investor was sourced (e.g., referral, direct outreach, network). Slices represent dollar-weighted proportions; only non-declined investors are counted.
+        </p>
       </div>
     </div>
   </div>
@@ -24,6 +27,9 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_activities_completion(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Donut chart showing the completion status of all deal activities (steps/tasks) across non-declined investors. Each slice is the count of activities in that status, giving a quick read on how much due-diligence and onboarding work remains open.
+        </p>
       </div>
     </div>
   </div>
@@ -34,16 +40,23 @@
                 <h6 class="m-0 font-weight-bold text-primary">Deal Funnel</h6>
             </div>
             <div class="card-body">
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/highcharts.js"></script>
-                <script src="https://cdnjs.cloudflare.com/ajax/libs/highcharts/11.4.1/modules/funnel.js"></script>
-
+              <% funnel_data = deal_activities_funnel_data(deal) %>
+              <% if funnel_data.any? %>
                 <div
                   id="funnel-chart-container"
                   style="width:100%; height:300px;"
                   data-controller="highcharts-funnel"
-                  data-highcharts-funnel-data-value="<%= kanban_funnel_data(@deal).to_json %>"
+                  data-highcharts-funnel-data-value="<%= funnel_data.to_json %>"
                   data-highcharts-funnel-theme-value="<%= chart_theme_color.to_json %>"
                 ></div>
+              <% else %>
+                <div class="d-flex align-items-center justify-content-center text-muted" style="height:300px;">
+                  <%= deal.deal_activities.where(deal_investor_id: nil).any? ? "No activities have been completed yet" : "No deal steps configured for this deal" %>
+                </div>
+              <% end %>
+              <p class="text-muted small mt-3 mb-0">
+                Funnel chart showing how many investors have completed each deal step, ordered by step sequence. The funnel narrows as investors progress through later stages, revealing where completions drop off across the deal process.
+              </p>
             </div>
         </div>
   </div>
@@ -52,14 +65,16 @@
   <!-- Deal Investors added by month Line Chart  -->
   <div class="col-lg-4">
     <div class="card shadow mb-4 border-bottom-primary">
-      <div class="card-header py-3 d-flex align-items-center justify-content-between">
+      <div class="card-header py-3">
         <h6 class="m-0 font-weight-bold text-primary">Deal Investors Added by Month</h6>
-        <span class="badge bg-primary-subtle text-primary border-primary-subtle" style="font-size: 0.65rem;"><i class="ti ti-filter"></i> Click to Filter</span>
       </div>
       <div class="card-body">
         <div class="chart-area" style="height: 300px;">
           <%= deal_investors_added_by_month(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Bar chart showing the count of new investors added to this deal each calendar month. Helps identify when outreach was most active and whether recruitment momentum is accelerating or slowing down.
+        </p>
       </div>
     </div>
   </div>
@@ -73,6 +88,9 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_commitment_velocity(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Cumulative area chart showing how total committed capital has grown over time. Each point is the running sum of investment amounts from investors in Active, Committed, or Complete status, ordered by the date their status last changed. A steep slope means rapid closing activity.
+        </p>
       </div>
     </div>
   </div>
@@ -87,6 +105,9 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_investor_concentration_by_lead(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Donut chart showing total capital committed broken down by the deal lead assigned to each investor relationship. Highlights which team member is managing the largest portion of the raise. Only non-declined investors are included.
+        </p>
       </div>
     </div>
   </div>
@@ -103,6 +124,9 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_investor_concentration_by_tier(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Donut chart showing total committed capital split by investor tier classification (e.g., anchor, strategic, standard). Reveals whether the raise is dominated by a particular tier. Only non-declined investors are included.
+        </p>
       </div>
     </div>
   </div>
@@ -117,6 +141,9 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_days_in_stage(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Column chart showing how long active (non-declined, non-complete) investors have been sitting in their current status without progressing. Investors are bucketed into 0–7, 8–14, 15–30, and 30+ day bins. A tall 30+ bar signals investors who may need a follow-up nudge.
+        </p>
       </div>
     </div>
   </div>
@@ -130,6 +157,9 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_activity_efficiency(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Horizontal bar chart showing the average number of days each activity type (deal step) took to reach Complete status, measured from when the activity was created to when it was last updated. Longer bars flag step types that consistently slow down the process.
+        </p>
       </div>
     </div>
   </div>
@@ -146,6 +176,9 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_conversion_funnel(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Bar chart showing the raw count of investors at each status stage (New → Interested → In Progress → Committed → Complete), displayed in pipeline order. Shows where investors are concentrated and where the most drop-off occurs between stages.
+        </p>
       </div>
     </div>
   </div>
@@ -159,11 +192,12 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_weighted_pipeline(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Compares your deal's target raise against a probability-weighted pipeline total. Each investor's amount is multiplied by their stage probability (New = 5%, Interested = 25%, In Progress = 50%, Committed/Complete = 100%), then summed. When the weighted bar approaches the target bar, the raise is on track.
+        </p>
       </div>
     </div>
   </div>
-</div>
-<div class="row mb-4">
   <!-- Investor Status -->
   <div class="col-lg-4">
     <div class="card shadow mb-4 border-bottom-primary">
@@ -175,9 +209,14 @@
         <div class="chart-area" style="height: 300px;">
           <%= deal_investors_status(deal) %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Donut chart showing the count of all deal investors (including declined) broken down by their current status. Each slice displays the percentage and count, giving a quick overview of how many investors are at each stage of the deal.
+        </p>
       </div>
     </div>
   </div>
+</div>
+<div class="row mb-4">
   <!-- Allocation Breakdown -->
   <div class="col-lg-4">
     <div class="card shadow mb-4">
@@ -199,6 +238,9 @@
             **chart_theme_color
           } %>
         </div>
+        <p class="text-muted small mt-3 mb-0">
+          Donut chart showing how the total raise breaks down across three capital categories: Primary investment (direct equity), Secondary investment (secondary purchases), and Fees. Each slice is the summed dollar amount across all non-declined investors in that category.
+        </p>
       </div>
     </div>
   </div>

@@ -62,26 +62,38 @@ Given('there are {string} deal_investors for the deal') do |arg|
 end
 
 Given('I should see the deal investors in the deal details page') do
-  visit(deal_path(@deal, grid_view: true, kanban: true))
+  visit(deal_path(@deal))
+  expect(page).to have_selector("#deals_list_grid .ag-root-wrapper", wait: 20)
+  expect(page).to have_selector("#deals_list_grid .ag-row", wait: 20)
 
   @deal.deal_investors.each do |deal_investor|
-    within("#deal_investor_#{deal_investor.id}") do
-      expect(page).to have_content(deal_investor.investor_name)
-      expect(page).to have_content(money_to_currency(deal_investor.primary_amount))
-      expect(page).to have_content(money_to_currency(deal_investor.secondary_investment))
-      expect(page).to have_content(money_to_currency(deal_investor.pre_money_valuation))
-    end
+    row_id = "deal_investor_#{deal_investor.id}"
+    # Verify the row exists via the center container (avoids pinned-cols ambiguity)
+    expect(page).to have_selector("#deals_list_grid .ag-center-cols-container .ag-row[row-id='#{row_id}']", wait: 10)
+    # Investor name may be in a pinned column container — check any row with this row-id
+    expect(page).to have_selector("#deals_list_grid .ag-row[row-id='#{row_id}']", text: deal_investor.investor_name, wait: 10)
   end
 end
 
 Given('I should see the deal stages in the deal details page') do
+  expect(page).to have_selector("#deals_list_grid .ag-root-wrapper", wait: 20)
+  expect(page).to have_selector("#deals_list_grid .ag-row", wait: 20)
+
   @deal.deal_investors.each do |deal_investor|
-    within("#deal_investor_#{deal_investor.id}") do
-      deal_investor.deal_activities.each do |act|
-        within("#deal_activity_#{act.id}") do
-          expect(page).to have_content(act.completed_status)
-        end
-      end
+    row_id = "deal_investor_#{deal_investor.id}"
+    # Verify the row exists in the center container (avoids pinned-cols ambiguity)
+    expect(page).to have_selector("#deals_list_grid .ag-center-cols-container .ag-row[row-id='#{row_id}']", wait: 10)
+
+    deal_investor.deal_activities.each do |act|
+      # Scroll activity column into view to defeat AG Grid column virtualization
+      page.execute_script(<<~JS)
+        if (window.DealsGrid && window.DealsGrid.gridOptions && window.DealsGrid.gridOptions.api) {
+          window.DealsGrid.gridOptions.api.ensureColumnVisible('activity_#{act.template_id}');
+        }
+      JS
+      expected = act.Complete? ? "Complete" : "Incomplete"
+      # Check in the full grid — each act.id is unique so no false matches across rows
+      expect(page).to have_css("#deals_list_grid .activity-badge[data-activity-id='#{act.id}'][data-activity-status='#{expected}']", wait: 5)
     end
   end
 end

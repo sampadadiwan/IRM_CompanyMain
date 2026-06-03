@@ -127,15 +127,8 @@ class DealActivitiesController < ApplicationController
 
     respond_to do |format|
       if result.success?
-        format.turbo_stream do
-          render turbo_stream: [
-            turbo_stream.replace(helpers.dom_id(@deal_activity.deal_investor), partial: "deals/grid_view_row",
-                                                                               locals: { deal_investor: @deal_activity.deal_investor })
-          ]
-        end
         format.html { redirect_to deal_activity_url(@deal_activity), notice: "Activity was successfully updated." }
       else
-        format.turbo_stream { redirect_to edit_deal_activity_path(@deal_activity, 'deal_activity[completed]': @deal_activity.completed), alert: @deal_activity.errors.full_messages }
         format.html { render :edit, back_to: deal_path(@deal_activity.deal) }
       end
     end

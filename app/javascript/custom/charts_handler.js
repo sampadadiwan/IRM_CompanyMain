@@ -4,6 +4,7 @@ import "highcharts/modules/exporting"
 import "highcharts/modules/offline-exporting"
 import "highcharts/modules/sankey"
 import "highcharts/modules/heatmap"
+import "highcharts/modules/funnel"
 
 // Make Highcharts globally available for Chartkick and other scripts
 window.Highcharts = Highcharts
@@ -53,15 +54,23 @@ window.handleChartClick = function(param, value, frameId) {
 /**
  * Global Highcharts event listener.
  * Intercepts point clicks and triggers handleChartClick if the series is marked as 'clickable'.
+ * Also dispatches a 'chart:grid-filter' CustomEvent when plotOptions.series.gridFilterType is set,
+ * so the AG Grid controller can filter without any per-chart timing/binding logic.
  */
 Highcharts.addEvent(Highcharts.Point, 'click', function () {
   const seriesOptions = this.series.options;
-  
-  // Only process clicks for charts explicitly configured with clickable: true
+  const value = (this.series.type === 'pie') ? this.name : (this.category || this.name);
+
+  // AG Grid filtering — driven by gridFilterType on plotOptions.series (set in the Ruby helper)
+  const filterType = this.series.chart.options.plotOptions?.series?.gridFilterType;
+  if (filterType) {
+    document.dispatchEvent(new CustomEvent('chart:grid-filter', {
+      detail: { type: filterType, value: value }
+    }));
+  }
+
+  // Turbo Frame filtering (used by other pages)
   if (seriesOptions.clickable) {
-    // Determine the correct value based on chart type
-    // Pie charts use 'name', Cartesian charts (Column/Area) use 'category'
-    const value = (this.series.type === 'pie') ? this.name : (this.category || this.name);
     window.handleChartClick(seriesOptions.clickParam, value, seriesOptions.clickFrameId);
   }
 });

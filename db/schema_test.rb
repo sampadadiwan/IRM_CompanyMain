@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_01_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1197,6 +1197,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_100001) do
     t.string "slug"
     t.string "source"
     t.string "status", limit: 20
+    t.datetime "status_changed_at"
     t.string "tags"
     t.string "tier", limit: 20
     t.integer "todays_messages_investee", default: 0
@@ -1214,7 +1215,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_01_100001) do
     t.index ["form_type_id"], name: "index_deal_investors_on_form_type_id"
     t.index ["import_upload_id"], name: "index_deal_investors_on_import_upload_id"
     t.index ["investor_entity_id"], name: "index_deal_investors_on_investor_entity_id"
-    t.index %w[investor_id deal_id generated_deleted], name: "unique_deal_investor", unique: true
+    t.index ["investor_id", "deal_id", "generated_deleted"], name: "unique_deal_investor", unique: true
     t.index ["investor_id"], name: "index_deal_investors_on_investor_id"
     t.index ["slug"], name: "index_deal_investors_on_slug", unique: true
   end

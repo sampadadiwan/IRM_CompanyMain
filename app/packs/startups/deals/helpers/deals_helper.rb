@@ -60,6 +60,7 @@ module DealsHelper
 
     pie_chart deal_investors, donut: true, id: "chart-deal-status", library: {
       plotOptions: {
+        series: { gridFilterType: 'status' },
         pie: {
           cursor: 'pointer',
           dataLabels: {
@@ -73,11 +74,13 @@ module DealsHelper
   end
 
   def deal_activities_completion(deal)
-    deal_activities = deal.deal_activities.unscoped.joins(:deal_investor)
+    # Use reorder(nil) instead of unscoped so the deal_id association constraint is preserved
+    deal_activities = deal.deal_activities.reorder(nil).joins(:deal_investor)
                           .merge(DealInvestor.not_declined).group(:status).count
 
     pie_chart deal_activities, donut: true, id: "chart-deal-activities", library: {
       plotOptions: {
+        series: { gridFilterType: 'activity_status' },
         pie: {
           cursor: 'pointer',
           dataLabels: {
@@ -98,6 +101,7 @@ module DealsHelper
       plotOptions: {
         series: {
           cursor: 'pointer',
+          gridFilterType: 'status',
           dataLabels: {
             enabled: true,
             format: '<b>{point.name}</b>: {point.y}'
@@ -109,11 +113,11 @@ module DealsHelper
   end
 
   def deal_commitment_velocity(deal)
-    investors = deal.deal_investors.where(status: %w[Active Committed Complete]).order(:created_at)
+    investors = deal.deal_investors.where(status: %w[Active Committed Complete]).order(:status_changed_at)
 
-    # Group by date and calculate running total
+    # Group by the date the investor's status last changed, building a running total
     cumulative_amount = 0
-    data = investors.group_by { |i| i.created_at.to_date }.map do |date, group|
+    data = investors.group_by { |i| (i.status_changed_at || i.created_at).to_date }.map do |date, group|
       cumulative_amount += group.sum(&:total_amount).to_f
       [date, cumulative_amount]
     end
@@ -149,7 +153,8 @@ module DealsHelper
   def deal_activity_efficiency(deal)
     # Average days to complete each activity template
     # Since we don't have "completed_at" easily on DealActivity, we'll use updated_at if status is Complete
-    activities = deal.deal_activities.unscoped.where(status: 'Complete').joins(:deal_investor).merge(DealInvestor.not_declined)
+    # Use reorder(nil) instead of unscoped so the deal_id association constraint is preserved
+    activities = deal.deal_activities.reorder(nil).where(status: 'Complete').joins(:deal_investor).merge(DealInvestor.not_declined)
 
     # Group by title and average (updated_at - created_at)
     # This is a proxy for how long it took to complete
@@ -172,6 +177,7 @@ module DealsHelper
 
     pie_chart data, donut: true, id: "chart-deal-source", library: {
       plotOptions: {
+        series: { gridFilterType: 'source' },
         pie: {
           cursor: 'pointer',
           dataLabels: {
@@ -190,6 +196,7 @@ module DealsHelper
 
     pie_chart data, donut: true, id: "chart-deal-tier", library: {
       plotOptions: {
+        series: { gridFilterType: 'tier' },
         pie: {
           cursor: 'pointer',
           dataLabels: {
@@ -208,6 +215,7 @@ module DealsHelper
 
     pie_chart data, donut: true, id: "chart-deal-lead", library: {
       plotOptions: {
+        series: { gridFilterType: 'deal_lead' },
         pie: {
           cursor: 'pointer',
           dataLabels: {
@@ -242,7 +250,8 @@ module DealsHelper
     column_chart bins, id: "chart-deal-days", library: {
       plotOptions: {
         series: {
-          cursor: 'pointer'
+          cursor: 'pointer',
+          gridFilterType: 'days_in_stage'
         }
       },
       **chart_theme_color
@@ -335,10 +344,25 @@ module DealsHelper
     }
   end
 
-  def kanban_funnel_data(deal)
-    deal.kanban_board.kanban_columns.includes(:kanban_cards).map do |column|
-      [column.name, column.kanban_cards.size]
-    end
+  def deal_activities_funnel_data(deal)
+    # Get template steps in sequence order — these define stage names and ordering
+    templates = deal.deal_activities.where(deal_investor_id: nil).order(:sequence)
+    return [] if templates.empty?
+
+    # Count completed activities per step title across non-declined investors
+    completed_counts = deal.deal_activities
+                           .reorder(nil)
+                           .where.not(deal_investor_id: nil)
+                           .where(status: "complete")
+                           .joins(:deal_investor)
+                           .merge(DealInvestor.not_declined)
+                           .group(:title)
+                           .count
+
+    data = templates.map { |t| [t.title, completed_counts[t.title] || 0] }
+
+    # Highcharts funnel divides each value by the total; all-zero data causes NaN and a blank render
+    data.sum(&:last) > 0 ? data : []
   end
 
   def get_grouped_access_rights(access_rights)

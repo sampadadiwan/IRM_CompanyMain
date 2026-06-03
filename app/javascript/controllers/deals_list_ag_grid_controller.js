@@ -779,7 +779,11 @@ export default class extends BaseAgGrid {
     this.initTooltips();
     this.setupActivityMenu();
     this.updateFilterVisuals();
-    setTimeout(() => this.bindChartEvents(), 1000);
+
+    // Listen for chart point clicks dispatched by charts_handler.js via the global
+    // Highcharts event. No timing/polling needed — the handler fires on any click.
+    this._chartFilterHandler = (e) => this.filterByChart(e.detail.type, e.detail.value);
+    document.addEventListener('chart:grid-filter', this._chartFilterHandler);
 
     // Wire the Bulk Advance Activity confirm button directly, since the modal
     // may be outside the Stimulus controller's DOM scope when Bootstrap moves it.
@@ -799,53 +803,9 @@ export default class extends BaseAgGrid {
     }
   }
 
-  bindChartEvents() {
-    console.log("Binding chart events...");
-    const chartConfigs = [
-      { id: 'chart-deal-status', type: 'status' },
-      { id: 'chart-deal-funnel', type: 'status' },
-      { id: 'chart-deal-source', type: 'source' },
-      { id: 'chart-deal-days', type: 'days_in_stage' },
-      { id: 'chart-deal-activities', type: 'activity_status' }
-    ];
-
-    let allBound = true;
-    chartConfigs.forEach(config => {
-      const chart = Chartkick.charts[config.id];
-      if (chart) {
-        try {
-          const highchart = chart.getChartObject();
-          if (highchart && highchart.series && highchart.series.length > 0) {
-            highchart.series.forEach(series => {
-              series.update({
-                point: {
-                  events: {
-                    click: (event) => {
-                      const value = event.point.name || event.point.category;
-                      this.filterByChart(config.type, value);
-                    }
-                  }
-                }
-              }, true); // Redraw
-            });
-            console.log(`Successfully bound events to ${config.id}`);
-          } else {
-            allBound = false;
-          }
-        } catch (e) {
-          console.error(`Error binding events to ${config.id}:`, e);
-          allBound = false;
-        }
-      } else {
-        allBound = false;
-        console.warn(`Chart ${config.id} not found in Chartkick.charts`);
-      }
-    });
-
-    // If not all charts were bound, try again once in 2 seconds
-    if (!allBound && !this.retryBinding) {
-      this.retryBinding = true;
-      setTimeout(() => this.bindChartEvents(), 2000);
+  disconnect() {
+    if (this._chartFilterHandler) {
+      document.removeEventListener('chart:grid-filter', this._chartFilterHandler);
     }
   }
 
@@ -964,47 +924,42 @@ export default class extends BaseAgGrid {
     console.log("Filtering by chart:", chartType, value);
     if (!this.gridOptions.api) return;
 
-    // Clear existing filters before applying new ones from chart click
     let filterModel = {};
 
     if (chartType === 'status') {
-      filterModel.status = {
-        filterType: 'set',
-        values: [value]
-      };
+      filterModel.status = { filterType: 'set', values: [value] };
+
     } else if (chartType === 'source') {
       const filterValue = (value === 'Unknown' || value === 'null' || value === '') ? null : value;
-      filterModel.source = {
-        filterType: 'set',
-        values: [filterValue]
-      };
-      // Fallback for text filter if set filter isn't active
-      if (!this.gridOptions.api.getFilterInstance('source')) {
-        filterModel.source = {
-          filterType: 'text',
-          type: 'contains',
-          filter: value === 'Unknown' ? '' : value
-        };
-      }
+      filterModel.source = { filterType: 'set', values: [filterValue] };
+
+    } else if (chartType === 'deal_lead') {
+      const filterValue = (value === 'Unknown' || value === 'null' || value === '') ? null : value;
+      filterModel.deal_lead = { filterType: 'set', values: [filterValue] };
+
+    } else if (chartType === 'tier') {
+      const filterValue = (value === 'Unknown' || value === 'null' || value === '') ? null : value;
+      filterModel.tier = { filterType: 'set', values: [filterValue] };
+
     } else if (chartType === 'days_in_stage') {
-       if (value === '30+ days' || value === '15-30 days' || value === '8-14 days') {
-          this.filterStagnant();
-          return;
-       }
+      if (value === '0-7 days') {
+        // Recently active investors — clear all filters to show the full list
+        this.gridOptions.api.setFilterModel({});
+        this.updateFilterVisuals();
+        this.scrollToGrid();
+        return;
+      } else {
+        // 8-14, 15-30, 30+ days — show stagnant investors
+        this.filterStagnant();
+        return;
+      }
+
     } else if (chartType === 'activity_status') {
-       if (value === 'Complete' || value === 'Completed') {
-          filterModel.health_score = {
-            filterType: 'number',
-            type: 'equals',
-            filter: 100
-          };
-       } else if (value === 'Incomplete' || value === 'Pending') {
-          filterModel.health_score = {
-            filterType: 'number',
-            type: 'lessThan',
-            filter: 100
-          };
-       }
+      if (value === 'Complete') {
+        filterModel.health_score = { filterType: 'number', type: 'equals', filter: 100 };
+      } else if (value === 'Incomplete' || value === 'Skip') {
+        filterModel.health_score = { filterType: 'number', type: 'lessThan', filter: 100 };
+      }
     }
 
     this.gridOptions.api.setFilterModel(filterModel);

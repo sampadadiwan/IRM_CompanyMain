@@ -30,7 +30,7 @@
   </td>
   <td>
     <%= belongs_to_entity_id?(current_user, @deal_activity.entity_id) ?
-              link_to(@deal_activity.deal_name, deal_path(@deal_activity.deal, grid_view: true)) :
+              link_to(@deal_activity.deal_name, deal_path(@deal_activity.deal)) :
               @deal_activity.deal_name %>
   </td>
 </tr>

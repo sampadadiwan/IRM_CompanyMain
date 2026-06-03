@@ -8,13 +8,16 @@ export default class extends Controller {
   }
 
   connect() {
+    // Highcharts + funnel module are loaded via importmap in charts_handler.js,
+    // so window.Highcharts is always available by the time this controller connects.
     this.renderChart()
   }
 
   renderChart() {
-    const themeOptions = this.themeValue || {}
+    // Guard: if all-zero data slipped through, don't render a broken chart
+    const data = this.dataValue
+    if (!data || data.length === 0 || data.every(point => point[1] === 0)) return
 
-    // Modern color palette matching the theme
     const colors = ['#5D87FF', '#39B69A', '#FFAE1F', '#FA896B', '#00A5FF', '#7C8FAC', '#536BBD']
 
     Highcharts.chart(this.element, {
@@ -35,7 +38,7 @@ export default class extends Controller {
       },
       series: [{
         name: 'Investors',
-        data: this.dataValue,
+        data: data,
         center: ['40%', '50%'],
         width: '60%',
         neckWidth: '25%',
@@ -55,7 +58,7 @@ export default class extends Controller {
       }],
       tooltip: {
         headerFormat: '',
-        pointFormat: '<span style="color:{point.color}">\u25CF</span> <b>{point.name}</b>: {point.y} Investors',
+        pointFormat: '<span style="color:{point.color}">●</span> <b>{point.name}</b>: {point.y} Investors',
         backgroundColor: '#ffffff',
         borderColor: '#ebf1f6',
         borderRadius: 8,

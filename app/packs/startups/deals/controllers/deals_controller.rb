@@ -85,41 +85,22 @@ class DealsController < ApplicationController
   def show
     if params[:chart].present?
       render "deal_charts"
-    elsif params[:kanban].present?
-      respond_to do |format|
-        format.xlsx do
-          @activity_names = %w[Investor Status Primary Secondary Advisor] + DealActivity.templates(@deal)
-          response.headers[
-            'Content-Disposition'
-          ] = "attachment; filename=deal.xlsx"
-
-          render params[:grid_view].present? ? "grid_view" : "show"
-        end
-        format.html do
-          # make board the default view if deal has a board
-          if params[:grid_view].blank? && (params[:overview].present? || current_user.curr_role_investor?)
-            redirect_to overview_deal_path(@deal)
-          elsif params[:grid_view].blank? && @deal.kanban_board.present?
-            redirect_to board_path(@deal.kanban_board)
-          else
-            render "grid_view"
-          end
-        end
-      end
     else
       @investor_label = @deal.entity.is_fund? ? "Company" : "Investor"
-      @deal_investors = policy_scope(@deal.deal_investors).includes(:investor, :deal, :deal_activities, :entity)
-      @deal_investors = @deal_investors.not_declined if params[:all].blank?
-      @deal_investors = @deal_investors.order("deal_investors.investor_name asc")
       respond_to do |format|
-        format.html { render "list_view" }
+        format.html do
+          if params[:overview].present? || current_user.curr_role_investor?
+            redirect_to overview_deal_path(@deal)
+          else
+            render "list_view"
+          end
+        end
         format.xlsx do
           @activity_names = [@investor_label, "Tags", "Health", "Status", "Primary (#{@deal.currency})", "Secondary (#{@deal.currency})", "Pre Money (#{@deal.currency})"] + DealActivity.templates(@deal).map(&:title) + ["Advisor", "Deal Lead", "Source"]
           response.headers['Content-Disposition'] = "attachment; filename=#{@deal.name}_list.xlsx"
           render "list_view"
         end
       end
-
     end
   end
 
@@ -158,7 +139,7 @@ class DealsController < ApplicationController
     results = CreateDeal.call(deal: @deal)
     respond_to do |format|
       if results.success?
-        format.html { redirect_to deal_url(@deal, kanban: true), notice: "Deal was successfully created." }
+        format.html { redirect_to deal_url(@deal), notice: "Deal was successfully created." }
         format.json { render :show, status: :created, location: @deal }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -179,7 +160,7 @@ class DealsController < ApplicationController
           UserAlert.new(user_id: current_user.id, message: "Deal was successfully updated! Please refresh!", level: "success").broadcast
           render :update
         end
-        format.html { redirect_to deal_url(@deal, kanban: true), notice: "Deal was successfully updated." }
+        format.html { redirect_to deal_url(@deal), notice: "Deal was successfully updated." }
         format.json { render :show, status: :ok, location: @deal }
       else
         @success = false
@@ -206,13 +187,14 @@ class DealsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_deal
     @deal = Deal.find(params[:id])
-    deals_path = deal_investors_path if current_user.curr_role_investor?
+    # Use a distinct local variable name to avoid shadowing the deals_path route helper
+    deals_index_path = current_user.curr_role_investor? ? deal_investors_path : deals_path
     path = if current_user.curr_role_investor?
              overview_deal_path(@deal)
            else
              deal_path(@deal)
            end
-    @bread_crumbs = { Deals: deals_path, "#{@deal.name || '-'}": path }
+    @bread_crumbs = { Deals: deals_index_path, "#{@deal.name || '-'}": path }
     authorize(@deal)
   end
 

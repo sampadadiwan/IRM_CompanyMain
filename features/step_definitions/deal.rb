@@ -20,9 +20,8 @@ When('I create a new deal {string}') do |arg1|
   click_on("Save")
   sleep(3)
 
-  kanban_board = KanbanBoard.first
-  kanban_columns = kanban_board.kanban_columns.pluck(:name)
-  kanban_columns.each { |column| expect(page.text).to(include(column)) }
+  expect(page).to have_content("Deal was successfully created")
+  expect(page).to have_content(@deal.name)
 end
 
 When('I edit the deal {string}') do |arg1|
@@ -111,7 +110,7 @@ Then('an deal should be created') do
 end
 
 Then('I should see the deal details on the details page') do
-  visit(deal_path(@deal, grid_view: true))
+  visit(deal_path(@deal))
   find_by_id('deal_tab').click
   expect(page).to have_content(@deal.name)
   expect(page).to have_content(money_to_currency(@deal.amount))
@@ -126,9 +125,8 @@ Then('I should see the deal in all deals page') do
 end
 
 Given('I visit the deal details page') do
-  ##sleep(5)
   @deal.reload
-  visit(deal_path(@deal, grid_view: true))
+  visit(deal_path(@deal))
 end
 
 Then('I should be able to change currency units') do
@@ -558,23 +556,17 @@ Given('I add widgets for the deal') do
     { title: "Center Widget", placement: "Center" },
     { title: "Right Widget", placement: "Right" }
   ].each do |widget|
-    visit(deal_path(@deal))
-    find("a[href='#widgets-tab']").click
-    # "New Widget" opens in _blank — switch to the new window
-    new_window = window_opened_by { click_on("New Widget") }
-    within_window(new_window) do
-      expect(page).to have_field('ci_widget_title', wait: 10)
-      fill_in('ci_widget_title', with: widget[:title])
-      select(widget[:placement], from: "ci_widget_image_placement")
-      trix_editors = all("trix-editor", wait: 5)
-      trix_editors[0].set("#{widget[:title]} Intro")
-      trix_editors[1].set("#{widget[:title]} Details")
-      attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-      sleep(0.5)
-      click_on("Save")
-      expect(page).to have_content("successfully")
-    end
-    new_window.close
+    visit(new_ci_widget_path("ci_widget[owner_id]": @deal.id, "ci_widget[owner_type]": "Deal"))
+    expect(page).to have_field('ci_widget_title', wait: 10)
+    fill_in('ci_widget_title', with: widget[:title])
+    select(widget[:placement], from: "ci_widget_image_placement")
+    trix_editors = all("trix-editor", wait: 5)
+    trix_editors[0].set("#{widget[:title]} Intro")
+    trix_editors[1].set("#{widget[:title]} Details")
+    attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
+    sleep(0.5)
+    click_on("Save")
+    expect(page).to have_content("successfully")
   end
 end
 
@@ -619,17 +611,17 @@ end
 Given('I click on the Add Item and create a new Stakeholder {string} and save') do |arg|
   @inv = FactoryBot.build(:investor)
   key_values(@inv, arg)
-  first('#add_new_card').click
-  #sleep(0.25)
   puts "\n####Creating New Stakeholder - #{@inv.investor_name} with #{@inv.primary_email}####\n"
 
+  visit(deal_path(@deal))
+  find('a[href*="deal_investors/new"]').click
   click_on("New Stakeholder")
   fill_in('investor_investor_name', with: @inv.investor_name)
   select("LP", from: "investor_category")
   fill_in('investor_primary_email', with: @inv.primary_email)
   click_on("Save")
   sleep(3)
-  visit(current_url)
+  visit(deal_path(@deal))
 end
 
 Given('I click on the Add Item and select {string} Investor and save') do |investor_name|
@@ -640,12 +632,11 @@ Given('I click on the Add Item and select {string} Investor and save') do |inves
 end
 
 def select_investor_name_and_save(investor_name, tags)
-  first('#add_new_card').click
-  #sleep(1)
+  visit(deal_path(@deal))
+  find('a[href*="deal_investors/new"]').click
   select(investor_name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags) if tags.present?
-  #sleep(0.5)
   click_button('Save')
   sleep(2)
 end
