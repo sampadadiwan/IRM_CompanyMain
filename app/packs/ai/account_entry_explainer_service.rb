@@ -34,8 +34,12 @@ class AccountEntryExplainerService
     variables    = breakdown.select { |k, _| k.start_with?('@') && !k.include?(' ') }
     other        = breakdown.reject { |k, _| k.start_with?('@') && !k.include?(' ') }
     result_row   = other.max_by { |k, _| k.length }
-    steps        = other.reject { |k, _| k == result_row&.first }
-                        .sort_by { |k, _| k.length }  # simplest → complex
+    steps_raw    = other.reject { |k, _| k == result_row&.first }
+    # Multi-statement formulas (contain newlines/semicolons) are stored in formula
+    # order — preserve that order so the LLM sees steps as they build on each other.
+    # Single-expression formulas store sub-expressions deepest-first, so sort
+    # shortest→longest to present simplest building blocks first.
+    steps        = formula.to_s.match?(/[;\n]/) ? steps_raw.to_a : steps_raw.sort_by { |k, _| k.length }
     result_val   = result_row&.last
 
     var_lines    = variables.map { |k, v| "  #{k} = #{v}" }.join("\n")

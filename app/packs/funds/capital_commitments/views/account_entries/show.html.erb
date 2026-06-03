@@ -191,12 +191,13 @@
       if exp_breakdown
         variables     = exp_breakdown.select { |k, _| k.start_with?('@') && !k.include?(' ') }
         other_entries = exp_breakdown.reject { |k, _| k.start_with?('@') && !k.include?(' ') }
-        # The result row is the one matching the full formula (longest key).
         result_row    = other_entries.max_by { |k, _| k.length }
-        # Sort longest (most complex) first so the table reads top-to-bottom
-        # from the near-final expression down to the simplest building block.
-        steps         = other_entries.reject { |k, _| k == result_row&.first }
-                                     .sort_by { |k, _| -k.length }
+        steps_raw     = other_entries.reject { |k, _| k == result_row&.first }
+        # Multi-statement formulas are stored in formula order — preserve it so the
+        # table reads top-to-bottom as the formula was written.
+        # Single-expression formulas store sub-expressions deepest-first, so sort
+        # most-complex-first to show the near-final result at the top.
+        steps         = exp_formula.to_s.match?(/[;\n]/) ? steps_raw.to_a : steps_raw.sort_by { |k, _| -k.length }
         result_key, result_val = result_row || [nil, nil]
       end
     %>
@@ -223,10 +224,11 @@
       if ai_wt_data.is_a?(Hash) && ai_wt_data["steps"].is_a?(Array) && exp_breakdown
         meaning_by_expr = ai_wt_data["steps"].index_by { |s| s["expression"] }
                             .transform_values { |s| s["meaning"] }
-        calc_steps = exp_breakdown
+        wt_raw = exp_breakdown
           .reject { |k, _| k.start_with?('@') && !k.include?(' ') }
           .reject { |k, _| k == result_key }
-          .sort_by { |k, _| k.length }
+        wt_ordered = exp_formula.to_s.match?(/[;\n]/) ? wt_raw.to_a : wt_raw.sort_by { |k, _| k.length }
+        calc_steps = wt_ordered
           .map { |(key, val)| { "type" => "step", "expression" => key,
                                 "value" => fmt_val.call(val),
                                 "meaning" => meaning_by_expr[key].to_s } }
