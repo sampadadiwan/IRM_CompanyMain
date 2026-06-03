@@ -33,11 +33,12 @@ class AccountEntryExplainerService
 
     variables    = breakdown.select { |k, _| k.start_with?('@') && !k.include?(' ') }
     other        = breakdown.reject { |k, _| k.start_with?('@') && !k.include?(' ') }
-    result_row   = other.max_by { |k, _| k.length }
-    steps_raw    = other.reject { |k, _| k == result_row&.first }
-    # find_expressions uses post-order traversal so insertion order is already
-    # build-up order (leaves before composites) for all formula shapes.
-    steps        = steps_raw.to_a
+    # Last entry is the final result — post-order traversal inserts the outermost
+    # expression last. max_by-length broke when addend expansion added long
+    # intermediate keys (e.g. AccountEntry.total_amount(...)) longer than the result.
+    result_row   = other.to_a.last
+    steps_raw    = other.to_a[0..-2]
+    steps        = steps_raw
     result_val   = result_row&.last
 
     var_lines    = variables.map { |k, v| "  #{k} = #{truncate_for_llm(v)}" }.join("\n")

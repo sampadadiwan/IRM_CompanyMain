@@ -103,6 +103,27 @@ Feature: FundFormula parse_statement explanation breakdown
     Then the breakdown includes the key "investor_ids" with string value "7 investors: [1, 2, 3, 4, 5, 6, 7]"
 
 
+  # ─── Assignment RHS addend expansion ────────────────────────────────────────
+
+  Scenario: Assignment with summed addends exposes each component individually
+    # When the RHS of an assignment is an addition/subtraction chain (A + B + C),
+    # each direct addend is evaluated and shown before the rolled-up variable value.
+    # This is the "sum_of_all_fees = X.amount_cents + Y.amount_cents + Z" pattern
+    # where X, Y, Z are complex method calls never named as separate variables.
+    # Single-call assignments (cost_of_sold = method.amount_cents) are unchanged —
+    # only expanded when there are 2+ addends.
+    Given a multi-statement formula with bindings "base=1000000;rate1=5;rate2=3;rate3=2":
+      """
+      total_fees = @base * @rate1 / 100 + @base * @rate2 / 100 + @base * @rate3 / 100;
+      total_fees
+      """
+    When parse_statement is run on the formula
+    Then the breakdown includes the key "@base * @rate1 / 100" with numeric value 50000.0
+    And the breakdown includes the key "@base * @rate2 / 100" with numeric value 30000.0
+    And the breakdown includes the key "@base * @rate3 / 100" with numeric value 20000.0
+    And the breakdown includes the key "total_fees" with numeric value 100000.0
+
+
   # ─── Noise filtering ────────────────────────────────────────────────────────
 
   Scenario: Bare string literal arguments are excluded from the breakdown
@@ -122,6 +143,42 @@ Feature: FundFormula parse_statement explanation breakdown
     When parse_statement is run on the formula
     Then the breakdown includes the key "@base_cents.is_a?(Integer)"
     And the breakdown does not include the key "Integer"
+
+
+  # ─── Result-row identification ──────────────────────────────────────────────
+
+  Scenario: Instance-variable context always appears in the breakdown
+    # @ivars like @start_date and @end_date were previously filtered into a
+    # now-removed "Input Parameters" table, so removing that table made them
+    # invisible. parse_statement always captures @ivars — the display layer
+    # must not filter them out. This scenario asserts they ARE in the breakdown.
+    Given a multi-statement formula with bindings "base=100000;rate=5":
+      """
+      cost = @base * @rate / 100;
+      cost
+      """
+    When parse_statement is run on the formula
+    Then the breakdown includes the key "@base" with numeric value 100000.0
+    And the breakdown includes the key "@rate" with numeric value 5.0
+    And the breakdown includes the key "cost" with numeric value 5000.0
+
+  Scenario: Long addend key is not mistaken for the final result
+    # reparse_and_save previously used max_by-length to find the result key.
+    # Once addend expansion added long intermediate expressions (e.g.
+    # AccountEntry.total_amount(...) at 154 chars) that are longer than the
+    # actual final expression ("total * x / y" at ~15 chars), the wrong key was
+    # pinned. The fix uses the LAST key — post-order traversal guarantees the
+    # outermost expression is always inserted last.
+    Given a multi-statement formula with bindings "base=1000000;rate=10":
+      """
+      total_fees = @base * @rate / 100 + @base * @rate / 200;
+      total_fees * 2
+      """
+    When parse_statement is run on the formula
+    Then the last breakdown key is "total_fees * 2"
+    And the breakdown includes the key "@base * @rate / 100" with numeric value 100000.0
+    And the breakdown includes the key "@base * @rate / 200" with numeric value 50000.0
+    And the breakdown includes the key "total_fees * 2" with numeric value 300000.0
 
 
   # ─── reparse_and_save ───────────────────────────────────────────────────────

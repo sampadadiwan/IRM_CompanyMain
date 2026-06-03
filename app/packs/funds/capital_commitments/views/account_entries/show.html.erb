@@ -185,18 +185,13 @@
         end
       end
 
-      # Split breakdown into @variables vs sub-expressions vs the final result.
-      # The final result key equals the formula string (possibly with spacing differences),
-      # so we treat the longest key as the "result" entry.
+      # The final result is the LAST entry — post-order traversal guarantees the
+      # most complex (final) expression is inserted last. Using max-by-length
+      # was wrong once addend expansion introduced long intermediate keys
+      # (e.g. AccountEntry.total_amount(...)) that are longer than the actual result.
       if exp_breakdown
-        variables     = exp_breakdown.select { |k, _| k.start_with?('@') && !k.include?(' ') }
-        other_entries = exp_breakdown.reject { |k, _| k.start_with?('@') && !k.include?(' ') }
-        result_row    = other_entries.max_by { |k, _| k.length }
-        steps_raw     = other_entries.reject { |k, _| k == result_row&.first }
-        # find_expressions uses post-order traversal, so simpler/leaf expressions are
-        # always inserted before the composites that depend on them — insertion order
-        # is already the correct build-up order for both single and multi-statement.
-        steps         = steps_raw.to_a
+        result_row = exp_breakdown.to_a.last
+        steps      = exp_breakdown.to_a[0..-2]
         result_key, result_val = result_row || [nil, nil]
       end
     %>

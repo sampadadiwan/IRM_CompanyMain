@@ -198,6 +198,28 @@ class FundFormula < ApplicationRecord
         when :lvasgn, :ivasgn
           exp = node.type == :lvasgn ? node.children[0].to_s : "@#{node.children[0]}"
           next if exp.blank? || exp.include?("SkipRule")
+          # When the RHS is a chain of additions/subtractions (e.g. A + B + C),
+          # expose each direct addend before collapsing to the variable name.
+          # This makes "sum_of_all_fees = X + Y + Z" show all three components
+          # rather than just the rolled-up total.
+          rhs = node.children[1]
+          if rhs.is_a?(Parser::AST::Node)
+            addends = []
+            collect_addends(rhs, addends)
+            if addends.size > 1
+              addends.each do |addend_exp|
+                next if addend_exp.blank? || addend_exp.include?("SkipRule")
+                begin
+                  val = eval(addend_exp, binding)
+                  val = summarise_array(val, addend_exp) if val.is_a?(Array)
+                  val = summarise_record(val)            if val.is_a?(ApplicationRecord)
+                  expression_map[addend_exp] = val unless skip_statement(addend_exp, val)
+                rescue
+                  # silently skip — addend may reference unavailable context
+                end
+              end
+            end
+          end
           begin
             val = eval(exp, binding)
             val = summarise_array(val, exp)  if val.is_a?(Array)
@@ -325,7 +347,10 @@ class FundFormula < ApplicationRecord
     # rubocop:enable Security/Eval
 
     breakdown  = parse_statement(bdg, external_formula: formula)   # Step 2: extract values
-    result_key = breakdown.max_by { |k, _| k.length }&.first
+    # The final result is the LAST entry — post-order traversal inserts the most
+    # complex (outermost) expression last. max_by length was unreliable once addend
+    # expansion introduced long intermediate keys longer than the actual result.
+    result_key = breakdown.keys.last
     breakdown[result_key] = account_entry.amount_cents.to_s if result_key  # pin to stored value
 
     account_entry.explanation[2] = breakdown.to_json
@@ -426,6 +451,22 @@ class FundFormula < ApplicationRecord
             else                           "items"
             end
     "#{arr.length} #{label}: #{arr.inspect}"
+  end
+
+  # Walks the left-spine of a +/- addition tree and collects each direct operand's
+  # source string.  For "A + B + C" (AST: (send (send A :+ B) :+ C)) this yields
+  # [A_src, B_src, C_src] — the three addends in left-to-right formula order.
+  # Non-additive nodes (method calls, variables, literals) are leaf-captured as-is.
+  # Only called when the collected list has >1 entry, so single-call RHS values
+  # (e.g. cost_of_sold = some_method.amount_cents) are never expanded.
+  def collect_addends(node, addends)
+    if node.type == :send && %i[+ -].include?(node.children[1])
+      collect_addends(node.children[0], addends)
+      right = node.children[2]
+      addends << right.loc.expression.source if right.is_a?(Parser::AST::Node)
+    else
+      addends << node.loc.expression.source
+    end
   end
 
   def find_expressions(node, expressions)

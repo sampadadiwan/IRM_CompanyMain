@@ -159,6 +159,13 @@ Then("the breakdown does not include the key {string}") do |key|
   expect(@breakdown).not_to have_key(key), "Expected breakdown NOT to include key #{key.inspect}"
 end
 
+Then("the last breakdown key is {string}") do |key|
+  actual_last = @breakdown.keys.last
+  expect(actual_last).to eq(key),
+    "Expected last breakdown key #{key.inspect}, got #{actual_last.inspect}. " \
+    "All keys: #{@breakdown.keys.inspect}"
+end
+
 Then("the breakdown does not include the key {string} with string value {string}") do |key, value|
   # Either the key is absent, OR it has a different value (the filter worked)
   absent_or_different = !@breakdown.key?(key) || @breakdown[key].to_s != value
