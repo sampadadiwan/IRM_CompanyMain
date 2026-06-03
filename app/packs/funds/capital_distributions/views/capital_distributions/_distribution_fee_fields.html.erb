@@ -33,7 +33,6 @@
   </div>
 
   <div class='row collapse'>
-
     <div class="form-group col">
       <%= f.label :entry_type %>
       <%= f.text_field :entry_type, class: "form-control" %>
@@ -47,6 +46,13 @@
     <div class="form-group col">
       <%= f.label :parent_ids, "Parent" %>
       <%= f.text_field :parent_ids, class: "form-control"%>
+    </div>
+  </div>
+
+  <div class='row collapse'>
+    <div class="form-group col">
+      <%= f.label :audit_name %>
+      <%= f.text_field :audit_name, class: "form-control" %>
     </div>
     <div class="form-group col">
       <%= f.label :cumulative %>

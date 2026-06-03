@@ -1,6 +1,7 @@
 class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassLength
   include CurrencyHelper
   include Memoized
+  include DocGeneratorHelper
 
   DIST_CASH_SQL = "gross_payable_cents - reinvestment_with_fees_cents".freeze
   DUE_AMOUNT_SQL = "capital_remittances.call_amount_cents + capital_remittances.other_fee_cents".freeze
@@ -24,19 +25,60 @@ class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassL
   end
 
   def method_missing(method_name, *args, &)
-    if method_name.to_s.starts_with?("money_")
-      # please refer to the comment in the TemplateDecorator for core  working
-      # In  cases where the resultant attribute is not a Money object but a numeric value, we convert it to Money using the currency of the fund before formatting it.
+    case method_name.to_s
+    when /^money_/
+      # please refer to the comment in the TemplateDecorator for core working
+      # In cases where the resultant attribute is not a Money object but a numeric value, we convert it to Money using the currency of the fund before formatting it.
       # This is to handle cases where we might be summing up cents values directly from the database which would return a numeric value instead of a Money object.
       attr_name = method_name.to_s.gsub("money_", "")
-
       res = send(attr_name)
+
       res = Money.new(res, @currency) if !res.is_a?(Money) && res.is_a?(Numeric)
-      money_to_currency(res)
+
+      res.is_a?(Money) ? money_to_currency(res) : res
+    when /^fundae/
+      fetch_account_entry(method_name, :fund_entries)
+    when /^kycae/
+      fetch_account_entry(method_name, :kyc_commitments)
+    when /^folioae/
+      fetch_account_entry(method_name, :folio_commitment)
+    # when /^aes/
+    #   fetch_folio_entries_breakdown(method_name, :aes_breakdown)
     else
-      # for any other method, we just call super to handle it as usual
       super
     end
+  end
+
+  private
+
+  def fetch_account_entry(method_name, scope_type)
+    # Handles fundae_, kycae_, and folioae_ prefixes for account entry lookups
+    # Format: prefix_name[_enttype_type][cumulative] or prefixcumulative_name[_enttype_type]
+    return "" unless object.respond_to?(:account_entries)
+
+    original_method_name = method_name.to_s
+    cumulative = extract_cumulative_flag(original_method_name, scope_type)
+    method_name_str = extract_method_name(original_method_name, scope_type, cumulative)
+    method_name_str, entry_type = method_name_str.split("_enttype_")
+
+    normalized_pattern = normalize_method_name(method_name_str)
+    account_entries = build_account_entries_scope(
+      object.account_entries,
+      scope_type,
+      cumulative,
+      entry_type,
+      normalized_pattern,
+      @as_of_date,
+      @capital_commitment,
+      kyc_commitments
+    )
+
+    return "" if account_entries.blank?
+
+    Money.new(
+      account_entries.where(reporting_date: account_entries.maximum(:reporting_date)).sum(:amount_cents),
+      @currency
+    )
   end
 
   def respond_to_missing?(method_name, include_private = false)

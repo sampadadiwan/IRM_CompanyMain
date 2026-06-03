@@ -1269,6 +1269,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
   end
 
   create_table "distribution_fees", force: :cascade do |t|
+    t.string "audit_name", limit: 65
     t.bigint "capital_distribution_id", null: false
     t.datetime "created_at", null: false
     t.boolean "cumulative", default: false, null: false

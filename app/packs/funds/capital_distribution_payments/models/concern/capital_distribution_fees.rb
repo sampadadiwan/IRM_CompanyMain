@@ -44,9 +44,10 @@ module CapitalDistributionFees
       # Sum the amount for the fee for the commitment account_entries
       ae_cents = cd_account_entries.sum(:amount_cents)
       # Get the audit trail to display of the account_entries for the fee
-      ae_audit = cd_account_entries.map { |a| [a.name, a.reporting_date, a.amount_cents, distribution_fee.fee_type] }
+      final_name = distribution_fee.audit_name.presence || distribution_fee.name
+      ae_audit = cd_account_entries.map { |a| [final_name, a.reporting_date, a.amount_cents, distribution_fee.fee_type] }
 
-      Rails.logger.debug { "Fees for #{distribution_fee.name} is #{ae_cents} #{ae_audit} for capital_distribution_payment: #{id}" }
+      Rails.logger.debug { "Fees for name - #{distribution_fee.name}; audit_name - #{distribution_fee.audit_name} is #{ae_cents} #{ae_audit} for capital_distribution_payment: #{id}" }
 
       next if ae_audit.blank?
 
@@ -88,7 +89,7 @@ module CapitalDistributionFees
         Rails.logger.debug { "Unknown fee type: #{distribution_fee.fee_type}, not adding to income_with_fees_cents or cost_of_investment_with_fees_cents" }
       end
 
-      json_fields[FormCustomField.to_name(distribution_fee.name)] = currency_from_cents(ae_cents, fund.currency, {})
+      json_fields[FormCustomField.to_name(final_name)] = currency_from_cents(ae_cents, fund.currency, {})
       json_fields["ae_audit"] << ae_audit if ae_audit.present?
     end
 

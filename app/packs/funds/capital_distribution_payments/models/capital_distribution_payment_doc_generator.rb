@@ -1,6 +1,7 @@
 class CapitalDistributionPaymentDocGenerator
   include CurrencyHelper
   include DocumentGeneratorBase
+  include DocGeneratorHelper
 
   attr_accessor :working_dir, :fund_doc_template_name
 
@@ -66,6 +67,7 @@ class CapitalDistributionPaymentDocGenerator
     context = base_context(capital_distribution_payment, fund_as_of, options)
     context.merge!(distribution_context(capital_distribution_payment, fund_as_of, fund_as_of_commitments_lp, fund_as_of_commitments_gp))
     context.merge!(amounts_context(fund_as_of))
+    context.merge!(account_entries_breakdown_context(capital_distribution_payment, template_path))
 
     convert(template, context, generated_file_name(capital_distribution_payment), template_name: @fund_doc_template_name)
   end
@@ -208,6 +210,51 @@ class CapitalDistributionPaymentDocGenerator
     )
 
     context.store :kyc_amounts, TemplateDecorator.decorate(kyc_amounts)
+  end
+
+  # Build account entries breakdown context for template substitution
+  # Extracts all merge fields starting with 'aes_' or 'aescumulative_' from the template,
+  # fetches detailed account entry breakdowns for KYC-level commitments, and decorates them.
+  # Each breakdown field becomes a key in the returned context hash.
+  #
+  # @param capital_distribution_payment [CapitalDistributionPayment] The distribution payment record
+  # @param template_path [String] Path to the .docx template file
+  # @return [Hash<Symbol, Array<TemplateDecorator>>] Hash where:
+  #   - Keys: Field names as symbols (e.g., :aes_revenue, :aescumulative_gains)
+  #   - Values: Decorated collections of breakdown items. Each item is an OpenStruct with:
+  #     - name [String] Display name from distribution fees or account entry name
+  #     - reporting_date [Date] When the entry was recorded
+  #     - folio_id [String] Folio identifier
+  #     - amount [Money] The amount in the fund's currency
+  #     - entry_type [String] The type of account entry (e.g., fee type)
+  #
+  # Returns an empty hash if no aes_ fields are found in the template.
+  def account_entries_breakdown_context(capital_distribution_payment, template_path)
+    context = {}
+    aes_fields = extract_merge_fields(template_path, [/^aes_/, /^aescumulative_/])
+
+    return context if aes_fields.blank?
+
+    capital_commitment = capital_distribution_payment.capital_commitment
+    currency = capital_distribution_payment.fund.currency
+    kyc_commitments = capital_commitment.investor_kyc.capital_commitments.where(fund_id: capital_distribution_payment.fund_id)
+
+    aes_fields.each do |field|
+      breakdown = fetch_account_entries_breakdown(
+        field,
+        capital_distribution_payment.fund.account_entries,
+        :aes_breakdown,
+        capital_distribution_payment.payment_date,
+        currency,
+        capital_commitment,
+        kyc_commitments,
+        capital_distribution_payment.capital_distribution
+      )
+
+      context[field.to_sym] = breakdown.present? ? TemplateDecorator.decorate_collection(breakdown) : []
+    end
+
+    context
   end
 
   # Builds the temp working directory path

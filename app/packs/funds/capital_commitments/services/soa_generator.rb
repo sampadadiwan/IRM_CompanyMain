@@ -5,7 +5,7 @@ class SoaGenerator
   CommittedAmounts = Data.define(:before_start_date, :before_end_date, :between_dates)
   RemittanceAmounts = Data.define(:committed_amount, :call_amount, :collected_amount, :uncalled_amount)
   RemittancePaymentsAmounts = Data.define(:amount, :folio_amount)
-  DistributionAmounts = Data.define(:amount)
+  DistributionAmounts = Data.define(:amount, :income, :income_with_fees, :cost_of_investment, :cost_of_investment_with_fees, :reinvestment, :reinvestment_with_fees, :net_payable, :gross_payable)
   # transfer_* fields are only present for the soa fund_units context, not the kyc variant
   SoaFundUnits = Data.define(:current, :before_end_date, :between_dates,
                              :transfer_in_amount, :transfer_out_amount, :transfer_amount)
@@ -275,7 +275,25 @@ class SoaGenerator
 
   def distribution_amounts(capital_distribution_payments, currency)
     amount_cents = capital_distribution_payments.sum(:net_payable_cents)
-    DistributionAmounts.new(amount: Money.new(amount_cents, currency))
+    income_cents = capital_distribution_payments.sum(:income_cents)
+    income_with_fees_cents = capital_distribution_payments.sum(:income_with_fees_cents)
+    cost_of_investment_cents = capital_distribution_payments.sum(:cost_of_investment_cents)
+    cost_of_investment_with_fees_cents = capital_distribution_payments.sum(:cost_of_investment_with_fees_cents)
+    reinvestment_cents = capital_distribution_payments.sum(:reinvestment_cents)
+    reinvestment_with_fees_cents = capital_distribution_payments.sum(:reinvestment_with_fees_cents)
+    gross_payable_cents = capital_distribution_payments.sum(:gross_payable_cents)
+
+    DistributionAmounts.new(
+      amount: Money.new(amount_cents, currency),
+      income: Money.new(income_cents, currency),
+      income_with_fees: Money.new(income_with_fees_cents, currency),
+      cost_of_investment: Money.new(cost_of_investment_cents, currency),
+      cost_of_investment_with_fees: Money.new(cost_of_investment_with_fees_cents, currency),
+      reinvestment: Money.new(reinvestment_cents, currency),
+      reinvestment_with_fees: Money.new(reinvestment_with_fees_cents, currency),
+      net_payable: Money.new(amount_cents, currency),
+      gross_payable: Money.new(gross_payable_cents, currency)
+    )
   end
 
   def fund_units(capital_commitment, start_date, end_date)

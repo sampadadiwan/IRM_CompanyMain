@@ -3,7 +3,7 @@ class FundAsOf
 
   attr_reader :fund, :as_of_date
 
-  DELEGATED_METHODS = %i[id json_fields name currency].freeze
+  DELEGATED_METHODS = %i[id json_fields name currency tracking_currency].freeze
   # Initialize with a fund and the as_of_date
   # @param fund [Fund] The fund to represent
   # @param as_of_date [Date] The date to represent the fund as of
@@ -57,6 +57,10 @@ class FundAsOf
     valuations.order(valuation_date: :desc).first
   end
   memoize :latest_valuation
+
+  def account_entries
+    fund.account_entries.where(reporting_date: ..as_of_date)
+  end
 
   # Delegate filtered methods to the fund
   def method_missing(method, *, &)

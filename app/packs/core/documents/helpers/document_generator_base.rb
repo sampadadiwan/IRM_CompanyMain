@@ -433,4 +433,88 @@ module DocumentGeneratorBase # rubocop:disable Metrics/ModuleLength
         .gsub('"', "&quot;")
         .gsub("'", "&apos;")
   end
+
+  # Extract mail merge fields from a Word template
+  # @param template_path [String] Path to the .docx file
+  # @param filter_pattern [String, Regexp, Array, nil] Optional regex, string, or array of patterns to filter field names
+  # @return [Array<String>] List of mail merge field names
+  def extract_merge_fields(template_path, filter_pattern = nil)
+    require "zip"
+    require "nokogiri"
+
+    merge_fields = []
+
+    begin
+      Zip::File.open(template_path) do |zip|
+        # Read document.xml from the .docx (which is a ZIP archive)
+        if zip.find_entry("word/document.xml")
+          doc_xml = zip.read("word/document.xml")
+          doc = Nokogiri::XML(doc_xml)
+
+          # Word uses namespaces; define the namespace properly
+          ns = { "w" => "http://schemas.openxmlformats.org/wordprocessingml/2006/main" }
+
+          # Find all instrText elements (Field Instructions in Word)
+          # They contain text like: MERGEFIELD field_name \* MERGEFORMAT
+          doc.xpath("//w:instrText", ns).each do |instr_node|
+            instr_text = instr_node.text.to_s.strip
+
+            # Check if this is a MERGEFIELD instruction
+            next unless instr_text.include?("MERGEFIELD")
+
+            # Extract the field name (between MERGEFIELD and the next space or backslash)
+            match = instr_text.match(/MERGEFIELD\s+([^\s\\]+)/i)
+            field_name = match[1] if match
+
+            next unless field_name
+
+            merge_fields << field_name if matches_filter_pattern?(field_name, filter_pattern)
+          end
+        end
+      end
+    rescue StandardError => e
+      Rails.logger.error { "Error extracting merge fields from #{template_path}: #{e.message}" }
+      return []
+    end
+
+    merge_fields.map do |field|
+      field.to_s.strip.split(":").first
+    end.uniq
+  end
+
+  private
+
+  def matches_filter_pattern?(field_name, filter_pattern)
+    return true if filter_pattern.nil?
+
+    patterns = filter_pattern.is_a?(Array) ? filter_pattern : [filter_pattern]
+
+    patterns.any? do |pattern|
+      case pattern
+      when Regexp
+        field_name.match?(pattern)
+      when String
+        field_name.include?(pattern)
+      else
+        false
+      end
+    end
+  end
+
+  # Check if template has any merge fields containing a specific pattern
+  # @param template_path [String] Path to the .docx file
+  # @param pattern [String] Pattern to search for (e.g., 'aes_')
+  # @return [Boolean] True if template contains matching fields
+  def template_has_merge_field_pattern?(template_path, pattern)
+    fields = extract_merge_fields(template_path, pattern)
+    fields.any?
+  end
+
+  # Get all merge fields containing a specific pattern
+  # @param template_path [String] Path to the .docx file
+  # @param pattern [String] Pattern to search for (e.g., 'aes_')
+  # @return [Array<String>] List of matching field names
+  def merge_fields_with_pattern(template_path, pattern)
+    extract_merge_fields(template_path, pattern)
+  end
 end
