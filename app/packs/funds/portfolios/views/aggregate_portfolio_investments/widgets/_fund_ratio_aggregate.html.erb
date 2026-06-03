@@ -40,11 +40,10 @@
   # Display options
   show_chart     = args[:show_chart].nil? ? (args[:chart].nil? ? true : args[:chart].to_s != "false") : args[:show_chart].to_s != "false"
   show_table     = args[:show_table].nil? ? (args[:list].nil? ? true : args[:list].to_s != "false") : args[:show_table].to_s != "false"
-  condensed      = args[:condensed].to_s == "true"
   hide_fund_name = args[:hide_fund_name].to_s == "true"
   show_y_axis    = args[:show_y_axis].nil? ? true : args[:show_y_axis].to_s != "false"
   decimals       = (args[:decimals] || 2).to_i
-  chart_colors   = args[:chart_colors] || ['#2ecc71', '#e67e22', '#3498db', '#9b59b6']
+  chart_colors   = args[:positive_colors] || ['#2ecc71', '#e67e22', '#3498db', '#9b59b6']
   negative_colors= args[:negative_colors] || ['orange', 'red']
   latest         = args[:latest].to_s == "false" ? false : true
 
@@ -86,10 +85,8 @@
                           parse_ratio_names.call(display_mode == "per_company" ? args[:ratio_names] : nil) ||
                           ["IRR", "MOIC", "Value To Cost"]
 
-  # Scenario/scenario filtering forwarded to the helper
-  scenario_filter  = args[:scenario]
-  scenarios_filter = args[:scenarios]
-  scenario_list    = scenarios_filter.present? ? scenarios_filter.split(",").map(&:strip) : nil
+  #
+  scenario_list    = nil
   show_legend      = args[:show_legend].nil? ? scenario_list.present? : args[:show_legend].to_s != "false"
 
   anchor_fund = @funds&.first || (fund_ids.first ? Fund.find_by(id: fund_ids.first) : nil)
@@ -104,13 +101,14 @@
   end
 
   # ── Helper: build ratios_by_name hash from an AR relation ──────────────────
-  build_ratios_by_name = ->(ratios_rel, rnames, use_agg_label: false) do
+  build_ratios_by_name = ->(ratios_rel, rnames, use_agg_label: false, fund_id_to_name: {}) do
     rnames.each_with_object({}) do |ratio_name, h|
       scoped = ratios_rel.where(name: ratio_name)
       h[ratio_name] = if scenario_list.present?
         scenario_list.map { |sc| [sc, scoped.where(scenario: sc).first&.value.to_f.round(decimals)] }
       elsif use_agg_label
-        scoped.includes(:fund_ratio_run).map do |fr|
+        all_runs = scoped.includes(:fund_ratio_run).to_a
+        all_runs.map do |fr|
           label = if fr.owner&.name.present?
             fr.owner.name
           elsif fr.fund_ratio_run
@@ -118,7 +116,12 @@
             sectors_s = Array(run.sectors).reject(&:blank?).join(", ")
             tags_s    = run.portfolio_companies_tags.to_s.split(",").map(&:strip).reject(&:blank?).join(", ")
             parts     = [sectors_s.presence, tags_s.presence].compact
-            parts.any? ? parts.join(" > ") : agg_owner_label
+            if parts.any?
+              parts.join(" > ")
+            else
+              fund_names = Array(run.fund_ids).map { |fid| fund_id_to_name[fid] }.compact.join(", ")
+              fund_names.presence || agg_owner_label
+            end
           else
             agg_owner_label
           end
@@ -129,6 +132,10 @@
       end
     end
   end
+
+  # Preload fund_id_to_name once for all sections to avoid N+1 queries
+  all_fund_ids_for_agg = []
+  fund_id_to_name = {}
   tag_list_csv = Array(uri_params[:tag_list]).join(",")
 
   # template_names — optional list of FundRatioRunTemplate names to restrict the
@@ -137,6 +144,8 @@
   template_names = args[:template_names].present? ? args[:template_names].split(",").map(&:strip) : nil
   template_ids   = if template_names.present?
     FundRatioRunTemplate.where(entity_id: current_user.entity_id, name: template_names).pluck(:id)
+  else
+    []
   end
 
   # ── Helper: render a ratio section (chart + table cards) ───────────────────
@@ -160,6 +169,12 @@
       scenarios: scenarios_filter,
       template_ids: template_ids
     )
+
+    # Preload fund names for aggregate section to avoid N+1 queries
+    if aggregate_ratios.present?
+      all_fund_ids_for_agg = aggregate_ratios.flat_map { |fr| Array(fr.fund_ratio_run&.fund_ids) || [] }.uniq
+      fund_id_to_name = Fund.where(id: all_fund_ids_for_agg).pluck(:id, :name).to_h
+    end
   %>
 
   <% if aggregate_ratios.nil? || aggregate_ratios.empty? %>
@@ -177,8 +192,10 @@
     </div>
   <% else %>
     <%
-      agg_ratios_by_name = build_ratios_by_name.call(aggregate_ratios, aggregate_ratio_names, use_agg_label: true)
+      agg_ratios_by_name = build_ratios_by_name.call(aggregate_ratios, aggregate_ratio_names, use_agg_label: true, fund_id_to_name: fund_id_to_name)
+
       agg_titles = section_titles.presence || Array.new(aggregate_ratio_names.size) { |i| aggregate_ratio_names[i] }
+
     %>
     <% if display_mode == "both" %>
       <h5 class="text-muted text-uppercase fw-semibold small mb-2 mt-3">Fund Aggregate Ratios</h5>
@@ -225,7 +242,12 @@
                         sectors_s = Array(run.sectors).reject(&:blank?).join(", ")
                         tags_s    = run.portfolio_companies_tags.to_s.split(",").map(&:strip).reject(&:blank?).join(", ")
                         parts     = [sectors_s.presence, tags_s.presence].compact
-                        parts.any? ? parts.join(" > ") : agg_owner_label
+                        if parts.any?
+                          parts.join(" > ")
+                        else
+                          fund_names = Array(run.fund_ids).map { |fid| fund_id_to_name[fid] }.compact.join(", ")
+                          fund_names.presence || agg_owner_label
+                        end
                       else
                         agg_owner_label
                       end

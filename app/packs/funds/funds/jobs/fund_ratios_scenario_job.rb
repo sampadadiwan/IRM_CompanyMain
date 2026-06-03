@@ -132,7 +132,7 @@ class FundRatiosScenarioJob < ApplicationJob
     # Owner must be a Fund so the portfolio dashboard widget (which filters
     # owner_type: ["Fund"]) can find these ratios.
     # Fall back to the first source fund if no anchor fund was set.
-    owner = @fund || @funds&.first
+    owner = @fund || nil
     # Idempotent: wipe only the ratios that belong to this specific run before recomputing,
     # so other runs with different fingerprints on the same date are not affected.
     FundRatio.where(computation_context: @run).delete_all

@@ -166,7 +166,17 @@ class FundsController < ApplicationController
 
       when "cross-fund", "cross-portfolio"
         # scenario param removed — FundRatioRun.name is now the fingerprint derived from inputs.
-        FundRatiosScenarioJob.perform_later(@fund.id, Date.local_parse(params[:end_date]), current_user.id, fund_ids: params[:fund_ids], portfolio_company_ids: params[:portfolio_company_ids], portfolio_companies_tags: params[:portfolio_companies_tags], portfolio_companies_sectors: params[:portfolio_companies_sectors], currency: params[:currency], type: params[:type])
+        FundRatiosScenarioJob.perform_later(
+            @fund.id,
+            Date.local_parse(params[:end_date]),
+            current_user.id,
+            fund_ids: params[:fund_ids],
+            portfolio_company_ids: params[:portfolio_company_ids],
+            portfolio_companies_tags: params[:portfolio_companies_tags],
+            portfolio_companies_sectors: params[:portfolio_companies_sectors],
+            currency: params[:currency],
+            type: params[:type]
+        )
       else
         # Invalid type, handle accordingly
         notice = "Invalid type specified for fund ratios generation."
