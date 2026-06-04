@@ -151,3 +151,9 @@ MoneyRails.configure do |config|
   # Example:
   config.raise_error_on_money_parsing = true
 end
+
+# amount_cents columns are decimal(30,8), so they can hold fractional cents.
+# Without infinite_precision, Money uses integer arithmetic and silently drops
+# anything beyond the currency's subunit — e.g. assigning amount = "51271821.9936141803"
+# would store 5127182199 cents instead of 5127182199.36141803, losing ~0.36 cents per entry.
+Money.default_infinite_precision = true
