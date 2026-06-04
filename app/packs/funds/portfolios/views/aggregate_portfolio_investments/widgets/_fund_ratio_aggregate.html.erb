@@ -114,7 +114,6 @@
           elsif fr.fund_ratio_run
             run = fr.fund_ratio_run
             template_name = run.template&.name.to_s
-            binding.pry
             template_name.presence || agg_owner_label
           else
             agg_owner_label
