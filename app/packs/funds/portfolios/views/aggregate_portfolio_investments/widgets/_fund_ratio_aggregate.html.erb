@@ -112,16 +112,10 @@
           label = if fr.owner&.name.present?
             fr.owner.name
           elsif fr.fund_ratio_run
-            run       = fr.fund_ratio_run
-            sectors_s = Array(run.sectors).reject(&:blank?).join(", ")
-            tags_s    = run.portfolio_companies_tags.to_s.split(",").map(&:strip).reject(&:blank?).join(", ")
-            parts     = [sectors_s.presence, tags_s.presence].compact
-            if parts.any?
-              parts.join(" > ")
-            else
-              fund_names = Array(run.fund_ids).map { |fid| fund_id_to_name[fid] }.compact.join(", ")
-              fund_names.presence || agg_owner_label
-            end
+            run = fr.fund_ratio_run
+            template_name = run.template&.name.to_s
+            binding.pry
+            template_name.presence || agg_owner_label
           else
             agg_owner_label
           end
@@ -239,15 +233,8 @@
                         fr.owner.name
                       elsif fr.fund_ratio_run
                         run       = fr.fund_ratio_run
-                        sectors_s = Array(run.sectors).reject(&:blank?).join(", ")
-                        tags_s    = run.portfolio_companies_tags.to_s.split(",").map(&:strip).reject(&:blank?).join(", ")
-                        parts     = [sectors_s.presence, tags_s.presence].compact
-                        if parts.any?
-                          parts.join(" > ")
-                        else
-                          fund_names = Array(run.fund_ids).map { |fid| fund_id_to_name[fid] }.compact.join(", ")
-                          fund_names.presence || agg_owner_label
-                        end
+                        template_name = run.template&.name.to_s
+                        template_name.presence || agg_owner_label
                       else
                         agg_owner_label
                       end

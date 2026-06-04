@@ -165,11 +165,10 @@ class FundRatioRun < ApplicationRecord
   def template
     FundRatioRunTemplate.where(entity_id: entity_id).find do |t|
       FundRatioRun.fingerprint(
-        fund_ids:              t.fund_ids,
+        fund_ids:              Array(t.fund_ids).map(&:to_i).reject(&:zero?),
         portfolio_company_ids: t.portfolio_company_ids,
         tags:                  t.portfolio_companies_tags,
-        sectors:               t.sectors,
-        type:                  t.run_type
+        sectors:               t.sectors
       ) == name
     end
   end
