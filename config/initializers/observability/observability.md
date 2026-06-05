@@ -27,4 +27,8 @@
   3. The security group disables access from outside, so need to enable the security groups access to the 3000 port to access Graphana
   4. Prometheus scrapes the Rails and Linux exporters (see promethus.prod.yml)
   5. There are RAils and Node dashboards in Graphana
-  6. Graphana is configured to send out emails using SMTP (AWS), but alerts are not yet setup
+  6. Graphana is configured to send out emails using SMTP (AWS)
+  7. Prometheus alerting rules are in alerts.yml — mount it alongside prometheus.prod.yml when starting the container
+     e.g. add: --volume my_app_dir/config/initializers/observability/alerts.yml:/etc/prometheus/alerts.yml
+  8. To receive alert notifications, configure Grafana Alerting (Alerting → Contact points) or deploy Alertmanager and
+     uncomment the alerting: block in prometheus.prod.yml pointing to it
