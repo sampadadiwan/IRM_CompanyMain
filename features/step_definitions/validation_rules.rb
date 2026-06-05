@@ -54,6 +54,61 @@ Given('there is a portfolio investment for the fund') do
   @portfolio_investment = pi
 end
 
+# Creates a buy PI with investment_date one day after the 2026-06-30 end_date used in scenarios.
+# Confirms the rule ignores companies whose first investment hasn't happened yet as of the reporting date.
+Given('there is a portfolio investment for the fund dated after the end date') do
+  @portfolio_company     ||= @entity.investors.portfolio_companies.last
+  @investment_instrument ||= @portfolio_company.investment_instruments.last
+
+  pi = FactoryBot.build(
+    :portfolio_investment,
+    entity:                @entity,
+    fund:                  @fund,
+    portfolio_company:     @portfolio_company,
+    investment_instrument: @investment_instrument,
+    quantity:              100,
+    investment_date:       Date.parse("2026-07-01")
+  )
+  result = PortfolioInvestmentCreate.call(portfolio_investment: pi)
+  raise "Failed to create portfolio investment: #{pi.errors.full_messages}" if result.failure?
+  @portfolio_investment = pi
+end
+
+# Creates a buy (qty=100, 2020-01-01) and a matching sell (qty=-100, 2022-01-01) so
+# SUM(quantity) = 0 for the company as of any 2026 end_date.
+# The sell is inserted directly to avoid attribution-job complexity — the rule only needs
+# the quantity column for its HAVING SUM(quantity) > 0 check.
+Given('there is a fully exited portfolio investment for the fund') do
+  @portfolio_company     ||= @entity.investors.portfolio_companies.last
+  @investment_instrument ||= @portfolio_company.investment_instruments.last
+
+  buy_pi = FactoryBot.build(
+    :portfolio_investment,
+    entity:                @entity,
+    fund:                  @fund,
+    portfolio_company:     @portfolio_company,
+    investment_instrument: @investment_instrument,
+    quantity:              100,
+    investment_date:       Date.parse("2020-01-01")
+  )
+  result = PortfolioInvestmentCreate.call(portfolio_investment: buy_pi)
+  raise "Failed to create buy: #{buy_pi.errors.full_messages}" if result.failure?
+
+  sell_pi = PortfolioInvestment.new(
+    entity:                         @entity,
+    fund:                           @fund,
+    portfolio_company:              @portfolio_company,
+    investment_instrument:          @investment_instrument,
+    aggregate_portfolio_investment: buy_pi.aggregate_portfolio_investment,
+    quantity:                       -100,
+    investment_date:                Date.parse("2022-01-01"),
+    ex_expenses_base_amount_cents:  0,
+    excused_folio_ids:              []
+  )
+  sell_pi.save(validate: false)
+  raise "Failed to save sell portfolio investment" unless sell_pi.persisted?
+end
+
 Given('there is an exchange rate {string} for the entity') do |args|
   attrs = args.split(";").map { |p| p.split("=") }.to_h
   ExchangeRate.create!(

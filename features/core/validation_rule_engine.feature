@@ -121,6 +121,24 @@ Feature: Validation Rule Engine
     When the validation rules are evaluated for an AllocationRun with "end_date=2026-06-30;start_date=2026-04-01"
     Then the rule "allocation_run_valuation_exists" does not fire
 
+  Scenario: Valuation exists rule does not fire when the portfolio investment was made after the end date
+    Given there is an existing portfolio company ""
+    And there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
+    And there is a portfolio investment for the fund dated after the end date
+    And the entity has opted in to all validation rules
+    When the validation rules are evaluated for an AllocationRun with "end_date=2026-06-30;start_date=2026-04-01"
+    Then the rule "allocation_run_valuation_exists" does not fire
+
+  Scenario: Valuation exists rule does not fire for a portfolio company fully exited before the end date
+    Given there is an existing portfolio company ""
+    And there is a fund "name=RuleTestFund;currency=INR" for the entity
+    And there is an investment instrument for the portfolio company "name=Stock;category=Unlisted;sub_category=Equity;sector=Tech"
+    And there is a fully exited portfolio investment for the fund
+    And the entity has opted in to all validation rules
+    When the validation rules are evaluated for an AllocationRun with "end_date=2026-06-30;start_date=2026-04-01"
+    Then the rule "allocation_run_valuation_exists" does not fire
+
   Scenario: FX rates rule warns when instrument uses a foreign currency and rate is missing
     Given there is an existing portfolio company ""
     And there is a fund "name=RuleTestFund;currency=INR" for the entity

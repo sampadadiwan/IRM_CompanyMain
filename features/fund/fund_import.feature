@@ -65,6 +65,16 @@ Scenario Outline: Import capital calls
   # Then the whatsapp message should be send successfully to "917721046692"
 
 @import
+Scenario: Import capital calls fails when call basis is blank
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR" for the entity
+  And Given I upload an investors file for the fund
+  And Given I upload "capital_commitments_multi_currency.xlsx" file for "Commitments" of the fund
+  Then Given I upload "capital_calls_blank_basis.xlsx" file for "Calls" of the fund with errors
+  Then the capital call should fail with error "Call Basis is required"
+
+@import
 Scenario Outline: Import capital remittance payments
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

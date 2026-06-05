@@ -44,6 +44,9 @@ class ImportCapitalCall < ImportUtil
           close_percentages = cleaned_fund_closes.zip(close_percentage_values).to_h
         end
 
+        # Require an explicit call basis; blank would silently default to Percentage of Commitment behaviour
+        raise "Call Basis is required" if user_data["Call Basis"].blank?
+
         # Make the capital_call
         capital_call = CapitalCall.new(entity_id: import_upload.entity_id, name:,
                                        fund:, due_date: Date.local_parse(user_data["Due Date"]),

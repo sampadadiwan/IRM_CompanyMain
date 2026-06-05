@@ -38,13 +38,19 @@ class AllocationRunRuleContextProvider
 
   # Returns a comma-separated string of portfolio company names that have no valuation
   # (owner_type: Investor) within [end_date - n_days, end_date].
-  # Returns nil when the fund has no portfolio investments (rule not applicable).
+  # Only checks companies with an active position (net quantity > 0) as of end_date —
+  # companies with no investment yet or fully exited by end_date are excluded.
+  # Returns nil when the fund has no active portfolio investments (rule not applicable).
   # Returns nil (empty result) when all companies have valuations — rule does not fire.
   def missing_valuation_companies(record, end_date, n_days)
     return nil unless record.fund_id.present?
 
+    # Only include portfolio companies with a positive net quantity as of end_date,
+    # so fully-exited or not-yet-invested companies don't trigger the warning.
     pc_ids = PortfolioInvestment.where(fund_id: record.fund_id)
-                                .distinct
+                                .where(investment_date: ..end_date)
+                                .group(:portfolio_company_id)
+                                .having("SUM(quantity) > 0")
                                 .pluck(:portfolio_company_id)
     return nil if pc_ids.empty?
 

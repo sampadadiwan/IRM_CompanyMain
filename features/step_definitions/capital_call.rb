@@ -493,6 +493,40 @@ Then('Given I upload {string} file for Call remittances of the fund') do |file|
   ImportUpload.last.status.should == "Completed"
 end
 
+Then('Given I upload {string} file for {string} of the fund with errors') do |file, tab|
+  @import_file = file
+  visit(fund_path(@fund))
+  click_on(tab)
+  if page.has_button?("Upload / Download")
+    click_on("Upload / Download")
+    click_on("Upload")
+  else
+    click_on("Upload")
+  end
+  fill_in('import_upload_name', with: "Test Upload")
+  attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
+  sleep(2)
+  click_on("Save")
+  expect(page).to have_content("Import Upload:")
+  ImportUploadJob.perform_now(ImportUpload.last.id)
+  expect(ImportUpload.last.failed_row_count).to be > 0
+end
+
+# Checks that the most recent import result file contains the given error message for at least one row
+Then('the capital call should fail with error {string}') do |error_msg|
+  import_upload = ImportUpload.last
+  tempfile = import_upload.import_results.download
+  data = Roo::Spreadsheet.open(tempfile.path)
+  headers = ImportServiceBase.new.get_headers(data.row(1))
+  error_col = headers.length # result column appended after all data columns
+  error_found = false
+  data.each_with_index do |row, idx|
+    next if idx.zero?
+    error_found = true if row[error_col]&.include?(error_msg)
+  end
+  expect(error_found).to be(true), "Expected error '#{error_msg}' not found in import results"
+end
+
 Then('There should be {string} capital calls created') do |count|
   @fund.capital_calls.count.should == count.to_i
 end
