@@ -321,10 +321,11 @@ module CapitalCommitmentShared
       csv << ["Net Hurdle Amount (cents)", hurdle_amount.to_f]
     end
 
-    # "tmp" folder is a direct child of the entity's root_folder
-    folder = entity.root_folder.children
-                   .where(name: "tmp", entity_id: entity_id)
-                   .first_or_create!(entity_id: entity_id)
+    # "tmp" folder is a direct child of the entity's root folder;
+    # has_ancestry stores children with ancestry = parent_id.to_s
+    root_folder_id = Folder.where(entity_id: entity_id, level: 0).pick(:id)
+    folder = Folder.where(name: "tmp", entity_id: entity_id, ancestry: root_folder_id.to_s)
+                   .first_or_create!
 
     # Use the first admin user of this entity as the document owner
     uid = User.where(entity_id: entity_id).first&.id
