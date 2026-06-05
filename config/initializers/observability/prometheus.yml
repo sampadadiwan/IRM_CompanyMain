@@ -1,5 +1,9 @@
 global:
-  scrape_interval: 15s  # How frequently to scrape targets (default is every 15s)
+  scrape_interval: 15s       # How frequently to scrape targets
+  evaluation_interval: 15s   # How frequently to evaluate alerting rules
+
+rule_files:
+  - "alerts.yml"
 
 scrape_configs:
   # this is the port for the prometheus exporter

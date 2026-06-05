@@ -1,0 +1,115 @@
+groups:
+  - name: rails_app
+    rules:
+      # Fire when error rate (4xx+5xx) exceeds 5% of total traffic over 5 minutes
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(ruby_http_requests_total{status=~"^[45].*"}[5m]))
+          / sum(rate(ruby_http_requests_total[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP error rate ({{ $value | humanizePercentage }})"
+          description: "More than 5% of requests are returning 4xx/5xx responses."
+
+      # Fire when p95 request latency exceeds 2 seconds
+      - alert: HighLatencyP95
+        expr: |
+          quantile(0.95,
+            irate(ruby_http_request_duration_seconds_sum[5m])
+            / irate(ruby_http_request_duration_seconds_count[5m]) > 0
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "p95 request latency is {{ $value | humanizeDuration }}"
+          description: "95th percentile response time has exceeded 2s for 5 minutes."
+
+      # Fire when Puma request backlog is non-zero (thread pool saturated)
+      - alert: PumaBacklogHigh
+        expr: sum(ruby_puma_request_backlog) > 5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Puma request backlog: {{ $value }} queued requests"
+          description: "Requests are queuing up — all Puma threads are busy."
+
+      # Fire when a web worker RSS is growing rapidly (memory leak signal)
+      - alert: MemoryLeakWeb
+        expr: |
+          deriv(ruby_rss{type=~"master|web|puma_master|puma_worker"}[1h]) > 52428800
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Web worker RSS growing >50MB/h on {{ $labels.hostname }}"
+          description: "Process {{ $labels.type }} on {{ $labels.hostname }} may be leaking memory."
+
+      # Fire when Sidekiq enqueued job count is very high
+      - alert: SidekiqQueueBacklogHigh
+        expr: ruby_sidekiq_stats_enqueued > 500
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sidekiq queue backlog: {{ $value }} jobs enqueued"
+          description: "Jobs are piling up — check worker capacity and for stuck jobs."
+
+      # Fire when Sidekiq dead queue is growing (jobs exhausted retries)
+      - alert: SidekiqDeadJobsHigh
+        expr: ruby_sidekiq_stats_dead_size > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $value }} jobs in Sidekiq dead queue"
+          description: "Jobs are failing permanently. Check Sidekiq dead queue for errors."
+
+      # Fire when any scraped target goes missing
+      - alert: InstanceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Instance {{ $labels.instance }} ({{ $labels.job }}) is down"
+          description: "Prometheus cannot reach the exporter. Check the process and network."
+
+  - name: node
+    rules:
+      # Fire when CPU utilisation stays above 85% for 10 minutes
+      - alert: HighCPU
+        expr: |
+          100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on {{ $labels.instance }}: {{ $value | humanize }}%"
+          description: "Sustained high CPU may cause request queuing and latency spikes."
+
+      # Fire when root filesystem free space drops below 10%
+      - alert: DiskSpaceLow
+        expr: |
+          (node_filesystem_avail_bytes{mountpoint="/"}
+          / node_filesystem_size_bytes{mountpoint="/"}) < 0.10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Disk space < 10% free on {{ $labels.instance }}"
+          description: "The root filesystem is nearly full. Free up space or expand the volume."
+
+      # Fire when available memory drops below 10% of total
+      - alert: LowMemory
+        expr: |
+          (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) < 0.10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low memory on {{ $labels.instance }}: {{ $value | humanizePercentage }} available"
+          description: "System memory is nearly exhausted. Risk of OOM kills."
