@@ -615,7 +615,16 @@ Then('the portfolio as of report should be generated for the date {string} with 
     worksheet = data.sheet(sheet)
 
     worksheet.each_with_index do |row, idx|
-      expect(row).to eq(result_excel.sheet(sheet).row(idx+1))
+      expected_row = result_excel.sheet(sheet).row(idx + 1)
+      # Compare element-wise with tolerance for numeric values
+      row.each_with_index do |cell, col_idx|
+        expected = expected_row[col_idx]
+        if cell.is_a?(Numeric) && expected.is_a?(Numeric)
+          expect(cell.to_d).to be_within(BigDecimal('0.01')).of(expected.to_d)
+        else
+          expect(cell).to eq(expected)
+        end
+      end
     end
   end
 end

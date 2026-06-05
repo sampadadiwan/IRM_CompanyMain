@@ -49,7 +49,7 @@
         Body
       </td>
       <td>
-        <%= (@incoming_email.body).html_safe %>
+        <%= sanitize @incoming_email.body, tags: %w[p br b i u a ul ol li div span blockquote pre], attributes: %w[href class style] %>
       </td>
     </tr>
     <tr>
@@ -57,7 +57,11 @@
         Owner
       </td>
       <td>
-        <%= link_to @incoming_email.owner %>
+        <% if @incoming_email.owner.present? %>
+          <%= link_to @incoming_email.owner %>
+        <% else %>
+          <span class="text-muted">Unmatched</span>
+        <% end %>
       </td>
     </tr>
     <tr>

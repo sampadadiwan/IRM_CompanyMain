@@ -6,7 +6,7 @@ class IncomingEmailPolicy < ApplicationPolicy
   end
 
   def index?
-    true
+    user.has_cached_role?(:company_admin) || super_user?
   end
 
   def show?

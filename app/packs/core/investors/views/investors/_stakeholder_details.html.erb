@@ -152,7 +152,7 @@
           </div>
       </div>
 
-      <% if current_user.has_cached_role?(:company_admin) %>
+      <% if policy(IncomingEmail.new).index? %>
         <div id="emails-tab" class="tab-pane fade">
           <div id="emails" class="associated_entity">
             <%= turbo_frame_tag "incoming_emails_list", target: "_top", src: incoming_emails_path(owner_id: investor.id, owner_type: "Investor"), loading: :lazy do %>

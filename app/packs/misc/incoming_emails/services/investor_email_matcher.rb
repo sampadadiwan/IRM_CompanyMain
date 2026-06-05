@@ -26,8 +26,10 @@ class InvestorEmailMatcher
       cc_domains = @cc_emails.map { |email| email.split("@").last }.uniq
       cc_domains -= GENERIC_DOMAINS
       if cc_domains.any?
-        domain_queries = cc_domains.map { |domain| "primary_email LIKE '%@#{domain}'" }.join(" OR ")
-        matches = investor_scope.where(domain_queries)
+        # Use parameterized queries to prevent SQL injection from user-supplied email headers
+        conditions = cc_domains.map { "primary_email LIKE ?" }.join(" OR ")
+        values = cc_domains.map { |domain| "%@#{domain}" }
+        matches = investor_scope.where(conditions, *values)
       end
     end
 

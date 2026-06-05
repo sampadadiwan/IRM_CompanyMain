@@ -24,8 +24,8 @@ class IncomingEmail < ApplicationRecord
 
     self.entity ||= Entity.joins(:entity_setting).where('entity_settings.mailbox': to).first
     if self.entity.present?
-      # Find the investor in this entity that matches the subject
-      self.owner ||= entity.investors.where(investor_name: subject.strip).first
+      # Case-insensitive match so minor capitalisation differences still link to the right investor
+      self.owner ||= entity.investors.where("investor_name ILIKE ?", subject.strip).first
     end
   end
 
@@ -54,14 +54,17 @@ class IncomingEmail < ApplicationRecord
   rescue StandardError => e
     Rails.logger.error "Error setting owner for incoming email: #{e.message}"
     Rails.logger.error e.backtrace.join("\n")
+    errors.add(:base, "Could not resolve email owner: #{e.message}")
   end
 
   def save_attachments(params)
     attachment_keys = params.keys.select { |k| k.start_with?("attachment") && params[k].is_a?(ActionDispatch::Http::UploadedFile) }
-    # For each attachment, create a document
+    return if attachment_keys.empty?
+
+    # Resolve once outside the loop to avoid N+1 queries per attachment
+    user = User.where(email: from).first || entity.employees.first || User.support_users.first
     attachment_keys.each do |key|
       file = params[key]
-      user = User.where(email: from).first || entity.employees.first || User.support_users.first
       document = documents.build(name: file.original_filename, entity:, user:, orignal: true)
       document.file = file.tempfile
       document.save
@@ -70,13 +73,10 @@ class IncomingEmail < ApplicationRecord
 
   after_create_commit :perform_summarization
   def perform_summarization
-    fund_entity = Entity.joins(:entity_setting).where(entity_settings: { investor_presentations_email: to }).first
-    # This email is sent by a potential portfolio company, with the investor presentation to the fund.
-    if fund_entity.present?
-      # Summarize the documents and create a report for the fund
-      FolderLlmReportJob.perform_later(folder_id, document_folder_id, report_template_name: "Investor Presentation Template")
-      # Also run Fabric to extract wisdom
-    end
+    # owner is already resolved by set_owner; no need to re-query entity_settings
+    return unless owner.is_a?(Entity)
+
+    FolderLlmReportJob.perform_later(folder_id, document_folder_id, report_template_name: "Investor Presentation Template")
   end
 
   # Move the email to the owner's folder

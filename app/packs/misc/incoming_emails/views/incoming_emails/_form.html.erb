@@ -2,7 +2,7 @@
   <%= form_with(model: incoming_email, validate: true) do |form| %>
     <% if incoming_email.errors.any? %>
       <div class="alert alert-danger">
-        <h2><%= pluralize(incoming_email.errors.count, "error") %> prohibited this incoming_email from being saved:</h2>
+        <h2><%= pluralize(incoming_email.errors.count, "error") %> prevented this email from being saved:</h2>
         <ul>
           <% incoming_email.errors.each do |error| %>
             <li><%= error.full_message %></li>
@@ -27,7 +27,7 @@
     <div class="form-group">
       <%= form.label :owner_id %>
       <%= form.select :owner_id, incoming_email.entity.investors.map{|i|[i.investor_name, i.id]}, {include_blank: true}, class: "form-control"  %>
-      <%= form.text_field :owner_type, class: "form-control", value: "Investor", hidden: true  %>
+      <%= form.hidden_field :owner_type, value: "Investor" %>
     </div>
     <% end %>
 

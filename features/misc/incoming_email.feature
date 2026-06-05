@@ -1,17 +1,46 @@
 @notification
 Feature: Incoming Email
-  Can receive incoming emails and log them to the DB
+  Can receive incoming emails via SendGrid and log them to the DB,
+  linking them to the correct owner by address pattern or entity mailbox
 
-Scenario Outline: Receive a new email
-  Given Im logged in as a user "" for an entity ""
-  Given the entity_setting has "<entity_setting>"
-  Given the user has role "company_admin"
-  Given there is an existing investor "name=Investor 1"
-  Given there is an incoming email sent for this investor "<email>"
-  When then the email should be "<added>" to the investor
+  Background:
+    Given Im logged in as a user "" for an entity ""
+    Given the user has role "company_admin"
+    Given there is an existing investor "name=Investor 1"
 
-  Examples:
-    | email                                                                   | entity_setting                | added |
-    | to=investor.1@dev.caphive.app;from=test1@example.com;subject=Test 123   |                               | true |
-    | to=incoming@myentity.com;from=test2@example.com;subject=Investor 1      | mailbox=incoming@myentity.com | true |
-    | to=incoming@myentity.com;from=test2@example.com;subject=Wrong Inv Name  | mailbox=incoming@myentity.com | false |
+  # ─── Routing by structured To address ───────────────────────────────────────
+
+  Scenario: Email addressed to owner system address is linked to that owner
+    Given there is an incoming email addressed to this investor from "test@example.com" with subject "Pitch Deck"
+    Then the email should be linked to the investor
+
+  # ─── Routing by entity mailbox ───────────────────────────────────────────────
+
+  Scenario: Email to entity mailbox with matching subject links to investor
+    Given the entity_setting has "mailbox=incoming@myentity.com"
+    Given there is an incoming email sent for this investor "to=incoming@myentity.com;from=sender@example.com;subject=Investor 1"
+    Then the email should be "true" to the investor
+
+  Scenario: Email to entity mailbox with non-matching subject creates email without owner
+    Given the entity_setting has "mailbox=incoming@myentity.com"
+    Given there is an incoming email sent for this investor "to=incoming@myentity.com;from=sender@example.com;subject=Unknown Fund"
+    Then the email should be "false" to the investor
+
+  Scenario: Email to entity mailbox matches investor regardless of subject capitalisation
+    Given the entity_setting has "mailbox=incoming@myentity.com"
+    Given there is an incoming email sent for this investor "to=incoming@myentity.com;from=sender@example.com;subject=investor 1"
+    Then the email should be "true" to the investor
+
+  # ─── Attachments ─────────────────────────────────────────────────────────────
+
+  Scenario: Email with attachment saves the document against the email
+    Given there is an incoming email addressed to this investor from "test@example.com" with subject "Pitch Deck" and attachment "sample.xlsx"
+    Then the email should be linked to the investor
+    And the email should have 1 document attached
+
+  # ─── Idempotency ─────────────────────────────────────────────────────────────
+
+  Scenario: Sending the same email twice via SendGrid does not create duplicates
+    Given there is an incoming email addressed to this investor from "test@example.com" with subject "Duplicate Test" and message id "<msg-001@example.com>"
+    And the same SendGrid payload is submitted again
+    Then only 1 incoming email record should exist with subject "Duplicate Test"

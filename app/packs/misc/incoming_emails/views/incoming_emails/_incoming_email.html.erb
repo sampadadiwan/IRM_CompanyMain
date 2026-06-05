@@ -4,18 +4,22 @@
     <%= incoming_email.from %>
   </td>
   <td>
-    <%= incoming_email.to %>
-  </td>
-  <td>
     <%= incoming_email.subject %>
   </td>
   <td>
-    <%= incoming_email.owner_type %>
+    <% if incoming_email.owner.present? %>
+      <%= link_to incoming_email.owner.to_s, incoming_email.owner %>
+    <% else %>
+      <span class="text-muted">Unmatched</span>
+    <% end %>
   </td>
   <td>
-    <%= l incoming_email.created_at %>
+    <%= incoming_email.documents.size > 0 ? incoming_email.documents.size : "—" %>
   </td>
   <td>
-    <%= link_to  t_common(:show), incoming_email , {class: "btn btn-outline-primary"}%>
+    <%= l(incoming_email.received_at.presence || incoming_email.created_at) %>
+  </td>
+  <td>
+    <%= link_to t_common(:show), incoming_email, {class: "btn btn-outline-primary"} %>
   </td>
 </tr>

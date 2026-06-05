@@ -8,15 +8,26 @@ class IncomingEmailsController < ApplicationController
   def sendgrid
     Rails.logger.debug { "Processing incoming email, to: #{params[:to]}, from: #{params[:from]}, subject: #{params[:subject]}" }
 
+    # Extract Message-ID from the raw headers string for idempotency on SendGrid retries
+    message_id = params[:headers]&.match(/Message-ID:\s*<([^>]+)>/i)&.[](1)
+
+    if message_id.present? && IncomingEmail.exists?(message_id: message_id)
+      Rails.logger.debug { "Skipping duplicate incoming email with message_id: #{message_id}" }
+      return head :ok
+    end
+
     email = IncomingEmail.new(
       from: params[:from],
       to: params[:to].truncate(255),
       subject: params[:subject],
-      body: params[:html].presence || params[:text]
+      body: params[:html].presence || params[:text],
+      cc_emails: params[:cc],
+      message_id: message_id,
+      received_at: Time.current
     )
 
     if email.save
-      email.save_attachments(params) if params[:attachments].present?
+      email.save_attachments(params)
       head :ok
     else
       Rails.logger.debug email.errors.full_messages

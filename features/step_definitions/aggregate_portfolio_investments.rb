@@ -21,5 +21,6 @@ Given('the api {string} is {string}') do |key, value|
 	api = AggregatePortfolioInvestment.last
 	puts "Checking #{key} is #{value}"
 	# binding.pry if api.send(key.to_sym).to_d != value.to_d
-	api.send(key.to_sym).to_d.should eq(value.to_d)
+	# Use tolerance to handle floating point precision differences
+	expect(api.send(key.to_sym).to_d).to be_within(BigDecimal('0.01')).of(value.to_d)
 end

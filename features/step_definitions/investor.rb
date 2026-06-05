@@ -1629,18 +1629,16 @@ Given('there is an incoming email sent for this investor {string}') do |args|
   response.code.should == "200"
 end
 
-When('then the email should be {string} to the investor') do |added|
-  IncomingEmail.count.should
+Then('the email should be {string} to the investor') do |added|
+  expect(IncomingEmail.count).to be >= 1
   last_incoming_email = IncomingEmail.last
-  last_incoming_email.owner.should
-  (Investor.find(1) if added == "true")
-  last_incoming_email.to.should
-  @incoming_email.to
-  last_incoming_email.from.should
-  @incoming_email.from
-  last_incoming_email.subject.should
-  @incoming_email.subject
-  last_incoming_email.body.should == @incoming_email.body
+  expect(last_incoming_email.from).to eq(@incoming_email.from)
+  expect(last_incoming_email.subject).to eq(@incoming_email.subject)
+  if added == "true"
+    expect(last_incoming_email.owner).to eq(@investor)
+  else
+    expect(last_incoming_email.owner).not_to eq(@investor)
+  end
 end
 
 When('I go to the Investor Kycs index page') do
