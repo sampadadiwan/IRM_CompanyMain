@@ -108,18 +108,30 @@
         scenario_list.map { |sc| [sc, scoped.where(scenario: sc).first&.value.to_f.round(decimals)] }
       elsif use_agg_label
         all_runs = scoped.includes(:fund_ratio_run).to_a
-        all_runs.map do |fr|
-          label = if fr.owner&.name.present?
-            fr.owner.name
-          elsif fr.fund_ratio_run
+
+        latest_by_label = all_runs.group_by do |fr|
+          if fr.fund_ratio_run
             run = fr.fund_ratio_run
             template_name = run.template&.name.to_s
             template_name.presence || agg_owner_label
           else
             agg_owner_label
           end
-          [label, fr.value.to_f.round(decimals)]
         end
+
+        latest_by_label
+          .map do |label, runs|
+            latest_run = runs.max_by { |r| r.end_date || Date.new(0) }
+
+            {
+              label: label,
+              value: latest_run.value.to_f.round(decimals),
+              end_date: latest_run.end_date
+            }
+          end
+          .sort_by { |r| r[:end_date] || Date.new(0) }
+          .reverse
+          .map { |r| [r[:label], r[:value]] }
       else
         scoped.map { |fr| [hide_fund_name ? "" : fr.display_owner&.name.to_s, fr.value.to_f.round(decimals)] }
       end
@@ -160,7 +172,8 @@
       ratio_names: aggregate_ratio_names,
       scenario: nil,
       scenarios: nil,
-      template_ids: template_ids
+      template_ids: template_ids,
+      latest: latest
     )
 
     # Preload fund names for aggregate section to avoid N+1 queries
@@ -188,12 +201,12 @@
       agg_ratios_by_name = build_ratios_by_name.call(aggregate_ratios, aggregate_ratio_names, use_agg_label: true, fund_id_to_name: fund_id_to_name)
 
       agg_titles = section_titles.presence || Array.new(aggregate_ratio_names.size) { |i| aggregate_ratio_names[i] }
-
     %>
     <% if display_mode == "both" %>
       <h5 class="text-muted text-uppercase fw-semibold small mb-2 mt-3">Fund Aggregate Ratios</h5>
     <% end %>
     <div class="row g-3 mb-3">
+
       <% agg_ratios_by_name.each_with_index do |(ratio_name, ratios_data), idx| %>
         <% next if ratios_data.blank? %>
         <%
@@ -228,9 +241,7 @@
                     table_rows = aggregate_ratios.where(name: ratio_name)
                                                  .includes(:owner, :fund_ratio_run)
                     table_rows_grouped = table_rows.group_by do |fr|
-                      if fr.owner&.name.present?
-                        fr.owner.name
-                      elsif fr.fund_ratio_run
+                      if fr.fund_ratio_run
                         run       = fr.fund_ratio_run
                         template_name = run.template&.name.to_s
                         template_name.presence || agg_owner_label
@@ -253,7 +264,7 @@
                         <% fr = frs.max_by { |r| r.end_date || Date.new(0) } %>
                         <tr>
                           <td class="small"><%= label %></td>
-                          <td class="small text-end fw-bold"><%= fr.display_value.presence || "#{"%.#{decimals}f" % fr.value} #{ratio_name.upcase.include?('IRR') ? '%' : 'x'}" %></td>
+                          <td class="small text-end fw-bold"><%= "#{"%.#{decimals}f" % fr.value} #{ratio_name.upcase.include?('IRR') ? '%' : 'x'}" %></td>
                           <td class="small text-end text-muted"><%= fr.end_date&.strftime("%b %-d, %Y") %></td>
                           <td class="small text-end">
                             <% if fr.fund_ratio_run %>
@@ -286,7 +297,7 @@
       fund_ids_i, [], uri_params[:sector], tag_list_csv,
       owner_types: ["Investor"],
       ratio_names: company_ratio_names,
-      template_ids: template_ids
+      template_ids: template_ids,latest: latest
     )
   %>
 
