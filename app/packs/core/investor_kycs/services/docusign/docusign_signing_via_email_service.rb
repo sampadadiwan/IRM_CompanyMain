@@ -34,7 +34,12 @@ class DocusignSigningViaEmailService
     envelope_definition.email_subject = "Please sign #{@doc.name} with #{@doc.entity.name}"
 
     tmpfile = @doc.file.download
-    data = File.read(tmpfile.path)
+    begin
+      data = File.read(tmpfile.path)
+    ensure
+      tmpfile.close
+      tmpfile.unlink
+    end
 
     encoded_file = Base64.strict_encode64(data)
     # fetch from esign
@@ -47,8 +52,6 @@ class DocusignSigningViaEmailService
     document.name = @doc.name.truncate(100)
     document.file_extension = 'pdf'
     document.document_id = @doc.id
-
-    tmpfile.close
 
     # The order in the docs array determines the order in the envelope
     envelope_definition.documents = [document]
@@ -71,16 +74,26 @@ class DocusignSigningViaEmailService
     signers = []
 
     doc_last_page = 1
-    # identify last page
+    page_height = 792  # default letter height
+    page_width = 612   # default letter width
+
+    # identify last page and get page dimensions
     doc.file.download do |tmpfile|
       reader = PDF::Reader.new(tmpfile.path)
       doc_last_page = reader.pages.count
+      first_page = reader.pages.first
+      page_height = first_page.height
+      page_width = first_page.width
     end
 
+    # Calculate maximum bounds with margins
+    x_max = page_width - 80   # Keep 80px margin from right edge
+    y_max = page_height - 50  # Keep 50px margin from top
+
     # Assuming xpos and ypos are the starting coordinates
-    # pdf hass x from 0 to 620
+    # pdf has x from 0 (left) to page_width (right), y from 0 (top) to page_height (bottom)
     xstart = 30 # Starting from the left
-    ystart = 750 # Starting from the bottom (assuming the bottom y-coordinate is 0 and top is 800)
+    ystart = page_height - 50 # Starting from the bottom with 50px margin
 
     # Define the number of signatures per row and the vertical step
     signatures_per_row = 3
@@ -111,8 +124,14 @@ class DocusignSigningViaEmailService
       col = idx % signatures_per_row
 
       # Adjust positions based on row and column
-      xpos = (xstart + (col * 190)).to_s
-      ypos = (ystart - (row * 50)).to_s
+      # y decreases as we go down from bottom (row 0 at bottom, each row goes down)
+      xpos = (xstart + (col * 190)).to_i
+      ypos = (ystart - (row * 50)).to_i
+
+      # Validate positions don't exceed bounds
+      raise "Signature x position #{xpos} exceeds maximum x #{x_max}" if xpos.to_i > x_max
+      raise "Signature y position #{ypos} exceeds maximum y #{y_max}" if ypos.to_i > y_max
+
       sign_tabs = []
       pages.each do |page|
         sign_here = DocuSign_eSign::SignHere.new

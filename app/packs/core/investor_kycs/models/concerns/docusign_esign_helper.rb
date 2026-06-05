@@ -3,18 +3,17 @@ class DocusignEsignHelper
   include ApiCreator
   include DocusignEsignUtils
 
-  debug_output $stdout
+  debug_output $stdout if Rails.env.development?
   attr_accessor :debug
 
   BASE_URL = Rails.application.credentials[:DOCUSIGN_ACC_BASE_URI]
   DOCUSIGN_USER_ID = Rails.application.credentials[:DOCUSIGN_USER_ID]
   ACCOUNT_ID = Rails.application.credentials[:DOCUSIGN_API_ACC_ID]
-  DOCUSIGN_ACCESS_TOKEN = Rails.application.credentials[:DOCUSIGN_SECRET_KEY]
   DOCUSIGN_RSA_PRIVATE_KEY = Rails.application.credentials[:DOCUSIGN_RSA_PRIVATE_KEY]
   DOCUSIGN_INTEGRATION_KEY = Rails.application.credentials[:DOCUSIGN_INTEGRATION_KEY]
 
-  def args
-    access_token = ::JwtAuth::JwtCreator.new.check_jwt_token
+  def args(entity_id)
+    access_token = ::JwtAuth::JwtCreator.new.check_jwt_token(entity_id)
     {
       account_id: ACCOUNT_ID,
       base_path: BASE_URL,
@@ -28,11 +27,14 @@ class DocusignEsignHelper
 
     # TODO: add support for docx files
 
-    DocusignSigningViaEmailService.new(args, document).worker
+    DocusignSigningViaEmailService.new(args(document.entity_id), document).worker
   end
 
   def update_document(response, document)
     response = ActiveSupport::HashWithIndifferentAccess.new(response)
+    # Log the response from DocuSign API
+    log_esign_response(document, response)
+
     if response[:envelope_id].present?
       document.update(sent_for_esign: true, sent_for_esign_date: Time.zone.now, provider_doc_id: response[:envelope_id], esign_status: "requested")
     else
@@ -68,22 +70,30 @@ class DocusignEsignHelper
       doc&.update(esign_status: "voided")
       # rubocop:disable Rails/SkipsModelValidations
       doc.e_signatures.update_all(status: "voided")
-    # rubocop:enable Rails/SkipsModelValidations
+      api_updates = params.dup
+      api_updates['data']['envelopeSummary'] = params.dig('data', 'envelopeSummary')&.except('envelopeDocuments')
+      # rubocop:enable Rails/SkipsModelValidations
+      log_webhook_data(doc, api_updates)
     # envelope-completed is the final status for docusign, triggered when all signers have signed
     when "envelope-completed"
       signature_completed(doc)
+      api_updates = params.dup
+      api_updates['data']['envelopeSummary'] = params.dig('data', 'envelopeSummary')&.except('envelopeDocuments')
+      log_webhook_data(doc, api_updates)
     # recipient-completed is triggered when a signer has signed
     when "recipient-completed"
-      api_updates = params
+      api_updates = params.dup
       api_updates['data']['envelopeSummary'] = params.dig('data', 'envelopeSummary')&.except('envelopeDocuments')
       esign = doc.e_signatures.order(:position)[(params["data"]["recipientId"].to_i - 1)]
       esign.update(status: "signed", api_updates: api_updates.to_s)
+      log_webhook_data(doc, api_updates)
     # recipient-sent is triggered when a signer has been sent the document
     when "recipient-sent"
-      api_updates = params
+      api_updates = params.dup
       api_updates['data']['envelopeSummary'] = params.dig('data', 'envelopeSummary')&.except('envelopeDocuments')
       esign = doc.e_signatures.order(:position)[(params["data"]["recipientId"].to_i - 1)]
       esign.update(status: "sent", api_updates: api_updates.to_s)
+      log_webhook_data(doc, api_updates)
     end
   end
 
@@ -93,7 +103,7 @@ class DocusignEsignHelper
       # document already completed
       Rails.logger.debug { "Document #{doc.name} #{doc.id} already completed" }
     else
-      envelope_api = create_envelope_api(args)
+      envelope_api = create_envelope_api(args(doc.entity_id))
       envelope = get_envelope(envelope_api, doc)
       overall_status = envelope.status
       doc.assign_attributes(last_status_updated_at: Time.zone.now)
@@ -110,6 +120,8 @@ class DocusignEsignHelper
           esign.update(status: esign_status)
         end
         doc.save
+        # Log manual status update
+        log_manual_update_data(doc, { envelope_status: overall_status, recipients: recipients.signers.map { |s| { email: s.email, status: s.status } } })
       else
         signatures_failed(doc, envelope)
       end
@@ -124,32 +136,79 @@ class DocusignEsignHelper
   end
 
   def download(doc)
-    envelope_api = create_envelope_api(args)
-    doc.id
-
+    envelope_api = create_envelope_api(args(doc.entity_id))
     envelope_api.get_document(ACCOUNT_ID, doc.id, doc.provider_doc_id)
   end
 
   def cancel_esign(doc)
-    cancel_docusign_api(doc)
-    doc.e_signatures.each do |esign|
-      esign.update(status: "cancelled")
+    # error is handled in docusign_esigning.rb
+    result, msg = cancel_docusign_api(doc)
+    if result
+      doc.e_signatures.each do |esign|
+        esign.update(status: "cancelled")
+      end
+      doc.update(esign_status: "cancelled")
+      # Log cancellation
+      log_manual_update_data(doc, { action: "cancelled", reason: "Cancelled by Administrator" })
+    else
+      log_manual_update_data(doc, { action: "cancellation request", error: msg })
     end
-    doc.update(esign_status: "cancelled")
+    result
   end
 
   def cancel_docusign_api(doc)
-    envelope_api = create_envelope_api(args)
+    envelope_api = create_envelope_api(args(doc.entity_id))
     env = DocuSign_eSign::Envelope.new
     env.status = 'voided'
-    env.voided_reason = 'Cancelled by Administator'
-    envelope_api.update(args[:account_id], doc.provider_doc_id, env)
+    env.voided_reason = 'Cancelled by Administrator'
+    envelope_api.update(args(doc.entity_id)[:account_id], doc.provider_doc_id, env)
+    [true, nil]
   rescue DocuSign_eSign::ApiError => e
-    handle_error(e)
+    msg = handle_error(e)
+    [false, msg]
   end
 
   def signature_completed(doc)
     file = download(doc)
     doc.signature_completed(file.path)
+  end
+
+  private
+
+  # Log initial response when document is sent for eSigning
+  def log_esign_response(document, response)
+    request_data = {
+      action: "send_for_esigning",
+      document_name: document.name,
+      document_id: document.id,
+      timestamp: Time.zone.now
+    }
+
+    if document.esign_log.present?
+      document.esign_log.update(request_data:, response_data: response)
+      document.esign_log.save
+    else
+      EsignLog.create(entity_id: document.entity_id, document:, request_data:, response_data: response)
+    end
+  end
+
+  # Log webhook data from DocuSign
+  def log_webhook_data(doc, params)
+    if doc.esign_log.present?
+      doc.esign_log.webhook_data.present? ? doc.esign_log.webhook_data[Time.zone.now.to_s] = params : doc.esign_log.webhook_data = { "#{Time.zone.now}": params }
+      doc.esign_log.save
+    else
+      EsignLog.create(entity_id: doc.entity_id, document: doc, webhook_data: { "#{Time.zone.now}": params })
+    end
+  end
+
+  # Log manual status updates fetched from DocuSign
+  def log_manual_update_data(doc, update_data)
+    if doc.esign_log.present?
+      doc.esign_log.manual_update_data.present? ? doc.esign_log.manual_update_data[Time.zone.now.to_s] = update_data : doc.esign_log.manual_update_data = { "#{Time.zone.now}": update_data }
+      doc.esign_log.save
+    else
+      EsignLog.create(entity_id: doc.entity_id, document: doc, manual_update_data: { "#{Time.zone.now}": update_data })
+    end
   end
 end

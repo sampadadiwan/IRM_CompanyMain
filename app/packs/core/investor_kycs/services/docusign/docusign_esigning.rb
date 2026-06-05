@@ -13,23 +13,28 @@ class DocusignEsigning < Trailblazer::Operation
 
   def update_document(ctx, helper:, doc:, user_id:, **)
     helper.update_document(ctx[:response], doc)
-    if user_id.present?
-      UserAlert.new(user_id:, message: "Document - #{doc.name} eSign status updated ", level: "
-      ").broadcast
-    end
+    UserAlert.new(user_id:, message: "Document - #{doc.name} eSign status updated ", level: "info").broadcast if user_id.present?
   end
 
-  def handle_errors(ctx, **)
-    handle_api_error if ctx[:error].is_a?(DocuSign_eSign::ApiError)
-    ctx[:errors] = [ctx[:errors].to_s, ctx[:error]&.full_message].join(', ')
+  def handle_errors(ctx, doc:, user_id:, **)
+    msg = "eSign failed for Document #{doc.id} - #{doc.name}"
+    api_msg = handle_api_error(ctx) if ctx[:error].is_a?(DocuSign_eSign::ApiError)
+    msg += if api_msg.present?
+             "<br>#{api_msg}"
+           else
+             "<br>#{ctx[:error].message}"
+           end
+    ctx[:error_message] = msg
+    Rails.logger.error msg
+    UserAlert.new(user_id:, message: msg, level: "danger").broadcast if user_id.present?
     false
   end
 
   def handle_api_error(ctx, **)
-    error = JSON.parse ctx[:error].response_body
-    @error_code = ctx[:error].code || error['errorCode']
-    @error_message = error['error_description'] || error['message']
+    error = JSON.parse(ctx[:error].response_body)
+    ctx[:error_code]    = ctx[:error].code || error['errorCode']
+    ctx[:error_message] = error['error_description'] || error['message']
 
-    Rails.logger.error "Error: #{@error_code} - #{@error_message}"
+    "Error - Code: #{ctx[:error_code]}, Message: #{ctx[:error_message]}"
   end
 end
