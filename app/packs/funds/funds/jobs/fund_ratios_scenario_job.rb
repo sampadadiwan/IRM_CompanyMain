@@ -25,24 +25,24 @@ class FundRatiosScenarioJob < ApplicationJob
     # find_or_initialize_by: re-running the same inputs on the same date reuses the
     # existing run record (unique index on entity + end_date + name prevents duplicates).
     @run = FundRatioRun.find_or_initialize_by(
-      entity:   @user.entity,
+      entity: @user.entity,
       end_date: @end_date,
-      name:     FundRatioRun.fingerprint(
-        fund_ids:              Array(@fund_ids),
+      name: FundRatioRun.fingerprint(
+        fund_ids: Array(@fund_ids),
         portfolio_company_ids: Array(@portfolio_company_ids),
-        tags:                  @portfolio_companies_tags,
-        sectors:               Array(@portfolio_companies_sectors)
+        tags: @portfolio_companies_tags,
+        sectors: Array(@portfolio_companies_sectors)
       )
     )
     @run.assign_attributes(
-      anchor_fund:              @fund,
-      user:                     @user,
-      run_type:                 type,
-      currency:                 @currency,
-      fund_ids:                 Array(@fund_ids),
-      portfolio_company_ids:    Array(@portfolio_company_ids),
+      anchor_fund: @fund,
+      user: @user,
+      run_type: type,
+      currency: @currency,
+      fund_ids: Array(@fund_ids),
+      portfolio_company_ids: Array(@portfolio_company_ids),
       portfolio_companies_tags: @portfolio_companies_tags,
-      sectors:                  Array(@portfolio_companies_sectors),
+      sectors: Array(@portfolio_companies_sectors),
       fund_ratio_run_template_id: template_id
     )
     begin
@@ -51,9 +51,9 @@ class FundRatiosScenarioJob < ApplicationJob
       # Two concurrent jobs with identical inputs hit the unique index simultaneously.
       # The other job won the race — reuse its persisted run record.
       @run = FundRatioRun.find_by!(
-        entity:   @user.entity,
+        entity: @user.entity,
         end_date: @end_date,
-        name:     @run.name
+        name: @run.name
       )
     end
 
@@ -73,30 +73,30 @@ class FundRatiosScenarioJob < ApplicationJob
       badge_class = 'mb-1 badge bg-primary-subtle text-primary'
       h = ActionController::Base.helpers
       links_html = if @run
-        run_q = ransack_query_params_multiple([
-          [:computation_context_id,   :eq, @run.id],
-          [:computation_context_type, :eq, "FundRatioRun"],
-          [:end_date,                 :eq, @run.end_date]
-        ])
-        [
-          h.link_to('View Generated Ratios',
-                    fund_ratios_path(filter: true, q: run_q),
-                    class: badge_class, target: '_blank', rel: 'noopener'),
-          h.link_to('View All Ratios',
-                    fund_ratios_path(filter: true),
-                    class: badge_class, target: '_blank', rel: 'noopener')
-        ]
-      else
-        [
-          h.link_to('View Generated Ratios',
-                    fund_ratios_path(fund_id: fund_id, filter: true,
-                                     q: ransack_query_params_multiple([[:end_date, :eq, @end_date]])),
-                    class: badge_class, target: '_blank', rel: 'noopener'),
-          h.link_to('View All Ratios',
-                    fund_ratios_path(fund_id: fund_id, filter: true),
-                    class: badge_class, target: '_blank', rel: 'noopener')
-        ]
-      end.join
+                     run_q = ransack_query_params_multiple([
+                                                             [:computation_context_id, :eq, @run.id],
+                                                             [:computation_context_type, :eq, "FundRatioRun"],
+                                                             [:end_date,                 :eq, @run.end_date]
+                                                           ])
+                     [
+                       h.link_to('View Generated Ratios',
+                                 fund_ratios_path(filter: true, q: run_q),
+                                 class: badge_class, target: '_blank', rel: 'noopener'),
+                       h.link_to('View All Ratios',
+                                 fund_ratios_path(filter: true),
+                                 class: badge_class, target: '_blank', rel: 'noopener')
+                     ]
+                   else
+                     [
+                       h.link_to('View Generated Ratios',
+                                 fund_ratios_path(fund_id: fund_id, filter: true,
+                                                  q: ransack_query_params_multiple([[:end_date, :eq, @end_date]])),
+                                 class: badge_class, target: '_blank', rel: 'noopener'),
+                       h.link_to('View All Ratios',
+                                 fund_ratios_path(fund_id: fund_id, filter: true),
+                                 class: badge_class, target: '_blank', rel: 'noopener')
+                     ]
+                   end.join
 
       notify("#{@run.run_type.humanize} ratio calculations are now complete.<br> #{links_html}", user_id) unless suppress_notification
     rescue StandardError => e
@@ -104,12 +104,12 @@ class FundRatiosScenarioJob < ApplicationJob
       raise e
     end
 
-    @run  # return run so batch callers can collect it for a consolidated notification
+    @run # return run so batch callers can collect it for a consolidated notification
   end
 
   def setup(fund_id, end_date, user_id, fund_ids: nil, portfolio_company_ids: nil, portfolio_companies_tags: nil, portfolio_companies_sectors: nil, currency: nil)
     @fund_id  = fund_id
-    @fund     = Fund.find_by(id: fund_id)   # anchor fund — optional, document storage only
+    @fund     = Fund.find_by(id: fund_id) # anchor fund — optional, document storage only
     @end_date = end_date
 
     # @funds is the ActiveRecord relation used in calculations; @fund_ids is stored on
@@ -176,13 +176,13 @@ class FundRatiosScenarioJob < ApplicationJob
 
     calc = FundRatioMultiFundCalcs.new(
       @run.name, @end_date, @user.entity,
-      funds:               @funds,
+      funds: @funds,
       portfolio_companies: @run.resolved_portfolio_companies,
-      currency:            @currency
+      currency: @currency
     )
 
     # entity_id falls back to @user.entity_id when no anchor fund was set.
-    shared = { computation_context: @run, entity_id: (@fund&.entity_id || @user.entity_id), end_date: @end_date, latest: true }
+    shared = { computation_context: @run, entity_id: @fund&.entity_id || @user.entity_id, end_date: @end_date, latest: true }
 
     # Aggregate Gross Portfolio IRR stored with Fund owner so aggregate section can show it.
     aggregate_owner = @fund || @funds&.first
@@ -191,15 +191,15 @@ class FundRatiosScenarioJob < ApplicationJob
 
     calc.portfolio_company_irr(return_cash_flows: false).each do |portfolio_company_id, values|
       fr = FundRatio.create!(**shared, owner_id: portfolio_company_id, owner_type: "Investor",
-                             name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %")
+                                       name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %")
       fr.create_cashflow_document(values[:cash_flows], @user.id) if values[:cash_flows].present?
     end
 
     calc.portfolio_company_metrics.each do |portfolio_company_id, values|
       FundRatio.create!(**shared, owner_id: portfolio_company_id, owner_type: "Investor",
-                        name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x")
+                                  name: "Value To Cost", value: values[:value_to_cost], display_value: "#{values[:value_to_cost]&.round(2)} x")
       FundRatio.create!(**shared, owner_id: portfolio_company_id, owner_type: "Investor",
-                        name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
+                                  name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
     end
   end
 

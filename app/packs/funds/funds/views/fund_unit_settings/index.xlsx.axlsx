@@ -9,6 +9,7 @@ wb.add_worksheet(name: "FundUnitSetting") do |sheet|
   # Create entries for each item
   @fund_unit_settings.each do |fu|
     custom_field_values = get_custom_values(fu, form_type, custom_field_names)
-    sheet.add_row [fu.fund.name, fu.name, fu.management_fee, fu.setup_fee, fu.carry, fu.gp_units, fu.isin, fu.notes] + custom_field_values
+    gp_units = fu.gp_units ? "Yes" : "No"
+    sheet.add_row [fu.fund.name, fu.name, fu.management_fee, fu.setup_fee, fu.carry, gp_units, fu.isin, fu.notes] + custom_field_values
   end
 end

@@ -393,8 +393,8 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
 
       next unless bought_amount.positive? && cost_of_remaining.positive?
 
-      value_to_cost = total_fmv / cost_of_remaining.to_f
-      moic = (total_fmv + total_sold) / bought_amount.to_f
+      value_to_cost = total_fmv.to_d / cost_of_remaining.to_d
+      moic = (total_fmv + total_sold).to_d / bought_amount.to_d
 
       @portfolio_company_metrics_map[portfolio_company_id] = {
         name: portfolio_company.investor_name,

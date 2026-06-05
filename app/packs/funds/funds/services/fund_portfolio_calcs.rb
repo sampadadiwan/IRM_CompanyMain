@@ -5,7 +5,7 @@ class FundPortfolioCalcs < FundRatioCalcs
 
   def initialize(fund, end_date, synthetic_investments: [])
     @fund  = fund
-    @model = fund  # FundRatioCalcs delegates portfolio_investments/aggregate_portfolio_investments to :model
+    @model = fund # FundRatioCalcs delegates portfolio_investments/aggregate_portfolio_investments to :model
     @end_date = end_date
     @synthetic_investments = synthetic_investments
     super()
@@ -275,8 +275,8 @@ class FundPortfolioCalcs < FundRatioCalcs
 
       next unless adj_cost_of_remaining.positive?
 
-      value_to_cost = adj_fmv / adj_cost_of_remaining.to_f
-      moic = bought_amount.positive? ? (total_val / bought_amount.to_f) : 0
+      value_to_cost = adj_fmv.to_d / adj_cost_of_remaining.to_d
+      moic = bought_amount.positive? ? (total_val.to_d / bought_amount.to_d) : 0
       cash_flows = [] unless return_cash_flows
 
       @portfolio_company_metrics_map[portfolio_company_id] = {
