@@ -111,12 +111,13 @@ When("I fill the new dashboard widget form with data 5") do
   fill_in "dashboard_widget_tags", with: "test_fund_ratios"
   select "XL", from: "dashboard_widget_size"
   fill_in "dashboard_widget_position", with: 5
-  # fill_in "dashboard_widget_metadata", with: "{show_table: true, show_chart: true, ratio_names: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'], titles: ['Gross Portfolio IRR', 'Gross Portfolio MOIC'],chart_colors: ['#00c49a', '#ff8042']}"
+  # Wait for AJAX to load dynamic metadata fields after widget type selection
+  expect(page).to have_field("metadata_show_table")
   select "ON", from: "metadata_show_table"
   select "ON", from: "metadata_show_chart"
   fill_in "metadata_aggregate_ratio_names", with: "Gross Portfolio IRR, Gross Portfolio MOIC"
   fill_in "metadata_titles", with: "Gross Portfolio IRR, Gross Portfolio MOIC"
-  fill_in "metadata_chart_colors", with: "#00c49a, #ff8042"
+  fill_in "metadata_positive_colors", with: "#00c49a, #ff8042"
   check "dashboard_widget_enabled"
   check "dashboard_widget_show_menu"
   click_button "Save"

@@ -38,7 +38,7 @@ end
 
 Given('there is an incoming email addressed to this investor from {string} with subject {string} and attachment {string}') do |from, subject, filename|
   file_path = Rails.public_path.join("sample_uploads", filename)
-  attachments = { "attachment1" => Rack::Test::UploadedFile.new(file_path, "application/octet-stream") }
+  attachments = { "attachment1" => Rack::Test::UploadedFile.new(file_path, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") }
   @last_session = post_to_sendgrid(
     to:          @investor.incoming_email_address,
     from:        from,

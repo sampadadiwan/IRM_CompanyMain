@@ -34,7 +34,7 @@ Feature: Incoming Email
   # ─── Attachments ─────────────────────────────────────────────────────────────
 
   Scenario: Email with attachment saves the document against the email
-    Given there is an incoming email addressed to this investor from "test@example.com" with subject "Pitch Deck" and attachment "sample.xlsx"
+    Given there is an incoming email addressed to this investor from "test@example.com" with subject "Pitch Deck" and attachment "investors.xlsx"
     Then the email should be linked to the investor
     And the email should have 1 document attached
 
