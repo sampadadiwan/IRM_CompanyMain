@@ -1,290 +1,244 @@
 # User and Role Management User Guide
 
-Users in CapHive are employee or investor accounts that can log in, access data, and perform actions. Every user belongs to an entity, and their role determines what they can do within that entity and beyond. This guide covers creating users, understanding the role system, setting up advisor dual-entity access, and using impersonation for support.
+Users are the login accounts — staff and investors — who access CapHive and act within it. Every user belongs to an entity, and their **role** decides what they can do. This guide covers creating users, the role system, advisor dual-access, and impersonation for support.
+
+It's written for administrators.
 
 ---
 
 ## Table of Contents
 
 1. [Key Concepts](#key-concepts)
-2. [User Roles Overview](#user-roles-overview)
-3. [Role Assignment by Entity Type](#role-assignment-by-entity-type)
+2. [The Roles at a Glance](#the-roles-at-a-glance)
+3. [Which Role a New User Gets](#which-role-a-new-user-gets)
 4. [Creating a User](#creating-a-user)
-5. [The curr\_role Field](#the-curr_role-field)
-6. [Employee Roles](#employee-roles)
-7. [Investor Role](#investor-role)
-8. [Investor Advisor Role (Dual-Entity)](#investor-advisor-role-dual-entity)
-9. [RM Role](#rm-role)
-10. [Support and Super Roles](#support-and-super-roles)
-11. [User Permissions](#user-permissions)
-12. [Password and Confirmation Flow](#password-and-confirmation-flow)
-13. [User Impersonation](#user-impersonation)
-14. [Active / Inactive Users](#active--inactive-users)
-15. [WhatsApp Notifications](#whatsapp-notifications)
-16. [Key Fields Reference](#key-fields-reference)
-17. [Frequently Asked Questions](#frequently-asked-questions)
+5. [Staff (Employee) Roles](#staff-employee-roles)
+6. [The Investor Role](#the-investor-role)
+7. [The Investor Advisor Role (Dual Access)](#the-investor-advisor-role-dual-access)
+8. [The Relationship Manager (RM) Role](#the-relationship-manager-rm-role)
+9. [Support and Super Roles](#support-and-super-roles)
+10. [Per-User Feature Access](#per-user-feature-access)
+11. [Joining and Password Setup](#joining-and-password-setup)
+12. [Impersonation (Support)](#impersonation-support)
+13. [Active and Inactive Users](#active-and-inactive-users)
+14. [WhatsApp Notifications](#whatsapp-notifications)
+15. [Worked Example](#worked-example)
+16. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
 ## Key Concepts
 
 | Term | Meaning |
-|---|---|
-| **User** | A login account belonging to an entity |
-| **Role** | A Rolify-managed permission label attached to a user |
-| **curr\_role** | The active role the user is currently operating under |
-| **Entity Type** | Controls which role is assigned at user creation |
-| **Advisor Entity** | The second entity an investor advisor can operate as |
-| **Impersonation** | Support staff temporarily acting as another user |
+|------|---------|
+| **User** | A login account belonging to an entity. |
+| **Role** | A permission label that defines what the user can do. |
+| **Active role** | The role the user is currently operating under (matters mainly for advisors). |
+| **Advisor entity** | The second entity an investor advisor can act as. |
+| **Impersonation** | Support staff temporarily acting as another user to help them. |
 
 ---
 
-## User Roles Overview
+## The Roles at a Glance
 
-CapHive uses the **Rolify** gem to manage roles. A user can hold multiple roles, but operates under one `curr_role` at a time.
+A user can hold several roles but operates under one at a time.
 
 ```mermaid
 graph TD
     User --> employee
     User --> investor
-    User --> investor_advisor
-    User --> rm
-    User --> company_admin
+    User --> investor_advisor[investor advisor]
+    User --> rm[relationship manager]
+    User --> company_admin[company admin]
     User --> approver
     User --> signatory
     User --> support
     User --> super
 ```
 
-| Role | Who has it | What it enables |
-|---|---|---|
-| `employee` | Staff of Company, Fund, or Holding entities | Full back-office access for their entity |
-| `investor` | Users of Investor, Investment Advisor, Family Office entities | Investor portal access |
-| `investor_advisor` | Users of Investor Advisor entities | Can switch between advisor and investor views |
-| `rm` | Investor users with RM category investor access | Relationship manager view |
-| `company_admin` | Designated admins within a company entity | Admin-level operations |
-| `approver` | Users who participate in approval workflows | Approval actions |
-| `signatory` | Users who sign documents | E-sign actions |
-| `support` | CapHive support staff | Can impersonate any user |
-| `super` | CapHive super admins | Full system access |
+| Role | Who has it | What it allows |
+|------|------------|----------------|
+| **Employee** | Staff of Company, Fund, or Holding entities | Full back-office access for their entity. |
+| **Investor** | Users of Investor, Investment Advisor, Family Office entities | Investor portal access. |
+| **Investor Advisor** | Users of Investor Advisor entities | Switch between advisor and investor views. |
+| **Relationship Manager (RM)** | Investor users flagged as RM | A relationship-manager view of their assigned investors. |
+| **Company Admin** | Designated admins within a company | Administrative operations. |
+| **Approver** | Users in approval workflows | Approve/activate approvals. |
+| **Signatory** | Users who sign documents | E-signing. |
+| **Support** | CapHive support staff | Can impersonate any user. |
+| **Super** | CapHive super admins | Full system access. |
 
 ---
 
-## Role Assignment by Entity Type
+## Which Role a New User Gets
 
-When a user is created, the system auto-assigns a role based on the entity type:
+When you create a user, a role is assigned automatically based on the entity type:
 
 ```mermaid
 flowchart TD
-    A[User Created] --> B{Entity Type}
-    B -- Company / Fund / Holding --> C[role: employee\ncurr_role: employee]
-    B -- Investor Advisor --> D[role: investor_advisor\ncurr_role: investor_advisor\nadvisor_entity_id set]
-    B -- Investor / Investment Advisor / Family Office --> E[role: investor\ncurr_role: investor]
-    E -- has RM InvestorAccess --> F[also add role: rm]
+    A[User created] --> B{Entity type}
+    B -->|Company / Fund / Holding| C[Employee]
+    B -->|Investor Advisor| D[Investor Advisor<br/>advisor entity set]
+    B -->|Investor / Investment Advisor / Family Office| E[Investor]
+    E -->|flagged as RM| F[also Relationship Manager]
 ```
 
 ---
 
 ## Creating a User
 
-Navigate to **[Entity] → Users → New**.
+Go to **[Entity] → Users → New**.
 
-Required fields:
-
-| Field | Notes |
-|---|---|
-| **First Name / Last Name** | Used for display and email communications |
-| **Email** | Must be valid. Used as login identifier |
-| **Entity** | The entity this user belongs to |
-
-Optional:
+**Required:**
 
 | Field | Notes |
-|---|---|
-| **Phone / Call Code** | Used for WhatsApp notifications |
-| **Department (dept)** | Team or division label |
-| **Tags** | Searchable labels |
-| **Signature** | Uploaded image used in e-signed documents |
+|-------|-------|
+| **First / Last Name** | For display and emails. |
+| **Email** | The login identifier. |
+| **Entity** | The entity the user belongs to. |
 
-On creation, the system:
-1. Assigns a role based on entity type
-2. Sets `curr_role` to the appropriate default
-3. Sets `active = true`
-4. Checks for any pending InvestorAccess records with this email and links them
-5. Sends a confirmation/invitation email (or confirms immediately if password is being set)
+**Optional:**
 
----
+| Field | Notes |
+|-------|-------|
+| **Phone / Call Code** | For WhatsApp notifications. |
+| **Department** | Team or division label. |
+| **Tags** | Searchable labels. |
+| **Signature** | An image used in e-signed documents. |
 
-## The curr\_role Field
-
-`curr_role` tracks which role the user is currently operating under. For most users this never changes. For **investor advisors**, it can switch between `employee` (operating as the advisor entity's employee) and `investor` (operating on behalf of a specific investor entity).
-
-The `advisor_entity_roles` field stores the comma-separated list of roles an advisor can switch between (e.g. `employee,investor_advisor`).
+On creation, the system assigns the right role, activates the account, links any pending investor-access invitations sent to that email, and emails an invitation (or confirms immediately if a password is being set).
 
 ---
 
-## Employee Roles
+## Staff (Employee) Roles
 
-Users with the `employee` role are staff members of a Company, Fund, or Holding entity. They have back-office access to:
-- All investors in their entity
-- All funds, capital calls, commitments, and distributions
-- Documents, tasks, reports, and approvals
+Employees are staff of a Company, Fund, or Holding entity, with back-office access to all the entity's investors, funds, calls, commitments, distributions, documents, tasks, reports, and approvals.
 
-Within the employee role, additional sub-roles control permissions:
-- **company_admin** — administrative operations
-- **approver** — can act in approval workflows
-- **signatory** — can sign documents electronically
+Within the employee role, extra capabilities can be granted:
 
-These sub-roles (`UPDATABLE_ROLES`) are managed in the Roles admin section.
+- **Company Admin** — administrative operations (managing settings, creating users).
+- **Approver** — can act in approval workflows.
+- **Signatory** — can sign documents electronically.
 
 ---
 
-## Investor Role
+## The Investor Role
 
-Users with the `investor` role access the investor portal. Their visibility is scoped to:
-- Funds and items for which their investor entity has been granted access rights
-- Their own capital commitments, remittances, and distributions
-- Documents shared with them
+Investor users see the investor portal, scoped to:
 
-Investor users are typically created via the **Investor Access** workflow (inviting a user to access a specific investor's portal). See the Investor Access guide.
+- Funds and items their investor entity has been granted access to.
+- Their own commitments, capital calls, and distributions.
+- Documents shared with them.
+
+Investor users are usually created through the **Investor Access** workflow — see the [Investor Access guide](investor_access_tutorial).
 
 ---
 
-## Investor Advisor Role (Dual-Entity)
+## The Investor Advisor Role (Dual Access)
 
-An investor advisor belongs to an **Investor Advisor** entity and can operate in two contexts:
+An investor advisor belongs to an **Investor Advisor** entity and can operate in two contexts, switching between them:
 
 ```mermaid
 flowchart LR
-    IA[Investor Advisor User] --> |curr_role = employee| AdvisorEntity[Advisor Entity\nBack Office]
-    IA --> |curr_role = investor_advisor| InvestorPortal[Investor Entity\nPortal Access]
+    IA[Investor Advisor user] -->|as their own firm| AdvisorEntity[Advisor firm<br/>back office]
+    IA -->|on a client's behalf| InvestorPortal[Client entity<br/>portal access]
 ```
 
-Key setup fields:
-
-| Field | Description |
-|---|---|
-| `advisor_entity_id` | Set to the user's entity at creation (locked — never changes) |
-| `advisor_entity_roles` | Comma-separated list, e.g. `employee,investor_advisor` |
-| `curr_role` | Current active role |
-
-The investor advisor switches entity context via the UI (role switcher). When acting as an investor, Pundit policies check `permissioned_investor_advisor?` to scope visibility.
+The advisor's home entity is fixed when their account is created, and the set of roles they can switch between is configured at the same time. When acting on a client's behalf, they see only what's been explicitly shared with them. See the [Investor Advisor guide](investor_advisor_user_guide).
 
 ---
 
-## RM Role
+## The Relationship Manager (RM) Role
 
-A user gets the `rm` role when they have an InvestorAccess linked to an Investor with `category = RM`. RM users can:
-- See investors assigned to them via RM mappings
-- Receive notifications routed through RM mapping channels
-- Access an RM-specific view of investor portfolios
+A user becomes an RM when their investor access is flagged as RM. RM users can:
+
+- See the investors assigned to them.
+- Receive notifications routed through their RM assignments.
+- Use an RM-specific view of investor portfolios.
 
 ---
 
 ## Support and Super Roles
 
-| Role | Access Level |
-|---|---|
-| `support` | Can impersonate any user via `no_password_login` (see Impersonation) |
-| `super` | Full system access; bypasses entity scoping |
-
-Support users appear in the `support_users` scope. Super users appear in `super_users`.
+| Role | Access |
+|------|--------|
+| **Support** | Can impersonate any user to help troubleshoot (see below). |
+| **Super** | Full system access, across all entities. |
 
 ---
 
-## User Permissions
+## Per-User Feature Access
 
-Users have a **permissions** bitflag (separate from the entity's permissions) that controls individual-level feature access. On creation, all available permissions are granted by default (`User.permissions.keys`).
-
-The `enable_deals` permission on a user also automatically enables `enable_kanban`.
-
-Users also have an `extended_permissions` flag for additional fine-grained controls.
+Beyond the entity-wide feature toggles, each user has their own feature access, granted in full by default. For example, giving a user **Deals** access also enables **kanban boards** for them. This lets you fine-tune what an individual can use within an entity that has a feature switched on.
 
 ---
 
-## Password and Confirmation Flow
+## Joining and Password Setup
 
-- **New users** receive a Devise confirmation email and must confirm before logging in
-- **Password reset** — when a user resets their password, they are **auto-confirmed** (the `confirm_user` callback fires on password change)
-- **System-created users** (`system_created = true`) are prompted to reset their password on first login (`reset_password?` returns true when `sign_in_count == 1 && system_created`)
-- All Devise emails are sent asynchronously via `deliver_later`
-
----
-
-## User Impersonation
-
-Support staff can log in as any user without knowing their password. This is done via the `no_password_login` flow in the sessions controller, which:
-1. Validates the support user's credentials
-2. Sets `session[:support_user_id]` to identify the impersonating user
-3. Signs in as the target user
-
-The `support_user_id` accessor on the User model exposes who initiated the impersonation. Impersonation is restricted to users with the `support` role.
-
-> **Audit:** All actions performed during an impersonated session are attributed to the impersonated user, not the support staff member.
+- **New users** receive a confirmation/invitation email and confirm before logging in.
+- **Password reset** also confirms the account, so a user who resets their password can log straight in.
+- **Admin-created users** are prompted to set their own password on first login.
+- All these emails are sent in the background.
 
 ---
 
-## Active / Inactive Users
+## Impersonation (Support)
 
-The `active` boolean controls whether a user can log in. It is set to `false` when:
-- An entity is disabled (all employees are deactivated in bulk)
-- An admin manually deactivates a user
+Support staff can log in **as** a user without knowing their password, to see exactly what that user sees and help resolve issues.
 
-Re-activating a user: set `active = true` and save. If the entity is still disabled, the user will still be blocked from logging in.
+```mermaid
+flowchart LR
+    S[Support user] -->|impersonate| T[Target user's view]
+    T -->|all actions attributed to| T
+```
+
+> **Audit:** every action taken during an impersonated session is recorded against the impersonated user, with the support staff member identified as the one who started the session. Impersonation is restricted to the **Support** role.
+
+---
+
+## Active and Inactive Users
+
+A user's **active** flag controls whether they can log in. It's turned off when an entity is disabled (all its staff are deactivated at once) or when an admin deactivates someone. To reactivate, turn the flag back on and save — but note that if the entity itself is still disabled, the user remains blocked.
 
 ---
 
 ## WhatsApp Notifications
 
-A user receives WhatsApp notifications when:
-- `whatsapp_enabled = true` on the user
-- A phone number and call code are set
-- The entity has WhatsApp credentials configured (or global credentials are set)
-
-WhatsApp is in addition to email notifications, not a replacement.
+A user receives WhatsApp notifications when WhatsApp is enabled on their account, a phone number and call code are set, and WhatsApp credentials are configured (at the entity or platform level). WhatsApp is in addition to email, not a replacement.
 
 ---
 
-## Key Fields Reference
+## Worked Example
 
-| Field | Type | Description |
-|---|---|---|
-| `email` | String | Login identifier (unique) |
-| `first_name` / `last_name` | String | Display name |
-| `entity_id` | Integer | Primary entity membership |
-| `advisor_entity_id` | Integer | Locked advisor entity (Investor Advisor type only) |
-| `advisor_entity_roles` | String | Available roles for advisor switching |
-| `curr_role` | String | Currently active role |
-| `active` | Boolean | Whether user can log in |
-| `system_created` | Boolean | Set when created by admin (triggers password reset prompt) |
-| `whatsapp_enabled` | Boolean | Whether WhatsApp notifications are sent |
-| `phone` / `call_code` | String | Phone number for WhatsApp |
-| `tag_list` | String | Comma-separated searchable tags |
-| `dept` | String | Department label |
-| `entity_type` | String | Cached from entity.entity_type at creation |
-| `permissions` | Bitfield | Individual feature permissions |
+Onboarding a new analyst to a fund, and giving them approval rights:
+
+1. **[Fund] → Users → New.** Enter the analyst's name and email, entity = the fund. They're created as an **Employee** and emailed an invitation.
+2. The analyst confirms via email and sets a password.
+3. To let them act in approval workflows, add the **Approver** capability to their account.
+4. Later, the analyst needs to manage the deal pipeline — grant them **Deals** access, which also enables kanban boards for them.
+5. When they leave, set their account to **inactive** — their history is preserved, but they can no longer log in.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Can a user belong to multiple entities?**
-Not directly. A user has one `entity_id`. Investor advisors have a second `advisor_entity_id` for dual-entity access. For genuine multi-entity staff, create separate user accounts per entity.
+**Can a user belong to multiple entities?**
+Not directly — a user has one home entity. Investor advisors get a second (advisor) entity for dual access. For genuine multi-entity staff, create a separate account per entity.
 
-**Q: How do I give an employee admin access?**
-Add the `company_admin` role to their user record via **Admin → Users → [User] → Roles**.
+**How do I give an employee admin access?**
+Add the **Company Admin** role to their user record.
 
-**Q: Why isn't my user receiving confirmation emails?**
-Check that the entity's `from_email` is configured in Entity Settings. If it is blank, emails will be sent from the default system address which may be spam-filtered.
+**Why isn't my user receiving confirmation emails?**
+Check the entity's "From Email" in Settings — if it's blank, mail goes from the default address and may be spam-filtered.
 
-**Q: What happens when I change a user's password?**
-The user is automatically confirmed (if not already), which allows them to log in without the email confirmation step.
+**What happens when I change a user's password?**
+The account is confirmed automatically, so they can log in without the separate email-confirmation step.
 
-**Q: Can I have an investor user who also has employee access to a fund?**
-Not within the same account. Create two separate user accounts — one for the investor entity (investor role) and one for the fund entity (employee role).
+**Can one account be both an investor and a fund employee?**
+No — create two separate accounts, one per entity and role.
 
-**Q: How do I deactivate a user without deleting them?**
-Set `active = false` on the user record. Their data and history are preserved; they simply cannot log in.
+**How do I deactivate a user without deleting them?**
+Set the account to inactive. Their data and history stay; they just can't log in.
 
-**Q: What is the difference between `company_admin` and `employee` roles?**
-All company admins are also employees. The `company_admin` role grants additional administrative capabilities (e.g. managing entity settings, creating other users). Regular employees have operational access but not administrative.
+**What's the difference between Company Admin and Employee?**
+Every company admin is also an employee. Company Admin adds administrative powers (managing settings, creating users) on top of normal operational access.

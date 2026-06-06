@@ -1,213 +1,211 @@
 # Approvals User Guide
 
-## Overview
+The **Approvals** system gives you a structured way to collect consent or decisions from investors — drawdown consents, amendment votes, policy sign-offs, and the like. You create an approval request, set a deadline and the response options, then activate it to notify investors. They respond from the portal or with one click from the email (no login needed), and you watch the responses come in live.
 
-The Approvals system provides a structured workflow for collecting consent or decisions from investors. Fund managers create an approval request, set a due date, configure response options, and then activate it to notify investors. Investors respond via the portal or directly from an email link (no login required). The system tracks responses in real time and supports reminders, document attachments, KYC display, and post-approval processing hooks.
+This guide covers the whole flow for fund managers, plus what the investor sees.
 
 ---
 
-## Roles and Permissions
+## Table of Contents
+
+1. [What an Approval Is](#what-an-approval-is)
+2. [Who Does What (Roles)](#who-does-what-roles)
+3. [The Approval Lifecycle](#the-approval-lifecycle)
+4. [Creating an Approval](#creating-an-approval)
+5. [Tracking Responses](#tracking-responses)
+6. [Sending Reminders](#sending-reminders)
+7. [Closing an Approval](#closing-an-approval)
+8. [What the Investor Sees](#what-the-investor-sees)
+9. [Email Notifications](#email-notifications)
+10. [Linking an Approval to a Fund or Deal](#linking-an-approval-to-a-fund-or-deal)
+11. [Custom Fields](#custom-fields)
+12. [Worked Example](#worked-example)
+13. [Frequently Asked Questions](#frequently-asked-questions)
+
+---
+
+## What an Approval Is
+
+An approval is a request for a yes/no (or multi-option) decision from a set of investors, with a deadline and a full audit trail of who responded, how, and when. It's the right tool whenever you need documented investor consent.
+
+---
+
+## Who Does What (Roles)
 
 | Role | What they can do |
-|------|-----------------|
-| **Employee (Company/Fund admin)** | Create, edit, delete approvals; add access rights; add documents; activate (approve) the approval; close the approval; send reminders |
-| **Approver** | Same as employee, plus the ability to activate (approve) an approval |
-| **Investor** | View approvals they have been granted access to; submit and update their response before the due date |
+|------|------------------|
+| **Fund Admin** | Create, edit, and delete approvals; manage access and documents; close approvals; send reminders. |
+| **Approver** | Everything a fund admin can do, **plus** activate (approve) an approval to send it out. |
+| **Investor** | View approvals shared with them and submit or update their response before the deadline. |
 
-> **Note:** The Approvals feature must be enabled for your account (`enable_approvals = true`). Contact your administrator if the menu item is not visible.
-
----
-
-## Lifecycle of an Approval
-
-```
-Draft → Approved (Active) → Closed (Locked)
-```
-
-| State | Description |
-|-------|-------------|
-| **Draft** | Approval has been saved but not yet activated. Investors are not notified. Editable. |
-| **Approved (Active)** | Activated by an Approver. Investors receive email notifications and can submit responses. Still editable until the due date or until closed. |
-| **Closed (Locked)** | No further changes or responses are accepted. Post-approval processing runs (e.g. capturing committed amounts on a Fund). |
+> The Approvals feature must be enabled for your account. If you don't see the menu, ask your administrator.
 
 ---
 
-## Step-by-Step: Creating an Approval (Fund Manager)
+## The Approval Lifecycle
 
-The approval detail page shows a guided steps bar:
+```mermaid
+flowchart LR
+    A[Draft<br/>saved, not sent] --> B[Active<br/>investors notified, responding]
+    B --> C[Closed<br/>locked, processing runs]
+```
 
-> **Setup Approval → Add Access Rights → Add Documents → Finalize Approval → Track Responses → Send Reminders**
+| State | What it means |
+|-------|---------------|
+| **Draft** | Saved but not yet sent. Investors aren't notified. Fully editable. |
+| **Active** | Activated by an Approver. Investors are notified and can respond. Still editable until closed or the deadline passes. |
+| **Closed** | Locked — no further changes or responses. Any follow-on processing runs (e.g. recording approved amounts on a fund). |
 
-### Step 1 — Setup Approval
+---
 
-Navigate to **Approvals → New Approval** and fill in the form:
+## Creating an Approval
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| **Title** | Yes | Name of the approval request (e.g. "Q1 2026 Drawdown Consent") |
-| **Due Date** | Yes | Last date investors can submit a response. Defaults to 7 days from today. Responses and edits are blocked after this date. |
-| **Response Status** | Yes | Comma-separated list of response options presented to investors. Default: `Approved,Pending,Rejected`. You can customise these (e.g. `Yes,No,Abstain`). |
-| **Details** | No | Rich-text body of the approval request — terms, instructions, reference text, etc. |
-| **Show KYCs in Approval** | No | When enabled, the investor's active KYC records (full name, PAN) are shown inside the approval email and response page. Useful for confirming identity at the point of consent. |
-| **Enable response links in email** | No | Adds one-click response buttons directly in the notification email. Investors can respond without logging in. Links are cryptographically signed and expire in 7 days. |
+The approval page guides you through six steps: **Set up → Add access → Add documents → Activate → Track responses → Send reminders.**
 
-Click **Save**. The approval is now in **Draft** state.
+### Step 1 — Set up
 
-### Step 2 — Add Access Rights
+Go to **Approvals → New Approval** and complete:
 
-Access rights control which investors can see and respond to this approval.
+| Field | Required | What it does |
+|-------|----------|--------------|
+| **Title** | Yes | The request name (e.g. "Q1 2026 Drawdown Consent"). |
+| **Due Date** | Yes | The deadline for responses (defaults to 7 days out). Responses and edits are blocked afterwards. |
+| **Response Options** | Yes | The choices investors see, comma-separated. Default `Approved, Pending, Rejected` — customise freely (e.g. `Yes, No, Abstain`). |
+| **Details** | No | The body of the request — terms, instructions, reference text. |
+| **Show KYC in Approval** | No | Displays the investor's KYC details (name, ID) in the email and response page, to confirm identity at the point of consent. |
+| **Enable response links in email** | No | Adds one-click response buttons to the email so investors can respond without logging in. The links are securely signed and expire in 7 days. |
 
-1. On the approval detail page, click the **Access Rights** tab.
-2. Add individual investors, investor groups, or link the approval to an owner (e.g. a Fund) to inherit its access rights automatically.
+Save — the approval is now in **Draft**.
 
-> When an approval is linked to an **owner** (Fund, Deal, etc.), access rights are copied from the owner when the approval is created. Any new investor added to the owner after creation will automatically get an approval response generated for them.
+### Step 2 — Add access
 
-### Step 3 — Add Documents
+Access controls who can see and respond. On the **Access Rights** tab, add individual investors, investor groups, or link the approval to an owner (such as a fund) to inherit its access automatically. When linked to an owner, access is copied across on creation, and any investor added to that owner later automatically gets a response generated for them.
 
-1. Click the **Documents** tab.
-2. Upload any supporting documents (offering memoranda, term sheets, consent forms).
-3. Documents attached here are automatically included as attachments in the notification email sent to investors, with optional password protection via custom notifications.
+### Step 3 — Add documents
 
-### Step 4 — Finalize Approval (Activate)
+On the **Documents** tab, upload supporting files (offering memoranda, consent forms). These are attached to the notification email, with optional password protection.
 
-Once the approval is ready, an **Approver** role user clicks **Approve** on the approval detail page.
+### Step 4 — Activate
 
-- A confirmation prompt appears: *"Please check that investors are added to access rights before approving. Approve and send notifications to investors?"*
-- On confirmation:
-  - The approval status changes to **Active** (`approved = true`).
-  - Pending response records are generated for all investors with access rights.
-  - Email notifications are queued and sent to each investor.
+When ready, an **Approver** clicks **Approve**. You'll be reminded to confirm investors are in the access list. On confirmation, the approval becomes **Active**, a pending response is created for every investor with access, and notification emails go out.
 
-> You cannot activate an approval if you only have the standard employee role. You need the **Approver** role.
+> Activation requires the **Approver** role — a standard admin role can't activate.
 
-### Step 5 — Track Responses
+```mermaid
+flowchart TD
+    A[Approver clicks Approve] --> B[Status → Active]
+    B --> C[Pending response created per investor]
+    C --> D[Notification emails sent]
+```
 
-On the **Responses** tab you can see:
+---
 
-- A **summary card** per response status (e.g. Approved: 12, Pending: 5, Rejected: 2, All: 19). Click any card to filter the response list.
-- A **response table** showing: Investor name, Tags, Responded by (user), Status badge (colour-coded), Last updated.
-- For each row: **Show**, **Edit** (if editable), and a **Quick Response** dropdown (for investors or permissioned employees).
+## Tracking Responses
 
-The response counts are maintained automatically using counter-cache columns on the approval record.
+The **Responses** tab shows:
 
-### Step 6 — Send Reminders
+- **Summary cards** per option (e.g. Approved: 12, Pending: 5, Rejected: 2, All: 19). Click a card to filter.
+- A **response table** with investor name, tags, who responded, a colour-coded status badge, and the last-updated time.
+- Per-row actions: **Show**, **Edit** (when editable), and a **Quick Response** option.
 
-If some investors have not yet responded before the due date:
+Response counts update automatically as investors reply. You can export the responses to Excel from this tab.
 
-1. Click **Send Reminder** on the approval detail page.
-2. A confirmation prompt appears: *"Send notifications to pending investors?"*
-3. On confirmation, all pending approval responses are reset to `notification_sent = false` and a reminder email is re-queued for each.
+---
 
-> Reminders are only available when the approval is **Active** (`approved = true`) and the due date has not passed.
+## Sending Reminders
+
+If some investors haven't responded and the deadline hasn't passed, click **Send Reminder** and confirm. A fresh reminder email is sent to everyone still pending. Reminders are available only while the approval is **Active** and before the due date.
 
 ---
 
 ## Closing an Approval
 
-Click **Close** on the approval detail page.
+Click **Close** and confirm. The approval is **locked** — no edits, no new responses. If it's linked to an owner (such as a fund), the follow-on processing runs automatically; for example, a fund can read each investor's approved amount and record it as a commitment.
 
-- Confirmation: *"This will close the approval and lock it so no further changes can be made."*
-- The approval is **locked** — no edits, no new responses accepted.
-- If the approval is linked to an owner (e.g. a Fund), the owner's `post_approval` hook runs automatically. For example, a Fund can extract approved amounts and record commitments for each investor.
+> A closed approval can't be reopened — create a new one if you need more responses.
 
 ---
 
-## Investor Experience
+## What the Investor Sees
 
-### Viewing Approvals
+Investors see only approvals shared with them (and for which they have approved portal access).
 
-Investors see only approvals for which they have been granted access rights **and** have approved investor access to the entity.
+**In the portal:** open **Approvals**, click one to see its title, deadline, description, KYC details (if enabled), and a form to submit or update their response. They pick a non-pending option and click **Submit**; the response is stamped with the time and their name. They can change it any time before the deadline.
 
-Navigate to **Approvals** from the main menu to see a list. Click an approval to open the detail view showing:
+**From the email (no login):** if response links are enabled, the email has one-click buttons for each option. Clicking one records the response instantly and shows a confirmation page. The link is signed and expires in 7 days.
 
-- Approval title and due date
-- Description / agreement reference text
-- KYC details (if enabled by the fund manager)
-- The investor's current response and a form to update it
-
-### Responding via the Portal
-
-1. Open the approval.
-2. In the response card, select a status from the dropdown (options are set by the fund manager, e.g. *Approved*, *Rejected*).
-3. Click **Submit**.
-
-The response is recorded with a timestamp and the logged-in user's name.
-
-> **Pending** is not a valid submitted response — you must select a non-pending status. Investors cannot change a response after the approval due date has passed.
-
-### Responding via Email (No Login Required)
-
-When **Enable response links in email** is turned on, the notification email contains clickable response buttons (e.g. "Approved", "Rejected") for each non-Pending status.
-
-- Clicking a link immediately records the response — no login needed.
-- The link is signed and expires in **7 days**.
-- After clicking, the investor sees a confirmation page ("Successfully registered response: Approved.").
-- If the link is invalid or expired, an error message is shown.
+```mermaid
+flowchart LR
+    A[Investor gets email] --> B{How to respond?}
+    B -->|One-click in email| C[Response recorded instantly]
+    B -->|Log in to portal| D[Pick option & Submit]
+    C --> E[Counts update live]
+    D --> E
+```
 
 ---
 
 ## Email Notifications
 
-| Trigger | Email sent to |
-|---------|--------------|
-| Approval activated (Approve button clicked) | All investors with pending responses |
-| Reminder sent (Send Reminder button clicked) | All investors with still-pending responses |
-| Investor submits a response | The investor (confirmation of their recorded status) |
+| When | Goes to |
+|------|---------|
+| Approval activated | All investors with a pending response. |
+| Reminder sent | Investors still pending. |
+| Investor responds | The investor (a confirmation of their recorded choice). |
 
-### Custom Notifications
-
-Each approval supports custom notification templates (via the **Notification** tab on the detail page). Custom templates can:
-
-- Override the default email subject and body
-- Control whether the approval link is shown
-- Control whether details (e.g. KYC info) are shown inline
-- Attach documents with optional password protection
-
-If no custom notification is configured, a standard email is sent with the approval title, description, KYC section (if enabled), response links (if enabled), and a "View Approval" button.
+Each approval can use a **custom notification template** to override the subject and body, control whether the link and details show, and attach password-protected documents. Without a custom template, a standard email is sent with the title, description, KYC section (if enabled), response buttons (if enabled), and a "View Approval" button.
 
 ---
 
-## Fund / Deal Integration
+## Linking an Approval to a Fund or Deal
 
-Approvals can be linked to an **owner** such as a Fund or Deal. When linked:
+An approval can be tied to an **owner** like a fund or deal. When linked:
 
-- Each investor's response is associated with their specific **folio** (commitment record) within that Fund or Deal, rather than just the investor entity.
-- The owner's access rights are automatically copied to the approval on creation.
-- When the approval is **closed**, the owner's `post_approval` method is called — for example, a Fund can capture the approved amounts from each investor's response and record them as commitments.
+- Each response is associated with the investor's specific **folio** in that fund or deal, not just the investor.
+- The owner's access list is copied onto the approval automatically.
+- On close, the owner's follow-on processing runs — e.g. a fund captures each investor's approved amount and records commitments.
 
 ---
 
 ## Custom Fields
 
-Approvals and approval responses support **custom fields** configured at the entity level. These appear in the approval form and response form and can capture additional structured data (e.g. "Committed Amount", "Investment Vehicle").
+Approvals and responses support **custom fields** set up at the organisation level, letting you capture extra structured data on the form — for example "Committed Amount" or "Investment Vehicle".
 
 ---
 
-## Admin Panel
+## Worked Example
 
-Administrators can access approvals and approval responses via the admin panel at `/admin/approvals` and `/admin/approval_responses`. The admin dashboard provides filtering and export capabilities for oversight and audit purposes.
+You need drawdown consent from a fund's investors:
+
+1. **Set up:** create "Q1 2026 Drawdown Consent", due in 10 days, options `Approved, Rejected`, with **Show KYC** and **response links in email** both on.
+2. **Add access:** link the approval to the fund — all the fund's investors are pulled in automatically.
+3. **Add documents:** attach the drawdown notice.
+4. **Activate:** the Approver clicks **Approve** — every investor gets an email with one-click Approved / Rejected buttons.
+5. **Track:** the Responses tab fills in live — Approved 14, Pending 4, Rejected 1.
+6. **Remind:** two days before the deadline, click **Send Reminder** for the 4 still pending.
+7. **Close:** after the deadline, click **Close**. Because it's linked to the fund, the approved amounts are recorded as commitments automatically.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Why can't I see the "Approve" button?**  
-A: The Approve button requires the **Approver** role. Contact your administrator to grant this role.
+**Why can't I see the "Approve" button?**
+Activating needs the **Approver** role. Ask your administrator to grant it.
 
-**Q: Can an investor change their response after submitting?**  
-A: Yes, as long as the approval is still Active and the due date has not passed. The investor can open the approval and resubmit.
+**Can an investor change their response after submitting?**
+Yes, while the approval is Active and the deadline hasn't passed.
 
-**Q: What happens if I add an investor to access rights after the approval is already Active?**  
-A: A new pending response is automatically generated for the newly added investor, and they receive an email notification.
+**I added an investor after activating — do they get included?**
+Yes. A pending response is created for them automatically and they're emailed.
 
-**Q: Can I reopen a closed approval?**  
-A: No. Once an approval is closed (`locked = true`), it cannot be reopened. Create a new approval if you need to collect further responses.
+**Can I reopen a closed approval?**
+No. Closed approvals are locked — create a new one if needed.
 
-**Q: The email response link says "Invalid link" — what went wrong?**  
-A: Email response links expire after 7 days. If the investor clicked after expiry, or the email was forwarded from a different address, the link will fail. Ask the investor to log in to the portal to respond directly, or resend a reminder email.
+**The email link says "Invalid link" — why?**
+Links expire after 7 days, and a forwarded email from a different address won't work. Ask the investor to respond from the portal, or resend a reminder.
 
-**Q: How do I export response data?**  
-A: On the Responses tab, approval responses can be exported to Excel (`.xlsx`) using the export option in the response list.
+**How do I export responses?**
+Use the export option on the Responses tab to download an Excel file.
 
-**Q: What are the default response statuses?**  
-A: `Approved,Pending,Rejected`. You can customise this list when creating or editing the approval. Use a comma-separated list of any labels you need (e.g. `Yes,No,Abstain,Not Applicable`).
+**What are the default response options?**
+`Approved, Pending, Rejected` — customise to any comma-separated labels you need (e.g. `Yes, No, Abstain`).

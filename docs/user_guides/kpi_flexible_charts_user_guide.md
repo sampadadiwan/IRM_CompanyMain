@@ -1,51 +1,100 @@
-# User Guide: Flexible KPI Charts in Grid View
+# Flexible KPI Charts User Guide
 
-The Flexible KPI Charting system allows you to create, customize, and save interactive visualizations directly from the KPI Grid View. This guide covers how to use manual selections, mix chart types, and manage saved configurations.
+The Flexible KPI Charting tool lets you build interactive visualisations straight from the KPI Grid — choose which metrics to plot, mix chart types, save layouts, and compare several views side by side. This guide shows you how.
 
 ---
 
-## 1. Accessing the Chart View
-Navigate to the **KPIs** section and ensure you are in the **Grid View**. The charting interface is integrated directly into the grid, appearing above the data table whenever a selection is made.
+## Table of Contents
 
-## 2. Creating a Manual Chart
-You can build a custom chart on the fly by selecting specific KPIs from the grid:
+1. [Where to Find It](#where-to-find-it)
+2. [Building a Chart](#building-a-chart)
+3. [Saving a Chart Layout](#saving-a-chart-layout)
+4. [Loading and Comparing Saved Charts](#loading-and-comparing-saved-charts)
+5. [Charts Follow Your Grid Filters](#charts-follow-your-grid-filters)
+6. [Consistent KPI Names](#consistent-kpi-names)
+7. [Worked Example](#worked-example)
+8. [Tips for Best Results](#tips-for-best-results)
 
-1.  **Select KPIs**: Click the checkboxes next to the KPI names in the first column of the grid table.
-2.  **Chart Controls**: As soon as you select a KPI, the **Chart Controls** panel will appear.
-3.  **Choose Chart Types**: In the controls panel, you can assign a specific visualization type to each selected KPI:
-    *   **Line**: Best for trends over time.
-    *   **Bar (Column)**: Best for comparing values across periods.
-    *   **Area**: Highlights the magnitude of change over time.
-    *   **Pie / Donut**: Useful for seeing the composition of a single period (best used when data points are limited).
-4.  **Mixed Modes**: You can mix types in a single chart (e.g., plot "Revenue" as a Bar and "Net Profit Margin" as a Line).
-5.  **Update Chart**: Click the **Update Chart** button to refresh the visualization with your choices.
+---
 
-## 3. Saving Chart Configurations
-Once you have created a chart layout you like, you can save it for future use:
+## Where to Find It
 
-1.  In the **Chart Controls** panel, enter a name in the **Setting Name** input field.
-2.  Click **Save Setting**.
-3.  The configuration is now stored and linked to your user account and the current Portfolio Company.
+Go to the **KPIs** section and switch to **Grid View**. The charting controls are built into the grid and appear above the data table as soon as you select something to plot.
 
-## 4. Using Saved Charts
-The **Saved Charts** dropdown (top right of the grid) allows you to quickly load previously saved visualizations.
+```mermaid
+flowchart LR
+    A[Select KPIs in the grid] --> B[Chart controls appear]
+    B --> C[Choose a chart type per KPI]
+    C --> D[Update Chart]
+    D --> E[Save layout / compare views]
+```
 
-*   **Multi-View**: You can check multiple saved charts simultaneously. Each selection will render as its own individual "card" on the page, allowing for side-by-side comparison of different KPI sets.
-*   **Toggle Off**: Uncheck a setting in the dropdown to remove its card from the view.
-*   **Clear All**: Use the "Clear All" link in the dropdown or the Chart Controls panel to reset all checkboxes and hide all chart cards.
+---
 
-## 5. Data & Filter Synchronization
-The charts are strictly bound to the **Grid Filters**:
+## Building a Chart
 
-*   **Time Window**: If you filter the grid to show "Last 12 Months" or a specific date range using the `no_of_periods` and `as_of` filters, the chart will only display data for that exact window.
-*   **Tags**: The chart respects the active tags (e.g., "Actual", "Budget", "Projected") selected in the grid filters.
-*   **Real-time Updates**: If you change a filter in the grid (e.g., switching from Monthly to Quarterly), the charts will automatically update to reflect the new data context.
+1. **Select KPIs** — tick the checkboxes next to the metric names in the first column of the grid.
+2. **Chart controls appear** as soon as you select one.
+3. **Choose a chart type for each KPI:**
+   - **Line** — best for trends over time.
+   - **Bar (Column)** — best for comparing values across periods.
+   - **Area** — emphasises the size of change over time.
+   - **Pie / Donut** — shows the make-up of a single period (best with few data points).
+4. **Mix types** — combine them in one chart (e.g. Revenue as bars, Net Profit Margin as a line).
+5. **Update Chart** — click to refresh the visualisation.
 
-## 6. Understanding KPI Names (Standardization)
-The system automatically handles the translation between technical "Reported" names and "Standard" investor names:
-*   **Legends & Labels**: The chart will always display the **Standard KPI Name** defined in your investor mappings, ensuring consistency even if different portfolio companies use different naming conventions in their raw data.
-*   **Cross-Category Access**: You can plot any KPI belonging to the company, even if it is not in the currently active category tab (e.g., plotting an "Income Statement" KPI while viewing the "Balance Sheet" tab).
+---
 
-## 7. Tips for Best Results
-*   **Comparison**: Use "Line" for growth metrics and "Bar" for volume metrics to make them easy to distinguish in a mixed chart.
-*   **Reseting**: If the UI becomes cluttered, the **Clear All** button in the top-right "Saved Charts" menu is the fastest way to return to a clean grid view.
+## Saving a Chart Layout
+
+Once you have a layout you like:
+
+1. Enter a name in the **Setting Name** box in the chart controls.
+2. Click **Save Setting**.
+
+The layout is saved against your account and the current portfolio company, ready to reuse.
+
+---
+
+## Loading and Comparing Saved Charts
+
+The **Saved Charts** dropdown (top right of the grid) loads your saved layouts:
+
+- **Compare several** — tick more than one and each renders as its own card, so you can view different metric sets side by side.
+- **Turn one off** — untick it to remove its card.
+- **Clear all** — use **Clear All** to reset every selection and return to a clean grid.
+
+---
+
+## Charts Follow Your Grid Filters
+
+Charts always reflect the grid's current filters:
+
+- **Time window** — narrow the grid to, say, the last 12 months or a specific range, and the chart shows only that window.
+- **Tags** — the chart respects the active tags (Actual, Budget, Projected) selected in the grid.
+- **Live updates** — change a grid filter (e.g. Monthly to Quarterly) and the charts update automatically.
+
+---
+
+## Consistent KPI Names
+
+The system shows the **standard investor-facing name** for each metric (from your KPI mappings), so legends and labels stay consistent even when different companies use different raw names. You can also plot any of the company's KPIs — including ones outside the category tab you're currently viewing (e.g. an income-statement metric while on the balance-sheet tab).
+
+---
+
+## Worked Example
+
+Comparing growth and profitability for a portfolio company:
+
+1. In Grid View, tick **Revenue** and **Net Profit Margin**.
+2. In the controls, set **Revenue** to **Bar** and **Net Profit Margin** to **Line** (a mixed chart makes the two easy to tell apart).
+3. Set the grid's time window to **Last 12 Months** and tag to **Actual** — the chart redraws for just that window.
+4. Click **Update Chart**, then name the layout "Revenue vs Margin (12M)" and **Save Setting**.
+5. Next quarter, reopen it from **Saved Charts** and add a second saved view alongside it to compare periods.
+
+---
+
+## Tips for Best Results
+
+- **Pick the right type** — Line for growth metrics, Bar for volume metrics; mixing them keeps a combined chart readable.
+- **Declutter fast** — if the page gets busy, **Clear All** in the Saved Charts menu is the quickest way back to a clean grid.

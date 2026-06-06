@@ -12,7 +12,18 @@ The Validation Rule Engine checks your data as you fill in forms and before you 
 Rules fire in two places:
 
 - **As you type / leave a field** — a coloured border appears around the field as early feedback.
-- **When you click Save / Generate / Submit** — a modal summarises all issues before anything is written to the database.
+- **When you click Save / Generate / Submit** — a pop-up summarises all issues before anything is saved.
+
+```mermaid
+flowchart TD
+    A[Fill in a form] --> B{Rule fires?}
+    B -->|No| C[Save normally]
+    B -->|Warning| D[Pop-up: Confirm & Save or Go Back]
+    B -->|Blocker| E[Pop-up: must fix before saving]
+    D -->|Confirm| C
+    D -->|Go Back| A
+    E -->|Fix the issue| A
+```
 
 ---
 
@@ -224,6 +235,26 @@ If the rule does not fire, check:
 - **Enabled** is `true` on the rule (and the override, if any).
 - The **Target Model** matches the form you are testing.
 - The **Condition Tree** JSON is valid (the admin form will error on invalid JSON).
+
+---
+
+## Worked Example
+
+Your firm wants to be warned whenever a valuation jumps too sharply, but with a tighter tolerance than the default 50%.
+
+**As a user entering a valuation:**
+
+1. Open **Portfolio Company → Valuations → New**.
+2. Enter a per-share value that is 60% higher than the previous valuation for that instrument.
+3. Tab out of the field — a **yellow border** appears.
+4. Click **Save** — a pop-up reads *"Per-share value increased by more than 50% vs. the previous valuation. Please confirm this is intentional."*
+5. You either click **Confirm & Save** (it's a genuine markup) or **Go Back** to correct a typo.
+
+**As the Company Admin tightening the threshold to 25%:**
+
+1. Go to **Admin → Validation Rules** and open the per-share-increase rule.
+2. Add a **Rule Override** with a param override of `{ "pct_threshold": 25 }`.
+3. Save — from now on the warning fires at a 25% jump for your entity only, leaving every other entity on the default.
 
 ---
 

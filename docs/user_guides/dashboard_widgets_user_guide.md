@@ -1,324 +1,247 @@
-# Dashboard Widgets User Guide (V9.1.87)
+# Dashboard Widgets User Guide
 
-This guide provides a detailed reference for configuring dashboard widgets in the IRM platform. Dashboards are modular and can be customized per entity or fund using a flexible widget system.
+Dashboards in CapHive are built from **widgets** — individual blocks of information or functionality. As an administrator you can enable, resize, reorder, and fine-tune widgets to create tailored dashboards for different users and entities, and even maintain several named versions of the same dashboard.
 
-## Table of Contents
-1. [Overview](#1-overview)
-2. [Global Widget Settings](#2-global-widget-settings)
-3. [Metadata Configuration](#3-metadata-configuration)
-4. [Widget Reference by Dashboard](#4-widget-reference-by-dashboard)
-    - [Fund Dashboard](#fund-dashboard)
-    - [Investor Dashboard](#investor-dashboard)
-    - [Portfolio Company Dashboard](#portfolio-company-dashboard)
-    - [Portfolio Dashboard](#portfolio-dashboard)
-    - [Aggregated Portfolio Dashboard](#aggregated-portfolio-dashboard)
-    - [Landing Pages (FM, LP, Ops)](#landing-pages)
-5. [Advanced Features](#5-advanced-features)
-    - [Named Dashboards](#named-dashboards)
-    - [Dashboard Selector Dropdown](#dashboard-selector-dropdown)
-    - [User Dashboard Preferences](#user-dashboard-preferences)
-    - [Flexible KPI Charts](#flexible-kpi-charts)
-    - [Embedded Documents (Excel as Grid)](#embedded-documents-excel-as-grid)
-    - [Agent Charts](#agent-charts)
-6. [FAQ](#6-faq)
+This guide is a reference for configuring dashboards and their widgets.
 
 ---
 
-## 1. Overview
-Dashboards in IRM are composed of "Widgets"—individual blocks of information or functionality. Administrators can enable, disable, resize, and reorder these widgets to create a tailored experience for different users and entities.
+## Table of Contents
 
-Each dashboard type (e.g., Fund Dashboard, Investor Dashboard) can have multiple **named configurations** — separate sets of widgets with their own layout and metadata. The special name `Default` is used when no other configuration is specified. Named dashboards allow an entity to maintain several distinct views of the same data (e.g., an operational view, a compliance view, and a presentation view) and switch between them instantly.
+1. [How Dashboards Are Built](#how-dashboards-are-built)
+2. [Widget Settings: Size, Position, Enabled](#widget-settings-size-position-enabled)
+3. [Widget Options (Metadata)](#widget-options-metadata)
+4. [Widget Reference by Dashboard](#widget-reference-by-dashboard)
+5. [Named Dashboards](#named-dashboards)
+6. [The Dashboard Selector](#the-dashboard-selector)
+7. [Per-User Dashboard Preferences](#per-user-dashboard-preferences)
+8. [Special Widgets](#special-widgets)
+9. [Worked Example](#worked-example)
+10. [Frequently Asked Questions](#frequently-asked-questions)
 
-## 2. Global Widget Settings
-Every widget has three primary settings that control its appearance on the dashboard:
+---
 
-*   **Size**: Controls the width of the widget on the page grid.
-    *   **XS**: 25% width (4 per row)
-    *   **Small**: 33% width (3 per row)
-    *   **Medium**: 50% width (2 per row)
-    *   **Large**: 66% width
-    *   **XL**: 100% width (Full row)
-*   **Position**: A numerical value determining the display order (lower numbers appear first).
-*   **Enabled**: A toggle to show or hide the widget on the dashboard.
+## How Dashboards Are Built
 
-## 3. Metadata Configuration
-Metadata allows for deep customization of a widget's behavior. It is written as a **Ruby-style Hash**.
+Each dashboard is simply a collection of widgets you arrange on a grid. Every dashboard type (Fund, Investor, Portfolio Company, and so on) can have several **named configurations** — distinct sets of widgets you switch between, such as an operational view, a compliance view, and a presentation view. The configuration called **Default** is shown when no other is chosen.
 
-### Syntax Rules:
-*   **Keys**: Followed by a colon (e.g., `title:`).
-*   **Strings**: Must be enclosed in single quotes (e.g., `'My Title'`).
-*   **Booleans**: Use `true` or `false` (no quotes).
-*   **Arrays**: Enclosed in square brackets (e.g., `['XIRR', 'TVPI']`).
-*   **Numbers**: Written directly (e.g., `12`).
+```mermaid
+flowchart LR
+    A[Dashboard type<br/>e.g. Fund] --> B[Named configuration<br/>e.g. Default / Compliance]
+    B --> C[Widgets<br/>arranged on a grid]
+    C --> D[Each widget: size, position, options]
+```
 
-**Example Metadata:**
+---
+
+## Widget Settings: Size, Position, Enabled
+
+Every widget has three core settings:
+
+- **Size** — the width on the grid:
+  - **XS** 25% (4 per row) · **Small** 33% (3 per row) · **Medium** 50% (2 per row) · **Large** 66% · **XL** 100% (full row).
+- **Position** — a number controlling display order (lower appears first).
+- **Enabled** — show or hide the widget.
+
+---
+
+## Widget Options (Metadata)
+
+Most widgets accept **options** that customise their behaviour, entered in a simple settings format. The rules:
+
+- Each option is a name followed by a colon and a value.
+- Text values go in single quotes (`'My Title'`).
+- Yes/no values use `true` or `false` (no quotes).
+- Lists go in square brackets (`['XIRR', 'TVPI']`).
+- Numbers are written directly (`12`).
+
+**Example:**
+
 ```ruby
 {title: 'Performance Summary', months: 12, ratio_names: ['XIRR', 'TVPI'], chart: true}
 ```
 
+> If an option's syntax is invalid, the widget falls back to its defaults. Each widget's edit form shows a sample to copy.
+
 ---
 
-## 4. Widget Reference by Dashboard
+## Widget Reference by Dashboard
 
 ### Fund Dashboard
-Used for individual Fund pages.
 
-#### Fund Ratios
-*   **Description**: Displays performance ratios (XIRR, TVPI, DPI, etc.) with optional charts.
-*   **Metadata Options**:
+**Fund Ratios** — performance ratios with optional charts.
 
 | Option | Type | Description |
-| :--- | :--- | :--- |
-| `title` | String | Custom widget title |
-| `scenario` | String | Calculation scenario (Default: 'Default') |
-| `ratio_names` | Array | Ratios to display, e.g., `['XIRR', 'TVPI', 'DPI']` |
-| `months` | Integer | History window in months |
-| `chart` | Boolean | Show/hide the chart |
-| `list` | Boolean | Show/hide the data table |
-| `condensed` | Boolean | Use a compact layout |
-| `decimals` | Integer | Number of decimal places (Default: 2) |
+|--------|------|-------------|
+| `title` | Text | Custom widget title. |
+| `scenario` | Text | Calculation scenario (default 'Default'). |
+| `ratio_names` | List | Ratios to display, e.g. `['XIRR', 'TVPI', 'DPI']`. |
+| `months` | Number | History window in months. |
+| `chart` / `list` | Yes/No | Show the chart / the table. |
+| `condensed` | Yes/No | Compact layout. |
+| `decimals` | Number | Decimal places (default 2). |
 
-#### Fund Cashflows
-*   **Description**: Visualizes fund cashflow series over time.
-*   **Metadata Options**:
+**Fund Cashflows** — cashflow series over time.
 
 | Option | Type | Description |
-| :--- | :--- | :--- |
-| `months` | Integer | History window (Default: 36) |
-| `series` | String | Comma-separated series names to include |
-| `chart_type` | String | `line`, `bar`, `area`, or `spline` |
+|--------|------|-------------|
+| `months` | Number | History window (default 36). |
+| `series` | Text | Comma-separated series names. |
+| `chart_type` | Text | `line`, `bar`, `area`, or `spline`. |
 
-#### Fund Portfolio Stats
-*   **Description**: Aggregate statistics across all investments in the fund.
-*   **Metadata Options**:
+**Fund Portfolio Stats** — aggregate stats across the fund's investments.
 
 | Option | Type | Description |
-| :--- | :--- | :--- |
-| `fields` | String | Comma-separated field paths (e.g., 'Bought Amount,FMV') |
-| `field_names` | String | Custom labels for the fields |
-| `force_units` | String | `Lakhs`, `Crores`, or `Millions` |
-| `currency` | String | Currency code (e.g., 'USD') |
-
----
+|--------|------|-------------|
+| `fields` | Text | Comma-separated fields (e.g. 'Bought Amount,FMV'). |
+| `field_names` | Text | Custom labels for the fields. |
+| `force_units` | Text | `Lakhs`, `Crores`, or `Millions`. |
+| `currency` | Text | Currency code (e.g. 'USD'). |
 
 ### Investor Dashboard
-Used for individual Investor profile pages.
 
-#### Documents
-*   **Description**: A powerful document browser for the investor's library.
-*   **Metadata Options**:
+**Documents** — a document browser for the investor's library.
 
 | Option | Type | Description |
-| :--- | :--- | :--- |
-| `folder_id` | Integer | Limit view to a specific folder ID |
-| `card_view` | Boolean | Toggle between list and grid/card view |
-| `per_page` | Integer | Number of documents per page |
-| `per_row` | Integer | Cards per row in card view |
-| `show_tags` | Boolean | Show/hide document tags |
+|--------|------|-------------|
+| `folder_id` | Number | Limit to a specific folder. |
+| `card_view` | Yes/No | List vs card view. |
+| `per_page` | Number | Documents per page. |
+| `per_row` | Number | Cards per row. |
+| `show_tags` | Yes/No | Show document tags. |
 
-#### Commitments
-*   **Description**: Summary of the investor's capital commitments.
-*   **Metadata**: None required.
-
----
+**Commitments** — a summary of the investor's commitments (no options needed).
 
 ### Portfolio Company Dashboard
-Used for individual Portfolio Company (Investee) pages.
 
-#### Kpis (Grid View)
-*   **Description**: The primary interface for viewing and charting company KPIs.
-*   **Metadata Options**:
+**KPIs (Grid View)** — view and chart company KPIs.
 
 | Option | Type | Description |
-| :--- | :--- | :--- |
-| `categories` | String | Comma-separated categories (e.g., 'Income Statement, Balance Sheet') |
-| `period` | String | `Quarter` or `Year` |
-| `no_of_periods`| Integer | Number of periods to display (Default: 12) |
-| `tag_list` | String | Filter by tags (e.g., 'Actual, Budget') |
-| `flexible_chart`| Boolean | Enable the interactive charting system |
+|--------|------|-------------|
+| `categories` | Text | Comma-separated categories. |
+| `period` | Text | `Quarter` or `Year`. |
+| `no_of_periods` | Number | Periods to display (default 12). |
+| `tag_list` | Text | Filter by tags (e.g. 'Actual, Budget'). |
+| `flexible_chart` | Yes/No | Enable interactive charting. |
 
-#### Captable
-*   **Description**: Detailed capitalization table with ownership breakdowns.
-*   **Metadata Options**:
+**Cap Table** — capitalisation table with ownership breakdowns.
 
 | Option | Type | Description |
-| :--- | :--- | :--- |
-| `show_charts` | Boolean | Show ownership distribution charts |
-| `diluted_chart`| String | `pie`, `donut`, or `half_donut` |
-| `show_captable`| Boolean | Show the main data table |
-| `ag` | Boolean | Use high-performance AG-Grid for the table |
+|--------|------|-------------|
+| `show_charts` | Yes/No | Show ownership charts. |
+| `diluted_chart` | Text | `pie`, `donut`, or `half_donut`. |
+| `show_captable` | Yes/No | Show the main table. |
+| `ag` | Yes/No | Use the high-performance grid for the table. |
 
-#### Data Card
-*   **Description**: Displays specific fields from the company record in a clean card format.
-*   **Example**: `{cols: 2, fields: "Category:category,City:city,Sector:custom_fields.sector"}`
-
----
+**Data Card** — selected record fields in a clean card, e.g. `{cols: 2, fields: "Category:category,City:city,Sector:custom_fields.sector"}`.
 
 ### Portfolio Dashboard
-Used for the overall Portfolio overview.
 
-#### Portfolio IRR
-*   **Description**: Calculates and charts the Internal Rate of Return for the entire portfolio.
-*   **Metadata Options**: `{show_table: true, show_chart: true}`
-
-#### FMV %
-*   **Description**: Pie chart showing the distribution of Fair Market Value across the portfolio.
-
----
+- **Portfolio IRR** — IRR for the whole portfolio, e.g. `{show_table: true, show_chart: true}`.
+- **FMV %** — a pie chart of fair-market-value distribution.
 
 ### Aggregated Portfolio Dashboard
-Used for cross-fund portfolio analysis.
 
-#### Aggre. Portfolio Investments
-*   **Description**: A multi-company investment table with grouping capabilities.
-*   **Metadata Options**: `{show_grouped: true, group_by_column: 'portfolio_company_name'}`
-
-#### Company Charts
-*   **Description**: Sector and Company-wise breakdowns.
-*   **Metadata Options**: `{plot: 'fmv,bought_amount', table_limit: 10}`
-
----
+- **Aggregate Portfolio Investments** — a multi-company table, e.g. `{show_grouped: true, group_by_column: 'portfolio_company_name'}`.
+- **Company Charts** — sector and company breakdowns, e.g. `{plot: 'fmv,bought_amount', table_limit: 10}`.
 
 ### Landing Pages
-*   **FM Landing Page**: Includes **FM Stats**, **Managed Funds**, and **Investment Opportunities**.
-*   **LP Landing Page**: Includes **My Funds**, **Offers**, **Interests**, and **Account Entries Chart**.
-*   **Ops Dashboard**: Focused on internal management with **My Tasks**, **Upcoming Events**, and **Investors No Interaction**.
+
+- **Fund Manager** — Stats, Managed Funds, Investment Opportunities.
+- **Investor (LP)** — My Funds, Offers, Interests, Account Entries Chart.
+- **Operations** — My Tasks, Upcoming Events, Investors With No Interaction.
 
 ---
 
-## 5. Advanced Features
+## Named Dashboards
 
-### Named Dashboards
+A **named dashboard** is a distinct set of widgets saved under a label for a dashboard type and entity. Every dashboard type supports multiple names.
 
-A **named dashboard** is a distinct set of widgets saved under a custom `Name` for a given dashboard type and entity. Any dashboard type supports multiple names.
+| Setting | Meaning |
+|---------|---------|
+| **Dashboard Name** | The dashboard type (e.g. Fund Dashboard). |
+| **Name** | The configuration label (e.g. Default, Compliance, Budget View). |
 
-| Field | Description |
-| :--- | :--- |
-| **Dashboard Name** | The dashboard type, e.g., `Fund Dashboard`, `Investor Dashboard` |
-| **Name** | The configuration label, e.g., `Default`, `Compliance`, `Budget View` |
+Widgets sharing the same dashboard type + name + entity form one named dashboard. Those named **Default** are the fallback when no specific name is requested. The same widget can appear in several named dashboards with different options — for example a Fund Ratios widget set to "Actual" in Default and "Budget" in a Budget View.
 
-All widgets that share the same **Dashboard Name + Name + Entity** form one named dashboard. Widgets with `Name = Default` are the fallback shown when no specific name is requested.
-
-**To create a named dashboard:**
-1. Go to **Dashboard Widgets** in the admin menu.
-2. Create one or more widgets, setting **Name** to your chosen label (e.g., `Compliance`).
-3. Ensure all widgets for that named dashboard share the same **Name** value.
-
-The same widget type can appear in multiple named dashboards with different metadata — for example, a `Fund Ratios` widget configured for `Actual` in the `Default` dashboard and for `Budget` in a `Budget View` dashboard.
+**To create one:** in **Dashboard Widgets**, create the widgets you want and give them all the same **Name** (e.g. "Compliance").
 
 ---
 
-### Dashboard Selector Dropdown
+## The Dashboard Selector
 
-When an entity has **more than one** named dashboard configured for a dashboard type, a selector dropdown appears automatically at the right-hand end of the dashboard navigation bar.
+When an entity has **two or more** named dashboards for a type, a selector dropdown appears at the right of the dashboard navigation bar:
 
-*   The dropdown lists all available dashboard names in **alphabetical order** (or in the order defined by user preferences — see below).
-*   Selecting a name immediately loads that dashboard via a Turbo Frame swap — no full page reload.
-*   The selected name is reflected in the URL (`?name=Compliance`) so the view can be **bookmarked and shared**.
-*   If only one named dashboard exists for an entity, the dropdown is not shown.
-
-> **Note:** The dropdown is only visible on dashboard types rendered through the main dashboard view (Fund, Investor, Portfolio Company, and the generic Ops Dashboard). The Aggregated Portfolio Dashboard selector is planned for a future release.
+- It lists the available names (alphabetically, or in a user's preferred order).
+- Choosing one loads it instantly without a full page reload.
+- The chosen name appears in the page address so the view can be bookmarked and shared.
+- With only one named dashboard, no dropdown is shown.
 
 ---
 
-### User Dashboard Preferences
+## Per-User Dashboard Preferences
 
-Administrators can configure per-user preferences that control:
+You can set, per user, the **order** named dashboards appear in the selector and which one **loads by default**. The first name in their preferred sequence becomes their default when they open that dashboard.
 
-1. **The order** in which named dashboards appear in the dropdown.
-2. **The default** dashboard loaded when no `?name=` parameter is present in the URL (i.e., the first in the sequence).
+- Edit these on the **User** form, in the **Dashboard Preferences** section (shown for users who already have preferences). The user's profile page also displays a read-only summary.
+- To set up preferences for the first time, ask your system administrator to seed them.
 
-Preferences are stored as JSON on the User record under the `preferences` column with the following structure:
+**Which dashboard loads:**
 
-```json
-{
-  "dashboard": {
-    "Fund Dashboard": {
-      "sequence": "Compliance,Default"
-    },
-    "Investor Dashboard": {
-      "sequence": "Budget View,Default"
-    }
-  }
-}
-```
-
-The `sequence` value is a comma-separated ordered list of dashboard names. The **first name** is loaded by default when the user navigates to that dashboard page.
-
-**Editing preferences via the User form:**
-
-The User edit form shows a **Dashboard Preferences** section automatically when the user already has preferences saved. Each dashboard type appears as a labelled text field showing the current sequence, which can be edited inline and saved.
-
-> The section is only shown for existing users who already have at least one dashboard preference entry. New preferences must be seeded via the Rails console or a one-off script.
-
-**Editing preferences via the Rails console:**
-
-```ruby
-Chewy.strategy(:bypass) do
-  user = User.find(103)
-  user.update!(preferences: {
-    "dashboard" => {
-      "Fund Dashboard" => { "sequence" => "Compliance,Default" }
-    }
-  })
-end
-```
-
-**The User show page** displays a read-only summary table of all dashboard preferences, including the full ordered sequence and the highlighted default for each dashboard type.
-
-**Fallback behaviour:**
-
-| Condition | Dashboard loaded |
-| :--- | :--- |
-| User has a sequence preference and no `?name=` in URL | First name in the sequence |
-| No sequence preference and no `?name=` in URL | `Default` |
-| `?name=X` is present in the URL | Always `X`, regardless of preference |
-| A sequence name no longer has widgets configured | Widget helper falls back to the full default widget set |
+| Situation | Dashboard shown |
+|-----------|-----------------|
+| User has a preferred sequence, no name in the address | First name in the sequence. |
+| No preference, no name in the address | Default. |
+| A specific name is in the address | That name, always. |
+| A preferred name no longer has widgets | Falls back to the default widget set. |
 
 ---
 
-### Flexible KPI Charts
-The **Kpis** widget supports an interactive charting mode. Users can select multiple KPIs from the grid and choose different chart types (Line, Bar, Area) for each to create mixed-mode visualizations. These configurations can be saved and loaded later.
-*See the [Flexible KPI Charts User Guide](./kpi_flexible_charts_user_guide.md) for more details.*
+## Special Widgets
 
-### Embedded Documents (Excel as Grid)
-The **Embed Document** widget can render Excel files (`.xlsx`) as interactive, searchable grids directly on the dashboard.
-*   **Metadata**: `{name: 'Financial Model', xlsx_as_grid: true}`
-
-### Agent Charts
-Leverage AI to generate custom visualizations based on complex data queries.
-*   **Metadata**: `{title: 'AI Insights'}`
+- **Flexible KPI Charts** — the KPIs widget supports interactive charting: pick KPIs from the grid, choose a chart type for each, and save the layout. See the [Flexible KPI Charts guide](kpi_flexible_charts_user_guide).
+- **Embedded Documents** — render an Excel file as an interactive, searchable grid on the dashboard, e.g. `{name: 'Financial Model', xlsx_as_grid: true}`.
+- **Agent Charts** — use AI to generate custom visualisations from a data question, e.g. `{title: 'AI Insights'}`. See the [Agent Charts guide](agent_charts_user_guide).
 
 ---
 
-## 6. FAQ
+## Worked Example
 
-**Q: Why isn't my widget showing up?**
-A: Ensure the **Enabled** toggle is on and that the **Dashboard Name** matches the page you are viewing. Also, check that the **Metadata** syntax is valid Ruby (e.g., no missing commas or unquoted strings).
+Giving a fund both an operational and a board-presentation dashboard:
 
-**Q: How do I change the order of widgets?**
-A: Use the **Position** field. Widgets are sorted in ascending order (1, 2, 3...).
-
-**Q: Can I show the same widget twice with different settings?**
-A: Yes. You can add multiple instances of the same widget to a dashboard and use **Metadata** to differentiate them (e.g., two "Fund Ratios" widgets, one for 'Actual' and one for 'Budget').
-
-**Q: What happens if I enter invalid metadata?**
-A: The widget will usually fall back to its default settings. Check the "Sample Metadata" hint in the edit form for the correct format.
-
-**Q: I've created a named dashboard but the dropdown isn't appearing.**
-A: The dropdown only appears when there are **two or more** distinct named dashboards configured for the same entity and dashboard type. Check that your widgets have different `Name` values and that all are **Enabled**. If only one name is configured (e.g., just `Default`), no dropdown is shown.
-
-**Q: How do I control which named dashboard a user sees first?**
-A: Set a `sequence` preference on the user record. The first name in the sequence becomes the default. You can do this via the User edit form (if a preference already exists) or via the Rails console. See [User Dashboard Preferences](#user-dashboard-preferences) for details.
-
-**Q: A user has a preference set but still lands on Default.**
-A: Check that the name in the sequence exactly matches the `Name` field on the dashboard widgets (case-sensitive). Also confirm the widgets for that named dashboard are enabled and belong to the correct entity.
-
-**Q: Can I share a link to a specific named dashboard?**
-A: Yes. The URL includes `?name=<dashboard-name>` whenever a named dashboard is active (e.g., `?name=Compliance`). Copy and share that URL — recipients will land on the same named dashboard directly.
-
-**Q: The dropdown shows names in the wrong order.**
-A: By default names are sorted alphabetically. To override the order for a specific user, set a `sequence` preference on their user record listing names in the desired order.
+1. In **Dashboard Widgets**, build your everyday widgets with **Name** = `Default` — Fund Ratios, Fund Cashflows, Portfolio Stats.
+2. Add a second set with **Name** = `Board View` — a condensed Fund Ratios (`{ratio_names: ['XIRR','TVPI','DPI'], condensed: true, chart: true}`), a large FMV % chart, and Portfolio Stats.
+3. Because the fund now has two named dashboards, the **selector dropdown** appears automatically.
+4. For the managing partner, set a **preference** so `Board View` is first — it becomes their default, while everyone else still lands on `Default`.
+5. Share the board dashboard by copying its address (which includes the name) into the meeting invite.
 
 ---
-*For technical support or custom widget requests, please contact the system administrator.*
+
+## Frequently Asked Questions
+
+**Why isn't my widget showing?**
+Check that **Enabled** is on, the **Dashboard Name** matches the page you're viewing, and the options syntax is valid (no missing commas or unquoted text).
+
+**How do I change the order of widgets?**
+Use the **Position** field — widgets sort ascending (1, 2, 3…).
+
+**Can I show the same widget twice with different settings?**
+Yes — add it twice and give each a different set of options (e.g. one Fund Ratios for Actual, one for Budget).
+
+**What if I enter invalid options?**
+The widget falls back to its defaults. Copy the sample shown in the edit form.
+
+**I created a named dashboard but the dropdown isn't appearing.**
+The dropdown needs **two or more** named dashboards for the same entity and type. Check the widgets have different **Name** values and are enabled.
+
+**How do I control which named dashboard a user sees first?**
+Set a preferred sequence on their user record; the first name is their default. See [Per-User Dashboard Preferences](#per-user-dashboard-preferences).
+
+**A user has a preference but still lands on Default.**
+Confirm the name in their sequence exactly matches the widgets' **Name** (case-sensitive) and that those widgets are enabled for the right entity.
+
+**Can I share a link to a specific named dashboard?**
+Yes — the page address includes the dashboard name when one is active; copy and share it.
+
+**The dropdown shows names in the wrong order.**
+Names sort alphabetically by default; set a preferred sequence on the user to override.

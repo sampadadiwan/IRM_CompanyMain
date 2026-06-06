@@ -1,404 +1,286 @@
 # Document Management User Guide
 
-CapHive provides a folder-based document management system with access control inheritance, document sharing, AI-powered Q&A extraction, and integration with the e-signing workflow. Documents are organised in hierarchical folders, and permissions propagate automatically from parent folders to children. This guide covers creating and organising documents, managing folder access, sharing documents externally, and using doc questions.
+CapHive organises files in a folder tree with automatic access inheritance, document sharing, AI-powered Q&A extraction, and built-in e-signing. Permissions you set on a folder flow down to everything inside it, so you control access in one place. This guide covers creating and organising documents, managing access, sharing externally, and extracting answers from documents.
 
 ---
 
 ## Table of Contents
 
 1. [Key Concepts](#key-concepts)
-2. [Document Storage Architecture](#document-storage-architecture)
-3. [Folder Hierarchy](#folder-hierarchy)
-4. [Folder Types: System vs Regular](#folder-types-system-vs-regular)
-5. [Folder Access Control Inheritance](#folder-access-control-inheritance)
+2. [How Documents Are Organised](#how-documents-are-organised)
+3. [The Folder Tree](#the-folder-tree)
+4. [System vs Regular Folders](#system-vs-regular-folders)
+5. [Access Inheritance](#access-inheritance)
 6. [Creating a Folder](#creating-a-folder)
-7. [Document Owners (What Can Have Documents)](#document-owners-what-can-have-documents)
+7. [What Can Hold Documents](#what-can-hold-documents)
 8. [Uploading a Document](#uploading-a-document)
-9. [Document Fields and Metadata](#document-fields-and-metadata)
-10. [Document Tags and Owner Tags](#document-tags-and-owner-tags)
-11. [As Of Date](#as-of-date)
-12. [Template Documents vs Regular Documents](#template-documents-vs-regular-documents)
-13. [Document Generation and As Of Date](#document-generation-and-as-of-date)
-14. [Document Approval](#document-approval)
-15. [Document Sharing (DocShare)](#document-sharing-docshare)
-16. [Document Access Rights](#document-access-rights)
-17. [Viewing Tracking](#viewing-tracking)
-18. [Document Q&A (DocQuestion)](#document-qa-docquestion)
-19. [Download and Print Permissions](#download-and-print-permissions)
-20. [Private Folders](#private-folders)
-21. [E-Signing Documents](#e-signing-documents)
-22. [Key Fields Reference](#key-fields-reference)
-23. [Frequently Asked Questions](#frequently-asked-questions)
+9. [Tags and Owner Tags](#tags-and-owner-tags)
+10. [The As-Of Date](#the-as-of-date)
+11. [Generated Documents and Templates](#generated-documents-and-templates)
+12. [Document Approval](#document-approval)
+13. [Sharing a Document Externally](#sharing-a-document-externally)
+14. [Document Access Rights](#document-access-rights)
+15. [Who Viewed a Document](#who-viewed-a-document)
+16. [Document Q&A](#document-qa)
+17. [Download and Print Controls](#download-and-print-controls)
+18. [Private Folders](#private-folders)
+19. [E-Signing](#e-signing)
+20. [Worked Example](#worked-example)
+21. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
 ## Key Concepts
 
 | Term | Meaning |
-|---|---|
-| **Document** | Any uploaded file (PDF, Excel, image, etc.) stored in a folder |
-| **Folder** | A named container in a hierarchical tree |
-| **Full Path** | The absolute path of a folder, e.g. `/Investors/Acme Capital/KYC` |
-| **Owner** | The business record a document belongs to (Fund, Deal, CapitalCommitment, etc.) |
-| **Owner Tag** | A classification label on a document (e.g. `PAN`, `KYC`, `Offer Template`) |
-| **DocShare** | A record sharing a document with a specific email address |
-| **DocQuestion** | An AI-extracted question-answer pair from a document's content |
-| **Access Right** | A permission record controlling who can see a folder or document |
+|------|---------|
+| **Document** | Any uploaded file (PDF, Excel, image…) stored in a folder. |
+| **Folder** | A named container in the tree. |
+| **Full Path** | A folder's location, e.g. `/Investors/Acme Capital/KYC`. |
+| **Owner** | The business record a document belongs to (a fund, commitment, deal…). |
+| **Owner Tag** | A functional label that workflows use to find specific document types (e.g. `KYC`, `Offer Template`). |
+| **Share** | Giving an external email address access to one document. |
+| **Document Q&A** | AI-extracted question-and-answer facts from a document's content. |
+| **Access Right** | A permission controlling who can see a folder or document. |
 
 ---
 
-## Document Storage Architecture
+## How Documents Are Organised
+
+Every entity has a **root folder** (`/`). Sub-folders are created automatically as business records are created (investors, commitments, capital calls, deals…), and you can also create folders by hand.
 
 ```mermaid
 graph TD
-    Entity --> RootFolder[Root Folder /]
-    RootFolder --> Investors[/Investors/]
-    RootFolder --> Funds[/Funds/]
-    RootFolder --> Deals[/Deals/]
-    RootFolder --> SecSales[/Secondary Sales/]
+    Entity --> Root[Root /]
+    Root --> Investors[/Investors/]
+    Root --> Funds[/Funds/]
+    Root --> Deals[/Deals/]
     Investors --> Inv1[/Investors/Acme Capital/]
     Inv1 --> KYC[/Investors/Acme Capital/KYC/]
-    Inv1 --> Commitments[/Investors/Acme Capital/INV-001-A/]
-    Commitments --> Doc1[Subscription Agreement.pdf]
-    Commitments --> Doc2[Capital Call Notice.pdf]
+    Inv1 --> Folio[/Investors/Acme Capital/INV-001-A/]
+    Folio --> D1[Subscription Agreement.pdf]
+    Folio --> D2[Capital Call Notice.pdf]
 ```
 
-Every entity has a **root folder** (`/`). Sub-folders are created automatically when business records are created (investors, commitments, capital calls, deals, etc.). You can also create folders manually.
+---
+
+## The Folder Tree
+
+Folders form a tree. Each folder has a **full path** built from its parents (the root is always `/`), and its depth is its **level** (root = 0, top-level = 1, and so on). Deleting a folder also deletes the folders and documents inside it.
 
 ---
 
-## Folder Hierarchy
-
-Folders form a tree using the **ancestry** gem:
-
-- Each folder knows its `level` (0 = root, 1 = top-level, 2 = sub-folder, etc.)
-- `full_path` is computed on creation: `parent.full_path + "/" + name`
-- The root folder's path is always `/`
-
-Destroying a folder with the `orphan_strategy: :destroy` setting destroys all child folders and their documents recursively.
-
----
-
-## Folder Types: System vs Regular
+## System vs Regular Folders
 
 | Type | Description |
-|---|---|
-| **System** | Created automatically by the platform (e.g. root folder, entity-level folder). Cannot be renamed via the UI |
-| **Regular** | User-created folders. Can be renamed and reorganised |
-
-The root folder is always `system`. Top-level sub-folders created by the system (e.g. for funds, investors) are also `system` type.
+|------|-------------|
+| **System** | Created automatically by the platform (the root, entity, fund, and investor folders). Can't be renamed in the UI. |
+| **Regular** | Folders you create. Can be renamed and reorganised. |
 
 ---
 
-## Folder Access Control Inheritance
+## Access Inheritance
 
-Access rights cascade down the folder tree automatically.
+Access rights cascade down the tree, so you usually only set them once at the folder level.
 
 ```mermaid
 flowchart TD
-    ParentFolder -->|set_parent_permissions\non child creation| ChildFolder
-    ChildFolder -->|replicate_to each doc| Documents
-    ParentFolder -->|access_rights_changed\nFolderAccessJob| ExistingChildren
+    Parent[Parent folder] -->|on creating a child| Child[Child folder inherits access]
+    Child --> Docs[Documents inside also inherit]
+    Parent -->|when access changes| Existing[Change cascades to all children]
 ```
 
-When a new folder is created:
-1. All access rights from the **parent folder** are replicated to the new folder
-2. Any documents already in the new folder also inherit the parent's access rights
-
-When an access right **changes** on a folder (added, modified, or removed):
-1. `FolderAccessJob` runs asynchronously
-2. It cascades the change to all child folders and documents within them (if `cascade = true` on the access right)
-
-This means you only need to set access rights at the folder level — child folders and documents inherit them automatically.
+- When a new folder is created, it inherits the parent's access — and so do any documents already inside it.
+- When you change a folder's access, the change cascades to all sub-folders and their documents (when the right is set to cascade).
 
 ---
 
 ## Creating a Folder
 
-Navigate to **[Entity] → Documents → Folders → New**.
-
-Required:
-- **Name** — folder name (stripped of whitespace)
-- **Parent** — the parent folder (defaults to the entity's root folder)
-
-The `full_path` is auto-computed and must be unique per entity (scoped by owner if applicable).
+Go to **[Entity] → Documents → Folders → New**. Provide a **Name** and a **Parent** (defaults to the entity's root). The full path is built automatically and must be unique.
 
 ---
 
-## Document Owners (What Can Have Documents)
+## What Can Hold Documents
 
-Documents can be attached to most business records via the polymorphic `owner` association. Supported owner types include:
+Documents can be attached to most business records, including:
 
-| Owner Type | Example Use |
-|---|---|
-| `Fund` | Fund-level documents (PPM, annual report) |
-| `CapitalCommitment` | Subscription agreements, KYC documents |
-| `CapitalCall` | Call notice PDFs |
-| `CapitalRemittance` | Remittance vouchers |
-| `Deal` | Deal documents |
-| `DealInvestor` | Investor-specific deal documents |
-| `InvestmentOpportunity` | Investment opportunity materials |
-| `ExpressionOfInterest` | EOI forms |
-| `Offer` | Secondary sale offer documents |
-| `InvestorKyc` | KYC identity documents |
+| Owner | Example use |
+|-------|-------------|
+| **Fund** | PPM, annual report. |
+| **Capital Commitment** | Subscription agreements, KYC documents. |
+| **Capital Call** | Call notices. |
+| **Capital Remittance** | Remittance vouchers. |
+| **Deal / Deal Investor** | Deal documents. |
+| **Investment Opportunity / EOI** | Opportunity materials, EOI forms. |
+| **Offer** | Secondary-sale offer documents. |
+| **Investor KYC** | Identity documents. |
 
-When a document is uploaded to a fund's data room, for example, `owner = fund` and the document lands in the fund's folder.
+A document uploaded to a fund's data room, for example, belongs to that fund and lands in its folder.
 
 ---
 
 ## Uploading a Document
 
-Navigate to the record (Fund, Commitment, etc.) and go to the **Documents** tab.
+Open the record (fund, commitment, etc.), go to its **Documents** tab, and upload. Provide:
 
-Required:
-- **Name** — document display name
-- **File** — the uploaded file (PDF, DOCX, XLSX, image, etc.)
+- **Name** — the display name.
+- **File** — the file itself (PDF, Word, Excel, image…).
 
 Optional:
-- **Tags** — searchable labels (max 120 chars)
-- **Owner Tag** — classification for specific workflows (e.g. `PAN`, `Offer Template`)
-- **As Of Date** — the date the document applies to (e.g. statement period end, call date). When set, this date is shown in the document grid instead of the upload date. Leave blank if not applicable.
-- **Send Email** — whether to notify relevant users on upload
 
-The `entity_id` and `folder` are set automatically from the owner record.
+- **Tags** — searchable labels.
+- **Owner Tag** — a functional classification used by specific workflows (see below).
+- **As-Of Date** — the business date the document applies to (see below).
+- **Send Email** — notify relevant users on upload.
 
----
-
-## Document Fields and Metadata
-
-| Field | Description |
-|---|---|
-| `name` | Display name |
-| `file` | Uploaded file (Shrine attachment) |
-| `tags` / `tag_list` | Searchable labels |
-| `owner_tag` | Functional classification (used by workflows to find specific doc types) |
-| `as_of` | Optional date the document applies to; shown in the document grid in place of the upload date |
-| `text` | Optional rich-text description |
-| `orignal` | Whether the original (unprotected) file is accessible |
-| `printing` | Whether printing is permitted |
-| `download` | Whether downloading is permitted |
-| `signed_by` | User who signed this document |
-| `approved_by` | User who approved this document |
-| `from_template` | Reference to the template document this was generated from |
+The entity and folder are set automatically from the record.
 
 ---
 
-## Document Tags and Owner Tags
+## Tags and Owner Tags
 
-**Tags** (`tag_list`) are general-purpose searchable labels, similar to investor or task tags. Use them for filtering and grouping (e.g. `kyc`, `compliance`, `annual-report`).
+- **Tags** are general-purpose searchable labels for filtering and grouping (e.g. `kyc`, `compliance`, `annual-report`).
+- **Owner Tags** are functional labels that specific workflows look for:
 
-**Owner Tags** (`owner_tag`) are functional labels recognised by specific workflows:
-
-| Owner Tag | Used By |
-|---|---|
-| `PAN` | KYC and offer/interest verification — links to PAN card image |
-| `Offer Template` | Secondary sales SPA generation |
-| `Buyer Template` | Secondary sales buyer SPA |
-| `Seller` | Secondary sale seller documents |
-| `Buyer` | Secondary sale buyer documents |
-| `Allocation Template` | Secondary sale allocation confirmation |
-| `KYC` | KYC document management |
-| Custom | Any value up to 40 characters for bespoke workflows |
+| Owner Tag | Used by |
+|-----------|---------|
+| **PAN** | KYC and offer verification (links to the ID image). |
+| **Offer / Buyer Template** | Secondary-sale agreement generation. |
+| **Seller / Buyer** | Secondary-sale party documents. |
+| **Allocation Template** | Secondary-sale allocation confirmation. |
+| **KYC** | KYC document management. |
+| **Custom** | Any label you need, for bespoke workflows. |
 
 ---
 
-## As Of Date
+## The As-Of Date
 
-Every document has an optional **As Of Date** field. When set, it represents the business date the document applies to — for example, the end of a reporting period or the date of a capital call — rather than the date the file was uploaded.
+Every document can have an **As-Of Date** — the business date it applies to (a statement period end, a call date) rather than its upload date.
 
-- **In the document grid**, the **Date** column shows the As Of Date if one is set, and falls back to the upload date if it is blank.
-- **For manually uploaded documents**, you can set the As Of Date in the document form. Leave it blank if the document is not tied to a specific business date.
-- **For generated documents**, the As Of Date is set automatically by the system at generation time (see [Document Generation and As Of Date](#document-generation-and-as-of-date)).
+- In the document list, the **Date** column shows the As-Of Date when set, falling back to the upload date when blank.
+- For uploads, set it on the form (or leave blank if not relevant).
+- For generated documents, the system sets it automatically (see below).
 
-This makes it straightforward for both GPs and LPs to identify, for example, the March 2025 investor statement without having to read each document name carefully.
+This lets you find, say, the March 2025 investor statement at a glance.
 
----
+### How it's set for generated documents
 
-## Document Generation and As Of Date
-
-When a document is generated from a template, the system automatically sets the As Of Date based on the type of document:
-
-| Document Type | As Of Date Set To |
-|---|---|
-| **Investor Statement (SOA) — commitment level** | End date of the statement period |
-| **Investor Statement (SOA) — KYC level** | End date of the statement period |
-| **Capital Call Notice** | Remittance date of the capital call |
-| **Distribution Notice** | Payment date of the distribution |
-| **Fund Report** | End date of the reporting period |
-| **Portfolio Report** | End date of the reporting period |
-| **Commitment Agreement** | Not set — upload date is shown |
-| **EOI / SPA / Secondary Sale documents** | Not set — upload date is shown |
+| Document | As-Of Date |
+|----------|-----------|
+| Investor Statement | End of the statement period. |
+| Capital Call Notice | The call's remittance date. |
+| Distribution Notice | The distribution's payment date. |
+| Fund Report / Portfolio Report | End of the reporting period. |
+| Commitment Agreement, EOI/SPA | Not set — upload date is shown. |
 
 ---
 
-## Template Documents vs Regular Documents
+## Generated Documents and Templates
 
-A document with `from_template_id` set is a **generated document** — it was created by merging data into a template. The template is stored as a separate document record.
-
-Templates are used in:
-- Capital call notice generation
-- Remittance voucher generation
-- Distribution payment documents
-- SPA generation in secondary sales
-
-The `generated_documents` association on a template document lists all instances created from it.
+A **generated document** is created by merging data into a **template**. Templates power capital-call notices, remittance vouchers, distribution documents, and secondary-sale agreements. Each template keeps a list of every document generated from it, so you can trace any generated document back to its template.
 
 ---
 
 ## Document Approval
 
-Documents go through an approval workflow when `send_for_esign` triggers the e-signing process. Before e-signing, a document may be set to `approved` status.
-
-| State | Meaning |
-|---|---|
-| (no status) | Uploaded, available |
-| `approved` | Reviewed and approved for use |
-| `sent_for_esign` | Currently in the e-signing workflow |
-
-See the E-Signing User Guide for the full e-sign lifecycle.
+Documents can be **approved** before use — for example, before they're attached to investor emails or sent for signature. The typical states are: uploaded → approved → sent for e-signing. See the [E-Signing guide](esigning_user_guide) for the full signing lifecycle.
 
 ---
 
-## Document Sharing (DocShare)
+## Sharing a Document Externally
 
-You can share a specific document with an external email address without giving them a full user account:
+You can share a single document with an external email address — no account required:
 
-1. Navigate to the document
-2. Click **Share** and enter the recipient's email
-3. A `DocShare` record is created linking the email to the document
-4. The recipient receives a link to view (but not necessarily download) the document
+1. Open the document and click **Share**.
+2. Enter the recipient's email.
+3. They receive a secure link to view the document.
 
 ```mermaid
 flowchart LR
-    Document -->|has_many| DocShare
-    DocShare --> EmailRecipient[External Email\ne.g. investor@example.com]
+    Document -->|shared with| Email[External email<br/>e.g. investor@example.com]
 ```
 
-DocShare requires a valid email address. The sharing link respects the document's `download` and `printing` permission flags.
+The link respects the document's download and printing settings.
 
 ---
 
 ## Document Access Rights
 
-Access rights on documents control which users can see them in the portal. They are typically **inherited from the parent folder** automatically.
-
-You can also set document-level access rights directly:
-1. Navigate to **Document → Access Rights → Add**
-2. Specify the investor or user to grant access to
-3. Set `cascade` if this right should propagate further
-
-Document-level access rights are additive — they don't override folder-level restrictions, they extend them.
+Access rights decide who sees a document in the portal, and are usually **inherited from the folder** automatically. You can also grant access on a single document directly (open the document → **Access Rights → Add**, choose the user or investor, and set whether it should cascade further). Document-level access **extends** folder access; it doesn't override folder restrictions.
 
 ---
 
-## Viewing Tracking
+## Who Viewed a Document
 
-The `viewed_bies` association records which users have viewed a document and when. This is used for audit purposes and for confirming investor receipt of important communications.
-
-Navigate to **Document → Viewed By** to see the list of viewers.
+Each document records **who viewed it and when** — useful for audit and for confirming an investor received an important communication. Open a document and view its **Viewed By** list.
 
 ---
 
-## Document Q&A (DocQuestion)
+## Document Q&A
 
-CapHive can extract structured information from documents using AI (DocQuestion). This feature:
-- Parses uploaded documents (e.g. KYC forms, financial statements)
-- Extracts key data points as question-answer pairs
-- Stores them as `DocQuestion` records linked to the entity
-
-Navigate to **[Entity] → Document Questions** to review extracted data.
-
-DocQuestions are used in the support agent and AI rules workflows to answer queries about document content without requiring manual review.
+CapHive can read a document with AI and extract key facts as question-and-answer pairs — for example pulling fields out of a KYC form or financial statement. Review extracted facts under **[Entity] → Document Questions**. These answers also power the support agents and AI rules, so the system can answer questions about a document's content without someone reading it manually.
 
 ---
 
-## Download and Print Permissions
+## Download and Print Controls
 
-Three permission flags control how documents can be accessed:
+Three settings control how a document can be accessed:
 
-| Flag | When true | When false |
-|---|---|---|
-| `download` | Users can download the file | View-only (no download) |
-| `printing` | Users can print the document | Printing disabled |
-| `orignal` | Users can access the original unprotected file | Only a protected/watermarked version |
+| Setting | On | Off |
+|---------|----|----|
+| **Download** | Users can download the file. | View only. |
+| **Printing** | Users can print. | Printing disabled. |
+| **Original file** | Users get the original file. | Only a protected/watermarked version. |
 
-These flags can be set at the **folder** level (via `FolderDefaultsJob`) and propagate to all documents within the folder.
+You can set these at the **folder** level and have them apply to every document inside.
 
 ---
 
 ## Private Folders
 
-Setting `private = true` on a folder restricts it to users with explicit access rights. Private folders are not shown in the default folder tree for users without access.
-
-Child folders created within a private folder automatically inherit the private flag (via the `set_parent_permissions` callback).
+Marking a folder **private** restricts it to users with explicit access — it won't appear in the folder tree for anyone else. Sub-folders created inside a private folder are private too.
 
 ---
 
-## E-Signing Documents
+## E-Signing
 
-Documents can be sent for electronic signature via the e-signing workflow. Key points:
-- E-signing is triggered by setting the document status to `sent_for_esign`
-- Once sent, the e-sign provider (Digio or other) manages the signing process
-- Statuses to restart signing after failure: `cancelled`, `voided`, `expired`, `failed` (listed in `RESEND_FOR_ESIGN_STATUSES`)
-- Completed and expired signatures should not be updated (listed in `SKIP_ESIGN_UPDATE_STATUSES`)
-
-See the **E-Signing User Guide** for the complete workflow including signatories, OTP, and completion callbacks.
+Documents can be sent for electronic signature. Once sent, the signing provider manages the process, and a failed, cancelled, voided, or expired request can be resent. See the **[E-Signing guide](esigning_user_guide)** for signatories, the signing experience, and completion.
 
 ---
 
-## Key Fields Reference
+## Worked Example
 
-### Document
+Setting up a controlled data room for a fund:
 
-| Field | Description |
-|---|---|
-| `name` | Display name |
-| `file` | Uploaded file |
-| `folder_id` | Folder this document lives in |
-| `owner_type` / `owner_id` | Polymorphic owner record |
-| `owner_tag` | Functional classification |
-| `tag_list` | Searchable tags |
-| `as_of` | Business date the document applies to (optional; replaces upload date in the grid) |
-| `orignal` | Original file access permission |
-| `printing` | Print permission |
-| `download` | Download permission |
-| `approved_by_id` | User who approved |
-| `signed_by_id` | User who signed |
-| `from_template_id` | Template document reference |
-
-### Folder
-
-| Field | Description |
-|---|---|
-| `name` | Folder name |
-| `full_path` | Absolute path in tree |
-| `level` | Depth (0 = root) |
-| `folder_type` | `regular` or `system` |
-| `private` | Restricted visibility |
-| `orignal` / `printing` / `download` | Default permissions propagated to documents |
-| `owner_type` / `owner_id` | Business record that owns this folder |
+1. The fund's folder is created automatically. Inside it, create a **regular** folder "Data Room".
+2. Set **Download = off** on the Data Room folder so investors can view but not download — every document added inherits this.
+3. Grant **access** to the fund's investors at the Data Room folder level; all current and future documents inside inherit it.
+4. Upload the PPM and quarterly reports, tagging each with `data-room` and setting the **As-Of Date** to the report period.
+5. For a prospective investor without an account, use **Share** on the teaser document to send a secure view-only link.
+6. Later, open a key document's **Viewed By** list to confirm which investors have opened it.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Can I rename a system folder?**
-System folders are created and named by the platform. Renaming them via the UI is not supported. Contact your administrator if a folder name needs to change.
+**Can I rename a system folder?**
+No — system folders are named by the platform. Ask your administrator if one needs to change.
 
-**Q: What happens to documents when I rename a fund or investor?**
-The folder name and full_path are updated automatically when the underlying record changes its name (e.g. renaming a folio ID updates its folder path and all linked sub-folders).
+**What happens to documents when I rename a fund or investor?**
+The folder name and path update automatically, including all sub-folders (e.g. renaming a folio updates its folder path).
 
-**Q: If I add an access right to a folder, will existing documents in it also get access?**
-Yes, if the access right has `cascade = true`. The `FolderAccessJob` propagates the change to all child folders and documents asynchronously.
+**If I add access to a folder, do existing documents get it too?**
+Yes, when the access right cascades — the change propagates to all sub-folders and documents.
 
-**Q: How do I share a document with someone who doesn't have a CapHive account?**
-Use the **DocShare** feature. Enter their email address and they receive a secure link. They don't need an account to view the document via the share link.
+**How do I share with someone who has no account?**
+Use **Share** with their email; they get a secure view link, no account needed.
 
-**Q: Can a document be in multiple folders?**
-No. Each document belongs to exactly one folder. To make a document accessible from multiple places, use access rights to grant access, or generate copies from a template.
+**Can a document live in two folders?**
+No — each document is in exactly one folder. Use access rights to widen who can see it, or generate copies from a template.
 
-**Q: How do I prevent investors from downloading fund documents?**
-Set `download = false` on the fund's document folder. This propagates to all documents in that folder. Investors can view but not download.
+**How do I stop investors downloading fund documents?**
+Set **Download = off** on the fund's document folder; it applies to everything inside. Investors can view but not download.
 
-**Q: What file types are supported?**
-Any file type can be uploaded. The viewer supports PDFs natively. For other formats, the browser handles rendering or prompts the user to download.
+**What file types are supported?**
+Any file can be uploaded. PDFs preview in the viewer; other formats render in the browser or download.

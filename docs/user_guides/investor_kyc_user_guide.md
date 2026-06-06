@@ -31,7 +31,8 @@ This guide covers the full lifecycle of Know Your Customer (KYC) records in CapH
 23. [Notifications](#notifications)
 24. [Filtering and Finding KYC Records](#filtering-and-finding-kyc-records)
 25. [Importing KYC Records](#importing-kyc-records)
-26. [Frequently Asked Questions](#frequently-asked-questions)
+26. [Worked Example](#worked-example)
+27. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -91,7 +92,7 @@ You can also create a KYC record via bulk import — see [Importing KYC Records]
 
 ## Document-First KYC Wizard
 
-When the **Document-First KYC Wizard** is enabled for your organisation and a `KycDocExtractorAgent` is configured, the system shows a document upload screen **before** the regular KYC form whenever a KYC has no documents attached yet. An AI agent scans the uploaded documents and pre-fills the form fields automatically, reducing manual data entry.
+When the **Document-First KYC Wizard** is enabled for your organisation, the system shows a document upload screen **before** the regular KYC form whenever a KYC has no documents attached yet. AI scans the uploaded documents and pre-fills the form fields automatically, reducing manual data entry.
 
 This screen appears for both **fund admins** (on the New KYC and Edit KYC pages) and **investors** (via their magic-link edit page).
 
@@ -122,35 +123,28 @@ If you prefer to fill the form manually without uploading documents first, click
 
 | Condition | Wizard shown? |
 |---|---|
-| `kyc_doc_first_wizard` flag enabled on entity | Required |
-| `KycDocExtractorAgent` configured for entity | Required |
-| KYC has no documents attached yet | Required — wizard is skipped once any document exists |
+| Document-First Wizard enabled for the entity | Required |
+| AI document extraction configured for the entity | Required |
+| KYC has no documents attached yet | Required — the wizard is skipped once any document exists |
 | KYC is already submitted or verified (locked) | No — locked KYCs go straight to the edit form |
-| `skip_doc_first` URL parameter present | No — use this to bypass programmatically |
+| You chose to fill the form manually | No — see [Skipping the wizard](#skipping-the-wizard) |
 
 ### Flow diagram
 
 ```mermaid
 sequenceDiagram
-    participant U as User (admin or investor)
-    participant W as Upload Screen
-    participant S as Server
-    participant AI as KycDocExtractorAgent
+    actor U as User (admin or investor)
+    participant System as CapHive
+    participant AI as AI extraction
 
-    U->>S: Open New KYC or Edit KYC (no docs yet)
-    S-->>W: Render doc-first upload screen
-
-    U->>W: Upload PAN / Tax ID and Address Proof
-    U->>W: Click "Continue to Fill Form →"
-    W->>S: POST documents (create or doc_first_upload)
-    S->>AI: Enqueue KycDocExtractorJob
-    S-->>U: Redirect to processing spinner
-
-    AI-->>S: Extraction complete → cache redirect URL
-    S-->>U: Redirect to KYC edit form
-
-    Note over U: Form fields pre-filled from documents
-    U->>S: Review, correct, and save / submit
+    U->>System: Open New KYC or Edit KYC (no docs yet)
+    System-->>U: Show the document upload screen
+    U->>System: Upload ID and address proof, click Continue
+    System->>AI: Read the documents and extract field values
+    System-->>U: Show a processing spinner
+    AI-->>System: Extraction complete
+    System-->>U: Open the KYC form, fields pre-filled
+    U->>System: Review, correct, and save / submit
 ```
 
 ### Administrator setup
@@ -158,10 +152,10 @@ sequenceDiagram
 To enable the document-first wizard for your organisation:
 
 1. Go to **Admin → Entity Settings** and enable **Document-First KYC Wizard**.
-2. Go to **AI Agents** and ensure a `KycDocExtractorAgent` is created and enabled for your entity.
-3. Configure the agent's **extraction rules** — one rule per document type (e.g. PAN Card → extract PAN number, Address Proof → extract address).
+2. Under **AI Agents**, ensure the KYC document-extraction agent is created and enabled for your entity.
+3. Configure its **extraction rules** — one per document type (e.g. ID document → extract the tax ID, Address Proof → extract the address). Each rule matches a document to the KYC field it should fill.
 
-Contact your CapHive administrator if the wizard does not appear after enabling the flag.
+Contact your CapHive administrator if the wizard does not appear after enabling it.
 
 ---
 
@@ -241,7 +235,7 @@ By default the KYC wizard has three fixed steps (KYC Details, Bank Details, Conf
 
 ### How it works
 
-Each `FormCustomField` has a **Step** attribute that controls where on the wizard it appears:
+Each custom field has a **Step** setting that controls where on the wizard it appears:
 
 | Step value | Wizard position | Notes |
 |---|---|---|
@@ -278,32 +272,24 @@ The labels appear in the step card header when the investor fills in the form.
 
 ```mermaid
 sequenceDiagram
-    participant I as Investor
+    actor I as Investor
     participant W as KYC Wizard
-    participant S as Server
 
-    I->>W: Open KYC edit link
-    W->>S: Load form (investor_kycs#edit)
-    S-->>W: Render wizard with N nav circles<br/>(3 fixed + extra steps + regulatory if present)
-
-    loop For each step 1 to N-1
-        I->>W: Fill fields on current step
-        I->>W: Click Next
-        W->>W: Validate current step (client-side)
-        W->>W: Show next step panel
+    I->>W: Open the KYC edit link
+    W-->>I: Show the wizard steps<br/>(3 fixed + any extra + regulatory)
+    loop Each step except the last
+        I->>W: Fill the fields, click Next
+        W->>W: Check the step, move to the next
     end
-
-    I->>W: Fill fields on final step
-    I->>W: Click Save / Submit KYC
-    W->>S: POST all fields (interim-save or full submit)
-    S-->>I: Redirect / confirmation
+    I->>W: Fill the final step, click Save / Submit
+    W-->>I: Confirmation (interim save or full submit)
 ```
 
 ---
 
 ## Managing Form Types: Tabbed View and Inline Edit
 
-The **Form Type show page** (`/form_types/:id`) gives you two ways to review and maintain custom fields.
+The **Form Type page** gives you two ways to review and maintain custom fields.
 
 ### Tabbed view
 
@@ -774,6 +760,20 @@ If the Form Tag column is blank, the system uses the Default tag.
 
 ---
 
+## Worked Example
+
+Onboarding an individual investor into a SEBI-regulated fund, end to end:
+
+1. **Create:** on the investor's folio, open the **KYC** tab → **New KYC**, choose **Individual** and the **SEBI**-tagged form type (so the SEBI category and sub-category fields appear).
+2. **Send:** click **Send KYC Form** — the investor receives a secure link, no account needed.
+3. **Investor completes:** they upload their ID and address proof; the document-first wizard pre-fills the form, they review, fill the SEBI category (**Domestic → Resident Individual**), and **Submit**.
+4. **Automated checks run:** ID and bank verification run in the background. ID comes back **Pass**; bank shows **Fail** because the account is in a joint name.
+5. **Resolve:** you click **Request Updates** asking the investor to confirm the bank account name; they update it and resubmit, and the bank check now passes.
+6. **Enrich (optional):** you fetch the investor's record from a central registry and **Assign KYC Data** to fill any gaps.
+7. **Verify:** with all fields, documents, and checks in order, you click **Verify KYC** — it records who verified it and when. You set an **Expiry Date** two years out so the system reminds you to refresh it.
+
+---
+
 ## Frequently Asked Questions
 
 **Can I change a KYC record from Individual to Non-Individual?**
@@ -815,14 +815,14 @@ Yes. Open the InvestorKyc Form Type for editing and fill in the **Extra Step Lab
 **I assigned a field to Step 5 but the wizard only shows 4 pages.**
 Check that the step was saved correctly by opening the Form Type show page and switching to the **Tabs by Step** view. If the field does not appear under the Step 5 tab, re-edit the field and confirm the Step dropdown is set to *Step 5 (Extra)*.
 
-**The document-first upload screen is not appearing even though the flag is enabled.**
-Two conditions must both be true: (1) the `kyc_doc_first_wizard` flag is enabled in Entity Settings, and (2) a `KycDocExtractorAgent` must be created and enabled under AI Agents for your entity. If either is missing, the system falls back to the standard form. Also check that the KYC you are opening has no documents already attached — once any document exists on a KYC the upload screen is skipped.
+**The document-first upload screen is not appearing even though it's enabled.**
+Two things must both be set up: the Document-First Wizard must be enabled in Entity Settings, and the KYC document-extraction agent must be created and enabled under AI Agents. If either is missing, the system falls back to the standard form. Also check that the KYC you are opening has no documents already attached — once any document exists, the upload screen is skipped.
 
 **I see the upload screen on an existing KYC but I already uploaded documents last time.**
-The upload screen only appears when the KYC has zero documents. If documents from a previous session are still attached, go directly to the edit form. You can trigger a fresh extraction via the AI Agents panel if needed.
+The upload screen only appears when the KYC has no documents. If documents from a previous session are still attached, go straight to the edit form. You can trigger a fresh extraction from the AI Agents panel if needed.
 
 **Can I skip the document-first screen and go straight to the form?**
-Yes. Click **Fill Form Manually** at the bottom-left of the upload screen. This adds `skip_doc_first=true` to the URL and takes you directly to the standard KYC wizard. You can still upload documents later from the Documents tab on the KYC record.
+Yes. Click **Fill Form Manually** at the bottom-left of the upload screen to go directly to the standard KYC wizard. You can still upload documents later from the Documents tab.
 
 **The form fields were not pre-filled after I uploaded documents.**
-This usually means the extraction rules on the `KycDocExtractorAgent` do not match the document names or field names. Ask your administrator to check the agent's extraction rules — the `doc_label` in each rule must exactly match the document name as it is saved (e.g. `Upload PAN / Tax ID`), and the `target_field` must match the KYC field name.
+This usually means the extraction rules don't match the document names or the KYC fields. Ask your administrator to check the agent's extraction rules — each rule must point at the correct document name and the KYC field it should fill.

@@ -57,24 +57,13 @@ The process typically begins when a Fund Admin sends a reminder to a Portfolio C
 sequenceDiagram
     autonumber
     actor Admin as Fund Admin
-    participant Web as Rails Web App
-    participant Job as SendPortcoNotificationJob
-    participant DB as Database
-    participant Mail as Mailer Service
+    participant System as CapHive
     actor Portco as Portco User
 
-    Admin->>Web: Click "Send Portco Notification"
-    Web->>Job: Enqueue Job (pc_id, as_of, period)
-    activate Job
-    Job->>DB: find_or_create_by! (KPI Report Shell)
-    DB-->>Job: Report Shell Record
-    Job->>Web: Generate Signed Magic Link (signed_id)
-    Job->>Mail: Deliver KPI Reminder Email with Link
-    activate Mail
-    Mail-->>Portco: Send Email (valid for 15 days)
-    deactivate Mail
-    Job->>DB: Update status to "Link Sent" & set link_sent_at
-    deactivate Job
+    Admin->>System: Click "Send Portco Notification"
+    System->>System: Create the KPI report (if needed)<br/>and a secure upload link
+    System-->>Portco: Email the reminder with the link (valid 15 days)
+    System->>System: Set status to "Link Sent"
 ```
 
 ### 2. Portfolio Company Fills Out the Report
@@ -87,33 +76,23 @@ sequenceDiagram
 sequenceDiagram
     autonumber
     actor Portco as Portco User
-    participant Web as Rails Web App
-    participant Pundit as Pundit Authorization
-    participant DB as Database
-    participant Mail as Mailer Service
+    participant System as CapHive
     actor Admin as Fund Admin
 
-    Portco->>Web: Click Magic Link in Email
-    alt Link is Expired or Invalid
-        Web-->>Portco: Render friendly "Link Expired" page (410 Gone)
-    else Link is Valid
-        Web->>Pundit: Authorize via @signed_id_user
-        Pundit-->>Web: Authorized (No login required)
-        Web-->>Portco: Render KPI Report Edit Page
+    Portco->>System: Click the link in the email
+    alt Link expired or invalid
+        System-->>Portco: Show a friendly "Link expired" page
+    else Link valid
+        System-->>Portco: Open the KPI report (no login needed)
     end
 
-    rect rgb(240, 248, 255)
-        note over Portco, Web: Interactive Editing Phase
-        Portco->>Web: Click "Save Draft"
-        Web->>DB: Update status to "Draft Saved"
-        Web-->>Portco: Redirect to Edit Page with success notice
-    end
+    note over Portco, System: Editing
+    Portco->>System: Save Draft
+    System-->>Portco: Status "Draft Saved" — keep editing
 
-    Portco->>Web: Click "Submit Report"
-    Web->>DB: Update status to "Submitted" & set submitted_at
-    Web->>Mail: Enqueue Submission Notification
-    Mail-->>Admin: Send Email Notification
-    Web-->>Portco: Redirect to Edit Page (Locked for editing)
+    Portco->>System: Submit Report
+    System-->>Admin: Email the fund team
+    System-->>Portco: Status "Submitted" — locked for editing
 ```
 
 ### 3. Portco Pending Dashboard
@@ -133,20 +112,14 @@ Portfolio company users can visit **KPI Reports → Pending KPI Requests** to se
 sequenceDiagram
     autonumber
     actor Admin as Fund Admin
-    participant Show as KPI Report Show Page
-    participant Grid as KPI Grid View
-    participant Svc as KpiApproveService
-    participant DB as Database
-    participant Jobs as Background Jobs
+    participant System as CapHive
 
-    Admin->>Show: Open submitted KPI Report
-    Show-->>Admin: Shows "View Including Staged" button
-    Admin->>Grid: Click button → Grid View (portfolio_company + view_unapproved=true + grid_view=true)
-    Grid-->>Admin: Staged KPIs highlighted in orange
-    Admin->>Grid: Click "Approve All" (Actions menu)
-    Grid->>Svc: KpiApproveService(unapproved_kpi_ids)
-    Svc->>DB: Promote staged KPIs to approved
-    Svc->>Jobs: Trigger KpiPercentageChangeJob + KpiCumulateJob
+    Admin->>System: Open the submitted KPI report
+    System-->>Admin: Show the "View Including Staged" button
+    Admin->>System: Click it → grid view, staged KPIs in orange
+    Admin->>System: Click "Approve All"
+    System->>System: Promote staged KPIs to approved
+    System->>System: Recalculate growth & cumulative totals
 ```
 
 ### 5. Staged Import (The Upload)
@@ -155,23 +128,19 @@ When a workbook is uploaded, the system performs a "Staged Import":
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant J as Import Job
-    participant R as Workbook Reader
-    participant DB as Database
+    actor U as User
+    participant System as CapHive
 
-    U->>DB: Upload Workbook
-    DB->>J: Enqueue Import Job
-    J->>R: Scan Sheets & Extract KPIs
-    loop Every Data Row
-        R->>DB: Compare with Approved Data
-        alt Value Changed or New
-            R->>DB: Create UNAPPROVED (Staged) Record
-        else Value Identical
-            R->>R: Skip (No Change)
+    U->>System: Upload workbook
+    System->>System: Scan sheets & extract KPIs
+    loop Every data row
+        alt Value changed or new
+            System->>System: Stage it (unapproved)
+        else Value identical
+            System->>System: Skip — no change
         end
     end
-    J->>U: Notify: Import Completed (Pending Approval)
+    System-->>U: Import complete (pending approval)
 ```
 
 ### 3. Authorized Approval
@@ -180,16 +149,13 @@ An Admin reviews the staged data. Unapproved values are highlighted in **orange*
 
 ```mermaid
 sequenceDiagram
-    participant A as Approver
-    participant S as Approval Service
-    participant DB as Database
-    participant J as Calculation Jobs
+    actor A as Approver
+    participant System as CapHive
 
-    A->>S: Approve KPI(s)
-    S->>DB: Promote Staged to Approved
-    S->>DB: Overwrite Old Approved Data
-    S->>J: Trigger Cumulative & % Change Recalcs
-    S->>A: Success Confirmation
+    A->>System: Approve KPI(s)
+    System->>System: Promote staged values to approved<br/>(replacing the old approved data)
+    System->>System: Recalculate cumulative & % change
+    System-->>A: Success confirmation
 ```
 
 ---

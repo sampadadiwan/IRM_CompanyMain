@@ -1,293 +1,227 @@
 # Secondary Sales User Guide
 
-The secondary sales module provides a two-sided marketplace for transferring fund interests between sellers (existing investors) and buyers (incoming investors or existing LPs acquiring more). This guide covers how to set up a secondary sale, manage offers and interests, run the clearing/allocation process, and generate Shareholder Purchase Agreements (SPAs).
+The secondary sales module is a two-sided marketplace for transferring fund interests between **sellers** (existing investors exiting some or all of their stake) and **buyers** (new investors, or existing LPs buying more). This guide covers setting up a sale, managing offers and interests, running the clearing/allocation process, and generating the purchase agreements (SPAs).
 
 ---
 
 ## Table of Contents
 
 1. [Key Concepts](#key-concepts)
-2. [Marketplace Architecture](#marketplace-architecture)
-3. [Secondary Sale Lifecycle](#secondary-sale-lifecycle)
+2. [How the Marketplace Works](#how-the-marketplace-works)
+3. [The Sale Lifecycle](#the-sale-lifecycle)
 4. [Creating a Secondary Sale](#creating-a-secondary-sale)
 5. [Price Types](#price-types)
 6. [Sale Types: Regular vs Tranche](#sale-types-regular-vs-tranche)
-7. [Access Control: Buyers and Sellers](#access-control-buyers-and-sellers)
+7. [Giving Buyers and Sellers Access](#giving-buyers-and-sellers-access)
 8. [Seller Offers](#seller-offers)
-9. [Offer Lifecycle](#offer-lifecycle)
-10. [Buyer Interests](#buyer-interests)
-11. [Interest Lifecycle (Shortlisting)](#interest-lifecycle-shortlisting)
-12. [Clearing Price Algorithm](#clearing-price-algorithm)
-13. [Allocations](#allocations)
-14. [Verification and Final Agreement](#verification-and-final-agreement)
-15. [SPA Generation](#spa-generation)
-16. [Escrow](#escrow)
-17. [Fees](#fees)
-18. [Document Templates](#document-templates)
-19. [Notifications](#notifications)
-20. [Key Fields Reference](#key-fields-reference)
-21. [Frequently Asked Questions](#frequently-asked-questions)
+9. [Buyer Interests and Shortlisting](#buyer-interests-and-shortlisting)
+10. [The Clearing Price](#the-clearing-price)
+11. [Allocations](#allocations)
+12. [Verification and Final Agreement](#verification-and-final-agreement)
+13. [Generating the SPA](#generating-the-spa)
+14. [Escrow](#escrow)
+15. [Advisor Fees](#advisor-fees)
+16. [Document Templates](#document-templates)
+17. [Notifications](#notifications)
+18. [Worked Example](#worked-example)
+19. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
 ## Key Concepts
 
 | Term | Meaning |
-|---|---|
-| **Secondary Sale** | The overall marketplace event with a defined date window |
-| **Offer** | A seller's listing of units they wish to sell |
-| **Interest** | A buyer's bid to acquire units at a specified price |
-| **Allocation** | A match between a specific Offer and Interest |
-| **Clearing Price** | The price at which supply and demand clear |
-| **Short-Listed** | An interest moved into active consideration for allocation |
-| **SPA** | Shareholder Purchase Agreement — the legal transfer document |
-| **Escrow** | Buyer's funds held pending transaction completion |
+|------|---------|
+| **Secondary Sale** | The overall marketplace event, with a submission window. |
+| **Offer** | A seller's listing of units they want to sell. |
+| **Interest** | A buyer's bid to acquire units at a price. |
+| **Allocation** | A confirmed match between an offer and an interest. |
+| **Clearing Price** | The price at which supply and demand balance. |
+| **Shortlisted** | An interest moved into active consideration. |
+| **SPA** | Share Purchase Agreement — the legal transfer document. |
+| **Escrow** | Buyer funds held pending completion. |
 
 ---
 
-## Marketplace Architecture
+## How the Marketplace Works
+
+Sellers submit offers; buyers submit interests. The fund manager shortlists interests, determines the clearing price, and creates allocations matching offers to interests.
 
 ```mermaid
 graph LR
-    SS[Secondary Sale] --> O1[Offer 1\nSeller A, 500 units]
-    SS --> O2[Offer 2\nSeller B, 300 units]
-    SS --> I1[Interest 1\nBuyer X, 400 units @ ₹120]
-    SS --> I2[Interest 2\nBuyer Y, 200 units @ ₹115]
-    SS --> I3[Interest 3\nBuyer Z, 300 units @ ₹110]
-
-    I1 --"Allocation 1"--> O1
-    I2 --"Allocation 2"--> O2
+    SS[Secondary Sale] --> O1[Offer: Seller A — 500 units]
+    SS --> O2[Offer: Seller B — 300 units]
+    SS --> I1[Interest: Buyer X — 400 @ 120]
+    SS --> I2[Interest: Buyer Y — 200 @ 115]
+    SS --> I3[Interest: Buyer Z — 300 @ 110]
+    I1 -->|Allocation| O1
+    I2 -->|Allocation| O2
 ```
-
-Sellers submit Offers; Buyers submit Interests. The fund manager then shortlists interests, runs the clearing algorithm, and creates Allocations to match offers with interests.
 
 ---
 
-## Secondary Sale Lifecycle
+## The Sale Lifecycle
 
 ```mermaid
 flowchart LR
-    A[Sale Created] --> B[Sellers Submit Offers]
-    B --> C[Buyers Submit Interests]
-    C --> D[Manager Shortlists Interests]
-    D --> E{Clear Price\nAlgorithm}
-    E --> F[Allocations Created]
-    F --> G[Offers Verified]
-    G --> H[SPA Generated]
-    H --> I[Interests Verified]
-    I --> J[Final Agreement Signed]
-    J --> K[Escrow Released]
-    K --> L[Transfer Complete]
+    A[Sale created] --> B[Sellers submit offers]
+    B --> C[Buyers submit interests]
+    C --> D[Manager shortlists interests]
+    D --> E[Clearing price determined]
+    E --> F[Allocations created]
+    F --> G[Offers verified]
+    G --> H[SPA generated]
+    H --> I[Interests verified]
+    I --> J[Final agreement signed]
+    J --> K[Escrow released]
+    K --> L[Transfer complete]
 ```
 
 ---
 
 ## Creating a Secondary Sale
 
-Navigate to **[Entity] → Secondary Sales → New**.
+Go to **[Entity] → Secondary Sales → New**.
 
-Required fields:
-
-| Field | Notes |
-|---|---|
-| **Name** | Unique per entity. Max 255 characters |
-| **Start Date** | Date when sellers/buyers can begin submitting |
-| **End Date** | Last date for submissions |
-| **Percent Allowed** | Maximum percentage of units a seller can offer |
-
-Optional but important:
+**Required:**
 
 | Field | Notes |
-|---|---|
-| **Sale Type** | Regular or Tranche (see below) |
-| **Price Type** | Fixed Price or Price Range (see below) |
-| **Final Price** | Required for Fixed Price type |
-| **Min Price / Max Price** | Required for Price Range type |
-| **Show Quantity** | Whether to display "Actual" or "Indicative" quantity to buyers |
-| **Support Email** | Contact for participant queries |
-| **Manage Offers** | Toggle fund manager's ability to add offers on behalf of sellers |
-| **Manage Interests** | Toggle fund manager's ability to add interests on behalf of buyers |
+|-------|-------|
+| **Name** | Unique within your entity. |
+| **Start Date** | When participants can begin submitting. |
+| **End Date** | The submission deadline. |
+| **Percent Allowed** | The most a seller may offer, as a percentage of their units. |
+
+**Optional but important:**
+
+| Field | Notes |
+|-------|-------|
+| **Sale Type** | Regular or Tranche. |
+| **Price Type** | Fixed Price or Price Range. |
+| **Final Price** | Required for Fixed Price. |
+| **Min / Max Price** | Required for Price Range. |
+| **Show Quantity** | Show buyers the "Actual" or only "Indicative" quantity. |
+| **Support Email** | Contact for participant queries. |
+| **Manage Offers / Interests** | Whether the fund manager can add offers/interests on participants' behalf. |
 
 ---
 
 ## Price Types
 
 | Type | Behaviour |
-|---|---|
-| **Fixed Price** | All offers and interests are at the same fixed price. No price negotiation |
-| **Price Range** | A min and max price band is set. Buyers bid within the band; clearing price is computed |
-
-For Fixed Price sales, `min_price` and `max_price` are both set to `final_price` automatically.
-
-For Price Range sales, the clearing price is computed from the shortlisted interests (see Clearing Price Algorithm).
+|------|-----------|
+| **Fixed Price** | Everything trades at one set price — no negotiation. The min and max are both set to that price. |
+| **Price Range** | A min–max band; buyers bid within it and the system computes a clearing price. |
 
 ---
 
 ## Sale Types: Regular vs Tranche
 
-| Type | Use Case |
-|---|---|
-| **Regular** | Standard secondary market event |
-| **Tranche** | Phased transfer allowing incremental allocations over multiple rounds |
+| Type | Use |
+|------|-----|
+| **Regular** | A standard one-off secondary event. |
+| **Tranche** | A phased transfer, allocating and verifying in multiple rounds — useful for large transactions completed over time. |
 
 ---
 
-## Access Control: Buyers and Sellers
+## Giving Buyers and Sellers Access
 
-Access to a secondary sale is controlled by **Access Rights** attached to the sale. Each access right specifies:
-- The investor (buyer or seller)
-- The metadata tag: `Buyer` or `Seller`
-
-Only investors with the appropriate access right can view and submit offers/interests.
-
-To grant access: navigate to **Secondary Sale → Access Rights → Add** and specify the investor and role.
+Access is granted per participant, each marked as a **Buyer** or a **Seller**. Only investors with the right access can view and submit. Grant access under **Secondary Sale → Access Rights → Add**.
 
 ```mermaid
 graph LR
-    Sale --> AR1[Access Right\nInvestor A — Seller]
-    Sale --> AR2[Access Right\nInvestor B — Buyer]
-    Sale --> AR3[Access Right\nInvestor C — Buyer]
+    Sale --> AR1[Access: Investor A — Seller]
+    Sale --> AR2[Access: Investor B — Buyer]
+    Sale --> AR3[Access: Investor C — Buyer]
 ```
 
-The `buyer_investors` and `seller_investors` helpers return the respective participant lists.
+An investor can be granted **both** roles, letting them sell some units and bid for others in the same sale.
 
 ---
 
 ## Seller Offers
 
-An **Offer** represents a seller's willingness to sell a specified quantity at a price.
-
-### Creating an Offer
-
-Navigate to **Secondary Sale → Offers → New** (or sellers submit via investor portal).
-
-Key offer fields:
+An **offer** is a seller's willingness to sell a quantity at a price. Create one under **Secondary Sale → Offers → New** (or sellers submit via their portal).
 
 | Field | Notes |
-|---|---|
-| **Investor** | The seller (must have Seller access to this sale) |
-| **Quantity** | Number of units to sell |
-| **Price** | Price per unit (overridden to final_price for Fixed Price sales) |
-| **PAN** | Seller's tax identifier |
-| **Bank Account Number / IFSC** | For settlement |
-| **Buyer** (optional) | Direct buyer entity if a specific buyer is pre-agreed |
-| **Auto Match** | Whether this offer participates in automatic matching |
+|-------|-------|
+| **Investor** | The seller (must have Seller access). |
+| **Quantity** | Units to sell. |
+| **Price** | Price per unit (set to the final price for Fixed Price sales). |
+| **Tax ID** | The seller's identifier. |
+| **Bank Account / IFSC** | For settlement. |
+| **Buyer** (optional) | A pre-agreed direct buyer, if any. |
+| **Auto Match** | Whether the offer takes part in automatic matching. |
 
-The `amount_cents` is auto-computed as `quantity × price × 100`.
-
-### Offer Approval
-
-Changing the quantity resets `approved` to `false`. Fund managers approve offers after verifying the quantity and eligibility. Only approved offers count toward `total_offered_quantity` on the sale.
-
----
-
-## Offer Lifecycle
+Changing an offer's quantity sends it back for approval. Fund managers approve offers after checking quantity and eligibility, and only approved offers count toward the total offered.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Submitted
     Submitted --> Approved: Manager approves
-    Approved --> Verified: After allocation confirmed
+    Approved --> Verified: Allocation confirmed
     Verified --> FinalAgreement: Buyer confirms SPA
     FinalAgreement --> [*]
-
-    Submitted --> Rejected: Quantity changed resets to pending
+    Submitted --> Submitted: Quantity changed → re-approval
 ```
 
-- **Submitted** — offer created, `approved = false`
-- **Approved** — offer included in total offered quantity
-- **Verified** — allocation confirmed; SPA generation triggered
-- **Final Agreement** — buyer has acknowledged the SPA
-
 ---
 
-## Buyer Interests
+## Buyer Interests and Shortlisting
 
-An **Interest** represents a buyer's bid to acquire a specified quantity at a price.
-
-### Submitting an Interest
-
-Key interest fields:
+An **interest** is a buyer's bid for a quantity at a price.
 
 | Field | Notes |
-|---|---|
-| **Investor** | The buyer's seller-side investor record |
-| **Interest Entity** | The buying entity (buyer_entity_id) |
-| **Buyer Entity Name** | Name of the acquiring entity |
-| **Quantity** | Number of units desired |
-| **Price** | Bid price (must be within min_price–max_price for Price Range) |
-| **PAN** | Buyer's tax identifier |
-| **Escrow Deposited** | Whether escrow funds have been deposited |
+|-------|-------|
+| **Investor / Buying Entity** | The buyer. |
+| **Quantity** | Units desired. |
+| **Price** | The bid (within the band for Price Range sales). |
+| **Tax ID** | The buyer's identifier. |
+| **Escrow Deposited** | Whether escrow funds are in. |
 
-The `amount_cents` is auto-computed as `quantity × applied_price × 100`.
-
----
-
-## Interest Lifecycle (Shortlisting)
+The fund manager **shortlists** interests for active consideration; only shortlisted interests count toward total demand and take part in clearing and allocation.
 
 ```mermaid
 stateDiagram-v2
     [*] --> Pending
-    Pending --> ShortListed: Manager shortlists
+    Pending --> Shortlisted: Manager shortlists
     Pending --> Rejected: Manager rejects
-    ShortListed --> Withdrawn: Buyer withdraws
-    ShortListed --> Verified: After allocation confirmed
+    Shortlisted --> Withdrawn: Buyer withdraws
+    Shortlisted --> Verified: Allocation confirmed
     Verified --> FinalAgreement: SPA signed
     FinalAgreement --> Completed
 ```
 
-| Status | Meaning |
-|---|---|
-| `pending` | Submitted but not yet reviewed |
-| `short_listed` | Under active consideration; quantity rolls up to `total_interest_quantity` on the sale |
-| `rejected` | Declined by fund manager |
-| `withdrawn` | Buyer withdrew their interest |
-
-Only shortlisted interests participate in clearing price computation and allocation.
-
 ---
 
-## Clearing Price Algorithm
+## The Clearing Price
 
-The clearing price determines the final transaction price for Price Range sales.
+For Price Range sales, the clearing price is the single price at which the transaction settles.
 
 ```mermaid
 flowchart TD
-    A[Collect Shortlisted Interests] --> B{interest_quantity == 0?}
-    B -- Yes --> C[Clearing Price = 0]
-    B -- No --> D{interest_quantity ≤ offer_quantity?}
-    D -- Yes --> E[Clearing Price = minimum interest price\n demand covered at lowest bid]
-    D -- No --> F[Sort interests by price DESC\nIterate until cumulative qty ≥ offer_quantity]
-    F --> G[Clearing Price = price at which\n cumulative qty first ≥ offer_quantity]
+    A[Collect shortlisted interests] --> B{Any demand?}
+    B -->|No| C[Clearing price = 0]
+    B -->|Yes| D{Demand ≤ supply?}
+    D -->|Yes| E[Everyone fills →<br/>clearing price = lowest bid]
+    D -->|No| F[Rank bids high → low,<br/>fill until supply runs out]
+    F --> G[Clearing price = the bid where<br/>supply is exhausted]
 ```
 
-**In plain terms:**
-- If demand ≤ supply → every buyer gets filled; clearing price is the lowest bid price
-- If demand > supply → prioritise highest bidders; clearing price is the marginal bid at which supply runs out
+In plain terms:
 
-After the clearing price is determined, it is set as `final_price` on the sale.
+- **If demand is at or below supply**, every buyer is filled and the clearing price is the **lowest** accepted bid.
+- **If demand exceeds supply**, the **highest** bidders are prioritised, and the clearing price is the marginal bid where supply runs out.
+
+The result becomes the sale's final price.
 
 ---
 
 ## Allocations
 
-An **Allocation** links a specific Offer to a specific Interest.
+An **allocation** links one offer to one interest, recording the quantity and price of the match and whether both sides have confirmed it. Confirming an allocation marks both the offer and the interest as verified.
 
-| Field | Meaning |
-|---|---|
-| `offer_id` | The seller's offer being matched |
-| `interest_id` | The buyer's interest being satisfied |
-| `quantity` | Units allocated in this match |
-| `price` | Price at which the allocation occurs |
-| `verified` | Whether both sides have confirmed the allocation |
-
-Verifying an allocation automatically marks the corresponding offer **and** interest as verified.
-
-Allocations can be created:
-- Manually by the fund manager
-- Via the automatic matching engine (for offers with `auto_match = true`)
-
-Custom matching fields can be configured on the sale to enforce specific pairing rules (e.g. matching by geography or investor category).
+Allocations can be created **manually** by the fund manager or by the **automatic matching engine** (for offers set to auto-match). You can configure custom matching rules on the sale to enforce specific pairings — for example matching by geography or investor category.
 
 ---
 
@@ -295,144 +229,107 @@ Custom matching fields can be configured on the sale to enforce specific pairing
 
 After allocation:
 
-1. **Verify the Offer** — confirm the seller's details (PAN, bank account). Triggers async PAN and bank validation jobs.
-2. **Verify the Interest** — confirm the buyer's details. Also triggers async validation.
-3. **Final Agreement** — both sides acknowledge the SPA document.
+1. **Verify the offer** — confirm the seller's details (tax ID, bank account); identity and bank checks run in the background.
+2. **Verify the interest** — confirm the buyer's details, with the same background checks.
+3. **Final agreement** — both sides acknowledge the SPA.
 
-Verification requires `full_name`, `address`, `PAN`, `bank_account_number`, and `ifsc_code` to be present.
+Verification needs the participant's full name, address, tax ID, and bank details to be present.
 
 ---
 
-## SPA Generation
+## Generating the SPA
 
-A Shareholder Purchase Agreement is generated automatically when an offer is verified (if a template document tagged **Offer Template** is attached to the sale).
-
-The SPA includes:
-- Seller details from the offer
-- Buyer details from the interest (via allocation)
-- Signatory emails from `seller_signatory_emails` (offer) and `buyer_signatory_emails` (interest)
-
-The generated SPA is stored in the offer's document folder and can be sent for e-signing.
-
-For interests: a separate buyer-side SPA can be generated using the **Interest Template** document type.
+A Share Purchase Agreement is generated automatically when an offer is verified, provided an **Offer Template** document is attached to the sale. It pulls the seller's details from the offer, the buyer's from the matched interest, and the signatory emails from each side. The SPA is stored in the offer's folder and can be sent for [e-signing](esigning_user_guide). A separate buyer-side SPA can be produced from a **Buyer Template**.
 
 ---
 
 ## Escrow
 
-Buyers can record that their escrow funds have been deposited by setting `escrow_deposited = true` on their interest. This is tracked for operational purposes; the system does not handle actual escrow transfers.
+Buyers can record that their escrow funds are in by marking **Escrow Deposited** on their interest. This is tracked for operations; the system doesn't move the money itself.
 
 ---
 
-## Fees
+## Advisor Fees
 
-The secondary sale supports fee computation for advisors:
+The sale supports advisor fee calculation:
 
-| Fee Type | Calculation |
-|---|---|
-| **Per Share** | `allocation_quantity × fee_amount` |
-| **Percentage** | `allocation_amount × fee_percentage / 100` |
-| **Flat** | Fixed fee regardless of quantity |
+| Fee type | How it's calculated |
+|----------|---------------------|
+| **Per Share** | Allocated quantity × fee per share. |
+| **Percentage** | Allocated amount × fee percentage. |
+| **Flat** | A fixed fee regardless of quantity. |
 
-Fees are computed per offer using `compute_fees` and aggregated per buyer entity using `compute_payments`.
+Fees are computed per offer and totalled per buying entity.
 
 ---
 
 ## Document Templates
 
-Documents attached to the secondary sale with specific `owner_tag` values are used as templates:
+Documents attached to the sale with specific owner tags act as templates:
 
-| Tag | Used For |
-|---|---|
-| `Offer Template` | SPA generation for sellers |
-| `Buyer Template` | SPA generation for buyers |
-| `Seller` | General seller documents |
-| `Buyer` | General buyer documents |
-| `Allocation Template` | Allocation confirmation document |
+| Tag | Used for |
+|-----|----------|
+| **Offer Template** | Seller-side SPA generation. |
+| **Buyer Template** | Buyer-side SPA generation. |
+| **Seller / Buyer** | General party documents. |
+| **Allocation Template** | The allocation confirmation document. |
 
-For each Offer Template, the system automatically adds Header and Footer document slots to the offer's document list.
+For each Offer Template, the system adds header and footer slots to the offer's documents.
 
 ---
 
 ## Notifications
 
-Notification recipients are controlled per sale via `notification_employee_ids`. When an event occurs (new offer, new interest, status change), notifications are sent to:
-1. Configured employees on the sale
-2. The investor's relationship managers (via RM mappings)
-3. The investor's approved users
-
-To suppress email notifications, set `no_offer_emails` or `no_interest_emails` on the sale.
-
-Adhoc notifications can be sent to: All Sellers, All Buyers, Approved Sellers, Verified Sellers, Shortlisted Buyers.
+You choose which employees are notified per sale. When something happens (a new offer or interest, a status change), notifications go to those employees, the investor's relationship managers, and the investor's approved contacts. You can suppress offer or interest emails on the sale, and send ad-hoc messages to groups such as All Sellers, All Buyers, Approved Sellers, Verified Sellers, or Shortlisted Buyers.
 
 ---
 
-## Key Fields Reference
+## Worked Example
 
-### SecondarySale
+A Price Range sale with a **600-unit** supply (Seller A 500, Seller B 100) and a band of 110–125.
 
-| Field | Description |
-|---|---|
-| `name` | Sale name (unique per entity) |
-| `start_date` / `end_date` | Active submission window |
-| `sale_type` | Regular or Tranche |
-| `price_type` | Fixed Price or Price Range |
-| `final_price` | Clearing/fixed price |
-| `min_price` / `max_price` | Price band for Range type |
-| `percent_allowed` | Max % of units a seller can offer |
-| `show_quantity` | Actual or Indicative |
-| `allocation_status` | Current allocation state |
-| `total_offered_quantity` | Sum of approved offer quantities |
-| `total_interest_quantity` | Sum of shortlisted interest quantities |
+Shortlisted bids:
 
-### Offer
+| Buyer | Quantity | Bid |
+|-------|----------|-----|
+| Buyer X | 400 | 120 |
+| Buyer Y | 200 | 115 |
+| Buyer Z | 300 | 110 |
 
-| Field | Description |
-|---|---|
-| `quantity` | Units offered for sale |
-| `price` | Price per unit |
-| `approved` | Whether offer is approved by fund manager |
-| `verified` | Whether seller details are verified |
-| `final_agreement` | Whether seller acknowledged SPA |
-| `allocation_quantity` | Units actually allocated |
-| `auto_match` | Eligible for automatic matching |
+Total demand = 900 units against 600 of supply, so **demand exceeds supply** — highest bidders first:
 
-### Interest
+1. Buyer X (120) takes 400 → 200 units of supply left.
+2. Buyer Y (115) takes the remaining 200 → supply exhausted.
+3. Buyer Z (110) is not filled.
 
-| Field | Description |
-|---|---|
-| `quantity` | Units desired |
-| `price` | Bid price |
-| `short_listed_status` | pending / short_listed / rejected / withdrawn |
-| `verified` | Whether buyer details are verified |
-| `final_agreement` | Whether buyer acknowledged SPA |
-| `escrow_deposited` | Escrow confirmation flag |
-| `allocation_quantity` | Units actually allocated |
+Supply runs out at Buyer Y's bid, so the **clearing price is 115**, and that becomes the sale's final price. The manager then creates allocations — Buyer X 400 and Buyer Y 200, drawn from Seller A and Seller B's offers — verifies both sides, and SPAs are generated for signing.
+
+If instead total demand had been **500 units (≤ 600 supply)**, everyone would fill and the clearing price would be the **lowest** accepted bid (110).
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Can a buyer also be a seller in the same sale?**
-Yes. An investor can have both Buyer and Seller access rights on the same secondary sale, allowing them to simultaneously offer existing units and bid for new ones.
+**Can a buyer also be a seller in the same sale?**
+Yes — grant the investor both Buyer and Seller access, so they can offer units and bid at the same time.
 
-**Q: What happens if the clearing price results in some shortlisted interests not being filled?**
-Interests priced below the clearing price remain shortlisted but unallocated. The fund manager can reject or leave them pending. They will not receive an allocation unless additional supply becomes available.
+**What if the clearing price leaves some interests unfilled?**
+Bids below the clearing price stay shortlisted but unallocated. The manager can reject them or leave them pending in case more supply appears.
 
-**Q: Can allocations be modified after creation?**
-Yes, until either side is verified. Once verified, allocations are effectively locked as the SPA process has begun.
+**Can allocations be changed after creation?**
+Yes, until either side is verified. Once verified, the SPA process has begun and the allocation is effectively locked.
 
-**Q: How do I handle a fixed-price sale?**
-Set Price Type to **Fixed Price** and provide the **Final Price**. All offers and interests will be auto-set to that price. The clearing price algorithm does not run.
+**How do I run a fixed-price sale?**
+Set Price Type to **Fixed Price** and a **Final Price**. All offers and interests use that price and the clearing calculation is skipped.
 
-**Q: Can I run a secondary sale without a template document?**
-Yes, but SPA generation will not work. You can still manage the offer/interest/allocation lifecycle without generating SPAs via the system.
+**Can I run a sale without a template document?**
+Yes, but SPAs won't be generated automatically. You can still manage the offer/interest/allocation lifecycle.
 
-**Q: How does auto-match work?**
-Offers marked `auto_match = true` are eligible for the automatic matching engine. When triggered, the engine pairs offers and interests based on price compatibility and (optionally) custom matching fields configured on the sale.
+**How does auto-match work?**
+Offers set to auto-match are eligible for the automatic engine, which pairs offers and interests by price compatibility and any custom matching rules you've configured.
 
-**Q: What is a Tranche sale vs Regular?**
-A Tranche sale allows the transfer to happen in phases. The allocation and verification process can be repeated across multiple tranches. Use this for large transactions where partial transfers are completed over time.
+**What's a Tranche sale?**
+A phased transfer — allocation and verification can be repeated across rounds, for large transactions completed over time.
 
-**Q: Who receives notifications when an offer is submitted?**
-The `notification_employee_ids` list on the sale receives notifications. If blank, no employee notifications are sent. The system also notifies the investor's RM mappings.
+**Who is notified when an offer is submitted?**
+The employees you've configured on the sale, plus the investor's relationship managers and approved contacts. If no employees are configured, no employee emails are sent.

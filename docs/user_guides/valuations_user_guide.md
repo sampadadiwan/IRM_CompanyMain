@@ -1,406 +1,263 @@
 # Valuations User Guide
 
-This guide covers how to record, manage, and analyse valuations for portfolio companies in CapHive — including how valuations flow through to FMV on portfolio investments, and how to use the Value Bridge to decompose performance drivers between two dates.
+This guide covers how to record and manage **valuations** for portfolio companies — how they flow through to the fair market value (FMV) of your investments, and how to use the **Value Bridge** to explain what drove performance between two dates.
 
 ---
 
 ## Table of Contents
 
-1. [What Is a Valuation?](#what-is-a-valuation)
-2. [Key Concepts](#key-concepts)
+1. [What a Valuation Is](#what-a-valuation-is)
+2. [Key Terms in Plain English](#key-terms-in-plain-english)
 3. [Creating a Valuation](#creating-a-valuation)
-4. [Valuation Fields Reference](#valuation-fields-reference)
+4. [Valuation Fields](#valuation-fields)
 5. [How Valuations Drive FMV](#how-valuations-drive-fmv)
-6. [Synthetic Valuations](#synthetic-valuations)
+6. [Synthetic (What-If) Valuations](#synthetic-what-if-valuations)
 7. [Custom Fields on Valuations](#custom-fields-on-valuations)
 8. [Setting Up the Value Bridge](#setting-up-the-value-bridge)
 9. [Using the Value Bridge](#using-the-value-bridge)
-10. [How the Value Bridge Is Computed](#how-the-value-bridge-is-computed)
-11. [MOIC Mode on the Value Bridge](#moic-mode-on-the-value-bridge)
-12. [Filtering and Finding Valuations](#filtering-and-finding-valuations)
-13. [Importing Valuations from a Spreadsheet](#importing-valuations-from-a-spreadsheet)
-14. [Validations and Business Rules](#validations-and-business-rules)
+10. [How the Value Bridge Works](#how-the-value-bridge-works)
+11. [MOIC Mode](#moic-mode)
+12. [Finding Valuations](#finding-valuations)
+13. [Importing Valuations](#importing-valuations)
+14. [Rules to Know](#rules-to-know)
 15. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
-## What Is a Valuation?
+## What a Valuation Is
 
-A **Valuation** records the **price per share** (or per unit) of a specific instrument held in a portfolio company, as of a given date. It is the single source of truth for the **fair market value (FMV)** of every portfolio investment in that instrument.
+A **valuation** records the **price per share (or per unit)** of a specific security held in a portfolio company, as of a given date. It's the single source of truth for the **fair market value (FMV)** of every investment in that security.
 
-Every time you want to mark up or mark down an investment, you create a new valuation record. CapHive uses the most recent valuation on or before any given date to calculate the current FMV of the fund's holdings.
+Whenever you mark an investment up or down, you create a new valuation. The system always uses the most recent valuation on or before a given date to value the holdings at that date.
+
+```mermaid
+flowchart LR
+    A[Record a valuation<br/>price per share on a date] --> B[FMV = shares held × that price]
+    B --> C[Unrealised gain updates]
+    C --> D[Fund and folio totals refresh]
+```
 
 ---
 
-## Key Concepts
+## Key Terms in Plain English
 
 | Term | Meaning |
 |------|---------|
-| **Portfolio Company** | The company the fund has invested in (an `Investor` record with category `Portfolio Company`) |
-| **Investment Instrument** | A specific class of security in that company (e.g. "Equity Shares", "Series A Preferred", "CCD"). Each instrument has its own valuation history. |
-| **Per Share Value** | The price of one unit of the instrument. Multiplied by quantity to get total FMV. |
-| **Valuation Date** | The date the per-share value is effective from. |
-| **Owner** | The portfolio company the valuation belongs to. A valuation is always scoped to one company and one instrument. |
-| **Synthetic** | A what-if valuation used for scenario modelling. Does **not** affect live FMV. |
-| **Latest Valuation** | The most recent non-synthetic valuation on or before a given end date — this is what drives FMV calculations. |
+| **Portfolio Company** | The company the fund has invested in. |
+| **Investment Instrument** | A specific class of security in that company (e.g. "Equity Shares", "Series A Preferred"). Each has its own valuation history. |
+| **Per Share Value** | The price of one unit of the security; multiplied by quantity to get FMV. |
+| **Valuation Date** | The date the price takes effect from. |
+| **Synthetic** | A what-if valuation for scenario modelling — does **not** affect live FMV. |
+| **Latest Valuation** | The most recent real valuation on or before a date — the one that drives FMV. |
 
 ---
 
 ## Creating a Valuation
 
-### From the portfolio company page
+**From the portfolio company page:** open the company, go to the **Valuations** tab, click **New Valuation**, fill in the form, and save.
 
-1. Navigate to the **Portfolio Company** (Stakeholders → the company).
-2. Click the **Valuations** tab.
-3. Click **New Valuation**.
-4. Fill in the form and save.
+**From the global list:** open **Valuations** in the main menu and click **New**.
 
-### From the global Valuations list
-
-Navigate to **Valuations** in the main menu and click **New**.
-
-### Creating multiple instrument valuations at once
-
-When creating a **new** valuation, you can select **multiple instruments** in a single form submission. CapHive will create a separate valuation record for each instrument selected, all with the same date and per-share value.
-
-> This is useful at quarter-end when you want to mark all instruments in a company at the same new value simultaneously.
+**Several instruments at once:** when creating a new valuation you can select **multiple instruments** in one go — a separate valuation is created for each, all with the same date and price. This is handy at quarter-end when marking every instrument in a company at the same time.
 
 ---
 
-## Valuation Fields Reference
+## Valuation Fields
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| **Valuation Date** | Yes | The effective date of this valuation. Must be unique per instrument per portfolio company. |
-| **Instrument** | Yes | Which instrument this valuation applies to. Instruments are specific to the portfolio company. |
-| **Per Share Value** | Yes | The price per unit. Must be ≥ 0. Stored with high precision (up to 8 decimal places). |
-| **Valuation** | No | Total enterprise or equity value — informational, not used in FMV calculations directly. |
-| **Report** | No | Attach a PDF or document (e.g. a valuation report from a third party). |
-| **Synthetic** | No | Mark as synthetic if this is a scenario/what-if record. Synthetic valuations do **not** update FMV. |
-| **Custom Fields** | No | Additional fields configured by your administrator (e.g. EBITDA, Revenue, Valuation Multiple) — required for Value Bridge. |
+| Field | Required | Notes |
+|-------|----------|-------|
+| **Valuation Date** | Yes | When this price takes effect. Only one valuation per instrument per date. |
+| **Instrument** | Yes | The security this applies to (specific to the company). |
+| **Per Share Value** | Yes | The price per unit. Must be zero or more, stored to high precision. |
+| **Valuation** | No | A total enterprise or equity value — informational, not used directly in FMV. |
+| **Report** | No | Attach a document, e.g. a third-party valuation report. |
+| **Synthetic** | No | Mark as a scenario/what-if; it won't affect live FMV. |
+| **Custom Fields** | No | Extra fields your administrator configures (e.g. revenue, EBITDA margin) — needed for the Value Bridge. |
 
-### Currency
-
-The currency of a valuation is determined by the **investment instrument's currency**, not the fund's currency. When FMV is computed for a fund in a different currency, the per-share value is converted using the exchange rate on the relevant date.
+**Currency:** a valuation's currency is the **instrument's** currency, not the fund's. When FMV is computed for a fund in a different currency, the price is converted using the exchange rate on the relevant date.
 
 ---
 
 ## How Valuations Drive FMV
 
-When you save a valuation (non-synthetic, and it is the **latest** for that instrument), CapHive automatically recalculates the FMV for every portfolio investment in that instrument.
+When you save a real valuation that is the **latest** for its instrument, the system automatically recalculates FMV for every investment in that instrument.
 
-### The update chain
-
-```
-1. You save a Valuation (per_share_value changes, or date changes)
-2. CapHive checks: is this the latest valuation for this instrument?
-3. If yes → triggers valuation_updated on the portfolio company
-4. For every portfolio investment in this instrument:
-   PortfolioInvestmentUpdate runs:
-   - Recomputes fmv_cents = net_quantity × per_share_value_in(fund_currency, end_date)
-   - Recomputes unrealized_gain = fmv − cost_of_remaining
-   - Updates all counter caches on the folio and fund
+```mermaid
+flowchart TD
+    A[Save a valuation] --> B{Latest for this instrument?}
+    B -->|No| Z[History kept, FMV unchanged]
+    B -->|Yes| C[For every holding in this instrument]
+    C --> D[FMV = shares held × price<br/>converted to fund currency]
+    D --> E[Unrealised gain = FMV − cost of remaining]
+    E --> F[Fund & folio totals refresh]
 ```
 
-### FMV formula
+The valuation used for any date is the latest one **on or before** that date — so a valuation dated 31 March applies to every date from 31 March onward until a newer one is entered. Shares held already account for buys, sells, and conversions.
 
-```
-FMV of a position as of a date =
-  Net Quantity on Date × Latest Per Share Value on or before that date
-                         (converted to fund currency at the exchange rate on that date)
-```
-
-Net Quantity accounts for buys, sells, and stock conversions. The "on or before" rule means if you enter a valuation dated March 31, all positions at any date from March 31 onwards will use that value until a newer valuation is entered.
-
-### When a valuation is deleted
-
-When you delete a valuation, CapHive enqueues an `UpdatePortfolioInvestmentsJob` to recompute all affected portfolio investments — ensuring no stale FMV values remain.
+If you **delete** a valuation, the system recomputes all affected investments so no stale FMV remains.
 
 ---
 
-## Synthetic Valuations
+## Synthetic (What-If) Valuations
 
-A **synthetic valuation** is a what-if record used for scenario analysis and the Value Bridge. It does **not** trigger any FMV updates and is **excluded** from all live calculations by default.
+A **synthetic valuation** is a scenario record used for modelling and the Value Bridge. It never triggers FMV updates and is excluded from live calculations:
 
-### Key rules
+- Synthetic valuations are hidden from the normal views (tools that need them, like the Value Bridge, show them automatically).
+- A synthetic valuation is never treated as the "latest" for FMV.
+- Realised gains, totals, and ratios are unaffected.
 
-- Synthetic valuations are hidden from all default queries (`default_scope { where(synthetic: false) }`).
-- To access them, use `.with_synthetic` scope — this is done automatically by the Value Bridge and scenario tooling.
-- A synthetic valuation is **never** considered "latest" for FMV purposes.
-- Attribution, counter caches, and ratios are unaffected by synthetic valuations.
-
-### When to use synthetic valuations
-
-- Modelling a hypothetical exit valuation for scenario planning.
-- Creating an "entry" snapshot for value bridge analysis without backdating real valuations.
-- Stress-testing fund ratios under different FMV assumptions.
+**Use them for:** modelling a hypothetical exit value, creating an entry snapshot for a value bridge without backdating real marks, or stress-testing ratios under different FMV assumptions.
 
 ---
 
 ## Custom Fields on Valuations
 
-Valuations support custom fields through CapHive's form builder. Your administrator can add any number of numeric, text, or calculated fields to the valuation form.
-
-Custom fields are stored in a `json_fields` column on each valuation and are used by:
-- The **Value Bridge** (see below)
-- Custom reports
-- KPI charts
+Valuations can carry custom fields your administrator adds (numeric, text, or calculated). They feed the **Value Bridge**, custom reports, and KPI charts.
 
 ### Built-in Value Bridge fields
 
-CapHive includes a standard set of value bridge custom fields that can be added to the **Valuation** form type by an administrator:
+There's a standard set of value-bridge fields an administrator can add to the valuation form:
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `revenue` | Number | Company revenue at this valuation date |
-| `ebitda_margin` | Number | EBITDA margin as a percentage |
-| `ebitda` | Calculated | `revenue × ebitda_margin ÷ 100` |
-| `valuation_multiple` | Number | The EV/EBITDA multiple applied |
-| `enterprise_value` | Calculated | `ebitda × valuation_multiple` |
-| `equity_value` | Calculated | `enterprise_value − net_debt` |
-| `net_debt` | Number | Net debt (debt minus cash) |
-| `debt_ratio` | Calculated | `net_debt ÷ enterprise_value` |
-| `equity_ratio` | Calculated | `equity_value ÷ enterprise_value` |
+| Field | Type | Meaning |
+|-------|------|---------|
+| **Revenue** | Number | Company revenue at this date. |
+| **EBITDA Margin** | Number | EBITDA margin (%). |
+| **EBITDA** | Calculated | Revenue × EBITDA margin ÷ 100. |
+| **Valuation Multiple** | Number | The EV/EBITDA multiple applied. |
+| **Enterprise Value** | Calculated | EBITDA × valuation multiple. |
+| **Net Debt** | Number | Debt minus cash. |
+| **Equity Value** | Calculated | Enterprise value − net debt. |
+| **Debt / Equity Ratios** | Calculated | Net debt and equity value as shares of enterprise value. |
 
-> **Setting up:** Ask your administrator to run the Value Bridge field setup, which adds all of the above as calculated custom fields on the Valuation form type for your entity. Once set up, these fields appear on every valuation form.
+> **Setup:** ask your administrator to enable the Value Bridge fields on the valuation form for your entity. Once done, they appear on every valuation.
 
 ---
 
 ## Setting Up the Value Bridge
 
-The Value Bridge analyses how enterprise value changed between two dates by isolating the contribution of each financial driver.
+The **Value Bridge** explains how a company's enterprise value changed between two dates by isolating the contribution of each driver — revenue growth, margin change, and multiple re-rating.
 
-### Step 1 — Add custom fields
-
-Your administrator sets up the Value Bridge custom fields on the Valuation form type. The standard drivers are:
-- **Revenue** (what revenue growth contributed)
-- **EBITDA Margin** (what margin expansion/contraction contributed)
-- **Valuation Multiple** (what re-rating contributed)
-
-Additional or different drivers can be configured by your administrator.
-
-### Step 2 — Configure the bridge columns for your entity
-
-The ordered list of drivers shown in the bridge is set in **Entity Settings → Value Bridge Columns** as a comma-separated list, e.g.:
-
-```
-Revenue, EBITDA Margin, Valuation Multiple
-```
-
-The order matters: drivers are applied **left to right**, and each step builds on the previous one.
-
-### Step 3 — Fill in custom fields on valuations
-
-For the Value Bridge to work, both the **entry** valuation (the start date) and the **exit** valuation (the end date) must have the custom fields filled in:
-- Revenue
-- EBITDA Margin
-- Valuation Multiple
-- Net Debt
-
-Calculated fields (EBITDA, Enterprise Value, etc.) are computed automatically from the inputs.
+1. **Add the custom fields.** Your administrator enables the value-bridge fields on the valuation form. The standard drivers are **Revenue**, **EBITDA Margin**, and **Valuation Multiple**.
+2. **Choose the drivers and their order.** The ordered list shown in the bridge is set in **Entity Settings → Value Bridge Columns**, e.g. `Revenue, EBITDA Margin, Valuation Multiple`. Order matters — drivers are applied left to right, each building on the previous.
+3. **Fill in the fields on both valuations.** The **entry** (start) and **exit** (end) valuations both need Revenue, EBITDA Margin, Valuation Multiple, and Net Debt. The calculated fields (EBITDA, Enterprise Value, etc.) compute automatically.
 
 ---
 
 ## Using the Value Bridge
 
-### Opening the Value Bridge
+1. Open the **Portfolio Company** and click **Value Bridge**.
+2. Choose the **Start Point** (entry valuation) and **End Point** (exit valuation).
+3. The bridge renders immediately, as both a table and a waterfall chart.
 
-1. Navigate to the **Portfolio Company** page.
-2. Click **Value Bridge** (or navigate to Valuations → Value Bridge for the company).
-3. Select the **Start Point** (entry valuation) from the dropdown.
-4. Select the **End Point** (exit valuation) from the dropdown.
-5. The bridge renders immediately.
+**The table** shows each metric at entry, the impact of each driver in turn, and the values at exit — colour-coded green (improvement) or red (deterioration). **The waterfall chart** shows the cumulative build-up from entry enterprise value to exit, each driver as a green or red bar.
 
-### What you see
-
-The Value Bridge renders both a **data table** and a **waterfall chart**:
-
-**Table columns:**
-
-| Column | What it shows |
-|--------|--------------|
-| **Entry** | All financial metrics at the start date |
-| **Revenue Impact** | EV change if only revenue moved to the exit value (all else held at entry) |
-| **EBITDA Margin Impact** | EV change if margin moved next (revenue already at exit value) |
-| **Valuation Multiple Impact** | EV change if the multiple moved last |
-| **Exit** | All financial metrics at the end date |
-
-**Table rows:** Each key metric (Revenue, EBITDA, Enterprise Value, Enterprise Value Change, etc.) is shown for each column, colour-coded green (improvement) or red (deterioration).
-
-**Waterfall chart:** A visual bar chart showing the cumulative build-up from Entry EV to Exit EV, with each driver as a positive (green) or negative (red) bar.
-
-### Selecting valuations
-
-The dropdown only shows valuations for the same instrument. If you have a `compute_value_bridge` custom field set to `"1"` on some valuations, only those valuations will appear in the dropdown — this lets you flag specific milestone valuations (e.g. entry, Q4-2024, Q4-2025) without cluttering the dropdown with every quarterly mark.
+The dropdowns only show valuations for the same instrument. If you flag specific milestone valuations for the bridge, only those appear — keeping the list to meaningful points (entry, year-ends) rather than every quarterly mark.
 
 ---
 
-## How the Value Bridge Is Computed
+## How the Value Bridge Works
 
-The bridge works by **isolating the impact of one driver at a time**, holding all others constant, and observing the resulting change in Enterprise Value.
+The bridge isolates **one driver at a time**, holding the others fixed, and measures the resulting change in enterprise value.
 
-### Algorithm
+Starting from the entry valuation:
 
-Starting from the **Entry** valuation:
+1. **Entry** — enterprise value = entry EBITDA × entry multiple.
+2. **Revenue impact** — move revenue to its exit value (margin and multiple still at entry), recompute enterprise value; the impact is the change from the previous step.
+3. **Margin impact** — now move the EBITDA margin to its exit value (revenue already at exit), recompute; the impact is the further change.
+4. **Multiple impact** — finally move the multiple to its exit value (revenue and margin already at exit), recompute; the impact is the final change.
+5. **Exit** — all metrics at exit values; this should match the exit valuation's enterprise value.
 
-```
-Step 0 — Entry:
-  Use all financial metrics from the entry date
-  Enterprise Value = entry EBITDA × entry Multiple
+### Worked example
 
-Step 1 — Revenue Impact:
-  Hold EBITDA Margin and Multiple at entry values
-  Change Revenue → exit Revenue
-  Recompute EBITDA = exit Revenue × entry EBITDA Margin ÷ 100
-  Recompute Enterprise Value = new EBITDA × entry Multiple
-  Revenue Impact = new EV − previous EV
-
-Step 2 — EBITDA Margin Impact:
-  Revenue is now at exit value (from Step 1)
-  Change EBITDA Margin → exit Margin
-  Recompute EBITDA = exit Revenue × exit Margin ÷ 100
-  Recompute Enterprise Value = new EBITDA × entry Multiple
-  EBITDA Margin Impact = new EV − previous EV
-
-Step 3 — Valuation Multiple Impact:
-  Revenue and Margin are now both at exit values
-  Change Multiple → exit Multiple
-  Recompute Enterprise Value = exit EBITDA × exit Multiple
-  Multiple Impact = new EV − previous EV
-
-Final — Exit:
-  All metrics at exit values
-  Enterprise Value = exit EBITDA × exit Multiple
-  (Should equal the exit valuation's Enterprise Value)
-```
-
-### Example
-
-| | Entry (2023-03-31) | Revenue Impact | EBITDA Margin Impact | Multiple Impact | Exit (2025-03-31) |
+| | Entry (2023-03-31) | Revenue impact | Margin impact | Multiple impact | Exit (2025-03-31) |
 |--|--|--|--|--|--|
 | Revenue | 100 | **120** | 120 | 120 | 120 |
 | EBITDA Margin | 20% | 20% | **25%** | 25% | 25% |
 | EBITDA | 20 | 24 | 30 | 30 | 30 |
-| Multiple | 10x | 10x | 10x | **12x** | 12x |
+| Multiple | 10× | 10× | 10× | **12×** | 12× |
 | Enterprise Value | **200** | 240 | 300 | 360 | **360** |
-| EV Change | — | **+40** | **+60** | **+60** | — |
+| EV change | — | **+40** | **+60** | **+60** | — |
 
-Total change = 40 + 60 + 60 = **160** (Entry 200 → Exit 360 ✓)
+Total change = 40 + 60 + 60 = **160** (entry 200 → exit 360 ✓).
 
-### Order matters
-
-The drivers are applied in the order configured in Entity Settings. The impact attributed to each driver depends on what has already been "applied" — revenue growth impact is measured holding margins and multiples at entry levels. This is a standard **sequential decomposition** approach.
+> **Order matters.** Each driver's impact depends on what's already been applied — revenue growth is measured with margins and multiples still at entry levels. This is a standard sequential decomposition.
 
 ---
 
-## MOIC Mode on the Value Bridge
+## MOIC Mode
 
-By default the Value Bridge shows **absolute values** (e.g. Enterprise Value in currency units). Switching to **MOIC mode** normalises every number by the Entry Enterprise Value.
+By default the bridge shows absolute values. Switch to **MOIC mode** to express every number as a multiple of the entry enterprise value:
 
-```
-MOIC = all values ÷ Entry Enterprise Value
-```
+> MOIC = each value ÷ entry enterprise value
 
-This makes the bridge instrument-agnostic and comparable across companies of different sizes — a revenue impact of "+0.20x" means the revenue growth alone contributed a 0.2x multiple on entry investment.
-
-Toggle between **Values** and **MOIC** using the "Basis" dropdown on the Value Bridge form.
+This makes bridges comparable across companies of different sizes — a "+0.20×" revenue impact means revenue growth alone added 0.2× on the entry value. Toggle between **Values** and **MOIC** with the **Basis** dropdown.
 
 ---
 
-## Filtering and Finding Valuations
+## Finding Valuations
 
-### Valuation list page
+Open **Valuations** in the main menu to see those you can access. You can narrow the list by:
 
-Navigate to **Valuations** in the main menu to see all valuations you have access to.
-
-### Filter by portfolio company
-
-Pass `owner_id` (the portfolio company ID) and `owner_type=Investor` to see only valuations for one company. This is done automatically when you open the Valuations tab on a portfolio company page.
-
-### Filter by instrument
-
-Use the ransack column filter for `investment_instrument` to restrict to one instrument within a company.
-
-### Filter by date
-
-Filter by `valuation_date` — supports on/before/after comparisons.
-
-### Filter by synthetic
-
-By default, synthetic valuations are **hidden**. The Valuations list uses `.with_synthetic` scope, so both synthetic and real records are visible. Filter by `synthetic = true` or `synthetic = false` to separate them.
-
-### Search
-
-Use the ransack filter on `portfolio_company_name` to search by company name, or `per_share_value` for numeric comparison.
+- **Portfolio company** — automatic when you open a company's Valuations tab.
+- **Instrument** — restrict to one security within a company.
+- **Date** — on/before/after a date.
+- **Synthetic** — show or hide what-if records (hidden by default in most views).
+- **Search** — by company name or per-share value.
 
 ---
 
-## Importing Valuations from a Spreadsheet
+## Importing Valuations
 
-### Spreadsheet columns
+Provide a spreadsheet with these columns:
 
-| Column | Required | Description |
-|--------|----------|-------------|
-| **Instrument** | Yes | Name of the investment instrument — must already exist on the portfolio company |
-| **Portfolio Company** | Yes | Company name — must match an existing Portfolio Company exactly |
-| **Valuation Date** | Yes | Date of the valuation (parsed with local date format) |
-| **Per Share Value** | Yes | Price per share/unit |
-| **Valuation** | No | Total valuation amount (informational) |
+| Column | Required | Notes |
+|--------|----------|-------|
+| **Instrument** | Yes | Must already exist on the company. |
+| **Portfolio Company** | Yes | Must match an existing company exactly. |
+| **Valuation Date** | Yes | The date of the mark. |
+| **Per Share Value** | Yes | Price per unit. |
+| **Valuation** | No | Total value (informational). |
 
-Additional columns can be provided to populate custom fields (e.g. `revenue`, `ebitda_margin`).
-
-### Duplicate handling
-
-If a valuation already exists for the same instrument, portfolio company, valuation date, per-share value, and total valuation, the row is **skipped** (no update, no error raised to fail the batch — just silently de-duplicated).
-
-### After import
-
-After a successful import, CapHive triggers the `valuation_updated` callback for each new valuation — so FMV on all related portfolio investments is recalculated automatically.
+Add extra columns to populate custom fields (e.g. revenue, EBITDA margin). An identical valuation (same instrument, company, date, price, and total) is skipped, so re-importing is safe. After import, FMV is recalculated for each affected instrument automatically.
 
 ---
 
-## Validations and Business Rules
+## Rules to Know
 
 | Rule | Detail |
 |------|--------|
-| **Valuation date required** | A valuation cannot be saved without a date. |
-| **Per share value ≥ 0** | A negative per-share value is not allowed. Zero is valid (e.g. write-off). |
-| **Unique per instrument per date** | Only one valuation per instrument per portfolio company per date. Attempting to create a duplicate raises a validation error. |
-| **Instrument required** | Every valuation must be linked to an investment instrument — it cannot float free. |
-| **Latest rule for FMV** | Only the most recent non-synthetic valuation on or before the calculation date drives FMV. Older valuations are retained as history but do not retroactively change previously computed FMV snapshots. |
-| **Synthetic flag is immutable after create** | The synthetic flag cannot be changed after a valuation is saved, to prevent accidental promotion of a scenario record to a live valuation. |
-| **Name auto-generated** | If no name is entered, CapHive sets it to `<Instrument> - <Date>`. If there is no instrument (entity-level valuation), it uses `<Entity Name> - <Date>`. |
+| **Date required** | A valuation can't be saved without a date. |
+| **Price ≥ 0** | Negative prices aren't allowed; zero is valid (e.g. a write-off). |
+| **One per instrument per date** | You can't have two valuations for the same instrument on the same date. |
+| **Instrument required** | Every valuation belongs to a specific instrument. |
+| **Latest drives FMV** | Only the most recent real valuation on or before a date drives FMV; older ones are kept as history. |
+| **Synthetic flag is fixed** | A valuation can't be switched between real and synthetic after it's created, to prevent a scenario record being promoted by accident. |
+| **Auto-named** | If you don't name it, it's named "[Instrument] – [Date]". |
 
 ---
 
 ## Frequently Asked Questions
 
-**Why hasn't my FMV updated after I saved a new valuation?**
-Check that:
-1. The valuation is **not** marked synthetic.
-2. The valuation date is the **latest** for that instrument — if an older valuation was edited, FMV would not update.
-3. The portfolio investments exist and have the correct instrument assigned.
+**Why hasn't FMV updated after I saved a valuation?**
+Check that it isn't marked synthetic, that it's the **latest** date for that instrument (editing an older valuation won't change FMV), and that the holdings have the right instrument. FMV updates happen immediately on save.
 
-FMV updates run synchronously (not in a background job), so the change should be visible immediately after saving.
-
-**Can I enter a valuation in a different currency than the fund?**
-Yes. The instrument has its own currency, and the valuation is always in that currency. When CapHive computes FMV for the fund, it converts per-share value to the fund's currency using exchange rates on the relevant dates.
+**Can I enter a valuation in a different currency from the fund?**
+Yes. The valuation uses the instrument's currency; FMV is converted to the fund's currency using the rate on the relevant date.
 
 **How do I model a write-off?**
-Create a new valuation with **Per Share Value = 0**. This will set FMV to zero for all holdings in that instrument from that date onwards.
+Create a valuation with **Per Share Value = 0** — FMV for that instrument becomes zero from that date onward.
 
 **Can I use the Value Bridge for non-EBITDA companies?**
-Yes, with configuration. The Value Bridge fields are fully customisable. Your administrator can configure different drivers (e.g. Revenue Multiple for SaaS companies, P/E multiple for listed equities, ARR growth for subscription businesses). The drivers and their calculation formulas are set up in the Valuation form type's custom fields.
+Yes. The drivers are configurable — your administrator can set up revenue multiples for SaaS, P/E for listed equities, ARR growth for subscriptions, and so on.
 
-**What is the difference between "Valuation" and "Per Share Value" on the form?**
-- **Per Share Value** is the operative number — it is multiplied by quantity to compute FMV for each portfolio investment.
-- **Valuation** (total) is informational — it may represent the total enterprise value or equity value of the company, but it does not feed directly into any automated calculation unless you set up a custom field formula that references it.
+**What's the difference between "Valuation" and "Per Share Value"?**
+Per Share Value is the operative number (multiplied by quantity for FMV). "Valuation" is an informational total and doesn't feed automated calculations unless a custom-field formula references it.
 
-**I created a valuation but do not see it in the Value Bridge dropdown. Why?**
-If any of your valuations have a custom field called `compute_value_bridge` set to `"1"`, the Value Bridge dropdown filters to **only** those flagged valuations. Check whether your other valuations need this flag set, or ask your administrator whether this filtering is intentional.
+**A valuation isn't in the Value Bridge dropdown — why?**
+If milestone valuations are flagged for the bridge, only flagged ones appear. Flag the valuation you need, or ask your administrator whether the filtering is intentional.
 
-**Can I bulk-update per-share values for many companies at once?**
-Yes — use the import spreadsheet. List each company/instrument/date combination in separate rows. Each row creates one valuation and triggers an FMV recalculation for that instrument.
+**Can I bulk-update prices for many companies?**
+Yes — use the import spreadsheet with one row per company/instrument/date. Each row creates a valuation and recalculates FMV.
 
 **Does deleting a valuation affect historical reporting?**
-When you delete a valuation, CapHive re-runs `PortfolioInvestmentUpdate` for all affected portfolio investments. This may change reported FMV figures going back to the date of the deleted valuation. Historical snapshots stored in fund ratios are not automatically re-generated — you would need to regenerate fund ratios after a deletion if you want the stored ratios to reflect the change.
+Deleting one recomputes FMV for affected investments back to that date. Stored fund-ratio snapshots aren't auto-regenerated — regenerate ratios afterwards if you want them to reflect the change.

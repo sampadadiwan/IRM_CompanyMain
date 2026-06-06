@@ -6,7 +6,7 @@ Agent Charts lets fund managers create AI-generated charts for their portfolio c
 
 - **Instant visual analysis** — turn months of KPI data into a Revenue trend, margin breakdown, or growth chart in seconds.
 - **Consistent reporting across the portfolio** — define a chart once and generate it for every portfolio company that matches a tag (e.g. all D2C companies, all Ecommerce companies). Each company gets its own version populated with its own data.
-- **No manual chart building** — no spreadsheets, no BI tools. Write a prompt like "line chart showing Revenue and EBITDA over 12 months" and the AI produces the Chart.js configuration.
+- **No manual chart building** — no spreadsheets, no BI tools. Write a prompt like "line chart showing Revenue and EBITDA over 12 months" and the AI produces the chart for you.
 - **Dashboard integration** — generated charts embed directly into the Portfolio Company Dashboard as widgets, visible to anyone with dashboard access.
 - **Always up to date** — regenerate any chart at any time to reflect the latest KPI data. Schedules can be configured to run generation automatically.
 
@@ -23,10 +23,10 @@ Agent Charts lets fund managers create AI-generated charts for their portfolio c
 6. [Viewing a Generated Chart](#6-viewing-a-generated-chart)
 7. [Embedding in a Dashboard](#7-embedding-in-a-dashboard)
 8. [Controlling Chart Height](#8-controlling-chart-height)
-9. [Bulk Seeding via Rake Task](#9-bulk-seeding-via-rake-task)
+9. [Creating a Standard Set of Charts](#9-creating-a-standard-set-of-charts)
 10. [Sample Chart Definitions](#10-sample-chart-definitions)
 11. [FAQ](#11-faq)
-12. [How It Works (Technical)](#12-how-it-works-technical)
+12. [How It Works](#12-how-it-works)
 
 ---
 
@@ -46,14 +46,14 @@ Before creating Agent Charts, ensure the following are in place:
 - Tags are set on the portfolio company's edit page in the **Tag List** field (comma-separated, e.g. `D2C,beauty`).
 - Charts with no tag apply to **all** portfolio companies.
 
-### LLM Configuration
-- An LLM must be configured for the entity (Admin → LLM Configuration). Agent Charts uses whichever LLM is set as the entity's default (Gemini, OpenAI, Anthropic, etc.).
+### AI Model
+- An AI model must be configured for the entity (Admin → LLM Configuration). Agent Charts uses whichever model is set as the entity's default.
 
 ---
 
 ## 2. Creating an Agent Chart
 
-Navigate to **AI → Agent Charts → New Agent Chart** (or `/agent_charts/new`).
+Navigate to **AI → Agent Charts → New Agent Chart**.
 
 | Field | Required | Description |
 |---|---|---|
@@ -67,7 +67,7 @@ Navigate to **AI → Agent Charts → New Agent Chart** (or `/agent_charts/new`)
 
 ### Writing a Good Prompt
 
-The prompt is the most important field. The LLM receives your prompt together with the actual data, so you do not need to repeat the data in the prompt — focus on how the chart should look.
+The prompt is the most important field. The AI receives your prompt together with the actual data, so you do not need to repeat the data in the prompt — focus on how the chart should look.
 
 **Include in your prompt:**
 - Chart type: `line chart`, `bar chart`, `stacked bar chart`, `doughnut chart`, etc.
@@ -134,25 +134,25 @@ Use this when you want to generate a chart for multiple portfolio companies at o
 
 ### 4.3 Via the Portfolio Company Agent (Scheduled)
 
-If the **Portfolio Company Agent** (`PortfolioCompanyAgent`) is enabled for the entity, it can run chart generation automatically on a schedule.
+If the **Portfolio Company Agent** is enabled for the entity, it can run chart generation automatically on a schedule.
 
 1. On a Portfolio Company page, open the **Misc** dropdown and click **Run Portfolio Company Agent**.
-2. The agent runs all applicable agent charts for that company in `:scheduled` mode — this means individual per-chart notifications are suppressed; only a final summary notification is sent.
-3. For fully automated scheduled runs, configure the agent's schedule in **Admin → Support Agents**.
+2. The agent generates all applicable charts for that company at once. To avoid noise, it sends a single summary notification rather than one per chart.
+3. For fully automated runs, configure the agent's schedule in **Admin → Support Agents**.
 
 ---
 
 ## 5. Understanding Status
 
-Each AgentChart has a single status that reflects the last generation attempt across all portfolio companies:
+Each chart has a single status reflecting its last generation attempt across all portfolio companies:
 
 | Status | Meaning |
-|---|---|
-| **draft** | Never generated, or reset after editing the prompt/KPI config. |
-| **ready** | At least one portfolio company spec was generated successfully. The `spec` column holds a JSON object keyed by portfolio company ID. |
-| **failed** | The last generation attempt raised an error. The `error` field on the chart detail page shows the exception message. |
+|--------|---------|
+| **Draft** | Never generated, or reset after you edited the prompt or KPI settings. |
+| **Ready** | The chart has been generated successfully for at least one company. |
+| **Failed** | The last attempt hit an error. The chart's detail page shows the error message. |
 
-A chart can have `status: ready` while one or more individual portfolio company specs are missing — the spec is stored per company and each generation attempt is independent.
+A chart can be **Ready** while still missing for some companies — it's generated and stored separately for each company, and each generation is independent.
 
 ---
 
@@ -165,7 +165,7 @@ After a chart has been generated for a portfolio company:
 3. The chart renders immediately below — no page reload needed.
 4. Alternatively, use the **Generate AI Charts** page on the portfolio company (Misc → Generate AI Charts) — charts with **Ready** status have their spec stored and will render in the dashboard widget.
 
-The chart is a fully interactive Chart.js visualisation — hover for tooltips, click legend items to toggle datasets, etc.
+The chart is fully interactive — hover for tooltips, click legend items to toggle datasets, and so on.
 
 ---
 
@@ -191,9 +191,9 @@ Agent Charts are displayed on the **Portfolio Company Dashboard** via the **Agen
 
 ### How the Widget Resolves the Chart
 
-- The widget looks up the AgentChart by title + entity.
-- It loads the chart spec for the current portfolio company via a Turbo Frame (lazy-loaded on scroll).
-- If no spec exists for this company yet, the widget shows a placeholder prompting you to generate the chart.
+- The widget finds the chart by its title within your entity.
+- It loads that chart for the company currently being viewed, when the dashboard is opened.
+- If the chart hasn't been generated for this company yet, the widget shows a placeholder prompting you to generate it.
 
 ---
 
@@ -211,28 +211,13 @@ Setting height at the chart level applies everywhere that chart is shown. Settin
 
 ---
 
-## 9. Bulk Seeding via Rake Task
+## 9. Creating a Standard Set of Charts
 
-To create a standard set of Agent Chart definitions for a new entity, use the seed rake task:
+When onboarding a new fund or entity, you'll usually want the same set of standard charts (Revenue & EBITDA trend, margin breakdown, growth, and so on) created in one go rather than one at a time.
 
-```bash
-rake agent_charts:seed ENTITY_ID=157
-```
+Your administrator can bulk-create a standard library of chart definitions for an entity. This is safe to repeat — any chart whose title already exists for the entity is skipped, so existing charts are never duplicated or overwritten. Once created, the charts behave exactly like ones you build by hand: generate them per company, embed them on dashboards, and refine the prompts as needed.
 
-The task is **idempotent** — it skips any chart whose title already exists for the entity, so it is safe to run multiple times. Output example:
-
-```
-Seeding agent charts for entity 157 (My Fund)…
-
-  CREATE #42  Revenue & EBITDA Trend  [Ecommerce]
-  CREATE #43  Gross Profit vs COGS Breakdown  [D2C]
-  CREATE #44  Contribution Margin Analysis  [(all companies)]
-  SKIP  Annual Revenue Growth (already exists as #31)
-
-Done — 3 created, 1 skipped.
-```
-
-To add your own charts to the seed list, edit `lib/tasks/agent_charts.rake` and add an entry to `CHART_DEFINITIONS`.
+If you have a preferred standard set you'd like rolled out to every new entity, share the chart titles and prompts with your administrator and they can add them to the standard library. The [Sample Chart Definitions](#10-sample-chart-definitions) below are a good starting point.
 
 ---
 
@@ -331,37 +316,24 @@ A: Set the **Chart Height (px)** field on the Agent Chart edit page to a smaller
 A: Yes. Create separate Agent Chart records with different prompts, KPI selections, or period ranges. Then add one Agent Chart widget per dashboard, each pointing to a different chart title via the Widget Configuration **Title** field.
 
 **Q: How long does generation take?**
-A: Each chart generation is a background job that makes one LLM call. It typically completes within 10–30 seconds depending on the LLM provider and data volume. You will receive an in-app notification when it finishes. The page does not need to stay open.
+A: Each chart is generated in the background with a single AI request, typically finishing within 10–30 seconds depending on the AI provider and data volume. You'll get an in-app notification when it's done — the page doesn't need to stay open.
 
 **Q: Can I schedule charts to regenerate automatically?**
 A: Yes — enable the **Portfolio Company Agent** for your entity (Admin → Support Agents) and configure its schedule. When it runs, it regenerates all applicable agent charts for each portfolio company automatically.
 
 ---
 
-## 12. How It Works (Technical)
+## 12. How It Works
 
-```
-AgentChart record (prompt + KPI config + tags)
-        │
-        ▼
-AgentChartJob (queued background job)
-        │
-        ├─ Fetches KPI data for the portfolio company (filtered by kpi_names + period)
-        ├─ OR loads CSV document files attached to the portfolio company
-        │
-        ▼
-ChartAgentService → two-turn LLM conversation
-        │  Turn 1: system instructions (Chart.js v4 JSON schema)
-        │  Turn 2: your prompt + data payload
-        │
-        ▼
-Chart.js v4 JSON spec (validated + height-normalised server-side)
-        │
-        ▼
-Stored in AgentChart.spec[portfolio_company_id]
-        │
-        ▼
-Rendered in-browser via the chart-renderer Stimulus controller
+Behind the scenes, generating a chart follows a simple pipeline:
+
+```mermaid
+flowchart TD
+    A[Chart definition<br/>prompt + KPIs + tags] --> B[Gather the data<br/>KPI history, or attached CSV files]
+    B --> C[Send the prompt + data to the AI]
+    C --> D[AI returns a ready-to-render chart]
+    D --> E[Stored separately for each company]
+    E --> F[Displayed on the dashboard, interactive]
 ```
 
-Each AgentChart definition is **reusable** — the same chart prompt can be generated for every portfolio company that matches its tag filter. The spec for each company is stored separately, keyed by portfolio company ID, so regenerating for one company does not affect others.
+Each chart definition is **reusable** — the same prompt can be generated for every portfolio company that matches its tags. Each company's chart is stored separately, so regenerating for one company never affects another.

@@ -31,15 +31,15 @@ Think of your fund as a secure building:
 1.  **The Door Key (Investor Access)**: This determines **WHO** can enter the building. You create an "Investor Access" record for a person (e.g., John Doe) and link them to an Investor Firm (e.g., Acme Capital).
 2.  **The Room Keys (Access Rights)**: This determines **WHAT** they can see once they are inside. You grant "Access Rights" to specific rooms (Funds, Documents, Deals, etc.).
 
-```
+```mermaid
 graph TD
     User[Individual Person] -->|Key 1: Investor Access| Firm[Investor Firm]
     Firm -->|Key 2: Access Rights| Data[Funds, Docs, Deals]
-    
-    subgraph "The Gate"
+
+    subgraph TheGate["The Gate"]
     Approval{Approved?}
     end
-    
+
     User --> Approval
     Approval -- Yes --> Firm
     Approval -- No --> Blocked[Access Denied]
@@ -160,18 +160,15 @@ When a KYC request is sent:
 sequenceDiagram
     participant FM as Fund Manager
     participant System as CapHive
-    participant DB as investor_accesses
-    participant Alice as alice@apex.com (no tags)
+    participant Alice as alice@apex.com (no topics)
     participant Bob as bob@apex.com (CapitalCall)
-    participant Carol as carol@apex.com (KYC,Approval)
+    participant Carol as carol@apex.com (KYC, Approval)
 
     FM->>System: Capital call approved
-    System->>DB: SELECT contacts WHERE<br/>tag_list IS NULL<br/>OR tag_list LIKE '%CapitalCall%'
-    DB-->>System: Alice (no tags), Bob (CapitalCall match)
-    Note over DB,System: Carol excluded — has tags, none match CapitalCall
-    System-->>Alice: Capital call email
-    System-->>Bob: Capital call email
-    Note over Carol: No email sent
+    Note over System: Send to contacts with no topics,<br/>or whose topics include CapitalCall
+    System-->>Alice: Capital call email (no topics = all)
+    System-->>Bob: Capital call email (CapitalCall matches)
+    Note over Carol: No email — topics don't include CapitalCall
 ```
 
 ### Employee notifications are unaffected
@@ -188,12 +185,12 @@ When an investor logs in, they see a simplified dashboard tailored to them:
 *   **Deals**: Information on active or past investment opportunities.
 *   **Notifications**: They receive an email alert whenever you share a new document or fund with them (if "Notify" is checked), subject to any Notification Topics they have set.
 
-```
+```mermaid
 sequenceDiagram
     participant FM as Fund Manager
     participant System as CapHive
     participant LP as Investor (LP)
-    
+
     FM->>System: Create Stakeholder (Unapproved)
     FM->>System: Click "Approve"
     System-->>LP: Sends Welcome Email

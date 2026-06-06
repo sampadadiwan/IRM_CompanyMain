@@ -1,100 +1,155 @@
 # Report Builder User Guide
 
-The **Report Builder** is a powerful self-service tool that allows you to create custom data exports across multiple tables in the CapHive system. You can join related data, perform aggregations (like summing commitment amounts), apply complex filters, and even create pivot tables—all without writing any code.
+The **Report Builder** is a self-service tool for creating custom data exports — without writing any code. Pick a starting record type, pull in related data, summarise it (totals, counts, averages), filter and sort it, even pivot it into a cross-tab, and export the result to Excel.
+
+This guide walks through building a report from scratch.
 
 ---
 
-## 1. Getting Started
+## Table of Contents
 
-### Creating a New Report
-1. Navigate to the **Reports** list page.
-2. Click the **"New Report (Builder)"** button.
-3. **Choose a Starting Table:** Select the primary table for your report (e.g., *Investor*, *Fund*, or *Capital Commitment*). This is the "Root" of your report.
-4. Once selected, you will be taken to the **Builder Interface**.
-
-### Naming Your Report
-Click on the report name (default: "Untitled Report") at the top left to rename it. Your changes are saved automatically as you type.
-
----
-
-## 2. The Builder Interface
-
-The builder is organized into three main panels:
-
-1.  **Available Columns (Left):** A searchable palette of all fields available from your starting table and any joined tables.
-2.  **Selected Columns (Center):** The structure of your report. Here you can reorder columns, set custom labels, and configure aggregations.
-3.  **Configuration (Right):** Manage table relations (joins), apply filters, and set default sorting.
+1. [What the Report Builder Does](#what-the-report-builder-does)
+2. [Creating a Report](#creating-a-report)
+3. [The Builder Layout](#the-builder-layout)
+4. [Adding and Arranging Columns](#adding-and-arranging-columns)
+5. [Pulling in Related Data](#pulling-in-related-data)
+6. [Summarising Related Data](#summarising-related-data)
+7. [Filtering and Sorting](#filtering-and-sorting)
+8. [Pivot Tables](#pivot-tables)
+9. [Preview and Export](#preview-and-export)
+10. [Worked Example](#worked-example)
+11. [Tips for Success](#tips-for-success)
 
 ---
 
-## 3. Building Your Report
+## What the Report Builder Does
 
-### Adding Columns
-*   **From the Palette:** Click the **(+)** icon next to any field in the left panel to add it to your report.
-*   **Search:** Use the search bar at the top of the palette to find specific fields quickly.
-*   **Reordering:** In the center panel, click and drag the **grip handle** (⋮⋮) to change the column order.
-*   **Removing:** Click the **Trash** icon next to a selected column to remove it.
+Start from one record type — say *Investor*, *Fund*, or *Capital Commitment* — and build outwards:
 
-### Joining Related Tables
-To include data from other tables (e.g., adding *Capital Commitments* to an *Investor* report):
-1.  Go to the **Relations & Joins** section in the right panel.
-2.  Select a relation from the **"+ Add new relation..."** dropdown.
-3.  Click **Add**.
-4.  New fields for that table will now appear in the **Available Columns** palette on the left.
+```mermaid
+flowchart LR
+    A[Pick a starting record<br/>e.g. Investor] --> B[Add related data<br/>e.g. their commitments]
+    B --> C[Summarise<br/>totals, counts, averages]
+    C --> D[Filter & sort]
+    D --> E[Preview]
+    E --> F[Export to Excel]
+```
 
-### Aggregating Data
-When you add columns from a "one-to-many" relation (like an Investor having multiple Commitments), you must choose how to summarize that data:
-*   **Sum:** Total value (e.g., Total Committed Amount).
-*   **Count:** Number of records (e.g., Number of Commitments).
-*   **Avg:** Average value.
-*   **Min / Max:** The lowest or highest value.
-*   **Latest:** The value from the most recently created record (e.g., Latest KYC Status).
-*   **List:** A comma-separated list of all unique values.
+Everything is point-and-click; your work saves automatically.
 
 ---
 
-## 4. Filtering and Sorting
+## Creating a Report
 
-### Applying Filters
-You can filter both the primary table and the joined tables independently.
-1.  In the **Filters** section (right panel), click **Add** under the relevant table.
-2.  **Field:** Select the field to filter by.
-3.  **Operator:** Choose an operator (e.g., *equals*, *contains*, *greater than*, *any of*).
-4.  **Value:** Enter the filter value.
-    *   *Tip:* Use **"any of"** with commas (e.g., `Individual, Institutional`) to filter for multiple values at once.
-5.  Click **Save All Filters** to apply your changes.
+1. Open the **Reports** list and click **New Report (Builder)**.
+2. **Choose a starting record type** — the main subject of your report (e.g. *Investor*). This is the report's foundation.
+3. You're taken into the builder.
+4. Click the report name (default "Untitled Report") to rename it — changes save as you type.
+
+---
+
+## The Builder Layout
+
+The builder has three panels:
+
+| Panel | Purpose |
+|-------|---------|
+| **Available Columns** (left) | A searchable list of every field you can add, from your starting record and any related data you bring in. |
+| **Selected Columns** (centre) | Your report's structure — reorder columns, rename them, and set how related data is summarised. |
+| **Configuration** (right) | Bring in related data, apply filters, and set the default sort order. |
+
+---
+
+## Adding and Arranging Columns
+
+- **Add** — click the **+** next to any field in the left panel.
+- **Search** — use the search bar to find a field fast (there are hundreds).
+- **Reorder** — drag the grip handle in the centre panel.
+- **Remove** — click the trash icon next to a selected column.
+
+---
+
+## Pulling in Related Data
+
+To include data connected to your starting record (e.g. an investor's commitments):
+
+1. In the **Relations & Joins** section (right panel), pick a relationship from the dropdown.
+2. Click **Add**.
+3. That related data's fields now appear in the left panel, ready to add.
+
+---
+
+## Summarising Related Data
+
+When a related record can have **many** rows for each starting record (an investor with several commitments), you choose how to summarise it:
+
+| Summary | Result |
+|---------|--------|
+| **Sum** | The total (e.g. total committed amount). |
+| **Count** | The number of records (e.g. number of commitments). |
+| **Avg** | The average value. |
+| **Min / Max** | The lowest / highest value. |
+| **Latest** | The value from the most recent record (e.g. latest KYC status). |
+| **List** | A comma-separated list of all unique values. |
+
+---
+
+## Filtering and Sorting
+
+### Filters
+
+You can filter the starting record and each related set independently:
+
+1. In the **Filters** section, click **Add** under the relevant set.
+2. Choose a **field**, an **operator** (equals, contains, greater than, any of…), and a **value**.
+   - **Tip:** use **"any of"** with commas (e.g. `Individual, Institutional`) to match several values at once.
+3. Click **Save All Filters**.
 
 ### Sorting
-In the **Default Sorting** section (right panel), select a column and a direction (Ascending ↑ or Descending ↓). This determines the default order of rows in your export.
+
+In **Default Sorting**, pick a column and a direction (ascending or descending) to set the order of rows in the export.
 
 ---
 
-## 5. Advanced: Pivot Tables
-The Report Builder supports "Pivoting" for joined relations, allowing you to turn row data into columns (e.g., showing commitment amounts broken down by Fund name as separate columns).
+## Pivot Tables
 
-1.  In the **Relations & Joins** section, find the joined table you want to pivot.
-2.  **Category:** Select the field that will become the new column headers (e.g., *Fund Name*).
-3.  **Value:** Select the numeric field to display (e.g., *Amount*).
-4.  **Aggregate:** Choose how to calculate the value (usually *Sum*).
-5.  Click **Apply**.
+Pivoting turns row values into columns — for example, showing each fund's committed amount as its own column.
+
+1. In **Relations & Joins**, find the related set to pivot.
+2. **Category** — the field that becomes the new column headers (e.g. Fund Name).
+3. **Value** — the number to show (e.g. Amount).
+4. **Aggregate** — how to combine it (usually Sum).
+5. Click **Apply**.
 
 ---
 
-## 6. Preview and Export
+## Preview and Export
 
-### Data Preview
-Click the **Preview** button at the top right (or **Refresh Preview** at the bottom) to see the first 50 rows of your report. This helps you verify your configuration before exporting.
-*   *Note:* Rows from the primary table that have no matching data in a joined table will appear with `0` or blank values (this is a "Left Join").
+- **Preview** — click **Preview** (or **Refresh Preview**) to see the first 50 rows and check your setup before exporting.
+  - *Note:* a starting record with no matching related data shows `0` or blank in those columns, rather than being dropped.
+- **Export** — click **Export XLSX** for a formatted Excel file. Large reports generate in the background, and you're notified when the download is ready.
 
-### Exporting to Excel
-1.  Click **Export XLSX** at the top right.
-2.  The system will generate a well-formatted `.xlsx` file.
-3.  For large reports, the generation happens in the background, and you will receive a notification when your download is ready.
+---
+
+## Worked Example
+
+**Goal:** a one-row-per-investor report showing each investor's type and their total committed capital.
+
+1. **New Report (Builder)** → start from **Investor**.
+2. Add columns **Name** and **Investor Type** from the left panel.
+3. In **Relations & Joins**, add the **Capital Commitments** relationship.
+4. From the new fields, add **Committed Amount** and set its summary to **Sum** → "Total Committed".
+5. Add a **filter**: Investor Type **any of** `Individual, Institutional`.
+6. Set **Default Sorting** to Total Committed, descending.
+7. **Preview** the first 50 rows; once it looks right, **Export XLSX**.
+
+Result: a clean list of investors ranked by how much they've committed.
 
 ---
 
 ## Tips for Success
-*   **Start Small:** Add a few columns and preview frequently to ensure the data looks as expected.
-*   **Check Aggregates:** If a number looks wrong, double-check if you are using *Sum* vs. *Count*.
-*   **Use Search:** The system has hundreds of available fields; the search bar in the palette is your best friend.
-*   **Saved Reports:** All builder reports are saved automatically. You can return to the Reports list at any time to edit or re-run them.
+
+- **Start small** — add a few columns and preview often.
+- **Check your summaries** — if a number looks off, confirm you're using **Sum** rather than **Count**.
+- **Use search** — with hundreds of fields available, the search bar is the fastest way to find one.
+- **Reports save automatically** — return to the Reports list any time to edit or re-run them.

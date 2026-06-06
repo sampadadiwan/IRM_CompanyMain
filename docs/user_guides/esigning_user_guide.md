@@ -17,13 +17,23 @@ This guide walks you through requesting, tracking, and completing electronic sig
 9. [Cancelling a Signature Request](#cancelling-a-signature-request)
 10. [Resending After a Failure or Expiry](#resending-after-a-failure-or-expiry)
 11. [Status Meanings](#status-meanings)
-12. [Frequently Asked Questions](#frequently-asked-questions)
+12. [Worked Example](#worked-example)
+13. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
 ## What is E-Signing?
 
 E-signing lets you send documents — such as subscription agreements, KYC forms, or offer letters — directly to investors and fund staff for legally binding electronic signatures. Signers receive an email with a link and sign from their phone or computer. Once everyone has signed, CapHive automatically saves a final signed copy to the investor's file.
+
+```mermaid
+flowchart LR
+    A[Add signatories<br/>to a document] --> B[Send for eSign]
+    B --> C[Signers get an email link]
+    C --> D[They sign on phone or computer]
+    D --> E[All signed]
+    E --> F[Signed copy saved automatically<br/>locked & approved]
+```
 
 ---
 
@@ -193,6 +203,22 @@ If a document status shows **Failed**, **Cancelled**, or **Expired**, you can st
 | **Cancelled** | Cancelled                                                 |
 | **Expired**   | Their window expired                                      |
 | **Voided**    | Voided (DocuSign)                                         |
+
+---
+
+## Worked Example
+
+Sending a subscription agreement to an investor and your fund manager, in order:
+
+1. Generate and approve the subscription agreement document.
+2. On the document's **E-Signatures** tab, click **Add Signatory** and add the **Investor** (their email, label "Investor", signature type as configured), then **Add Signatory** again for the **Fund Manager**.
+3. Drag the **Investor** to position 1 and the **Fund Manager** to position 2 so it signs sequentially. Save.
+4. Click **Send for eSign**. The status becomes **Requested**; only the investor is emailed first.
+5. The investor signs from their phone → their badge turns green, and the fund manager is then emailed automatically.
+6. The fund manager signs → all signatories are green.
+7. CapHive downloads the completed file, creates a new document tagged **Signed** (locked and approved) in the same folder, and marks the original **Completed**.
+
+If the investor says they never got the email, you check spam, then click **Resend for eSign** to issue a fresh link.
 
 ---
 

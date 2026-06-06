@@ -1,95 +1,144 @@
-# Tasks Features User Guide (V9.1.86)
+# Tasks User Guide
 
-With the latest update (V9.1.86), the Tasks module has been enhanced with new visualization tools, recurring tasks, and improved categorization to help you manage your workload more effectively.
+The **Tasks** module helps your team manage its workload — tracking what's done, what's outstanding, and what's overdue, with recurring tasks, templates for common processes, reminders, and clear categorisation. This guide covers everything from the dashboard to bulk imports.
+
+---
 
 ## Table of Contents
-1. [Task Statistics Dashboard](#1-task-statistics-dashboard)
-2. [Category Management](#2-category-management)
-3. [Recurring Tasks](#3-recurring-tasks)
-4. [Task Templates](#4-task-templates)
-5. [Notifications & Reminders](#5-notifications--reminders)
-6. [Importing Tasks](#6-importing-tasks)
-7. [Organization & Folders](#7-organization--folders)
-8. [Advanced Filtering](#8-advanced-filtering)
-9. [FAQ](#9-faq)
+
+1. [The Tasks Dashboard](#the-tasks-dashboard)
+2. [Categories](#categories)
+3. [Recurring Tasks](#recurring-tasks)
+4. [Task Templates](#task-templates)
+5. [Notifications and Reminders](#notifications-and-reminders)
+6. [Importing Tasks in Bulk](#importing-tasks-in-bulk)
+7. [How Tasks Are Organised](#how-tasks-are-organised)
+8. [Finding Tasks](#finding-tasks)
+9. [Worked Example](#worked-example)
+10. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
-## 1. Task Statistics Dashboard
-The Tasks index page features a summary dashboard at the top, providing an at-a-glance view of your task status.
+## The Tasks Dashboard
 
-*   **Completed:** Total number of tasks finished.
-*   **Incomplete:** Tasks that still require action.
-*   **Delayed:** Tasks where the due date has passed but remain incomplete.
-*   **Due This Week:** Tasks that need to be prioritized within the current week.
+The Tasks page opens with a summary of where things stand. Each card is clickable and instantly filters the list:
 
-Each statistic card is clickable, allowing you to instantly filter the task list.
+| Card | What it shows |
+|------|---------------|
+| **Completed** | Tasks finished. |
+| **Incomplete** | Tasks still needing action. |
+| **Delayed** | Tasks past their due date and not yet done. |
+| **Due This Week** | Tasks to prioritise this week. |
 
-## 2. Category Management
-Tasks can be assigned to specific functional categories for better organization and reporting.
-
-*   **Standard Categories:** Finance, Ops, Compliance, IR, or Other.
-*   **Custom Selection:** Specify a custom category name using the "Other" field.
-
-## 3. Recurring Tasks
-Automate repetitive tasks by setting up recurrence rules.
-
-*   **Frequency:** Daily, Weekly, Monthly, or Yearly.
-*   **Intervals:** Define how often the task repeats (e.g., "Every 2 weeks").
-*   **End Conditions:** Set an optional end date for the recurrence.
-
-To enable, check the **"Make Recurring"** box in the task form.
-
-## 4. Task Templates
-Task templates allow you to standardize workflows for common business processes. Templates can be created for:
-*   Capital Commitments & Calls
-*   Distributions & Remittances
-*   KYC (Individual & Non-Individual)
-*   Offers & Interest tracking
-
-Templates pre-fill details, tags, and due dates (e.g., "Due in 5 days").
-
-## 5. Notifications & Reminders
-Stay on top of your work with automated alerts.
-*   **Assignment Notifications:** When a task is assigned to you, an email notification is sent automatically.
-*   **Multiple Reminders:** You can set multiple reminders for a single task to alert you at specific intervals before the due date.
-
-## 6. Importing Tasks
-For large-scale task management, use the **Import** feature. You can upload a file (CSV/Excel) to bulk-create tasks, assign them to users, and set categories in one step.
-
-## 7. Organization & Folders
-Tasks are automatically organized into a virtual folder structure based on their category:
-*   `/Tasks/Finance`
-*   `/Tasks/Compliance`
-*   `/Tasks/General` (for tasks without a category)
-
-This makes it easier to browse tasks within the document management system.
-
-## 8. Advanced Filtering
-Use the search and filter panel to find tasks based on:
-*   **Status:** Completed vs. Incomplete.
-*   **Assignee:** Filter by tasks assigned to you or specific team members.
-*   **Tags:** Search by custom tags assigned during creation.
-*   **Delayed:** Specifically target tasks that are past their due date.
+```mermaid
+flowchart LR
+    A[Task created] --> B[Incomplete]
+    B -->|done| C[Completed]
+    B -->|due date passes| D[Delayed]
+    D -->|done| C
+```
 
 ---
 
-## 9. FAQ
+## Categories
 
-**Q: How do I assign a task to a team member?**
-A: In the task creation or edit form, use the "Assigned To" dropdown to select a user from your organization. They will receive an email notification automatically.
+Tasks can be tagged to a functional area for easier organisation and reporting:
 
-**Q: Can I set more than one reminder for a task?**
-A: Yes. The task form allows you to add multiple reminder entries, each with its own timing (e.g., 1 day before, 1 hour before).
-
-**Q: What happens if I miss a due date?**
-A: The task will automatically appear in the "Delayed" category on your dashboard and will be highlighted in red in the task list.
-
-**Q: How do recurring tasks work?**
-A: When you set a recurrence rule, the system automatically generates the next instance of the task once the current one is created or completed (depending on configuration).
-
-**Q: Can I use templates for custom tasks?**
-A: Yes, you can create your own templates for any recurring business process to ensure consistency across your team.
+- **Standard categories:** Finance, Ops, Compliance, IR, or Other.
+- **Custom:** choose "Other" and enter your own category name.
 
 ---
-*For more information on managing tasks, please refer to the core documentation or contact support.*
+
+## Recurring Tasks
+
+Automate anything you do on a regular cadence by setting a recurrence rule:
+
+- **Frequency:** Daily, Weekly, Monthly, or Yearly.
+- **Interval:** how often it repeats (e.g. "every 2 weeks").
+- **End condition:** an optional date to stop recurring.
+
+Tick **Make Recurring** in the task form to switch it on. When the current instance is created or completed, the next one is generated automatically.
+
+```mermaid
+flowchart LR
+    A[Recurring task] --> B[Instance due]
+    B -->|created/completed| C[Next instance generated]
+    C --> B
+    C -.->|end date reached.-> D[Recurrence stops]
+```
+
+---
+
+## Task Templates
+
+Templates standardise the steps for common processes, so a whole checklist can be created in one go with sensible due dates pre-filled (e.g. "due in 5 days"). Templates exist for:
+
+- Capital commitments and calls
+- Distributions and remittances
+- KYC (individual and non-individual)
+- Offers and interest tracking
+
+---
+
+## Notifications and Reminders
+
+- **Assignment alerts:** when a task is assigned to someone, they're emailed automatically.
+- **Multiple reminders:** set several reminders on a single task to nudge you at different points before the due date (e.g. one day before and one hour before).
+
+---
+
+## Importing Tasks in Bulk
+
+For large workloads, use **Import** to upload a spreadsheet that creates many tasks at once — assigning owners, setting categories, and applying due dates in a single step.
+
+---
+
+## How Tasks Are Organised
+
+Tasks are automatically filed into virtual folders by category, making them easy to browse within document management:
+
+- **Tasks / Finance**
+- **Tasks / Compliance**
+- **Tasks / General** (for tasks with no category)
+
+---
+
+## Finding Tasks
+
+Use the search and filter panel to narrow the list by:
+
+- **Status** — completed vs. incomplete.
+- **Assignee** — your tasks or a specific team member's.
+- **Tags** — any custom tags added at creation.
+- **Delayed** — only tasks past their due date.
+
+---
+
+## Worked Example
+
+Setting up a quarterly compliance review for your team:
+
+1. Create a task "Quarterly compliance review", category **Compliance**, assigned to a colleague — they're emailed immediately.
+2. Tick **Make Recurring**, set frequency **Quarterly**, and leave the end date open.
+3. Add two reminders: one **a week before** and one **the day before** the due date.
+4. The task files itself under **Tasks / Compliance**.
+5. Each quarter, the next instance is generated automatically; if one is missed, it appears under **Delayed** on the dashboard, highlighted in red.
+
+---
+
+## Frequently Asked Questions
+
+**How do I assign a task to a team member?**
+Use the "Assigned To" dropdown in the task form. They'll be emailed automatically.
+
+**Can I set more than one reminder?**
+Yes — add multiple reminders, each with its own timing (e.g. one day before, one hour before).
+
+**What happens if I miss a due date?**
+The task moves to the **Delayed** category on the dashboard and is highlighted in red in the list.
+
+**How do recurring tasks work?**
+When you set a recurrence rule, the system generates the next instance automatically once the current one is created or completed.
+
+**Can I create my own templates?**
+Yes — build a template for any repeatable process so your team follows the same steps every time.
