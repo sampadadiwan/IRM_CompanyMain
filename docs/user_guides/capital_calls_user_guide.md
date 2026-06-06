@@ -1,806 +1,614 @@
 # Capital Calls User Guide
 
-This guide explains everything you need to know about issuing capital calls, tracking investor remittances, recording payments, and understanding how amounts and fees are computed. No technical knowledge is required.
+A **capital call** is how a fund draws down the capital that investors have already promised. When the fund is ready to invest or pay expenses, it "calls" a portion of each investor's commitment and asks them to wire the money by a deadline.
+
+This guide walks you through the full journey — issuing a call, working out each investor's share, sending notices, recording the money that comes in, and confirming receipt. No technical background is needed; everything is described in fund-operations terms.
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Key Concepts](#key-concepts)
-3. [Capital Call Lifecycle](#capital-call-lifecycle)
+1. [Where Capital Calls Fit](#where-capital-calls-fit)
+2. [Key Terms in Plain English](#key-terms-in-plain-english)
+3. [The Capital Call Journey](#the-capital-call-journey)
 4. [Creating a Capital Call](#creating-a-capital-call)
-5. [Call Basis — How Amounts Are Calculated](#call-basis--how-amounts-are-calculated)
-6. [Fund Closes and Close Percentages](#fund-closes-and-close-percentages)
-7. [Call Fees](#call-fees)
-8. [Generating Remittances](#generating-remittances)
-9. [Approving a Capital Call](#approving-a-capital-call)
-10. [Capital Remittances](#capital-remittances)
-11. [Remittance Status Lifecycle](#remittance-status-lifecycle)
-12. [Verifying a Remittance](#verifying-a-remittance)
-13. [Capital Remittance Payments](#capital-remittance-payments)
-14. [Multi-Currency Support](#multi-currency-support)
-15. [Notifications](#notifications)
-16. [Document Generation](#document-generation)
-17. [Unit Allocation](#unit-allocation)
-18. [Recomputing Fees](#recomputing-fees)
-19. [Importing Data](#importing-data)
-20. [Key Computations Reference](#key-computations-reference)
-21. [Frequently Asked Questions](#frequently-asked-questions)
+5. [How Each Investor's Amount Is Calculated (Call Basis)](#how-each-investors-amount-is-calculated-call-basis)
+6. [Calling Different Closes at Different Rates](#calling-different-closes-at-different-rates)
+7. [Adding Fees to a Call](#adding-fees-to-a-call)
+8. [Generating Investor Remittances](#generating-investor-remittances)
+9. [Generating and Approving Call Notices](#generating-and-approving-call-notices)
+10. [Approving the Capital Call](#approving-the-capital-call)
+11. [Understanding Remittances](#understanding-remittances)
+12. [The Remittance Status Lifecycle](#the-remittance-status-lifecycle)
+13. [Recording Investor Payments](#recording-investor-payments)
+14. [Verifying a Remittance](#verifying-a-remittance)
+15. [Working Across Currencies](#working-across-currencies)
+16. [Investor Notifications](#investor-notifications)
+17. [Allocating Fund Units](#allocating-fund-units)
+18. [Refreshing Fees After a Change](#refreshing-fees-after-a-change)
+19. [Importing Calls, Remittances and Payments](#importing-calls-remittances-and-payments)
+20. [Worked Example, End to End](#worked-example-end-to-end)
+21. [Quick Calculation Reference](#quick-calculation-reference)
+22. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
-## Overview
+## Where Capital Calls Fit
 
-A **Capital Call** is a request from a fund to its investors asking them to transfer a portion of their committed capital. CapHive manages the entire lifecycle — from issuing the call and computing each investor's share, to tracking payments and sending notifications.
+When investors join a fund they sign a **commitment** — a legal promise to provide up to a certain amount of capital over the fund's life. That money usually isn't transferred all at once. Instead, the fund draws it down in instalments as it finds deals and incurs costs. Each instalment is a **capital call** (sometimes called a *drawdown* or *capital drawdown*).
 
+```mermaid
+flowchart LR
+    A[Investor signs commitment] --> B[Fund issues a capital call]
+    B --> C[Each investor receives a remittance request]
+    C --> D[Investors wire their share]
+    D --> E[Fund team confirms receipt]
+    E --> F[Fund units issued, optional]
+    F --> G[Capital is now deployed]
 ```
-Fund issues Capital Call
-        │
-        ▼
-System generates one Capital Remittance per investor commitment
-        │
-        ▼
-Investors receive notification email with their due amount
-        │
-        ▼
-Investors transfer funds → recorded as Capital Remittance Payments
-        │
-        ▼
-Team verifies receipt → Remittance marked Paid
-        │
-        ▼
-(Optional) Fund units allocated to investors
-```
+
+Over a fund's life there are usually many capital calls, each drawing down a slice of the total commitment until the fund is fully called.
 
 ---
 
-## Key Concepts
+## Key Terms in Plain English
 
-| Term | Meaning |
-|------|---------|
-| **Capital Call** | The fund-level instruction to call a percentage or amount from investors |
-| **Capital Remittance** | The per-investor record showing how much is owed for a given capital call |
-| **Capital Remittance Payment** | A single payment made by an investor against their remittance |
-| **Call Fee** | A fee (management fee, upfront fee, etc.) that is bundled into or alongside the call amount |
-| **Folio ID** | A unique identifier for each investor-commitment combination |
-| **Fund Close** | A closing tranche of the fund (e.g. First Close, Second Close) |
-| **Call Basis** | The method used to calculate each investor's call amount |
-| **Verified** | A flag set by the fund team to confirm that the remittance amount has been validated/received |
+| Term | What it means |
+|------|---------------|
+| **Capital Call** | The fund-wide instruction to draw down capital — "we are calling 25% of commitments." |
+| **Remittance** | One investor's slice of a capital call — the amount that *this* investor owes for *this* call. There is one remittance per investor commitment. |
+| **Remittance Payment** | A single transfer of money an investor makes against their remittance. A remittance can be paid in one or several payments. |
+| **Call Fee** | A charge bundled into or alongside the call — for example a management fee or upfront fee. |
+| **Folio** | An investor's individual account within the fund, identified by a **Folio ID**. One investor can hold several folios. |
+| **Fund Close** | A closing round of the fund (First Close, Second Close, and so on). Investors are grouped by the close they joined. |
+| **Call Basis** | The method used to work out each investor's share of the call. |
+| **Verified** | The fund team's confirmation that the money has arrived and the remittance is correct. |
+| **Committed / Called / Collected** | *Committed* is what the investor promised in total; *called* is what has been requested so far; *collected* is what has actually been received. |
 
 ---
 
-## Capital Call Lifecycle
+## The Capital Call Journey
 
+A capital call moves through a clear sequence of stages. Up to the point of approval you can freely edit it; once approved, it locks so that the figures investors received can never silently change.
+
+```mermaid
+flowchart TD
+    A[1. Create the call<br/>name, dates, basis, closes, fees] --> B[2. Generate remittances<br/>one per eligible investor]
+    B --> C[3. Generate call notices<br/>personalised document per investor]
+    C --> D[4. Review and approve each notice]
+    D --> E[5. Approve the capital call<br/>locks the call, sends notices]
+    E --> F[6. Investors pay<br/>payments recorded against remittances]
+    F --> G[7. Verify remittances<br/>confirm receipt, set Paid status]
+    G --> H[8. Allocate fund units, optional]
 ```
-  ┌─────────────────────────────────────────────────────────┐
-  │                    CAPITAL CALL                          │
-  │                                                         │
-  │  1. CREATE                                              │
-  │     Set name, dates, call basis, fund closes, fees      │
-  │                    │                                    │
-  │                    ▼                                    │
-  │  2. GENERATE REMITTANCES (automatic or manual)          │
-  │     One remittance created per eligible commitment      │
-  │                    │                                    │
-  │                    ▼                                    │
-  │  3. GENERATE & APPROVE CALL NOTICE DOCUMENTS            │
-  │     Generate personalised notices per remittance        │
-  │     Approve each document before proceeding             │
-  │     ─ Call is LOCKED for edits after approval ─         │
-  │                    │                                    │
-  │                    ▼                                    │
-  │  4. APPROVE                                             │
-  │     Fund manager approves the call                      │
-  │     ─ Validates all generated documents are approved    │
-  │     ─ Triggers notification emails (if enabled)         │
-  │     ─ Call, edit, and recompute actions disabled        │
-  │                    │                                    │
-  │                    ▼                                    │
-  │  5. INVESTORS PAY                                       │
-  │     Payments recorded as Remittance Payments            │
-  │                    │                                    │
-  │                    ▼                                    │
-  │  6. VERIFY REMITTANCES                                  │
-  │     Team marks each remittance as Verified              │
-  │     Status changes to Paid / Overdue / Overpaid         │
-  │                    │                                    │
-  │                    ▼                                    │
-  │  7. CLOSE (optional)                                    │
-  │     Allocate fund units; send payment notifications     │
-  └─────────────────────────────────────────────────────────┘
-```
+
+> **Why approval locks the call:** once notices have gone out, investors are acting on those numbers. Locking prevents the amounts, due dates, or investor list from changing after the fact, which protects everyone's audit trail.
 
 ---
 
 ## Creating a Capital Call
 
-Navigate to a **Fund** and click **New Capital Call**.
+Open a **Fund** and click **New Capital Call**.
 
-### Required Fields
+### Required information
 
-| Field | Description |
-|-------|-------------|
-| **Name** | A unique name for this call within the fund. Spaces are trimmed and duplicates are not allowed. |
-| **Call Date** | The date the call is issued. Defaults to today. |
-| **Due Date** | The deadline by which investors must pay. Defaults to two weeks from today. |
-| **Call Basis** | How each investor's amount is calculated (see [Call Basis](#call-basis--how-amounts-are-calculated)). |
-| **Fund Closes** | Which closing tranches this call applies to. Must be specified unless Call Basis is "Upload". |
-| **Percentage Called** | For "Percentage of Commitment" basis, the percentage of each investor's commitment to call. Cannot exceed 100%. |
+| Field | What to enter |
+|-------|---------------|
+| **Name** | A unique label for this call within the fund (e.g. "Drawdown 3 — Q2 2026"). Duplicates are not allowed. |
+| **Call Date** | The date the call is issued. Defaults to today. Also used as the default exchange-rate date. |
+| **Due Date** | The deadline by which investors must pay. Defaults to two weeks out. |
+| **Call Basis** | How each investor's amount is worked out — see [Call Basis](#how-each-investors-amount-is-calculated-call-basis). |
+| **Fund Closes** | Which closing rounds this call applies to. Required for every basis except "Upload". |
+| **Percentage Called** | For the "Percentage of Commitment" basis, the percentage of each investor's commitment to draw (cannot exceed 100%). |
 
-### Optional Fields
+### Optional settings
 
-| Field | Description |
-|-------|-------------|
-| **Notes** | Internal notes about this call. |
-| **Send Call Notice** | Whether to email investors when the call is approved. Defaults to **Yes**. |
-| **Send Payment Notification** | Whether to notify investors when a payment is received and verified. Defaults to **Yes**. |
-| **Generate Remittances** | Whether to auto-generate one remittance per commitment. Defaults to **Yes**. |
-| **Remittances Verified** | If enabled, generated remittances are automatically marked as verified and paid. Useful for recording historical data. |
-| **Call Fees** | Fee entries to be included in the call computation (see [Call Fees](#call-fees)). |
-| **Unit Prices** | Per-unit-type price and premium for unit allocation. |
+| Field | What it does |
+|-------|--------------|
+| **Notes** | Internal notes, not shown to investors. |
+| **Send Call Notice** | Email investors when the call is approved. Default **Yes**. |
+| **Send Payment Notification** | Email investors when their payment is received and confirmed. Default **Yes**. |
+| **Generate Remittances** | Automatically create one remittance per investor on save. Default **Yes**. |
+| **Remittances Verified** | Create remittances already marked as paid and verified — useful for loading historical calls that were settled long ago. |
+| **Call Fees** | Fees to include in the call — see [Adding Fees](#adding-fees-to-a-call). |
+| **Unit Prices** | The per-unit price and premium for each unit class, used when allocating fund units. |
 
-### Business Rules
+### Rules to keep in mind
 
-- The call **name must be unique** within the fund.
-- **Due Date and Call Date are both required.**
-- **Percentage Called** must be ≤ 100.
-- Fund Closes must be specified for all call basis types except "Upload".
-- Once saved, if the call basis is not "Upload", CapHive will automatically queue generation of remittances if the percentage or amount changes.
-
----
-
-## Call Basis — How Amounts Are Calculated
-
-The Call Basis determines how CapHive computes each investor's individual call amount.
-
-### Option 1: Percentage of Commitment
-
-```
-Investor Call Amount = (Percentage Called / 100) × Investor's Committed Amount
-                       + Capital Fees + Investment Amount
-```
-
-- You set a **Percentage Called** (e.g. 25%).
-- CapHive multiplies each investor's commitment by that percentage.
-- If different fund closes are called at different percentages, each close gets its own percentage (see [Fund Closes and Close Percentages](#fund-closes-and-close-percentages)).
-- Fees (if configured) are added on top of the base call amount.
-
-### Option 2: Investable Capital Percentage (or custom account-entry basis)
-
-```
-Investor Call Amount = (Investor's Investable Capital %) × Total Amount To Be Called
-                       + Capital Fees + Investment Amount
-```
-
-- You set a **Total Amount To Be Called** at the fund level.
-- Each investor's share is determined by their "Investable Capital Percentage" account entry (the most recent entry up to the due date).
-- If no such entry exists for an investor, their call amount is zero.
-
-### Option 3: Upload
-
-- No automatic computation.
-- You upload a spreadsheet with each investor's exact call amount (in folio currency and/or fund currency).
-- Call amounts, capital fees, other fees, and investment amounts are all taken directly from the file.
-- Use this when amounts are determined externally (e.g. from a fund administrator's file).
+- The call name must be unique within the fund.
+- Both Call Date and Due Date are required.
+- Percentage Called cannot exceed 100%.
+- Fund Closes must be chosen for every basis except "Upload".
+- If you later change the percentage or total amount, the system re-queues remittance generation automatically.
 
 ---
 
-## Fund Closes and Close Percentages
+## How Each Investor's Amount Is Calculated (Call Basis)
 
-A fund may have multiple closing tranches. Capital calls can target **specific closes** or **all closes**.
+The **Call Basis** decides how the fund's draw is split among investors. There are three approaches.
 
-- When you select fund closes, only investors whose commitment belongs to one of the selected closes will receive a remittance.
-- You can specify a **different percentage for each close**. For example, First Close investors might be called at 25% while Second Close investors are called at 10%.
+### Option 1 — Percentage of Commitment
 
+The most common method: call the same percentage of every investor's commitment.
+
+> **Investor's call = Percentage Called × Committed Amount, plus any fees.**
+
+You enter one percentage (say 25%), and each investor is asked for that share of what they committed. Different closes can be called at different percentages — see the next section.
+
+**Example:** an investor who committed $4,000,000, called at 25%, owes **$1,000,000** before fees.
+
+### Option 2 — Investable Capital Percentage (account-entry basis)
+
+Used when each investor's share should follow a stored ratio rather than a flat percentage of commitment — for example their share of *investable* capital after excused or defaulting investors are removed.
+
+> **Investor's call = Investor's stored share % × Total Amount To Be Called, plus any fees.**
+
+You set one **Total Amount To Be Called** for the whole fund, and each investor's share comes from their most recent "Investable Capital Percentage" figure on or before the due date. If an investor has no such figure, their call is zero.
+
+### Option 3 — Upload
+
+For when amounts are decided outside the system (e.g. supplied by a fund administrator).
+
+- Nothing is calculated automatically.
+- You upload a spreadsheet with each investor's exact call amount, fees, and any investment amount.
+- The figures from the file are used exactly as given.
+
+```mermaid
+flowchart TD
+    A{How are amounts decided?} -->|Flat % of each commitment| B[Percentage of Commitment]
+    A -->|Follows a stored ratio| C[Investable Capital Percentage]
+    A -->|Decided externally| D[Upload a spreadsheet]
 ```
-Example:
-  First Close  → 25%
-  Second Close → 10%
-  Third Close  → excluded from this call
-```
-
-- Selecting **"All"** applies the call to every commitment in the fund at the same percentage.
 
 ---
 
-## Call Fees
+## Calling Different Closes at Different Rates
 
-Call Fees let you bundle additional charges into a capital call. They are attached to a specific call and computed per investor.
+A fund often closes in several rounds. Later investors may be "trued up" so that, over time, everyone reaches the same called percentage — which means a single call can apply different rates to different closes.
 
-### Fee Types
+- When you select specific closes, only investors in those closes receive a remittance.
+- You can give each close its own percentage.
 
-| Fee Type | Effect |
-|----------|--------|
-| **Fees Part Of Capital** | Added to the investor's call amount (capital_fee). Included in the total amount the investor must transfer. |
-| **Other Fees** | Charged separately on top of the call amount. Shown as a distinct line item. |
-| **Investment Amount** | Treated as an investment sub-component within the call. Added to the call amount alongside capital fees. |
+**Example:**
 
-### How Fee Amounts Are Determined
+| Fund Close | Percentage Called |
+|------------|-------------------|
+| First Close | 25% |
+| Second Close | 10% |
+| Third Close | *not included in this call* |
 
-**Standard (Account Entry) Method:**
-- You specify a fee **name** (must match an account entry name in the commitment), a **start date**, and an **end date**.
-- CapHive sums all non-cumulative account entries with that name whose reporting date falls within the start-to-end date range.
-- This is the standard method for management fees, upfront fees, etc.
-
-**Formula Method (support users only):**
-- A custom formula (Ruby expression) can be written in the notes field of the call fee.
-- The formula has access to `capital_call`, `capital_commitment`, and `capital_remittance` objects.
-- A convenience method `management_fees_days(start_date, end_date)` is available for day-count calculations.
-
-### Fee Audit
-
-For every remittance, CapHive stores a detailed audit trail in JSON showing exactly which account entries contributed to each fee amount, including the name, date, and amount of each entry.
+Selecting **All** applies one percentage to every investor in the fund.
 
 ---
 
-## Generating Remittances
+## Adding Fees to a Call
 
-When a capital call is saved (or when the percentage/amount changes), CapHive automatically generates one **Capital Remittance** for each eligible commitment.
+Call fees let you bundle charges — such as management fees — into a capital call. Each fee is attached to the call and worked out per investor.
 
-### What "Eligible" Means
+### Fee types
 
-A commitment is eligible if:
-- Its **fund close** is included in the capital call's selected fund closes.
-- No remittance already exists for this commitment + capital call combination (generation is **idempotent** — it never creates duplicates).
+| Fee type | How it behaves |
+|----------|----------------|
+| **Fees Part Of Capital** | Added into the investor's call amount. Counts toward the money they transfer and toward called capital. |
+| **Other Fees** | Charged in addition to the call amount and shown as a separate line (e.g. a late-payment charge). |
+| **Investment Amount** | A portion of the call earmarked as a direct investment. Added alongside capital fees. |
 
-### Generation Options
+### How a fee amount is found
 
-| Setting | Behaviour |
-|---------|-----------|
-| **Generate Remittances = Yes** | CapHive auto-generates remittances when the call is saved (default). |
-| **Generate Remittances = No** | You can still add remittances manually or via upload. |
-| **Remittances Verified = Yes** | Generated remittances are created pre-verified with status "Paid". A payment record is also created automatically. |
+The standard approach links a fee to a **named charge** already recorded against each investor. You give the fee a **name**, a **start date**, and an **end date**, and the system adds up every matching charge dated within that window. This is how recurring management fees and one-off upfront fees are typically applied.
 
-> **Tip:** After generation completes (which runs as a background job), refresh the capital call page to see the remittances list.
+> For unusual fee arrangements, your CapHive support team can configure a custom calculation on your behalf. Day-count management-fee calculations are supported.
+
+### Fee transparency
+
+For every investor, the system keeps a full breakdown of exactly which charges made up each fee — name, date, and amount — so any fee figure can be traced back to its components if an investor queries it.
 
 ---
 
-## Approving a Capital Call
+## Generating Investor Remittances
 
-Approval is a formal, one-way step that triggers notifications and locks the call against further changes.
+When you save a capital call (or change its percentage or total), the system creates one **remittance** per eligible investor.
 
-### Pre-Approval Checklist
+### Who is "eligible"
 
-Before clicking Approve, complete these steps in order:
+An investor receives a remittance when:
 
-1. **Generate Documents** — use the Generate Documents action to create personalised call notices for each remittance.
-2. **Review and approve notices** — open each remittance's Documents tab and approve the generated call notice. Unapproved notices block approval.
-3. Confirm the due date, call amount, and investor list are correct. These cannot be changed after approval.
+- Their commitment belongs to one of the call's selected fund closes, **and**
+- They don't already have a remittance for this call. (Generation never creates duplicates — running it again is safe.)
 
-### Approval Steps
+### Generation options
+
+| Setting | Result |
+|---------|--------|
+| **Generate Remittances = Yes** | Remittances are created automatically when you save (default). |
+| **Generate Remittances = No** | You add remittances yourself, manually or by upload. |
+| **Remittances Verified = Yes** | Remittances are created already verified and marked Paid, with a matching payment recorded. Use this only for loading settled, historical calls. |
+
+> **Tip:** generation runs in the background. Give it a moment, then refresh the capital call page to see the remittance list.
+
+---
+
+## Generating and Approving Call Notices
+
+A **call notice** is the personalised letter each investor receives telling them how much to pay and by when. Notices must be produced and approved *before* you approve the call.
+
+### Producing notices
+
+**For the whole call:** open the call and choose **Actions → Generate Documents**. The system creates one notice per investor in the background using your fund's **Call Template**.
+
+**For a single investor:** open that remittance and click **Generate Docs**.
+
+### Prerequisites
+
+- A document template tagged **"Call Template"** must exist for the fund (or for the specific commitment).
+- The investor must have a verified **KYC record**.
+- If your fund is set to send notices "per KYC", investors with several folios receive a single combined notice instead of one per folio.
+
+### Approving each notice
+
+Every generated notice must be reviewed and **approved** individually:
+
+1. Open a remittance and go to its **Documents** tab.
+2. Read the notice and click **Approve**.
+3. Repeat for every investor.
+
+Only **approved** notices are attached to the investor email. Requiring explicit approval guarantees a person has reviewed each letter before it reaches an investor. Any notice left unapproved will block the call's approval.
+
+---
+
+## Approving the Capital Call
+
+Approval is the formal "go" step. It sends the notices and locks the call.
+
+### Before you approve, confirm
+
+1. Notices have been generated and **every** one is approved.
+2. The due date, amounts, and investor list are correct — these cannot be changed afterwards.
+
+### Approving
 
 1. Open the capital call.
-2. Click **Actions → Approve**.
-3. The system checks that **all generated documents are approved** (any unapproved call notice on a remittance will block approval with an error).
-4. Once approved, the capital call is locked and the `Approved By` user is recorded.
+2. Choose **Actions → Approve**.
+3. The system checks that all notices are approved. If any are outstanding, approval is blocked with a clear message and you'll need to approve those notices first.
+4. Once approved, the call locks and records who approved it.
 
-### What Happens After Approval
+### What happens on approval
 
-- If **Send Call Notice** is enabled, notification emails are sent to all investors with pending remittances (whose commitments do not have "Skip Call Notice" set).
-- Approved call notice documents are attached to the email.
-- The approved status is visible to investors in their portal.
-- **Edit, Delete, Recompute Fees, and Generate Documents actions are all disabled** on an approved call. Unit Allocation remains available.
+- If **Send Call Notice** is on, investors with an outstanding remittance receive their notice email (unless that investor is set to skip notices).
+- The approved notice document is attached to the email.
+- The approved status becomes visible to investors in their portal.
+- **Edit, Delete, Refresh Fees, and Generate Documents are disabled.** Allocating fund units remains available.
 
-### Business Rule: Approval Cannot Proceed If
-
-- Any generated document attached to a remittance of this call has not yet been approved.
-- You must approve (or delete) those documents first.
+If a notice needs correcting after approval, that has to be handled outside the system — by then investors already hold the original figures.
 
 ---
 
-## Capital Remittances
+## Understanding Remittances
 
-A Capital Remittance is the per-investor record for a capital call. It shows:
+A remittance is one investor's record for one capital call. It shows:
 
-- How much the investor owes (`call_amount` = base call + capital fees + investment amount)
-- Any other fees owed separately (`other_fee`)
-- How much has been collected (`collected_amount`)
-- The outstanding balance (`due_amount` = call_amount + other_fee − collected_amount)
-- The current status (Pending, Paid, Overdue, Overpaid)
+- **Call Amount** — what they owe (base call + capital fees + any investment amount).
+- **Other Fee** — anything charged separately.
+- **Collected Amount** — how much has come in so far.
+- **Outstanding Balance** — Call Amount + Other Fee − Collected Amount.
+- **Status** — Pending, Paid, Overdue, or Overpaid.
 
-### Key Fields
+### Key fields
 
-| Field | Description |
-|-------|-------------|
-| **Folio ID** | The investor's commitment identifier. Must be unique within a capital call. |
-| **Call Amount** | Total amount to be transferred (base + capital fees + investment amount). |
-| **Capital Fee** | The portion of the call amount that represents fees. |
-| **Other Fee** | Fees charged in addition to the call amount (e.g. penalty). |
-| **Investment Amount** | Sub-component of the call treated as a pure investment. |
-| **Collected Amount** | Running total of all received payments. |
-| **Due Amount** | `Call Amount + Other Fee − Collected Amount` |
-| **Committed Amount** | The investor's total committed amount at the time the remittance was created (snapshot). |
-| **Remittance Date** | The date used for exchange rate lookups (defaults to the call date). |
-| **Payment Date** | The date of the last received payment. Auto-set from payments. |
-| **Verified** | Whether the fund team has confirmed the remittance. |
-| **Notification Sent** | Whether the call notice email has been sent to this investor. |
-| **Arrear Amount** | Any amount carried forward from a previous call. |
-| **Percentage** | The effective percentage of commitment being called for this investor. |
+| Field | What it tells you |
+|-------|-------------------|
+| **Folio ID** | The investor's account in this fund. Appears once per call. |
+| **Call Amount** | Total to be transferred (base + capital fees + investment amount). |
+| **Capital Fee** | The fee portion bundled into the call amount. |
+| **Other Fee** | Anything charged on top of the call amount. |
+| **Investment Amount** | Portion of the call earmarked as a direct investment. |
+| **Collected Amount** | Running total received. |
+| **Outstanding Balance** | What is still owed. |
+| **Committed Amount** | The investor's commitment captured at the time the remittance was created. |
+| **Remittance Date** | The date used for currency conversion (defaults to the call date). |
+| **Payment Date** | The date of the most recent payment received. |
+| **Verified** | Whether the team has confirmed receipt. |
+| **Notification Sent** | Whether the notice email has gone out. |
+| **Arrear Amount** | Any unpaid balance carried over from an earlier call. |
+| **Percentage** | The effective percentage of commitment this call represents for the investor. |
 
-### Folio Currency vs Fund Currency
+### Two currencies, always
 
-Every remittance stores amounts in **two currencies**:
-- **Folio Currency** (`folio_*` fields): The investor's denomination currency (from their commitment). This is the currency investors actually pay in.
-- **Fund Currency** (`call_amount`, `collected_amount`, etc.): The fund's base currency. Amounts are converted using exchange rates on the remittance date.
+Every remittance keeps amounts in two currencies:
+
+- **Folio currency** — the currency the investor committed and pays in. This is what they actually wire.
+- **Fund currency** — the fund's base currency, used for fund-level totals. Converted using the exchange rate on the remittance date.
 
 ---
 
-## Remittance Status Lifecycle
+## The Remittance Status Lifecycle
 
-```
-  New Remittance Created
-          │
-          ▼
-      ┌───────┐
-      │PENDING│  ◄── Due date in the future
-      └───────┘
-          │
-          │  Due date passes with unpaid balance
-          ▼
-      ┌───────┐
-      │OVERDUE│  ◄── Checked daily by background job
-      └───────┘
-
-  When team verifies the remittance:
-          │
-          ├──── Folio Due Amount ≤ ±10 ──────────► ┌────┐
-          │                                         │PAID│
-          │                                         └────┘
-          │
-          ├──── Folio Due Amount < -10 ────────────► ┌─────────┐
-          │                                           │OVERPAID │
-          │                                           └─────────┘
-          │
-          └──── Folio Due Amount > 10 ──────────────► PENDING or OVERDUE
-                                                      (based on due date)
+```mermaid
+flowchart TD
+    A[Remittance created] --> B[Pending<br/>due date still ahead]
+    B -->|Due date passes, still owing| C[Overdue]
+    B -->|Team verifies| D{Outstanding balance?}
+    C -->|Team verifies| D
+    D -->|Fully paid, within rounding| E[Paid]
+    D -->|Paid more than owed| F[Overpaid]
+    D -->|Still owing| B
 ```
 
-### Status Rules
+| Status | When it applies |
+|--------|-----------------|
+| **Pending** | Not yet verified, due date today or later. |
+| **Overdue** | Not yet verified, due date has passed. |
+| **Paid** | Verified and settled (a small rounding tolerance is allowed so tiny currency differences don't block "Paid"). |
+| **Overpaid** | Verified, but more was received than was owed. |
 
-| Status | Condition |
-|--------|-----------|
-| **Pending** | Remittance is not verified. Due date is today or in the future. |
-| **Overdue** | Remittance is not verified. Due date has passed. |
-| **Paid** | Remittance is verified. Folio due amount is within ±10 (currency tolerance for rounding). |
-| **Overpaid** | Remittance is verified. Folio due amount is less than −10 (more has been paid than owed). |
+A daily background process automatically flips unpaid **Pending** remittances to **Overdue** once their due date passes, so your overdue list is always current without manual effort.
 
-> **Tolerance:** A ±10 cent tolerance is applied when determining Paid vs outstanding, to account for rounding differences.
+---
 
-### Daily Status Update
+## Recording Investor Payments
 
-A background job runs every day and automatically changes **Pending** remittances to **Overdue** when their capital call's due date has passed.
+A payment records actual money received from an investor. A remittance can have several payments if the investor pays in instalments.
+
+### Adding a payment
+
+1. Open the remittance.
+2. Click **New Payment**.
+3. Enter:
+
+| Field | What to enter |
+|-------|---------------|
+| **Amount (Folio Currency)** | The amount received, in the investor's currency. This is the main figure. |
+| **Payment Date** | When the money was received. |
+| **Reference No** | Bank or transaction reference. Must be unique within the fund. |
+| **Notes** | Optional internal notes. |
+| **Payment Proof** | Attach a bank statement, confirmation, or screenshot. |
+
+### How currency is handled
+
+- Enter the amount in the **folio (investor) currency**.
+- The system converts it to the **fund currency** using the exchange rate on the payment date.
+- If you supply both currency amounts yourself (typically via import), conversion is skipped.
+
+### Effect on the remittance
+
+- The **Collected Amount** updates automatically — no manual recalculation.
+- The remittance's payment date moves to match the most recent payment.
+
+### Deleting a payment
+
+A payment **cannot be deleted** once fund units have been allocated against it. Adjust or remove the unit allocation first. Reference numbers must stay unique within the fund.
 
 ---
 
 ## Verifying a Remittance
 
-Verification is the fund team's confirmation that the investor's payment has been received and validated.
+Verification is the team's confirmation that the money arrived and the figures are right.
 
-### How to Verify
+### To verify
 
-1. Open a Capital Remittance.
-2. Click **Verify** (or use the verify action from the remittances list).
-3. The system:
-   - Recomputes call fees.
-   - Recalculates the call amount.
-   - Toggles the `verified` flag.
-   - Recalculates the status (Paid / Overdue / Overpaid).
-   - Updates the payment date.
-   - Sends **payment received notifications** to the investor (if enabled and conditions are met — see [Notifications](#notifications)).
-4. Clicking Verify again **un-verifies** the remittance (toggle behaviour).
+1. Open the remittance.
+2. Click **Verify**.
+3. The system refreshes the fees, recalculates the call amount, updates the status (Paid / Overdue / Overpaid), sets the payment date, and — if enabled — emails the investor a payment-received confirmation.
+4. Clicking **Verify** again removes verification (it's a toggle).
 
-### Business Rule: Unverify on New Payment
+### Automatic re-check on new payments
 
-When a new payment is added to a remittance, the remittance is automatically **unverified**. The team must re-verify it after reviewing the new payment. This ensures the collected amount is always recalculated before final confirmation.
+When you add a payment to an already-verified remittance, the system **un-verifies** it so someone reviews the new total before re-confirming. Just re-verify once you've checked the updated figure.
 
 ---
 
-## Capital Remittance Payments
+## Working Across Currencies
 
-A Capital Remittance Payment records an actual money transfer from an investor.
+The system fully supports investors paying in different currencies from the fund's own.
 
-### Creating a Payment
-
-1. Open a Capital Remittance.
-2. Click **New Payment**.
-3. Fill in:
-
-| Field | Description |
-|-------|-------------|
-| **Amount (Folio Currency)** | The amount received in the investor's currency. This is the primary amount. |
-| **Payment Date** | The date the payment was received. |
-| **Reference No** | Bank reference or transaction ID. Must be unique within the fund (if provided). |
-| **Notes** | Optional internal notes. |
-| **Payment Proof** | Upload a proof document (bank statement, screenshot, etc.). |
-
-### Currency Conversion
-
-- Payments are always entered in the **folio currency** (the investor's denomination).
-- CapHive automatically converts the amount to the **fund currency** using the exchange rate for the payment date.
-- If you provide both folio and fund currency amounts explicitly (e.g. via import), automatic conversion is skipped.
-
-### Effect on Collected Amount
-
-When a payment is saved, the remittance's `collected_amount` (and `folio_collected_amount`) are updated automatically via counter cache — no manual recalculation needed.
-
-The **payment date on the remittance** is always updated to match the most recently dated payment.
-
-### Deleting a Payment
-
-A payment **cannot be deleted** if fund units have already been allocated based on that payment. You must adjust or remove the unit allocations first.
-
-### Reference No Uniqueness
-
-Reference numbers must be **unique within the fund**. Duplicate reference numbers are rejected.
-
----
-
-## Multi-Currency Support
-
-CapHive fully supports funds with investors in multiple currencies.
-
-```
-  Investor's Commitment Currency (Folio Currency)
-          │
-          │  Exchange rate on remittance date
-          ▼
-  Fund's Base Currency
-          │
-          │  Exchange rate on payment date (for tracking currency)
-          ▼
-  Tracking Currency (optional, for reporting)
+```mermaid
+flowchart LR
+    A[Folio currency<br/>what the investor pays] -->|rate on remittance date| B[Fund currency<br/>fund-level totals]
+    B -->|rate on payment date| C[Tracking currency<br/>cross-fund reporting, optional]
 ```
 
-- **Folio Currency**: Set at the commitment level. All investor-facing amounts use this currency.
-- **Fund Currency**: The fund's base currency. Used for fund-level totals (call_amount, collected_amount on the Capital Call).
-- **Tracking Currency**: An optional reporting currency used for cross-fund dashboards.
+- **Folio currency** — set on the commitment; everything investor-facing uses it.
+- **Fund currency** — the fund's base currency; fund totals roll up here.
+- **Tracking currency** — an optional reporting currency for dashboards that span multiple funds.
 
-Amounts are always stored and displayed in all three currencies where applicable.
-
----
-
-## Notifications
-
-CapHive can send automated email notifications at several points in the capital call lifecycle.
-
-### 1. Call Notice (to Investors)
-
-**When sent:** When a capital call is **approved**, if "Send Call Notice" is enabled on the call.
-
-**Who receives it:** The notification users of each investor associated with a pending remittance — provided:
-- "Send Call Notice" flag is **Yes** on the capital call, AND
-- The investor's commitment does not have **Skip Call Notice** set to Yes.
-
-**What it contains:**
-- Fund name and capital call name as subject.
-- Any approved, generated documents attached to the remittance (e.g. call notice letter).
-- Any manually uploaded documents attached to the remittance.
-- If a custom notification template is configured for the call, the custom subject and body are used.
-
-**Sending a Reminder:**
-- Click **Send Reminder** on the capital call page.
-- This re-sends the call notice email (with "Reminder:" prefix in the subject) to all investors whose remittances are still Pending or Overdue.
-- Individual remittance reminders can also be triggered from the remittance detail page.
-- If a notification was previously sent to an investor, subsequent sends are treated as reminders automatically.
-
-### 2. Payment Received Notification (to Investors)
-
-**When sent:** When a remittance is **verified** (or when a payment is added and the remittance is already verified).
-
-**Who receives it:** The notification users of the investor.
-
-**Conditions for sending:**
-- "Send Payment Notification" flag is **Yes** on the capital call, AND
-- The remittance is **verified**, AND
-- The payment amount is positive, AND
-- The payment notification has not already been sent for this payment.
-
-**Subject:** "Remittance payment received by [Fund Name] for [Capital Call Name]"
-
-**Deduplication:** Once a payment notification is sent, it is marked `payment_notification_sent = true` and will not be sent again.
-
-### 3. Call Notice Skipping
-
-Set **Skip Call Notice = Yes** on a capital commitment to permanently exclude that investor from all call notice and reminder emails for that commitment.
-
-### Notification Summary Table
-
-| Event | Trigger | Recipient | Controlled By |
-|-------|---------|-----------|---------------|
-| Call issued | Capital call approved | Investors with pending remittances | "Send Call Notice" on call + "Skip Call Notice" on commitment |
-| Reminder | Manual click on "Send Reminder" | Investors with Pending/Overdue remittances | Same as above |
-| Individual reminder | Manual from remittance page | Single investor | Same as above |
-| Payment received | Remittance verified | Investor | "Send Payment Notification" on call |
+Amounts are stored and shown in each relevant currency, so you never have to convert by hand.
 
 ---
 
-## Document Generation
+## Investor Notifications
 
-CapHive can automatically generate a personalised call notice document for each remittance. Document generation must be completed **before** the capital call is approved — the Generate Documents action is disabled on an approved call.
+The system can email investors automatically at key moments.
 
-### How to Generate Documents
+### Call notice
 
-**For all remittances in a call:**
-1. Open the Capital Call.
-2. Click **Actions → Generate Documents**.
-3. CapHive queues a background job that creates a document for each remittance using the **"Call Template"** template.
-4. Refresh the page after a few minutes and review the generated documents on each remittance.
+- **Sent when:** the call is approved (if **Send Call Notice** is on).
+- **To:** each investor with an outstanding remittance, unless their commitment is set to **Skip Call Notice**.
+- **Contains:** the fund and call name, the approved notice document, and any documents you attached manually. A custom subject and body are used if your fund has a notification template.
 
-**For a single remittance:**
-1. Open the Capital Remittance.
-2. Click **Generate Docs**.
-3. A document is generated for that remittance only.
+**Reminders:** click **Send Reminder** on the call to re-send to everyone still Pending or Overdue (the subject is prefixed "Reminder:"). You can also remind a single investor from their remittance. Once a notice has been sent to an investor, later sends are treated as reminders automatically.
 
-### Prerequisites
+### Payment-received confirmation
 
-- A template tagged **"Call Template"** must exist (either at the fund level or the commitment level).
-- The investor must have a verified **KYC record**.
+- **Sent when:** a remittance is verified (or a payment is added to an already-verified remittance).
+- **To:** the investor.
+- **Conditions:** **Send Payment Notification** is on, the remittance is verified, the payment is positive, and a confirmation hasn't already been sent for that payment.
 
-### Document Generation Per KYC
+### Skipping notices for an investor
 
-If the fund's `call_notice_on` setting is "kyc", a single document is generated per KYC (rather than per folio). This is useful when one investor has multiple commitments but should receive a single combined notice.
+Set **Skip Call Notice = Yes** on a commitment to permanently exclude that investor from call and reminder emails — handy for internal or fund-of-funds investors who don't need these communications.
 
-### Approving Generated Documents
+### Notification summary
 
-After generation, each document must be individually **approved** before the capital call itself can be approved. Unapproved generated documents block the capital call approval step.
-
-1. Open a Capital Remittance.
-2. Click the **Documents** tab.
-3. Review the generated call notice and click **Approve**.
-4. Repeat for every remittance. Once all notices are approved, the capital call's Approve action will proceed.
-
-> **Why this matters:** Only approved documents are attached to the investor notification email. Requiring explicit approval ensures the fund team has reviewed every notice before it reaches investors.
-
-### No Re-Generation After Approval
-
-Once a capital call is approved, the Generate Documents action is permanently disabled for that call. If a notice needs to be corrected after approval, the correction must be handled outside CapHive (e.g. a separate communication to the investor).
+| Event | Trigger | Who receives it | Controlled by |
+|-------|---------|-----------------|---------------|
+| Call issued | Call approved | Investors with outstanding remittances | Send Call Notice + Skip Call Notice |
+| Reminder | "Send Reminder" clicked | Pending / Overdue investors | Same as above |
+| Single reminder | From a remittance | One investor | Same as above |
+| Payment received | Remittance verified | The investor | Send Payment Notification |
 
 ---
 
-## Unit Allocation
+## Allocating Fund Units
 
-If the fund issues units to investors based on their capital contributions:
+If your fund issues units to investors based on the capital they contribute:
 
-### For All Remittances in a Call
+- **For the whole call:** open the call and click **Allocate Units**.
+- **For one investor:** open the remittance and click **Allocate Units**.
 
-1. Open the Capital Call.
-2. Click **Allocate Units**.
-3. CapHive queues a background job that allocates fund units to each remittance.
+How much is allocated:
 
-### For a Single Remittance
+- If the investor has paid **at least** the full call amount, units are allocated for the **call amount** (you can't allocate more than was called).
+- If they've paid **less**, units are allocated for the **amount actually collected**.
+- Already-allocated amounts are tracked, so partial allocations can build up over time as more money arrives.
 
-1. Open the Capital Remittance.
-2. Click **Allocate Units**.
-
-### Unit Allocation Logic
-
-- If `collected_amount ≥ call_amount`: units are allocated for the **call amount** (capped at what was called).
-- If `collected_amount < call_amount`: units are allocated for the **collected amount**.
-- The amount already allocated is tracked, so partial allocations can be made progressively.
-
-### Blocking Payment Deletion
-
-If units have already been allocated for a payment, that payment **cannot be deleted** until the unit allocation is adjusted. The remittance itself also cannot be deleted while any of its payments have units allocated.
+Once units are allocated against a payment, that payment can't be deleted until the allocation is undone — and the remittance can't be deleted while any of its payments have units.
 
 ---
 
-## Recomputing Fees
+## Refreshing Fees After a Change
 
-If fee account entries are updated after a capital call's remittances have already been generated, fees can go stale. Use **Recompute Fees** to refresh all remittances.
+If you correct or backdate the charges behind a fee *after* remittances exist, those remittances can show stale figures. Use **Refresh Fees** (also labelled **Recompute Call**) to bring them up to date.
 
-1. Open the Capital Call.
-2. Click **Recompute Fees** (or **Recompute Call** button).
-3. CapHive queues a background job that:
-   - Recomputes call fees for every remittance.
-   - Recalculates call amounts.
-   - Updates statuses.
-4. Any errors during recomputation are reported by email to the triggering user.
+1. Open the capital call.
+2. Click **Refresh Fees**.
+3. The system re-reads the charges in each fee's date range, recalculates fees and call amounts, and updates every status.
+4. If anything goes wrong, the person who triggered it receives an email with the details.
 
-> **Note:** Recompute replaces computed amounts. If investors have already been notified of their amounts, consider whether re-notification is needed.
+> **Before refreshing:** if investors have already been told their amounts, decide whether they need to be re-notified of the change. Refresh is not available once a call is approved.
 
 ---
 
-## Importing Data
+## Importing Calls, Remittances and Payments
 
-### Importing Capital Calls
+You can bulk-load data from spreadsheets. This is mainly for onboarding historical activity or working from an administrator's file.
 
-Use the **Import** feature to create multiple capital calls from a spreadsheet.
+### Importing capital calls
 
-**Required columns:**
+Each row creates a call. Key columns: Fund, Name (unique per fund), Percentage Called (comma-separated for multiple closes), Due Date, Call Date, Fund Closes (blank means All), Generate Remittances (Yes/No), Remittances Verified (Yes/No), Call Basis, optional Unit Price/Premium, Send Call Notice, and Send Payment Notification.
 
-| Column | Description |
-|--------|-------------|
-| Fund | Fund name (must match exactly) |
-| Name | Capital call name (must be unique within the fund) |
-| Percentage Called | Percentage(s) — comma-separated for multiple closes |
-| Due Date | Payment deadline |
-| Call Date | Date the call is issued |
-| Fund Closes | Comma-separated close names, or leave blank for "All" |
-| Generate Remittances | Yes/No |
-| Remittances Verified | Yes/No |
-| Call Basis | "Percentage of Commitment", "Upload", or custom |
-| Unit Price/Premium | Optional — format: `UnitType:Price:Premium,UnitType2:...` |
-| Send Call Notice | Yes/No |
-| Send Payment Notification | Yes/No |
+- A duplicate call name in the same fund is rejected.
+- If you list several closes and several percentages, they pair up in order (First Close → first percentage, and so on).
+- You can include an **Exchange Rates** sheet to set rates for multi-currency funds.
 
-**Business Rules:**
-- A capital call with the same name in the same fund is rejected as a duplicate.
-- If a "Fund Closes" column is provided with multiple closes, and "Percentage Called" contains comma-separated values, they are paired in order (First Close → first percentage, etc.).
-- An "Exchange Rates" sheet may be included in the Excel file to set exchange rates for multi-currency funds.
+### Importing remittances
 
-### Importing Capital Remittances
+Key columns: Stakeholder (investor), Fund, Capital Call, Call Amount in folio currency (inclusive of capital fees), Capital Fees, Other Fees, optional fund-currency overrides, Investment Amount, Remittance Date, Verified, and Folio No. The investor must already have a commitment in that fund under the given folio. Imported remittances use the "Upload" basis.
 
-**Required columns:**
+### Importing payments
 
-| Column | Description |
-|--------|-------------|
-| Stakeholder | Investor name |
-| Fund | Fund name |
-| Capital Call | Capital call name |
-| Call Amount (Inclusive Of Capital Fees, Folio Currency) | Total folio amount to call |
-| Capital Fees (Folio Currency) | Fees in folio currency |
-| Other Fees (Folio Currency) | Other fees in folio currency |
-| Call Amount (Inclusive Of Capital Fees, Fund Currency) | Optional override in fund currency |
-| Capital Fees (Fund Currency) | Optional |
-| Other Fees (Fund Currency) | Optional |
-| Investment Amount (Fund Currency) | Optional |
-| Remittance Date | Date for FX rate lookups |
-| Verified | Yes/No |
-| Folio No | Investor's folio ID |
+Key columns: Stakeholder, Fund, Capital Call, Amount (folio currency), Currency, optional fund-currency amount, Folio No *or* Virtual Bank Account, Verified, Reference No, Payment Date, Notes, and Update Only.
 
-**Business Rules:**
-- The investor must exist and have a commitment in the specified fund with the specified folio number.
-- Import creates remittances with `call_basis = "Upload"`.
-
-### Importing Capital Remittance Payments
-
-**Required columns:**
-
-| Column | Description |
-|--------|-------------|
-| Stakeholder | Investor name |
-| Fund | Fund name |
-| Capital Call | Capital call name |
-| Amount (Folio Currency) | Payment amount in investor's currency |
-| Currency | Folio currency code — must match commitment currency |
-| Amount (Fund Currency) | Optional — if provided, disables auto conversion |
-| Folio No | Investor's folio ID (or use Virtual Bank Account) |
-| Virtual Bank Account | Alternative to Folio No |
-| Verified | Yes/No — whether to verify the remittance after payment |
-| Reference No | Bank transaction reference |
-| Payment Date | Date of payment |
-| Notes | Optional |
-| Update Only | Yes/No — if Yes, only updates an existing matching payment |
-
-**Business Rules:**
-- Either Folio No or Virtual Bank Account must be provided.
-- Currency must match the commitment's folio currency.
+- Either a Folio No or a Virtual Bank Account is required.
+- The currency must match the investor's commitment currency.
 - Reference numbers must be unique within the fund.
-- If `Update Only = Yes` and no matching payment exists, the row is skipped.
-- If a payment already exists with matching fund, remittance, amount, reference, and date, a new one will not be created (unless `Update Only = Yes` to force an update).
-- After all rows are processed, counter caches are fixed and remittances are optionally verified in bulk.
+- An identical payment (same fund, remittance, amount, reference, and date) won't be duplicated.
+- With **Update Only = Yes**, rows that don't match an existing payment are skipped.
 
 ---
 
-## Key Computations Reference
+## Worked Example, End to End
 
-### Call Amount (Percentage of Commitment)
+**Setup**
 
-```
-folio_call_amount = (percentage / 100) × folio_committed_amount
-                  + folio_capital_fee + folio_investment_amount
+- Fund: *Acme Growth Fund I*, base currency **USD**.
+- Three investors:
 
-call_amount = convert(folio_call_amount, folio_currency → fund_currency)
-            + capital_fee + investment_amount
-```
+| Investor | Close | Commitment | Folio currency |
+|----------|-------|-----------|----------------|
+| Northwind LP | First Close | $5,000,000 | USD |
+| Briar Capital | First Close | $3,000,000 | USD |
+| Kestrel Family Office | Second Close | $2,000,000 | EUR (committed €1,850,000) |
 
-### Call Amount (Account Entry Basis)
+**The call**
 
-```
-percentage = investor's account entry value for the call basis name
-             (most recent entry on or before due_date)
+The fund issues "Drawdown 2", basis *Percentage of Commitment*, calling **First Close at 20%** and **Second Close at 12%**, plus a **1% management fee** as *Fees Part Of Capital*.
 
-computed_amount = total_amount_to_be_called × (percentage / 100)
+**Resulting remittances**
 
-call_amount = computed_amount + capital_fee + investment_amount
-folio_call_amount = convert(call_amount, fund_currency → folio_currency)
-```
+| Investor | Base call | Management fee (1% of commitment) | Total call amount |
+|----------|-----------|-----------------------------------|-------------------|
+| Northwind LP | 20% × $5.0M = $1,000,000 | $50,000 | **$1,050,000** |
+| Briar Capital | 20% × $3.0M = $600,000 | $30,000 | **$630,000** |
+| Kestrel (in EUR) | 12% × €1.85M = €222,000 | €18,500 | **€240,500** |
 
-### Call Amount (Upload)
+Kestrel pays in euros; their **€240,500** is also shown in USD on the fund's books using the exchange rate on the remittance date.
 
-```
-call_amount = convert(folio_call_amount, folio_currency → fund_currency)
-              [if not already provided in fund currency]
+**Payment and status**
 
-computed_amount = call_amount − capital_fee
+- Northwind wires $1,050,000 → after verification, status **Paid**.
+- Briar wires only $600,000 → outstanding $30,000; after the due date it shows **Overdue** until the balance arrives.
+- Kestrel wires €240,600 (slightly too much) → after verification, status **Overpaid** by €100.
 
-percentage = min(folio_call_amount / folio_committed_amount × 100, 100%)
-             [capped at 100%, floored at −100%]
-```
+**Capital raised on this call:** $1,050,000 + $600,000 + USD-equivalent of €240,500.
 
-### Due Amount
+---
 
-```
-due_amount = call_amount + other_fee − collected_amount
-folio_due_amount = folio_call_amount + folio_other_fee − folio_collected_amount
-```
+## Quick Calculation Reference
 
-The **folio due amount** is used for status determination (Paid/Overpaid/Pending/Overdue).
+These are the same calculations described above, gathered in one place for reference.
 
-### Percentage Raised (Capital Call Level)
+**Percentage-of-commitment call**
 
-```
-percentage_raised = (collected_amount / call_amount) × 100
-```
+> Call amount = (Percentage ÷ 100) × Committed amount + Capital fees + Investment amount
 
-### Status Determination
+**Account-entry (Investable Capital %) call**
 
-```
-IF verified:
-  IF |folio_due_amount| ≤ 10    → Paid
-  IF folio_due_amount < −10     → Overpaid
-  IF due_date > today           → Pending
-  ELSE                          → Overdue
-ELSE:
-  → Pending
-```
+> Call amount = Total amount to be called × (Investor's stored share ÷ 100) + Capital fees + Investment amount
 
-### Counter Caches (Auto-Aggregated)
+**Upload call**
 
-The following totals are maintained automatically and updated whenever remittances or payments change:
+> Call amount is taken from the file; the effective percentage is back-calculated as Call amount ÷ Committed amount (capped at 100%).
 
-| Field | Aggregated From |
-|-------|----------------|
-| Capital Call `call_amount` | Sum of all remittance `call_amount_cents` |
-| Capital Call `collected_amount` | Sum of verified remittance `collected_amount_cents` |
-| Capital Call `capital_fee` | Sum of all remittance `capital_fee_cents` |
-| Capital Call `other_fee` | Sum of all remittance `other_fee_cents` |
-| Fund `call_amount` | Sum of all remittance `call_amount_cents` |
-| Fund `collected_amount` | Sum of verified remittance `collected_amount_cents` |
-| Commitment `call_amount` | Sum of remittances for that commitment |
-| Commitment `collected_amount` | Sum of verified remittances for that commitment |
+**Outstanding balance**
+
+> Outstanding = Call amount + Other fee − Collected amount
+
+**Percentage raised (call level)**
+
+> Percentage raised = Collected amount ÷ Call amount × 100
+
+**Status (after verification)**
+
+> Fully paid → **Paid** · Paid more than owed → **Overpaid** · Still owing, due date past → **Overdue** · Still owing, due date ahead → **Pending**
+
+Fund-, call-, and commitment-level totals (called and collected) are kept in step automatically as remittances and payments change — you never tally them by hand.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Can I add a remittance manually for an investor who was missed in generation?**
-Yes. From the capital call's Remittances tab, click **New Remittance** and select the investor and commitment. The call amount will be computed automatically based on the call basis.
+**Can I add a remittance for an investor who was missed?**
+Yes. On the call's Remittances tab, click **New Remittance** and pick the investor. The amount is worked out automatically from the call basis.
 
-**Q: What happens if I change the percentage after remittances have already been generated?**
-For call basis "Percentage of Commitment", CapHive will re-queue remittance generation. Existing remittances are not updated automatically — use **Recompute Fees** to refresh existing remittances.
+**What if I change the percentage after remittances exist?**
+For the percentage-of-commitment basis, the system re-queues generation for missing remittances. Existing remittances aren't changed automatically — use **Refresh Fees** to bring them up to date.
 
-**Q: Can one investor have multiple remittances for the same capital call?**
-No. Each folio ID can only appear once per capital call. The folio ID is unique per call.
+**Can one investor have two remittances on the same call?**
+No. Each folio appears once per call.
 
-**Q: What if an investor overpays?**
-The remittance status becomes **Overpaid** (folio due amount < −10). The excess is visible in the due_amount field. You can handle this by recording a negative adjustment or carrying it forward.
+**What if an investor overpays?**
+The remittance shows **Overpaid**. You can record a negative adjustment or carry the excess forward to a future call.
 
-**Q: Can I send the call notice without approving the call?**
-No. The call notice is sent only when the capital call is approved (or when you manually trigger a reminder from the remittance page for an already-approved call).
+**Can I send the notice without approving the call?**
+No. Notices go out on approval (or as a manual reminder afterwards).
 
-**Q: What does "Skip Call Notice" on a commitment do?**
-It permanently suppresses call notice and reminder emails for that specific commitment. This is useful for internal or fund-of-funds investors who do not need investor communications.
+**What does "Skip Call Notice" do?**
+It permanently stops call and reminder emails for that commitment — useful for internal or fund-of-funds investors.
 
-**Q: Can I edit a capital call after it has been approved?**
-No. Once approved, the capital call is fully locked. Edit, Delete, Recompute Fees, and Generate Documents are all disabled. This protects the integrity of the amounts and notices already sent to investors. If a correction is needed after approval, contact your administrator.
+**Can I edit a call after approval?**
+No. Approved calls are fully locked to protect the figures investors received. Corrections after approval must be handled outside the system.
 
-**Q: Can I generate documents after the call is approved?**
-No. Document generation is only available before approval. The intended workflow is: generate documents → approve each notice → then approve the capital call. Once approved, any corrections to notices must be handled outside CapHive.
+**Can I generate notices after approval?**
+No. Notices are produced before approval. The intended order is: generate notices → approve each → approve the call.
 
-**Q: What if I forget to approve the documents before approving the call?**
-The system will block the approval and display an error: "There are unapproved documents for the remittances of this call. Please approve them first." Open each remittance's Documents tab, approve the notice, and try again.
+**I forgot to approve the notices — what happens?**
+Approval is blocked with a message telling you there are unapproved notices. Approve them on each remittance's Documents tab, then try again.
 
-**Q: Can I edit a remittance after it is verified?**
-Yes, but editing will typically trigger a re-verification step (the unverify-on-change logic applies to payment changes, not manual edits). Always re-verify after making changes to ensure the status reflects the current state.
+**What's the difference between Call Date and Due Date?**
+Call Date is when the call is issued (and the default date for currency conversion). Due Date is the payment deadline — unpaid remittances become Overdue after it.
 
-**Q: What is the difference between "Call Date" and "Due Date"?**
-- **Call Date** is when the call is issued and is used as the default remittance date for FX lookups.
-- **Due Date** is the payment deadline. Remittances become "Overdue" if unpaid after this date.
+**Can I delete a capital call?**
+Only an unapproved call, and only if none of its remittances have allocated fund units. Remove unit allocations first.
 
-**Q: Can I delete a capital call?**
-Only if the call has not been approved. Approved calls are locked and cannot be deleted. For unapproved calls, deletion is also blocked if any remittance has allocated fund units — remove unit allocations first.
-
-**Q: What does "Recompute Fees" do exactly?**
-It re-reads all account entries within the call fee date ranges and recalculates each investor's capital_fee, other_fee, and investment_amount. Call amounts, folio amounts, and statuses are all updated. Use this after correcting or backdating fee entries. Note: Recompute Fees is not available on an approved call.
+**What exactly does "Refresh Fees" do?**
+It re-reads the charges in each fee's date range and recalculates every investor's fees, call amounts, and statuses. Use it after correcting or backdating fee figures. It isn't available on approved calls.

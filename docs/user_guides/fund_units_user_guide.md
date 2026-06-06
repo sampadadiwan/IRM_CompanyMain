@@ -1,530 +1,266 @@
 # Fund Units User Guide
 
-This guide explains how CapHive models investor ownership through fund units — from initial setup of unit classes, through issuance on capital calls and redemption on distributions, to secondary transfers between investors.
+**Fund units** are how the system tracks each investor's ownership stake in a fund — the fund's equivalent of shares. As investors pay into capital calls they receive units; as the fund returns capital they redeem units; and investors can transfer units to one another. The running unit balance gives you a live, auditable cap table where every unit ties back to the cash transaction that created it.
+
+This guide covers the whole picture: defining unit classes, issuing units on capital calls, redeeming them on distributions, transferring them between investors, and reporting on the result.
 
 ---
 
 ## Table of Contents
 
-1. [What Are Fund Units?](#what-are-fund-units)
-2. [Concepts and Terminology](#concepts-and-terminology)
-3. [Fund Unit Settings — Defining Unit Classes](#fund-unit-settings--defining-unit-classes)
-4. [Assigning Unit Types to Investors](#assigning-unit-types-to-investors)
-5. [Setting Unit Prices on Capital Calls](#setting-unit-prices-on-capital-calls)
-6. [Setting Unit Prices on Distributions](#setting-unit-prices-on-distributions)
-7. [Generating Units from a Capital Call](#generating-units-from-a-capital-call)
-8. [Redeeming Units from a Distribution](#redeeming-units-from-a-distribution)
-9. [The Full Unit Lifecycle](#the-full-unit-lifecycle)
-10. [Fund Unit Transfers](#fund-unit-transfers)
-11. [What a Transfer Does Under the Hood](#what-a-transfer-does-under-the-hood)
-12. [Counter Caches and Cap Table Rollups](#counter-caches-and-cap-table-rollups)
-13. [Viewing and Filtering Fund Units](#viewing-and-filtering-fund-units)
-14. [Importing Unit Settings from a Spreadsheet](#importing-unit-settings-from-a-spreadsheet)
-15. [Importing Fund Units from a Spreadsheet](#importing-fund-units-from-a-spreadsheet)
-16. [Frequently Asked Questions](#frequently-asked-questions)
+1. [What Fund Units Represent](#what-fund-units-represent)
+2. [Key Terms in Plain English](#key-terms-in-plain-english)
+3. [Step 1 — Defining Unit Classes](#step-1--defining-unit-classes)
+4. [Step 2 — Assigning a Class to Each Investor](#step-2--assigning-a-class-to-each-investor)
+5. [Step 3 — Setting Unit Prices](#step-3--setting-unit-prices)
+6. [Issuing Units from a Capital Call](#issuing-units-from-a-capital-call)
+7. [Redeeming Units on a Distribution](#redeeming-units-on-a-distribution)
+8. [The Full Unit Lifecycle](#the-full-unit-lifecycle)
+9. [Transferring Units Between Investors](#transferring-units-between-investors)
+10. [The Investor's Unit Balance (Cap Table)](#the-investors-unit-balance-cap-table)
+11. [Viewing and Filtering Units](#viewing-and-filtering-units)
+12. [Importing Unit Classes and Units](#importing-unit-classes-and-units)
+13. [Worked Example](#worked-example)
+14. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
-## What Are Fund Units?
+## What Fund Units Represent
 
-Fund units represent an investor's **proportional ownership stake** in a fund. When an investor pays into a capital call, they receive units. When a distribution returns capital, some units are redeemed. The total units held by each investor at any point reflects their current ownership in the fund.
+A fund unit is a measure of an investor's proportional ownership. The principle is simple:
 
-CapHive automates this process:
-
+```mermaid
+flowchart LR
+    A[Investor pays a capital call] -->|units issued, +| B[Unit balance rises]
+    C[Fund returns capital] -->|units redeemed, −| D[Unit balance falls]
+    E[Investor sells a stake] -->|units transferred| F[Units move between investors]
 ```
-Capital Call → Investor Pays → Units Issued  (+quantity)
-Distribution → Capital Returned → Units Redeemed (−quantity)
-Transfer → Investor Sells Stake → Units Move Between Folios
-```
 
-The unit count provides an auditable, per-investor cap table that links every unit back to the underlying cash transaction that created or destroyed it.
+At any moment, an investor's net unit balance reflects their current ownership in the fund. Because each unit record links back to the call payment, distribution, or transfer that produced it, the cap table is fully traceable.
 
 ---
 
-## Concepts and Terminology
+## Key Terms in Plain English
 
-| Term | Meaning |
-|------|---------|
-| **Unit Type / Class / Series** | The category of unit (e.g. "Class A", "Series I"). Each fund can have multiple classes with different fee structures. |
+| Term | What it means |
+|------|---------------|
+| **Unit Class (Type / Series)** | A category of unit, such as "Class A" or "Series I". A fund can have several classes with different fee or carry terms. |
 | **Unit Price** | The base price per unit set on a capital call or distribution. |
-| **Premium** | An additional amount per unit charged over the base price (common in some fund structures). |
-| **Amount** | `Quantity × (Price + Premium)` — the total monetary value represented by a unit record. |
-| **Issue Date** | The date the units were issued. For call-based units: the later of the payment date and the call due date. |
-| **GP Units** | Units held by the General Partner rather than limited partners. Flagged separately on the setting. |
-| **Transfer Ratio** | The percentage of an investor's units being moved to another investor in a secondary transfer. |
-| **Folio** | An investor's capital commitment record within a fund. Each folio has one unit type. |
+| **Premium** | An extra amount per unit charged over the base price, used in some fund structures. |
+| **Issue Date** | The date units are issued. For call-based units it's the later of the payment date and the call's due date, so units are never dated before the call was due. |
+| **GP Units** | Units held by the General Partner (the fund manager) rather than by investors. |
+| **Transfer Ratio** | The percentage of an investor's units being moved in a secondary transfer. |
+| **Folio** | An investor's account within the fund. Each folio carries one unit class. |
 
 ---
 
-## Fund Unit Settings — Defining Unit Classes
+## Step 1 — Defining Unit Classes
 
-Before any units can be issued, you must define the **unit classes** available in the fund. Each unit class is a **FundUnitSetting**.
+Before any units can be issued you define the **unit classes** the fund offers. Go to **Fund → Unit Settings**.
 
-### Where to find them
+| Field | Required | What it's for |
+|-------|----------|---------------|
+| **Class / Series Name** | Yes | The class name (e.g. "Class A"). Must be one of the unit classes set up on the fund, and unique within the fund. |
+| **Management Fee %** | No | The class's management fee. Shown for reference and reporting. |
+| **Setup Fee %** | No | A one-time setup fee. For reference. |
+| **Carry %** | No | The carried-interest rate for the class. Used as a reference for carry reporting. |
+| **ISIN** | No | The securities identification number, if the class has one. |
+| **GP Units** | No | Tick if this class is held by the General Partner rather than investors. |
 
-Navigate to **Fund → Unit Settings**.
-
-### Fields
-
-| Field | Required | Description |
-|-------|----------|-------------|
-| **Class/Series Name** | Yes | The name of the unit class (e.g. "Class A", "Series I"). Must match one of the unit types configured on the fund. Unique per fund. Max 40 characters. |
-| **Management Fee %** | No | Management fee percentage associated with this class. Informational — used for display and reporting; not automatically applied to calculations. |
-| **Setup Fee %** | No | One-time setup fee percentage. Informational. |
-| **Carry %** | No | Carried interest percentage for this class. Informational — used for display and carry computation references. |
-| **ISIN** | No | The International Securities Identification Number for this unit class, if applicable. |
-| **GP Units** | No | Tick this if units of this class are held by the General Partner rather than limited partners. |
-
-> **Important:** The **Class/Series Name** must exactly match one of the unit type values defined in the fund's configuration (`fund.unit_types`). If a name is entered that is not in the fund's allowed list, the setting will not save.
-
-### Validation rules
-
-- Name must be unique within the fund.
-- Name must be one of the fund's allowed unit types.
+> The class name must exactly match one of the unit classes configured on the fund; otherwise it won't save. The fee and carry percentages here are **informational** — they appear in reports but aren't applied to calculations automatically.
 
 ---
 
-## Assigning Unit Types to Investors
+## Step 2 — Assigning a Class to Each Investor
 
-Each capital commitment (folio) must have a **unit type** assigned before units can be issued. This tells CapHive which class of units to issue when that investor pays a call.
-
-Set the unit type on the **Capital Commitment** record (the folio). The unit type must match one of the fund's unit settings.
+Every commitment (folio) needs a **unit class** before it can receive units. Set it on the investor's **Capital Commitment** record; it must be one of the fund's defined classes. This tells the system which class to issue when the investor pays a call.
 
 ---
 
-## Setting Unit Prices on Capital Calls
+## Step 3 — Setting Unit Prices
 
-When you create or edit a capital call, you can set **unit prices** — the price and premium per unit for each unit class. These prices are stored on the call and used during unit allocation.
+Units are valued at the price you set on the relevant call or distribution.
 
-Unit prices are set as a JSON structure on the call, keyed by unit type:
+- **On a capital call:** set a **price and premium per class**. These are used when issuing units. If a class has no price on the call, no units are issued for investors in that class — even if they've paid.
+- **On a distribution:** set a **price per class**. This determines how many units are redeemed for each unit of capital returned.
 
-```
-{
-  "Class A": { "price": 1000, "premium": 50 },
-  "Class B": { "price": 800,  "premium": 0  }
-}
-```
-
-> If a unit type has no entry in the call's unit prices, no units will be issued for investors of that type, even if they are verified and paid.
+Prices live on each call and distribution individually, because a fund's unit price (NAV) changes from one drawdown to the next.
 
 ---
 
-## Setting Unit Prices on Distributions
+## Issuing Units from a Capital Call
 
-Similarly, capital distributions can have unit prices defined for redemptions. The price here is used to calculate how many units to redeem per unit of capital returned.
+Once a call is approved and remittances are verified, trigger **Allocate Units** from the call.
 
+### What must be true for an investor to receive units
+
+```mermaid
+flowchart TD
+    A[Remittance verified?] -->|No| X[No units]
+    A -->|Yes| B[Money actually collected?]
+    B -->|No| X
+    B -->|Yes| C[Unit price set for the investor's class?]
+    C -->|No| X
+    C -->|Yes| D[Folio has a unit class assigned?]
+    D -->|No| X
+    D -->|Yes| E[Units not already issued for this remittance?]
+    E -->|No| X
+    E -->|Yes| F[Units issued]
 ```
-{
-  "Class A": 1050,
-  "Class B": 850
-}
-```
 
-(Distributions use a single price value per class, not price + premium.)
+### How many units
+
+> **Units issued = Amount collected ÷ (Price + Premium)**
+
+The **issue date** is the later of the payment date and the call's due date, so early payers don't get backdated units.
+
+Each issuance creates one unit record holding the class, quantity, price, premium, total value, and issue date, linked to the remittance that triggered it. Re-running allocation is safe — investors who already have units for that call are skipped, and only those still missing units are processed. You'll get a confirmation when it finishes, and a detailed error report if any investor couldn't be processed (for example a missing unit class).
 
 ---
 
-## Generating Units from a Capital Call
+## Redeeming Units on a Distribution
 
-Once a capital call is approved and remittances are verified, you trigger unit allocation from the call.
+When a distribution's payments are completed, trigger **Redeem Units** from the distribution.
 
-### Prerequisites (all must be true for a remittance to receive units)
+### What must be true
 
-| Condition | What it checks |
-|-----------|---------------|
-| Remittance is **verified** | The payment has been confirmed |
-| Collected amount is **positive** | Money was actually received |
-| Capital call has **unit prices** configured | Price and premium exist for the investor's unit type |
-| Capital commitment has a **unit type** assigned | The folio knows which class to issue |
-| Units have **not already been allocated** for this remittance | Prevents double-issuance (idempotent) |
+- The distribution payment is **completed**.
+- There is a return-of-capital amount to redeem against.
+- A **unit price** is set for the investor's class on the distribution.
+- The folio has a **unit class** assigned.
+- Units haven't already been redeemed for this payment.
 
-### Quantity formula
+### How many units
 
-```
-Quantity = Collected Amount ÷ (Price + Premium)
-```
+> **Units redeemed = − (Return of capital ÷ Price)**
 
-If Price + Premium = 0, no units are issued (division by zero is prevented).
-
-### Issue date rule
-
-```
-Issue Date = max(Payment Date, Call Due Date)
-```
-
-This ensures that units are never backdated before the call was due, even if the investor paid early.
-
-### What gets created
-
-For each qualifying remittance, one **FundUnit** record is created:
-
-| Field | Value |
-|-------|-------|
-| `unit_type` | The folio's unit type |
-| `quantity` | Positive number (issuance) |
-| `price` | From the call's unit prices |
-| `premium` | From the call's unit prices |
-| `amount` | `quantity × (price + premium)` |
-| `total_premium` | `premium × quantity` |
-| `issue_date` | `max(payment_date, due_date)` |
-| `owner` | The capital remittance that triggered it |
-| `reason` | Descriptive label (defaults to the call name) |
-
-### Notifications
-
-After allocation runs, you receive a success notification. If any remittances fail (e.g. missing unit type), you receive an error notification and a detailed error report is emailed to your entity.
-
----
-
-## Redeeming Units from a Distribution
-
-When a capital distribution is completed and payments are marked as such, you trigger unit **redemption**.
-
-### Prerequisites
-
-| Condition | What it checks |
-|-----------|---------------|
-| Distribution payment is **completed** | Payment has been processed |
-| `cost_of_investment_with_fees` is **positive** | There is a cost basis to redeem against |
-| Distribution has **unit prices** configured | Price exists for the investor's unit type |
-| Capital commitment has a **unit type** assigned | The folio knows which class to redeem |
-| Units have **not already been redeemed** for this payment | Prevents double-redemption (idempotent) |
-
-### Quantity formula
-
-```
-Quantity = −(Cost of Investment with Fees ÷ Price)
-```
-
-The quantity is **negative** — redemptions reduce the investor's unit balance.
-
-### Issue date
-
-The issue date on redemption units is set to the distribution payment's `payment_date`.
-
-### What gets created
-
-| Field | Value |
-|-------|-------|
-| `unit_type` | The folio's unit type |
-| `quantity` | Negative number (redemption) |
-| `price` | From the distribution's unit prices |
-| `amount` | `quantity × price` (negative) |
-| `issue_date` | `payment_date` |
-| `owner` | The capital distribution payment |
+The quantity is **negative** — redemptions reduce the balance — and the issue date is the payment date. As with issuance, re-running is safe and won't double-redeem.
 
 ---
 
 ## The Full Unit Lifecycle
 
-```
-1. Setup
-   ├── Define unit classes (FundUnitSetting): name, fees, carry, ISIN
-   ├── Assign unit_type to each capital commitment (folio)
-   └── Configure fund.unit_types with allowed class names
-
-2. Capital Call
-   ├── Set unit prices on the call (price + premium per class)
-   ├── Investors pay → remittances verified
-   └── Generate Units → one FundUnit per verified remittance
-       quantity = amount ÷ (price + premium)   [positive]
-       issue_date = max(payment_date, due_date)
-
-3. Distribution
-   ├── Set unit prices on the distribution (price per class)
-   ├── Distribution payments marked completed
-   └── Redeem Units → one FundUnit per completed payment
-       quantity = −(cost_of_investment_with_fees ÷ price)  [negative]
-       issue_date = payment_date
-
-4. Secondary Transfer (optional)
-   └── Move a % of units from one folio to another
-       (see Fund Unit Transfers section)
-
-5. Reporting
-   └── total_fund_units_quantity on each folio = net units held
-       = sum of all positive and negative FundUnit records
+```mermaid
+flowchart TD
+    S1[Setup<br/>define classes, assign a class to each folio] --> S2[Capital call<br/>set prices, investors pay, allocate units +]
+    S2 --> S3[Distribution<br/>set prices, payments completed, redeem units −]
+    S3 --> S4[Secondary transfer<br/>move a % of units between folios]
+    S4 --> S5[Reporting<br/>net balance = all + and − records summed]
 ```
 
 ---
 
-## Fund Unit Transfers
+## Transferring Units Between Investors
 
-A **Fund Unit Transfer** moves some or all of one investor's units to another investor within the same fund. This is used for secondary market transactions — when an LP sells (or gifts) part of their stake to another party.
+A **fund unit transfer** moves some or all of one investor's units to another investor in the same fund — typically a secondary-market sale. Because this is a detailed workflow with its own validations and effects (it also splits the seller's call payments, distributions, and fees), it has a dedicated guide.
 
-### Accessing the transfer form
+> **See the [Fund Unit Transfers User Guide](fund_unit_transfers_user_guide)** for the step-by-step process, the transfer form, validation messages, and what to check afterwards.
 
-Navigate to **Capital Commitment (Folio) → Transfer Fund Units**.
+In brief, a transfer:
 
-### Transfer fields
+- Records units leaving the seller's folio and arriving on the buyer's folio, dated to the transfer date.
+- Splits the seller's call payments, distributions, and (optionally) fee line items between the two folios in proportion to the transfer ratio.
+- Adjusts each folio's committed capital to reflect the change.
+- Refreshes both folios' totals immediately.
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| **From Folio** | Auto-filled | The selling investor's folio (pre-filled from the commitment you navigated from) |
-| **To Folio** | Yes | The buying investor's folio — must be in the same fund |
-| **Transfer Ratio** | Yes | What percentage of the from-folio's units are being transferred (0–100) |
-| **Transfer Date** | Yes | The effective date of the transfer |
-| **Price** | Yes | Price per unit at the time of transfer |
-| **Premium** | Yes | Premium per unit at the time of transfer (0 if none) |
-| **Transfer Account Entries** | No | Tick to also transfer the proportional share of the from-folio's account entries to the to-folio |
-| **Account Entries Not Pro-Rated** | No | Comma-separated list of account entry names that should be **copied in full** to the to-folio rather than pro-rated by the transfer ratio |
-
-### Transfer validations
-
-The system checks these conditions before proceeding:
-
-| Condition | Rule |
-|-----------|------|
-| Same fund | Both the from-folio and to-folio must belong to the same fund |
-| Same unit type | Both folios must have the same unit type assigned |
-| Sufficient units | The from-folio must hold at least as many units as the transfer quantity |
-| Commitment date order | The to-commitment's commitment date must be **on or before** the from-commitment's commitment date. This is required because the transfer creates adjustments backdated to the from-commitment's commitment date — the to-commitment must already exist at that date. |
-
-If any validation fails, the transfer is marked as **Failed** and the error is recorded.
+Both folios must be in the **same fund** and hold the **same unit class**, and the seller must hold enough units to cover the transfer.
 
 ---
 
-## What a Transfer Does Under the Hood
+## The Investor's Unit Balance (Cap Table)
 
-A transfer is a multi-step operation that touches several records simultaneously. All steps run inside database transactions where possible.
+Every unit record automatically updates the investor's totals, so the folio always shows a live balance:
 
-### Step 1 — Issue transfer unit records
+| Shown on the folio | What it tracks |
+|--------------------|----------------|
+| **Units held** | Net units — every issuance, redemption, and transfer summed together. |
+| **Total premium paid** | The total premium the investor has paid on their units. |
+| **Total unit value** | The value of units issued (issuances only, not redemptions). |
 
-Two FundUnit records are created:
-
-```
-From-folio:  quantity = −(from_folio.total_units × transfer_ratio)
-             transfer = "out"
-             price    = transfer price
-             premium  = transfer premium
-             issue_date = transfer_date
-
-To-folio:    quantity = +(same as above)
-             transfer = "in"
-             price    = transfer price
-             premium  = transfer premium
-             issue_date = transfer_date
-```
-
-### Step 2 — Transfer account entries (if requested)
-
-For every account entry on the from-folio:
-
-```
-Standard entries:
-  From-folio entry amount  ×= (1 − transfer_ratio)   [reduced]
-  New to-folio entry amount = original × transfer_ratio [created]
-
-Excluded entries (listed in "Account Entries Not Pro-Rated"):
-  From-folio entry is unchanged
-  New to-folio entry = full original amount (not pro-rated)
-```
-
-Each entry records a `transfer_id` (a unique UUID for this transfer run) and the original amount so the change can be audited.
-
-### Step 3 — Transfer remittances
-
-Every capital remittance on the from-folio is split:
-
-```
-From-folio remittance:
-  call_amount      ×= (1 − transfer_ratio)
-  collected_amount ×= (1 − transfer_ratio)
-  committed_amount ×= (1 − transfer_ratio)
-  (+ all folio/fee/tracking variants)
-
-New to-folio remittance (copy):
-  call_amount      = original × transfer_ratio
-  collected_amount = original × transfer_ratio
-  committed_amount = original × transfer_ratio
-  (+ all folio/fee/tracking variants)
-```
-
-Each remittance's payments are also split by the same ratio.
-
-### Step 4 — Transfer distribution payments
-
-Every distribution payment on the from-folio is split by the same transfer_ratio / retained_ratio logic:
-
-```
-gross_payable, net_payable, income, cost_of_investment, reinvestment,
-units_quantity, folio_amount — all scaled by transfer_ratio for the new record
-                              and by (1 − transfer_ratio) for the original
-```
-
-### Step 5 — Commitment adjustments
-
-Two `CommitmentAdjustment` records are created:
-
-```
-To-folio adjustment:   +folio_committed_amount × transfer_ratio
-                        (as_of = from_commitment.commitment_date)
-
-From-folio adjustment: −folio_committed_amount × transfer_ratio
-                        (as_of = from_commitment.commitment_date)
-```
-
-These adjustments update the committed capital figures for both folios to reflect the transfer.
-
-### Step 6 — Counter culture recalculation
-
-After all records are created and updated, CapHive recalculates all counter caches for the fund to ensure totals are accurate:
-- Remittance payment totals
-- Remittance collected amounts
-- Distribution payment amounts
-- Fund unit quantities
-- Commitment totals
-- Commitment adjustment totals
-
-### Transfer status
-
-The FundUnitTransfer record is updated to `completed` on success, or `Failed: <reason>` if any validation or step fails.
+The fund also rolls up total premium across all investors. These figures update automatically whenever a unit is issued, redeemed, or transferred — no manual tallying.
 
 ---
 
-## Counter Caches and Cap Table Rollups
+## Viewing and Filtering Units
 
-Every FundUnit record automatically rolls up to:
+Go to **Fund → Fund Units** to see every unit record for a fund. You can narrow the list by fund, folio, investor, or import batch, and filter the columns by class, quantity, price, premium, issue date, or reason.
 
-| Target | Field | What it tracks |
-|--------|-------|----------------|
-| **Capital Commitment** | `total_fund_units_quantity` | Net units held by this investor (sum of all +/− quantities) |
-| **Capital Commitment** | `total_units_premium_cents` | Total premium paid for units by this investor |
-| **Capital Commitment** | `total_units_amount_cents` | Total amount of positive unit records only (issuances, not redemptions) |
-| **Fund** | `total_units_premium_cents` | Total premium across all investors in the fund |
+Reading the list:
 
-The `total_fund_units_quantity` on each folio is the live unit balance — updated automatically whenever a unit is issued, redeemed, or transferred.
+| What you see | What it means |
+|--------------|---------------|
+| **Positive quantity** | Units issued from a capital-call payment. |
+| **Negative quantity** | Units redeemed on a distribution. |
+| **Transfer "in"** | Units received via a secondary transfer. |
+| **Transfer "out"** | Units sent via a secondary transfer. |
 
----
-
-## Viewing and Filtering Fund Units
-
-### Opening the unit list
-
-Navigate to **Fund → Fund Units** to see all unit records for a fund.
-
-### Available filters
-
-| Filter | Description |
-|--------|-------------|
-| `fund_id` | Restrict to a specific fund |
-| `capital_commitment_id` | Show only units for one folio |
-| `investor_id` | Show only units for one investor |
-| `import_upload_id` | Show units from a specific import batch |
-| `owner_id` / `owner_type` | Filter by the transaction that created the units (e.g. `CapitalRemittance`, `CapitalDistributionPayment`) |
-
-### Ransack column filters
-
-| Attribute | Filter options |
-|-----------|---------------|
-| `unit_type` | Partial match |
-| `quantity` | Numeric comparison |
-| `price` | Numeric comparison |
-| `premium` | Numeric comparison |
-| `issue_date` | Date range |
-| `reason` | Partial match |
-
-### Reading the list
-
-- **Positive quantity** = units issued (from a capital call payment)
-- **Negative quantity** = units redeemed (from a distribution payment)
-- **transfer = "in"** = received via secondary transfer
-- **transfer = "out"** = sent via secondary transfer
-
-The sum of all quantity values for a folio equals the current `total_fund_units_quantity` shown on the commitment.
+The sum of all quantities for a folio equals the unit balance shown on that commitment.
 
 ---
 
-## Importing Unit Settings from a Spreadsheet
+## Importing Unit Classes and Units
 
-To create or update unit class definitions in bulk, use the FundUnitSetting import.
+You can bulk-load both, mainly for migrating historical data.
 
-### Spreadsheet columns
+**Unit classes** — provide the fund, class name (must be an allowed class), and optional management fee %, setup fee %, carry %, GP-units flag, and ISIN. Use the **Update Only** column to update existing classes rather than create new ones. A class that already exists is skipped unless you're updating; an update for a class that doesn't exist is also skipped.
 
-| Column | Required | Description |
-|--------|----------|-------------|
-| **Fund** | Yes | Fund name — must match exactly |
-| **Class/Series** | Yes | Unit class name (must match fund's allowed unit types) |
-| **Management Fee %** | No | Percentage value (e.g. `2.0`) |
-| **Setup Fee %** | No | Percentage value |
-| **Carry %** | No | Percentage value |
-| **Gp Units** | No | `Yes` if these are GP-held units |
-| **Isin** | No | ISIN code |
-| **Update Only** | No | `Yes` = update existing record; fail if not found. Leave blank = create new; fail if already exists. |
-
-### Duplicate handling
-
-- If **Update Only** is blank and a setting with the same name already exists for that fund, the row is skipped with an error.
-- If **Update Only** is `Yes` and no existing setting is found, the row is skipped with an error.
+**Units** — provide the fund, folio, the call name (for issuances) or distribution title (for redemptions), unit class, quantity (positive to issue, negative to redeem), price, optional premium, optional reason, and issue date. Positive rows are matched to the investor's remittance for that call; negative rows to their payment on that distribution. A unit that already exists for the same source and issue date is skipped.
 
 ---
 
-## Importing Fund Units from a Spreadsheet
+## Worked Example
 
-To create unit records in bulk (e.g. for migrating historical data), use the FundUnit import.
+**Setup**
 
-### Spreadsheet columns
+- Fund: *Acme Growth Fund I*. Unit class **Class A**, no premium.
+- Investor *Northwind LP* holds Class A.
 
-| Column | Required | Description |
-|--------|----------|-------------|
-| **Fund** | Yes | Fund name |
-| **Folio No** | Yes | Investor's folio ID within the fund |
-| **Call / Distribution Name** | Yes | Name of the capital call (for positive quantities) or title of the distribution (for negative quantities) |
-| **Unit Type** | Yes | Must match the folio's assigned unit type |
-| **Quantity** | Yes | Positive = issuance; negative = redemption |
-| **Price** | Yes | Price per unit |
-| **Premium** | No | Premium per unit (defaults to 0) |
-| **Reason** | No | Description of why these units were issued/redeemed |
-| **Issue Date** | Yes | Date the units were issued |
-| **Update Only** | No | `Yes` = update existing record; blank = create new |
+**Capital call**
 
-### Owner resolution
+The fund issues a call with **Class A priced at $1,000**. Northwind pays **$1,000,000** by the due date.
 
-- **Positive quantity** → the import looks up a **CapitalRemittance** matching the folio + call name.
-- **Negative quantity** → the import looks up a **CapitalDistributionPayment** matching the folio + distribution title.
+> Units issued = $1,000,000 ÷ $1,000 = **1,000 units**, dated the due date.
 
-The found remittance or payment becomes the `owner` of the new FundUnit.
+**Second call at a higher NAV**
 
-### Duplicate handling
+A later call prices **Class A at $1,250**. Northwind pays **$625,000**.
 
-- If a unit already exists for the same owner and the same issue date, the row is skipped.
-- If **Update Only** is `Yes`, it updates the existing unit.
+> Units issued = $625,000 ÷ $1,250 = **500 units**.
+
+Northwind now holds **1,500 units**.
+
+**Distribution with redemption**
+
+A distribution returns capital and prices **Class A at $1,300**, redeeming $260,000 of Northwind's capital.
+
+> Units redeemed = − ($260,000 ÷ $1,300) = **−200 units**.
+
+**Resulting balance:** 1,000 + 500 − 200 = **1,300 units held**.
 
 ---
 
 ## Frequently Asked Questions
 
-**What happens if I generate units twice for the same capital call?**
-CapHive checks whether a FundUnit already exists for each remittance. If units are already allocated, the remittance is skipped. Generating again is safe — it only fills in any remittances that were not yet processed.
+**What happens if I allocate units twice for the same call?**
+Nothing harmful. Investors who already have units for that call are skipped, so re-running only fills in anyone who was missed.
 
-**Why did some investors not receive units even though they paid?**
-Check the following on the investor's folio and the capital call:
-1. Is the remittance **verified**? Units are only issued for verified remittances.
-2. Does the folio have a **unit type** assigned?
-3. Does the capital call have **unit prices** for that unit type?
+**An investor paid but didn't receive units — why?**
+Check three things: the remittance is **verified**, the folio has a **unit class** assigned, and the call has a **price set for that class**. All three are required.
 
-All three must be true.
+**Can I edit a unit record manually?**
+Yes — open it and edit. Changing the quantity or price updates the investor's balance automatically.
 
-**Can I manually adjust a unit record?**
-Yes — navigate to the unit record and edit it. However, changing the quantity or price will also update the counter caches on the folio automatically.
+**If a transfer is 100%, does the seller end up with zero units?**
+Yes. A full transfer moves all units (and the related payment and fee history) to the buyer, leaving the seller's balance at zero. See the [Fund Unit Transfers guide](fund_unit_transfers_user_guide).
 
-**What if the transfer ratio is 100%? Does the from-folio end up with zero units?**
-Yes. A 100% transfer moves all units, all remittances, all distribution payments, and all account entries (if selected) to the to-folio. The from-folio's net unit balance will be zero after the transfer.
+**Can I transfer units between different funds?**
+No — both folios must be in the same fund.
 
-**Can I transfer between investors in different funds?**
-No. The from-folio and to-folio must both belong to the same fund.
+**Can I transfer between investors holding different classes?**
+No — both folios must hold the same unit class, or the transfer is rejected.
 
-**Can I transfer between investors with different unit types?**
-No. The unit type must match on both folios. If the two investors hold different classes, the transfer will fail validation.
+**Do transfers affect performance metrics?**
+Yes. Because a transfer splits the underlying call payments and distributions, the buyer's XIRR and DPI/RVPI/TVPI will reflect the transferred history. Regenerate fund ratios after a transfer to see updated figures.
 
-**Why does the to-commitment's date matter for a transfer?**
-The transfer creates backdated commitment adjustments as of the from-commitment's original commitment date. The to-commitment must already exist at that date — meaning its commitment date must be on or before the from-commitment's date. If the to-commitment is newer, the adjustment would be backdated before the to-commitment's start date, which is not allowed.
-
-**Do unit transfers affect XIRR and distribution calculations?**
-Yes. Because the transfer splits the underlying remittances and distribution payments proportionally, the to-folio's XIRR and DPI/RVPI/TVPI calculations will include the transferred history going forward. Regenerate fund ratios after a transfer to see updated performance metrics.
-
-**Where can I see the history of a transfer?**
-Each FundUnit created by a transfer has `transfer = "in"` or `transfer = "out"` on it. The remittances and account entries modified by the transfer contain a `transfer_id` in their JSON fields, along with the original amounts and notes, providing a full audit trail.
-
-**Why are unit prices not automatically pulled from FundUnitSettings?**
-The fee percentages on FundUnitSettings (management fee, carry, etc.) are informational — they are used for display and reporting. The actual **price and premium per unit** must be set on each capital call individually, since the NAV and unit price can change with each drawdown.
+**Why aren't unit prices taken from the unit class settings?**
+Because the fee and carry percentages on a class are reference information. The actual price and premium must be set per call and per distribution, since a fund's unit price changes with each drawdown.

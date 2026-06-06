@@ -1,823 +1,340 @@
 # Portfolio Investments User Guide
 
-This guide covers everything about recording, tracking, and computing returns on portfolio investments — including buy/sell transactions, FMV computation, FIFO and weighted-average cost attribution, aggregate views, stock conversions, splits, adjustments, portfolio cashflows, and scenarios.
+This guide covers how a fund's **direct investments in portfolio companies** are recorded and tracked: buying and selling holdings, valuing what you still hold, working out realised and unrealised gains, handling conversions and splits, recording income, and modelling future exits. It's written for investment and finance teams — no technical background needed.
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Key Concepts and Data Model](#key-concepts-and-data-model)
-3. [Portfolio Investment Lifecycle](#portfolio-investment-lifecycle)
+1. [How Portfolio Investments Are Organised](#how-portfolio-investments-are-organised)
+2. [Key Terms in Plain English](#key-terms-in-plain-english)
+3. [The Investment Lifecycle](#the-investment-lifecycle)
 4. [Investment Instruments](#investment-instruments)
-5. [Creating a Portfolio Investment (Buy)](#creating-a-portfolio-investment-buy)
+5. [Recording a Purchase (Buy)](#recording-a-purchase-buy)
 6. [Recording a Sale (Sell)](#recording-a-sale-sell)
-7. [Attribution — FIFO vs Weighted Average](#attribution--fifo-vs-weighted-average)
-8. [FMV Computation](#fmv-computation)
-9. [Aggregate Portfolio Investment](#aggregate-portfolio-investment)
-10. [Key Computed Fields](#key-computed-fields)
-11. [Stock Conversions](#stock-conversions)
-12. [Stock Splits](#stock-splits)
-13. [Stock Adjustments](#stock-adjustments)
-14. [Portfolio Cashflows (Income)](#portfolio-cashflows-income)
-15. [Proforma Investments](#proforma-investments)
-16. [Excused Investors](#excused-investors)
-17. [Portfolio Scenarios](#portfolio-scenarios)
-18. [Multi-Currency Support](#multi-currency-support)
-19. [Importing Data](#importing-data)
-20. [Key Computations Reference](#key-computations-reference)
-21. [Frequently Asked Questions](#frequently-asked-questions)
+7. [Cost Attribution: FIFO vs Weighted Average](#cost-attribution-fifo-vs-weighted-average)
+8. [Valuations and Fair Market Value](#valuations-and-fair-market-value)
+9. [The Aggregate (Rolled-Up) View](#the-aggregate-rolled-up-view)
+10. [Stock Conversions](#stock-conversions)
+11. [Stock Splits and Adjustments](#stock-splits-and-adjustments)
+12. [Portfolio Income](#portfolio-income)
+13. [Excused Investors](#excused-investors)
+14. [Modelling: Proforma Investments and Scenarios](#modelling-proforma-investments-and-scenarios)
+15. [Working Across Currencies](#working-across-currencies)
+16. [Importing Data](#importing-data)
+17. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
-## Overview
+## How Portfolio Investments Are Organised
 
-CapHive's portfolio module tracks a fund's direct investments in portfolio companies — recording purchases (buys), sales (sells), current fair market value (FMV), and computing unrealised and realised gains. Each transaction belongs to a **Portfolio Company** and is denominated in a specific **Investment Instrument** (e.g. equity shares, debentures, CCDs).
+A fund invests in companies, in specific securities, through individual transactions. The structure mirrors that:
 
+```mermaid
+flowchart TD
+    F[Fund] --> C[Portfolio Company]
+    C --> I[Investment Instrument<br/>e.g. Series A Equity]
+    I --> A[Aggregate view<br/>one rolled-up summary]
+    A --> B1[Buy: 1,000 shares @ $100]
+    A --> B2[Buy: 500 shares @ $150]
+    A --> S1[Sell: 600 shares @ $200]
+    I --> V[Valuations<br/>per-share price over time]
 ```
-  Fund
-    │
-    ├── Portfolio Company A
-    │       ├── Investment Instrument: Series A Equity
-    │       │       ├── Aggregate Portfolio Investment (rolled-up view)
-    │       │       │       ├── Portfolio Investment: Buy 1,000 shares @ ₹100 (2021-03-01)
-    │       │       │       ├── Portfolio Investment: Buy 500 shares @ ₹150 (2022-06-15)
-    │       │       │       └── Portfolio Investment: Sell 600 shares @ ₹200 (2023-09-01)
-    │       │       │               └── Portfolio Attributions (FIFO links to the buys)
-    │       │       └── Valuations (per-share price history)
-    │       └── Investment Instrument: CCDs
-    │               └── Aggregate Portfolio Investment
-    └── Portfolio Company B
-            └── ...
-```
+
+- A **portfolio company** is the business the fund invests in.
+- An **investment instrument** is the specific security held in that company (equity, debentures, convertible notes, etc.).
+- Each **transaction** is a single buy or sell.
+- The **aggregate view** automatically rolls every buy and sell for one fund-company-instrument combination into a single summary.
 
 ---
 
-## Key Concepts and Data Model
+## Key Terms in Plain English
 
-| Term | Meaning |
-|------|---------|
-| **Portfolio Company** | The investee company (stored as an Investor with type = Portfolio Company) |
-| **Investment Instrument** | The specific security (e.g. equity, debenture, CCD, preference share). Each instrument belongs to one portfolio company and has a fixed currency. |
-| **Portfolio Investment (PI)** | A single buy or sell transaction. Positive quantity = Buy; Negative quantity = Sell. |
-| **Aggregate Portfolio Investment (API)** | A rolled-up summary of all buys and sells for one fund × portfolio company × instrument combination. One API per unique (fund, portfolio company, instrument) triplet. |
-| **Portfolio Attribution** | The link between a sell transaction and the specific buy lot(s) it consumed. Carries cost_of_sold, gain, and sale_amount per link. |
-| **Valuation** | A per-share price on a specific date, used to compute FMV of current holdings. |
-| **FMV** | Fair Market Value: current quantity held × latest per-share price. |
-| **Cost of Remaining** | The book cost of unsold holdings: net_quantity × cost_per_share. |
-| **Unrealised Gain** | FMV − Cost of Remaining. |
-| **Realised Gain** | Sale proceeds − Cost of the shares sold (from attribution). |
-| **FIFO** | First-In First-Out: oldest buys are sold first. |
-| **WTD_AVG** | Weighted Average: sell quantity is allocated proportionally across all open buy lots. |
+| Term | What it means |
+|------|---------------|
+| **Portfolio Company** | A company the fund has invested in. |
+| **Investment Instrument** | The specific security held (e.g. "Series A Equity", "10% NCD"). Each belongs to one company and has a fixed currency. |
+| **Transaction** | A single buy (positive quantity) or sell (negative quantity). |
+| **Buy Lot** | A single purchase, tracked separately so its cost can be matched against future sales. |
+| **Aggregate View** | The auto-maintained summary of all buys and sells for one fund-company-instrument. |
+| **Valuation** | A per-share price on a given date, used to value remaining holdings. |
+| **FMV (Fair Market Value)** | Current value of what's still held = shares held × latest price. |
+| **Cost of Remaining** | The book cost of holdings not yet sold. |
+| **Unrealised Gain** | FMV − cost of remaining (paper gain on what you still hold). |
+| **Realised Gain** | Sale proceeds − cost of the shares actually sold. |
+| **FIFO / Weighted Average** | Two methods for deciding which buy lots a sale draws from. |
 
 ---
 
-## Portfolio Investment Lifecycle
+## The Investment Lifecycle
 
-```
-  1. RECORD BUY
-     ↓
-     - Create PortfolioInvestment (quantity > 0)
-     - Create/update Investment Instrument
-     - Auto-create AggregatePortfolioInvestment if first buy
-     - Create initial Valuation at buy price
-     - Compute amount_cents (with FX conversion if needed)
-     - Compute cost_of_remaining, FMV, unrealized_gain
-     ↓
-  2. VALUATIONS UPDATED PERIODICALLY
-     ↓
-     - Add new Valuation records (per-share price on date)
-     - FMV recomputes = net_quantity × latest valuation
-     - Unrealised gain updates automatically
-     ↓
-  3. RECORD SELL
-     ↓
-     - Create PortfolioInvestment (quantity < 0)
-     - Validate sell quantity ≤ net available quantity
-     - Compute gain_cents (sale price − buy price per attribution)
-     - Attribution job runs (FIFO or WTD_AVG):
-         links each sold share to a specific buy lot
-         computes cost_of_sold and gain per attribution
-     - Update net_quantity on the buy lot(s)
-     ↓
-  4. AGGREGATE METRICS UPDATED
-     ↓
-     - API.quantity, bought_amount, sold_amount, gain, fmv, cost_of_sold
-       all auto-updated via counter caches
-     - avg_cost recomputed
+```mermaid
+flowchart TD
+    A[Record a buy<br/>shares + amount] --> B[Value periodically<br/>add per-share valuations]
+    B --> C[FMV & unrealised gain<br/>update automatically]
+    C --> D[Record a sell<br/>negative quantity]
+    D --> E[Cost matched to buy lots<br/>FIFO or weighted average]
+    E --> F[Realised gain calculated]
+    F --> G[Aggregate view refreshed]
 ```
 
 ---
 
 ## Investment Instruments
 
-An Investment Instrument is the type of security in which the fund has invested. It must be created before recording any transactions.
+An instrument is the security the fund invests in. It must exist before you record transactions.
 
-### Required Fields
+| Field | Required | Notes |
+|-------|----------|-------|
+| **Name** | Yes | e.g. "Series A Equity", "CCDs". Unique within the company. |
+| **Currency** | Yes | The instrument's denomination. **Cannot be changed later** — it underpins every amount calculation. |
+| **Sector** | No | Industry sector. |
+| **Category / Sub-Category** | No | Your own classification. |
+| **Investment Domicile** | No | Domestic or foreign (sets the offshore flag automatically). |
+| **Regulatory fields** | No | Investee type, security type, ISIN, registration number, and similar, used for regulatory reporting. |
 
-| Field | Description |
-|-------|-------------|
-| **Name** | Instrument name (e.g. "Series A Equity", "10% NCD", "CCDs"). Must be unique within a portfolio company. |
-| **Currency** | The denomination currency of this instrument. This determines whether FX conversion is needed when recording investments. Once set, the currency **cannot be changed**. |
-
-### Optional Fields
-
-| Field | Description |
-|-------|-------------|
-| **Sector** | The industry sector of the portfolio company. |
-| **Category / Sub-Category** | Custom classification of the instrument. |
-| **Investment Domicile** | "Domestic" or foreign. Automatically sets "Offshore Investment" flag accordingly. |
-| **SEBI Reporting Fields** | Type of investee company, type of security, ISIN, registration number, associate/AIF flags. Used for regulatory reporting. |
-
-### Business Rules
-
-- An instrument's **currency cannot be changed** after it is created. This protects the integrity of existing investment amount calculations.
-- Each instrument is linked to one portfolio company (they are not shared across companies).
-- Valuations are stored per instrument (not per portfolio investment).
+Each instrument belongs to a single company (instruments aren't shared across companies), and **valuations are recorded per instrument** rather than per transaction.
 
 ---
 
-## Creating a Portfolio Investment (Buy)
+## Recording a Purchase (Buy)
 
-A Buy records money deployed into a portfolio company.
+A buy records capital deployed into a company.
 
-### Required Fields
+| Field | Required | Notes |
+|-------|----------|-------|
+| **Portfolio Company** | Yes | The company invested in. |
+| **Investment Instrument** | Yes | The security bought. |
+| **Investment Date** | Yes | The transaction date. |
+| **Quantity** | Yes | Number of shares/units — must be positive. |
+| **Amount (excluding expenses)** | Yes | The amount in the instrument's currency, before expenses. |
+| **Notes** | No | Internal notes. |
+| **Excused Folios** | No | Investors excused from this investment (see [Excused Investors](#excused-investors)). |
+| **Proforma** | No | A what-if record for modelling only — excluded from all live figures. |
+| **Reference ID** | No | An external reference that helps prevent duplicate imports. |
 
-| Field | Description |
-|-------|-------------|
-| **Portfolio Company** | The investee company. |
-| **Investment Instrument** | The security type being purchased. |
-| **Investment Date** | The date of the investment. |
-| **Quantity** | Number of shares/units purchased. Must be positive. |
-| **Amount (Excluding Expenses)** | The investment amount in the instrument's currency, before expenses. |
+**On save, the system automatically:**
 
-### Optional Fields
-
-| Field | Description |
-|-------|-------------|
-| **Notes** | Internal notes. |
-| **Excused Folio IDs** | Commitments whose investors are excused from contributing to this investment. They will not receive a share of the gain or distribution. |
-| **Proforma** | If Yes, this investment is for modelling purposes only and is excluded from all live calculations (FMV, gain, counter caches). |
-| **Ref ID** | An external reference number (used to prevent duplicate imports). |
-
-### What Happens on Save
-
-1. **Expenses are added** — Any form custom fields tagged as "Expense" are summed and added to the base amount.
-2. **Amount is converted** — If the instrument currency differs from the fund currency, the amount is converted using the exchange rate on the investment date. The exchange rate used is stored on the record.
-3. **Aggregate is set up** — If no Aggregate Portfolio Investment exists yet for this (fund, company, instrument) combination, one is created automatically.
-4. **Initial valuation created** — A valuation is created (or updated) for the instrument on the investment date, using the buy's cost per share. This ensures FMV can be computed from day one.
-5. **All metrics computed** — cost_of_remaining, FMV, unrealised gain are calculated.
-6. **quantity_as_of_date computed** — The cumulative quantity held as of the investment date is computed and stored.
-
-### Duplicate Prevention
-
-CapHive prevents duplicate imports by matching on: portfolio_company_name + investment_date + ex_expenses_base_amount + quantity + instrument + fund + ref_id. If all match, the import is rejected.
+1. Adds any expense fields to the base amount.
+2. Converts the amount to the fund's currency if the instrument is in a different currency (recording the rate used).
+3. Creates the aggregate view if this is the first transaction for the company-instrument.
+4. Creates an initial valuation at the buy price, so the holding can be valued from day one.
+5. Calculates cost of remaining, FMV, and unrealised gain.
 
 ---
 
 ## Recording a Sale (Sell)
 
-A Sell records the disposal of shares.
+A sell records disposing of shares. It's recorded just like a buy, but with a **negative quantity** (e.g. −500 to sell 500 shares).
 
-### Required Fields
+Before saving, the system checks you aren't selling more than you hold across all open buy lots; if you are, it's rejected. Once saved, the sale is **matched to specific buy lots** to determine its cost basis and realised gain (see the next section). A sell has no FMV or unrealised gain of its own — it's a realised event.
 
-Same as a Buy, but **quantity must be negative** (e.g. −500 to sell 500 shares).
-
-### Sell Validation
-
-Before saving, CapHive checks:
+```mermaid
+flowchart LR
+    A[Enter sell<br/>negative quantity] --> B{Enough shares held?}
+    B -->|No| C[Rejected]
+    B -->|Yes| D[Matched to buy lots]
+    D --> E[Realised gain = proceeds − cost of shares sold]
 ```
-total net_quantity available across all open buy lots
-  = sum of (buy.quantity + buy.sold_quantity − buy.transfer_quantity)
-    for allocatable buys
-
-If |sell quantity| > available quantity → rejected with error
-```
-
-"Allocatable buys" are buy lots for the same portfolio company and instrument with `net_quantity > 0`, ordered by investment date.
-
-### Attribution
-
-After the sell is saved, a background job (or immediate execution during import) runs the **AttributionService** to link the sell to its buy lot(s):
-
-- **FIFO:** oldest lots first, exhausted before moving to newer ones.
-- **WTD_AVG:** each lot contributes proportionally to its share of total available quantity.
-
-Attribution only runs **once** per sell — if attributions already exist, the sell is not re-attributed.
-
-### What Gets Computed on a Sell
-
-| Field | Value |
-|-------|-------|
-| `gain_cents` | (sale_price_per_share − buy_price_per_share) × quantity |
-| `cost_of_sold_cents` | buy_price_per_share × quantity sold |
-| `sale_amount_cents` | sale_price_per_share × quantity |
-| `fmv_cents` | 0 (sells have no FMV) |
-| `unrealized_gain_cents` | 0 |
-| `cost_of_remaining_cents` | 0 |
 
 ---
 
-## Attribution — FIFO vs Weighted Average
+## Cost Attribution: FIFO vs Weighted Average
 
-Attribution is the process of linking a sell transaction to the specific buy lot(s) it consumed. This determines the cost basis and realised gain for each sale.
+When you sell, the system has to decide **which** of your purchases the sold shares came from, because different purchases were made at different prices. This is set per fund.
 
-### FIFO (First-In First-Out)
+Consider two purchases, then a sale of 1,200 shares at $200:
 
-```
-Example:
-  Buy Lot 1: 1,000 shares @ ₹100 on 2021-03-01  (net_qty=1,000)
-  Buy Lot 2:   500 shares @ ₹150 on 2022-06-15  (net_qty=500)
+| Buy lot | Shares | Price | Date |
+|---------|--------|-------|------|
+| Lot 1 | 1,000 | $100 | Mar 2021 |
+| Lot 2 | 500 | $150 | Jun 2022 |
 
-  Sell: 1,200 shares @ ₹200 on 2023-09-01
+### FIFO (First-In, First-Out)
 
-FIFO attribution:
-  Attribution 1: Sell → Lot 1 (1,000 shares)
-    cost_of_sold = 1,000 × ₹100 = ₹1,00,000
-    gain         = 1,000 × (₹200 − ₹100) = ₹1,00,000
-    sale_amount  = 1,000 × ₹200 = ₹2,00,000
+The oldest shares are sold first.
 
-  Attribution 2: Sell → Lot 2 (200 shares)
-    cost_of_sold = 200 × ₹150 = ₹30,000
-    gain         = 200 × (₹200 − ₹150) = ₹10,000
-    sale_amount  = 200 × ₹200 = ₹40,000
+| Drawn from | Shares | Cost | Sale | Gain |
+|------------|--------|------|------|------|
+| Lot 1 | 1,000 | $100,000 | $200,000 | $100,000 |
+| Lot 2 | 200 | $30,000 | $40,000 | $10,000 |
+| **Total** | **1,200** | **$130,000** | **$240,000** | **$110,000** |
 
-Total gain = ₹1,10,000
-```
+FIFO is the default for most tax and regulatory reporting.
 
-**When to use:** FIFO is the default for most regulatory and tax reporting frameworks.
+### Weighted Average
 
-### Weighted Average (WTD_AVG)
+The sale is spread proportionally across all open lots. Total held = 1,500 shares (Lot 1 is 66.67%, Lot 2 is 33.33%).
 
-```
-Example (same lots as above):
-  Total available: 1,500 shares (Lot 1: 1,000, Lot 2: 500)
-  Sell: 1,200 shares
+| Drawn from | Shares | Cost | Gain |
+|------------|--------|------|------|
+| Lot 1 (66.67%) | 800 | $80,000 | $80,000 |
+| Lot 2 (33.33%) | 400 | $60,000 | $20,000 |
+| **Total** | **1,200** | **$140,000** | **$100,000** |
 
-  Lot 1 proportion = 1,000 / 1,500 = 66.67%
-  Lot 2 proportion =   500 / 1,500 = 33.33%
+Weighted average smooths the cost basis across all purchases, as some accounting standards require.
 
-WTD_AVG attribution:
-  Attribution 1: Sell → Lot 1 (1,200 × 66.67% = 800 shares)
-    cost_of_sold = 800 × ₹100 = ₹80,000
-    gain         = 800 × (₹200 − ₹100) = ₹80,000
+> **Notice the difference:** the same sale produces a **$110,000** gain under FIFO but **$100,000** under weighted average, because the two methods consume different-priced lots. Choose the method that matches your reporting framework.
 
-  Attribution 2: Sell → Lot 2 (1,200 × 33.33% = 400 shares)
-    cost_of_sold = 400 × ₹150 = ₹60,000
-    gain         = 400 × (₹200 − ₹150) = ₹20,000
-
-Total gain = ₹1,00,000
-```
-
-**When to use:** Weighted average gives a smoothed cost basis across all lots, commonly used in certain accounting standards.
-
-### Choosing the Cost Method
-
-The cost method is set per fund via the `portfolio_cost_type` field:
-- `FIFO` — first-in first-out
-- `WTD_AVG` — weighted average
-
-Once attributions have been created for a sell, they are not automatically re-run even if the cost method changes. To re-run attribution, existing attributions must be deleted first.
-
-### Effect on Buy Lots
-
-When a sell is attributed to a buy lot:
-- The buy lot's `sold_quantity` counter increases by the attributed quantity.
-- The buy lot's `net_quantity` = original_quantity + sold_quantity − transfer_quantity decreases accordingly.
-- The buy lot's `cost_of_remaining` = net_quantity × cost_per_share is updated.
+Once a sale has been matched, changing the fund's method later doesn't automatically re-match past sales — that has to be redone deliberately. You can always review how a sale was matched on its attribution breakdown.
 
 ---
 
-## FMV Computation
+## Valuations and Fair Market Value
 
-FMV (Fair Market Value) is the estimated current value of unsold holdings, based on the latest available share price.
+**FMV** is the current value of holdings you still own, based on the latest per-share price.
 
-### Valuation Records
+> FMV = Shares still held × Latest per-share valuation (converted to the fund's currency)
 
-FMV is computed from **Valuation** records stored against each investment instrument:
+Valuations are recorded per instrument, each with a date and a per-share price. The system uses the most recent valuation on or before the date you're valuing as of. A buy automatically creates an opening valuation at its purchase price, so you always have at least one.
 
-| Field | Description |
-|-------|-------------|
-| **Investment Instrument** | The instrument this valuation applies to |
-| **Valuation Date** | The date this price is valid |
-| **Per Share Value (cents)** | The price per share in the instrument's base currency |
+FMV refreshes automatically whenever you add a valuation, record a buy or sell, or match a sale. Note:
 
-When a Buy is created, CapHive automatically creates a Valuation at the buy price (if one doesn't already exist for that instrument on that date).
+- If there's **no valuation** on or before the date, FMV can't be computed — add one.
+- If **no shares** remain (all sold or converted), FMV is zero.
 
-### FMV Computation Formula
-
+```mermaid
+flowchart LR
+    A[Add valuation<br/>per-share price] --> B[FMV = shares held × price]
+    B --> C[Unrealised gain = FMV − cost of remaining]
 ```
-FMV (fund currency) = net_quantity × latest_valuation.per_share_value_in(fund_currency, date)
-
-where:
-  net_quantity = quantity (buy) + sold_quantity − transfer_quantity
-               = shares still held (not sold, not converted)
-
-  latest_valuation = most recent Valuation for this instrument
-                     with valuation_date ≤ computation date
-
-  per_share_value_in(fund_currency, date) =
-    IF instrument.currency == fund.currency:
-      per_share_value_cents (no conversion)
-    ELSE:
-      per_share_value_cents × exchange_rate(instrument_currency → fund_currency, on date)
-```
-
-**If no valuation is found** on or before the date, FMV raises an error — you must ensure valuations exist. Zero net_quantity also returns zero FMV (avoiding the lookup).
-
-### Updating FMV
-
-FMV is recomputed whenever:
-- A valuation is added or updated.
-- A buy or sell is saved (triggers `compute_all_numbers`).
-- An attribution is created or deleted (triggers `PortfolioInvestmentUpdate` on the buy lot).
-- The `recompute_fees` job runs on the fund.
-
-### FMV in Two Currencies
-
-Each buy PI stores FMV in both the fund currency and the instrument's base currency:
-
-| Field | Currency |
-|-------|----------|
-| `fmv_cents` | Fund currency |
-| `instrument_currency_fmv_cents` | Instrument's base currency (raw, no FX) |
-| `tracking_fmv_cents` | Tracking currency (for cross-fund dashboards) |
 
 ---
 
-## Aggregate Portfolio Investment
+## The Aggregate (Rolled-Up) View
 
-The **Aggregate Portfolio Investment (API)** is an automatically maintained rollup record. There is exactly one API per (fund × portfolio company × investment instrument) combination, regardless of how many individual buy/sell transactions have been recorded.
+For each fund-company-instrument combination there's a single **aggregate view** that summarises every transaction — no matter how many buys and sells you've recorded. It's created automatically with the first buy and keeps itself up to date.
 
-### Auto-Creation
+It shows, at a glance:
 
-An API is created automatically when the first buy transaction is saved for a given (fund, company, instrument) triplet.
+| Aggregate figure | What it tells you |
+|------------------|-------------------|
+| **Quantity held** | Net shares still owned. |
+| **Total bought / sold** | Cumulative amounts purchased and sold. |
+| **Average cost** | Blended cost per share across all purchases. |
+| **Cost of remaining** | Book cost of shares still held. |
+| **FMV** | Current value of remaining holdings. |
+| **Unrealised gain** | Paper gain on what's still held. |
+| **Realised gain** | Gain locked in from sales. |
+| **Portfolio income** | Actual income received (dividends, interest). |
 
-### What It Aggregates
+### Point-in-time views
 
-| API Field | Source |
-|-----------|--------|
-| `quantity` | Sum of `net_quantity` across all non-proforma buy PIs |
-| `bought_quantity` | Sum of quantity across all non-proforma buy PIs |
-| `sold_quantity` | Sum of quantity across all non-proforma sell PIs |
-| `bought_amount_cents` | Sum of amount_cents across all non-proforma buy PIs |
-| `sold_amount_cents` | Sum of amount_cents across all non-proforma sell PIs |
-| `cost_of_sold_cents` | Sum of cost_of_sold_cents across all sell PIs |
-| `cost_of_remaining_cents` | Sum of cost_of_remaining_cents across all buy PIs |
-| `gain_cents` | Sum of gain_cents across all sell PIs |
-| `fmv_cents` | Sum of fmv_cents across all buy PIs |
-| `unrealized_gain_cents` | Sum of unrealized_gain_cents across all buy PIs |
-| `avg_cost_cents` | `bought_amount_cents / bought_quantity` |
-| `portfolio_income_cents` | Sum of all "Actual" portfolio cashflows |
-
-### as_of(date) Temporal Query
-
-The `as_of(date)` method returns a **snapshot copy** of the API as of a historical date — without modifying the stored record:
-
-```
-API.as_of(2022-12-31):
-  1. Collects all PIs with investment_date ≤ 2022-12-31
-  2. Runs pi.as_of(2022-12-31) on each (same for PIs)
-  3. Re-computes all rolled-up fields from those PIs
-  4. Looks up FMV on that date using valuations ≤ 2022-12-31
-  5. Returns a frozen (read-only) copy with historical values
-```
-
-This is used extensively in reports, XIRR calculations, and the portfolio report generator.
-
-### avg_cost (Average Cost Per Share)
-
-```
-avg_cost_cents = total_bought_amount_cents / total_bought_quantity
-               (only updated when bought_quantity > 0)
-```
-
-Average cost is the blended cost per share across all buy transactions, regardless of when they were made.
-
----
-
-## Key Computed Fields
-
-### For Buy Transactions
-
-```
-  cost_per_share_cents   = amount_cents / quantity
-
-  sold_quantity          = sum of attribution quantities linked to this buy
-  transfer_quantity      = sum of stock_conversions from this buy
-
-  net_quantity           = quantity + sold_quantity − transfer_quantity
-                         (shares still held)
-
-  net_bought_quantity    = quantity − transfer_quantity
-                         (shares bought and not yet converted away)
-
-  cost_of_remaining      = net_quantity × cost_per_share
-                         (book value of unsold holding)
-
-  fmv                    = net_quantity × latest_valuation_price
-                         (current market value)
-
-  unrealized_gain        = fmv − cost_of_remaining
-```
-
-### For Sell Transactions
-
-```
-  gain_cents             = amount_cents.abs + cost_of_sold_cents
-                         (note: cost_of_sold is negative, gain adds them)
-
-  cost_of_sold_cents     = sum across all attributions (bought_pi.price × qty)
-
-  sale_price_per_share   = amount_cents / |quantity|
-
-  cost_of_sold_per_share = cost_of_sold_cents / |quantity|
-```
-
-### For the Aggregate (API)
-
-```
-  cost_of_remaining  = bought_amount + cost_of_sold + transfer_amount
-                     (i.e. cost of all buys minus cost of what was sold)
-
-  unrealized_gain    = fmv − cost_of_remaining
-
-  gain               = sold_amount + cost_of_sold
-                     (realized gain from all sells combined)
-```
+You can also view the aggregate **as of a past date** — a read-only snapshot using only the transactions and valuations that existed then. This powers historical reports, performance metrics, and the portfolio report generator.
 
 ---
 
 ## Stock Conversions
 
-A Stock Conversion records the transformation of one instrument type into another — for example, when Compulsorily Convertible Debentures (CCDs) convert into equity shares.
+A **stock conversion** records one security turning into another — for example convertible debentures (CCDs) converting into equity.
 
-### How It Works
+A conversion records the instrument and lot being converted, the quantity surrendered, the new instrument, the quantity received, and the date. On save, the system reduces the original holding, creates a new holding in the destination instrument (carrying the original cost across, converted at the rate on the original investment date), and updates both aggregate views.
 
-1. The conversion records:
-   - **From instrument:** The instrument being surrendered
-   - **From PI:** The specific buy lot being converted
-   - **From quantity:** How many units are converted out
-   - **To instrument:** The new instrument type
-   - **To quantity:** How many units are received in exchange
-   - **Conversion date:** When the conversion occurs
+Key points:
 
-2. On save, CapHive:
-   - Adds `from_quantity` to the source PI's `transfer_quantity`
-   - Creates a **new buy PI** for the destination instrument, dated to the original investment date, with the cost converted using the exchange rate on that date
-   - Updates the source API and creates/updates the destination API
-   - Marks the `conversion_date` on both PIs
-
-3. The source PI's `net_quantity` decreases by `from_quantity`. It is no longer available for sale or further conversion.
-
-### Business Rules
-
-- From and To instruments must be **different**.
-- `from_quantity` cannot exceed the source PI's current `net_quantity`.
-- If the two instruments are in different currencies, an exchange rate for the conversion date must exist.
-- Converted quantities are excluded from FMV calculations for the source instrument (the `before()` scope filters by `conversion_date`).
-
-### Effect on XIRR
-
-In Gross Portfolio IRR calculations, stock conversions are removed from the buy cash flows to avoid double-counting — the converted cost is "transferred" to the new instrument, not treated as a new investment.
+- The "from" and "to" instruments must be different.
+- You can't convert more than you currently hold.
+- A conversion is **cost-preserving** — it doesn't create a gain or reduce the portfolio's cost; it just moves cost to the new instrument.
+- In Gross Portfolio IRR, conversions are netted out so the converted cost isn't double-counted as a fresh investment.
 
 ---
 
-## Stock Splits
+## Stock Splits and Adjustments
 
-A stock split adjusts the quantity of shares held without changing the total invested amount.
+### Stock splits
 
-### What Changes
+A split changes the number of shares without changing the total invested. After a 2-for-1 split, 1,000 shares at $100 become 2,000 shares at $50 — same total value, half the price each. Apply a split and the system updates the share count and recalculates per-share cost and FMV; the aggregate view follows automatically.
 
-When a split by ratio `R` is applied to a buy PI:
-- `quantity *= R` (more shares)
-- All attribution quantities are also multiplied by `R`
-- `compute_all_numbers` is re-run to update cost_per_share, FMV, etc.
-- A note is appended: "Stock adjusted by factor R on [date]"
+### Stock adjustments
 
-### Effect on Cost
-
-After a 2:1 split: if you held 1,000 shares at ₹100 each, you now hold 2,000 shares at ₹50 each. The total invested value is unchanged.
-
-### How to Apply
-
-Stock splits are applied through the **Stock Adjustments** feature or directly from the portfolio investment record. The split is applied at the individual PI level; the aggregate automatically recalculates.
+A **stock adjustment** corrects the share count without a full buy or sell — used for bonus shares, rights issues, or data fixes. Record the company, instrument, and the adjustment (positive to add shares, negative to remove), and the system applies it across the relevant holdings.
 
 ---
 
-## Stock Adjustments
+## Portfolio Income
 
-A Stock Adjustment records a correction to the quantity of shares without creating a full buy or sell transaction — typically used for bonus shares, rights issues, or data corrections.
+**Portfolio income** records money received from an investment — dividends, interest, or partial payouts.
 
-### How It Works
+| Field | Notes |
+|-------|-------|
+| **Portfolio Company / Instrument** | What generated the income. |
+| **Payment Date** | When it was received. |
+| **Amount** | In the fund's currency. |
+| **Tag** | "Actual" for real income, or other tags for projections/budgets. |
 
-1. Create a StockAdjustment with:
-   - Portfolio company, investment instrument
-   - Adjustment value (positive = add shares, negative = remove shares)
-2. On save, a background job applies the adjustment to all buy PIs for this company and instrument.
-
----
-
-## Portfolio Cashflows (Income)
-
-Portfolio Cashflows record income received from a portfolio company investment — such as dividends, interest, or partial distributions.
-
-### Fields
-
-| Field | Description |
-|-------|-------------|
-| **Portfolio Company** | The investee company |
-| **Investment Instrument** | The instrument generating income |
-| **Payment Date** | When the income was received |
-| **Amount** | Amount in the fund's currency |
-| **Tag** | "Actual" (real income) or other tags (projections, budgets) |
-
-### Effect on Metrics
-
-Only cashflows tagged **"Actual"** roll up to the API's `portfolio_income_cents` field (via counter cache).
-
-In performance calculations:
-- **Gross Portfolio IRR** includes actual portfolio cashflows as positive cash flows on their payment date.
-- `portfolio_income_cents` on the API shows cumulative actual income received.
-
----
-
-## Proforma Investments
-
-Proforma investments are **what-if** transaction records used for modelling and scenario analysis. They do not affect any live metrics.
-
-### Business Rules
-
-- Proforma PIs are **excluded** from all counter caches (no rollup to the API).
-- They are excluded from FMV, gain, and attribution computations by default.
-- The default scope (`where(proforma: false)`) automatically excludes them.
-- To include proforma records in a query, use `.include_proforma`.
-- Attribution is not run for proforma sells.
-
-### Use Cases
-
-- Modelling a proposed investment before committing.
-- Scenario analysis for hypothetical exits.
-- Historical backdating for portfolio scenarios.
+Only income tagged **"Actual"** counts toward the portfolio's cumulative income and is included as a positive cash flow in **Gross Portfolio IRR** on its payment date. Projection/budget tags are kept separate for modelling.
 
 ---
 
 ## Excused Investors
 
-When a portfolio company receives investment from the fund, specific LP investors may be **excused** from participating (e.g. conflict of interest, investor restriction).
+Sometimes specific investors don't participate in a particular investment — for example due to a conflict of interest or a mandate restriction. A buy can list these **excused investors** (by folio).
 
-### How Excused Investors Work
-
-A Buy PI can have a list of `excused_folio_ids` — the capital commitment IDs of investors who do not participate in this investment.
-
-When computing an investor's **allocation of gains** from a sell, the investor's account entry percentage (Investable Capital Percentage) is looked up at the buy date. If they were excused from that buy, they were not invested, so they do not participate in the gain.
-
-This is used in the `allocation_of_realized_gain_cents` method to compute each LP's share of gains.
+When the fund later works out each investor's share of a realised gain, it looks at who was actually invested at the time of the buy. An excused investor wasn't in that deal, so they receive **no share** of the gain from selling it. This keeps gain allocation fair to the investors who actually carried the position.
 
 ---
 
-## Portfolio Scenarios
+## Modelling: Proforma Investments and Scenarios
 
-Portfolio Scenarios let you model "what if" exits at different valuations to estimate returns.
+### Proforma investments
 
-### What a Scenario Contains
+**Proforma** transactions are what-if records for modelling. They're excluded from all live figures (FMV, gains, performance, aggregates), so you can sketch a proposed deal or a hypothetical exit without affecting real numbers. Use them to model a deal before committing or to test exit assumptions.
 
-- A name and description
-- A set of **Scenario Investments** (hypothetical sells at specified prices)
-- Computed XIRR, MOIC, DPI, etc. for the scenario
+### Portfolio scenarios
 
-Scenarios use the same attribution and computation logic as actual investments, but applied to the scenario's hypothetical transactions.
+**Scenarios** let you model exits at different valuations to estimate returns. A scenario holds a set of hypothetical sales at chosen prices and computes XIRR, MOIC, DPI, and similar — using the same logic as real investments, applied to the scenario's transactions. This is the tool for answering "what would our return be if we exited Company X at a $500M valuation next year?"
 
 ---
 
-## Multi-Currency Support
+## Working Across Currencies
 
-### Investment Amount
+When an instrument is held in a currency different from the fund's:
 
-If the instrument currency differs from the fund currency:
-1. `ex_expenses_base_amount_cents` stores the amount in instrument currency.
-2. `amount_cents` is the FX-converted equivalent in fund currency.
-3. The exchange rate used is stored as `exchange_rate_id`.
-4. Expenses (if any) are added in instrument currency before conversion.
+- The amount is stored in the instrument's currency and also converted to the fund's currency at the rate on the investment date.
+- FMV is calculated in the instrument's currency and converted to the fund's currency at the rate on the valuation date.
+- A tracking-currency version is maintained for cross-fund dashboards.
 
-### FMV
-
-```
-fmv_cents (fund currency) = net_quantity × valuation.per_share_value_cents
-                             × exchange_rate(instrument → fund, on computation date)
-
-instrument_currency_fmv_cents = net_quantity × valuation.per_share_value_cents
-                                (raw, no conversion)
-```
-
-### Tracking Currency
-
-For cross-fund dashboards and XIRR in tracking currency:
-```
-tracking_amount_cents = amount_cents × exchange_rate(fund → tracking, on investment_date)
-tracking_fmv_cents    = fmv_cents × exchange_rate(fund → tracking, on today)
-```
-
-### Validation
-
-If no exchange rate exists between the instrument currency and fund currency on the investment date, the PI creation is **rejected with an error**. Exchange rates must be set up before recording foreign-currency investments.
+If no exchange rate exists between the instrument and fund currencies on the transaction date, the transaction is rejected — set up the rate first.
 
 ---
 
 ## Importing Data
 
-### Importing Portfolio Investments
+You can bulk-load from spreadsheets.
 
-**Required columns:**
+**Transactions** — provide fund, portfolio company (must already exist), investment date, amount (excluding expenses, in instrument currency), quantity (positive to buy, negative to sell), instrument, and currency. Optional columns include domicile, notes, excused folios, proforma, a reference ID (helps avoid duplicates), and regulatory fields. If an instrument doesn't exist yet, it's created from the import. Sales are matched to buy lots during the import so ordering stays correct.
 
-| Column | Description |
-|--------|-------------|
-| Fund | Fund name |
-| Portfolio Company Name | Must match an existing portfolio company (investor) |
-| Investment Date | Date of the transaction |
-| Amount (Excluding Expenses) | Amount in instrument's currency, before expenses |
-| Quantity | Positive = Buy, Negative = Sell |
-| Instrument | Name of the investment instrument |
-| Currency | Instrument's denomination currency |
+**Income** — provide fund, company, instrument, payment date, amount (fund currency), and tag ("Actual" or a custom tag).
 
-**Optional columns:**
-
-| Column | Description |
-|--------|-------------|
-| Investment Domicile | "Domestic" or foreign |
-| Notes | Internal notes |
-| Excused Folio Ids | Comma-separated folio IDs of excused investors |
-| Proforma | "Yes" for scenario/modelling investments |
-| Ref Id | External reference number (prevents duplicates) |
-| SEBI reporting fields | Type of investee, type of security, ISIN, etc. |
-
-**Business Rules:**
-- Portfolio Company must already exist as an investor with `portfolio_company = true`.
-- If the Instrument doesn't exist, it is **created** from the import data.
-- A Ref Id helps prevent duplicate import of the same transaction.
-- Attributions for sells are run immediately during import (not in a background job) to ensure correct ordering.
-- After import, all Aggregate Portfolio Investments are saved to recalculate avg_cost.
-
-### Importing Portfolio Cashflows
-
-| Column | Description |
-|--------|-------------|
-| Fund | Fund name |
-| Portfolio Company | Portfolio company name |
-| Instrument | Investment instrument name |
-| Payment Date | Date of income receipt |
-| Amount | Amount in fund currency |
-| Tag | "Actual" or custom tag |
-
-### Importing Investment Instruments
-
-| Column | Description |
-|--------|-------------|
-| Portfolio Company Name | Parent company |
-| Name | Instrument name |
-| Currency | Denomination currency |
-| Sector, Category, ISIN, etc. | Optional attributes |
-
----
-
-## Key Computations Reference
-
-### Buy PI Computation Flow
-
-```
-1. base_amount_cents = ex_expenses_base_amount_cents + expense_cents
-
-2. IF instrument.currency == fund.currency:
-     amount_cents = base_amount_cents
-   ELSE:
-     amount_cents = convert(instrument_currency → fund_currency, base_amount_cents, investment_date)
-
-3. cost_per_share_cents = amount_cents / quantity
-
-4. sold_quantity = sum of portfolio_attribution.quantity where bought_pi = this PI
-   transfer_quantity = sum of stock_conversion.from_quantity where from_PI = this PI
-
-   net_quantity = quantity + sold_quantity − transfer_quantity
-   net_bought_quantity = quantity − transfer_quantity
-
-5. cost_of_remaining_cents = net_quantity × cost_per_share_cents
-
-6. fmv_cents = net_quantity × latest_valuation.per_share_value_in(fund_currency, date)
-
-7. unrealized_gain_cents = fmv_cents − cost_of_remaining_cents
-```
-
-### Sell PI Computation Flow
-
-```
-1. amount_cents = |quantity| × sale_price_per_share_cents
-   (same FX logic as buy)
-
-2. After Attribution:
-   cost_of_sold_cents = sum(attributed quantity × bought_pi.cost_per_share)
-                       [negative value — represents cost outflow]
-
-   gain_cents = amount_cents.abs + cost_of_sold_cents
-              = (sale proceeds) − (cost of shares sold)
-```
-
-### Attribution: FIFO
-
-```
-For each buy lot (sorted by investment_date ASC):
-  attribution_quantity = min(buy.net_quantity, remaining_sell_quantity)
-
-  PortfolioAttribution {
-    bought_pi = buy,
-    sold_pi   = sell,
-    quantity  = −attribution_quantity,
-    cost_of_sold = attribution_quantity × buy.price_per_share,
-    gain         = (sell.price_per_share − buy.price_per_share) × attribution_quantity,
-    sale_amount  = sell.price_per_share × attribution_quantity
-  }
-
-  remaining_sell_quantity -= attribution_quantity
-  STOP when remaining_sell_quantity = 0
-```
-
-### Attribution: Weighted Average
-
-```
-total_buy_quantity = sum of net_quantity across all allocatable buys
-
-For each buy lot:
-  proportion = buy.net_quantity / total_buy_quantity
-  attribution_quantity = sell_quantity × proportion  [rounded to 6 dp]
-
-  PortfolioAttribution {
-    quantity     = −attribution_quantity,
-    cost_of_sold = attribution_quantity × buy.price_per_share,
-    gain         = (sell.price_per_share − buy.price_per_share) × attribution_quantity,
-    sale_amount  = sell.price_per_share × attribution_quantity
-  }
-```
-
-### API Metrics
-
-```
-avg_cost_cents          = bought_amount_cents / bought_quantity
-                         (recomputed whenever bought_quantity > 0)
-
-cost_of_remaining       = bought_amount + cost_of_sold + transfer_amount
-                         (cost basis of unsold holdings)
-
-unrealized_gain         = fmv − cost_of_remaining
-
-gain (realized)         = sold_amount + cost_of_sold
-                         (proceeds minus cost of sold shares)
-```
-
-### Counter Caches on API (Auto-Updated)
-
-| API Counter | Source |
-|-------------|--------|
-| `quantity` | Sum of `net_quantity` of non-proforma buy PIs |
-| `bought_amount_cents` | Sum of `amount_cents` of non-proforma buy PIs |
-| `sold_amount_cents` | Sum of `amount_cents` of non-proforma sell PIs |
-| `fmv_cents` | Sum of `fmv_cents` of non-proforma buy PIs |
-| `gain_cents` | Sum of `gain_cents` of non-proforma PIs (all types) |
-| `cost_of_sold_cents` | Sum of `cost_of_sold_cents` of non-proforma sell PIs |
-| `cost_of_remaining_cents` | Sum of `cost_of_remaining_cents` of non-proforma buy PIs |
-| `unrealized_gain_cents` | Sum of `unrealized_gain_cents` of non-proforma buy PIs |
-| `portfolio_income_cents` | Sum of `amount_cents` of "Actual" cashflows |
-| `tracking_bought_amount_cents` | Sum of `tracking_amount_cents` of non-proforma buy PIs |
-| `tracking_sold_amount_cents` | Sum of `tracking_amount_cents` of non-proforma sell PIs |
+**Instruments** — provide company, name, currency, and optional attributes (sector, category, ISIN, etc.).
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: What is the difference between `amount` and `ex_expenses_amount` on a buy?**
-`ex_expenses_amount` is the investment amount before any expense add-ons (the amount you actually wire to the portfolio company). `amount` includes expenses (fees, transaction costs) added to arrive at the total deployment amount. Both are stored in the fund currency.
+**What's the difference between the amount before expenses and the total amount?**
+The amount before expenses is what you actually pay the company; the total amount adds any transaction costs/fees. Both are held in the fund's currency.
 
-**Q: Can I change the FIFO/WTD_AVG method after sells have been recorded?**
-The cost method is set per fund. Changing it does not retroactively re-run attributions. Existing attributions remain as-is. If you need to switch, existing attributions for affected sells must be deleted, and the attribution job re-run.
+**Can I switch FIFO and weighted average after recording sales?**
+The method is set per fund. Changing it doesn't automatically re-match past sales — those have to be re-matched deliberately.
 
-**Q: Why does my sell show a different gain than expected?**
-Gain is computed per attribution: (sell price per share − buy price per share) × quantity. Under FIFO, older lots have older (potentially lower) prices, which can produce larger gains. Under WTD_AVG, gains are smoothed. Check the Portfolio Attributions tab on the sell PI to see the breakdown.
+**Why is my gain different from what I expected?**
+Gain depends on which buy lots the sale drew from. FIFO uses the oldest (often cheaper) lots, producing larger gains; weighted average smooths across all lots. Check the sale's attribution breakdown to see exactly how it was matched.
 
-**Q: What happens if I delete a buy that has been partially sold?**
-CapHive will prevent or warn about this — the sell's attributions reference the buy. To delete the buy, you must first delete any sells that were attributed to it (and their attributions).
+**What if I delete a buy that's been partly sold?**
+You can't delete it while sales reference it. Delete the dependent sales first, then the buy.
 
-**Q: Why is FMV zero for a holding even though I have shares?**
-There are two reasons: (a) no Valuation exists for the instrument on or before today — add one; or (b) the net_quantity is zero (all shares sold or converted). Check the valuations list for the instrument.
+**Why is FMV zero even though I hold shares?**
+Either there's no valuation on or before today (add one), or no shares actually remain (all sold or converted). Check the instrument's valuations.
 
-**Q: What does `quantity_as_of_date` mean?**
-It records the cumulative net quantity across all PIs for this (fund, company, instrument) as of the PI's own investment_date. This is a snapshot used in historical reporting.
+**How is a conversion different from a sale?**
+A conversion (e.g. CCD → equity) is cost-preserving — it changes the security type without realising a gain. A sale realises a gain and reduces the cost of remaining.
 
-**Q: How are stock conversions different from sells?**
-A stock conversion is a tax-neutral instrument change (e.g. CCD → Equity). The cost basis is preserved and transferred to the new instrument. A sell realizes the gain. A conversion does not generate gain or reduce the portfolio's cost of remaining — it just changes the instrument type.
+**What do excused investors do?**
+They list investors who didn't participate in a specific deal. When a gain is later allocated, excused investors get no share of that deal's gain.
 
-**Q: What does `excused_folio_ids` do exactly?**
-It lists commitments whose investors chose not to participate in a specific investment. When computing each LP's share of realized gain from a sell, the commitment's Investable Capital Percentage at the buy date is used. If an investor was excused from a buy, they have no ICP for that buy and receive zero allocation of gain from that sale.
+**Can the same instrument be held in two funds?**
+Yes — each fund-company-instrument combination has its own aggregate view, and transactions never mix across funds.
 
-**Q: Can I have the same instrument invested across two different funds?**
-Yes. Each (fund × portfolio company × instrument) combination gets its own Aggregate Portfolio Investment. Transactions are fund-specific and do not mix across funds.
-
-**Q: What is a proforma investment?**
-Proforma investments are modelling tools — they do not affect live metrics (FMV, gain, IRR, counter caches). Use them to model scenarios before committing a real investment, or to run what-if exit analyses.
+**What is a proforma investment?**
+A modelling-only record that doesn't affect live figures — used to test proposed deals or hypothetical exits.

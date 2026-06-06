@@ -2,7 +2,7 @@
 
 Ratio Run Templates let you save a set of filter parameters once and re-run the same calculation for any date with a single click — individually, all at once, or grouped by tag.
 
-> For background on how cross-fund and cross-portfolio ratios are computed and what a FundRatioRun record contains, see the **[Fund Ratios User Guide](fund_ratios_user_guide)**.
+> For background on how cross-fund and cross-portfolio ratios are computed and what a ratio run record contains, see the **[Fund Ratios User Guide](fund_ratios_user_guide)**.
 
 ---
 
@@ -31,7 +31,7 @@ A template stores the filter inputs for a cross-fund or cross-portfolio ratio ca
 - An optional **anchor fund** used for document storage
 - A **display name**, optional **tags** for grouping, and a **position** that controls run order
 
-When you trigger a template you supply only the **end date**. Everything else comes from the saved configuration. The system creates (or reuses) a `FundRatioRun` linked to the resulting ratios.
+When you trigger a template you supply only the **end date**. Everything else comes from the saved configuration. The system creates (or reuses) a **ratio run** that links to the resulting ratios.
 
 ---
 
@@ -97,21 +97,21 @@ From the index table, click the **Run** button (or open the Actions dropdown →
 
 Click **Run All** at the top of the index, enter an end date, and click **Run All Templates**. Every template for the entity is then run **sequentially in position order** — each template starts only after the previous one finishes.
 
-```
+```mermaid
 sequenceDiagram
     actor User
-    participant Batch as FundRatioRunTemplateBatchJob
-    participant Job as FundRatiosScenarioJob
+    participant System as CapHive
+    participant Run as Ratio calculation
 
-    User->>Batch: Run All (end_date)
-    loop for each template in position order
-        Batch->>Job: perform (template N)
-        Job-->>Batch: done
+    User->>System: Run All (end date)
+    loop each template, in position order
+        System->>Run: calculate template N
+        Run-->>System: done
     end
-    Batch-->>User: notification per template
+    System-->>User: notification per template
 ```
 
-Each template produces its own `FundRatioRun` identified by its filter fingerprint. Two templates with identical filter inputs will share a single run record (see [Idempotency](#idempotency)).
+Each template produces its own **ratio run**, identified by its unique combination of filters. Two templates with identical filters share a single run record (see [Idempotency](#idempotency)).
 
 ---
 
@@ -125,13 +125,13 @@ Useful when you have templates organised by frequency (e.g. `monthly`, `quarterl
 
 ## Viewing Past Runs
 
-Click **Actions → View Runs** on any template row to see all historical `FundRatioRun` records produced by that template, ordered by end date descending. From there you can navigate to the run detail page which shows the exact inputs and links to the generated ratios.
+Click **Actions → View Runs** on any template row to see every past ratio run produced by that template, newest first. From there you can open a run to see the exact inputs used and follow links to the ratios it generated.
 
 ---
 
 ## Idempotency — Re-running the Same Date {#idempotency}
 
-Triggering the same template twice for the same end date does **not** create duplicate data. The system computes a SHA-256 fingerprint from the filter inputs and uses it as the run's unique identifier. If a run with that fingerprint already exists for that date, the existing record is reused and the ratios are recalculated in place.
+Triggering the same template twice for the same end date does **not** create duplicate data. The system recognises a run by its unique combination of filter inputs. If a run with the same filters already exists for that date, the existing record is reused and its ratios are recalculated in place.
 
 This means you can safely re-trigger a template to refresh ratios after updating valuations or cash flows without worrying about duplicates.
 
@@ -146,10 +146,10 @@ One at a time, in position order. A single background job processes the list seq
 No. The anchor fund is used only for document storage (cash flow documents). If you leave it blank, the system picks the entity's first fund as a fallback for that purpose. The calculation itself is unaffected.
 
 **What happens if I change a template's filters?**
-Saved templates are independent snapshots. Changing a template's filters changes the fingerprint, so future triggers produce a new `FundRatioRun`. Existing runs are not affected.
+Saved templates are independent snapshots. Changing a template's filters changes its filter combination, so future triggers produce a new ratio run. Existing runs are not affected.
 
 **Can I delete a template?**
-Yes. Deleting a template does not delete the `FundRatioRun` records or `FundRatio` rows it produced — those remain and can still be viewed through the fund ratios index.
+Yes. Deleting a template does not delete the ratio runs or ratio figures it produced — those remain and can still be viewed through the fund ratios index.
 
 **The run type shows "cross-fund" but I expected "cross-portfolio". Why?**
 The run type is inferred: unless at least one portfolio company filter (explicit IDs, tags, or sectors) is set, the template is treated as cross-fund. Add a portfolio company tag or sector filter to switch it to cross-portfolio.

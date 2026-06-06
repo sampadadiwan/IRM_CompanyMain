@@ -1,512 +1,279 @@
-# Carry Computations & Performance Ratios User Guide
+# Carry & Performance Metrics User Guide
 
-This guide explains how CapHive computes fund performance metrics — XIRR (net and gross IRR), DPI, RVPI, TVPI, MOIC, PIC, and Estimated Carry — and how these metrics are used at both the fund level and the individual investor (folio) level.
+This guide explains how the fund's performance is measured — XIRR (gross and net of carry), DPI, RVPI, TVPI, MOIC, PIC, and Gross Portfolio IRR — and, most importantly, how **carried interest (carry)** is factored into those numbers so investors see returns *after* the manager's profit share.
+
+It's written for fund managers and finance teams. The metrics themselves are also covered in the [Fund Ratios User Guide](fund_ratios_user_guide); here the focus is on what feeds them and how carry changes the picture.
 
 ---
 
 ## Table of Contents
 
-1. [Overview](#overview)
-2. [Key Terms](#key-terms)
-3. [Cash Flow Inputs](#cash-flow-inputs)
-4. [Performance Metrics](#performance-metrics)
-   - [DPI — Distributions to Paid-In](#dpi--distributions-to-paid-in)
-   - [RVPI — Residual Value to Paid-In](#rvpi--residual-value-to-paid-in)
-   - [TVPI — Total Value to Paid-In](#tvpi--total-value-to-paid-in)
-   - [XIRR — Net IRR and Gross IRR](#xirr--net-irr-and-gross-irr)
-   - [MOIC — Multiple on Invested Capital](#moic--multiple-on-invested-capital)
-   - [PIC — Paid-In to Committed Capital](#pic--paid-in-to-committed-capital)
-   - [Gross Portfolio IRR](#gross-portfolio-irr)
-5. [Carry in FundUnitSettings](#carry-in-fundunitsettings)
-6. [Estimated Carry Account Entry](#estimated-carry-account-entry)
-7. [Net IRR vs Gross IRR](#net-irr-vs-gross-irr)
-8. [Ratio Formulas — Customising Metrics](#ratio-formulas--customising-metrics)
-9. [Tracking Currency Support](#tracking-currency-support)
-10. [Computation Levels: Fund vs Folio](#computation-levels-fund-vs-folio)
-11. [Key Computations Reference](#key-computations-reference)
-12. [Frequently Asked Questions](#frequently-asked-questions)
+1. [The Big Picture](#the-big-picture)
+2. [Key Terms in Plain English](#key-terms-in-plain-english)
+3. [What Feeds the Metrics](#what-feeds-the-metrics)
+4. [The Performance Metrics](#the-performance-metrics)
+5. [Carry, Step by Step](#carry-step-by-step)
+6. [Net IRR vs Gross IRR](#net-irr-vs-gross-irr)
+7. [A Worked Carry Example](#a-worked-carry-example)
+8. [Where Carry % Is Configured](#where-carry--is-configured)
+9. [The Estimated Carry Line Item](#the-estimated-carry-line-item)
+10. [Fund-Level vs Investor-Level Metrics](#fund-level-vs-investor-level-metrics)
+11. [Reporting in a Tracking Currency](#reporting-in-a-tracking-currency)
+12. [Customising Metrics](#customising-metrics)
+13. [Metric Reference Card](#metric-reference-card)
+14. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
-## Overview
+## The Big Picture
 
-CapHive computes performance metrics using actual cash flow data stored in the system:
-- **Capital calls** (money in from investors)
-- **Capital distributions** (money back to investors)
-- **Portfolio FMV** (current value of unrealised investments)
-- **Cash in hand and net current assets** (liquid fund balances)
-- **Estimated carry** (the GP's expected profit share from future exits)
+Performance is calculated from the real activity already recorded in the fund:
 
-Metrics can be computed at two levels:
-- **Fund level** — aggregate across all investors
-- **Folio level** — per individual investor commitment
+```mermaid
+flowchart LR
+    A[Capital calls<br/>money in] --> M[Performance metrics]
+    B[Distributions<br/>money back] --> M
+    C[Portfolio FMV<br/>value still held] --> M
+    D[Cash & net current assets] --> M
+    E[Estimated carry<br/>manager's future share] --> M
+    M --> F[DPI, RVPI, TVPI]
+    M --> G[Gross IRR & Net IRR]
+    M --> H[MOIC, PIC, Gross Portfolio IRR]
+```
+
+Metrics can be produced at two levels: the **fund** as a whole, or each **investor** (folio) individually.
 
 ---
 
-## Key Terms
+## Key Terms in Plain English
 
-| Term | Meaning |
-|------|---------|
-| **Paid-In Capital** | The total amount investors have actually transferred to the fund (sum of verified capital remittance collected amounts) |
-| **Distributions** | The total net payable actually sent back to investors (sum of completed distribution payments) |
-| **FMV** | Fair Market Value of the fund's unrealised portfolio holdings (from "Portfolio FMV" account entry) |
-| **Cash In Hand** | Liquid cash held by the fund (from "Cash In Hand" account entry) |
-| **Net Current Assets** | Fund's net current assets balance (from "Net Current Assets" account entry) |
-| **Estimated Carry** | The GP's estimated profit share (from "Estimated Carry" account entry). Used only when computing Net IRR. |
-| **Carry %** | The percentage of profits the GP earns per unit class, configured in Fund Unit Settings |
-| **End Date** | The date as of which metrics are calculated. All account entries and transactions up to and including this date are included. |
-
----
-
-## Cash Flow Inputs
-
-### For Net IRR / XIRR Calculations
-
-| Cash Flow | Sign | Source |
-|-----------|------|--------|
-| Capital remittance payments | **Negative** (money out from investor) | `capital_remittance_payments.amount_cents` on `payment_date` |
-| Distribution payments — gross payable | **Positive** (money back to investor) | `capital_distribution_payments.gross_payable_cents` on `payment_date` |
-| Distribution payments — reinvestment | **Negative** (re-invested, not received) | `capital_distribution_payments.reinvestment_with_fees_cents` on `payment_date` |
-| Portfolio FMV (terminal value) | **Positive** | "Portfolio FMV" account entry, as of end date |
-| Cash In Hand | **Positive** | "Cash In Hand" account entry, as of end date |
-| Net Current Assets | **Positive** | "Net Current Assets" account entry, as of end date |
-| Estimated Carry | **Negative** (GP's share, reduces investor return) | "Estimated Carry" account entry — **only** when computing Net IRR |
-| Custom ratio formula adjustments | **Positive or Negative** | Account entries specified via Ratio Formulas |
-
-> **Reinvestment is treated as a cost** in XIRR because it represents money the investor is effectively putting back in (even though it came from a distribution), not money they have received.
-
-### For DPI / RVPI / TVPI Calculations
-
-| Component | Source |
-|-----------|--------|
-| **Paid-In (denominator)** | Sum of `collected_amount_cents` on **verified** capital remittances up to end date |
-| **Distributions (DPI numerator)** | Sum of `net_payable_cents` on **completed** distribution payments up to end date |
-| **Residual Value (RVPI numerator)** | `Portfolio FMV + Cash In Hand + Net Current Assets` |
+| Term | What it means |
+|------|---------------|
+| **Paid-In Capital** | What investors have actually transferred to the fund (confirmed call payments). |
+| **Distributions** | What has actually been returned to investors (completed distribution payments). |
+| **FMV** | Fair market value — the current worth of investments not yet sold. |
+| **Cash in Hand / Net Current Assets** | Liquid balances the fund still holds. |
+| **Carried Interest (Carry)** | The manager's (GP's) share of profits — typically 20%. |
+| **Estimated Carry** | The manager's expected share of the value not yet realised. Used to turn gross returns into net returns. |
+| **Carry %** | The carry rate for a unit class, recorded in the fund's unit settings. |
+| **End Date** | The "as of" date for the calculation — everything up to and including this date is counted. |
 
 ---
 
-## Performance Metrics
+## What Feeds the Metrics
 
-### DPI — Distributions to Paid-In
+### Cash flows for IRR
 
-**What it measures:** How much cash has been returned to investors relative to how much they put in.
+For rate-of-return measures, each event is a dated cash flow with a direction:
 
-```
-DPI = Total Distributions / Total Paid-In Capital
+| Event | Counts as | Why |
+|-------|-----------|-----|
+| Capital call payments | **Money out** (−) | Investor put it in. |
+| Distributions received | **Money in** (+) | Investor got it back. |
+| Reinvested portion of a distribution | **Money out** (−) | Effectively put back in, not received. |
+| Portfolio FMV at the end date | **Money in** (+) | Value still held. |
+| Cash in hand / net current assets | **Money in** (+) | Liquid value still held. |
+| **Estimated carry** at the end date | **Money out** (−) | The manager's share — *only* for Net IRR. |
 
-where:
-  Total Distributions  = sum of net_payable_cents of COMPLETED distribution payments
-                         (up to end date)
-  Total Paid-In Capital = sum of collected_amount_cents of VERIFIED capital remittances
-                          (up to end date)
+> Reinvestment counts as money *out* because, although it came from a distribution, the investor didn't pocket it — it went back to work in the fund.
 
-DPI = 0  if Paid-In Capital is zero
-```
+### Inputs for the multiples
 
-- A DPI of 1.0x means investors have received back exactly what they put in.
-- A DPI above 1.0x means the fund has returned more than was called.
-- DPI only counts **completed** distributions and **verified** remittances, so unrecorded receipts or pending distributions do not appear here.
-
-**Fund level:** Uses all fund remittances and distribution payments.
-**Folio level:** Uses only the specific commitment's remittances and distribution payments.
+- **Paid-in** (the denominator for DPI, RVPI, TVPI) = confirmed call payments up to the end date.
+- **Distributions** (DPI's value side) = completed distribution payments up to the end date.
+- **Residual value** (RVPI's value side) = FMV + cash in hand + net current assets.
 
 ---
 
-### RVPI — Residual Value to Paid-In
+## The Performance Metrics
 
-**What it measures:** The current estimated value of unrealised investments relative to paid-in capital.
+| Metric | Plain meaning | Formula |
+|--------|---------------|---------|
+| **DPI** | Cash returned per dollar paid in. | Distributions ÷ Paid-in |
+| **RVPI** | Value still held per dollar paid in. | Residual value ÷ Paid-in |
+| **TVPI** | Total value per dollar paid in. | DPI + RVPI |
+| **Gross IRR** | Annualised fund return, before carry. | IRR of all cash flows |
+| **Net IRR** | Annualised return after the manager's carry. | IRR with estimated carry deducted |
+| **MOIC** | Value created on money invested in companies. | (Sale proceeds + FMV) ÷ Amount invested |
+| **PIC** | Share of commitments drawn down. | Paid-in ÷ Committed |
+| **Gross Portfolio IRR** | Return on the investments themselves, before fund fees and carry. | IRR of company buys, sells, income, and FMV |
 
-```
-RVPI = (Portfolio FMV + Cash In Hand + Net Current Assets) / Total Paid-In Capital
-
-RVPI = 0  if Paid-In Capital is zero
-```
-
-- A high RVPI indicates significant unrealised value still in the portfolio.
-- FMV, Cash In Hand, and Net Current Assets are read from their most recent account entries on or before the end date.
-
-**Fund level:** Uses fund-level account entries (not tied to any commitment).
-**Folio level:** Uses the commitment's own account entries (e.g. investor's share of FMV).
-
----
-
-### TVPI — Total Value to Paid-In
-
-**What it measures:** The combined return — both what has been distributed and what remains in the portfolio.
-
-```
-TVPI = (Total Distributions + Residual Value) / Total Paid-In Capital
-
-     = DPI + RVPI
-```
-
-- TVPI is the most commonly quoted performance multiple.
-- A TVPI of 2.0x means investors have (or expect) to receive twice what they put in.
+DPI, RVPI, TVPI, and IRR are produced at both fund and investor level. MOIC and Gross Portfolio IRR are fund-level only. (For the full definitions and worked numbers, see the [Fund Ratios User Guide](fund_ratios_user_guide).)
 
 ---
 
-### XIRR — Net IRR and Gross IRR
+## Carry, Step by Step
 
-**What it measures:** The internal rate of return of all cash flows, accounting for the timing of each payment.
+Carry is the manager's reward for generating profit — usually a percentage (often 20%) of the gains above the investors' original capital, sometimes subject to a hurdle rate.
 
-#### Net IRR (Investor's perspective)
-
-Net IRR uses the investor's actual cash flows:
-
-```
-Cash Flows In:   Capital remittance payments (negative)
-                 Reinvestment portions of distributions (negative)
-                 [Custom outflow formula entries]
-
-Cash Flows Out:  Gross distribution payments (positive)
-                 Portfolio FMV (positive, on end date)
-                 Cash In Hand (positive, on end date)
-                 Net Current Assets (positive, on end date)
-                 [Custom inflow formula entries]
-
-Adjustment:      Estimated Carry (negative, on end date) ← only when net_irr=true
+```mermaid
+flowchart TD
+    A[Fund grows in value] --> B[Profit above paid-in capital]
+    B --> C{Carry rate applied}
+    C --> D[Manager's share<br/>e.g. 20% of profit]
+    C --> E[Investors' share<br/>the remaining 80%]
+    D --> F[Estimated carry line item]
+    F --> G[Subtracted in Net IRR]
 ```
 
-When `net_irr = true`, the **Estimated Carry** account entry is subtracted from the terminal value. This reduces the investor's apparent return to reflect that the GP will take a share of future profits — giving a more conservative, LP-perspective return figure.
-
-#### Gross IRR (Fund's perspective)
-
-Gross IRR is calculated without the Estimated Carry deduction (i.e., `net_irr = false`). It represents the overall fund return before the GP's carry is taken.
-
-```
-Gross IRR = same as Net IRR, but Estimated Carry is NOT subtracted
-```
-
-The result is expressed as a **percentage, rounded to 2 decimal places** (e.g. 18.45%).
-
----
-
-### MOIC — Multiple on Invested Capital
-
-**What it measures:** The ratio of total realised and unrealised value from portfolio investments to the total invested capital. MOIC is computed from **portfolio investment transactions** (buys and sells), not from capital calls and distributions.
-
-```
-MOIC = (Total Sold Amount + Current FMV) / Total Bought Amount
-
-where:
-  Total Bought Amount = sum of portfolio investment buy amounts
-  Total Sold Amount   = sum of portfolio investment sell amounts
-  Current FMV         = sum of current FMV of remaining portfolio investments
-```
-
-- A MOIC of 2.0x means every rupee/dollar invested in portfolio companies has generated 2x in return.
-- Stock conversions are removed from the numerator/denominator to avoid double-counting when a position has been converted.
-
----
-
-### PIC — Paid-In to Committed Capital
-
-**What it measures:** The proportion of total investor commitments that has actually been called.
-
-```
-PIC = Total Paid-In Capital / Total Committed Capital
-
-where:
-  Total Paid-In Capital  = sum of collected_amount_cents of VERIFIED remittances
-  Total Committed Capital = sum of committed_amount_cents of all capital commitments
-```
-
-- A PIC of 0.60 means 60% of the committed capital has been drawn down.
-
----
-
-### Gross Portfolio IRR
-
-**What it measures:** The IRR of the portfolio company investments themselves — how well the fund has performed on its direct investments, independent of the fund's fee and carry structure.
-
-```
-Cash Flows:
-  Portfolio investment buys  → Negative (money deployed)
-  Portfolio investment sells → Positive (proceeds received)
-  Portfolio income cashflows → Positive (dividends/distributions from portfolio companies)
-  Current FMV               → Positive (terminal value, on end date)
-  [Stock conversions adjusted out]
-```
-
-This is a fund-level metric only (not computed per folio).
-
----
-
-## Carry in FundUnitSettings
-
-Each unit class or series in a fund can have a **Carry %** configured in the **Fund Unit Settings**.
-
-| Field | Description |
-|-------|-------------|
-| **Carry %** | The percentage of profits the GP earns on distributions from this unit class. E.g. 20% means the GP takes 20 cents for every 1 rupee/dollar of profit. |
-| **Management Fee %** | Annual management fee percentage for this unit class. |
-| **Setup Fee %** | One-time setup/placement fee percentage. |
-
-The Carry % stored in FundUnitSetting is a **reference/informational field** used in distribution notices and reports. It is not automatically applied to calculated carry in XIRR/DPI computations — those use the "Estimated Carry" account entry instead.
-
-### Setting Carry %
-
-1. Navigate to the Fund.
-2. Go to **Fund Unit Settings** (via the Actions menu).
-3. Create or edit a unit class.
-4. Enter the **Carry %** (e.g. 20 for 20%).
-
-### Importing Fund Unit Settings
-
-Fund unit settings (including carry %) can be imported via spreadsheet:
-
-| Column | Description |
-|--------|-------------|
-| Fund | Fund name |
-| Class/Series | Unit class name (must match a unit type already defined in the fund) |
-| Management Fee % | Annual management fee |
-| Setup Fee % | One-time setup fee |
-| Carry % | Carry percentage for this class |
-| Gp Units | Yes/No — whether these are GP units |
-| ISIN | Securities identifier |
-| Update Only | Yes/No — update existing only |
-
----
-
-## Estimated Carry Account Entry
-
-The **"Estimated Carry"** account entry is the mechanism through which carry is factored into XIRR calculations.
-
-### What It Is
-
-- A non-cumulative account entry with name = **"Estimated Carry"** recorded against a fund or commitment.
-- It represents the GP's estimated share of future profits that will be paid out of the portfolio's unrealised value.
-- It is used **only** in Net IRR calculations, where it is subtracted from the terminal value to show investors their expected return net of carry.
-
-### How to Record It
-
-The "Estimated Carry" account entry is typically generated by a **fund formula** in CapHive rather than entered manually. The formula computes the estimated carry based on:
-- Current FMV
-- Total distributions to date
-- Hurdle rate (if applicable)
-- Carry percentage from Fund Unit Settings
-
-### Effect on Net IRR
-
-```
-Without Estimated Carry:  Gross IRR — returns the fund's full return
-With Estimated Carry:     Net IRR  — subtracts GP's share from terminal value
-                                     giving LP's actual expected return
-```
-
-Example:
-- Current FMV = 500
-- Estimated Carry = 80 (GP's expected 20% of unrealised profit)
-- Net IRR terminal value = 500 − 80 = **420** (LP's share)
-- Gross IRR terminal value = 500
+In the system, carry affects performance through one mechanism: the **Estimated Carry** line item, which is subtracted from the value still held when computing **Net IRR**. The **Carry %** on a unit class is reference information for reports — it does not, by itself, deduct carry from any calculation.
 
 ---
 
 ## Net IRR vs Gross IRR
 
+Both are the same calculation, with one difference: Net IRR removes the manager's estimated share from the value still held.
+
+```mermaid
+flowchart LR
+    subgraph Gross IRR
+    G1[Calls −] --> GR[Return]
+    G2[Distributions +] --> GR
+    G3[FMV + cash +] --> GR
+    end
+    subgraph Net IRR
+    N1[Calls −] --> NR[Return]
+    N2[Distributions +] --> NR
+    N3[FMV + cash +] --> NR
+    N4[− Estimated carry] --> NR
+    end
 ```
-              GROSS IRR                     NET IRR (LP Perspective)
-              ─────────                     ────────────────────────
-Cash In:      Capital calls (negative)      Capital calls (negative)
-              Reinvestment (negative)        Reinvestment (negative)
 
-Cash Out:     Distributions (positive)      Distributions (positive)
-              FMV (positive)                FMV (positive)
-              Cash In Hand (positive)        Cash In Hand (positive)
-              Net Current Assets (positive)  Net Current Assets (positive)
-                                             Estimated Carry (NEGATIVE ← subtracted)
-
-Result:       Full fund return              Investor's return after GP carry
-```
-
-Both are expressed as an annualised percentage return.
+| | Gross IRR | Net IRR (investor's view) |
+|--|-----------|----------------------------|
+| Capital calls | Money out | Money out |
+| Reinvestment | Money out | Money out |
+| Distributions | Money in | Money in |
+| FMV, cash, net current assets | Money in | Money in |
+| Estimated carry | — | **Subtracted** |
+| Shows | The fund's full return | The return investors keep after carry |
 
 ---
 
-## Ratio Formulas — Customising Metrics
+## A Worked Carry Example
 
-CapHive allows funds to customise how performance ratios are computed by adding **Ratio Formulas**. These define account entries that should modify the standard computation.
+*Acme Growth Fund I* as of the reporting date:
 
-For full documentation, see the [Ratio Formulas User Guide](ratio_formulas_user_guide.md).
+| Input | Amount |
+|-------|--------|
+| Paid-in capital | $40,000,000 |
+| Distributions to date | $10,000,000 |
+| Portfolio FMV | $60,000,000 |
+| Cash in hand | $2,000,000 |
+| Carry rate | 20% |
 
-### Summary of Actions
+**Estimate the carry.** Total value = distributions + FMV + cash = $72,000,000. Profit above paid-in = $72M − $40M = **$32,000,000**. Estimated carry = 20% × $32M = **$6,400,000**.
 
-| Action | Effect |
-|--------|--------|
-| `add_cashflow` | Adds the account entry as a positive cash flow in XIRR |
-| `reduce_cashflow` | Adds the account entry as a negative cash flow in XIRR |
-| `add_numerator` | Adds to the top of DPI / RVPI / TVPI / MOIC / PIC |
-| `reduce_numerator` | Subtracts from the top |
-| `add_denominator` | Adds to the bottom |
-| `reduce_denominator` | Subtracts from the bottom |
+**Value still held, the two ways:**
 
-### Formula Levels
+| | Value still held |
+|--|------------------|
+| Gross IRR | FMV $60M + cash $2M = **$62,000,000** |
+| Net IRR | $62M − $6.4M carry = **$55,600,000** |
 
-| Level | Scope |
-|-------|-------|
-| **Fund** | Only applies to fund-level account entries (not tied to any commitment) |
-| **Folio** | Only applies to entries tied to a specific investor commitment |
-| **PortfolioCompany** | Only applies to entries tied to a portfolio company context |
+Both IRRs then annualise the same dated cash flows, but Net IRR uses the lower ending value — so it always comes out below Gross IRR. The gap is the manager's expected share of the upside.
 
-### Period Options
-
-| Period | Behaviour |
-|--------|-----------|
-| **As-on** | Takes only the single most recent non-cumulative entry on or before the end date |
-| **All** | Sums all non-cumulative entries from the beginning up to the end date |
+(TVPI here, for reference: ($10M + $62M) ÷ $40M = **1.80×** gross of carry.)
 
 ---
 
-## Tracking Currency Support
+## Where Carry % Is Configured
 
-All metrics can optionally be computed in the fund's **tracking currency** rather than its base currency.
+Each unit class can record a **Carry %** in **Fund → Fund Unit Settings**, alongside its management fee and setup fee.
 
-When `use_tracking_currency = true`:
-- Each capital remittance payment's `tracking_amount_cents` is used instead of `amount_cents`.
-- Each distribution payment's `tracking_gross_payable_cents` / `tracking_net_payable_cents` are used.
-- Account entry values (FMV, Cash In Hand, etc.) are converted to the tracking currency using the exchange rate on the end date.
-- An exchange rate for the fund's base currency → tracking currency on the end date **must exist** in the system; otherwise the computation raises an error.
+| Field | Meaning |
+|-------|---------|
+| **Carry %** | The manager's profit share for this class (e.g. 20). |
+| **Management Fee %** | The annual management fee. |
+| **Setup Fee %** | A one-time setup/placement fee. |
 
----
-
-## Computation Levels: Fund vs Folio
-
-```
-  FUND LEVEL                          FOLIO LEVEL
-  ──────────                          ───────────
-  Uses all fund remittances           Uses only this commitment's remittances
-  Uses all fund distribution payments Uses only this commitment's distribution payments
-  FMV from fund-level AEs             FMV from commitment-level AEs
-  Cash In Hand from fund-level AEs    Cash In Hand from commitment-level AEs
-  Net Current Assets from fund AEs    Net Current Assets from commitment AEs
-  Estimated Carry from fund AEs       Estimated Carry from commitment AEs
-  All ratio formulas at Fund level    Ratio formulas at Folio level
-
-  Class: FundPortfolioCalcs           Class: CapitalCommitmentCalcs
-```
-
-Both levels compute DPI, RVPI, TVPI, XIRR (gross and net). MOIC and Gross Portfolio IRR are fund-level only.
+These percentages are **reference figures** used in distribution notices and reports. They are not automatically deducted from distributions or baked into IRR — the **Estimated Carry** line item is what actually moves Net IRR. You can also bulk-load unit settings (including Carry %) by spreadsheet; see the [Fund Units User Guide](fund_units_user_guide).
 
 ---
 
-## Key Computations Reference
+## The Estimated Carry Line Item
 
-### DPI (Fund and Folio)
+The **Estimated Carry** line item is how carry enters the Net IRR calculation.
 
-```
-Paid-In = sum of collected_amount_cents WHERE verified=true AND payment_date ≤ end_date
+- It's an amount recorded against the fund (for fund-level Net IRR) or an investor folio (for that investor's Net IRR), representing the manager's expected share of value not yet realised.
+- It's normally produced by a **fund formula** rather than typed in by hand — the formula derives it from current FMV, distributions to date, any hurdle rate, and the carry rate from unit settings.
+- It is used **only** in Net IRR, where it's subtracted from the ending value.
 
-Fund:    Distributions = sum of net_payable_cents WHERE completed=true AND payment_date ≤ end_date
-                         (fund-level capital_distribution_payments)
-Folio:   Distributions = sum of net_payable_cents WHERE completed=true AND payment_date ≤ end_date
-                         (commitment's capital_distribution_payments)
+> **In short:** Gross IRR ignores it; Net IRR subtracts it. Keep it refreshed (re-run the fund formula periodically) so Net IRR stays accurate as valuations change.
 
-DPI = Distributions / Paid-In
-      [± ratio formula adjustments to numerator/denominator]
-```
+---
 
-### RVPI (Fund and Folio)
+## Fund-Level vs Investor-Level Metrics
 
-```
-Residual Value = FMV + Cash In Hand + Net Current Assets
-                 (from account entries as of end_date)
+The same metrics are calculated at two scopes:
 
-RVPI = Residual Value / Paid-In
-       [± ratio formula adjustments]
-```
+| | Fund level | Investor (folio) level |
+|--|-----------|------------------------|
+| Cash flows | All investors' calls and distributions | Only this investor's |
+| FMV, cash, net current assets | The fund's totals | This investor's share |
+| Estimated carry | The fund's | This investor's |
+| Ratio formulas | Fund-level rules | Folio-level rules |
 
-### TVPI (Fund and Folio)
+This is why an investor's DPI or XIRR can differ from the fund's — each investor joined at a different time and was called and distributed on a different schedule. MOIC and Gross Portfolio IRR are computed only at the fund level.
 
-```
-TVPI = (Distributions + Residual Value) / Paid-In
-       [± ratio formula adjustments]
-     = DPI + RVPI  (approximately, before formula adjustments)
-```
+---
 
-### XIRR
+## Reporting in a Tracking Currency
 
-```
-Cash flows:
-  Each capital remittance payment:     (−amount) on payment_date
-  Each distribution payment:           (+gross_payable) on payment_date
-  Each reinvestment:                   (−reinvestment_with_fees) on payment_date
-  Terminal: FMV                        (+) on end_date
-  Terminal: Cash In Hand               (+) on end_date
-  Terminal: Net Current Assets         (+) on end_date
-  Terminal: Estimated Carry (net IRR)  (−) on end_date
-  ± ratio formula cashflow entries
+Every metric can also be produced in the fund's **tracking (reporting) currency** instead of its base currency. When you do this, each call payment and distribution is taken at its tracking-currency value, and FMV, cash, and other balances are converted at the rate on the end date. An exchange rate from the fund's base currency to the tracking currency on the end date must exist, or the calculation can't run.
 
-Result: annualised IRR as a percentage, rounded to 2 decimal places
-```
+---
 
-### MOIC (Fund level)
+## Customising Metrics
 
-```
-For each portfolio investment buy (quantity > 0):
-  total_bought += amount_cents
+If a metric needs to account for something the standard calculation doesn't — a fee rebate, a sidecar investment, an expense that should reduce the return — use **ratio formulas**. They fold specific recorded amounts into a ratio's value side or capital side, on top of the standard components (they add to, never replace, the defaults).
 
-For each portfolio investment sell (quantity < 0):
-  total_sold += |amount_cents|
+> Full details, including every action and a decision guide, are in the **[Ratio Formulas User Guide](ratio_formulas_user_guide)**.
 
-Current FMV = sum of FMV of remaining positions
+---
 
-MOIC = (total_sold + Current FMV) / total_bought
-       [± ratio formula adjustments]
-```
+## Metric Reference Card
 
-### PIC
+| Metric | What goes in |
+|--------|--------------|
+| **DPI** | Completed distributions ÷ confirmed paid-in capital. |
+| **RVPI** | (FMV + cash in hand + net current assets) ÷ paid-in capital. |
+| **TVPI** | (Distributions + residual value) ÷ paid-in capital, i.e. DPI + RVPI. |
+| **Gross IRR** | Dated cash flows: calls (−), reinvestment (−), distributions (+), and ending FMV/cash/net current assets (+). |
+| **Net IRR** | The same, with estimated carry subtracted from the ending value. |
+| **MOIC** | (Company sale proceeds + remaining FMV) ÷ amount invested in companies; stock conversions netted out. |
+| **PIC** | Confirmed paid-in capital ÷ total committed capital. |
+| **Gross Portfolio IRR** | Company buys (−), sells (+), portfolio income (+), and ending FMV (+); fund-level only. |
 
-```
-PIC = Total Paid-In Capital / Total Committed Capital
-
-where:
-  Total Committed Capital = sum of committed_amount_cents of all capital commitments
-  Total Paid-In Capital   = sum of verified remittance collected amounts
-```
-
-### Gross Portfolio IRR
-
-```
-Cash flows:
-  Buy portfolio investments  → (−amount_cents) on investment_date
-  Sell portfolio investments → (+amount_cents) on investment_date
-  Portfolio income cashflows → (+amount_cents) on payment_date
-  Current FMV               → (+) on end_date
-
-  [Stock conversion adjustments to remove double-counting]
-  [Ratio formula cashflow entries for "Gross Portfolio IRR"]
-```
+All IRRs are reported as an annualised percentage; the rest as a multiple.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: What's the difference between DPI and TVPI?**
-DPI only counts what has actually been distributed (paid out in cash). TVPI includes both distributions and the estimated remaining value (FMV + cash). TVPI = DPI + RVPI.
+**What's the difference between DPI and TVPI?**
+DPI counts only cash actually distributed. TVPI adds the remaining value (FMV + cash), so TVPI = DPI + RVPI.
 
-**Q: Why does Net IRR differ from Gross IRR?**
-Net IRR subtracts the "Estimated Carry" account entry from the terminal FMV before computing the IRR. This reflects the GP's expected profit share, giving investors a more accurate picture of their own expected return after carry.
+**Why does Net IRR differ from Gross IRR?**
+Net IRR subtracts the Estimated Carry from the ending value before computing the return, reflecting the manager's expected profit share. It's the figure investors care about most.
 
-**Q: Where does the Estimated Carry figure come from?**
-It comes from an account entry named exactly "Estimated Carry" recorded against the fund (for fund-level XIRR) or against the investor commitment (for folio-level XIRR). This entry is typically generated by a fund formula and updated periodically.
+**Where does the Estimated Carry figure come from?**
+From an "Estimated Carry" line item on the fund (for fund-level Net IRR) or the investor folio (for folio-level), usually generated by a fund formula and refreshed periodically.
 
-**Q: Is carry automatically deducted from distributions?**
-No. The Carry % on Fund Unit Settings is informational and used in reports and notices. It is not automatically subtracted from distribution payments. Actual carry paid to the GP is recorded as a separate portfolio transaction or distribution. The "Estimated Carry" account entry is the only mechanism that affects computed metrics.
+**Is carry automatically deducted from distributions?**
+No. The Carry % on unit settings is informational. Actual carry paid to the manager is recorded as its own transaction; the Estimated Carry line item is the only thing that changes computed Net IRR.
 
-**Q: Why would DPI be negative?**
-This would indicate that distributions have been recorded as negative amounts, or that paid-in capital is negative (rare). Check for any negative remittance payments or distribution payments.
+**Why might DPI be negative?**
+Almost always a data issue — a distribution or call payment recorded as a negative amount. Check the underlying figures.
 
-**Q: Can RVPI be computed without FMV data?**
-Yes — if no "Portfolio FMV" account entry exists, FMV defaults to zero. RVPI will then only reflect Cash In Hand and Net Current Assets. The result will typically be lower than the fund's true residual value.
+**Can RVPI be computed without FMV?**
+Yes — FMV defaults to zero if there's no valuation, so RVPI would reflect only cash and net current assets and understate true residual value. Record a valuation to fix it.
 
-**Q: What does the Carry % in Fund Unit Settings actually do?**
-It is a reference number stored per unit class and displayed in reports and distribution notices. It does not automatically compute or deduct carry from XIRR or distribution calculations. To reflect carry in Net IRR, record an "Estimated Carry" account entry.
+**Why do fund-level and investor-level metrics differ?**
+Because each investor was called and distributed on their own schedule, and holds their own share of value. Fund metrics aggregate everyone; folio metrics isolate one investor.
 
-**Q: How is a fund's total paid-in capital different from a commitment's paid-in capital?**
-At the fund level, paid-in = sum across ALL investor commitments' collected amounts (verified remittances). At the folio level, paid-in = only the specific commitment's collected amounts. This is why DPI and XIRR differ between fund-level and folio-level views for the same fund.
+**What happens to IRR with no ending value (FMV)?**
+It still computes, using only realised cash flows. For a fund with no exits and no valuation yet, that usually shows a negative IRR until value is recorded.
 
-**Q: What happens to XIRR if no terminal value (FMV) is available?**
-XIRR is still computed but the terminal value cash flows are zero. The result reflects only realised cash flows (distributions against capital calls). For a fund with no exits, this typically produces a negative XIRR.
-
-**Q: Can Ratio Formulas override the standard account entries like Cash In Hand?**
-No — Ratio Formulas are **additive** on top of the standard components. They cannot remove or replace the standard cash flows. If you need to exclude the default Cash In Hand, contact your system administrator.
+**Can ratio formulas remove a standard component like Cash in Hand?**
+No — formulas are additive on top of the standard components. To exclude a default, contact your administrator.

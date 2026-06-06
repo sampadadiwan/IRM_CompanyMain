@@ -1,351 +1,321 @@
 # Capital Commitments User Guide
 
-A capital commitment records an investor's legal obligation to contribute a specified amount of capital to a fund over time. This guide explains how to create and manage commitments, how multi-currency folios work, the four types of commitment adjustments, how performance metrics (TVPI, DPI, RVPI, XIRR) are computed, and how commitments link to capital calls, distributions, fund units, and account entries.
+A **capital commitment** is an investor's legal promise to contribute up to a set amount of capital to a fund over its life. It is the foundation record for everything that follows — capital calls, distributions, fund units, fees, and performance metrics all hang off the commitment.
+
+This guide explains how to set up and manage commitments: how an investor's account (folio) works, how to handle investors who commit in a foreign currency, the four ways a commitment can be adjusted, how returns (TVPI, DPI, RVPI, XIRR) are measured, and how commitments connect to the rest of the fund.
 
 ---
 
 ## Table of Contents
 
-1. [Key Concepts](#key-concepts)
-2. [Commitment Lifecycle](#commitment-lifecycle)
-3. [Creating a Commitment](#creating-a-commitment)
-4. [Folio ID and Unit Type](#folio-id-and-unit-type)
-5. [Fund Close](#fund-close)
-6. [Multi-Currency Commitments (Folio Currency)](#multi-currency-commitments-folio-currency)
-7. [Tracking Currency](#tracking-currency)
-8. [Percentage Ownership](#percentage-ownership)
-9. [Commitment Adjustments](#commitment-adjustments)
-10. [Account Entries](#account-entries)
-11. [Performance Metrics: TVPI, DPI, RVPI, XIRR](#performance-metrics-tvpi-dpi-rvpi-xirr)
-12. [Relationships to Other Records](#relationships-to-other-records)
-13. [Onboarding Completed Flag](#onboarding-completed-flag)
-14. [Investor Signatory (E-Sign)](#investor-signatory-e-sign)
-15. [Skipping Call Notices](#skipping-call-notices)
-16. [Importing Commitments](#importing-commitments)
-17. [Key Fields Reference](#key-fields-reference)
-18. [Frequently Asked Questions](#frequently-asked-questions)
+1. [What a Commitment Represents](#what-a-commitment-represents)
+2. [Key Terms in Plain English](#key-terms-in-plain-english)
+3. [The Commitment Lifecycle](#the-commitment-lifecycle)
+4. [Creating a Commitment](#creating-a-commitment)
+5. [Folio ID and Unit Type](#folio-id-and-unit-type)
+6. [Fund Close](#fund-close)
+7. [Investors Who Commit in a Foreign Currency](#investors-who-commit-in-a-foreign-currency)
+8. [Tracking (Reporting) Currency](#tracking-reporting-currency)
+9. [Percentage Ownership](#percentage-ownership)
+10. [Adjusting a Commitment](#adjusting-a-commitment)
+11. [Account Entries (Allocated Line Items)](#account-entries-allocated-line-items)
+12. [Measuring Performance: TVPI, DPI, RVPI, XIRR](#measuring-performance-tvpi-dpi-rvpi-xirr)
+13. [How a Commitment Connects to Everything Else](#how-a-commitment-connects-to-everything-else)
+14. [Onboarding, E-Signing and Skipping Notices](#onboarding-e-signing-and-skipping-notices)
+15. [Importing Commitments](#importing-commitments)
+16. [Worked Example](#worked-example)
+17. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
-## Key Concepts
+## What a Commitment Represents
 
-| Term                    | Meaning                                                                                          |
-| ----------------------- | ------------------------------------------------------------------------------------------------ |
-| **Folio ID**            | Unique alphanumeric identifier for this investor-fund pair (e.g. `INV-001-A`)                    |
-| **Fund Close**          | The tranche or closing round the investor joined (e.g. `First Close`, `Second Close`)            |
-| **Unit Type**           | Class of fund units issued to this investor (e.g. `Class A`, `Class B`)                          |
-| **Folio Currency**      | The currency in which the investor committed and pays (may differ from the fund's base currency) |
-| **Committed Amount**    | The total obligation in the fund's base currency after all adjustments                           |
-| **Called Amount**       | Amount called from the investor via capital calls                                                |
-| **Collected Amount**    | Amount actually received (verified remittances)                                                  |
-| **Distribution Amount** | Amount returned to the investor via distributions                                                |
-| **Tracking Amount**     | Amounts restated in the entity's tracking/reporting currency                                     |
-| **Account Entry**       | A line-item allocation (e.g. Portfolio FMV, Cash In Hand) computed per commitment                |
+When an investor (a Limited Partner, or LP) joins a fund, they sign a subscription agreement promising a certain amount of capital — say $5 million. That promise is the **commitment**. The fund then draws the money down over time through capital calls, deploys it, and eventually returns it through distributions.
+
+A commitment is never "closed" while the fund is alive. It stays active throughout, accumulating called capital, distributions, fees, and performance history.
 
 ---
 
-## Commitment Lifecycle
+## Key Terms in Plain English
+
+| Term | What it means |
+|------|---------------|
+| **Folio** | An investor's individual account within one fund. One investor can hold several folios (e.g. through different entities or closes). |
+| **Folio ID** | The unique reference for that account, e.g. `INV-001-A`. Appears on every notice, statement, and voucher. |
+| **Fund Close** | The closing round the investor joined (First Close, Second Close, and so on). |
+| **Unit Type** | The class of fund units the investor holds (Class A, Class B, etc.). |
+| **Folio Currency** | The currency the investor committed and pays in — which may differ from the fund's own currency. |
+| **Committed Amount** | The total promised, expressed in the fund's currency after any adjustments. |
+| **Called Amount** | How much has been requested from the investor through capital calls. |
+| **Collected Amount** | How much has actually been received and confirmed. |
+| **Distribution Amount** | How much has been returned to the investor. |
+| **Account Entry** | An allocated line item (e.g. the investor's share of portfolio value or cash) calculated for this folio. |
+
+---
+
+## The Commitment Lifecycle
 
 ```mermaid
 flowchart LR
-    A[Commitment Created] --> B[Capital Calls Issued]
-    B --> C[Remittances Collected]
-    C --> D[Fund Units Issued]
-    D --> E[Account Entries Generated]
-    E --> F[Distributions Paid]
-    F --> G[TVPI / XIRR Computed]
-    A --> H[Adjustment Added]
-    H --> A
+    A[Commitment created] --> B[Capital calls issued]
+    B --> C[Money collected]
+    C --> D[Fund units issued]
+    D --> E[Line items allocated]
+    E --> F[Distributions paid]
+    F --> G[Performance measured<br/>TVPI / DPI / XIRR]
+    A -. adjustment anytime .-> A
 ```
 
-At any point after creation, adjustments can modify the committed amount. The commitment is never "closed" — it remains active throughout the fund's life.
+A commitment can be adjusted at any point after it's created — for example when an investor tops up. The commitment itself remains open for the life of the fund.
 
 ---
 
 ## Creating a Commitment
 
-Navigate to **Fund → Capital Commitments → New**.
+Go to **Fund → Capital Commitments → New**.
 
-Required fields:
+| Field | Notes |
+|-------|-------|
+| **Investor** | The LP this commitment belongs to. |
+| **Investor KYC** | The verified entity actually investing. Optional but strongly recommended. |
+| **Folio ID** | Must be unique within the fund. Up to 40 characters. |
+| **Fund Close** | The closing round (free text, e.g. "First Close"). |
+| **Commitment Date** | The date the legal commitment was made. |
+| **Unit Type** | Must be one of the unit classes configured on the fund. |
+| **Folio Committed Amount** | The amount promised, in the folio (investor) currency. |
+| **Folio Currency** | Leave blank to use the fund's own currency. |
 
-| Field                      | Notes                                                              |
-| -------------------------- | ------------------------------------------------------------------ |
-| **Investor**               | The LP whose commitment this is                                    |
-| **Investor KYC**           | KYC record used as the investing entity (optional but recommended) |
-| **Folio ID**               | Must be unique within the fund. Max 40 characters                  |
-| **Fund Close**             | Free text identifying the closing round                            |
-| **Commitment Date**        | Date the legal commitment was made                                 |
-| **Unit Type**              | Must be one of the unit types configured on the fund               |
-| **Folio Committed Amount** | Amount in the folio currency                                       |
-| **Folio Currency**         | Leave blank to use the fund's base currency                        |
+When you save, the system automatically:
 
-On save, the system automatically:
+- Converts the folio amount into the fund's currency using the exchange rate on the commitment date.
+- Locks in the original committed value so it can always be referenced.
+- Recalculates each investor's **percentage ownership** of the fund.
+- Creates a document folder for the commitment.
 
-- Converts the folio amount to the fund's base currency using the exchange rate on the commitment date
-- Sets `orig_committed_amount` (the locked original base-currency value)
-- Computes `percentage` ownership across all commitments in the fund
-- Creates a document folder for the commitment under `/Funds/{fund}/Commitments/{folio_id}/`
-
-> **Important:** Never edit `committed_amount_cents` directly in the database. Always change `folio_committed_amount_cents`; the system derives base-currency amounts automatically.
+> **Important:** to change a committed amount later, always edit the **folio committed amount** or add an adjustment. The fund-currency equivalent is derived for you — don't try to set it directly, or the figures will fall out of step.
 
 ---
 
 ## Folio ID and Unit Type
 
-The **Folio ID** is the investor's unique identifier within the fund. It appears on call notices, remittance requests, statements, and distribution vouchers.
+The **Folio ID** is the investor's unique reference within the fund. It appears on call notices, remittance requests, statements, and distribution vouchers, and it names the document folder for the commitment.
 
-- Must be unique per fund
-- Used as the folder name for all documents related to this commitment
-- Changing it after creation renames all linked folder paths and updates remittances, distributions, and account entries automatically
+- It must be unique within the fund.
+- If you rename it later, all linked documents and records (remittances, distributions, allocated line items) follow the new name automatically.
 
-The **Unit Type** must match one of the comma-separated values in the fund's **Unit Types** field (case-insensitive). Common examples: `Class A`, `Class B`, `Regular`.
+The **Unit Type** must match one of the unit classes set up on the fund (matching is not case-sensitive). Common examples are `Class A`, `Class B`, or `Regular`.
 
 ---
 
 ## Fund Close
 
-The Fund Close field identifies which closing round this investor joined. It is free text (e.g. `First Close`, `Second Close`, `Tranche 1`). It is used:
-
-- In reports and statements
-- When calculating close-specific capital call percentages (see the Capital Calls guide)
+The Fund Close records which closing round the investor joined — for example "First Close", "Second Close", or "Tranche 1". It's free text and is used in reports and statements, and to apply close-specific percentages on capital calls (see the [Capital Calls guide](capital_calls_user_guide)).
 
 ---
 
-## Multi-Currency Commitments (Folio Currency)
+## Investors Who Commit in a Foreign Currency
 
-An investor may commit in a currency different from the fund's base currency (e.g. a USD fund receiving a GBP commitment).
+An investor may commit in a currency different from the fund's — for example a USD fund accepting a GBP commitment.
 
+```mermaid
+flowchart LR
+    A[Folio amount in GBP] -->|rate on commitment date| B[Committed amount in USD]
 ```
-Folio Currency (GBP)  →  fund.currency (USD)
-     via exchange rate on commitment_date
-```
 
-The system stores both:
+The system keeps both:
 
-- `folio_committed_amount` — the original amount in the investor's currency
-- `committed_amount` — the equivalent in the fund's base currency
+- The **folio committed amount** — the original figure in the investor's currency, which never changes on its own.
+- The **committed amount** — the equivalent in the fund's currency.
 
-When exchange rates change, use an **Exchange Rate** commitment adjustment (see below) to restate the base-currency value without changing the folio amount.
-
-A commitment is considered a **foreign currency commitment** when `folio_currency ≠ fund.currency`. The search screen includes a `Foreign Currency Commitment` filter.
+When exchange rates move significantly, use an **Exchange Rate adjustment** (below) to restate the fund-currency value without touching the investor's original figure. The commitment search includes a **Foreign Currency Commitment** filter so you can find these folios quickly.
 
 ---
 
-## Tracking Currency
+## Tracking (Reporting) Currency
 
-If the entity has a **Tracking Currency** configured (e.g. USD for an INR fund), the system also stores `tracking_committed_amount`, `tracking_collected_amount`, and `tracking_distribution_amount` in that currency.
-
-Tracking amounts are computed using the exchange rate on the relevant transaction date. They appear in the additional columns view of the commitment list.
+If your organisation reports in a single currency across funds — say USD for an INR fund — the system also keeps each commitment's committed, collected, and distributed amounts in that **tracking currency**, converted at the rate on each transaction's date. These appear in the additional-columns view of the commitment list and feed cross-fund dashboards.
 
 ---
 
 ## Percentage Ownership
 
-Each commitment holds a `percentage` field — its proportional share of the fund's total committed capital.
+Each commitment carries a **percentage** — its share of the fund's total committed capital.
 
-```
-percentage = (committed_amount / total_committed_amount_in_fund) × 100
-```
+> Percentage = Investor's committed amount ÷ Total committed across the fund × 100
 
-This is **auto-recomputed** every time:
-
-- A commitment is created or destroyed
-- The committed amount changes (via adjustment)
-
-The percentage is used in fund-level allocation runs (e.g. for pro-rata expense allocations).
+This recalculates automatically whenever a commitment is added, removed, or adjusted. It drives fund-level allocations — for example splitting an expense pro-rata across investors.
 
 ---
 
-## Commitment Adjustments
+## Adjusting a Commitment
 
-A commitment adjustment modifies a commitment's financial amounts. There are four types:
+A **commitment adjustment** changes a commitment's financial figures. There are four kinds, and the system always records the before-and-after values so the change is fully auditable.
 
 ```mermaid
 flowchart TD
-    A[Commitment Adjustment] --> B{Adjustment Type}
-    B --> C[Top Up]
-    B --> D[Exchange Rate]
-    B --> E[Transfer]
-    B --> F[Arrear]
-
-    C --> G[Increases committed_amount]
-    D --> H[Restates committed_amount at new FX rate]
-    E --> I[Transfers part of commitment to another folio]
-    F --> J[Records arrear_amount separately\n does not change committed_amount]
+    A[Commitment adjustment] --> B{Type}
+    B --> C[Top Up<br/>investor increases commitment]
+    B --> D[Exchange Rate<br/>restate at a new FX rate]
+    B --> E[Transfer<br/>move part to another folio]
+    B --> F[Arrear<br/>track an amount owed separately]
+    C --> G[Increases committed amount]
+    D --> H[Restates committed amount only]
+    E --> I[Adjusts committed amount across folios]
+    F --> J[Recorded separately, not in committed amount]
 ```
 
 ### Top Up
 
-Use when an investor increases their commitment. Provide:
-
-- **Folio Amount** — the increase in folio currency
-- **As Of** — must be on or after the original commitment date
-- **Reason** — description of why the top-up occurred
-
-The system converts the folio amount to the fund's base currency using the exchange rate on the `as_of` date and adds it to `committed_amount`.
+Used when an investor increases their commitment. Enter the increase (in folio currency), an **As Of** date (on or after the original commitment date), and a reason. The system converts the increase to the fund currency and adds it to the committed amount.
 
 ### Exchange Rate
 
-Use to restate the base-currency committed amount when the exchange rate has moved significantly. The folio amount remains unchanged; only the fund-currency equivalent is updated.
+Used to restate the fund-currency committed amount when rates have moved. The investor's original folio figure stays the same; only the fund-currency equivalent updates.
 
 ### Transfer
 
-Records a transfer of part of a commitment to another folio. Like Top Up, it updates `committed_amount`.
+Records moving part of a commitment to another folio, adjusting the committed amount accordingly.
 
 ### Arrear
 
-Records an amount owed by the investor that is tracked separately from the main commitment. Arrear amounts roll up to `arrear_amount_cents` on the commitment and are not included in `committed_amount`. This is useful for penalty interest or deferred amounts.
-
-**Pre/Post adjustment amounts** are stored automatically so you can see the before and after state.
+Records an amount the investor owes that is tracked **separately** from the main commitment — for example penalty interest or a deferred balance. Arrears roll up into their own total and are deliberately kept out of the committed amount.
 
 ---
 
-## Account Entries
+## Account Entries (Allocated Line Items)
 
-Account entries are financial line items allocated to a commitment, typically generated by a **Fund Formula** run. They represent things like:
+Account entries are financial line items calculated for each commitment — usually produced by a **fund formula run** that takes a fund-level value and allocates it down to individual investors. Typical examples:
 
-| Entry Name           | What it represents                                                |
-| -------------------- | ----------------------------------------------------------------- |
-| `Portfolio FMV`      | Current fair market value of portfolio allocated to this investor |
-| `Cash In Hand`       | Cash held in the fund allocated pro-rata                          |
-| `Net Current Assets` | Other current assets                                              |
-| `Estimated Carry`    | Projected carry charged to this investor                          |
+| Line item | What it represents |
+|-----------|--------------------|
+| **Portfolio FMV** | The investor's share of the current fair market value of the portfolio. |
+| **Cash In Hand** | The investor's pro-rata share of cash held by the fund. |
+| **Net Current Assets** | The investor's share of other current assets. |
+| **Estimated Carry** | The projected carried interest charged to this investor. |
 
-Account entries have:
-
-- **Reporting Date** — the as-of date
-- **Entry Type** — categorisation (e.g. `Income`, `Expense`, `Asset`)
-- **Cumulative** flag — whether the amount is cumulative to date or for the period
-- **Parent** — can link to a PortfolioInvestment, AggregatePortfolioInvestment, another Investor, or another AccountEntry (polymorphic)
-
-Account entries drive the RVPI calculation (see below).
+Each entry has a reporting date, a category (such as income, expense, or asset), and a flag for whether the figure is cumulative or for a single period. Entries can be linked to a portfolio investment, an aggregate position, or another investor. They feed the residual-value side of the performance metrics below.
 
 ---
 
-## Performance Metrics: TVPI, DPI, RVPI, XIRR
+## Measuring Performance: TVPI, DPI, RVPI, XIRR
 
-All metrics are computed as of a given date using the `CapitalCommitmentCalcs` engine.
+The system measures each investor's performance as of any chosen date. These are the standard private-fund return metrics.
 
-### Base Inputs
+### What goes into them
 
-| Input                | Source                                                                    |
-| -------------------- | ------------------------------------------------------------------------- |
-| `collected`          | Sum of verified remittance `collected_amount` on or before the date       |
-| `distribution`       | Sum of completed distribution payment `net_payable` on or before the date |
-| `fmv`                | Latest `Portfolio FMV` account entry on or before the date                |
-| `cash_in_hand`       | Latest `Cash In Hand` account entry                                       |
-| `net_current_assets` | Latest `Net Current Assets` account entry                                 |
+| Input | Where it comes from |
+|-------|---------------------|
+| **Collected** | Confirmed money received from the investor up to the date. |
+| **Distributions** | Completed distribution payments up to the date. |
+| **Portfolio FMV** | The investor's latest share of portfolio value. |
+| **Cash In Hand** | The investor's latest share of fund cash. |
+| **Net Current Assets** | The investor's latest share of other current assets. |
 
-### Formulas
+The **residual value** is FMV + Cash In Hand + Net Current Assets — what the investor's stake is still worth.
 
-```
-DPI  = distribution / collected
-RVPI = (fmv + cash_in_hand + net_current_assets) / collected
-TVPI = (distribution + fmv + cash_in_hand + net_current_assets) / collected
-XIRR = Internal rate of return on collected inflows and distributed outflows
-```
+### The metrics
 
-All four return `0` when `collected = 0`.
+| Metric | Plain meaning | Formula |
+|--------|---------------|---------|
+| **DPI** (Distributions to Paid-In) | Cash already returned per dollar paid in. | Distributions ÷ Collected |
+| **RVPI** (Residual Value to Paid-In) | Value still held per dollar paid in. | Residual value ÷ Collected |
+| **TVPI** (Total Value to Paid-In) | Total value — returned plus remaining — per dollar paid in. | (Distributions + Residual value) ÷ Collected |
+| **XIRR** | The annualised rate of return, accounting for the timing of every cash flow. | Internal rate of return on money in and money out |
 
-Ratio formulas defined on the fund can override or augment these standard calculations via the `apply_static_formulas` method (see the Ratio Formulas guide).
-
-Metrics can optionally be computed in the **tracking currency** (pass `use_tracking_currency: true`) when tracking currency is configured.
+All four read as zero until the investor has paid in capital. Custom **ratio formulas** defined on the fund can extend these standard calculations (see the [Ratio Formulas guide](ratio_formulas_user_guide)). Where a tracking currency is configured, the metrics can also be produced in that currency.
 
 ---
 
-## Relationships to Other Records
+## How a Commitment Connects to Everything Else
+
+A commitment sits at the centre of an investor's activity in the fund:
 
 ```mermaid
-erDiagram
-    Fund ||--o{ CapitalCommitment : "has many"
-    Investor ||--o{ CapitalCommitment : "has many"
-    InvestorKYC ||--o{ CapitalCommitment : "has many (optional)"
-    CapitalCommitment ||--o{ CapitalRemittance : "has many"
-    CapitalCommitment ||--o{ CapitalDistributionPayment : "has many"
-    CapitalCommitment ||--o{ FundUnit : "has many"
-    CapitalCommitment ||--o{ AccountEntry : "has many"
-    CapitalCommitment ||--o{ CommitmentAdjustment : "has many"
-    CapitalCommitment ||--o{ FundRatio : "has many"
+flowchart TD
+    F[Fund] --> CC[Commitment / Folio]
+    I[Investor] --> CC
+    K[Investor KYC] -. optional .-> CC
+    CC --> R[Capital Remittances<br/>increase collected capital]
+    CC --> D[Distribution Payments<br/>increase distributions]
+    CC --> U[Fund Units<br/>issued as money is collected]
+    CC --> E[Account Entries<br/>allocated line items]
+    CC --> A[Adjustments<br/>top-ups, FX, transfers, arrears]
+    CC --> P[Performance Ratios<br/>TVPI / XIRR snapshots]
 ```
 
-- **Capital Remittances** — each capital call generates remittances per commitment; verified remittances increment `collected_amount`
-- **Capital Distribution Payments** — completed payments increment `distribution_amount`
-- **Fund Units** — issued when remittances are verified (if fund unit tracking is enabled)
-- **Fund Ratios** — per-investor ratios (e.g. TVPI snapshots) stored at reporting dates
+- **Capital remittances** — each capital call creates a remittance per commitment; confirmed remittances increase collected capital.
+- **Distribution payments** — completed payments increase distributions returned.
+- **Fund units** — issued as capital is collected, when unit tracking is on.
+- **Performance ratios** — per-investor snapshots stored at reporting dates.
 
 ---
 
-## Onboarding Completed Flag
+## Onboarding, E-Signing and Skipping Notices
 
-The `onboarding_completed` boolean flag can be set to indicate that all required documents, KYC linkage, and account setup steps for this investor are done. It is used in search/filter views to identify incomplete onboardings.
-
----
-
-## Investor Signatory (E-Sign)
-
-The `esign_emails` field stores a comma-separated list of email addresses to use as investor signatories when sending documents (e.g. subscription agreements) for e-signing. These override the default investor access user emails for this commitment.
-
----
-
-## Skipping Call Notices
-
-Setting `json_fields["skip_doc_gen"] = "yes"` on a commitment causes the capital call notice generation job to skip this folio. Useful when a co-investor arrangement requires direct billing outside the system.
+- **Onboarding completed** — a simple Yes/No flag indicating that KYC, documents, and account setup for this investor are all done. Use it to spot folios that still need attention in the search view.
+- **Investor signatory (e-sign)** — you can list the email addresses that should sign documents (such as subscription agreements) for this commitment. These override the investor's default access emails for signing.
+- **Skip call notices** — turn this on to exclude a folio from automatic capital-call notices, which is useful when a co-investor arrangement is billed directly outside the system.
 
 ---
 
 ## Importing Commitments
 
-Commitments can be bulk-imported via an import file. During import, the `imported` flag is set to suppress the normal post-create callbacks (e.g. the InvestorAddedJob). Required import columns match the `STANDARD_COLUMNS` definition.
+Commitments can be bulk-loaded from a spreadsheet during onboarding. Imported commitments skip the usual "new investor" automations so a large load doesn't trigger a flood of notifications. The import file must include the standard set of columns (investor, folio ID, fund close, commitment date, unit type, folio committed amount, and folio currency).
 
 ---
 
-## Key Fields Reference
+## Worked Example
 
-| Field                         | Type    | Description                                              |
-| ----------------------------- | ------- | -------------------------------------------------------- |
-| `folio_id`                    | String  | Unique investor identifier in this fund                  |
-| `fund_close`                  | String  | Closing round name                                       |
-| `unit_type`                   | String  | Class of units issued                                    |
-| `commitment_date`             | Date    | Date of legal commitment                                 |
-| `folio_currency`              | String  | Currency of investor's payment obligation                |
-| `folio_committed_amount`      | Money   | Committed amount in folio currency                       |
-| `orig_folio_committed_amount` | Money   | Folio amount before adjustments                          |
-| `committed_amount`            | Money   | Committed amount in fund currency (after adjustments)    |
-| `orig_committed_amount`       | Money   | Locked base-currency amount at commitment date FX        |
-| `collected_amount`            | Money   | Verified remittances received                            |
-| `call_amount`                 | Money   | Amount called via capital calls                          |
-| `distribution_amount`         | Money   | Distributions paid                                       |
-| `adjustment_amount`           | Money   | Cumulative Top Up / Exchange Rate / Transfer adjustments |
-| `arrear_amount`               | Money   | Cumulative Arrear adjustments                            |
-| `total_units_amount`          | Money   | Total value of issued fund units                         |
-| `percentage`                  | Decimal | % ownership of fund                                      |
-| `onboarding_completed`        | Boolean | All onboarding steps done                                |
-| `esign_emails`                | String  | Comma-separated signatory emails                         |
+**Setup**
+
+- Fund: *Acme Growth Fund I*, currency **USD**.
+- Investor: *Maple Pension*, committed **€4,000,000**, folio currency **EUR**, on a day when €1 = $1.10.
+
+**On creation**
+
+- Folio committed amount: €4,000,000 (locked as the original).
+- Committed amount (fund currency): €4,000,000 × 1.10 = **$4,400,000**.
+- If the fund's total commitments are $44,000,000, Maple's ownership = $4.4M ÷ $44M = **10%**.
+
+**A year later — top-up**
+
+Maple adds €1,000,000 when €1 = $1.15.
+
+- Folio committed amount: now €5,000,000.
+- Top-up in fund currency: €1,000,000 × 1.15 = $1,150,000.
+- Committed amount: $4,400,000 + $1,150,000 = **$5,550,000**. (The original $4.4M tranche keeps its rate; only the new tranche uses the new rate.)
+
+**Performance check (illustrative)**
+
+By the reporting date Maple has paid in $3,000,000, received $900,000 in distributions, and their remaining stake is worth $3,600,000.
+
+- DPI = 900,000 ÷ 3,000,000 = **0.30×**
+- RVPI = 3,600,000 ÷ 3,000,000 = **1.20×**
+- TVPI = (900,000 + 3,600,000) ÷ 3,000,000 = **1.50×**
+
+So for every dollar paid in, $1.50 of total value exists — $0.30 already returned and $1.20 still held.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: Can I change the folio currency after a commitment is created?**
-No. The folio currency is locked once the original amounts are set. If you need to correct it, destroy the commitment and recreate it. Existing remittances and distributions linked to it will also need to be recreated.
+**Can I change the folio currency after creating a commitment?**
+No. The folio currency is locked once the original amounts are set. To correct it, delete the commitment and recreate it — note that linked remittances and distributions will also need recreating.
 
-**Q: The committed amount is wrong. How do I fix it?**
-Add a **Top Up** or **Exchange Rate** commitment adjustment with the delta amount. Directly editing the committed amount cents field is not supported and will cause data inconsistencies.
+**The committed amount is wrong. How do I fix it?**
+Add a **Top Up** or **Exchange Rate** adjustment for the difference. Don't try to overwrite the fund-currency amount directly — that causes inconsistencies.
 
-**Q: Why does the percentage not add up to exactly 100%?**
-Rounding to two decimal places across many commitments can leave a tiny remainder. This is expected and does not affect financial calculations.
+**Why doesn't ownership add up to exactly 100%?**
+Rounding to two decimals across many investors can leave a tiny remainder. It's expected and doesn't affect any calculations.
 
-**Q: What is the difference between `folio_committed_amount` and `committed_amount`?**
-`folio_committed_amount` is always in the investor's folio currency. `committed_amount` is the equivalent in the fund's base currency. For domestic (same-currency) commitments, they are equal.
+**What's the difference between the folio committed amount and the committed amount?**
+The folio committed amount is always in the investor's currency; the committed amount is the equivalent in the fund's currency. For same-currency commitments they're identical.
 
-**Q: Can one investor have multiple commitments to the same fund?**
-Yes, but each must have a unique folio ID. Multiple folios for one investor are common when they invest via different KYC entities or at different fund closes.
+**Can one investor commit to the same fund more than once?**
+Yes — each commitment just needs its own folio ID. Multiple folios are common when an investor uses different entities or joins at different closes.
 
-**Q: How are account entries generated?**
-Account entries are created by running a **Fund Formula** (via Allocation Run). The formula defines how fund-level values (e.g. Portfolio FMV) are allocated down to individual commitments. See the Fund Formulas guide.
+**How are account entries (allocated line items) created?**
+By running a **fund formula** through an allocation run, which spreads fund-level values down to each commitment. See the [Carry & Allocation guide](carry_computations_user_guide).
 
-**Q: What triggers a percentage recompute?**
-Any save that changes `committed_amount_cents`, or any commitment being destroyed. The recompute updates all commitments in the fund in a single SQL statement.
-
-**Q: Can I skip a capital call notice for one investor?**
-Yes. Set `skip_doc_gen` to `yes` in the commitment's JSON fields. The call notice generation job will exclude this folio.
+**Can I skip the capital-call notice for one investor?**
+Yes — turn on **Skip call notices** for that commitment, and call notices will exclude that folio.

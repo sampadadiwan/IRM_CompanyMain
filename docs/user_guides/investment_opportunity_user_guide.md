@@ -1,306 +1,274 @@
 # Investment Opportunity User Guide
 
-## Overview
+**Investment Opportunities** let a fund manager put a deal or fundraise in front of a chosen set of investors, collect their **Expressions of Interest (EOIs)**, and run the allocation process through to close. Each opportunity has a polished, investor-facing preview page, a documents area and private data room, marketing content sections, a track-record strip, and a fully tracked EOI pipeline with approval, verification, and proportional allocation.
 
-Investment Opportunities (IOs) let fund managers publish a fundraise to a selected set of investors, collect Expressions of Interest (EOIs), and manage the allocation process through to close. Each opportunity has a rich investor-facing preview page, a document/data room structure, configurable widgets for marketing content, and a tracked EOI pipeline with approval, verification, and proportional allocation.
-
----
-
-## Roles and Permissions
-
-| Role | Capabilities |
-|------|-------------|
-| **Employee (Fund admin)** | Create, edit, delete opportunities; manage access rights, documents, widgets, track records, notifications |
-| **Approver** | All employee rights, plus approve/unapprove individual EOIs |
-| **Relationship Manager (RM)** | Submit EOIs on behalf of their clients; view and manage their own submitted EOIs |
-| **Investor** | View opportunities they have access to; submit and update their own EOI; access data room if granted |
-
-> **Note:** The Investment Opportunities feature must be enabled for your account (`enable_inv_opportunities = true`). Contact your administrator if the menu is not visible.
+This guide walks through the whole journey — from creating an opportunity to notifying investors of their final allocation.
 
 ---
 
-## Creating an Investment Opportunity
+## Table of Contents
 
-Navigate to **Investment Opportunities → New Investment Opportunity**.
+1. [The Opportunity Journey](#the-opportunity-journey)
+2. [Who Does What (Roles)](#who-does-what-roles)
+3. [Creating an Opportunity](#creating-an-opportunity)
+4. [Enriching the Opportunity](#enriching-the-opportunity)
+5. [Controlling Who Can See It](#controlling-who-can-see-it)
+6. [The Investor Preview](#the-investor-preview)
+7. [Notifying Investors](#notifying-investors)
+8. [The Expression of Interest Workflow](#the-expression-of-interest-workflow)
+9. [The Allocation Process](#the-allocation-process)
+10. [Worked Allocation Example](#worked-allocation-example)
+11. [Tracking Progress](#tracking-progress)
+12. [Frequently Asked Questions](#frequently-asked-questions)
 
-### Required Fields
+---
 
-| Field | Description |
-|-------|-------------|
-| **Company Name** | Name of the company or deal (max 100 characters). Shown on the listing card and investor preview. |
-| **Fund Raise Amount** | Total amount being raised. Drives the progress bar showing % raised (based on approved EOIs). |
-| **Min Ticket Size** | Minimum amount an investor can express interest for. Validated on every EOI — amounts below this are rejected. |
-| **Currency** | Currency for all monetary values. Defaults to the entity's configured currency. |
-| **Last Date** | Closing date for EOIs. Defaults to one month from today. |
+## The Opportunity Journey
 
-### Optional Fields
+```mermaid
+flowchart LR
+    A[Create opportunity] --> B[Add content,<br/>documents, track record]
+    B --> C[Grant investor access]
+    C --> D[Notify investors: Open]
+    D --> E[Investors submit EOIs]
+    E --> F[Approve EOIs]
+    F --> G[Lock EOIs]
+    G --> H[Run allocation]
+    H --> I[Review & finalise]
+    I --> J[Lock allocations]
+    J --> K[Notify investors: Allocated]
+```
 
-| Field | Description |
-|-------|-------------|
-| **Valuation** | Company or deal valuation — shown in the key metrics strip on the preview. |
-| **Logo** | Company logo (JPEG/PNG/GIF/BMP). Displayed on the listing card and the preview header. |
-| **Tags** | Comma-separated tags (e.g. `SaaS, Series B, Healthcare`). Used for filtering the opportunity list. Max 120 characters total. |
-| **Details** | Rich-text investment thesis, deal description, or any long-form content. Displayed prominently on the investor preview. |
-| **Shareable** | When enabled, a signed link to this opportunity can be shared with anyone — they can view the preview without logging in. Useful for advisors sharing deals with prospective investors. |
+---
 
-Click **Save**. The opportunity is created and you are taken to the detail page.
+## Who Does What (Roles)
+
+| Role | What they can do |
+|------|------------------|
+| **Fund Admin** | Create, edit, and delete opportunities; manage access, documents, content, track record, and notifications. |
+| **Approver** | Everything a fund admin can do, plus approve or unapprove individual EOIs. |
+| **Relationship Manager (RM)** | Submit EOIs on behalf of their clients and manage those EOIs. |
+| **Investor** | View opportunities they've been given access to, submit and update their own EOI, and access the data room if granted. |
+
+> The Investment Opportunities feature must be switched on for your account. If you don't see the menu, ask your administrator to enable it.
+
+---
+
+## Creating an Opportunity
+
+Go to **Investment Opportunities → New Investment Opportunity**.
+
+### Required information
+
+| Field | What it's for |
+|-------|---------------|
+| **Company Name** | The deal or company name shown on the listing card and preview. |
+| **Fund Raise Amount** | The total being raised. Drives the progress bar showing how much has been covered by approved EOIs. |
+| **Min Ticket Size** | The smallest amount an investor may express interest for. EOIs below this are rejected. |
+| **Currency** | The currency for all amounts. Defaults to your entity's currency. |
+| **Last Date** | The closing date for EOIs. Defaults to one month out. |
+
+### Optional information
+
+| Field | What it's for |
+|-------|---------------|
+| **Valuation** | The deal/company valuation, shown in the key-metrics strip. |
+| **Logo** | The company logo for the card and preview header. |
+| **Tags** | Labels like `SaaS, Series B, Healthcare` for filtering the opportunity list. |
+| **Details** | The investment thesis or deal description — long-form rich text shown prominently on the preview. |
+| **Shareable** | When on, a private link lets anyone view the preview *without logging in* — handy for advisors sharing a deal with prospects. |
+
+Click **Save** to create the opportunity and open its detail page.
 
 ---
 
 ## Enriching the Opportunity
 
-The detail page has a tabbed interface: **Documents, Widgets, Track Record, Tasks, Interests, Access Rights, Notifications**.
+The detail page is organised into tabs: **Documents, Widgets, Track Record, Tasks, Interests, Access Rights, Notifications**.
 
-### Documents
+### Documents and data room
 
-The **Documents** tab holds files shown in the documents section of the investor preview. Upload offering memoranda, term sheets, pitch decks, and other materials investors should see by default.
+- **Documents** — files shown by default on the preview: offering memoranda, term sheets, pitch decks, and the like.
+- **Data Room** — a separate, private folder. Its documents are shown only to investors whose EOI has **Show Data Room** turned on.
 
-A separate **Data Room** folder also exists on the opportunity. Data room documents are only shown to investors whose EOI has `Show Data Room` enabled.
+### Content sections (Widgets)
 
-### Widgets (Sections)
+**Widgets** are rich content blocks that make up the body of the preview — market opportunity, team bios, product highlights, financial projections, and so on. Each has a title, a short intro, a main body, an optional image or video (positioned left/right/centre, or an embedded YouTube video), and an optional link. They appear in the order you add them, so arrange them to tell the full story.
 
-**Widgets** are rich content sections that appear in the body of the investor preview. Use them to add structured marketing content such as market opportunity, team bios, product highlights, and financial projections.
+### Track record
 
-Each widget has:
-
-| Field | Description |
-|-------|-------------|
-| **Title** | Section heading displayed on the preview |
-| **Intro Text** | Short introductory paragraph shown above the main body |
-| **Details** | Main rich-text body of the section |
-| **Image / Video** | Upload an image or video file for the section |
-| **Image Placement** | Position of the image relative to the text: `Left`, `Right`, or `Center` |
-| **Embed YouTube Videos** | Paste a YouTube embed code to include a video player |
-| **URL** | Optional link associated with the widget |
-
-Widgets are displayed in creation order. Add as many as needed to tell the full investment story.
-
-### Track Record
-
-**Track Record** entries appear as highlight metrics in the preview (e.g. "3x MOIC", "₹500Cr AUM", "12 Exits"). Each entry has:
-
-| Field | Description |
-|-------|-------------|
-| **Name** | Label for the metric (e.g. "Realised MOIC") |
-| **Prefix** | Short prefix displayed before the value (e.g. `₹`, `$`) — max 5 characters |
-| **Value** | The metric value (e.g. `3.2x`, `500`) |
-| **Suffix** | Short suffix after the value (e.g. `Cr`, `M`) — max 5 characters |
-| **Details** | Optional explanatory note displayed below the metric |
+**Track Record** entries appear as highlight cards on the preview (for example "3.2× Realised MOIC" or "$500M AUM"). Each has a name, an optional prefix and suffix (like `$` or `Cr`), the value, and an optional explanatory note.
 
 ---
 
-## Access Rights
+## Controlling Who Can See It
 
-The **Access Rights** tab controls which investors can see this opportunity and place EOIs.
+The **Access Rights** tab decides which investors can see the opportunity and submit an EOI.
 
-- Add individual investors or investor groups manually.
-- When an investor is added, they immediately gain view access and an `InvestmentOpportunity` access right is created.
-- Investors granted access will appear in notification recipient lists.
+- Add investors or investor groups individually.
+- An added investor immediately gains view access and is included in notification recipient lists.
 
-To see who will receive a notification before sending, use **Notifications → View Who Gets Notified** (available as a link in each notification confirmation prompt).
-
----
-
-## Preview
-
-Click **Preview** on the detail page to see the opportunity exactly as investors see it:
-
-- **Header** — company name, logo, close date
-- **Key Metrics strip** — Fund Raise Amount, Approved EOI Amount, Valuation, Min Ticket Size
-- **Details** — investment thesis (from the Details field)
-- **Widgets** — all content sections in order
-- **Track Record** — highlight metric cards
-- **Documents panel** (right column) — all documents in the opportunity's folder
-- **"Ready to Invest?" CTA** — links directly to the EOI form
-- **Your Interest** (investors only) — shows the investor's own EOI card
-- **Data Room** (visible to investors with data room access; always visible to fund managers)
-
-### Shareable Link
-
-When **Shareable** is enabled, a signed URL is generated that allows anyone with the link to view the preview without logging in. This is intended for advisors and relationship managers sharing opportunities externally. The link is cryptographically signed and scoped to the specific opportunity.
+Before sending any notification, use **View Who Gets Notified** (linked in the confirmation prompt) to check the recipient list.
 
 ---
 
-## Notifications
+## The Investor Preview
 
-Fund managers can send notifications from the **Notifications** dropdown on the detail page.
+Click **Preview** to see the opportunity exactly as an investor does:
 
-### Built-in Notifications
+- **Header** — company name, logo, and close date.
+- **Key metrics strip** — fund raise amount, approved EOI amount, valuation, and minimum ticket size.
+- **Details** — the investment thesis.
+- **Content sections** — all your widgets, in order.
+- **Track record** — the highlight cards.
+- **Documents panel** — everything in the opportunity's documents folder.
+- **"Ready to Invest?"** — a clear call-to-action linking to the EOI form.
+- **Your Interest** — for investors, a card showing their own EOI.
+- **Data Room** — shown to investors with data-room access (and always to fund managers).
 
-| Notification | When to use |
-|-------------|-------------|
-| **Send Investment Opportunity Open: To LPs** | Announce that the opportunity is now open and investors can place EOIs |
-| **Send Investment Opportunity Allocated: To LPs** | Announce that allocations have been finalised |
+### The shareable link
 
-Both notifications are sent to all investors who have access rights to the opportunity.
-
-Before confirming, a link to **View Who Gets Notified** is shown in the confirmation dialog — click it to verify the recipient list before sending.
-
-### Custom Notifications
-
-Any custom notification template configured at the entity level for `InvestmentOpportunity` appears as an additional menu item. Custom notifications support custom subject lines, body copy, and document attachments.
-
----
-
-## Expression of Interest (EOI) Workflow
-
-### How Investors Submit an EOI
-
-1. Investor opens the opportunity (via notification email, direct link, or the portal listing).
-2. Clicks **Express Interest** on the preview page.
-3. Fills in the EOI form:
-
-| Field | Description |
-|-------|-------------|
-| **Investor** | Pre-selected to the logged-in investor (investors cannot change this) |
-| **Amount** | Investment amount. Must be ≥ Min Ticket Size and ≤ Fund Raise Amount |
-| **Investor KYC** | Optionally link an existing KYC record to the EOI |
-| **Details** | Free-text notes or questions for the fund manager |
-
-4. Clicks **Save**. The EOI is created in an unapproved state and access rights to the opportunity are automatically granted.
-
-> If the amount is edited after submission, the EOI is automatically reset to unapproved and must be re-approved by an Approver.
-
-### How RMs Submit EOIs for Clients
-
-Relationship managers can submit EOIs on behalf of their clients. In addition to the standard fields, RMs see:
-
-| Field | Description |
-|-------|-------------|
-| **Investor Name** | Name identifying the investor or investor group |
-| **Investor Email** | Email for the investor or investor group |
-| **Investor KYC** | Select a KYC record; required before the EOI can be approved |
-
-When an RM-submitted EOI is **approved**, the system automatically:
-1. Looks up or creates a new Investor record using the `investor_name` and `investor_email`.
-2. Re-points the linked KYC record to that new investor.
-
-When the same EOI is **unapproved**, the KYC is re-pointed back to the RM.
-
-### Approving and Unapproving EOIs
-
-Users with the **Approver** role can approve or unapprove EOIs from the **Interests** tab or the Finalize Allocation view.
-
-- Clicking **Approve** marks the EOI as `approved = true`.
-- The EOI amount is added to the opportunity's **Approved EOI Amount** counter and the progress bar updates.
-- Clicking **UnApprove** reverses this.
-
-> An EOI for an RM-submitted interest cannot be approved unless a KYC record has been attached to it.
-
-### Data Room Access
-
-From the Interests tab, fund managers can toggle **Show Data Room** on or off for each individual EOI via the Actions dropdown. When enabled, the investor can see the data room section on the preview page.
-
-### EOI Status Summary
-
-The Interests tab shows five filter cards:
-
-| Card | What it shows |
-|------|--------------|
-| **Total** | All EOIs for this opportunity |
-| **Approved** | EOIs where `approved = true` |
-| **Verified** | EOIs where `verified = true` (manually marked by the fund manager) |
-| **Unapproved** | EOIs not yet approved |
-| **Unverified** | EOIs not yet verified |
-
-Click any card to filter the EOI table to that subset.
+With **Shareable** enabled, a private, signed link lets advisors or prospective investors view the full preview without an account. They can't submit an EOI from that link — they'd need to log in for that.
 
 ---
 
-## Allocation Process
+## Notifying Investors
+
+Send notifications from the **Notifications** menu on the detail page.
+
+| Notification | Use it to |
+|--------------|-----------|
+| **Opportunity Open: To LPs** | Announce that investors can now place EOIs. |
+| **Opportunity Allocated: To LPs** | Announce that final allocations are set. |
+
+Both go to all investors with access. Any custom notification template set up for opportunities appears as an extra menu item and supports a custom subject, body, and attachments. The confirmation prompt always offers **View Who Gets Notified** so you can verify recipients first.
+
+---
+
+## The Expression of Interest Workflow
+
+```mermaid
+flowchart TD
+    A[Investor opens the preview] --> B[Express Interest]
+    B --> C[Enter amount + details]
+    C --> D[EOI submitted, unapproved]
+    D --> E{Approver reviews}
+    E -->|Approve| F[Counts toward the raise]
+    E -->|Amount edited later| D
+    F --> G[Optional: mark Verified]
+```
+
+### How investors submit
+
+1. Open the opportunity (from a notification, a link, or the portal listing).
+2. Click **Express Interest**.
+3. Enter the **amount** (must be at least the minimum ticket and no more than the raise), optionally link a **KYC record**, and add any **notes**.
+4. **Save.** The EOI is created unapproved, and the investor is automatically granted access.
+
+> If the amount is changed after submission, the EOI returns to unapproved and must be approved again.
+
+### How RMs submit for clients
+
+Relationship managers can submit on behalf of clients, additionally providing the investor's **name**, **email**, and a **KYC record** (required before approval). When an RM's EOI is approved, the system finds or creates the investor record from that name and email and links the KYC to them; unapproving reverses this.
+
+### Approving EOIs
+
+Approvers approve or unapprove EOIs from the **Interests** tab or the Finalize Allocation screen. Approving adds the EOI's amount to the opportunity's **Approved EOI Amount** and advances the progress bar; unapproving reverses it. An RM-submitted EOI can't be approved until a KYC record is attached.
+
+### Verification and data room
+
+- **Verified** is a manual flag for your internal process (e.g. confirming KYC, documents, and transfer are done). It doesn't affect allocation maths.
+- **Show Data Room** can be toggled per EOI from the Interests tab to give that investor data-room access on the preview.
+
+### Filtering EOIs
+
+The Interests tab shows filter cards — **Total, Approved, Verified, Unapproved, Unverified** — click any to filter the table.
+
+---
+
+## The Allocation Process
+
+```mermaid
+flowchart LR
+    A[Lock EOIs] --> B[Run automatic allocation]
+    B --> C[Review & adjust in Finalize Allocation]
+    C --> D[Lock allocations]
+    D --> E[Notify investors]
+```
 
 ### Step 1 — Lock EOIs
 
-Once the opportunity closes (or earlier if desired), lock new EOIs to prevent further submissions.
+When the opportunity closes (or sooner), open the **Allocation** menu and click **Lock EOIs** to stop new submissions. You can toggle it back at any time.
 
-On the detail page, open the **Allocation** dropdown and click **Lock EOIs**. A confirmation prompt explains what this does. Toggle again at any time to unlock.
+### Step 2 — Run automatic allocation
 
-### Step 2 — Run Automatic Allocation
+Click **Allocate**. The system works in the background: for each approved EOI it calculates a proportional allocation, and if the raise is **over-subscribed** it applies a pro-rata haircut so the total comes back to the target. The page shows "Allocation in progress" — refresh after a moment.
 
-Click **Allocate** from the Allocation dropdown. A background job runs asynchronously:
+> The allocation each approved investor receives = their EOI amount × (target raise ÷ total approved EOIs), capped so a fully- or under-subscribed raise gives everyone their full amount.
 
-1. Resets all EOI `allocation_amount` and `allocation_percentage` to zero.
-2. For each **approved** EOI, calculates a proportional allocation:
-   - `allocation_amount = eoi_amount × (100 / max(percentage_raised, 100))`
-   - If the raise is over-subscribed (>100%), every investor receives a pro-rata haircut.
-3. Saves the updated amounts.
+### Step 3 — Review and adjust
 
-The page shows "Allocation in progress, check back in a few minutes." Refresh after a short wait.
+Click **View Allocations** to open **Finalize Allocation**, a table of every EOI with inline editing. For each one you can approve/verify it, **override the allocation amount**, and add comments. Filter by Verified / Unverified / All, search by investor, and **Save** each row in place.
 
-### Step 3 — Review and Adjust in Finalize Allocation
+### Step 4 — Lock allocations
 
-Click **View Allocations** from the Allocation dropdown to open the **Finalize Allocation** screen.
+Once finalised, click **Lock Allocations** to prevent further changes to allocation amounts.
 
-This shows a full table of all EOIs with inline editing. For each EOI you can set:
+### Step 5 — Notify investors
 
-| Field | Description |
-|-------|-------------|
-| **Approved** | Check/uncheck to approve or revoke the EOI's approval |
-| **Verified** | Check/uncheck to mark the EOI as verified |
-| **Allocation Amount** | Override the auto-calculated allocation amount |
-| **Comments** | Internal notes for this EOI |
-
-Filter the view to **Verified**, **Un-Verified**, or **All** using the buttons at the top. Use the search box to find a specific investor by name.
-
-Click **Save** on any row to save changes inline without leaving the page.
-
-### Step 4 — Lock Allocations
-
-Once allocations are finalised, click **Lock Allocations** from the Allocation dropdown. This prevents further edits to allocation amounts.
-
-### Step 5 — Notify Investors
-
-Send the **"Investment Opportunity Allocated: To LPs"** notification to inform investors of their final allocation.
+Send the **Opportunity Allocated: To LPs** notification to tell investors their final allocation.
 
 ---
 
-## EOI Detail Page
+## Worked Allocation Example
 
-Each EOI has its own detail page accessible via **Show** in the Interests tab. It includes:
+A deal targets a **$100M** raise. After approvals, EOIs total **$150M** — 150% subscribed, so everyone is scaled back to fit $100M.
 
-- **Investor details** — name, email, submission date, expression amount, approval status, last updated
-- **Documents tab** — files the investor or RM has attached to their EOI (e.g. signed subscription forms)
-- **Tasks tab** — any tasks assigned in the context of this EOI
+> Scale factor = target ÷ total approved = 100 ÷ 150 = **66.67%**
+
+| Investor | EOI amount | Allocation (× 66.67%) |
+|----------|-----------|------------------------|
+| Northwind LP | $60M | $40.0M |
+| Briar Capital | $50M | $33.3M |
+| Kestrel Family Office | $40M | $26.7M |
+| **Total** | **$150M** | **$100M** |
+
+If the raise had instead come in **under** target — say $80M of EOIs against the $100M raise — no haircut applies and each investor receives their full stated amount.
+
+You can still override any single allocation on the Finalize Allocation screen (for example to honour a strategic investor's full ask) before locking.
 
 ---
 
-## Key Metrics on the Opportunity Detail Page
+## Tracking Progress
 
-The top of the detail page shows four summary cards:
+The detail page header shows four summary cards: **Fund Raise Amount** (the target), **Approved EOI Amount** (the running total of approved EOIs), **Valuation**, and **Min Ticket Size**. A progress bar shows how much of the raise is covered by approved EOIs.
 
-| Metric | What it represents |
-|--------|--------------------|
-| **Fund Raise Amount** | Target raise as configured on the opportunity |
-| **Approved EOI Amount** | Sum of amounts from all approved EOIs (auto-maintained via counter cache) |
-| **Valuation** | Deal valuation if configured |
-| **Min Ticket Size** | Minimum per-investor investment amount |
-
-A progress bar on the Fund Raise Amount in the summary table shows the percentage of the raise covered by approved EOIs.
+Each EOI also has its own detail page (via **Show** on the Interests tab) with the investor's details, a documents tab for attachments like signed subscription forms, and a tasks tab.
 
 ---
 
 ## Frequently Asked Questions
 
-**Q: An investor can't see the opportunity in their portal — what's wrong?**  
-A: Check that the investor has been added to the opportunity's **Access Rights**. Also verify that the investor has approved portal access (`InvestorAccess` approved for their entity).
+**An investor can't see the opportunity — why?**
+Check that they're listed under **Access Rights**, and that they have approved portal access for their entity.
 
-**Q: Can I edit an opportunity after investors have submitted EOIs?**  
-A: Yes. Core fields (company name, amounts, dates, details) remain editable. Note that changing the fund raise amount or min ticket size may invalidate existing EOIs that were previously within range.
+**Can I edit an opportunity after EOIs are in?**
+Yes — name, amounts, dates, and details stay editable. Be aware that changing the raise amount or minimum ticket can put existing EOIs out of range.
 
-**Q: Why does the "Approve" option not appear for an RM-submitted EOI?**  
-A: RM EOIs require a linked KYC record before they can be approved. Open the EOI, select an Investor KYC, save, then approve.
+**Why is there no Approve option on an RM-submitted EOI?**
+It needs a linked KYC record first. Open the EOI, select a KYC, save, then approve.
 
-**Q: What happens if I unapprove an EOI after running allocation?**  
-A: The EOI amount is removed from the `eoi_amount_cents` counter on the opportunity. Re-run **Allocate** to recalculate allocation amounts for all remaining approved EOIs.
+**What if I unapprove an EOI after allocating?**
+Its amount drops out of the approved total. Re-run **Allocate** to recalculate everyone's allocation.
 
-**Q: Can an investor edit their EOI after submission?**  
-A: Yes, as long as the EOI is not yet approved and EOIs are not locked. Once an EOI is approved, it cannot be edited (the policy check blocks updates on approved records).
+**Can an investor edit their EOI after submitting?**
+Yes, while it's unapproved and EOIs aren't locked. Once approved, it can't be edited.
 
-**Q: What is the "Verified" flag for?**  
-A: Verification is a manual flag for the fund manager's internal process — typically used to confirm that KYC, subscription documents, and fund transfer have been completed. It has no automatic effect on allocation calculations.
+**What's the Verified flag for?**
+It's a manual marker for your internal process (KYC, documents, transfer complete). It has no effect on allocation maths.
 
-**Q: Can I share the opportunity with someone who doesn't have a portal account?**  
-A: Yes. Enable **Shareable** on the opportunity. The system generates a signed link that can be given to advisors or prospective investors. They can view the full preview page without logging in. They cannot submit an EOI from that link — they would need to log in for that.
+**Can I share the opportunity with someone without a portal account?**
+Yes — enable **Shareable** and send the signed link. They can view the full preview but must log in to submit an EOI.
 
-**Q: How is proportional allocation calculated when the raise is oversubscribed?**  
-A: Each approved EOI receives `EOI_amount × (100 / percentage_raised)`. For example, if ₹150 Cr in EOIs were approved against a ₹100 Cr target (150% subscribed), each investor receives 66.67% of their stated EOI amount as their allocation.
+**How is allocation calculated when oversubscribed?**
+Each approved investor gets their EOI amount scaled by (target ÷ total approved). See the [Worked Allocation Example](#worked-allocation-example).

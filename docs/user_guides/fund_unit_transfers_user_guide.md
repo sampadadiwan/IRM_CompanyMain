@@ -12,11 +12,12 @@ This guide explains how to transfer fund units between investors. It is written 
 4. [Step-by-Step: Running a Transfer](#step-by-step-running-a-transfer)
 5. [Understanding the Transfer Form](#understanding-the-transfer-form)
 6. [Transfer Ratio Examples](#transfer-ratio-examples)
-7. [Account Entries — Should You Transfer Them?](#account-entries--should-you-transfer-them)
-8. [What Happens After You Click Transfer](#what-happens-after-you-click-transfer)
-9. [Validation Errors and What They Mean](#validation-errors-and-what-they-mean)
-10. [After the Transfer — What to Check](#after-the-transfer--what-to-check)
-11. [Frequently Asked Questions](#frequently-asked-questions)
+7. [Worked Example](#worked-example)
+8. [Account Entries — Should You Transfer Them?](#account-entries--should-you-transfer-them)
+9. [What Happens After You Click Transfer](#what-happens-after-you-click-transfer)
+10. [Validation Errors and What They Mean](#validation-errors-and-what-they-mean)
+11. [After the Transfer — What to Check](#after-the-transfer--what-to-check)
+12. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -27,6 +28,13 @@ When an investor commits capital to a fund, they receive **fund units** that rep
 The system automatically splits the seller's financial history — their capital call payments, any fees recorded, and any distributions they have received — between the two parties in proportion to how much of the stake changed hands.
 
 Think of it like a property transfer: the buyer takes on a share of everything that came with the original investment.
+
+```mermaid
+flowchart LR
+    A[Seller's folio<br/>units + full history] -->|transfer ratio %| B[Buyer's folio<br/>receives that share]
+    A -->|remaining %| A2[Seller keeps the rest]
+    B --> C[Units, call payments,<br/>distributions, fees, committed capital<br/>all split proportionally]
+```
 
 ---
 
@@ -86,6 +94,32 @@ Before starting the transfer, confirm the following:
 | Seller transfers **75%** of their stake | `75` |
 
 A transfer ratio of 100 means the seller's folio ends up with zero units after the transfer. All their payment history and distributions are moved to the buyer.
+
+---
+
+## Worked Example
+
+**Before the transfer** — *Northwind LP* holds the following in *Acme Growth Fund I*:
+
+| Item | Northwind (seller) |
+|------|--------------------|
+| Fund units held | 1,000 |
+| Committed capital | $5,000,000 |
+| Capital paid in to date | $2,000,000 |
+| Distributions received to date | $300,000 |
+
+Northwind sells **40%** of its stake to *Briar Capital* (transfer ratio = `40`), with **Transfer Account Entries** ticked so fees move across too.
+
+**After the transfer** — everything is split 40 / 60:
+
+| Item | Northwind keeps (60%) | Briar receives (40%) |
+|------|----------------------|----------------------|
+| Fund units | 600 | 400 |
+| Committed capital | $3,000,000 | $2,000,000 |
+| Capital paid in | $1,200,000 | $800,000 |
+| Distributions received | $180,000 | $120,000 |
+
+Briar's folio now carries 40% of Northwind's full history, so future performance metrics (XIRR, DPI, TVPI) for both investors reflect the correct share. A "transfer out" of 400 units appears on Northwind's Fund Units tab and a matching "transfer in" of 400 units on Briar's.
 
 ---
 
