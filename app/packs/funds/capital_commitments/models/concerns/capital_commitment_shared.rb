@@ -131,8 +131,8 @@ module CapitalCommitmentShared
     # Collects per-payment rows for CSV export; nil when data_csv is false (no overhead)
     csv_rows = data_csv ? [] : nil
 
-    Rails.logger.debug "[Hurdle] Computing hurdle for commitment #{id} as of #{end_date}"
-    Rails.logger.debug "[Hurdle] Hurdle rate: #{hurdle_rate}"
+    Rails.logger.debug { "[Hurdle] Computing hurdle for commitment #{id} as of #{end_date}" }
+    Rails.logger.debug { "[Hurdle] Hurdle rate: #{hurdle_rate}" }
 
     remittance_col = use_tracking_currency ? :tracking_amount_cents : :amount_cents
     distribution_col = use_tracking_currency ? :tracking_gross_payable_cents : :gross_payable_cents
@@ -172,11 +172,11 @@ module CapitalCommitmentShared
 
       if truncated_dist
         effective_end_date = truncated_dist.payment_date.to_date
-        Rails.logger.debug "[Hurdle] Distributions exceed remittances; effective_end_date capped at #{effective_end_date} (distribution #{truncated_dist.id})"
+        Rails.logger.debug { "[Hurdle] Distributions exceed remittances; effective_end_date capped at #{effective_end_date} (distribution #{truncated_dist.id})" }
       end
     end
 
-    Rails.logger.debug "[Hurdle] Effective end date: #{effective_end_date}"
+    Rails.logger.debug { "[Hurdle] Effective end date: #{effective_end_date}" }
 
     # Step 2: Query payments scoped to effective_end_date and compute hurdles.
     remittances = capital_remittance_payments.where(payment_date: ..effective_end_date).order(payment_date: :asc)
@@ -215,7 +215,7 @@ module CapitalCommitmentShared
       hurdle_amount -= dist_hurdle
     end
 
-    Rails.logger.debug "[Hurdle] Final calculated hurdle amount: #{hurdle_amount}"
+    Rails.logger.debug { "[Hurdle] Final calculated hurdle amount: #{hurdle_amount}" }
     save_hurdle_csv(csv_rows, end_date, effective_end_date, hurdle_rate, hurdle_amount, use_distributions) if data_csv
     hurdle_amount
   end
@@ -226,7 +226,7 @@ module CapitalCommitmentShared
   # @param cap_amount_cents [Integer] If provided, only calculate hurdle for payments up to this cumulative amount.
   # This is used for distributions to ensure we only offset hurdle up to the principal amount.
   def calculate_hurdle_for_payments(payments, end_date, hurdle_rate, amount_column:, label: "Payments", cap_amount_cents: nil, csv_rows: nil)
-    Rails.logger.debug "[Hurdle] Processing #{label} (#{payments.count} records) with cap: #{cap_amount_cents || 'None'}"
+    Rails.logger.debug { "[Hurdle] Processing #{label} (#{payments.count} records) with cap: #{cap_amount_cents || 'None'}" }
 
     cumulative_amount_cents = 0
     total_hurdle = 0
@@ -245,7 +245,7 @@ module CapitalCommitmentShared
         # If the current distribution payment exceeds the remaining principal,
         # only calculate hurdle on the portion that matches the principal.
         if amount > remaining_cap
-          Rails.logger.debug "[Hurdle]   - Payment ID: #{payment.id} truncated from #{amount} to #{remaining_cap} due to principal cap"
+          Rails.logger.debug { "[Hurdle]   - Payment ID: #{payment.id} truncated from #{amount} to #{remaining_cap} due to principal cap" }
           amount = remaining_cap
         end
       end
@@ -259,27 +259,27 @@ module CapitalCommitmentShared
       days = [(end_date - payment_date).to_i, 0].max
 
       # Using (1 + r)^t - 1 formula for compound interest hurdle (XIRR basis).
-      calculation = amount.to_d * (((1 + hurdle_rate) ** (days / 365.0)) - 1)
+      calculation = amount.to_d * (((1 + hurdle_rate)**(days / 365.0)) - 1)
 
-      Rails.logger.debug "[Hurdle]   - Payment ID: #{payment.id}, Date: #{payment_date}, Amount: #{amount}, Days: #{days}, Hurdle: #{calculation.to_f}"
+      Rails.logger.debug { "[Hurdle]   - Payment ID: #{payment.id}, Date: #{payment_date}, Amount: #{amount}, Days: #{days}, Hurdle: #{calculation.to_f}" }
 
       total_hurdle += calculation
       cumulative_amount_cents += amount
 
       # Append row data for CSV export when requested
       csv_rows&.push(
-        section:                label,
-        payment_id:             payment.id,
-        payment_date:           payment_date,
-        raw_amount_cents:       payment.send(amount_column), # original value before any cap
-        effective_amount_cents: amount,                      # after principal-cap truncation
-        days:                   days,
-        hurdle_calculation:     calculation.to_f,
-        running_total_cents:    cumulative_amount_cents       # cumulative total after this payment
+        section: label,
+        payment_id: payment.id,
+        payment_date: payment_date,
+        raw_amount_cents: payment.send(amount_column), # original value before any cap
+        effective_amount_cents: amount, # after principal-cap truncation
+        days: days,
+        hurdle_calculation: calculation.to_f,
+        running_total_cents: cumulative_amount_cents # cumulative total after this payment
       )
     end
 
-    Rails.logger.debug "[Hurdle] Total hurdle for #{label}: #{total_hurdle.to_f}"
+    Rails.logger.debug { "[Hurdle] Total hurdle for #{label}: #{total_hurdle.to_f}" }
     total_hurdle
   end
 
@@ -336,13 +336,14 @@ module CapitalCommitmentShared
 
     begin
       Document.create!(
-        name:      "Hurdle Computation - #{investor_name} - #{id} - #{end_date}.csv",
-        file:      temp_file,
-        user_id:   uid,
-        owner:     self,
-        folder:    folder,
+        name: "Hurdle Computation - #{investor_name} - #{id} - #{end_date}.csv",
+        file: temp_file,
+        user_id: uid,
+        owner_type: "CapitalCommitment",
+        owner_id: id,
+        folder: folder,
         entity_id: entity_id,
-        orignal:   true
+        orignal: true
       )
     ensure
       temp_file.close
