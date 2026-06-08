@@ -11,7 +11,7 @@ module Noticed
     end
 
     def index?
-      !user.investor_advisor?
+      !user.investor_advisor? || user.has_cached_role?(:company_admin)
     end
 
     def show?
