@@ -32,7 +32,16 @@ module AccountEntryAllocation
     # rubocop:disable Lint/RescueException
     def safe_eval(eval_string, bdg)
       Rails.logger.debug { "AllocationBaseOperation: eval_string = #{eval_string}" }
-      eval(eval_string, bdg, __FILE__, __LINE__)
+      result = eval(eval_string, bdg, __FILE__, __LINE__)
+
+      # SQLite silently stores Float::INFINITY and NaN but MySQL DECIMAL columns reject them,
+      # causing the migration to primary DB to fail. Raise here with formula context instead.
+      if result.respond_to?(:finite?) && !result.finite?
+        kind = result.nan? ? "NaN" : (result.positive? ? "Infinity" : "-Infinity")
+        raise ZeroDivisionError, "Formula produced #{kind} (divide-by-zero or 0.0/0.0). Formula: #{eval_string}"
+      end
+
+      result
     rescue SkipRule => e
       msg = "AllocationBaseOperation: SkipRule in eval #{eval_string}: #{e.message}"
       Rails.logger.error msg

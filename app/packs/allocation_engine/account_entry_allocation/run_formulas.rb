@@ -73,8 +73,11 @@ module AccountEntryAllocation
       if Rails.env.development? && File.exist?(ctx[:sqlite_path])
         Rails.logger.debug { "Skipping SQLite DB load in development as file already exists at #{ctx[:sqlite_path]}" }
         success = true
+        script_output = ""
       else
-        success = system(env, "bash #{script_path}")
+        require "open3"
+        script_output, status = Open3.capture2e(env, "bash #{script_path}")
+        success = status.success?
       end
 
       if success
@@ -91,8 +94,13 @@ module AccountEntryAllocation
         notify("Loaded DB with account_entries for fund #{fund.name}", :info, ctx[:user_id])
         true
       else
-        error_msg = "Failed to load isolated SQLite DB for Entity ID: #{entity_id}"
-        notify(error_msg, :info, ctx[:user_id])
+        exit_code = defined?(status) ? status.exitstatus : "unknown"
+        # Tail last 50 lines of output — the failure line is usually near the end
+        tail_output = script_output.to_s.lines.last(50).join
+        error_msg = "Failed to load isolated SQLite DB for Entity ID: #{entity_id} " \
+                    "(fund_ids=#{fund_ids.join(',')}, adapter=#{adapter}, exit_code=#{exit_code}, " \
+                    "script=#{script_path})\nScript output:\n#{tail_output}"
+        notify("Failed to load data for fund #{fund.name} (exit_code=#{exit_code})", :info, ctx[:user_id])
         Rails.logger.error error_msg
         ctx[:error] = error_msg
         false
@@ -181,9 +189,17 @@ module AccountEntryAllocation
         queue << nil
         loader_thread&.join
 
-        # Mark all as migrated to avoid double processing in final catch-all
-        # migrate_entries_to_primary(ctx) will now only pick up leftovers
-        migrate_entries_to_primary(ctx, final_check: true)
+        # Final catch-all: migrate any rows the background thread missed
+        begin
+          migrate_entries_to_primary(ctx, final_check: true)
+        rescue StandardError => e
+          error_message = "Final migration to primary DB failed: #{e.message}"
+          Rails.logger.error error_message
+          Rails.logger.error e.backtrace.join("\n")
+          notify(error_message, :danger, ctx[:user_id])
+          ctx[:allocation_run]&.update_column(:status, error_message)
+          raise e
+        end
 
         # We only set it to Success if it wasn't already set to an error message during formula execution
         # Reloading to check current DB state of the status
@@ -302,10 +318,13 @@ module AccountEntryAllocation
             # because the main thread's with_scratch_sqlite connections are thread-local
             migrate_entries_to_primary(ctx, fund_formula_id: fund_formula_id)
           rescue StandardError => e
-            Rails.logger.error "Error in background loader thread: #{e.message}"
+            error_message = "Migration to primary DB failed (formula #{fund_formula_id}): #{e.message}"
+            Rails.logger.error error_message
             Rails.logger.error e.backtrace.join("\n")
-            # We don't raise here to keep the thread alive for other formulas,
-            # but the final load call in run_formulas will catch missing entries.
+            notify(error_message, :danger, ctx[:user_id])
+            ctx[:allocation_run]&.update_column(:status, error_message)
+            # Do not re-raise — keep the thread alive for remaining formulas.
+            # The final migrate_entries_to_primary in the ensure block will retry unmigrated rows.
           end
         end
       end

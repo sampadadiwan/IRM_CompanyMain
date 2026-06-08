@@ -15,6 +15,29 @@ class AccountEntrySqlite < ApplicationRecordSqlite
     joins("INNER JOIN account_entries AS parent_account_entries ON account_entries.parent_id = parent_account_entries.id AND account_entries.parent_type in ('AccountEntrySqlite', 'AccountEntry')")
   }
 
+  # insert_all bypasses AR callbacks, so we validate here before any batch write reaches SQLite.
+  # MySQL cannot represent NaN/Infinity in numeric columns (it parses "NaN" as a column name),
+  # so catching it here — with formula/commitment context — is far more actionable than the
+  # cryptic "Unknown column 'NaN' in 'field list'" raised during migration to primary DB.
+  FINITE_CHECKED_COLUMNS = %w[amount_cents folio_amount_cents].freeze
+
+  def self.insert_all(attributes, **kwargs)
+    Array(attributes).each_with_index do |attrs, idx|
+      FINITE_CHECKED_COLUMNS.each do |col|
+        value = attrs[col] || attrs[col.to_sym]
+        next unless value.respond_to?(:finite?) && !value.finite?
+
+        kind = value.nan? ? "NaN" : (value.positive? ? "Infinity" : "-Infinity")
+        context = "fund_formula_id=#{attrs['fund_formula_id']}, " \
+                  "capital_commitment_id=#{attrs['capital_commitment_id']}, " \
+                  "name=#{attrs['name']}"
+        raise ZeroDivisionError,
+              "#{kind} in '#{col}' (row #{idx}) — likely divide-by-zero in formula. #{context}"
+      end
+    end
+    super
+  end
+
   def to_s
     "#{name} #{I18n.l(reporting_date)}"
   end
