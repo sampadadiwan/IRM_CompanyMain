@@ -30,7 +30,7 @@
 
     <div class="form-group mt-3">
       <%= f.label :account_entry_names %>
-      <%= f.select :account_entry_names, @fund.entity.account_entries.pluck(:name).uniq.sort, { selected: @ratio_formula.account_entry_names }, { multiple: true, class: "form-control select2", data: { placeholder: "Select Account Entry Names" } } %>
+      <%= f.select :account_entry_names, @fund.entity.account_entries.distinct.pluck(:name).sort, { selected: @ratio_formula.account_entry_names }, { multiple: true, class: "form-control select2", data: { placeholder: "Select Account Entry Names" } } %>
     </div>
 
     <div class="form-group mt-3">

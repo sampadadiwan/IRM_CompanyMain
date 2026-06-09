@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_09_100001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -74,10 +74,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
     t.date "reporting_date", null: false
     t.string "rule_for", limit: 10, default: "Accounting"
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "updated_at", null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
-    t.index %w[capital_commitment_id name reporting_date], name: "idx_ae_cc_name_date"
+    t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
+    t.index ["entity_id", "deleted_at", "name"], name: "idx_ae_entity_deleted_name"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
