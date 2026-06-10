@@ -56,6 +56,9 @@ class CapitalDistributionPaymentDocJob < DocGenJob
     @user_id = user_id
     @template_id = template_id
 
+    # If call_notice_on is set to kyc in the fund json_fields then notice will be generated with KYC level data
+    options[:dist_notice_per_kyc] = @fund.kyc_level_data_gen?
+
     Chewy.strategy(:sidekiq) do
       generate(@start_date, @end_date, @user_id, options: options) if valid_inputs
     end

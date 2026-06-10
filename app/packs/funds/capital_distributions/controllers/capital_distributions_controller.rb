@@ -75,9 +75,7 @@ class CapitalDistributionsController < ApplicationController
 
   # This action is used to generate the documentation for the payments of the capital distribution
   def generate_docs
-    # call_notice_on value can be kyc for kyc level doc gen or nil/folio for normal doc gen
-    dist_notice_per_kyc = @capital_distribution.fund.json_fields["call_notice_on"].to_s.strip.downcase == "kyc"
-    CapitalDistributionPaymentDocJob.perform_later(@capital_distribution.id, nil, current_user.id, options: { dist_notice_per_kyc: dist_notice_per_kyc })
+    CapitalDistributionPaymentDocJob.perform_later(@capital_distribution.id, nil, current_user.id)
     redirect_to capital_distribution_path(@capital_distribution), notice: "Documentation generation started, please check back in a few mins. Each distribution payment will have the customized document attached"
   end
 

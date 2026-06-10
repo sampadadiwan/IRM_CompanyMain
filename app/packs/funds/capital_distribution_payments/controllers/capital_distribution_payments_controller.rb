@@ -72,9 +72,7 @@ class CapitalDistributionPaymentsController < ApplicationController
     if @capital_distribution_payment.capital_commitment.skip_doc_gen?
       redirect_to capital_distribution_payment_path(@capital_distribution_payment), alert: "Notice cannot be generated as skip_doc_gen is set to Yes in the Commitment"
     else
-      # If call_notice_on is set to kyc in the fund json_fields then notice will be generated with KYC level data
-      dist_notice_per_kyc = @capital_distribution_payment.fund.json_fields["call_notice_on"].to_s.strip.downcase == "kyc"
-      CapitalDistributionPaymentDocJob.perform_later(@capital_distribution_payment.capital_distribution_id, @capital_distribution_payment.id, current_user.id, options: { dist_notice_per_kyc: dist_notice_per_kyc })
+      CapitalDistributionPaymentDocJob.perform_later(@capital_distribution_payment.capital_distribution_id, @capital_distribution_payment.id, current_user.id)
       redirect_to capital_distribution_payment_path(@capital_distribution_payment), notice: "Documentation generation started, please check back in a few mins."
     end
   end
