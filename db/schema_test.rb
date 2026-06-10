@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_09_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_10_100001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3161,6 +3161,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_100001) do
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
+    t.bigint "import_upload_id"
     t.string "level"
     t.string "period"
     t.json "ratios"
@@ -3168,6 +3169,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_09_100001) do
     t.index ["deleted_at"], name: "index_ratio_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_ratio_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_ratio_formulas_on_fund_id"
+    t.index ["import_upload_id"], name: "index_ratio_formulas_on_import_upload_id"
   end
 
   create_table "reminders", force: :cascade do |t|

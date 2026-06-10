@@ -8,6 +8,11 @@ class RatioFormulasController < ApplicationController
     @q = @fund.ratio_formulas.ransack(params[:q])
     @ratio_formulas = policy_scope(@q.result).includes(:fund)
     @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund), 'Ratio Formulas': nil }
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+    end
   end
 
   def show

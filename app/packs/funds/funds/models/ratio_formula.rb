@@ -11,6 +11,7 @@ class RatioFormula < ApplicationRecord
 
   belongs_to :entity
   belongs_to :fund
+  belongs_to :import_upload, optional: true
 
   delegate :entity_id, to: :fund, allow_nil: true
 
