@@ -42,7 +42,11 @@
           Deal Reports
         </a>
       <% end %>
-
+      <% if @support_agent.agent_type == "PresentationAnalystAgent" %>
+        <a class="nav-link <%= 'active' if active_tab == 'presentation_reports' %>" data-bs-toggle="pill" href="#presentation-reports-tab">
+          Presentation Reports
+        </a>
+      <% end %>
 
     </nav>
 
@@ -97,6 +101,12 @@
           <%= render 'note_summaries_tab', support_agent: @support_agent, note_summaries: @note_summaries %>
         </div>
       <% end %>
+      <% if @support_agent.agent_type == "PresentationAnalystAgent" %>
+        <div id="presentation-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'presentation_reports' %>">
+          <%= render 'presentation_reports_tab', support_agent: @support_agent, presentation_reports: @presentation_reports %>
+        </div>
+      <% end %>
+
       <% if @support_agent.agent_type == "DealManagementAgent" %>
         <%# Deal Reports Tab %>
         <div id="deal-reports-tab" class="tab-pane fade in <%= 'show active' if active_tab == 'deal_reports' %>">

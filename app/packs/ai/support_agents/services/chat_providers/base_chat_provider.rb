@@ -49,6 +49,9 @@ class BaseChatProvider
                      when "PortfolioCompanyAgent" then defined?(PortfolioCompanyChatProvider) ? PortfolioCompanyChatProvider : DefaultChatProvider
                      when "LpAssistantAgent" then defined?(LpChatProvider) ? LpChatProvider : DefaultChatProvider
                      when "PortfolioAssistantAgent" then defined?(PortfolioAssistantChatProvider) ? PortfolioAssistantChatProvider : DefaultChatProvider
+                     # PRD §12.3 — PresentationChatProvider loads SupportAgentReport.json_fields
+                     # as context so the GP can ask follow-ups without re-running the agent.
+                     when "PresentationAnalystAgent" then defined?(PresentationChatProvider) ? PresentationChatProvider : DefaultChatProvider
 
                      else DefaultChatProvider
                      end

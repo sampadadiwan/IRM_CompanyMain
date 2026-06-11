@@ -123,7 +123,8 @@ class DashboardWidget < ApplicationRecord
 
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Agent Chart", path: "investors/widgets/agent_chart", size: "XL", metadata_help: "{title: 'Chart Title', height: 420}"),
     DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Scoring Report", path: "investors/widgets/scoring_report", size: "XL", metadata_help: "{title: 'Company Score', agent_type: 'PortfolioScoringAgent'}"),
-    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Note Summaries", path: "dashboard_widgets/widgets/note_summaries", size: "XL", metadata_help: "{title: 'Note Summaries'}")
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Note Summaries", path: "dashboard_widgets/widgets/note_summaries", size: "XL", metadata_help: "{title: 'Note Summaries'}"),
+    DashboardWidget.new(dashboard_name: PORTFOLIO_COMPANY_DASHBOARD, widget_name: "Presentation Analyst", path: "investors/widgets/presentation_analyst", size: "XL", metadata_help: "{title: 'Investor Presentation Analysis', last_n: 6}")
 
   ].freeze
 

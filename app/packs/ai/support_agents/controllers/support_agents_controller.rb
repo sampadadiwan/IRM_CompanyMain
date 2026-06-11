@@ -80,6 +80,17 @@ class SupportAgentsController < ApplicationController
                         SupportAgentReport.none
                       end
 
+    # Load presentation analyst reports for PresentationAnalystAgent
+    @presentation_reports = if @support_agent.agent_type == "PresentationAnalystAgent"
+                               reports = SupportAgentReport
+                                 .where(support_agent: @support_agent, owner_type: "Investor")
+                                 .includes(:owner)
+                               reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+                               reports.order(created_at: :desc)
+                             else
+                               SupportAgentReport.none
+                             end
+
     @deal_reports = if @support_agent.agent_type == "DealsReportAgent"
                       SupportAgentReport
                         .where(support_agent: @support_agent, owner_type: "Deal")

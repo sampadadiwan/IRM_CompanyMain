@@ -119,6 +119,19 @@
                 <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
               </span>
             <% end %>
+
+            <% if @investor.entity.support_agents.set?(:presentation_analyst_agent) %>
+              <%= button_to run_support_agents_path(agent_type: "PresentationAnalystAgent", target_id: @investor.id, method: :post),
+                            class: "dropdown-item",
+                            data: { bs_toggle: "tooltip", bs_title: "Reads investor presentations across all periods and generates a pre-board briefing and Management Accountability Score" } do %>
+                <i class="ti ti-files"></i> Run Presentation Analyst
+              <% end %>
+            <% else %>
+              <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Presentation Analyst Agent is disabled. Contact support to enable it">
+                <i class="ti ti-files"></i> Run Presentation Analyst
+                <i class="ti ti-lock ms-1" style="font-size:0.7rem"></i>
+              </span>
+            <% end %>
           <% end %>
 
           <% if @investor.category == "Portfolio Company" %>

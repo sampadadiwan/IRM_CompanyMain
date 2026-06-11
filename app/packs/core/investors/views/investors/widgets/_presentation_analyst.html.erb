@@ -1,0 +1,83 @@
+<%
+  args         ||= {}
+  widget_title  = args[:title].presence || "Investor Presentation Analysis"
+  last_n        = (args[:last_n].presence || 6).to_i
+
+  agent = SupportAgent.find_by(agent_type: "PresentationAnalystAgent", entity_id: @investor.entity_id)
+
+  reports = if agent
+    SupportAgentReport
+      .where(owner: @investor, support_agent: agent)
+      .order(created_at: :desc)
+      .limit(last_n)
+      .to_a
+  else
+    []
+  end
+
+  can_run = @investor.entity.support_agents.set?(:presentation_analyst_agent) && policy(@investor).update?
+%>
+
+<%= render(WidgetCardComponent.new(widget: widget, args: args, widget_size: widget.widget_size)) do %>
+
+  <% if reports.any? %>
+    <div class="table-responsive">
+      <table class="table table-sm table-bordered align-middle mb-0 pres-summary-table">
+        <thead style="background:#f0f0f0;">
+          <tr>
+            <th>Periods</th>
+            <th style="min-width:130px;">Score</th>
+            <th>Grade</th>
+            <th>Questions</th>
+            <th>Status</th>
+            <th>Run At</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% reports.each do |report| %>
+            <%= render "support_agents/presentation_report_row",
+                       report: report,
+                       agent:  agent,
+                       action: :collapse %>
+            <%= render "support_agents/presentation_report_detail",
+                       report:  report,
+                       colspan: 7 %>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+    <div class="px-3 py-2 d-flex justify-content-between align-items-center border-top">
+      <small class="text-muted">
+        <i class="ti ti-calendar me-1"></i>
+        Last run: <%= reports.first.created_at.strftime("%d %b %Y at %H:%M") %>
+      </small>
+      <% if can_run %>
+        <%= button_to run_support_agents_path(agent_type: "PresentationAnalystAgent", target_id: @investor.id, method: :post),
+                      class: "btn btn-sm btn-outline-secondary",
+                      data: { bs_toggle: "tooltip", bs_title: "Re-run the Presentation Analyst for this company" } do %>
+          <i class="ti ti-refresh"></i> Re-run
+        <% end %>
+      <% end %>
+    </div>
+
+  <% elsif agent %>
+    <div class="p-3 text-center text-muted">
+      <i class="ti ti-files" style="font-size:2rem;opacity:0.3;"></i>
+      <p class="mt-2 mb-3 small">No presentation analysis yet. Attach investor updates to KPI reports and run the agent.</p>
+      <% if can_run %>
+        <%= button_to run_support_agents_path(agent_type: "PresentationAnalystAgent", target_id: @investor.id, method: :post),
+                      class: "btn btn-sm btn-primary",
+                      data: { bs_toggle: "tooltip", bs_title: "Read investor presentations and generate a pre-board briefing" } do %>
+          <i class="ti ti-robot"></i> Run Presentation Analyst
+        <% end %>
+      <% end %>
+    </div>
+
+  <% else %>
+    <div class="p-3 text-center text-muted">
+      <small>No Presentation Analyst configured for this entity.</small>
+    </div>
+  <% end %>
+
+<% end %>

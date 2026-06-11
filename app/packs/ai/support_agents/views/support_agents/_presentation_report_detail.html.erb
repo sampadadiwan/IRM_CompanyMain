@@ -1,0 +1,505 @@
+<%#
+  Full inline detail panel for one SupportAgentReport row.
+  Renders a collapsed <tr> containing the score breakdown, flag cards, and briefing questions.
+  Used by both _presentation_reports_tab.html.erb and investors/widgets/_presentation_analyst.html.erb.
+
+  Locals:
+    report   — SupportAgentReport (required)
+    colspan  — integer, must match the number of <th> columns in the parent table (default 7)
+%>
+<%
+  colspan = local_assigns.fetch(:colspan, 7)
+
+  jf        = report.json_fields || {}
+  score     = jf["score"] || {}
+  overall   = score["overall_score"].to_i
+  grade     = score["grade"].to_s
+  periods   = jf["periods_analyzed"] || []
+  questions = jf["analyst_questions"] || []
+  flags     = jf["cross_period_flags"] || {}
+
+  bar_color = ->(val) {
+    val.to_i >= 80 ? "bg-success" : val.to_i >= 60 ? "bg-primary" : val.to_i >= 40 ? "bg-warning" : "bg-danger"
+  }
+  bc = bar_color.call(overall)
+
+  fmt_period = ->(label) {
+    label.to_s.sub(/-(?:Actual|Budget|IC)\z/, '').gsub('-', ' ')
+  }
+
+  status_badge = ->(status) {
+    map = {
+      "missed"        => ["bg-danger",           "Missed"],
+      "met"           => ["bg-success",           "Met"],
+      "partial"       => ["bg-warning text-dark", "Partial"],
+      "partially_met" => ["bg-warning text-dark", "Partial"],
+      "unconfirmed"   => ["bg-secondary",         "Unconfirmed"],
+      "not_mentioned" => ["bg-secondary",         "Not Mentioned"],
+      "at_risk"       => ["bg-danger",            "At Risk"],
+      "resolved"      => ["bg-success",           "Resolved"],
+      "dropped"       => ["bg-warning text-dark", "Dropped"],
+      "escalated"     => ["bg-danger",            "Escalated"],
+      "ongoing"       => ["bg-primary",           "Ongoing"],
+      "reframed"      => ["bg-primary",           "Reframed"],
+      "new"           => ["bg-info text-dark",    "New"],
+    }
+    cls, label = map[status.to_s.downcase] || ["bg-secondary", status.to_s.titleize]
+    "<span class=\"badge #{cls}\" style=\"font-size:0.72rem;\">#{label}</span>".html_safe
+  }
+
+  category_badge = ->(cat) {
+    map = {
+      "commitment" => "bg-primary",
+      "risk"       => "bg-danger",
+      "objective"  => "bg-secondary",
+      "initiative" => "bg-warning text-dark",
+      "metric"     => "bg-info text-dark",
+      "governance" => "bg-dark",
+    }
+    cls = map[cat.to_s.downcase] || "bg-secondary"
+    "<span class=\"badge #{cls}\" style=\"font-size:0.72rem;\">#{cat}</span>".html_safe
+  }
+%>
+
+<tr class="collapse" id="pres-detail-<%= report.id %>">
+  <td colspan="<%= colspan %>" class="p-0 border-top-0" style="background-color:#ffffff!important;">
+    <div class="p-3 d-flex flex-column gap-4">
+
+      <%# ═══ Management Accountability Score ════════════════════════════════ %>
+      <% if overall > 0 %>
+        <section>
+          <%# Pre-compute breakdown data for popover explanations %>
+          <%
+            pop_c_all      = flags["commitment_tracker"]   || []
+            pop_r_all      = flags["risk_evolution"]       || []
+            pop_d_all      = flags["objective_drift"]      || []
+            pop_g_all      = flags["initiative_graveyard"] || []
+            pop_a_all      = flags["metric_anomalies"]     || []
+
+            pop_c_met      = pop_c_all.count { |c| c["status"] == "met" }
+            pop_c_partial  = pop_c_all.count { |c| c["status"] == "partially_met" }
+            pop_c_missed   = pop_c_all.count { |c| c["status"] == "missed" }
+            pop_c_silent   = pop_c_all.count { |c| c["status"] == "not_mentioned" }
+
+            pop_r_resolved  = pop_r_all.count { |r| r["status"] == "resolved"  }
+            pop_r_dropped   = pop_r_all.count { |r| r["status"] == "dropped"   }
+            pop_r_escalated = pop_r_all.count { |r| r["status"] == "escalated" }
+            pop_r_new       = pop_r_all.count { |r| r["status"] == "new"       }
+            pop_r_net       = (pop_r_resolved * 5) - (pop_r_dropped * 10) - (pop_r_escalated * 5) - (pop_r_new * 3)
+
+            pop_d_removed  = pop_d_all.count { |d| d["change"] == "removed"  }
+            pop_d_reframed = pop_d_all.count { |d| d["change"] == "reframed" }
+          %>
+
+          <%# Hidden popover content divs — wired up via JS below %>
+          <div id="dim-pop-commitment-<%= report.id %>" class="d-none">
+            <div style="min-width:290px;font-size:0.82rem;">
+              <div class="fw-semibold mb-1">Commitment Score &middot; 35% of total</div>
+              <p class="text-muted mb-2" style="font-size:0.78rem;line-height:1.4;">
+                Tracks every explicit promise management made across all periods and checks whether it was honoured.
+                Silent drops — commitments made in one update but never revisited — are the heaviest penalty signal:
+                they suggest management is actively avoiding accountability.
+              </p>
+              <code style="display:block;font-size:0.74rem;background:#f8f9fa;padding:4px 6px;border-radius:4px;margin-bottom:8px;">
+                (met + partial&times;0.5) &divide; total &times; 100 &minus; 5pts per silent drop
+              </code>
+              <table class="table table-sm table-borderless mb-2" style="font-size:0.81rem;">
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Met in full</td><td class="py-0 text-end fw-semibold" style="color:#198754;"><%= pop_c_met %></td></tr>
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Partially met</td><td class="py-0 text-end fw-semibold" style="color:#ffc107;"><%= pop_c_partial %></td></tr>
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Missed</td><td class="py-0 text-end fw-semibold" style="color:#dc3545;"><%= pop_c_missed %></td></tr>
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Silent drop (−5pts each)</td><td class="py-0 text-end fw-semibold" style="color:#dc3545;"><%= pop_c_silent %></td></tr>
+                <tr style="border-top:1px solid #dee2e6;"><td class="ps-0" style="color:#6c757d;">Total tracked</td><td class="text-end fw-semibold"><%= pop_c_all.size %></td></tr>
+              </table>
+              <div style="color:#6c757d;font-size:0.76rem;">Source: <strong>Commitment Tracker</strong> (<%= pop_c_all.size %> items below)</div>
+            </div>
+          </div>
+
+          <div id="dim-pop-risk-<%= report.id %>" class="d-none">
+            <div style="min-width:290px;font-size:0.82rem;">
+              <div class="fw-semibold mb-1">Risk Score &middot; 25% of total</div>
+              <p class="text-muted mb-2" style="font-size:0.78rem;line-height:1.4;">
+                Measures whether management discloses risks transparently and resolves them.
+                Resolved risks earn credit. Risks that silently disappear — with no stated resolution — are the
+                most damaging signal: they imply management removed the risk from view, not from the business.
+              </p>
+              <code style="display:block;font-size:0.74rem;background:#f8f9fa;padding:4px 6px;border-radius:4px;margin-bottom:8px;">
+                Starts 100 &middot; &minus;10 dropped &middot; &minus;5 escalated &middot; &minus;3 new &middot; +5 resolved
+              </code>
+              <table class="table table-sm table-borderless mb-2" style="font-size:0.81rem;">
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Resolved (+5 each)</td><td class="py-0 text-end fw-semibold" style="color:#198754;"><%= pop_r_resolved %> &rarr; +<%= pop_r_resolved * 5 %></td></tr>
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Dropped (−10 each)</td><td class="py-0 text-end fw-semibold" style="color:#dc3545;"><%= pop_r_dropped %> &rarr; &minus;<%= pop_r_dropped * 10 %></td></tr>
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Escalated (−5 each)</td><td class="py-0 text-end fw-semibold" style="color:#dc3545;"><%= pop_r_escalated %> &rarr; &minus;<%= pop_r_escalated * 5 %></td></tr>
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">New risk (−3 each)</td><td class="py-0 text-end fw-semibold" style="color:#ffc107;"><%= pop_r_new %> &rarr; &minus;<%= pop_r_new * 3 %></td></tr>
+                <tr style="border-top:1px solid #dee2e6;">
+                  <td class="ps-0" style="color:#6c757d;">Net adjustment from 100</td>
+                  <td class="text-end fw-semibold" style="color:<%= pop_r_net >= 0 ? '#198754' : '#dc3545' %>;">
+                    <%= pop_r_net >= 0 ? '+' : '' %><%= pop_r_net %>
+                  </td>
+                </tr>
+              </table>
+              <div style="color:#6c757d;font-size:0.76rem;">Source: <strong>Risk Evolution</strong> (<%= pop_r_all.size %> items below)</div>
+            </div>
+          </div>
+
+          <div id="dim-pop-coherence-<%= report.id %>" class="d-none">
+            <div style="min-width:290px;font-size:0.82rem;">
+              <div class="fw-semibold mb-1">Coherence Score &middot; 25% of total</div>
+              <p class="text-muted mb-2" style="font-size:0.78rem;line-height:1.4;">
+                Measures how consistently management pursues stated objectives and sees initiatives through.
+                Pivoting strategy without explanation and quietly abandoning initiatives both signal
+                that management's communication cannot be relied upon to reflect actual priorities.
+              </p>
+              <code style="display:block;font-size:0.74rem;background:#f8f9fa;padding:4px 6px;border-radius:4px;margin-bottom:8px;">
+                Starts 100 &middot; &minus;8 removed &middot; &minus;3 reframed &middot; &minus;5 per abandoned initiative
+              </code>
+              <table class="table table-sm table-borderless mb-2" style="font-size:0.81rem;">
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Objective removed (−8 each)</td><td class="py-0 text-end fw-semibold" style="color:#dc3545;"><%= pop_d_removed %> &rarr; &minus;<%= pop_d_removed * 8 %></td></tr>
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Objective reframed (−3 each)</td><td class="py-0 text-end fw-semibold" style="color:#ffc107;"><%= pop_d_reframed %> &rarr; &minus;<%= pop_d_reframed * 3 %></td></tr>
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Abandoned initiative (−5 each)</td><td class="py-0 text-end fw-semibold" style="color:#dc3545;"><%= pop_g_all.size %> &rarr; &minus;<%= pop_g_all.size * 5 %></td></tr>
+                <tr style="border-top:1px solid #dee2e6;"><td class="ps-0" style="color:#6c757d;">Total deductions</td><td class="text-end fw-semibold" style="color:#dc3545;">&minus;<%= (pop_d_removed * 8) + (pop_d_reframed * 3) + (pop_g_all.size * 5) %></td></tr>
+              </table>
+              <div style="color:#6c757d;font-size:0.76rem;">
+                Sources: <strong>Objective Drift</strong> (<%= pop_d_all.size %>),
+                <strong>Initiative Graveyard</strong> (<%= pop_g_all.size %>) — both below
+              </div>
+            </div>
+          </div>
+
+          <div id="dim-pop-narrative-<%= report.id %>" class="d-none">
+            <div style="min-width:290px;font-size:0.82rem;">
+              <div class="fw-semibold mb-1">Narrative Score &middot; 15% of total</div>
+              <p class="text-muted mb-2" style="font-size:0.78rem;line-height:1.4;">
+                Measures the consistency and honesty of metric reporting across periods.
+                Declining trends with no commentary, metrics that disappear from updates, and
+                large unexplained swings all signal that management is not being transparent
+                about the direction of the business.
+              </p>
+              <code style="display:block;font-size:0.74rem;background:#f8f9fa;padding:4px 6px;border-radius:4px;margin-bottom:8px;">
+                100 &minus; 10pts per metric anomaly
+              </code>
+              <table class="table table-sm table-borderless mb-2" style="font-size:0.81rem;">
+                <tr><td class="py-0 ps-0" style="color:#6c757d;">Metric anomalies found</td><td class="py-0 text-end fw-semibold" style="color:<%= pop_a_all.size > 2 ? '#dc3545' : '#ffc107' %>;"><%= pop_a_all.size %></td></tr>
+                <tr style="border-top:1px solid #dee2e6;"><td class="ps-0" style="color:#6c757d;">Total penalty</td><td class="text-end fw-semibold" style="color:#dc3545;">&minus;<%= pop_a_all.size * 10 %></td></tr>
+              </table>
+              <% if pop_a_all.any? %>
+                <div style="color:#6c757d;font-size:0.76rem;margin-bottom:4px;">Flagged metrics:</div>
+                <% pop_a_all.each do |a| %>
+                  <div style="font-size:0.76rem;color:#495057;margin-bottom:2px;">
+                    &bull; <%= h(a["metric"].to_s) %>
+                    <% if a["periods_affected"].present? %>
+                      <span style="color:#6c757d;">(<%= a["periods_affected"].map { |p| fmt_period.call(p) }.join(", ") %>)</span>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% end %>
+              <div style="color:#6c757d;font-size:0.76rem;margin-top:4px;">Source: <strong>Metric Anomalies</strong> (<%= pop_a_all.size %> items below)</div>
+            </div>
+          </div>
+
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <h6 class="mb-0 fw-semibold">Management Accountability Score</h6>
+            <span class="badge fs-5 px-3 py-1 <%= bc %>"><%= overall %>&nbsp;<%= grade %></span>
+          </div>
+          <p class="text-muted small mb-3">
+            A composite score (0–100) across four dimensions — click <i class="ti ti-info-circle"></i> on any card for the full breakdown with actual data from this run.
+          </p>
+          <div class="row g-2">
+            <% [
+                 ["Commitment", "commitment_score", "35%", "Did management honour every explicit commitment? Tracks met, partial, missed, and silently dropped promises.", "commitment"],
+                 ["Risk",       "risk_score",       "25%", "Were risks actively managed and resolved, or did they silently disappear without explanation?",              "risk"],
+                 ["Coherence",  "coherence_score",  "25%", "Did strategic objectives and initiatives remain consistent, or did management pivot without acknowledging it?", "coherence"],
+                 ["Narrative",  "narrative_score",  "15%", "Are key metrics reported consistently, or do trends deteriorate without commentary?",                         "narrative"],
+               ].each do |dim_label, dim_key, dim_weight, dim_brief, dim_slug| %>
+              <% dv  = score[dim_key].to_i %>
+              <% dbc = bar_color.call(dv) %>
+              <div class="col-6 col-md-3">
+                <div class="card h-100 border shadow-none">
+                  <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="small fw-semibold"><%= dim_label %></span>
+                      <div class="d-flex align-items-center gap-1">
+                        <button type="button"
+                                class="btn btn-link p-0 pres-dim-info"
+                                data-target-id="dim-pop-<%= dim_slug %>-<%= report.id %>"
+                                style="font-size:0.85rem;color:#6c757d;line-height:1;">
+                          <i class="ti ti-info-circle"></i>
+                        </button>
+                        <span class="badge bg-light text-secondary border" style="font-size:0.68rem;"><%= dim_weight %></span>
+                      </div>
+                    </div>
+                    <div class="d-flex align-items-baseline gap-1 mb-1">
+                      <span class="fw-bold" style="font-size:2rem;line-height:1.1;"><%= dv %></span>
+                      <span class="text-muted" style="font-size:0.8rem;">/100</span>
+                    </div>
+                    <div class="progress mb-2" style="height:4px;">
+                      <div class="progress-bar <%= dbc %>" style="width:<%= dv %>%;"></div>
+                    </div>
+                    <p class="text-muted mb-0" style="font-size:0.71rem;line-height:1.35;"><%= dim_brief %></p>
+                  </div>
+                </div>
+              </div>
+            <% end %>
+          </div>
+        </section>
+      <% end %>
+
+      <%# ═══ Cross-Period Flags ══════════════════════════════════════════════ %>
+      <% all_flags_empty = flags.values.all? { |v| Array(v).empty? } %>
+      <% unless flags.empty? || all_flags_empty %>
+        <section>
+          <h6 class="fw-semibold mb-1">Cross-Period Flags</h6>
+          <p class="text-muted small mb-3">
+            Patterns detected by comparing investor updates across all <%= periods.size %> periods.
+            Each lens focuses on a different dimension of management communication quality.
+          </p>
+          <div class="row g-3">
+
+            <% commitments = flags["commitment_tracker"] || [] %>
+            <% unless commitments.empty? %>
+              <%= render layout: "support_agents/flag_card", locals: {
+                    title:     "Commitment Tracker",
+                    count:     commitments.size,
+                    help_text: "Explicit promises and targets made by management — tracked to see if they were met, missed, or never revisited in subsequent updates.",
+                    col_class: "col-12 col-lg-6",
+                    score_dim: "Commitment · 35%"
+                  } do %>
+                <colgroup><col style="width:1%;"><col><col style="width:7rem;"></colgroup>
+                <tbody>
+                  <% commitments.each do |item| %>
+                    <tr>
+                      <td class="px-3 py-2" style="white-space:nowrap;"><%= status_badge.call(item["status"]) %></td>
+                      <td class="py-2">
+                        <div class="small fw-semibold"><%= item["commitment"] %></div>
+                        <% if item["evidence"].present? %>
+                          <div class="text-muted fst-italic mt-1" style="font-size:0.71rem;">"<%= item["evidence"].truncate(150) %>"</div>
+                        <% end %>
+                      </td>
+                      <td class="px-3 py-2 text-end" style="white-space:nowrap;">
+                        <% if item["from_period"].present? %>
+                          <span class="badge bg-light text-secondary border" style="font-size:0.67rem;"><%= fmt_period.call(item["from_period"]) %></span>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              <% end %>
+            <% end %>
+
+            <% risks = flags["risk_evolution"] || [] %>
+            <% unless risks.empty? %>
+              <%= render layout: "support_agents/flag_card", locals: {
+                    title:     "Risk Evolution",
+                    count:     risks.size,
+                    help_text: "How each risk changed across periods. Resolved risks receive credit; risks that silently disappeared without explanation are flagged as dropped.",
+                    col_class: "col-12 col-lg-6",
+                    score_dim: "Risk · 25%"
+                  } do %>
+                <colgroup><col style="width:1%;"><col><col style="width:8rem;"></colgroup>
+                <tbody>
+                  <% risks.each do |item| %>
+                    <tr>
+                      <td class="px-3 py-2" style="white-space:nowrap;"><%= status_badge.call(item["status"]) %></td>
+                      <td class="py-2">
+                        <div class="small fw-semibold"><%= item["name"] %></div>
+                        <% if item["note"].present? %>
+                          <div class="text-muted mt-1" style="font-size:0.71rem;"><%= item["note"] %></div>
+                        <% end %>
+                      </td>
+                      <td class="px-3 py-2 text-end" style="white-space:nowrap;">
+                        <div class="d-flex flex-column gap-1 align-items-end">
+                          <% if item["first_period"].present? %>
+                            <span class="badge bg-light text-secondary border" style="font-size:0.67rem;">From: <%= fmt_period.call(item["first_period"]) %></span>
+                          <% end %>
+                          <% if item["last_period"].present? && item["last_period"] != item["first_period"] %>
+                            <span class="badge bg-light text-secondary border" style="font-size:0.67rem;">To: <%= fmt_period.call(item["last_period"]) %></span>
+                          <% end %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              <% end %>
+            <% end %>
+
+            <% drifts = flags["objective_drift"] || [] %>
+            <% unless drifts.empty? %>
+              <%= render layout: "support_agents/flag_card", locals: {
+                    title:     "Objective Drift",
+                    count:     drifts.size,
+                    help_text: "Strategic objectives that materially shifted between periods without explicit acknowledgement — a pivot or change in direction worth questioning at the board.",
+                    col_class: "col-12 col-lg-6",
+                    score_dim: "Coherence · 25%"
+                  } do %>
+                <colgroup><col style="width:1%;"><col><col style="width:9rem;"></colgroup>
+                <tbody>
+                  <% drifts.each do |item| %>
+                    <tr>
+                      <td class="px-3 py-2" style="white-space:nowrap;"><%= status_badge.call(item["change"]) %></td>
+                      <td class="py-2">
+                        <div class="small fw-semibold"><%= item["description"] %></div>
+                        <% if item["evidence"].present? %>
+                          <div class="text-muted fst-italic mt-1" style="font-size:0.71rem;">"<%= item["evidence"].truncate(180) %>"</div>
+                        <% end %>
+                      </td>
+                      <td class="px-3 py-2 text-end" style="white-space:nowrap;">
+                        <% if item["from_period"].present? || item["to_period"].present? %>
+                          <div class="d-flex flex-column gap-1 align-items-end">
+                            <span class="badge bg-light text-secondary border" style="font-size:0.67rem;"><%= fmt_period.call(item["from_period"]) %></span>
+                            <i class="ti ti-arrow-down text-muted" style="font-size:0.7rem;"></i>
+                            <span class="badge bg-light text-secondary border" style="font-size:0.67rem;"><%= fmt_period.call(item["to_period"]) %></span>
+                          </div>
+                        <% end %>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              <% end %>
+            <% end %>
+
+            <% graveyard = flags["initiative_graveyard"] || [] %>
+            <% unless graveyard.empty? %>
+              <%= render layout: "support_agents/flag_card", locals: {
+                    title:     "Initiative Graveyard",
+                    count:     graveyard.size,
+                    help_text: "Initiatives announced in earlier updates that quietly disappeared — no completion note, no cancellation, just silence in subsequent periods.",
+                    col_class: "col-12 col-lg-6",
+                    score_dim: "Coherence · 25%"
+                  } do %>
+                <colgroup><col style="width:1%;"><col><col style="width:10rem;"></colgroup>
+                <tbody>
+                  <% graveyard.each do |item| %>
+                    <tr>
+                      <td class="px-3 py-2 text-center" style="vertical-align:top;">
+                        <i class="ti ti-ghost text-warning" style="font-size:0.9rem;"></i>
+                      </td>
+                      <td class="py-2">
+                        <div class="small fw-semibold"><%= item["name"] %></div>
+                        <% if item["note"].present? %>
+                          <div class="text-muted mt-1" style="font-size:0.71rem;"><%= item["note"].truncate(180) %></div>
+                        <% end %>
+                      </td>
+                      <td class="px-3 py-2 text-end" style="white-space:nowrap;">
+                        <div class="d-flex flex-column gap-1 align-items-end">
+                          <% if item["first_period"].present? %>
+                            <span class="badge bg-light text-secondary border" style="font-size:0.67rem;">Announced: <%= fmt_period.call(item["first_period"]) %></span>
+                          <% end %>
+                          <% if item["last_seen_period"].present? %>
+                            <span class="badge bg-warning text-dark" style="font-size:0.67rem;">Last seen: <%= fmt_period.call(item["last_seen_period"]) %></span>
+                          <% end %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              <% end %>
+            <% end %>
+
+            <% anomalies = flags["metric_anomalies"] || [] %>
+            <% unless anomalies.empty? %>
+              <%= render layout: "support_agents/flag_card", locals: {
+                    title:     "Metric Anomalies",
+                    count:     anomalies.size,
+                    help_text: "Key metrics with unusual trends — consistent declines, large swings, or metrics reported in early periods that stopped appearing in later updates.",
+                    col_class: "col-12",
+                    score_dim: "Narrative · 15%"
+                  } do %>
+                <colgroup><col style="width:1%;"><col><col style="width:9rem;"></colgroup>
+                <tbody>
+                  <% anomalies.each do |item| %>
+                    <tr>
+                      <td class="px-3 py-2" style="white-space:nowrap;">
+                        <span class="badge bg-info text-dark" style="font-size:0.72rem;"><%= item["metric"].to_s.truncate(30) %></span>
+                      </td>
+                      <td class="py-2 small"><%= item["description"] %></td>
+                      <td class="px-3 py-2 text-end" style="white-space:nowrap;">
+                        <div class="d-flex flex-column gap-1 align-items-end">
+                          <% (item["periods_affected"] || []).each do |p| %>
+                            <span class="badge bg-light text-secondary border" style="font-size:0.67rem;"><%= fmt_period.call(p) %></span>
+                          <% end %>
+                        </div>
+                      </td>
+                    </tr>
+                  <% end %>
+                </tbody>
+              <% end %>
+            <% end %>
+
+          </div><%# /row g-3 %>
+        </section>
+      <% end %>
+
+      <%# ═══ Pre-Board Briefing Questions ══════════════════════════════════ %>
+      <% unless questions.empty? %>
+        <section>
+          <h6 class="fw-semibold mb-1">Pre-Board Briefing Questions</h6>
+          <p class="text-muted small mb-2">
+            Questions grounded in specific statements, numbers, and commitments from the investor updates.
+            Use these before the board call to surface accountability gaps and probe management's awareness.
+          </p>
+          <div class="table-responsive">
+            <table class="table table-bordered table-sm align-middle mb-0 bg-white">
+              <thead style="background:#f8f8f8;">
+                <tr>
+                  <th style="width:2.5rem;" class="text-center">#</th>
+                  <th>Question</th>
+                  <th style="width:10rem;" class="text-center">Quarter</th>
+                  <th style="width:7.5rem;" class="text-center">Category</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% questions.each_with_index do |q, idx| %>
+                  <tr>
+                    <td class="text-muted small text-center"><%= idx + 1 %></td>
+                    <td class="small"><%= q["question"] %></td>
+                    <td class="text-center">
+                      <% if q["source_period"].present? %>
+                        <span class="badge bg-light text-secondary border" style="font-size:0.7rem;">
+                          <%= fmt_period.call(q["source_period"]) %>
+                        </span>
+                      <% end %>
+                    </td>
+                    <td class="text-center">
+                      <% if q["category"].present? %>
+                        <%= category_badge.call(q["category"]) %>
+                      <% end %>
+                    </td>
+                  </tr>
+                <% end %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% end %>
+
+    </div><%# /p-3 d-flex flex-column gap-4 %>
+  </td>
+</tr>
+
+<script>
+  (function() {
+    function initPresPopovers() {
+      document.querySelectorAll('.pres-dim-info').forEach(function(el) {
+        if (bootstrap.Popover.getInstance(el)) return;
+        var targetId = el.dataset.targetId;
+        var contentEl = document.getElementById(targetId);
+        new bootstrap.Popover(el, {
+          trigger: 'click', html: true, placement: 'bottom',
+          content: contentEl ? contentEl.innerHTML : '', title: '',
+        });
+      });
+      if (!window.__presPopoverClickBound) {
+        window.__presPopoverClickBound = true;
+        document.addEventListener('click', function(e) {
+          if (!e.target.closest('.pres-dim-info') && !e.target.closest('.popover')) {
+            document.querySelectorAll('.pres-dim-info').forEach(function(el) {
+              var pop = bootstrap.Popover.getInstance(el);
+              if (pop) pop.hide();
+            });
+          }
+        }, { capture: true });
+      }
+    }
+    document.addEventListener('turbo:load', initPresPopovers);
+    if (document.readyState !== 'loading') initPresPopovers();
+  })();
+</script>
