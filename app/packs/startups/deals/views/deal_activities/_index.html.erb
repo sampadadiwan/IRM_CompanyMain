@@ -1,10 +1,22 @@
+<% template ||= false %>
 <%= turbo_frame_tag "deal_activities_frame", target: "_top" do %>
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <% if params[:template].present? || template %>
       <h1 class="h3 mb-0 text-gray-800">Deal Step Templates</h1>
-      <%= link_to "New Step Template", new_deal_activity_path("deal_activity[deal_id]": params[:deal_id], 
-                      back_to: params[:back_to]), {class: "btn btn-outline-primary"} if params[:deal_id] %>
+      <span>
+        <%= link_to "New Step Template", new_deal_activity_path("deal_activity[deal_id]": params[:deal_id],
+                        back_to: params[:back_to]), {class: "btn btn-outline-primary"} if params[:deal_id] %>
+        <% if params[:deal_id].present? && @deal && policy(ImportUpload.new(entity: @deal.entity, owner: @deal)).new? %>
+          <%= link_to new_import_upload_path("import_upload[import_type]": "DealActivityTemplate",
+                                             "import_upload[owner_id]": @deal.id,
+                                             "import_upload[owner_type]": "Deal",
+                                             sample_upload: "DEAL_ACTIVITY_TEMPLATES_SAMPLE"),
+                class: "btn btn-outline-success" do %>
+            <i class="ti ti-upload"></i> Import Templates
+          <% end %>
+        <% end %>
+      </span>
 
     <% else %>
       <h1 class="h3 mb-0 text-gray-800">Deal Steps</h1>

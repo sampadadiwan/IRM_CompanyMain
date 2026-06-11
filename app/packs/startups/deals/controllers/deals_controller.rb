@@ -270,7 +270,8 @@ class DealsController < ApplicationController
   # Only allow a list of trusted parameters through.
   def deal_params
     params.require(:deal).permit(:name, :amount, :status, :form_type_id, :clone_from_id, :tags,
-                                 :start_date, :currency, :units, :activity_list, :archived, card_view_attrs: [], properties: {})
+                                 :start_date, :currency, :units, :activity_list, :archived, :skip_templates,
+                                 card_view_attrs: [], properties: {})
   end
 
   def find_or_initialize_deals_agent

@@ -36,9 +36,10 @@ class ImportUpload < ApplicationRecord
               "TASK_SAMPLE" => "/sample_uploads/tasks.xlsx",
               "DASHBOARD_WIDGET_SAMPLE" => "/sample_uploads/dashboard_widgets.xlsx",
               "DEAL_INVESTORS_SAMPLE" => "/sample_uploads/deal_investors.xlsx",
-              "RATIO_FORMULA_SAMPLE" => "/sample_uploads/ratio_formulas.xlsx" }.freeze
+              "RATIO_FORMULA_SAMPLE" => "/sample_uploads/ratio_formulas.xlsx",
+              "DEAL_ACTIVITY_TEMPLATES_SAMPLE" => "/sample_uploads/deal_activity_templates.xlsx" }.freeze
 
-  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment InvestorKpiMapping FormCustomField DashboardWidget AgentChart Task DealInvestor RatioFormula].sort.freeze
+  TYPES = %w[InvestorAccess Investor CapitalCommitment CapitalCall CapitalRemittance CapitalRemittancePayment CapitalDistribution CapitalDistributionPayment Documents PortfolioInvestment PortfolioIncome Valuation FundDocs FundUnitSetting FundUnit AccountEntry InvestorKyc InvestorAdvisor Offer OfferDocs Kpi KycDocs Fund ExchangeRate Allocation FundRatio InvestmentInstrument Investment InvestorKpiMapping FormCustomField DashboardWidget AgentChart Task DealInvestor RatioFormula DealActivityTemplate].sort.freeze
 
   DOC_TYPES = %w[Documents FundDocs KycDocs OfferDocs].freeze
 
@@ -90,6 +91,9 @@ class ImportUpload < ApplicationRecord
   end
 
   def model_class
+    # DealActivityTemplate is not a model class; templates are stored as DealActivity records.
+    return DealActivity if import_type == "DealActivityTemplate"
+
     DOC_TYPES.include?(import_type) ? Document : import_type.constantize
   end
 
@@ -98,7 +102,11 @@ class ImportUpload < ApplicationRecord
   end
 
   def form_type_names
-    import_type == "InvestorKyc" ? %w[IndividualKyc NonIndividualKyc] : [import_type]
+    case import_type
+    when "InvestorKyc"        then %w[IndividualKyc NonIndividualKyc]
+    when "DealActivityTemplate" then %w[DealActivity]
+    else                          [import_type]
+    end
   end
 
   def self.ransackable_attributes(_auth_object = nil)

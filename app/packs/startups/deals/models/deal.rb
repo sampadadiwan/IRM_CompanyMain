@@ -36,6 +36,9 @@ class Deal < ApplicationRecord
   validates :currency, length: { maximum: 10 }
   validates :units, length: { maximum: 15 }
 
+  # Not persisted — set at creation time to skip seeding default step templates.
+  attr_accessor :skip_templates
+
   STATUS = %w[Open Closed].freeze
   ACTIVITIES = Rack::Utils.parse_nested_query(ENV.fetch("DEAL_ACTIVITIES", "").tr(":", "=").tr(",", "&"))
   FUND_ACTIVITIES = Rack::Utils.parse_nested_query(ENV.fetch("FUND_DEAL_ACTIVITIES", "").tr(":", "=").tr(",", "&"))

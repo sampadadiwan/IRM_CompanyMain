@@ -100,5 +100,16 @@
 <div>
   <%= link_to  t_common(:edit), edit_deal_activity_path(@deal_activity),
       {class: "btn btn-outline-primary"} if policy(@deal_activity).update? %>
+  <% if @deal_activity.Template? && policy(@deal_activity).destroy? %>
+    <% derived_count = @deal_activity.derived_activities.count %>
+    <% warning_msg = "Delete template \"#{@deal_activity.title}\"? This will also delete #{derived_count} linked investor step(s). This action is not reversible." %>
+    <%= button_to t_common(:delete), @deal_activity, method: :delete,
+        class: "btn btn-outline-danger", form_class: "deleteButton",
+        data: { action: "click->confirm#popup", turbo: false,
+                title: "Delete Step Template",
+                msg: warning_msg,
+                reversible: "no",
+                "other-info": "#{derived_count} investor step(s) will also be permanently deleted." } %>
+  <% end %>
 </div>
 <%= render  "/deal_activities/details", deal_activity: @deal_activity %>

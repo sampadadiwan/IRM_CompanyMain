@@ -3,116 +3,259 @@ Given('there is an existing deal investor for the deal') do
   raise "No investor found for entity" unless @existing_investor
 
   @existing_deal_investor = DealInvestor.create!(
-    deal: @deal,
-    investor: @existing_investor,
-    entity_id: @deal.entity_id,
-    status: "Active",
-    primary_amount_cents: 100_000_00,
-    tier: "Tier 2"
+    deal:                    @deal,
+    investor:                @existing_investor,
+    entity_id:               @deal.entity_id,
+    status:                  "Active",
+    primary_amount_cents:    100_000_00,
+    pre_money_valuation_cents: 0,
+    tier:                    "Tier 2"
   )
 
   # Create deal activities for the investor
-  templates = DealActivity.templates(@deal)
-  templates.each do |template|
+  DealActivity.templates(@deal).each do |template|
     DealActivity.create!(
-      deal: @deal,
-      deal_investor: @existing_deal_investor,
-      entity_id: @deal.entity_id,
-      title: template.title,
-      status: "incomplete",
-      days: template.days || 0,
-      sequence: template.sequence,
-      template_id: template.id
+      deal:             @deal,
+      deal_investor:    @existing_deal_investor,
+      entity_id:        @deal.entity_id,
+      title:            template.title,
+      status:           "incomplete",
+      days:             template.days || 0,
+      sequence:         template.sequence,
+      template_id:      template.id
     )
   end
 end
 
-# Generates a temporary xlsx file for the import using the first investor in the entity.
-# If update_only is true, sets "Update Only" = "Yes" on all data rows.
-def generate_deal_investor_xlsx(investor_name, update_only: false)
-  require "caxlsx"
-  headers = ["Investor Name", "Status", "Tier", "Primary Amount (USD)",
-             "Secondary Amount (USD)", "Pre Money Valuation (USD)",
-             "Deal Lead", "Source", "Tags", "Company Advisor", "Investor Advisor", "Update Only"]
-  row = [investor_name, "Active", "Tier 1", "500000", "0", "5000000",
-         "John Doe", "Referral", "VC,Tech", "", "", update_only ? "Yes" : ""]
+# ─── Given: import deal activity templates ───────────────────────────────────
 
-  tmp = Tempfile.new(["deal_investors_test", ".xlsx"])
+# Imports specific activity templates for the deal via the DealActivityTemplate
+# import mechanism.  Uses the shared helpers from deal_template_management_steps.rb.
+Given("the deal has deal activity templates {string} imported") do |titles_csv|
+  titles = titles_csv.split(",").map(&:strip)
+  tmp = build_deal_activity_template_workbook_for_titles(titles)
+  run_deal_activity_template_import(tmp)
+  @step_titles = DealActivity.templates(@deal).map(&:title)
+  @first_step  = @step_titles.first
+end
+
+# Builds a DealActivityTemplate xlsx with the given list of titles (5 days each).
+def build_deal_activity_template_workbook_for_titles(titles)
+  require "caxlsx"
+  tmp = Tempfile.new(["deal_activity_templates_test", ".xlsx"])
   Axlsx::Package.new do |p|
-    p.workbook.add_worksheet(name: "Sheet1") do |ws|
-      ws.add_row headers
-      ws.add_row row
+    p.workbook.add_worksheet(name: "Deal Activity Templates") do |ws|
+      ws.add_row(["Title*", "Days*"])
+      titles.each_with_index { |title, i| ws.add_row([title, (i + 1) * 5]) }
     end
     p.serialize(tmp.path)
   end
   tmp
 end
 
-When('I import deal investors using {string}') do |file|
-  @import_file = file
-  update_only = file.include?("update_only")
+# ─── xlsx builders ────────────────────────────────────────────────────────────
 
-  # Use the first investor of the entity so the name matches what's in DB
-  investor = Investor.where(entity_id: @user.entity_id).first
-  raise "No investor found for import" unless investor
+# Builds a three-sheet workbook matching the new template format.
+# Options:
+#   :with_steps     — include Deal Steps sheet
+#   :with_notes     — include Notes sheet (plain)
+#   :with_reminder  — include Notes sheet with reminder columns populated
+#   :omit_premoney  — leave Pre Money Valuation blank
+#   :custom_fields  — include extra custom-field columns
+def build_deal_investor_workbook(investor_name, opts = {})
+  require "caxlsx"
 
-  tmp = generate_deal_investor_xlsx(investor.investor_name, update_only: update_only)
+  investor_headers = [
+    "Deal Investor", "Status", "Tags", "Source", "Deal Lead", "Tier",
+    "Primary Amount", "Secondary Amount", "Pre Money Valuation"
+  ]
+  investor_headers += ["Client History", "RM Name"] if opts[:custom_fields]
 
+  pre_money = opts[:omit_premoney] ? "" : "10000000"
+  investor_row = [
+    investor_name, "Active", "VC", "Referral", "John Doe", "High",
+    "1000000", "0", pre_money
+  ]
+  investor_row += ["Met at event", "Allan"] if opts[:custom_fields]
+
+  tmp = Tempfile.new(["deal_investors_test", ".xlsx"])
+
+  Axlsx::Package.new do |p|
+    # Sheet 1 — Deal Investors
+    p.workbook.add_worksheet(name: "Deal Investors") do |ws|
+      ws.add_row investor_headers
+      ws.add_row investor_row
+    end
+
+    # Sheet 2 — Deal Steps (optional)
+    if opts[:with_steps]
+      titles = opts[:step_titles] || ["Deck Sent", "Meeting 1"]
+      p.workbook.add_worksheet(name: "Deal Steps") do |ws|
+        ws.add_row(["Deal Investor"] + titles)
+        ws.add_row([investor_name, "Complete"] + (["Incomplete"] * [titles.length - 1, 0].max))
+      end
+    end
+
+    # Sheet 3 — Notes (optional)
+    if opts[:with_notes] || opts[:with_reminder]
+      p.workbook.add_worksheet(name: "Notes") do |ws|
+        ws.add_row ["Deal Investor", "On", "Details", "Tags",
+                    "Reminder Emails", "Reminder Date"]
+        if opts[:with_reminder]
+          ws.add_row [investor_name, "2026-01-01", "Met at conference", "Meeting",
+                      "investor@example.com", "2026-02-15"]
+        else
+          ws.add_row [investor_name, "2026-01-01", "Intro meeting notes", "Meeting", "", ""]
+        end
+      end
+    end
+
+    p.serialize(tmp.path)
+  end
+
+  tmp
+end
+
+# ─── shared import helper ─────────────────────────────────────────────────────
+
+def run_deal_investor_import(tmp_file)
   visit(new_import_upload_path(
-    "import_upload[entity_id]": @user.entity_id,
+    "import_upload[entity_id]":  @user.entity_id,
     "import_upload[import_type]": "DealInvestor",
     "import_upload[owner_type]": "Deal",
-    "import_upload[owner_id]": @deal.id
+    "import_upload[owner_id]":   @deal.id
   ))
-  fill_in('import_upload_name', with: "Test DealInvestor Upload")
-  attach_file('files[]', tmp.path, make_visible: true)
+  fill_in("import_upload_name", with: "Test DealInvestor Upload")
+  attach_file("files[]", tmp_file.path, make_visible: true)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
 
   @import_upload = ImportUpload.last
   ImportUploadJob.perform_now(@import_upload.id)
   @import_upload.reload
-  tmp.close
-  tmp.unlink
 
   if @import_upload.failed_row_count > 0
     puts "Import failed_row_count: #{@import_upload.failed_row_count}"
     puts "Import error_text: #{@import_upload.error_text}"
   end
+ensure
+  tmp_file.close
+  tmp_file.unlink
 end
 
-Then('{string} deal investor should be created for the deal') do |count|
+# ─── When steps ───────────────────────────────────────────────────────────────
+
+When("I import deal investors using the new template") do
+  investor = Investor.where(entity_id: @user.entity_id).first
+  raise "No investor found for import" unless investor
+
+  tmp = build_deal_investor_workbook(investor.investor_name)
+  run_deal_investor_import(tmp)
+end
+
+When("I import deal investors using the new template with deal steps") do
+  investor = Investor.where(entity_id: @user.entity_id).first
+  raise "No investor found for import" unless investor
+
+  # Templates and @step_titles/@first_step were set by the Given step above.
+  raise "No templates — add 'the deal has deal activity templates ... imported' step" if @step_titles.blank?
+
+  tmp = build_deal_investor_workbook(investor.investor_name, with_steps: true, step_titles: @step_titles)
+  run_deal_investor_import(tmp)
+end
+
+When("I import deal investors using the new template with notes") do
+  investor = Investor.where(entity_id: @user.entity_id).first
+  raise "No investor found for import" unless investor
+
+  tmp = build_deal_investor_workbook(investor.investor_name, with_notes: true)
+  run_deal_investor_import(tmp)
+end
+
+When("I import deal investors using the new template with reminder notes") do
+  investor = Investor.where(entity_id: @user.entity_id).first
+  raise "No investor found for import" unless investor
+
+  tmp = build_deal_investor_workbook(investor.investor_name, with_reminder: true)
+  run_deal_investor_import(tmp)
+end
+
+When("I import deal investors using the new template without pre money valuation") do
+  investor = Investor.where(entity_id: @user.entity_id).first
+  raise "No investor found for import" unless investor
+
+  tmp = build_deal_investor_workbook(investor.investor_name, omit_premoney: true)
+  run_deal_investor_import(tmp)
+end
+
+When("I import deal investors using the new template with custom fields") do
+  investor = Investor.where(entity_id: @user.entity_id).first
+  raise "No investor found for import" unless investor
+
+  tmp = build_deal_investor_workbook(investor.investor_name, custom_fields: true)
+  run_deal_investor_import(tmp)
+end
+
+# ─── Then steps ───────────────────────────────────────────────────────────────
+
+Then("{string} deal investor should be created for the deal") do |count|
   @deal.reload
   expect(@deal.deal_investors.count).to eq(count.to_i)
 end
 
-Then('the imported deal investor should have the correct attributes from {string}') do |_file|
+Then("the imported deal investor should have the correct attributes") do
   di = @deal.deal_investors.last
   expect(di.investor_name).to be_present
-  expect(di.status).to be_present
-  expect(di.primary_amount_cents).to be >= 0
+  expect(di.status).to eq("Active")
+  expect(di.primary_amount_cents).to be > 0
 end
 
-Then('the deal investor should have deal activities created') do
+Then("the deal investor should have deal activities created") do
   di = @deal.deal_investors.last
   expect(di.deal_activities.count).to be > 0
 end
 
-Then('the deal investor should be updated with data from {string}') do |_file|
-  @import_upload.failed_row_count.should == 0
-  @import_upload.status.should == "Completed"
-  @existing_deal_investor.reload
-  # Status should have been updated by the update-only file
-  expect(@existing_deal_investor.status).to be_present
+Then("the deal investor activities should have updated statuses") do
+  di = DealInvestor.where(deal_id: @deal.id).last
+  # @first_step is the title set in the When step (first template title)
+  first_activity = di.deal_activities.find { |a| a.title.casecmp?(@first_step) }
+  expect(first_activity).not_to be_nil
+  # DealActivity enum returns the key name (capital C for Complete)
+  expect(first_activity.status).to eq("Complete")
 end
 
-Then('the import should have {string} failed rows with error {string}') do |count, error_msg|
+Then("notes should be created for the deal investor") do
+  investor = @deal.deal_investors.last.investor
+  notes = Note.where(investor_id: investor.id)
+  expect(notes.count).to be >= 1
+  expect(notes.first.details.to_plain_text).to be_present
+end
+
+Then("a reminder should be created for the note") do
+  investor = @deal.deal_investors.last.investor
+  note = Note.where(investor_id: investor.id).last
+  expect(note).not_to be_nil
+  expect(note.reminder).not_to be_nil
+  expect(note.reminder.email).to eq("investor@example.com")
+end
+
+Then("the deal investor pre money valuation should be {string}") do |expected|
+  di = @deal.deal_investors.last
+  expect(di.pre_money_valuation_cents.to_i).to eq(expected.to_i)
+end
+
+Then("the deal investor should have the custom field stored") do
+  di = @deal.deal_investors.last
+  expect(di.json_fields).to be_present
+  # At least one custom field value should be stored
+  expect(di.json_fields.values.any?(&:present?)).to be true
+end
+
+Then("the import should have {string} failed rows with error {string}") do |count, error_msg|
   expect(@import_upload.failed_row_count).to eq(count.to_i)
 
-  # Row-level errors are stored in the import_results Shrine attachment as an xlsx
   combined = ""
   if @import_upload.import_results.present?
-    # Use open to get an IO object from Shrine
     @import_upload.import_results.open do |io|
       tmp = Tempfile.new(["import_results", ".xlsx"])
       tmp.binmode
@@ -121,7 +264,7 @@ Then('the import should have {string} failed rows with error {string}') do |coun
       data = Roo::Spreadsheet.open(tmp.path)
       all_rows = []
       data.each_with_index do |row, idx|
-        next if idx.zero? # skip header
+        next if idx.zero? # skip header row
 
         all_rows << row.compact.join(" ")
       end

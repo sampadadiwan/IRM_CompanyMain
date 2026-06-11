@@ -29,6 +29,9 @@ class CreateDeal < DealActions
   private
 
   def create_activity_template_records(ctx, deal)
+    # Skip entirely when the user checked "No Templates" at creation time.
+    return if deal.skip_templates.present?
+
     seq = 1
     if deal.clone_from_id.present?
       clone_from = Deal.find(deal.clone_from_id)

@@ -1,35 +1,57 @@
 Feature: Import Deal Investors
-  Can bulk import deal investors into a deal, including Update Only mode
+  Bulk-imports deal investors, deal-activity statuses, and notes from the
+  three-sheet "Deal Investors" xlsx template.
 
   Background:
     Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Company"
     Given the user has role "company_admin"
-    And there exists a deal "name=Series A;amount_cents=500000" for my company
+    And there exists a deal "name=Series A;amount_cents=500000;skip_templates=1" for my company
 
   @import
-  Scenario: Import new deal investors from xlsx
+  Scenario: Import new deal investors from the multi-sheet template
     Given there are "3" existing investor ""
-    When I import deal investors using "deal_investors.xlsx"
+    And the deal has deal activity templates "Deck Sent,Meeting 1" imported
+    When I import deal investors using the new template
     Then "1" deal investor should be created for the deal
-    And the imported deal investor should have the correct attributes from "deal_investors.xlsx"
+    And the imported deal investor should have the correct attributes
     And the deal investor should have deal activities created
 
   @import
-  Scenario: Import deal investors with Update Only - investor exists
+  Scenario: Import updates deal activity statuses from the Deal Steps sheet
     Given there are "3" existing investor ""
-    And there is an existing deal investor for the deal
-    When I import deal investors using "deal_investors_update_only.xlsx"
-    Then the deal investor should be updated with data from "deal_investors_update_only.xlsx"
+    And the deal has deal activity templates "Deck Sent,Meeting 1" imported
+    When I import deal investors using the new template with deal steps
+    Then the deal investor activities should have updated statuses
 
   @import
-  Scenario: Import deal investors with Update Only - investor does not exist as deal investor
+  Scenario: Import creates notes from the Notes sheet
     Given there are "3" existing investor ""
-    When I import deal investors using "deal_investors_update_only.xlsx"
-    Then the import should have "1" failed rows with error "not found for update"
+    When I import deal investors using the new template with notes
+    Then notes should be created for the deal investor
 
   @import
-  Scenario: Import deal investors skips duplicate when no Update Only flag
+  Scenario: Import creates notes with a reminder
+    Given there are "3" existing investor ""
+    When I import deal investors using the new template with reminder notes
+    Then a reminder should be created for the note
+
+  @import
+  Scenario: Import skips duplicate when investor already exists as deal investor
     Given there are "3" existing investor ""
     And there is an existing deal investor for the deal
-    When I import deal investors using "deal_investors.xlsx"
+    When I import deal investors using the new template
     Then the import should have "1" failed rows with error "already exists"
+
+  @import
+  Scenario: Import with pre-money valuation defaults to zero when omitted
+    Given there are "3" existing investor ""
+    When I import deal investors using the new template without pre money valuation
+    Then "1" deal investor should be created for the deal
+    And the deal investor pre money valuation should be "0"
+
+  @import
+  Scenario: Import handles custom fields on deal investor
+    Given there are "3" existing investor ""
+    When I import deal investors using the new template with custom fields
+    Then "1" deal investor should be created for the deal
+    And the deal investor should have the custom field stored

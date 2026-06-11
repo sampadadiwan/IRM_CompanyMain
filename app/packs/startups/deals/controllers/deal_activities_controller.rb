@@ -10,7 +10,10 @@ class DealActivitiesController < ApplicationController
     authorize(DealActivity)
     @deal_activities = policy_scope(DealActivity).includes(:deal, deal_investor: :investor)
 
-    @deal_activities = @deal_activities.where(deal_id: params[:deal_id]) if params[:deal_id].present?
+    if params[:deal_id].present?
+      @deal_activities = @deal_activities.where(deal_id: params[:deal_id])
+      @deal = Deal.find_by(id: params[:deal_id])
+    end
 
     @deal_activities = @deal_activities.where(deal_investor_id: params[:deal_investor_id]) if params[:deal_investor_id].present?
 
@@ -161,8 +164,13 @@ class DealActivitiesController < ApplicationController
   # DELETE /deal_activities/1 or /deal_activities/1.json
   def destroy
     deal = @deal_activity.deal
+    is_template = @deal_activity.Template?
     @deal_activity.destroy
-    deal.kanban_board.broadcast_board_event if @deal_activity.deal.kanban_board.present?
+    deal.kanban_board.broadcast_board_event if deal.kanban_board.present?
+
+    # After deleting a template, regenerate remaining investor activities so sequences
+    # and activity pointers are updated for all investors on this deal.
+    GenerateDealActivitiesJob.perform_later(deal.id, "Deal") if is_template
 
     redirect_path = if @deal_activity.deal_investor_id.blank?
                       deal_activities_path(deal_id: @deal_activity.deal_id, template: true)
