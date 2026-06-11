@@ -166,11 +166,12 @@ class FundsController < ApplicationController
 
       when "cross-fund", "cross-portfolio"
         # scenario param removed — FundRatioRun.name is now the fingerprint derived from inputs.
-        FundRatiosScenarioJob.perform_later(
+        fund_ids= (params[:fund_ids] == nil) ? policy_scope(Fund).all().pluck(:id) : params[:fund_ids];
+        FundRatiosScenarioJob.set(wait: 3.seconds).perform_later(
             @fund.id,
             Date.local_parse(params[:end_date]),
             current_user.id,
-            fund_ids: params[:fund_ids],
+            fund_ids: fund_ids,
             portfolio_company_ids: params[:portfolio_company_ids],
             portfolio_companies_tags: params[:portfolio_companies_tags],
             portfolio_companies_sectors: params[:portfolio_companies_sectors],
