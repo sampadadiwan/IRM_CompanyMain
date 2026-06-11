@@ -7,7 +7,7 @@ class ImportRatioFormula < ImportUtil
   step nil, delete: :create_custom_fields
 
   # Columns expected in the import file (must match headers exactly, case-insensitive after titleize).
-  STANDARD_HEADERS = ["Level", "Action", "Period", "Ratios", "Account Entry Names"].freeze
+  STANDARD_HEADERS = ["Level", "Action", "Period", "Ratio", "Account Entry Names"].freeze
 
   # Returns the standard headers so ImportUtil can validate the uploaded file.
   def standard_headers
@@ -23,13 +23,12 @@ class ImportRatioFormula < ImportUtil
     raise "Fund not found" unless fund
 
     # Accept both humanized text ("Add cashflow", "As on") and raw enum values ("add_cashflow", "as_on").
-    level              = lookup_enum(RatioFormula.level,  row_data["Level"])
-    action             = lookup_enum(RatioFormula.action, row_data["Action"])
-    period             = lookup_enum(RatioFormula.period, row_data["Period"])
-    # Comma-separated strings are split into arrays to match the model's normalize_arrays logic.
-    ratios             = split_csv(row_data["Ratios"])
+    level               = lookup_enum(RatioFormula.level,  row_data["Level"])
+    action              = lookup_enum(RatioFormula.action, row_data["Action"])
+    period              = lookup_enum(RatioFormula.period, row_data["Period"])
+    ratio               = row_data["Ratio"].to_s.strip
     account_entry_names = split_csv(row_data["Account Entry Names"])
-    update_only        = row_data["Update Only"]&.downcase == "yes"
+    update_only         = row_data["Update Only"]&.downcase == "yes"
 
     if update_only
       id = row_data["Id"]
@@ -39,7 +38,7 @@ class ImportRatioFormula < ImportUtil
       raise "RatioFormula with id #{id} not found for Fund #{fund.id}" unless ratio_formula
 
       ratio_formula.update!(
-        level:, action:, period:, ratios:, account_entry_names:,
+        level:, action:, period:, ratio:, account_entry_names:,
         import_upload_id: import_upload.id
       )
     else
@@ -54,7 +53,7 @@ class ImportRatioFormula < ImportUtil
       fund.ratio_formulas.create!(
         entity_id: fund.entity_id,
         fund_id: fund.id,
-        level:, action:, period:, ratios:, account_entry_names:,
+        level:, action:, period:, ratio:, account_entry_names:,
         import_upload_id: import_upload.id
       )
     end
@@ -64,7 +63,7 @@ class ImportRatioFormula < ImportUtil
 
   private
 
-  # Splits a comma-separated string into a trimmed array; returns [] for blank input.
+  # Splits a comma-separated string into a trimmed array; used for account_entry_names.
   def split_csv(value)
     return [] if value.blank?
 

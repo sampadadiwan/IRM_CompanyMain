@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_10_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_11_100001) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3172,7 +3172,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_10_100001) do
     t.bigint "import_upload_id"
     t.string "level"
     t.string "period"
-    t.json "ratios"
+    t.string "ratio"
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_ratio_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_ratio_formulas_on_entity_id"

@@ -66,7 +66,6 @@ class RatioFormulasController < ApplicationController
   end
 
   def ratio_formula_params
-    # Since ratios and account_entry_names are arrays, we need to permit them accordingly
-    params.require(:ratio_formula).permit(:level, :action, :period, ratios: [], account_entry_names: [])
+    params.require(:ratio_formula).permit(:level, :action, :period, :ratio, account_entry_names: [])
   end
 end

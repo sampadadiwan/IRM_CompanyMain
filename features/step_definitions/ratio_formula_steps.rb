@@ -3,15 +3,14 @@ Then('there should be {string} ratio formulas for the fund') do |count|
   RatioFormula.where(fund: @fund).count.should == count.to_i
 end
 
-Then('the ratio formula {string} should have level {string} action {string} period {string} ratios {string} account_entry_names {string}') do |position, level, action, period, ratios, account_entry_names|
+Then('the ratio formula {string} should have level {string} action {string} period {string} ratio {string} account_entry_names {string}') do |position, level, action, period, ratio, account_entry_names|
   # position is 1-based index into fund's ratio formulas ordered by id
   rf = RatioFormula.where(fund: @fund).order(:id).to_a[position.to_i - 1]
   expect(rf).not_to be_nil, "Expected ratio formula at position #{position} to exist"
   rf.level.should == level
   rf.action.should == action
   rf.period.should == period
-  # Compare as sorted arrays so order of comma-separated values in the sheet doesn't matter
-  rf.ratios.sort.should == ratios.split(",").map(&:strip).sort
+  rf.ratio.should == ratio
   rf.account_entry_names.sort.should == account_entry_names.split(",").map(&:strip).sort
 end
 

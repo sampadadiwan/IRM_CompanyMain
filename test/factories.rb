@@ -856,7 +856,7 @@ FactoryBot.define do
     entity
     fund
     level { "Fund" }
-    ratios { ["XIRR"] }
+    ratio { "XIRR" }
     action { "add_cashflow" }
     account_entry_names { ["Custom Entry"] }
     period { "all" }

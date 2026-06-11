@@ -30,7 +30,7 @@
         <thead class="table-light">
           <tr>
             <th>Level</th>
-            <th>Ratios</th>
+            <th>Ratio</th>
             <th>Action</th>
             <th>Account Entry Names</th>
             <th>Period</th>
@@ -43,9 +43,7 @@
               <tr>
                 <td><%= formula.level_text %></td>
                 <td>
-                  <% Array(formula.ratios).each do |ratio| %>
-                    <span class="badge bg-info-subtle text-info"><%= ratio %></span>
-                  <% end %>
+                  <span class="badge bg-info-subtle text-info"><%= formula.ratio %></span>
                 </td>
                 <td><%= formula.action_text %></td>
                 <td>

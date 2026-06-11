@@ -10,8 +10,8 @@ Feature: Import Ratio Formula
   Scenario: Import creates ratio formulas from xlsx
     Given Given import file "ratio_formulas.xlsx" for "RatioFormula"
     Then there should be "2" ratio formulas for the fund
-    And the ratio formula "1" should have level "Fund" action "add_cashflow" period "as_on" ratios "XIRR, DPI, TVPI" account_entry_names "Operating Income, Revenue"
-    And the ratio formula "2" should have level "Folio" action "reduce_cashflow" period "all" ratios "MOIC, RVPI" account_entry_names "Capital Expenditure"
+    And the ratio formula "1" should have level "Fund" action "add_cashflow" period "as_on" ratio "XIRR" account_entry_names "Operating Income, Revenue"
+    And the ratio formula "2" should have level "Folio" action "reduce_cashflow" period "all" ratio "MOIC" account_entry_names "Capital Expenditure"
     # Verify the model stores raw enum values regardless of humanized input
     And the ratio formula "1" should store raw enum value "add_cashflow" for action
     And the ratio formula "1" should store raw enum value "as_on" for period

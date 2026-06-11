@@ -24,8 +24,8 @@
     </div>
 
     <div class="form-group mt-3">
-      <%= f.label :ratios %>
-      <%= f.select :ratios, %w[XIRR DPI TVPI MOIC RVPI PIC], { selected: @ratio_formula.ratios }, { multiple: true, class: "form-control select2", data: { placeholder: "Select Ratios" }, name: 'ratio_formula[ratios][]' } %>
+      <%= f.label :ratio %>
+      <%= f.select :ratio, %w[XIRR DPI TVPI MOIC RVPI PIC], { include_blank: "Select Ratio" }, class: "form-control" %>
     </div>
 
     <div class="form-group mt-3">

@@ -183,7 +183,7 @@ class FundRatioCalcs
   def apply_formula_cashflows(cf, ratio_name, use_tracking_currency)
     formulas = ratio_formulas.where(action: %w[add_cashflow reduce_cashflow])
     formulas.each do |formula|
-      next unless Array(formula.ratios).include?(ratio_name)
+      next unless formula.ratio == ratio_name
 
       entries = get_ratio_formula_entries(formula)
       entries.each do |ae|
@@ -236,7 +236,7 @@ class FundRatioCalcs
   def apply_static_formulas(ratio_name, numerator, denominator, use_tracking_currency)
     formulas = ratio_formulas.where(action: %w[add_numerator reduce_numerator add_denominator reduce_denominator])
     formulas.each do |formula|
-      next unless Array(formula.ratios).include?(ratio_name)
+      next unless formula.ratio == ratio_name
 
       entries = get_ratio_formula_entries(formula)
       entries.each do |ae|

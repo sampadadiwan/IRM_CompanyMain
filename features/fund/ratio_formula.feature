@@ -23,7 +23,7 @@ Feature: Ratio Formula Management
     And Given import file "fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
 
     # Create the rule via factory/model
-    Given there is a RatioFormula for the fund "Demo Fund 2" with "level=Fund;action=add_cashflow;ratios=XIRR;account_entry_names=Custom Inflow;period=all"
+    Given there is a RatioFormula for the fund "Demo Fund 2" with "level=Fund;action=add_cashflow;ratio=XIRR;account_entry_names=Custom Inflow;period=all"
     
     # Add the custom entry that should be picked up by the formula
     And there is an AccountEntry "name=Custom Inflow;amount_cents=100000000;reporting_date=2024-01-01;entry_type=Income" for the fund

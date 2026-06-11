@@ -4,9 +4,7 @@ class RatioFormula < ApplicationRecord
 
   acts_as_paranoid
 
-  # In MySQL JSON columns are returned as arrays/hashes directly
-  # But we can still ensure they are treated as arrays in the app
-  # serialize :ratios, type: Array
+  # account_entry_names is a JSON array; ratio is a single string value
   # serialize :account_entry_names, type: Array
 
   belongs_to :entity
@@ -20,11 +18,10 @@ class RatioFormula < ApplicationRecord
   enumerize :period, in: %w[as_on all], default: 'as_on'
 
   validates :level, :action, :period, presence: true
-  validates :ratios, presence: true
+  validates :ratio, presence: true
   validates :account_entry_names, presence: true
 
-  # Ensure ratios and account_entry_names are handled as arrays if they are strings
-  before_validation :normalize_arrays
+  before_validation :normalize_account_entry_names
 
   def to_s
     "#{level} #{action} for #{account_entry_names.join(', ')}"
@@ -40,13 +37,7 @@ class RatioFormula < ApplicationRecord
 
   private
 
-  def normalize_arrays
-    self.ratios = if ratios.is_a?(String)
-                    ratios.split(',').map(&:strip).reject(&:blank?)
-                  else
-                    Array(ratios).reject(&:blank?)
-                  end
-
+  def normalize_account_entry_names
     self.account_entry_names = if account_entry_names.is_a?(String)
                                  account_entry_names.split(',').map(&:strip).reject(&:blank?)
                                else
