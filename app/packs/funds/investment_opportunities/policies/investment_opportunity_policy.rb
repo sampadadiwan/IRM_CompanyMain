@@ -16,7 +16,8 @@ class InvestmentOpportunityPolicy < IoBasePolicy
   end
 
   def new?
-    user.enable_inv_opportunities
+    # investors must not access the new form; mirror create? restriction
+    user.enable_inv_opportunities && permissioned_employee?(:create)
   end
 
   def update?

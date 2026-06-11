@@ -71,8 +71,6 @@ class InvestorKycsBulkActionJob < BulkActionJob
       msg = "KYC link not sent, KYC already submitted by investor."
       send_notification(msg, user_id, "danger")
       @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
-    elsif Rails.env.test?
-      SendKycFormJob.perform_later(investor_kyc.id, reminder: false, custom_notification_id: custom_notification_id)
     else
       SendKycFormJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(investor_kyc.id, reminder: false, custom_notification_id: custom_notification_id)
     end
@@ -87,9 +85,6 @@ class InvestorKycsBulkActionJob < BulkActionJob
       msg = "KYC Reminder could not be sent, KYC is already submitted or verified."
       send_notification(msg, user_id, "danger")
       @error_msg << { msg:, id: investor_kyc.id, Kyc: investor_kyc }
-    elsif Rails.env.test?
-      # Randomize the time to send the reminder, so we dont flood aws SES
-      SendKycFormJob.perform_later(investor_kyc.id, reminder: true, custom_notification_id: custom_notification_id)
     else
       SendKycFormJob.set(wait: rand(DELAY_SECONDS).seconds).perform_later(investor_kyc.id, reminder: true, custom_notification_id: custom_notification_id)
     end
