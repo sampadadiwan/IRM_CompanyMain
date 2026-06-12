@@ -213,6 +213,16 @@ end
 
 
 Given('investor has access right {string} in the deal') do |arg1|
+  # "OTHER" is a placeholder meaning "a real investor that is NOT @investor".
+  # After DatabaseCleaner truncation, auto-increment resets to 1, so hardcoding
+  # access_to_investor_id=1 would collide with @investor.id. Instead, create a
+  # throwaway investor from a separate entity and substitute its actual DB id.
+  if arg1.include?('access_to_investor_id=OTHER')
+    other_entity   = FactoryBot.create(:entity, entity_type: "Investor")
+    other_investor = FactoryBot.create(:investor, investor_entity: other_entity, entity: @entity,
+                                       primary_email: "other_inv_#{rand(9999)}@example.com")
+    arg1 = arg1.sub('access_to_investor_id=OTHER', "access_to_investor_id=#{other_investor.id}")
+  end
   @access_right = AccessRight.new(owner: @deal, entity: @entity)
   key_values(@access_right, arg1)
   @access_right.save!
