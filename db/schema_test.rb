@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_11_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_12_012527) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1237,6 +1237,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_11_200001) do
     t.date "end_date"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
+    t.json "grid_columns"
     t.integer "impressions_count", default: 0
     t.json "json_fields"
     t.string "name"

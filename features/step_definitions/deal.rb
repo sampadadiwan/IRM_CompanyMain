@@ -789,3 +789,86 @@ Then('I cannot see the deal card {string}') do |deal_name|
   expect(page).not_to have_content("Overview")
   expect(page).not_to have_content("Queries")
 end
+
+# ---------------------------------------------------------------------------
+# Deal Grid Columns feature steps
+# ---------------------------------------------------------------------------
+
+# Opens the deal edit form, clears any existing grid column rows, adds one
+# row with the given field/label/position, then saves.
+When('I edit the deal grid columns with field {string} label {string} and position {string}') do |field, label, position|
+  visit(edit_deal_path(@deal))
+
+  # Remove all existing grid column rows first
+  all("[data-deal-grid-columns-target='row']").each do |row|
+    row.find("[data-action='click->deal-grid-columns#removeRow']").click
+  end
+
+  _add_grid_column_row(field, label, position)
+  click_button('Save')
+  sleep(1)
+end
+
+# Adds a single grid column row without saving (used when building multiple rows).
+When('I add grid column with field {string} label {string} and position {string}') do |field, label, position|
+  # Open edit page only on the first call (row may already be on page)
+  visit(edit_deal_path(@deal)) unless page.has_css?("[data-deal-grid-columns-target='rows']", wait: 2)
+  _add_grid_column_row(field, label, position)
+end
+
+When('I save the deal form') do
+  click_button('Save')
+  sleep(1)
+end
+
+# Navigates to the deal show page and ensures the Investors tab / list view is visible.
+Given('I visit the deal list view') do
+  @deal.reload
+  visit(deal_path(@deal))
+  # Wait for AG Grid to initialize
+  sleep(2)
+end
+
+# Verifies a column header exists in the AG Grid column definitions (visible or scrolled off-screen).
+# visible: :all is required because end-positioned columns may be outside the viewport.
+Then('the investor grid should show the column {string}') do |header_text|
+  within('.deals-list-view') do
+    expect(page).to have_css('.ag-header-cell-text', text: header_text, visible: :all, wait: 5)
+  end
+end
+
+# Verifies a configured column header is absent from the grid.
+Then('the investor grid should not show the column {string}') do |header_text|
+  within('.deals-list-view') do
+    expect(page).not_to have_css('.ag-header-cell-text', text: header_text, visible: :all, wait: 3)
+  end
+end
+
+# Verifies a base hardcoded column that is always present regardless of deal config.
+Then('the investor grid should show the base column {string}') do |header_text|
+  within('.deals-list-view') do
+    expect(page).to have_css('.ag-header-cell-text', text: header_text, visible: :all, wait: 5)
+  end
+end
+
+# ---------------------------------------------------------------------------
+# Helper — appends one grid column row in the deal form
+# ---------------------------------------------------------------------------
+def _add_grid_column_row(field, label, position)
+  click_button('+ Add Column')
+  sleep(0.3)
+
+  # The new row is the last one in the rows container
+  row = all("[data-deal-grid-columns-target='row']").last
+  within(row) do
+    select_option = find("[data-field='field']")
+    select_option.find("option[value='#{field}']").select_option
+
+    find("[data-field='label']").set(label)
+
+    pos_select = find("[data-field='position']")
+    pos_select.find("option[value='#{position.downcase}']").select_option
+  end
+
+  sleep(0.2)
+end
