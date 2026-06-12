@@ -4,7 +4,7 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800"><%= title %></h1>
   <div class="d-flex gap-2">
-    <%= link_to "New Note", new_note_path("note[investor_id]": investor_id, "note[entity_id]": current_user.entity_id), {class: "btn btn-outline-primary ti ti-plus"} %>
+    <%= link_to "New Note", new_note_path("note[investor_id]": investor_id, "note[entity_id]": current_user.entity_id, return_to: params[:return_to]), {class: "btn btn-outline-primary ti ti-plus"} %>
     <% if investor_id.present? %>
       <% if current_user.entity.support_agents.set?(:note_summarization_agent) %>
       <button type="button" class="btn btn-outline-secondary"
