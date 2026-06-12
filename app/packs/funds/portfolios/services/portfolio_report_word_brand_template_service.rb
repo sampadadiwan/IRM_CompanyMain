@@ -409,9 +409,11 @@ class PortfolioReportWordBrandTemplateService
             <w:rPr><w:color w:val="#{CAPTION}"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>
             <w:t xml:space="preserve">Page </w:t>
           </w:r>
-          <w:fldChar w:fldCharType="begin"/>
-          <w:instrText>PAGE</w:instrText>
-          <w:fldChar w:fldCharType="end"/>
+          <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+          <w:r><w:t>1</w:t></w:r>
+          <w:r><w:fldChar w:fldCharType="end"/></w:r>
           <w:r>
             <w:rPr><w:color w:val="#{CAPTION}"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>
             <w:t xml:space="preserve">  |  Generated: #{Time.zone.today.strftime('%d %b %Y')}  |  #{@brand_name}</w:t>
