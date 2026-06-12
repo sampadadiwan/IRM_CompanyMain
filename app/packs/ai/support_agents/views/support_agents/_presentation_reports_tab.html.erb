@@ -28,7 +28,11 @@
                      show_company: true,
                      action:       :collapse %>
 
-          <%= render "support_agents/presentation_report_detail", report: report, colspan: 8 %>
+          <%= render "support_agents/presentation_report_detail",
+                     report:            report,
+                     colspan:           8,
+                     scoring_enabled:   @support_agent.json_fields["enable_scoring"].to_s.downcase   != "no",
+                     questions_enabled: @support_agent.json_fields["enable_questions"].to_s.downcase != "no" %>
 
         <% end %><%# /presentation_reports.each %>
       </tbody>

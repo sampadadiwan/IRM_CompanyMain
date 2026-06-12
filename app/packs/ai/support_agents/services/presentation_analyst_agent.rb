@@ -358,6 +358,15 @@ class PresentationAnalystAgent < SupportAgentService
     # Nothing to ask if extraction produced no records
     return true if ctx[:period_records].empty?
 
+    # Skip if the enable_questions flag is explicitly disabled (default: on)
+    unless questions_enabled?
+      ctx[:analyst_questions] = []
+      ctx[:issues][:analysis_issues] << {
+        type: :info, message: "Question generation disabled via enable_questions setting", severity: :success
+      }
+      return true
+    end
+
     # Initialise early so the rescue block can reference them safely even if an
     # error is raised before their normal assignment points below
     flags_digest   = nil
@@ -421,6 +430,14 @@ class PresentationAnalystAgent < SupportAgentService
   # PRD §6: "How this differs from PortfolioScoringAgent" — this measures management
   # communication behaviour, not company fundamentals.
   def compute_scores(ctx, **)
+    # Skip if the enable_scoring flag is explicitly disabled (default: on)
+    unless scoring_enabled?
+      ctx[:score] = nil
+      ctx[:issues][:analysis_issues] << {
+        type: :info, message: "Scoring disabled via enable_scoring setting", severity: :success
+      }
+      return true
+    end
     flags   = ctx[:cross_period_flags] || {}
     records = ctx[:period_records]
 
@@ -569,12 +586,15 @@ class PresentationAnalystAgent < SupportAgentService
       # Management Accountability Score (PRD §6)
       "score"               => ctx[:score],
       # Issue arrays from all steps — surfaced in the UI expandable panels
-      "collection_issues"   => ctx[:issues][:collection_issues],
-      "extraction_issues"   => ctx[:issues][:extraction_issues],
-      "analysis_issues"     => ctx[:issues][:analysis_issues],
-      "final_status"        => has_blocking ? "blocked" : "ready",
-      "run_at"              => now,
-      "completed_at"        => now
+      "collection_issues" => ctx[:issues][:collection_issues],
+      "extraction_issues" => ctx[:issues][:extraction_issues],
+      "analysis_issues" => ctx[:issues][:analysis_issues],
+      "final_status" => has_blocking ? "blocked" : "ready",
+      "run_at" => now,
+      "completed_at" => now,
+      # Persist which features were active during this run so the UI can hide sections accordingly
+      "scoring_enabled"   => scoring_enabled?,
+      "questions_enabled" => questions_enabled?
     )
 
     # MySQL doesn't track JSON column mutations automatically
@@ -899,6 +919,19 @@ class PresentationAnalystAgent < SupportAgentService
     csv   = @support_agent.json_fields["presentation_doc_names"].to_s
     names = csv.split(",").map(&:strip).reject(&:blank?)
     names.any? ? names : DEFAULT_DOC_NAMES
+  end
+
+  # Returns true unless enable_scoring is explicitly set to "No"/"false"/etc.
+  # Defaults to enabled so existing agents and new agents without the field work as before.
+  def scoring_enabled?
+    val = @support_agent.json_fields["enable_scoring"].to_s.strip.downcase
+    val.blank? || !%w[no false 0 disabled].include?(val)
+  end
+
+  # Returns true unless enable_questions is explicitly set to "No"/"false"/etc.
+  def questions_enabled?
+    val = @support_agent.json_fields["enable_questions"].to_s.strip.downcase
+    val.blank? || !%w[no false 0 disabled].include?(val)
   end
 
   # ─── LLM Response Helpers ─────────────────────────────────────────────────────

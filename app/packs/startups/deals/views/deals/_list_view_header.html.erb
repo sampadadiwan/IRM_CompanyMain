@@ -2,12 +2,9 @@
   <h3 class="h3 mb-0 text-gray-600"><%= deal.name %> </h3>
   <span>
     <% if params[:all].blank? %>
-      <%= link_to "All #{investor_label}s", deal_path(deal, list_view: true, all: true), class: "btn btn-outline-primary" %>
+      <%= link_to "Clear Filters", deal_path(deal, list_view: true, all: true), class: "btn btn-outline-primary" %>
     <% else %>
       <%= link_to "Not Declined", deal_path(deal, list_view: true), class: "btn btn-outline-primary" %>
-    <% end %>
-    <% if deal.kanban_board.present? %>
-      <%= link_to "Kanban Board", board_path(deal.kanban_board), class: "btn btn-outline-info", data: { turbo: false } %>
     <% end %>
     <%= link_to "Download Excel", deal_path(deal, list_view: true, format: :xlsx), class: "btn btn-outline-primary" %>
     <% if policy(ImportUpload.new(entity: deal.entity, owner: deal)).new? %>

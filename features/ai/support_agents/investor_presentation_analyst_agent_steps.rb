@@ -138,7 +138,9 @@ def build_presentation_agent(entity, extra_fields = {})
       "max_periods"            => "8",
       "kpi_tag_list"           => "Actual",
       "comparison_strategy"    => "all_periods",
-      "llm_model"              => "gemini-3-flash"
+      "llm_model"              => "gemini-3-flash",
+      "enable_scoring"         => "Yes",
+      "enable_questions"       => "Yes"
     }.merge(extra_fields)
   end
 end

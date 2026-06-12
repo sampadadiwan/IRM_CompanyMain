@@ -18,6 +18,12 @@
   questions = jf["analyst_questions"] || []
   flags     = jf["cross_period_flags"] || {}
 
+  # Feature flags: caller passes current agent config values as locals so toggling the
+  # setting in the UI takes effect immediately on all reports (including old ones that
+  # pre-date these keys). Falls back to the stored report value, then to true.
+  scoring_enabled   = local_assigns.fetch(:scoring_enabled,   jf.fetch("scoring_enabled",   true))
+  questions_enabled = local_assigns.fetch(:questions_enabled, jf.fetch("questions_enabled",  true))
+
   bar_color = ->(val) {
     val.to_i >= 80 ? "bg-success" : val.to_i >= 60 ? "bg-primary" : val.to_i >= 40 ? "bg-warning" : "bg-danger"
   }
@@ -66,7 +72,7 @@
     <div class="p-3 d-flex flex-column gap-4">
 
       <%# ═══ Management Accountability Score ════════════════════════════════ %>
-      <% if overall > 0 %>
+      <% if scoring_enabled && overall > 0 %>
         <section>
           <%# Pre-compute breakdown data for popover explanations %>
           <%
@@ -429,7 +435,7 @@
       <% end %>
 
       <%# ═══ Pre-Board Briefing Questions ══════════════════════════════════ %>
-      <% unless questions.empty? %>
+      <% if questions_enabled && questions.any? %>
         <section>
           <h6 class="fw-semibold mb-1">Pre-Board Briefing Questions</h6>
           <p class="text-muted small mb-2">

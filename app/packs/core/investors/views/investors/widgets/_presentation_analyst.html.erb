@@ -41,8 +41,10 @@
                        agent:  agent,
                        action: :collapse %>
             <%= render "support_agents/presentation_report_detail",
-                       report:  report,
-                       colspan: 7 %>
+                       report:            report,
+                       colspan:           7,
+                       scoring_enabled:   agent.json_fields["enable_scoring"].to_s.downcase   != "no",
+                       questions_enabled: agent.json_fields["enable_questions"].to_s.downcase != "no" %>
           <% end %>
         </tbody>
       </table>
