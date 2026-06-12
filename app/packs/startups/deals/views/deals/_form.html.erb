@@ -83,6 +83,7 @@
       <%= form.select :card_view_attrs, DealInvestor::CARD_VIEW_ATTRS.to_a, {include_blank: false, include_hidden: false}, class: "form-control select2 select2-multiple", multiple: "multiple" %>
     </div>
 
+    <% di_custom_fields = deal.entity.form_types.find_by(name: 'DealInvestor')&.form_custom_fields&.visible || [] %>
     <div class="form-group" data-controller="deal-grid-columns">
       <%= form.label :grid_columns, "Grid Columns" %>
 
@@ -96,9 +97,18 @@
           <div class="d-flex gap-2 mb-2 align-items-center" data-deal-grid-columns-target="row">
             <select class="form-control" data-field="field">
               <option value="">-- Field --</option>
-              <% DealInvestor::STANDARD_COLUMNS.each do |k, v| %>
-                <% fld = v.split("; ").first %>
-                <option value="<%= fld %>" <%= "selected" if col["field"] == fld %>><%= k.split("; ").first %></option>
+              <optgroup label="Standard Fields">
+                <% DealInvestor::STANDARD_COLUMNS.each do |k, v| %>
+                  <% fld = v.split("; ").first %>
+                  <option value="<%= fld %>" <%= "selected" if col["field"] == fld %>><%= k.split("; ").first %></option>
+                <% end %>
+              </optgroup>
+              <% if di_custom_fields.any? %>
+                <optgroup label="Custom Fields">
+                  <% di_custom_fields.each do |cf| %>
+                    <option value="properties.<%= cf.name %>" <%= "selected" if col["field"] == "properties.#{cf.name}" %>><%= cf.label %></option>
+                  <% end %>
+                </optgroup>
               <% end %>
             </select>
             <input type="text" class="form-control" data-field="label"
@@ -121,8 +131,17 @@
         <div class="d-flex gap-2 mb-2 align-items-center" data-deal-grid-columns-target="row">
           <select class="form-control" data-field="field">
             <option value="">-- Field --</option>
-            <% DealInvestor::STANDARD_COLUMNS.each do |k, v| %>
-              <option value="<%= v.split("; ").first %>"><%= k.split("; ").first %></option>
+            <optgroup label="Standard Fields">
+              <% DealInvestor::STANDARD_COLUMNS.each do |k, v| %>
+                <option value="<%= v.split("; ").first %>"><%= k.split("; ").first %></option>
+              <% end %>
+            </optgroup>
+            <% if di_custom_fields.any? %>
+              <optgroup label="Custom Fields">
+                <% di_custom_fields.each do |cf| %>
+                  <option value="properties.<%= cf.name %>"><%= cf.label %></option>
+                <% end %>
+              </optgroup>
             <% end %>
           </select>
           <input type="text" class="form-control" data-field="label" placeholder="Label (optional)">

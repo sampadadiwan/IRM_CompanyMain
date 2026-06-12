@@ -112,6 +112,11 @@ class Deal < ApplicationRecord
     cols = grid_columns.presence
     return label_map.map { |field, label| { field: field, label: label } } if cols.blank?
 
+    # Extend with custom field labels so they resolve without a manual override
+    entity.form_types.find_by(name: 'DealInvestor')&.form_custom_fields&.visible&.each do |cf|
+      label_map["properties.#{cf.name}"] = cf.label
+    end
+
     cols.filter_map do |col|
       field = col["field"].presence
       next unless field

@@ -439,8 +439,9 @@ Given('we Generate Investor Statements from commitments index page') do
   visit(fund_path(@fund))
   expect(page).to have_content("New Commitment", wait: 5)
   click_on("Generate")
+  expect(page).to have_content("Generate Investor Statement", wait: 5) # wait for dropdown to render
   click_on("Generate Investor Statement")
-  expect(page).to have_content("Generate Investor Statements For : #{@fund.name}")
+  expect(page).to have_content("Generate Investor Statements For : #{@fund.name}", wait: 10)
   sleep(0.5)
   @start_date = Time.zone.parse("01/01/2022")
   @end_date = Time.zone.parse("31/12/2022")
