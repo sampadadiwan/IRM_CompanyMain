@@ -118,7 +118,11 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
     PROMPT
   end
 
-  # Downloads PDFs from the most recent KPI report into Tempfiles, yields paths, then cleans up.
+  MAX_COMBINED_PDF_BYTES = 10 * 1024 * 1024
+
+  # Same fast-path / greedy-batch logic as PortfolioReportDraftService#with_kpi_report_pdfs.
+  # Fast path  — combined PDFs ≤ 10 MB: pass as multimodal binary attachments.
+  # Fallback   — combined PDFs > 10 MB: extract text locally with PDF::Reader per batch.
   def with_kpi_report_pdfs(kpi_reports)
     tmpfiles = []
 
@@ -138,27 +142,69 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
       next unless doc.pdf?
 
       tmp = Tempfile.new([doc.name.parameterize.presence || "kpi-doc", ".pdf"])
+      tmpfiles << { doc: doc, tmp: tmp } # register before I/O so ensure always cleans up
       tmp.binmode
       doc.file.open { |io| tmp.write(io.read) }
       tmp.flush
-      tmpfiles << tmp
-      lines << "PDF attached: #{doc.name}"
-      Rails.logger.info { "[SectionRegenerateJob] Attached PDF '#{doc.name}' (#{tmp.size} bytes)" }
+      Rails.logger.info { "[SectionRegenerateJob] Downloaded PDF '#{doc.name}' (#{tmp.size} bytes)" }
     rescue StandardError => e
-      Rails.logger.warn { "[SectionRegenerateJob] Skipped PDF '#{doc.name}': #{e.message}" }
+      Rails.logger.warn { "[SectionRegenerateJob] Could not download PDF '#{doc.name}': #{e.message}" }
     end
 
-    commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
-    yield commentary, tmpfiles.map(&:path)
+    total_bytes = tmpfiles.sum { |t| t[:tmp].size }
+
+    if total_bytes <= MAX_COMBINED_PDF_BYTES
+      tmpfiles.each { |t| lines << "PDF attached: #{t[:doc].name}" }
+      commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
+      yield commentary, tmpfiles.map { |t| t[:tmp].path }
+    else
+      batches = greedy_pdf_batches(tmpfiles)
+      Rails.logger.info { "[SectionRegenerateJob] Payload #{total_bytes} bytes — #{batches.size} batch(es), extracting locally" }
+
+      batches.each_with_index do |batch, idx|
+        Rails.logger.info { "[SectionRegenerateJob] Batch #{idx + 1}/#{batches.size}: #{batch.map { |e| e[:doc].name }.join(', ')}" }
+        batch.each do |entry|
+          lines << "--- #{entry[:doc].name} ---"
+          lines << extract_pdf_text(entry[:tmp].path).truncate(3000)
+        end
+      end
+
+      commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
+      yield commentary, []
+    end
   ensure
-    tmpfiles.each do |t|
-      t.close
-      begin
-        t.unlink
-      rescue StandardError
-        nil
+    tmpfiles.each do |entry|
+      entry[:tmp].close
+      entry[:tmp].unlink rescue nil
+    end
+  end
+
+  def greedy_pdf_batches(tmpfiles)
+    batches       = []
+    current_batch = []
+    current_size  = 0
+
+    tmpfiles.each do |entry|
+      size = entry[:tmp].size
+      if current_batch.any? && current_size + size > MAX_COMBINED_PDF_BYTES
+        batches << current_batch
+        current_batch = [entry]
+        current_size  = size
+      else
+        current_batch << entry
+        current_size  += size
       end
     end
+    batches << current_batch if current_batch.any?
+    batches
+  end
+
+  def extract_pdf_text(file_path)
+    require 'pdf-reader'
+    PDF::Reader.new(file_path).pages.first(100).map(&:text).join("\n\n")
+  rescue StandardError => e
+    Rails.logger.warn { "[SectionRegenerateJob] PDF text extraction failed: #{e.message}" }
+    "(text extraction failed: #{e.message.truncate(120)})"
   end
 
   def format_period(as_of, period_type)
