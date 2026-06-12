@@ -9,8 +9,9 @@ class PortfolioReportDraftsController < ApplicationController
                           .where(id: Array(@draft.selected_kpi_mapping_ids).map(&:to_i))
                           .order(:position)
                           .group_by(&:category)
-    # Period labels are the column headers of the KPI table, derived from kpi_table_data keys
-    @period_labels = @draft.effective_kpi_table.values.first&.keys || []
+    # Period labels are the column headers of the KPI table, sorted chronologically (year then period number)
+    @period_labels = (@draft.effective_kpi_table.values.first&.keys || [])
+                       .sort_by { |label| [label[/\d{4}/].to_i, label[/\A[A-Z](\d)/i, 1].to_i] }
   end
 
   # PATCH /portfolio_report_drafts/:id/approve
@@ -29,7 +30,8 @@ class PortfolioReportDraftsController < ApplicationController
     @kpi_mappings  = @draft.portfolio_company.investor_kpi_mappings
                            .where(id: Array(@draft.selected_kpi_mapping_ids).map(&:to_i))
                            .order(:position).group_by(&:category)
-    @period_labels = @draft.effective_kpi_table.values.first&.keys || []
+    @period_labels = (@draft.effective_kpi_table.values.first&.keys || [])
+                       .sort_by { |label| [label[/\d{4}/].to_i, label[/\A[A-Z](\d)/i, 1].to_i] }
     render layout: false
   end
 
