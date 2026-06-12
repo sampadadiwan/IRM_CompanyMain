@@ -99,7 +99,10 @@ class DealsController < ApplicationController
           @deal_investors = @deal.deal_investors
                                  .includes(:deal, :rich_text_notes, investor: :investor_entity, deal_activities: :rich_text_details)
           @deal_investors = @deal_investors.not_declined if [nil, "", "false", false].include?(params[:all])
-          @activity_names = [@investor_label, "Tags", "Health", "Status", "Primary (#{@deal.currency})", "Secondary (#{@deal.currency})", "Pre Money (#{@deal.currency})"] + DealActivity.templates(@deal).map(&:title) + ["Advisor", "Deal Lead", "Source"]
+          investor_ids = @deal_investors.map(&:investor_id)
+          @notes = Note.where(investor_id: investor_ids, entity_id: @deal.entity_id)
+                       .includes(:investor, :reminder, :rich_text_details)
+                       .order(:investor_id, :on)
           response.headers['Content-Disposition'] = "attachment; filename=#{@deal.name}_list.xlsx"
           render "list_view"
         end
