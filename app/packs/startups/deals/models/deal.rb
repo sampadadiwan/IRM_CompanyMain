@@ -89,4 +89,27 @@ class Deal < ApplicationRecord
   def history
     versions.map(&:reify)
   end
+
+  # Accepts a JSON string from the hidden form field and parses it before assigning.
+  def grid_columns=(val)
+    parsed = val.is_a?(String) ? (JSON.parse(val) rescue val) : val
+    super(parsed)
+  end
+
+  # Returns [{field:, label:}] for the JS column filter; defaults to all standard columns when none configured.
+  def grid_columns_for_js
+    label_map = DealInvestor::STANDARD_COLUMNS.each_with_object({}) do |(k, v), h|
+      h[v.split("; ").first] = k.split("; ").first
+    end
+    cols = grid_columns.presence
+    return label_map.map { |field, label| { field: field, label: label } } if cols.blank?
+
+    cols.map do |col|
+      field = col["field"].presence
+      next unless field
+      label    = col["label"].presence || label_map[field] || field.to_s.humanize
+      position = col["position"].presence || "end"
+      { field: field, label: label, position: position }
+    end.compact
+  end
 end

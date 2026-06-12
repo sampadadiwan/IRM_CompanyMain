@@ -9,7 +9,8 @@ export default class extends BaseAgGrid {
     currency: String,
     activityTemplates: Array,
     customFields: String,
-    gridColumns: String
+    gridColumns: String,
+    dealGridColumns: Array  // [{field, label}] from deal.grid_columns_for_js
   }
 
   columnDefs() {
@@ -314,6 +315,73 @@ export default class extends BaseAgGrid {
       enableRowGroup: true,
       editable: true
     });
+
+    // Standard money/text columns not already hardcoded above
+    const moneyFields = [
+      { field: 'primary_amount',         label: 'Primary Amount' },
+      { field: 'secondary_investment',   label: 'Secondary Investment' },
+      { field: 'pre_money_valuation',    label: 'Pre Money Valuation' },
+      { field: 'fee',                    label: 'Fee' },
+      { field: 'total_amount',           label: 'Total Amount' }
+    ];
+    moneyFields.forEach(({ field, label }) => {
+      // Skip if this field was already added via gridColumns (form_type prefs)
+      const alreadyAdded = columns.some(c => c.field === field);
+      if (!alreadyAdded) {
+        columns.push(this.numberFormatColumn(this, field, label, this.formatNumberWithCommas, 'sum', true));
+      }
+    });
+
+    const textFields = [
+      { field: 'company_advisor', label: 'Company Advisor' },
+      { field: 'notes',           label: 'Notes' },
+      { field: 'tags',            label: 'Tags' }
+    ];
+    textFields.forEach(({ field, label }) => {
+      if (!columns.some(c => c.field === field)) {
+        columns.push({ field, headerName: label, enableRowGroup: true, editable: true });
+      }
+    });
+
+    // When the deal has explicit column config:
+    // - Base hardcoded + activity columns always show (investor_name, status, tier …)
+    // - Configured extra columns are added; unconfigured extras (primary_amount etc.) are hidden
+    // - position="start" cols are inserted before the base block; position="end" after
+    if (this.hasDealGridColumnsValue && this.dealGridColumnsValue.length > 0) {
+      const baseFields = new Set([
+        'investor_name', 'health_score', 'status', 'stagnant', 'tier',
+        'investor_advisor', 'deal_lead', 'source'
+      ]);
+      const configuredFields = new Set(this.dealGridColumnsValue.map(c => c.field));
+
+      // Apply custom label overrides
+      this.dealGridColumnsValue.forEach(cfg => {
+        if (!cfg.label) return;
+        const col = columns.find(c => c.field === cfg.field);
+        if (col) col.headerName = cfg.label;
+      });
+
+      // Split columns into three buckets
+      const startCols = [];
+      const baseCols  = [];
+      const endCols   = [];
+
+      columns.forEach(col => {
+        const isBase     = baseFields.has(col.field) || col.field?.startsWith('activity_');
+        const cfg        = this.dealGridColumnsValue.find(c => c.field === col.field);
+        const inConfig   = !!cfg;
+        const position   = cfg?.position || 'end';
+
+        if (isBase) {
+          baseCols.push(col);
+        } else if (inConfig) {
+          (position === 'start' ? startCols : endCols).push(col);
+        }
+        // unconfigured extras are dropped
+      });
+
+      return [...startCols, ...baseCols, ...endCols];
+    }
 
     return columns;
   }
