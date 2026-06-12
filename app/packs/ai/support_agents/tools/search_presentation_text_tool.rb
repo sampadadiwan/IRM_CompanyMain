@@ -41,7 +41,7 @@ class SearchPresentationTextTool < RubyLLM::Tool
     end
 
     # Split query into individual terms; match any term (OR search) for higher recall
-    terms = query.downcase.split(/\s+/).first(6).reject(&:blank?)
+    terms = query.downcase.split(/\s+/).first(6).compact_blank
     return "Query is blank." if terms.empty?
 
     # Serialise each record to JSON for full-text matching across all eight extracted fields

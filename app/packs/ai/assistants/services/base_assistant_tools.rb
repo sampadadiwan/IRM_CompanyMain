@@ -59,7 +59,6 @@ class BaseAssistantTools
       HTML
     end
 
-    # rubocop:disable Metrics/CyclomaticComplexity
     # ensures the legend is meaningful and points/series are identifiable.
     # Also nudges line/scatter charts to actually render points.
     def normalize_chart_config!(cfg)
@@ -97,7 +96,6 @@ class BaseAssistantTools
         end
       end
     end
-    # rubocop:enable Metrics/CyclomaticComplexity
   end
 
   # Tool to generate chart visualizations directly from a data query.

@@ -103,9 +103,9 @@ class ImportUpload < ApplicationRecord
 
   def form_type_names
     case import_type
-    when "InvestorKyc"        then %w[IndividualKyc NonIndividualKyc]
+    when "InvestorKyc" then %w[IndividualKyc NonIndividualKyc]
     when "DealActivityTemplate" then %w[DealActivity]
-    else                          [import_type]
+    else [import_type]
     end
   end
 

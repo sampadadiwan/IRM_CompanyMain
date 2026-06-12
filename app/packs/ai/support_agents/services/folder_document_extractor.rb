@@ -115,9 +115,9 @@ class FolderDocumentExtractor
          .sort_by { |e| e.name.match(/slide(\d+)\.xml/)[1].to_i }
          .first(30)
          .each_with_index do |entry, i|
-           doc = Nokogiri::XML(entry.get_input_stream.read).tap(&:remove_namespaces!)
-           texts = doc.xpath('//t').map(&:text).compact_blank
-           parts << "=== Slide #{i + 1} ===\n#{texts.join("\n")}" if texts.any?
+        doc = Nokogiri::XML(entry.get_input_stream.read).tap(&:remove_namespaces!)
+        texts = doc.xpath('//t').map(&:text).compact_blank
+        parts << "=== Slide #{i + 1} ===\n#{texts.join("\n")}" if texts.any?
       end
     end
     parts.join("\n\n").presence || "No text found in PowerPoint"

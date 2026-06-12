@@ -7,9 +7,9 @@
 # @see AgentChatSession
 
 class GenericChatAgent < SupportAgentService
-  DESCRIPTION = "Provides multi-turn AI chat for any configured support agent using context-aware chat providers.".freeze
+  DESCRIPTION = "Provides multi-turn AI chat for any configured support agent using context-aware chat providers."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Orchestrates multi-turn AI chat conversations for any configured support agent.
     Resolves the appropriate chat provider based on the agent type, builds context from the
     target record, and persists all messages to an AgentChatSession for resumable conversations.

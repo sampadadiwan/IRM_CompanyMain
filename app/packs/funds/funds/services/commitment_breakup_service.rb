@@ -16,37 +16,37 @@ class CommitmentBreakupService
     divisor = @fund.currency == 'INR' ? 1_000_000_000.0 : 100_000_000.0
 
     data = []
-    data << { 
-      name: "Original Commitment<br/>(#{format_amount(original_cents)})", 
-      y: (original_cents / divisor).to_f, 
+    data << {
+      name: "Original Commitment<br/>(#{format_amount(original_cents)})",
+      y: (original_cents / divisor).to_f,
       label: format_amount(original_cents),
       color: '#5D87FF' # Blue
     }
-    data << { 
-      name: "Top Up Adjustments<br/>(#{format_amount(top_up_cents)})", 
+    data << {
+      name: "Top Up Adjustments<br/>(#{format_amount(top_up_cents)})",
       y: (top_up_cents / divisor).to_f,
       label: format_amount(top_up_cents),
       color: '#763EBD' # Purple
     }
-    data << { 
-      name: "FX Adjustments<br/>(#{format_amount(fx_cents)})", 
+    data << {
+      name: "FX Adjustments<br/>(#{format_amount(fx_cents)})",
       y: (fx_cents / divisor).to_f,
       label: format_amount(fx_cents),
       color: '#FFAE1F' # Orange
     }
-    
+
     if other_cents != 0
-      data << { 
-        name: "Other Adjustments<br/>(#{format_amount(other_cents)})", 
+      data << {
+        name: "Other Adjustments<br/>(#{format_amount(other_cents)})",
         y: (other_cents / divisor).to_f,
         label: format_amount(other_cents),
         color: '#FA896B' # Coral
       }
     end
 
-    data << { 
-      name: "Total Adjusted Commitment<br/>(#{format_amount(total_cents)})", 
-      isSum: true, 
+    data << {
+      name: "Total Adjusted Commitment<br/>(#{format_amount(total_cents)})",
+      isSum: true,
       label: format_amount(total_cents),
       color: '#5D87FF' # Blue
     }

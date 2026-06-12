@@ -3,7 +3,6 @@ class RansackTable < ViewComponent::Base
   include Pagy::Frontend
   include ApplicationHelper
 
-  # rubocop:disable Naming/MethodParameterName
   def initialize(model, q:, turbo_frame:, pagy:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil, snapshot: nil, actions_column: true)
     super()
     @records = records
@@ -17,5 +16,4 @@ class RansackTable < ViewComponent::Base
     @ransack_table_header = RansackTableHeader.new(model, q: q, turbo_frame: turbo_frame, default_columns_map: default_columns_map, entity: entity, current_user: current_user, records: records, report_id: report_id, id: id, css_class: css_class, referrer: referrer, snapshot: snapshot, actions_column: actions_column)
   end
   # rubocop:enable Naming/MethodParameterName
-  # rubocop:enable Metrics/ParameterLists
 end

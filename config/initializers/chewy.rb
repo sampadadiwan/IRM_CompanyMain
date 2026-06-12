@@ -1,6 +1,6 @@
 if Rails.env.test?
   Chewy.settings = {
-    prefix: "test#{ENV['TEST_ENV_NUMBER']}"
+    prefix: "test#{ENV.fetch('TEST_ENV_NUMBER', nil)}"
   }
   # Bypass ES indexing in tests — the middleware uses this strategy per request,
   # and it must match the global :bypass set in features/support/env.rb.

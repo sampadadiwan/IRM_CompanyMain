@@ -68,7 +68,6 @@ class DocusignEsignHelper
     # envelope-voided is cancellation for docusign, triggered initially when a user cancels esigning
     when "envelope-voided"
       doc&.update(esign_status: "voided")
-      # rubocop:disable Rails/SkipsModelValidations
       doc.e_signatures.update_all(status: "voided")
       api_updates = params.dup
       api_updates['data']['envelopeSummary'] = params.dig('data', 'envelopeSummary')&.except('envelopeDocuments')

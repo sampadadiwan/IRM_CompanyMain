@@ -8,7 +8,7 @@ module WithReportBuilderViews
   private
 
   def set_report_builder_view
-    return unless params[:view_id].present?
+    return if params[:view_id].blank?
 
     @report_view = Report.find_by(id: params[:view_id], is_view: true)
     return unless @report_view
@@ -22,7 +22,7 @@ module WithReportBuilderViews
       entity: current_user.entity,
       external_filters: params[:q]
     )
-    
+
     @rows = engine.run
     @columns = engine.columns
     @is_custom_view = true

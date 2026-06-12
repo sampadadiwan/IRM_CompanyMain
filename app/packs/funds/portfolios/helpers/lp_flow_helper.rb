@@ -14,10 +14,10 @@ module LpFlowHelper
 
     data = commitments.map do |cc|
       lp_name     = cc.investor&.investor_name || "Unknown"
-      series_data = apis.map do |api|
+      series_data = apis.to_h do |api|
         # LP's implied share of this company's FMV
         [api.portfolio_company_name, (api.fmv_cents * cc.percentage / 100.0 / 100.0).round(2)]
-      end.to_h
+      end
       { name: lp_name, data: series_data }
     end
 
@@ -59,15 +59,16 @@ module LpFlowHelper
     all_lp_names.each do |lp_name|
       cc = cc_lookup[lp_name]
       next unless cc
+
       raw[lp_name] = apis.filter_map do |api|
         fmv = (api.fmv_cents * cc.percentage / 100.0 / 100.0).round(2)
-        fmv > 0 ? { company: api.portfolio_company_name, value: fmv } : nil
+        fmv.positive? ? { company: api.portfolio_company_name, value: fmv } : nil
       end
     end
 
     lp_names = all_lp_names
-                 .sort_by { |name| -(raw[name]&.sum { |p| p[:value] } || 0) }
-                 .first(15)
+               .sort_by { |name| -(raw[name]&.sum { |p| p[:value] } || 0) }
+               .first(15)
 
     points = lp_names.flat_map.with_index do |lp_name, y|
       (raw[lp_name] || []).map { |p| { x: company_names.index(p[:company]), y: y, value: p[:value] } }

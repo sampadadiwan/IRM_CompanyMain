@@ -5,7 +5,6 @@
 # It uses Pundit policies to ensure the user only accesses authorized data and
 # Ransack for flexible querying.
 #
-# rubocop:disable Metrics/CyclomaticComplexity
 class FundAssistantDataManager
   attr_accessor :assistant
 

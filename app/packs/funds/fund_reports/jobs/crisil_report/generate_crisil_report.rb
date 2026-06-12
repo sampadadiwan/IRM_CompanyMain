@@ -77,14 +77,15 @@ class GenerateCrisilReport < Trailblazer::Operation
 
     fund = Fund.find(fund_id)
 
-    file = File.open(ctx[:file_path])
     report_name = "#{report_name} #{start_date.strftime('%d %B,%Y')} to #{end_date.strftime('%d %B,%Y')}"
 
-    ActiveRecord::Base.transaction do
-      # Delete all old reports with the same name - basically the reports of the same type that were generated for the same time period
-      Document.where(name: report_name, entity_id: fund.entity_id).destroy_all if Document.exists?(name: report_name, entity_id: fund.entity_id)
-      # Create a new Docment with the new report excel file
-      Document.create!(entity_id: fund.entity_id, owner: fund, name: report_name, file:, folder: report_folder(fund), user: User.find(user_id), orignal: true, download: true)
+    File.open(ctx[:file_path]) do |file|
+      ActiveRecord::Base.transaction do
+        # Delete all old reports with the same name - basically the reports of the same type that were generated for the same time period
+        Document.where(name: report_name, entity_id: fund.entity_id).destroy_all if Document.exists?(name: report_name, entity_id: fund.entity_id)
+        # Create a new Docment with the new report excel file
+        Document.create!(entity_id: fund.entity_id, owner: fund, name: report_name, file:, folder: report_folder(fund), user: User.find(user_id), orignal: true, download: true)
+      end
     end
   rescue StandardError => e
     ctx[:errors] = e.message
@@ -99,5 +100,4 @@ class GenerateCrisilReport < Trailblazer::Operation
     UserAlert.new(message: "#{report_name} Generation Failed: #{ctx[:errors]}", user_id:, level: "danger").broadcastif user_id.present?
     false
   end
-  # rubocop:enable Metrics/ParameterLists
 end

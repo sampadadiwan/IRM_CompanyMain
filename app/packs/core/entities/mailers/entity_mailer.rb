@@ -76,8 +76,7 @@ class EntityMailer < ApplicationMailer
     # If no entity_id is provided, default to the original support email
     return default_to unless params[:entity_id]
 
-    # Find the entity; if it doesn't exist, use the default support email
-    @entity ||= Entity.find_by(id: params[:entity_id])
+    @entity ||= Entity.find_by(id: params[:entity_id]) # rubocop:disable Rails/FindByOrAssignmentMemoization
     return default_to unless @entity
 
     # Retrieve all emails of users associated with enabled SupportClientMapping for this entity

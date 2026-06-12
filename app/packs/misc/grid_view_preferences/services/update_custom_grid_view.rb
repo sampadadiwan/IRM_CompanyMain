@@ -7,7 +7,6 @@ class UpdateCustomGridView < Trailblazer::Operation
 
   def map_grid_fields(_ctx, params:, custom_grid_view:, **)
     selected_column_ids = params.dig("custom_grid_view", "grid_view_preferences") || []
-    # rubocop:disable Rails/SkipsModelValidations
     custom_grid_view.grid_view_preferences.update_all(selected: false)
     # rubocop:enable Rails/SkipsModelValidations
 

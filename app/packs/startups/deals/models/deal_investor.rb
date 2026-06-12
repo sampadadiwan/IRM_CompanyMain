@@ -80,6 +80,7 @@ class DealInvestor < ApplicationRecord
 
   def track_status_change
     return unless self.class.column_names.include?('status_changed_at')
+
     self.status_changed_at = Time.current if status_changed?
   end
 
@@ -161,7 +162,6 @@ class DealInvestor < ApplicationRecord
   end
 
   def set_deal_investor_activity
-
     # After activities are created, set the deal_investor to the first incomplete activity (lowest sequence).
     # Only set it if not already pointing to a valid activity.
     return if deal_activity_id.present? && deal_activities.exists?(template_id: deal_activity_id)

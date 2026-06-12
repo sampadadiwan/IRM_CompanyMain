@@ -25,10 +25,11 @@ class ImportFundDocsService < ImportServiceBase
 
     if index_path && File.exist?(index_path)
       Rails.logger.debug { "Found index file, proceeding with import in #{File.dirname(index_path)}" }
-      import_file = File.open(index_path, "r")
-      ctx[:import_file] = import_file
-      ctx[:unzip_dir] = File.dirname(index_path)
-      super(ctx, import_file:, import_upload:)
+      File.open(index_path, "r") do |import_file|
+        ctx[:import_file] = import_file
+        ctx[:unzip_dir] = File.dirname(index_path)
+        super(ctx, import_file:, import_upload:)
+      end
     else
       Rails.logger.debug { "index.xlsx not found inside zip file at #{unzip_dir}" }
       ctx[:errors] = "index.xlsx not found inside zip file"

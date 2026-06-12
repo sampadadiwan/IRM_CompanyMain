@@ -61,14 +61,14 @@ class CapitalCommitmentsController < ApplicationController
             from_commitment.reload.lock!
 
             transfer = FundUnitTransfer.new(
-              entity_id:               @capital_commitment.entity_id,
-              fund_id:                 @capital_commitment.fund_id,
-              from_commitment_id:      @capital_commitment.id,
-              to_commitment_id:        to_commitment.id,
-              transfer_ratio:          params[:transfer_ratio].to_i,
-              transfer_date:           Date.local_parse(params[:transfer_date]),
-              price:                   BigDecimal(params[:price].presence || "0"),
-              premium:                 BigDecimal(params[:premium].presence || "0"),
+              entity_id: @capital_commitment.entity_id,
+              fund_id: @capital_commitment.fund_id,
+              from_commitment_id: @capital_commitment.id,
+              to_commitment_id: to_commitment.id,
+              transfer_ratio: params[:transfer_ratio].to_i,
+              transfer_date: Date.local_parse(params[:transfer_date]),
+              price: BigDecimal(params[:price].presence || "0"),
+              premium: BigDecimal(params[:premium].presence || "0"),
               transfer_account_entries: params[:transfer_account_entries] == "1",
               account_entries_excluded: params[:account_entries_excluded]
             )

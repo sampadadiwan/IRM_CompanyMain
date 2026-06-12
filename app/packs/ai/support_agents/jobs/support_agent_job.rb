@@ -107,16 +107,16 @@ class SupportAgentJob < ApplicationJob
             return
           end
         elsif target_id.present? && target_type.present?
-          if target_type == "Entity"
-            # Entity provided: run for all portfolio companies in that entity
-            targets = support_agent.agent.new.targets(target_id)
-          elsif target_type == "Investor"
-            # Specific investor provided: run for just that one
-            targets = [Investor.find(target_id)]
-          else
-            # Other target types (for other agents like KycOnboardingAgent)
-            targets = [target_type.constantize.find(target_id)]
-          end
+          targets = if target_type == "Entity"
+                      # Entity provided: run for all portfolio companies in that entity
+                      support_agent.agent.new.targets(target_id)
+                    elsif target_type == "Investor"
+                      # Specific investor provided: run for just that one
+                      [Investor.find(target_id)]
+                    else
+                      # Other target types (for other agents like KycOnboardingAgent)
+                      [target_type.constantize.find(target_id)]
+                    end
         else
           # No target specified: run for all targets from agent's entity
           targets = support_agent.agent.new.targets(support_agent.entity_id)
@@ -126,7 +126,7 @@ class SupportAgentJob < ApplicationJob
         errors = []
         successes = []
         # A batch run is when multiple targets are processed in one job
-        is_batch_run = targets.count > 1
+        is_batch_run = targets.many?
 
         targets.each do |target|
           # Determine if this target should run with step UI
@@ -201,7 +201,6 @@ class SupportAgentJob < ApplicationJob
 
         # Mark execution log as completed
         execution_log.mark_completed!({ successes: successes.count, errors: errors.count })
-
       rescue StandardError => e
         Rails.logger.error { "SupportAgentJob failed: #{e.message}" }
         Rails.logger.error { e.backtrace.join("\n") }
@@ -222,9 +221,7 @@ class SupportAgentJob < ApplicationJob
     message = "<strong>#{support_agent.name}</strong> completed batch run for #{batch_target_type.pluralize}:<br/>"
     message += "✓ <strong>#{success_count}</strong> of <strong>#{total}</strong> processed successfully"
 
-    if error_count > 0
-      message += "<br/>✗ <strong>#{error_count}</strong> failed"
-    end
+    message += "<br/>✗ <strong>#{error_count}</strong> failed" if error_count.positive?
 
     # Show first few errors if any
     if errors.any?
@@ -235,9 +232,9 @@ class SupportAgentJob < ApplicationJob
       message += "<br/><small>...and #{errors.count - 3} more</small>" if errors.count > 3
     end
 
-    notification_type = if error_count == 0
+    notification_type = if error_count.zero?
                           "success"
-                        elsif success_count > 0
+                        elsif success_count.positive?
                           "warning"
                         else
                           "danger"

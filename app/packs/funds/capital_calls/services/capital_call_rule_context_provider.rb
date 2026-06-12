@@ -16,7 +16,7 @@ class CapitalCallRuleContextProvider
   # @param entity [Entity]       Unused here but part of the standard provider interface
   # @param params [Hash]         Unused — no parameterised queries for these rules
   # @return [Hash] symbol-keyed context values
-  def call(record:, entity:, params: {}) # rubocop:disable Lint/UnusedMethodArgument
+  def call(record:, entity:, params: {})
     # Both rules are only meaningful for persisted calls that have generated remittances.
     # A new/unsaved call or one with no remittances returns nil for both keys so rules don't fire.
     return default_context unless record.persisted?
@@ -26,7 +26,7 @@ class CapitalCallRuleContextProvider
 
     {
       remittances_without_notices: remittances_without_notices(remittance_ids),
-      unapproved_notices_count:    unapproved_notices_count(remittance_ids)
+      unapproved_notices_count: unapproved_notices_count(remittance_ids)
     }
   end
 
@@ -40,10 +40,10 @@ class CapitalCallRuleContextProvider
   # NO document with owner_tag "Generated". Returns nil when all remittances have a notice.
   def remittances_without_notices(remittance_ids)
     with_notice_ids = Document
-      .where(owner_type: "CapitalRemittance", owner_id: remittance_ids, owner_tag: "Generated")
-      .distinct
-      .pluck(:owner_id)
-      .to_set
+                      .where(owner_type: "CapitalRemittance", owner_id: remittance_ids, owner_tag: "Generated")
+                      .distinct
+                      .pluck(:owner_id)
+                      .to_set
 
     missing_ids = remittance_ids.reject { |id| with_notice_ids.include?(id) }
     return nil if missing_ids.empty?
@@ -55,9 +55,9 @@ class CapitalCallRuleContextProvider
   # or nil when all generated notices are approved (rule should not fire).
   def unapproved_notices_count(remittance_ids)
     count = Document
-      .where(owner_type: "CapitalRemittance", owner_id: remittance_ids,
-             owner_tag: "Generated", approved: false)
-      .count
+            .where(owner_type: "CapitalRemittance", owner_id: remittance_ids,
+                   owner_tag: "Generated", approved: false)
+            .count
 
     count.positive? ? count : nil
   end

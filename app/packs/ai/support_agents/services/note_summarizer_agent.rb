@@ -11,9 +11,9 @@
 #
 # @see SupportAgentService for base class step helpers (generate_progress_reports, enabled?, etc.)
 class NoteSummarizerAgent < SupportAgentService
-  DESCRIPTION = "Generates LLM-based summaries of investor notes on a monthly or quarterly schedule. Auto-tags untagged notes before summarising.".freeze
+  DESCRIPTION = "Generates LLM-based summaries of investor notes on a monthly or quarterly schedule. Auto-tags untagged notes before summarising."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Generates an LLM-powered summary of investor notes for each investor over a configured
     monthly or quarterly lookback period. Runs as a batch across all investors for the entity.
 
@@ -38,11 +38,11 @@ class NoteSummarizerAgent < SupportAgentService
 
   # Human-readable labels shown in the step progress panel
   STEP_LABELS = {
-    initialize_agent:          "Initialize",
-    tag_untagged_notes:        "Auto-Tag Notes",
-    collect_notes:             "Collect Notes",
-    generate_summary:          "Generate Summary",
-    save_summary_as_note:      "Save Note",
+    initialize_agent: "Initialize",
+    tag_untagged_notes: "Auto-Tag Notes",
+    collect_notes: "Collect Notes",
+    generate_summary: "Generate Summary",
+    save_summary_as_note: "Save Note",
     generate_progress_reports: "Save Report"
   }.freeze
 
@@ -72,7 +72,7 @@ class NoteSummarizerAgent < SupportAgentService
   # @param user_id [Integer, nil] nil for scheduled runs
   # @param entity_id [Integer]
   # @param execution_mode [Symbol] :adhoc_batch or :scheduled
-  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch) # rubocop:disable Lint/UnusedMethodArgument
+  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch)
     support_agent = SupportAgent.find(support_agent_id)
 
     # Preload notes to avoid N+1 when iterating investors sequentially
@@ -82,25 +82,23 @@ class NoteSummarizerAgent < SupportAgentService
     errors    = []
 
     targets.to_a.each do |target|
-      begin
-        # One Trailblazer call per investor — each gets its own ctx and report
-        support_agent.agent.wtf?(
-          support_agent_id: support_agent_id,
-          target:           target,
-          user_id:          user_id,
-          entity_id:        entity_id,
-          batch_mode:       true
-        )
-        successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
-      rescue StandardError => e
-        Rails.logger.error { "[NoteSummarizerAgent] process_batch error for Target ID=#{target.id}: #{e.message}" }
-        Rails.logger.error { e.backtrace.join("\n") }
-        errors << {
-          target_id:   target.id,
-          target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}",
-          error:       e.message
-        }
-      end
+      # One Trailblazer call per investor — each gets its own ctx and report
+      support_agent.agent.wtf?(
+        support_agent_id: support_agent_id,
+        target: target,
+        user_id: user_id,
+        entity_id: entity_id,
+        batch_mode: true
+      )
+      successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
+    rescue StandardError => e
+      Rails.logger.error { "[NoteSummarizerAgent] process_batch error for Target ID=#{target.id}: #{e.message}" }
+      Rails.logger.error { e.backtrace.join("\n") }
+      errors << {
+        target_id: target.id,
+        target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}",
+        error: e.message
+      }
     end
 
     # Batch summary notification — suppressed for scheduled runs (no user to notify)
@@ -136,11 +134,11 @@ class NoteSummarizerAgent < SupportAgentService
     case period.downcase
     when "month"
       # Summarise the previous calendar month so the period is always complete
-      ctx[:period_start] = Date.today.prev_month.beginning_of_month
-      ctx[:period_end]   = Date.today.prev_month.end_of_month
+      ctx[:period_start] = Time.zone.today.prev_month.beginning_of_month
+      ctx[:period_end]   = Time.zone.today.prev_month.end_of_month
     else
       # Default to previous calendar quarter using the same helper as PortfolioCompanyAgent
-      prev_quarter_last_day = Date.today.beginning_of_quarter - 1.day
+      prev_quarter_last_day = Time.zone.today.beginning_of_quarter - 1.day
       ctx[:period_start]    = prev_quarter_last_day.beginning_of_quarter
       ctx[:period_end]      = prev_quarter_last_day.end_of_quarter
     end
@@ -151,7 +149,7 @@ class NoteSummarizerAgent < SupportAgentService
 
     Rails.logger.info do
       "[NoteSummarizerAgent] Initialized investor=#{investor.id} period=#{period} " \
-      "(#{ctx[:period_start]}..#{ctx[:period_end]})"
+        "(#{ctx[:period_start]}..#{ctx[:period_end]})"
     end
 
     @support_agent.enabled?
@@ -180,14 +178,14 @@ class NoteSummarizerAgent < SupportAgentService
                                    .to_s
                                    .split(",")
                                    .map(&:strip)
-                                   .reject(&:blank?)
+                                   .compact_blank
 
     # Load only notes that have no tags yet within the period — no need to re-tag existing ones
     untagged = Note
-                 .where(investor: investor, entity: @support_agent.entity)
-                 .where(on: ctx[:period_start]..ctx[:period_end])
-                 .where(tags: [nil, ""])
-                 .with_all_rich_text
+               .where(investor: investor, entity: @support_agent.entity)
+               .where(on: ctx[:period_start]..ctx[:period_end])
+               .where(tags: [nil, ""])
+               .with_all_rich_text
 
     untagged_notes = untagged.to_a
 
@@ -268,17 +266,17 @@ class NoteSummarizerAgent < SupportAgentService
     # Exclude auto-generated summary notes (tagged "summary") so they are never
     # included in future summaries — they exist only for reference.
     notes = Note
-              .where(investor: investor, entity: @support_agent.entity)
-              .where(on: ctx[:period_start]..ctx[:period_end])
-              .where("tags NOT REGEXP ? OR tags IS NULL OR tags = ''", "(^|,)summary(,|$)")
-              .with_all_rich_text # eager-loads the ActionText body in one query
+            .where(investor: investor, entity: @support_agent.entity)
+            .where(on: ctx[:period_start]..ctx[:period_end])
+            .where("tags NOT REGEXP ? OR tags IS NULL OR tags = ''", "(^|,)summary(,|$)")
+            .with_all_rich_text # eager-loads the ActionText body in one query
 
     # Optional tag filter: only include notes whose tags column matches at least one tag
     tag_filter = @support_agent.json_fields["tag_filter"]
                                .to_s
                                .split(",")
                                .map(&:strip)
-                               .reject(&:blank?)
+                               .compact_blank
 
     if tag_filter.any?
       # REGEXP matches any note containing at least one of the configured tags
@@ -379,7 +377,7 @@ class NoteSummarizerAgent < SupportAgentService
   # @param investor [Investor] note owner
   def save_summary_as_note(ctx, investor: nil, **)
     # Skip if there is nothing to write (no notes in period or LLM failure)
-    unless ctx[:summary_text].present?
+    if ctx[:summary_text].blank?
       ctx[:issues][:summary_issues] << {
         type: :info, message: "No summary to save as note — skipped", severity: :success
       }
@@ -400,9 +398,9 @@ class NoteSummarizerAgent < SupportAgentService
 
     note = existing || Note.new(
       investor: investor,
-      entity:   @support_agent.entity,
-      user:     User.where(entity_id: @support_agent.entity_id).first, # system note — use first entity user
-      on:       note_date
+      entity: @support_agent.entity,
+      user: User.where(entity_id: @support_agent.entity_id).first, # system note — use first entity user
+      on: note_date
     )
 
     note.tags    = tags
@@ -433,7 +431,7 @@ class NoteSummarizerAgent < SupportAgentService
   # @param ctx [Hash] execution context; reads :summary_text, :note_count, period fields
   # @param investor [Investor] used as the report owner (model: arg to base class)
   # @param support_agent [SupportAgent] current agent record
-  def generate_progress_reports(ctx, investor: nil, support_agent:, **)
+  def generate_progress_reports(ctx, support_agent:, investor: nil, **)
     # Base class writes ctx[:issues] into json_fields and persists the report
     super(ctx, model: investor, support_agent: support_agent)
 
@@ -443,11 +441,11 @@ class NoteSummarizerAgent < SupportAgentService
     return true unless report
 
     report.json_fields = (report.json_fields || {}).merge(
-      "summary_text"  => ctx[:summary_text].to_s,
-      "note_count"    => ctx[:note_count].to_i,
-      "period_label"  => ctx[:period_label],
-      "period_start"  => ctx[:period_start]&.iso8601,
-      "period_end"    => ctx[:period_end]&.iso8601
+      "summary_text" => ctx[:summary_text].to_s,
+      "note_count" => ctx[:note_count].to_i,
+      "period_label" => ctx[:period_label],
+      "period_start" => ctx[:period_start]&.iso8601,
+      "period_end" => ctx[:period_end]&.iso8601
     )
     # MySQL doesn't detect JSON field mutations automatically — must mark dirty
     report.json_fields_will_change!

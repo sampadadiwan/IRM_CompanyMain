@@ -14,9 +14,7 @@ class ValidationRulesController < ApplicationController
   def evaluate
     target_model = params[:target_model].to_s
 
-    unless ValidationRuleEvaluator::CONTEXT_PROVIDERS.key?(target_model)
-      return render json: { error: "Unknown target_model: #{target_model}" }, status: :bad_request
-    end
+    return render json: { error: "Unknown target_model: #{target_model}" }, status: :bad_request unless ValidationRuleEvaluator::CONTEXT_PROVIDERS.key?(target_model)
 
     model_class = target_model.constantize
 
@@ -52,6 +50,11 @@ class ValidationRulesController < ApplicationController
     }
   end
 
+  # Virtual attr_accessors that are not DB columns but must be assignable for rule evaluation.
+  VIRTUAL_ATTRS = {
+    "FundRatioRunTemplate" => %w[trigger_end_date]
+  }.freeze
+
   private
 
   # Per-model attribute normalisation before assignment.
@@ -63,23 +66,14 @@ class ValidationRulesController < ApplicationController
 
       # The multi-create form sends investment_instrument_ids[] (array) but the
       # model has a singular investment_instrument_id — use the first value
-      if attrs["investment_instrument_id"].blank? && attrs["investment_instrument_ids[]"].present?
-        attrs["investment_instrument_id"] = Array(attrs["investment_instrument_ids[]"]).first
-      end
+      attrs["investment_instrument_id"] = Array(attrs["investment_instrument_ids[]"]).first if attrs["investment_instrument_id"].blank? && attrs["investment_instrument_ids[]"].present?
 
       # monetize needs entity (for currency) before per_share_value can be assigned;
       # fall back to the current user's entity if entity_id is missing from the form
       attrs["entity_id"] ||= current_user.entity_id.to_s
 
-    when "AllocationRun"
+    when "AllocationRun", "FundRatio", "CapitalCall", "CapitalRemittance"
       attrs = attrs.dup
-      # The allocate form is flat (no model prefix) — entity and fund come from
-      # the fund being allocated, not from the form params directly
-      attrs["entity_id"] ||= current_user.entity_id.to_s
-
-    when "FundRatio"
-      attrs = attrs.dup
-      # The generate_fund_ratios form is also flat; supply entity_id for monetize/context
       attrs["entity_id"] ||= current_user.entity_id.to_s
 
     when "FundRatioRunTemplate"
@@ -87,30 +81,15 @@ class ValidationRulesController < ApplicationController
       # Trigger forms send end_date; the rule engine reads the virtual trigger_end_date attr
       attrs["trigger_end_date"] = attrs.delete("end_date") if attrs.key?("end_date")
       attrs["entity_id"] ||= current_user.entity_id.to_s
-
-    when "CapitalCall"
-      attrs = attrs.dup
-      # Approval evaluates a persisted record; ensure entity_id is present for scoping
-      attrs["entity_id"] ||= current_user.entity_id.to_s
-
-    when "CapitalRemittance"
-      attrs = attrs.dup
-      # Send-notification evaluates a persisted record; ensure entity_id is present for scoping
-      attrs["entity_id"] ||= current_user.entity_id.to_s
     end
 
     attrs
   end
 
-  # Virtual attr_accessors that are not DB columns but must be assignable for rule evaluation.
-  VIRTUAL_ATTRS = {
-    "FundRatioRunTemplate" => %w[trigger_end_date]
-  }.freeze
-
   # Build the set of attributes we can safely assign.
   # Includes DB column names, monetize virtual setters, and model-specific virtual attrs.
   def assignable_attrs(model_class, raw_attrs)
-    columns      = model_class.column_names
+    columns = model_class.column_names
     # monetize creates virtual setters like "per_share_value" alongside "per_share_value_cents";
     # include any incoming key whose cents-column equivalent exists on the model
     virtual_money = raw_attrs.keys.select do |k|

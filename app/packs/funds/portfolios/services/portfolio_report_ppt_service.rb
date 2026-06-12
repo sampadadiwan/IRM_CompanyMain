@@ -12,19 +12,19 @@ require 'nokogiri'
 # All positioning uses EMUs (1 inch = 914_400 EMUs).
 class PortfolioReportPptService
   # ── Canvas ────────────────────────────────────────────────────────────────
-  SLIDE_W = 12_192_000   # 13.33" widescreen
-  SLIDE_H  =  6_858_000  # 7.5"
-  MARGIN   =    457_200  # 0.5"
-  CONTENT_W = SLIDE_W - MARGIN * 2
-  HEADER_H  =    914_400  # 1" header bar
+  SLIDE_W = 12_192_000 # 13.33" widescreen
+  SLIDE_H = 6_858_000 # 7.5"
+  MARGIN = 457_200 # 0.5"
+  CONTENT_W = SLIDE_W - (MARGIN * 2)
+  HEADER_H = 914_400 # 1" header bar
 
   # ── Brand palette (hex without #) ─────────────────────────────────────────
-  NAVY  = "1A3C6E"
-  BLUE  = "2563EB"
-  WHITE = "FFFFFF"
-  DARK  = "1A1A1A"
-  GRAY  = "6B7280"
-  LIGHT = "EEF2F8"
+  NAVY  = "1A3C6E".freeze
+  BLUE  = "2563EB".freeze
+  WHITE = "FFFFFF".freeze
+  DARK  = "1A1A1A".freeze
+  GRAY  = "6B7280".freeze
+  LIGHT = "EEF2F8".freeze
 
   def initialize(draft, theme_overrides: {})
     @draft     = draft
@@ -32,8 +32,8 @@ class PortfolioReportPptService
     @template  = draft.portfolio_report_template
     @sections  = ordered_sections
     @mappings  = InvestorKpiMapping
-                   .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
-                   .order(:position)
+                 .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
+                 .order(:position)
     @period_labels = draft.effective_kpi_table.values.first&.keys || []
     @overrides = theme_overrides
   end
@@ -82,15 +82,15 @@ class PortfolioReportPptService
              "#{@draft.n_periods} periods"
     slide_xml do
       background(NAVY) +
-      text_box(e(@portco.to_s), x: MARGIN, y: 1_371_600, w: CONTENT_W, h: 1_371_600,
-               size: 4000, bold: true, color: WHITE, align: "ctr") +
-      text_box(e(@template.portfolio_report.name), x: MARGIN, y: 2_895_000, w: CONTENT_W, h: 685_800,
-               size: 2400, bold: false, color: "93C5FD", align: "ctr") +
-      text_box(e(period), x: MARGIN, y: 3_657_600, w: CONTENT_W, h: 457_200,
-               size: 1400, bold: false, color: "BFDBFE", align: "ctr") +
-      text_box(e("Prepared #{Date.today.strftime('%d %b %Y')}"),
-               x: MARGIN, y: SLIDE_H - MARGIN - 342_900, w: CONTENT_W, h: 342_900,
-               size: 1000, bold: false, color: "93C5FD", align: "ctr")
+        text_box(e(@portco.to_s), x: MARGIN, y: 1_371_600, w: CONTENT_W, h: 1_371_600,
+                                  size: 4000, bold: true, color: WHITE, align: "ctr") +
+        text_box(e(@template.portfolio_report.name), x: MARGIN, y: 2_895_000, w: CONTENT_W, h: 685_800,
+                                                     size: 2400, bold: false, color: "93C5FD", align: "ctr") +
+        text_box(e(period), x: MARGIN, y: 3_657_600, w: CONTENT_W, h: 457_200,
+                            size: 1400, bold: false, color: "BFDBFE", align: "ctr") +
+        text_box(e("Prepared #{Time.zone.today.strftime('%d %b %Y')}"),
+                 x: MARGIN, y: SLIDE_H - MARGIN - 342_900, w: CONTENT_W, h: 342_900,
+                 size: 1000, bold: false, color: "93C5FD", align: "ctr")
     end
   end
 
@@ -100,17 +100,17 @@ class PortfolioReportPptService
 
     slide_xml do
       header_bar(e("Contents")) +
-      bullet_text_box(section_bullets,
-                      x: MARGIN, y: HEADER_H + MARGIN,
-                      w: CONTENT_W, h: SLIDE_H - HEADER_H - MARGIN * 2,
-                      size: 2000)
+        bullet_text_box(section_bullets,
+                        x: MARGIN, y: HEADER_H + MARGIN,
+                        w: CONTENT_W, h: SLIDE_H - HEADER_H - (MARGIN * 2),
+                        size: 2000)
     end
   end
 
   def kpi_slide
     slide_xml do
       header_bar(e("KPI Data")) +
-      kpi_table
+        kpi_table
     end
   end
 
@@ -120,10 +120,10 @@ class PortfolioReportPptService
 
     slide_xml do
       header_bar(e(section.name)) +
-      bullet_text_box(bullets.map { |b| e(b) },
-                      x: MARGIN, y: HEADER_H + MARGIN,
-                      w: CONTENT_W, h: SLIDE_H - HEADER_H - MARGIN * 2,
-                      size: 1600)
+        bullet_text_box(bullets.map { |b| e(b) },
+                        x: MARGIN, y: HEADER_H + MARGIN,
+                        w: CONTENT_W, h: SLIDE_H - HEADER_H - (MARGIN * 2),
+                        size: 1600)
     end
   end
 
@@ -194,7 +194,7 @@ class PortfolioReportPptService
     XML
 
     bar + text_box(title_text, x: MARGIN, y: 0, w: CONTENT_W, h: HEADER_H,
-                   size: 2800, bold: true, color: WHITE, align: "l", valign: "ctr")
+                               size: 2800, bold: true, color: WHITE, align: "l", valign: "ctr")
   end
 
   # Generic text box shape (single paragraph / run)
@@ -281,26 +281,26 @@ class PortfolioReportPptService
 
     table_top    = HEADER_H + MARGIN
     table_h      = SLIDE_H - table_top - MARGIN
-    col_count    = @period_labels.length + 1
+    @period_labels.length
     metric_col_w = (CONTENT_W * 0.35).to_i
     period_col_w = ((CONTENT_W - metric_col_w) / [@period_labels.length, 1].max).to_i
-    row_h        = 400_000  # per row height
+    row_h        = 400_000 # per row height
 
     header_row = table_cell(e("Metric"), fill: NAVY, text_color: WHITE, bold: true,
-                             w: metric_col_w, h: row_h) +
+                                         w: metric_col_w, h: row_h) +
                  @period_labels.map { |l|
                    table_cell(e(l), fill: NAVY, text_color: WHITE, bold: true,
-                              w: period_col_w, h: row_h)
+                                    w: period_col_w, h: row_h)
                  }.join
 
     data_rows = @mappings.each_with_index.map do |ikm, row_idx|
       fill = row_idx.even? ? LIGHT : WHITE
       cell = table_cell(e(ikm.reported_kpi_name), fill: fill, text_color: DARK, bold: false,
-                        w: metric_col_w, h: row_h)
+                                                  w: metric_col_w, h: row_h)
       cells = @period_labels.map do |lbl|
         val = @draft.effective_kpi_table.dig(ikm.id.to_s, lbl)&.to_s || "—"
         table_cell(e(val), fill: fill, text_color: DARK, bold: false,
-                   w: period_col_w, h: row_h, align: "r")
+                           w: period_col_w, h: row_h, align: "r")
       end.join
       "<a:tr h=\"#{row_h}\">#{cell}#{cells}</a:tr>"
     end.join
@@ -363,7 +363,7 @@ class PortfolioReportPptService
   def write_content_types(zip, slide_count)
     slide_entries = (1..slide_count).map do |n|
       "<Override PartName=\"/ppt/slides/slide#{n}.xml\" " \
-      "ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
+        "ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
     end.join("\n    ")
 
     zip.put_next_entry("[Content_Types].xml")
@@ -423,8 +423,8 @@ class PortfolioReportPptService
   def write_presentation_rels(zip, slide_count)
     slide_rels_entries = (1..slide_count).map do |n|
       "<Relationship Id=\"rId#{n + 2}\" " \
-      "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" " \
-      "Target=\"slides/slide#{n}.xml\"/>"
+        "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" " \
+        "Target=\"slides/slide#{n}.xml\"/>"
     end.join("\n    ")
 
     zip.put_next_entry("ppt/_rels/presentation.xml.rels")
@@ -445,6 +445,7 @@ class PortfolioReportPptService
   def write_theme(zip)
     zip.put_next_entry("ppt/theme/theme1.xml")
     return zip.write(@overrides[:theme_xml]) if @overrides[:theme_xml]
+
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="CapHive">
@@ -607,7 +608,7 @@ class PortfolioReportPptService
     doc = Nokogiri::HTML.fragment(html)
     bullets = doc.css("li").map { |li| li.text.strip }.reject(&:empty?)
     bullets = doc.css("p").map  { |p|  p.text.strip  }.reject(&:empty?) if bullets.empty?
-    bullets = html.split("\n").map(&:strip).reject(&:empty?)             if bullets.empty?
+    bullets = html.split("\n").map(&:strip).reject(&:empty?) if bullets.empty?
     bullets.presence || ["No content generated."]
   end
 

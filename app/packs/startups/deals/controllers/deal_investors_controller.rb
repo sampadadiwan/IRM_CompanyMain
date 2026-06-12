@@ -243,7 +243,7 @@ class DealInvestorsController < ApplicationController
     @deal = @deal_investors.first.deal
     authorize @deal, :update?
 
-    @deal_investors.update_all(status: new_status) # rubocop:disable Rails/SkipsModelValidations
+    @deal_investors.update_all(status: new_status)
 
     render json: { success: true, updated_count: @deal_investors.count, status: new_status }
   rescue Pundit::NotAuthorizedError
@@ -263,7 +263,6 @@ class DealInvestorsController < ApplicationController
 
     advanced_count = 0
     errors = []
-
 
     @deal_investors.each do |deal_investor|
       # deal_investor.deal_activity points to the template; find the investor-specific instance

@@ -20,7 +20,6 @@ class WhatsappGeneralNotification < ApplicationJob
       params = { entity_name:, message:, link:, whatsapp_number:, endpoint:, token:, template_name: }
       self.class.send_message(params)
 
-      # rubocop:disable Rails/SkipsModelValidations
       notification.update_columns(whatsapp_sent: true, whatsapp: { to: whatsapp_number, params: { entity_name:, message:, link: } }.to_json)
       # rubocop:enable Rails/SkipsModelValidations
     end

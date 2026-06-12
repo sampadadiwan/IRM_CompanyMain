@@ -14,7 +14,7 @@
 class CallNoticeAgent < SupportAgentService
   DESCRIPTION = "Validates capital call readiness by checking KYC status, document generation, and approval workflow."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Validates that all prerequisites are in place before capital call notices are sent to investors.
     Runs against each CapitalCall in the entity and walks through a multi-step checklist,
     surfacing any blockers in real time via the step progress panel.
@@ -166,7 +166,6 @@ class CallNoticeAgent < SupportAgentService
   # @param ctx [Hash] the Trailblazer context
   # @param target [CapitalCall] the capital call being validated
   # @return [Boolean] true if all documents generated, false otherwise
-  # rubocop:disable Metrics/MethodLength
   def check_documents_generated(ctx, target:, **)
     report = ctx[:support_agent_report]
     return true unless report
@@ -231,8 +230,6 @@ class CallNoticeAgent < SupportAgentService
       true
     end
   end
-
-  # rubocop:enable Metrics/MethodLength
 
   # Verifies that all generated call notice documents have been approved.
   #

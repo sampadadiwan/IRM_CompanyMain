@@ -22,7 +22,7 @@ class CreateDeal < DealActions
     ctx[:errors].blank?
   end
 
-  def create_activity_template(ctx, deal:, **)
+  def create_activity_template(_ctx, deal:, **)
     true
   end
 

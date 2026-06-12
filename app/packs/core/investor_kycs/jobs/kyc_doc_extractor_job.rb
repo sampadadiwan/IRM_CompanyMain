@@ -5,8 +5,10 @@ class KycDocExtractorJob < ApplicationJob
   # Used when Rails.cache is :null_store (test env) and the inline adapter runs the job
   # synchronously in the same Puma process before the browser reaches the processing page.
   # Keyed by investor_kyc_id (string); entries are consumed (deleted) on first read.
+  # rubocop:disable Style/MutableConstant
   PENDING_REDIRECTS = {}
   PENDING_REDIRECTS_MUTEX = Mutex.new
+  # rubocop:enable Style/MutableConstant
 
   def self.store_redirect(kyc_id, url)
     PENDING_REDIRECTS_MUTEX.synchronize { PENDING_REDIRECTS[kyc_id.to_s] = url }
@@ -18,7 +20,7 @@ class KycDocExtractorJob < ApplicationJob
 
   def perform(investor_kyc_id, support_agent_id, redirect_url)
     investor_kyc = InvestorKyc.find(investor_kyc_id)
-    investor_kyc.reload  # ensure committed documents are visible
+    investor_kyc.reload # ensure committed documents are visible
 
     KycDocExtractorAgent.call(support_agent_id: support_agent_id, target: investor_kyc)
   rescue StandardError => e

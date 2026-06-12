@@ -129,7 +129,7 @@ class FormType < ApplicationRecord
 
   # Strip blank values so saving the form with empty label fields doesn't store empty strings in JSON.
   def step_labels=(val)
-    write_attribute(:step_labels, val.present? ? val.reject { |_, v| v.blank? }.presence : nil)
+    write_attribute(:step_labels, val.present? ? val.compact_blank.presence : nil)
   end
 
   # Human-readable label for a given step integer (4–9).

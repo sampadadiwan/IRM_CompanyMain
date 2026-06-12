@@ -28,7 +28,7 @@ class KpiChartSettingsController < ApplicationController
 
     authorize @kpi_chart_setting
     @kpi_chart_setting.config = kpi_chart_setting_params[:config]
-    @kpi_chart_setting.is_default = kpi_chart_setting_params[:is_default] if kpi_chart_setting_params.has_key?(:is_default)
+    @kpi_chart_setting.is_default = kpi_chart_setting_params[:is_default] if kpi_chart_setting_params.key?(:is_default)
 
     if @kpi_chart_setting.save
       render json: @kpi_chart_setting, status: :created

@@ -21,9 +21,11 @@ class PortfolioReportTemplate < ApplicationRecord
   # Returns the PPT service class to use when output_format == "ppt".
   # Set branding["ppt_theme"] = "pastel" to use the pastel variant.
   def ppt_service_class
-    (branding || {}).fetch("ppt_theme", "default") == "pastel" \
-      ? PortfolioReportPastelPptService
-      : PortfolioReportPptService
+    if (branding || {}).fetch("ppt_theme", "default") == "pastel"
+      PortfolioReportPastelPptService
+    else
+      PortfolioReportPptService
+    end
   end
 
   # Returns section ids in configured order as integers (section_order is persisted as strings).
@@ -35,9 +37,9 @@ class PortfolioReportTemplate < ApplicationRecord
   def kpi_config
     cfg = (kpi_layout || {}).with_indifferent_access
     cfg.reverse_merge(
-      categories: [],          # empty = all categories for this portco
-      tags:       ["Actual"],
-      n_periods:  6,
+      categories: [], # empty = all categories for this portco
+      tags: ["Actual"],
+      n_periods: 6,
       side_by_side: false
     )
   end

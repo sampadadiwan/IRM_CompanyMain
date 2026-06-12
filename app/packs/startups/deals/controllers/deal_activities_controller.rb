@@ -166,7 +166,7 @@ class DealActivitiesController < ApplicationController
     deal = @deal_activity.deal
     is_template = @deal_activity.Template?
     @deal_activity.destroy
-    deal.kanban_board.broadcast_board_event if deal.kanban_board.present?
+    deal.kanban_board.presence&.broadcast_board_event
 
     # After deleting a template, regenerate remaining investor activities so sequences
     # and activity pointers are updated for all investors on this deal.

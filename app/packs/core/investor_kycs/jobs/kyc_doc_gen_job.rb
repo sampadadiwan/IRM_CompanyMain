@@ -64,5 +64,4 @@ class KycDocGenJob < DocGenJob
       generate(@start_date, @end_date, @user_id, options:) if valid_inputs
     end
   end
-  # rubocop:enable Metrics/ParameterLists
 end

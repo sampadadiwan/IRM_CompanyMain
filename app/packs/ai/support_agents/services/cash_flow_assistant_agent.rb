@@ -11,9 +11,9 @@
 #
 # @see SupportAgentService
 class CashFlowAssistantAgent < SupportAgentService
-  DESCRIPTION = "Analyzes cash flow across configured funds and sends consolidated reports to fund managers.".freeze
+  DESCRIPTION = "Analyzes cash flow across configured funds and sends consolidated reports to fund managers."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Analyzes cash flow across a configured set of funds and delivers a consolidated report
     to fund managers. Targets the entity itself and iterates over the funds listed in json_fields.
 

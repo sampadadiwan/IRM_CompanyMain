@@ -150,7 +150,7 @@ module AggregatePortfolioInvestmentsHelper
   # @param sectors_to_include [Array<String>, String] Sectors to include (comma-separated or array), empty means all
   # @param attr [String] Attribute to sum ('fmv' or 'bought_amount')
   # @return [Array<Array>] Array of [sector_name, value_in_dollars] pairs
-  def investment_grouped_data_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr) # rubocop:disable Metrics/CyclomaticComplexity
+  def investment_grouped_data_by_sectors(entity, fund_ids, portfolio_company_ids, sectors_to_include, attr)
     use_fmv  = attr.to_s.downcase == "fmv"
     use_sold = attr.to_s.downcase == "sold_amount"
     attr_field = use_fmv ? "fmv_cents" : "amount_cents"
@@ -158,7 +158,7 @@ module AggregatePortfolioInvestmentsHelper
     # buys hold fmv_cents and bought amount_cents; sells hold sold amount_cents
     base_scope = use_sold ? entity.portfolio_investments.sells : entity.portfolio_investments.buys
     # :valuation is only meaningful for FMV (it carries the valuation date used for the exchange rate)
-    includes_list = use_fmv ? [:portfolio_company, :fund, :valuation] : [:portfolio_company, :fund]
+    includes_list = use_fmv ? %i[portfolio_company fund valuation] : %i[portfolio_company fund]
     portfolio_investments = filter_investments(base_scope.includes(*includes_list), fund_ids, portfolio_company_ids)
 
     sectors_arr = sectors_to_include.is_a?(Array) ? sectors_to_include : Array(sectors_to_include.to_s.split(','))
@@ -222,7 +222,7 @@ module AggregatePortfolioInvestmentsHelper
     # buys hold fmv_cents and bought amount_cents; sells hold sold amount_cents
     base_scope = use_sold ? entity.portfolio_investments.sells : entity.portfolio_investments.buys
     # :valuation is only meaningful for FMV (it carries the valuation date used for the exchange rate)
-    includes_list = use_fmv ? [:fund, :valuation] : [:fund]
+    includes_list = use_fmv ? %i[fund valuation] : [:fund]
     portfolio_investments = base_scope.includes(*includes_list)
     portfolio_investments = portfolio_investments.where(fund_id: fund_ids) if fund_ids.present?
     portfolio_investments = portfolio_investments.where(portfolio_company_id: portfolio_company_ids) if portfolio_company_ids.present?

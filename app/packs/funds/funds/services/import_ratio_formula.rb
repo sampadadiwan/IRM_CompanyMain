@@ -67,7 +67,7 @@ class ImportRatioFormula < ImportUtil
   def split_csv(value)
     return [] if value.blank?
 
-    value.to_s.split(",").map(&:strip).reject(&:blank?)
+    value.to_s.split(",").map(&:strip).compact_blank
   end
 
   # Resolves a cell value to its enum key, accepting either the humanized text

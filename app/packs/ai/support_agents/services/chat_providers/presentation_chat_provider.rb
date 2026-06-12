@@ -64,26 +64,22 @@ class PresentationChatProvider < BaseChatProvider
   # The report's json_fields contain period_records and cross_period_flags.
   def latest_report
     @latest_report ||= SupportAgentReport
-      .where(support_agent: support_agent, owner_type: "Investor")
-      .order(created_at: :desc)
-      .first
+                       .where(support_agent: support_agent, owner_type: "Investor")
+                       .order(created_at: :desc)
+                       .first
   end
 
   # Builds the intelligence context block injected into the system prompt.
   # Format: one section per period record (oldest → newest), followed by the
   # cross-period flags summary.
   def intelligence_context
-    unless latest_report
-      return "No presentation data available — run the PresentationAnalystAgent first."
-    end
+    return "No presentation data available — run the PresentationAnalystAgent first." unless latest_report
 
     fields  = latest_report.json_fields || {}
     records = fields["period_records"] || []
     flags   = fields["cross_period_flags"] || {}
 
-    if records.empty?
-      return "Agent has been run but no presentation documents were found or extracted."
-    end
+    return "Agent has been run but no presentation documents were found or extracted." if records.empty?
 
     # Period records: one labelled section per period so the LLM can cite correctly
     parts = records.map do |record|
@@ -94,9 +90,7 @@ class PresentationChatProvider < BaseChatProvider
     end
 
     # Append cross-period flags as a separate section so the LLM knows what changed
-    if flags.any?
-      parts << "--- Cross-Period Flags ---\n#{JSON.pretty_generate(flags)}"
-    end
+    parts << "--- Cross-Period Flags ---\n#{JSON.pretty_generate(flags)}" if flags.any?
 
     parts.join("\n\n")
   end

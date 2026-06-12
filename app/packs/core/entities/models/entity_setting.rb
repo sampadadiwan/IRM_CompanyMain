@@ -76,7 +76,8 @@ class EntitySetting < ApplicationRecord
   # Format matches grouped_options_for_select: [["Provider", [["Label", "model-id"], ...]], ...]
   def available_llm_models
     LlmModels::PROVIDERS.filter_map do |_key, provider|
-      next unless send(provider[:key_field]).present?
+      next if send(provider[:key_field]).blank?
+
       [provider[:label], provider[:models]]
     end
   end
@@ -97,7 +98,6 @@ class EntitySetting < ApplicationRecord
     Base64.strict_encode64("#{digio_client_id}:#{digio_client_secret}") if digio_client_id.present? && digio_client_secret.present?
   end
 
-  # rubocop : disable Rails/SkipsModelValidations
   def self.disable_all(reset: false)
     if Rails.env.development?
       EntitySetting.update_all(sandbox: true)

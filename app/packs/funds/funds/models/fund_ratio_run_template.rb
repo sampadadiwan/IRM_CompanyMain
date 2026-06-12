@@ -39,7 +39,7 @@ class FundRatioRunTemplate < ApplicationRecord
 
   # Filters templates that include the given tag in their tags JSON array.
   # Uses MEMBER OF (MySQL 8+) or json_each (SQLite in tests).
-  scope :for_tag, ->(tag) {
+  scope :for_tag, lambda { |tag|
     if connection.adapter_name.downcase.include?("sqlite")
       where("EXISTS (SELECT 1 FROM json_each(fund_ratio_run_templates.tags) WHERE value = ?)", tag)
     else
@@ -51,7 +51,7 @@ class FundRatioRunTemplate < ApplicationRecord
   # Loaded in Ruby because extracting values from a JSON array in SQL
   # requires json_each / JSON_TABLE which varies by adapter.
   def self.distinct_tags
-    pluck(:tags).flatten.compact.map(&:strip).reject(&:blank?).uniq.sort
+    pluck(:tags).flatten.compact.map(&:strip).compact_blank.uniq.sort
   end
 
   # Returns all FundRatioRun records produced by triggering this template.
@@ -83,13 +83,13 @@ class FundRatioRunTemplate < ApplicationRecord
       anchor_fund_id,
       end_date,
       user_id,
-      fund_ids:                    fund_ids.presence,
-      portfolio_company_ids:       portfolio_company_ids.presence,
-      portfolio_companies_tags:    portfolio_companies_tags.presence,
+      fund_ids: fund_ids.presence,
+      portfolio_company_ids: portfolio_company_ids.presence,
+      portfolio_companies_tags: portfolio_companies_tags.presence,
       portfolio_companies_sectors: sectors.presence,
-      currency:                    currency.presence,
-      type:                        run_type,
-      template_id:                 id
+      currency: currency.presence,
+      type: run_type,
+      template_id: id
     )
   end
 end

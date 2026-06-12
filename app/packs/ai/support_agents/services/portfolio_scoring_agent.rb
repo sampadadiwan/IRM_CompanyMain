@@ -22,11 +22,11 @@ class PortfolioScoringAgent < SupportAgentService
   SUPPORTED_DOC_EXTENSIONS = %w[.pdf .txt .md .xlsx .xls .pptx .ppt .docx .doc .csv].freeze
 
   STEP_LABELS = {
-    initialize_agent:   "Initialize",
-    load_sector_skill:  "Load Skill",
+    initialize_agent: "Initialize",
+    load_sector_skill: "Load Skill",
     gather_portco_data: "Gather Data",
-    generate_score:     "Score",
-    store_score:        "Save Score"
+    generate_score: "Score",
+    store_score: "Save Score"
   }.freeze
 
   step :initialize_agent
@@ -51,7 +51,7 @@ class PortfolioScoringAgent < SupportAgentService
   # Batch processor — shared by adhoc and scheduled runs.
   # Sequential (no threading) so each wtf? call sees a clean context.
   # :scheduled mode suppresses the batch summary email/notification.
-  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch) # rubocop:disable Lint/UnusedMethodArgument
+  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch)
     support_agent = SupportAgent.find(support_agent_id)
     targets = targets.includes(:portfolio_kpi_reports, :valuations, :portfolio_investments, :documents) if targets.respond_to?(:includes)
 
@@ -59,14 +59,12 @@ class PortfolioScoringAgent < SupportAgentService
     errors    = []
 
     targets.to_a.each do |target|
-      begin
-        support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
-        successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
-      rescue StandardError => e
-        Rails.logger.error { "[PortfolioScoringAgent] process_batch error for Target ID=#{target.id}: #{e.message}" }
-        Rails.logger.error { e.backtrace.join("\n") }
-        errors << { target_id: target.id, target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}", error: e.message }
-      end
+      support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
+      successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
+    rescue StandardError => e
+      Rails.logger.error { "[PortfolioScoringAgent] process_batch error for Target ID=#{target.id}: #{e.message}" }
+      Rails.logger.error { e.backtrace.join("\n") }
+      errors << { target_id: target.id, target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}", error: e.message }
     end
 
     if execution_mode != :scheduled
@@ -127,13 +125,13 @@ class PortfolioScoringAgent < SupportAgentService
     return true if ctx[:skill_error]
 
     ctx[:portco_data] = {
-      company_name:          investor.investor_name,
-      sector:                investor.sector,
-      custom_fields:         investor.json_fields.reject { |_, v| v.blank? },
-      kpi_reports:           gather_kpi_data(investor),
+      company_name: investor.investor_name,
+      sector: investor.sector,
+      custom_fields: investor.json_fields.compact_blank,
+      kpi_reports: gather_kpi_data(investor),
       portfolio_investments: gather_investment_data(investor),
-      valuations:            gather_valuation_data(investor),
-      documents:             gather_document_texts(investor)
+      valuations: gather_valuation_data(investor),
+      documents: gather_document_texts(investor)
     }
     Rails.logger.info { "[PortfolioScoringAgent] Data gathered for #{investor.investor_name}: #{ctx[:portco_data].keys.join(', ')}" }
     true
@@ -165,14 +163,14 @@ class PortfolioScoringAgent < SupportAgentService
   def store_score(ctx, investor: nil, support_agent: nil, **)
     if ctx[:score]
       report = SupportAgentReport.create!(
-        owner:         investor,
+        owner: investor,
         support_agent: support_agent,
-        status:        :completed,
-        json_fields:   {
-          "score"        => ctx[:score],
-          "sector"       => ctx[:sector],
+        status: :completed,
+        json_fields: {
+          "score" => ctx[:score],
+          "sector" => ctx[:sector],
           "final_status" => "ready",
-          "run_at"       => Time.current.iso8601,
+          "run_at" => Time.current.iso8601,
           "completed_at" => Time.current.iso8601
         }
       )
@@ -180,14 +178,14 @@ class PortfolioScoringAgent < SupportAgentService
     else
       error_msg = ctx[:skill_error] || ctx[:score_error] || "Unknown scoring error"
       SupportAgentReport.create!(
-        owner:         investor,
+        owner: investor,
         support_agent: support_agent,
-        status:        :failed,
-        json_fields:   {
-          "error"        => error_msg,
-          "sector"       => ctx[:sector],
+        status: :failed,
+        json_fields: {
+          "error" => error_msg,
+          "sector" => ctx[:sector],
           "final_status" => "failed",
-          "run_at"       => Time.current.iso8601,
+          "run_at" => Time.current.iso8601,
           "completed_at" => Time.current.iso8601
         }
       )
@@ -215,12 +213,12 @@ class PortfolioScoringAgent < SupportAgentService
       Rails.logger.info { "[PortfolioScoringAgent] kpi_frequency=#{freq.presence || '(blank)'} — no period filter applied, using all periods" }
     end
 
-    results = scope.map do |report|
+    results = scope.filter_map do |report|
       approved_kpis = report.kpis.approved.map { |k| { name: k.name, value: k.value, denomination: k.investor_kpi_mapping&.denomination }.compact }
       next if approved_kpis.empty?
 
       { period: report.period, as_of: report.as_of, kpis: approved_kpis }
-    end.compact
+    end
 
     Rails.logger.info { "[PortfolioScoringAgent] gather_kpi_data → #{results.size} KPI report(s) with approved KPIs (periods: #{results.map { |r| r[:period] }.tally.inspect})" }
     results
@@ -230,13 +228,13 @@ class PortfolioScoringAgent < SupportAgentService
   def gather_investment_data(investor)
     investor.portfolio_investments.map do |pi|
       {
-        instrument:   pi.investment_instrument&.name,
-        fund:         pi.fund&.name,
-        amount:       pi.amount&.format,
-        cost:         pi.cost&.format,
-        fmv:          pi.fmv&.format,
-        date:         pi.try(:investment_date),
-        status:       pi.try(:status)
+        instrument: pi.investment_instrument&.name,
+        fund: pi.fund&.name,
+        amount: pi.amount&.format,
+        cost: pi.cost&.format,
+        fmv: pi.fmv&.format,
+        date: pi.try(:investment_date),
+        status: pi.try(:status)
       }.compact
     end
   end
@@ -245,10 +243,10 @@ class PortfolioScoringAgent < SupportAgentService
   def gather_valuation_data(investor)
     investor.valuations.order(valuation_date: :desc).map do |v|
       {
-        date:            v.valuation_date,
-        valuation:       v.valuation&.format,
+        date: v.valuation_date,
+        valuation: v.valuation&.format,
         per_share_value: v.per_share_value&.format,
-        currency:        v.currency
+        currency: v.currency
       }.compact
     end
   end
@@ -277,8 +275,9 @@ class PortfolioScoringAgent < SupportAgentService
     reports.each do |report|
       report.documents.each do |doc|
         next if doc.file.blank?
+
         # Apply name whitelist when configured
-        if allowed_names.any? && !allowed_names.include?(doc.name.to_s.downcase)
+        if allowed_names.any? && allowed_names.exclude?(doc.name.to_s.downcase)
           Rails.logger.info { "[PortfolioScoringAgent] Skipping '#{doc.name}' — not in document_name_filter" }
           next
         end
@@ -365,7 +364,7 @@ class PortfolioScoringAgent < SupportAgentService
     custom_json      = JSON.pretty_generate(data[:custom_fields])
     doc_context      = format_documents(data[:documents])
     min_pts          = @support_agent.json_fields["min_points_per_section"].to_i
-    min_pts          = 3 if min_pts < 1  # enforce sensible floor
+    min_pts          = 3 if min_pts < 1 # enforce sensible floor
 
     <<~PROMPT
       #{skill_content}

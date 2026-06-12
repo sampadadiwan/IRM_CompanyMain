@@ -3,15 +3,15 @@ class ImportDealInvestor < ImportUtil
   # Every column present in the upload that is NOT in this list is treated
   # as a custom field and stored in json_fields.
   STANDARD_FIELD_MAP = {
-    "Deal Investor"      => nil,                          # investor lookup — not a model attribute
-    "Status"             => :status,
-    "Tags"               => :tags,
-    "Source"             => :source,
-    "Deal Lead"          => :deal_lead,
-    "Tier"               => :tier,
-    "Primary Amount"     => :primary_amount_cents,        # parsed to cents
-    "Secondary Amount"   => :secondary_investment_cents,  # parsed to cents
-    "Pre Money Valuation" => :pre_money_valuation_cents   # parsed to cents, optional
+    "Deal Investor" => nil, # investor lookup — not a model attribute
+    "Status" => :status,
+    "Tags" => :tags,
+    "Source" => :source,
+    "Deal Lead" => :deal_lead,
+    "Tier" => :tier,
+    "Primary Amount" => :primary_amount_cents, # parsed to cents
+    "Secondary Amount" => :secondary_investment_cents, # parsed to cents
+    "Pre Money Valuation" => :pre_money_valuation_cents # parsed to cents, optional
   }.freeze
 
   # -----------------------------------------------------------------------
@@ -58,7 +58,7 @@ class ImportDealInvestor < ImportUtil
         ws.add_row(headers + ["Result"])
 
         sheet[:data][1..].each_with_index do |row, i|
-          sanitized = row[..headers.length - 1].map { |x| x&.to_s&.strip&.squeeze(" ") }
+          sanitized = row[..(headers.length - 1)].map { |x| x&.to_s&.strip&.squeeze(" ") }
           user_data = headers.zip(sanitized).to_h
 
           Audited.audit_class.as_user(import_upload.user) do
@@ -74,7 +74,7 @@ class ImportDealInvestor < ImportUtil
     File.binwrite("/tmp/import_result_#{import_upload.id}.xlsx", package.to_stream.read)
   end
 
-  def save_investor_row(user_data, import_upload, custom_headers, ctx, deal, entity_id, result_row)
+  def save_investor_row(user_data, import_upload, custom_headers, _ctx, deal, entity_id, result_row)
     investor_name = user_data["Deal Investor"].to_s.strip
     raise "Deal Investor name is required" if investor_name.blank?
 
@@ -91,19 +91,19 @@ class ImportDealInvestor < ImportUtil
 
     primary_cents   = parse_money(user_data["Primary Amount"])
     secondary_cents = parse_money(user_data["Secondary Amount"])
-    pre_money_cents = parse_money(user_data["Pre Money Valuation"])  # 0 when blank
+    pre_money_cents = parse_money(user_data["Pre Money Valuation"]) # 0 when blank
 
     deal_investor.assign_attributes(
       entity_id:,
-      status:                      user_data["Status"].presence&.strip || DealInvestor::STATUS.first,
-      tier:                        user_data["Tier"].presence&.strip,
-      deal_lead:                   user_data["Deal Lead"].presence&.strip,
-      source:                      user_data["Source"].presence&.strip,
-      tags:                        user_data["Tags"].presence&.strip,
-      primary_amount_cents:        primary_cents,
-      secondary_investment_cents:  secondary_cents,
-      pre_money_valuation_cents:   pre_money_cents,
-      import_upload_id:            import_upload.id
+      status: user_data["Status"].presence&.strip || DealInvestor::STATUS.first,
+      tier: user_data["Tier"].presence&.strip,
+      deal_lead: user_data["Deal Lead"].presence&.strip,
+      source: user_data["Source"].presence&.strip,
+      tags: user_data["Tags"].presence&.strip,
+      primary_amount_cents: primary_cents,
+      secondary_investment_cents: secondary_cents,
+      pre_money_valuation_cents: pre_money_cents,
+      import_upload_id: import_upload.id
     )
 
     # Store unmapped columns as custom fields
@@ -118,9 +118,7 @@ class ImportDealInvestor < ImportUtil
     deal_investor.save!
 
     # Create DealActivity records from templates only for brand-new investors
-    if deal_investor.previously_new_record?
-      create_deal_activities(deal, deal_investor, entity_id)
-    end
+    create_deal_activities(deal, deal_investor, entity_id) if deal_investor.previously_new_record?
 
     import_upload.processed_row_count += 1
     result_row << "Success"
@@ -133,19 +131,19 @@ class ImportDealInvestor < ImportUtil
   def create_deal_activities(deal, deal_investor, entity_id)
     DealActivity.templates(deal).each do |template|
       activity = DealActivity.where(
-        deal_id:          deal.id,
+        deal_id: deal.id,
         deal_investor_id: deal_investor.id,
-        template_id:      template.id
+        template_id: template.id
       ).first_or_initialize
 
       next unless activity.new_record?
 
       activity.assign_attributes(
         entity_id:,
-        title:       template.title,
-        status:      "incomplete",
-        days:        template.days || 0,
-        sequence:    template.sequence,
+        title: template.title,
+        status: "incomplete",
+        days: template.days || 0,
+        sequence: template.sequence,
         template_id: template.id
       )
       activity.save!
@@ -198,11 +196,7 @@ class ImportDealInvestor < ImportUtil
 
   # Maps the human-readable template values to DealActivity enum keys
   def map_activity_status(value)
-    case value.downcase
-    when "complete"   then "complete"
-    when "incomplete" then "incomplete"
-    when "skip"       then "skip"
-    end
+    { "complete" => "complete", "incomplete" => "incomplete", "skip" => "skip" }[value.downcase]
   end
 
   # -----------------------------------------------------------------------
@@ -229,9 +223,9 @@ class ImportDealInvestor < ImportUtil
       note = Note.new(
         entity_id:,
         investor_id: investor.id,
-        user_id:     import_upload.user_id,
-        on:          parse_date(user_data["On"]),
-        tags:        user_data["Tags"].presence&.strip
+        user_id: import_upload.user_id,
+        on: parse_date(user_data["On"]),
+        tags: user_data["Tags"].presence&.strip
       )
       note.details = details_text
       note.save!
@@ -241,11 +235,11 @@ class ImportDealInvestor < ImportUtil
       reminder_date  = parse_date(user_data["Reminder Date"])
       if reminder_email.present? || reminder_date.present?
         Reminder.create!(
-          owner:     note,
+          owner: note,
           entity_id:,
-          email:     reminder_email,
-          due_date:  reminder_date,
-          note:      details_text  # Reminder#note (text field) must be present
+          email: reminder_email,
+          due_date: reminder_date,
+          note: details_text # Reminder#note (text field) must be present
         )
       end
 

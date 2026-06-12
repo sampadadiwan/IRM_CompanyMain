@@ -33,6 +33,6 @@ class AllocationsBulkActionJob < BulkActionJob
   end
 
   def record_includes
-    [:offer, :interest, :entity, :secondary_sale, :form_type, :documents]
+    %i[offer interest entity secondary_sale form_type documents]
   end
 end

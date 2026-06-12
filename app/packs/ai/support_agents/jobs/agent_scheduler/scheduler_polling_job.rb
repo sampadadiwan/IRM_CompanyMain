@@ -17,7 +17,7 @@ class SchedulerPollingJob
   #
   # @return [void]
   def perform
-    AgentSchedule.due.includes(:support_agent, :entity).each do |schedule|
+    AgentSchedule.due.includes(:support_agent, :entity).find_each do |schedule|
       process_schedule(schedule)
     rescue StandardError => e
       Rails.logger.error("[SchedulerPollingJob] Error processing schedule #{schedule.id}: #{e.message}")

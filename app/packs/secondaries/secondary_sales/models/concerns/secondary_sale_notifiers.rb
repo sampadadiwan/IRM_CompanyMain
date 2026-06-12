@@ -49,7 +49,7 @@ module SecondarySaleNotifiers
       end
     end
 
-    interests.short_listed.includes(investor: :approved_users).each do |interest|
+    interests.short_listed.includes(investor: :approved_users).find_each do |interest|
       interest.investor.notification_users(with_tag: 'SecondarySale').each do |user|
         SecondarySaleNotifier.with(record: self, entity_id:, email_method: :notify_allocation_interests, msg: "Secondary Sale: #{name} allocation complete").deliver_later(user)
       end
@@ -57,7 +57,7 @@ module SecondarySaleNotifiers
   end
 
   def notify_spa_buyers
-    interests.short_listed.not_final_agreement.includes(investor: :approved_users).each do |interest|
+    interests.short_listed.not_final_agreement.includes(investor: :approved_users).find_each do |interest|
       interest.investor.approved_users.each do |user|
         SecondarySaleNotifier.with(record: self, entity_id:, email_method: :notify_spa_interests, msg: "Secondary Sale: #{name}, please accept uploaded SPA.").deliver_later(user)
       end

@@ -10,7 +10,6 @@ class AllocationRunsController < ApplicationController
     redirect_back_or_to(allocate_form_fund_path(@allocation_run.fund))
   end
 
-  # rubocop :disable Rails/SkipsModelValidations
   def unlock
     fund = @allocation_run.fund
     # We want to unlock AllocationRuns with the same end_date

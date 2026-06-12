@@ -4,16 +4,8 @@ module DocGeneratorHelper
   # @param scope_type [Symbol] The scope type (:fund_entries, :kyc_commitments, :folio_commitment, :aes_breakdown)
   # @return [Boolean] True if the field has a cumulative suffix for the scope type
   def extract_cumulative_flag(method_name, scope_type)
-    prefix = case scope_type
-             when :fund_entries
-               "fundaecumulative_"
-             when :kyc_commitments
-               "kycaecumulative_"
-             when :folio_commitment
-               "folioaecumulative_"
-             when :aes_breakdown
-               "aescumulative_"
-             end
+    prefix = { fund_entries: "fundaecumulative_", kyc_commitments: "kycaecumulative_",
+               folio_commitment: "folioaecumulative_", aes_breakdown: "aescumulative_" }[scope_type]
     method_name.starts_with?(prefix)
   end
 

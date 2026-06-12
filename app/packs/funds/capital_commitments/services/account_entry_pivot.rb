@@ -99,7 +99,7 @@ class AccountEntryPivot
           @structured_data[key][group_val][date] = PivotEntry.new(amount, date, nil, nil)
         else
           @structured_data[key][group_val][date] ||= PivotEntry.new(0, date, c_name, c_id)
-          @structured_data[key][group_val][date].amount += amount  # Struct accessor allows mutation
+          @structured_data[key][group_val][date].amount += amount # Struct accessor allows mutation
         end
       end
     end

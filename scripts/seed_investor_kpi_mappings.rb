@@ -19,14 +19,14 @@ Chewy.strategy(:atomic) do
   # Find all portfolio companies for this entity
   # Using the category we assigned earlier
   portcos = Investor.where(entity_id: entity_id, category: "Portfolio Company")
-  
+
   puts "Found #{portcos.count} portfolio companies to seed mappings for."
 
   portcos.each do |portco|
     puts "Seeding mappings for #{portco.investor_name}..."
-    
+
     standard_kpis.each_with_index do |kpi_data, index|
-      mapping = InvestorKpiMapping.find_or_create_by!(
+      InvestorKpiMapping.find_or_create_by!(
         entity_id: entity_id,
         investor_id: portco.id,
         standard_kpi_name: kpi_data[:name]
@@ -37,7 +37,7 @@ Chewy.strategy(:atomic) do
         ikm.show_in_report = true
         ikm.position = index + 1
       end
-      
+
       # For the existing reports, if they don't have these KPIs, we could create them.
       # But the user just asked to seed the mappings.
     end

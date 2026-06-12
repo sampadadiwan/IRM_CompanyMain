@@ -179,7 +179,6 @@ class AccessRight < ApplicationRecord
     end
   end
 
-
   # add_to_user_access_rights_cache / remove_from_user_access_rights_cache callbacks removed:
   # Policies now query access_rights directly; no serialized cache to maintain on users.
   def users
@@ -195,7 +194,6 @@ class AccessRight < ApplicationRecord
   end
 
   after_commit :update_owner
-  # rubocop:disable Rails/SkipsModelValidations
   # This is to bust any cached dashboards showing the commitments
   def update_owner
     # Update the investors entity to bust any cache

@@ -15,9 +15,7 @@ module ValidationRuleOverridesHelper
   def render_override_summary(override)
     return content_tag(:span, "Using global default", class: "text-muted") unless override
 
-    unless override.enabled
-      return content_tag(:span, "Rule disabled", class: "text-muted small")
-    end
+    return content_tag(:span, "Rule disabled", class: "text-muted small") unless override.enabled
 
     parts = []
     parts << content_tag(:div, safe_join(["Severity: ", render_severity_badge(override.severity_override)]), class: "mb-1") if override.severity_override.present?
@@ -44,11 +42,11 @@ module ValidationRuleOverridesHelper
   def render_override_actions(override, rule)
     if override
       safe_join([
-        link_to("Edit", edit_validation_rule_override_path(override), class: "btn btn-sm btn-outline-primary me-1"),
-        button_to("Reset", validation_rule_override_path(override),
-                  method: :delete, class: "btn btn-sm btn-outline-secondary",
-                  form: { data: { turbo_confirm: "Remove this override? The rule will revert to its global default." } })
-      ])
+                  link_to("Edit", edit_validation_rule_override_path(override), class: "btn btn-sm btn-outline-primary me-1"),
+                  button_to("Reset", validation_rule_override_path(override),
+                            method: :delete, class: "btn btn-sm btn-outline-secondary",
+                            form: { data: { turbo_confirm: "Remove this override? The rule will revert to its global default." } })
+                ])
     else
       link_to("Set Override", new_validation_rule_override_path(validation_rule_id: rule.id), class: "btn btn-sm btn-outline-secondary")
     end

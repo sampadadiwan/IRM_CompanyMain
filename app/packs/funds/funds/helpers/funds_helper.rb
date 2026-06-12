@@ -46,9 +46,9 @@ module FundsHelper
   # Maps each model class that has a dedicated notification topic to its canonical tag name.
   # Contacts whose tag_list intersects this tag (or have no tag) receive the notification.
   NOTIFICATION_TAG_FOR_MODEL = {
-    "CapitalCall"               => "CapitalCall",
-    "CapitalDistribution"       => "Distribution",
-    "CapitalDistributionPayment" => "CapitalCall",
+    "CapitalCall" => "CapitalCall",
+    "CapitalDistribution" => "Distribution",
+    "CapitalDistributionPayment" => "CapitalCall"
   }.freeze
 
   # Provides a comprehensive list of email-related statistics and investor access details

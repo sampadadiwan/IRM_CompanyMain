@@ -4,7 +4,7 @@ module AggregatePortfolioInvestmentDashboardHelper
     chart_data = data.transform_values { |v| v / 100.0 }.sort_by { |_k, v| -v }.first(10).to_h
 
     if data.size > 10
-      others_sum = data.sort_by { |_k, v| -v }[10..-1].sum { |item| item[1] } / 100.0
+      others_sum = data.sort_by { |_k, v| -v }[10..].sum { |item| item[1] } / 100.0
       chart_data["Others"] = others_sum
     end
 

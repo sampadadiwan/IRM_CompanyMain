@@ -198,7 +198,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
 
   # FMV / total cost basis across all source funds, mirroring FundPortfolioCalcs#portfolio_value_to_cost.
   def portfolio_value_to_cost
-    return 0 unless @funds.present?
+    return 0 if @funds.blank?
 
     numerator = 0
     denominator = 0
@@ -294,8 +294,6 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
     (lxirr * 100).round(2)
   end
 
-  # rubocop:disable Metrics/MethodLength
-  # rubocop:disable Metrics/BlockLength
   # Compute the XIRR for each portfolio company
   def portfolio_company_irr(return_cash_flows: false, scenarios: nil)
     Rails.logger.debug { "Portfolio Company IRR for #{@portfolio_company_ids}" }
@@ -303,7 +301,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
 
     if @portfolio_company_irr_map.empty?
       # Get all the Portfolio companies
-      all_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id| # rubocop:disable Metrics/BlockLength
+      all_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
         @portfolio_company_id = portfolio_company_id
         portfolio_company = Investor.find(portfolio_company_id)
         # Get all the portfolio investments for this portfolio company before the end date
@@ -364,8 +362,6 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
 
     @portfolio_company_irr_map
   end
-  # rubocop:enable Metrics/MethodLength
-  # rubocop:enable Metrics/BlockLength
 
   def portfolio_company_metrics
     Rails.logger.debug { "Portfolio Company IRR for #{@portfolio_company_ids}" }
@@ -407,7 +403,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
   end
 
   # Compute the XIRR for each API
-  # rubocop:disable Metrics/BlockLength
+
   def api_irr(return_cash_flows: false, scenarios: nil)
     @api_irr_map ||= {}
 
@@ -470,7 +466,6 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
     @api_irr_map
   end
 
-  # rubocop:enable Metrics/BlockLength
   def api_cost_to_value
     @api_cost_map ||= {}
 

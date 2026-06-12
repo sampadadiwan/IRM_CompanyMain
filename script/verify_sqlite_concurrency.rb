@@ -1,7 +1,6 @@
 # Usage: bundle exec rails runner script/verify_sqlite_concurrency.rb
 
 # rubocop:disable Style/MixinUsage
-# rubocop:disable Metrics/BlockLength
 require 'fileutils'
 require 'sqlite3'
 require 'securerandom'

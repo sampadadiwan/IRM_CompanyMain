@@ -126,7 +126,7 @@ class UsersController < ApplicationController
     # Find user by signed id — see https://kukicola.io/posts/signed-urls-with-ruby/
     @user = User.find_signed(params[:signed_id])
 
-    unless @user.present?
+    if @user.blank?
       redirect_to new_session_path(User), notice: "Invalid login link"
       return
     end
@@ -139,9 +139,9 @@ class UsersController < ApplicationController
     # email is not whitelisted (or if login delegation is disabled on the mapping entirely).
     if support_user.present?
       mapping = SupportClientMapping.find_by(
-        user_id:   support_user_id,
+        user_id: support_user_id,
         entity_id: @user.entity_id,
-        enabled:   true
+        enabled: true
       )
       unless mapping&.allow_login_as(support_user.email)
         redirect_to root_path, alert: "Login delegation not permitted for this account."
@@ -270,9 +270,7 @@ class UsersController < ApplicationController
                                                :dept, :sale_notification, :enable_support, :tag_list, properties: {})
                 end
 
-    if current_user.has_cached_role?(:company_admin) && params.dig(:user, :preferences, :dashboard).present?
-      permitted[:preferences] = sanitized_preferences
-    end
+    permitted[:preferences] = sanitized_preferences if current_user.has_cached_role?(:company_admin) && params.dig(:user, :preferences, :dashboard).present?
 
     permitted
   end

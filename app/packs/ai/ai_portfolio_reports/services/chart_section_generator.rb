@@ -1,5 +1,4 @@
 # app/packs/ai/ai_portfolio_reports/services/chart_section_generator.rb
-# rubocop:disable Metrics/ClassLength
 # Generates charts for a report section using document data.
 class ChartSectionGenerator
   # @param report [AiPortfolioReport] report context

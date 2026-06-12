@@ -13,9 +13,9 @@
 # Migrations required before use:
 #   • deal_investors: ai_score (integer nullable), ai_grade (varchar 10 nullable)
 class DealManagementAgent < SupportAgentService
-  DESCRIPTION = "Monitors deal health, sends reminders, checks documents, extracts terms, and scores investors — scoped to one deal.".freeze
+  DESCRIPTION = "Monitors deal health, sends reminders, checks documents, extracts terms, and scores investors — scoped to one deal."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Runs six independently-toggleable capabilities against a single open deal:
 
     • Check Deal Progress  — flags stagnant investors (no update/activity within stagnant_days)
@@ -44,12 +44,12 @@ class DealManagementAgent < SupportAgentService
   CHARS_TOTAL          = 50_000  # per-investor total cap; oldest docs truncated first
 
   STEP_LABELS = {
-    initialize_agent:          "Initialize",
-    check_deal_progress:       "Deal Progress",
-    check_document_checklist:  "Doc Checklist",
-    extract_deal_terms:        "Extract Terms",
-    run_investor_pipeline:     "Investor Pipeline",
-    send_email_digest:         "Email Digest",
+    initialize_agent: "Initialize",
+    check_deal_progress: "Deal Progress",
+    check_document_checklist: "Doc Checklist",
+    extract_deal_terms: "Extract Terms",
+    run_investor_pipeline: "Investor Pipeline",
+    send_email_digest: "Email Digest",
     generate_progress_reports: "Save Report"
   }.freeze
 
@@ -75,7 +75,7 @@ class DealManagementAgent < SupportAgentService
   # ── Step 1 ── Load agent + LLM, validate deal, initialise issues hash.
   # Returns false to halt pipeline when deal is Closed or agent is disabled.
   def initialize_agent(ctx, target: nil, **)
-    super  # loads @support_agent, ctx[:support_agent], ctx[:llm]
+    super # loads @support_agent, ctx[:support_agent], ctx[:llm]
 
     deal       = target
     ctx[:deal] = deal
@@ -83,7 +83,7 @@ class DealManagementAgent < SupportAgentService
     ctx[:issues] = {
       progress_issues: [],
       document_issues: [],
-      digest_issues:   []
+      digest_issues: []
     }
 
     Rails.logger.info { "[DealManagementAgent] Initializing for Deal ID=#{deal.id} '#{deal.name}'" }
@@ -125,27 +125,27 @@ class DealManagementAgent < SupportAgentService
 
       if !investor_updated_recently && !activities_updated_recently
         ctx[:issues][:progress_issues] << {
-          type:          :stagnant,
-          severity:      :blocking,
-          message:       "#{di.investor_name} has had no activity for more than #{stagnant_days} days",
-          investor_id:   di.id,
+          type: :stagnant,
+          severity: :blocking,
+          message: "#{di.investor_name} has had no activity for more than #{stagnant_days} days",
+          investor_id: di.id,
           investor_name: di.investor_name
         }
       end
 
       # Overdue activities for this investor
       di.deal_activities
-        .select { |a| a.status != "Complete" && a.status != "complete" && a.by_date.present? && a.by_date < Date.today }
+        .select { |a| a.status != "Complete" && a.status != "complete" && a.by_date.present? && a.by_date < Time.zone.today }
         .each do |act|
         ctx[:issues][:progress_issues] << {
-          type:           :overdue,
-          severity:       :blocking,
-          message:        "#{di.investor_name}: '#{act.title}' was due #{act.by_date.strftime('%d %b %Y')}",
-          investor_id:    di.id,
-          investor_name:  di.investor_name,
-          activity_id:    act.id,
+          type: :overdue,
+          severity: :blocking,
+          message: "#{di.investor_name}: '#{act.title}' was due #{act.by_date.strftime('%d %b %Y')}",
+          investor_id: di.id,
+          investor_name: di.investor_name,
+          activity_id: act.id,
           activity_title: act.title,
-          by_date:        act.by_date.iso8601
+          by_date: act.by_date.iso8601
         }
       end
 
@@ -156,9 +156,9 @@ class DealManagementAgent < SupportAgentService
 
     if ctx[:issues][:progress_issues].empty?
       ctx[:issues][:progress_issues] << {
-        type:     :info,
+        type: :info,
         severity: :success,
-        message:  "No stagnant investors or overdue activities"
+        message: "No stagnant investors or overdue activities"
       }
     end
 
@@ -169,8 +169,8 @@ class DealManagementAgent < SupportAgentService
       alert_user(ctx, "Deal Progress: all investors on track ✓", :success)
     else
       parts = []
-      parts << "#{stagnant} stagnant investor#{'s' if stagnant != 1}" if stagnant > 0
-      parts << "#{overdue} overdue activit#{'ies' if overdue != 1}#{'y' if overdue == 1}" if overdue > 0
+      parts << "#{stagnant} stagnant investor#{'s' if stagnant != 1}" if stagnant.positive?
+      parts << "#{overdue} overdue activit#{'ies' if overdue != 1}#{'y' if overdue == 1}" if overdue.positive?
       alert_user(ctx, "Deal Progress: #{parts.join(', ')} found", :warning)
     end
     true
@@ -187,13 +187,13 @@ class DealManagementAgent < SupportAgentService
     end
 
     required = @support_agent.json_fields["required_docs"].to_s
-                              .split(",").map(&:strip).reject(&:blank?)
+                             .split(",").map(&:strip).compact_blank
 
     if required.empty?
       ctx[:issues][:document_issues] << {
-        type:     :info,
+        type: :info,
         severity: :success,
-        message:  "No required documents configured — checklist skipped"
+        message: "No required documents configured — checklist skipped"
       }
       return true
     end
@@ -201,21 +201,21 @@ class DealManagementAgent < SupportAgentService
     uploaded = deal.deal_documents_folder.documents.pluck(:name).map(&:downcase)
 
     required.each do |name|
-      if uploaded.include?(name.downcase)
-        ctx[:issues][:document_issues] << {
-          type:          :present,
-          severity:      :success,
-          message:       "#{name} is present in the data room",
-          document_name: name
-        }
-      else
-        ctx[:issues][:document_issues] << {
-          type:          :missing,
-          severity:      :blocking,
-          message:       "#{name} is missing from the data room",
-          document_name: name
-        }
-      end
+      ctx[:issues][:document_issues] << if uploaded.include?(name.downcase)
+                                          {
+                                            type: :present,
+                                            severity: :success,
+                                            message: "#{name} is present in the data room",
+                                            document_name: name
+                                          }
+                                        else
+                                          {
+                                            type: :missing,
+                                            severity: :blocking,
+                                            message: "#{name} is missing from the data room",
+                                            document_name: name
+                                          }
+                                        end
     end
 
     missing = ctx[:issues][:document_issues].count { |i| i[:severity] == :blocking }
@@ -251,9 +251,9 @@ class DealManagementAgent < SupportAgentService
 
     # Check cache on the latest previous report (if any) — new records are created each run
     existing_report = SupportAgentReport
-                        .where(owner: deal, support_agent: @support_agent)
-                        .latest_only
-                        .first
+                      .where(owner: deal, support_agent: @support_agent)
+                      .latest_only
+                      .first
     if existing_report
       jf = existing_report.json_fields || {}
       if jf["term_extraction_fingerprint"] == current_fingerprint &&
@@ -302,7 +302,7 @@ class DealManagementAgent < SupportAgentService
     Rails.logger.error { "[DealManagementAgent] Term extraction failed: #{e.message}" }
     ctx[:term_extraction_error] = e.message
     alert_user(ctx, "Extract Terms: failed — #{e.message}", :danger)
-    true  # soft-fail
+    true # soft-fail
   end
 
   # ── Step 5 ── Per-investor loop: collect docs, summarise, score, save report.
@@ -337,9 +337,9 @@ class DealManagementAgent < SupportAgentService
     notify_email = @support_agent.json_fields["notify_email"].to_s.strip
     if notify_email.blank?
       ctx[:issues][:digest_issues] << {
-        type:     :info,
+        type: :info,
         severity: :success,
-        message:  "notify_email not configured — digest skipped"
+        message: "notify_email not configured — digest skipped"
       }
       alert_user(ctx, "Email Digest: no notify_email configured — skipped", :info)
       return true
@@ -348,21 +348,21 @@ class DealManagementAgent < SupportAgentService
     has_blocking = ctx[:issues].values.flatten.any? { |i| i[:severity] == :blocking }
 
     DealManagementDigestMailer.with(
-      support_agent_id:  @support_agent.id,
-      deal_id:           deal.id,
-      notify_email:      notify_email,
-      progress_issues:   ctx[:issues][:progress_issues],
-      document_issues:   ctx[:issues][:document_issues],
-      extracted_terms:   ctx[:extracted_terms],
+      support_agent_id: @support_agent.id,
+      deal_id: deal.id,
+      notify_email: notify_email,
+      progress_issues: ctx[:issues][:progress_issues],
+      document_issues: ctx[:issues][:document_issues],
+      extracted_terms: ctx[:extracted_terms],
       score_leaderboard: ctx[:score_leaderboard] || [],
-      health_scores:     ctx[:health_scores] || {},
-      has_blocking:      has_blocking
+      health_scores: ctx[:health_scores] || {},
+      has_blocking: has_blocking
     ).pipeline_digest.deliver_later
 
     ctx[:issues][:digest_issues] << {
-      type:     :info,
+      type: :info,
       severity: :success,
-      message:  "Pipeline digest queued to #{notify_email}#{has_blocking ? ' (includes blocker alert)' : ''}"
+      message: "Pipeline digest queued to #{notify_email}#{' (includes blocker alert)' if has_blocking}"
     }
     Rails.logger.info { "[DealManagementAgent] Digest queued to #{notify_email}" }
     alert_user(ctx, "Email Digest: sent to #{notify_email}#{has_blocking ? ' ⚠ blockers included' : ' ✓'}", has_blocking ? :warning : :success)
@@ -371,14 +371,14 @@ class DealManagementAgent < SupportAgentService
     Rails.logger.error { "[DealManagementAgent] Digest email failed: #{e.message}" }
     ctx[:issues][:digest_issues] << { type: :error, severity: :success, message: "Digest failed: #{e.message}" }
     alert_user(ctx, "Email Digest: failed — #{e.message}", :danger)
-    true  # email failure must not block report save
+    true # email failure must not block report save
   end
 
   # ── Step 7 ── Save deal-level SupportAgentReport. Always runs.
   # Extends base class report with extracted_terms, leaderboard, and cache fields.
   # Creates a new report each run (not upsert) so history accumulates.
   # mark_as_latest! flips the latest flag on the new record and clears it on all prior ones.
-  def generate_progress_reports(ctx, deal: nil, support_agent:, **)
+  def generate_progress_reports(ctx, support_agent:, deal: nil, **)
     alert_user(ctx, "Saving report for '#{deal&.name}'…", :info)
 
     ctx[:issues].each_value { |issues| issues.reject! { |i| i[:message].blank? } }
@@ -388,14 +388,14 @@ class DealManagementAgent < SupportAgentService
     report = SupportAgentReport.new(owner: deal, support_agent: support_agent)
     report.status = has_blocking ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
     report.json_fields = ctx[:issues].transform_keys(&:to_s).merge(
-      "final_status"                => has_blocking ? "blocked" : "ready",
-      "completed_at"                => Time.current.iso8601,
-      "run_at"                      => ctx[:run_at] || Time.current.iso8601,
-      "extracted_terms"             => ctx[:extracted_terms],
+      "final_status" => has_blocking ? "blocked" : "ready",
+      "completed_at" => Time.current.iso8601,
+      "run_at" => ctx[:run_at] || Time.current.iso8601,
+      "extracted_terms" => ctx[:extracted_terms],
       "term_extraction_fingerprint" => ctx[:term_extraction_fingerprint],
       "term_extraction_prompt_used" => ctx[:term_extraction_prompt_used],
-      "score_leaderboard"           => ctx[:score_leaderboard] || [],
-      "health_scores"               => ctx[:health_scores] || {}
+      "score_leaderboard" => ctx[:score_leaderboard] || [],
+      "health_scores" => ctx[:health_scores] || {}
     )
     report.save!
     report.mark_as_latest!
@@ -415,7 +415,7 @@ class DealManagementAgent < SupportAgentService
   # level: :info | :success | :warning | :danger
   def alert_user(ctx, message, level = :info)
     user_id = ctx[:user_id]
-    return unless user_id.present?
+    return if user_id.blank?
 
     UserAlert.new(user_id: user_id, message: message, level: level.to_s).broadcast
   rescue StandardError => e
@@ -434,12 +434,12 @@ class DealManagementAgent < SupportAgentService
     period = @support_agent.json_fields["note_period"].presence || "Quarter"
     case period.downcase
     when "month"
-      prev        = Date.today.prev_month
+      prev        = Time.zone.today.prev_month
       start_date  = prev.beginning_of_month
       end_date    = prev.end_of_month
       label       = "Month"
     else
-      prev_q_last = Date.today.beginning_of_quarter - 1.day
+      prev_q_last = Time.zone.today.beginning_of_quarter - 1.day
       start_date  = prev_q_last.beginning_of_quarter
       end_date    = prev_q_last.end_of_quarter
       label       = "Quarter"
@@ -459,21 +459,23 @@ class DealManagementAgent < SupportAgentService
 
     if docs.any?
       summary_text = generate_investor_summary(ctx, di, doc_text, period_label) if enabled?("summarize_notes")
-      score_data   = score_investor(ctx, di, doc_text, summary_text)             if enabled?("score_investors")
+      score_data   = score_investor(ctx, di, doc_text, summary_text) if enabled?("score_investors")
 
       if score_data
         # Write back to DealInvestor (update_columns bypasses validations/callbacks — safe here)
-        di.update_columns(
-          ai_score: score_data["overall_score"].to_i,
-          ai_grade: score_data["grade"].to_s.first(10)
-        ) if di.class.column_names.include?("ai_score")
+        if di.class.column_names.include?("ai_score")
+          di.update_columns(
+            ai_score: score_data["overall_score"].to_i,
+            ai_grade: score_data["grade"].to_s.first(10)
+          )
+        end
 
         score_leaderboard << {
-          investor_id:   di.id,
+          investor_id: di.id,
           investor_name: di.investor_name,
-          status:        di.status,
-          ai_score:      score_data["overall_score"].to_i,
-          ai_grade:      score_data["grade"].to_s
+          status: di.status,
+          ai_score: score_data["overall_score"].to_i,
+          ai_grade: score_data["grade"].to_s
         }
       end
     else
@@ -484,23 +486,23 @@ class DealManagementAgent < SupportAgentService
       di, score_data,
       docs.any? ? "ready" : "skipped",
       period_label,
-      summary_text:   summary_text,
+      summary_text: summary_text,
       document_count: docs.size,
       activity_count: di.deal_activities.count
     )
   end
 
   # Collects documents from the investor's folder and completed activity attachments.
-  def collect_investor_documents(di, period_start, period_end)
+  def collect_investor_documents(di, period_start, _period_end)
     docs = Document
-      .where(owner_type: "DealInvestor", owner_id: di.id)
-      .to_a
+           .where(owner_type: "DealInvestor", owner_id: di.id)
+           .to_a
 
     # Completed activity attachments within the note_period window
     completed_ids = DealActivity
-      .where(deal_investor_id: di.id, status: "complete")
-      .where("updated_at >= ?", period_start)
-      .pluck(:id)
+                    .where(deal_investor_id: di.id, status: "complete")
+                    .where(updated_at: period_start..)
+                    .pluck(:id)
 
     docs += Document.where(owner_type: "DealActivity", owner_id: completed_ids).to_a if completed_ids.any?
 
@@ -521,7 +523,7 @@ class DealManagementAgent < SupportAgentService
       text = read_document_text(doc)
       next if text.blank?
 
-      text  = text.first(CHARS_PER_DOC) if text.length > CHARS_PER_DOC
+      text = text.first(CHARS_PER_DOC) if text.length > CHARS_PER_DOC
       total += text.length
       parts << "=== #{doc.name} ===\n#{text}"
     rescue StandardError => e
@@ -573,15 +575,15 @@ class DealManagementAgent < SupportAgentService
     report        = SupportAgentReport.new(owner: di, support_agent: @support_agent)
     report.status = final_status == "failed" ? :failed : :completed
     report.json_fields = {
-      "final_status"   => final_status,
-      "summary_text"   => extra[:summary_text].to_s,
-      "score"          => score_data,
+      "final_status" => final_status,
+      "summary_text" => extra[:summary_text].to_s,
+      "score" => score_data,
       "document_count" => extra[:document_count].to_i,
       "activity_count" => extra[:activity_count].to_i,
-      "period_label"   => period_label,
-      "error"          => extra[:error],
-      "run_at"         => Time.current.iso8601,
-      "completed_at"   => Time.current.iso8601
+      "period_label" => period_label,
+      "error" => extra[:error],
+      "run_at" => Time.current.iso8601,
+      "completed_at" => Time.current.iso8601
     }.compact
     report.json_fields_will_change!
     report.save!
@@ -628,7 +630,7 @@ class DealManagementAgent < SupportAgentService
 
   # Extracts plain text from a file on disk by extension.
   # Mirrors PortfolioScoringAgent's implementation, extended with .docx support.
-  def extract_text_from_file(file_path, extension) # rubocop:disable Metrics/MethodLength
+  def extract_text_from_file(file_path, extension)
     case extension
     when ".txt", ".md"
       File.read(file_path, encoding: "UTF-8")
@@ -769,8 +771,8 @@ class DealManagementAgent < SupportAgentService
 
   def build_scoring_prompt(di, deal, skill_content, doc_text, summary_text, min_pts)
     activity_lines = di.deal_activities.map do |act|
-      days_overdue = act.by_date.present? ? (Date.today - act.by_date).to_i : nil
-      overdue_str  = (days_overdue.present? && days_overdue > 0) ? "+#{days_overdue}d overdue" : nil
+      days_overdue = act.by_date.present? ? (Time.zone.today - act.by_date).to_i : nil
+      overdue_str  = days_overdue.present? && days_overdue.positive? ? "+#{days_overdue}d overdue" : nil
       [act.title, act.status, act.by_date, overdue_str].compact.join(" | ")
     end.join("\n")
 
@@ -798,7 +800,7 @@ class DealManagementAgent < SupportAgentService
       ### Notes
       #{notes_text.presence || 'No notes recorded.'}
 
-      #{summary_text.present? ? "### AI Summary\n#{summary_text}\n" : ''}
+      #{"### AI Summary\n#{summary_text}\n" if summary_text.present?}
 
       ---
 

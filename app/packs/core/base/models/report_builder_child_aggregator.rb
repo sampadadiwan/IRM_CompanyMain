@@ -3,13 +3,13 @@
 # and one MAX(id)-subquery for "latest" columns.
 class ReportBuilderChildAggregator
   GROUP_SQL = {
-    "sum"   => ->(col) { "SUM(#{col})" },
+    "sum" => ->(col) { "SUM(#{col})" },
     "count" => ->(_)   { "COUNT(*)" },
-    "avg"   => ->(col) { "AVG(#{col})" },
-    "min"   => ->(col) { "MIN(#{col})" },
-    "max"   => ->(col) { "MAX(#{col})" },
-    "list"  => ->(col) {
-      if ActiveRecord::Base.connection.adapter_name =~ /mysql/i
+    "avg" => ->(col) { "AVG(#{col})" },
+    "min" => ->(col) { "MIN(#{col})" },
+    "max" => ->(col) { "MAX(#{col})" },
+    "list" => lambda { |col|
+      if /mysql/i.match?(ActiveRecord::Base.connection.adapter_name)
         "GROUP_CONCAT(DISTINCT #{col} SEPARATOR ', ')"
       else
         "GROUP_CONCAT(DISTINCT #{col})"
@@ -115,7 +115,7 @@ class ReportBuilderChildAggregator
 
     # Use model's latest scope if available, otherwise fallback to MAX(id)
     latest_id_scope = base_scope.group("`#{child_class.table_name}`.`#{fk}`")
-    latest_id_scope = child_class.respond_to?(:latest) ? latest_id_scope.latest : latest_id_scope
+    latest_id_scope = latest_id_scope.latest if child_class.respond_to?(:latest)
     latest_id_sql   = latest_id_scope.select("MAX(`#{child_class.table_name}`.id) AS max_id").to_sql
 
     db_cols = latest_keys.map { |k| db_col(bare_col(k)) }.uniq
@@ -141,24 +141,24 @@ class ReportBuilderChildAggregator
       # e.g. "fund.name"
       parts = col.split(".")
       target_col = parts.last
-      
+
       # We need the table name for the joined model
       # This is tricky because ActiveRecord might alias tables.
       # For now, let's assume standard table names.
-      
+
       # We can try to resolve the table name from the association
       current_klass = child_class
       parts[0..-2].each do |part|
         reflection = current_klass.reflect_on_association(part.to_sym)
         current_klass = reflection.klass if reflection
       end
-      
+
       table_name = current_klass.table_name
-      
+
       # Check for monetization on the target class
       cents = "#{target_col}_cents"
       final_col = current_klass.column_names.include?(cents) ? cents : target_col
-      
+
       "`#{table_name}`.`#{final_col}`"
     else
       return "`#{child_class.table_name}`.`#{col}`" if child_class.column_names.include?(col)
@@ -172,7 +172,7 @@ class ReportBuilderChildAggregator
   def monetized?(col)
     target_klass = child_class
     target_col   = col
-    
+
     if col.include?(".")
       parts = col.split(".")
       target_col = parts.last

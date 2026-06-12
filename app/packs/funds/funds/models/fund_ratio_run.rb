@@ -22,7 +22,7 @@ class FundRatioRun < ApplicationRecord
 
   # Expose #fund so FundRatio can duck-type across FundRatioRun and PortfolioScenario
   # without branching: both respond to computation_context.fund.
-  alias_method :fund, :anchor_fund
+  alias fund anchor_fund
 
   # name is the canonical fingerprint — set automatically before validation.
   validates :name, presence: true, uniqueness: { scope: %i[entity_id end_date] }
@@ -36,8 +36,8 @@ class FundRatioRun < ApplicationRecord
     parts = []
     parts << "F:#{Array(fund_ids).map(&:to_i).sort.join(',')}"                          if fund_ids.present?
     parts << "PC:#{Array(portfolio_company_ids).map(&:to_i).sort.join(',')}"            if portfolio_company_ids.present?
-    parts << "Tag:#{tags.to_s.split(',').map(&:strip).reject(&:blank?).sort.join(',')}" if tags.present?
-    parts << "S:#{Array(sectors).map(&:strip).reject(&:blank?).sort.join(',')}"         if sectors.present?
+    parts << "Tag:#{tags.to_s.split(',').map(&:strip).compact_blank.sort.join(',')}" if tags.present?
+    parts << "S:#{Array(sectors).map(&:strip).compact_blank.sort.join(',')}"         if sectors.present?
     parts << "T:#{type}"                                                                if type.present?
     # SHA-256 digest keeps the name within VARCHAR(255) regardless of how many IDs are passed.
     # The raw inputs are preserved in fund_ids / portfolio_company_ids / sectors / portfolio_companies_tags columns.
@@ -46,7 +46,7 @@ class FundRatioRun < ApplicationRecord
 
   # Finds the unique run matching the given dashboard filter params.
   # Computes the fingerprint and does a single indexed WHERE name = ? lookup.
-  scope :for_filter, ->(entity_id:, end_date:, fund_ids: [], portfolio_company_ids: [], tags: nil, sectors: []) {
+  scope :for_filter, lambda { |entity_id:, end_date:, fund_ids: [], portfolio_company_ids: [], tags: nil, sectors: []|
     where(
       entity_id:,
       end_date:,
@@ -58,7 +58,7 @@ class FundRatioRun < ApplicationRecord
   # Each array element gets its own index entry, so these queries hit the index rather
   # than doing a full-table scan. See docs/features/fund_ratio_run.md — "JSON Array Indexing".
   # SQLite (used in tests) does not support MEMBER OF — use json_each() instead.
-  scope :for_source_fund, ->(id) {
+  scope :for_source_fund, lambda { |id|
     if connection.adapter_name.downcase.include?("sqlite")
       where("EXISTS (SELECT 1 FROM json_each(fund_ratio_runs.fund_ids) WHERE CAST(value AS INTEGER) = ?)", id.to_i)
     else
@@ -66,7 +66,7 @@ class FundRatioRun < ApplicationRecord
     end
   }
 
-  scope :for_source_portfolio_company, ->(id) {
+  scope :for_source_portfolio_company, lambda { |id|
     if connection.adapter_name.downcase.include?("sqlite")
       where("EXISTS (SELECT 1 FROM json_each(fund_ratio_runs.portfolio_company_ids) WHERE CAST(value AS INTEGER) = ?)", id.to_i)
     else
@@ -74,7 +74,7 @@ class FundRatioRun < ApplicationRecord
     end
   }
 
-  scope :for_source_sector, ->(sector) {
+  scope :for_source_sector, lambda { |sector|
     if connection.adapter_name.downcase.include?("sqlite")
       where("EXISTS (SELECT 1 FROM json_each(fund_ratio_runs.sectors) WHERE value = ?)", sector)
     else
@@ -87,7 +87,7 @@ class FundRatioRun < ApplicationRecord
   # searching for ",tag," avoids false partial matches (e.g. "growth" matching "regrowth").
   # sanitize_sql_like escapes any % or _ in the tag before it enters the LIKE pattern.
   # CONCAT is MySQL-only; SQLite uses the || concatenation operator.
-  scope :for_source_tag, ->(tag) {
+  scope :for_source_tag, lambda { |tag|
     safe_tag = "%,#{sanitize_sql_like(tag.to_s.strip)},%"
     if connection.adapter_name.downcase.include?("sqlite")
       where("(',' || portfolio_companies_tags || ',') LIKE ?", safe_tag)
@@ -103,7 +103,7 @@ class FundRatioRun < ApplicationRecord
   # Example: "Cross-portfolio · 3 funds · growth, tech · FinTech"
   def to_s
     scope = []
-    scope << "#{fund_ids.size} #{'fund'.pluralize(fund_ids.size)}"                         if fund_ids.any?
+    scope << "#{fund_ids.size} #{'fund'.pluralize(fund_ids.size)}" if fund_ids.any?
     scope << "#{portfolio_company_ids.size} #{'company'.pluralize(portfolio_company_ids.size)}" if portfolio_company_ids.any?
     scope << portfolio_companies_tags                                                        if portfolio_companies_tags.present?
     scope << sectors.join(", ")                                                              if sectors.any?
@@ -165,10 +165,10 @@ class FundRatioRun < ApplicationRecord
   def template
     FundRatioRunTemplate.where(entity_id: entity_id).find do |t|
       FundRatioRun.fingerprint(
-        fund_ids:              Array(t.fund_ids).map(&:to_i).reject(&:zero?),
+        fund_ids: Array(t.fund_ids).map(&:to_i).reject(&:zero?),
         portfolio_company_ids: t.portfolio_company_ids,
-        tags:                  t.portfolio_companies_tags,
-        sectors:               t.sectors
+        tags: t.portfolio_companies_tags,
+        sectors: t.sectors
       ) == name
     end
   end
@@ -177,11 +177,11 @@ class FundRatioRun < ApplicationRecord
 
   def set_name
     self.name ||= self.class.fingerprint(
-      fund_ids:              fund_ids,
+      fund_ids: fund_ids,
       portfolio_company_ids: portfolio_company_ids,
-      tags:                  portfolio_companies_tags,
-      sectors:               sectors,
-      type:                  run_type
+      tags: portfolio_companies_tags,
+      sectors: sectors,
+      type: run_type
     )
   end
 end

@@ -43,7 +43,7 @@ class KpiDateUtils
     begin
       Date.local_parse(normalized)
       true
-    rescue ArgumentError, Date::Error
+    rescue ArgumentError
       false
     end
   end
@@ -261,7 +261,7 @@ class KpiDateUtils
 
       # Always return the end of the month
       date.end_of_month
-    rescue ArgumentError, Date::Error
+    rescue ArgumentError
       if Rails.env.test? || !raise_error
         nil
       else
@@ -272,7 +272,6 @@ class KpiDateUtils
   end
 
   # Parses a raw period string and returns Month, Quarter, or Year
-  # rubocop:disable Metrics/CyclomaticComplexity
   def self.detect_period_type(raw_period)
     return nil if raw_period.blank?
 

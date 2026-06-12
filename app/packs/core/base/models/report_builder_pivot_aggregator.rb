@@ -40,7 +40,7 @@ class ReportBuilderPivotAggregator
   def child_class = join_config[:base_class].to_s.constantize
   def fk          = join_config[:fk].to_s
   def joins       = join_config[:joins]
-  def group_bys   = Array(pivot[:group_bys] || pivot[:group_by]).map(&:to_s).reject(&:blank?)
+  def group_bys   = Array(pivot[:group_bys] || pivot[:group_by]).map(&:to_s).compact_blank
   def value_col   = pivot[:value_col].to_s
   def aggregate   = pivot[:aggregate].to_s.presence || "sum"
 
@@ -80,21 +80,21 @@ class ReportBuilderPivotAggregator
   def run_pivot_query(combinations)
     return run_latest_pivot_query(combinations) if aggregate == "latest"
 
-    result  = Hash.new { |h, k| h[k] = {} }
+    result = Hash.new { |h, k| h[k] = {} }
     db_val_col = db_col(value_col)
     db_grp_cols = group_bys.map { |gb| db_col(gb) }
-    conn    = child_class.connection
+    conn = child_class.connection
 
     case_exprs = combinations.map do |combo|
       combo_vals = Array(combo)
       safe = "pv_#{combo_vals.join('_').gsub(/[^a-z0-9]/i, '_')[0, 40]}_#{combinations.index(combo)}"
-      
+
       # Build multi-column WHEN clause
       when_parts = db_grp_cols.each_with_index.map do |col, i|
         "#{col} = #{conn.quote(combo_vals[i])}"
       end
       when_clause = "CASE WHEN #{when_parts.join(' AND ')} THEN #{db_val_col} END"
-      
+
       sql = agg_for_sql(aggregate, when_clause)
       { combo: combo, alias: safe, sql: "#{sql} AS `#{safe}`" }
     end
@@ -116,12 +116,12 @@ class ReportBuilderPivotAggregator
 
   def run_latest_pivot_query(combinations)
     result = Hash.new { |h, k| h[k] = {} }
-    
+
     db_grp_cols = group_bys.map { |gb| db_col(gb) }
-    
+
     # Find latest ID per (root, categories)
     latest_ids_scope = base_scope.group("`#{child_class.table_name}`.`#{fk}`", *db_grp_cols)
-    latest_ids_scope = child_class.respond_to?(:latest) ? latest_ids_scope.latest : latest_ids_scope
+    latest_ids_scope = latest_ids_scope.latest if child_class.respond_to?(:latest)
     latest_ids_query = latest_ids_scope.select("MAX(`#{child_class.table_name}`.id)")
 
     # Fetch values for those IDs
@@ -132,7 +132,7 @@ class ReportBuilderPivotAggregator
       .select("`#{child_class.table_name}`.`#{fk}`", *db_grp_cols, db_val_col_name)
       .each do |row|
         root_id = row.send(fk)
-        
+
         # Extract combination from row
         combo = group_bys.map { |gb| row.send(gb.split(".").last) }
         next unless combinations.include?(combo) || combinations.include?(combo.first) # handle single vs multi
@@ -188,12 +188,13 @@ class ReportBuilderPivotAggregator
         reflection = target_klass.reflect_on_association(part.to_sym)
         target_klass = reflection.klass if reflection
       end
-      
+
       cents = "#{target_col}_cents"
       final_col = target_klass.column_names.include?(cents) ? cents : target_col
       "`#{target_klass.table_name}`.`#{final_col}`"
     else
       return "`#{child_class.table_name}`.`#{col}`" if child_class.column_names.include?(col)
+
       cents = "#{col}_cents"
       final_col = child_class.column_names.include?(cents) ? cents : col
       "`#{child_class.table_name}`.`#{final_col}`"
@@ -203,7 +204,7 @@ class ReportBuilderPivotAggregator
   def monetized?(col)
     target_klass = child_class
     target_col   = col
-    
+
     if col.include?(".")
       parts = col.split(".")
       target_col = parts.last

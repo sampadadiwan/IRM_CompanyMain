@@ -120,7 +120,6 @@ module ApplicationHelper
     options.sort_by! { |label, _value| label }
   end
 
-  # rubocop:disable Naming/MethodParameterName
   def sortable_header(q, attr, label, **)
     sort_link(q, attr, **) do
       active_sort = q.sorts.find { |s| s.name == attr.to_s }

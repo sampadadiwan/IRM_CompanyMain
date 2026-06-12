@@ -37,7 +37,7 @@ module CapitalCommitmentDashboardHelper
 
     top_data = sorted_data.first(top_n).to_h
     if sorted_data.size > top_n
-      others_sum = sorted_data[top_n..-1].sum { |_k, v| v }
+      others_sum = sorted_data[top_n..].sum { |_k, v| v }
       top_data["Others"] = others_sum
     end
 
@@ -197,13 +197,13 @@ module CapitalCommitmentDashboardHelper
     nav_cents = cc.account_entries.where(reporting_date: ..Time.zone.today).sum(:amount_cents).to_i if nav_cents <= 0
 
     # Ensure NAV displayed in metrics is not negative
-    nav_cents = 0 if nav_cents < 0
+    nav_cents = 0 if nav_cents.negative?
     nav = Money.new(nav_cents, cc.currency)
 
     # Simple comparison for NAV % change (vs previous account entry date)
-    prev_ae = cc.account_entries.where(name: "Portfolio FMV").where("reporting_date < ?", Time.zone.today).order(reporting_date: :desc).second
+    prev_ae = cc.account_entries.where(name: "Portfolio FMV").where(reporting_date: ...Time.zone.today).order(reporting_date: :desc).second
     nav_change_pct = 0
-    nav_change_pct = ((nav_cents - prev_ae.amount_cents).to_f / prev_ae.amount_cents * 100).round(1) if prev_ae && prev_ae.amount_cents.positive?
+    nav_change_pct = ((nav_cents - prev_ae.amount_cents).to_f / prev_ae.amount_cents * 100).round(1) if prev_ae&.amount_cents&.positive?
 
     currency_units = cc.currency == "INR" ? "Crores" : "Millions"
 
@@ -225,7 +225,6 @@ module CapitalCommitmentDashboardHelper
                  when "3M" then 3.months.ago.to_date.beginning_of_month
                  when "6M" then 6.months.ago.to_date.beginning_of_month
                  when "YTD" then Time.zone.today.beginning_of_year
-                 else nil
                  end
 
     events = Hash.new { |h, k| h[k] = { called: 0.0, distributed: 0.0, nav: 0.0, has_nav: false } }
@@ -335,10 +334,8 @@ module CapitalCommitmentDashboardHelper
   end
 
   def card2_recent_activity(cc)
-    activities = []
-
-    cc.capital_remittances.verified.limit(5).each do |r|
-      activities << { type: :remittance, date: r.remittance_date, title: "#{money_to_currency(r.collected_amount)} collected", icon: "ti-arrow-up-right", color: "text-primary" }
+    activities = cc.capital_remittances.verified.limit(5).map do |r|
+      { type: :remittance, date: r.remittance_date, title: "#{money_to_currency(r.collected_amount)} collected", icon: "ti-arrow-up-right", color: "text-primary" }
     end
 
     cc.capital_distribution_payments.limit(5).each do |d|

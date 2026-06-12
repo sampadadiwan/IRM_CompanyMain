@@ -36,7 +36,6 @@ class TrackingCurrencyJob < ApplicationJob
     end
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def update_fund(fund, user_id, force: false)
     Audited.audit_class.as_user("TrackingCurrencyJob") do
       if fund.has_tracking_currency?

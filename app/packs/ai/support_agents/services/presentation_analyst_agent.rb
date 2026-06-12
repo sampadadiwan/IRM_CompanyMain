@@ -20,9 +20,9 @@ require 'shellwords'
 # PRD §11 — Architecture, §12 — New Components, §13 — Data Storage
 class PresentationAnalystAgent < SupportAgentService
   DESCRIPTION = "Reads investor presentations across periods, flags what changed, " \
-                "and generates a pre-board briefing + Management Accountability Score.".freeze
+                "and generates a pre-board briefing + Management Accountability Score."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Reads investor presentation documents (PDF, PPTX, DOCX) from a portfolio company's
     KpiReports, extracts structured intelligence per period, then compares across periods
     to surface commitment misses, dropped risks, objective drift, abandoned initiatives,
@@ -51,13 +51,13 @@ class PresentationAnalystAgent < SupportAgentService
   # PRD §12.1 — Configuration. These match the agent's FormType custom fields.
   # Human-readable labels shown in the Trailblazer step progress panel.
   STEP_LABELS = {
-    initialize_agent:       "Initialize",
-    collect_presentations:  "Collect Presentations",
-    extract_intelligence:   "Extract Intelligence",
+    initialize_agent: "Initialize",
+    collect_presentations: "Collect Presentations",
+    extract_intelligence: "Extract Intelligence",
     compare_across_periods: "Cross-Period Analysis",
-    generate_analyst_qs:    "Generate Briefing",
-    compute_scores:         "Score",
-    store_results:          "Save"
+    generate_analyst_qs: "Generate Briefing",
+    compute_scores: "Score",
+    store_results: "Save"
   }.freeze
 
   # All file types the agent will attempt to read. PPTX/DOCX go through a
@@ -98,7 +98,7 @@ class PresentationAnalystAgent < SupportAgentService
   # Sequential batch processor — mirrors PortfolioScoringAgent.process_batch exactly.
   # :scheduled mode suppresses the batch summary notification.
   # PRD §11 — BATCH / SCHEDULED execution mode.
-  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch) # rubocop:disable Lint/UnusedMethodArgument
+  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch)
     support_agent = SupportAgent.find(support_agent_id)
 
     # Preload KPI reports to avoid N+1 queries when iterating companies
@@ -108,19 +108,17 @@ class PresentationAnalystAgent < SupportAgentService
     errors    = []
 
     targets.to_a.each do |target|
-      begin
-        support_agent.agent.wtf?(
-          support_agent_id: support_agent_id,
-          target:           target,
-          user_id:          user_id,
-          entity_id:        entity_id,
-          batch_mode:       true
-        )
-        successes << { id: target.id, name: target.try(:investor_name) || "ID=#{target.id}" }
-      rescue StandardError => e
-        Rails.logger.error { "[PresentationAnalystAgent] process_batch error for ID=#{target.id}: #{e.message}" }
-        errors << { target_id: target.id, target_name: target.try(:investor_name) || "ID=#{target.id}", error: e.message }
-      end
+      support_agent.agent.wtf?(
+        support_agent_id: support_agent_id,
+        target: target,
+        user_id: user_id,
+        entity_id: entity_id,
+        batch_mode: true
+      )
+      successes << { id: target.id, name: target.try(:investor_name) || "ID=#{target.id}" }
+    rescue StandardError => e
+      Rails.logger.error { "[PresentationAnalystAgent] process_batch error for ID=#{target.id}: #{e.message}" }
+      errors << { target_id: target.id, target_name: target.try(:investor_name) || "ID=#{target.id}", error: e.message }
     end
 
     # Only notify on adhoc runs; scheduled runs generate their own digest emails separately
@@ -143,10 +141,10 @@ class PresentationAnalystAgent < SupportAgentService
   # Calls super to load @support_agent and ctx[:llm], then checks the agent is
   # enabled and the target is a portfolio company (not an LP or fund).
   def initialize_agent(ctx, target: nil, **)
-    super  # sets @support_agent, ctx[:support_agent], ctx[:llm] via SupportAgentService
+    super # sets @support_agent, ctx[:support_agent], ctx[:llm] via SupportAgentService
 
     ctx[:investor]       = target
-    ctx[:period_records] = []  # accumulated per-period extracted records
+    ctx[:period_records] = [] # accumulated per-period extracted records
     ctx[:issues]         = { collection_issues: [], extraction_issues: [], analysis_issues: [] }
 
     Rails.logger.info { "[PresentationAnalystAgent] Initializing for #{target&.investor_name} (ID=#{target&.id})" }
@@ -164,10 +162,10 @@ class PresentationAnalystAgent < SupportAgentService
   #
   # PRD §12.1 — presentation_doc_names, max_periods, kpi_tag_list config fields.
   def collect_presentations(ctx, investor: nil, **)
-    allowed_names = presentation_doc_names  # from custom field CSV, or DEFAULT_DOC_NAMES
+    allowed_names = presentation_doc_names # from custom field CSV, or DEFAULT_DOC_NAMES
     tag_list      = @support_agent.json_fields["kpi_tag_list"].presence || "Actual"
     max_periods = @support_agent.json_fields["max_periods"].to_i
-    max_periods = 8 if max_periods < 1  # guard: treat zero/blank as default
+    max_periods = 8 if max_periods < 1 # guard: treat zero/blank as default
 
     # Order ascending so extract_intelligence processes oldest → newest (needed for
     # the comparator to understand temporal direction of changes)
@@ -198,8 +196,8 @@ class PresentationAnalystAgent < SupportAgentService
       # the blocked state. Subsequent steps handle empty ctx[:presentation_docs] by
       # checking size before making any LLM calls.
       ctx[:issues][:collection_issues] << {
-        type:     :info,
-        message:  "No presentation documents found matching: #{allowed_names.join(', ')}",
+        type: :info,
+        message: "No presentation documents found matching: #{allowed_names.join(', ')}",
         severity: :blocking
       }
       Rails.logger.warn { "[PresentationAnalystAgent] No presentations found for #{investor.investor_name}" }
@@ -211,8 +209,8 @@ class PresentationAnalystAgent < SupportAgentService
       "[PresentationAnalystAgent] Found #{ctx[:presentation_docs].size} presentation(s): #{labels}"
     end
     ctx[:issues][:collection_issues] << {
-      type:     :info,
-      message:  "Found #{ctx[:presentation_docs].size} presentation(s) across #{ctx[:presentation_docs].map { |d| d[:period_label] }.join(', ')}",
+      type: :info,
+      message: "Found #{ctx[:presentation_docs].size} presentation(s) across #{ctx[:presentation_docs].pluck(:period_label).join(', ')}",
       severity: :success
     }
     true
@@ -231,7 +229,7 @@ class PresentationAnalystAgent < SupportAgentService
       # read_document_text handles download + text extraction; returns nil on failure
       text = read_document_text(entry[:document])
 
-      unless text.present?
+      if text.blank?
         ctx[:issues][:extraction_issues] << {
           type: :info, message: "Could not read #{entry[:period_label]} — skipped", severity: :success
         }
@@ -248,7 +246,7 @@ class PresentationAnalystAgent < SupportAgentService
         # Attach period metadata so the comparator knows the temporal ordering
         ctx[:period_records] << record.merge(
           "period_label" => entry[:period_label],
-          "as_of"        => entry[:report].as_of.to_s
+          "as_of" => entry[:report].as_of.to_s
         )
         ctx[:issues][:extraction_issues] << {
           type: :info, message: "Extracted #{entry[:period_label]}", severity: :success
@@ -308,16 +306,16 @@ class PresentationAnalystAgent < SupportAgentService
 
     total_flags = (flags&.values || []).sum { |v| Array(v).size }
     ctx[:issues][:analysis_issues] << {
-      type:     :info,
-      message:  "Cross-period analysis complete (#{strategy}) — #{total_flags} flag(s) across #{ctx[:period_records].size} periods",
+      type: :info,
+      message: "Cross-period analysis complete (#{strategy}) — #{total_flags} flag(s) across #{ctx[:period_records].size} periods",
       severity: :success
     }
     Rails.logger.info { "[PresentationAnalystAgent] Cross-period analysis: #{total_flags} flags (strategy=#{strategy})" }
     true
   rescue StandardError => e
     Rails.logger.error { "[PresentationAnalystAgent] Comparator failed: #{e.message}" }
-    ctx[:cross_period_flags] = {}  # empty flags → scoring still runs, questions skipped
-    true  # soft-fail so store_results runs
+    ctx[:cross_period_flags] = {} # empty flags → scoring still runs, questions skipped
+    true # soft-fail so store_results runs
   end
 
   # One LLM call covering all periods simultaneously — more accurate because the
@@ -343,7 +341,7 @@ class PresentationAnalystAgent < SupportAgentService
     end
 
     # Deduplicate flags that appear in multiple window pairs
-    merged.transform_values { |items| items.uniq { |item| item.to_json } }
+    merged.transform_values { |items| items.uniq(&:to_json) }
   end
 
   # ─── Step 5: Generate Analyst Questions (Pre-Board Briefing) ─────────────────
@@ -378,9 +376,9 @@ class PresentationAnalystAgent < SupportAgentService
 
     # Look up the previous run to check if flags are unchanged
     prev_report    = SupportAgentReport
-                       .where(owner: investor, support_agent: support_agent)
-                       .order(created_at: :desc)
-                       .first
+                     .where(owner: investor, support_agent: support_agent)
+                     .order(created_at: :desc)
+                     .first
     prev_digest    = prev_report&.json_fields&.dig("flags_digest")
     prev_questions = prev_report&.json_fields&.dig("analyst_questions")
 
@@ -389,8 +387,8 @@ class PresentationAnalystAgent < SupportAgentService
       ctx[:analyst_questions] = prev_questions
       ctx[:flags_digest]      = flags_digest
       ctx[:issues][:analysis_issues] << {
-        type:     :info,
-        message:  "Flags unchanged — reusing #{prev_questions.size} questions from previous run (no LLM call)",
+        type: :info,
+        message: "Flags unchanged — reusing #{prev_questions.size} questions from previous run (no LLM call)",
         severity: :success
       }
       Rails.logger.info { "[PresentationAnalystAgent] Digest match — skipping question generation for #{investor.investor_name}" }
@@ -406,8 +404,8 @@ class PresentationAnalystAgent < SupportAgentService
     ctx[:analyst_questions] = questions || []
     ctx[:flags_digest]      = flags_digest
     ctx[:issues][:analysis_issues] << {
-      type:     :info,
-      message:  "Generated #{ctx[:analyst_questions].size} briefing questions",
+      type: :info,
+      message: "Generated #{ctx[:analyst_questions].size} briefing questions",
       severity: :success
     }
     Rails.logger.info { "[PresentationAnalystAgent] Generated #{ctx[:analyst_questions].size} questions for #{investor.investor_name}" }
@@ -417,7 +415,7 @@ class PresentationAnalystAgent < SupportAgentService
     # Fall back to the previous run's questions rather than losing them entirely
     ctx[:analyst_questions] = prev_questions || []
     ctx[:flags_digest]      = flags_digest
-    true  # soft-fail
+    true # soft-fail
   end
 
   # ─── Step 6: Management Accountability Score ──────────────────────────────────
@@ -447,21 +445,21 @@ class PresentationAnalystAgent < SupportAgentService
     coherence  = score_coherence(flags["objective_drift"] || [], flags["initiative_graveyard"] || [], records)
     narrative  = score_narrative(flags["metric_anomalies"] || [])
 
-    overall = (commitment * 0.35 + risk * 0.25 + coherence * 0.25 + narrative * 0.15).round
+    overall = ((commitment * 0.35) + (risk * 0.25) + (coherence * 0.25) + (narrative * 0.15)).round
 
     ctx[:score] = {
-      "overall_score"    => overall,
-      "grade"            => score_to_grade(overall),
+      "overall_score" => overall,
+      "grade" => score_to_grade(overall),
       "commitment_score" => commitment,
-      "risk_score"       => risk,
-      "coherence_score"  => coherence,
-      "narrative_score"  => narrative,
+      "risk_score" => risk,
+      "coherence_score" => coherence,
+      "narrative_score" => narrative,
       "periods_analyzed" => records.size
     }
 
     ctx[:issues][:analysis_issues] << {
-      type:     :info,
-      message:  "Management Accountability Score: #{overall}/100 (#{score_to_grade(overall)})",
+      type: :info,
+      message: "Management Accountability Score: #{overall}/100 (#{score_to_grade(overall)})",
       severity: :success
     }
     Rails.logger.info { "[PresentationAnalystAgent] Score: #{overall} #{score_to_grade(overall)} for #{ctx[:investor]&.investor_name}" }
@@ -469,7 +467,7 @@ class PresentationAnalystAgent < SupportAgentService
   rescue StandardError => e
     Rails.logger.error { "[PresentationAnalystAgent] Scoring failed: #{e.message}" }
     ctx[:score] = nil
-    true  # soft-fail — a missing score should not block storing the questions and flags
+    true # soft-fail — a missing score should not block storing the questions and flags
   end
 
   # Commitment dimension (weight 35%):
@@ -477,15 +475,15 @@ class PresentationAnalystAgent < SupportAgentService
   # "not_mentioned" = commitment appeared in an earlier period but was never revisited —
   # the most damaging signal (management avoided accountability entirely).
   def score_commitments(tracker)
-    return 50 if tracker.empty?  # neutral when no commitments were tracked
+    return 50 if tracker.empty? # neutral when no commitments were tracked
 
     met     = tracker.count { |c| c["status"] == "met" }
     partial = tracker.count { |c| c["status"] == "partially_met" }
-    at_risk = tracker.count { |c| c["status"] == "at_risk" }   # softening but not yet failed
-    drops   = tracker.count { |c| c["status"] == "not_mentioned" }  # silent drops
+    at_risk = tracker.count { |c| c["status"] == "at_risk" } # softening but not yet failed
+    drops   = tracker.count { |c| c["status"] == "not_mentioned" } # silent drops
 
-    base = ((met + partial * 0.5 + at_risk * 0.25) / tracker.size * 100).round
-    (base - drops * 5).clamp(0, 100)  # silent drops cost 5pts; at_risk counts 0.25 (warning, not failure)
+    base = ((met + (partial * 0.5) + (at_risk * 0.25)) / tracker.size * 100).round
+    (base - (drops * 5)).clamp(0, 100) # silent drops cost 5pts; at_risk counts 0.25 (warning, not failure)
   end
 
   # Risk dimension (weight 25%):
@@ -515,7 +513,7 @@ class PresentationAnalystAgent < SupportAgentService
       score += case obj["change"]
                when "removed"  then -8  # hardest to justify without explanation
                when "reframed" then -3  # acknowledged pivot, still disruption
-               else 0                  # "added" objectives are not penalised
+               else 0 # "added" objectives are not penalised
                end
     end
 
@@ -525,9 +523,9 @@ class PresentationAnalystAgent < SupportAgentService
     # Reward strategic consistency: objectives appearing in ≥3 periods show stable vision
     if records.size >= 3
       stable_objectives = records
-        .flat_map { |r| Array(r["strategic_objectives"]).map { |o| o["description"].to_s.downcase } }
-        .tally
-        .count { |_, n| n >= 3 }
+                          .flat_map { |r| Array(r["strategic_objectives"]).map { |o| o["description"].to_s.downcase } }
+                          .tally
+                          .count { |_, n| n >= 3 }
       score += stable_objectives * 5
     end
 
@@ -538,7 +536,7 @@ class PresentationAnalystAgent < SupportAgentService
   # Each metric anomaly (regression, restatement, arithmetic inconsistency)
   # costs 10 points — this is the most binary of the four dimensions.
   def score_narrative(anomalies)
-    (100 - anomalies.size * 10).clamp(0, 100)
+    (100 - (anomalies.size * 10)).clamp(0, 100)
   end
 
   # Maps a 0–100 score to the same grade scale as PortfolioScoringAgent
@@ -574,17 +572,17 @@ class PresentationAnalystAgent < SupportAgentService
 
     report.json_fields = (report.json_fields || {}).merge(
       # The eight-category per-period extracted records (PRD §4.1)
-      "period_records"      => ctx[:period_records],
+      "period_records" => ctx[:period_records],
       # Five cross-period lenses (PRD §4.2)
-      "cross_period_flags"  => ctx[:cross_period_flags] || {},
+      "cross_period_flags" => ctx[:cross_period_flags] || {},
       # Pre-board briefing questions (PRD §5)
-      "analyst_questions"   => ctx[:analyst_questions] || [],
+      "analyst_questions" => ctx[:analyst_questions] || [],
       # Human-readable list of periods analyzed (shown in score card header)
-      "periods_analyzed"    => ctx[:period_records].map { |r| r["period_label"] },
+      "periods_analyzed" => ctx[:period_records].pluck("period_label"),
       # Digest used to decide whether questions need regeneration next run (PRD §5)
-      "flags_digest"        => ctx[:flags_digest],
+      "flags_digest" => ctx[:flags_digest],
       # Management Accountability Score (PRD §6)
-      "score"               => ctx[:score],
+      "score" => ctx[:score],
       # Issue arrays from all steps — surfaced in the UI expandable panels
       "collection_issues" => ctx[:issues][:collection_issues],
       "extraction_issues" => ctx[:issues][:extraction_issues],
@@ -600,7 +598,7 @@ class PresentationAnalystAgent < SupportAgentService
     # MySQL doesn't track JSON column mutations automatically
     report.json_fields_will_change!
     report.status = has_blocking ? :failed : :completed
-    report.save!  # after_create callback fires mark_as_latest! atomically
+    report.save! # after_create callback fires mark_as_latest! atomically
 
     ctx[:support_agent_report] = report
     Rails.logger.info { "[PresentationAnalystAgent] Report saved ID=#{report.id} status=#{report.status}" }
@@ -677,7 +675,7 @@ class PresentationAnalystAgent < SupportAgentService
     txt_path = file_path.sub(/\.[^.]+$/, '.txt')
     File.exist?(txt_path) ? File.read(txt_path, encoding: 'UTF-8') : nil
   rescue StandardError
-    nil  # fall through to next tier
+    nil # fall through to next tier
   end
 
   # Pandoc: handles DOCX well; PPTX support is limited
@@ -685,9 +683,9 @@ class PresentationAnalystAgent < SupportAgentService
     return nil unless system("which pandoc > /dev/null 2>&1")
 
     output = `pandoc --to plain #{Shellwords.shellescape(file_path)} 2>/dev/null`
-    output.present? ? output : nil
+    output.presence
   rescue StandardError
-    nil  # fall through to Nokogiri
+    nil # fall through to Nokogiri
   end
 
   # Nokogiri XML parse: last resort for PPTX — misses speaker notes and tables
@@ -917,7 +915,7 @@ class PresentationAnalystAgent < SupportAgentService
   # PRD §12.1 — presentation_doc_names config.
   def presentation_doc_names
     csv   = @support_agent.json_fields["presentation_doc_names"].to_s
-    names = csv.split(",").map(&:strip).reject(&:blank?)
+    names = csv.split(",").map(&:strip).compact_blank
     names.any? ? names : DEFAULT_DOC_NAMES
   end
 

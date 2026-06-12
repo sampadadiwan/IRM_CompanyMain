@@ -1,5 +1,4 @@
 class InvestorKycDecorator < ApplicationDecorator
-
   def aml_status
     return if object.blank?
 

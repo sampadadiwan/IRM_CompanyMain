@@ -13,7 +13,7 @@ class FundRatioRunTemplatesController < ApplicationController
     authorize FundRatioRunTemplate
     # All entity-scoped templates ordered by position then name.
     # distinct_tags is used to populate the "Run by Tag" dropdown.
-    @templates    = policy_scope(FundRatioRunTemplate).ordered
+    @templates = policy_scope(FundRatioRunTemplate).ordered
     @distinct_tags = policy_scope(FundRatioRunTemplate).distinct_tags
   end
 
@@ -85,7 +85,7 @@ class FundRatioRunTemplatesController < ApplicationController
     valid_ids  = collect_valid_ids(templates, end_date)
     FundRatioRunTemplateBatchJob.perform_later(valid_ids, end_date, current_user.id) if valid_ids.any?
     redirect_to fund_ratio_run_templates_path,
-                notice: "Enqueued #{valid_ids.size} ratio #{"calculation".pluralize(valid_ids.size)} for #{end_date} — running sequentially."
+                notice: "Enqueued #{valid_ids.size} ratio #{'calculation'.pluralize(valid_ids.size)} for #{end_date} — running sequentially."
   end
 
   # POST /fund_ratio_run_templates/trigger_by_tag
@@ -102,7 +102,7 @@ class FundRatioRunTemplatesController < ApplicationController
     valid_ids  = collect_valid_ids(templates, end_date)
     FundRatioRunTemplateBatchJob.perform_later(valid_ids, end_date, current_user.id) if valid_ids.any?
     redirect_to fund_ratio_run_templates_path,
-                notice: "Enqueued #{valid_ids.size} ratio #{"calculation".pluralize(valid_ids.size)} for tag '#{tag}' on #{end_date} — running sequentially."
+                notice: "Enqueued #{valid_ids.size} ratio #{'calculation'.pluralize(valid_ids.size)} for tag '#{tag}' on #{end_date} — running sequentially."
   end
 
   # POST /fund_ratio_run_templates/:id/trigger_one
@@ -117,7 +117,7 @@ class FundRatioRunTemplatesController < ApplicationController
     blockers = violations.select(&:blocker?)
     if blockers.any?
       return redirect_to fund_ratio_run_templates_path,
-                         alert: "Cannot enqueue '#{@template.name}': #{blockers.map(&:message).join("; ")}"
+                         alert: "Cannot enqueue '#{@template.name}': #{blockers.map(&:message).join('; ')}"
     end
 
     @template.enqueue(end_date: end_date, user_id: current_user.id)
@@ -139,8 +139,8 @@ class FundRatioRunTemplatesController < ApplicationController
       t.trigger_end_date = end_date
       violations = ValidationRuleEvaluator.call(record: t, entity: current_user.entity)
 
-      if violations.select(&:blocker?).any?
-        Rails.logger.warn("[FundRatioRunTemplates] Skipped '#{t.name}': #{violations.select(&:blocker?).map(&:message).join("; ")}")
+      if violations.any?(&:blocker?)
+        Rails.logger.warn("[FundRatioRunTemplates] Skipped '#{t.name}': #{violations.select(&:blocker?).map(&:message).join('; ')}")
         next
       end
 
@@ -159,7 +159,8 @@ class FundRatioRunTemplatesController < ApplicationController
   def coerce_portfolio_companies_tags
     p = params[:fund_ratio_run_template]
     return unless p&.key?(:portfolio_companies_tags)
-    p[:portfolio_companies_tags] = Array(p[:portfolio_companies_tags]).map(&:strip).reject(&:blank?).join(",")
+
+    p[:portfolio_companies_tags] = Array(p[:portfolio_companies_tags]).map(&:strip).compact_blank.join(",")
   end
 
   def template_params

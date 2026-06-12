@@ -31,8 +31,7 @@ class AccountEntryExplainerService
     description  = extract_description
     breakdown    = extract_breakdown
 
-    variables    = breakdown.select { |k, _| k.start_with?('@') && !k.include?(' ') }
-    other        = breakdown.reject { |k, _| k.start_with?('@') && !k.include?(' ') }
+    variables, other = breakdown.partition { |k, _| k.start_with?('@') && k.exclude?(' ') }
     # Last entry is the final result — post-order traversal inserts the outermost
     # expression last. max_by-length broke when addend expansion added long
     # intermediate keys (e.g. AccountEntry.total_amount(...)) longer than the result.
@@ -45,9 +44,9 @@ class AccountEntryExplainerService
 
     # Build the numbered step list we send to the LLM; it must return them in
     # the same order so we can match meanings back by index.
-    step_lines   = steps.each_with_index.map { |(k, v), i|
+    step_lines   = steps.each_with_index.map do |(k, v), i|
       "  #{i + 1}. expression: #{k.inspect}\n     value: #{truncate_for_llm(v)}"
-    }.join("\n\n")
+    end.join("\n\n")
 
     currency = @account_entry.fund.currency.presence || "USD"
 
@@ -134,6 +133,7 @@ class AccountEntryExplainerService
   def truncate_for_llm(value, max_chars: 150)
     str = value.to_s
     return str if str.length <= max_chars
+
     "#{str[0, max_chars]}... [list truncated]"
   end
 

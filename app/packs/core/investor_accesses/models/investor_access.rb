@@ -166,19 +166,19 @@ class InvestorAccess < ApplicationRecord
       # Check whether any other approved InvestorAccess still links this user to an investor
       # in this fund.  If none remain, the user's AR on the fund should be revoked.
       still_has_access = InvestorAccess
-        .joins(investor: :capital_commitments)
-        .where(user_id: user_id, approved: true, is_investor_advisor: true)
-        .where("capital_commitments.fund_id = ?", fund_id)
-        .where.not(id: id)
-        .exists?
+                         .joins(investor: :capital_commitments)
+                         .where(user_id: user_id, approved: true, is_investor_advisor: true)
+                         .where(capital_commitments: { fund_id: fund_id })
+                         .where.not(id: id)
+                         .exists?
 
       next if still_has_access
 
       AccessRight.where(
         entity_id: investor.investor_entity_id,
         owner_type: "Fund",
-        owner_id:   fund_id,
-        user_id:    user_id
+        owner_id: fund_id,
+        user_id: user_id
       ).destroy_all
     end
   end

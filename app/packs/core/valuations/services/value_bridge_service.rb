@@ -33,13 +33,13 @@ class ValueBridgeService
     @value_bridge_fields = value_bridge_fields.presence || VALUE_BRIDGE_FIELDS
 
     # Fetch custom fields for the value bridge if they exist
-    @value_bridge_custom_fields = FormCustomField.joins(:form_type).where(form_type: { entity_id: @investment_date_valuation.entity_id, name: "Valuation" }).where(form_custom_fields: { label: @value_bridge_fields + KEY_FIELDS }).index_by { |f| f.label }
+    @value_bridge_custom_fields = FormCustomField.joins(:form_type).where(form_type: { entity_id: @investment_date_valuation.entity_id, name: "Valuation" }).where(form_custom_fields: { label: @value_bridge_fields + KEY_FIELDS }).index_by(&:label)
 
     @key_fields = (@value_bridge_fields + KEY_FIELDS).uniq
 
     @moic = moic
     Rails.logger.debug { "ValueBridgeService: value_bridge_fields = #{@value_bridge_fields}" }
-    ap @value_bridge_custom_fields
+    Rails.logger.debug @value_bridge_custom_fields
   end
 
   # Example Input:

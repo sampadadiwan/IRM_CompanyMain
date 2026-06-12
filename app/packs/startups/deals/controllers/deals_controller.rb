@@ -119,14 +119,14 @@ class DealsController < ApplicationController
     agent = find_or_initialize_deals_agent
 
     config = (agent.json_fields || {}).merge(
-      "deal_ids"              => @deal.id.to_s,
-      "report_recipients"     => params[:report_recipients].to_s.strip,
-      "stale_days"            => params[:stale_days].to_s.presence || "14",
-      "include_greeting"      => params[:include_greeting].present? ? "true" : "false",
-      "include_updates"       => params[:include_updates].present? ? "true" : "false",
-      "include_tasks_due"     => params[:include_tasks_due].present? ? "true" : "false",
+      "deal_ids" => @deal.id.to_s,
+      "report_recipients" => params[:report_recipients].to_s.strip,
+      "stale_days" => params[:stale_days].to_s.presence || "14",
+      "include_greeting" => params[:include_greeting].present? ? "true" : "false",
+      "include_updates" => params[:include_updates].present? ? "true" : "false",
+      "include_tasks_due" => params[:include_tasks_due].present? ? "true" : "false",
       "include_tasks_overdue" => params[:include_tasks_overdue].present? ? "true" : "false",
-      "include_stale_items"   => params[:include_stale_items].present? ? "true" : "false"
+      "include_stale_items" => params[:include_stale_items].present? ? "true" : "false"
     )
     agent.json_fields = config
 
@@ -134,26 +134,30 @@ class DealsController < ApplicationController
       # Upsert schedule
       schedule = agent.agent_schedule || agent.build_agent_schedule
       schedule.assign_attributes(
-        entity_id:    @deal.entity_id,
-        frequency:    params[:schedule_frequency].presence || "weekly",
-        run_at_time:  params[:schedule_run_at_time].presence || "10:00",
-        run_on_day:   params[:schedule_run_on_day].to_i,
-        timezone:     params[:schedule_timezone].presence || "UTC",
-        enabled:      params.key?(:agent_enabled) ? params[:agent_enabled] == "1" : schedule.enabled
+        entity_id: @deal.entity_id,
+        frequency: params[:schedule_frequency].presence || "weekly",
+        run_at_time: params[:schedule_run_at_time].presence || "10:00",
+        run_on_day: params[:schedule_run_on_day].to_i,
+        timezone: params[:schedule_timezone].presence || "UTC",
+        enabled: params.key?(:agent_enabled) ? params[:agent_enabled] == "1" : schedule.enabled
       )
 
       unless schedule.save
         Rails.logger.warn("[update_agent_settings] Schedule save failed for agent #{agent.id}: #{schedule.errors.full_messages.join(', ')}")
         return respond_to do |format|
-          format.turbo_stream { render turbo_stream: turbo_stream.replace("agent-settings-tab",
-            partial: "deals/deal_agent_settings", locals: { deal: @deal, schedule_errors: schedule.errors.full_messages }) }
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.replace("agent-settings-tab",
+                                                      partial: "deals/deal_agent_settings", locals: { deal: @deal, schedule_errors: schedule.errors.full_messages })
+          end
           format.html { redirect_to deal_path(@deal), alert: "Settings saved but schedule failed: #{schedule.errors.full_messages.join(', ')}" }
         end
       end
 
       respond_to do |format|
-        format.turbo_stream { render turbo_stream: turbo_stream.replace("agent-settings-tab",
-          partial: "deals/deal_agent_settings", locals: { deal: @deal }) }
+        format.turbo_stream do
+          render turbo_stream: turbo_stream.replace("agent-settings-tab",
+                                                    partial: "deals/deal_agent_settings", locals: { deal: @deal })
+        end
         format.html { redirect_to deal_path(@deal), notice: "Agent settings saved." }
       end
     else

@@ -80,7 +80,7 @@ class AgentChart < ApplicationRecord
     self.kpi_before ||= 12
     self.kpi_before_period ||= "Month"
     # Filter by specified KPIs and  period
-    kpi_reports = entity.kpi_reports.where(portfolio_company_id:, period: self.kpi_before_period).order(as_of: :desc).limit(self.kpi_before)
+    kpi_reports = entity.kpi_reports.where(portfolio_company_id:, period: kpi_before_period).order(as_of: :desc).limit(kpi_before)
 
     # Fetch KPI data for the specified portfolio company and KPIs
     kpi_report_ids = kpi_reports.pluck(:id)

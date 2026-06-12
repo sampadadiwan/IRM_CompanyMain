@@ -6,11 +6,10 @@
 
 require "date"
 require "fileutils"
-require "set"
 
 BULLET_LOG = ARGV[0] || "log/bullet.log"
 TEST_LOG   = ARGV[1] || "log/test.log"
-REPORT     = "tmp/n_plus_one_report.md"
+REPORT     = "tmp/n_plus_one_report.md".freeze
 
 # ── 1. Parse bullet.log ──────────────────────────────────────────────────────
 
@@ -44,12 +43,12 @@ lines.each do |raw|
     # Start of a new Bullet block — push previous and open a fresh one
     issues << current if current
     current = Issue.new(
-      timestamp:    m[1],
-      kind:         nil,  # filled in when we see the USE/AVOID line
-      model:        nil,
+      timestamp: m[1],
+      kind: nil, # filled in when we see the USE/AVOID line
+      model: nil,
       associations: [],
       add_includes: nil,
-      call_stack:   []
+      call_stack: []
     )
 
   elsif current
@@ -70,7 +69,7 @@ lines.each do |raw|
       current.add_includes = stripped
 
     # Call stack lines contain .rb or .erb file paths
-    elsif stripped =~ /\.(rb|erb):\d+/
+    elsif /\.(rb|erb):\d+/.match?(stripped)
       current.call_stack << stripped
     end
   end
@@ -103,6 +102,7 @@ end
 
 def scenario_for(issue_index, scenario_timeline)
   return "unknown" if scenario_timeline.empty?
+
   # Each Bullet flush corresponds to one scenario's After hook.
   # Map issue index → scenario index (clamped to timeline length).
   idx = [issue_index, scenario_timeline.size - 1].min
@@ -111,11 +111,11 @@ end
 
 # ── 4. Group by model+association for frequency ranking ──────────────────────
 
-frequency      = Hash.new { |h, k| h[k] = { count: 0, call_sites: Set.new, scenarios: Set.new } }
+frequency = Hash.new { |h, k| h[k] = { count: 0, call_sites: Set.new, scenarios: Set.new } }
 avoid_frequency = Hash.new { |h, k| h[k] = { count: 0, call_sites: Set.new } }
 
 issues.each_with_index do |issue, i|
-  key = "#{issue.model} => [#{issue.associations.join(", ")}]"
+  key = "#{issue.model} => [#{issue.associations.join(', ')}]"
   if issue.kind == "n_plus_one"
     frequency[key][:count] += 1
     issue.call_stack.first(3).each { |cs| frequency[key][:call_sites] << cs }
@@ -127,9 +127,8 @@ issues.each_with_index do |issue, i|
 end
 
 # Genuine AVOID = appears only in AVOID, never in USE → safe to remove or safelist
-genuine_avoids = avoid_frequency.reject { |key, _| frequency.key?(key) }
+conflicted_avoids, genuine_avoids = avoid_frequency.partition { |key, _| frequency.key?(key) }
 # Conflicted AVOID = appears in both USE and AVOID → means the preload IS needed in some paths; safelist, don't remove
-conflicted_avoids = avoid_frequency.select { |key, _| frequency.key?(key) }
 
 unused = issues.select { |i| i.kind == "unused_eager_loading" }
 
@@ -138,7 +137,7 @@ unused = issues.select { |i| i.kind == "unused_eager_loading" }
 FileUtils.mkdir_p("tmp")
 File.open(REPORT, "w") do |f|
   f.puts "# N+1 Query Report"
-  f.puts "_Generated: #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}_"
+  f.puts "_Generated: #{Time.zone.now.strftime('%Y-%m-%d %H:%M:%S')}_"
   f.puts "_Source: `#{BULLET_LOG}` + `#{TEST_LOG}`_"
   f.puts
   f.puts "## Summary"

@@ -22,12 +22,12 @@ class PortfolioReportPptThemeReader
     @colors ||= begin
       result = {}
       xml = load_theme
-      return result unless xml
-
-      xml.remove_namespaces!
-      COLOR_SLOTS.each do |slot|
-        node = xml.at_xpath("//clrScheme/#{slot}/srgbClr")
-        result[slot] = node["val"].upcase if node
+      if xml
+        xml.remove_namespaces!
+        COLOR_SLOTS.each do |slot|
+          node = xml.at_xpath("//clrScheme/#{slot}/srgbClr")
+          result[slot] = node["val"].upcase if node
+        end
       end
       result
     end
@@ -42,9 +42,10 @@ class PortfolioReportPptThemeReader
   def font
     @font ||= begin
       xml = load_theme
-      return nil unless xml
-      xml.remove_namespaces!
-      xml.at_xpath("//fontScheme/majorFont/latin")&.attr("typeface")
+      if xml
+        xml.remove_namespaces!
+        xml.at_xpath("//fontScheme/majorFont/latin")&.attr("typeface")
+      end
     end
   end
 
@@ -74,6 +75,7 @@ class PortfolioReportPptThemeReader
 
   def load_theme_raw
     return @theme_raw if defined?(@theme_raw)
+
     @theme_raw = Zip::File.open(@pptx_path) do |zip|
       entry = zip.find_entry("ppt/theme/theme1.xml")
       entry&.get_input_stream&.read

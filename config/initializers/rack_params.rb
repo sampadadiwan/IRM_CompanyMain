@@ -5,6 +5,6 @@
 #
 # With 206 FCFs × ~31 fields each = ~6,386 params; raise limit to 65536.
 Rack::Utils.default_query_parser = Rack::QueryParser.make_default(
-  Rack::Utils.param_depth_limit,  # keep default depth limit (32)
+  Rack::Utils.param_depth_limit, # keep default depth limit (32)
   params_limit: 65_536
 )

@@ -120,8 +120,6 @@ class ChangeFundCurrencyJob < ApplicationJob
 
   private
 
-  # rubocop:disable Rails/SkipsModelValidations
-
   # ── Validation helpers ────────────────────────────────────────────────────
 
   def validate_pi_exchange_rates(fund, new_currency)

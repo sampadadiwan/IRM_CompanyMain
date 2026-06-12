@@ -60,7 +60,6 @@ class CashFlowStressScenarioTool < RubyLLM::Tool
     @support_agent = support_agent
   end
 
-  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
   def execute(
     fund_name: nil,
     extra_investment_cents: 0,
@@ -145,7 +144,6 @@ class CashFlowStressScenarioTool < RubyLLM::Tool
       expense_multiplier: expense_multiplier, extra_expense_cents: extra_expense_cents
     )
   end
-  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/MethodLength, Metrics/PerceivedComplexity
 
   private
 

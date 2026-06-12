@@ -1,4 +1,4 @@
-class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
+class InvestorKyc < ApplicationRecord
   STANDARD_COLUMNS = { "Investor; text-col" => "investor_name; text-col",
                        "Investing Entity; text-col" => "full_name; text-col",
                        "Type; text-col" => "kyc_type; text-col",
@@ -122,11 +122,11 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
 
   attribute :submission_status, :string, default: "not_sent"
   enum :submission_status, {
-    not_sent:    "not_sent",
-    link_sent:   "link_sent",
+    not_sent: "not_sent",
+    link_sent: "link_sent",
     draft_saved: "draft_saved",
-    completed:   "completed",
-    verified:    "verified"
+    completed: "completed",
+    verified: "verified"
   }, prefix: :submission
 
   include FileUploader::Attachment(:signature)
@@ -166,11 +166,12 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   def check_required_file_type_custom_fields
     type_name = respond_to?(:type_from_kyc_type) ? (type_from_kyc_type || self.class.name) : self.class.name
     ft = form_type || entity&.form_types&.where(name: type_name)&.last
-    return unless ft.present?
+    return if ft.blank?
 
-    ft.form_custom_fields.where(field_type: "File", required: true).each do |fcf|
+    ft.form_custom_fields.where(field_type: "File", required: true).find_each do |fcf|
       document_name = fcf.label.presence || fcf.name.humanize
       next if documents.any? { |d| d.name == document_name }
+
       errors.add(:base, "#{document_name} can't be blank")
     end
   end
@@ -214,10 +215,7 @@ class InvestorKyc < ApplicationRecord # rubocop:disable Metrics/ClassLength
   # If not this leads to bugs where the InvestorKycNotification cannot be created when the kyc_type changes
   def send_kyc_form(reminder: false, custom_notification_id: nil)
     if send_kyc_form_to_user || reminder
-      # rubocop:disable Rails/SkipsModelValidations
-      unless submission_completed? || submission_verified?
-        update_columns(submission_status: "link_sent", link_sent_at: Time.current)
-      end
+      update_columns(submission_status: "link_sent", link_sent_at: Time.current) unless submission_completed? || submission_verified?
       # rubocop:enable Rails/SkipsModelValidations
       email_method = :notify_kyc_required
       msg = "Kindly update your KYC details for #{entity.name} by clicking on the button below"

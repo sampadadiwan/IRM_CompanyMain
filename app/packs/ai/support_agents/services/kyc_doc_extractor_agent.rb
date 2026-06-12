@@ -22,9 +22,9 @@
 #     }
 #   }
 class KycDocExtractorAgent < SupportAgentService
-  DESCRIPTION = "Extracts field values from uploaded KYC documents and pre-populates the form.".freeze
+  DESCRIPTION = "Extracts field values from uploaded KYC documents and pre-populates the form."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Document-first KYC wizard agent. When an investor uploads documents before filling the form,
     this agent reads each document with the configured extraction rules, asks the LLM to extract
     specific field values, and writes them back into the InvestorKyc record so the form is
@@ -71,7 +71,7 @@ class KycDocExtractorAgent < SupportAgentService
 
       doc = investor_kyc.documents.find { |d| d.name.to_s.strip == doc_label }
 
-      unless doc&.file.present?
+      if doc&.file.blank?
         # All fields for this doc are skipped together
         doc_rules.each do |rule|
           target_field = rule["target_field"].to_s.strip
@@ -134,7 +134,7 @@ class KycDocExtractorAgent < SupportAgentService
 
   # Returns extraction rules array for the KYC's form_type_id.
   def rules_for(investor_kyc)
-    extraction_rules = (@support_agent.json_fields["extraction_rules"] || {})
+    extraction_rules = @support_agent.json_fields["extraction_rules"] || {}
     form_type_id     = investor_kyc.form_type_id&.to_s
     return [] if form_type_id.blank?
 

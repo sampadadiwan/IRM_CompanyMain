@@ -282,11 +282,8 @@ class KpiWorkbookReader
       notes: "Imported from Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
     )
 
-    if kpi.changed?
-      kpi.save
-    end
+    kpi.save if kpi.changed?
   end
-  # rubocop:enable Metrics/ParameterLists
 
   # Strips and normalizes a row's values
   def clean_row(row)

@@ -63,7 +63,11 @@ class PortfolioReportsController < ApplicationController
     PROMPT
 
     response = llm.ask(prompt)
-    raw      = response.is_a?(String) ? response : (response.respond_to?(:content) ? response.content : response.to_s)
+    raw      = if response.is_a?(String)
+                 response
+               else
+                 (response.respond_to?(:content) ? response.content : response.to_s)
+               end
     cleaned  = raw.gsub(/\A```json\s*|\s*```\z/, "").strip
 
     sections = JSON.parse(cleaned)
@@ -82,8 +86,16 @@ class PortfolioReportsController < ApplicationController
     if request.post?
       template_id  = params[:portfolio_report_template_id].to_i
       portco_ids   = Array(params[:portfolio_company_ids]).map(&:to_i).reject(&:zero?)
-      start_date   = Date.parse(params[:start_date]) rescue (Date.today - 3.months).beginning_of_month
-      end_date     = Date.parse(params[:end_date])   rescue Date.today.end_of_month
+      start_date   = begin
+        Date.parse(params[:start_date])
+      rescue StandardError
+        (Time.zone.today - 3.months).beginning_of_month
+      end
+      end_date = begin
+        Date.parse(params[:end_date])
+      rescue StandardError
+        Time.zone.today.end_of_month
+      end
       n_periods    = params[:n_periods].to_i.clamp(1, 24)
       kpi_tag      = params[:kpi_tag].presence || "Actual"
       kpi_type     = params[:kpi_period_type].presence || "Monthly"
@@ -95,23 +107,23 @@ class PortfolioReportsController < ApplicationController
         next unless portco
 
         draft = PortfolioReportDraft.create!(
-          portfolio_company:         portco,
-          portfolio_report:          template.portfolio_report,
+          portfolio_company: portco,
+          portfolio_report: template.portfolio_report,
           portfolio_report_template: template,
-          user:                      current_user,
-          start_date:                start_date,
-          end_date:                  end_date,
-          kpi_period_type:           kpi_type,
-          kpi_tag:                   kpi_tag,
-          n_periods:                 n_periods,
-          selected_kpi_mapping_ids:  portco.investor_kpi_mappings.show_in_report.pluck(:id),
-          status:                    :configuring
+          user: current_user,
+          start_date: start_date,
+          end_date: end_date,
+          kpi_period_type: kpi_type,
+          kpi_tag: kpi_tag,
+          n_periods: n_periods,
+          selected_kpi_mapping_ids: portco.investor_kpi_mappings.show_in_report.pluck(:id),
+          status: :configuring
         )
         PortfolioReportDraftJob.perform_later(draft.id)
       end
 
       redirect_to portfolio_reports_path,
-                  notice: "Queued #{portco_ids.size} report #{"draft".pluralize(portco_ids.size)} — you'll be notified as each completes."
+                  notice: "Queued #{portco_ids.size} report #{'draft'.pluralize(portco_ids.size)} — you'll be notified as each completes."
     else
       # Form setup: load all portfolio companies + ready report types for this entity
       @portfolio_reports = policy_scope(PortfolioReport).includes(:portfolio_report_templates, :portfolio_report_sections)

@@ -15,9 +15,9 @@ class ReportBuilderController < ApplicationController
     roots = ReportBuilderModelDiscovery.roots
     render json: roots.map { |m|
       {
-        name:    m.name,
-        label:   m.name.humanize,
-        pack:    ReportBuilderModelDiscovery.pack_for(m),
+        name: m.name,
+        label: m.name.humanize,
+        pack: ReportBuilderModelDiscovery.pack_for(m),
         columns: columns_for_model(m)
       }
     }
@@ -36,26 +36,26 @@ class ReportBuilderController < ApplicationController
   # GET /report_builder/new
   def new
     authorize Report.new(entity: current_user.entity), :create?
-    @bread_crumbs = { Reports: reports_path, "New Report Builder": nil }
+    @bread_crumbs = { Reports: reports_path, 'New Report Builder': nil }
     @root_models = ReportBuilderModelDiscovery.roots.group_by { |m| ReportBuilderModelDiscovery.pack_for(m) }
   end
 
   # POST /report_builder
   def create
     @report = Report.new(
-      user:           current_user,
-      entity:         current_user.entity,
-      curr_role:      current_user.curr_role,
-      name:           "Untitled Report",
+      user: current_user,
+      entity: current_user.entity,
+      curr_role: current_user.curr_role,
+      name: "Untitled Report",
       report_builder: true,
-      url:            "/report_builder",
+      url: "/report_builder",
       template: {
-        version:      1,
-        root_model:   params[:root_model],
-        joins:        [],
-        aggregates:   {},
+        version: 1,
+        root_model: params[:root_model],
+        joins: [],
+        aggregates: {},
         root_filters: {},
-        sort:         {}
+        sort: {}
       }
     )
     authorize @report, :create?
@@ -72,24 +72,26 @@ class ReportBuilderController < ApplicationController
     authorize @report, :update?
     @bread_crumbs = { Reports: reports_path, @report.name => view_report_builder_path(@report), Edit: nil }
     @config     = ReportBuilderConfig.new(@report.template)
-    @root_class = @config.root_class rescue nil
+    @root_class = begin
+      @config.root_class
+    rescue StandardError
+      nil
+    end
 
     return unless @root_class
 
     @root_columns   = columns_for_model(@root_class)
     @associations   = ReportBuilderModelDiscovery.associations_for(@root_class)
-    
+
     # Ensure all models are loaded so constantize works for joined models
     ReportBuilderModelDiscovery.all_models
 
     @joined_columns = @config.joins.each_with_object({}) do |j, h|
       model_name = j[:model].to_s
       klass = model_name.safe_constantize
-      
+
       # Fallback: search all models if safe_constantize failed
-      if klass.nil?
-        klass = ReportBuilderModelDiscovery.all_models.find { |m| m.name == model_name }
-      end
+      klass = ReportBuilderModelDiscovery.all_models.find { |m| m.name == model_name } if klass.nil?
 
       if klass
         h[j[:relation].to_s] = columns_for_model(klass)
@@ -116,7 +118,7 @@ class ReportBuilderController < ApplicationController
 
     # Mimic standard index variables
     @q = @report.root_class.ransack(params[:q])
-    
+
     render :view
   end
 
@@ -146,11 +148,9 @@ class ReportBuilderController < ApplicationController
 
     ReportBuilderExportJob.perform_later(@report.id, current_user.id)
 
-    redirect_back fallback_location: edit_report_builder_path(@report), 
-                  notice: "Report generation started. You will be notified when it's ready."
+    redirect_back_or_to(edit_report_builder_path(@report), notice: "Report generation started. You will be notified when it's ready.")
   rescue StandardError => e
-    redirect_back fallback_location: edit_report_builder_path(@report), 
-                  alert: "Failed to start export: #{e.message}"
+    redirect_back_or_to(edit_report_builder_path(@report), alert: "Failed to start export: #{e.message}")
   end
 
   # PATCH /report_builder/:id/template
@@ -178,11 +178,11 @@ class ReportBuilderController < ApplicationController
       # Get the next sequence number
       max_seq = @report.grid_view_preferences.maximum(:sequence) || 0
       @report.grid_view_preferences.create!(
-        key:       key,
-        name:      name,
-        label:     params[:label].presence || name,
+        key: key,
+        name: name,
+        label: params[:label].presence || name,
         entity_id: @report.entity_id,
-        sequence:  max_seq + 1
+        sequence: max_seq + 1
       )
     end
 
@@ -281,10 +281,10 @@ class ReportBuilderController < ApplicationController
           j.except("pivot")
         else
           j.merge("pivot" => {
-            "group_bys" => Array(params[:group_bys]).map(&:to_s).map(&:strip).reject(&:blank?),
-            "value_col" => params[:value_col].to_s.strip,
-            "aggregate" => params[:aggregate].to_s.strip.presence || "sum"
-          })
+                    "group_bys" => Array(params[:group_bys]).map { |x| x.to_s.strip }.compact_blank,
+                    "value_col" => params[:value_col].to_s.strip,
+                    "aggregate" => params[:aggregate].to_s.strip.presence || "sum"
+                  })
         end
       else
         j
@@ -311,10 +311,10 @@ class ReportBuilderController < ApplicationController
     authorize @report, :update?
 
     schedule = @report.report_schedule || @report.build_report_schedule
-    
+
     # Handle recipients as array
     recipients = params[:recipients].to_s.split(",").map(&:strip).compact_blank
-    
+
     if schedule.update(
       frequency: params[:frequency],
       recipients: recipients,
@@ -331,7 +331,7 @@ class ReportBuilderController < ApplicationController
     authorize @report, :update?
 
     expression = params[:expression].to_s
-    allowed_keys = @report.grid_view_preferences.pluck(:key).map { |k| k.split(";").first.strip }.to_set
+    allowed_keys = @report.grid_view_preferences.pluck(:key).to_set { |k| k.split(";").first.strip }
     referenced   = expression.scan(/\[([^\]]+)\]/).flatten.map { |r| r.split(";").first.strip }
     bad          = referenced.reject { |r| allowed_keys.include?(r) }
 
@@ -344,8 +344,8 @@ class ReportBuilderController < ApplicationController
     formulas = tmpl["formulas"] || []
 
     formulas << {
-      "key"        => "formula_#{Time.now.to_i}",
-      "label"      => params[:label].presence || "New Formula",
+      "key" => "formula_#{Time.now.to_i}",
+      "label" => params[:label].presence || "New Formula",
       "expression" => expression
     }
 
@@ -372,13 +372,11 @@ class ReportBuilderController < ApplicationController
 
     # Extract all [column.key] references from the expression and validate
     # them against the columns actually selected in this report.
-    allowed_keys = @report.grid_view_preferences.pluck(:key).map { |k| k.split(";").first.strip }.to_set
+    allowed_keys = @report.grid_view_preferences.pluck(:key).to_set { |k| k.split(";").first.strip }
 
     referenced = expression.scan(/\[([^\]]+)\]/).flatten.map { |r| r.split(";").first.strip }
     bad = referenced.reject { |r| allowed_keys.include?(r) }
-    if bad.any?
-      return render json: { ok: false, error: "Unknown column(s): #{bad.join(', ')}. Only selected report columns can be used in formulas." }
-    end
+    return render json: { ok: false, error: "Unknown column(s): #{bad.join(', ')}. Only selected report columns can be used in formulas." } if bad.any?
 
     engine = ReportBuilderQueryEngine.new(report: @report, entity: current_user.entity)
     sample_row = engine.run(limit: 1).first || {}
@@ -403,10 +401,10 @@ class ReportBuilderController < ApplicationController
     if template_config
       # Clear existing GVPs
       @report.grid_view_preferences.destroy_all
-      
+
       # Update template JSON
       @report.update!(template: template_config[:template].deep_stringify_keys)
-      
+
       # Create new GVPs
       template_config[:columns].each_with_index do |col, i|
         @report.grid_view_preferences.create!(
@@ -417,7 +415,7 @@ class ReportBuilderController < ApplicationController
           sequence: i + 1
         )
       end
-      
+
       redirect_to edit_report_builder_path(@report), notice: "Template '#{template_config[:name]}' applied."
     else
       redirect_to edit_report_builder_path(@report), alert: "Template not found."
@@ -484,7 +482,7 @@ class ReportBuilderController < ApplicationController
 
   def columns_for_model(klass)
     return [] unless klass
-    
+
     # Use a Hash to ensure uniqueness by key
     cols_by_key = {}
 
@@ -515,15 +513,16 @@ class ReportBuilderController < ApplicationController
     if cols_by_key.empty?
       klass.column_names.each do |name|
         next if %w[id entity_id created_at updated_at deleted_at].include?(name)
+
         cols_by_key[name] = { label: name.humanize, key: name }
       end
     end
 
     cols_by_key.values.map do |c|
       {
-        label:     c[:label].to_s.split(";").first.strip,
-        key:       c[:key].to_s.split(";").first.strip,
-        raw_key:   c[:key],
+        label: c[:label].to_s.split(";").first.strip,
+        key: c[:key].to_s.split(";").first.strip,
+        raw_key: c[:key],
         raw_label: c[:label]
       }
     end.sort_by { |c| c[:label] }

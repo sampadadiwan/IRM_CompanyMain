@@ -20,7 +20,7 @@ require 'nokogiri'
 # Activation: export job calls has_placeholders? on the uploaded file and routes here
 # instead of the generated-service path when placeholders are found.
 class PortfolioReportPptTemplateService
-  PLACEHOLDER_RE = /\[\[\s*(.+?)\s*\]\]/im.freeze
+  PLACEHOLDER_RE = /\[\[\s*(.+?)\s*\]\]/im
   NS = {
     "p" => "http://schemas.openxmlformats.org/presentationml/2006/main",
     "a" => "http://schemas.openxmlformats.org/drawingml/2006/main",
@@ -45,8 +45,8 @@ class PortfolioReportPptTemplateService
     @template      = draft.portfolio_report_template
     @sections      = ordered_sections
     @mappings      = InvestorKpiMapping
-                       .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
-                       .order(:position)
+                     .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
+                     .order(:position)
     @period_labels = draft.effective_kpi_table.values.first&.keys || []
   end
 
@@ -90,17 +90,18 @@ class PortfolioReportPptTemplateService
     when "fund name", "report name" then replace_ppt_text(shape, @template.portfolio_report.name, doc)
     when "template name"            then replace_ppt_text(shape, @template.name, doc)
     when "period"                   then replace_ppt_text(shape, period_label, doc)
-    when "prepared date"            then replace_ppt_text(shape, Date.today.strftime("%d %b %Y"), doc)
+    when "prepared date"            then replace_ppt_text(shape, Time.zone.today.strftime("%d %b %Y"), doc)
     when /\Asection:\s*(.+)\z/i
-      section = @sections.find { |s|
-        s.name.casecmp?($1.strip) || s.name.downcase.include?($1.strip.downcase)
-      }
+      section = @sections.find do |s|
+        s.name.casecmp?(::Regexp.last_match(1).strip) || s.name.downcase.include?(::Regexp.last_match(1).strip.downcase)
+      end
       return unless section
+
       replace_ppt_bullets(shape, extract_bullets(@draft.narrative_for(section.id)), doc)
     when "all sections"
-      bullets = @sections.flat_map { |s|
+      bullets = @sections.flat_map do |s|
         ["▸ #{s.name}"] + extract_bullets(@draft.narrative_for(s.id))
-      }
+      end
       replace_ppt_bullets(shape, bullets, doc)
     when "kpi table"
       replace_ppt_with_kpi_table(shape, doc)
@@ -145,7 +146,7 @@ class PortfolioReportPptTemplateService
     lst_style = txBody.at_xpath("a:lstStyle", NS)&.to_xml(save_with: 0) || "<a:lstStyle/>"
 
     paras = lines.each_with_index.map do |line, i|
-      spc = i > 0 ? "<a:spcBef><a:spcPts val=\"180\"/></a:spcBef>" : ""
+      spc = i.positive? ? "<a:spcBef><a:spcPts val=\"180\"/></a:spcBef>" : ""
       <<~PARA
         <a:p>
           <a:pPr marL="342900" indent="-342900">
@@ -182,7 +183,7 @@ class PortfolioReportPptTemplateService
     period_col_w = ((cx - metric_col_w) / [@period_labels.length, 1].max).to_i
 
     header_cells =
-      ppt_tc("Metric", fill: "1A3C6E", color: "FFFFFF", bold: true,  w: metric_col_w, h: row_h) +
+      ppt_tc("Metric", fill: "1A3C6E", color: "FFFFFF", bold: true, w: metric_col_w, h: row_h) +
       @period_labels.map { |l|
         ppt_tc(l, fill: "1A3C6E", color: "FFFFFF", bold: true, w: period_col_w, h: row_h, align: "r")
       }.join
@@ -190,10 +191,10 @@ class PortfolioReportPptTemplateService
     data_rows = @mappings.each_with_index.map do |ikm, idx|
       fill  = idx.even? ? "EEF2F8" : "FFFFFF"
       cells = ppt_tc(ikm.reported_kpi_name, fill: fill, color: "1A1A1A", bold: false, w: metric_col_w, h: row_h)
-      cells += @period_labels.map { |lbl|
+      cells += @period_labels.map do |lbl|
         val = @draft.effective_kpi_table.dig(ikm.id.to_s, lbl)&.to_s || "—"
         ppt_tc(val, fill: fill, color: "1A1A1A", bold: false, w: period_col_w, h: row_h, align: "r")
-      }.join
+      end.join
       "<a:tr h=\"#{row_h}\">#{cells}</a:tr>"
     end.join
 
@@ -258,10 +259,11 @@ class PortfolioReportPptTemplateService
 
   def extract_bullets(html)
     return ["No content generated."] if html.blank?
+
     doc     = Nokogiri::HTML.fragment(html)
     bullets = doc.css("li").map { |li| li.text.strip }.reject(&:empty?)
     bullets = doc.css("p").map  { |p|  p.text.strip  }.reject(&:empty?) if bullets.empty?
-    bullets = html.split("\n").map(&:strip).reject(&:empty?)             if bullets.empty?
+    bullets = html.split("\n").map(&:strip).reject(&:empty?) if bullets.empty?
     bullets.presence || ["No content generated."]
   end
 

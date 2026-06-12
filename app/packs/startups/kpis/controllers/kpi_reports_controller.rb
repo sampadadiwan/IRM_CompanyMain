@@ -53,7 +53,7 @@ class KpiReportsController < ApplicationController
     @kpi_report.user_id = current_user.id
     @kpi_report.as_of = Time.zone.today
     @bread_crumbs = { Kpis: kpi_reports_path }
-    @bread_crumbs["#{@kpi_report.portfolio_company.investor_name}"] = investor_path(@kpi_report.portfolio_company) if @kpi_report.portfolio_company.present?
+    @bread_crumbs[@kpi_report.portfolio_company.investor_name.to_s] = investor_path(@kpi_report.portfolio_company) if @kpi_report.portfolio_company.present?
     @bread_crumbs[:New] = nil
 
     authorize @kpi_report
@@ -135,11 +135,11 @@ class KpiReportsController < ApplicationController
     # policy_scope uses the for_investor scope which joins on access_rights — portco users have no
     # access_rights entries on the fund's KPI reports, so we query directly by the portco's entity.
     @kpi_reports = KpiReport
-      .portco_pending
-      .joins(:portfolio_company)
-      .where(investors: { investor_entity_id: current_user.entity_id })
-      .includes(:portfolio_company, :entity)
-    @bread_crumbs = { "Pending KPI Requests": portco_pending_kpi_reports_path }
+                   .portco_pending
+                   .joins(:portfolio_company)
+                   .where(investors: { investor_entity_id: current_user.entity_id })
+                   .includes(:portfolio_company, :entity)
+    @bread_crumbs = { 'Pending KPI Requests': portco_pending_kpi_reports_path }
   end
 
   def refresh_import
@@ -172,7 +172,6 @@ class KpiReportsController < ApplicationController
     redirect_to request.referer || kpi_report_url(@kpi_report), notice: "Computation started."
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def recompute_cumulative
     # Force recomputation by resetting autofill_completed if necessary
     # and ensuring the job picks up all reports for this portfolio company
@@ -212,7 +211,7 @@ class KpiReportsController < ApplicationController
         # Use local_parse so locale-specific formats (DD/MM/YYYY vs MM/DD/YYYY) are
         # interpreted consistently with the rest of the app rather than Ruby's default.
         Date.local_parse(params[:as_of])
-      rescue Date::Error, ArgumentError
+      rescue ArgumentError
         redirect_to request.referer || kpi_reports_path, alert: "Invalid date format for 'As Of'."
         return
       end
@@ -349,8 +348,8 @@ class KpiReportsController < ApplicationController
 
     authorize @kpi_report
     @bread_crumbs = { Kpis: kpi_reports_path }
-    @bread_crumbs["#{@kpi_report.portfolio_company.investor_name}"] = investor_path(@kpi_report.portfolio_company) if @kpi_report.portfolio_company.present?
-    @bread_crumbs["#{@kpi_report.as_of}"] = kpi_report_path(@kpi_report)
+    @bread_crumbs[@kpi_report.portfolio_company.investor_name.to_s] = investor_path(@kpi_report.portfolio_company) if @kpi_report.portfolio_company.present?
+    @bread_crumbs[@kpi_report.as_of.to_s] = kpi_report_path(@kpi_report)
   end
 
   # Only allow a list of trusted parameters through.

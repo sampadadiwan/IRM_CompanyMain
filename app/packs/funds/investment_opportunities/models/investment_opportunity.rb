@@ -84,7 +84,6 @@ class InvestmentOpportunity < ApplicationRecord
   end
 
   after_commit :update_investor_entity
-  # rubocop:disable Rails/SkipsModelValidations
   # This is to bust any cached dashboards showing the commitments
   def update_investor_entity
     investors.each do |i|

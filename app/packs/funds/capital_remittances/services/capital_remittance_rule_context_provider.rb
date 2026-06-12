@@ -12,12 +12,12 @@ class CapitalRemittanceRuleContextProvider
   # @param entity [Entity]             Unused but part of the standard provider interface
   # @param params [Hash]               Unused
   # @return [Hash] symbol-keyed context values
-  def call(record:, entity:, params: {}) # rubocop:disable Lint/UnusedMethodArgument
+  def call(record:, entity:, params: {})
     return default_context unless record.persisted?
 
     {
       notice_not_generated: notice_not_generated(record.id),
-      notice_not_approved:  notice_not_approved(record.id)
+      notice_not_approved: notice_not_approved(record.id)
     }
   end
 
@@ -29,11 +29,9 @@ class CapitalRemittanceRuleContextProvider
 
   # Returns true when the remittance has no document with owner_tag "Generated"; nil otherwise.
   def notice_not_generated(remittance_id)
-    has_notice = Document.where(
-      owner_type: "CapitalRemittance",
-      owner_id:   remittance_id,
-      owner_tag:  "Generated"
-    ).exists?
+    has_notice = Document.exists?(owner_type: "CapitalRemittance",
+                                  owner_id: remittance_id,
+                                  owner_tag: "Generated")
 
     has_notice ? nil : true
   end
@@ -42,9 +40,9 @@ class CapitalRemittanceRuleContextProvider
   def notice_not_approved(remittance_id)
     count = Document.where(
       owner_type: "CapitalRemittance",
-      owner_id:   remittance_id,
-      owner_tag:  "Generated",
-      approved:   false
+      owner_id: remittance_id,
+      owner_tag: "Generated",
+      approved: false
     ).count
 
     count.positive? ? count : nil

@@ -19,7 +19,7 @@ class ReportBuilderQueryEngine
     root_records, root_ids = pass1(limit: limit)
     child_data             = pass2(root_ids)
     rows                   = merge(root_records, child_data)
-    
+
     apply_formulas(rows)
   end
 
@@ -58,10 +58,10 @@ class ReportBuilderQueryEngine
 
   def pass1(limit: nil)
     scope = config.root_class.where(entity_id: entity.id)
-    
+
     merged_filters = config.root_filters.merge(@external_filters)
     scope = scope.ransack(merged_filters).result
-    
+
     scope = apply_sort(scope)
     scope = scope.limit(limit) if limit
 
@@ -84,7 +84,7 @@ class ReportBuilderQueryEngine
       .map(&:key)
       .reject { |k| k.include?(".") }
       .map    { |k| k.split(";").first.strip }
-      .flat_map { |k|
+      .flat_map do |k|
         if col_names.include?(k)
           [k]
         elsif col_names.include?("#{k}_cents")
@@ -92,7 +92,7 @@ class ReportBuilderQueryEngine
         else
           []
         end
-      }
+      end
       .uniq
   end
 
@@ -105,16 +105,16 @@ class ReportBuilderQueryEngine
       relation_path = join_cfg[:relation].to_s
       parts         = relation_path.split(".")
       first_rel     = parts.first
-      
+
       reflection = config.root_class.reflect_on_association(first_rel.to_sym)
       next unless reflection
-      
+
       base_class = reflection.klass
       fk         = reflection.macro == :belongs_to ? "id" : reflection.foreign_key.to_s
-      
+
       # The rest of the path are the joins
       # e.g. "fund.fund_manager"
-      remaining_path = parts.size > 1 ? parts[1..-1].join(".") : nil
+      remaining_path = parts.size > 1 ? parts[1..].join(".") : nil
 
       pivot_cfg = join_cfg[:pivot]
       pivot_ready = pivot_cfg.present? &&

@@ -38,7 +38,7 @@ module ValuationsHelper
     keys.each do |key|
       # Check if values for this key are numeric
       # We check a sample or all. Let's check all to be sure.
-      numeric_values = valuations.map { |v| v.json_fields[key] }.compact
+      numeric_values = valuations.filter_map { |v| v.json_fields[key] }
       next if numeric_values.empty?
       next unless numeric_values.all? { |v| v.is_a?(Numeric) || v.to_s.match?(/\A-?\d+\.?\d*\z/) }
 

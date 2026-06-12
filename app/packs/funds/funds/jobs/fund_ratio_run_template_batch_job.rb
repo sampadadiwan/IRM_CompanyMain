@@ -32,14 +32,14 @@ class FundRatioRunTemplateBatchJob < ApplicationJob
         template.anchor_fund_id,
         end_date,
         user_id,
-        fund_ids:                    template.fund_ids.presence,
-        portfolio_company_ids:       template.portfolio_company_ids.presence,
-        portfolio_companies_tags:    template.portfolio_companies_tags.presence,
+        fund_ids: template.fund_ids.presence,
+        portfolio_company_ids: template.portfolio_company_ids.presence,
+        portfolio_companies_tags: template.portfolio_companies_tags.presence,
         portfolio_companies_sectors: template.sectors.presence,
-        currency:                    template.currency.presence,
-        type:                        template.run_type,
-        suppress_notification:       true,
-        template_id:                 template.id
+        currency: template.currency.presence,
+        type: template.run_type,
+        suppress_notification: true,
+        template_id: template.id
       )
       completed_runs << run if run
     end

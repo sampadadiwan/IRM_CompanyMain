@@ -71,7 +71,7 @@ class AmlReportAsyncDownloadJob < ApplicationJob
     msg = "Failed to download Aml Report for #{name}: #{err.message}"
     Rails.logger.error msg
     UserAlert.new(user_id: user_id, message: msg, level: :danger).broadcast if user_id.present?
-    errs = [investing_entity: aml_report.investor_kyc.full_name, aml_report_name: name, error: msg]
+    errs = [{ investing_entity: aml_report.investor_kyc.full_name, aml_report_name: name, error: msg }]
     EntityMailer.with(entity_id: User.find(user_id).entity_id, user_id:, error_msg: errs).doc_gen_errors.deliver_now
     raise err
   end

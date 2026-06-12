@@ -15,8 +15,11 @@ class PortfolioReportExportJob < ApplicationJob
     Rails.logger.info { "[ExportJob] draft=#{draft_id} format=#{template.output_format} portco=#{portco}" }
 
     Chewy.strategy(:sidekiq) do
-      doc = template.output_format == "ppt" ? generate_ppt(draft, portco, user) \
-                                            : generate_word(draft, portco, user, template)
+      doc = if template.output_format == "ppt"
+              generate_ppt(draft, portco, user)
+            else
+              generate_word(draft, portco, user, template)
+            end
       draft.update!(generated_document: doc, status: :exported)
     end
 
@@ -25,15 +28,18 @@ class PortfolioReportExportJob < ApplicationJob
     msg  = "#{ext} export ready — #{portco} (#{template.name}). " \
            "<a href=\"#{url}\" class=\"alert-link\">View &rarr;</a>"
     UserAlert.new(user_id: user_id, message: msg, level: "success").broadcast
-
   rescue StandardError => e
     Rails.logger.error { "[ExportJob] failed draft=#{draft_id}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}" }
     # Revert to approved so the user can see export failed and retry
-    draft.update_columns(status: "approved") rescue nil
+    begin
+      draft.update_columns(status: "approved")
+    rescue StandardError
+      nil
+    end
     UserAlert.new(
       user_id: user_id,
       message: "Report export failed: #{e.message.truncate(200)}",
-      level:   "danger"
+      level: "danger"
     ).broadcast
     raise
   end
@@ -46,8 +52,8 @@ class PortfolioReportExportJob < ApplicationJob
     portco    = draft.portfolio_company
     sections  = ordered_sections(draft)
     mappings  = InvestorKpiMapping
-                  .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
-                  .order(:position)
+                .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
+                .order(:position)
     period_labels = draft.effective_kpi_table.values.first&.keys || []
 
     html = <<~HTML
@@ -72,7 +78,7 @@ class PortfolioReportExportJob < ApplicationJob
         <h1>#{portco} — #{template.name}</h1>
         <p style="color:#666; font-size:10pt;">
           #{draft.kpi_period_type} #{draft.kpi_tag} &middot;
-          #{draft.start_date.strftime("%b %Y")} to #{draft.end_date.strftime("%b %Y")} &middot;
+          #{draft.start_date.strftime('%b %Y')} to #{draft.end_date.strftime('%b %Y')} &middot;
           #{draft.n_periods} periods
         </p>
     HTML
@@ -103,7 +109,7 @@ class PortfolioReportExportJob < ApplicationJob
     # ── Section narratives ─────────────────────────────────────────────────────
     sections.each do |section|
       narrative = draft.narrative_for(section.id)
-      next unless narrative.present?
+      next if narrative.blank?
 
       html << "<h2>#{CGI.escapeHTML(section.name)}</h2>\n"
       # narrative is stored as HTML (from Trix editor or LLM <ul><li> output)
@@ -124,13 +130,12 @@ class PortfolioReportExportJob < ApplicationJob
         if PortfolioReportPptTemplateService.has_placeholders?(style_tmp.path)
           # Placeholder mode — fill [[ markers ]] in the user's own PPTX design
           bytes = PortfolioReportPptTemplateService.new(draft).generate(style_tmp.path)
-          save_and_upload(draft, portco, user, bytes, ext: "pptx")
         else
           # Theme-only mode — generated service reads colours from the uploaded file
           overrides  = ppt_theme_overrides_from_path(style_tmp.path)
           bytes      = template.ppt_service_class.new(draft, theme_overrides: overrides).generate
-          save_and_upload(draft, portco, user, bytes, ext: "pptx")
         end
+        save_and_upload(draft, portco, user, bytes, ext: "pptx")
       end
     else
       bytes = template.ppt_service_class.new(draft).generate
@@ -156,7 +161,7 @@ class PortfolioReportExportJob < ApplicationJob
         end
       end
     else
-      html  = build_html(draft, template)
+      html = build_html(draft, template)
       save_and_upload(draft, portco, user, Htmltoword::Document.create(html), ext: "docx")
     end
   end
@@ -179,19 +184,19 @@ class PortfolioReportExportJob < ApplicationJob
 
   def upload_document(draft, portco, user, file_path, ext: "docx")
     # Use ASCII-only name — S3 Content-Disposition requires ISO-8859-1 safe filenames
-    base     = draft.portfolio_report_template.name.gsub('—', '-')
-    period   = "#{draft.start_date.strftime("%b %Y")} to #{draft.end_date.strftime("%b %Y")}"
+    base     = draft.portfolio_report_template.name.tr('—', '-')
+    period   = "#{draft.start_date.strftime('%b %Y')} to #{draft.end_date.strftime('%b %Y')}"
     doc_name = "#{base} - #{period}"
 
     Document.create!(
       entity_id: portco.entity_id,
-      owner:     portco,
-      folder:    portco.document_folder,
-      name:      doc_name,
-      file:      File.open(file_path),
-      orignal:   true,
-      user:      user,
-      download:  true
+      owner: portco,
+      folder: portco.document_folder,
+      name: doc_name,
+      file: File.open(file_path),
+      orignal: true,
+      user: user,
+      download: true
     )
   end
 

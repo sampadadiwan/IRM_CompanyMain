@@ -6,7 +6,7 @@ class NotesController < ApplicationController
     @bread_crumbs = { Notes: notes_path }
     if params[:investor_id]
       @investor = Investor.find(params[:investor_id])
-      @bread_crumbs["#{@investor.investor_name}"] = investor_path(@investor, tab: 'notes-tab')
+      @bread_crumbs[@investor.investor_name.to_s] = investor_path(@investor, tab: 'notes-tab')
     end
 
     @q = Note.ransack(params[:q])
@@ -62,7 +62,7 @@ class NotesController < ApplicationController
     @note.reminder = Reminder.new(entity_id: @note.entity_id)
 
     @bread_crumbs = { Notes: notes_path }
-    @bread_crumbs["#{@note.investor.investor_name}"] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
+    @bread_crumbs[@note.investor.investor_name.to_s] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
     @bread_crumbs[:New] = nil
 
     authorize @note
@@ -139,10 +139,9 @@ class NotesController < ApplicationController
     @note = Note.find(params[:id])
     authorize @note
     @bread_crumbs = { Notes: notes_path }
-    @bread_crumbs["#{@note.investor.investor_name}"] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
-    @bread_crumbs["#{@note}"] = note_path(@note)
+    @bread_crumbs[@note.investor.investor_name.to_s] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
+    @bread_crumbs[@note.to_s] = note_path(@note)
   end
-
 
   # Only allow a list of trusted parameters through.
   def note_params

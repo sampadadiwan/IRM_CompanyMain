@@ -54,11 +54,11 @@ module ForInvestor
 
       if user.entity_type == "Group Company"
         join_clause
-          .where("ar_emp.entity_id IN (?)", user.entity.child_ids)
+          .where(ar_emp: { entity_id: user.entity.child_ids })
           .where("#{table_name}": { entity_id: user.entity.child_ids })
       else
         join_clause
-          .where("ar_emp.entity_id = ?", user.entity_id)
+          .where(ar_emp: { entity_id: user.entity_id })
           .where("#{table_name}": { entity_id: user.entity_id })
       end
     }

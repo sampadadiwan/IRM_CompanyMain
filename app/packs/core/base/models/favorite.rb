@@ -8,6 +8,6 @@ class Favorite < ApplicationRecord
   after_commit :touch_user
 
   def touch_user
-    user.touch # rubocop:disable Rails/SkipsModelValidations
+    user.touch
   end
 end

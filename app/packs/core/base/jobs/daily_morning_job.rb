@@ -1,6 +1,5 @@
 class DailyMorningJob < ApplicationJob
   def perform
-    # rubocop:disable Metrics/BlockLength
     Chewy.strategy(:atomic) do
       # DocumentEsignUpdateJob.perform_now
 

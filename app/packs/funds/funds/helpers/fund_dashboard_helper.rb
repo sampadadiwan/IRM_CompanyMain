@@ -25,10 +25,10 @@ module FundDashboardHelper
     all_dates = fund_ratios.map { |fr| fr.end_date.beginning_of_month }.uniq.sort
 
     # Group by commitment name (when owner is a commitment) or fund name, plus ratio name
-    ratios_data = fund_ratios.group_by { |fr|
+    ratios_data = fund_ratios.group_by do |fr|
       label = fr.capital_commitment.present? ? fr.capital_commitment.to_s : fr.fund.name
       [label, fr.name]
-    }.transform_values do |ratios|
+    end.transform_values do |ratios|
       ratios_by_date = ratios.group_by { |v| v.end_date.beginning_of_month }
       all_dates.map do |date|
         vals = ratios_by_date[date]
@@ -62,7 +62,6 @@ module FundDashboardHelper
     # Plot the chart with multiple series
     send(chart_method, series, id: chart_id, discrete: true, library: line_chart_options)
   end
-  # rubocop:enable Metrics/ParameterLists
 
   def create_line_chart_options(args)
     decimals = args[:decimals].present? ? args[:decimals].to_i : 2
@@ -161,23 +160,23 @@ module FundDashboardHelper
     # Group and sum data
     data = {
       "Collected Capital" => capital_calls.group_by { |record| group_fn.call(record_date(record)) }
-                             .transform_values { |entries| entries.sum { |e| (e.try(:collected_amount_cents) || 0) / 100.0 } },
+                                          .transform_values { |entries| entries.sum { |e| (e.try(:collected_amount_cents) || 0) / 100.0 } },
 
       "Capital Distributions" => capital_distributions.group_by { |record| group_fn.call(record_date(record)) }
-                                 .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
+                                                      .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
 
       "Portfolio Investments" => portfolio_investments.group_by { |record| group_fn.call(record_date(record)) }
-                                 .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
+                                                      .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } },
 
       "Expenses" => account_entries.group_by { |record| group_fn.call(record_date(record)) }
-                    .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
+                                   .transform_values { |entries| entries.sum { |e| amount_cents(e) / 100.0 } }
     }
 
     # Get all period dates and sort chronologically
     all_periods = data.values.flat_map(&:keys).uniq.compact.sort
 
     # Filter to requested series if specified
-    allowed = Array(series).map(&:to_s).map(&:strip) if series.present?
+    allowed = Array(series).map { |x| x.to_s.strip } if series.present?
     data = data.select { |name, _| allowed.nil? || allowed.any? { |s| name.downcase.include?(s.downcase) } }
 
     # Prepare chart data

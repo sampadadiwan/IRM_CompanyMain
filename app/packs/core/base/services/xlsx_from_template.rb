@@ -23,8 +23,8 @@ class XlsxFromTemplate
     # Mappings of col names to data, which is typically in the metadata in the report.
     @column_data_mapping = column_data_mapping.split(';') # break on semicolons
                                               .to_h do |pair| # ["Fund=fund.name", ...]
-                                                key, value = pair.split("=", 2) # split on the first “=”
-                                                [key.strip, value&.strip] # remove surrounding whitespace
+      key, value = pair.split("=", 2) # split on the first “=”
+      [key.strip, value&.strip] # remove surrounding whitespace
     end
 
     @pivot_columns = @column_data_mapping['pivot']

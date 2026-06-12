@@ -93,7 +93,7 @@ class DashboardWidget < ApplicationRecord
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Commitments", path: "investors/widgets/commitments", size: "Medium"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Embed Document", path: "investors/widgets/embedded_doc", size: "XL", metadata_help: "{name: 'Document Name', xlsx_as_grid: true, title: 'Optional Title'}"),
     DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Fund Ratios", path: "investors/widgets/fund_ratios", size: "XL", metadata_help: "{title: 'Title', scenario: 'Default', scenarios: 'Actual,Budget', condensed: true, chart: false, chart_type: 'line or bar or area', list: true, months: 12, latest: false, end_date: '31-12-2025', ratio_names: ['XIRR', 'TVPI', 'DPI'], show_y_axis: true, show_legend: true, decimals: 2, hide_fund_name: false, for_commitments: true, timeseries: true }"),
-    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Note Summaries", path: "dashboard_widgets/widgets/note_summaries", size: "XL", metadata_help: "{title: 'Note Summaries'}"),
+    DashboardWidget.new(dashboard_name: INVESTOR_DASHBOARD, widget_name: "Note Summaries", path: "dashboard_widgets/widgets/note_summaries", size: "XL", metadata_help: "{title: 'Note Summaries'}")
 
   ].freeze
 
@@ -255,7 +255,7 @@ class DashboardWidget < ApplicationRecord
   # rubocop:disable Security/Eval
   def metadata_args
     ret_val = metadata ? eval(metadata) : {}
-    ret_val = ret_val.is_a?(Hash) ? ret_val : {}
+    ret_val = {} unless ret_val.is_a?(Hash)
     ret_val.deep_symbolize_keys
   end
 
@@ -271,7 +271,7 @@ class DashboardWidget < ApplicationRecord
                      .gsub(/(\w+):\s*([^,}\['"\s]+)\/([^,}\]]+)/) do |match|
                        # Only quote if not already quoted
                        m = Regexp.last_match
-                       if m[2].start_with?("'") || m[2].start_with?('"')
+                       if m[2].start_with?("'", '"')
                          match
                        else
                          "#{m[1]}: '#{m[2]}/#{m[3]}'"
@@ -281,15 +281,13 @@ class DashboardWidget < ApplicationRecord
                      .gsub(/,\s*\}/, "}")
 
     ret_val = eval(sanitized_help)
-    ret_val = ret_val.is_a?(Hash) ? ret_val : {}
+    ret_val = {} unless ret_val.is_a?(Hash)
     # Clean up values in the hash
     ret_val.each do |k, v|
-      if v.is_a?(String)
-        ret_val[k] = v.gsub(/\.\.\.*/, "").gsub(/,\s*$/, "").strip
-      end
+      ret_val[k] = v.gsub(/\.\.\.*/, "").gsub(/,\s*$/, "").strip if v.is_a?(String)
     end
     ret_val.deep_symbolize_keys
-  rescue StandardError, SyntaxError => e
+  rescue StandardError, SyntaxError
     # Fallback to a more robust regex-based extractor if eval fails
     extract_keys_from_help.deep_symbolize_keys
   end

@@ -111,7 +111,7 @@ class InvestorsController < ApplicationController
                                       agent_chart_id: chart.id,
                                       portfolio_company_id: @investor.id)
         end
-        notice = "Generating #{@applicable_charts.size} #{"chart".pluralize(@applicable_charts.size)} for #{@investor.investor_name}…"
+        notice = "Generating #{@applicable_charts.size} #{'chart'.pluralize(@applicable_charts.size)} for #{@investor.investor_name}…"
       end
 
       redirect_to investor_path(@investor), notice: notice
@@ -124,22 +124,26 @@ class InvestorsController < ApplicationController
     authorize @investor, :kpi_data_preview?
     period_type = params[:kpi_period_type].presence || "Monthly"
     kpi_tag     = params[:kpi_tag].presence         || "Actual"
-    end_date    = Date.parse(params[:end_date]) rescue Date.today
+    end_date    = begin
+      Date.parse(params[:end_date])
+    rescue StandardError
+      Time.zone.today
+    end
     n_requested = params[:n_periods].to_i.clamp(1, 24)
 
     reports = KpiReport
-                .where(portfolio_company: @investor,
-                       entity:            @investor.entity,
-                       period:            period_type,
-                       tag_list:          kpi_tag)
-                .where("as_of <= ?", end_date)
-                .order(as_of: :desc)
-                .limit(n_requested)
-                .pluck(:as_of)
+              .where(portfolio_company: @investor,
+                     entity: @investor.entity,
+                     period: period_type,
+                     tag_list: kpi_tag)
+              .where(as_of: ..end_date)
+              .order(as_of: :desc)
+              .limit(n_requested)
+              .pluck(:as_of)
 
-    labels = reports.reverse.map { |d|
+    labels = reports.reverse.map do |d|
       period_type == "Monthly" ? d.strftime("%b %Y") : "Q#{((d.month - 1) / 3) + 1} #{d.year}"
-    }
+    end
 
     render json: { count: reports.length, requested: n_requested, labels: labels }
   end
@@ -151,36 +155,35 @@ class InvestorsController < ApplicationController
       template = PortfolioReportTemplate.find(params[:portfolio_report_template_id])
 
       draft = PortfolioReportDraft.create!(
-        portfolio_company:          @investor,
-        portfolio_report:           template.portfolio_report,
-        portfolio_report_template:  template,
-        user:                       current_user,
-        start_date:                 params[:start_date],
-        end_date:                   params[:end_date],
-        kpi_period_type:            params[:kpi_period_type],
-        kpi_tag:                    params[:kpi_tag],
-        n_periods:                  params[:n_periods],
-        selected_kpi_mapping_ids:   params[:selected_kpi_mapping_ids],
-        status:                     :configuring
+        portfolio_company: @investor,
+        portfolio_report: template.portfolio_report,
+        portfolio_report_template: template,
+        user: current_user,
+        start_date: params[:start_date],
+        end_date: params[:end_date],
+        kpi_period_type: params[:kpi_period_type],
+        kpi_tag: params[:kpi_tag],
+        n_periods: params[:n_periods],
+        selected_kpi_mapping_ids: params[:selected_kpi_mapping_ids],
+        status: :configuring
       )
 
       PortfolioReportDraftJob.perform_later(draft.id)
 
       redirect_to portfolio_report_draft_path(draft), notice: "Generating your report draft — we'll notify you when it's ready to review."
     else
-      all_reports             = @investor.entity.portfolio_reports
-                                          .includes(portfolio_report_templates: :style_document,
-                                                    portfolio_report_sections:  [])
+      all_reports = @investor.entity.portfolio_reports
+                             .includes(portfolio_report_templates: :style_document,
+                                       portfolio_report_sections: [])
       # Split into ready (sections + at least one template) vs incomplete (shown in setup roadmap only)
-      @ready_portfolio_reports    = all_reports.select { |r| r.portfolio_report_sections.any? && r.portfolio_report_templates.any? }
-      @incomplete_portfolio_reports = all_reports.reject { |r| r.portfolio_report_sections.any? && r.portfolio_report_templates.any? }
-      @portfolio_reports          = @ready_portfolio_reports   # used by the Stimulus template-dropdown script
+      @ready_portfolio_reports, @incomplete_portfolio_reports = all_reports.partition { |r| r.portfolio_report_sections.any? && r.portfolio_report_templates.any? }
+      @portfolio_reports          = @ready_portfolio_reports # used by the Stimulus template-dropdown script
       @kpi_mappings               = @investor.investor_kpi_mappings.show_in_report.group_by(&:category)
       # Pre-fill dates/settings from the most recent draft for this portco
       @last_draft                 = PortfolioReportDraft.where(portfolio_company: @investor)
                                                         .order(created_at: :desc).first
-      @start_date                 = @last_draft&.start_date  || (Date.today - 3.months).beginning_of_month
-      @end_date                   = @last_draft&.end_date    || Date.today.end_of_month
+      @start_date                 = @last_draft&.start_date  || (Time.zone.today - 3.months).beginning_of_month
+      @end_date                   = @last_draft&.end_date    || Time.zone.today.end_of_month
       @default_n_periods          = @last_draft&.n_periods   || 6
       @default_kpi_period_type    = @last_draft&.kpi_period_type
       @default_kpi_tag            = @last_draft&.kpi_tag
@@ -207,7 +210,7 @@ class InvestorsController < ApplicationController
 
     # Initialize empty arrays - will be populated in index method
     @tags_for_select ||= []
-    @sectors_for_select ||= []
+    @setup_portfolio_dashboard ||= []
   end
 
   def setup_portfolio_agent_run
@@ -410,17 +413,17 @@ class InvestorsController < ApplicationController
   #   - charts with no tag_list apply to every portfolio company
   #   - charts whose tag_list shares at least one tag with the portco's tag_list
   def load_applicable_agent_charts
-    portco_tags = @investor.tag_list.to_s.split(",").map(&:strip).reject(&:blank?)
+    portco_tags = @investor.tag_list.to_s.split(",").map(&:strip).compact_blank
     base = AgentChart.where(entity: @investor.entity).order(:title)
 
     @applicable_charts = if portco_tags.any?
-      tag_conditions = portco_tags.map { "tag_list LIKE ?" }.join(" OR ")
-      base.where("tag_list IS NULL OR tag_list = '' OR (#{tag_conditions})",
-                 *portco_tags.map { |t| "%#{t}%" })
-    else
-      # Portco has no tags — only untagged charts (which apply to all) are relevant.
-      base.where("tag_list IS NULL OR tag_list = ''")
-    end
+                           tag_conditions = portco_tags.map { "tag_list LIKE ?" }.join(" OR ")
+                           base.where("tag_list IS NULL OR tag_list = '' OR (#{tag_conditions})",
+                                      *portco_tags.map { |t| "%#{t}%" })
+                         else
+                           # Portco has no tags — only untagged charts (which apply to all) are relevant.
+                           base.where("tag_list IS NULL OR tag_list = ''")
+                         end
   end
 
   # Use callbacks to share common setup or constraints between actions.

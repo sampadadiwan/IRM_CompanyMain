@@ -92,7 +92,15 @@ class Deal < ApplicationRecord
 
   # Accepts a JSON string from the hidden form field and parses it before assigning.
   def grid_columns=(val)
-    parsed = val.is_a?(String) ? (JSON.parse(val) rescue val) : val
+    parsed = if val.is_a?(String)
+               begin
+                 JSON.parse(val)
+               rescue StandardError
+                 val
+               end
+             else
+               val
+             end
     super(parsed)
   end
 
@@ -104,12 +112,13 @@ class Deal < ApplicationRecord
     cols = grid_columns.presence
     return label_map.map { |field, label| { field: field, label: label } } if cols.blank?
 
-    cols.map do |col|
+    cols.filter_map do |col|
       field = col["field"].presence
       next unless field
+
       label    = col["label"].presence || label_map[field] || field.to_s.humanize
       position = col["position"].presence || "end"
       { field: field, label: label, position: position }
-    end.compact
+    end
   end
 end

@@ -1,7 +1,3 @@
-# rubocop:disable Rails/SkipsModelValidations
-# rubocop:disable Metrics/BlockLength
-# rubocop:disable Metrics/MethodLength
-# rubocop:disable Metrics/ClassLength
 class FundUnitTransferService < Trailblazer::Operation
   step :generate_transfer_token
   step :validate_transfer
@@ -165,11 +161,11 @@ class FundUnitTransferService < Trailblazer::Operation
 
         AccountEntry.transaction do
           entry.update_columns(
-            amount_cents:          (orig_amount   * retained_ratio).round(2),
-            folio_amount_cents:    (orig_folio    * retained_ratio).round(2),
+            amount_cents: (orig_amount * retained_ratio).round(2),
+            folio_amount_cents: (orig_folio * retained_ratio).round(2),
             tracking_amount_cents: (orig_tracking * retained_ratio).round(2),
-            json_fields:           entry.json_fields,
-            updated_at:            Time.current
+            json_fields: entry.json_fields,
+            updated_at: Time.current
           )
           # Insert without callbacks
           AccountEntry.insert_all!([new_entry.attributes.except("generated_deleted")])
@@ -202,7 +198,7 @@ class FundUnitTransferService < Trailblazer::Operation
       orig_arrear_folio      = BigDecimal(remittance.arrear_folio_amount_cents.to_s)
       orig_arrear            = BigDecimal(remittance.arrear_amount_cents.to_s)
       orig_tracking_collected = BigDecimal(remittance.tracking_collected_amount_cents.to_s)
-      orig_tracking_call     = BigDecimal(remittance.tracking_call_amount_cents.to_s)
+      orig_tracking_call = BigDecimal(remittance.tracking_call_amount_cents.to_s)
 
       new_remittance = remittance.dup
       new_remittance.json_fields["transfer_id"]           = ctx[:transfer_token]
@@ -231,7 +227,7 @@ class FundUnitTransferService < Trailblazer::Operation
       new_remittance.arrear_folio_amount_cents          = (orig_arrear_folio      * transfer_ratio).round(2)
       new_remittance.arrear_amount_cents                = (orig_arrear            * transfer_ratio).round(2)
       new_remittance.tracking_collected_amount_cents    = (orig_tracking_collected * transfer_ratio).round(2)
-      new_remittance.tracking_call_amount_cents         = (orig_tracking_call     * transfer_ratio).round(2)
+      new_remittance.tracking_call_amount_cents         = (orig_tracking_call * transfer_ratio).round(2)
       new_remittance.created_at = Time.zone.now
       new_remittance.updated_at = Time.zone.now
 
@@ -256,7 +252,7 @@ class FundUnitTransferService < Trailblazer::Operation
       remittance.arrear_folio_amount_cents       = (orig_arrear_folio      * retained_ratio).round(2)
       remittance.arrear_amount_cents             = (orig_arrear            * retained_ratio).round(2)
       remittance.tracking_collected_amount_cents = (orig_tracking_collected * retained_ratio).round(2)
-      remittance.tracking_call_amount_cents      = (orig_tracking_call     * retained_ratio).round(2)
+      remittance.tracking_call_amount_cents      = (orig_tracking_call * retained_ratio).round(2)
 
       CapitalRemittance.transaction do
         # Update without callbacks
@@ -331,10 +327,10 @@ class FundUnitTransferService < Trailblazer::Operation
           payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}"
 
           payment.update_columns(
-            amount_cents:          (orig_amount   * retained_ratio).round(2),
-            folio_amount_cents:    (orig_folio    * retained_ratio).round(2),
+            amount_cents: (orig_amount * retained_ratio).round(2),
+            folio_amount_cents: (orig_folio * retained_ratio).round(2),
             tracking_amount_cents: (orig_tracking * retained_ratio).round(2),
-            json_fields:           payment.json_fields
+            json_fields: payment.json_fields
           )
         end
       end
@@ -404,21 +400,21 @@ class FundUnitTransferService < Trailblazer::Operation
       payment.json_fields["transfer_notes"] = "Transfer from #{from_commitment.folio_id} to #{to_commitment.folio_id}, transfer_ratio: #{transfer_ratio}"
 
       payment.update_columns(
-        income_cents:                         (orig_income                        * retained_ratio).round(2),
-        percentage:                           (orig_percentage                    * retained_ratio).round(10),
-        units_quantity:                       (orig_units_quantity                * retained_ratio).round(10),
-        cost_of_investment_cents:             (orig_cost_of_investment            * retained_ratio).round(2),
-        folio_amount_cents:                   (orig_folio_amount                  * retained_ratio).round(2),
-        net_of_account_entries_cents:         (orig_net_of_account_entries        * retained_ratio).round(2),
-        net_payable_cents:                    (orig_net_payable                   * retained_ratio).round(2),
-        income_with_fees_cents:               (orig_income_with_fees              * retained_ratio).round(2),
-        cost_of_investment_with_fees_cents:   (orig_cost_of_investment_with_fees  * retained_ratio).round(2),
-        reinvestment_cents:                   (orig_reinvestment                  * retained_ratio).round(2),
-        reinvestment_with_fees_cents:         (orig_reinvestment_with_fees        * retained_ratio).round(2),
-        gross_payable_cents:                  (orig_gross_payable                 * retained_ratio).round(2),
-        gross_of_account_entries_cents:       (orig_gross_of_account_entries      * retained_ratio).round(2),
-        tracking_net_payable_cents:           (orig_tracking_net_payable          * retained_ratio).round(2),
-        tracking_gross_payable_cents:         (orig_tracking_gross_payable        * retained_ratio).round(2),
+        income_cents: (orig_income * retained_ratio).round(2),
+        percentage: (orig_percentage * retained_ratio).round(10),
+        units_quantity: (orig_units_quantity * retained_ratio).round(10),
+        cost_of_investment_cents: (orig_cost_of_investment * retained_ratio).round(2),
+        folio_amount_cents: (orig_folio_amount * retained_ratio).round(2),
+        net_of_account_entries_cents: (orig_net_of_account_entries * retained_ratio).round(2),
+        net_payable_cents: (orig_net_payable * retained_ratio).round(2),
+        income_with_fees_cents: (orig_income_with_fees * retained_ratio).round(2),
+        cost_of_investment_with_fees_cents: (orig_cost_of_investment_with_fees * retained_ratio).round(2),
+        reinvestment_cents: (orig_reinvestment * retained_ratio).round(2),
+        reinvestment_with_fees_cents: (orig_reinvestment_with_fees * retained_ratio).round(2),
+        gross_payable_cents: (orig_gross_payable * retained_ratio).round(2),
+        gross_of_account_entries_cents: (orig_gross_of_account_entries * retained_ratio).round(2),
+        tracking_net_payable_cents: (orig_tracking_net_payable * retained_ratio).round(2),
+        tracking_gross_payable_cents: (orig_tracking_gross_payable * retained_ratio).round(2),
         tracking_reinvestment_with_fees_cents: (orig_tracking_reinvestment_with_fees * retained_ratio).round(2),
         json_fields: payment.json_fields
       )

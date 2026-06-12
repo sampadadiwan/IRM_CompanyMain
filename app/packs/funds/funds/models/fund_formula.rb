@@ -157,7 +157,7 @@ class FundFormula < ApplicationRecord
     statement = external_formula || formula
     buffer    = Parser::Source::Buffer.new('(string)')
     buffer.source = statement
-    ast       = Parser::CurrentRuby.new.parse(buffer)
+    ast = Parser::CurrentRuby.new.parse(buffer)
 
     expression_map = {}
 
@@ -167,14 +167,12 @@ class FundFormula < ApplicationRecord
       ivar_exprs = []
       collect_ivar_expressions(ast, ivar_exprs)
       ivar_exprs.uniq.each do |exp|
-        begin
-          val = eval(exp, binding)
-          val = summarise_array(val, exp)  if val.is_a?(Array)
-          val = summarise_record(val)      if val.is_a?(ApplicationRecord)
-          expression_map[exp] = val unless skip_statement(exp, val)
-        rescue
-          # Silently skip — the ivar may not be set in this particular binding context
-        end
+        val = eval(exp, binding)
+        val = summarise_array(val, exp)  if val.is_a?(Array)
+        val = summarise_record(val)      if val.is_a?(ApplicationRecord)
+        expression_map[exp] = val unless skip_statement(exp, val)
+      rescue
+        # Silently skip — the ivar may not be set in this particular binding context
       end
 
       # Pass 2 — walk top-level statements in formula order, per-node strategy:
@@ -198,26 +196,26 @@ class FundFormula < ApplicationRecord
         when :lvasgn, :ivasgn
           exp = node.type == :lvasgn ? node.children[0].to_s : "@#{node.children[0]}"
           next if exp.blank? || exp.include?("SkipRule")
+
           # When the RHS is a chain of additions/subtractions (e.g. A + B + C),
           # expose each direct addend before collapsing to the variable name.
           # This makes "sum_of_all_fees = X + Y + Z" show all three components
           # rather than just the rolled-up total.
           rhs = node.children[1]
-          if rhs.is_a?(Parser::AST::Node)
-            addends = []
-            collect_addends(rhs, addends)
-            if addends.size > 1
-              addends.each do |addend_exp|
-                next if addend_exp.blank? || addend_exp.include?("SkipRule")
-                begin
-                  val = eval(addend_exp, binding)
-                  val = summarise_array(val, addend_exp) if val.is_a?(Array)
-                  val = summarise_record(val)            if val.is_a?(ApplicationRecord)
-                  expression_map[addend_exp] = val unless skip_statement(addend_exp, val)
-                rescue
-                  # silently skip — addend may reference unavailable context
-                end
+          addends = []
+          collect_addends(rhs, addends) if rhs.is_a?(Parser::AST::Node)
+          if addends.size > 1
+            addends.each do |addend_exp|
+              next if addend_exp.blank? || addend_exp.include?("SkipRule")
+
+              val = begin
+                eval(addend_exp, binding)
+              rescue # rubocop:disable Style/RescueStandardError, Metrics/BlockNesting
+                next
               end
+              val = summarise_array(val, addend_exp) if val.is_a?(Array)
+              val = summarise_record(val)            if val.is_a?(ApplicationRecord)
+              expression_map[addend_exp] = val unless skip_statement(addend_exp, val)
             end
           end
           begin
@@ -233,6 +231,7 @@ class FundFormula < ApplicationRecord
           find_expressions(node, exprs)
           exprs.uniq.each do |exp|
             next if exp.include?("SkipRule")
+
             begin
               val = eval(exp, binding)
               val = summarise_array(val, exp)  if val.is_a?(Array)
@@ -251,6 +250,7 @@ class FundFormula < ApplicationRecord
       find_expressions(ast, exprs)
       exprs.uniq.each do |exp|
         next if exp.include?("SkipRule")
+
         begin
           val = eval(exp, binding)
           val = summarise_array(val, exp)  if val.is_a?(Array)
@@ -316,7 +316,7 @@ class FundFormula < ApplicationRecord
 
     quarter, year = account_entry.period.split('-')
     q             = quarter.delete('Q').to_i
-    @start_date   = Date.new(year.to_i, (q - 1) * 3 + 1, 1)
+    @start_date   = Date.new(year.to_i, ((q - 1) * 3) + 1, 1)
 
     # Expose as plain locals too — formulas use end_date and start_date
     # (not just @end_date / @start_date) depending on which operation ran them.
@@ -342,16 +342,13 @@ class FundFormula < ApplicationRecord
     return false if formula.blank?
 
     bdg = binding
-    # rubocop:disable Security/Eval
-    eval(formula, bdg)   # Step 1: populate formula-defined local variables in the binding
-    # rubocop:enable Security/Eval
-
-    breakdown  = parse_statement(bdg, external_formula: formula)   # Step 2: extract values
+    eval(formula, bdg) # Step 1: populate formula-defined local variables in the binding
+    breakdown = parse_statement(bdg, external_formula: formula) # Step 2: extract values
     # The final result is the LAST entry — post-order traversal inserts the most
     # complex (outermost) expression last. max_by length was unreliable once addend
     # expansion introduced long intermediate keys longer than the actual result.
     result_key = breakdown.keys.last
-    breakdown[result_key] = account_entry.amount_cents.to_s if result_key  # pin to stored value
+    breakdown[result_key] = account_entry.amount_cents.to_s if result_key # pin to stored value
 
     account_entry.explanation[2] = breakdown.to_json
     account_entry.save!(validate: false)
@@ -375,8 +372,9 @@ class FundFormula < ApplicationRecord
     # summarise_record before this check, so they are no longer filtered here.
     return true if val.is_a?(OpenStruct) || val.is_a?(CustomFieldsProxy) ||
                    val.is_a?(ActiveRecord::Relation) || val.is_a?(ActiveRecord::QueryMethods::WhereChain)
-    return true if exp.strip.match?(/\A["'].*["']\z/)   # bare string literal
-    exp.delete("\"'").strip == val.to_s.strip            # self-naming constant / class constant
+    return true if exp.strip.match?(/\A["'].*["']\z/) # bare string literal
+
+    exp.delete("\"'").strip == val.to_s.strip # self-naming constant / class constant
   end
 
   # Collects @ivar reads and one-level attribute reads (@fund.id, @fund.master_fund_id)
@@ -501,7 +499,6 @@ class FundFormula < ApplicationRecord
     %w[fund].sort
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def self.update_formulas_to_json_fields(fund_id)
     FundFormula.where(fund_id: fund_id).find_each do |ff|
       next if ff.formula.blank?

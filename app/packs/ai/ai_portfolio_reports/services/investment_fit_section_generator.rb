@@ -38,7 +38,6 @@ class InvestmentFitSectionGenerator
 
   private
 
-  # rubocop:disable Metrics/MethodLength
   def build_prompt(criteria)
     criteria_text = criteria.map do |c|
       "- **#{c['name']}:** #{c['value']}"
@@ -109,8 +108,6 @@ class InvestmentFitSectionGenerator
       }
     PROMPT
   end
-
-  # rubocop:enable Metrics/MethodLength
 
   def fetch_live_exchange_rates
     url = "https://api.frankfurter.dev/v1/latest?base=USD&symbols=INR,EUR,GBP,JPY,SGD,AED"

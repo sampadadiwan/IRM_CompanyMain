@@ -199,7 +199,6 @@ class KycDocGenerator
 
     add_header_footers(investor_kyc, file_name, additional_headers, additional_footers, nil, file_name: doc_template.name)
   end
-  # rubocop:enable Metrics/ParameterLists
 
   def amounts(investor_kyc, ccs, currency, start_date, end_date, fund_id)
     remittances = investor_kyc.capital_remittances.where(capital_commitment_id: ccs.pluck(:id))

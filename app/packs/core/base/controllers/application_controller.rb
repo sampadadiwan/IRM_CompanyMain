@@ -93,15 +93,15 @@ class ApplicationController < ActionController::Base
   #   name            - the active dashboard name (from params, then preference, then "Default")
   def resolve_dashboard(dashboard_type, requested_name)
     raw_names = DashboardWidget.enabled
-      .where(dashboard_name: dashboard_type, entity_id: current_user.entity_id)
-      .distinct.pluck(:name)
+                               .where(dashboard_name: dashboard_type, entity_id: current_user.entity_id)
+                               .distinct.pluck(:name)
 
     sequence = current_user.dashboard_sequence(dashboard_type)
     ordered = if sequence.any?
-      (sequence & raw_names) + (raw_names - sequence).sort
-    else
-      raw_names.sort
-    end
+                (sequence & raw_names) + (raw_names - sequence).sort
+              else
+                raw_names.sort
+              end
 
     name = requested_name || sequence.first || "Default"
     [ordered, name]

@@ -18,7 +18,7 @@ class AccountEntryExplainJob < ApplicationJob
         account_entry.update_columns(
           json_fields: account_entry.json_fields.merge(
             "ai_explanation_status" => "error",
-            "ai_explanation_data"   => nil   # Fix: clear stale data so UI is consistent
+            "ai_explanation_data" => nil # Fix: clear stale data so UI is consistent
           )
         )
       end
@@ -29,9 +29,9 @@ class AccountEntryExplainJob < ApplicationJob
     account_entry.with_lock do
       account_entry.update_columns(
         json_fields: account_entry.json_fields.merge(
-          "ai_explanation_data"   => data,
+          "ai_explanation_data" => data,
           "ai_explanation_status" => "complete",
-          "ai_explanation_at"     => Time.current.iso8601
+          "ai_explanation_at" => Time.current.iso8601
         )
       )
     end
@@ -54,15 +54,13 @@ class AccountEntryExplainJob < ApplicationJob
     # Do not re-raise — let the job complete without retry.
   rescue StandardError => e
     account_entry = AccountEntry.find_by(id: account_entry_id)
-    if account_entry
-      account_entry.with_lock do
-        account_entry.update_columns(
-          json_fields: account_entry.json_fields.merge(
-            "ai_explanation_status" => "error",
-            "ai_explanation_data"   => nil  # Fix: clear stale data on error
-          )
+    account_entry&.with_lock do
+      account_entry.update_columns(
+        json_fields: account_entry.json_fields.merge(
+          "ai_explanation_status" => "error",
+          "ai_explanation_data" => nil # Fix: clear stale data on error
         )
-      end
+      )
     end
     send_notification(
       "AI explanation for account entry ##{account_entry_id} failed: #{e.message}",

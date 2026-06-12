@@ -54,7 +54,6 @@ module CanonicalFingerprint
   end
 
   # Persist snapshot AFTER you actually fan out the change.
-  # rubocop:disable Rails/SkipsModelValidations
   def mark_synced_now!
     update_columns(
       last_synced_ccf_hex: ccf_hex,

@@ -1,7 +1,4 @@
 class FundRatioCalcs
-  # rubocop:disable Metrics/CyclomaticComplexity
-  # rubocop:disable Metrics/PerceivedComplexity
-  # rubocop:disable Metrics/MethodLength
   attr_accessor :model, :portfolio_company_id
 
   delegate :capital_remittance_payments, to: :model
@@ -91,10 +88,6 @@ class FundRatioCalcs
     # Return XIRR and optionally the cash flows
     return_cash_flows ? [(lxirr * 100).round(2), cf] : (lxirr * 100).round(2)
   end
-
-  # rubocop:enable Metrics/CyclomaticComplexity
-  # rubocop:enable Metrics/PerceivedComplexity
-  # rubocop:enable Metrics/MethodLength
 
   # Calculates the Multiple on Invested Capital (MOIC) for the given model.
   # MOIC is the ratio of total returns (from sales and FMV) to total invested capital.

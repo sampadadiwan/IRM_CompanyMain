@@ -310,15 +310,14 @@ class Investor < ApplicationRecord
 
     if model
       users.select do |user|
+        policy = Pundit.policy(user, model)
         if user.has_cached_role?(:investor_advisor)
           # Use the original user object directly. dup clears the primary key and association cache,
           # causing has_cached_role? to fail. permissioned_investor_advisor? does not use curr_role.
-          policy = Pundit.policy(user, model)
           policy.permissioned_investor_advisor?(as_entity_id: investor_entity_id) || policy.show?
         else
           # For normal users, check show? first; fall back to overview? for models
           # (like Deal) where investors access via overview? rather than show?.
-          policy = Pundit.policy(user, model)
           policy.show? || (policy.respond_to?(:overview?) && policy.overview?)
         end
       end

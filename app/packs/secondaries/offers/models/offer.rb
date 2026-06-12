@@ -147,7 +147,7 @@ class Offer < ApplicationRecord
   def validate_pan_card
     should_validate_pan = (saved_change_to_PAN? && self.PAN.present?) ||
                           (saved_change_to_full_name? && full_name.present?) ||
-                          (self.PAN.present? && full_name.present? && self.pan_verification_response.blank?)
+                          (self.PAN.present? && full_name.present? && pan_verification_response.blank?)
 
     return unless should_validate_pan
 

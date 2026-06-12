@@ -41,24 +41,24 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
     # Fetch the last n_periods KpiReports for this portco up to end_date
     kpi_reports = KpiReport
-      .where(
-        portfolio_company: draft.portfolio_company,
-        entity:            draft.portfolio_report.entity,
-        period:            draft.kpi_period_type,
-        tag_list:          draft.kpi_tag
-      )
-      .where("as_of <= ?", draft.end_date)
-      .order(as_of: :desc)
-      .limit(draft.n_periods)
-      .to_a
-      .reverse   # oldest → newest
+                  .where(
+                    portfolio_company: draft.portfolio_company,
+                    entity: draft.portfolio_report.entity,
+                    period: draft.kpi_period_type,
+                    tag_list: draft.kpi_tag
+                  )
+                  .where(as_of: ..draft.end_date)
+                  .order(as_of: :desc)
+                  .limit(draft.n_periods)
+                  .to_a
+                  .reverse # oldest → newest
 
     period_labels = kpi_reports.map { |kr| format_period(kr.as_of, draft.kpi_period_type) }
 
     # Pre-fetch all Kpi rows in one query
     kpis_index = Kpi
-      .where(kpi_report: kpi_reports, investor_kpi_mapping: mappings)
-      .index_by { |k| [k.kpi_report_id, k.investor_kpi_mapping_id] }
+                 .where(kpi_report: kpi_reports, investor_kpi_mapping: mappings)
+                 .index_by { |k| [k.kpi_report_id, k.investor_kpi_mapping_id] }
 
     table_data = {}
     mappings.each do |ikm|
@@ -73,7 +73,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
     ctx[:mappings]      = mappings
     ctx[:period_labels] = period_labels
-    ctx[:kpi_reports]   = kpi_reports   # passed to step 3 for commentary extraction
+    ctx[:kpi_reports]   = kpi_reports # passed to step 3 for commentary extraction
 
     Rails.logger.info do
       "[DraftService] KPI table built: #{mappings.count} metrics × #{period_labels.count} periods"
@@ -128,7 +128,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
         end
 
         draft.set_llm_output(section.id, bullets)
-        draft.save!   # persist after each section — partial progress is recoverable
+        draft.save! # persist after each section — partial progress is recoverable
       end
     end
 
@@ -140,7 +140,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
   # ── Step 4 ────────────────────────────────────────────────────────────────
 
-  def finalize_draft(ctx, draft:, user_id:, **)
+  def finalize_draft(_ctx, draft:, user_id:, **)
     draft.update!(status: :review)
     if user_id.present?
       url  = Rails.application.routes.url_helpers.portfolio_report_draft_path(draft)
@@ -156,12 +156,14 @@ class PortfolioReportDraftService < Trailblazer::Operation
   def handle_error(ctx, draft: nil, user_id: nil, **)
     msg = ctx[:error]&.message.to_s.truncate(200)
     Rails.logger.error { "[DraftService] failed — #{msg}\n#{ctx[:error]&.backtrace&.first(5)&.join("\n")}" }
-    draft&.update!(status: :configuring)   # let user retry
-    UserAlert.new(
-      user_id: user_id,
-      message: "Draft generation failed: #{msg}",
-      level:   "danger"
-    ).broadcast if user_id.present?
+    draft&.update!(status: :configuring) # let user retry
+    if user_id.present?
+      UserAlert.new(
+        user_id: user_id,
+        message: "Draft generation failed: #{msg}",
+        level: "danger"
+      ).broadcast
+    end
     true
   end
 
@@ -185,7 +187,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
     header = "Metric".ljust(metric_w) + period_labels.map { |l| l.rjust(col_w) }.join
     lines << header
-    lines << "-" * header.length
+    lines << ("-" * header.length)
 
     mappings.each do |ikm|
       cols = period_labels.map do |lbl|
@@ -218,6 +220,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
   def build_notes_context(notes)
     return "No notes available." if notes.empty?
+
     notes.map do |n|
       body = n.details.to_plain_text.strip.truncate(600)
       "[#{n.created_at.to_date}] #{body}"
@@ -259,14 +262,21 @@ class PortfolioReportDraftService < Trailblazer::Operation
     commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
     yield commentary, tmpfiles.map(&:path)
   ensure
-    tmpfiles.each { |t| t.close; t.unlink rescue nil }
+    tmpfiles.each do |t|
+      t.close
+      begin
+        t.unlink
+      rescue StandardError
+        nil
+      end
+    end
   end
 
   def build_section_prompt(section, kpi_context, notes_context, kpi_report_commentary, draft)
     <<~PROMPT
       You are an analyst at a private equity fund writing a section of a portfolio report.
       Portfolio company: #{draft.portfolio_company.investor_name}
-      Report period: #{draft.start_date.strftime("%b %Y")} to #{draft.end_date.strftime("%b %Y")}
+      Report period: #{draft.start_date.strftime('%b %Y')} to #{draft.end_date.strftime('%b %Y')}
 
       Section: #{section.name}
       Instructions: #{section.data}
@@ -291,7 +301,6 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
   def format_period(as_of, period_type)
     case period_type
-    when "Month"     then as_of.strftime("%b %Y")
     when "Quarter"   then "Q#{((as_of.month - 1) / 3) + 1} #{as_of.year}"
     when "Half Year" then "H#{as_of.month <= 6 ? 1 : 2} #{as_of.year}"
     when "Year"      then as_of.year.to_s
@@ -302,6 +311,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
   def extract_text(response)
     return response.to_s unless response.respond_to?(:content)
+
     content = response.content
     content.is_a?(RubyLLM::Content) ? content.text : content.to_s
   end

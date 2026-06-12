@@ -7,9 +7,9 @@ class AccessRightsController < ApplicationController
   def index
     if params[:investor_id].present?
       @investor = Investor.find(params[:investor_id])
-      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), "Access Rights": nil }
+      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), 'Access Rights': nil }
     else
-      @bread_crumbs = { "Access Rights": access_rights_path }
+      @bread_crumbs = { 'Access Rights': access_rights_path }
     end
 
     # Step 1: Apply policy scope
@@ -111,16 +111,16 @@ class AccessRightsController < ApplicationController
   # Use callbacks to share common setup or constraints between actions.
   def set_access_right
     @access_right = AccessRight.includes(:investor, :owner).find(params[:id])
-    if @access_right.investor
-      @bread_crumbs = {
-        Investors: investors_path,
-        @access_right.investor.investor_name => investor_path(@access_right.investor),
-        "Access Rights": access_rights_path(investor_id: @access_right.access_to_investor_id),
-        @access_right.owner_type => nil
-      }
-    else
-      @bread_crumbs = { "Access Rights": access_rights_path, @access_right.owner_type => nil }
-    end
+    @bread_crumbs = if @access_right.investor
+                      {
+                        Investors: investors_path,
+                        @access_right.investor.investor_name => investor_path(@access_right.investor),
+                        'Access Rights': access_rights_path(investor_id: @access_right.access_to_investor_id),
+                        @access_right.owner_type => nil
+                      }
+                    else
+                      { 'Access Rights': access_rights_path, @access_right.owner_type => nil }
+                    end
   end
 
   # Only allow a list of trusted parameters through.

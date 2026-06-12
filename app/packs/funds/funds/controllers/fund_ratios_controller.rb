@@ -82,9 +82,7 @@ class FundRatiosController < ApplicationController
     authorize(@fund_ratio)
     # fund_id is nil for cross-fund / cross-portfolio rows — omit that crumb.
     @bread_crumbs = { Funds: funds_path }
-    if @fund_ratio.fund.present?
-      @bread_crumbs[@fund_ratio.fund.name.to_sym] = fund_path(@fund_ratio.fund)
-    end
+    @bread_crumbs[@fund_ratio.fund.name.to_sym] = fund_path(@fund_ratio.fund) if @fund_ratio.fund.present?
     @bread_crumbs[:'Fund Ratios'] = fund_ratios_path(fund_id: @fund_ratio.fund_id, filter: true)
     @bread_crumbs[@fund_ratio.to_s.to_sym] = nil
   end

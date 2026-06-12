@@ -20,16 +20,16 @@ class ReportBuilderFormulaService
     @formulas.each do |formula|
       key   = formula["key"]
       expr  = formula["expression"].to_s
-      
+
       # Replace [column.key] with safe__key in the expression
       safe_expr = expr.gsub(/\[([^\]]+)\]/) do
-        $1.split(";").first.strip.gsub(".", "__")
+        ::Regexp.last_match(1).split(";").first.strip.gsub(".", "__")
       end
 
       begin
         result = @calculator.evaluate(safe_expr, data)
         row[key] = result
-        
+
         # Update data hash so subsequent formulas can use this result
         data[key.to_s.gsub(".", "__")] = result
       rescue StandardError => e
@@ -45,8 +45,8 @@ class ReportBuilderFormulaService
   def self.validate(expression, sample_row = {})
     calculator = Dentaku::Calculator.new
     data = sample_row.transform_keys { |k| k.to_s.gsub(".", "__") }
-    safe_expr = expression.to_s.gsub(/\[([^\]]+)\]/) { $1.gsub(".", "__") }
-    
+    safe_expr = expression.to_s.gsub(/\[([^\]]+)\]/) { ::Regexp.last_match(1).gsub(".", "__") }
+
     begin
       calculator.evaluate!(safe_expr, data)
       true

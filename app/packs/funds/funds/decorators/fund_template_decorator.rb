@@ -1,4 +1,4 @@
-class FundTemplateDecorator < TemplateDecorator # rubocop:disable Metrics/ClassLength
+class FundTemplateDecorator < TemplateDecorator
   include CurrencyHelper
   include Memoized
   include DocGeneratorHelper

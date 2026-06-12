@@ -14,9 +14,9 @@
 #
 # @see SupportAgentService
 class EsignMonitorAgent < SupportAgentService
-  DESCRIPTION = "Monitors the e-signing pipeline: resends stuck requests and flags expired or voided documents.".freeze
+  DESCRIPTION = "Monitors the e-signing pipeline: resends stuck requests and flags expired or voided documents."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Monitors the e-signature pipeline and takes corrective action on stuck or expired documents.
     Targets the entity itself and scans all documents currently in "requested" e-sign status.
 
@@ -32,10 +32,10 @@ class EsignMonitorAgent < SupportAgentService
   DESC
 
   STEP_LABELS = {
-    initialize_agent:     "Initialize",
-    find_pending_esigns:  "Find Pending",
+    initialize_agent: "Initialize",
+    find_pending_esigns: "Find Pending",
     send_esign_reminders: "Send Reminders",
-    flag_expired_esigns:  "Flag Expired",
+    flag_expired_esigns: "Flag Expired",
     generate_progress_reports: "Save Report"
   }.freeze
 
@@ -65,16 +65,16 @@ class EsignMonitorAgent < SupportAgentService
     reminder_after_days = @support_agent.json_fields["reminder_after_days"]&.to_i || 3
 
     ctx[:pending_docs] = Document
-      .where(entity_id: target.id)
-      .esign_status_requested
-      .where("updated_at < ?", reminder_after_days.days.ago)
-      .includes(:e_signatures)
+                         .where(entity_id: target.id)
+                         .esign_status_requested
+                         .where(updated_at: ...reminder_after_days.days.ago)
+                         .includes(:e_signatures)
 
     count = ctx[:pending_docs].size
     ctx[:issues][:esign_issues] << {
       type: :info,
       message: "#{count} document(s) pending e-sign for more than #{reminder_after_days} day(s)",
-      severity: count > 0 ? :warning : :success
+      severity: count.positive? ? :warning : :success
     }
     Rails.logger.info { "[EsignMonitorAgent] Found #{count} stuck e-sign request(s) for entity #{target.id}" }
     true
@@ -134,8 +134,8 @@ class EsignMonitorAgent < SupportAgentService
     end
 
     expired_docs = Document
-      .where(entity_id: target.id)
-      .where(esign_status: %w[expired cancelled voided])
+                   .where(entity_id: target.id)
+                   .where(esign_status: %w[expired cancelled voided])
 
     expired_docs.each do |doc|
       ctx[:issues][:esign_issues] << {

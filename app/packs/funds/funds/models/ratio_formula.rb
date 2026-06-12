@@ -39,9 +39,9 @@ class RatioFormula < ApplicationRecord
 
   def normalize_account_entry_names
     self.account_entry_names = if account_entry_names.is_a?(String)
-                                 account_entry_names.split(',').map(&:strip).reject(&:blank?)
+                                 account_entry_names.split(',').map(&:strip).compact_blank
                                else
-                                 Array(account_entry_names).reject(&:blank?)
+                                 Array(account_entry_names).compact_blank
                                end
   end
 end

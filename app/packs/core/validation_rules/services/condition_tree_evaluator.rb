@@ -44,7 +44,7 @@ class ConditionTreeEvaluator
     case node["op"]
     when "AND" then node["conditions"].all? { |c| evaluate_node(c) }
     when "OR"  then node["conditions"].any? { |c| evaluate_node(c) }
-    else             evaluate_leaf(node)
+    else evaluate_leaf(node)
     end
   end
 
@@ -60,7 +60,7 @@ class ConditionTreeEvaluator
     when "lt"               then resolve_field(node["field"]).to_f < resolve_param_or_value(node)
     when "eq"               then resolve_field(node["field"]).to_s == resolve_param_or_value(node).to_s
     when "blank"            then resolve_field(node["field"]).blank?
-    when "not_blank"        then !resolve_field(node["field"]).blank?
+    when "not_blank"        then resolve_field(node["field"]).present?
     else
       # Unknown operator — do not fire the rule to avoid false positives
       Rails.logger.warn("[ConditionTreeEvaluator] Unknown operator: #{op}")
@@ -73,7 +73,11 @@ class ConditionTreeEvaluator
     raw = resolve_field(node["field"])
     return false if raw.blank?
 
-    date = raw.to_date rescue return(false)
+    begin
+      date = raw.to_date
+    rescue ArgumentError, TypeError
+      return false
+    end
     !quarter_end?(date)
   end
 

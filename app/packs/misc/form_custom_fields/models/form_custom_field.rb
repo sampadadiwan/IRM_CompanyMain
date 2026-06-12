@@ -9,31 +9,31 @@ class FormCustomField < ApplicationRecord
   VALID_FORMATS = %w[email phone url alphanumeric pan gstin ifsc].freeze
 
   FORMAT_PATTERNS = {
-    "email"        => /\A[^@\s]+@[^@\s]+\.[^@\s]+\z/i,
-    "phone"        => /\A[\d\s+\-()\[\]]{7,20}\z/,
-    "url"          => /\Ahttps?:\/\/.+/i,
+    "email" => /\A[^@\s]+@[^@\s]+\.[^@\s]+\z/i,
+    "phone" => /\A[\d\s+\-()\[\]]{7,20}\z/,
+    "url" => %r{\Ahttps?://.+}i,
     "alphanumeric" => /\A[a-zA-Z0-9]+\z/,
-    "pan"          => /\A[A-Z]{5}[0-9]{4}[A-Z]\z/,
-    "gstin"        => /\A[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]\z/,
-    "ifsc"         => /\A[A-Z]{4}0[A-Z0-9]{6}\z/
+    "pan" => /\A[A-Z]{5}[0-9]{4}[A-Z]\z/,
+    "gstin" => /\A[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]\z/,
+    "ifsc" => /\A[A-Z]{4}0[A-Z0-9]{6}\z/
   }.freeze
 
   REGULATORY_ENVS = %w[SEBI CRISIL IFSC MAS].freeze
   REGULATORY_FIELD_MODELS = %w[IndividualKyc NonIndividualKyc InvestmentInstrument].freeze
 
   VALIDATION_RULE_KEYS = %w[min_length max_length min_value max_value min_date max_date
-                             min_selections max_selections pattern format unique
-                             error_message max_size_mb].freeze
+                            min_selections max_selections pattern format unique
+                            error_message max_size_mb].freeze
 
   VALIDATION_RULE_KEYS.each do |key|
     define_method("vr_#{key}") { (validation_rules || {})[key] }
     define_method("vr_#{key}=") do |val|
       self.validation_rules ||= {}
       if key == "unique"
-        (val == "1" || val == true || val == "true") ? self.validation_rules[key] = true : self.validation_rules.delete(key)
+        ["1", true, "true"].include?(val) ? validation_rules[key] = true : validation_rules.delete(key)
       else
         cleaned = val.to_s.strip.presence
-        cleaned ? self.validation_rules[key] = cleaned : self.validation_rules.delete(key)
+        cleaned ? validation_rules[key] = cleaned : validation_rules.delete(key)
       end
     end
   end
@@ -45,7 +45,7 @@ class FormCustomField < ApplicationRecord
   # Values 1–3 map to the fixed infra steps; 100 (end) is the default "append to last fixed step".
   enum :step,  { one: 1, two: 2, three: 3, end: 100, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9 }
 
-  EXTRA_STEP_RANGE = (4..9).freeze
+  EXTRA_STEP_RANGE = (4..9)
 
   validates :name, :show_user_ids, length: { maximum: 100 }
   validates :label, length: { maximum: 254 }
@@ -87,11 +87,13 @@ class FormCustomField < ApplicationRecord
 
   def meta_data_present_for_option_types
     return unless OPTION_FIELD_TYPES.include?(field_type)
+
     errors.add(:meta_data, "must provide at least one option for #{field_type}") if meta_data.blank?
   end
 
   def name_normalizes_to_non_blank
     return if name.blank?
+
     errors.add(:name, "produces an empty field key after normalization") if FormCustomField.to_name(name).blank?
   end
 
@@ -113,7 +115,7 @@ class FormCustomField < ApplicationRecord
                    else                                []
                    end
 
-    return if allowed_keys.empty?  # field type (e.g. Calculation, Header) carries no validation rules
+    return if allowed_keys.empty? # field type (e.g. Calculation, Header) carries no validation rules
 
     invalid_keys = rules.keys - allowed_keys
     errors.add(:validation_rules, "contains invalid keys for #{field_type}: #{invalid_keys.join(', ')}") if invalid_keys.any?
@@ -128,9 +130,7 @@ class FormCustomField < ApplicationRecord
           errors.add(:validation_rules, "pattern is not a valid regex: #{e.message}")
         end
       end
-      if rules["format"].present?
-        errors.add(:validation_rules, "format must be one of: #{VALID_FORMATS.join(', ')}") unless VALID_FORMATS.include?(rules["format"])
-      end
+      errors.add(:validation_rules, "format must be one of: #{VALID_FORMATS.join(', ')}") if rules["format"].present? && VALID_FORMATS.exclude?(rules["format"])
     when "NumberField", "Money"
       validate_min_max_rule(rules, "min_value", "max_value")
     when "DateField"
@@ -246,6 +246,7 @@ class FormCustomField < ApplicationRecord
     min = rules[min_key]
     max = rules[max_key]
     return unless min.present? && max.present?
+
     errors.add(:validation_rules, "#{min_key} must be less than or equal to #{max_key}") if min.to_d > max.to_d
   end
 
@@ -253,6 +254,7 @@ class FormCustomField < ApplicationRecord
     %w[min_date max_date].each do |key|
       val = rules[key]
       next if val.blank? || val == "today"
+
       begin
         Date.parse(val.to_s)
       rescue ArgumentError
@@ -263,6 +265,7 @@ class FormCustomField < ApplicationRecord
     min = rules["min_date"]
     max = rules["max_date"]
     return unless min.present? && max.present? && min != "today" && max != "today"
+
     begin
       errors.add(:validation_rules, "min_date must be before max_date") if Date.parse(min.to_s) > Date.parse(max.to_s)
     rescue ArgumentError

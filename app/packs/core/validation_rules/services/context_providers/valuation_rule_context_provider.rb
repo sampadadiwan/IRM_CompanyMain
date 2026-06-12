@@ -7,7 +7,7 @@ class ValuationRuleContextProvider
   # @param record [Valuation] The record being validated (unsaved changes applied)
   # @param entity [Entity]    The tenant (unused here but part of the standard interface)
   # @return [Hash] symbol-keyed context values
-  def call(record:, entity:, params: {}) # rubocop:disable Lint/UnusedMethodArgument
+  def call(record:, entity:, params: {})
     prev = find_previous_valuation(record)
 
     {
@@ -30,7 +30,7 @@ class ValuationRuleContextProvider
 
     scope = Valuation.unscoped
                      .where(investment_instrument_id: record.investment_instrument_id)
-                     .where("valuation_date < ?", record.valuation_date)
+                     .where(valuation_date: ...record.valuation_date)
 
     # Narrow to same owner when the valuation is owner-scoped
     scope = scope.where(owner_type: record.owner_type, owner_id: record.owner_id) if record.owner_id.present?

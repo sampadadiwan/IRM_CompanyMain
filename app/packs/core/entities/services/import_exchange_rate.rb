@@ -21,7 +21,7 @@ class ImportExchangeRate < ImportUtil
     if exchange_rate.present?
       raise "Duplicate, already present"
     else
-      exchange_rate = ExchangeRate.create!(exchange_rate_attributes)
+      ExchangeRate.create!(exchange_rate_attributes)
       true
     end
   end

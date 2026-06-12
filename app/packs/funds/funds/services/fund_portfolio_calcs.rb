@@ -318,7 +318,7 @@ class FundPortfolioCalcs < FundRatioCalcs
         cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
       end
 
-      api.portfolio_cashflows.actual.where(payment_date: ..@end_date).each do |pcf|
+      api.portfolio_cashflows.actual.where(payment_date: ..@end_date).find_each do |pcf|
         amount = convert_amount(@fund, pcf.amount_cents, pcf.payment_date, use_tracking_currency)
         cf << XirrTransaction.new(amount, date: pcf.payment_date, notes: "Portfolio Income") if amount.positive?
       end

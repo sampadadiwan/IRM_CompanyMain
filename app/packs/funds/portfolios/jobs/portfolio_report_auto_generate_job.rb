@@ -6,12 +6,12 @@ class PortfolioReportAutoGenerateJob < ApplicationJob
   queue_as :low
 
   def perform
-    today = Date.today
+    today = Time.zone.today
 
     PortfolioReportTemplate
       .where(auto_generate_enabled: true)
       .includes(portfolio_report: :entity)
-      .each do |template|
+      .find_each do |template|
         next unless due?(template, today)
 
         entity  = template.portfolio_report.entity
@@ -23,17 +23,17 @@ class PortfolioReportAutoGenerateJob < ApplicationJob
           kpi_ids = portco.investor_kpi_mappings.show_in_report.pluck(:id)
 
           draft = PortfolioReportDraft.create!(
-            portfolio_company:         portco,
-            portfolio_report:          report,
+            portfolio_company: portco,
+            portfolio_report: report,
             portfolio_report_template: template,
-            user:                      entity.users.with_role(:company_admin).first || entity.users.first,
-            start_date:                start_date_for(template, today),
-            end_date:                  today.end_of_month,
-            kpi_period_type:           "Monthly",
-            kpi_tag:                   "Actual",
-            n_periods:                 template.kpi_config[:n_periods] || 6,
-            selected_kpi_mapping_ids:  kpi_ids,
-            status:                    :configuring
+            user: entity.users.with_role(:company_admin).first || entity.users.first,
+            start_date: start_date_for(template, today),
+            end_date: today.end_of_month,
+            kpi_period_type: "Monthly",
+            kpi_tag: "Actual",
+            n_periods: template.kpi_config[:n_periods] || 6,
+            selected_kpi_mapping_ids: kpi_ids,
+            status: :configuring
           )
           PortfolioReportDraftJob.perform_later(draft.id)
 

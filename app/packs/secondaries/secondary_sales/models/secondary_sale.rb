@@ -119,15 +119,15 @@ class SecondarySale < ApplicationRecord
   end
 
   def display_quantity
-    self.show_quantity == "Indicative" ? indicative_quantity : total_offered_quantity
+    show_quantity == "Indicative" ? indicative_quantity : total_offered_quantity
   end
 
   def display_price
-    self.price_type == "Fixed Price" ? final_price.to_s : "#{min_price} - #{max_price}"
+    price_type == "Fixed Price" ? final_price.to_s : "#{min_price} - #{max_price}"
   end
 
   def display_amounts
-    self.price_type == "Fixed Price" ? [Money.new(display_quantity * final_price * 100, entity.currency)] : [Money.new(display_quantity * min_price * 100, entity.currency), Money.new(display_quantity * max_price * 100, entity.currency)]
+    price_type == "Fixed Price" ? [Money.new(display_quantity * final_price * 100, entity.currency)] : [Money.new(display_quantity * min_price * 100, entity.currency), Money.new(display_quantity * max_price * 100, entity.currency)]
   end
 
   def self.ransackable_attributes(_auth_object = nil)

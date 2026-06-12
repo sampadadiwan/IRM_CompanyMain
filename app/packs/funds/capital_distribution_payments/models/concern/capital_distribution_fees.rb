@@ -25,7 +25,7 @@ module CapitalDistributionFees
     self.expense_with_fees_cents = 0
     self.display_only_with_fees_cents = 0
 
-    capital_distribution.distribution_fees.order(fee_type: :asc).each do |distribution_fee| # rubocop:disable Metrics/BlockLength
+    capital_distribution.distribution_fees.order(fee_type: :asc).each do |distribution_fee|
       Rails.logger.debug { "Processing distribution_fee: #{distribution_fee.name} for capital_distribution_payment: #{id}" }
 
       cd_account_entries = capital_commitment.account_entries.where(

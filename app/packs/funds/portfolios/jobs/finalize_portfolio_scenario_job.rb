@@ -29,7 +29,7 @@ class FinalizePortfolioScenarioJob < ApplicationJob
         UserAlert.new(user_id:, message: "Fund ratios for #{portfolio_scenario.name} were successfully created.<br> #{ratios_link}", level: "success").broadcast
       else
         UserAlert.new(user_id:, message: "Error Finalizing Portfolio Scenario: #{portfolio_scenario.name} -  #{result[:errors].join(', ')}", level: "danger").broadcast
-        errs = [portfolio_scenario: portfolio_scenario.name, error: result[:errors].join(', ')]
+        errs = [{ portfolio_scenario: portfolio_scenario.name, error: result[:errors].join(', ') }]
         EntityMailer.with(entity_id: portfolio_scenario.entity_id, user_id:, error_msg: errs).doc_gen_errors.deliver_now
       end
     end

@@ -57,10 +57,13 @@ class ImportFundDocs < ImportUtil
     dir = context[:unzip_dir]
     doc_name = user_data["Document Name"]
     orignal = user_data["Allow Orignal Format Download"].to_s.downcase.strip == "yes"
-    as_of = user_data["As Of Date"].presence && begin
-      Date.parse(user_data["As Of Date"])
-    rescue ArgumentError
-      return [false, "Invalid 'As Of Date': #{user_data['As Of Date']}"]
+    as_of = nil
+    if user_data["As Of Date"].present?
+      begin
+        as_of = Date.parse(user_data["As Of Date"])
+      rescue ArgumentError
+        return [false, "Invalid 'As Of Date': #{user_data['As Of Date']}"]
+      end
     end
 
     # Case-insensitive file path resolution

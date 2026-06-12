@@ -39,7 +39,6 @@ module InvestorKycConcern
   end
 
   # Ovveride the include with_folder method
-  # rubocop:disable Rails/SkipsModelValidations
   def document_changed(document)
     grant_access_rights_to_investor(document)
     # Check if all the required docs have been uploaded

@@ -10,7 +10,6 @@ class DocSharesController < ApplicationController
 
   def show; end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def view
     token = params[:token]
     doc_share_id = DocShareTokenService.new.verify_token(token)

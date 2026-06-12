@@ -123,7 +123,6 @@ module CapitalRemittanceDashboardHelper
     chart_method = case chart_type.to_s
                    when "line" then :line_chart
                    when "bar" then :column_chart
-                   when "area" then :area_chart
                    else :area_chart
                    end
 
@@ -159,9 +158,7 @@ module CapitalRemittanceDashboardHelper
   private
 
   def owner_remittances(owner)
-    if owner.is_a?(Fund)
-      owner.capital_remittances
-    elsif owner.is_a?(CapitalCall)
+    if owner.is_a?(Fund) || owner.is_a?(CapitalCall)
       owner.capital_remittances
     else
       CapitalRemittance.none
