@@ -380,6 +380,11 @@ export default class extends BaseAgGrid {
         // unconfigured extras are dropped
       });
 
+      // Preserve the order the user set in the form (dealGridColumnsValue array order)
+      const configIndex = (col) => this.dealGridColumnsValue.findIndex(c => c.field === col.field);
+      startCols.sort((a, b) => configIndex(a) - configIndex(b));
+      endCols.sort((a, b) => configIndex(a) - configIndex(b));
+
       return [...startCols, ...baseCols, ...endCols];
     }
 

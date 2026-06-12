@@ -114,7 +114,7 @@ class Deal < ApplicationRecord
 
     # Extend with custom field labels so they resolve without a manual override
     entity.form_types.find_by(name: 'DealInvestor')&.form_custom_fields&.visible&.each do |cf|
-      label_map["properties.#{cf.name}"] = cf.label
+      label_map["properties.#{cf.name}"] = cf.label.presence || cf.name.humanize
     end
 
     cols.filter_map do |col|

@@ -106,7 +106,7 @@
               <% if di_custom_fields.any? %>
                 <optgroup label="Custom Fields">
                   <% di_custom_fields.each do |cf| %>
-                    <option value="properties.<%= cf.name %>" <%= "selected" if col["field"] == "properties.#{cf.name}" %>><%= cf.label %></option>
+                    <option value="properties.<%= cf.name %>" <%= "selected" if col["field"] == "properties.#{cf.name}" %>><%= cf.label.presence || cf.name.humanize %></option>
                   <% end %>
                 </optgroup>
               <% end %>
@@ -139,7 +139,7 @@
             <% if di_custom_fields.any? %>
               <optgroup label="Custom Fields">
                 <% di_custom_fields.each do |cf| %>
-                  <option value="properties.<%= cf.name %>"><%= cf.label %></option>
+                  <option value="properties.<%= cf.name %>"><%= cf.label.presence || cf.name.humanize %></option>
                 <% end %>
               </optgroup>
             <% end %>
