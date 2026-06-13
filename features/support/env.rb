@@ -264,5 +264,9 @@ end
 World(IRMUtils)
 
 AfterAll do
-  FileUtils.rm_rf(Dir.glob(Rails.root.join('public', 'uploads', '*')))
+  # Only remove this process's upload directory so parallel workers don't
+  # delete files that other still-running processes depend on.
+  n = ENV.fetch('TEST_ENV_NUMBER', 'test')
+  FileUtils.rm_rf(Rails.root.join('public', 'uploads', n.to_s))
+  FileUtils.rm_rf(Rails.root.join('public', 'uploads', 'cache', n.to_s))
 end
