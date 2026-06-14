@@ -113,13 +113,11 @@ sequenceDiagram
 | Duplicate orchestration | Has this KYC been picked up by two concurrent runs? | Kill the duplicate; log the collision |
 | Stuck in transition | Has a KYC been in the same in-progress state for > 2 hours? | Alert employee; surface in manual review queue |
 | Phase regression | Has a KYC moved backwards (e.g. Phase 2 back to Phase 1)? | Flag as anomaly; block further automation until reviewed |
-| Commitment without KYC | Is there a commitment recorded > 1 hour ago with no KYC created? (KYCs may also exist without a commitment — this check applies only where commitments are linked) | Alert employee; attempt re-trigger once |
 | Wrong form type assigned | Does the KYC's form type tag match the fund's configured regime? | Flag for company_admin correction; do not send invitation until resolved |
 
 > **Key Takeaways**
 > - Phase regression (state moving backwards) blocks all further automation and never auto-resolves — it always requires a human to review.
 > - Wrong form type blocks the invitation — the investor is never contacted until the configuration is corrected.
-> - The "commitment without KYC" check applies only where commitments are explicitly linked to fund records; KYCs without commitments are normal and not flagged.
 
 ---
 
@@ -133,6 +131,8 @@ Sending an email to the wrong investor, or the same email twice, is the most vis
 | State freshness | Has the investor already taken the action that triggered this nudge? | Cancel nudge; it is no longer relevant |
 | Valid recipient address | Is the email address present and valid? | Block send; surface as data error in manual queue |
 | Bounce tracking | Did a previously sent email hard-bounce? | Block all future sends to this address; surface in EOD digest for manual contact |
+
+> **Infrastructure note — bounce detection:** The app currently sends email via **AWS SES**. SES delivers bounce and complaint notifications via SNS → webhook, but there is no existing webhook handler in the app. Bounce detection for the nudge agent requires building: (1) an SNS subscription endpoint that receives SES bounce/complaint events, (2) a bounce record store keyed on the recipient email address, and (3) a pre-send check in the nudge agent that blocks sends to any address with a recorded hard bounce. Until this is built, the "Bounce tracking" check above cannot be enforced automatically — bounces will be invisible to the system and operators will need to detect them manually.
 | Opt-out check | Has the investor unsubscribed? | Block all automated sends; surface case as "manual contact required" in EOD digest |
 | Invitation link expiry | Has the investor's onboarding link expired (default: 30 days)? | Issue a fresh link automatically; send a re-invitation nudge; log link refresh |
 | Placeholder resolution | Are all `{variables}` in the template resolvable? | Block send; surface template error |
@@ -157,7 +157,7 @@ This is the highest-risk agent for silent errors. AI extraction produces plausib
 
 ```mermaid
 flowchart TD
-    A[AI extracts a field value] --> B{Format valid?}
+    A[AI extracts a field value from document] --> B{Format valid?}
     B -- No --> REJECT[Reject extraction\nFlag field for manual entry]
     B -- Yes --> C{Value plausible?}
     C -- No --> REJECT
@@ -165,31 +165,53 @@ flowchart TD
     D -- Yes --> REJECT
     D -- No --> E{Confidence score\nabove threshold?}
     E -- No --> FLAG[Accept but mark\n'AI-extracted, low confidence'\nAdd to AI Review Queue]
-    E -- Yes --> F{Cross-doc consistency\ncheck needed?}
-    F -- Yes --> G{Name on PAN matches\nname on address proof?}
-    G -- No --> CONFLICT[Flag discrepancy\nSurface both values\nto company_admin side-by-side]
-    G -- Yes --> ACCEPT[✓ Accept extraction]
-    F -- No --> ACCEPT
+    E -- Yes --> G{Extracted value matches\nkyc.attribute in DB?}
+    G -- No --> CONFLICT[severity: blocking\nRecord document_issue:\ndoc · attribute · extracted vs DB value]
+    G -- Yes --> ACCEPT[✓ Accept — log success]
 ```
 
-**Verification API Checks**
+**Field-to-document consistency** (`check_field_to_document_consistency`): For each document attached to the KYC, the agent uses the LLM to extract the field values defined in the FormType's `doc_extraction` custom fields. Each extracted value is then compared against the corresponding attribute on the `InvestorKyc` record in the DB:
+
+- **String fields**: case-insensitive, whitespace-normalised (e.g. extracted PAN `ABCDE1234F` vs `kyc.PAN`)
+- **Date fields**: parsed and compared as dates (handles format variations in scanned documents)
+- **Numeric fields**: compared as decimals
+
+A mismatch produces a `severity: :blocking` `document_issue` with the document name, attribute name, extracted value, and DB value — surfaced to the onboarding user for resolution. A fully matching document logs `severity: :success`. An LLM parse failure on the document logs `severity: :warning` and surfaces for review without blocking.
+
+**Verification API Checks — PAN and Bank**
+
+> **Implementation:** Reuse existing jobs — do not duplicate verification logic.
+> - **PAN:** Call `investor_kyc.validate_pan_card` (defined in `InvestorKycConcern`) — this enqueues `VerifyPanJob`, which is already used by the existing save flow (`InvestorKycAction#validate_pan_card`). The job is guarded by `pan_verification_enabled?` (reads `entity.entity_setting.pan_verification`) and checks PAN number, name, and DOB match against the API response.
+> - **Bank:** Call `investor_kyc.validate_bank` (defined in `InvestorKycConcern`) — enqueues `VerifyBankJob`, also used by the existing save flow. Guarded by `bank_verification_enabled?` (reads `entity.entity_setting.bank_verification`). Uses fuzzy name match with a score threshold of 50.
+> - Both methods are idempotent — they skip re-verification if the relevant field hasn't changed and a response already exists. No backward-compatibility changes needed.
 
 | Check | What to look for | Action on failure |
 |---|---|---|
-| API timeout / 5xx | Did the API return an error rather than a result? | Retry once after 5 min; if retry fails, mark "API error" and surface in employee queue |
-| Soft pass detection | Did verification pass with a low match score or caveats? | Flag as "pass with caveats"; show raw response to company_admin rather than auto-advancing |
+| API timeout / 5xx | Did the API return an error rather than a result? | Retry once after 5 min; if retry fails, mark "API error" and surface in onboarding queue |
+| Soft pass detection | Did verification pass with a low match score or caveats? | Flag as "pass with caveats"; show raw response to onboarding user rather than auto-advancing |
 | Result persistence | Was the result written before the job completed? | On restart, re-read record before re-running — never run verification twice if result exists |
 | Timestamp integrity | Is the verification timestamp plausible? | Flag as data integrity error |
 
 **KRA Enrichment Checks**
 
+> **Implementation:** Reuse `CkycKraService` — do not duplicate KRA logic.
+> - Use `CkycKraService#fetch_kra_data(investor_kyc, create: true)` to find or create a `KycData` record (keyed on `PAN + birth_date`, `source: :kra`).
+> - Use `CkycKraService#get_kra_data(kra_data)` to call the KRA API (`KycVerify#get_kra_pan_response`) and check for "KYC details have been successfully verified" in the response.
+> - `InvestorKyc#kra_data` returns the last matching KRA record (`kyc_datas.kra.where(PAN: self.PAN).last`) — use this to check whether enrichment has already been applied before triggering.
+> - No changes needed to `CkycKraService`; call it from the agent without modification.
+
 | Check | What to look for | Action on failure |
 |---|---|---|
-| Already enriched | Has KRA data already been assigned to this KYC? | Block re-assignment; do not overwrite without explicit company_admin instruction |
+| Already enriched | Does `investor_kyc.kra_data` already have `status: "Success"`? | Skip fetch; do not re-assign |
 | Field ownership | Is the system about to overwrite a field the investor explicitly filled? | Only fill genuinely empty fields; never overwrite investor-entered data |
 | Implausible enrichment | Does the KRA name differ from the on-file name by more than the fuzzy threshold? | Do not auto-assign; surface discrepancy for manual review |
 
 **AML Checks**
+
+> **Implementation:** Reuse `InvestorKyc#generate_aml_report(user_id)` — do not duplicate AML logic.
+> - `generate_aml_report` enqueues `GenerateAmlReportJob` on the `serial` queue (concurrency 1, `retry: 0`). This is the same job used by the existing manual AML flow and handles rate limiting (random jitter up to `DELAY_SECONDS`, reschedules on "Rate limit reached"), multiple AML reports per KYC (`additional_aml_report_attributes` custom field), and error broadcasting.
+> - The agent should call `generate_aml_report(system_user_id)` passing a designated system user rather than a human user id, so error emails go to the right place.
+> - Backward compatible: the job signature (`investor_kyc_id, user_id`) is unchanged; no modifications needed.
 
 | Check | What to look for | Action on failure |
 |---|---|---|
@@ -197,11 +219,13 @@ flowchart TD
 | AML prerequisites met | Are PAN + name + DOB all present before triggering AML? | Defer check; re-trigger automatically when all three become available |
 | AML flag unreviewed | Has an AML-flagged case not been reviewed within 48h? | Surface in next EOD digest with "AML unreviewed" label |
 | AML flag stale | Was the AML check run > 30 days ago and the case is still open? | Re-run AML silently; flag if result changes |
-| Double AML run | Has AML already been run and a result stored for this KYC? | Block re-run; use stored result unless explicitly overridden by company_admin |
+| Double AML run | Does an `AmlReport` with a `request_id` already exist for this KYC? | Block re-run; use stored result unless explicitly overridden |
 
 > **Key Takeaways**
 > - AI extraction passes a four-step filter: format valid → value is plausible → not a field label → confidence above threshold. Failing any step rejects or flags the extraction.
-> - A soft pass (verification API returns "pass with caveats") is not the same as a clean pass — it is flagged and shown to compliance rather than auto-advancing the case.
+> - Field-to-document consistency compares extracted document values against the KYC record in the DB (`kyc.attribute`), not against other documents. Which fields to check is driven by `doc_extraction` custom fields on the FormType — configurable per fund and per form type.
+> - A mismatch (e.g. PAN card shows `ABCDE1234F` but `kyc.PAN` is `XYZPQ9876K`) is `severity: :blocking` — the case cannot advance until resolved by the onboarding user.
+> - A soft pass (verification API returns "pass with caveats") is not the same as a clean pass — it is flagged and shown to the onboarding user rather than auto-advancing the case.
 > - KRA never overwrites: it fills only genuinely empty fields. Investor-entered data is always preserved regardless of what KRA returns.
 > - AML prerequisites (PAN + name + DOB) are checked before the AML call is made. If they are not all present, the check is deferred and re-triggered automatically — the Inspector manages this, not the agent.
 
@@ -249,17 +273,25 @@ The Q&A agent is investor-facing — a hallucinated answer about status, missing
 
 > **KycDocGenerationAgent is optional.** It is enabled per fund via configuration and defaults to off. The checks below apply only when doc generation is enabled; funds with it disabled skip this agent entirely and proceed directly from `ReadyToClose` to the verification queue.
 
+> **Implementation:** Reuse the existing doc generation stack — do not duplicate it.
+> - **Generator:** `KycDocGenerator` (includes `DocumentGeneratorBase`). It uses the **Sablon gem** to render a Word template (.docx) against a context hash, then **soffice (LibreOffice)** to convert the rendered .docx to an accessible PDF. Entry point for async runs: `KycDocGenJob`.
+> - **Placeholder check (pre-generation):** `DocumentGeneratorBase#extract_merge_fields(template_path)` parses the Word template's DOCX XML and returns all `MERGEFIELD` names the template expects. Call this before rendering and diff against `context.keys` — any field name present in the template but absent from the context will be unresolved.
+> - **Placeholder check (post-generation):** Run `extract_merge_fields(output_docx_path)` on the rendered `.docx`. Sablon removes MERGEFIELDs it successfully substitutes; any that remain in the output file were unresolved. Collect and surface these by name before e-sign send.
+> - **Duplicate doc prevention:** `DocumentGeneratorBase#upload` already destroys existing documents with the same name (`where(name: ...).where.not(owner_tag: "signed").find_each(&:destroy)`) before saving the new one. No additional logic needed.
+> - Backward compatible: `KycDocGenerator`, `KycDocGenJob`, and `DocumentGeneratorBase` are unchanged — the agent calls them as-is.
+
 | Check | What to look for | Action on failure |
 |---|---|---|
-| Pre-generation completeness | Are all required KYC fields populated? | Block generation; surface missing fields to company_admin |
-| Placeholder resolution | Does the generated document contain unresolved `{{placeholders}}`? | Block e-sign send; alert employee with the list |
-| Blank section detection | Does any section render empty when it should have content? | Block e-sign send; flag for manual review |
-| Duplicate doc prevention | Does a generated doc already exist for this KYC? | Block re-generation; surface existing doc for review |
-| E-sign acknowledgement | *(E-signing enabled only)* Did the e-sign platform acknowledge receipt within 60 seconds? | Retry once; if unacknowledged, surface in employee queue |
+| Pre-generation completeness | Are all required KYC fields populated? | Block generation; surface missing fields to onboarding user |
+| Placeholder resolution (pre-generation) | Does `extract_merge_fields(template)` return fields not present in the context? | Block generation; surface the list of unresolved field names |
+| Placeholder resolution (post-generation) | Does `extract_merge_fields(output_docx)` still return any MERGEFIELDs? | Block e-sign send; alert onboarding user with the list |
+| Duplicate doc prevention | Does a generated (non-signed) doc with the same name already exist for this KYC? | Handled automatically by `upload` — existing doc is replaced; only signed docs are preserved |
+| E-sign acknowledgement | *(E-signing enabled only)* Did the e-sign platform acknowledge receipt within 60 seconds? | Retry once; if unacknowledged, surface in onboarding queue |
 
 > **Key Takeaways**
-> - Generation is gated by a pre-flight completeness check — all required fields must be present before generation starts. The agent never generates a document with known gaps.
-> - Blank section and unresolved placeholder checks run post-generation, before e-sign send. The document exists in the DB and can be inspected manually even if the send is blocked.
+> - Generation uses the existing `KycDocGenerator` / `DocumentGeneratorBase` stack (Sablon + soffice). No new doc generation code is needed.
+> - Placeholder resolution is a two-step check: before rendering (compare template field names against context keys) and after rendering (verify no MERGEFIELDs remain in the output .docx). Both steps use the existing `extract_merge_fields` method.
+> - Duplicate doc replacement is already handled by `upload` — it destroys non-signed documents with the same name before saving the new one.
 > - The e-sign acknowledgement window is 60 seconds — if the provider does not confirm receipt in that window, it is treated as a send failure and retried once.
 
 ---
@@ -323,7 +355,7 @@ These metrics are included in the weekly GP digest and available on the Inspecto
 > - AI extraction checks include a guard for "value equals a field label" — LLMs on dense forms sometimes extract the label text (e.g. "Date of Birth") instead of the value next to it.
 > - Nudge suppression is not always bad. "Investor acted before nudge fired" is healthy suppression — the system worked. "Email bounced" is unhealthy — it surfaces in the EOD digest. The ratio between the two tells you whether cadence is calibrated.
 > - A stuck KYC is surfaced to the review queue, not auto-advanced. The Inspector does not know why it is stuck; a human or corrective company_admin action resolves it.
-> - Cross-doc consistency checks (name/DOB across PAN and Aadhaar) surface both values side-by-side for a company_admin to confirm — the Inspector never auto-accepts one over the other.
+> - Field-to-document consistency compares each extracted document value against the live DB record (`kyc.attribute`). A mismatch is `severity: :blocking` and surfaces to the onboarding user with the document name, attribute, extracted value, and DB value side-by-side.
 
 ---
 
