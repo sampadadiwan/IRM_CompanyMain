@@ -2,6 +2,15 @@
 
 > **See also:** [High Level Design](autonomous_kyc_onboarding_hld.md) · [Inspector Agent & Resilience](autonomous_kyc_inspector_agent.md)
 
+> **Roles used in this document**
+> | Role | App role | Who |
+> |---|---|---|
+> | `company_admin` | `:company_admin` | Full system access; can perform all KYC onboarding functions |
+> | `employee` | `:employee` + `investor_kyc_onboarding` flag | Can perform all KYC onboarding functions — equivalent to `company_admin` within this feature |
+> | `investor` | `:investor` | Submits KYC; receives nudges; uses Q&A agent |
+>
+> Within this feature, `company_admin` and `employee` (with `investor_kyc_onboarding` flag) have identical access: setup wizard, AML review, Issues screen, verification sign-off, EOD digest, and progress reports. The difference is that `company_admin` has broader system-wide access outside of onboarding.
+
 ## 1. Problem Statement
 
 - KYC onboarding is the single biggest operational bottleneck between a signed commitment and a fund close.
@@ -11,7 +20,7 @@
 - The result: prolonged onboarding cycles, delayed closes, and strained GP-LP relationships.
 
 > **Key Takeaways**
-> - The bottleneck is coordination, not analysis — most of what fund managers do to run onboarding requires no judgment from them.
+> - The bottleneck is coordination, not analysis — most of what company_admins do to run onboarding requires no judgment from them.
 > - Investors have no visibility into what they should do next; generic reminders create friction, not action.
 > - The goal is not to speed up the manual process — it is to replace the coordination layer entirely.
 
@@ -35,8 +44,9 @@ graph LR
     ORC -->|schedules| NUD["KycNudgeAgent
     Targeted emails · Escalation · Cadence"]
 
-    ORC -->|on close| DOC["KycDocGenerationAgent
-    Agreement · E-sign · Docs checklist"]
+    ORC -->|on close, if enabled| DOC["KycDocGenerationAgent
+    Agreement · E-sign · Docs checklist
+    (optional — defaults to off)"]
 
     ORC -.->|always on| QNA["KycQnAAgent
     Investor status Qs · GP fund-wide Qs"]
@@ -55,6 +65,7 @@ graph LR
 > **Key Takeaways**
 > - One orchestrator drives all agents; no agent communicates with another directly.
 > - QnA and ProgressReport are always-on; the rest are triggered by state changes or schedule.
+> - KycDocGenerationAgent is **optional** — enabled per fund via configuration; defaults to off. Funds that do not generate KYC agreements skip the DocGeneration step entirely.
 > - The Inspector cross-cuts every agent — it is not a phase but a continuous guard.
 > - "Fully automated" means humans review exceptions; the final compliance sign-off is still human.
 
@@ -64,8 +75,8 @@ graph LR
 
 - **Zero manual coordination for standard cases.** A KYC that follows the happy path — investor submits, all checks pass, documents uploaded — closes without a human touching it beyond the final compliance sign-off.
 - **Targeted, not generic, investor communication.** Every nudge tells the investor precisely what is missing and what to do, not "please complete your KYC."
-- **Visibility without involvement.** The onboarding team can see the status of every investor in real time; escalations arrive as a single EOD digest, not as per-case email noise.
-- **Instant answers for LPs and GPs.** Investors and fund managers can ask plain-language questions about onboarding status and process at any time and receive accurate, immediate responses.
+- **Visibility without involvement.** Any onboarding user (company_admin or employee with the investor_kyc_onboarding flag) can see the status of every investor in real time; escalations arrive as a single EOD digest, not as per-case email noise.
+- **Instant answers for LPs and GPs.** Investors and onboarding users can ask plain-language questions about onboarding status at any time and receive accurate, immediate responses.
 - **Auditable.** Every automated decision — a nudge sent, a data field populated from a registry, a doc generated — is recorded with a reason and timestamp.
 
 > **Key Takeaways**
@@ -78,30 +89,32 @@ graph LR
 ## 4. Non-Goals (v1)
 
 - CKYC integration (removed from scope).
-- Automated final compliance verification — a human compliance officer must still provide the final sign-off; the system queues verified-ready cases for one-click approval.
+- Automated final compliance verification — a human employee must still provide the final sign-off; the system queues verified-ready cases for one-click approval.
 - Multi-fund KYC deduplication (an investor onboarding into two funds simultaneously is treated as two independent onboarding runs).
 - Mobile-native investor app.
 - Non-Indian regulatory regimes (SEBI, GIFT City, and Default tags are in scope; other jurisdictions are future phases).
+- Flexible unique identifier per jurisdiction: the KYC import deduplication is currently hardcoded to the `Pan/Tax Id` column (`import_investor_kyc.rb`). Non-Indian funds (e.g. US) may use a different column (e.g. SSN / Tax Id). In v1 the column is hardcoded; making it configurable at the KYC-configuration level (not on FormType, which is shared across models) is a future-phase item.
 
 > **Key Takeaways**
 > - Final compliance sign-off is intentionally not automated in v1 — this is a deliberate trust boundary, not a gap.
 > - Each fund's onboarding is an independent run; multi-fund KYC deduplication is a separate problem.
 > - India-only scope: SEBI, GIFT City, and Default regulatory tags are the entire surface area for v1.
+> - The deduplication unique identifier is hardcoded to `Pan/Tax Id` in v1. Multi-jurisdiction support requires making this configurable at the KYC-configuration level.
 
 ---
 
 ## 5. Who This Is For
 
-| Persona | Role in onboarding | What they gain |
+| Role | Responsibilities in onboarding | What they gain |
 |---|---|---|
-| **Fund Manager / GP** | Oversees the close; wants onboarding done fast with no surprises | Real-time progress reports; escalations only for genuinely blocked cases; no manual chasing |
-| **Compliance Officer** | Must verify each KYC before the fund can call capital | A clean, exception-driven queue; all checks pre-run; one-click sign-off for ready cases |
-| **Investor (LP)** | Must provide identity, financial, and document information | Guided, personalised experience; instant answers to their questions; no unexplained delays |
-| **Fund Operations / Admin** | Historically owns the manual coordination work | Freed from chasing; handles only edge cases surfaced by the system |
+| **`company_admin`** | All KYC onboarding functions: setup wizard, AML review, Issues screen, verification sign-off, progress reports, escalation digest | Real-time progress visibility; no manual coordination for standard cases |
+| **`employee`** (investor_kyc_onboarding) | Same as company_admin within this feature: setup wizard, AML review, Issues screen, verification sign-off, progress reports, escalation digest | Same capabilities as company_admin within onboarding; no access to unrelated system modules |
+| **`investor`** | Submits identity, financial, and document information | Guided, personalised experience; instant answers via Q&A; no unexplained delays |
 
 > **Key Takeaways**
-> - Four personas, four distinct value propositions: GP gets visibility without involvement, Compliance gets a clean exception queue, LP gets a guided experience, Ops gets freed from coordination work.
-> - The system is designed so each persona only interacts with the decisions that require their judgment.
+> - Within KYC onboarding, `company_admin` and `employee` (with `investor_kyc_onboarding` flag) are equivalent — either can run the wizard, review AML flags, work the Issues screen, and sign off on verified KYCs.
+> - The only distinction between the two roles is scope outside this feature: `company_admin` has system-wide access; `employee` with the flag is scoped to onboarding.
+> - The system is designed so each role only interacts with the decisions that require their judgment — the investor drives their own submission; onboarding operators handle exceptions.
 
 ---
 
@@ -109,9 +122,11 @@ graph LR
 
 Before automated onboarding can run, the fund's KYC configuration must be established: what data will be collected, from which investor types, under which regulatory regimes, and how investors will be communicated with throughout the process. This is done once per fund through a guided setup wizard.
 
-The wizard is built around one insight: **get the data in first, configure the forms second.** Rather than blocking import on schema approval, the wizard imports all investor data immediately using placeholder FormTypes, then lets the fund manager and compliance officer configure each FormType at their own pace. Validation happens per FormType as each one is completed — not as a single upfront gate.
+> **Note on role usage in this section:** The wizard can be run by either a `company_admin` or an `employee` with the `investor_kyc_onboarding` flag — they are equivalent within this feature. The term "company_admin" below refers to whoever is operating the wizard, regardless of which role they hold.
 
-This means the fund manager can see all their investors in the system within minutes of uploading their spreadsheets, while the compliance officer reviews FormTypes independently and incrementally.
+The wizard is built around one insight: **get the data in first, configure the forms second.** Rather than blocking import on schema approval, the wizard imports all investor data immediately using placeholder FormTypes, then lets the company_admin configure each FormType at their own pace. Validation happens per FormType as each one is completed — not as a single upfront gate.
+
+This means the company_admin can see all their investors in the system within minutes of uploading their spreadsheets and configure each FormType independently and incrementally.
 
 The wizard autosaves after every step. It can be paused and resumed at any time.
 
@@ -121,24 +136,23 @@ The wizard autosaves after every step. It can be paused and resumed at any time.
 |---|---|---|---|
 | **1** | Upload Your Investor Spreadsheets | Fund manager uploads one or more Excel files in the standard CapHive KYC import format. Each file or sheet represents one investor segment (e.g. Individual · SEBI, Non-Individual · Default). The system reads the `KYC Type` and `Form Tag` columns to identify distinct segments before any data is written. | Segments identified; files queued for import |
 | **2** | Format Validation & Immediate Import | The wizard validates column structure, flags format errors, and resolves duplicate PANs. It then creates a placeholder FormType for each segment and imports all valid rows immediately — no schema approval needed. Invalid rows go to the Pending queue; custom field data is held as raw import data until Step 3. | All valid investor records created in CapHive; errors held in Pending queue |
-| **3** | Configure FormType per Segment | For each segment, the system inspects the non-core columns in the imported data, infers a field type for each (checkbox, dropdown, number, date, currency, text), and pre-creates the custom fields. The fund manager reviews the proposals, adjusts labels and types, marks required fields, and saves — no approval loop. The system immediately applies the FormType to all records and resolves the raw import data into structured field values. | Placeholder FormTypes replaced with real definitions; custom fields applied to all records |
+| **3** | Configure FormType per Segment | For each segment, the system inspects the non-core columns in the imported data, infers a field type for each (checkbox, dropdown, number, date, currency, text), and pre-creates the custom fields. The company_admin reviews the proposals, adjusts labels and types, marks required fields, and saves — no approval loop. The system immediately applies the FormType to all records and resolves the raw import data into structured field values. | Placeholder FormTypes replaced with real definitions; custom fields applied to all records |
 | **4** | Data Compliance Check | After each FormType is saved, a rule-based check runs automatically across every record in that segment. It catches type mismatches (e.g. text in a Number field), orphaned columns (data with no matching field — would be silently lost), dropdown values not in the allowed list, and missing required fields. Errors block invitations; warnings are surfaced but not blocking. | All records validated against the FormType; no orphaned data or type mismatches blocking invitations |
-| **5** | Design the Investor Email Journey | The fund manager configures the automated communication sequence: what emails go out, when, and with what content. Presented as a visual timeline from invitation to completion. Each email is editable inline with placeholder variables rendered using real sample data. A "Send to myself" test delivers the full journey to the fund manager's inbox before any investor is contacted. | Nudge cadence, email content, and timing confirmed; fund manager has previewed the full investor journey |
-| **6** | Final Configuration | Sets the operational parameters for the live system: onboarding deadline, maximum open window before escalation, onboarding team members (who receives EOD escalation digests), escalation CC list, compliance officer and deputy, e-signing on/off, and pilot group if a staged rollout is preferred. | Onboarding team, deadlines, compliance roles, and e-signing configured |
-| **7** | Review and Launch | A single summary screen shows every configuration decision — record counts per segment, email journey steps, compliance officer, deadline, and FormTypes — before anything is sent. The fund manager clicks Launch to send the first wave of invitations and activate the automated monitoring loop. | Invitations sent; automated onboarding loop active |
+| **5** | Design the Investor Email Journey | The company_admin configures the automated communication sequence: what emails go out, when, and with what content. Presented as a visual timeline from invitation to completion. Each email is editable inline with placeholder variables rendered using real sample data. A "Send to myself" test delivers the full journey to the company_admin's inbox before any investor is contacted. | Nudge cadence, email content, and timing confirmed; company_admin has previewed the full investor journey |
+| **6** | Final Configuration | Sets the operational parameters for the live system: onboarding deadline, maximum open window before escalation, onboarding team members (who receive the verification queue and EOD escalation digests), escalation CC list, AML alert recipient (company_admin), e-signing on/off, and pilot group if a staged rollout is preferred. | Employee recipients, deadlines, AML alert assignment, and e-signing configured |
+| **7** | Review and Launch | A single summary screen shows every configuration decision — record counts per segment, email journey steps, deadline, and FormTypes — before anything is sent. The company_admin clicks Launch to send the first wave of invitations and activate the automated monitoring loop. | Invitations sent; automated onboarding loop active |
 
 > **Key Takeaways**
 > - Steps 1–4 are about getting data in and validated. Steps 5–6 are about configuring behaviour. Step 7 is the launch gate.
 > - Steps 3 and 4 repeat per segment — each segment is independent and can be completed at different times.
-> - No step requires compliance officer involvement; the wizard is owned entirely by the fund manager.
+> - No dedicated sign-off step is required within the wizard; setup is entirely a company_admin self-service flow.
 
 ### Wizard Flow
 
 ```mermaid
 sequenceDiagram
-    actor FM as Fund Manager
+    actor FM as company_admin
     participant W as Setup Wizard
-    actor CO as Compliance Officer
     participant DB as CapHive
 
     FM->>W: Upload spreadsheet(s)
@@ -172,14 +186,14 @@ sequenceDiagram
     end
 
     FM->>W: Configure email journey + cadence
-    FM->>W: Set deadline · compliance officer · pilot group
+    FM->>W: Set deadline · pilot group
     FM->>W: Launch onboarding
     W->>DB: Activate automated monitoring loop
     W-->>FM: Onboarding live
 ```
 
 > **Key Takeaways**
-> - The compliance officer does not appear in the wizard flow — they are a configuration setting (Step 6), not a participant.
+> - The verification queue is visible to all `company_admin` users and all employees with the `investor_kyc_onboarding` flag — no individual assignee is configured in the wizard.
 > - The FormType loop runs once per segment, not once per file. Two files with the same KYC Type + Form Tag are merged into one segment.
 > - Everything up to Launch is reversible. The wizard autosaves and can be paused at any step.
 
@@ -192,9 +206,9 @@ sequenceDiagram
 - File structure is confirmed before any data is written.
 - Fund manager can add more files or proceed to import.
 
-The fund manager uploads one or more Excel files representing the investors they intend to onboard. Each file (or sheet within a file) typically corresponds to a distinct investor segment: Individual SEBI investors, Non-Individual SEBI investors, Individual GIFT City investors, and so on.
+The company_admin uploads one or more Excel files representing the investors they intend to onboard. Each file (or sheet within a file) typically corresponds to a distinct investor segment: Individual SEBI investors, Non-Individual SEBI investors, Individual GIFT City investors, and so on.
 
-Each spreadsheet must use the standard CapHive KYC import format — the same format accepted by the manual KYC import tool. The `KYC Type` column (`individual` / `non_individual`) and the `Form Tag` column (`SEBI`, `GIFT`, `Default`) are required in every file. The fund manager can download the standard import template from within the wizard if needed.
+Each spreadsheet must use the standard CapHive KYC import format — the same format accepted by the manual KYC import tool. The `KYC Type` column (`individual` / `non_individual`) and the `Form Tag` column (`SEBI`, `GIFT`, `Default`) are required in every file. The company_admin can download the standard import template from within the wizard if needed.
 
 **What the system reads immediately upon upload:**
 
@@ -216,7 +230,7 @@ For each file or sheet, the system reads the `KYC Type` and `Form Tag` columns a
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Additional files can be added at any point in the wizard. The fund manager proceeds to format validation once all files are uploaded.
+Additional files can be added at any point in the wizard. The company_admin proceeds to format validation once all files are uploaded.
 
 > **Key Takeaways**
 > - Segments are identified solely from the `KYC Type` and `Form Tag` columns — these two fields drive the entire FormType structure downstream.
@@ -237,7 +251,7 @@ The wizard validates the format of each file and then imports immediately — no
 
 ```mermaid
 sequenceDiagram
-    actor FM as Fund Manager
+    actor FM as company_admin
     participant W as Setup Wizard
     participant DB as CapHive
 
@@ -280,11 +294,11 @@ Custom field columns from the spreadsheet are stored as raw import data attached
 
 **Outcome:**
 - Placeholder FormType replaced with a real, fund-specific FormType for the segment.
-- Custom fields created with system-inferred types; fund manager reviews, adjusts, and saves — no approval loop.
+- Custom fields created with system-inferred types; company_admin reviews, adjusts, and saves — no approval loop.
 - Raw import data resolved into structured custom field values on all records in the segment.
 - Repeated once per segment until all placeholders are replaced.
 
-When the fund manager opens the FormType editor for a segment, the system has already inspected the non-core columns in that segment's spreadsheet data and **pre-created the custom fields** — one per unrecognised column — with types inferred from the column values. The fund manager reviews and adjusts the proposals rather than building from scratch.
+When the company_admin opens the FormType editor for a segment, the system has already inspected the non-core columns in that segment's spreadsheet data and **pre-created the custom fields** — one per unrecognised column — with types inferred from the column values. The company_admin reviews and adjusts the proposals rather than building from scratch.
 
 **Type inference rules:**
 
@@ -300,7 +314,7 @@ When the fund manager opens the FormType editor for a segment, the system has al
 
 ```mermaid
 sequenceDiagram
-    actor FM as Fund Manager
+    actor FM as company_admin
     participant W as Setup Wizard
     participant DB as CapHive
 
@@ -320,10 +334,10 @@ sequenceDiagram
     W-->>FM: Validation report — proceed to Step 4
 ```
 
-The fund manager saves directly in the wizard — no approval workflow, no back and forth. Once saved, the system immediately applies the FormType to all records in the segment and runs an automated data compliance check.
+The company_admin saves directly in the wizard — no approval workflow, no back and forth. Once saved, the system immediately applies the FormType to all records in the segment and runs an automated data compliance check.
 
 > **Key Takeaways**
-> - The system infers field types from actual column data — the fund manager reviews proposals, not a blank form.
+> - The system infers field types from actual column data — the company_admin reviews proposals, not a blank form.
 > - Dropdown options are pre-populated from values already present in the data.
 > - Saving the FormType triggers three things atomically: placeholder replaced, raw import data resolved into structured fields, compliance check run.
 > - This step repeats independently per segment — each one can be completed at a different time.
@@ -336,7 +350,7 @@ The fund manager saves directly in the wizard — no approval workflow, no back 
 - Every record in the segment checked against the FormType definition just saved.
 - Errors (type mismatch, orphaned column, invalid dropdown value) surfaced inline — block invitations until resolved.
 - Warnings (missing required field) noted but not blocking — investor fills these on their form.
-- Segment marked clean once zero errors remain; fund manager can re-run at any time after corrections.
+- Segment marked clean once zero errors remain; company_admin can re-run at any time after corrections.
 
 After the FormType is saved, a rule-based check runs automatically across every record in the segment. No AI required — these are deterministic rules against the FormType definition just saved.
 
@@ -344,7 +358,7 @@ After the FormType is saved, a rule-based check runs automatically across every 
 sequenceDiagram
     participant W as Setup Wizard
     participant CHK as Compliance Checker
-    actor FM as Fund Manager
+    actor FM as company_admin
 
     W->>CHK: FormType saved — check all records in segment
 
@@ -373,7 +387,7 @@ sequenceDiagram
 | Required custom field has no value for a record | Warning — investor fills themselves | No action needed; investor prompted on their form |
 | Optional custom field has no value | Informational | No action needed |
 
-The fund manager can re-run the check at any time after making corrections. Once there are no errors (warnings are allowed), the segment is ready and the wizard advances.
+The company_admin can re-run the check at any time after making corrections. Once there are no errors (warnings are allowed), the segment is ready and the wizard advances.
 
 > **Key Takeaways**
 > - Errors block invitations; warnings do not. The distinction matters: don't try to fix all warnings before launching.
@@ -388,10 +402,10 @@ The fund manager can re-run the check at any time after making corrections. Once
 **Outcome:**
 - Full nudge cadence configured: triggers, delays, and recipients for each email in the investor journey.
 - Email subjects and body copy reviewed and edited inline using real sample data.
-- Sender name set per email (personal from fund manager, or generic fund address).
+- Sender name set per email (personal from company_admin, or generic fund address).
 - Fund manager has sent the complete journey to themselves and confirmed every email reads correctly before any investor receives one.
 
-This step is where the automated onboarding communication is configured. It is presented as a visual journey — a sequence of events the investor experiences from first invitation through to completion. Each node is clickable: the fund manager sees the email content, edits it, and adjusts timing, all in one place.
+This step is where the automated onboarding communication is configured. It is presented as a visual journey — a sequence of events the investor experiences from first invitation through to completion. Each node is clickable: the company_admin sees the email content, edits it, and adjusts timing, all in one place.
 
 ```mermaid
 timeline
@@ -416,21 +430,21 @@ timeline
             : Sent only if e-signing is enabled for the fund
 ```
 
-All placeholder variables (`{Fund Name}`, `{First Name}`, `{Missing Fields}`, etc.) are rendered with real sample data in the preview. The fund manager edits prose directly — no template syntax required.
+All placeholder variables (`{Fund Name}`, `{First Name}`, `{Missing Fields}`, etc.) are rendered with real sample data in the preview. The company_admin edits prose directly — no template syntax required.
 
-The fund manager can:
+The company_admin can:
 - Adjust the delay on any email.
 - Edit the subject and body inline.
 - Add a new email at any point in the journey.
 - Remove emails they do not want.
-- Assign a different sender name per email (nudges from the fund manager personally, not from a generic address).
+- Assign a different sender name per email (nudges from the company_admin personally, not from a generic address).
 
 **"Send to myself" test:**
-At any point, the fund manager clicks **Send me the full journey** and receives every email in the sequence to their own inbox, rendered with a sample investor's data. This makes the experience tangible before a single investor is contacted.
+At any point, the company_admin clicks **Send me the full journey** and receives every email in the sequence to their own inbox, rendered with a sample investor's data. This makes the experience tangible before a single investor is contacted.
 
 > **Key Takeaways**
 > - The default timeline is a starting point — adjust delays based on your investor base and how responsive they typically are.
-> - Each email can have a different sender name. Personal sender (fund manager's name) performs better for high-stakes nudges; a generic fund address is appropriate for confirmations.
+> - Each email can have a different sender name. Personal sender (company_admin's name) performs better for high-stakes nudges; a generic fund address is appropriate for confirmations.
 > - "Send to myself" is not optional — always test the full journey before launch. It is the only way to experience what your investors will actually receive.
 
 ---
@@ -440,7 +454,6 @@ At any point, the fund manager clicks **Send me the full journey** and receives 
 **Outcome:**
 - Onboarding deadline and maximum open window set.
 - Onboarding team members selected (≥1 required); escalation CC list added.
-- Compliance officer and deputy compliance officer assigned.
 - E-signing toggled on or off for this fund.
 - Pilot group and launch mode decided (all at once, or pilot-first).
 
@@ -453,15 +466,14 @@ A short set of operational parameters that govern how the automated system behav
 | **Pilot group** | A subset of investors who receive the invitation first, before full rollout | None |
 | **Launch mode** | Send to all at once, or hold until manually triggered per investor | All at once |
 | **E-signing** | Whether the generated KYC agreement must be e-signed by the investor before the record enters the verification queue | Off |
-| **Compliance officer** | Who receives the verification queue and AML alerts | Required |
-| **Deputy compliance officer** | Auto-receives the queue if primary is inactive for > 48h | Recommended |
-| **Onboarding team** | Selected employees of the entity responsible for onboarding; all escalation digests are sent to this group | Required (≥1) |
+| **Onboarding team** | Employees (investor_kyc_onboarding) responsible for onboarding; all escalation digests and the verification queue are sent to this group | Required (≥1) |
+| **AML alert recipient** | company_admin or employee (investor_kyc_onboarding) who receives AML flag notifications | Required |
 | **Escalation CC** | Additional email addresses (outside the platform) copied on all escalation digests | Optional |
 | **Weekly digest recipients** | Who receives the automated progress report | Onboarding team |
 
 > **Key Takeaways**
 > - The maximum open window (default 30 days) is the escalation trigger — after this many days with no progress, the case escalates regardless of the nudge cadence still running.
-> - The onboarding team field requires at least one member — escalation digests have no destination without it.
+> - The employee recipients field requires at least one member — escalation digests have no destination without it.
 > - The pilot group exists so you can test the full live flow with a small subset before committing to a full rollout.
 > - E-signing defaults to off — only enable it if Digio credentials are configured in entity settings.
 
@@ -470,7 +482,7 @@ A short set of operational parameters that govern how the automated system behav
 ### Step 7 — Review and Launch
 
 **Outcome:**
-- All configuration displayed on one summary screen — segment counts, email steps, compliance officer, deadline, and FormTypes.
+- All configuration displayed on one summary screen — segment counts, email steps, deadline, and FormTypes.
 - Fund manager confirms and clicks Launch.
 - First wave of invitations sent immediately (or pilot group first if configured).
 - Automated monitoring loop activated; the system takes over from this point.
@@ -488,7 +500,7 @@ A short set of operational parameters that govern how the automated system behav
 │  OR  Pilot group first:          10  (then 253 on approval) │
 │                                                             │
 │  Email journey:                 9 steps configured          │
-│  Compliance officer:            Priya Sharma                │
+│  AML alert recipient:           Priya Sharma (company_admin) │
 │  Onboarding deadline:           15 Sept 2026                │
 │  FormTypes approved:            3  (Individual SEBI, Ind. Default, NI SEBI) │
 │                                                             │
@@ -516,7 +528,7 @@ Rows that could not be imported are held in a **Pending Imports** queue accessib
 
 > **Key Takeaways**
 > - Import first, configure forms second — placeholder FormTypes mean all investor data is live within minutes of upload, before any schema is finalised.
-> - The fund manager saves FormTypes directly with no approval loop; compliance does not review FormTypes in the wizard.
+> - The company_admin saves FormTypes directly with no approval loop; no separate review step is required.
 > - The data compliance check (Step 4) runs automatically after each FormType save and is the gate that prevents bad data from reaching investors.
 > - Step 5's "Send to myself" test is the only way to see the full investor email journey before go-live — always use it.
 > - Step 7 (Review and Launch) is the last human gate; everything after is system-driven until the final compliance sign-off.
@@ -552,7 +564,8 @@ stateDiagram-v2
     DocsRequired --> ReadyToClose : Docs uploaded
     DocsRequired --> Escalated : Nudges exhausted
 
-    ReadyToClose --> DocGenerated : Agreement generated
+    ReadyToClose --> DocGenerated : Doc generation enabled + agreement generated
+    ReadyToClose --> VerificationQueue : Doc generation disabled
     DocGenerated --> AwaitingESig : E-sign enabled
     DocGenerated --> VerificationQueue : E-sign disabled
     AwaitingESig --> VerificationQueue : Investor e-signs
@@ -588,10 +601,10 @@ Triggered whenever a KYC record is created — via the setup wizard import, manu
 
 > **Deferred AML**: When PAN or DOB are not available at creation (common in bulk imports), the AML check runs automatically during Phase 2 as soon as the investor submits their form and the required fields are populated. This ensures AML always runs before the case can proceed to `ReadyToClose`.
 
-> **AML flag review timeout**: If an AML-flagged case has not been reviewed by the compliance officer within 48 hours, it surfaces in the next EOD digest with an explicit "AML flag unreviewed" label. If still unreviewed after 7 days it is escalated directly to the onboarding team lead as a separate alert, not just the digest.
+> **AML flag review timeout**: If an AML-flagged case has not been reviewed within 48 hours, it surfaces in the next EOD digest with an explicit "AML flag unreviewed" label. If still unreviewed after 7 days it is escalated to all configured recipients as a separate alert, not just the digest.
 
 > **Key Takeaways**
-> - Phase 1 has exactly one human-gated decision: the compliance officer reviewing an AML flag. Everything else is automatic.
+> - Phase 1 has exactly one human-gated decision: reviewing an AML flag (can be performed by any company_admin or employee with the investor_kyc_onboarding flag). Everything else is automatic.
 > - An AML flag at creation means the investor receives no invitation and no contact until the flag is resolved — they are never aware the process started.
 > - Deferred AML (data not present at creation) always catches up in Phase 2 before the case can close. There is no path to ReadyToClose without AML having run.
 > - The 48h / 7d escalation ladder for unreviewed flags ensures AML cases don't silently sit in a queue.
@@ -666,7 +679,7 @@ sequenceDiagram
 
 #### Nudge Escalation Sequence
 
-Escalations are never sent per individual KYC event. Instead, the system accumulates all blocked cases throughout the day and sends a single EOD digest to the configured onboarding team (and CC list). The digest links to an Issues screen showing every blocked case with its reason, days stuck, and available actions.
+Escalations are never sent per individual KYC event. Instead, the system accumulates all blocked cases throughout the day and sends a single EOD digest to the configured recipients (company_admin and/or employee with the investor_kyc_onboarding flag, plus the CC list). The digest links to an Issues screen showing every blocked case with its reason, days stuck, and available actions.
 
 ```mermaid
 sequenceDiagram
@@ -696,21 +709,21 @@ sequenceDiagram
 > **Key Takeaways**
 > - Every nudge is targeted — it names the specific field or check that is blocking the investor, not "please complete your KYC."
 > - Escalation is never per-KYC. All blocked cases accumulate and go out as one EOD digest.
-> - When the open window is exceeded, automated nudges pause for that case. The onboarding team decides the next action per case from the Issues screen — the system does not make that call.
+> - When the open window is exceeded, automated nudges pause for that case. The employee decides the next action per case from the Issues screen — the system does not make that call.
 
 #### Investor Opt-Out
 
 All investor emails include an unsubscribe link. If an investor opts out:
 - All automated nudges are suppressed immediately and permanently for that KYC.
 - The case surfaces in the next EOD digest as "investor opted out — manual contact required."
-- The onboarding team must contact the investor directly and, if successful, re-enable nudges explicitly. Nudges never auto-resume after an opt-out.
+- The employee must contact the investor directly and, if successful, re-enable nudges explicitly. Nudges never auto-resume after an opt-out.
 
 This is a legal requirement (TRAI DLT regulations) and a practical safeguard — suppressing silently and continuing would risk the case stalling indefinitely without anyone noticing.
 
 > **Key Takeaways**
 > - Opt-out is permanent and immediate — nudges stop the moment the investor clicks unsubscribe and never auto-resume.
 > - The case does not close or stall invisibly — it surfaces in the next EOD digest as "manual contact required."
-> - Re-enabling nudges after an opt-out requires an explicit action by the onboarding team; the system will not do it automatically even if the investor later engages.
+> - Re-enabling nudges after an opt-out requires an explicit action by the employee; the system will not do it automatically even if the investor later engages.
 
 #### Progress Reporting
 
@@ -726,7 +739,7 @@ The GP can ask a plain-language question ("How many KYCs are verified for Fund I
 > **Key Takeaways**
 > - Progress reporting is continuous and live — not a daily snapshot. The GP always sees current state.
 > - The blocked list names the specific investor, their specific reason, and how many days they have been stuck.
-> - The weekly digest is sent to the onboarding team by default; additional recipients are configured in Step 6.
+> - The weekly digest is sent to the employee by default; additional recipients are configured in Step 6.
 
 ---
 
@@ -740,52 +753,51 @@ sequenceDiagram
     participant DOC as KycDocGenerationAgent
     participant Q as Priority Queue
     actor I as Investor
-    actor CO as Compliance Officer
-    actor DEP as Deputy Officer
+    actor EMP as employee
 
-    ORC->>DOC: All checks pass + docs complete
-    DOC->>DOC: Generate KYC agreement\nfrom template + investor data
+    ORC->>ORC: All checks pass + docs complete
 
-    alt E-signing enabled for this fund
-        DOC->>I: Send e-sign request
-        I-->>DOC: Investor e-signs
-    else E-signing disabled
-        Note over DOC: Skip e-sign — proceed directly to queue
+    alt Doc generation enabled (opt-in, default off)
+        ORC->>DOC: Trigger KycDocGenerationAgent
+        DOC->>DOC: Generate KYC agreement\nfrom template + investor data
+
+        alt E-signing enabled for this fund
+            DOC->>I: Send e-sign request
+            I-->>DOC: Investor e-signs
+        else E-signing disabled
+            Note over DOC: Skip e-sign — proceed directly to queue
+        end
+
+        DOC->>ORC: Docs complete — mark checklist done
+    else Doc generation disabled
+        Note over ORC: Skip doc generation — proceed directly to queue
     end
 
-    DOC->>ORC: Docs complete — mark checklist done
     ORC->>Q: Insert into verification queue\n(priority: deadline proximity)
-    Q-->>CO: Cases ordered by priority score
-    alt CO available
-        CO->>ORC: One-click sign-off
-    else CO unavailable > 48h
-        Q-->>DEP: Auto-route to deputy officer
-        DEP->>ORC: One-click sign-off
-    end
+    Q-->>EMP: Cases ordered by priority score
+    EMP->>ORC: One-click sign-off
     ORC->>ORC: Mark KYC Verified\n(verified_by, verified_at recorded)
 ```
 
 The verification queue is **priority-ordered**, not FIFO. During onboarding there are no capital commitments yet, so priority is based on days until the fund's onboarding deadline and time in queue. Once the fund moves to a capital call stage and commitments are recorded, committed amount can be incorporated as a secondary priority signal.
 
-A **deputy compliance officer** is configurable in the setup wizard. If the primary officer has not actioned any queue items for more than 48 hours, the queue automatically routes to the deputy. If both are inactive for more than 48 hours simultaneously, the onboarding team lead is alerted via the EOD digest with a "verification queue stalled" flag. This prevents the entire close pipeline from stalling on one person's availability.
+**Sign-off confirmation**: The onboarding user (company_admin or employee with the investor_kyc_onboarding flag) sees a brief confirmation modal before sign-off is recorded ("Confirm verified: [Investor Name], [Fund]"), reducing the risk of one-click misfire on a large queue. A sign-off can be reversed within 1 hour by the same user — after that it is locked for audit integrity.
 
-**Sign-off confirmation**: The compliance officer sees a brief confirmation modal before sign-off is recorded ("Confirm verified: [Investor Name], [Fund]"), reducing the risk of one-click misfire on a large queue. A sign-off can be reversed within 1 hour by the same officer — after that it is locked for audit integrity.
-
-**Post-document data change**: If a core KYC field is updated after the agreement has been generated but before compliance sign-off, the system voids the existing document, regenerates it with the updated data, and re-sends the e-sign request if e-signing is enabled. The compliance officer is notified of the regeneration. Fields locked post-sign-off cannot be edited without explicit admin override.
+**Post-document data change**: If a core KYC field is updated after the agreement has been generated but before sign-off, the system voids the existing document, regenerates it with the updated data, and re-sends the e-sign request if e-signing is enabled. The onboarding team is notified of the regeneration. Fields locked post-sign-off cannot be edited without an explicit override by any company_admin.
 
 **Outcome:** A fully verified KYC record with complete audit trail, ready for capital calls. Where e-signing is enabled, the record includes the signed agreement document.
 
 > **Key Takeaways**
+> - KycDocGenerationAgent is optional and defaults to off. Funds that don't generate agreements skip directly from `ReadyToClose` to the verification queue — no doc generation step at all.
 > - The verification queue is priority-ordered by deadline proximity, not FIFO — the most time-sensitive cases surface first.
-> - If the primary compliance officer is inactive for > 48h, the queue auto-routes to the deputy. If both are inactive, the onboarding team lead is alerted.
-> - A data change after document generation voids the old document and triggers regeneration automatically. The compliance officer is notified but does not need to intervene.
+> - A data change after document generation voids the old document and triggers regeneration automatically. The employee is notified but does not need to intervene.
 > - Sign-off locks after 1 hour. The confirmation modal and the reversal window together protect against one-click misfires on a large queue.
 
 > **Key Takeaways**
 > - AML runs at KYC creation if PAN + name + DOB are available; if not, it defers until the investor submits. It always runs before a case can close.
 > - An AML flag blocks the invitation — the investor is never contacted until compliance resolves the flag.
 > - PAN, Bank, and KRA checks run in parallel after submission, not sequentially.
-> - Escalation is always EOD batched to the onboarding team — never fired per individual KYC event.
+> - Escalation is always EOD batched to the employee — never fired per individual KYC event.
 > - Investor opt-out permanently suppresses all nudges and never auto-resumes; it surfaces as "manual contact required" in the next digest.
 > - The verification queue is priority-ordered by deadline proximity, not FIFO.
 > - The 1-hour sign-off reversal window exists to protect against one-click misfires on a large queue; after that, the record locks for audit integrity.
@@ -826,7 +838,7 @@ The system is designed to escalate late rather than early. A human is only pulle
 - Registry data conflicts materially with what the investor submitted.
 - A case has been open beyond the fund's maximum onboarding window.
 
-Escalations are batched, not per-KYC. The onboarding team (configured during setup) receives a single EOD digest listing every case that needs attention, with a direct link to the Issues screen. No individual case fires its own alert email — this prevents inbox noise and keeps escalation actionable. The CC list (also set during setup) receives the same digest.
+Escalations are batched, not per-KYC. All configured onboarding users (company_admin or employee with the investor_kyc_onboarding flag) receive a single EOD digest listing every case that needs attention, with a direct link to the Issues screen. No individual case fires its own alert email — this prevents inbox noise and keeps escalation actionable. The CC list (also set during setup) receives the same digest.
 
 The Issues screen shows each blocked case with its reason, time stuck, and available actions — the team resolves from one place, not from their inbox.
 
@@ -840,7 +852,7 @@ The Issues screen shows each blocked case with its reason, time stuck, and avail
 
 ## 10. KYC Internal Notes
 
-Each KYC record has a rich-text internal notes field, editable in place on the KYC detail view. It is visible only to the onboarding team and compliance officer — investors never see it, and no automated agent reads it.
+Each KYC record has a rich-text internal notes field, editable in place on the KYC detail view. It is visible only to employees and company_admins — investors never see it, and no automated agent reads it.
 
 Notes are the team's shared scratchpad for anything that matters to a specific case but doesn't fit into a structured field: a call the investor had with the GP, a document that's in transit, a compliance concern that needs watching, a manual exception being tracked.
 
@@ -857,13 +869,13 @@ Notes are the team's shared scratchpad for anything that matters to a specific c
 
 ### Behaviour
 
-- Any member of the onboarding team can edit the notes field on any KYC at any time.
+- Any employee or company_admin can edit the notes field on any KYC at any time.
 - Notes appear on the KYC detail view and in the Issues screen alongside the case status.
 - The full edit history is retained via ActionText's built-in versioning.
 - The system does not act on notes; they are purely informational for humans.
 
 > **Key Takeaways**
-> - Notes are collaborative — any onboarding team member can read and edit the notes for any KYC.
+> - Notes are collaborative — any employee or company_admin can read and edit the notes for any KYC.
 > - Notes appear alongside the case in the Issues screen, so the team always has context when working a blocked case.
 > - Edit history is automatic via ActionText — no extra setup needed.
 
@@ -871,9 +883,9 @@ Notes are the team's shared scratchpad for anything that matters to a specific c
 
 | Role | Can read | Can write |
 |---|---|---|
-| Onboarding team member | Yes | Yes |
-| Compliance officer | Yes | Yes |
-| Investor | No | No |
+| `employee` (investor_kyc_onboarding) | Yes | Yes |
+| `company_admin` | Yes | Yes |
+| `investor` | No | No |
 | KycQnAAgent | No | No |
 
 > Notes are internal. No automated agent reads or surfaces note content to investors or in outbound communications.

@@ -17,6 +17,10 @@ class ImportInvestorKyc < ImportUtil
     saved = true
     full_name = user_data["Investing Entity"]
     update_only = user_data["Update Only"]
+    # TODO: "Pan/Tax Id" is the unique identifier for Indian jurisdictions (SEBI, GIFT).
+    # Non-Indian jurisdictions (e.g. US) may use a different column (e.g. SSN / Tax ID).
+    # When adding multi-jurisdiction support, make the identifier column configurable at the
+    # KYC configuration level (not on FormType, which is shared across models).
     pan = user_data["Pan/Tax Id"]&.strip
 
     investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first

@@ -8,7 +8,16 @@
 
 Automation at scale fails in predictable ways: emails fire twice, AI extracts a field label instead of a value, an agent retries after a timeout and duplicates a record, a KYC silently stalls because a background job crashed without logging. The KycInspectorAgent is the system's internal auditor — it runs continuously alongside all other agents, checking their inputs, outputs, and side-effects, and surfacing anything that needs human attention before it becomes a problem.
 
-The Inspector does not fix errors. It **detects, explains, and routes them** — either to an automated retry, to the GP/compliance queue, or to a developer alert depending on severity.
+The Inspector does not fix errors. It **detects, explains, and routes them** — either to an automated retry, to the review queue, or to a developer alert depending on severity.
+
+> **Roles used in this document**
+> | Role | App role | Who |
+> |---|---|---|
+> | `company_admin` | `:company_admin` | Full system access; can perform all KYC onboarding functions |
+> | `employee` | `:employee` + `investor_kyc_onboarding` flag | Can perform all KYC onboarding functions — equivalent to `company_admin` within this feature |
+> | `investor` | `:investor` | Submits their own KYC; receives nudges; uses the Q&A agent |
+>
+> Within this feature, `company_admin` and `employee` (with `investor_kyc_onboarding` flag) are equivalent — either can handle AML review, Issues screen, verification sign-off, and all escalation digests. Where this document says "company_admin" or "employee" in an onboarding context, either role applies. The only distinction is that `company_admin` has broader system-wide access outside of onboarding.
 
 ### Architecture
 
@@ -54,7 +63,7 @@ sequenceDiagram
     participant INS as KycInspectorAgent
     participant LOG as Audit Log
     participant Q as Manual Review Queue
-    actor OPS as Ops / GP
+    actor OPS as company_admin
 
     A->>INS: Pre-flight check request
     INS->>INS: Verify preconditions + idempotency key
@@ -102,10 +111,10 @@ sequenceDiagram
 | Check | What to look for | Action on failure |
 |---|---|---|
 | Duplicate orchestration | Has this KYC been picked up by two concurrent runs? | Kill the duplicate; log the collision |
-| Stuck in transition | Has a KYC been in the same in-progress state for > 2 hours? | Alert ops; surface in manual review queue |
+| Stuck in transition | Has a KYC been in the same in-progress state for > 2 hours? | Alert employee; surface in manual review queue |
 | Phase regression | Has a KYC moved backwards (e.g. Phase 2 back to Phase 1)? | Flag as anomaly; block further automation until reviewed |
-| Commitment without KYC | Is there a commitment recorded > 1 hour ago with no KYC created? (KYCs may also exist without a commitment — this check applies only where commitments are linked) | Alert ops; attempt re-trigger once |
-| Wrong form type assigned | Does the KYC's form type tag match the fund's configured regime? | Flag for admin correction; do not send invitation until resolved |
+| Commitment without KYC | Is there a commitment recorded > 1 hour ago with no KYC created? (KYCs may also exist without a commitment — this check applies only where commitments are linked) | Alert employee; attempt re-trigger once |
+| Wrong form type assigned | Does the KYC's form type tag match the fund's configured regime? | Flag for company_admin correction; do not send invitation until resolved |
 
 > **Key Takeaways**
 > - Phase regression (state moving backwards) blocks all further automation and never auto-resolves — it always requires a human to review.
@@ -130,7 +139,7 @@ Sending an email to the wrong investor, or the same email twice, is the most vis
 | Cadence integrity | Has timing drift occurred across retries? | Recalculate from original trigger timestamp, not retry timestamp |
 | Escalation threshold | Was the GP CC threshold crossed but GP not actually copied? | Retry escalation send; alert if retry fails |
 | EOD digest delivery | Did the EOD digest send successfully (delivery receipt within 10 min)? | Retry up to 3x; if all fail, surface on Inspector dashboard as critical error |
-| Digest recipient validity | Are all onboarding team members still active CapHive users with fund access? | Remove inactive members; if list becomes empty, alert the GP directly |
+| Digest recipient validity | Are all employee recipients still active CapHive users with fund access? | Remove inactive members; if list becomes empty, alert a company_admin directly |
 
 > **Key Takeaways**
 > - The 24-hour duplicate window prevents the most common failure mode: a Sidekiq retry sending the same email twice to the same investor.
@@ -158,7 +167,7 @@ flowchart TD
     E -- No --> FLAG[Accept but mark\n'AI-extracted, low confidence'\nAdd to AI Review Queue]
     E -- Yes --> F{Cross-doc consistency\ncheck needed?}
     F -- Yes --> G{Name on PAN matches\nname on address proof?}
-    G -- No --> CONFLICT[Flag discrepancy\nSurface both values\nto admin side-by-side]
+    G -- No --> CONFLICT[Flag discrepancy\nSurface both values\nto company_admin side-by-side]
     G -- Yes --> ACCEPT[✓ Accept extraction]
     F -- No --> ACCEPT
 ```
@@ -167,8 +176,8 @@ flowchart TD
 
 | Check | What to look for | Action on failure |
 |---|---|---|
-| API timeout / 5xx | Did the API return an error rather than a result? | Retry once after 5 min; if retry fails, mark "API error" and surface in ops queue |
-| Soft pass detection | Did verification pass with a low match score or caveats? | Flag as "pass with caveats"; show raw response to compliance rather than auto-advancing |
+| API timeout / 5xx | Did the API return an error rather than a result? | Retry once after 5 min; if retry fails, mark "API error" and surface in employee queue |
+| Soft pass detection | Did verification pass with a low match score or caveats? | Flag as "pass with caveats"; show raw response to company_admin rather than auto-advancing |
 | Result persistence | Was the result written before the job completed? | On restart, re-read record before re-running — never run verification twice if result exists |
 | Timestamp integrity | Is the verification timestamp plausible? | Flag as data integrity error |
 
@@ -176,7 +185,7 @@ flowchart TD
 
 | Check | What to look for | Action on failure |
 |---|---|---|
-| Already enriched | Has KRA data already been assigned to this KYC? | Block re-assignment; do not overwrite without explicit admin instruction |
+| Already enriched | Has KRA data already been assigned to this KYC? | Block re-assignment; do not overwrite without explicit company_admin instruction |
 | Field ownership | Is the system about to overwrite a field the investor explicitly filled? | Only fill genuinely empty fields; never overwrite investor-entered data |
 | Implausible enrichment | Does the KRA name differ from the on-file name by more than the fuzzy threshold? | Do not auto-assign; surface discrepancy for manual review |
 
@@ -188,7 +197,7 @@ flowchart TD
 | AML prerequisites met | Are PAN + name + DOB all present before triggering AML? | Defer check; re-trigger automatically when all three become available |
 | AML flag unreviewed | Has an AML-flagged case not been reviewed within 48h? | Surface in next EOD digest with "AML unreviewed" label |
 | AML flag stale | Was the AML check run > 30 days ago and the case is still open? | Re-run AML silently; flag if result changes |
-| Double AML run | Has AML already been run and a result stored for this KYC? | Block re-run; use stored result unless explicitly overridden by compliance |
+| Double AML run | Has AML already been run and a result stored for this KYC? | Block re-run; use stored result unless explicitly overridden by company_admin |
 
 > **Key Takeaways**
 > - AI extraction passes a four-step filter: format valid → value is plausible → not a field label → confidence above threshold. Failing any step rejects or flags the extraction.
@@ -204,12 +213,12 @@ The Q&A agent is investor-facing — a hallucinated answer about status, missing
 
 | Check | What to look for | Action on failure |
 |---|---|---|
-| Source grounding | Is the answer grounded in the investor's actual KYC record, not a general inference? | Reject ungrounded answers; respond with "I don't have enough information — please contact your fund manager" |
+| Source grounding | Is the answer grounded in the investor's actual KYC record, not a general inference? | Reject ungrounded answers; respond with "I don't have enough information — please contact your fund admin" |
 | Status currency | Is the KYC record being read at query time, not from a cached snapshot? | Always read live record before answering status questions |
 | Scope boundary | Is the question about a field or process outside this system's knowledge? | Acknowledge the boundary explicitly; do not guess |
 | PII leakage | Does the answer contain another investor's data or fields not belonging to the querying investor? | Block response; log as critical security error |
-| Investor vs. GP context | Is a GP-level question (e.g. "how many investors are verified?") being answered to an investor session? | Block; route to GP portal |
-| Confidence floor | Is the answer confidence below the minimum threshold for an investor-facing response? | Respond with "I'm not certain — please check with your onboarding team" rather than a low-confidence answer |
+| Investor vs. GP context | Is a GP-level question (e.g. "how many investors are verified?") being answered to an investor session? | Block; route to company_admin view |
+| Confidence floor | Is the answer confidence below the minimum threshold for an investor-facing response? | Respond with "I'm not certain — please check with your fund admin" rather than a low-confidence answer |
 
 > **Key Takeaways**
 > - PII leakage is treated as a critical security error — the response is blocked and dev is alerted immediately, not surfaced in the EOD digest.
@@ -227,7 +236,7 @@ The Q&A agent is investor-facing — a hallucinated answer about status, missing
 | Duplicate report prevention | Has a report already been sent for this fund in this reporting period? | Suppress duplicate; log suppression |
 | Stale data | Was report generated > 15 min after the data snapshot it is based on? | Regenerate from a fresh snapshot before sending |
 | Escalation accuracy | Are "blocked" KYCs in the report still actually blocked? | Re-check each listed KYC at send time; remove resolved cases |
-| Recipient validation | Are all digest recipients still active CapHive users with fund access? | Remove inactive recipients; alert the GP |
+| Recipient validation | Are all digest recipients still active CapHive users with fund access? | Remove inactive recipients; alert a company_admin |
 
 > **Key Takeaways**
 > - Reports are re-validated at send time, not just at generation time — a KYC that resolved in the window between generation and send is removed from the blocked list before the digest goes out.
@@ -238,13 +247,15 @@ The Q&A agent is investor-facing — a hallucinated answer about status, missing
 
 #### KycDocGenerationAgent
 
+> **KycDocGenerationAgent is optional.** It is enabled per fund via configuration and defaults to off. The checks below apply only when doc generation is enabled; funds with it disabled skip this agent entirely and proceed directly from `ReadyToClose` to the verification queue.
+
 | Check | What to look for | Action on failure |
 |---|---|---|
-| Pre-generation completeness | Are all required KYC fields populated? | Block generation; surface missing fields to admin |
-| Placeholder resolution | Does the generated document contain unresolved `{{placeholders}}`? | Block e-sign send; alert ops with the list |
+| Pre-generation completeness | Are all required KYC fields populated? | Block generation; surface missing fields to company_admin |
+| Placeholder resolution | Does the generated document contain unresolved `{{placeholders}}`? | Block e-sign send; alert employee with the list |
 | Blank section detection | Does any section render empty when it should have content? | Block e-sign send; flag for manual review |
 | Duplicate doc prevention | Does a generated doc already exist for this KYC? | Block re-generation; surface existing doc for review |
-| E-sign acknowledgement | *(E-signing enabled only)* Did the e-sign platform acknowledge receipt within 60 seconds? | Retry once; if unacknowledged, surface in ops queue |
+| E-sign acknowledgement | *(E-signing enabled only)* Did the e-sign platform acknowledge receipt within 60 seconds? | Retry once; if unacknowledged, surface in employee queue |
 
 > **Key Takeaways**
 > - Generation is gated by a pre-flight completeness check — all required fields must be present before generation starts. The agent never generates a document with known gaps.
@@ -275,11 +286,11 @@ The Q&A agent is investor-facing — a hallucinated answer about status, missing
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Every error entry links directly to the affected KYC record and shows what was attempted, what the Inspector detected, what was done automatically, and what the admin needs to do — in plain language. The Inspector log is immutable and timestamped throughout.
+Every error entry links directly to the affected KYC record and shows what was attempted, what the Inspector detected, what was done automatically, and what the company_admin needs to do — in plain language. The Inspector log is immutable and timestamped throughout.
 
 > **Key Takeaways**
 > - Three severity tiers: Red (requires human action), Yellow (auto-handled, surfaced for awareness), Green (clean action count for the last 24h).
-> - Every red entry is actionable in plain language — it tells the admin what failed, what the Inspector did automatically, and what still needs a decision.
+> - Every red entry is actionable in plain language — it tells the company_admin what failed, what the Inspector did automatically, and what still needs a decision.
 > - The AI Review Queue surfaces low-confidence extractions for human spot-checking — separate from the manual review queue for errors.
 > - The audit log is immutable — no entry can be edited or deleted after it is written.
 
@@ -295,7 +306,7 @@ Every error entry links directly to the affected KYC record and shows what was a
 | Verification API error rate | Sustained errors indicate an API-level issue, not a data issue |
 | Mean time stuck in Phase 2 | Increasing over time = nudge cadence not converting; investigate copy or timing |
 | Manual intervention rate | Share of KYCs requiring human action beyond final sign-off; target < 30% |
-| False-pass rate | Verifications that passed but were later corrected by the compliance officer |
+| False-pass rate | Verifications that passed but were later corrected by a company_admin |
 
 These metrics are included in the weekly GP digest and available on the Inspector dashboard at any time.
 
@@ -311,8 +322,8 @@ These metrics are included in the weekly GP digest and available on the Inspecto
 > - Pre-flight is a gate that runs before an action and can block it. Post-action is a receipt check that runs after and catches outcomes that appeared to succeed but didn't.
 > - AI extraction checks include a guard for "value equals a field label" — LLMs on dense forms sometimes extract the label text (e.g. "Date of Birth") instead of the value next to it.
 > - Nudge suppression is not always bad. "Investor acted before nudge fired" is healthy suppression — the system worked. "Email bounced" is unhealthy — it surfaces in the EOD digest. The ratio between the two tells you whether cadence is calibrated.
-> - A stuck KYC is surfaced to the review queue, not auto-advanced. The Inspector does not know why it is stuck; a human or corrective admin action resolves it.
-> - Cross-doc consistency checks (name/DOB across PAN and Aadhaar) surface both values side-by-side for an admin to confirm — the Inspector never auto-accepts one over the other.
+> - A stuck KYC is surfaced to the review queue, not auto-advanced. The Inspector does not know why it is stuck; a human or corrective company_admin action resolves it.
+> - Cross-doc consistency checks (name/DOB across PAN and Aadhaar) surface both values side-by-side for a company_admin to confirm — the Inspector never auto-accepts one over the other.
 
 ---
 
@@ -328,7 +339,7 @@ The two agents that produce generative prose — `KycQnAAgent` and `KycProgressR
 
 ### Exception-First Review
 
-**The Issues screen is already the review queue.** Instead of sampling random traces, review every escalated or failed KYC. The system self-selects what needs attention. The onboarding team opens the Issues screen each morning and works the list.
+**The Issues screen is already the review queue.** Instead of sampling random traces, review every escalated or failed KYC. The system self-selects what needs attention. An employee opens the Issues screen each morning and works the list.
 
 This is better than random sampling for a low-to-medium volume workflow: failure cases are rarer than successes, so sampling is wasteful — you spend most of your time reading healthy traces to find the one that went wrong.
 
@@ -367,15 +378,15 @@ These are shown on the Inspector dashboard and included in the weekly digest.
 
 These are the only agents where "technically correct but wrong" is a real failure mode.
 
-**KycQnAAgent** — investor rates every answer with a thumbs up or down after receiving it. The onboarding team reviews all thumbs-down responses weekly. Each reviewed response either:
+**KycQnAAgent** — investor rates every answer with a thumbs up or down after receiving it. An employee reviews all thumbs-down responses weekly. Each reviewed response either:
 - Gets a corrective prompt or assertion added (if the agent will hit this again)
 - Gets a note in `internal_notes` on the KYC if it was a one-off investor misunderstanding
 
-**KycProgressReportAgent** — the GP or fund manager can flag a digest as misleading from the email itself ("This report missed X"). Flags appear in the Inspector dashboard alongside the report trace.
+**KycProgressReportAgent** — a company_admin can flag a digest as misleading from the email itself ("This report missed X"). Flags appear in the Inspector dashboard alongside the report trace.
 
 > **Key Takeaways**
 > - Thumbs-down is a review trigger, not a running score. Each bad QnA response either becomes an assertion (if the pattern will recur) or an internal note (if it was a one-off).
-> - Flagging a digest "from the email" is deliberate — it captures the feedback in the moment rather than requiring the GP to log in and find the report to comment on it.
+> - Flagging a digest "from the email" is deliberate — it captures the feedback in the moment rather than requiring the company_admin to log in and find the report to comment on it.
 > - These two channels (thumbs-down + digest flag) are the only human quality feedback loops in the system. Everything else is automated.
 
 ---
@@ -470,7 +481,7 @@ sequenceDiagram
     participant ORC as KycOrchestrator
     participant HB as Heartbeat Store
     participant WD as Watchdog
-    actor OPS as Ops Team
+    actor OPS as employee
 
     loop Every 5 minutes
         ORC->>HB: Write heartbeat timestamp
@@ -498,21 +509,21 @@ On restart, the orchestrator re-hydrates by reading the current state of all ope
 
 ### Stale KYC Archival
 
-A KYC that remains in Escalated state beyond the fund's maximum open window is no longer an active case — it is a zombie. Treating it as active distorts the progress dashboard, inflates "mean time in Phase 2" metrics, and causes compliance officers to lose trust in the queue.
+A KYC that remains in Escalated state beyond the fund's maximum open window is no longer an active case — it is a zombie. Treating it as active distorts the progress dashboard, inflates "mean time in Phase 2" metrics, and causes company_admins to lose trust in the queue.
 
 Once a KYC crosses the stale threshold:
 - It moves to **Stale** state and is removed from all active dashboards and reports
 - It is retained in full for audit purposes and remains searchable
-- The GP receives a one-time notification per stale case explaining why it was archived
-- Re-activation is a deliberate GP action ("Resume onboarding"), not automatic
+- The company_admin receives a one-time notification per stale case explaining why it was archived
+- Re-activation is a deliberate company_admin action ("Resume onboarding"), not automatic
 - The stale threshold is configurable per fund (default: maximum open window + 15 days)
 
 This keeps the active dashboard meaningful — every case shown is genuinely actionable.
 
 > **Key Takeaways**
 > - Stale is not a failure state — it is a deliberate archive. The KYC is fully retained in the DB and auditable; it is just removed from active dashboards and queues.
-> - Re-activation requires a deliberate GP action. The system never auto-resumes a stale case, even if the investor later submits data.
-> - The stale threshold is fund-configurable (default: maximum open window + 15 days). Adjust it based on how long your compliance team can realistically work escalated cases.
+> - Re-activation requires a deliberate company_admin action. The system never auto-resumes a stale case, even if the investor later submits data.
+> - The stale threshold is fund-configurable (default: maximum open window + 15 days). Adjust it based on how long your company_admin team can realistically work escalated cases.
 
 ---
 
@@ -533,18 +544,18 @@ A consolidated view of what can go wrong across every phase, how it is detected,
 
 | Failure | Detection | Resolution | Owner |
 |---|---|---|---|
-| Uploaded file is corrupt or empty | Step 2 format validation | Show error; prompt re-upload | HITL — fund manager |
-| KYC Type or Form Tag column has unrecognised values | Step 2 validation | Surface invalid values and allowed options; block import until corrected | HITL — fund manager |
+| Uploaded file is corrupt or empty | Step 2 format validation | Show error; prompt re-upload | HITL — company_admin / employee |
+| KYC Type or Form Tag column has unrecognised values | Step 2 validation | Surface invalid values and allowed options; block import until corrected | HITL — company_admin / employee |
 | Import partially completes (crash mid-run) | On restart, re-read import progress; idempotency prevents duplicates | Resume from last committed row | Auto |
 | Placeholder FormType creation fails | System error logged in Step 2 | Abort import; surface error; allow retry | Auto retry → HITL |
-| Two admins editing the wizard concurrently | Session lock per fund on wizard | Second session sees "wizard in use by [name]"; read-only until lock releases | Auto (lock) |
-| Compliance officer assigned in Step 6 is no longer active | Pre-launch check at Step 7 | Block launch; prompt reassignment | HITL — fund manager |
-| Raw import data fails to resolve into custom fields for some records | Post-FormType-save check | Surface affected records; allow inline correction | HITL — fund manager |
+| Two onboarding users editing the wizard concurrently | Session lock per fund on wizard | Second session sees "wizard in use by [name]"; read-only until lock releases | Auto (lock) |
+| AML alert recipient assigned in Step 6 is no longer active | Pre-launch check at Step 7 | Block launch; prompt reassignment | HITL — company_admin / employee |
+| Raw import data fails to resolve into custom fields for some records | Post-FormType-save check | Surface affected records; allow inline correction | HITL — company_admin / employee |
 
 > **Key Takeaways**
-> - Most wizard failures are HITL — they require the fund manager to correct data or configuration. There is no automated recovery from a malformed spreadsheet.
+> - Most wizard failures are HITL — they require an onboarding user (company_admin or employee with the flag) to correct data or configuration. There is no automated recovery from a malformed spreadsheet.
 > - The concurrent editing lock is automatic and non-disruptive — the second session sees a "wizard in use" notice, not an error page.
-> - Compliance officer validity is checked at Step 7 (launch gate), not Step 6 — giving the fund manager time to verify the assignment before hitting the final confirmation.
+> - AML alert recipient validity is checked at Step 7 (launch gate), not Step 6 — giving the onboarding user time to verify the assignment before hitting the final confirmation.
 
 ---
 
@@ -553,16 +564,16 @@ A consolidated view of what can go wrong across every phase, how it is detected,
 | Failure | Detection | Resolution | Owner |
 |---|---|---|---|
 | AML API down at creation time | Circuit breaker | Defer AML; send invitation immediately; re-run AML when circuit closes | Auto |
-| Invitation email bounces on first send | Bounce tracking in NudgeAgent | Block all future sends; surface in EOD digest as "bad address" | Auto detect → HITL — onboarding team |
+| Invitation email bounces on first send | Bounce tracking in NudgeAgent | Block all future sends; surface in EOD digest as "bad address" | Auto detect → HITL — company_admin / employee |
 | Investor's onboarding link has expired | Link validation on click | Show "link expired" page; auto-issue fresh link; trigger re-invitation nudge | Auto |
-| AML flags investor but compliance never reviews | Inspector time-based scan: unreviewed AML flags > 48h | Surface in EOD digest; escalate directly after 7 days | HITL — compliance officer |
-| AML flag cleared by compliance | Compliance officer marks as reviewed: cleared | State machine transitions back to InvitationSent (pre-submission) or ChecksRunning (post-submission) | Auto (state transition) |
-| AML flag confirmed by compliance — investor should not proceed | Compliance officer marks as reviewed: do not proceed | Transition to Stale; archive with reason | HITL → Auto (archive) |
+| AML flags investor but compliance never reviews | Inspector time-based scan: unreviewed AML flags > 48h | Surface in EOD digest; escalate directly after 7 days | HITL — company_admin / employee |
+| AML flag cleared by compliance | Onboarding user marks as reviewed: cleared | State machine transitions back to InvitationSent (pre-submission) or ChecksRunning (post-submission) | Auto (state transition) |
+| AML flag confirmed by compliance — investor should not proceed | Onboarding user marks as reviewed: do not proceed | Transition to Stale; archive with reason | HITL → Auto (archive) |
 
 > **Key Takeaways**
 > - AML API down at creation is Auto — the invitation still goes out immediately; only the AML check is deferred. The investor is not blocked by an infrastructure outage.
 > - Expired invitation links auto-renew — the investor is never stranded on a broken link. A re-invitation nudge is sent automatically with the fresh link.
-> - Both AML clearance transitions (InvitationSent and ChecksRunning) are state machine operations driven by the compliance officer's decision. The system executes whichever path the decision maps to.
+> - Both AML clearance transitions (InvitationSent and ChecksRunning) are state machine operations driven by the onboarding user's decision (company_admin or employee with flag). The system executes whichever path the decision maps to.
 
 ---
 
@@ -571,34 +582,35 @@ A consolidated view of what can go wrong across every phase, how it is detected,
 | Failure | Detection | Resolution | Owner |
 |---|---|---|---|
 | PAN / Bank / KRA / AML API hard down | Circuit breaker | Queue all pending calls; drain in batches when circuit closes | Auto |
-| PAN verification passes but data is later found fraudulent | Compliance officer flags post-sign-off | Revert verification result; return case to ChecksFailed; surface in queue | HITL — compliance officer |
+| PAN verification passes but data is later found fraudulent | Onboarding user flags post-sign-off | Revert verification result; return case to ChecksFailed; surface in queue | HITL — company_admin / employee |
 | Investor updates a field after a check already passed | Field change detection on verified fields | Re-trigger affected checks automatically | Auto |
-| Investor opts out of all emails | Unsubscribe link click | Suppress all nudges permanently; surface case in EOD digest as "manual contact required" | Auto suppress → HITL — onboarding team |
+| Investor opts out of all emails | Unsubscribe link click | Suppress all nudges permanently; surface case in EOD digest as "manual contact required" | Auto suppress → HITL — company_admin / employee |
 | Nudge sent to investor who has already completed the action (race condition) | State freshness check pre-send | Cancel nudge; log suppression | Auto |
 | EOD digest fails to send | Delivery receipt check within 10 min | Retry up to 3x; if all fail, surface on Inspector dashboard as critical | Auto retry → HITL — dev alert |
-| All onboarding team members inactive at digest send time | Recipient validation | Fall back to escalation CC list; alert GP | Auto fallback → HITL |
+| All configured recipients inactive at digest send time | Recipient validation | Fall back to escalation CC list; alert a company_admin directly if CC list also empty | Auto fallback → HITL |
 | Nudge timing drifts due to retry using wrong timestamp | Cadence integrity check | Recalculate from original trigger timestamp | Auto |
-| KycQnAAgent answers with incorrect investor status | Confidence scoring + live record read | Low-confidence answers blocked; investor directed to onboarding team | Auto block |
+| KycQnAAgent answers with incorrect investor status | Confidence scoring + live record read | Low-confidence answers blocked; investor directed to fund admin | Auto block |
 | KycQnAAgent leaks another investor's data | PII scope check pre-response | Block response; log as critical security error; alert dev | Auto block → dev alert |
 
 > **Key Takeaways**
 > - A field change that invalidates a previously passed check re-triggers that check automatically. Investors cannot lock in a passing result by modifying data after the fact.
 > - PII leakage is the most severe Phase 2 failure — it triggers both an immediate block and a dev alert. It is never routed through the EOD digest.
-> - If all onboarding team members are inactive when the digest is due, the system falls back to the escalation CC list. If that is also empty, the GP is alerted directly.
+> - If all configured onboarding recipients are inactive when the digest is due, the system falls back to the escalation CC list. If that is also empty, a company_admin is alerted directly.
 
 ---
 
 ### Phase 3 — Close
 
+> Doc generation failures (first four rows) apply only when KycDocGenerationAgent is enabled. Funds with doc generation disabled go directly from `ReadyToClose` to the verification queue; only the sign-off rows apply to them.
+
 | Failure | Detection | Resolution | Owner |
 |---|---|---|---|
-| KYC agreement template not configured for this fund/segment | Pre-generation pre-flight check | Block doc generation; surface in Inspector dashboard | HITL — ops |
-| Generated document contains unresolved placeholders or blank sections | Post-generation check | Block e-sign send; surface to ops with field list | HITL — ops |
-| E-sign provider unresponsive | Acknowledgement check within 60s | Retry once; surface in ops queue | Auto retry → HITL |
-| Investor data changes after document generated (pre-sign-off) | Change detection on core fields | Void existing document; regenerate; re-send e-sign if enabled; notify compliance officer | Auto |
-| Compliance officer accidentally signs off wrong KYC | Confirmation modal pre-sign-off + 1h reversal window | Show confirmation; allow reversal within 1h; lock after that | HITL — compliance officer |
-| Both compliance officer and deputy inactive > 48h | Dual inactivity scan | Alert onboarding team lead in EOD digest: "verification queue stalled" | HITL — onboarding team |
-| Compliance sign-off recorded but downstream state not updated (crash post-write) | Post-action verification on state transition | On restart, re-hydrate and re-apply state; idempotency prevents double-verification | Auto |
+| KYC agreement template not configured for this fund/segment | Pre-generation pre-flight check | Block doc generation; surface in Inspector dashboard | HITL — company_admin / employee |
+| Generated document contains unresolved placeholders or blank sections | Post-generation check | Block e-sign send; surface to onboarding user with field list | HITL — company_admin / employee |
+| E-sign provider unresponsive | Acknowledgement check within 60s | Retry once; surface in onboarding queue | Auto retry → HITL |
+| Investor data changes after document generated (pre-sign-off) | Change detection on core fields | Void existing document; regenerate; re-send e-sign if enabled; notify onboarding team | Auto |
+| Onboarding user accidentally signs off wrong KYC | Confirmation modal pre-sign-off + 1h reversal window | Show confirmation; allow reversal within 1h; lock after that | HITL — company_admin / employee |
+| Sign-off recorded but downstream state not updated (crash post-write) | Post-action verification on state transition | On restart, re-hydrate and re-apply state; idempotency prevents double-verification | Auto |
 
 > **Key Takeaways**
 > - Template not configured is caught by pre-flight before generation starts. The document is never partially generated.
@@ -611,10 +623,10 @@ A consolidated view of what can go wrong across every phase, how it is detected,
 
 | Failure | Detection | Resolution | Owner |
 |---|---|---|---|
-| Orchestrator crashes silently | Heartbeat watchdog (> 15 min stale) | Alert ops; auto-restart; re-hydrate all in-progress KYCs | Auto recover → HITL alert |
+| Orchestrator crashes silently | Heartbeat watchdog (> 15 min stale) | Alert onboarding team; auto-restart; re-hydrate all in-progress KYCs | Auto recover → HITL alert |
 | Agent produces duplicate actions (retry race) | Idempotency key check before execution | Second attempt is a no-op; logged | Auto |
 | KYC state regresses (moves backward in state machine) | Phase regression scan in Inspector | Block further automation; surface for manual review | HITL |
-| Fund manager re-imports a spreadsheet after onboarding is live | Re-import detection (fund + segment already active) | Surface warning with impact preview; require explicit confirmation | HITL — fund manager |
+| Onboarding user re-imports a spreadsheet after onboarding is live | Re-import detection (fund + segment already active) | Surface warning with impact preview; require explicit confirmation | HITL — company_admin / employee |
 | Audit log integrity compromised | Immutable log store with hash chaining | Developer alert; incident raised | Dev |
 
 ---
@@ -623,8 +635,8 @@ A consolidated view of what can go wrong across every phase, how it is detected,
 > - "Auto → HITL" in the Owner column means the system tries an automated recovery first; if that fails or isn't possible, the case escalates to a human via the Issues screen or EOD digest.
 > - Pure "Auto" (no HITL) is only used where the resolution is deterministic and judgment-free — nudge suppressed because investor already acted; import resumes from last committed row. HITL on these would flood the queue with non-decisions.
 > - Not everything goes through the EOD digest. Critical failures (PII leak, audit log compromise, orchestrator crash) trigger immediate alerts regardless of time of day.
-> - AML flag resolution has two paths — InvitationSent or ChecksRunning — chosen by the compliance officer's "cleared" decision. The state machine enforces which transition is valid; there is no system judgment here.
-> - Document voiding and regeneration after a data change is safe to automate because the original document has no legal standing until signed, and the compliance officer still performs the final sign-off on the new document.
+> - AML flag resolution has two paths — InvitationSent or ChecksRunning — chosen by the company_admin's "cleared" decision. The state machine enforces which transition is valid; there is no system judgment here.
+> - Document voiding and regeneration after a data change is safe to automate because the original document has no legal standing until signed, and the employee still performs the final sign-off on the new document.
 
 ---
 
@@ -638,12 +650,12 @@ A consolidated view of what can go wrong across every phase, how it is detected,
 | Percentage of KYCs closed without manual admin coordination | ≥ 70% of standard (non-AML-flagged) cases |
 | Investor nudge-to-action rate | ≥ 60% of nudges result in investor action within 48 hours |
 | GP escalations as a share of total onboardings | ≤ 15% |
-| Compliance officer time per KYC sign-off | < 5 minutes for queue-ready cases |
+| employee time per KYC sign-off | < 5 minutes for queue-ready cases |
 
 > **Key Takeaways**
 > - The 50% reduction in median time-to-verified is the headline metric — the clearest signal that automation is working end-to-end.
 > - 70% of KYCs closing without manual coordination is the autonomy target. Below that means the system is creating as much work as it saves.
-> - Compliance sign-off under 5 minutes validates the queue-ready design. If sign-offs are consistently taking longer, cases are entering the verification queue before checks have fully completed.
+> - employee sign-off under 5 minutes validates the queue-ready design. If sign-offs are consistently taking longer, cases are entering the verification queue before checks have fully completed.
 
 ---
 
