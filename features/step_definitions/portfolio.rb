@@ -205,11 +205,10 @@ Given('Given I upload {string} file for portfolio companies of the fund') do |fi
   visit(new_import_upload_path("import_upload[entity_id]": @fund.entity_id, "import_upload[owner_id]": @fund.id, "import_upload[owner_type]": "Fund", "import_upload[import_type]": "Valuation"))
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  sleep(4)  # JS direct-upload to /upload endpoint; increased for parallel load
   click_on("Save")
-  sleep(2)
+  expect(page).to have_content("Import Upload:", wait: 15)  # wait for save redirect
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  sleep(4)
   @import_upload = ImportUpload.last
   @import_upload.failed_row_count.should == 0
 end
@@ -315,12 +314,12 @@ Given('Given I upload the portfolio companies') do
   visit(investors_path)
   click_on("Actions")
   click_on("Upload")
-  sleep(1)
+  expect(page).to have_field('import_upload_name', wait: 10)  # wait for upload form
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/portfolio_companies.xlsx'), make_visible: true)
-  sleep(4)
+  sleep(6)  # JS direct-upload to /upload endpoint; increased for parallel load
   click_on("Save")
-  sleep(4)
+  expect(page).to have_content("Import Upload:", wait: 15)  # wait for save redirect
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 

@@ -45,8 +45,9 @@ When(/^I fill and submit the login page$/) do
   fill_in('user_email', with: @user.email)
   fill_in('user_password', with: "password")
   click_on("Log In")
-  sleep(1)
-  # expect(page).to have_content("Signed in successfully")
+  # Wait for Devise to redirect away from the sign-in page before reading the DB.
+  # A fixed sleep is too short under parallel load; Capybara retries until true.
+  expect(page).not_to have_current_path('/users/sign_in', wait: 15)
   User.find_by_email(@user.email).sign_in_count.should > 0
 end
 

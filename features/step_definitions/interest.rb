@@ -152,16 +152,15 @@ Given('given I upload an interests file {string}') do |file_name|
   @import_offer_file_name = file_name
   @existing_user_count = User.count
   visit(secondary_sale_path(@sale))
-  sleep(2)
-  # click_on("Interests")
+  expect(page).to have_css("#interest_buttons", wait: 10)  # wait for page to render
   within("#interest_buttons") do
     click_on("Upload Interests")
   end
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(2)
+  sleep(3)  # JS direct-upload to /upload endpoint; larger window for parallel load
   click_on("Save")
-  expect(page).to have_content("Import Upload:")
+  expect(page).to have_content("Import Upload:", wait: 15)
   # sleep(4)
   ImportUploadJob.perform_now(ImportUpload.last.id)
   # sleep(5)

@@ -205,10 +205,9 @@ Given('Given I upload an investor access file for employees') do
 
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(2)
+  sleep(3)  # JS direct-upload to /upload endpoint; larger window for parallel load
   click_on("Save")
-  expect(page).to have_content("Import Upload:")
-  # sleep(2)
+  expect(page).to have_content("Import Upload:", wait: 15)
   ImportUploadJob.perform_now(ImportUpload.last.id)
 end
 
@@ -706,23 +705,20 @@ end
 Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   @template_name = name
   visit(fund_path(Fund.last))
-  sleep(3)
+  expect(page).to have_button("Actions", wait: 15)  # page fully loaded before interacting
   click_on("Actions")
-  sleep(0.5)
-  find('#misc_action_menu').hover
-  sleep(2)
+  find('#misc_action_menu', wait: 10).hover  # wait for dropdown, then reveal submenu
+  expect(page).to have_link("New Template", wait: 10)  # wait for submenu to open
   click_on("New Template")
-  # sleep(2)
   fill_in('document_name', with: name)
 
   select(owner_tag, from: "document_owner_tag")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{name}.docx"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(5)
+  sleep(10)  # JS direct-upload to /upload endpoint; larger window for parallel load
   check("document_template")
   click_on("Save")
   expect(page).to have_content("successfully")
-  # sleep(2)
 end
 
 Given('we Generate Investor Statement for the first capital commitment') do
@@ -944,7 +940,7 @@ Then('the document has {string} e_signatures by Docusign') do |_string|
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  # sleep(2)
+  sleep(2)
   visit(document_path(@doc))
 end
 
@@ -1015,17 +1011,15 @@ Then('the docusign esign completed document is present') do
   allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(%w[completed completed], ESignature.pluck(:email), "completed"))
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
   click_on("Get eSignatures' updates")
-  sleep(2)
+  sleep(5)
   visit(document_path(@doc))
-  # sleep(1)
-  # page should contain status signed
   click_on("Signatures")
   expected_status = "Signed"
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  expect(page).to have_content(expected_status, wait: 10)
+  # Increased wait: under parallel load the in-process webhook job takes longer.
+  expect(page).to have_content(expected_status, wait: 20)
   visit(capital_commitment_path(@capital_commitment))
-  # the signed document owner tag will be signed
-  expect(page).to have_content("Signed", wait: 10).once
+  expect(page).to have_content("Signed", wait: 20).once
 end
 
 Given('the template has esigns setup') do
@@ -1109,7 +1103,7 @@ Then('the document is partially signed by Docusign') do
   click_on("Signatures")
   # sleep(1)
   click_on("Get eSignatures' updates")
-  sleep(8)
+  sleep(3)
   visit(current_path)
   click_on("Signatures")
   # page should contain status requested

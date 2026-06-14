@@ -133,7 +133,7 @@ When('I save the KYC form') do
 end
 
 Then('I should be on the KYC details page') do
-  expect(page.current_url.include?("investor_kycs/")).to be true
+  expect(page).to have_current_path(/investor_kycs\//, wait: 15)
 end
 
 Then('the page should display the correct KYC details') do
@@ -145,16 +145,14 @@ Then('the page should display the correct KYC details') do
 end
 
 Then('I should be on the KYC data edit page') do
-  expect(page.current_url.include?("kyc_datas/")).to be true
-  expect(page.current_url.include?("/edit")).to be true
+  expect(page).to have_current_path(/kyc_datas\/.*\/edit/, wait: 15)
   expect(page).to have_content("Investor kyc")
   expect(page).to have_content("Pan")
 end
 
 Then('I should be on the Investor KYC edit page') do
   expect(page).to have_content("Kyc type")
-  expect(page.current_url.include?("investor_kycs/")).to be true
-  expect(page.current_url.include?("/edit")).to be true
+  expect(page).to have_current_path(/investor_kycs\/.*\/edit/, wait: 15)
 end
 
 Then('the {string} field should be pre-filled with the valid PAN') do |string|
@@ -202,7 +200,7 @@ Then('the page should display the correct CKYC details') do
 end
 
 Then('I should be on the KYC data show page') do
-  expect(page.current_url.include?("kyc_datas/")).to be true
+  expect(page).to have_current_path(/kyc_datas\//, wait: 15)
 end
 
 When('I navigate to the {string} tab for the investor kyc') do |string|

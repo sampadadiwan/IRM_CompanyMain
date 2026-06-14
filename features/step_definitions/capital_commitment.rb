@@ -185,7 +185,7 @@ Then('when the capital commitment docs are generated') do
     #sleep((1)
     click_on("Proceed")
     expect(page).to have_content("Documentation generation started")
-    sleep(8)
+    sleep(3)
     # expect(page).to have_content("generated successfully")
   end
 end
@@ -453,6 +453,7 @@ Given('we Generate Investor Statements from commitments index page') do
   expect(@template).to be_present
   select(@template.name, from: "fund_template_name")
   click_on("Submit")
+  sleep(2)
   # Use have_selector with visible: :all because Bootstrap's fade transition can briefly make the notice
   # element non-visible to Selenium; we just need to confirm the flash was set (redirect succeeded).
   expect(page).to have_selector("#notice", text: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", visible: :all, wait: 10)
