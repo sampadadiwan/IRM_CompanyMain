@@ -22,6 +22,7 @@ class AgentChatMessageFeedbackPolicy < ApplicationPolicy
   end
 
   class Scope < ApplicationPolicy::Scope
+    # @return [ActiveRecord::Relation] feedbacks scoped to support user's mapped entities, or user's own entity
     def resolve
       if user.support?
         mapped_entity_ids = SupportClientMapping.where(user: user, enabled: true).pluck(:entity_id)

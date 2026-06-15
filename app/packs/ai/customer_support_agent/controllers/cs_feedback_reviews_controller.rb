@@ -163,6 +163,8 @@ class CsFeedbackReviewsController < ApplicationController
     @feedback = AgentChatMessageFeedback.find(params[:id])
   end
 
+  # Preloads the user question for each feedback item to avoid N+1 in the partial.
+  # @return [void]
   def preload_feedback_questions
     if @feedbacks.any?
       session_ids = @feedbacks.map { |f| f.agent_chat_message.agent_chat_session_id }.uniq
@@ -182,6 +184,8 @@ class CsFeedbackReviewsController < ApplicationController
     end
   end
 
+  # Preloads the latest feedback for each escalation session to avoid N+1 in the partial.
+  # @return [void]
   def preload_escalation_feedbacks
     if @escalations.any?
       esc_session_ids = @escalations.map(&:agent_chat_session_id).uniq

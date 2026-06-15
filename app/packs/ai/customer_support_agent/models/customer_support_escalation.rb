@@ -19,7 +19,6 @@ class CustomerSupportEscalation < ApplicationRecord
   scope :for_entity, ->(entity_id) { where(entity_id: entity_id) }
 
   # @param user [User] the CS team member resolving the escalation
-  # @param notes [String] optional resolution notes
   # @return [Boolean]
   def resolve!(user)
     update!(

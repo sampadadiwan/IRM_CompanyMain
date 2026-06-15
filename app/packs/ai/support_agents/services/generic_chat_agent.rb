@@ -149,6 +149,10 @@ class GenericChatAgent < SupportAgentService
     end
   end
 
+  # Registers a before_tool_call hook that raises after max_tool_iterations calls.
+  # @param chat [RubyLLM::Chat] the chat instance
+  # @param provider [BaseChatProvider] the current provider
+  # @return [void]
   def register_tool_call_cap(chat, provider)
     max_iterations = provider.max_tool_iterations
     return unless max_iterations
@@ -160,6 +164,10 @@ class GenericChatAgent < SupportAgentService
     end
   end
 
+  # Auto-escalates the session to the CS team when the tool cap is exceeded.
+  # Only fires for CustomerSupportAgent; other agent types get a generic error.
+  # @param ctx [Hash] the Trailblazer context
+  # @return [void]
   def auto_escalate(ctx)
     unless ctx[:support_agent]&.agent_type == "CustomerSupportAgent"
       ctx[:ai_response] = "I'm sorry, I encountered an issue processing your request. Please try again."
