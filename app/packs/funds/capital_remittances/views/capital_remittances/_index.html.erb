@@ -42,8 +42,10 @@
               <i class="ti ti-upload"></i> <%= t_common(:upload) %> / Download
             </button>
             <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+              <% unless current_user.curr_role_investor? %>
               <%= link_to xl_link, id: "capital_remittances_download_xl_btn", class: "dropdown-item", data: { bs_toggle: "tooltip", bs_container: "body", bs_title: "Download in excel  the call amount for each folio along with fees" } do %>
                 <i class="ti ti-download"></i> <%= t_common(:download) %>
+              <% end %>
               <% end %>
               <!-- Disable upload if call basis is not Upload or if some remittances have been deleted (so people can upload them) -->
               <% disabled = capital_call.call_basis != "Upload" && capital_call.capital_remittances.count == capital_call.fund.capital_commitments.count ? "disabled" : nil %>
@@ -72,8 +74,10 @@
         </div>
         <%= render "capital_remittances/filter", data_source: data_source %>
       <% else %>
+        <% unless current_user.curr_role_investor? %>
         <%= link_to xl_link, id: "capital_remittances_download_xl_btn", class: "btn btn-outline-primary" do %>
           <i class="ti ti-download"></i> <%= t_common(:download) %>
+        <% end %>
         <% end %>
         <%= render "/capital_remittances/bulk_actions" %>
       <% end %>

@@ -1,5 +1,6 @@
 <tr id="aggregate_portfolio_investment_<%= aggregate_portfolio_investment.id %>">
   <%= render RansackTableRow.new(model: aggregate_portfolio_investment, columns:) %>
+  <% unless current_user.curr_role_investor? %>
   <td class="action-col">
     <div class="btn-group">
       <button class="btn btn-outline-primary dropdown-toggle d-inline-flex align-items-center" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -35,4 +36,5 @@
       </ul>
     </div>
   </td>
+  <% end %>
 </tr>
