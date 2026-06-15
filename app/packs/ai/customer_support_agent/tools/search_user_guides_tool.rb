@@ -60,7 +60,7 @@ class SearchUserGuidesTool < RubyLLM::Tool
   def search_files(pattern, terms)
     results = []
 
-    Dir.glob(GUIDES_DIR.join("**/*.md")).sort.each do |file_path|
+    Dir.glob(GUIDES_DIR.join("**/*.md")).each do |file_path|
       relative_path = Pathname.new(file_path).relative_path_from(Rails.root).to_s
       filename = File.basename(file_path, ".md").downcase
       filename_hits = terms.count { |t| filename.include?(t.downcase) }

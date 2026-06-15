@@ -71,7 +71,7 @@ class CsFeedbackReviewsController < ApplicationController
     # The user question is the most recent 'user' message before this assistant message
     @user_question = @session.agent_chat_messages
                              .where(role: "user")
-                             .where("created_at < ?", @message.created_at)
+                             .where(created_at: ...@message.created_at)
                              .order(created_at: :desc)
                              .first
 
@@ -128,7 +128,7 @@ class CsFeedbackReviewsController < ApplicationController
     # Find the original user question
     user_question = @session.agent_chat_messages
                             .where(role: "user")
-                            .where("created_at < ?", @message.created_at)
+                            .where(created_at: ...@message.created_at)
                             .order(created_at: :desc)
                             .first
 
@@ -208,7 +208,7 @@ class CsFeedbackReviewsController < ApplicationController
     @session = @message.agent_chat_session
     @user_question = @session.agent_chat_messages
                              .where(role: "user")
-                             .where("created_at < ?", @message.created_at)
+                             .where(created_at: ...@message.created_at)
                              .order(created_at: :desc)
                              .first
     @escalation = CustomerSupportEscalation.find_by(

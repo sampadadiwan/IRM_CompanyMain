@@ -27,7 +27,7 @@ class SearchPastMessagesTool < RubyLLM::Tool
   # @param keywords [String] space-separated search terms
   # @return [String] matching past messages or a no-results message
   def execute(keywords:)
-    terms = keywords.to_s.strip.split(/\s+/).reject(&:blank?)
+    terms = keywords.to_s.strip.split(/\s+/).compact_blank
     return "Please provide at least one search keyword." if terms.empty?
 
     messages = find_messages(terms)

@@ -35,7 +35,7 @@ class ResponseJudgeJob < ApplicationJob
     message.agent_chat_session
            .agent_chat_messages
            .where(role: "user")
-           .where("id < ?", message.id)
+           .where(id: ...message.id)
            .order(id: :desc)
            .first
   end
