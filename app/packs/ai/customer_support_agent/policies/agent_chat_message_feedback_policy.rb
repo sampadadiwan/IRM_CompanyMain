@@ -8,6 +8,27 @@
 class AgentChatMessageFeedbackPolicy < ApplicationPolicy
   # @return [Boolean] true if the message belongs to the current user's session
   def update?
-    record.agent_chat_message.agent_chat_session.analyst_id == user.id
+    support? || record.agent_chat_message.agent_chat_session.analyst_id == user.id
+  end
+
+  # Support users can view feedback for their mapped entities
+  def show?
+    support? || record.agent_chat_message.agent_chat_session.analyst_id == user.id
+  end
+
+  # Support users can re-test feedback items
+  def retest?
+    support?
+  end
+
+  class Scope < ApplicationPolicy::Scope
+    def resolve
+      if user.support?
+        mapped_entity_ids = SupportClientMapping.where(user: user, enabled: true).pluck(:entity_id)
+        scope.where(entity_id: mapped_entity_ids)
+      else
+        scope.where(entity_id: user.entity_id)
+      end
+    end
   end
 end

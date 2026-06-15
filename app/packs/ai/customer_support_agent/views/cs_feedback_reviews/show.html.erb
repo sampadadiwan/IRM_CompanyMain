@@ -27,7 +27,7 @@
         <span class="text-muted ms-2"><%= @message.created_at.strftime("%d %b %Y %H:%M") %></span>
       </div>
       <div class="card-body">
-        <div class="markdown-body"><%= simple_format(@message.content) %></div>
+        <div class="markdown-body"><%= render_markdown(@message.content) %></div>
       </div>
     </div>
 
@@ -85,7 +85,7 @@
           <div class="alert alert-info mb-2">
             <strong>New response</strong> (session #<%= @retest_session_id %>):
           </div>
-          <div class="markdown-body border rounded p-3 bg-light"><%= simple_format(@retest_response) %></div>
+          <div class="markdown-body border rounded p-3 bg-light"><%= render_markdown(@retest_response) %></div>
         <% elsif @retest_error.present? %>
           <div class="alert alert-danger"><%= @retest_error %></div>
         <% else %>

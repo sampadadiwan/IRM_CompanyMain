@@ -8,6 +8,8 @@
 # @see AgentChatMessageFeedback
 # @see CustomerSupportEscalation
 class CsFeedbackReviewsController < ApplicationController
+  helper DocumentHelper
+
   before_action :set_feedback, only: %i[show update retest]
 
   # GET /cs_feedback_reviews
@@ -27,6 +29,8 @@ class CsFeedbackReviewsController < ApplicationController
     # Feedback queue
     feedbacks = policy_scope(AgentChatMessageFeedback)
                 .includes(agent_chat_message: { agent_chat_session: %i[support_agent analyst] })
+    feedbacks = feedbacks.where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
+
     feedbacks = feedbacks.where(status: params[:status]) if params[:status].present?
     feedbacks = feedbacks.where(rating: params[:rating]) if params[:rating].present?
     feedbacks = feedbacks.where(entity_id: params[:entity_id]) if params[:entity_id].present?
