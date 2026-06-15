@@ -97,6 +97,9 @@ class FmCsChatProvider < BaseChatProvider
     6
   end
 
+  # @return [AgentChatSession, nil]
+  attr_writer :chat_session
+
   private
 
   # @return [Array<Fund>]
@@ -108,9 +111,6 @@ class FmCsChatProvider < BaseChatProvider
   def entity_fund_ids
     @entity_fund_ids ||= entity_funds.map(&:id)
   end
-
-  # @return [AgentChatSession, nil]
-  attr_writer :chat_session
 
   def chat_session
     @chat_session ||= AgentChatSession.where(

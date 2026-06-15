@@ -80,23 +80,25 @@
       <div class="card-header bg-light">
         <strong>Re-test</strong>
       </div>
-      <div class="card-body">
-        <% if @retest_response.present? %>
-          <div class="alert alert-info mb-2">
-            <strong>New response</strong> (session #<%= @retest_session_id %>):
-          </div>
-          <div class="markdown-body border rounded p-3 bg-light"><%= render_markdown(@retest_response) %></div>
-        <% elsif @retest_error.present? %>
-          <div class="alert alert-danger"><%= @retest_error %></div>
-        <% else %>
-          <p class="text-muted mb-2">Replay the original question through the agent and compare the new response with the original above.</p>
-          <%= button_to "Re-test this question",
-                retest_cs_feedback_review_path(@feedback),
-                method: :post,
-                class: "btn btn-outline-warning btn-sm",
-                data: { confirm: "This will run the question through the agent again. Proceed?" } %>
-        <% end %>
-      </div>
+      <%= turbo_frame_tag "retest_result" do %>
+        <div class="card-body">
+          <% if @retest_response.present? %>
+            <div class="alert alert-info mb-2">
+              <strong>New response</strong> (session #<%= @retest_session_id %>):
+            </div>
+            <div class="markdown-body border rounded p-3 bg-light"><%= render_markdown(@retest_response) %></div>
+          <% elsif @retest_error.present? %>
+            <div class="alert alert-danger"><%= @retest_error %></div>
+          <% else %>
+            <p class="text-muted mb-2">Replay the original question through the agent and compare the new response with the original above.</p>
+            <%= button_to "Re-test this question",
+                  retest_cs_feedback_review_path(@feedback),
+                  method: :post,
+                  class: "btn btn-outline-warning btn-sm",
+                  data: { confirm: "This will run the question through the agent again. Proceed?", turbo_frame: "retest_result" } %>
+          <% end %>
+        </div>
+      <% end %>
     </div>
   </div>
 
