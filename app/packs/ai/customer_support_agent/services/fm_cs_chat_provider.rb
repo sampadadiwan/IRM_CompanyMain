@@ -110,11 +110,13 @@ class FmCsChatProvider < BaseChatProvider
   end
 
   # @return [AgentChatSession, nil]
+  attr_writer :chat_session
+
   def chat_session
-    @chat_session ||= AgentChatSession.find_by(
+    @chat_session ||= AgentChatSession.where(
       support_agent: support_agent,
       analyst: analyst
-    )
+    ).order(updated_at: :desc).first
   end
 
   # @return [String] few-shot examples loaded from cs_examples.md, if it exists

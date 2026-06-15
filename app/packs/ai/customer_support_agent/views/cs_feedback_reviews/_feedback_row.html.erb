@@ -1,10 +1,9 @@
 <%
   message = feedback.agent_chat_message
   session = message&.agent_chat_session
-  user_question = session&.agent_chat_messages&.where(role: "user")
-                         &.where("created_at < ?", message.created_at)
-                         &.order(created_at: :desc)&.first
+  user_question = @user_questions_by_message_id[message.id]
 %>
+
 <tr>
   <td><%= feedback.entity&.name %></td>
   <td><%= session&.analyst&.name || "Unknown" %></td>

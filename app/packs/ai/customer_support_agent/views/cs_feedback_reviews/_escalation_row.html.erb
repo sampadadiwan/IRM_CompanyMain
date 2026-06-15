@@ -23,9 +23,8 @@
   <td><%= escalation.created_at.strftime("%d %b %Y %H:%M") %></td>
   <td>
     <%# Link to the feedback review for the last assistant message in this session %>
-    <% last_feedback = AgentChatMessageFeedback.joins(:agent_chat_message)
-                        .where(agent_chat_messages: { agent_chat_session_id: session&.id, role: "assistant" })
-                        .order(created_at: :desc).first %>
+   <% last_feedback = @feedback_by_session_id[session&.id] %>
+
     <% if last_feedback %>
       <%= link_to "View", cs_feedback_review_path(last_feedback), class: "btn btn-sm btn-outline-primary" %>
     <% end %>

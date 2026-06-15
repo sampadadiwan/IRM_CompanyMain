@@ -35,6 +35,33 @@ class FmRunQueryTool < RunQueryTool
     super(entity_ids: entity_ids, accessible_fund_ids: accessible_fund_ids, accessible_investor_ids: [])
   end
 
+  # Override: skip the fund-check guard from RunQueryTool.
+  # FM entities may have no funds yet but still need entity-scoped queries.
+  # Only the entity_id check matters for CS agent queries.
+  def execute(sql:)
+    return 'No accessible fund manager entities for this investor.' if @entity_ids.empty?
+
+    error = validate(sql)
+    if error
+      Rails.logger.warn(
+        "[cs_agent][FmRunQueryTool] REJECTED — reason=#{error}\n  llm_sql=#{sql}"
+      )
+      return "Query rejected: #{error}"
+    end
+
+    safe_sql = substitute_and_limit(sql)
+    t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    result = ActiveRecord::Base.connection.exec_query(safe_sql, 'CS Agent Query')
+    Rails.logger.info("[cs_agent] FmRunQueryTool took #{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round}ms sql=#{sql.first(200)}")
+    format_result(result)
+  rescue ActiveRecord::StatementInvalid => e
+    Rails.logger.error(
+      "[cs_agent][FmRunQueryTool] SQL FAILED — #{e.class}: #{e.message.lines.first&.strip}\n  " \
+      "llm_sql=#{sql}\n  executed_sql=#{safe_sql}"
+    )
+    "SQL execution failed: #{e.message.lines.first&.strip}"
+  end
+
   private
 
   # @param sql [String]

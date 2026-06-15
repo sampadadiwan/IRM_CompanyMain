@@ -6,9 +6,9 @@
 # @see BaseChatProvider
 # @see AgentChatSession
 #
-class MaxToolIterationsExceeded < StandardError; end
-
 class GenericChatAgent < SupportAgentService
+  class MaxToolIterationsExceeded < StandardError; end
+
   DESCRIPTION = "Provides multi-turn AI chat for any configured support agent using context-aware chat providers."
 
   LONG_DESCRIPTION = <<~DESC
@@ -88,6 +88,7 @@ class GenericChatAgent < SupportAgentService
       analyst: ctx[:analyst]
     )
     ctx[:context] = ctx[:provider].build_context
+    ctx[:provider].chat_session = ctx[:chat_session] if ctx[:provider].respond_to?(:chat_session=)
   end
 
   def setup_ruby_llm_chat(ctx, **)
@@ -160,6 +161,11 @@ class GenericChatAgent < SupportAgentService
   end
 
   def auto_escalate(ctx)
+    unless ctx[:support_agent]&.agent_type == "CustomerSupportAgent"
+      ctx[:ai_response] = "I'm sorry, I encountered an issue processing your request. Please try again."
+      return
+    end
+
     session = ctx[:chat_session]
     analyst = ctx[:analyst]
     entity = ctx[:provider]&.support_agent&.entity

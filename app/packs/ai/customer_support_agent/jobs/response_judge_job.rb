@@ -130,22 +130,22 @@ class ResponseJudgeJob < ApplicationJob
   # @param entity [Entity]
   # @param scores [Hash] parsed judge scores
   def upsert_feedback(message, entity, scores)
-    feedback = AgentChatMessageFeedback.find_or_initialize_by(
-      agent_chat_message_id: message.id
-    )
+    feedback = AgentChatMessageFeedback.find_or_create_by!(agent_chat_message_id: message.id) do |f|
+      f.entity_id = entity.id
+      f.channel = message.channel || "web"
+      f.status = "open"
+    end
 
-    feedback.entity_id = entity.id
-    feedback.channel ||= message.channel || "web"
-    feedback.status ||= "open"
+    feedback.with_lock do
+      feedback.judge_completeness = scores["completeness"]
+      feedback.judge_grounding = scores["grounding"]
+      feedback.judge_actionability = scores["actionability"]
+      feedback.judge_total = scores["completeness"] + scores["grounding"] + scores["actionability"]
+      feedback.judge_issues = scores["issues"]
 
-    feedback.judge_completeness = scores["completeness"]
-    feedback.judge_grounding = scores["grounding"]
-    feedback.judge_actionability = scores["actionability"]
-    feedback.judge_total = scores["completeness"] + scores["grounding"] + scores["actionability"]
-    feedback.judge_issues = scores["issues"]
+      feedback.status = "needs_review" if feedback.judge_total < 5 && feedback.status == "open"
 
-    feedback.status = "needs_review" if feedback.judge_total < 5 && feedback.status == "open"
-
-    feedback.save!
+      feedback.save!
+    end
   end
 end

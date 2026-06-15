@@ -109,7 +109,7 @@ class SupportAgentChatsController < ApplicationController
 
     target = find_chattable
 
-    sessions = AgentChatSession.where(
+    sessions = AgentChatSession.includes(:agent_chat_messages).where(
       chattable: target || @support_agent,
       support_agent: @support_agent,
       analyst_id: current_user.id

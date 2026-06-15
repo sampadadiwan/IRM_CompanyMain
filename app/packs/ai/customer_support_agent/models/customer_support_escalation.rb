@@ -21,7 +21,7 @@ class CustomerSupportEscalation < ApplicationRecord
   # @param user [User] the CS team member resolving the escalation
   # @param notes [String] optional resolution notes
   # @return [Boolean]
-  def resolve!(user, notes: nil)
+  def resolve!(user)
     update!(
       status: "resolved",
       resolved_by: user,

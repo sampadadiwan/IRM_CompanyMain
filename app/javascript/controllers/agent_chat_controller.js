@@ -602,14 +602,18 @@ formatMarkdown(text) {
       },
       body: JSON.stringify(data)
     })
-    return await res.json()
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+      return await res.json()
+
   }
 
   async getJSON(url) {
     const res = await fetch(url, {
       headers: { "Accept": "application/json" }
     })
-    return await res.json()
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+      return await res.json()
+
   }
 
   async deleteJSON(url) {
@@ -620,7 +624,9 @@ formatMarkdown(text) {
         "Accept": "application/json"
       }
     })
-    return await res.json()
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+      return await res.json()
+
   }
 
     async patchJSON(url, data) {
@@ -633,7 +639,9 @@ formatMarkdown(text) {
       },
       body: JSON.stringify(data)
     })
-    return await res.json()
+    if (!res.ok) throw new Error(`Request failed: ${res.status}`)
+      return await res.json()
+
   }
 
 }

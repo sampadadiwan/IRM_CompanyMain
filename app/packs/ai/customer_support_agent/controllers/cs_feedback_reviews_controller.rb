@@ -23,62 +23,41 @@ class CsFeedbackReviewsController < ApplicationController
     authorize :cs_feedback_review
 
     @tab = params[:tab].presence || "feedbacks"
-    # Scope to entities this support user is mapped to
     @mapped_entity_ids = SupportClientMapping.where(user: current_user, enabled: true).pluck(:entity_id)
 
-    # Feedback queue
+    # Feedback queue — always count for tab badge, only load records for active tab
     feedbacks = policy_scope(AgentChatMessageFeedback)
-                .includes(agent_chat_message: { agent_chat_session: %i[support_agent analyst] })
-    feedbacks = feedbacks.where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
-
+                .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
     feedbacks = feedbacks.where(status: params[:status]) if params[:status].present?
     feedbacks = feedbacks.where(rating: params[:rating]) if params[:rating].present?
     feedbacks = feedbacks.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     feedbacks = feedbacks.where(judge_total: ..params[:judge_max].to_i) if params[:judge_max].present?
     feedbacks = feedbacks.order(created_at: :desc)
-    @pagy_feedbacks, @feedbacks = pagy(feedbacks, page_param: :feedbacks_page, items: 20)
 
-    # Preload user questions for the current page of feedbacks (avoids N+1 in the partial)
-    if @feedbacks.any?
-      session_ids = @feedbacks.map { |f| f.agent_chat_message.agent_chat_session_id }.uniq
-      all_messages = AgentChatMessage.where(agent_chat_session_id: session_ids)
-                                     .order(created_at: :desc)
-      @user_questions_by_message_id = {}
-      @feedbacks.each do |f|
-        msg = f.agent_chat_message
-        question = all_messages.find do |m|
-          m.agent_chat_session_id == msg.agent_chat_session_id &&
-            m.role == "user" &&
-            m.created_at < msg.created_at
-        end
-        @user_questions_by_message_id[msg.id] = question
-      end
-    else
-      @user_questions_by_message_id = {}
-    end
-
-    # Escalation queue
+    # Escalation queue — always count for tab badge, only load records for active tab
     escalations = CustomerSupportEscalation.where(entity_id: @mapped_entity_ids)
-                                           .includes(agent_chat_session: %i[support_agent analyst])
-
     escalations = escalations.where(status: params[:escalation_status]) if params[:escalation_status].present?
     escalations = escalations.where(entity_id: params[:entity_id]) if params[:entity_id].present?
     escalations = escalations.order(created_at: :desc)
-    @pagy_escalations, @escalations = pagy(escalations, page_param: :escalations_page, items: 20)
 
-    # Preload linked feedbacks for escalations (avoids N+1 in the partial)
-    if @escalations.any?
-      esc_session_ids = @escalations.map(&:agent_chat_session_id).uniq
-      latest_feedbacks = AgentChatMessageFeedback
-                         .joins(:agent_chat_message)
-                         .where(agent_chat_messages: { agent_chat_session_id: esc_session_ids, role: "assistant" })
-                         .order(created_at: :desc)
+    if @tab == "feedbacks"
+      @pagy_feedbacks, @feedbacks = pagy(
+        feedbacks.includes(agent_chat_message: { agent_chat_session: %i[support_agent analyst] }),
+        page_param: :feedbacks_page, items: 20
+      )
+      preload_feedback_questions
+      @pagy_escalations = Pagy.new(count: escalations.count, page: 1, items: 20)
+      @escalations = []
       @feedback_by_session_id = {}
-      esc_session_ids.each do |sid|
-        @feedback_by_session_id[sid] = latest_feedbacks.find { |f| f.agent_chat_message.agent_chat_session_id == sid }
-      end
     else
-      @feedback_by_session_id = {}
+      @pagy_escalations, @escalations = pagy(
+        escalations.includes(agent_chat_session: %i[support_agent analyst]),
+        page_param: :escalations_page, items: 20
+      )
+      preload_escalation_feedbacks
+      @pagy_feedbacks = Pagy.new(count: feedbacks.count, page: 1, items: 20)
+      @feedbacks = []
+      @user_questions_by_message_id = {}
     end
   end
 
@@ -123,7 +102,8 @@ class CsFeedbackReviewsController < ApplicationController
           agent_chat_session_id: @feedback.agent_chat_message.agent_chat_session_id,
           status: "open"
         )
-        linked_escalation&.resolve!(current_user, notes: params[:resolution_notes])
+        linked_escalation&.resolve!(current_user)
+
       end
 
       redirect_to cs_feedback_review_path(@feedback), notice: "Feedback marked as #{params[:status]}."
@@ -181,6 +161,41 @@ class CsFeedbackReviewsController < ApplicationController
   # @return [AgentChatMessageFeedback]
   def set_feedback
     @feedback = AgentChatMessageFeedback.find(params[:id])
+  end
+
+  def preload_feedback_questions
+    if @feedbacks.any?
+      session_ids = @feedbacks.map { |f| f.agent_chat_message.agent_chat_session_id }.uniq
+      all_messages = AgentChatMessage.where(agent_chat_session_id: session_ids).order(created_at: :desc)
+      @user_questions_by_message_id = {}
+      @feedbacks.each do |f|
+        msg = f.agent_chat_message
+        question = all_messages.find do |m|
+          m.agent_chat_session_id == msg.agent_chat_session_id &&
+            m.role == "user" &&
+            m.created_at < msg.created_at
+        end
+        @user_questions_by_message_id[msg.id] = question
+      end
+    else
+      @user_questions_by_message_id = {}
+    end
+  end
+
+  def preload_escalation_feedbacks
+    if @escalations.any?
+      esc_session_ids = @escalations.map(&:agent_chat_session_id).uniq
+      latest_feedbacks = AgentChatMessageFeedback
+                         .joins(:agent_chat_message)
+                         .where(agent_chat_messages: { agent_chat_session_id: esc_session_ids, role: "assistant" })
+                         .order(created_at: :desc)
+      @feedback_by_session_id = {}
+      esc_session_ids.each do |sid|
+        @feedback_by_session_id[sid] = latest_feedbacks.find { |f| f.agent_chat_message.agent_chat_session_id == sid }
+      end
+    else
+      @feedback_by_session_id = {}
+    end
   end
 
   # Loads dependencies needed by the show template (used by both show and retest)
