@@ -20,9 +20,17 @@ class CustomerSupportEscalationMailer < ApplicationMailer
 
     subject = "[CS Escalation] #{@entity.name} — #{@escalation.reason.humanize}"
 
+    # Send to support users mapped to this entity; fall back to global support email
+    mapped_emails = SupportClientMapping
+                    .where(entity_id: @entity.id, enabled: true)
+                    .includes(:user)
+                    .filter_map { |m| m.user.email }
+
+    recipients = mapped_emails.presence || [ENV.fetch("SUPPORT_EMAIL_TO", "support@caphive.com")]
+
     mail(
       from: ENV.fetch("SUPPORT_EMAIL_FROM", nil),
-      to: ENV.fetch("SUPPORT_EMAIL_TO", "support@caphive.com"),
+      to: recipients,
       subject: subject
     )
   end
