@@ -240,6 +240,16 @@
             </tr>
           <% end %>
         <% end %>
+        <tr>
+  <td>CS Agent Judge</td>
+  <td>
+    <%= display_boolean @entity.entity_setting.cs_judge_enabled %>
+    <% if @entity.entity_setting.cs_judge_enabled? %>
+      <small class="text-muted d-block">Model: <%= @entity.entity_setting.cs_judge_model.presence || "Default (#{@entity.entity_setting.cs_judge_model_name})" %></small>
+    <% end %>
+  </td>
+</tr>
+
 
 
       <% end %>

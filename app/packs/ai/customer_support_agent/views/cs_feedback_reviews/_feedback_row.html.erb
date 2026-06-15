@@ -1,0 +1,43 @@
+<%
+  message = feedback.agent_chat_message
+  session = message&.agent_chat_session
+  user_question = session&.agent_chat_messages&.where(role: "user")
+                         &.where("created_at < ?", message.created_at)
+                         &.order(created_at: :desc)&.first
+%>
+<tr>
+  <td><%= feedback.entity&.name %></td>
+  <td><%= session&.analyst&.name || "Unknown" %></td>
+  <td title="<%= user_question&.content %>">
+    <%= truncate(user_question&.content.to_s, length: 80) %>
+  </td>
+  <td>
+    <% if feedback.rating == "negative" %>
+      <span class="badge bg-danger">Negative</span>
+    <% elsif feedback.rating == "positive" %>
+      <span class="badge bg-success">Positive</span>
+    <% else %>
+      <span class="text-muted">-</span>
+    <% end %>
+  </td>
+  <td>
+    <% if feedback.judged? %>
+      <span class="<%= feedback.judge_total <= 4 ? 'text-danger fw-bold' : '' %>">
+        <%= feedback.judge_total %>/9
+      </span>
+    <% else %>
+      <span class="text-muted">-</span>
+    <% end %>
+  </td>
+  <td>
+    <% status_colors = { "open" => "secondary", "needs_review" => "warning", "resolved" => "success",
+                          "dismissed" => "info", "pending_engineering" => "primary" } %>
+    <span class="badge bg-<%= status_colors[feedback.status] || 'secondary' %>">
+      <%= feedback.status.titleize %>
+    </span>
+  </td>
+  <td><%= feedback.created_at.strftime("%d %b %Y %H:%M") %></td>
+  <td>
+    <%= link_to "View", cs_feedback_review_path(feedback), class: "btn btn-sm btn-outline-primary" %>
+  </td>
+</tr>

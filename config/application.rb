@@ -20,11 +20,11 @@ module CapHive
     # roots — they are namespaces (e.g. Admin::, Audited::, Noticed::) resolved relative to
     # their parent dir. Also exclude delivery_methods/ itself (namespace dir at pack level).
     # concerns/ dirs are the exception: they define flat top-level constants, so re-added below.
-    config.autoload_paths += Rails.root.glob('app/packs/**/').reject { |path|
+    config.autoload_paths += Rails.root.glob('app/packs/**/').reject do |path|
       path_str = path.to_s
       path_str.match?(%r{/(controllers|channels|dashboards|policies)/[^/]+}) ||
         path_str.match?(%r{/(delivery_methods|account_entry_allocation)/?$})
-    }
+    end
     config.autoload_paths += Rails.root.glob('app/packs/**/controllers/concerns/')
     config.autoload_paths << Rails.root.join('lib')
 
@@ -35,7 +35,7 @@ module CapHive
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/core/#{view_path}/helpers")
     end
 
-    misc_view_paths = %w[approvals form_types form_custom_fields payments investor_notices import_uploads esigns kanbans  grid_view_preferences events  blogs incoming_emails]
+    misc_view_paths = %w[approvals form_types form_custom_fields payments investor_notices import_uploads esigns kanbans grid_view_preferences events blogs incoming_emails]
 
     misc_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/misc/#{view_path}/views")
@@ -65,7 +65,7 @@ module CapHive
       config.paths['app/helpers'].unshift("#{Rails.root}/app/packs/startups/#{view_path}/helpers")
     end
 
-    ai_view_paths = %w[ai_rules chats agent_charts support_agents faqs ai_portfolio_reports assistants assistant_tasks report_insights]
+    ai_view_paths = %w[ai_rules chats agent_charts support_agents faqs ai_portfolio_reports assistants assistant_tasks report_insights customer_support_agent]
 
     ai_view_paths.each do |view_path|
       config.paths['app/views'].unshift("#{Rails.root}/app/packs/ai/#{view_path}/views")

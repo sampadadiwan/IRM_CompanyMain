@@ -1,0 +1,120 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">CS Feedback Reviews</h1>
+</div>
+
+<%# ── Filters (shared across tabs) ── %>
+<div class="card mb-3">
+  <div class="card-body">
+    <%= form_tag cs_feedback_reviews_path, method: :get, class: "row g-2 align-items-end" do %>
+      <%= hidden_field_tag :tab, @tab %>
+
+      <div class="col-auto">
+        <%= label_tag :entity_id, "Entity", class: "form-label" %>
+        <%= select_tag :entity_id,
+              options_from_collection_for_select(Entity.where(id: @mapped_entity_ids).order(:name), :id, :name, params[:entity_id]),
+              include_blank: "All Entities", class: "form-select form-select-sm" %>
+      </div>
+
+      <div class="col-auto">
+        <%= label_tag :status, "Feedback Status", class: "form-label" %>
+        <%= select_tag :status,
+              options_for_select(AgentChatMessageFeedback::STATUSES.map { |s| [s.titleize, s] }, params[:status]),
+              include_blank: "All", class: "form-select form-select-sm" %>
+      </div>
+
+      <div class="col-auto">
+        <%= label_tag :rating, "Rating", class: "form-label" %>
+        <%= select_tag :rating,
+              options_for_select([["Positive", "positive"], ["Negative", "negative"]], params[:rating]),
+              include_blank: "All", class: "form-select form-select-sm" %>
+      </div>
+
+      <div class="col-auto">
+        <%= label_tag :judge_max, "Judge Score ≤", class: "form-label" %>
+        <%= number_field_tag :judge_max, params[:judge_max], min: 0, max: 9, class: "form-control form-control-sm", style: "width: 80px" %>
+      </div>
+
+      <div class="col-auto">
+        <%= label_tag :escalation_status, "Escalation Status", class: "form-label" %>
+        <%= select_tag :escalation_status,
+              options_for_select(CustomerSupportEscalation::STATUSES.map { |s| [s.titleize, s] }, params[:escalation_status]),
+              include_blank: "All", class: "form-select form-select-sm" %>
+      </div>
+
+      <div class="col-auto">
+        <%= submit_tag "Filter", class: "btn btn-sm btn-primary" %>
+        <%= link_to "Clear", cs_feedback_reviews_path, class: "btn btn-sm btn-outline-secondary" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<%# ── Tabs ── %>
+<ul class="nav nav-tabs mb-3">
+  <li class="nav-item">
+    <%= link_to "Feedback Queue (#{@pagy_feedbacks.count})",
+          cs_feedback_reviews_path(request.query_parameters.merge(tab: "feedbacks")),
+          class: "nav-link #{'active' if @tab == 'feedbacks'}" %>
+  </li>
+  <li class="nav-item">
+    <%= link_to "Escalation Queue (#{@pagy_escalations.count})",
+          cs_feedback_reviews_path(request.query_parameters.merge(tab: "escalations")),
+          class: "nav-link #{'active' if @tab == 'escalations'}" %>
+  </li>
+</ul>
+
+<%# ── Feedback Tab ── %>
+<% if @tab == "feedbacks" %>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Entity</th>
+          <th>User</th>
+          <th>Question</th>
+          <th>Rating</th>
+          <th>Judge Score</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @feedbacks.each do |feedback| %>
+          <%= render "feedback_row", feedback: feedback %>
+        <% end %>
+        <% if @feedbacks.empty? %>
+          <tr><td colspan="8" class="text-center text-muted py-4">No feedback items found.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+    <%= raw pagy_bootstrap_nav(@pagy_feedbacks) %>
+  </div>
+
+<%# ── Escalation Tab ── %>
+<% else %>
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Entity</th>
+          <th>User</th>
+          <th>Reason</th>
+          <th>Summary</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @escalations.each do |escalation| %>
+          <%= render "escalation_row", escalation: escalation %>
+        <% end %>
+        <% if @escalations.empty? %>
+          <tr><td colspan="7" class="text-center text-muted py-4">No escalations found.</td></tr>
+        <% end %>
+      </tbody>
+    </table>
+    <%= raw pagy_bootstrap_nav(@pagy_escalations) %>
+  </div>
+<% end %>

@@ -62,15 +62,25 @@ class SupportAgentChatsController < ApplicationController
 
     target = find_chattable
 
-    session = AgentChatSession.find_by(
-      chattable: target || @support_agent,
-      support_agent: @support_agent,
-      analyst_id: current_user.id
-    )
+    # Load a specific session if requested, otherwise the most recent one
+    session = if params[:session_id].present?
+                AgentChatSession.find_by(
+                  id: params[:session_id],
+                  support_agent: @support_agent,
+                  analyst_id: current_user.id
+                )
+              else
+                AgentChatSession.where(
+                  chattable: target || @support_agent,
+                  support_agent: @support_agent,
+                  analyst_id: current_user.id
+                ).order(updated_at: :desc).first
+              end
 
     messages = if session
-                 session.agent_chat_messages.order(:created_at).map do |m|
-                   { id: m.id, role: m.role, content: m.content, created_at: m.created_at.iso8601 }
+                 session.agent_chat_messages.includes(:feedback).order(:created_at).map do |m|
+                   { id: m.id, role: m.role, content: m.content, created_at: m.created_at.iso8601,
+                     feedback_rating: m.feedback&.rating }
                  end
                else
                  []
@@ -85,6 +95,39 @@ class SupportAgentChatsController < ApplicationController
     session = AgentChatSession.find_by!(id: params[:id], analyst_id: current_user.id)
     session.destroy!
     render json: { success: true }
+  end
+
+  # GET /support_agents/:support_agent_id/chats/sessions
+  #
+  # Returns all chat sessions for the current user with this agent,
+  # ordered by most recent first. Used by the session sidebar in the chat panel.
+  #
+  # @return [JSON] { success: true, sessions: [{ id, created_at, preview, message_count }] }
+  def sessions
+    @support_agent = SupportAgent.find(params[:support_agent_id])
+    authorize @support_agent, :show?
+
+    target = find_chattable
+
+    sessions = AgentChatSession.where(
+      chattable: target || @support_agent,
+      support_agent: @support_agent,
+      analyst_id: current_user.id
+    ).order(updated_at: :desc)
+
+    session_list = sessions.map do |s|
+      first_user_msg = s.agent_chat_messages.where(role: "user").order(:created_at).first
+      {
+        id: s.id,
+        created_at: s.created_at.iso8601,
+        updated_at: s.updated_at.iso8601,
+        preview: first_user_msg&.content.to_s.truncate(60),
+        message_count: s.agent_chat_messages.count,
+        status: s.status
+      }
+    end
+
+    render json: { success: true, sessions: session_list }
   end
 
   private

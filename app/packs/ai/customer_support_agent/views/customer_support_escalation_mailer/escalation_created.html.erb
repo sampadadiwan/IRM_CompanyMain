@@ -1,0 +1,36 @@
+<h2>Customer Support Escalation</h2>
+
+<table style="border-collapse: collapse; width: 100%;">
+  <tr>
+    <td style="padding: 8px; font-weight: bold;">Entity:</td>
+    <td style="padding: 8px;"><%= @entity.name %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; font-weight: bold;">User:</td>
+    <td style="padding: 8px;"><%= @user.name %> (<%= @user.email %>)</td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; font-weight: bold;">Reason:</td>
+    <td style="padding: 8px;"><%= @escalation.reason.humanize %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; font-weight: bold;">Summary:</td>
+    <td style="padding: 8px;"><%= @escalation.summary %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; font-weight: bold;">Session ID:</td>
+    <td style="padding: 8px;"><%= @session.id %></td>
+  </tr>
+  <tr>
+    <td style="padding: 8px; font-weight: bold;">Escalated at:</td>
+    <td style="padding: 8px;"><%= @escalation.created_at.strftime('%d %b %Y %H:%M UTC') %></td>
+  </tr>
+</table>
+
+<h3>Recent Conversation</h3>
+<% @recent_messages.each do |msg| %>
+  <p><strong><%= msg.role.capitalize %>:</strong> <%= msg.content.truncate(500) %></p>
+<% end %>
+
+<hr>
+<p><em>This escalation was triggered by the Customer Support Agent. Review and resolve in the feedback review dashboard.</em></p>

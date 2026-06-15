@@ -15,14 +15,16 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
 
 
 export default class extends Controller {
-  static targets = ["panel", "toggleBtn", "messages", "input", "spinner", "welcome", "sendBtn", "resizeHandle", "maximizeIcon", "maximizeLabel" , "maximizeBtn"]
+  static targets = ["panel", "toggleBtn", "messages", "input", "spinner", "welcome", "sendBtn", "resizeHandle", "maximizeIcon", "maximizeLabel" , "maximizeBtn", "sessionList"]
   static values = {
     supportAgentId: Number,
     chattableType: String,
     chattableId: Number,
     sessionId: Number,
     expanded: { type: Boolean, default: false },
-    contentContainer: { type: String, default: "" }
+    contentContainer: { type: String, default: "" },
+    feedbackEnabled: { type: Boolean, default: false }
+
 
   }
 
@@ -270,7 +272,8 @@ fillPrompt(e) {
 
       if (res.success) {
         this.sessionIdValue = res.session_id
-        this.appendMessage("assistant", res.response)
+        this.appendMessage("assistant", res.response, res.message_id)
+
       } else {
         this.appendError(res.error || "Something went wrong")
       }
@@ -292,7 +295,8 @@ fillPrompt(e) {
       if (res.success && res.messages.length > 0) {
         this.hideWelcome()
         this.sessionIdValue = res.session_id
-        res.messages.forEach(msg => this.appendMessage(msg.role, msg.content))
+        res.messages.forEach(msg => this.appendMessage(msg.role, msg.content, msg.id, msg.feedback_rating))
+
         this.scrollToBottom()
       }
       this.historyLoaded = true
@@ -317,23 +321,139 @@ fillPrompt(e) {
     }
   }
 
+  /**
+ * Toggles the session history sidebar. Loads session list from the server
+ * on first open. Allows users to see and switch between past conversations.
+ *
+ * @returns {void}
+ */
+async toggleSessions() {
+  const list = this.sessionListTarget
+  const isVisible = !list.classList.contains("d-none")
+
+  if (isVisible) {
+    list.classList.add("d-none")
+    return
+  }
+
+  list.classList.remove("d-none")
+  list.innerHTML = '<div class="p-2 text-muted small text-center">Loading sessions...</div>'
+
+  try {
+    const url = `/support_agents/${this.supportAgentIdValue}/chats/sessions?chattable_type=${this.chattableTypeValue}&chattable_id=${this.chattableIdValue}`
+    const res = await this.getJSON(url)
+
+    if (res.success && res.sessions.length > 0) {
+      list.innerHTML = res.sessions.map(s => {
+        const date = new Date(s.updated_at)
+        const dateStr = date.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+        const isActive = s.id === this.sessionIdValue
+        const statusBadge = s.status === "escalated" ? '<span class="badge bg-warning text-dark ms-1" style="font-size:0.65rem">Escalated</span>' : ""
+
+        return `
+          <div class="d-flex align-items-center px-3 py-2 border-bottom session-item ${isActive ? 'bg-light' : ''}"
+               style="cursor: pointer; ${isActive ? 'border-left: 3px solid var(--bs-primary);' : ''}"
+               data-action="click->agent-chat#switchSession"
+               data-session-id="${s.id}">
+            <div class="flex-grow-1 overflow-hidden">
+              <div class="small fw-semibold text-truncate">${this.escapeHtml(s.preview || "New conversation")}</div>
+              <div class="text-muted" style="font-size:0.7rem">${dateStr} · ${s.message_count} msgs ${statusBadge}</div>
+            </div>
+            ${isActive ? '<i class="bi bi-check-circle-fill text-primary ms-2"></i>' : ''}
+          </div>
+        `
+      }).join("")
+    } else {
+      list.innerHTML = '<div class="p-3 text-muted small text-center">No past sessions</div>'
+    }
+  } catch (err) {
+    console.error("Failed to load sessions:", err)
+    list.innerHTML = '<div class="p-3 text-danger small text-center">Failed to load sessions</div>'
+  }
+}
+
+/**
+ * Switches to a different chat session. Clears the current messages,
+ * loads the selected session's history, and updates the session ID.
+ *
+ * @param {MouseEvent} e - Click event from a session item; reads data-session-id.
+ * @returns {void}
+ */
+async switchSession(e) {
+  const sessionId = e.currentTarget.dataset.sessionId
+  if (!sessionId || parseInt(sessionId) === this.sessionIdValue) return
+
+  // Clear current messages
+  Array.from(this.messagesTarget.children).forEach(child => {
+    if (!child.hasAttribute('data-agent-chat-target')) child.remove()
+  })
+
+  // Load the selected session's messages
+  try {
+    const url = this.chatsUrl() + `?chattable_type=${this.chattableTypeValue}&chattable_id=${this.chattableIdValue}&session_id=${sessionId}`
+    const res = await this.getJSON(url)
+
+    if (res.success && res.messages.length > 0) {
+      this.hideWelcome()
+      this.sessionIdValue = res.session_id
+      res.messages.forEach(msg => this.appendMessage(msg.role, msg.content, msg.id, msg.feedback_rating))
+      this.scrollToBottom()
+    } else {
+      this.sessionIdValue = parseInt(sessionId)
+      this.showWelcome()
+    }
+  } catch (err) {
+    console.error("Failed to switch session:", err)
+  }
+
+  // Collapse the session list
+  this.sessionListTarget.classList.add("d-none")
+}
+
+/**
+ * Starts a new chat session. Clears the current messages and resets
+ * the session ID to 0 so the next message creates a fresh session
+ * on the backend (via GenericChatAgent's session auto-expire logic).
+ *
+ * @returns {void}
+ */
+newChat() {
+  // Clear current messages
+  Array.from(this.messagesTarget.children).forEach(child => {
+    if (!child.hasAttribute('data-agent-chat-target')) child.remove()
+  })
+
+  this.sessionIdValue = 0
+  this.showWelcome()
+  this.sessionListTarget.classList.add("d-none")
+  this.inputTarget.focus()
+}
+
+
   // --- UI Helpers ---
 
-  appendMessage(role, content) {
+  appendMessage(role, content, messageId, feedbackRating) {
     const div = document.createElement("div")
     div.classList.add("d-flex", "mb-3")
 
     if (role === "user") {
       div.classList.add("justify-content-end")
       div.innerHTML = `<div class="bg-primary text-white rounded-4 py-2 px-3" style="max-width:80%; border-bottom-right-radius:4px!important">${this.escapeHtml(content)}</div>`
-    } else {
+        } else {
       div.classList.add("justify-content-start")
-      div.innerHTML = `<div class="bg-light rounded-4 py-2 px-3" style="max-width:80%; border-bottom-left-radius:4px!important">${this.formatMarkdown(content)}</div>`
+      div.innerHTML = `
+        <div style="max-width:80%;">
+          <div class="bg-light rounded-4 py-2 px-3" style="border-bottom-left-radius:4px!important">${this.formatMarkdown(content)}</div>
+          ${messageId && this.feedbackEnabledValue ? this.feedbackRowHtml(messageId, feedbackRating) : ""}
+        </div>
+      `
     }
+
 
     this.messagesTarget.appendChild(div)
     this.scrollToBottom()
   }
+
 
   appendError(msg) {
     const html = `<div class="text-center text-danger small my-2">${this.escapeHtml(msg)}</div>`
@@ -374,6 +494,90 @@ formatMarkdown(text) {
     ADD_ATTR: ["target", "rel"]
   })
 }
+
+  feedbackRowHtml(messageId, feedbackRating) {
+    const upClass = feedbackRating === "positive" ? "text-primary" : "text-muted"
+    const downClass = feedbackRating === "negative" ? "text-danger" : "text-muted"
+    return `
+      <div class="d-flex align-items-center gap-3 mt-2 ms-2 feedback-row" data-message-id="${messageId}">
+        <button class="btn btn-sm btn-link ${upClass} p-1" data-action="click->agent-chat#rateFeedback"
+                data-rating="positive" data-message-id="${messageId}" title="Helpful" style="font-size: 1rem;">
+          <i class="${feedbackRating === 'positive' ? 'fa-solid' : 'fa-regular'} fa-thumbs-up"></i>
+        </button>
+        <button class="btn btn-sm btn-link ${downClass} p-1" data-action="click->agent-chat#rateFeedback"
+                data-rating="negative" data-message-id="${messageId}" title="Not helpful" style="font-size: 1rem;">
+          <i class="${feedbackRating === 'negative' ? 'fa-solid' : 'fa-regular'} fa-thumbs-down"></i>
+        </button>
+      </div>
+    `
+  }
+
+
+  async rateFeedback(e) {
+    const btn = e.currentTarget
+    const messageId = btn.dataset.messageId
+    const rating = btn.dataset.rating
+    const row = btn.closest(".feedback-row")
+
+    // Optimistic UI — highlight selected, dim the other
+    row.querySelectorAll("button").forEach(b => {
+      b.classList.remove("text-primary", "text-danger")
+      b.classList.add("text-muted")
+      b.querySelector("i").classList.replace("fa-solid", "fa-regular")
+    })
+    btn.classList.remove("text-muted")
+    btn.classList.add(rating === "positive" ? "text-primary" : "text-danger")
+    btn.querySelector("i").classList.replace("fa-regular", "fa-solid")
+
+
+    
+
+    // Remove any existing note input or thanks message
+    row.parentElement.querySelectorAll(".feedback-note-input").forEach(el => el.remove())
+
+
+
+    // If negative, show inline note input
+    if (rating === "negative" && !row.parentElement.querySelector(".feedback-note-input")) {
+      const noteHtml = `
+        <div class="d-flex align-items-center gap-1 mt-1 feedback-note-input" style="max-width:80%;">
+          <input type="text" class="form-control form-control-sm" placeholder="What went wrong? (optional)"
+                 data-message-id="${messageId}" style="font-size: 0.75rem;">
+          <button class="btn btn-sm btn-outline-secondary" data-action="click->agent-chat#submitFeedbackNote"
+                  data-message-id="${messageId}" style="font-size: 0.75rem;">Send</button>
+        </div>
+      `
+      row.insertAdjacentHTML("afterend", noteHtml)
+    }
+
+
+    try {
+      await this.patchJSON(`${this.chatsUrl()}/${messageId}/feedback`, { rating, notes: rating === "positive" ? "" : undefined })
+    } catch (err) {
+
+      console.error("Failed to save feedback:", err)
+    }
+  }
+
+  async submitFeedbackNote(e) {
+    const btn = e.currentTarget
+    const messageId = btn.dataset.messageId
+    const wrapper = btn.closest(".feedback-note-input")
+    const input = wrapper.querySelector("input")
+    const notes = (input.value || "").trim()
+
+    if (!notes) return
+
+    btn.disabled = true
+    try {
+      await this.patchJSON(`${this.chatsUrl()}/${messageId}/feedback`, { notes })
+      wrapper.innerHTML = `<span class="text-muted small">Thanks for your feedback</span>`
+    } catch (err) {
+      console.error("Failed to save feedback note:", err)
+      btn.disabled = false
+    }
+  }
+
 
 
 
@@ -418,4 +622,18 @@ formatMarkdown(text) {
     })
     return await res.json()
   }
+
+    async patchJSON(url, data) {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "X-CSRF-Token": this.csrfToken(),
+        "Content-Type": "application/json",
+        "Accept": "application/json"
+      },
+      body: JSON.stringify(data)
+    })
+    return await res.json()
+  }
+
 }

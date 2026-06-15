@@ -24,7 +24,21 @@ resources :support_agents do
   end
 
   # Generic chat routes
-  resources :chats, controller: 'support_agent_chats', only: %i[index create destroy]
+  resources :chats, controller: 'support_agent_chats', only: %i[index create destroy] do
+    collection do
+      get :sessions
+    end
+    member do
+      patch :feedback, controller: 'support_agent_chat_feedbacks', action: :update
+    end
+  end
+end
+
+# CS Feedback Review Dashboard — Super Admin queue for flagged responses + escalations
+resources :cs_feedback_reviews, only: %i[index show update] do
+  member do
+    post :retest
+  end
 end
 
 resources :agent_charts do
