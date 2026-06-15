@@ -7,6 +7,9 @@ class InvestorAccess < ApplicationRecord
   update_index('investor_access') { self if index_record? }
 
   validates :email, :first_name, :last_name, presence: true
+  validates :first_name, :last_name, length: { maximum: 255 } # matches users.first_name / users.last_name column size
+  validates :email, length: { maximum: 255 }
+  validates :tag_list, length: { maximum: 120 }, allow_blank: true
   belongs_to :entity
   belongs_to :investor_entity, class_name: "Entity"
   belongs_to :investor # , strict_loading: true
@@ -20,7 +23,7 @@ class InvestorAccess < ApplicationRecord
 
   validates_uniqueness_of :email, scope: :investor_id, message: "Aready added as a stakeholder"
   validates_format_of :email, with: URI::MailTo::EMAIL_REGEXP, multiline: true
-  validates :phone, length: { maximum: 15 }
+  validates :phone, length: { maximum: 15 }, allow_blank: true
 
   counter_culture :investor, column_name: proc { |model| model.approved ? 'investor_access_count' : 'unapproved_investor_access_count' },
                              column_names: {

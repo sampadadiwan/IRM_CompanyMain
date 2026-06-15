@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_12_012527) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2254,13 +2254,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_12_012527) do
     t.string "email"
     t.boolean "email_enabled", default: true
     t.integer "entity_id"
-    t.string "first_name", limit: 20
+    t.string "first_name", limit: 255
     t.integer "granted_by"
     t.bigint "import_upload_id"
     t.bigint "investor_entity_id"
     t.integer "investor_id"
     t.boolean "is_investor_advisor", default: false
-    t.string "last_name", limit: 20
+    t.string "last_name", limit: 255
     t.string "phone", limit: 15
     t.boolean "send_confirmation", default: false
     t.string "tag_list", limit: 120
