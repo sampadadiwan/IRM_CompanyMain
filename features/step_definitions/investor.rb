@@ -580,6 +580,38 @@ Then('I should see the kyc documents {string}') do |docs|
   end
 end
 
+# Confirms a partial/draft save did NOT persist a document for the given custom field —
+# i.e. the missing required file genuinely was left blank, not silently attached.
+Then('I should not see the kyc document {string}') do |custom_field_name|
+  @investor_kyc = InvestorKyc.last
+  document_names = @investor_kyc.documents.pluck(:name)
+  document_names.include?(custom_field_name).should == false
+end
+
+# Reopens an already-saved KYC and attaches a file to a required custom File field that
+# was left blank on a previous (partial) save, then saves again to complete it.
+When('I edit the investor kyc and upload the missing custom file {string}') do |custom_field_name|
+  @investor_kyc = InvestorKyc.last
+  field_id = FormCustomField.to_name(custom_field_name)
+
+  visit(edit_investor_kyc_path(@investor_kyc))
+  sleep(1)
+  click_on("Next")
+  sleep(1)
+  click_on("Next")
+  sleep(1)
+
+  page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
+    within "#custom_file_#{field_id}" do
+      click_on 'Choose file'
+    end
+  end
+  sleep(2)
+
+  click_on("Save")
+  expect(page).to have_content("successfully")
+end
+
 Then('I should see ckyc and kra data comparison page') do
   expect(page).to have_content("CKYC")
   expect(page).to have_content("KRA")
