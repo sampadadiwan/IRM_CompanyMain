@@ -334,7 +334,7 @@ FactoryBot.define do
     pan_verification { false }
     bank_verification { false }
     trial { false }
-    trail_end_date { "2023-01-22" }
+    trial_end_date { "2023-01-22" }
     valuation_math { Faker::Company.name }
     snapshot_frequency_months { 1 }
     last_snapshot_on { "2023-01-22" }
