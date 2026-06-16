@@ -97,6 +97,7 @@
     <div class="portfolio_investment_ag_grid" data-controller="ag"
       data-ag-grid-div-name-value="portfolio_investment_ag_grid"
       data-ag-lazy-load-data-value=<%= false %>
+      data-ag-hide-actions-value="<%= current_user.curr_role_investor? %>"
       data-custom-columns='<%= custom_grid_columns.to_json %>'
       data-group-by-column='<%= params[:group_by_column] %>'
       data-ag-table-name-value="#portfolio_investments_table<%=table_suffix%>" data-ag-custom-fields-value="" >

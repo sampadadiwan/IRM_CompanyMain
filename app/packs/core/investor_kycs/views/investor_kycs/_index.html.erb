@@ -6,18 +6,20 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">KYCs</h1>
   <div class="d-flex flex-wrap align-items-center gap-2">
-    <% if policy(InvestorKyc).investor_pending? %>
-      <%= link_to investor_pending_investor_kycs_path,
-            class: "btn btn-outline-warning d-inline-flex align-items-center" do %>
-        <i class="ti ti-clock"></i> Pending KYC Requests
+    <% unless current_user.curr_role_investor? %>
+      <% if policy(InvestorKyc).investor_pending? %>
+        <%= link_to investor_pending_investor_kycs_path,
+              class: "btn btn-outline-warning d-inline-flex align-items-center" do %>
+          <i class="ti ti-clock"></i> Pending KYC Requests
+        <% end %>
       <% end %>
-    <% end %>
-    <% if policy(InvestorKyc).analytics? %>
-      <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
-              data-bs-toggle="collapse" data-bs-target="#investorKycAnalytics"
-              aria-expanded="false" aria-controls="investorKycAnalytics">
-        <i class="ti ti-chart-bar"></i> Analytics
-      </button>
+      <% if policy(InvestorKyc).analytics? %>
+        <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
+                data-bs-toggle="collapse" data-bs-target="#investorKycAnalytics"
+                aria-expanded="false" aria-controls="investorKycAnalytics">
+          <i class="ti ti-chart-bar"></i> Analytics
+        </button>
+      <% end %>
     <% end %>
     <% entity_id = @investor ? @investor.entity_id : current_user.entity_id %>
     <% investor_kyc = InvestorKyc.new(investor_id: @investor&.id, entity_id: entity_id) %>
@@ -115,7 +117,7 @@
         </div>
       </div>
     <% end %>
-    <% if @investor.blank? %>
+    <% if @investor.blank? && !current_user.curr_role_investor? %>
       <div class="btn-group">
         <div class="dropdown">
           <button class="btn btn-outline-success dropdown-toggle d-inline-flex align-items-center" type="button"
