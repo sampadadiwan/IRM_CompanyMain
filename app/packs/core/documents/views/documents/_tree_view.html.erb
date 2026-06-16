@@ -3,7 +3,7 @@
     tree_view_id = widget_id.present? ? "tree_view_#{widget_id}" : "tree_view"
     documents_frame_id = widget_id.present? ? "documents_frame_#{widget_id}" : "documents_frame"
     show_action_buttons = params[:show_action_buttons].to_s != "false" # default to true
-    show_action_buttons = false if current_user.curr_role_investor?
+    # show_action_buttons = false if current_user.curr_role_investor?
     folder_url_method ||= :folder_documents_path
     use_entity_name_for_root ||= false
     virtual_root ||= nil

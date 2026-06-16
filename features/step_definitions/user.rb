@@ -26,6 +26,16 @@
     @created_user.entity_id.should == @user.entity_id
   end
 
+  # Confirms DeviseMailer interpolates the inviting admin's entity name into the
+  # confirmation_instructions subject, rather than the static "Confirmation instructions"
+  # string from devise.en.yml.
+  Then('the new user receives a confirmation email welcoming them to their entity') do
+    open_email(@new_user.email)
+    puts "\n####Email subject####\n"
+    puts current_email.subject
+    expect(current_email.subject).to eq("Welcome to CapHive (#{@user.entity.name})")
+  end
+
   Then('I should see the user details on the details page') do
     visit(user_path(@created_user))
     expect(page).to have_content(@created_user.first_name)

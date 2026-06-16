@@ -27,7 +27,9 @@ Devise.setup do |config|
   config.mailer_sender = ENV.fetch("SUPPORT_EMAIL_FROM", nil)
 
   # Configure the class responsible to send e-mails.
-  # config.mailer = 'Devise::Mailer'
+  # DeviseMailer overrides confirmation_instructions to set a per-entity subject
+  # (e.g. "Welcome to Acme Capital") instead of the static devise.en.yml string.
+  config.mailer = "DeviseMailer"
 
   # Configure the parent class responsible to send e-mails.
   # config.parent_mailer = 'ActionMailer::Base'

@@ -130,7 +130,7 @@
         <div id="collapseDocuments" class="accordion-collapse collapse" aria-labelledby="docs-tab" data-bs-parent="#investorFundDetailsAccordion">
           <div class="accordion-body">
             <div id="docs" class="">
-                <%= turbo_frame_tag "documents_tree_frame", src: folder_documents_path(entity_id: fund.entity_id, folder_id: fund.document_folder.id, show_root_docs: true), loading: :lazy, target: "_top" do %>
+                <%= turbo_frame_tag "documents_tree_frame", src: folder_documents_path(entity_id: fund.entity_id, folder_id: fund.document_folder.id, show_root_docs: true, show_action_buttons: false), loading: :lazy, target: "_top" do %>
                   <div class="text-center">
                       <div class="spinner-border" role="status">
                         <span class="visually-hidden">Loading...</span>

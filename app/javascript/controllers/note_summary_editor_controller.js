@@ -1,4 +1,4 @@
-import InlineEditorController from "./inline_editor_controller"
+import InlineEditorController from "controllers/inline_editor_controller"
 import { marked } from "marked"
 
 // Inline editor for NoteSummarizerAgent summary text.

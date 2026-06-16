@@ -98,7 +98,7 @@ class Investor < ApplicationRecord
   validates :primary_email, length: { maximum: 255 }
   validates_format_of :primary_email, with: URI::MailTo::EMAIL_REGEXP, multiline: true
 
-  validates_uniqueness_of :primary_email, scope: :entity_id, message: "already assigned to an existing Stakeholder."
+  validates_uniqueness_of :primary_email, scope: :entity_id, message: "has already been used for a different stakeholder. Please enter a unique primary email ID."
 
   # The investor_entity_id duplicate is a side effect of the name/email match (see #update_name),
   # so it's redundant noise once either of those is already flagged.

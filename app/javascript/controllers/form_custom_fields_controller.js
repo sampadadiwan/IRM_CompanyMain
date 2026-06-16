@@ -10,6 +10,7 @@ export default class extends Controller {
     // Attach an 'input' event listener to all elements with the class 'custom_field'
     // When the input value changes, the 'valueChanged' function is called with the event target as an argument
     $( ".custom_field" ).on("input", (event)=>{
+        this.clearCustomFieldError(event.target);
         this.valueChanged(event.target);
     });
 
@@ -21,6 +22,35 @@ export default class extends Controller {
         }
     });
 
+    // The browser's native required-field validation only shows its own
+    // tooltip, which looks inconsistent with the red field_with_errors
+    // styling used for server-validated fields (eg. primary_email).
+    // The 'invalid' event doesn't bubble, but it does fire during the
+    // capturing phase, so we catch it at the document level and replace
+    // the native UI with the same highlight used elsewhere in the app.
+    document.addEventListener("invalid", (event) => {
+        if ($(event.target).hasClass("custom_field")) {
+            event.preventDefault();
+            this.showCustomFieldError(event.target);
+        }
+    }, true);
+  }
+
+  // Highlights an invalid custom field the same way Rails highlights
+  // fields with server-side validation errors (see .field_with_errors)
+  showCustomFieldError(elem) {
+    const $group = $(elem).closest(".form-group");
+    $group.addClass("field_with_errors");
+    if ($group.find(".custom-field-error-message").length === 0) {
+        const message = elem.validationMessage || "can't be blank";
+        $(elem).after(`<label class="message custom-field-error-message">${message}</label>`);
+    }
+  }
+
+  clearCustomFieldError(elem) {
+    const $group = $(elem).closest(".form-group");
+    $group.removeClass("field_with_errors");
+    $group.find(".custom-field-error-message").remove();
   }
 
   initialize() {
@@ -122,18 +152,20 @@ export default class extends Controller {
       // File inputs need to be handled differently
       // We should not clear the other fields associated with the file like name, send_email etc
       // see _file.html.erb custom field
-      $(elem).find(':input').each(function() {
-        switch(this.type) {
+      $(elem).find(':input').each((idx, input) => {
+        switch(input.type) {
             case 'file':
-                // jQuery(this).val('');
+                // jQuery(input).val('');
                 break;
         }
         // Remove the required attribute from the form element
-        $(this).removeAttr('required');
+        $(input).removeAttr('required');
+        this.clearCustomFieldError(input);
       });
     } else {
-      $(elem).find(':input').each(function() {
-        switch(this.type) {
+      $(elem).find(':input').each((idx, input) => {
+        const $input = jQuery(input);
+        switch(input.type) {
             case 'password':
             case 'text':
             case 'textarea':
@@ -144,15 +176,16 @@ export default class extends Controller {
             case 'number':
             case 'tel':
             case 'email':
-                jQuery(this).val('');
+                $input.val('');
                 break;
             case 'checkbox':
             case 'radio':
-                this.checked = false;
+                input.checked = false;
                 break;
         }
         // Remove the required attribute from the form element
-        $(this).removeAttr('required');
+        $input.removeAttr('required');
+        this.clearCustomFieldError(input);
       });
     }
   }
