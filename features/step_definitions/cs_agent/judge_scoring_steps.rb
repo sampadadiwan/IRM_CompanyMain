@@ -63,12 +63,20 @@ Then("the judge_total should equal the sum of the three scores") do
 end
 
 Then("the feedback should have judge_issues populated") do
-  issues = JSON.parse(@feedback.judge_issues) rescue []
+  issues = begin
+    JSON.parse(@feedback.judge_issues)
+  rescue StandardError
+    []
+  end
   expect(issues).to be_any
 end
 
 Then("the issues should describe specific problems with the response") do
-  issues = JSON.parse(@feedback.judge_issues) rescue []
+  issues = begin
+    JSON.parse(@feedback.judge_issues)
+  rescue StandardError
+    []
+  end
   issues.each do |issue|
     expect(issue).to be_a(String)
     expect(issue.length).to be > 5
@@ -89,7 +97,7 @@ end
 
 Then("the feedback should not appear in the CS support team's feedback queue") do
   queue = AgentChatMessageFeedback.where(entity_id: @entity.id)
-           .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
+                                  .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
   expect(queue).not_to include(@feedback)
 end
 
@@ -220,7 +228,7 @@ end
 
 Then("the job should be retried after {int} seconds") do |seconds|
   # Verified by the retry_on declaration in the job class
-  retry_config = ResponseJudgeJob.retry_on_exceptions
+  ResponseJudgeJob.retry_on_exceptions
   expect(seconds).to eq(5) # Matches retry_on StandardError, wait: 5.seconds
 end
 
@@ -237,9 +245,7 @@ end
 
 Then("no scores should be written to the feedback") do
   feedback = AgentChatMessageFeedback.find_by(agent_chat_message: @assistant_msg)
-  if feedback
-    expect(feedback.judge_total).to be_nil
-  end
+  expect(feedback.judge_total).to be_nil if feedback
 end
 
 Then("the job should not raise an error") do
@@ -266,7 +272,7 @@ end
 When("the support user views the feedback queue") do
   mapped_ids = SupportClientMapping.where(user: @support_user, enabled: true).pluck(:entity_id)
   @queue = AgentChatMessageFeedback.where(entity_id: mapped_ids)
-            .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
+                                   .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
 end
 
 Then("the queue should include the feedback with judge_total {int}") do |score|

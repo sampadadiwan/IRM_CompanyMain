@@ -115,7 +115,7 @@ end
 
 Then("the feedback should appear in the CS support team's feedback queue") do
   queue = AgentChatMessageFeedback.where(entity_id: @entity.id)
-           .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
+                                  .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
   expect(queue).to include(@feedback)
 end
 
@@ -195,7 +195,7 @@ Then("the agent should have access to the conversation history") do
 end
 
 Given("I have multiple chat sessions with the CS agent") do
-  @sessions = 3.times.map do |i|
+  @sessions = Array.new(3) do |i|
     session = FactoryBot.create(:agent_chat_session,
                                 support_agent: @support_agent,
                                 analyst: @fm_user,

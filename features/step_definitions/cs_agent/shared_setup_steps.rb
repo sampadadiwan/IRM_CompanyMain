@@ -6,13 +6,12 @@ Before do
   # Stub LLM so tests never call a real AI provider.
   # Returns context-appropriate responses based on the user message.
   fake_chat = double("RubyLLM::Chat",
-    with_instructions: nil,
-    with_tools: nil,
-    add_message: nil,
-    on_new_message: nil,
-    before_tool_call: nil,
-    messages: []
-  )
+                     with_instructions: nil,
+                     with_tools: nil,
+                     add_message: nil,
+                     on_new_message: nil,
+                     before_tool_call: nil,
+                     messages: [])
   allow(fake_chat).to receive(:ask) do |message|
     content = case message.to_s.downcase
               when /capital call/
@@ -28,7 +27,6 @@ Before do
   end
   allow(LlmService).to receive(:ruby_llm_chat).and_return(fake_chat)
 end
-
 
 Given("an entity exists with a customer support agent configured") do
   @entity = FactoryBot.create(:entity)

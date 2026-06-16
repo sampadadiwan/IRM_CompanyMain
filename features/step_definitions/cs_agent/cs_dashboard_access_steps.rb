@@ -53,7 +53,7 @@ end
 When("I view the feedback queue") do
   mapped_ids = SupportClientMapping.where(user: @support_user, enabled: true).pluck(:entity_id)
   @visible_feedbacks = AgentChatMessageFeedback.where(entity_id: mapped_ids)
-                        .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
+                                               .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
 end
 
 Then("I should only see feedback from my mapped entity") do
@@ -91,7 +91,7 @@ end
 When("I filter the feedback queue by status {string}") do |status|
   mapped_ids = SupportClientMapping.where(user: @support_user, enabled: true).pluck(:entity_id)
   @visible_feedbacks = AgentChatMessageFeedback.where(entity_id: mapped_ids, status: status)
-                        .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
+                                               .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
 end
 
 Then("I should only see feedback with status {string}") do |status|
@@ -125,7 +125,7 @@ end
 
 When("I filter the feedback queue by entity") do
   @visible_feedbacks = AgentChatMessageFeedback.where(entity_id: @entity.id)
-                        .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
+                                               .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5)
 end
 
 Then("I should only see feedback from the selected entity") do
@@ -144,7 +144,7 @@ end
 When("I filter the feedback queue by judge_max {int}") do |threshold|
   mapped_ids = SupportClientMapping.where(user: @support_user, enabled: true).pluck(:entity_id)
   @visible_feedbacks = AgentChatMessageFeedback.where(entity_id: mapped_ids)
-                        .where(judge_total: ..threshold)
+                                               .where(judge_total: ..threshold)
 end
 
 Then("I should only see feedback with judge_total {int} or below") do |threshold|
@@ -163,7 +163,7 @@ Then("I should see the low-judge-score feedback") do
 end
 
 Then("I should not see the positive feedback with high judge score") do
-  high_positives = @visible_feedbacks.where(rating: "positive").where("judge_total >= ?", 5)
+  high_positives = @visible_feedbacks.where(rating: "positive").where(judge_total: 5..)
   expect(high_positives).to be_empty
 end
 
@@ -187,7 +187,7 @@ end
 When("I view the CS Reviews dashboard") do
   mapped_ids = SupportClientMapping.where(user: @support_user, enabled: true).pluck(:entity_id)
   @feedback_count = AgentChatMessageFeedback.where(entity_id: mapped_ids)
-                     .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5).count
+                                            .where("rating = ? OR (judge_total IS NOT NULL AND judge_total < ?)", "negative", 5).count
   @escalation_count = CustomerSupportEscalation.where(entity_id: mapped_ids).count
 end
 

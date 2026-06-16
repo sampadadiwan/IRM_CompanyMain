@@ -89,7 +89,7 @@ end
 
 Then("the email should be sent to the support user mapped to the entity") do
   mapped_emails = SupportClientMapping.where(entity_id: @entity.id, enabled: true)
-                   .includes(:user).filter_map { |m| m.user.email }
+                                      .includes(:user).filter_map { |m| m.user.email }
   expect(mapped_emails).to include(@support_user.email)
 end
 
@@ -105,7 +105,7 @@ end
 
 Then("an escalation email should be sent to the global support email address") do
   mapped_emails = SupportClientMapping.where(entity_id: @entity.id, enabled: true)
-                   .includes(:user).filter_map { |m| m.user.email }
+                                      .includes(:user).filter_map { |m| m.user.email }
   expect(mapped_emails).to be_empty
   # Falls back to ENV["SUPPORT_EMAIL_TO"] or "support@caphive.com"
   fallback = ENV.fetch("SUPPORT_EMAIL_TO", "support@caphive.com")
@@ -123,7 +123,7 @@ end
 
 Then("the escalation email should be sent to both mapped support users") do
   mapped_emails = SupportClientMapping.where(entity_id: @entity.id, enabled: true)
-                   .includes(:user).filter_map { |m| m.user.email }
+                                      .includes(:user).filter_map { |m| m.user.email }
   expect(mapped_emails).to include(@support_user.email)
   expect(mapped_emails).to include(@second_support_user.email)
 end

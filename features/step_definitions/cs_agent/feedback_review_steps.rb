@@ -82,7 +82,6 @@ Then("I should see whether a guide match was found") do
   expect(page).to have_css(".badge")
 end
 
-
 When("I confirm the action") do
   # Playwright handles the confirm dialog automatically
   page.accept_confirm if page.driver.respond_to?(:accept_confirm)
@@ -120,7 +119,6 @@ end
 When("I enter resolution notes {string}") do |notes|
   fill_in "resolution_notes", with: notes
 end
-
 
 Then("the feedback status should change to {string}") do |status|
   eventually do
