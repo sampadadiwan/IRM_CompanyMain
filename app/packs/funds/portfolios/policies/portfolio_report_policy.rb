@@ -1,4 +1,10 @@
 class PortfolioReportPolicy < FundBasePolicy
+  class Scope < FundBasePolicy::Scope
+    def resolve
+      scope.where(entity_id: user.entity_id)
+    end
+  end
+
   def index?
     user.entity.permissions.enable_fund_portfolios?
   end
