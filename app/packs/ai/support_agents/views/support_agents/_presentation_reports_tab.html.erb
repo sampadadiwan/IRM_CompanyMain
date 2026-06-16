@@ -1,0 +1,47 @@
+<% if presentation_reports.empty? %>
+  <div class="alert alert-secondary">
+    <i class="ti ti-info-circle me-1"></i>
+    No reports yet. Run the agent on a portfolio company to generate the first pre-board briefing.
+  </div>
+<% else %>
+
+  <%# ── Summary table (one row per portfolio company) ────────────────────── %>
+  <div class="table-responsive mb-3">
+    <table class="table table-bordered align-middle mb-0 pres-summary-table">
+      <thead style="background:#f0f0f0;">
+        <tr>
+          <th>Portfolio Company</th>
+          <th>Periods</th>
+          <th style="min-width:140px;">Score</th>
+          <th>Grade</th>
+          <th>Questions</th>
+          <th>Status</th>
+          <th>Run At</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% presentation_reports.each do |report| %>
+          <%= render "support_agents/presentation_report_row",
+                     report:       report,
+                     agent:        @support_agent,
+                     show_company: true,
+                     action:       :collapse %>
+
+          <%= render "support_agents/presentation_report_detail",
+                     report:            report,
+                     colspan:           8,
+                     scoring_enabled:   @support_agent.json_fields["enable_scoring"].to_s.downcase   != "no",
+                     questions_enabled: @support_agent.json_fields["enable_questions"].to_s.downcase != "no" %>
+
+        <% end %><%# /presentation_reports.each %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small">
+    <i class="ti ti-calendar me-1"></i>
+    Last run: <%= presentation_reports.first&.created_at&.strftime("%d %b %Y at %H:%M") %>
+  </p>
+
+<% end %>

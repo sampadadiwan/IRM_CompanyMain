@@ -41,5 +41,4 @@ class AccountEntryPolicy < FundBasePolicy
   def explain?
     show?
   end
-
 end

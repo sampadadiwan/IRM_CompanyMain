@@ -311,6 +311,18 @@ Feature: Fund child model access rights
     And there is an investment opportunity
     Then the user "investor@example.com" should be denied "show" on the record
 
+  Scenario: Investor is denied new on investment opportunity even with IO AR (investor must not create IOs)
+    When the entity has enable_inv_opportunities enabled
+    And there is an investment opportunity
+    And I grant "read" access to the investment opportunity for investor "Big LP"
+    Then the user "investor@example.com" should be denied "new, create" on the record
+
+  Scenario: Investor is denied update on investment opportunity even with IO AR
+    When the entity has enable_inv_opportunities enabled
+    And there is an investment opportunity
+    And I grant "read" access to the investment opportunity for investor "Big LP"
+    Then the user "investor@example.com" should be denied "update, edit" on the record
+
   # ---------------------------------------------------------------------------
   # ExpressionOfInterest — employee OR investor OR rm; model_with_access_rights = IO
   # ---------------------------------------------------------------------------

@@ -34,7 +34,7 @@ class UpdateDocumentFolderPathJob < ApplicationJob
   end
 
   def update_descendants(folder)
-    folder.children.includes(:entity).each do |child|
+    folder.children.includes(:entity).find_each do |child|
       child.set_defaults
       child.save!
       update_descendants(child)

@@ -17,7 +17,7 @@ class AiReportSection < ApplicationRecord
   # Add a chart to this section
   def add_chart(chart)
     self.agent_chart_ids ||= []
-    self.agent_chart_ids << chart.id unless agent_chart_ids.include?(chart.id)
+    agent_chart_ids << chart.id unless agent_chart_ids.include?(chart.id)
     save
   end
 

@@ -1,4 +1,3 @@
-# rubocop:disable Metrics/ClassLength
 class DocumentsController < ApplicationController
   include ActiveStorage::SetCurrent
   include DocumentHelper
@@ -197,7 +196,7 @@ class DocumentsController < ApplicationController
   def new
     @document = Document.new(document_params)
     @bread_crumbs = { Documents: documents_path }
-    @bread_crumbs["#{@document.owner}"] = polymorphic_path(@document.owner) if @document.owner.present?
+    @bread_crumbs[@document.owner.to_s] = polymorphic_path(@document.owner) if @document.owner.present?
     @bread_crumbs[:New] = nil
 
     @document.setup_folder_defaults
@@ -328,8 +327,8 @@ class DocumentsController < ApplicationController
     @document = Document.find(params[:id])
     authorize @document
     @bread_crumbs = { Documents: documents_path }
-    @bread_crumbs["#{@document.owner}"] = polymorphic_path(@document.owner) if @document.owner.present?
-    @bread_crumbs["#{@document.name}"] = document_path(@document)
+    @bread_crumbs[@document.owner.to_s] = polymorphic_path(@document.owner) if @document.owner.present?
+    @bread_crumbs[@document.name.to_s] = document_path(@document)
   end
 
   def entity_documents

@@ -6,7 +6,7 @@ class KpiReportSearch
 
     if params[:budget_view].blank?
       no_val = params[:no_of_periods].to_s.strip
-      no_of_periods = no_val.present? && no_val.to_i > 0 ? no_val.to_i : 12
+      no_of_periods = no_val.present? && no_val.to_i.positive? ? no_val.to_i : 12
       period = params[:period].presence || 'month'
     end
 

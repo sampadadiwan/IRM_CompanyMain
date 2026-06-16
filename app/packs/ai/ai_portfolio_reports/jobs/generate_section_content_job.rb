@@ -1,4 +1,3 @@
-# rubocop:disable Metrics/ClassLength
 # Background job to generate AI report section content from documents.
 class GenerateSectionContentJob < ApplicationJob
   queue_as :default

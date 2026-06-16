@@ -25,7 +25,11 @@
 
   <div class="associated_entity">
     <% model_class = @import_upload.model_class.name.underscore.pluralize %>
-    <% if ["interests", "investors", "portfolio_investments", "capital_commitments", "investor_kycs", "allocations", "fund_unit_settings", "account_entries", "capital_calls", "fund_ratios", "capital_remittances", "kpi_reports", "offers", "investments", "capital_distribution_payments", "investor_kpi_mappings", "dashboard_widgets", "agent_charts"].include?(model_class) %>
+    <% if model_class == "ratio_formulas" %>
+      <%= link_to "View Ratio Formulas for #{@import_upload.owner}",
+            fund_ratio_formulas_path(@import_upload.owner),
+            class: "btn btn-outline-primary mt-2" %>
+    <% elsif ["interests", "investors", "portfolio_investments", "capital_commitments", "investor_kycs", "allocations", "fund_unit_settings", "account_entries", "capital_calls", "fund_ratios", "capital_remittances", "kpi_reports", "offers", "investments", "capital_distribution_payments", "investor_kpi_mappings", "dashboard_widgets", "agent_charts"].include?(model_class) %>
       <turbo-frame id="<%= "#{model_class}_frame" %>"
                    src="<%= url_for(controller: model_class, action: :index, import_upload_id: @import_upload.id) %>"
                    loading="lazy" target="_top">

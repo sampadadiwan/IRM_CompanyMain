@@ -6,10 +6,10 @@
   <% if toolbar == "Yes" %>
     <div class="d-flex flex-wrap align-items-center gap-2">
       <%= user_guide_info_icon %>
-      <%# Analytics Toggle Button %>
-      <% if fund %>
-        <button class="btn btn-outline-info d-inline-flex align-items-center" type="button" 
-                data-bs-toggle="collapse" data-bs-target="#commitmentAnalytics" 
+      <%# Analytics Toggle Button - hidden for investors %>
+      <% if fund && !current_user.curr_role_investor? %>
+        <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
+                data-bs-toggle="collapse" data-bs-target="#commitmentAnalytics"
                 aria-expanded="false" aria-controls="commitmentAnalytics">
           <i class="ti ti-chart-bar"></i> Analytics
         </button>
@@ -124,7 +124,8 @@
           <i class="ti ti-upload"></i> <%= t_common(:upload) %>
         <% end %>
       <% end %>
-      <%# Download/Export Dropdown %>
+      <%# Download/Export Dropdown - hidden for investors %>
+      <% unless current_user.curr_role_investor? %>
       <div class="btn-group">
         <button class="btn btn-outline-success dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
           <i class="ti ti-download"></i> <%= t_common(:download) %>
@@ -148,6 +149,7 @@
           </li>
         </ul>
       </div>
+      <% end %>
     </div>
   <% end %>
 </div>

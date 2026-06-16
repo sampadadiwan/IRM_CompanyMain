@@ -11,15 +11,15 @@ class ValidationRuleOverridesController < ApplicationController
 
     # All global defaults relevant to the engine, ordered for display
     @rules_by_model = ValidationRule
-                        .global_defaults
-                        .where(target_model: ValidationRuleEvaluator::CONTEXT_PROVIDERS.keys)
-                        .order(:target_model, :name)
-                        .group_by(&:target_model)
+                      .global_defaults
+                      .where(target_model: ValidationRuleEvaluator::CONTEXT_PROVIDERS.keys)
+                      .order(:target_model, :name)
+                      .group_by(&:target_model)
 
     # Preload overrides for this entity keyed by rule id — avoids N+1 in the view
     @overrides_by_rule_id = ValidationRuleOverride
-                              .where(entity_id: current_user.entity_id)
-                              .index_by(&:validation_rule_id)
+                            .where(entity_id: current_user.entity_id)
+                            .index_by(&:validation_rule_id)
   end
 
   # GET /validation_rule_overrides/new?validation_rule_id=X
@@ -71,7 +71,7 @@ class ValidationRuleOverridesController < ApplicationController
   def set_override
     # Scoped to current entity so a company_admin cannot touch another entity's overrides
     @override = ValidationRuleOverride.find_by!(
-      id:        params[:id],
+      id: params[:id],
       entity_id: current_user.entity_id
     )
   end

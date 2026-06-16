@@ -110,7 +110,7 @@ class ReportInsightRunner < Trailblazer::Operation
   # Construct the detailed prompt using the gathered information.
   # Includes instructions for the LLM on how to format the response,
   # available chart types, and color palettes.
-  def build_prompt(ctx, report:, record_count:, **) # rubocop:disable Metrics/MethodLength
+  def build_prompt(ctx, report:, record_count:, **)
     ctx[:prompt] = <<~PROMPT
       You are generating a client-ready report insight for a busy professional.
       The dataset is provided as an attached JSON file. Use it for analysis.

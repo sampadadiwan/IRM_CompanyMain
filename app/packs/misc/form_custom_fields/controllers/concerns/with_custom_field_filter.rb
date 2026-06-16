@@ -35,9 +35,9 @@ module WithCustomFieldFilter
   def register_filterable_ransackers_for(model_class)
     form_types = FormType.where(entity_id: current_user.entity_id, name: model_class.name)
     all_filterable = FormCustomField
-      .where(form_type: form_types)
-      .filterable
-      .order(:form_type_id, :position)
+                     .where(form_type: form_types)
+                     .filterable
+                     .order(:form_type_id, :position)
 
     deduped = all_filterable.index_by(&:name).values
     deduped.each { |fcf| model_class.register_cf_ransacker(fcf.name, label: fcf.human_label) }

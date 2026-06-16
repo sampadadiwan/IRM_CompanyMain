@@ -14,10 +14,6 @@ class ReportSchedule < ApplicationRecord
   def set_cron_expression
     return if cron_expression.present?
 
-    self.cron_expression = case frequency
-                           when 'daily'   then "0 9 * * *"      # 9 AM daily
-                           when 'weekly'  then "0 9 * * 1"      # 9 AM every Monday
-                           when 'monthly' then "0 9 1 * *"      # 9 AM on the 1st of every month
-                           end
+    self.cron_expression = { 'daily' => "0 9 * * *", 'weekly' => "0 9 * * 1", 'monthly' => "0 9 1 * *" }[frequency]
   end
 end

@@ -1,4 +1,3 @@
-# rubocop:disable Metrics/ClassLength
 # Generates or refines AI portfolio report sections using document and web context.
 class PortfolioReportAgent < SupportAgentService
   DESCRIPTION = "Generates or refines AI portfolio report sections using document and web context.".freeze
@@ -250,7 +249,6 @@ class PortfolioReportAgent < SupportAgentService
   #
   # @param ctx [Hash] execution context
   # @return [void]
-  # rubocop:disable Metrics/MethodLength
   def generate_section_content(ctx, **)
     section_type = ctx[:section_type]
     template = ctx[:template]
@@ -331,10 +329,8 @@ class PortfolioReportAgent < SupportAgentService
 
     true
   end
-  # rubocop:enable Metrics/MethodLength
 
   # Refine section content using LLM
-  # rubocop:disable Metrics/MethodLength
   # Refine section content using user confirmation and optional web context.
   #
   # @param ctx [Hash] execution context
@@ -407,8 +403,6 @@ class PortfolioReportAgent < SupportAgentService
     Rails.logger.info "[PortfolioReportAgent] Refined #{content.length} characters"
     true
   end
-
-  # rubocop:enable Metrics/MethodLength
 
   # Load previous refinements into assistant (OpenAI uses 'assistant' role)
   # Load prior refinement history into the assistant.
@@ -505,7 +499,6 @@ class PortfolioReportAgent < SupportAgentService
   # == Helper Methods ==
 
   # Get section-specific template
-  # rubocop:disable Metrics/MethodLength
   # Fetch the section template by section type.
   #
   # @param section_type [String] section type name
@@ -684,9 +677,6 @@ class PortfolioReportAgent < SupportAgentService
       length: "1-2 short paragraphs or 3-5 bullet points"
     }
   end
-  # rubocop:enable Metrics/MethodLength
-
-  # rubocop:disable Lint/UnusedMethodArgument
 
   # Build generation prompt for new content.
   #
@@ -788,10 +778,7 @@ class PortfolioReportAgent < SupportAgentService
     PROMPT
   end
 
-  # rubocop:enable Lint/UnusedMethodArgument
-
   # Refinement prompt
-  # rubocop:disable Lint/UnusedMethodArgument,Metrics/MethodLength
 
   # Build system prompt used during refinement.
   #
@@ -861,8 +848,6 @@ class PortfolioReportAgent < SupportAgentService
       Generate the refined #{section_type} section now in pure HTML format:
     PROMPT
   end
-
-  # rubocop:enable Lint/UnusedMethodArgument,Metrics/MethodLength
 
   # Load documents from folder
   # Load documents from a local folder path.
@@ -967,7 +952,6 @@ class PortfolioReportAgent < SupportAgentService
   end
 
   # Extract PowerPoint text using zip and XML parsing
-  # rubocop:disable Metrics/MethodLength
   # Extract text from a PowerPoint file.
   #
   # @param file_path [String] PowerPoint path
@@ -1042,8 +1026,6 @@ class PortfolioReportAgent < SupportAgentService
     "Error extracting PPTX: #{e.message}"
   end
 
-  # rubocop:enable Metrics/MethodLength
-
   # Extract data from chart XML
   # Extract chart-relevant data from a document.
   #
@@ -1094,7 +1076,6 @@ class PortfolioReportAgent < SupportAgentService
 
   # NEW: Build search queries based on section type
 
-  # rubocop:disable Metrics/MethodLength
   # Build web search queries for a section type.
   #
   # @param section_type [String] section type name
@@ -1149,7 +1130,6 @@ class PortfolioReportAgent < SupportAgentService
 
     section_queries.first(2)
   end
-  # rubocop:enable Metrics/MethodLength
 
   # Extract company name from document context using the LLM.
   #
@@ -1229,4 +1209,3 @@ class PortfolioReportAgent < SupportAgentService
     formatted
   end
 end
-# rubocop:enable Metrics/ClassLength

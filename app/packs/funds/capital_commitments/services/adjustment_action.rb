@@ -4,7 +4,6 @@ class AdjustmentAction < Trailblazer::Operation
   end
 
   def touch_investor(_ctx, commitment_adjustment:, **)
-    # rubocop:disable Rails/SkipsModelValidations
     commitment_adjustment.capital_commitment.investor.touch # unless commitment_adjustment.destroyed?
     # rubocop:enable Rails/SkipsModelValidations
   end

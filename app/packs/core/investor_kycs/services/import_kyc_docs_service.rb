@@ -12,9 +12,10 @@ class ImportKycDocsService < ImportServiceBase
     # We replace the import_file with the index.xlsx, so import pre_process can work right
     if File.exist?("#{unzip_dir}/index.xlsx")
       Rails.logger.debug "Found index.xlsx inside zip file"
-      import_file = File.open("#{unzip_dir}/index.xlsx", "r")
-      ctx[:import_file] = import_file
-      super(ctx, import_file:, import_upload:)
+      File.open("#{unzip_dir}/index.xlsx", "r") do |import_file|
+        ctx[:import_file] = import_file
+        super(ctx, import_file:, import_upload:)
+      end
     else
       Rails.logger.debug "index.xlsx not found inside zip file"
       ctx[:errors] = "index.xlsx not found inside zip file"

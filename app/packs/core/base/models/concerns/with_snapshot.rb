@@ -44,7 +44,6 @@ module WithSnapshot
     after_create :set_orignal_id, if: -> { orignal_id.nil? }
   end
 
-  # rubocop :disable Rails/SkipsModelValidations
   def set_orignal_id
     update_column(:orignal_id, id) if orignal_id.nil?
   end

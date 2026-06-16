@@ -12,18 +12,19 @@ class FundsController < ApplicationController
 
   # GET /funds/1/analytics
   def analytics
-    if params[:type] == "CapitalCall"
+    case params[:type]
+    when "CapitalCall"
       render "/capital_calls/analytics_content", layout: false
-    elsif params[:type] == "CapitalDistribution"
+    when "CapitalDistribution"
       render "/capital_distributions/analytics_content", layout: false
-    elsif params[:type] == "CapitalRemittance"
+    when "CapitalRemittance"
       @owner = params[:capital_call_id].present? ? CapitalCall.find(params[:capital_call_id]) : @fund
       render "/capital_remittances/analytics_content", layout: false
-    elsif params[:type] == "AggregatePortfolioInvestment"
+    when "AggregatePortfolioInvestment"
       render "/aggregate_portfolio_investments/analytics_content", layout: false
-    elsif params[:type] == "LPFlow"
+    when "LPFlow"
       render "/lp_flow/analytics_content", layout: false
-    elsif params[:type] == "FundRatio"
+    when "FundRatio"
       render "/fund_ratios/analytics_content", layout: false
     else
       render "/capital_commitments/analytics_content", layout: false
@@ -166,16 +167,17 @@ class FundsController < ApplicationController
 
       when "cross-fund", "cross-portfolio"
         # scenario param removed — FundRatioRun.name is now the fingerprint derived from inputs.
-        FundRatiosScenarioJob.perform_later(
-            @fund.id,
-            Date.local_parse(params[:end_date]),
-            current_user.id,
-            fund_ids: params[:fund_ids],
-            portfolio_company_ids: params[:portfolio_company_ids],
-            portfolio_companies_tags: params[:portfolio_companies_tags],
-            portfolio_companies_sectors: params[:portfolio_companies_sectors],
-            currency: params[:currency],
-            type: params[:type]
+        fund_ids = params[:fund_ids].nil? ? policy_scope(Fund).pluck(:id) : params[:fund_ids]
+        FundRatiosScenarioJob.set(wait: 3.seconds).perform_later(
+          @fund.id,
+          Date.local_parse(params[:end_date]),
+          current_user.id,
+          fund_ids: fund_ids,
+          portfolio_company_ids: params[:portfolio_company_ids],
+          portfolio_companies_tags: params[:portfolio_companies_tags],
+          portfolio_companies_sectors: params[:portfolio_companies_sectors],
+          currency: params[:currency],
+          type: params[:type]
         )
       else
         # Invalid type, handle accordingly

@@ -24,10 +24,10 @@ class AgentChartsController < ApplicationController
     # present so the multi-select mirrors what the job would run against.
     base = @agent_chart.entity.investors.portfolio_companies.order(:investor_name)
     @candidate_companies = if @agent_chart.tag_list.present?
-      base.with_tag_list(@agent_chart.tag_list)
-    else
-      base
-    end
+                             base.with_tag_list(@agent_chart.tag_list)
+                           else
+                             base
+                           end
   end
 
   # GET /agent_charts/new
@@ -74,7 +74,7 @@ class AgentChartsController < ApplicationController
 
     if ids
       AgentChartJob.perform_later(current_user.id, agent_chart_id: @agent_chart.id, portfolio_company_ids: ids)
-      notice = "Generating chart for #{ids.size} portfolio #{"company".pluralize(ids.size)}…"
+      notice = "Generating chart for #{ids.size} portfolio #{'company'.pluralize(ids.size)}…"
     else
       AgentChartJob.perform_later(current_user.id, agent_chart_id: @agent_chart.id)
       notice = "Generating chart for all matching portfolio companies…"
@@ -102,7 +102,7 @@ class AgentChartsController < ApplicationController
     params.require(:agent_chart).permit(
       :title, :prompt, :raw_data, :spec, :llm_model, :status,
       :tag_list, :error, :document_names, :kpi_before, :kpi_before_period,
-      :chart_height,   # user-controlled canvas height in pixels; nil uses JS default
+      :chart_height, # user-controlled canvas height in pixels; nil uses JS default
       kpi_names: []
     )
   end

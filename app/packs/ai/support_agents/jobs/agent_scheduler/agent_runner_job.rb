@@ -59,9 +59,7 @@ class AgentRunnerJob
     targets = @support_agent.agent.new.targets(@entity.id)
 
     # Special handling for PortfolioCompanyAgent: process as batch with shared context
-    if @support_agent.agent_type == "PortfolioCompanyAgent" && targets.count > 1
-      return execute_portfolio_company_batch(targets)
-    end
+    return execute_portfolio_company_batch(targets) if @support_agent.agent_type == "PortfolioCompanyAgent" && targets.many?
 
     # Default: process each target individually
     successes = []
@@ -171,7 +169,6 @@ class AgentRunnerJob
     @execution_log.mark_completed!(result[:summary], status: status)
 
     # Update schedule last_run_at
-    # rubocop:disable Rails/SkipsModelValidations
     @schedule&.update_columns(last_run_at: Time.current)
     # rubocop:enable Rails/SkipsModelValidations
 

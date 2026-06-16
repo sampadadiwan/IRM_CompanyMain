@@ -27,10 +27,6 @@ class TaskPolicy < ApplicationPolicy
     index?
   end
 
-  def deal_tasks?
-    index?
-  end
-
   def show?
     if support?
       create?

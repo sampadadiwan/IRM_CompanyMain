@@ -26,6 +26,11 @@ When('the fund has show_portfolios enabled') do
   @fund.update!(show_portfolios: true)
 end
 
+# Enables the enable_inv_opportunities flag on the fund entity so IO policy checks are meaningful.
+When('the entity has enable_inv_opportunities enabled') do
+  @fund.entity.update!(enable_inv_opportunities: true)
+end
+
 # ---------------------------------------------------------------------------
 # Fund child record creation (all set @record used by generic assertions below)
 # ---------------------------------------------------------------------------

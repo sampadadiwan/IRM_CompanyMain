@@ -21,10 +21,10 @@ class AllocationRunRuleContextProvider
     end_dt = record.end_date.presence&.to_date
 
     {
-      prev_run_date:                prev&.created_at&.to_date,
-      missing_valuation_companies:  end_dt && missing_valuation_companies(record, end_dt, n_days),
-      missing_fx_rates:             end_dt && missing_fx_rates(record, entity, end_dt, n_days),
-      account_entries_exist:        end_dt && account_entries_exist?(record, end_dt, n_days, params["account_entry_names"])
+      prev_run_date: prev&.created_at&.to_date,
+      missing_valuation_companies: end_dt && missing_valuation_companies(record, end_dt, n_days),
+      missing_fx_rates: end_dt && missing_fx_rates(record, entity, end_dt, n_days),
+      account_entries_exist: end_dt && account_entries_exist?(record, end_dt, n_days, params["account_entry_names"])
     }
   end
 
@@ -43,7 +43,7 @@ class AllocationRunRuleContextProvider
   # Returns nil when the fund has no active portfolio investments (rule not applicable).
   # Returns nil (empty result) when all companies have valuations — rule does not fire.
   def missing_valuation_companies(record, end_date, n_days)
-    return nil unless record.fund_id.present?
+    return nil if record.fund_id.blank?
 
     # Only include portfolio companies with a positive net quantity as of end_date,
     # so fully-exited or not-yet-invested companies don't trigger the warning.
@@ -82,7 +82,7 @@ class AllocationRunRuleContextProvider
   # When multiple sources share the same (from, to) pair their labels are merged.
   # Returns nil when no foreign currencies exist (nothing to check) or all rates are present.
   def missing_fx_rates(record, entity, end_date, n_days)
-    return nil unless record.fund_id.present?
+    return nil if record.fund_id.blank?
 
     fund = Fund.find_by(id: record.fund_id)
     return nil unless fund
@@ -112,8 +112,7 @@ class AllocationRunRuleContextProvider
 
     missing = sources.reject do |(from, to), _|
       ExchangeRate.where(entity_id: entity.id, from:, to:)
-                  .where(as_of: since..end_date)
-                  .exists?
+                  .exists?(as_of: since..end_date)
     end
 
     return nil if missing.empty?
@@ -126,9 +125,9 @@ class AllocationRunRuleContextProvider
   # Returns nil when no account_entry_names param is configured.
   def account_entries_exist?(record, end_date, n_days, names_csv)
     return nil if names_csv.blank?
-    return nil unless record.fund_id.present?
+    return nil if record.fund_id.blank?
 
-    names = names_csv.to_s.split(",").map(&:strip).reject(&:blank?)
+    names = names_csv.to_s.split(",").map(&:strip).compact_blank
     return nil if names.empty?
 
     since = end_date - n_days.days
@@ -136,8 +135,7 @@ class AllocationRunRuleContextProvider
     # All named entries must be present — check each required name exists at least once
     names.all? do |name|
       AccountEntry.where(fund_id: record.fund_id, name: name, capital_commitment_id: nil)
-                  .where(reporting_date: since..end_date)
-                  .exists?
+                  .exists?(reporting_date: since..end_date)
     end
   end
 end

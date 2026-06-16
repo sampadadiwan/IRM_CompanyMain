@@ -136,7 +136,7 @@ class FundRatio < ApplicationRecord
                  else
                    all_keys = cash_flows.flat_map { |cf| cf.respond_to?(:keys) ? cf.keys : [] }.uniq
                    CSV.generate do |csv|
-                     csv << all_keys.map(&:to_s).map(&:titleize)
+                     csv << all_keys.map { |x| x.to_s.titleize }
                      cash_flows.each do |cf|
                        csv << all_keys.map { |key| cf[key] }
                      end
@@ -144,7 +144,7 @@ class FundRatio < ApplicationRecord
                  end
                elsif cash_flows.is_a?(Hash)
                  CSV.generate do |csv|
-                   csv << cash_flows.keys.map(&:to_s).map(&:titleize)
+                   csv << cash_flows.keys.map { |x| x.to_s.titleize }
                    csv << cash_flows.values
                  end
                end

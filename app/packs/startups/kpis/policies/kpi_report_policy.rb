@@ -47,9 +47,7 @@ class KpiReportPolicy < KpiPolicyBase
   def update?
     # If the report is already submitted or reviewed, portco users cannot edit it.
     # Only fund admins/employees can edit/update it.
-    if record.status_submitted? || record.status_reviewed?
-      return belongs_to_entity?(user, record) || permissioned_employee?
-    end
+    return belongs_to_entity?(user, record) || permissioned_employee? if record.status_submitted? || record.status_reviewed?
 
     create?
   end

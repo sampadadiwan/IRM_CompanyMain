@@ -41,24 +41,24 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
     # Fetch the last n_periods KpiReports for this portco up to end_date
     kpi_reports = KpiReport
-      .where(
-        portfolio_company: draft.portfolio_company,
-        entity:            draft.portfolio_report.entity,
-        period:            draft.kpi_period_type,
-        tag_list:          draft.kpi_tag
-      )
-      .where("as_of <= ?", draft.end_date)
-      .order(as_of: :desc)
-      .limit(draft.n_periods)
-      .to_a
-      .reverse   # oldest → newest
+                  .where(
+                    portfolio_company: draft.portfolio_company,
+                    entity: draft.portfolio_report.entity,
+                    period: draft.kpi_period_type,
+                    tag_list: draft.kpi_tag
+                  )
+                  .where(as_of: ..draft.end_date)
+                  .order(as_of: :desc)
+                  .limit(draft.n_periods)
+                  .to_a
+                  .reverse # oldest → newest
 
     period_labels = kpi_reports.map { |kr| format_period(kr.as_of, draft.kpi_period_type) }
 
     # Pre-fetch all Kpi rows in one query
     kpis_index = Kpi
-      .where(kpi_report: kpi_reports, investor_kpi_mapping: mappings)
-      .index_by { |k| [k.kpi_report_id, k.investor_kpi_mapping_id] }
+                 .where(kpi_report: kpi_reports, investor_kpi_mapping: mappings)
+                 .index_by { |k| [k.kpi_report_id, k.investor_kpi_mapping_id] }
 
     table_data = {}
     mappings.each do |ikm|
@@ -73,7 +73,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
     ctx[:mappings]      = mappings
     ctx[:period_labels] = period_labels
-    ctx[:kpi_reports]   = kpi_reports   # passed to step 3 for commentary extraction
+    ctx[:kpi_reports]   = kpi_reports # passed to step 3 for commentary extraction
 
     Rails.logger.info do
       "[DraftService] KPI table built: #{mappings.count} metrics × #{period_labels.count} periods"
@@ -99,15 +99,15 @@ class PortfolioReportDraftService < Trailblazer::Operation
     kpi_ctx   = build_kpi_context(draft, mappings, period_labels)
     notes_ctx = build_notes_context(notes)
 
-    # Download PDFs from the last KPI report once; pass them to every section ask.
-    # Tempfiles are cleaned up in the ensure block after all sections finish.
+    # Download PDFs from the last KPI report once.
+    # Small enough combined → pass binary files directly to every section ask.
+    # Too large to fit in one request → extract text locally with PDF::Reader, pass text to sections.
     with_kpi_report_pdfs(kpi_reports) do |kpi_report_ctx, pdf_paths|
       sections.each do |section|
         Rails.logger.info { "[DraftService] Generating section '#{section.name}'" }
 
         prompt = build_section_prompt(section, kpi_ctx, notes_ctx, kpi_report_ctx, draft)
 
-        # Pass PDFs directly — RubyLLM sends them as multimodal attachments; the LLM reads them natively.
         ask_opts = pdf_paths.any? ? { with: pdf_paths } : {}
         response = llm.ask(prompt, **ask_opts)
         raw_text = extract_text(response)
@@ -128,7 +128,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
         end
 
         draft.set_llm_output(section.id, bullets)
-        draft.save!   # persist after each section — partial progress is recoverable
+        draft.save! # persist after each section — partial progress is recoverable
       end
     end
 
@@ -140,7 +140,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
   # ── Step 4 ────────────────────────────────────────────────────────────────
 
-  def finalize_draft(ctx, draft:, user_id:, **)
+  def finalize_draft(_ctx, draft:, user_id:, **)
     draft.update!(status: :review)
     if user_id.present?
       url  = Rails.application.routes.url_helpers.portfolio_report_draft_path(draft)
@@ -156,12 +156,14 @@ class PortfolioReportDraftService < Trailblazer::Operation
   def handle_error(ctx, draft: nil, user_id: nil, **)
     msg = ctx[:error]&.message.to_s.truncate(200)
     Rails.logger.error { "[DraftService] failed — #{msg}\n#{ctx[:error]&.backtrace&.first(5)&.join("\n")}" }
-    draft&.update!(status: :configuring)   # let user retry
-    UserAlert.new(
-      user_id: user_id,
-      message: "Draft generation failed: #{msg}",
-      level:   "danger"
-    ).broadcast if user_id.present?
+    draft&.update!(status: :configuring) # let user retry
+    if user_id.present?
+      UserAlert.new(
+        user_id: user_id,
+        message: "Draft generation failed: #{msg}",
+        level: "danger"
+      ).broadcast
+    end
     true
   end
 
@@ -185,7 +187,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
     header = "Metric".ljust(metric_w) + period_labels.map { |l| l.rjust(col_w) }.join
     lines << header
-    lines << "-" * header.length
+    lines << ("-" * header.length)
 
     mappings.each do |ikm|
       cols = period_labels.map do |lbl|
@@ -218,15 +220,26 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
   def build_notes_context(notes)
     return "No notes available." if notes.empty?
+
     notes.map do |n|
       body = n.details.to_plain_text.strip.truncate(600)
       "[#{n.created_at.to_date}] #{body}"
     end.join("\n\n")
   end
 
-  # Yields text commentary + an array of local PDF paths for the most recent KPI report.
-  # PDFs are written to Tempfiles (so RubyLLM can read them via with:) and cleaned up in ensure.
-  # Excel/images/generated docs are skipped.
+  # Raw 10 MB ≈ 13 MB base64-encoded, leaving comfortable headroom under the ~20 MB
+  # API request body limit once the text prompt is included.
+  MAX_COMBINED_PDF_BYTES = 10 * 1024 * 1024
+
+  # Yields (commentary_text, pdf_paths) to the block.
+  #
+  # Fast path  — combined PDFs ≤ MAX_COMBINED_PDF_BYTES:
+  #   pdf_paths contains all tempfile paths; section calls attach them as multimodal input.
+  #
+  # Fallback   — combined PDFs > MAX_COMBINED_PDF_BYTES:
+  #   Greedy-batches by size; extracts each batch locally with PDF::Reader (zero API cost,
+  #   no chat-history side effects). pdf_paths is empty; section calls receive text only.
+  #   Every file is still fully processed — nothing is dropped.
   def with_kpi_report_pdfs(kpi_reports)
     tmpfiles = []
 
@@ -246,27 +259,88 @@ class PortfolioReportDraftService < Trailblazer::Operation
       next unless doc.pdf?
 
       tmp = Tempfile.new([doc.name.parameterize.presence || "kpi-doc", ".pdf"])
+      tmpfiles << { doc: doc, tmp: tmp } # register before I/O so ensure always cleans up
       tmp.binmode
       doc.file.open { |io| tmp.write(io.read) }
       tmp.flush
-      tmpfiles << tmp
-      lines << "PDF attached: #{doc.name}"
-      Rails.logger.info { "[DraftService] Attached PDF '#{doc.name}' (#{tmp.size} bytes)" }
+      Rails.logger.info { "[DraftService] Downloaded PDF '#{doc.name}' (#{tmp.size} bytes)" }
     rescue StandardError => e
-      Rails.logger.warn { "[DraftService] Skipped PDF '#{doc.name}': #{e.message}" }
+      Rails.logger.warn { "[DraftService] Could not download PDF '#{doc.name}': #{e.message}" }
     end
 
-    commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
-    yield commentary, tmpfiles.map(&:path)
+    total_bytes = tmpfiles.sum { |t| t[:tmp].size }
+    Rails.logger.info { "[DraftService] Total PDF payload: #{total_bytes} bytes (#{tmpfiles.size} files)" }
+
+    if total_bytes <= MAX_COMBINED_PDF_BYTES
+      # Fast path — everything fits; pass binaries directly to section calls.
+      tmpfiles.each { |t| lines << "PDF attached: #{t[:doc].name}" }
+      commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
+      yield commentary, tmpfiles.map { |t| t[:tmp].path }
+    else
+      # Greedy batching — pack as many PDFs as fit per batch, extract text locally per batch.
+      batches = greedy_pdf_batches(tmpfiles)
+      Rails.logger.info do
+        "[DraftService] Payload #{total_bytes} bytes exceeds limit — #{batches.size} greedy batch(es), extracting locally"
+      end
+
+      batches.each_with_index do |batch, idx|
+        batch_names = batch.map { |e| e[:doc].name }
+        batch_bytes = batch.sum { |e| e[:tmp].size }
+        Rails.logger.info { "[DraftService] Batch #{idx + 1}/#{batches.size}: #{batch_names.join(', ')} (#{batch_bytes} bytes)" }
+
+        batch.each do |entry|
+          text = extract_pdf_text(entry[:tmp].path)
+          lines << "--- #{entry[:doc].name} ---"
+          lines << text.truncate(3000)
+        end
+      end
+
+      commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
+      yield commentary, []
+    end
   ensure
-    tmpfiles.each { |t| t.close; t.unlink rescue nil }
+    tmpfiles.each do |entry|
+      entry[:tmp].close
+      entry[:tmp].unlink rescue nil
+    end
+  end
+
+  # Groups tmpfile entries into the fewest batches where each batch's combined size
+  # stays within MAX_COMBINED_PDF_BYTES. Greedy left-to-right.
+  def greedy_pdf_batches(tmpfiles)
+    batches       = []
+    current_batch = []
+    current_size  = 0
+
+    tmpfiles.each do |entry|
+      size = entry[:tmp].size
+      if current_batch.any? && current_size + size > MAX_COMBINED_PDF_BYTES
+        batches << current_batch
+        current_batch = [entry]
+        current_size  = size
+      else
+        current_batch << entry
+        current_size  += size
+      end
+    end
+    batches << current_batch if current_batch.any?
+    batches
+  end
+
+  # Local PDF text extraction — zero API cost, no chat-history side effects.
+  def extract_pdf_text(file_path)
+    require 'pdf-reader'
+    PDF::Reader.new(file_path).pages.first(100).map(&:text).join("\n\n")
+  rescue StandardError => e
+    Rails.logger.warn { "[DraftService] PDF text extraction failed for #{file_path}: #{e.message}" }
+    "(text extraction failed: #{e.message.truncate(120)})"
   end
 
   def build_section_prompt(section, kpi_context, notes_context, kpi_report_commentary, draft)
     <<~PROMPT
       You are an analyst at a private equity fund writing a section of a portfolio report.
       Portfolio company: #{draft.portfolio_company.investor_name}
-      Report period: #{draft.start_date.strftime("%b %Y")} to #{draft.end_date.strftime("%b %Y")}
+      Report period: #{draft.start_date.strftime('%b %Y')} to #{draft.end_date.strftime('%b %Y')}
 
       Section: #{section.name}
       Instructions: #{section.data}
@@ -291,7 +365,6 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
   def format_period(as_of, period_type)
     case period_type
-    when "Month"     then as_of.strftime("%b %Y")
     when "Quarter"   then "Q#{((as_of.month - 1) / 3) + 1} #{as_of.year}"
     when "Half Year" then "H#{as_of.month <= 6 ? 1 : 2} #{as_of.year}"
     when "Year"      then as_of.year.to_s
@@ -302,6 +375,7 @@ class PortfolioReportDraftService < Trailblazer::Operation
 
   def extract_text(response)
     return response.to_s unless response.respond_to?(:content)
+
     content = response.content
     content.is_a?(RubyLLM::Content) ? content.text : content.to_s
   end

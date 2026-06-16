@@ -36,6 +36,9 @@ class Deal < ApplicationRecord
   validates :currency, length: { maximum: 10 }
   validates :units, length: { maximum: 15 }
 
+  # Not persisted — set at creation time to skip seeding default step templates.
+  attr_accessor :skip_templates
+
   STATUS = %w[Open Closed].freeze
   ACTIVITIES = Rack::Utils.parse_nested_query(ENV.fetch("DEAL_ACTIVITIES", "").tr(":", "=").tr(",", "&"))
   FUND_ACTIVITIES = Rack::Utils.parse_nested_query(ENV.fetch("FUND_DEAL_ACTIVITIES", "").tr(":", "=").tr(",", "&"))
@@ -85,5 +88,42 @@ class Deal < ApplicationRecord
 
   def history
     versions.map(&:reify)
+  end
+
+  # Accepts a JSON string from the hidden form field and parses it before assigning.
+  def grid_columns=(val)
+    parsed = if val.is_a?(String)
+               begin
+                 JSON.parse(val)
+               rescue StandardError
+                 val
+               end
+             else
+               val
+             end
+    super(parsed)
+  end
+
+  # Returns [{field:, label:}] for the JS column filter; defaults to all standard columns when none configured.
+  def grid_columns_for_js
+    label_map = DealInvestor::STANDARD_COLUMNS.each_with_object({}) do |(k, v), h|
+      h[v.split("; ").first] = k.split("; ").first
+    end
+    cols = grid_columns.presence
+    return label_map.map { |field, label| { field: field, label: label } } if cols.blank?
+
+    # Extend with custom field labels so they resolve without a manual override
+    entity.form_types.find_by(name: 'DealInvestor')&.form_custom_fields&.visible&.each do |cf|
+      label_map["properties.#{cf.name}"] = cf.label.presence || cf.name.humanize
+    end
+
+    cols.filter_map do |col|
+      field = col["field"].presence
+      next unless field
+
+      label    = col["label"].presence || label_map[field] || field.to_s.humanize
+      position = col["position"].presence || "end"
+      { field: field, label: label, position: position }
+    end
   end
 end

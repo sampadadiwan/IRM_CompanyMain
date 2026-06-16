@@ -69,7 +69,6 @@ class DocusignSigningViaEmailService
     envelope_definition
   end
 
-  # rubocop:disable Metrics/MethodLength
   def prep_user_data(doc, esigns)
     signers = []
 
@@ -98,7 +97,6 @@ class DocusignSigningViaEmailService
     # Define the number of signatures per row and the vertical step
     signatures_per_row = 3
     # more than total 42 signers will not be supported
-    # rubocop:disable Metrics/BlockLength
     esigns.order(:position).each_with_index do |esign, idx|
       signer = DocuSign_eSign::Signer.new
       signer.email = esign.email

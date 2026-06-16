@@ -1,5 +1,6 @@
 class ValuationsController < ApplicationController
   include WithCustomFieldFilter
+
   helper ValuationsHelper
   before_action :set_valuation, only: %i[show edit update destroy]
   skip_after_action :verify_policy_scoped, only: :index
@@ -42,13 +43,12 @@ class ValuationsController < ApplicationController
     @valuation.valuation_date = Time.zone.today
 
     @bread_crumbs = { Stakeholders: investors_path(entity_id: @valuation.entity_id) }
-    @bread_crumbs["#{@valuation.owner&.investor_name}"] = investor_path(@valuation.owner) if @valuation.owner.present?
+    @bread_crumbs[@valuation.owner&.investor_name.to_s] = investor_path(@valuation.owner) if @valuation.owner.present?
     @bread_crumbs[:New] = nil
 
     authorize @valuation
     setup_custom_fields(@valuation)
   end
-
 
   # GET /valuations/1/edit
   def edit
@@ -207,8 +207,8 @@ class ValuationsController < ApplicationController
     @valuation = Valuation.with_synthetic.find(params[:id])
     authorize @valuation
     @bread_crumbs = { Stakeholders: investors_path(entity_id: @valuation.entity_id) }
-    @bread_crumbs["#{@valuation.owner&.investor_name}"] = investor_path(@valuation.owner) if @valuation.owner.present?
-    @bread_crumbs["#{@valuation}"] = valuation_path(@valuation)
+    @bread_crumbs[@valuation.owner&.investor_name.to_s] = investor_path(@valuation.owner) if @valuation.owner.present?
+    @bread_crumbs[@valuation.to_s] = valuation_path(@valuation)
   end
 
   # Only allow a list of trusted parameters through.
@@ -241,7 +241,7 @@ class ValuationsController < ApplicationController
 
     respond_to do |format|
       format.html do
-        flash[:alert] = "Cannot save: #{messages}"
+        flash.now[:alert] = "Cannot save: #{messages}"
         action_name == "create" ? render(:new, status: :unprocessable_entity) : render(:edit, status: :unprocessable_entity)
       end
       format.json { render json: { errors: blockers.map(&:message) }, status: :unprocessable_entity }

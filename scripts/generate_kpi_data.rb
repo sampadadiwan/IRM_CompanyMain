@@ -31,7 +31,7 @@ Chewy.strategy(:atomic) do
     puts "Generating data for #{name}..."
 
     # Create Portfolio Entity (multi-tenant scope for the portco itself)
-    portco_email = "finance@#{name.downcase.gsub(' ', '')}.com"
+    portco_email = "finance@#{name.downcase.delete(' ')}.com"
     portco_entity = Entity.find_or_create_by!(name: "#{name} Entity") do |e|
       e.entity_type = "Portfolio Company"
       e.primary_email = portco_email
@@ -201,11 +201,11 @@ Chewy.strategy(:atomic) do
 
     # Create valuations for both instruments (Query 40)
     (0..7).reverse_each do |i|
-      val_date = (Date.today.beginning_of_quarter - (i * 3).months).end_of_quarter
-      
+      val_date = (Time.zone.today.beginning_of_quarter - (i * 3).months).end_of_quarter
+
       # Common: Gradually increasing valuation
-      psv_common = 1000 + ((7-i) * 200) # Starts at 10.00, ends at 24.00
-      
+      psv_common = 1000 + ((7 - i) * 200) # Starts at 10.00, ends at 24.00
+
       Valuation.find_or_create_by!(
         entity_id: entity_id,
         owner: portco,
@@ -216,8 +216,8 @@ Chewy.strategy(:atomic) do
       end
 
       # Preferred: Usually higher than common
-      psv_preferred = 2000 + ((7-i) * 300) # Starts at 20.00, ends at 41.00
-      
+      psv_preferred = 2000 + ((7 - i) * 300) # Starts at 20.00, ends at 41.00
+
       Valuation.find_or_create_by!(
         entity_id: entity_id,
         owner: portco,
@@ -296,10 +296,10 @@ Chewy.strategy(:atomic) do
 
     # 6. Create KPI Reports and individual KPIs (Last 8 quarters)
     (0..7).reverse_each do |i|
-      as_of = (Date.today.beginning_of_quarter - (i * 3).months).end_of_quarter
+      as_of = (Time.zone.today.beginning_of_quarter - (i * 3).months).end_of_quarter
 
       # Create BOTH Actual and Budget for some quarters to allow variance analysis (Query 31)
-      ["Actual", "Budget"].each do |type|
+      %w[Actual Budget].each do |type|
         report = KpiReport.find_or_create_by!(
           portfolio_company_id: portco.id,
           entity_id: entity_id,
@@ -322,18 +322,18 @@ Chewy.strategy(:atomic) do
         ) do |doc|
           doc.user_id = user_id
           doc.tag_list = "Financial Statement"
-          doc.file = File.open(Rails.root.join('public/sample_uploads/sample_kyc1.pdf'))
+          doc.file = File.open(Rails.public_path.join('sample_uploads/sample_kyc1.pdf'))
         end
 
         # KPIs for the report
         # Generate trending values
-        mrr_base = 100_000 + ( (7-i) * 20_000 ) + rand(5000)
+        mrr_base = 100_000 + ((7 - i) * 20_000) + rand(5000)
         # If budget, slightly different
         mrr_base *= 1.1 if type == "Budget"
-        
+
         revenue_base = mrr_base * 1.2
-        ebitda_base = -50_000 + ( (7-i) * 10_000 ) + rand(2000)
-        burn_base = 40_000 - ( (7-i) * 2000 ) + rand(1000)
+        ebitda_base = -50_000 + ((7 - i) * 10_000) + rand(2000)
+        burn_base = 40_000 - ((7 - i) * 2000) + rand(1000)
         marketing_base = revenue_base * 0.25
 
         kpis_data = [
@@ -346,7 +346,7 @@ Chewy.strategy(:atomic) do
 
         kpis_data.each do |kpi_item|
           val = kpi_item[:value]
-          
+
           # Calculate simple QoQ percentage change for Query 26
           # (Very rough: random +/- 10%)
           pct_change = (rand * 20) - 10
@@ -367,59 +367,57 @@ Chewy.strategy(:atomic) do
             k.notes = "Quarterly update for #{kpi_item[:name]} based on latest financials." # Query 32
 
             # Add RAG Status (Query 30, 32)
-            if kpi_item[:name] == "EBITDA" && val < -45_000
-              k.rag_status = { status: "Red", reason: "Burn higher than budget" }
-            elsif kpi_item[:name] == "Cash Burn" && val > 35_000
-              k.rag_status = { status: "Amber", reason: "Monitoring burn closely" }
-            else
-              k.rag_status = { status: "Green" }
-            end
+            k.rag_status = if kpi_item[:name] == "EBITDA" && val < -45_000
+                             { status: "Red", reason: "Burn higher than budget" }
+                           elsif kpi_item[:name] == "Cash Burn" && val > 35_000
+                             { status: "Amber", reason: "Monitoring burn closely" }
+                           else
+                             { status: "Green" }
+                           end
 
             # Common Size Value (Query 35, 50)
-            if kpi_item[:name] == "Marketing Spend"
-              k.common_size_value = (val / revenue_base) * 100
-            end
+            k.common_size_value = (val / revenue_base) * 100 if kpi_item[:name] == "Marketing Spend"
           end
         end
       end
 
       # Monthly reports for the last 3 months to answer Query 36
-      if i < 1
-        [0, 1, 2].each do |m|
-          month_as_of = (Date.today.beginning_of_month - m.months).end_of_month
-          
-          ["Actual", "Budget"].each do |type|
-            KpiReport.find_or_create_by!(
-              portfolio_company_id: portco.id,
-              entity_id: entity_id,
-              as_of: month_as_of,
-              period: "Month",
-              tag_list: type
-            ) do |r|
-              r.user_id = user_id
-              r.analysis = "Monthly update for #{name}."
-              r.autofill_completed = true
-              r.enable_portco_upload = true
-            end
-            
-            # Add some KPIs to these monthly reports for Query 36 (missed budget)
-            # We'll make CyberShield miss its budget for 3 consecutive months
-            mrr_val = 200_000
-            mrr_val = 180_000 if type == "Actual" && name == "CyberShield"
-            mrr_val = 210_000 if type == "Budget" && name == "CyberShield"
+      next unless i < 1
 
-            report = KpiReport.find_by(portfolio_company_id: portco.id, as_of: month_as_of, period: "Month", tag_list: type)
-            
-            Kpi.find_or_create_by!(
-              kpi_report_id: report.id,
-              portfolio_company_id: portco.id,
-              entity_id: entity_id,
-              name: "MRR"
-            ) do |k|
-              k.investor_kpi_mapping_id = mappings["MRR"]&.id
-              k.value = mrr_val
-              k.status = "approved"
-            end
+      [0, 1, 2].each do |m|
+        month_as_of = (Time.zone.today.beginning_of_month - m.months).end_of_month
+
+        %w[Actual Budget].each do |type|
+          KpiReport.find_or_create_by!(
+            portfolio_company_id: portco.id,
+            entity_id: entity_id,
+            as_of: month_as_of,
+            period: "Month",
+            tag_list: type
+          ) do |r|
+            r.user_id = user_id
+            r.analysis = "Monthly update for #{name}."
+            r.autofill_completed = true
+            r.enable_portco_upload = true
+          end
+
+          # Add some KPIs to these monthly reports for Query 36 (missed budget)
+          # We'll make CyberShield miss its budget for 3 consecutive months
+          mrr_val = 200_000
+          mrr_val = 180_000 if type == "Actual" && name == "CyberShield"
+          mrr_val = 210_000 if type == "Budget" && name == "CyberShield"
+
+          report = KpiReport.find_by(portfolio_company_id: portco.id, as_of: month_as_of, period: "Month", tag_list: type)
+
+          Kpi.find_or_create_by!(
+            kpi_report_id: report.id,
+            portfolio_company_id: portco.id,
+            entity_id: entity_id,
+            name: "MRR"
+          ) do |k|
+            k.investor_kpi_mapping_id = mappings["MRR"]&.id
+            k.value = mrr_val
+            k.status = "approved"
           end
         end
       end

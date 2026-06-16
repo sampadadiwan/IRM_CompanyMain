@@ -59,7 +59,7 @@ class SupportClientMapping < ApplicationRecord
     update_column(:enabled, false)
 
     # Only disable entity support if no other enabled mappings exist
-    other_active = entity.support_client_mappings.where.not(id: id).where(enabled: true).exists?
+    other_active = entity.support_client_mappings.where.not(id: id).exists?(enabled: true)
     unless other_active
       entity.permissions.unset(:enable_support)
       entity.save
@@ -75,7 +75,6 @@ class SupportClientMapping < ApplicationRecord
   # - Removes :support role, grants :company_admin role.
   # Raises error if mapping is currently disabled.
   def switch
-
     if enabled && entity.enable_support
       user.json_fields ||= {}
       user.json_fields['orig_entity_id'] ||= user.entity_id

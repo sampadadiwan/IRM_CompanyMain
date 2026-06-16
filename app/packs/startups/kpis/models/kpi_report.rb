@@ -200,7 +200,6 @@ class KpiReport < ApplicationRecord
 
   # after_commit :compute_common_size_kpi, on: %i[create update]
 
-  # rubocop:disable Rails/SkipsModelValidations
   def compute_common_size_kpi
     # This method computes the common size KPI for the report
     ikm = portfolio_company&.investor_kpi_mappings&.where(base_for_common_size: true)&.last

@@ -3,7 +3,7 @@ require "open3"
 require "json"
 require "fileutils"
 
-module DocumentGeneratorBase # rubocop:disable Metrics/ModuleLength
+module DocumentGeneratorBase
   IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .gif].freeze
 
   def convert(template, context, file_name, to_pdf: true, template_name: nil)
@@ -361,7 +361,7 @@ module DocumentGeneratorBase # rubocop:disable Metrics/ModuleLength
 
     # Convert +0530 to +05'30'
     tz_formatted = if tz_offset.match?(/^[+-]\d{4}$/)
-                     "#{tz_offset[0..2]}'#{tz_offset[3..-1]}'"
+                     "#{tz_offset[0..2]}'#{tz_offset[3..]}'"
                    else
                      "+00'00'"
                    end
@@ -369,7 +369,7 @@ module DocumentGeneratorBase # rubocop:disable Metrics/ModuleLength
     "#{base}#{tz_formatted}"
   end
 
-  def add_xmp_metadata(pdf_doc, title, author, subject) # rubocop:disable Metrics/MethodLength
+  def add_xmp_metadata(pdf_doc, title, author, subject)
     # Create XMP metadata stream (required for PDF/UA-1)
     # XMP is an XML-based metadata format embedded in PDFs
     now = Time.current.iso8601

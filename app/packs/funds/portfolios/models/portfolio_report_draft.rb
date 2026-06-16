@@ -68,6 +68,7 @@ class PortfolioReportDraft < ApplicationRecord
 
   def end_date_after_start_date
     return unless start_date && end_date
+
     errors.add(:end_date, "must be after start date") if end_date <= start_date
   end
 
@@ -75,6 +76,7 @@ class PortfolioReportDraft < ApplicationRecord
   def plain_to_html(text)
     lines = text.split("\n").map(&:strip).reject(&:empty?)
     return "" if lines.empty?
+
     "<ul>#{lines.map { |l| "<li>#{CGI.escapeHTML(l)}</li>" }.join}</ul>"
   end
 end

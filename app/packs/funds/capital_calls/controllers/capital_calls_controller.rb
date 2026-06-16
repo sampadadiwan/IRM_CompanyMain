@@ -34,8 +34,7 @@ class CapitalCallsController < ApplicationController
 
   def generate_docs
     # custom field value can be kyc or folio
-    call_notice_per_kyc = @capital_call.fund.json_fields["call_notice_on"].to_s.strip.downcase == "kyc"
-    CapitalRemittanceDocJob.perform_later(@capital_call.id, nil, current_user.id, options: { call_notice_per_kyc: call_notice_per_kyc })
+    CapitalRemittanceDocJob.perform_later(@capital_call.id, nil, current_user.id)
     redirect_to capital_call_path(@capital_call), notice: "Documentation generation started, please check back in a few mins. Each remittance will have the customized document attached"
   end
 

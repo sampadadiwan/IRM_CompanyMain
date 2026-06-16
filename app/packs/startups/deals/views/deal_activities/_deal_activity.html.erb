@@ -6,12 +6,12 @@
         <%= link_to(deal_activity.title, deal_activity) %>
     </td>
     <td>
-        <%= belongs_to_entity_id?(current_user, deal_activity.entity_id) ? 
+        <%= belongs_to_entity_id?(current_user, deal_activity.entity_id) ?
                 link_to(deal_activity.deal_name, deal_activity.deal) : deal_activity.deal_name %>
-        
+
     </td>
     <td>
-        <%= belongs_to_entity_id?(current_user, deal_activity.entity_id) && deal_activity.deal_investor ? 
+        <%= belongs_to_entity_id?(current_user, deal_activity.entity_id) && deal_activity.deal_investor ?
             link_to(deal_activity.investor_name, deal_activity.deal_investor) : deal_activity.investor_name %>
     </td>
     <td>
@@ -31,5 +31,16 @@
     <td>
         <%= link_to  t_common(:show), deal_activity, class: "btn btn-outline-primary" %>
         <%= link_to  t_common(:edit), edit_deal_activity_path(deal_activity), class: "btn btn-outline-success" if policy(deal_activity).update? %>
+        <% if deal_activity.Template? && policy(deal_activity).destroy? %>
+          <% derived_count = deal_activity.derived_activities.count %>
+          <% warning_msg = "Delete template \"#{deal_activity.title}\"? This will also delete #{derived_count} linked investor step(s). This action is not reversible." %>
+          <%= button_to t_common(:delete), deal_activity_path(deal_activity), method: :delete,
+              class: "btn btn-outline-danger", form_class: "deleteButton",
+              data: { action: "click->confirm#popup", turbo: false,
+                      title: "Delete Step Template",
+                      msg: warning_msg,
+                      reversible: "no",
+                      "other-info": "#{derived_count} investor step(s) will also be permanently deleted." } %>
+        <% end %>
     </td>
 </tr>

@@ -27,7 +27,7 @@ module InvestorAnalyticsHelper
   def investor_tag_distribution_chart(records)
     # Extract and count individual tags from the comma-separated tag_list
     all_tags = records.pluck(:tag_list).compact.flat_map { |list| list.split(",").map(&:strip) }.compact_blank
-    data = all_tags.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| -v }.first(10).to_h
+    data = all_tags.tally.sort_by { |_k, v| -v }.first(10).to_h
 
     pie_chart data, donut: true, title: "Top 10 Tags", id: "investor_tag_distribution_chart", library: {
       **chart_theme_color,
@@ -188,12 +188,12 @@ module InvestorAnalyticsHelper
     end
 
     data = top_lps.map do |lp_name|
-      series_data = apis.map do |api|
+      series_data = apis.to_h do |api|
         cc = cc_lookup[[api.fund_id, lp_name]]
         # LP's implied share of this company's FMV in this fund
         value = cc ? (api.fmv_cents * cc.percentage / 100.0 / 100.0).round(2) : 0
         [api.fund.name, value]
-      end.to_h
+      end
       { name: lp_name, data: series_data }
     end
 
@@ -242,15 +242,16 @@ module InvestorAnalyticsHelper
       raw[lp_name] = apis.filter_map do |api|
         cc = cc_lookup[[api.fund_id, lp_name]]
         next unless cc
+
         fmv = (api.fmv_cents * cc.percentage / 100.0 / 100.0).round(2)
-        fmv > 0 ? { fund: api.fund.name, value: fmv } : nil
+        fmv.positive? ? { fund: api.fund.name, value: fmv } : nil
       end
     end
 
     # Sort LPs by their total implied FMV and keep top 15
     lp_names = all_lp_names
-                 .sort_by { |name| -raw[name].sum { |p| p[:value] } }
-                 .first(15)
+               .sort_by { |name| -raw[name].sum { |p| p[:value] } }
+               .first(15)
 
     points = lp_names.flat_map.with_index do |lp_name, y|
       raw[lp_name].map { |p| { x: fund_names.index(p[:fund]), y: y, value: p[:value] } }

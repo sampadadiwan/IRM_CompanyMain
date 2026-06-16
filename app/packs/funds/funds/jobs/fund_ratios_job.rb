@@ -37,6 +37,10 @@ class FundRatiosJob < ApplicationJob
 
   def _generate_ratios_for_commitments(fund, end_date, user_id, return_cash_flows)
     fund.capital_commitments.each do |capital_commitment|
+      # skip if fund is configured for kyc level data gen and the commitment is marked to skip doc gen (which also implies skipping ratio gen)
+      # we assume one of the KYC's commitment will have data gen enabled and will have ratios generated
+      next if fund.kyc_level_data_gen? && capital_commitment.skip_doc_gen?
+
       calc_fund_ratios(fund, capital_commitment, end_date, return_cash_flows, user_id)
       notify("Folio #{capital_commitment.folio_id} calculations are now complete.", user_id)
     rescue StandardError => e
@@ -66,9 +70,9 @@ class FundRatiosJob < ApplicationJob
   end
 
   def calc_fund_ratios(fund, capital_commitment, end_date, return_cash_flows, user_id)
-    owner = capital_commitment || fund
     _delete_previous_fund_ratios(fund, capital_commitment, end_date)
-    calc = _initialize_calculator(fund, capital_commitment, end_date)
+    # Use factory here to initialize the appropriate calculator based on whether we're calculating for a fund or capital commitment or KYC
+    calc, owner = FundRatioCalcInitializer.call(fund, capital_commitment, end_date)
 
     _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
     _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
@@ -89,10 +93,6 @@ class FundRatiosJob < ApplicationJob
     FundRatio.where(fund:, capital_commitment:, end_date:).delete_all
   end
 
-  def _initialize_calculator(fund, capital_commitment, end_date)
-    capital_commitment ? CapitalCommitmentCalcs.new(capital_commitment, end_date) : FundPortfolioCalcs.new(fund, end_date)
-  end
-
   def _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
     xirr, cash_flows = calc.xirr(return_cash_flows:)
     fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, display_value: "#{xirr} %")
@@ -106,7 +106,8 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_moic_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
-    return if calc.is_a?(CapitalCommitmentCalcs)
+    # we only compute MOIC for FundPortfolioCalcs, not for others - confirm why
+    return unless calc.is_a?(FundPortfolioCalcs)
 
     moic, cash_flows = calc.moic(return_cash_flows:)
     fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: moic, display_value: "#{moic} x")

@@ -824,8 +824,14 @@ Then('call notice is generated for the remittances') do
   end
   click_on("Generate Documents")
   click_on("Proceed")
-  sleep(5) # Wait for the job to complete
-  expect(page).to have_content("Documentation generation started, please check back in a few mins. Each remittance will have the customized document attached")
+  sleep(2)
+  # With :inline job adapter the job runs synchronously and the completion flash
+  # ("N documents generated successfully") replaces the async "started" flash
+  # before any fixed sleep could catch it.  Accept either message.
+  expect(page).to have_content(
+    /Documentation generation started|documents generated/i,
+    wait: 20
+  )
 end
 
 Then('remittance notice must be generated for each remittance') do

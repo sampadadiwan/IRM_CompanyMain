@@ -1,3 +1,3 @@
 <%= render NewCard.new do %>
-    <%= render "form", note: @note %>
+    <%= render "form", note: @note, return_to: params[:return_to] %>
 <% end %>

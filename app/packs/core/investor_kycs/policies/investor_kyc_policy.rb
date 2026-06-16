@@ -117,6 +117,7 @@ class InvestorKycPolicy < ApplicationPolicy
 
   def update?
     return true if signed_id_investor?
+
     (create?(:investor_kyc_update) || support?) && !record.verified
   end
 

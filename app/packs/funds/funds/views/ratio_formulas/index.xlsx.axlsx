@@ -1,0 +1,18 @@
+wb = xlsx_package.workbook
+
+wb.add_worksheet(name: "RatioFormulas") do |sheet|
+  # Header row matches ImportRatioFormula::STANDARD_HEADERS plus Id and Fund for reference
+  sheet.add_row(["Id", "Fund", "Level", "Action", "Period", "Ratio", "Account Entry Names"])
+
+  @ratio_formulas.each do |rf|
+    sheet.add_row [
+      rf.id,
+      rf.fund.name,
+      rf.level_text,
+      rf.action_text,
+      rf.period_text,
+      rf.ratio,
+      Array(rf.account_entry_names).join(", ")
+    ]
+  end
+end

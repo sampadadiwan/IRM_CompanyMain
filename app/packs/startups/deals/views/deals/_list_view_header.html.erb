@@ -2,14 +2,17 @@
   <h3 class="h3 mb-0 text-gray-600"><%= deal.name %> </h3>
   <span>
     <% if params[:all].blank? %>
-      <%= link_to "All #{investor_label}s", deal_path(deal, list_view: true, all: true), class: "btn btn-outline-primary" %>
+      <%= link_to deal_path(deal, list_view: true, all: true), class: "btn btn-outline-primary" do %>
+        <i class="ti ti-filter-off"></i> Clear Filters
+      <% end %>
     <% else %>
-      <%= link_to "Not Declined", deal_path(deal, list_view: true), class: "btn btn-outline-primary" %>
+      <%= link_to deal_path(deal, list_view: true), class: "btn btn-outline-primary" do %>
+        <i class="ti ti-filter"></i> Not Declined
+      <% end %>
     <% end %>
-    <% if deal.kanban_board.present? %>
-      <%= link_to "Kanban Board", board_path(deal.kanban_board), class: "btn btn-outline-info", data: { turbo: false } %>
+    <%= link_to deal_path(deal, list_view: true, format: :xlsx), class: "btn btn-outline-primary" do %>
+      <i class="ti ti-file-spreadsheet"></i> Download Excel
     <% end %>
-    <%= link_to "Download Excel", deal_path(deal, list_view: true, format: :xlsx), class: "btn btn-outline-primary" %>
     <% if policy(ImportUpload.new(entity: deal.entity, owner: deal)).new? %>
       <%= link_to new_import_upload_path("import_upload[import_type]": "DealInvestor",
                                          "import_upload[owner_id]": deal.id,
@@ -20,7 +23,9 @@
       <% end %>
     <% end %>
     <% if policy(DealInvestor.new(deal: deal, entity: deal.entity)).new? %>
-      <%= link_to "Add #{investor_label}", new_deal_investor_path(deal_investor: { deal_id: deal.id }, turbo_frame: "deal_investor_frame"), class: "btn btn-primary", data: { action: "click->deals-list-ag-grid#addInvestor" } %>
+      <%= link_to new_deal_investor_path(deal_investor: { deal_id: deal.id }, turbo_frame: "deal_investor_frame"), class: "btn btn-primary", data: { action: "click->deals-list-ag-grid#addInvestor" } do %>
+        <i class="ti ti-user-plus"></i> Add <%= investor_label %>
+      <% end %>
     <% end %>
   </span>
 </div>

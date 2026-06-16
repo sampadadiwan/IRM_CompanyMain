@@ -24,8 +24,7 @@ class ImportFundRatio < ImportUtil
 
     # Portfolio scenario is optional; when present the ratio is set as computation_context.
     portfolio_scenario_name = user_data["Portfolio Scenario"]&.strip
-    portfolio_scenario      = portfolio_scenario_name.present? ?
-                                fund.portfolio_scenarios.find_by(name: portfolio_scenario_name) : nil
+    portfolio_scenario      = (fund.portfolio_scenarios.find_by(name: portfolio_scenario_name) if portfolio_scenario_name.present?)
     raise "Portfolio Scenario not found for #{portfolio_scenario_name}" if portfolio_scenario_name.present? && portfolio_scenario.nil?
 
     # Scenario defaults to "Default" when the column is blank
@@ -34,15 +33,15 @@ class ImportFundRatio < ImportUtil
     end_date = user_data["End Date"].present? ? parse_date(user_data["End Date"]) : nil
 
     attributes = {
-      fund:           fund,
-      entity:         entity,
-      owner:          owner,
-      user_data:      user_data,
-      value:          parse_value(user_data["Value"]),
-      display_value:  format_display_value(user_data["Value"], user_data["Ratio Name"]),
-      end_date:       end_date,
-      import_upload:  import_upload,
-      scenario:       scenario
+      fund: fund,
+      entity: entity,
+      owner: owner,
+      user_data: user_data,
+      value: parse_value(user_data["Value"]),
+      display_value: format_display_value(user_data["Value"], user_data["Ratio Name"]),
+      end_date: end_date,
+      import_upload: import_upload,
+      scenario: scenario
     }
     # Set computation_context to the PortfolioScenario when one was resolved.
     # scenario string is also set explicitly here because the before_create callback
@@ -156,13 +155,13 @@ class ImportFundRatio < ImportUtil
     raise "Fund Ratio not found for update: #{attrs[:user_data]}" if fund_ratio.nil?
 
     fund_ratio.assign_attributes(
-      value:               attrs[:value],
-      display_value:       attrs[:display_value],
-      end_date:            attrs[:end_date],
-      import_upload_id:    attrs[:import_upload].id,
-      notes:               attrs[:user_data]["Note"],
-      label:               attrs[:user_data]["Label"],
-      scenario:            attrs[:scenario],
+      value: attrs[:value],
+      display_value: attrs[:display_value],
+      end_date: attrs[:end_date],
+      import_upload_id: attrs[:import_upload].id,
+      notes: attrs[:user_data]["Note"],
+      label: attrs[:user_data]["Label"],
+      scenario: attrs[:scenario],
       computation_context: attrs[:computation_context]
     )
     fund_ratio.save!
@@ -173,31 +172,31 @@ class ImportFundRatio < ImportUtil
   def create_fund_ratio(attrs)
     # Uniqueness is enforced at the application layer; (name, end_date, owner) must be unique per fund
     existing_fund_ratio = FundRatio.find_by(
-      fund_id:                  attrs[:fund].id,
-      entity_id:                attrs[:entity].id,
-      name:                     attrs[:user_data]["Ratio Name"],
+      fund_id: attrs[:fund].id,
+      entity_id: attrs[:entity].id,
+      name: attrs[:user_data]["Ratio Name"],
       computation_context_type: attrs[:computation_context]&.class&.name,
-      computation_context_id:   attrs[:computation_context]&.id,
-      owner_type:               attrs[:owner].class.name,
-      owner_id:                 attrs[:owner].id,
-      end_date:                 attrs[:end_date]
+      computation_context_id: attrs[:computation_context]&.id,
+      owner_type: attrs[:owner].class.name,
+      owner_id: attrs[:owner].id,
+      end_date: attrs[:end_date]
     )
 
     raise "Fund Ratio already exists for the given period (end date: #{attrs[:end_date]})" if existing_fund_ratio
 
     fund_ratio = FundRatio.new(
-      fund_id:             attrs[:fund].id,
-      entity_id:           attrs[:entity].id,
-      owner_type:          attrs[:owner].class.name,
-      owner_id:            attrs[:owner].id,
-      name:                attrs[:user_data]["Ratio Name"],
-      value:               attrs[:value],
-      display_value:       attrs[:display_value],
-      end_date:            attrs[:end_date],
-      import_upload_id:    attrs[:import_upload].id,
-      notes:               attrs[:user_data]["Note"],
-      label:               attrs[:user_data]["Label"],
-      scenario:            attrs[:scenario],
+      fund_id: attrs[:fund].id,
+      entity_id: attrs[:entity].id,
+      owner_type: attrs[:owner].class.name,
+      owner_id: attrs[:owner].id,
+      name: attrs[:user_data]["Ratio Name"],
+      value: attrs[:value],
+      display_value: attrs[:display_value],
+      end_date: attrs[:end_date],
+      import_upload_id: attrs[:import_upload].id,
+      notes: attrs[:user_data]["Note"],
+      label: attrs[:user_data]["Label"],
+      scenario: attrs[:scenario],
       computation_context: attrs[:computation_context]
     )
 

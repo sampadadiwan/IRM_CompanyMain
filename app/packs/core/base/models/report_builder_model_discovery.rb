@@ -34,12 +34,17 @@ class ReportBuilderModelDiscovery
 
   # Models eligible as report roots — edit ROOT_MODELS above to control this list.
   def self.roots
-    @roots ||= ROOT_MODELS.filter_map { |name|
+    @roots ||= ROOT_MODELS.filter_map do |name|
       klass = name.safe_constantize
       next unless klass
-      next unless klass.column_names.include?("entity_id") rescue nil
+
+      begin
+        next unless klass.column_names.include?("entity_id")
+      rescue StandardError
+        nil
+      end
       klass
-    }.sort_by(&:name)
+    end.sort_by(&:name)
   end
 
   def self.all_models
@@ -58,14 +63,19 @@ class ReportBuilderModelDiscovery
   def self.associations_for(klass)
     klass.reflect_on_all_associations.filter_map do |r|
       next if r.options[:polymorphic]
-      target_klass = r.klass rescue next
+
+      target_klass = begin
+        r.klass
+      rescue StandardError
+        next
+      end
 
       {
-        name:         r.name.to_s,
-        model:        target_klass.name,
-        macro:        r.macro.to_s,
-        foreign_key:  foreign_key_for(klass, r),
-        label:        r.name.to_s.humanize,
+        name: r.name.to_s,
+        model: target_klass.name,
+        macro: r.macro.to_s,
+        foreign_key: foreign_key_for(klass, r),
+        label: r.name.to_s.humanize,
         has_children: target_klass.reflect_on_all_associations.any? { |child| !child.options[:polymorphic] }
       }
     rescue NameError
@@ -85,21 +95,24 @@ class ReportBuilderModelDiscovery
     end
   end
 
-  def self.foreign_key_for(root_class, reflection)
+  def self.foreign_key_for(_root_class, reflection)
     case reflection.macro
-    when :has_many, :has_one then reflection.foreign_key.to_s
-    when :belongs_to         then reflection.foreign_key.to_s
+    when :has_many, :has_one, :belongs_to then reflection.foreign_key.to_s
     end
   end
   private_class_method :foreign_key_for
 
   def self.app_models
     ActiveRecord::Base.descendants
-      .select { |k| k.ancestors.include?(ApplicationRecord) }
-      .reject(&:abstract_class?)
-      .reject { |k| k.name.nil? }
-      .select { |k| k.table_exists? rescue false }
-      .reject { |k| EXCLUDED_TABLES.include?(k.table_name) }
+                      .select { |k| k.ancestors.include?(ApplicationRecord) }
+                      .reject(&:abstract_class?)
+                      .reject { |k| k.name.nil? }
+                      .select do |k|
+      k.table_exists?
+    rescue StandardError
+      false
+    end
+                      .reject { |k| EXCLUDED_TABLES.include?(k.table_name) }
   end
   private_class_method :app_models
 
@@ -107,7 +120,15 @@ class ReportBuilderModelDiscovery
     if Rails.respond_to?(:autoloaders)
       # Eager load each Zeitwerk loader directly, bypassing the @eager_loaded cache
       # that can cause stale results when roots is first called before all packs are warm.
-      Rails.autoloaders.each { |loader| loader.eager_load(force: true) rescue loader.eager_load rescue nil }
+      Rails.autoloaders.each do |loader|
+        begin
+          loader.eager_load(force: true)
+        rescue StandardError
+          loader.eager_load
+        end
+      rescue StandardError
+        nil
+      end
     else
       Rails.application.eager_load!
     end

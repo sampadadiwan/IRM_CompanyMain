@@ -15,8 +15,6 @@ class ReportBuilderExportJob < ApplicationJob
       all_rows = engine.run
       exporter = ReportBuilderXlsxExporter.new(report: report, rows: all_rows, columns: engine.columns)
 
-      filename = "#{report.name.parameterize.presence || 'report'}-#{Date.today.strftime('%d-%b-%Y')}.xlsx"
-
       # 2. Save to temporary file
       temp_file = Tempfile.new([report.name.parameterize, ".xlsx"])
       begin
@@ -51,15 +49,12 @@ class ReportBuilderExportJob < ApplicationJob
         end
 
         # 4. Send Email if scheduled
-        if schedule
-          ReportMailer.scheduled_report(report, schedule.recipients, temp_file.path).deliver_now
-        end
+        ReportMailer.scheduled_report(report, schedule.recipients, temp_file.path).deliver_now if schedule
 
         # 5. Notify User (if not scheduled or also notify owner)
         download_url = Rails.application.routes.url_helpers.document_path(document)
         message = "Your report <strong>#{report.name}</strong> is ready. <a href='#{download_url}' class='fw-bold text-decoration-underline'>Click here to download</a>."
         UserAlert.new(user_id: user.id, entity_id: entity.id, message:, level: "success").broadcast
-
       ensure
         temp_file.close
         temp_file.unlink
@@ -68,8 +63,6 @@ class ReportBuilderExportJob < ApplicationJob
   rescue StandardError => e
     Rails.logger.error "[ReportBuilderExportJob] Error: #{e.message}"
     error_user = User.find_by(id: user_id)
-    if error_user
-      UserAlert.new(user_id: error_user.id, entity_id: error_user.entity_id, message: "Failed to generate report <strong>#{report&.name || 'Unknown'}</strong>: #{e.message}", level: "danger").broadcast
-    end
+    UserAlert.new(user_id: error_user.id, entity_id: error_user.entity_id, message: "Failed to generate report <strong>#{report&.name || 'Unknown'}</strong>: #{e.message}", level: "danger").broadcast if error_user
   end
 end

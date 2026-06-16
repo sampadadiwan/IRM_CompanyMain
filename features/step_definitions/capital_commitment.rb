@@ -185,7 +185,7 @@ Then('when the capital commitment docs are generated') do
     #sleep((1)
     click_on("Proceed")
     expect(page).to have_content("Documentation generation started")
-    sleep(8)
+    sleep(3)
     # expect(page).to have_content("generated successfully")
   end
 end
@@ -439,8 +439,10 @@ Given('we Generate Investor Statements from commitments index page') do
   visit(fund_path(@fund))
   expect(page).to have_content("New Commitment", wait: 5)
   click_on("Generate")
-  click_on("Generate Investor Statement")
-  expect(page).to have_content("Generate Investor Statements For : #{@fund.name}")
+  # find with visible: true waits for the Bootstrap dropdown to fully open before clicking.
+  # click_on("Generate Investor Statement") is too broad and can click a hidden element, leaving the page empty.
+  find("a", text: "Generate Investor Statement", visible: true, wait: 5).click
+  expect(page).to have_content("Generate Investor Statements For : #{@fund.name}", wait: 10)
   sleep(0.5)
   @start_date = Time.zone.parse("01/01/2022")
   @end_date = Time.zone.parse("31/12/2022")
@@ -451,7 +453,10 @@ Given('we Generate Investor Statements from commitments index page') do
   expect(@template).to be_present
   select(@template.name, from: "fund_template_name")
   click_on("Submit")
-  expect(page).to have_content("Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", wait: 10)
+  sleep(2)
+  # Use have_selector with visible: :all because Bootstrap's fade transition can briefly make the notice
+  # element non-visible to Selenium; we just need to confirm the flash was set (redirect succeeded).
+  expect(page).to have_selector("#notice", text: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", visible: :all, wait: 10)
 end
 
 Then('the {string} is successfully generated for all intended commitments') do |template_name|

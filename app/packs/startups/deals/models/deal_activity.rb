@@ -15,6 +15,10 @@ class DealActivity < ApplicationRecord
   belongs_to :deal_investor, optional: true
   belongs_to :entity
 
+  # Derived activities are investor-specific copies generated from this template (linked via template_id).
+  # Cascade destroy so deleting a template removes all investor copies.
+  has_many :derived_activities, class_name: "DealActivity", foreign_key: :template_id, dependent: :destroy
+
   delegate :investor_name, to: :deal_investor, allow_nil: true
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :deal, prefix: :deal
@@ -28,12 +32,19 @@ class DealActivity < ApplicationRecord
   scope :not_templates, ->(deal) { where(deal_id: deal.id).where.not(deal_investor_id: nil).order(:sequence) }
 
   before_save :set_defaults
+  before_destroy :clear_investor_activity_pointer, if: :Template?
   after_commit :recreate_activities, unless: :destroyed?
 
   validate :check_done
 
   def set_defaults
     self.status = "Template" if deal_investor_id.nil?
+  end
+
+  def clear_investor_activity_pointer
+    # DealInvestor.deal_activity_id stores the template id; clear it so investors
+    # don't point to a deleted template after cascade destroy.
+    DealInvestor.where(deal_id: deal_id, deal_activity_id: id).update_all(deal_activity_id: nil)
   end
 
   def check_done

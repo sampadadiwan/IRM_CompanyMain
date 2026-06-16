@@ -37,7 +37,11 @@ module AccountEntryAllocation
       # SQLite silently stores Float::INFINITY and NaN but MySQL DECIMAL columns reject them,
       # causing the migration to primary DB to fail. Raise here with formula context instead.
       if result.respond_to?(:finite?) && !result.finite?
-        kind = result.nan? ? "NaN" : (result.positive? ? "Infinity" : "-Infinity")
+        kind = if result.nan?
+                 "NaN"
+               else
+                 (result.positive? ? "Infinity" : "-Infinity")
+               end
         raise ZeroDivisionError, "Formula produced #{kind} (divide-by-zero or 0.0/0.0). Formula: #{eval_string}"
       end
 

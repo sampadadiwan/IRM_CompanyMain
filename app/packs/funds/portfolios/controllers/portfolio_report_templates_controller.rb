@@ -1,5 +1,5 @@
 class PortfolioReportTemplatesController < ApplicationController
-  before_action :set_template,        only: %i[show edit update destroy]
+  before_action :set_template, only: %i[show edit update destroy]
   before_action :set_portfolio_report
 
   # GET /portfolio_reports/:portfolio_report_id/portfolio_report_templates
@@ -72,15 +72,15 @@ class PortfolioReportTemplatesController < ApplicationController
     permitted = params.require(:portfolio_report_template).permit(
       :name, :output_format, :style_document_id,
       :auto_generate_enabled, :auto_generate_frequency, :auto_generate_day,
-      branding:      [:primary_color, :font],
+      branding: %i[primary_color font],
       section_order: [],
-      kpi_layout:    [:n_periods, :side_by_side, categories: [], tags: []]
+      kpi_layout: [:n_periods, :side_by_side, { categories: [], tags: [] }]
     )
 
     # categories arrives as a comma-separated string from the text input — split it
     if permitted[:kpi_layout] && permitted[:kpi_layout][:categories].is_a?(String)
       permitted[:kpi_layout][:categories] = permitted[:kpi_layout][:categories]
-                                              .split(",").map(&:strip).reject(&:blank?)
+                                            .split(",").map(&:strip).compact_blank
     end
 
     permitted

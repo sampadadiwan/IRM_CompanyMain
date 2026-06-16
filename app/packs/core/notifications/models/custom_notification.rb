@@ -21,7 +21,6 @@ class CustomNotification < ApplicationRecord
 
   # validates :email_method, uniqueness: { scope: %i[owner_id owner_type], message: ->(object, _data) { "#{object.email_method} already exists for #{object.owner}" } }
   after_create_commit :reset_latest
-  # rubocop:disable Rails/SkipsModelValidations
   def reset_latest
     # Update latest flag for all records with the same email_method, entity_id, owner_id, owner_type except the current record itself to false
     self.class.where(

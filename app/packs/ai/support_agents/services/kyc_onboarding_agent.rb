@@ -318,9 +318,8 @@ class KycOnboardingAgent < SupportAgentService
       return true
     end
 
-    expiry_issues = ctx[:issues][:field_issues].select { |i|
-      %i[kyc_expired kyc_expiring_soon].include?(i[:type])
-    }
+    expiry_types = %i[kyc_expired kyc_expiring_soon]
+    expiry_issues = ctx[:issues][:field_issues].select { |i| expiry_types.include?(i[:type]) }
 
     if expiry_issues.empty?
       Rails.logger.debug { "[KycOnboardingAgent] No expiry issues for InvestorKyc ID=#{investor_kyc.id} — skipping reminder." }

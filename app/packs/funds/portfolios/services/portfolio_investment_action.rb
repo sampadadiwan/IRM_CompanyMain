@@ -6,7 +6,7 @@ class PortfolioInvestmentAction < Trailblazer::Operation
 
   def compute_amount_cents(_ctx, portfolio_investment:, **)
     # Ensure fund and investment_instrument are loaded before compute accesses both for currency comparison
-    ActiveRecord::Associations::Preloader.new(records: [portfolio_investment], associations: [:fund, :investment_instrument]).call if portfolio_investment.persisted? && !portfolio_investment.association(:fund).loaded?
+    ActiveRecord::Associations::Preloader.new(records: [portfolio_investment], associations: %i[fund investment_instrument]).call if portfolio_investment.persisted? && !portfolio_investment.association(:fund).loaded?
     portfolio_investment.compute_amount_cents
     true
   end

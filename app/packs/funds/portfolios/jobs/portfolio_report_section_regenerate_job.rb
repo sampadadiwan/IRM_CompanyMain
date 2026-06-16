@@ -2,6 +2,7 @@ require 'cgi'
 
 class PortfolioReportSectionRegenerateJob < ApplicationJob
   include Rails.application.routes.url_helpers
+
   queue_as :low
 
   def perform(draft_id, section_id, user_id)
@@ -28,16 +29,20 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
 
     # Pull the same KPI reports used when the draft was first generated
     kpi_reports = KpiReport
-      .where(portfolio_company: draft.portfolio_company, entity: entity,
-             period: draft.kpi_period_type, tag_list: draft.kpi_tag)
-      .where("as_of <= ?", draft.end_date)
-      .order(as_of: :desc).limit(draft.n_periods).to_a.reverse
+                  .where(portfolio_company: draft.portfolio_company, entity: entity,
+                         period: draft.kpi_period_type, tag_list: draft.kpi_tag)
+                  .where(as_of: ..draft.end_date)
+                  .order(as_of: :desc).limit(draft.n_periods).to_a.reverse
 
     with_kpi_report_pdfs(kpi_reports) do |kpi_report_ctx, pdf_paths|
       prompt   = build_section_prompt(section, kpi_ctx, notes_ctx, kpi_report_ctx, draft)
       ask_opts = pdf_paths.any? ? { with: pdf_paths } : {}
       response = llm.ask(prompt, **ask_opts)
-      raw_text = response.is_a?(String) ? response : (response.respond_to?(:content) ? response.content : response.to_s)
+      raw_text = if response.is_a?(String)
+                   response
+                 else
+                   (response.respond_to?(:content) ? response.content : response.to_s)
+                 end
 
       bullets = begin
         parsed = JSON.parse(raw_text.gsub(/\A```json\s*|\s*```\z/, "").strip)
@@ -60,7 +65,6 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
     msg = "Section \"#{section.name}\" regenerated for #{draft.portfolio_company}. " \
           "<a href=\"#{url}\" class=\"alert-link\">Open draft &rarr;</a>"
     UserAlert.new(user_id: user_id, message: msg, level: "success").broadcast if user_id.present?
-
   rescue StandardError => e
     Rails.logger.error { "[SectionRegenerateJob] draft=#{draft_id} section=#{section_id}: #{e.message}" }
     UserAlert.new(user_id: user_id, message: "Section regeneration failed: #{e.message.truncate(200)}", level: "danger").broadcast if user_id.present?
@@ -71,11 +75,12 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
 
   def build_kpi_context(draft, mappings, period_labels)
     return "No KPI data available." if period_labels.empty? || mappings.empty?
+
     lines    = ["KPI Data (#{draft.kpi_period_type} #{draft.kpi_tag} — #{period_labels.count} periods):", ""]
     metric_w = mappings.map { |m| m.reported_kpi_name.length }.max.to_i + 2
     col_w    = [period_labels.map(&:length).max.to_i, 10].max + 2
     header   = "Metric".ljust(metric_w) + period_labels.map { |l| l.rjust(col_w) }.join
-    lines << header << "-" * header.length
+    lines << header << ("-" * header.length)
     mappings.each do |ikm|
       cols = period_labels.map { |lbl| (draft.effective_kpi_table.dig(ikm.id.to_s, lbl)&.to_s || "—").rjust(col_w) }.join
       lines << "#{ikm.reported_kpi_name.ljust(metric_w)}#{cols}"
@@ -85,6 +90,7 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
 
   def build_notes_context(notes)
     return "No notes available." if notes.empty?
+
     notes.map { |n| "[#{n.created_at.to_date}] #{n.details.to_plain_text.strip.truncate(600)}" }.join("\n\n")
   end
 
@@ -92,7 +98,7 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
     <<~PROMPT
       You are an analyst at a private equity fund writing a section of a portfolio report.
       Portfolio company: #{draft.portfolio_company.investor_name}
-      Report period: #{draft.start_date.strftime("%b %Y")} to #{draft.end_date.strftime("%b %Y")}
+      Report period: #{draft.start_date.strftime('%b %Y')} to #{draft.end_date.strftime('%b %Y')}
 
       Section: #{section.name}
       Instructions: #{section.data}
@@ -112,7 +118,11 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
     PROMPT
   end
 
-  # Downloads PDFs from the most recent KPI report into Tempfiles, yields paths, then cleans up.
+  MAX_COMBINED_PDF_BYTES = 10 * 1024 * 1024
+
+  # Same fast-path / greedy-batch logic as PortfolioReportDraftService#with_kpi_report_pdfs.
+  # Fast path  — combined PDFs ≤ 10 MB: pass as multimodal binary attachments.
+  # Fallback   — combined PDFs > 10 MB: extract text locally with PDF::Reader per batch.
   def with_kpi_report_pdfs(kpi_reports)
     tmpfiles = []
 
@@ -132,25 +142,73 @@ class PortfolioReportSectionRegenerateJob < ApplicationJob
       next unless doc.pdf?
 
       tmp = Tempfile.new([doc.name.parameterize.presence || "kpi-doc", ".pdf"])
+      tmpfiles << { doc: doc, tmp: tmp } # register before I/O so ensure always cleans up
       tmp.binmode
       doc.file.open { |io| tmp.write(io.read) }
       tmp.flush
-      tmpfiles << tmp
-      lines << "PDF attached: #{doc.name}"
-      Rails.logger.info { "[SectionRegenerateJob] Attached PDF '#{doc.name}' (#{tmp.size} bytes)" }
+      Rails.logger.info { "[SectionRegenerateJob] Downloaded PDF '#{doc.name}' (#{tmp.size} bytes)" }
     rescue StandardError => e
-      Rails.logger.warn { "[SectionRegenerateJob] Skipped PDF '#{doc.name}': #{e.message}" }
+      Rails.logger.warn { "[SectionRegenerateJob] Could not download PDF '#{doc.name}': #{e.message}" }
     end
 
-    commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
-    yield commentary, tmpfiles.map(&:path)
+    total_bytes = tmpfiles.sum { |t| t[:tmp].size }
+
+    if total_bytes <= MAX_COMBINED_PDF_BYTES
+      tmpfiles.each { |t| lines << "PDF attached: #{t[:doc].name}" }
+      commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
+      yield commentary, tmpfiles.map { |t| t[:tmp].path }
+    else
+      batches = greedy_pdf_batches(tmpfiles)
+      Rails.logger.info { "[SectionRegenerateJob] Payload #{total_bytes} bytes — #{batches.size} batch(es), extracting locally" }
+
+      batches.each_with_index do |batch, idx|
+        Rails.logger.info { "[SectionRegenerateJob] Batch #{idx + 1}/#{batches.size}: #{batch.map { |e| e[:doc].name }.join(', ')}" }
+        batch.each do |entry|
+          lines << "--- #{entry[:doc].name} ---"
+          lines << extract_pdf_text(entry[:tmp].path).truncate(3000)
+        end
+      end
+
+      commentary = lines.any? ? "[#{label}]\n#{lines.join("\n")}" : "No KPI report commentary available."
+      yield commentary, []
+    end
   ensure
-    tmpfiles.each { |t| t.close; t.unlink rescue nil }
+    tmpfiles.each do |entry|
+      entry[:tmp].close
+      entry[:tmp].unlink rescue nil
+    end
+  end
+
+  def greedy_pdf_batches(tmpfiles)
+    batches       = []
+    current_batch = []
+    current_size  = 0
+
+    tmpfiles.each do |entry|
+      size = entry[:tmp].size
+      if current_batch.any? && current_size + size > MAX_COMBINED_PDF_BYTES
+        batches << current_batch
+        current_batch = [entry]
+        current_size  = size
+      else
+        current_batch << entry
+        current_size  += size
+      end
+    end
+    batches << current_batch if current_batch.any?
+    batches
+  end
+
+  def extract_pdf_text(file_path)
+    require 'pdf-reader'
+    PDF::Reader.new(file_path).pages.first(100).map(&:text).join("\n\n")
+  rescue StandardError => e
+    Rails.logger.warn { "[SectionRegenerateJob] PDF text extraction failed: #{e.message}" }
+    "(text extraction failed: #{e.message.truncate(120)})"
   end
 
   def format_period(as_of, period_type)
     case period_type
-    when "Month"     then as_of.strftime("%b %Y")
     when "Quarter"   then "Q#{((as_of.month - 1) / 3) + 1} #{as_of.year}"
     when "Half Year" then "H#{as_of.month <= 6 ? 1 : 2} #{as_of.year}"
     when "Year"      then as_of.year.to_s

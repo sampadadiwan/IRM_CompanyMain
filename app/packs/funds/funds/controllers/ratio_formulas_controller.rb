@@ -8,6 +8,11 @@ class RatioFormulasController < ApplicationController
     @q = @fund.ratio_formulas.ransack(params[:q])
     @ratio_formulas = policy_scope(@q.result).includes(:fund)
     @bread_crumbs = { Funds: funds_path, "#{@fund.name}": fund_path(@fund), 'Ratio Formulas': nil }
+
+    respond_to do |format|
+      format.html
+      format.xlsx
+    end
   end
 
   def show
@@ -61,7 +66,6 @@ class RatioFormulasController < ApplicationController
   end
 
   def ratio_formula_params
-    # Since ratios and account_entry_names are arrays, we need to permit them accordingly
-    params.require(:ratio_formula).permit(:level, :action, :period, ratios: [], account_entry_names: [])
+    params.require(:ratio_formula).permit(:level, :action, :period, :ratio, account_entry_names: [])
   end
 end

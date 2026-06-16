@@ -44,8 +44,8 @@ class TasksController < ApplicationController
   # GET /tasks/1 or /tasks/1.json
   def show
     @bread_crumbs = { Tasks: tasks_path }
-    @bread_crumbs["#{@task.owner}"] = polymorphic_path(@task.owner) if @task.owner.present?
-    @bread_crumbs["#{@task.category}"] = task_path(@task)
+    @bread_crumbs[@task.owner.to_s] = polymorphic_path(@task.owner) if @task.owner.present?
+    @bread_crumbs[@task.category.to_s] = task_path(@task)
   end
 
   # GET /tasks/new
@@ -57,7 +57,7 @@ class TasksController < ApplicationController
     @task.user = current_user
 
     @bread_crumbs = { Tasks: tasks_path }
-    @bread_crumbs["#{@task.owner}"] = polymorphic_path(@task.owner) if @task.owner.present?
+    @bread_crumbs[@task.owner.to_s] = polymorphic_path(@task.owner) if @task.owner.present?
     @bread_crumbs[:New] = nil
 
     authorize @task
@@ -67,8 +67,8 @@ class TasksController < ApplicationController
   # GET /tasks/1/edit
   def edit
     @bread_crumbs = { Tasks: tasks_path }
-    @bread_crumbs["#{@task.owner}"] = polymorphic_path(@task.owner) if @task.owner.present?
-    @bread_crumbs["#{@task.category}"] = task_path(@task)
+    @bread_crumbs[@task.owner.to_s] = polymorphic_path(@task.owner) if @task.owner.present?
+    @bread_crumbs[@task.category.to_s] = task_path(@task)
     @bread_crumbs[:Edit] = nil
 
     setup_custom_fields(@task)
@@ -170,7 +170,7 @@ class TasksController < ApplicationController
       tasks = rule.tasks.to_a
       ActiveRecord::Associations::Preloader.new(
         records: tasks,
-        associations: [:documents, :folders, :reminders, :noticed_events]
+        associations: %i[documents folders reminders noticed_events]
       ).call
       rule.destroy
       notice = "Entire task series was successfully destroyed."

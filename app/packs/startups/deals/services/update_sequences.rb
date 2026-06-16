@@ -15,7 +15,7 @@ class UpdateSequences < Trailblazer::Operation
   def update_non_template_deal_activities(ctx, deal_activity:, **)
     ctx[:deal] = deal_activity.deal
     DealActivity.not_templates(ctx[:deal]).where(template_id: deal_activity.id)
-                .update_all(sequence: deal_activity.sequence) # rubocop:disable Rails/SkipsModelValidations
+                .update_all(sequence: deal_activity.sequence)
     true
   end
 

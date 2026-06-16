@@ -23,10 +23,20 @@ when :s3, :s3_multipart
 when :app
   require "shrine/storage/file_system"
 
+  # In parallel test runs each process gets its own sub-directory so that the
+  # AfterAll hook can clean up only its own files without racing against other
+  # still-running processes that share the same public/uploads/ tree.
+  upload_prefix = if Rails.env.test?
+                    n = ENV.fetch('TEST_ENV_NUMBER', 'test')
+                    "uploads/#{n}"
+                  else
+                    "uploads"
+                  end
+
   # both `cache` and `store` storages are needed
   Shrine.storages = {
-    cache: Shrine::Storage::FileSystem.new("public", prefix: "uploads/cache"),
-    store: Shrine::Storage::FileSystem.new("public", prefix: "uploads")
+    cache: Shrine::Storage::FileSystem.new("public", prefix: "#{upload_prefix}/cache"),
+    store: Shrine::Storage::FileSystem.new("public", prefix: upload_prefix)
   }
 end
 

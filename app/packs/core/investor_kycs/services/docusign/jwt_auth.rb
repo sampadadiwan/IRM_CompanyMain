@@ -18,7 +18,7 @@ module JwtAuth
     end
 
     # @return [String] The access token string on success; raises an exception if JWT is invalid or if consent is required
-    def check_jwt_token(entity_id) # rubocop:disable Metrics/MethodLength
+    def check_jwt_token(entity_id)
       # Check if the access token is already cached
       access_token = Rails.cache.read("docusign_access_token_#{entity_id}")
       if access_token.present?

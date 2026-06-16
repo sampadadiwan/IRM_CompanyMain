@@ -21,7 +21,6 @@ class UsersSyncController < ActionController::API
   # Body: { action:"UPSERT", event_id, as_of, origin_region, target_region, ccf_hex,
   #         user:{...}, entity:{...}, roles:[{name}] }
 
-  # rubocop:disable Rails/SkipsModelValidations
   def upsert
     payload       = parse_json_body!
     origin_region = norm_region(payload["origin_region"])

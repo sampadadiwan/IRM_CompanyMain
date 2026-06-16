@@ -42,7 +42,7 @@ class DocLlmValidator < DocLlmBase
 
   ".freeze
 
-  def run_checks_with_llm(ctx, model:, doc_questions:, llm_client:, **) # rubocop:disable Metrics/MethodLength
+  def run_checks_with_llm(ctx, model:, doc_questions:, llm_client:, **)
     new_checks = VariableInterpolation.replace_variables(doc_questions, model)
     Rails.logger.debug { "Running checks with LLM: #{new_checks}" }
 

@@ -1,6 +1,6 @@
 class CapitalDistributionPayment < ApplicationRecord
   # Value objects for fee breakdown data passed to Sablon document templates.
-  FeeEntry = Data.define(:name, :date, :amount, :fee_type)    # one raw fee line from ae_audit JSON — immutable, fully known at construction
+  FeeEntry = Data.define(:name, :date, :amount, :fee_type) # one raw fee line from ae_audit JSON — immutable, fully known at construction
   # Struct (not Data.define) because total_amount_across_folios is annotated in a second pass
   # by the doc generator after consolidation, so the object must be mutable.
   ConsolidatedFee = Struct.new(:name, :amount, :date, :total_amount_across_folios, keyword_init: true) do
@@ -120,7 +120,6 @@ class CapitalDistributionPayment < ApplicationRecord
                                                net_payable_cents, payment_date)
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def send_notification(force: false)
     msg = nil
 

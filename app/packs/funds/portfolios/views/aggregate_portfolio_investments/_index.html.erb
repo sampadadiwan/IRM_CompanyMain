@@ -7,7 +7,7 @@
   <h1 class="h3 mb-0 text-gray-800">Aggregate Portfolio Investments</h1>
   <div class="d-flex flex-wrap align-items-center gap-2">
     <%= user_guide_info_icon %>
-    <% if fund %>
+    <% if fund && !current_user.curr_role_investor? %>
       <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
               data-bs-toggle="collapse" data-bs-target="#portfolioAnalytics"
               aria-expanded="false" aria-controls="portfolioAnalytics">

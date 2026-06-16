@@ -14,19 +14,19 @@ require 'zip'
 #   File.binwrite("tmp/word_placeholder_template.docx", bytes)
 class PortfolioReportWordBrandTemplateService
   # ── Brand palette ────────────────────────────────────────────────────────────
-  EMERALD      = "047857"
-  EMERALD_DARK = "064E3B"
-  EMERALD_MID  = "065F46"
-  EMERALD_LITE = "D1FAE5"
-  TEAL         = "0F766E"
-  AMBER        = "B45309"
-  GOLD         = "D4A847"
-  WHITE        = "FFFFFF"
-  BODY         = "334155"
-  CAPTION      = "94A3B8"
-  SLATE_LITE   = "F8FAFC"
+  EMERALD      = "047857".freeze
+  EMERALD_DARK = "064E3B".freeze
+  EMERALD_MID  = "065F46".freeze
+  EMERALD_LITE = "D1FAE5".freeze
+  TEAL         = "0F766E".freeze
+  AMBER        = "B45309".freeze
+  GOLD         = "D4A847".freeze
+  WHITE        = "FFFFFF".freeze
+  BODY         = "334155".freeze
+  CAPTION      = "94A3B8".freeze
+  SLATE_LITE   = "F8FAFC".freeze
 
-  W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+  W_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main".freeze
 
   SECTIONS = [
     "Business Overview",
@@ -87,31 +87,31 @@ class PortfolioReportWordBrandTemplateService
   # Cover page — emerald header band, company name, report metadata
   def cover_xml
     <<~XML
-      #{shaded_para("[[ company name ]]",
-          fill: EMERALD_DARK, color: WHITE, sz: 80, bold: true,
-          spacing_before: 3600, spacing_after: 3600,
-          border_bottom_color: GOLD, border_bottom_sz: 36)}
+      #{shaded_para('[[ company name ]]',
+                    fill: EMERALD_DARK, color: WHITE, sz: 80, bold: true,
+                    spacing_before: 3600, spacing_after: 3600,
+                    border_bottom_color: GOLD, border_bottom_sz: 36)}
 
-      #{shaded_para("[[ fund name ]]",
-          fill: TEAL, color: WHITE, sz: 36,
-          spacing_before: 720, spacing_after: 720)}
+      #{shaded_para('[[ fund name ]]',
+                    fill: TEAL, color: WHITE, sz: 36,
+                    spacing_before: 720, spacing_after: 720)}
 
-      #{plain_para("", spacing_before: 240, spacing_after: 0)}
-
-      #{run_para([
-          { text: "Period: ",    bold: true,  color: BODY,    sz: 22 },
-          { text: "[[ period ]]", bold: false, color: EMERALD, sz: 22 }
-        ], spacing_before: 0, spacing_after: 80)}
+      #{plain_para('', spacing_before: 240, spacing_after: 0)}
 
       #{run_para([
-          { text: "Prepared: ",         bold: true,  color: BODY,    sz: 22 },
-          { text: "[[ prepared date ]]", bold: false, color: EMERALD, sz: 22 }
-        ], spacing_before: 0, spacing_after: 80)}
+                   { text: 'Period: ', bold: true, color: BODY, sz: 22 },
+                   { text: '[[ period ]]', bold: false, color: EMERALD, sz: 22 }
+                 ], spacing_before: 0, spacing_after: 80)}
 
       #{run_para([
-          { text: "Report: ",          bold: true,  color: BODY,    sz: 22 },
-          { text: "[[ template name ]]", bold: false, color: TEAL,    sz: 22 }
-        ], spacing_before: 0, spacing_after: 480)}
+                   { text: 'Prepared: ', bold: true, color: BODY, sz: 22 },
+                   { text: '[[ prepared date ]]', bold: false, color: EMERALD, sz: 22 }
+                 ], spacing_before: 0, spacing_after: 80)}
+
+      #{run_para([
+                   { text: 'Report: ', bold: true, color: BODY, sz: 22 },
+                   { text: '[[ template name ]]', bold: false, color: TEAL, sz: 22 }
+                 ], spacing_before: 0, spacing_after: 480)}
 
       #{separator_para(EMERALD)}
 
@@ -122,30 +122,32 @@ class PortfolioReportWordBrandTemplateService
   # Executive summary callout box — thick left border, light background
   def callout_box_xml
     <<~XML
-      #{shaded_para("Executive Summary",
-          fill: EMERALD_LITE, color: EMERALD_DARK, sz: 24, bold: true,
-          border_left_color: EMERALD, border_left_sz: 24,
-          spacing_before: 240, spacing_after: 80)}
+      #{shaded_para('Executive Summary',
+                    fill: EMERALD_LITE, color: EMERALD_DARK, sz: 24, bold: true,
+                    border_left_color: EMERALD, border_left_sz: 24,
+                    spacing_before: 240, spacing_after: 80)}
       #{shaded_para(
-          "This report covers [[ company name ]] for the period [[ period ]]. " \
-          "Key performance data, operational highlights, and strategic updates are detailed below. " \
-          "All figures are unaudited unless otherwise stated.",
-          fill: EMERALD_LITE, color: BODY, sz: 20,
-          border_left_color: EMERALD, border_left_sz: 24,
-          spacing_before: 0, spacing_after: 320)}
+        'This report covers [[ company name ]] for the period [[ period ]]. ' \
+        'Key performance data, operational highlights, and strategic updates are detailed below. ' \
+        'All figures are unaudited unless otherwise stated.',
+        fill: EMERALD_LITE, color: BODY, sz: 20,
+        border_left_color: EMERALD, border_left_sz: 24,
+        spacing_before: 0, spacing_after: 320
+      )}
     XML
   end
 
   def kpi_section_xml
     <<~XML
-      #{heading1_para("Key Performance Indicators")}
+      #{heading1_para('Key Performance Indicators')}
 
       #{plain_para(
-          "The table below is generated automatically from your KPI data for the selected period. " \
-          "Column headers reflect the reporting periods; rows map to your KPI mappings.",
-          color: CAPTION, sz: 18, italic: true, spacing_before: 0, spacing_after: 160)}
+        'The table below is generated automatically from your KPI data for the selected period. ' \
+        'Column headers reflect the reporting periods; rows map to your KPI mappings.',
+        color: CAPTION, sz: 18, italic: true, spacing_before: 0, spacing_after: 160
+      )}
 
-      #{placeholder_para("[[ kpi table ]]")}
+      #{placeholder_para('[[ kpi table ]]')}
 
       #{separator_para(EMERALD_LITE)}
     XML
@@ -159,7 +161,7 @@ class PortfolioReportWordBrandTemplateService
       <<~XML
         #{heading2_para(section_name, color: accent)}
         #{placeholder_para("[[ section: #{section_name} ]]")}
-        #{plain_para("", spacing_before: 160, spacing_after: 0)}
+        #{plain_para('', spacing_before: 160, spacing_after: 0)}
       XML
     end.join("\n")
   end
@@ -168,11 +170,12 @@ class PortfolioReportWordBrandTemplateService
     <<~XML
       #{separator_para(GOLD)}
       #{plain_para(
-          "Template note: Rename the [[ section: Name ]] markers above to match your " \
-          "portfolio report's section names exactly (case-insensitive). " \
-          "For example, change [[ section: Business Overview ]] if your section is named differently. " \
-          "The [[ kpi table ]] placeholder is replaced with your full KPI dataset automatically.",
-          color: CAPTION, sz: 16, italic: true, spacing_before: 160, spacing_after: 160)}
+        'Template note: Rename the [[ section: Name ]] markers above to match your ' \
+        "portfolio report's section names exactly (case-insensitive). " \
+        'For example, change [[ section: Business Overview ]] if your section is named differently. ' \
+        'The [[ kpi table ]] placeholder is replaced with your full KPI dataset automatically.',
+        color: CAPTION, sz: 16, italic: true, spacing_before: 160, spacing_after: 160
+      )}
     XML
   end
 
@@ -183,12 +186,8 @@ class PortfolioReportWordBrandTemplateService
                   border_bottom_color: nil, border_bottom_sz: 4,
                   border_left_color: nil,   border_left_sz: 4)
     borders_xml = ""
-    if border_bottom_color
-      borders_xml += "<w:bottom w:val=\"single\" w:sz=\"#{border_bottom_sz}\" w:space=\"0\" w:color=\"#{border_bottom_color}\"/>"
-    end
-    if border_left_color
-      borders_xml += "<w:left w:val=\"single\" w:sz=\"#{border_left_sz}\" w:space=\"120\" w:color=\"#{border_left_color}\"/>"
-    end
+    borders_xml += "<w:bottom w:val=\"single\" w:sz=\"#{border_bottom_sz}\" w:space=\"0\" w:color=\"#{border_bottom_color}\"/>" if border_bottom_color
+    borders_xml += "<w:left w:val=\"single\" w:sz=\"#{border_left_sz}\" w:space=\"120\" w:color=\"#{border_left_color}\"/>" if border_left_color
     border_block = borders_xml.empty? ? "" : "<w:pBdr>#{borders_xml}</w:pBdr>"
 
     <<~XML
@@ -200,8 +199,8 @@ class PortfolioReportWordBrandTemplateService
         </w:pPr>
         <w:r>
           <w:rPr>
-            #{bold ? "<w:b/>" : ""}
-            #{italic ? "<w:i/>" : ""}
+            #{'<w:b/>' if bold}
+            #{'<w:i/>' if italic}
             <w:color w:val="#{color}"/>
             <w:sz w:val="#{sz}"/><w:szCs w:val="#{sz}"/>
           </w:rPr>
@@ -220,8 +219,8 @@ class PortfolioReportWordBrandTemplateService
         </w:pPr>
         <w:r>
           <w:rPr>
-            #{bold ? "<w:b/>" : ""}
-            #{italic ? "<w:i/>" : ""}
+            #{'<w:b/>' if bold}
+            #{'<w:i/>' if italic}
             <w:color w:val="#{color}"/>
             <w:sz w:val="#{sz}"/><w:szCs w:val="#{sz}"/>
           </w:rPr>
@@ -233,12 +232,12 @@ class PortfolioReportWordBrandTemplateService
 
   # Multi-run paragraph — takes array of {text:, bold:, color:, sz:}
   def run_para(runs, spacing_before: 0, spacing_after: 160)
-    run_xml = runs.map { |r|
-      "<w:r><w:rPr>#{r[:bold] ? "<w:b/>" : ""}" \
-      "<w:color w:val=\"#{r[:color]}\"/>" \
-      "<w:sz w:val=\"#{r[:sz]}\"/><w:szCs w:val=\"#{r[:sz]}\"/>" \
-      "</w:rPr><w:t xml:space=\"preserve\">#{CGI.escapeHTML(r[:text])}</w:t></w:r>"
-    }.join
+    run_xml = runs.map do |r|
+      "<w:r><w:rPr>#{'<w:b/>' if r[:bold]}" \
+        "<w:color w:val=\"#{r[:color]}\"/>" \
+        "<w:sz w:val=\"#{r[:sz]}\"/><w:szCs w:val=\"#{r[:sz]}\"/>" \
+        "</w:rPr><w:t xml:space=\"preserve\">#{CGI.escapeHTML(r[:text])}</w:t></w:r>"
+    end.join
     <<~XML
       <w:p>
         <w:pPr><w:spacing w:before="#{spacing_before}" w:after="#{spacing_after}"/></w:pPr>
@@ -410,12 +409,14 @@ class PortfolioReportWordBrandTemplateService
             <w:rPr><w:color w:val="#{CAPTION}"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>
             <w:t xml:space="preserve">Page </w:t>
           </w:r>
-          <w:fldChar w:fldCharType="begin"/>
-          <w:instrText>PAGE</w:instrText>
-          <w:fldChar w:fldCharType="end"/>
+          <w:r><w:fldChar w:fldCharType="begin"/></w:r>
+          <w:r><w:instrText xml:space="preserve"> PAGE </w:instrText></w:r>
+          <w:r><w:fldChar w:fldCharType="separate"/></w:r>
+          <w:r><w:t>1</w:t></w:r>
+          <w:r><w:fldChar w:fldCharType="end"/></w:r>
           <w:r>
             <w:rPr><w:color w:val="#{CAPTION}"/><w:sz w:val="16"/><w:szCs w:val="16"/></w:rPr>
-            <w:t xml:space="preserve">  |  Generated: #{Date.today.strftime('%d %b %Y')}  |  #{@brand_name}</w:t>
+            <w:t xml:space="preserve">  |  Generated: #{Time.zone.today.strftime('%d %b %Y')}  |  #{@brand_name}</w:t>
           </w:r>
         </w:p>
       </w:ftr>

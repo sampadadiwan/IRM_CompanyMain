@@ -83,7 +83,6 @@ class FundFormulasController < ApplicationController
     fetch_rows
     enabled = ActiveRecord::Type::Boolean.new.cast(params[:enable])
     respond_to do |format|
-      # rubocop:disable Rails/SkipsModelValidations
       if @fund_formulas.update_all(enabled:)
         # rubocop:enable Rails/SkipsModelValidations
         format.html { redirect_to fund_formulas_path(fund_id: params[:fund_id]), notice: "Fund formulas was successfully updated." }
@@ -155,7 +154,7 @@ class FundFormulasController < ApplicationController
     @formulas = FundFormula.includes(fund: :entity).where(fund_id: fund_ids)
     @formulas = @formulas.where(name: name) if name.present?
     @formulas = @formulas.where(rule_type: rule_type) if rule_type.present?
-    
+
     # Group by formula to keep them distinct but keep access to fund/entity info
     @formulas = @formulas.to_a.uniq(&:formula)
 

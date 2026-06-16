@@ -4,7 +4,7 @@ module FundStatisticsHelper
   ].freeze
 
   # Only pass custom colors as true if we are sure the css has these colors defined otherwise the chart will have all black color (no color actually but looks black)
-  def pie_chart_with_options(data, chart_type: "donut", descending: true, **extra_options) # rubocop:disable Metrics/CyclomaticComplexity
+  def pie_chart_with_options(data, chart_type: "donut", descending: true, **extra_options)
     chart_type = chart_type.to_s.downcase
     inner_size = chart_type == "pie" ? nil : "50%"
     semi       = chart_type == "half_donut"
@@ -82,7 +82,7 @@ module FundStatisticsHelper
     return if charts.empty?
 
     content_tag(:div, class: "row") do
-      charts.join.html_safe
+      safe_join(charts)
     end
   end
 

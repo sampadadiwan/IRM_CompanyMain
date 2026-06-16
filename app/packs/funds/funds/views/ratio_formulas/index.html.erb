@@ -3,6 +3,20 @@
     <h1>Ratio Formulas for <%= @fund.name %></h1>
     <div class="d-flex flex-wrap align-items-center gap-2">
       <%= user_guide_info_icon %>
+      <%= link_to fund_ratio_formulas_path(@fund, format: :xlsx), class: "btn btn-outline-success" do %>
+        <i class="ti ti-download"></i> Download
+      <% end %>
+      <% if policy(RatioFormula.new(fund: @fund)).import? %>
+        <%= link_to new_import_upload_path(
+              "import_upload[owner_id]": @fund.id,
+              "import_upload[owner_type]": "Fund",
+              "import_upload[entity_id]": @fund.entity_id,
+              "import_upload[import_type]": "RatioFormula",
+              "sample_upload": "RATIO_FORMULA_SAMPLE"),
+            class: "btn btn-outline-primary" do %>
+          <i class="ti ti-upload"></i> Import
+        <% end %>
+      <% end %>
       <% if policy(RatioFormula.new(fund: @fund)).create? %>
         <%= link_to new_fund_ratio_formula_path(@fund), class: "btn btn-primary" do %>
           <i class="ti ti-plus"></i> New Ratio Formula
@@ -16,7 +30,7 @@
         <thead class="table-light">
           <tr>
             <th>Level</th>
-            <th>Ratios</th>
+            <th>Ratio</th>
             <th>Action</th>
             <th>Account Entry Names</th>
             <th>Period</th>
@@ -29,9 +43,7 @@
               <tr>
                 <td><%= formula.level_text %></td>
                 <td>
-                  <% Array(formula.ratios).each do |ratio| %>
-                    <span class="badge bg-info-subtle text-info"><%= ratio %></span>
-                  <% end %>
+                  <span class="badge bg-info-subtle text-info"><%= formula.ratio %></span>
                 </td>
                 <td><%= formula.action_text %></td>
                 <td>

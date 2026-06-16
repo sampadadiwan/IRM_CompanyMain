@@ -121,7 +121,7 @@ class ApplicationPolicy
         true
       else
         model_with_access_rights = get_model_with_access_rights(owner:)
-        return false unless model_with_access_rights.present?
+        return false if model_with_access_rights.blank?
 
         # Live DB lookup — indexed on (owner_type, owner_id, user_id)
         ar = AccessRight.where(
@@ -161,7 +161,7 @@ class ApplicationPolicy
        !belongs_to_entity?(user, record)
 
       model_with_access_rights = get_model_with_access_rights(owner:)
-      return false unless model_with_access_rights.present?
+      return false if model_with_access_rights.blank?
 
       # Find ARs for this user via their approved investor accesses.
       # access_to_category is never stored in production (the UI always expands category → per-investor ARs),
@@ -171,7 +171,7 @@ class ApplicationPolicy
 
       ar = AccessRight.where(
         owner_type: model_with_access_rights.class.name,
-        owner_id:   model_with_access_rights.id,
+        owner_id: model_with_access_rights.id,
         access_to_investor_id: approved_investor_ids
       ).first
 
@@ -196,7 +196,7 @@ class ApplicationPolicy
   def permissioned_investor_advisor?(metadata = "none", owner: nil, as_entity_id: nil)
     if user.has_cached_role?(:investor_advisor)
       model_with_access_rights = get_model_with_access_rights(owner:)
-      return false unless model_with_access_rights.present?
+      return false if model_with_access_rights.blank?
 
       # Live DB lookup — indexed on (owner_type, owner_id, user_id)
       entity_id = as_entity_id.presence || user.entity_id
@@ -237,7 +237,7 @@ class ApplicationPolicy
   def permissioned_rm?(metadata = "none", owner: nil)
     if user.has_cached_role?(:rm)
       model_with_access_rights = get_model_with_access_rights(owner:)
-      return false unless model_with_access_rights.present?
+      return false if model_with_access_rights.blank?
 
       # Live DB lookup — RM ARs can be granted three ways:
       #   1. access_to_category = 'RM'  (categorical grant to all RMs)
@@ -247,17 +247,17 @@ class ApplicationPolicy
       base_scope = AccessRight.where(
         entity_id: model_with_access_rights.entity_id,
         owner_type: model_with_access_rights.class.name,
-        owner_id:   model_with_access_rights.id
+        owner_id: model_with_access_rights.id
       )
       approved_investor_ids = InvestorAccess.approved.where(user_id: user.id).pluck(:investor_id)
       ar = if approved_investor_ids.any?
-        base_scope.where(
-          "access_to_category = 'RM' OR user_id = ? OR access_to_investor_id IN (?)",
-          user.id, approved_investor_ids
-        ).first
-      else
-        base_scope.where("access_to_category = 'RM' OR user_id = ?", user.id).first
-      end
+             base_scope.where(
+               "access_to_category = 'RM' OR user_id = ? OR access_to_investor_id IN (?)",
+               user.id, approved_investor_ids
+             ).first
+           else
+             base_scope.where("access_to_category = 'RM' OR user_id = ?", user.id).first
+           end
 
       return false unless ar
 

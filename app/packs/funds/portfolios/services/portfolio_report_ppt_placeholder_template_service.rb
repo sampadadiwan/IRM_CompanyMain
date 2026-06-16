@@ -24,27 +24,27 @@ require 'zip'
 class PortfolioReportPptPlaceholderTemplateService
   # ── Canvas ───────────────────────────────────────────────────────────────────
   SLIDE_W = 12_192_000
-  SLIDE_H  =  6_858_000
-  MARGIN   =    685_800
-  CONTENT_W = SLIDE_W - MARGIN * 2
+  SLIDE_H = 6_858_000
+  MARGIN = 685_800
+  CONTENT_W = SLIDE_W - (MARGIN * 2)
 
   # ── Emerald brand palette ────────────────────────────────────────────────────
-  EMERALD_900 = "064E3B"
-  EMERALD_800 = "065F46"
-  EMERALD_700 = "047857"
-  EMERALD_500 = "10B981"
-  EMERALD_100 = "D1FAE5"
-  EMERALD_50  = "ECFDF5"
-  TEAL_700    = "0F766E"
-  TEAL_100    = "CCFBF1"
-  AMBER_700   = "B45309"
-  AMBER_100   = "FEF3C7"
-  GOLD        = "D4A847"
-  WHITE       = "FFFFFF"
-  SLATE_800   = "1E293B"
-  SLATE_700   = "334155"
-  SLATE_400   = "94A3B8"
-  SLATE_100   = "F1F5F9"
+  EMERALD_900 = "064E3B".freeze
+  EMERALD_800 = "065F46".freeze
+  EMERALD_700 = "047857".freeze
+  EMERALD_500 = "10B981".freeze
+  EMERALD_100 = "D1FAE5".freeze
+  EMERALD_50  = "ECFDF5".freeze
+  TEAL_700    = "0F766E".freeze
+  TEAL_100    = "CCFBF1".freeze
+  AMBER_700   = "B45309".freeze
+  AMBER_100   = "FEF3C7".freeze
+  GOLD        = "D4A847".freeze
+  WHITE       = "FFFFFF".freeze
+  SLATE_800   = "1E293B".freeze
+  SLATE_700   = "334155".freeze
+  SLATE_400   = "94A3B8".freeze
+  SLATE_100   = "F1F5F9".freeze
 
   # Section accent colours — one per section slide
   SECTION_ACCENTS = [EMERALD_700, TEAL_700, AMBER_700, EMERALD_800].freeze
@@ -59,16 +59,16 @@ class PortfolioReportPptPlaceholderTemplateService
   # Layout constants (EMU)
   STRIPE_H    =   114_300   # top accent stripe
   TITLE_BG_H  =   971_550   # title band
-  RULE_Y      = STRIPE_H + TITLE_BG_H           # 1_085_850
-  RULE_H      =    28_575
-  CONTENT_Y   = RULE_Y + RULE_H + 114_300       # 1_228_725
-  FOOTER_H    =   285_750
-  FOOTER_Y    = SLIDE_H - FOOTER_H              # 6_572_250
-  CONTENT_H   = FOOTER_Y - CONTENT_Y - 57_150  # ~5_286_375
+  RULE_Y      = STRIPE_H + TITLE_BG_H # 1_085_850
+  RULE_H = 28_575
+  CONTENT_Y = RULE_Y + RULE_H + 114_300 # 1_228_725
+  FOOTER_H = 285_750
+  FOOTER_Y    = SLIDE_H - FOOTER_H # 6_572_250
+  CONTENT_H   = FOOTER_Y - CONTENT_Y - 57_150 # ~5_286_375
 
   # Cover layout
-  PANEL_W     = SLIDE_W / 3                     # left brand panel ≈ 4_064_000
-  PANEL_GAP   =    28_575                       # gold stripe between panels
+  PANEL_W = SLIDE_W / 3 # left brand panel ≈ 4_064_000
+  PANEL_GAP = 28_575 # gold stripe between panels
 
   def initialize(brand_name: "CapHive")
     @brand_name = brand_name
@@ -115,55 +115,55 @@ class PortfolioReportPptPlaceholderTemplateService
 
   def cover_slide
     right_x = PANEL_W + PANEL_GAP
-    right_w = SLIDE_W - right_x - MARGIN / 2
+    right_w = SLIDE_W - right_x - (MARGIN / 2)
 
     slide_xml do
       # Backgrounds
       filled_rect(0, 0, SLIDE_W, SLIDE_H, EMERALD_50) +
-      # Left brand panel — deep emerald
-      filled_rect(0, 0, PANEL_W, SLIDE_H, EMERALD_800) +
-      # Gold separator stripe
-      filled_rect(PANEL_W, 0, PANEL_GAP, SLIDE_H, GOLD) +
-      # Brand name in left panel
-      text_box(e(@brand_name),
-               x: MARGIN / 2, y: SLIDE_H / 2 - 800_000, w: PANEL_W - MARGIN,
-               h: 500_000, size: 1800, bold: true, color: WHITE, align: "l", valign: "t") +
-      text_box(e("Portfolio Report"),
-               x: MARGIN / 2, y: SLIDE_H / 2 - 280_000, w: PANEL_W - MARGIN,
-               h: 342_900, size: 1100, bold: false, color: EMERALD_100, align: "l", valign: "t") +
-      # accent1 colour chip at bottom of left panel
-      filled_rect(MARGIN / 2, SLIDE_H - 600_000, 228_600, 228_600, EMERALD_700) +
-      text_box(e("accent1: ##{EMERALD_700}"),
-               x: MARGIN / 2 + 285_750, y: SLIDE_H - 600_000, w: PANEL_W - MARGIN,
-               h: 228_600, size: 800, bold: false, color: EMERALD_100, align: "l", valign: "ctr") +
+        # Left brand panel — deep emerald
+        filled_rect(0, 0, PANEL_W, SLIDE_H, EMERALD_800) +
+        # Gold separator stripe
+        filled_rect(PANEL_W, 0, PANEL_GAP, SLIDE_H, GOLD) +
+        # Brand name in left panel
+        text_box(e(@brand_name),
+                 x: MARGIN / 2, y: (SLIDE_H / 2) - 800_000, w: PANEL_W - MARGIN,
+                 h: 500_000, size: 1800, bold: true, color: WHITE, align: "l", valign: "t") +
+        text_box(e("Portfolio Report"),
+                 x: MARGIN / 2, y: (SLIDE_H / 2) - 280_000, w: PANEL_W - MARGIN,
+                 h: 342_900, size: 1100, bold: false, color: EMERALD_100, align: "l", valign: "t") +
+        # accent1 colour chip at bottom of left panel
+        filled_rect(MARGIN / 2, SLIDE_H - 600_000, 228_600, 228_600, EMERALD_700) +
+        text_box(e("accent1: ##{EMERALD_700}"),
+                 x: (MARGIN / 2) + 285_750, y: SLIDE_H - 600_000, w: PANEL_W - MARGIN,
+                 h: 228_600, size: 800, bold: false, color: EMERALD_100, align: "l", valign: "ctr") +
 
-      # Right side — placeholder content shapes
-      # Company name — large
-      placeholder_shape(e("[[ company name ]]"),
-               x: right_x + MARGIN / 2, y: 800_000, w: right_w,
-               h: 1_200_000, size: 4400, bold: true, color: EMERALD_900) +
-      # Divider rule
-      filled_rect(right_x + MARGIN / 2, 2_100_000, right_w, 19_050, EMERALD_700) +
-      # Fund / report name
-      placeholder_shape(e("[[ fund name ]]"),
-               x: right_x + MARGIN / 2, y: 2_200_000, w: right_w,
-               h: 600_000, size: 2000, bold: false, color: TEAL_700) +
-      # Period
-      placeholder_shape(e("[[ period ]]"),
-               x: right_x + MARGIN / 2, y: 2_900_000, w: right_w / 2,
-               h: 342_900, size: 1400, bold: false, color: SLATE_700) +
-      # Prepared date — label + placeholder side by side
-      text_box(e("Prepared:"),
-               x: right_x + MARGIN / 2, y: 3_350_000, w: 800_000,
-               h: 285_750, size: 1100, bold: true, color: SLATE_400, align: "l", valign: "ctr") +
-      placeholder_shape(e("[[ prepared date ]]"),
-               x: right_x + MARGIN / 2 + 857_250, y: 3_350_000, w: right_w - 857_250,
-               h: 285_750, size: 1100, bold: false, color: SLATE_700) +
-      # Confidential tag bottom
-      filled_rect(right_x + MARGIN / 2, SLIDE_H - 400_000, 1_371_600, 228_600, AMBER_100) +
-      text_box(e("CONFIDENTIAL"),
-               x: right_x + MARGIN / 2, y: SLIDE_H - 400_000, w: 1_371_600,
-               h: 228_600, size: 900, bold: true, color: AMBER_700, align: "ctr", valign: "ctr")
+        # Right side — placeholder content shapes
+        # Company name — large
+        placeholder_shape(e("[[ company name ]]"),
+                          x: right_x + (MARGIN / 2), y: 800_000, w: right_w,
+                          h: 1_200_000, size: 4400, bold: true, color: EMERALD_900) +
+        # Divider rule
+        filled_rect(right_x + (MARGIN / 2), 2_100_000, right_w, 19_050, EMERALD_700) +
+        # Fund / report name
+        placeholder_shape(e("[[ fund name ]]"),
+                          x: right_x + (MARGIN / 2), y: 2_200_000, w: right_w,
+                          h: 600_000, size: 2000, bold: false, color: TEAL_700) +
+        # Period
+        placeholder_shape(e("[[ period ]]"),
+                          x: right_x + (MARGIN / 2), y: 2_900_000, w: right_w / 2,
+                          h: 342_900, size: 1400, bold: false, color: SLATE_700) +
+        # Prepared date — label + placeholder side by side
+        text_box(e("Prepared:"),
+                 x: right_x + (MARGIN / 2), y: 3_350_000, w: 800_000,
+                 h: 285_750, size: 1100, bold: true, color: SLATE_400, align: "l", valign: "ctr") +
+        placeholder_shape(e("[[ prepared date ]]"),
+                          x: right_x + (MARGIN / 2) + 857_250, y: 3_350_000, w: right_w - 857_250,
+                          h: 285_750, size: 1100, bold: false, color: SLATE_700) +
+        # Confidential tag bottom
+        filled_rect(right_x + (MARGIN / 2), SLIDE_H - 400_000, 1_371_600, 228_600, AMBER_100) +
+        text_box(e("CONFIDENTIAL"),
+                 x: right_x + (MARGIN / 2), y: SLIDE_H - 400_000, w: 1_371_600,
+                 h: 228_600, size: 900, bold: true, color: AMBER_700, align: "ctr", valign: "ctr")
     end
   end
 
@@ -174,27 +174,27 @@ class PortfolioReportPptPlaceholderTemplateService
 
     slide_xml do
       content_chrome(e("Contents"), EMERALD_700) +
-      numbered_list(items.map { |s| e(s) },
-                    x: MARGIN, y: CONTENT_Y, w: CONTENT_W * 55 / 100, h: CONTENT_H,
-                    size: 1900, color: SLATE_700, accent: EMERALD_700) +
-      # Right panel — design notes box
-      filled_rect(MARGIN + CONTENT_W * 57 / 100, CONTENT_Y,
-                  CONTENT_W * 43 / 100, CONTENT_H, EMERALD_50) +
-      filled_rect(MARGIN + CONTENT_W * 57 / 100, CONTENT_Y,
-                  9_525, CONTENT_H, EMERALD_700) +
-      text_box(e("How to use this template"),
-               x: MARGIN + CONTENT_W * 57 / 100 + 57_150, y: CONTENT_Y + 114_300,
-               w: CONTENT_W * 43 / 100 - 171_450, h: 400_000,
-               size: 1300, bold: true, color: EMERALD_900, align: "l", valign: "t") +
-      text_box(e("• Each [[ marker ]] shape is replaced with live data on export\n" \
-                 "• Rename [[ section: Name ]] to match your section names\n" \
-                 "• [[ kpi table ]] expands to fit the shape you drew\n" \
-                 "• All other shapes are preserved exactly as designed\n" \
-                 "• Edit in PowerPoint then re-upload as your style reference"),
-               x: MARGIN + CONTENT_W * 57 / 100 + 57_150, y: CONTENT_Y + 570_000,
-               w: CONTENT_W * 43 / 100 - 171_450, h: CONTENT_H - 700_000,
-               size: 1100, bold: false, color: SLATE_700, align: "l", valign: "t") +
-      slide_footer
+        numbered_list(items.map { |s| e(s) },
+                      x: MARGIN, y: CONTENT_Y, w: CONTENT_W * 55 / 100, h: CONTENT_H,
+                      size: 1900, color: SLATE_700, accent: EMERALD_700) +
+        # Right panel — design notes box
+        filled_rect(MARGIN + (CONTENT_W * 57 / 100), CONTENT_Y,
+                    CONTENT_W * 43 / 100, CONTENT_H, EMERALD_50) +
+        filled_rect(MARGIN + (CONTENT_W * 57 / 100), CONTENT_Y,
+                    9_525, CONTENT_H, EMERALD_700) +
+        text_box(e("How to use this template"),
+                 x: MARGIN + (CONTENT_W * 57 / 100) + 57_150, y: CONTENT_Y + 114_300,
+                 w: (CONTENT_W * 43 / 100) - 171_450, h: 400_000,
+                 size: 1300, bold: true, color: EMERALD_900, align: "l", valign: "t") +
+        text_box(e("• Each [[ marker ]] shape is replaced with live data on export\n" \
+                   "• Rename [[ section: Name ]] to match your section names\n" \
+                   "• [[ kpi table ]] expands to fit the shape you drew\n" \
+                   "• All other shapes are preserved exactly as designed\n" \
+                   "• Edit in PowerPoint then re-upload as your style reference"),
+                 x: MARGIN + (CONTENT_W * 57 / 100) + 57_150, y: CONTENT_Y + 570_000,
+                 w: (CONTENT_W * 43 / 100) - 171_450, h: CONTENT_H - 700_000,
+                 size: 1100, bold: false, color: SLATE_700, align: "l", valign: "t") +
+        slide_footer
     end
   end
 
@@ -208,17 +208,17 @@ class PortfolioReportPptPlaceholderTemplateService
     slide_xml do
       content_chrome(e("Key Performance Indicators"), TEAL_700) +
 
-      # Three "stat chip" boxes — decorative, user edits these in PowerPoint
-      stat_chip("Revenue",     "e.g. €26.3m", EMERALD_700, x: MARGIN,                  y: stat_y, w: stat_w) +
-      stat_chip("EBITDA Mgn",  "e.g. 18.3%",  TEAL_700,    x: MARGIN + stat_w + 114_300, y: stat_y, w: stat_w) +
-      stat_chip("Headcount",   "e.g. 138",    AMBER_700,   x: MARGIN + (stat_w + 114_300) * 2, y: stat_y, w: stat_w) +
+        # Three "stat chip" boxes — decorative, user edits these in PowerPoint
+        stat_chip("Revenue",     "e.g. €26.3m", EMERALD_700, x: MARGIN, y: stat_y, w: stat_w) +
+        stat_chip("EBITDA Mgn",  "e.g. 18.3%",  TEAL_700,    x: MARGIN + stat_w + 114_300, y: stat_y, w: stat_w) +
+        stat_chip("Headcount",   "e.g. 138",    AMBER_700,   x: MARGIN + ((stat_w + 114_300) * 2), y: stat_y, w: stat_w) +
 
-      # Large KPI table placeholder — user can resize this in PowerPoint
-      placeholder_shape(e("[[ kpi table ]]"),
-               x: MARGIN, y: stat_y + 685_800 + 114_300,
-               w: CONTENT_W, h: CONTENT_H - 685_800 - 228_600,
-               size: 1600, bold: false, color: TEAL_700) +
-      slide_footer
+        # Large KPI table placeholder — user can resize this in PowerPoint
+        placeholder_shape(e("[[ kpi table ]]"),
+                          x: MARGIN, y: stat_y + 685_800 + 114_300,
+                          w: CONTENT_W, h: CONTENT_H - 685_800 - 228_600,
+                          size: 1600, bold: false, color: TEAL_700) +
+        slide_footer
     end
   end
 
@@ -230,25 +230,25 @@ class PortfolioReportPptPlaceholderTemplateService
 
     slide_xml do
       content_chrome(e(section_name), accent) +
-      # Left column — main narrative placeholder (65% width)
-      placeholder_shape(e("[[ section: #{section_name} ]]"),
-               x: MARGIN, y: CONTENT_Y,
-               w: CONTENT_W * 63 / 100, h: CONTENT_H,
-               size: 1600, bold: false, color: SLATE_700) +
-      # Right column — "Key Takeaway" callout panel (35% width)
-      filled_rect(MARGIN + CONTENT_W * 65 / 100, CONTENT_Y,
-                  CONTENT_W * 35 / 100, CONTENT_H, bg_color) +
-      filled_rect(MARGIN + CONTENT_W * 65 / 100, CONTENT_Y,
-                  9_525, CONTENT_H, accent) +
-      text_box(e("Key Takeaway"),
-               x: MARGIN + CONTENT_W * 65 / 100 + 57_150, y: CONTENT_Y + 114_300,
-               w: CONTENT_W * 35 / 100 - 171_450, h: 342_900,
-               size: 1300, bold: true, color: accent, align: "l", valign: "t") +
-      text_box(e("Edit this panel in PowerPoint to add a key stat, quote, or summary for #{section_name}."),
-               x: MARGIN + CONTENT_W * 65 / 100 + 57_150, y: CONTENT_Y + 514_350,
-               w: CONTENT_W * 35 / 100 - 171_450, h: CONTENT_H - 628_650,
-               size: 1100, bold: false, color: SLATE_400, align: "l", valign: "t") +
-      slide_footer
+        # Left column — main narrative placeholder (65% width)
+        placeholder_shape(e("[[ section: #{section_name} ]]"),
+                          x: MARGIN, y: CONTENT_Y,
+                          w: CONTENT_W * 63 / 100, h: CONTENT_H,
+                          size: 1600, bold: false, color: SLATE_700) +
+        # Right column — "Key Takeaway" callout panel (35% width)
+        filled_rect(MARGIN + (CONTENT_W * 65 / 100), CONTENT_Y,
+                    CONTENT_W * 35 / 100, CONTENT_H, bg_color) +
+        filled_rect(MARGIN + (CONTENT_W * 65 / 100), CONTENT_Y,
+                    9_525, CONTENT_H, accent) +
+        text_box(e("Key Takeaway"),
+                 x: MARGIN + (CONTENT_W * 65 / 100) + 57_150, y: CONTENT_Y + 114_300,
+                 w: (CONTENT_W * 35 / 100) - 171_450, h: 342_900,
+                 size: 1300, bold: true, color: accent, align: "l", valign: "t") +
+        text_box(e("Edit this panel in PowerPoint to add a key stat, quote, or summary for #{section_name}."),
+                 x: MARGIN + (CONTENT_W * 65 / 100) + 57_150, y: CONTENT_Y + 514_350,
+                 w: (CONTENT_W * 35 / 100) - 171_450, h: CONTENT_H - 628_650,
+                 size: 1100, bold: false, color: SLATE_400, align: "l", valign: "t") +
+        slide_footer
     end
   end
 
@@ -257,19 +257,19 @@ class PortfolioReportPptPlaceholderTemplateService
   def closing_slide
     slide_xml do
       filled_rect(0, 0, SLIDE_W, SLIDE_H, EMERALD_800) +
-      filled_rect(0, 0, SLIDE_W, 114_300, GOLD) +
-      filled_rect(0, SLIDE_H - 114_300, SLIDE_W, 114_300, EMERALD_900) +
-      text_box(e("Appendix & Disclosures"),
-               x: MARGIN, y: SLIDE_H / 2 - 700_000, w: CONTENT_W, h: 685_800,
-               size: 4000, bold: true, color: WHITE, align: "ctr", valign: "t") +
-      text_box(e("This document is confidential and prepared solely for the intended recipient. " \
-                 "All financial information is unaudited and subject to change. " \
-                 "Past performance is not a reliable indicator of future results."),
-               x: MARGIN, y: SLIDE_H / 2 + 114_300, w: CONTENT_W, h: 685_800,
-               size: 1200, bold: false, color: EMERALD_100, align: "ctr", valign: "t") +
-      text_box(e("#{@brand_name}  ·  Generated #{Date.today.strftime('%d %b %Y')}"),
-               x: MARGIN, y: SLIDE_H - 342_900, w: CONTENT_W, h: 228_600,
-               size: 900, bold: false, color: EMERALD_700, align: "ctr", valign: "ctr")
+        filled_rect(0, 0, SLIDE_W, 114_300, GOLD) +
+        filled_rect(0, SLIDE_H - 114_300, SLIDE_W, 114_300, EMERALD_900) +
+        text_box(e("Appendix & Disclosures"),
+                 x: MARGIN, y: (SLIDE_H / 2) - 700_000, w: CONTENT_W, h: 685_800,
+                 size: 4000, bold: true, color: WHITE, align: "ctr", valign: "t") +
+        text_box(e("This document is confidential and prepared solely for the intended recipient. " \
+                   "All financial information is unaudited and subject to change. " \
+                   "Past performance is not a reliable indicator of future results."),
+                 x: MARGIN, y: (SLIDE_H / 2) + 114_300, w: CONTENT_W, h: 685_800,
+                 size: 1200, bold: false, color: EMERALD_100, align: "ctr", valign: "t") +
+        text_box(e("#{@brand_name}  ·  Generated #{Time.zone.today.strftime('%d %b %Y')}"),
+                 x: MARGIN, y: SLIDE_H - 342_900, w: CONTENT_W, h: 228_600,
+                 size: 900, bold: false, color: EMERALD_700, align: "ctr", valign: "ctr")
     end
   end
 
@@ -277,26 +277,26 @@ class PortfolioReportPptPlaceholderTemplateService
 
   def content_chrome(title, accent)
     filled_rect(0, 0, SLIDE_W, SLIDE_H, WHITE) +
-    filled_rect(0, 0, SLIDE_W, STRIPE_H, accent) +
-    filled_rect(0, STRIPE_H, SLIDE_W, TITLE_BG_H, SLATE_100) +
-    text_box(title,
-             x: MARGIN, y: STRIPE_H, w: CONTENT_W * 75 / 100, h: TITLE_BG_H,
-             size: 2800, bold: true, color: SLATE_800, align: "l", valign: "ctr") +
-    # Brand badge top-right
-    filled_rect(SLIDE_W - 400_000, 0, 400_000, STRIPE_H, EMERALD_800) +
-    text_box(e(@brand_name),
-             x: SLIDE_W - 380_000, y: 0, w: 360_000, h: STRIPE_H,
-             size: 700, bold: true, color: WHITE, align: "ctr", valign: "ctr") +
-    filled_rect(MARGIN, RULE_Y, CONTENT_W, RULE_H, EMERALD_100)
+      filled_rect(0, 0, SLIDE_W, STRIPE_H, accent) +
+      filled_rect(0, STRIPE_H, SLIDE_W, TITLE_BG_H, SLATE_100) +
+      text_box(title,
+               x: MARGIN, y: STRIPE_H, w: CONTENT_W * 75 / 100, h: TITLE_BG_H,
+               size: 2800, bold: true, color: SLATE_800, align: "l", valign: "ctr") +
+      # Brand badge top-right
+      filled_rect(SLIDE_W - 400_000, 0, 400_000, STRIPE_H, EMERALD_800) +
+      text_box(e(@brand_name),
+               x: SLIDE_W - 380_000, y: 0, w: 360_000, h: STRIPE_H,
+               size: 700, bold: true, color: WHITE, align: "ctr", valign: "ctr") +
+      filled_rect(MARGIN, RULE_Y, CONTENT_W, RULE_H, EMERALD_100)
   end
 
   def slide_footer
     text_box(e("CONFIDENTIAL  ·  #{@brand_name}"),
              x: MARGIN, y: FOOTER_Y + 57_150, w: CONTENT_W / 2, h: FOOTER_H,
              size: 800, bold: false, color: SLATE_400, align: "l", valign: "ctr") +
-    text_box(e(Date.today.strftime('%d %b %Y')),
-             x: MARGIN + CONTENT_W / 2, y: FOOTER_Y + 57_150, w: CONTENT_W / 2, h: FOOTER_H,
-             size: 800, bold: false, color: SLATE_400, align: "r", valign: "ctr")
+      text_box(e(Time.zone.today.strftime('%d %b %Y')),
+               x: MARGIN + (CONTENT_W / 2), y: FOOTER_Y + 57_150, w: CONTENT_W / 2, h: FOOTER_H,
+               size: 800, bold: false, color: SLATE_400, align: "r", valign: "ctr")
   end
 
   # ── Shape primitives ──────────────────────────────────────────────────────────
@@ -393,7 +393,7 @@ class PortfolioReportPptPlaceholderTemplateService
   def numbered_list(items, x:, y:, w:, h:, size: 1900, color: SLATE_700, accent: EMERALD_700)
     id    = @shape_id += 1
     paras = items.each_with_index.map do |item, i|
-      spc = i > 0 ? "<a:spcBef><a:spcPts val=\"280\"/></a:spcBef>" : ""
+      spc = i.positive? ? "<a:spcBef><a:spcPts val=\"280\"/></a:spcBef>" : ""
       <<~PARA
         <a:p>
           <a:pPr marL="457200" indent="-457200">#{spc}</a:pPr>
@@ -454,7 +454,7 @@ class PortfolioReportPptPlaceholderTemplateService
           <p:cNvSpPr txBox="1"/><p:nvPr/>
         </p:nvSpPr>
         <p:spPr>
-          <a:xfrm><a:off x="#{x}" y="#{y + 57_150}"/><a:ext cx="#{w}" cy="#{285_750}"/></a:xfrm>
+          <a:xfrm><a:off x="#{x}" y="#{y + 57_150}"/><a:ext cx="#{w}" cy="285750"/></a:xfrm>
           <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
           <a:noFill/><a:ln><a:noFill/></a:ln>
         </p:spPr>
@@ -476,7 +476,7 @@ class PortfolioReportPptPlaceholderTemplateService
           <p:cNvSpPr txBox="1"/><p:nvPr/>
         </p:nvSpPr>
         <p:spPr>
-          <a:xfrm><a:off x="#{x}" y="#{y + 342_900}"/><a:ext cx="#{w}" cy="#{228_600}"/></a:xfrm>
+          <a:xfrm><a:off x="#{x}" y="#{y + 342_900}"/><a:ext cx="#{w}" cy="228600"/></a:xfrm>
           <a:prstGeom prst="rect"><a:avLst/></a:prstGeom>
           <a:noFill/><a:ln><a:noFill/></a:ln>
         </p:spPr>
@@ -518,7 +518,7 @@ class PortfolioReportPptPlaceholderTemplateService
               <p:cNvGrpSpPr><a:grpSpLocks noGrp="1"/></p:cNvGrpSpPr>
               <p:nvPr/>
             </p:nvGrpSpPr>
-            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
             #{content}
           </p:spTree>
         </p:cSld>
@@ -529,10 +529,10 @@ class PortfolioReportPptPlaceholderTemplateService
   # ── PPTX structural files ─────────────────────────────────────────────────────
 
   def write_content_types(zip, n)
-    entries = (1..n).map { |i|
+    entries = (1..n).map do |i|
       "<Override PartName=\"/ppt/slides/slide#{i}.xml\" " \
-      "ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
-    }.join("\n    ")
+        "ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
+    end.join("\n    ")
     zip.put_next_entry("[Content_Types].xml")
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -581,11 +581,11 @@ class PortfolioReportPptPlaceholderTemplateService
   end
 
   def write_presentation_rels(zip, n)
-    entries = (1..n).map { |i|
+    entries = (1..n).map do |i|
       "<Relationship Id=\"rId#{i + 2}\" " \
-      "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" " \
-      "Target=\"slides/slide#{i}.xml\"/>"
-    }.join
+        "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" " \
+        "Target=\"slides/slide#{i}.xml\"/>"
+    end.join
     zip.put_next_entry("ppt/_rels/presentation.xml.rels")
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -659,9 +659,10 @@ class PortfolioReportPptPlaceholderTemplateService
           <p:bg><p:bgPr><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></p:bgPr></p:bg>
           <p:spTree>
             <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
           </p:spTree>
         </p:cSld>
+        <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
         <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>
         <p:txStyles>
           <p:titleStyle><a:lstStyle/></p:titleStyle>
@@ -694,7 +695,7 @@ class PortfolioReportPptPlaceholderTemplateService
         <p:cSld name="Blank">
           <p:spTree>
             <p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>
-            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
           </p:spTree>
         </p:cSld>
       </p:sldLayout>

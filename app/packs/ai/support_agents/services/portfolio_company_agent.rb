@@ -48,7 +48,7 @@ class PortfolioCompanyAgent < SupportAgentService
   # @param user_id [Integer, nil] nil for scheduled runs
   # @param entity_id [Integer]
   # @param execution_mode [Symbol] :adhoc_batch or :scheduled
-  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch) # rubocop:disable Lint/UnusedMethodArgument
+  def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch)
     support_agent = SupportAgent.find(support_agent_id)
 
     # Preload commonly used associations to avoid N+1 queries
@@ -60,28 +60,26 @@ class PortfolioCompanyAgent < SupportAgentService
     # Batch mode always runs with_steps=false (no step-by-step UI for batch)
     # Sequential processing (no threading) per user requirement
     targets.to_a.each do |target|
-      begin
-        result = support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
-        target_name = target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"
-        # wtf? returns a Trailblazer result object and never raises for step-level failures
-        # (a step returning false routes to the failure track without raising). Inspect
-        # result.failure? so those silent pipeline aborts show up in the errors list.
-        if result.failure?
-          Rails.logger.warn { "PortfolioCompanyAgent.process_batch pipeline failure for Target ID=#{target.id}" }
-          errors << { target_id: target.id, target_name: target_name, error: "Pipeline failure (step returned false)" }
-        else
-          successes << { id: target.id, name: target_name }
-        end
-      rescue StandardError => e
-        Rails.logger.error { "PortfolioCompanyAgent.process_batch error for Target ID=#{target.id}: #{e.message}" }
-        Rails.logger.error { e.backtrace.join("\n") }
-        errors << { target_id: target.id, target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}", error: e.message }
+      result = support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
+      target_name = target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"
+      # wtf? returns a Trailblazer result object and never raises for step-level failures
+      # (a step returning false routes to the failure track without raising). Inspect
+      # result.failure? so those silent pipeline aborts show up in the errors list.
+      if result.failure?
+        Rails.logger.warn { "PortfolioCompanyAgent.process_batch pipeline failure for Target ID=#{target.id}" }
+        errors << { target_id: target.id, target_name: target_name, error: "Pipeline failure (step returned false)" }
+      else
+        successes << { id: target.id, name: target_name }
       end
+    rescue StandardError => e
+      Rails.logger.error { "PortfolioCompanyAgent.process_batch error for Target ID=#{target.id}: #{e.message}" }
+      Rails.logger.error { e.backtrace.join("\n") }
+      errors << { target_id: target.id, target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}", error: e.message }
     end
 
     # Enqueue a single AgentChartJob for all processed portfolio companies
     if successes.any?
-      processed_ids = successes.map { |s| s[:id] }
+      processed_ids = successes.pluck(:id)
       AgentChartJob.perform_later(user_id, portfolio_company_ids: processed_ids.uniq, execution_mode: execution_mode)
     end
 
@@ -207,8 +205,8 @@ class PortfolioCompanyAgent < SupportAgentService
 
     # Avoid double-sending on the same calendar day
     last_report = SupportAgentReport
-      .where(owner: portfolio_company, support_agent: support_agent)
-      .order(created_at: :desc).first
+                  .where(owner: portfolio_company, support_agent: support_agent)
+                  .order(created_at: :desc).first
     last_sent = last_report&.json_fields&.dig("last_kpi_reminder_sent_at")
     if last_sent && Date.parse(last_sent) >= Time.zone.today
       ctx[:issues][:kpi_issues] << {
@@ -280,7 +278,7 @@ class PortfolioCompanyAgent < SupportAgentService
   #
   # Called for both single-company (with steps) and batch (adhoc/scheduled) runs.
   # Batch coordination (looping, chart job, notifications) is handled by process_batch.
-  def generate_progress_reports(ctx, portfolio_company: nil, support_agent:, **)
+  def generate_progress_reports(ctx, support_agent:, portfolio_company: nil, **)
     super(ctx, model: portfolio_company, support_agent: support_agent)
 
     # Persist the reminder timestamp directly into json_fields AFTER super saves the

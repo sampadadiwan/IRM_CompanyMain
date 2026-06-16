@@ -100,7 +100,7 @@ class PortfolioScenariosController < ApplicationController
   def preload_scenario_investments
     ActiveRecord::Associations::Preloader.new(
       records: [@portfolio_scenario],
-      associations: { scenario_investments: [:fund, :portfolio_company, :user] }
+      associations: { scenario_investments: %i[fund portfolio_company user] }
     ).call
   end
 

@@ -119,7 +119,7 @@ class ApplicationRecord < ActiveRecord::Base
   end
 
   def self.run_all_jobs
-    Sidekiq::Queue.all.each do |queue|
+    Sidekiq::Queue.find_each do |queue|
       queue.each { |job| job.delete && Object.const_get(job.klass).new.perform(*job.args) }
     end
   end

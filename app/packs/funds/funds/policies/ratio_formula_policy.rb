@@ -26,4 +26,8 @@ class RatioFormulaPolicy < FundBasePolicy
   def destroy?
     update?
   end
+
+  def import?
+    user.enable_funds && permissioned_employee?(:create)
+  end
 end

@@ -10,9 +10,9 @@ module FormTypeHelper
     # Always resolve to the enum name string so where(step:) works consistently across Rails versions.
     # In Rails 7.1+ passing an integer to where() on an enum column is unreliable; strings are safe.
     step_name = if step.is_a?(Integer)
-                  FormCustomField.steps.key(step)   # e.g. 4 → "four", 8 → "eight"
+                  FormCustomField.steps.key(step) # e.g. 4 → "four", 8 → "eight"
                 elsif step.present?
-                  step.to_s                          # :one → "one", "end" → "end"
+                  step.to_s # :one → "one", "end" → "end"
                 end
 
     fields = custom_fields.presence || model.form_type.form_custom_fields.includes(:rich_text_info).visible.not_regulatory
@@ -61,7 +61,7 @@ module FormTypeHelper
     custom_calcs = form_type ? form_type.form_custom_fields.calculations : []
     custom_calc_headers = form_type ? form_type.form_custom_fields.calculations.collect(&:human_label) : []
     # hash of field_name => field_type, used by callers that need type-aware value formatting (e.g. DateField → Date object)
-    custom_field_types = custom_fields.each_with_object({}) { |f, h| h[f.name] = f.field_type }
+    custom_field_types = custom_fields.to_h { |f| [f.name, f.field_type] }
 
     [form_type, custom_field_names, custom_headers, custom_calcs, custom_calc_headers, custom_field_types]
   end
@@ -73,7 +73,11 @@ module FormTypeHelper
     if form_type && model&.properties
       model.properties.values_at(*custom_field_names).each_with_index.map do |v, i|
         if field_types[custom_field_names[i]] == "DateField" && v.present?
-          Date.parse(v.to_s) rescue v.to_s
+          begin
+            Date.parse(v.to_s)
+          rescue StandardError
+            v.to_s
+          end
         else
           v.to_s
         end

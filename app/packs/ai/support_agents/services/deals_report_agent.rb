@@ -19,11 +19,11 @@
 # @see DealsReportRenderer
 class DealsReportAgent < SupportAgentService
   STEP_LABELS = {
-    initialize_agent:       "Initialize",
-    load_deals:             "Load Deals",
+    initialize_agent: "Initialize",
+    load_deals: "Load Deals",
     calculate_deal_summary: "Calculate Summaries",
-    generate_deal_reports:  "Generate Reports",
-    send_report_email:      "Send Email",
+    generate_deal_reports: "Generate Reports",
+    send_report_email: "Send Email",
     generate_progress_reports: "Save Report"
   }.freeze
 
@@ -48,7 +48,7 @@ class DealsReportAgent < SupportAgentService
     @config            = @support_agent.json_fields || {}
     @report_recipients = (@config["report_recipients"] || "").split(",").map(&:strip).compact_blank
     @stale_days        = (@config["stale_days"] || 30).to_i
-    @deal_ids          = (@config["deal_ids"] || "").split(",").map(&:strip).map(&:to_i).compact_blank
+    @deal_ids          = (@config["deal_ids"] || "").split(",").map { |x| x.strip.to_i }.compact_blank
 
     # Content flags (default all on for backwards compatibility)
     @include_greeting      = @config.fetch("include_greeting",      "true") == "true"
@@ -85,9 +85,11 @@ class DealsReportAgent < SupportAgentService
       return true
     end
 
-    mark_step_success(report, :load_deals,
-                      message: "#{ctx[:deals].size} deal(s) loaded",
-                      count: ctx[:deals].size) if report
+    if report
+      mark_step_success(report, :load_deals,
+                        message: "#{ctx[:deals].size} deal(s) loaded",
+                        count: ctx[:deals].size)
+    end
     true
   end
 
@@ -99,9 +101,11 @@ class DealsReportAgent < SupportAgentService
 
     ctx[:deal_results] = ctx[:deals].map { |deal| summarize_deal(deal) }
 
-    mark_step_success(report, :calculate_deal_summary,
-                      message: "Summarized #{ctx[:deal_results].size} deal(s)",
-                      count: ctx[:deal_results].size) if report
+    if report
+      mark_step_success(report, :calculate_deal_summary,
+                        message: "Summarized #{ctx[:deal_results].size} deal(s)",
+                        count: ctx[:deal_results].size)
+    end
     true
   end
 
@@ -131,9 +135,11 @@ class DealsReportAgent < SupportAgentService
       end
     end
 
-    mark_step_success(report, :generate_deal_reports,
-                      message: "Saved #{ctx[:deal_results].size} deal report(s)",
-                      count: ctx[:deal_results].size) if report
+    if report
+      mark_step_success(report, :generate_deal_reports,
+                        message: "Saved #{ctx[:deal_results].size} deal report(s)",
+                        count: ctx[:deal_results].size)
+    end
     true
   end
 
@@ -144,25 +150,29 @@ class DealsReportAgent < SupportAgentService
     mark_step_running(report, :send_report_email) if report
 
     if @report_recipients.empty?
-      mark_step_skipped(report, :send_report_email,
-                        message: "No report recipients configured") if report
+      if report
+        mark_step_skipped(report, :send_report_email,
+                          message: "No report recipients configured")
+      end
       return true
     end
 
     DealsReportMailer.with(
-      support_agent_id:      @support_agent.id,
-      deal_results:          ctx[:deal_results],
-      recipients:            @report_recipients,
-      include_greeting:      @include_greeting,
-      include_updates:       @include_updates,
-      include_tasks_due:     @include_tasks_due,
+      support_agent_id: @support_agent.id,
+      deal_results: ctx[:deal_results],
+      recipients: @report_recipients,
+      include_greeting: @include_greeting,
+      include_updates: @include_updates,
+      include_tasks_due: @include_tasks_due,
       include_tasks_overdue: @include_tasks_overdue,
-      include_stale_items:   @include_stale_items
+      include_stale_items: @include_stale_items
     ).send_report.deliver_later
 
-    mark_step_success(report, :send_report_email,
-                      message: "Queued for #{@report_recipients.size} recipient(s)",
-                      count: @report_recipients.size) if report
+    if report
+      mark_step_success(report, :send_report_email,
+                        message: "Queued for #{@report_recipients.size} recipient(s)",
+                        count: @report_recipients.size)
+    end
     true
   end
 
@@ -216,34 +226,34 @@ class DealsReportAgent < SupportAgentService
     # Top investors by amount
     top_investors = active.sort_by { |di| -di.total_amount_cents.to_i }.first(10).map do |di|
       {
-        investor_name:   di.investor_name,
-        status:          di.status,
-        tier:            di.tier,
+        investor_name: di.investor_name,
+        status: di.status,
+        tier: di.tier,
         total_amount_cents: di.total_amount_cents.to_i,
-        current_step:    di.deal_activity&.title
+        current_step: di.deal_activity&.title
       }
     end
 
     {
-      deal_id:          deal.id,
-      deal_name:        deal.name,
-      currency:         deal.currency,
-      deal_status:      deal_status,
-      target_cents:     target_cents,
-      committed_cents:  committed_cents,
-      pending_cents:    pending_cents,
-      declined_cents:   declined_cents,
-      remaining_cents:  remaining_cents,
-      fill_rate:        fill_rate,
-      total_investors:  investors.size,
-      active_count:     active.size,
-      pending_count:    pending.size,
-      declined_count:   declined.size,
-      stale:            stale,
-      stale_days:       stale_days,
+      deal_id: deal.id,
+      deal_name: deal.name,
+      currency: deal.currency,
+      deal_status: deal_status,
+      target_cents: target_cents,
+      committed_cents: committed_cents,
+      pending_cents: pending_cents,
+      declined_cents: declined_cents,
+      remaining_cents: remaining_cents,
+      fill_rate: fill_rate,
+      total_investors: investors.size,
+      active_count: active.size,
+      pending_count: pending.size,
+      declined_count: declined.size,
+      stale: stale,
+      stale_days: stale_days,
       last_activity_at: last_activity_at&.iso8601,
       step_distribution: step_distribution,
-      top_investors:    top_investors
+      top_investors: top_investors
     }
   end
 

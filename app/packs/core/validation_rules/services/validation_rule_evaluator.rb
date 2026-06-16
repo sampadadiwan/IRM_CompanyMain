@@ -11,18 +11,18 @@ class ValidationRuleEvaluator
   # Registry mapping target_model strings to their ContextProvider classes.
   # Add new models here when extending the engine.
   CONTEXT_PROVIDERS = {
-    "Valuation"              => ValuationRuleContextProvider,
-    "AllocationRun"          => AllocationRunRuleContextProvider,
-    "FundRatio"              => FundRatioRuleContextProvider,
-    "FundRatioRunTemplate"   => FundRatioRunTemplateRuleContextProvider,
-    "CapitalCall"            => CapitalCallRuleContextProvider,
-    "CapitalRemittance"      => CapitalRemittanceRuleContextProvider
+    "Valuation" => ValuationRuleContextProvider,
+    "AllocationRun" => AllocationRunRuleContextProvider,
+    "FundRatio" => FundRatioRuleContextProvider,
+    "FundRatioRunTemplate" => FundRatioRunTemplateRuleContextProvider,
+    "CapitalCall" => CapitalCallRuleContextProvider,
+    "CapitalRemittance" => CapitalRemittanceRuleContextProvider
   }.freeze
 
   # What the caller gets back for each fired rule
   Result = Struct.new(:rule, :severity, :message, keyword_init: true) do
     def warning? = severity == "warning"
-    def blocker?  = severity == "blocker"
+    def blocker? = severity == "blocker"
   end
 
   # ── Public interface ─────────────────────────────────────────────────────────
@@ -41,7 +41,7 @@ class ValidationRuleEvaluator
   end
 
   def call
-    active_rules = resolve_active_rules   # [[ValidationRule, ValidationRuleOverride|nil], ...]
+    active_rules = resolve_active_rules # [[ValidationRule, ValidationRuleOverride|nil], ...]
 
     Rails.logger.debug { "[RuleEval] #{active_rules.size} active rule(s) for #{@target_model}" }
 
@@ -51,8 +51,8 @@ class ValidationRuleEvaluator
       params    = resolve_params(rule, override)
       context   = build_context(params)
       triggered = ConditionTreeEvaluator.call(
-        tree:    rule.condition_tree,
-        record:  @record,
+        tree: rule.condition_tree,
+        record: @record,
         context:,
         params:
       )

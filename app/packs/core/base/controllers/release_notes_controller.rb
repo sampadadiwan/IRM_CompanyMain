@@ -4,7 +4,7 @@ class ReleaseNotesController < ApplicationController
   def index
     authorize :release_note, :index?
     skip_policy_scope
-    @notes = Dir.glob(Rails.root.join("docs/release_notes", "*.md")).map do |path|
+    @notes = Rails.root.glob("docs/release_notes/*.md").map do |path|
       id = File.basename(path, ".md")
       title = id.humanize.titleize
       mtime = File.mtime(path)
@@ -15,7 +15,7 @@ class ReleaseNotesController < ApplicationController
       # Fall back to h2 headings, then first prose line
       features = content.scan(/^##\s+(.+)/).flatten.map(&:strip) if features.empty?
       fallback = content.split("\n")
-                        .reject { |l| l.strip.empty? || l.match?(/\A[#]{1,6}\s/) || l.start_with?("---") || l.match?(/\A\*\*Released/) }
+                        .reject { |l| l.strip.empty? || l.match?(/\A\#{1,6}\s/) || l.start_with?("---") || l.start_with?('**Released') }
                         .first
                         .then { |l| l&.gsub(/[*_`#>|]/, '')&.strip }
       description = features.any? ? features.join(" · ").truncate(600) : (fallback&.truncate(600) || "Release notes for #{title}.")

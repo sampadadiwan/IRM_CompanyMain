@@ -6,7 +6,7 @@ class ResendDocumentForEsign < Trailblazer::Operation
   def reset_doc_esignature(_ctx, document:, **)
     result = document.update(sent_for_esign: false, esign_status: "")
 
-    document.e_signatures.update_all(status: "") if result # rubocop:disable Rails/SkipsModelValidations
+    document.e_signatures.update_all(status: "") if result
     result
   end
 

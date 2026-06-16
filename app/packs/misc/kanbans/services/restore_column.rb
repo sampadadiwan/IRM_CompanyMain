@@ -9,7 +9,6 @@ class RestoreColumn < Trailblazer::Operation
     archived_cards.each(&:restore!)
     kanban_column.restore!
     kanban_columns = kanban_column.kanban_board.kanban_columns
-    # rubocop : disable Rails/SkipsModelValidations
     kanban_columns.each_with_index do |column, index|
       column.update_column(:sequence, index + 1)
     end

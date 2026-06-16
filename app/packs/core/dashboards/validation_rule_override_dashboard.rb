@@ -2,17 +2,17 @@ require "administrate/base_dashboard"
 
 class ValidationRuleOverrideDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
-    id:               Field::Number,
+    id: Field::Number,
     # The global default rule being overridden
-    validation_rule:  Field::BelongsTo,
-    entity:           Field::BelongsTo,
-    enabled:          Field::BooleanEmoji,
+    validation_rule: Field::BelongsTo,
+    entity: Field::BelongsTo,
+    enabled: Field::BooleanEmoji,
     # JSON hash of param values that replace the rule's defaults for this entity
-    param_overrides:  JsonField,
+    param_overrides: JsonField,
     message_override: Field::String,
-    created_by:       Field::BelongsTo,
-    created_at:       Field::DateTime,
-    updated_at:       Field::DateTime
+    created_by: Field::BelongsTo,
+    created_at: Field::DateTime,
+    updated_at: Field::DateTime
   }.freeze
 
   COLLECTION_ATTRIBUTES = %i[

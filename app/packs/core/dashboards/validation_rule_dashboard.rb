@@ -2,22 +2,22 @@ require "administrate/base_dashboard"
 
 class ValidationRuleDashboard < Administrate::BaseDashboard
   ATTRIBUTE_TYPES = {
-    id:               Field::Number,
-    entity:           Field::BelongsTo,
-    target_model:     Field::Select.with_options(collection: ValidationRule::TARGET_MODELS),
-    name:             Field::String,
-    description:      Field::Text,
+    id: Field::Number,
+    entity: Field::BelongsTo,
+    target_model: Field::Select.with_options(collection: ValidationRule::TARGET_MODELS),
+    name: Field::String,
+    description: Field::Text,
     # condition_tree and params are raw JSON — display as text for now;
     # a proper condition-builder UI can replace this in a later iteration
-    condition_tree:   JsonField,
-    params:           JsonField,
-    severity:         Field::Select.with_options(collection: ValidationRule::SEVERITIES),
+    condition_tree: JsonField,
+    params: JsonField,
+    severity: Field::Select.with_options(collection: ValidationRule::SEVERITIES),
     message_template: Field::String,
-    enabled:          Field::BooleanEmoji,
-    is_default:       Field::BooleanEmoji,
-    created_by:       Field::BelongsTo,
-    created_at:       Field::DateTime,
-    updated_at:       Field::DateTime
+    enabled: Field::BooleanEmoji,
+    is_default: Field::BooleanEmoji,
+    created_by: Field::BelongsTo,
+    created_at: Field::DateTime,
+    updated_at: Field::DateTime
   }.freeze
 
   COLLECTION_ATTRIBUTES = %i[
@@ -61,19 +61,19 @@ class ValidationRuleDashboard < Administrate::BaseDashboard
 
   COLLECTION_FILTERS = {
     # Filter by model type
-    valuation:      ->(resources) { resources.where(target_model: "Valuation") },
+    valuation: ->(resources) { resources.where(target_model: "Valuation") },
     allocation_run: ->(resources) { resources.where(target_model: "AllocationRun") },
-    fund_ratio:     ->(resources) { resources.where(target_model: "FundRatio") },
+    fund_ratio: ->(resources) { resources.where(target_model: "FundRatio") },
     # Filter by severity
-    warnings:       ->(resources) { resources.where(severity: "warning") },
-    blockers:       ->(resources) { resources.where(severity: "blocker") },
+    warnings: ->(resources) { resources.where(severity: "warning") },
+    blockers: ->(resources) { resources.where(severity: "blocker") },
     # Filter by origin
-    defaults:       ->(resources) { resources.where(is_default: true) },
-    custom:         ->(resources) { resources.where(is_default: false) },
+    defaults: ->(resources) { resources.where(is_default: true) },
+    custom: ->(resources) { resources.where(is_default: false) },
     # Filter by state
-    disabled:       ->(resources) { resources.where(enabled: false) },
+    disabled: ->(resources) { resources.where(enabled: false) },
     # Show only global defaults (apply to all entities)
-    global:         ->(resources) { resources.where(entity_id: nil) }
+    global: ->(resources) { resources.where(entity_id: nil) }
   }.freeze
 
   def display_resource(rule)

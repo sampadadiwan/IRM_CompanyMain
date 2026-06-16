@@ -67,7 +67,6 @@ class AccountEntry < ApplicationRecord
     Rails.logger.debug { "Indexing completed. #{entries_to_index.count} account entries indexed for reporting date #{reporting_date}" }
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def self.bulk_update_tracking_currency_numbers(fund, reporting_date)
     exchange_rate = get_exchange_rate(fund.currency, fund.tracking_currency, reporting_date)
     fund.account_entries.where(reporting_date: reporting_date).update_all(tracking_amount_cents: Arel.sql("amount_cents * #{exchange_rate.rate}"))

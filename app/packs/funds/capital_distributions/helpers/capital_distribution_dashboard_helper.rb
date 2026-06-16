@@ -27,7 +27,7 @@ module CapitalDistributionDashboardHelper
   end
 
   def distribution_history_chart(fund)
-    data = fund.capital_distributions.order(:distribution_date).map { |d| [d.title, d.gross_amount_cents / 100.0] }.to_h
+    data = fund.capital_distributions.order(:distribution_date).to_h { |d| [d.title, d.gross_amount_cents / 100.0] }
 
     options = {
       library: {

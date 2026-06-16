@@ -1,4 +1,4 @@
-class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
+class User < ApplicationRecord
   include UserEnabled
   include WithCustomField
   include Memoized
@@ -92,7 +92,7 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
   has_many :offers, dependent: :destroy
   has_many :interests, dependent: :destroy
   has_many :investor_accesses, dependent: :destroy
-  has_many :access_rights, foreign_key: :user_id, dependent: :destroy
+  has_many :access_rights, dependent: :destroy
   has_many :investment_criteria_templates, foreign_key: :created_by_user_id, dependent: :nullify
 
   # Noticed gem
@@ -168,7 +168,6 @@ class User < ApplicationRecord # rubocop:disable Metrics/ClassLength
   # This is triggered whenever the user's 'enable_support' attribute changes.
   # It ensures that all support client mappings that are currently active (not expired)
   # reflect the user's current support status.
-  # rubocop:disable Rails/SkipsModelValidations
   def update_support
     SupportClientMapping.where(entity_id:, end_date: Time.zone.today..).update_all(enabled: enable_support)
   end

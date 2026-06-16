@@ -20,7 +20,7 @@ class GenerateDealStepTasksJob < ApplicationJob
 
     # We split the CSV by both commas and newlines to be flexible
     # and remove any blank segments or surrounding whitespace
-    task_titles = target_activity.tasks_csv.split(/[,\n]/).map(&:strip).reject(&:blank?).uniq
+    task_titles = target_activity.tasks_csv.split(/[,\n]/).map(&:strip).compact_blank.uniq
 
     # We iterate through each task title and create a Task record if it doesn't already exist
     task_titles.each do |title|

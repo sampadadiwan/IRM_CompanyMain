@@ -1,5 +1,5 @@
 class InvestorKycCreate < InvestorKycAction
-  step :check_required_file_custom_fields  # validate required File custom fields before save bypasses model validations
+  step :check_required_file_custom_fields # validate required File custom fields before save bypasses model validations
   step :save
   step :associate_with_owner
   left :handle_errors, Output(:failure) => End(:failure)
@@ -18,7 +18,7 @@ class InvestorKycCreate < InvestorKycAction
     # because setup_form_type / set_investor_name run in before_save, not before_validation.
     type_name = investor_kyc.respond_to?(:type_from_kyc_type) ? (investor_kyc.type_from_kyc_type || investor_kyc.class.name) : investor_kyc.class.name
     ft = investor_kyc.form_type || investor_kyc.entity&.form_types&.where(name: type_name)&.last
-    return true unless ft.present?
+    return true if ft.blank?
 
     missing = ft.form_custom_fields.where(field_type: "File", required: true).reject do |fcf|
       document_name = fcf.label.presence || fcf.name.humanize
@@ -38,7 +38,6 @@ class InvestorKycCreate < InvestorKycAction
   end
 
   # This method is used to save the investor_kyc to the associated owner like capital_commitment or expression_of_interest
-  # rubocop:disable Rails/SkipsModelValidations
   def associate_with_owner(ctx, investor_kyc:, **)
     if ctx[:owner_id].present? && ctx[:owner_type].present?
       owner = ctx[:owner_type].constantize.find(ctx[:owner_id])

@@ -14,7 +14,7 @@ class AuditTrail < ViewComponent::Base
     changes = audit.audited_changes
     return changes if @only_keys.blank?
 
-    changes = changes.select { |k, _v| @only_keys.include?(k) }.deep_dup
+    changes = changes.slice(*@only_keys).deep_dup
 
     # Thoughtful: Humanize IDs
     changes.each do |k, v|

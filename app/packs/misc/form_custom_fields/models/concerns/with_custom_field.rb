@@ -169,7 +169,7 @@ module WithCustomField
     # Memoised per record instance. CustomFieldsProxy is cheap to build (no method
     # definitions), but we still cache it so repeated calls within a request don't
     # allocate a new wrapper object each time.
-    @cached_custom_fields ||= CustomFieldsProxy.new(json_fields)
+    @custom_fields ||= CustomFieldsProxy.new(json_fields)
   end
 
   def custom_fields_with_td
@@ -189,8 +189,6 @@ module WithCustomField
     TemplateDecorator.decorate(CustomFieldsProxy.new(struct))
   end
 
-  # rubocop:enable Style/OpenStructUse
-
   def custom_calcs
     CustomCalcs.new(self, custom_calculations)
   end
@@ -199,20 +197,19 @@ module WithCustomField
     TemplateDecorator.decorate(custom_calcs)
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def ensure_json_fields
     return unless form_type && json_fields
 
     updated = false
     form_type.form_custom_fields.visible.each do |cf|
       self.json_fields ||= {}
-      unless self.json_fields.key?(cf.name)
-        self.json_fields[cf.name] ||= nil
+      unless json_fields.key?(cf.name)
+        json_fields[cf.name] ||= nil
         updated = true
       end
     end
 
-    update_column(:json_fields, self.json_fields) if updated
+    update_column(:json_fields, json_fields) if updated
     updated
   end
   # rubocop:enable Rails/SkipsModelValidations
@@ -257,7 +254,8 @@ module WithCustomField
 
   def check_required_custom_fields
     required_fields_for.each do |fcf|
-      next if fcf.field_type == "File"  # File fields are stored as Documents, not json_fields; validated separately
+      next if fcf.field_type == "File" # File fields are stored as Documents, not json_fields; validated separately
+
       val = json_fields[fcf.name]
       msg = fcf.validation_rules&.dig("error_message").presence || "#{fcf.human_label} is required"
       errors.add(:base, msg) if val.blank?
@@ -266,6 +264,7 @@ module WithCustomField
 
   def check_custom_field_formats
     return unless form_type
+
     # Go through form_type.form_custom_fields (direct has_many on FormType) rather than the
     # has_many :through proxy on this model. When the owner is a new record, Rails autosave
     # tries to insert_record every item in the through-association's loaded target, which
@@ -289,53 +288,37 @@ module WithCustomField
         validate_selection_field(fcf, val, rules, error_msg)
       end
 
-      if rules["unique"]
-        validate_unique_field(fcf, val, error_msg)
-      end
+      validate_unique_field(fcf, val, error_msg) if rules["unique"]
     end
   end
 
   private
 
   def validate_numeric_field(fcf, val, rules, error_msg)
-    unless val.to_s =~ /\A-?\d+(\.\d+)?\z/
+    unless /\A-?\d+(\.\d+)?\z/.match?(val.to_s)
       errors.add(:base, error_msg || "#{fcf.human_label} must be a number")
       return
     end
     num = val.to_d
-    if rules["min_value"].present? && num < rules["min_value"].to_d
-      errors.add(:base, error_msg || "#{fcf.human_label} must be at least #{rules['min_value']}")
-    end
-    if rules["max_value"].present? && num > rules["max_value"].to_d
-      errors.add(:base, error_msg || "#{fcf.human_label} must be at most #{rules['max_value']}")
-    end
-    if rules["integer_only"] && num != num.floor
-      errors.add(:base, error_msg || "#{fcf.human_label} must be a whole number")
-    end
+    errors.add(:base, error_msg || "#{fcf.human_label} must be at least #{rules['min_value']}") if rules["min_value"].present? && num < rules["min_value"].to_d
+    errors.add(:base, error_msg || "#{fcf.human_label} must be at most #{rules['max_value']}") if rules["max_value"].present? && num > rules["max_value"].to_d
+    errors.add(:base, error_msg || "#{fcf.human_label} must be a whole number") if rules["integer_only"] && num != num.floor
   end
 
   def validate_date_field(fcf, val, rules, error_msg)
     date = Date.parse(val.to_s)
     min_date = resolve_date_rule(rules["min_date"])
     max_date = resolve_date_rule(rules["max_date"])
-    if min_date && date < min_date
-      errors.add(:base, error_msg || "#{fcf.human_label} cannot be before #{min_date}")
-    end
-    if max_date && date > max_date
-      errors.add(:base, error_msg || "#{fcf.human_label} cannot be after #{max_date}")
-    end
+    errors.add(:base, error_msg || "#{fcf.human_label} cannot be before #{min_date}") if min_date && date < min_date
+    errors.add(:base, error_msg || "#{fcf.human_label} cannot be after #{max_date}") if max_date && date > max_date
   rescue ArgumentError, TypeError
     errors.add(:base, error_msg || "#{fcf.human_label} must be a valid date")
   end
 
   def validate_text_field(fcf, val, rules, error_msg)
     str = val.to_s
-    if rules["min_length"].present? && str.length < rules["min_length"].to_i
-      errors.add(:base, error_msg || "#{fcf.human_label} must be at least #{rules['min_length']} characters")
-    end
-    if rules["max_length"].present? && str.length > rules["max_length"].to_i
-      errors.add(:base, error_msg || "#{fcf.human_label} must be at most #{rules['max_length']} characters")
-    end
+    errors.add(:base, error_msg || "#{fcf.human_label} must be at least #{rules['min_length']} characters") if rules["min_length"].present? && str.length < rules["min_length"].to_i
+    errors.add(:base, error_msg || "#{fcf.human_label} must be at most #{rules['max_length']} characters") if rules["max_length"].present? && str.length > rules["max_length"].to_i
     if rules["pattern"].present?
       begin
         errors.add(:base, error_msg || "#{fcf.human_label} format is invalid") unless str.match?(Regexp.new(rules["pattern"]))
@@ -350,14 +333,10 @@ module WithCustomField
   end
 
   def validate_selection_field(fcf, val, rules, error_msg)
-    selections = val.is_a?(Array) ? val : val.to_s.split(",").map(&:strip).reject(&:blank?)
+    selections = val.is_a?(Array) ? val : val.to_s.split(",").map(&:strip).compact_blank
     count = selections.length
-    if rules["min_selections"].present? && count < rules["min_selections"].to_i
-      errors.add(:base, error_msg || "#{fcf.human_label} requires at least #{rules['min_selections']} selection(s)")
-    end
-    if rules["max_selections"].present? && count > rules["max_selections"].to_i
-      errors.add(:base, error_msg || "#{fcf.human_label} allows at most #{rules['max_selections']} selection(s)")
-    end
+    errors.add(:base, error_msg || "#{fcf.human_label} requires at least #{rules['min_selections']} selection(s)") if rules["min_selections"].present? && count < rules["min_selections"].to_i
+    errors.add(:base, error_msg || "#{fcf.human_label} allows at most #{rules['max_selections']} selection(s)") if rules["max_selections"].present? && count > rules["max_selections"].to_i
   end
 
   def validate_unique_field(fcf, val, error_msg)
@@ -374,6 +353,7 @@ module WithCustomField
   def resolve_date_rule(val)
     return nil if val.blank?
     return Time.zone.today if val == "today"
+
     Date.parse(val.to_s)
   rescue ArgumentError
     nil
@@ -458,13 +438,9 @@ class CustomFieldsProxy
 
   # Explicit delegation — without these, present?/blank? would fall through to
   # method_missing and return nil, making .present? always truthy (non-nil).
-  def present?
-    @hash.present?
-  end
+  delegate :present?, to: :@hash
 
-  def blank?
-    @hash.blank?
-  end
+  delegate :blank?, to: :@hash
 
   # Lets callers use respond_to? guards before .send(variable_field_name).
   def respond_to_missing?(name, include_private = false)
@@ -494,7 +470,7 @@ class CustomCalcs
     @model.perform_custom_calculation(calc) if calc
   end
 
-  def respond_to_missing? *_args
+  def respond_to_missing?(*_args)
     true
   end
 end

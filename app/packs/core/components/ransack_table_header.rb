@@ -35,23 +35,23 @@ class RansackTableHeader < ViewComponent::Base
 
     if columns.blank? && @default_columns_map.present?
       # If default_columns_map is a Hash (STANDARD_COLUMNS format), convert it to AG Grid format
-      if @default_columns_map.is_a?(Hash)
-        columns = @default_columns_map.map do |label, key|
-          clean_label = label.split(";").first.strip
-          clean_key = key.split(";").first.strip
-          # Try to infer data type
-          data_type = if clean_key.include?("custom_fields.")
-                        ApplicationRecord::DEFAULT_DATA_TYPE
-                      else
-                        @model.columns_hash[clean_key]&.type.to_s.capitalize.presence ||
-                          @model.columns_hash["#{clean_key}_cents"]&.type.to_s.capitalize.presence ||
-                          ApplicationRecord::DEFAULT_DATA_TYPE
-                      end
-          { label: clean_label, key: clean_key, data_type: data_type }
-        end
-      else
-        columns = @default_columns_map
-      end
+      columns = if @default_columns_map.is_a?(Hash)
+                  @default_columns_map.map do |label, key|
+                    clean_label = label.split(";").first.strip
+                    clean_key = key.split(";").first.strip
+                    # Try to infer data type
+                    data_type = if clean_key.include?("custom_fields.")
+                                  ApplicationRecord::DEFAULT_DATA_TYPE
+                                else
+                                  @model.columns_hash[clean_key]&.type.to_s.capitalize.presence ||
+                                    @model.columns_hash["#{clean_key}_cents"]&.type.to_s.capitalize.presence ||
+                                    ApplicationRecord::DEFAULT_DATA_TYPE
+                                end
+                    { label: clean_label, key: clean_key, data_type: data_type }
+                  end
+                else
+                  @default_columns_map
+                end
     end
 
     columns = @model.ag_grids_default_columns if columns.blank?
@@ -68,9 +68,7 @@ class RansackTableHeader < ViewComponent::Base
         if default_columns_map[col_key]
           default_type = default_columns_map[col_key][:data_type]
           # If the default type involves special rendering (not String), prefer it
-          if default_type != "String"
-            col[:data_type] = default_type
-          end
+          col[:data_type] = default_type if default_type != "String"
         end
         col
       end

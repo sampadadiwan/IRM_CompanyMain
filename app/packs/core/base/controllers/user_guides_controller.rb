@@ -4,15 +4,15 @@ class UserGuidesController < ApplicationController
   def index
     authorize :user_guide, :index?
     skip_policy_scope
-    @guides = Dir.glob(Rails.root.join("docs/user_guides", "*.md")).map do |path|
+    @guides = Rails.root.glob("docs/user_guides/*.md").map do |path|
       id = File.basename(path, ".md")
       title = id.humanize.titleize.gsub(/ User Guide$/i, '')
-      
+
       content = File.read(path)
       # Extract first paragraph (skip title and empty lines)
       lines = content.split("\n").reject { |l| l.strip.empty? || l.start_with?("#") || l.start_with?("---") }
       description = lines.first&.truncate(120) || "Learn how to use the #{title.downcase} features in IRM."
-      
+
       { id: id, title: title, description: description }
     end.sort_by { |g| g[:title] }
     @bread_crumbs = { t('top_menus.user_guides') => nil }

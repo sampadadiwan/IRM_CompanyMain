@@ -14,7 +14,7 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent CustomerSupportAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy
@@ -102,6 +102,15 @@ class SupportAgent < ApplicationRecord
       ["Summarize last quarter's notes", "What are the action items?", "Show all meeting notes"]
     when "CustomerSupportAgent"
       ["How do I create a capital call?", "What's the process for investor onboarding?", "How do I generate a distribution notice?"]
+    when "PresentationAnalystAgent"
+      # PRD §7 — sample questions surfaced in the chat panel welcome state.
+      # Each question is designed to show the GP what kinds of patterns the agent can find.
+      [
+        "What commitments from earlier periods were not followed up on?",
+        "Which risks disappeared without a stated resolution?",
+        "Compare the ARR targets stated across all periods.",
+        "What happened to the [initiative name] — when did it last appear?"
+      ]
     else
       []
     end

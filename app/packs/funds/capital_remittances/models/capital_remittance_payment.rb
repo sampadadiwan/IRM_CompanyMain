@@ -63,7 +63,6 @@ class CapitalRemittancePayment < ApplicationRecord
       end
 
       # Mark this as sent, so we dont resend duplicate notifications
-      # rubocop:disable Rails/SkipsModelValidations
       update_column(:payment_notification_sent, true)
       # rubocop:enable Rails/SkipsModelValidations
     end

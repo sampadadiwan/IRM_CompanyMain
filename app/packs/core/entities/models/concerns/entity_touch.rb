@@ -5,7 +5,6 @@ module EntityTouch
     after_commit :touch_entity
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def touch_entity
     entity.touch
   end

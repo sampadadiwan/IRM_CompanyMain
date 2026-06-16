@@ -23,7 +23,7 @@ class ApprovalsController < ApplicationController
     @approval.default_response_status
 
     @bread_crumbs = { Approvals: approvals_path }
-    @bread_crumbs["#{@approval.owner}"] = polymorphic_path(@approval.owner) if @approval.owner.present?
+    @bread_crumbs[@approval.owner.to_s] = polymorphic_path(@approval.owner) if @approval.owner.present?
     @bread_crumbs[:New] = nil
 
     authorize @approval

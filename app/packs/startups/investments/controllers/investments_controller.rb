@@ -19,7 +19,7 @@ class InvestmentsController < ApplicationController
     if params[:portfolio_company_id].present?
       @portfolio_company_id = params[:portfolio_company_id]
       @portfolio_company = Investor.find(@portfolio_company_id)
-      @bread_crumbs["#{@portfolio_company.investor_name}"] = investor_path(@portfolio_company)
+      @bread_crumbs[@portfolio_company.investor_name.to_s] = investor_path(@portfolio_company)
       authorize @portfolio_company, :show?
     end
 
@@ -44,7 +44,7 @@ class InvestmentsController < ApplicationController
     @investment.entity_id = current_user.entity_id
 
     @bread_crumbs = { Investments: investments_path }
-    @bread_crumbs["#{@investment.portfolio_company.investor_name}"] = investor_path(@investment.portfolio_company) if @investment.portfolio_company.present?
+    @bread_crumbs[@investment.portfolio_company.investor_name.to_s] = investor_path(@investment.portfolio_company) if @investment.portfolio_company.present?
     @bread_crumbs[:New] = nil
 
     authorize @investment
@@ -89,8 +89,8 @@ class InvestmentsController < ApplicationController
     @investment = Investment.find(params[:id])
     authorize @investment
     @bread_crumbs = { Investments: investments_path }
-    @bread_crumbs["#{@investment.portfolio_company.investor_name}"] = investor_path(@investment.portfolio_company) if @investment.portfolio_company.present?
-    @bread_crumbs["#{@investment}"] = investment_path(@investment)
+    @bread_crumbs[@investment.portfolio_company.investor_name.to_s] = investor_path(@investment.portfolio_company) if @investment.portfolio_company.present?
+    @bread_crumbs[@investment.to_s] = investment_path(@investment)
   end
 
   # Only allow a list of trusted parameters through.

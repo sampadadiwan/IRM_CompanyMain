@@ -1,6 +1,5 @@
 require 'base64'
 
-# rubocop:disable Metrics/ClassLength
 class DigioEsignHelper
   # Fixed-shape result returned by sign/validate_doc_size/update_document.
   # Callers access .success?, [:errors], and [:message] — Struct covers all three:
@@ -91,7 +90,7 @@ class DigioEsignHelper
     else
       doc.update(sent_for_esign: true, esign_status: "failed", provider_doc_id: json_res["id"])
 
-      doc.e_signatures.includes(:entity).each do |esign|
+      doc.e_signatures.includes(:entity).find_each do |esign|
         esign.add_api_update(json_res)
         esign.update(status: "failed", api_updates: esign.api_updates)
       end
@@ -203,7 +202,7 @@ class DigioEsignHelper
     if response.success?
       # added transaction to avoid partial updates
       ActiveRecord::Base.transaction do
-        doc.e_signatures.includes(:entity).each do |esign|
+        doc.e_signatures.includes(:entity).find_each do |esign|
           esign.add_api_update(response)
           esign.update(status: "cancelled", api_updates: esign.api_updates)
         end
@@ -351,7 +350,7 @@ class DigioEsignHelper
     e = StandardError.new("Error getting status for #{doc.name}")
     ExceptionNotifier.notify_exception(e)
     doc.update(esign_status: "failed")
-    doc.e_signatures.includes(:entity).each do |esign|
+    doc.e_signatures.includes(:entity).find_each do |esign|
       esign.add_api_update(response)
       esign.save!
     end

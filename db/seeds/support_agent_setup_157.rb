@@ -75,6 +75,31 @@ new_form_types = [
     ]
   },
 
+  # --- PresentationAnalystAgent ---
+  {
+    name: "SupportAgent", tag: "PresentationAnalystAgent",
+    fields: [
+      { name: "presentation_doc_names", field_type: "TextField", label: "Presentation document names", position: 1,
+        meta_data: "",
+        help_text: "Comma-separated document names to match (e.g. Investor Update, Board Deck). Case-insensitive partial match." },
+      { name: "max_periods",            field_type: "NumberField", label: "Max periods to analyse",    position: 2,
+        meta_data: "",
+        help_text: "Number of most recent Actual KPI periods to include (default 8)." },
+      { name: "kpi_tag_list",           field_type: "TextField",   label: "KPI tag filter",             position: 3,
+        meta_data: "",
+        help_text: "Tag used to filter KPI reports (default: Actual)." },
+      { name: "comparison_strategy",    field_type: "Select",      label: "Comparison strategy",        position: 4,
+        meta_data: "all_periods,sliding_window",
+        help_text: "all_periods: one LLM call across all periods (more accurate). sliding_window: one call per adjacent pair (cheaper)." },
+      { name: "enable_scoring",         field_type: "Select",      label: "Enable Management Accountability Score", position: 5,
+        meta_data: "Yes,No",
+        help_text: "When set to No, skips the Management Accountability Score computation and hides the score section in the UI." },
+      { name: "enable_questions",       field_type: "Select",      label: "Enable pre-board briefing questions",    position: 6,
+        meta_data: "Yes,No",
+        help_text: "When set to No, skips the analyst question generation step and hides the briefing section in the UI." }
+    ]
+  },
+
   # --- PortfolioScoringAgent ---
   # Skill files (File fields) are uploaded manually per sector after seeding.
   # Add one File field per sector needed; meta_data drives skill_for_sector matching.

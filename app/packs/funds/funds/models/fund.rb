@@ -317,4 +317,8 @@ class Fund < ApplicationRecord
     @portfolio_investment_ids ||= portfolio_investments.pluck(:id)
     @portfolio_investment_ids
   end
+
+  def kyc_level_data_gen?
+    json_fields["call_notice_on"].to_s.strip.downcase == "kyc"
+  end
 end

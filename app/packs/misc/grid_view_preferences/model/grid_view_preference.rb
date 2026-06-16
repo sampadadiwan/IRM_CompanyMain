@@ -109,7 +109,6 @@ class GridViewPreference < ApplicationRecord
 
   # Touches the associated entity to trigger cache invalidation or updated timestamps
   # Only applicable if the owner is a FormType and has an associated entity
-  # rubocop:disable Rails/SkipsModelValidations
   def touch_entity
     owner.entity.touch if owner.is_a?(FormType) && owner.entity.present?
   end

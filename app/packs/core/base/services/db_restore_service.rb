@@ -7,7 +7,7 @@ require 'rake'
 require 'json'
 require 'shellwords'
 
-class DbRestoreService # rubocop:disable Metrics/ClassLength
+class DbRestoreService
   REGION = ENV.fetch("AWS_REGION")
   INSTANCE_NAME = 'DbCheckInstance'.freeze
   LOCAL_SCRIPT_PATH = Rails.root.join("tmp", "db_backup_xtra_#{Rails.env}.sh")
@@ -128,7 +128,7 @@ class DbRestoreService # rubocop:disable Metrics/ClassLength
   end
 
   # Launches a new EC2 instance with the specified parameters.
-  def launch_new_instance(instance_name) # rubocop:disable Metrics/MethodLength
+  def launch_new_instance(instance_name)
     Rails.logger.debug { "→ Launching new instance with name #{instance_name}..." }
 
     ami_id = find_latest_ami_id(AMI_NAME)

@@ -134,7 +134,6 @@ class PortfolioAssistantDataManager
     end
   end
 
-  # rubocop:disable Metrics/MethodLength
   # Lists portfolio investments for a portfolio company.
   def list_portfolio_investments(portfolio_company_id:, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
     Rails.logger.debug { "[PortfolioAssistantDataManager] list_portfolio_investments called with portfolio_company_id: #{portfolio_company_id.inspect}, scope: #{scope.inspect}, query: #{query.inspect}, sort: #{sort.inspect}, limit: #{limit.inspect}, aggregate: #{aggregate.inspect}" }
@@ -186,7 +185,6 @@ class PortfolioAssistantDataManager
       }
     end
   end
-  # rubocop:enable Metrics/MethodLength
 
   # Lists KPIs for portfolio companies.
   def list_portfolio_kpis(portfolio_company_ids: nil, scope: nil, query: {}, sort: nil, limit: nil, aggregate: nil)
@@ -228,7 +226,7 @@ class PortfolioAssistantDataManager
       if current_scope.present?
         # If scope is a comma-separated string, convert to hash for KpiQuery
         scope_params = if current_scope.is_a?(String)
-                         current_scope.split(',').each_with_object({}) { |s, h| h[s.strip.to_sym] = "true" }
+                         current_scope.split(',').to_h { |s| [s.strip.to_sym, "true"] }
                        elsif current_scope.is_a?(Symbol)
                          { current_scope => "true" }
                        else

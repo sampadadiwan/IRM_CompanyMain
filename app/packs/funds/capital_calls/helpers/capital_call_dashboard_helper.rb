@@ -21,7 +21,7 @@ module CapitalCallDashboardHelper
   end
 
   def call_history_chart(fund)
-    data = fund.capital_calls.order(:call_date).map { |c| [c.name, c.call_amount_cents / 100.0] }.to_h
+    data = fund.capital_calls.order(:call_date).to_h { |c| [c.name, c.call_amount_cents / 100.0] }
 
     chart = column_chart data, title: "Capital Call History", height: "400px", id: "call_history_chart_#{fund.id}", library: {
       plotOptions: {

@@ -16,25 +16,25 @@ require 'zip'
 class PortfolioReportBrandTemplatePptService
   # ── Canvas ──────────────────────────────────────────────────────────────────
   SLIDE_W = 12_192_000
-  SLIDE_H  =  6_858_000
-  MARGIN   =    685_800
+  SLIDE_H = 6_858_000
+  MARGIN =    685_800
 
   # ── Emerald brand palette ────────────────────────────────────────────────────
-  EMERALD_900 = "064E3B"   # near-black green — dk1 / primary heading text
-  EMERALD_800 = "065F46"   # deep brand green — slide headers
-  EMERALD_700 = "047857"   # accent1 — primary accent (read by theme reader)
-  EMERALD_500 = "10B981"   # accent2 — lighter green highlight
-  EMERALD_100 = "D1FAE5"   # very light mint — table alt rows / cover band
-  EMERALD_50  = "ECFDF5"   # near-white mint — cover background tint
-  TEAL_700    = "0F766E"   # accent3 — teal complement
-  AMBER_700   = "B45309"   # accent4 — warm contrast / highlight
-  AMBER_100   = "FEF3C7"   # amber tint
-  WHITE       = "FFFFFF"
-  SLATE_700   = "334155"   # body text
-  SLATE_400   = "94A3B8"   # caption / meta
-  GOLD_LINE   = "D4A847"   # decorative rule / stripe
+  EMERALD_900 = "064E3B".freeze   # near-black green — dk1 / primary heading text
+  EMERALD_800 = "065F46".freeze   # deep brand green — slide headers
+  EMERALD_700 = "047857".freeze   # accent1 — primary accent (read by theme reader)
+  EMERALD_500 = "10B981".freeze   # accent2 — lighter green highlight
+  EMERALD_100 = "D1FAE5".freeze   # very light mint — table alt rows / cover band
+  EMERALD_50  = "ECFDF5".freeze   # near-white mint — cover background tint
+  TEAL_700    = "0F766E".freeze   # accent3 — teal complement
+  AMBER_700   = "B45309".freeze   # accent4 — warm contrast / highlight
+  AMBER_100   = "FEF3C7".freeze   # amber tint
+  WHITE       = "FFFFFF".freeze
+  SLATE_700   = "334155".freeze   # body text
+  SLATE_400   = "94A3B8".freeze   # caption / meta
+  GOLD_LINE   = "D4A847".freeze   # decorative rule / stripe
 
-  CONTENT_W = SLIDE_W - MARGIN * 2
+  CONTENT_W = SLIDE_W - (MARGIN * 2)
 
   def initialize(brand_name: "CapHive Emerald")
     @brand_name = brand_name
@@ -78,100 +78,100 @@ class PortfolioReportBrandTemplatePptService
     slide_xml do
       # Mint background
       filled_rect(0, 0, SLIDE_W, SLIDE_H, EMERALD_50) +
-      # Left brand panel (deep emerald)
-      filled_rect(0, 0, SLIDE_W / 3, SLIDE_H, EMERALD_800) +
-      # Decorative gold rule on the right edge of the panel
-      filled_rect(SLIDE_W / 3, 0, 28_575, SLIDE_H, GOLD_LINE) +
-      # Brand name in the left panel
-      text_box(e(@brand_name),
-               x: MARGIN / 2, y: SLIDE_H / 2 - 600_000, w: SLIDE_W / 3 - MARGIN,
-               h: 600_000, size: 2000, bold: true, color: WHITE, align: "l", valign: "t") +
-      # Sub-label
-      text_box(e("Brand Theme Template"),
-               x: MARGIN / 2, y: SLIDE_H / 2 + 57_150, w: SLIDE_W / 3 - MARGIN,
-               h: 342_900, size: 1200, bold: false, color: EMERALD_100, align: "l", valign: "t") +
-      # Large accent1 swatch label on the right
-      text_box(e("accent1"),
-               x: MARGIN / 2, y: SLIDE_H - 800_000, w: SLIDE_W / 3 - MARGIN,
-               h: 285_750, size: 900, bold: false, color: EMERALD_500, align: "l", valign: "t") +
-      text_box(e("##{EMERALD_700}"),
-               x: MARGIN / 2, y: SLIDE_H - 520_000, w: SLIDE_W / 3 - MARGIN,
-               h: 285_750, size: 1000, bold: true, color: EMERALD_100, align: "l", valign: "t") +
-      # Main heading on the right
-      text_box(e("Portfolio Report"),
-               x: SLIDE_W / 3 + MARGIN, y: 1_200_000, w: CONTENT_W - SLIDE_W / 3 + MARGIN,
-               h: 1_371_600, size: 5200, bold: true, color: EMERALD_900, align: "l", valign: "t") +
-      text_box(e("Brand Reference Deck"),
-               x: SLIDE_W / 3 + MARGIN, y: 2_743_200, w: CONTENT_W - SLIDE_W / 3 + MARGIN,
-               h: 685_800, size: 2400, bold: false, color: TEAL_700, align: "l", valign: "t") +
-      text_box(e("Upload this file as a style reference on any PPT template\nto apply the Emerald brand palette to your exports."),
-               x: SLIDE_W / 3 + MARGIN, y: 3_600_000, w: CONTENT_W - SLIDE_W / 3 + MARGIN,
-               h: 800_000, size: 1300, bold: false, color: SLATE_700, align: "l", valign: "t") +
-      # Date bottom-right
-      text_box(e("Generated #{Date.today.strftime('%d %b %Y')}"),
-               x: SLIDE_W / 3 + MARGIN, y: SLIDE_H - 400_000,
-               w: CONTENT_W - SLIDE_W / 3 + MARGIN, h: 285_750,
-               size: 900, bold: false, color: SLATE_400, align: "r", valign: "t")
+        # Left brand panel (deep emerald)
+        filled_rect(0, 0, SLIDE_W / 3, SLIDE_H, EMERALD_800) +
+        # Decorative gold rule on the right edge of the panel
+        filled_rect(SLIDE_W / 3, 0, 28_575, SLIDE_H, GOLD_LINE) +
+        # Brand name in the left panel
+        text_box(e(@brand_name),
+                 x: MARGIN / 2, y: (SLIDE_H / 2) - 600_000, w: (SLIDE_W / 3) - MARGIN,
+                 h: 600_000, size: 2000, bold: true, color: WHITE, align: "l", valign: "t") +
+        # Sub-label
+        text_box(e("Brand Theme Template"),
+                 x: MARGIN / 2, y: (SLIDE_H / 2) + 57_150, w: (SLIDE_W / 3) - MARGIN,
+                 h: 342_900, size: 1200, bold: false, color: EMERALD_100, align: "l", valign: "t") +
+        # Large accent1 swatch label on the right
+        text_box(e("accent1"),
+                 x: MARGIN / 2, y: SLIDE_H - 800_000, w: (SLIDE_W / 3) - MARGIN,
+                 h: 285_750, size: 900, bold: false, color: EMERALD_500, align: "l", valign: "t") +
+        text_box(e("##{EMERALD_700}"),
+                 x: MARGIN / 2, y: SLIDE_H - 520_000, w: (SLIDE_W / 3) - MARGIN,
+                 h: 285_750, size: 1000, bold: true, color: EMERALD_100, align: "l", valign: "t") +
+        # Main heading on the right
+        text_box(e("Portfolio Report"),
+                 x: (SLIDE_W / 3) + MARGIN, y: 1_200_000, w: CONTENT_W - (SLIDE_W / 3) + MARGIN,
+                 h: 1_371_600, size: 5200, bold: true, color: EMERALD_900, align: "l", valign: "t") +
+        text_box(e("Brand Reference Deck"),
+                 x: (SLIDE_W / 3) + MARGIN, y: 2_743_200, w: CONTENT_W - (SLIDE_W / 3) + MARGIN,
+                 h: 685_800, size: 2400, bold: false, color: TEAL_700, align: "l", valign: "t") +
+        text_box(e("Upload this file as a style reference on any PPT template\nto apply the Emerald brand palette to your exports."),
+                 x: (SLIDE_W / 3) + MARGIN, y: 3_600_000, w: CONTENT_W - (SLIDE_W / 3) + MARGIN,
+                 h: 800_000, size: 1300, bold: false, color: SLATE_700, align: "l", valign: "t") +
+        # Date bottom-right
+        text_box(e("Generated #{Time.zone.today.strftime('%d %b %Y')}"),
+                 x: (SLIDE_W / 3) + MARGIN, y: SLIDE_H - 400_000,
+                 w: CONTENT_W - (SLIDE_W / 3) + MARGIN, h: 285_750,
+                 size: 900, bold: false, color: SLATE_400, align: "r", valign: "t")
     end
   end
 
   def palette_slide
     slide_xml do
       slide_chrome("Brand Colour Palette") +
-      # Row of 5 colour swatches with labels underneath
-      swatch_block(EMERALD_800, "Emerald 800\n##{EMERALD_800}", x: MARGIN, y: 1_500_000) +
-      swatch_block(EMERALD_700, "Emerald 700\n##{EMERALD_700}\naccent1", x: MARGIN + 2_057_400, y: 1_500_000) +
-      swatch_block(EMERALD_500, "Emerald 500\n##{EMERALD_500}\naccent2", x: MARGIN + 4_114_800, y: 1_500_000) +
-      swatch_block(TEAL_700,    "Teal 700\n##{TEAL_700}\naccent3",    x: MARGIN + 6_172_200, y: 1_500_000) +
-      swatch_block(AMBER_700,   "Amber 700\n##{AMBER_700}\naccent4",  x: MARGIN + 8_229_600, y: 1_500_000) +
-      text_box(e("The accent1 colour (##{EMERALD_700}) is read by the theme reader when this file is uploaded as a style reference."),
-               x: MARGIN, y: 4_800_000, w: CONTENT_W, h: 400_000,
-               size: 1100, bold: false, color: SLATE_400, align: "l", valign: "t")
+        # Row of 5 colour swatches with labels underneath
+        swatch_block(EMERALD_800, "Emerald 800\n##{EMERALD_800}", x: MARGIN, y: 1_500_000) +
+        swatch_block(EMERALD_700, "Emerald 700\n##{EMERALD_700}\naccent1", x: MARGIN + 2_057_400, y: 1_500_000) +
+        swatch_block(EMERALD_500, "Emerald 500\n##{EMERALD_500}\naccent2", x: MARGIN + 4_114_800, y: 1_500_000) +
+        swatch_block(TEAL_700,    "Teal 700\n##{TEAL_700}\naccent3",    x: MARGIN + 6_172_200, y: 1_500_000) +
+        swatch_block(AMBER_700,   "Amber 700\n##{AMBER_700}\naccent4",  x: MARGIN + 8_229_600, y: 1_500_000) +
+        text_box(e("The accent1 colour (##{EMERALD_700}) is read by the theme reader when this file is uploaded as a style reference."),
+                 x: MARGIN, y: 4_800_000, w: CONTENT_W, h: 400_000,
+                 size: 1100, bold: false, color: SLATE_400, align: "l", valign: "t")
     end
   end
 
   def typography_slide
     slide_xml do
       slide_chrome("Typography") +
-      # Heading samples
-      text_box(e("Heading 1 — Report Title  (52pt, bold, Calibri)"),
-               x: MARGIN, y: 1_300_000, w: CONTENT_W, h: 685_800,
-               size: 5200, bold: true, color: EMERALD_900, align: "l", valign: "t") +
-      text_box(e("Heading 2 — Section Title  (28pt, bold)"),
-               x: MARGIN, y: 2_200_000, w: CONTENT_W, h: 457_200,
-               size: 2800, bold: true, color: EMERALD_800, align: "l", valign: "t") +
-      text_box(e("Body text — supporting narrative and bullet points  (17pt, regular)"),
-               x: MARGIN, y: 2_800_000, w: CONTENT_W, h: 400_000,
-               size: 1700, bold: false, color: SLATE_700, align: "l", valign: "t") +
-      text_box(e("Caption / footer text  (10pt, light)"),
-               x: MARGIN, y: 3_300_000, w: CONTENT_W, h: 342_900,
-               size: 1000, bold: false, color: SLATE_400, align: "l", valign: "t") +
-      # Divider
-      filled_rect(MARGIN, 3_800_000, CONTENT_W, 9_525, EMERALD_700) +
-      text_box(e("All typefaces inherit the theme's majorFont / minorFont (Calibri by default). " \
-                 "To change the font, edit the style template in PowerPoint and re-upload."),
-               x: MARGIN, y: 3_900_000, w: CONTENT_W, h: 500_000,
-               size: 1100, bold: false, color: SLATE_400, align: "l", valign: "t")
+        # Heading samples
+        text_box(e("Heading 1 — Report Title  (52pt, bold, Calibri)"),
+                 x: MARGIN, y: 1_300_000, w: CONTENT_W, h: 685_800,
+                 size: 5200, bold: true, color: EMERALD_900, align: "l", valign: "t") +
+        text_box(e("Heading 2 — Section Title  (28pt, bold)"),
+                 x: MARGIN, y: 2_200_000, w: CONTENT_W, h: 457_200,
+                 size: 2800, bold: true, color: EMERALD_800, align: "l", valign: "t") +
+        text_box(e("Body text — supporting narrative and bullet points  (17pt, regular)"),
+                 x: MARGIN, y: 2_800_000, w: CONTENT_W, h: 400_000,
+                 size: 1700, bold: false, color: SLATE_700, align: "l", valign: "t") +
+        text_box(e("Caption / footer text  (10pt, light)"),
+                 x: MARGIN, y: 3_300_000, w: CONTENT_W, h: 342_900,
+                 size: 1000, bold: false, color: SLATE_400, align: "l", valign: "t") +
+        # Divider
+        filled_rect(MARGIN, 3_800_000, CONTENT_W, 9_525, EMERALD_700) +
+        text_box(e("All typefaces inherit the theme's majorFont / minorFont (Calibri by default). " \
+                   "To change the font, edit the style template in PowerPoint and re-upload."),
+                 x: MARGIN, y: 3_900_000, w: CONTENT_W, h: 500_000,
+                 size: 1100, bold: false, color: SLATE_400, align: "l", valign: "t")
     end
   end
 
   def sample_data_slide
     slide_xml do
       slide_chrome("KPI Data Table — Sample") +
-      sample_table
+        sample_table
     end
   end
 
   def section_sample_slide
     slide_xml do
       slide_chrome("Investment Highlights", accent: TEAL_700) +
-      bullets_block([
-        "Portfolio company delivered 42% revenue growth YoY, exceeding the base case by 8pp",
-        "EBITDA margin expanded to 18.3% from 14.1% driven by improved operating leverage",
-        "Completed bolt-on acquisition of TechCo Ltd in Q3; integration on track",
-        "Management team strengthened with appointment of new CFO from industry",
-        "Pipeline remains active — 3 follow-on deals under review for H2"
-      ])
+        bullets_block([
+                        "Portfolio company delivered 42% revenue growth YoY, exceeding the base case by 8pp",
+                        "EBITDA margin expanded to 18.3% from 14.1% driven by improved operating leverage",
+                        "Completed bolt-on acquisition of TechCo Ltd in Q3; integration on track",
+                        "Management team strengthened with appointment of new CFO from industry",
+                        "Pipeline remains active — 3 follow-on deals under review for H2"
+                      ])
     end
   end
 
@@ -179,20 +179,20 @@ class PortfolioReportBrandTemplatePptService
 
   def slide_chrome(title, accent: EMERALD_700)
     filled_rect(0, 0, SLIDE_W, SLIDE_H, WHITE) +
-    filled_rect(0, 0, SLIDE_W, 114_300, accent) +
-    filled_rect(0, 114_300, SLIDE_W, 971_550, "F8FAFC") +
-    text_box(e(title),
-             x: MARGIN, y: 114_300, w: CONTENT_W, h: 971_550,
-             size: 2800, bold: true, color: EMERALD_900, align: "l", valign: "ctr") +
-    filled_rect(MARGIN, 1_085_850, CONTENT_W, 28_575, "E2E8F0") +
-    # Brand mark — small emerald swatch top-right
-    filled_rect(SLIDE_W - 400_000, 0, 400_000, 114_300, EMERALD_800)
+      filled_rect(0, 0, SLIDE_W, 114_300, accent) +
+      filled_rect(0, 114_300, SLIDE_W, 971_550, "F8FAFC") +
+      text_box(e(title),
+               x: MARGIN, y: 114_300, w: CONTENT_W, h: 971_550,
+               size: 2800, bold: true, color: EMERALD_900, align: "l", valign: "ctr") +
+      filled_rect(MARGIN, 1_085_850, CONTENT_W, 28_575, "E2E8F0") +
+      # Brand mark — small emerald swatch top-right
+      filled_rect(SLIDE_W - 400_000, 0, 400_000, 114_300, EMERALD_800)
   end
 
   def bullets_block(lines)
     id    = @shape_id += 1
     paras = lines.map.with_index do |line, i|
-      spc = i > 0 ? "<a:spcBef><a:spcPts val=\"180\"/></a:spcBef>" : ""
+      spc = i.positive? ? "<a:spcBef><a:spcPts val=\"180\"/></a:spcBef>" : ""
       <<~PARA
         <a:p>
           <a:pPr marL="342900" indent="-342900">
@@ -240,7 +240,7 @@ class PortfolioReportBrandTemplatePptService
     lines    = label.split("\n")
 
     text_paras = lines.map.with_index do |line, i|
-      bold = i == 0 ? 1 : 0
+      bold = i.zero? ? 1 : 0
       txt_color = i == 2 ? EMERALD_700 : SLATE_700
       <<~PARA
         <a:p>
@@ -296,31 +296,31 @@ class PortfolioReportBrandTemplatePptService
     id        = @shape_id += 1
     row_h     = 400_000
     table_top = 1_300_000
-    table_h   = SLIDE_H - table_top - MARGIN / 2
+    table_h   = SLIDE_H - table_top - (MARGIN / 2)
     col_w     = [CONTENT_W / 5] * 5
     col_w[0]  = (CONTENT_W * 0.40).to_i
     rest_w    = ((CONTENT_W - col_w[0]) / 4).to_i
     (1..4).each { |i| col_w[i] = rest_w }
 
-    headers   = ["Metric", "FY2021", "FY2022", "FY2023", "FY2024"]
+    headers   = %w[Metric FY2021 FY2022 FY2023 FY2024]
     rows      = [
       ["Revenue (€m)",      "12.4", "18.7", "26.3", "37.4"],
       ["EBITDA (€m)",       "1.8",  "3.1",  "4.8",  "6.9"],
       ["EBITDA Margin (%)", "14.5", "16.6", "18.3", "18.5"],
       ["Headcount",         "48",   "71",   "103",  "138"],
-      ["ARR (€m)",          "9.6",  "15.2", "22.7", "33.1"],
+      ["ARR (€m)",          "9.6",  "15.2", "22.7", "33.1"]
     ]
 
-    header_row = headers.each_with_index.map { |h, i|
+    header_row = headers.each_with_index.map do |h, i|
       sample_cell(e(h), fill: EMERALD_700, color: WHITE, bold: true,
-                  w: col_w[i], h: row_h, align: i == 0 ? "l" : "r")
-    }.join
+                        w: col_w[i], h: row_h, align: i.zero? ? "l" : "r")
+    end.join
 
     data_rows = rows.each_with_index.map do |row, ri|
       fill = ri.even? ? EMERALD_100 : WHITE
       cells = row.each_with_index.map do |val, ci|
         sample_cell(e(val), fill: fill, color: EMERALD_900, bold: false,
-                    w: col_w[ci], h: row_h, align: ci == 0 ? "l" : "r")
+                            w: col_w[ci], h: row_h, align: ci.zero? ? "l" : "r")
       end.join
       "<a:tr h=\"#{row_h}\">#{cells}</a:tr>"
     end.join
@@ -453,7 +453,7 @@ class PortfolioReportBrandTemplatePptService
               <p:nvPr/>
             </p:nvGrpSpPr>
             <p:grpSpPr>
-              <a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm>
+              <a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm>
             </p:grpSpPr>
             #{content}
           </p:spTree>
@@ -467,10 +467,10 @@ class PortfolioReportBrandTemplatePptService
   # ── PPTX structure ───────────────────────────────────────────────────────────
 
   def write_content_types(zip, n)
-    entries = (1..n).map { |i|
+    entries = (1..n).map do |i|
       "<Override PartName=\"/ppt/slides/slide#{i}.xml\" " \
-      "ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
-    }.join("\n    ")
+        "ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
+    end.join("\n    ")
     zip.put_next_entry("[Content_Types].xml")
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -503,9 +503,9 @@ class PortfolioReportBrandTemplatePptService
   end
 
   def write_presentation(zip, n)
-    ids = (1..n).map.with_index(256) { |i, id|
+    ids = (1..n).map.with_index(256) do |i, id|
       "<p:sldId id=\"#{id}\" r:id=\"rId#{i + 2}\"/>"
-    }.join("\n    ")
+    end.join("\n    ")
     zip.put_next_entry("ppt/presentation.xml")
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -521,11 +521,11 @@ class PortfolioReportBrandTemplatePptService
   end
 
   def write_presentation_rels(zip, n)
-    entries = (1..n).map { |i|
+    entries = (1..n).map do |i|
       "<Relationship Id=\"rId#{i + 2}\" " \
-      "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" " \
-      "Target=\"slides/slide#{i}.xml\"/>"
-    }.join("\n    ")
+        "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" " \
+        "Target=\"slides/slide#{i}.xml\"/>"
+    end.join("\n    ")
     zip.put_next_entry("ppt/_rels/presentation.xml.rels")
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -605,9 +605,10 @@ class PortfolioReportBrandTemplatePptService
               <p:cNvGrpSpPr/>
               <p:nvPr/>
             </p:nvGrpSpPr>
-            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
           </p:spTree>
         </p:cSld>
+        <p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/>
         <p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst>
         <p:txStyles>
           <p:titleStyle><a:lstStyle/></p:titleStyle>
@@ -644,7 +645,7 @@ class PortfolioReportBrandTemplatePptService
               <p:cNvGrpSpPr/>
               <p:nvPr/>
             </p:nvGrpSpPr>
-            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></a:xfrm></p:grpSpPr>
+            <p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>
           </p:spTree>
         </p:cSld>
       </p:sldLayout>

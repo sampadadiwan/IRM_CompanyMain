@@ -16,9 +16,9 @@
 # @see SupportAgentService
 # @see CallNoticeAgent
 class DistributionReadinessAgent < SupportAgentService
-  DESCRIPTION = "Validates distribution readiness: KYC, net payable, notices generated/approved, bank details on file.".freeze
+  DESCRIPTION = "Validates distribution readiness: KYC, net payable, notices generated/approved, bank details on file."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Validates that all prerequisites are in place before a capital distribution payment is released.
     Runs against each CapitalDistribution in the entity and surfaces any blockers before funds are wired.
 
@@ -35,14 +35,14 @@ class DistributionReadinessAgent < SupportAgentService
   DESC
 
   STEP_LABELS = {
-    initialize_agent:                        "Initialize",
-    verify_investor_kyc:                     "KYC Check",
-    check_net_payable_computed:              "Net Payable",
-    check_distribution_notices_generated:    "Notices Generated",
-    check_documents_approved:               "Docs Approved",
-    verify_bank_details:                     "Bank Details",
-    mark_ready_to_pay:                       "Ready to Pay",
-    generate_progress_reports:              "Save Report"
+    initialize_agent: "Initialize",
+    verify_investor_kyc: "KYC Check",
+    check_net_payable_computed: "Net Payable",
+    check_distribution_notices_generated: "Notices Generated",
+    check_documents_approved: "Docs Approved",
+    verify_bank_details: "Bank Details",
+    mark_ready_to_pay: "Ready to Pay",
+    generate_progress_reports: "Save Report"
   }.freeze
 
   step :initialize_agent
@@ -66,10 +66,10 @@ class DistributionReadinessAgent < SupportAgentService
     if report
       mark_step_running(report, :initialize_agent)
       ctx[:issues] = {
-        kyc_issues:     [],
+        kyc_issues: [],
         payment_issues: [],
         document_issues: [],
-        bank_issues:    []
+        bank_issues: []
       }
       mark_step_success(report, :initialize_agent, message: "Agent initialized")
     end
@@ -130,11 +130,11 @@ class DistributionReadinessAgent < SupportAgentService
 
     mark_step_running(report, :check_net_payable_computed)
     payments = distribution_payments(target)
-    failed_records = payments.select { |p|
+    failed_records = payments.select do |p|
       p.net_payable_cents.nil? || p.net_payable_cents.zero?
-    }.map { |p|
+    end.map do |p|
       { "name" => p.investor_name, "reason" => "Net payable not computed — re-run fee calculation" }
-    }
+    end
 
     if failed_records.any?
       mark_step_failed(report, :check_net_payable_computed,
@@ -175,11 +175,11 @@ class DistributionReadinessAgent < SupportAgentService
     end
 
     payments = distribution_payments(target)
-    failed_records = payments.select { |p|
+    failed_records = payments.select do |p|
       p.documents.not_templates.empty?
-    }.map { |p|
+    end.map do |p|
       { "name" => "#{p.investor_name} (#{p.folio_id})", "reason" => "No distribution notice generated" }
-    }
+    end
 
     if failed_records.any?
       mark_step_failed(report, :check_distribution_notices_generated,
@@ -217,7 +217,7 @@ class DistributionReadinessAgent < SupportAgentService
       next if unapproved.blank?
 
       failed_records << {
-        "name"   => "#{payment.investor_name} (#{payment.folio_id})",
+        "name" => "#{payment.investor_name} (#{payment.folio_id})",
         "reason" => "#{unapproved.size} document(s) pending approval"
       }
     end
@@ -298,6 +298,6 @@ class DistributionReadinessAgent < SupportAgentService
 
   def distribution_payments(distribution)
     @distribution_payments ||= distribution.capital_distribution_payments
-                                            .includes(:documents, capital_commitment: :investor_kyc)
+                                           .includes(:documents, capital_commitment: :investor_kyc)
   end
 end

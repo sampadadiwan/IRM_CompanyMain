@@ -1,4 +1,3 @@
-# rubocop:disable Metrics/ClassLength
 class InfoOnInvestorsJob
   include CurrencyHelper
 
@@ -102,7 +101,6 @@ class InfoOnInvestorsJob
     data
   end
 
-  # rubocop:disable Metrics/MethodLength
   def report_table_2_data(kycs, end_date, fund)
     data = hash_tree
     data["T2_Sponsor"]["Value"] = t2_calculate_sum(kycs, "Sponsor", end_date, :amount, fund.id)

@@ -15,7 +15,7 @@ Chewy.strategy(:atomic) do
 
   portcos.each do |portco|
     puts "Creating portfolio investments for #{portco.investor_name}..."
-    
+
     # 3. Create an Investment Instrument for this company
     # Some companies might already have one, but we'll try to find or create
     instrument = InvestmentInstrument.find_or_create_by!(
@@ -56,9 +56,9 @@ Chewy.strategy(:atomic) do
 
     # 4. Create one or two PortfolioInvestments
     # Seed Round
-    amount = 50000000 # $500k
-    quantity = 10000
-    
+    amount = 50_000_000 # $500k
+    quantity = 10_000
+
     PortfolioInvestment.find_or_create_by!(
       fund_id: fund.id,
       entity_id: entity_id,
@@ -81,30 +81,30 @@ Chewy.strategy(:atomic) do
     end
 
     # Series A (for some)
-    if [true, false].sample
-      amount_a = 150000000 # $1.5M
-      quantity_a = 5000
-      
-      PortfolioInvestment.find_or_create_by!(
-        fund_id: fund.id,
-        entity_id: entity_id,
-        portfolio_company_id: portco.id,
-        investment_instrument_id: instrument.id,
-        investment_date: 6.months.ago.to_date,
-        aggregate_portfolio_investment_id: api_record.id # Link it here
-      ) do |pi|
-        pi.ex_expenses_base_amount_cents = amount_a
-        pi.base_amount_cents = amount_a
-        pi.ex_expenses_amount_cents = amount_a
-        pi.amount_cents = amount_a
-        pi.net_bought_amount_cents = amount_a
-        pi.net_amount_cents = amount_a
-        pi.quantity = quantity_a
-        pi.sub_category = "Equity"
-        pi.category = "Unlisted"
-        pi.sector = instrument.sector
-        pi.notes = "Series A round investment"
-      end
+    next unless [true, false].sample
+
+    amount_a = 150_000_000 # $1.5M
+    quantity_a = 5000
+
+    PortfolioInvestment.find_or_create_by!(
+      fund_id: fund.id,
+      entity_id: entity_id,
+      portfolio_company_id: portco.id,
+      investment_instrument_id: instrument.id,
+      investment_date: 6.months.ago.to_date,
+      aggregate_portfolio_investment_id: api_record.id # Link it here
+    ) do |pi|
+      pi.ex_expenses_base_amount_cents = amount_a
+      pi.base_amount_cents = amount_a
+      pi.ex_expenses_amount_cents = amount_a
+      pi.amount_cents = amount_a
+      pi.net_bought_amount_cents = amount_a
+      pi.net_amount_cents = amount_a
+      pi.quantity = quantity_a
+      pi.sub_category = "Equity"
+      pi.category = "Unlisted"
+      pi.sector = instrument.sector
+      pi.notes = "Series A round investment"
     end
   end
 end

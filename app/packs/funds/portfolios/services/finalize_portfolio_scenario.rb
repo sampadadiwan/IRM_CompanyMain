@@ -133,7 +133,6 @@ class FinalizePortfolioScenario < Trailblazer::Operation
     ctx[:errors].blank?
   end
 
-  # rubocop:disable Metrics/MethodLength
   def save_portfolio_company_ratios(ctx, portfolio_scenario:, **)
     # Parse the JSON into a hash keyed by company_id -> metrics hash
     portfolio_company_data = JSON.parse(
@@ -141,7 +140,7 @@ class FinalizePortfolioScenario < Trailblazer::Operation
       symbolize_names: true
     )
 
-    portfolio_company_data.each do |company_id, company_data| # rubocop:disable Metrics/BlockLength
+    portfolio_company_data.each do |company_id, company_data|
       # company_data ex: { name:, xirr:, xirr_USD:, moic:, moic_USD:, cash_flows: [...] }
 
       # Collect all metric/currency pairs dynamically, e.g.

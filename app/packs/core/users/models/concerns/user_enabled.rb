@@ -9,7 +9,7 @@ module UserEnabled
                           enable_captable enable_investors enable_kpis enable_kycs enable_approvals enable_reports enable_kanban enable_import_uploads enable_investor_advisors enable_form_types enable_user_llm_chat enable_compliance enable_ai_chat]
 
     # Add new flags to the end of this list
-    flag :extended_permissions, %i[investor_kyc_create investor_kyc_read investor_kyc_update investor_kyc_delete investor_kyc_approve investor_create investor_read investor_update investor_destroy]
+    flag :extended_permissions, %i[investor_kyc_create investor_kyc_read investor_kyc_update investor_kyc_delete investor_kyc_approve  investor_create investor_read investor_update investor_destroy investor_kyc_onboarding]
   end
 
   def enable_compliance

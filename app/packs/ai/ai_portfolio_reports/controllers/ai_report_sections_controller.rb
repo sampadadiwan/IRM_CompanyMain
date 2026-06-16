@@ -225,7 +225,6 @@ class AiReportSectionsController < ApplicationController
   # Regenerate a section's content using the agent.
   #
   # @return [void]
-  # rubocop:disable Metrics/MethodLength
   def regenerate
     @report = AiPortfolioReport.find(params[:ai_portfolio_report_id])
     @section = @report.ai_report_sections.find(params[:id])

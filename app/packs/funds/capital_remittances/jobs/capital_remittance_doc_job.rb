@@ -50,6 +50,8 @@ class CapitalRemittanceDocJob < DocGenJob
     @end_date = Time.zone.now
     @user_id = user_id
     @template_id = template_id
+    # custom field value can be kyc or folio
+    options[:call_notice_per_kyc] = @fund.kyc_level_data_gen?
 
     Chewy.strategy(:sidekiq) do
       generate(@start_date, @end_date, @user_id, options: options) if valid_inputs

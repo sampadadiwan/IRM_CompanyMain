@@ -8,7 +8,7 @@ class FeaturesController < ApplicationController
     authorize :feature, :index?
     skip_policy_scope
 
-    all_files = Dir.glob(FEATURES_ROOT.join("**", "*.md")).sort
+    all_files = Dir.glob(FEATURES_ROOT.join("**", "*.md"))
 
     # Build a flat list with group = subdirectory name (nil for top-level)
     @features = all_files.map do |path|
@@ -27,8 +27,8 @@ class FeaturesController < ApplicationController
 
     # Group: nil (top-level) first, then named groups alphabetically
     @grouped_features = @features.group_by { |f| f[:group] }
-                                  .sort_by { |group, _| group.nil? ? "" : group }
-                                  .to_h
+                                 .sort_by { |group, _| group.nil? ? "" : group }
+                                 .to_h
 
     @bread_crumbs = { t("top_menus.features") => nil }
   end
@@ -39,7 +39,7 @@ class FeaturesController < ApplicationController
     raw_id      = params[:id].to_s.sub(/\.md$/i, "")
     # Prevent directory traversal
     safe_path   = FEATURES_ROOT.join("#{raw_id}.md").cleanpath
-    unless safe_path.to_s.start_with?(FEATURES_ROOT.to_s + "/")
+    unless safe_path.to_s.start_with?("#{FEATURES_ROOT}/")
       redirect_to features_path, alert: "Feature document not found."
       return
     end

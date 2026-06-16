@@ -1,7 +1,6 @@
 class KpiCumulateJob < ApplicationJob
   queue_as :default
 
-  # rubocop: disable Rails/SkipsModelValidations, Metrics/MethodLength, Metrics/BlockLength
   def perform(portfolio_company_id, user_id: nil, force: false)
     Chewy.strategy(:sidekiq) do
       @error_msgs = []

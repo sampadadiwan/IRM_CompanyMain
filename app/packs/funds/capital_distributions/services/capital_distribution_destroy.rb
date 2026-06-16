@@ -1,7 +1,6 @@
 class CapitalDistributionDestroy < Trailblazer::Operation
   step :save_with_pi
 
-  # rubocop:disable  Rails/SkipsModelValidations
   def save_with_pi(_ctx, capital_distribution:, **)
     # This operation saves the capital distribution and updates the portfolio investments with the new capital_distribution_id.
     cd_saved = false, pis_saved = false

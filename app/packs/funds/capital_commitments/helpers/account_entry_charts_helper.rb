@@ -51,7 +51,7 @@ module AccountEntryChartsHelper
       data_points = all_periods.each_with_object({}) do |period, hash|
         date = if period.is_a?(Time) || period.is_a?(Date)
                  period
-               elsif period.to_s =~ /^\d{4}-\d{2}-\d{2}$/
+               elsif /^\d{4}-\d{2}-\d{2}$/.match?(period.to_s)
                  Date.parse(period.to_s)
                end
 

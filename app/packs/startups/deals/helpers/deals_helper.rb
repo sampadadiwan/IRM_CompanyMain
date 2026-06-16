@@ -362,7 +362,7 @@ module DealsHelper
     data = templates.map { |t| [t.title, completed_counts[t.title] || 0] }
 
     # Highcharts funnel divides each value by the total; all-zero data causes NaN and a blank render
-    data.sum(&:last) > 0 ? data : []
+    data.sum(&:last).positive? ? data : []
   end
 
   def get_grouped_access_rights(access_rights)

@@ -27,7 +27,11 @@ class AccountEntrySqlite < ApplicationRecordSqlite
         value = attrs[col] || attrs[col.to_sym]
         next unless value.respond_to?(:finite?) && !value.finite?
 
-        kind = value.nan? ? "NaN" : (value.positive? ? "Infinity" : "-Infinity")
+        kind = if value.nan?
+                 "NaN"
+               else
+                 (value.positive? ? "Infinity" : "-Infinity")
+               end
         context = "fund_formula_id=#{attrs['fund_formula_id']}, " \
                   "capital_commitment_id=#{attrs['capital_commitment_id']}, " \
                   "name=#{attrs['name']}"

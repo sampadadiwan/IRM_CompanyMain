@@ -8,6 +8,9 @@ json.notes deal_investor.notes.to_plain_text if deal_investor.notes.present?
 json.primary_amount deal_investor.primary_amount.to_f
 json.secondary_investment deal_investor.secondary_investment.to_f
 json.pre_money_valuation deal_investor.pre_money_valuation.to_f
+json.fee deal_investor.fee.to_f
+json.total_amount deal_investor.total_amount.to_f
+json.company_advisor deal_investor.company_advisor
 json.activities deal_investor.deal_activities do |activity|
   json.extract! activity, :id, :template_id, :status, :title
   json.details activity.details.to_plain_text if activity.details.present?

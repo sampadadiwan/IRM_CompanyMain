@@ -1,5 +1,6 @@
 class ReportBuilderTable < ViewComponent::Base
   def initialize(report:, columns:, rows:, q:, turbo_frame: "report_builder_view")
+    super()
     @report = report
     @columns = columns
     @rows = rows

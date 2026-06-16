@@ -16,7 +16,7 @@ class ExpressionOfInterestsController < ApplicationController
   def new
     @expression_of_interest = ExpressionOfInterest.new(expression_of_interest_params)
     @bread_crumbs = { Opportunities: investment_opportunities_path }
-    @bread_crumbs["#{@expression_of_interest.investment_opportunity.company_name}"] = investment_opportunity_path(@expression_of_interest.investment_opportunity) if @expression_of_interest.investment_opportunity.present?
+    @bread_crumbs[@expression_of_interest.investment_opportunity.company_name.to_s] = investment_opportunity_path(@expression_of_interest.investment_opportunity) if @expression_of_interest.investment_opportunity.present?
     @bread_crumbs[:New] = nil
 
     @expression_of_interest.entity_id = @expression_of_interest.investment_opportunity.entity_id
@@ -138,7 +138,7 @@ class ExpressionOfInterestsController < ApplicationController
     @expression_of_interest = ExpressionOfInterest.find(params[:id])
     authorize @expression_of_interest
     @bread_crumbs = { Opportunities: investment_opportunities_path }
-    @bread_crumbs["#{@expression_of_interest.investment_opportunity.company_name}"] = investment_opportunity_path(@expression_of_interest.investment_opportunity) if @expression_of_interest.investment_opportunity.present?
+    @bread_crumbs[@expression_of_interest.investment_opportunity.company_name.to_s] = investment_opportunity_path(@expression_of_interest.investment_opportunity) if @expression_of_interest.investment_opportunity.present?
     @bread_crumbs["EOI"] = expression_of_interest_path(@expression_of_interest)
   end
 

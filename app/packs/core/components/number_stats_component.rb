@@ -11,7 +11,6 @@ class NumberStatsComponent < ViewComponent::Base
     @text_info = text_info
     @css_class = css_class
   end
-  # rubocop :enable Metrics/ParameterLists
 
   attr_reader :path, :amount, :raw_amount, :subtitle, :progress_bar_color, :text_info, :fs_size, :css_class
 end

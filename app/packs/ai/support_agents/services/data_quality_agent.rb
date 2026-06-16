@@ -16,9 +16,9 @@
 #
 # @see SupportAgentService
 class DataQualityAgent < SupportAgentService
-  DESCRIPTION = "Nightly data integrity checks per fund: commitment overflows, stale valuations, stale FX rates. Emails a health score and fix-it list.".freeze
+  DESCRIPTION = "Nightly data integrity checks per fund: commitment overflows, stale valuations, stale FX rates. Emails a health score and fix-it list."
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+  LONG_DESCRIPTION = <<~DESC
     Runs deterministic integrity checks across each fund's financial data on a nightly schedule.
     Targets every Fund in the entity and produces a health score (percentage of active checks passing)
     along with a fix-it list emailed to configured recipients.
@@ -36,13 +36,13 @@ class DataQualityAgent < SupportAgentService
   DESC
 
   STEP_LABELS = {
-    initialize_agent:             "Initialize",
-    check_commitment_overflows:   "Commitment Check",
-    check_missing_valuations:     "Valuation Check",
-    check_stale_fx_rates:         "FX Rate Check",
-    compute_health_score:         "Health Score",
-    send_quality_report:          "Send Report",
-    generate_progress_reports:    "Save Report"
+    initialize_agent: "Initialize",
+    check_commitment_overflows: "Commitment Check",
+    check_missing_valuations: "Valuation Check",
+    check_stale_fx_rates: "FX Rate Check",
+    compute_health_score: "Health Score",
+    send_quality_report: "Send Report",
+    generate_progress_reports: "Save Report"
   }.freeze
 
   step :initialize_agent
@@ -77,17 +77,17 @@ class DataQualityAgent < SupportAgentService
       return true
     end
 
-    overflows = fund.capital_commitments.select { |c|
+    overflows = fund.capital_commitments.select do |c|
       c.collected_amount_cents.to_i > c.committed_amount_cents.to_i
-    }
+    end
 
     if overflows.any?
-      failed = overflows.map { |c|
+      failed = overflows.map do |c|
         {
-          "name"   => c.investor_name.presence || "Commitment ##{c.id}",
+          "name" => c.investor_name.presence || "Commitment ##{c.id}",
           "reason" => "Collected #{c.collected_amount} exceeds committed #{c.committed_amount}"
         }
-      }
+      end
       ctx[:issues][:commitment_issues].concat(failed)
       ctx[:check_results] << { name: "Commitment Overflows", status: :fail, count: overflows.size }
       Rails.logger.warn { "[DataQualityAgent] #{overflows.size} collected > committed overflow(s) in Fund #{fund.id}" }
@@ -113,15 +113,15 @@ class DataQualityAgent < SupportAgentService
 
     # Portfolio companies are Investor records reachable via portfolio_investments on this fund
     portfolio_company_ids = fund.portfolio_investments.pluck(:portfolio_company_id).uniq
-    stale = Investor.where(id: portfolio_company_ids).select { |pc|
-      pc.valuations.where("valuation_date >= ?", cutoff).empty?
-    }
+    stale = Investor.where(id: portfolio_company_ids).select do |pc|
+      pc.valuations.where(valuation_date: cutoff..).empty?
+    end
 
     if stale.any?
       ctx[:issues][:valuation_issues].concat(
-        stale.map { |pc|
+        stale.map do |pc|
           { "name" => pc.investor_name, "reason" => "No valuation in the last #{stale_days} days" }
-        }
+        end
       )
       ctx[:check_results] << { name: "Missing Valuations", status: :fail, count: stale.size }
       Rails.logger.warn { "[DataQualityAgent] #{stale.size} portfolio company/companies missing recent valuations in Fund #{fund.id}" }
@@ -144,17 +144,17 @@ class DataQualityAgent < SupportAgentService
 
     stale_days = @support_agent.json_fields["stale_fx_days"]&.to_i || 30
     stale_pairs = ExchangeRate
-      .where(entity_id: fund.entity_id, latest: true)
-      .where("updated_at < ?", stale_days.days.ago)
+                  .where(entity_id: fund.entity_id, latest: true)
+                  .where(updated_at: ...stale_days.days.ago)
 
     if stale_pairs.any?
       ctx[:issues][:fx_issues].concat(
-        stale_pairs.map { |r|
+        stale_pairs.map do |r|
           {
-            "name"   => "#{r.from}/#{r.to}",
-            "reason" => "Last updated #{r.updated_at.to_date} (#{(Date.today - r.updated_at.to_date).to_i} days ago)"
+            "name" => "#{r.from}/#{r.to}",
+            "reason" => "Last updated #{r.updated_at.to_date} (#{(Time.zone.today - r.updated_at.to_date).to_i} days ago)"
           }
-        }
+        end
       )
       ctx[:check_results] << { name: "Stale FX Rates", status: :fail, count: stale_pairs.size }
       Rails.logger.warn { "[DataQualityAgent] #{stale_pairs.size} stale FX rate(s) for entity #{fund.entity_id}" }

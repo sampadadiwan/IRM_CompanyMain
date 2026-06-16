@@ -372,6 +372,13 @@
   }
 }
 
+// ── Presentation Analyst: suppress row hover on the summary table ─────────────
+
+.pres-summary-table tbody tr:hover td {
+  background-color: inherit !important;
+  box-shadow: none !important;
+}
+
 // ── Note Summary: markdown prose display + raw-markdown textarea editor ───────
 
 .note-summary-body.prose {

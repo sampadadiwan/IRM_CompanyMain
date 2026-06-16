@@ -12,7 +12,7 @@ module SupportAgentsHelper
     return "".html_safe if text.blank?
 
     sections = parse_agent_description_sections(text)
-    parts    = sections.map { |s| render_agent_description_section(s) }.compact
+    parts    = sections.filter_map { |s| render_agent_description_section(s) }
     safe_join(parts)
   end
 
@@ -49,7 +49,7 @@ module SupportAgentsHelper
       elsif current.nil?
         header_lines << stripped unless stripped.empty?
       else
-        current += " " + stripped unless stripped.empty?
+        current += " #{stripped}" unless stripped.empty?
       end
     end
     items << current if current
@@ -70,11 +70,9 @@ module SupportAgentsHelper
   end
 
   def render_steps_section(section)
-    header_html = if section[:header].present?
-      content_tag(:div, section[:header], class: "agent-section-label")
-    end
+    header_html = (content_tag(:div, section[:header], class: "agent-section-label") if section[:header].present?)
 
-    steps_html = section[:items].each_with_index.map do |item, idx|
+    step_tags = section[:items].each_with_index.map do |item, idx|
       if item.include?(" — ")
         title, body = item.split(" — ", 2)
       else
@@ -86,22 +84,23 @@ module SupportAgentsHelper
         badge = content_tag(:div, (idx + 1).to_s, class: "agent-step-num")
         inner = content_tag(:div, title, class: "agent-step-title")
         inner += content_tag(:div, body, class: "agent-step-body") if body.present?
-        badge + content_tag(:div, inner.html_safe)
+        badge + content_tag(:div, inner)
       end
-    end.join.html_safe
+    end
+    steps_html = safe_join(step_tags)
 
     content_tag(:div, class: "agent-steps-section") do
-      (header_html.to_s + content_tag(:div, steps_html, class: "agent-steps")).html_safe
+      safe_join([header_html, content_tag(:div, steps_html, class: "agent-steps")])
     end
   end
 
   def render_config_section(section)
     # Extract the first token of each comma-separated clause as the param name
-    param_names = section[:text].split(/,\s*(?=[a-z_]+[\s\(])/).map do |clause|
-      clause.strip.split(/[\s\(]/)[0]
-    end.compact.reject(&:empty?).uniq
+    param_names = section[:text].split(/,\s*(?=[a-z_]+[\s(])/).filter_map do |clause|
+      clause.strip.split(/[\s(]/)[0]
+    end.reject(&:empty?).uniq
 
-    badges = param_names.map { |p| content_tag(:span, p, class: "agent-config-badge") }.join(" ").html_safe
+    badges = safe_join(param_names.map { |p| content_tag(:span, p, class: "agent-config-badge") }, " ")
 
     content_tag(:div, class: "agent-config-section") do
       content_tag(:span, "Config", class: "agent-section-label me-2") + badges

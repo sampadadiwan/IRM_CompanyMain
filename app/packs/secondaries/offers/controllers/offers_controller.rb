@@ -74,7 +74,7 @@ class OffersController < ApplicationController
     @offer.investor_id ||= @offer.entity.investors.where(investor_entity_id: current_user.entity_id).first&.id
 
     @bread_crumbs = { Secondaries: secondary_sales_path }
-    @bread_crumbs["#{@offer.secondary_sale.name}"] = secondary_sale_path(@offer.secondary_sale) if @offer.secondary_sale.present?
+    @bread_crumbs[@offer.secondary_sale.name.to_s] = secondary_sale_path(@offer.secondary_sale) if @offer.secondary_sale.present?
     @bread_crumbs[:New] = nil
 
     setup_custom_fields(@offer, force_form_type: @offer.secondary_sale.offer_form_type)
@@ -167,8 +167,8 @@ class OffersController < ApplicationController
     @offer = Offer.find(params[:id])
     authorize @offer
     @bread_crumbs = { Secondaries: secondary_sales_path }
-    @bread_crumbs["#{@offer.secondary_sale.name}"] = secondary_sale_path(@offer.secondary_sale) if @offer.secondary_sale.present?
-    @bread_crumbs["#{@offer}"] = offer_path(@offer)
+    @bread_crumbs[@offer.secondary_sale.name.to_s] = secondary_sale_path(@offer.secondary_sale) if @offer.secondary_sale.present?
+    @bread_crumbs[@offer.to_s] = offer_path(@offer)
   end
 
   # Only allow a list of trusted parameters through.

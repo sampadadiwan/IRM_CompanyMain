@@ -8,7 +8,7 @@ class ReportBuilderSchedulerJob < ApplicationJob
       # Trigger the export job
       # We use the report's owner as the user for the export job
       ReportBuilderExportJob.perform_later(schedule.report_id, schedule.report.user_id, schedule.id)
-      
+
       # Update last run at
       schedule.update_column(:last_run_at, Time.current)
     end

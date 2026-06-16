@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -74,10 +74,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
     t.date "reporting_date", null: false
     t.string "rule_for", limit: 10, default: "Accounting"
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "updated_at", null: false
+    t.datetime "updated_at", precision: nil, null: false
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
-    t.index %w[capital_commitment_id name reporting_date], name: "idx_ae_cc_name_date"
+    t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
     t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
+    t.index ["entity_id", "deleted_at", "name"], name: "idx_ae_entity_deleted_name"
     t.index ["entity_id"], name: "index_account_entries_on_entity_id"
     t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
     t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
@@ -1135,6 +1136,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
     t.boolean "docs_required_for_completion", default: false
     t.bigint "document_folder_id"
     t.integer "entity_id"
+    t.bigint "import_upload_id"
     t.boolean "notify_employees", default: false
     t.boolean "notify_investor", default: false
     t.integer "sequence"
@@ -1149,6 +1151,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
     t.index ["deleted_at"], name: "index_deal_activities_on_deleted_at"
     t.index ["document_folder_id"], name: "index_deal_activities_on_document_folder_id"
     t.index ["entity_id"], name: "index_deal_activities_on_entity_id"
+    t.index ["import_upload_id"], name: "index_deal_activities_on_import_upload_id"
   end
 
   create_table "deal_docs", force: :cascade do |t|
@@ -1234,6 +1237,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
     t.date "end_date"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
+    t.json "grid_columns"
     t.integer "impressions_count", default: 0
     t.json "json_fields"
     t.string "name"
@@ -2250,13 +2254,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
     t.string "email"
     t.boolean "email_enabled", default: true
     t.integer "entity_id"
-    t.string "first_name", limit: 20
+    t.string "first_name", limit: 255
     t.integer "granted_by"
     t.bigint "import_upload_id"
     t.bigint "investor_entity_id"
     t.integer "investor_id"
     t.boolean "is_investor_advisor", default: false
-    t.string "last_name", limit: 20
+    t.string "last_name", limit: 255
     t.string "phone", limit: 15
     t.boolean "send_confirmation", default: false
     t.string "tag_list", limit: 120
@@ -3160,13 +3164,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_03_100001) do
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
     t.bigint "fund_id", null: false
+    t.bigint "import_upload_id"
     t.string "level"
     t.string "period"
-    t.json "ratios"
+    t.string "ratio"
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_ratio_formulas_on_deleted_at"
     t.index ["entity_id"], name: "index_ratio_formulas_on_entity_id"
     t.index ["fund_id"], name: "index_ratio_formulas_on_fund_id"
+    t.index ["import_upload_id"], name: "index_ratio_formulas_on_import_upload_id"
   end
 
   create_table "reminders", force: :cascade do |t|

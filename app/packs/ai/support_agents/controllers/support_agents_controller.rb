@@ -46,8 +46,8 @@ class SupportAgentsController < ApplicationController
 
     @portfolio_reports = if @support_agent.agent_type == "PortfolioCompanyAgent"
                            reports = SupportAgentReport
-                             .where(support_agent: @support_agent, owner_type: "Investor")
-                             .includes(:owner)
+                                     .where(support_agent: @support_agent, owner_type: "Investor")
+                                     .includes(:owner)
 
                            # Filter by specific owner if owner_id param is provided
                            reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
@@ -60,8 +60,8 @@ class SupportAgentsController < ApplicationController
     # Load latest scoring report per company for PortfolioScoringAgent
     @scoring_reports = if @support_agent.agent_type == "PortfolioScoringAgent"
                          reports = SupportAgentReport
-                           .where(support_agent: @support_agent, owner_type: "Investor")
-                           .includes(:owner)
+                                   .where(support_agent: @support_agent, owner_type: "Investor")
+                                   .includes(:owner)
                          reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
                          # Return the latest report per owner so we can show a per-company summary
                          reports.order(created_at: :desc)
@@ -72,13 +72,24 @@ class SupportAgentsController < ApplicationController
     # Load note summaries per investor for NoteSummarizerAgent
     @note_summaries = if @support_agent.agent_type == "NoteSummarizerAgent"
                         reports = SupportAgentReport
-                          .where(support_agent: @support_agent, owner_type: "Investor")
-                          .includes(:owner)
+                                  .where(support_agent: @support_agent, owner_type: "Investor")
+                                  .includes(:owner)
                         reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
                         reports.order(updated_at: :desc)
                       else
                         SupportAgentReport.none
                       end
+
+    # Load presentation analyst reports for PresentationAnalystAgent
+    @presentation_reports = if @support_agent.agent_type == "PresentationAnalystAgent"
+                              reports = SupportAgentReport
+                                        .where(support_agent: @support_agent, owner_type: "Investor")
+                                        .includes(:owner)
+                              reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
+                              reports.order(created_at: :desc)
+                            else
+                              SupportAgentReport.none
+                            end
 
     @deal_reports = if @support_agent.agent_type == "DealsReportAgent"
                       SupportAgentReport
@@ -88,7 +99,6 @@ class SupportAgentsController < ApplicationController
                     else
                       SupportAgentReport.none
                     end
-
   end
 
   # Initializes a new support agent for creation.
@@ -151,8 +161,8 @@ class SupportAgentsController < ApplicationController
     authorize @support_agent, :show?
 
     reports = SupportAgentReport
-      .where(support_agent: @support_agent, owner_type: "Investor")
-      .includes(:owner)
+              .where(support_agent: @support_agent, owner_type: "Investor")
+              .includes(:owner)
     reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
     @note_summaries = reports.order(updated_at: :desc).limit(20)
   end
@@ -169,9 +179,9 @@ class SupportAgentsController < ApplicationController
 
     updated_score = (report.json_fields["score"] || {}).merge(score_edit_params)
     report.json_fields = report.json_fields.merge(
-      "score"           => updated_score,
+      "score" => updated_score,
       "manually_edited" => true,
-      "edited_at"       => Time.current.iso8601
+      "edited_at" => Time.current.iso8601
     )
     report.save!
 
@@ -191,9 +201,9 @@ class SupportAgentsController < ApplicationController
 
     summary_text = params.permit(:summary_text)[:summary_text].to_s.strip
     report.json_fields = report.json_fields.merge(
-      "summary_text"    => summary_text,
+      "summary_text" => summary_text,
       "manually_edited" => true,
-      "edited_at"       => Time.current.iso8601
+      "edited_at" => Time.current.iso8601
     )
     report.save!
 
@@ -232,7 +242,6 @@ class SupportAgentsController < ApplicationController
   # for real-time UI feedback.
   #
   # @return [void]
-  # rubocop:disable Metrics/MethodLength
   def run_with_steps
     @support_agent = SupportAgent.find(params[:id])
     authorize @support_agent
@@ -248,11 +257,11 @@ class SupportAgentsController < ApplicationController
        @support_agent.agent_type == "DealsReportAgent"
       SupportAgentJob.perform_later(
         support_agent_id: @support_agent.id,
-        target_id:        params[:target_id],
-        target_type:      params[:target_type],
-        user_id:          current_user.id,
-        with_steps:       true,
-        execution_mode:   :adhoc_batch
+        target_id: params[:target_id],
+        target_type: params[:target_type],
+        user_id: current_user.id,
+        with_steps: true,
+        execution_mode: :adhoc_batch
       )
       return redirect_to(request.referer || support_agents_path, notice: "#{@support_agent.name} queued.")
     end
@@ -312,7 +321,6 @@ class SupportAgentsController < ApplicationController
       end
     end
   end
-  # rubocop:enable Metrics/MethodLength
 
   # Runs the support agent on multiple portfolio companies in batch (adhoc run).
   #
@@ -329,7 +337,6 @@ class SupportAgentsController < ApplicationController
   def run_batch
     @support_agent = SupportAgent.find(params[:id])
     authorize @support_agent
-
 
     # Generic batch processing - get target IDs and type
     target_ids = params[:target_ids]&.reject(&:blank?) || []
@@ -562,27 +569,25 @@ class SupportAgentsController < ApplicationController
   # @param support_agent [SupportAgent] the agent to check
   # @return [String] the target model class name (e.g., "Investor", "CapitalCall")
   def infer_target_type_from_agent(support_agent)
-    begin
-      # Get the agent service class
-      agent_service = support_agent.agent_service
-      return nil unless agent_service.respond_to?(:targets)
+    # Get the agent service class
+    agent_service = support_agent.agent_service
+    return nil unless agent_service.respond_to?(:targets)
 
-      # Call targets with entity_id to get the relation
-      # Use a safe call with current user's entity
-      target_relation = if agent_service.method(:targets).arity == 1
-                          agent_service.targets(current_user.entity_id)
-                        elsif agent_service.method(:targets).arity == 2
-                          agent_service.targets(current_user.entity_id, support_agent)
-                        else
-                          agent_service.targets
-                        end
+    # Call targets with entity_id to get the relation
+    # Use a safe call with current user's entity
+    target_relation = if agent_service.method(:targets).arity == 1
+                        agent_service.targets(current_user.entity_id)
+                      elsif agent_service.method(:targets).arity == 2
+                        agent_service.targets(current_user.entity_id, support_agent)
+                      else
+                        agent_service.targets
+                      end
 
-      # Extract the model class name from the relation
-      target_relation.model.name if target_relation.respond_to?(:model)
-    rescue => e
-      Rails.logger.error "[SupportAgentsController] Failed to infer target type: #{e.message}"
-      nil
-    end
+    # Extract the model class name from the relation
+    target_relation.model.name if target_relation.respond_to?(:model)
+  rescue StandardError => e
+    Rails.logger.error "[SupportAgentsController] Failed to infer target type: #{e.message}"
+    nil
   end
 
   # Validates that the target type is in the allowed whitelist.

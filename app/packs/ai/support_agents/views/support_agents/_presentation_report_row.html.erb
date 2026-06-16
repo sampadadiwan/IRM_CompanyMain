@@ -1,0 +1,89 @@
+<%#
+  Shared summary <tr> for a single SupportAgentReport produced by PresentationAnalystAgent.
+  Used by both _presentation_reports_tab.html.erb (agent page) and
+  investors/widgets/_presentation_analyst.html.erb (portfolio dashboard widget).
+
+  Locals:
+    report          — SupportAgentReport (required)
+    agent           — SupportAgent (required, used for the link-out action)
+    show_company    — boolean, default false — adds a Portfolio Company column first
+    action          — :collapse (expand inline detail panel) | :link_out (link to agent page)
+                      default :link_out
+%>
+<%
+  jf      = report.json_fields || {}
+  score   = jf["score"] || {}
+  overall = score["overall_score"].to_i
+  grade   = score["grade"].to_s
+  periods = jf["periods_analyzed"] || []
+  qs      = jf["analyst_questions"] || []
+  bc      = overall >= 80 ? "bg-success" : overall >= 60 ? "bg-primary" : overall >= 40 ? "bg-warning" : "bg-danger"
+
+  row_action   = local_assigns.fetch(:action, :link_out)
+  show_company = local_assigns.fetch(:show_company, false)
+%>
+<tr>
+  <% if show_company %>
+    <td class="fw-semibold">
+      <% if report.owner %>
+        <%= link_to report.owner.investor_name, investor_path(report.owner), data: { turbo: false } %>
+      <% else %>
+        <span class="text-muted">—</span>
+      <% end %>
+    </td>
+  <% end %>
+
+  <td class="text-muted small">
+    <%= periods.size %> period<%= "s" if periods.size != 1 %>
+  </td>
+
+  <td>
+    <% if overall > 0 %>
+      <div class="d-flex align-items-center gap-2">
+        <div class="progress flex-grow-1" style="height:8px;">
+          <div class="progress-bar <%= bc %>" style="width:<%= overall %>%;"></div>
+        </div>
+        <span class="fw-bold small"><%= overall %></span>
+      </div>
+    <% else %>
+      <span class="text-muted small">—</span>
+    <% end %>
+  </td>
+
+  <td>
+    <% if grade.present? %>
+      <span class="badge fs-6 px-2 py-1 <%= bc %>"><%= grade %></span>
+    <% end %>
+  </td>
+
+  <td class="small"><%= qs.size %> questions</td>
+
+  <td>
+    <%
+      case report.status.to_s
+      when "completed" then st, sc = "Ready",   "bg-success"
+      when "failed"    then st, sc = "Blocked", "bg-danger"
+      else                  st, sc = report.status.to_s.titleize, "bg-secondary"
+      end
+    %>
+    <span class="badge <%= sc %>"><%= st %></span>
+  </td>
+
+  <td class="text-muted small"><%= report.created_at.strftime("%d %b %Y, %H:%M") %></td>
+
+  <td>
+    <% if row_action == :collapse %>
+      <button class="btn btn-sm btn-outline-secondary"
+              data-bs-toggle="collapse"
+              data-bs-target="#pres-detail-<%= report.id %>">
+        <i class="ti ti-chevron-down"></i>
+      </button>
+    <% else %>
+      <%= link_to support_agent_path(agent, tab: "presentation_reports"),
+                  class: "btn btn-sm btn-outline-secondary",
+                  data: { turbo: false, bs_toggle: "tooltip", bs_title: "View full briefing" } do %>
+        <i class="ti ti-external-link"></i>
+      <% end %>
+    <% end %>
+  </td>
+</tr>

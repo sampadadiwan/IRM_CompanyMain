@@ -1,3 +1,42 @@
+Then('there should be {string} ratio formulas for the fund') do |count|
+  # Reload to pick up any records created by the background job
+  RatioFormula.where(fund: @fund).count.should == count.to_i
+end
+
+Then('the ratio formula {string} should have level {string} action {string} period {string} ratio {string} account_entry_names {string}') do |position, level, action, period, ratio, account_entry_names|
+  # position is 1-based index into fund's ratio formulas ordered by id
+  rf = RatioFormula.where(fund: @fund).order(:id).to_a[position.to_i - 1]
+  expect(rf).not_to be_nil, "Expected ratio formula at position #{position} to exist"
+  rf.level.should == level
+  rf.action.should == action
+  rf.period.should == period
+  rf.ratio.should == ratio
+  rf.account_entry_names.sort.should == account_entry_names.split(",").map(&:strip).sort
+end
+
+Then('the ratio formula {string} should store raw enum value {string} for {word}') do |position, expected_value, field|
+  # Confirms the DB column holds the raw enum key, not the humanized display text
+  rf = RatioFormula.where(fund: @fund).order(:id).to_a[position.to_i - 1]
+  expect(rf).not_to be_nil
+  rf.send(field).should == expected_value
+end
+
+Then('re-importing {string} for {string} should fail with duplicate errors') do |file, type|
+  # Create a second ImportUpload with the same file and run it inline.
+  iu = ImportUpload.create!(
+    entity: @entity,
+    owner: @fund,
+    import_type: type,
+    name: "Re-import #{type}",
+    user_id: @user.id,
+    import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}"))
+  )
+  ImportUploadJob.perform_now(iu.id)
+  iu.reload
+  # Every row should have failed because the records already exist
+  iu.failed_row_count.should > 0
+end
+
 Given('Im logged in as user {string}') do |first_name|
   @user ||= User.find_by(first_name: first_name)
   steps %(

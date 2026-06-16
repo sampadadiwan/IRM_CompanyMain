@@ -58,7 +58,7 @@ resources :deals do
   get 'analytics', on: :collection
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
-  get  :agent_settings, on: :member
+  get :agent_settings, on: :member
   patch :agent_settings, action: :update_agent_settings, on: :member
   post :run_now, on: :member
 end

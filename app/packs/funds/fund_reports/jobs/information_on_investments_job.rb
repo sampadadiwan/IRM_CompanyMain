@@ -11,8 +11,6 @@ class InformationOnInvestmentsJob
     end
   end
 
-  # rubocop : disable Metrics/MethodLength
-  # rubocop : disable Metrics/BlockLength
   def generate_report(fund_id, start_date, end_date)
     Rails.logger.debug { "Table 4: Generating Report for #{fund_id}, #{start_date}, #{end_date} " }
 

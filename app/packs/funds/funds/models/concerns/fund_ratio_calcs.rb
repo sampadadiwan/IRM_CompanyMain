@@ -1,7 +1,4 @@
 class FundRatioCalcs
-  # rubocop:disable Metrics/CyclomaticComplexity
-  # rubocop:disable Metrics/PerceivedComplexity
-  # rubocop:disable Metrics/MethodLength
   attr_accessor :model, :portfolio_company_id
 
   delegate :capital_remittance_payments, to: :model
@@ -19,6 +16,7 @@ class FundRatioCalcs
 
     # Capital Remittance Payments
     Rails.logger.debug { "Adding capital_remittance_payments for #{model_type}: #{model} on #{@end_date}" }
+    # When computing ratios at kyc level, InvestorKycCalcs overrides this method to return KYC-scoped payments
     capital_remittance_payments.where(capital_remittance_payments: { payment_date: ..@end_date }).find_each do |cr|
       if use_tracking_currency
         # Add remittance payment in tracking currency if amount is not zero
@@ -31,6 +29,7 @@ class FundRatioCalcs
 
     # Capital Distribution Payments
     Rails.logger.debug { "Adding capital_distribution_payments for #{model_type}: #{model} on #{@end_date}" }
+    # When computing ratios at kyc level, InvestorKycCalcs overrides this method to return KYC-scoped payments
     capital_distribution_payments.where(capital_distribution_payments: { payment_date: ..@end_date }).find_each do |cdp|
       if use_tracking_currency
         # Add gross distribution payment in tracking currency if amount is not zero
@@ -89,10 +88,6 @@ class FundRatioCalcs
     # Return XIRR and optionally the cash flows
     return_cash_flows ? [(lxirr * 100).round(2), cf] : (lxirr * 100).round(2)
   end
-
-  # rubocop:enable Metrics/CyclomaticComplexity
-  # rubocop:enable Metrics/PerceivedComplexity
-  # rubocop:enable Metrics/MethodLength
 
   # Calculates the Multiple on Invested Capital (MOIC) for the given model.
   # MOIC is the ratio of total returns (from sales and FMV) to total invested capital.
@@ -181,7 +176,7 @@ class FundRatioCalcs
   def apply_formula_cashflows(cf, ratio_name, use_tracking_currency)
     formulas = ratio_formulas.where(action: %w[add_cashflow reduce_cashflow])
     formulas.each do |formula|
-      next unless Array(formula.ratios).include?(ratio_name)
+      next unless formula.ratio == ratio_name
 
       entries = get_ratio_formula_entries(formula)
       entries.each do |ae|
@@ -202,7 +197,9 @@ class FundRatioCalcs
     when 'Folio'
       return [] unless @model.is_a?(CapitalCommitment)
 
-      scope = scope.where(folio_id: @model.folio_id)
+      # When computing ratios at kyc level we have multiple folio ids - check InvestorKycCalcs init
+      @folio_ids ||= @model.folio_id
+      scope = scope.where(folio_id: @folio_ids)
     when 'PortfolioCompany'
       # This level might need specific logic depending on where it's called
       # For now, if we have a portfolio_company context, we filter by it
@@ -214,8 +211,12 @@ class FundRatioCalcs
     end
 
     if formula.period == 'as_on'
-      entry = scope.order(reporting_date: :desc).first
-      entry ? [entry] : []
+      if @compute_at_kyc_level
+        latest_per_commitment(scope)
+      else
+        entry = scope.order(reporting_date: :desc).first
+        entry ? [entry] : []
+      end
     else
       scope.to_a
     end
@@ -228,7 +229,7 @@ class FundRatioCalcs
   def apply_static_formulas(ratio_name, numerator, denominator, use_tracking_currency)
     formulas = ratio_formulas.where(action: %w[add_numerator reduce_numerator add_denominator reduce_denominator])
     formulas.each do |formula|
-      next unless Array(formula.ratios).include?(ratio_name)
+      next unless formula.ratio == ratio_name
 
       entries = get_ratio_formula_entries(formula)
       entries.each do |ae|
@@ -246,5 +247,20 @@ class FundRatioCalcs
       end
     end
     [numerator, denominator]
+  end
+
+  # Gets the latest account entry per commitment by date and ID.
+  # Handles the case where multiple entries exist for the same commitment on the same date
+  # by selecting only the entry with the highest ID.
+  #
+  # @param account_entries_relation [ActiveRecord::Relation] The filtered account entries relation
+  # @return [ActiveRecord::Relation] The latest account entries per commitment
+  def latest_per_commitment(account_entries_relation)
+    latest_per_commitment = account_entries_relation.select('capital_commitment_id, MAX(reporting_date) as max_reporting_date')
+                                                    .group(:capital_commitment_id)
+    entries_at_max_date = account_entries_relation.where("(capital_commitment_id, reporting_date) IN (SELECT capital_commitment_id, max_reporting_date FROM (#{latest_per_commitment.to_sql}) as sub)")
+    max_ids_per_commitment = entries_at_max_date.select('capital_commitment_id, MAX(id) as max_id')
+                                                .group(:capital_commitment_id)
+    account_entries_relation.where("(capital_commitment_id, id) IN (SELECT capital_commitment_id, max_id FROM (#{max_ids_per_commitment.to_sql}) as sub)")
   end
 end

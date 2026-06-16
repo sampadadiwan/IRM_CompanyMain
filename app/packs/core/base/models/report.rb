@@ -22,8 +22,7 @@ class Report < ApplicationRecord
 
     parts = notification_recipients.split(",").map(&:strip).compact_blank
 
-    emails = parts.select { |p| p.include?("@") }
-    tags   = parts.reject { |p| p.include?("@") }
+    emails, tags = parts.partition { |p| p.include?("@") }
 
     if emails.any? && tags.any?
       errors.add(:notification_recipients, "Cannot mix email addresses and user tags.")
@@ -91,7 +90,6 @@ class Report < ApplicationRecord
     from + step
   end
 
-  # rubocop:disable Rails/SkipsModelValidations
   def add_report_id_to_url
     uri = URI.parse(url)
     return if uri.query.nil?
@@ -233,8 +231,7 @@ class Report < ApplicationRecord
 
     parts = notification_recipients.split(",").map(&:strip).compact_blank
 
-    emails = parts.select { |p| p.include?("@") }
-    tags   = parts.reject { |p| p.include?("@") }
+    emails, tags = parts.partition { |p| p.include?("@") }
 
     raise "Cannot mix email addresses and user tags in notification recipients." if emails.any? && tags.any?
 

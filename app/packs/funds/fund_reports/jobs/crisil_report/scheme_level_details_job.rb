@@ -65,7 +65,6 @@ class SchemeLevelDetailsJob
     @fund_report.save!
   end
 
-  # rubocop:disable Metrics/MethodLength
   def generate_excel_report(fund_id, _start_date, end_date, workbook, single: false)
     fund = Fund.find(fund_id)
     @end_date = end_date

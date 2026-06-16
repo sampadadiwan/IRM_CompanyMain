@@ -19,7 +19,7 @@ require 'nokogiri'
 # Activation: export job calls has_placeholders? on the uploaded file and routes here
 # instead of the htmltoword path when placeholders are found.
 class PortfolioReportWordTemplateService
-  PLACEHOLDER_RE = /\[\[\s*(.+?)\s*\]\]/im.freeze
+  PLACEHOLDER_RE = /\[\[\s*(.+?)\s*\]\]/im
   W_NS = { "w" => "http://schemas.openxmlformats.org/wordprocessingml/2006/main" }.freeze
 
   # Returns true when the uploaded .docx contains at least one [[ ]] marker.
@@ -27,6 +27,7 @@ class PortfolioReportWordTemplateService
     Zip::File.open(docx_path) do |zip|
       entry = zip.find_entry("word/document.xml")
       return false unless entry
+
       doc = Nokogiri::XML(entry.get_input_stream.read)
       doc.xpath("//w:r/w:t", W_NS).any? { |t| t.text.include?("[[") }
     end
@@ -40,8 +41,8 @@ class PortfolioReportWordTemplateService
     @template      = draft.portfolio_report_template
     @sections      = ordered_sections
     @mappings      = InvestorKpiMapping
-                       .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
-                       .order(:position)
+                     .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
+                     .order(:position)
     @period_labels = draft.effective_kpi_table.values.first&.keys || []
   end
 
@@ -93,8 +94,8 @@ class PortfolioReportWordTemplateService
     when "fund name", "report name" then simple_para_xml(context_para, @template.portfolio_report.name)
     when "template name"            then simple_para_xml(context_para, @template.name)
     when "period"                   then simple_para_xml(context_para, period_label)
-    when "prepared date"            then simple_para_xml(context_para, Date.today.strftime("%d %b %Y"))
-    when /\Asection:\s*(.+)\z/i     then section_paras_xml($1.strip)
+    when "prepared date"            then simple_para_xml(context_para, Time.zone.today.strftime("%d %b %Y"))
+    when /\Asection:\s*(.+)\z/i     then section_paras_xml(::Regexp.last_match(1).strip)
     when "all sections"             then all_sections_xml
     when "kpi table"                then kpi_table_word_xml
     end
@@ -103,17 +104,17 @@ class PortfolioReportWordTemplateService
   # Preserves the placeholder paragraph's own paragraph/run style so the resolved text
   # inherits font, size, colour, and alignment the user set on the placeholder.
   def simple_para_xml(context_para, text)
-    pPr = context_para.at_xpath("w:pPr",       W_NS)&.to_xml(save_with: 0) || ""
+    pPr = context_para.at_xpath("w:pPr", W_NS)&.to_xml(save_with: 0) || ""
     rPr = context_para.at_xpath(".//w:r/w:rPr", W_NS)&.to_xml(save_with: 0) || ""
     "<w:p>#{pPr}<w:r>#{rPr}" \
-    "<w:t xml:space=\"preserve\">#{CGI.escapeHTML(text)}</w:t></w:r></w:p>"
+      "<w:t xml:space=\"preserve\">#{CGI.escapeHTML(text)}</w:t></w:r></w:p>"
   end
 
   # Resolves [[ section: Name ]] — fuzzy match on section name.
   def section_paras_xml(name)
-    section = @sections.find { |s|
+    section = @sections.find do |s|
       s.name.casecmp?(name) || s.name.downcase.include?(name.downcase)
-    }
+    end
     return nil unless section
 
     bullets_to_paras(extract_bullets(@draft.narrative_for(section.id)))
@@ -128,10 +129,10 @@ class PortfolioReportWordTemplateService
   end
 
   def bullets_to_paras(bullets)
-    bullets.map { |b|
+    bullets.map do |b|
       "<w:p><w:pPr><w:pStyle w:val=\"ListBullet\"/></w:pPr>" \
-      "<w:r><w:t xml:space=\"preserve\">#{CGI.escapeHTML(b)}</w:t></w:r></w:p>"
-    }.join
+        "<w:r><w:t xml:space=\"preserve\">#{CGI.escapeHTML(b)}</w:t></w:r></w:p>"
+    end.join
   end
 
   # Generates an OOXML <w:tbl> — column widths in twips (1 twip = 1/1440 inch).
@@ -155,10 +156,10 @@ class PortfolioReportWordTemplateService
     data_rows = @mappings.each_with_index.map do |ikm, idx|
       fill  = idx.even? ? "EEF2F8" : "FFFFFF"
       cells = word_tc(ikm.reported_kpi_name, fill: fill, color: "1A1A1A", bold: false, w: metric_w)
-      cells += @period_labels.map { |lbl|
+      cells += @period_labels.map do |lbl|
         val = @draft.effective_kpi_table.dig(ikm.id.to_s, lbl)&.to_s || "—"
         word_tc(val, fill: fill, color: "1A1A1A", bold: false, w: period_w, align: "right")
-      }.join
+      end.join
       "<w:tr>#{cells}</w:tr>"
     end.join
 
@@ -187,7 +188,7 @@ class PortfolioReportWordTemplateService
           <w:pPr>#{jc}</w:pPr>
           <w:r>
             <w:rPr>
-              #{bold ? "<w:b/>" : ""}
+              #{'<w:b/>' if bold}
               <w:color w:val="#{color}"/>
               <w:sz w:val="20"/><w:szCs w:val="20"/>
             </w:rPr>
@@ -204,10 +205,11 @@ class PortfolioReportWordTemplateService
 
   def extract_bullets(html)
     return ["No content generated."] if html.blank?
+
     doc     = Nokogiri::HTML.fragment(html)
     bullets = doc.css("li").map { |li| li.text.strip }.reject(&:empty?)
     bullets = doc.css("p").map  { |p|  p.text.strip  }.reject(&:empty?) if bullets.empty?
-    bullets = html.split("\n").map(&:strip).reject(&:empty?)             if bullets.empty?
+    bullets = html.split("\n").map(&:strip).reject(&:empty?) if bullets.empty?
     bullets.presence || ["No content generated."]
   end
 

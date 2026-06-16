@@ -48,7 +48,7 @@ class InterestsController < ApplicationController
     @interest.investor_id ||= @interest.entity.investors.where(investor_entity_id: current_user.entity_id).first&.id
 
     @bread_crumbs = { Secondaries: secondary_sales_path }
-    @bread_crumbs["#{@interest.secondary_sale.name}"] = secondary_sale_path(@interest.secondary_sale) if @interest.secondary_sale.present?
+    @bread_crumbs[@interest.secondary_sale.name.to_s] = secondary_sale_path(@interest.secondary_sale) if @interest.secondary_sale.present?
     @bread_crumbs[:New] = nil
 
     redirect_to secondary_sale_path(@interest.secondary_sale, notice: "Investor not set") if @interest.investor_id.blank?
@@ -204,8 +204,8 @@ class InterestsController < ApplicationController
     @interest = Interest.find(params[:id])
     authorize @interest
     @bread_crumbs = { Secondaries: secondary_sales_path }
-    @bread_crumbs["#{@interest.secondary_sale.name}"] = secondary_sale_path(@interest.secondary_sale, tab: "interests-tab") if @interest.secondary_sale.present?
-    @bread_crumbs["#{@interest}"] = interest_path(@interest)
+    @bread_crumbs[@interest.secondary_sale.name.to_s] = secondary_sale_path(@interest.secondary_sale, tab: "interests-tab") if @interest.secondary_sale.present?
+    @bread_crumbs[@interest.to_s] = interest_path(@interest)
   end
 
   # Only allow a list of trusted parameters through.

@@ -16,25 +16,25 @@ require 'nokogiri'
 # The export job calls template.ppt_service_class which returns this class.
 class PortfolioReportPastelPptService
   # ── Canvas ─────────────────────────────────────────────────────────────────
-  SLIDE_W   = 12_192_000
-  SLIDE_H   =  6_858_000
-  MARGIN    =    685_800    # 0.75" side margin
-  CONTENT_W = SLIDE_W - MARGIN * 2   # 10_820_400
+  SLIDE_W = 12_192_000
+  SLIDE_H = 6_858_000
+  MARGIN = 685_800 # 0.75" side margin
+  CONTENT_W = SLIDE_W - (MARGIN * 2) # 10_820_400
 
   # ── Colour palette ─────────────────────────────────────────────────────────
-  WHITE        = "FFFFFF"
-  COVER_BAND   = "EFF6FF"   # very-light blue — upper cover band
-  SLIDE_BG     = "FFFFFF"
-  TITLE_BG     = "F8FAFC"   # near-white title strip
-  DIVIDER_CLR  = "E2E8F0"   # horizontal rule under title
-  TBL_HDR_BG   = "DBEAFE"   # pastel blue — KPI table header fill
-  TBL_HDR_TXT  = "1E3A8A"   # dark navy — KPI table header text
-  ROW_EVEN     = "F1F5F9"   # very light slate — alternating rows
-  ROW_ODD      = "FFFFFF"
-  CELL_BORDER  = "CBD5E1"
-  HEADING_CLR  = "1E293B"   # dark slate
-  BODY_CLR     = "334155"   # medium slate
-  CAPTION_CLR  = "94A3B8"   # light slate — footer / meta
+  WHITE        = "FFFFFF".freeze
+  COVER_BAND   = "EFF6FF".freeze   # very-light blue — upper cover band
+  SLIDE_BG     = "FFFFFF".freeze
+  TITLE_BG     = "F8FAFC".freeze   # near-white title strip
+  DIVIDER_CLR  = "E2E8F0".freeze   # horizontal rule under title
+  TBL_HDR_BG   = "DBEAFE".freeze   # pastel blue — KPI table header fill
+  TBL_HDR_TXT  = "1E3A8A".freeze   # dark navy — KPI table header text
+  ROW_EVEN     = "F1F5F9".freeze   # very light slate — alternating rows
+  ROW_ODD      = "FFFFFF".freeze
+  CELL_BORDER  = "CBD5E1".freeze
+  HEADING_CLR  = "1E293B".freeze   # dark slate
+  BODY_CLR     = "334155".freeze   # medium slate
+  CAPTION_CLR  = "94A3B8".freeze   # light slate — footer / meta
 
   # Rotating accent colours (used for top stripe + bullets, one per section)
   ACCENTS = %w[3B82F6 10B981 8B5CF6 F59E0B EF4444 06B6D4 EC4899 84CC16].freeze
@@ -42,15 +42,15 @@ class PortfolioReportPastelPptService
   # ── Layout (EMU) ────────────────────────────────────────────────────────────
   # Cover
   COVER_BAND_H   = 2_400_000
-  COVER_STRIPE_H =    57_150   # vivid line at base of upper band
+  COVER_STRIPE_H = 57_150 # vivid line at base of upper band
 
   # Content slides
   STRIPE_H   =   114_300   # thin top accent stripe (0.125")
   TITLE_BG_H =   971_550   # title band height  (~1.06")
-  RULE_H     =    28_575   # divider below title
+  RULE_H = 28_575 # divider below title
   RULE_Y     = STRIPE_H + TITLE_BG_H                   # 1_085_850
   CONTENT_Y  = RULE_Y + RULE_H + 114_300               # 1_228_725
-  FOOTER_H   =   285_750
+  FOOTER_H = 285_750
   FOOTER_Y   = SLIDE_H - FOOTER_H                      # 6_572_250
   CONTENT_H  = FOOTER_Y - CONTENT_Y - 57_150           # ~5_286_375
 
@@ -60,8 +60,8 @@ class PortfolioReportPastelPptService
     @template      = draft.portfolio_report_template
     @sections      = ordered_sections
     @mappings      = InvestorKpiMapping
-                       .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
-                       .order(:position)
+                     .where(id: Array(draft.selected_kpi_mapping_ids).map(&:to_i))
+                     .order(:position)
     @period_labels = draft.effective_kpi_table.values.first&.keys || []
     @shape_id      = 200
     @overrides     = theme_overrides
@@ -108,33 +108,33 @@ class PortfolioReportPastelPptService
     slide_xml do
       # White background
       filled_rect(0, 0, SLIDE_W, SLIDE_H, WHITE) +
-      # Soft blue upper band
-      filled_rect(0, 0, SLIDE_W, COVER_BAND_H, COVER_BAND) +
-      # Vivid accent stripe at the base of the band — uses brand override if set
-      filled_rect(0, COVER_BAND_H, SLIDE_W, COVER_STRIPE_H, accent_for(0)) +
-      # Report / template name — centred in the upper band
-      text_box(e(@template.portfolio_report.name),
-               x: MARGIN, y: (COVER_BAND_H - 700_000) / 2, w: CONTENT_W, h: 700_000,
-               size: 2200, bold: true, color: HEADING_CLR, align: "l", valign: "ctr") +
-      # Company name — large, below the band
-      text_box(e(@portco.to_s),
-               x: MARGIN, y: COVER_BAND_H + COVER_STRIPE_H + 228_600,
-               w: CONTENT_W, h: 1_371_600,
-               size: 5200, bold: true, color: HEADING_CLR, align: "l", valign: "t") +
-      # Period
-      text_box(e(period),
-               x: MARGIN, y: COVER_BAND_H + COVER_STRIPE_H + 1_714_500,
-               w: CONTENT_W, h: 400_000,
-               size: 1800, bold: false, color: BODY_CLR, align: "l", valign: "t") +
-      # Meta (period type / tag / count)
-      text_box(e(meta),
-               x: MARGIN, y: COVER_BAND_H + COVER_STRIPE_H + 2_171_700,
-               w: CONTENT_W, h: 342_900,
-               size: 1300, bold: false, color: CAPTION_CLR, align: "l", valign: "t") +
-      # Prepared date — bottom right
-      text_box(e("Prepared #{Date.today.strftime('%d %b %Y')}"),
-               x: MARGIN, y: SLIDE_H - 400_000, w: CONTENT_W, h: 342_900,
-               size: 1000, bold: false, color: CAPTION_CLR, align: "r", valign: "t")
+        # Soft blue upper band
+        filled_rect(0, 0, SLIDE_W, COVER_BAND_H, COVER_BAND) +
+        # Vivid accent stripe at the base of the band — uses brand override if set
+        filled_rect(0, COVER_BAND_H, SLIDE_W, COVER_STRIPE_H, accent_for(0)) +
+        # Report / template name — centred in the upper band
+        text_box(e(@template.portfolio_report.name),
+                 x: MARGIN, y: (COVER_BAND_H - 700_000) / 2, w: CONTENT_W, h: 700_000,
+                 size: 2200, bold: true, color: HEADING_CLR, align: "l", valign: "ctr") +
+        # Company name — large, below the band
+        text_box(e(@portco.to_s),
+                 x: MARGIN, y: COVER_BAND_H + COVER_STRIPE_H + 228_600,
+                 w: CONTENT_W, h: 1_371_600,
+                 size: 5200, bold: true, color: HEADING_CLR, align: "l", valign: "t") +
+        # Period
+        text_box(e(period),
+                 x: MARGIN, y: COVER_BAND_H + COVER_STRIPE_H + 1_714_500,
+                 w: CONTENT_W, h: 400_000,
+                 size: 1800, bold: false, color: BODY_CLR, align: "l", valign: "t") +
+        # Meta (period type / tag / count)
+        text_box(e(meta),
+                 x: MARGIN, y: COVER_BAND_H + COVER_STRIPE_H + 2_171_700,
+                 w: CONTENT_W, h: 342_900,
+                 size: 1300, bold: false, color: CAPTION_CLR, align: "l", valign: "t") +
+        # Prepared date — bottom right
+        text_box(e("Prepared #{Time.zone.today.strftime('%d %b %Y')}"),
+                 x: MARGIN, y: SLIDE_H - 400_000, w: CONTENT_W, h: 342_900,
+                 size: 1000, bold: false, color: CAPTION_CLR, align: "r", valign: "t")
     end
   end
 
@@ -144,18 +144,18 @@ class PortfolioReportPastelPptService
 
     slide_xml do
       content_slide_chrome(e("Contents"), accent_for(0)) +
-      numbered_list(items,
-                    x: MARGIN, y: CONTENT_Y, w: CONTENT_W, h: CONTENT_H,
-                    size: 1900, color: BODY_CLR, accent: accent_for(0)) +
-      slide_footer
+        numbered_list(items,
+                      x: MARGIN, y: CONTENT_Y, w: CONTENT_W, h: CONTENT_H,
+                      size: 1900, color: BODY_CLR, accent: accent_for(0)) +
+        slide_footer
     end
   end
 
   def kpi_slide
     slide_xml do
       content_slide_chrome(e("KPI Data"), accent_for(1)) +
-      kpi_table +
-      slide_footer
+        kpi_table +
+        slide_footer
     end
   end
 
@@ -166,10 +166,10 @@ class PortfolioReportPastelPptService
 
     slide_xml do
       content_slide_chrome(e(section.name), accent) +
-      bullet_list(bullets.map { |b| e(b) },
-                  x: MARGIN, y: CONTENT_Y, w: CONTENT_W, h: CONTENT_H,
-                  size: 1700, color: BODY_CLR, accent: accent) +
-      slide_footer
+        bullet_list(bullets.map { |b| e(b) },
+                    x: MARGIN, y: CONTENT_Y, w: CONTENT_W, h: CONTENT_H,
+                    size: 1700, color: BODY_CLR, accent: accent) +
+        slide_footer
     end
   end
 
@@ -178,12 +178,12 @@ class PortfolioReportPastelPptService
   # Thin top stripe + light title band + divider rule
   def content_slide_chrome(title_text, accent_color)
     filled_rect(0, 0, SLIDE_W, SLIDE_H, SLIDE_BG) +
-    filled_rect(0, 0, SLIDE_W, STRIPE_H, accent_color) +
-    filled_rect(0, STRIPE_H, SLIDE_W, TITLE_BG_H, TITLE_BG) +
-    text_box(title_text,
-             x: MARGIN, y: STRIPE_H, w: CONTENT_W, h: TITLE_BG_H,
-             size: 2800, bold: true, color: HEADING_CLR, align: "l", valign: "ctr") +
-    filled_rect(MARGIN, RULE_Y, CONTENT_W, RULE_H, DIVIDER_CLR)
+      filled_rect(0, 0, SLIDE_W, STRIPE_H, accent_color) +
+      filled_rect(0, STRIPE_H, SLIDE_W, TITLE_BG_H, TITLE_BG) +
+      text_box(title_text,
+               x: MARGIN, y: STRIPE_H, w: CONTENT_W, h: TITLE_BG_H,
+               size: 2800, bold: true, color: HEADING_CLR, align: "l", valign: "ctr") +
+      filled_rect(MARGIN, RULE_Y, CONTENT_W, RULE_H, DIVIDER_CLR)
   end
 
   def slide_footer
@@ -251,7 +251,7 @@ class PortfolioReportPastelPptService
   def numbered_list(items, x:, y:, w:, h:, size: 1900, color: BODY_CLR, accent: ACCENTS[0])
     id    = @shape_id += 1
     paras = items.each_with_index.map do |item, i|
-      spc = i > 0 ? "<a:spcBef><a:spcPts val=\"280\"/></a:spcBef>" : ""
+      spc = i.positive? ? "<a:spcBef><a:spcPts val=\"280\"/></a:spcBef>" : ""
       <<~PARA
         <a:p>
           <a:pPr marL="457200" indent="-457200">
@@ -279,7 +279,7 @@ class PortfolioReportPastelPptService
   def bullet_list(lines, x:, y:, w:, h:, size: 1700, color: BODY_CLR, accent: ACCENTS[0])
     id    = @shape_id += 1
     paras = lines.each_with_index.map do |line, i|
-      spc = i > 0 ? "<a:spcBef><a:spcPts val=\"180\"/></a:spcBef>" : ""
+      spc = i.positive? ? "<a:spcBef><a:spcPts val=\"180\"/></a:spcBef>" : ""
       <<~PARA
         <a:p>
           <a:pPr marL="342900" indent="-342900">
@@ -296,9 +296,11 @@ class PortfolioReportPastelPptService
         </a:p>
       PARA
     end.join
-    paras = "<a:p><a:r><a:rPr lang=\"en-US\" sz=\"#{size}\" dirty=\"0\"><a:solidFill>" \
-            "<a:srgbClr val=\"#{CAPTION_CLR}\"/></a:solidFill></a:rPr>" \
-            "<a:t>No content generated.</a:t></a:r></a:p>" if paras.empty?
+    if paras.empty?
+      paras = "<a:p><a:r><a:rPr lang=\"en-US\" sz=\"#{size}\" dirty=\"0\"><a:solidFill>" \
+              "<a:srgbClr val=\"#{CAPTION_CLR}\"/></a:solidFill></a:rPr>" \
+              "<a:t>No content generated.</a:t></a:r></a:p>"
+    end
     text_run_box(id, x, y, w, h, paras)
   end
 
@@ -335,20 +337,20 @@ class PortfolioReportPastelPptService
 
     header_row =
       kpi_cell(e("Metric"), fill: TBL_HDR_BG, color: TBL_HDR_TXT,
-               bold: true,  w: metric_col_w, h: row_h, align: "l") +
+                            bold: true, w: metric_col_w, h: row_h, align: "l") +
       @period_labels.map { |l|
         kpi_cell(e(l), fill: TBL_HDR_BG, color: TBL_HDR_TXT,
-                 bold: true, w: period_col_w, h: row_h, align: "r")
+                       bold: true, w: period_col_w, h: row_h, align: "r")
       }.join
 
     data_rows = @mappings.each_with_index.map do |ikm, row_idx|
       fill = row_idx.even? ? ROW_EVEN : ROW_ODD
       name_cell = kpi_cell(e(ikm.reported_kpi_name), fill: fill, color: HEADING_CLR,
-                           bold: false, w: metric_col_w, h: row_h, align: "l")
+                                                     bold: false, w: metric_col_w, h: row_h, align: "l")
       val_cells = @period_labels.map do |lbl|
         val = @draft.effective_kpi_table.dig(ikm.id.to_s, lbl)&.to_s || "—"
         kpi_cell(e(val), fill: fill, color: BODY_CLR, bold: false,
-                 w: period_col_w, h: row_h, align: "r")
+                         w: period_col_w, h: row_h, align: "r")
       end.join
       "<a:tr h=\"#{row_h}\">#{name_cell}#{val_cells}</a:tr>"
     end.join
@@ -425,10 +427,11 @@ class PortfolioReportPastelPptService
 
   def extract_bullets(html)
     return ["No content generated."] if html.blank?
+
     doc     = Nokogiri::HTML.fragment(html)
     bullets = doc.css("li").map { |li| li.text.strip }.reject(&:empty?)
     bullets = doc.css("p").map  { |p|  p.text.strip  }.reject(&:empty?) if bullets.empty?
-    bullets = html.split("\n").map(&:strip).reject(&:empty?)             if bullets.empty?
+    bullets = html.split("\n").map(&:strip).reject(&:empty?) if bullets.empty?
     bullets.presence || ["No content generated."]
   end
 
@@ -463,10 +466,10 @@ class PortfolioReportPastelPptService
   # ── PPTX structural files ─────────────────────────────────────────────────────
 
   def write_content_types(zip, n)
-    entries = (1..n).map { |i|
+    entries = (1..n).map do |i|
       "<Override PartName=\"/ppt/slides/slide#{i}.xml\" " \
-      "ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
-    }.join("\n    ")
+        "ContentType=\"application/vnd.openxmlformats-officedocument.presentationml.slide+xml\"/>"
+    end.join("\n    ")
     zip.put_next_entry("[Content_Types].xml")
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -499,9 +502,9 @@ class PortfolioReportPastelPptService
   end
 
   def write_presentation(zip, n)
-    slide_ids = (1..n).map.with_index(256) { |i, id|
+    slide_ids = (1..n).map.with_index(256) do |i, id|
       "<p:sldId id=\"#{id}\" r:id=\"rId#{i + 2}\"/>"
-    }.join("\n    ")
+    end.join("\n    ")
     zip.put_next_entry("ppt/presentation.xml")
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -517,11 +520,11 @@ class PortfolioReportPastelPptService
   end
 
   def write_presentation_rels(zip, n)
-    entries = (1..n).map { |i|
+    entries = (1..n).map do |i|
       "<Relationship Id=\"rId#{i + 2}\" " \
-      "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" " \
-      "Target=\"slides/slide#{i}.xml\"/>"
-    }.join("\n    ")
+        "Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide\" " \
+        "Target=\"slides/slide#{i}.xml\"/>"
+    end.join("\n    ")
     zip.put_next_entry("ppt/_rels/presentation.xml.rels")
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -538,6 +541,7 @@ class PortfolioReportPastelPptService
     # If a style-reference PPTX was uploaded, inject its theme verbatim so PowerPoint
     # sees the exact brand palette (fonts, shadows, etc.) from the reference file.
     return zip.write(@overrides[:theme_xml]) if @overrides[:theme_xml]
+
     zip.write(<<~XML)
       <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
       <a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="PastelBusiness">

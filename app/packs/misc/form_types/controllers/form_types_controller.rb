@@ -5,12 +5,12 @@ class FormTypesController < ApplicationController
   def index
     authorize(FormType)
     @form_types = policy_scope(FormType)
-    @bread_crumbs = { "Custom Forms": nil }
+    @bread_crumbs = { 'Custom Forms': nil }
   end
 
   # GET /form_types/1 or /form_types/1.json
   def show
-    @bread_crumbs = { "Custom Forms": form_types_path, "#{@form_type.name} #{@form_type.tag}": nil }
+    @bread_crumbs = { 'Custom Forms': form_types_path, "#{@form_type.name} #{@form_type.tag}": nil }
   end
 
   def generate_upload_xlsx
@@ -38,12 +38,12 @@ class FormTypesController < ApplicationController
     @form_type.entity_id ||= current_user.entity_id
     @form_type.tag ||= "Default"
     authorize(@form_type)
-    @bread_crumbs = { "Custom Forms": form_types_path, New: nil }
+    @bread_crumbs = { 'Custom Forms': form_types_path, New: nil }
   end
 
   # GET /form_types/1/edit
   def edit
-    @bread_crumbs = { "Custom Forms": form_types_path, "#{@form_type.name} #{@form_type.tag}": form_type_path(@form_type), Edit: nil }
+    @bread_crumbs = { 'Custom Forms': form_types_path, "#{@form_type.name} #{@form_type.tag}": form_type_path(@form_type), Edit: nil }
   end
 
   # POST /form_types or /form_types.json
@@ -111,7 +111,7 @@ class FormTypesController < ApplicationController
 
   # GET /form_types/1/edit_step_labels
   def edit_step_labels
-    @bread_crumbs = { "Custom Forms": form_types_path, "#{@form_type.name} #{@form_type.tag}": form_type_path(@form_type), "Step Labels": nil }
+    @bread_crumbs = { 'Custom Forms': form_types_path, "#{@form_type.name} #{@form_type.tag}": form_type_path(@form_type), 'Step Labels': nil }
   end
 
   # PATCH /form_types/1/update_step_labels

@@ -204,7 +204,7 @@ class Document < ApplicationRecord
   # TODO: This is really inefficient
   def notification_users
     users = access_rights.map(&:users).flatten
-    users += self.owner.access_rights.map(&:users).flatten if %w[Fund Deal SecondarySale InvestmentOpportunity].include? owner_type
+    users += owner.access_rights.map(&:users).flatten if %w[Fund Deal SecondarySale InvestmentOpportunity].include? owner_type
 
     users.uniq
   end

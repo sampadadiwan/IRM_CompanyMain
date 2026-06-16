@@ -20,10 +20,10 @@ class DealsReportRenderer
     ApplicationController.render(
       partial: "support_agents/deals_report_html",
       locals: {
-        deal_result:   @deal_result,
-        currency:      @currency,
+        deal_result: @deal_result,
+        currency: @currency,
         support_agent: @support_agent,
-        generated_at:  Time.current
+        generated_at: Time.current
       }
     )
   end
@@ -41,12 +41,12 @@ class DealsReportRenderer
       tempfile.rewind
 
       folder.documents.create!(
-        file:      File.open(tempfile.path),
-        name:      REPORT_NAME,
+        file: File.open(tempfile.path),
+        name: REPORT_NAME,
         entity_id: deal.entity_id,
-        user_id:   user_id,
-        orignal:   true,
-        download:  true,
+        user_id: user_id,
+        orignal: true,
+        download: true,
         owner_tag: "Generated"
       )
     ensure
@@ -60,9 +60,9 @@ class DealsReportRenderer
   def reports_folder(deal)
     deal.document_folder.children.find_by(name: "Reports", private: true) ||
       deal.document_folder.children.create!(
-        name:      "Reports",
+        name: "Reports",
         entity_id: deal.entity_id,
-        private:   true
+        private: true
       )
   end
 end

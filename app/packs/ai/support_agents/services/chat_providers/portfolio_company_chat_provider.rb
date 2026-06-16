@@ -87,9 +87,7 @@ class PortfolioCompanyChatProvider < BaseChatProvider
     sections << build_summary_section(reports, completed_reports, failed_reports)
 
     # Failed companies (blocking issues)
-    if failed_reports.any?
-      sections << build_failed_companies_section(failed_reports)
-    end
+    sections << build_failed_companies_section(failed_reports) if failed_reports.any?
 
     # Completed companies (informational)
     if completed_reports.any?

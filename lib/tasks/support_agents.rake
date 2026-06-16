@@ -375,6 +375,90 @@ SUPPORT_AGENT_FORM_CONFIGS = [
                    "e.g. 'Q3 Financials,Board Deck'. All other documents from the selected reports " \
                    "are ignored. Leave blank to send all documents from the selected KPI reports." }
     ]
+  },
+
+  # ── PresentationAnalystAgent ─────────────────────────────────────────────────
+  # PRD: docs/ai/investor_presentation_analyst_prd.md
+  # Reads investor presentations from KpiReports, extracts structured intelligence
+  # per period, compares across periods, and produces a pre-board briefing +
+  # Management Accountability Score. PRD §12.1 — Configuration.
+  {
+    tag: "PresentationAnalystAgent",
+    agent: {
+      name:       "Investor Presentation Analyst",
+      with_steps: true,  # shows the 7-step progress panel in the agent UI
+      json_fields: {
+        # Document name matching — case-insensitive substring match against document.name.
+        # Any document whose name contains one of these strings is treated as a presentation.
+        # PRD §12.1: presentation_doc_names config. Mirrors DEFAULT_DOC_NAMES in the agent class.
+        "presentation_doc_names" => "Investor Update, Board Deck, Management Presentation, Quarterly Update, Investor Presentation",
+
+        # How many of the most recent KPI report periods to scan.
+        # Older periods are trimmed to keep the LLM prompt within budget.
+        "max_periods"            => "8",
+
+        # Which KpiReport tag to scan. Actual = real reported figures (not Budget/IC).
+        "kpi_tag_list"           => "Actual",
+
+        # all_periods: one LLM call across all records — more accurate, recommended default.
+        # sliding_window: one call per adjacent pair — cheaper for many periods.
+        # PRD §6: "configurable to lower costs"
+        "comparison_strategy"    => "all_periods",
+
+        # gemini-3-flash has a 1M token context window — required for full-document processing.
+        # PRD §4.1: "Full document needs to be processed — gemini has a 1M context."
+        "llm_model"              => "gemini-3-flash",
+
+        # Enables the floating chat panel (same UX as LP Assistant).
+        # PRD §4.4 — Chat Q&A Mode.
+        "chat_config"            => { "enabled" => "true" }
+      },
+      schedule: {
+        # Monthly on the 1st at 06:00 IST — timed so briefings are ready before
+        # board meetings that typically fall in the first two weeks of each month.
+        frequency: "monthly", run_on_day: 1, run_at_time: "06:00", timezone: "Asia/Kolkata",
+        enabled: false,  # disabled by default; GP enables once presentations are uploaded
+        notify_on_failure:          true,
+        notify_on_success:          false,
+        notify_on_partial_success:  true,
+        notify_caphive_on_error:    true
+      }
+    },
+    fields: [
+      # PRD §12.1 — all five config fields exposed as FormCustomFields so the GP
+      # can tune the agent from the UI without touching json_fields directly.
+
+      { name: "presentation_doc_names",
+        field_type: "TextField", label: "Presentation document names", meta_data: "", position: 1,
+        help_text: "Comma-separated substrings matched (case-insensitively) against document names " \
+                   "on each KPI report. Documents whose names contain any of these strings are treated " \
+                   "as investor presentations. Default: 'Investor Update, Board Deck, Management " \
+                   "Presentation, Quarterly Update, Investor Presentation'." },
+
+      { name: "max_periods",
+        field_type: "NumberField", label: "Max periods to analyze", meta_data: "", position: 2,
+        help_text: "Maximum number of the most recent KPI report periods to include. Older periods " \
+                   "beyond this count are skipped. Increase for a longer history; reduce to lower LLM " \
+                   "cost and latency. Default: 8." },
+
+      { name: "kpi_tag_list",
+        field_type: "Select", label: "KPI report tag", meta_data: "Actual,Budget,IC", position: 3,
+        help_text: "Restricts which KpiReports are scanned for presentation documents. 'Actual' " \
+                   "(default) covers real reported figures. 'Budget' and 'IC' cover projections and " \
+                   "investment committee submissions respectively." },
+
+      { name: "comparison_strategy",
+        field_type: "Select", label: "Comparison strategy", meta_data: "all_periods,sliding_window", position: 4,
+        help_text: "'all_periods' sends all extracted period records in one LLM call — more accurate " \
+                   "because the model sees the full temporal arc. 'sliding_window' makes one call per " \
+                   "adjacent pair (N-1 → N) — cheaper when there are many periods. Default: all_periods." },
+
+      { name: "llm_model",
+        field_type: "TextField", label: "LLM model", meta_data: "", position: 5,
+        help_text: "LLM model name used for all extraction, comparison, and question-generation calls. " \
+                   "Must support a large context window (≥500K tokens) to process full presentations " \
+                   "without truncation. Default: gemini-3-flash (1M token context)." }
+    ]
   }
 ].freeze
 

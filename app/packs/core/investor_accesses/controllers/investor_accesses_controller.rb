@@ -7,9 +7,9 @@ class InvestorAccessesController < ApplicationController
     authorize(InvestorAccess)
     if params[:investor_id].present?
       @investor = Investor.find(params[:investor_id])
-      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), "Access": nil }
+      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), Access: nil }
     else
-      @bread_crumbs = { "Investor Access": investor_accesses_path }
+      @bread_crumbs = { 'Investor Access': investor_accesses_path }
     end
 
     @q = InvestorAccess.ransack(params[:q])
@@ -23,7 +23,7 @@ class InvestorAccessesController < ApplicationController
 
   def search
     authorize(InvestorAccess)
-    @bread_crumbs = { "Investor Access": investor_accesses_path }
+    @bread_crumbs = { 'Investor Access': investor_accesses_path }
     @entity = current_user.entity
     query = params[:query]
     if query.present?
@@ -72,9 +72,9 @@ class InvestorAccessesController < ApplicationController
 
     if @investor_access.investor_id.present?
       @investor = @investor_access.investor
-      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), "Access": investor_accesses_path(investor_id: @investor.id), New: nil }
+      @bread_crumbs = { Investors: investors_path, @investor.investor_name => investor_path(@investor), Access: investor_accesses_path(investor_id: @investor.id), New: nil }
     else
-      @bread_crumbs = { "Investor Access": investor_accesses_path, New: nil }
+      @bread_crumbs = { 'Investor Access': investor_accesses_path, New: nil }
     end
   end
 
@@ -108,7 +108,7 @@ class InvestorAccessesController < ApplicationController
 
   def upload
     authorize(InvestorAccess)
-    @bread_crumbs = { "Investor Access": investor_accesses_path, "Upload": nil }
+    @bread_crumbs = { 'Investor Access': investor_accesses_path, Upload: nil }
   end
 
   # POST /investor_accesses or /investor_accesses.json
@@ -179,7 +179,7 @@ class InvestorAccessesController < ApplicationController
     @bread_crumbs = {
       Investors: investors_path,
       @investor_access.investor.investor_name => investor_path(@investor_access.investor),
-      "Access": investor_accesses_path(investor_id: @investor_access.investor_id),
+      Access: investor_accesses_path(investor_id: @investor_access.investor_id),
       @investor_access.email => investor_access_path(@investor_access)
     }
   end

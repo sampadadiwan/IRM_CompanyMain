@@ -23,7 +23,7 @@ class IncomingEmail < ApplicationRecord
     return if entity.present?
 
     self.entity ||= Entity.joins(:entity_setting).where('entity_settings.mailbox': to).first
-    if self.entity.present?
+    if entity.present?
       # matches() generates ILIKE on Postgres and LIKE on SQLite — both case-insensitive
       self.owner ||= entity.investors.where(Investor.arel_table[:investor_name].matches(subject.strip)).first
     end

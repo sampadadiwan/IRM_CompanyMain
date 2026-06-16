@@ -79,13 +79,13 @@ Scenario Outline: Access Deal as Investor with access
   And another user has "<should>" access to the document
 
   Examples:
-  	|should	    |entity               |deal                     | access_right                                      | investor_access |
-  	|false  	  |entity_type=Company  |name=Series A;amount_cents=100 | access_type=Deal;access_to_investor_id=1          | approved=1 |
-    |false  	  |entity_type=Company  |name=Series B;amount_cents=120 | access_type=Deal;access_to_category=Co-Investor | approved=1 |
-	  |false      |entity_type=Company  |name=Series A;amount_cents=100 | access_type=Deal;access_to_investor_id=1          | approved=1 |
-    |false      |entity_type=Company  |name=Series B;amount_cents=120 | access_type=Deal;access_to_category=Co-Investor   | approved=1 |
-	  |false      |entity_type=Company  |name=Series A;amount_cents=100 | access_type=Deal;access_to_investor_id=1          | approved=0 |
-    |false      |entity_type=Company  |name=Series B;amount_cents=120 | access_type=Deal;access_to_category=Lead Investor | approved=0 |
+  	|should	    |entity               |deal                     | access_right                                          | investor_access |
+  	|false  	  |entity_type=Company  |name=Series A;amount_cents=100 | access_type=Deal;access_to_investor_id=OTHER          | approved=1 |
+    |false  	  |entity_type=Company  |name=Series B;amount_cents=120 | access_type=Deal;access_to_category=Co-Investor       | approved=1 |
+	  |false      |entity_type=Company  |name=Series A;amount_cents=100 | access_type=Deal;access_to_investor_id=OTHER          | approved=1 |
+    |false      |entity_type=Company  |name=Series B;amount_cents=120 | access_type=Deal;access_to_category=Co-Investor       | approved=1 |
+	  |false      |entity_type=Company  |name=Series A;amount_cents=100 | access_type=Deal;access_to_investor_id=OTHER          | approved=0 |
+    |false      |entity_type=Company  |name=Series B;amount_cents=120 | access_type=Deal;access_to_category=Lead Investor     | approved=0 |
 
 
 
@@ -99,7 +99,7 @@ Scenario Outline: Access Deal as Investor without investor access
 
   Examples:
   	|should	    |entity               |deal                     | access_right     |
-  	|false      |entity_type=Company  |name=Series A;amount_cents=100 | access_type=Deal;access_to_investor_id=1 |
+  	|false      |entity_type=Company  |name=Series A;amount_cents=100 | access_type=Deal;access_to_investor_id=OTHER |
     |false      |entity_type=Company  |name=Series B;amount_cents=120 | access_type=Deal;access_to_category=Lead Investor |
 
 

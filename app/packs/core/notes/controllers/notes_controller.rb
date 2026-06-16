@@ -6,7 +6,7 @@ class NotesController < ApplicationController
     @bread_crumbs = { Notes: notes_path }
     if params[:investor_id]
       @investor = Investor.find(params[:investor_id])
-      @bread_crumbs["#{@investor.investor_name}"] = investor_path(@investor, tab: 'notes-tab')
+      @bread_crumbs[@investor.investor_name.to_s] = investor_path(@investor, tab: 'notes-tab')
     end
 
     @q = Note.ransack(params[:q])
@@ -62,7 +62,7 @@ class NotesController < ApplicationController
     @note.reminder = Reminder.new(entity_id: @note.entity_id)
 
     @bread_crumbs = { Notes: notes_path }
-    @bread_crumbs["#{@note.investor.investor_name}"] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
+    @bread_crumbs[@note.investor.investor_name.to_s] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
     @bread_crumbs[:New] = nil
 
     authorize @note
@@ -90,7 +90,9 @@ class NotesController < ApplicationController
 
     respond_to do |format|
       if @note.save
-        format.html { redirect_to note_url(@note), notice: "Note was successfully created." }
+        # Redirect back to the originating page (e.g. a deal) if a safe relative return_to was provided
+        redirect_target = params[:return_to].presence&.then { |url| url.start_with?('/') ? url : nil } || note_url(@note)
+        format.html { redirect_to redirect_target, notice: "Note was successfully created." }
         format.json { render :show, status: :created, location: @note }
       else
         format.html { render :new, status: :unprocessable_entity }
@@ -137,10 +139,9 @@ class NotesController < ApplicationController
     @note = Note.find(params[:id])
     authorize @note
     @bread_crumbs = { Notes: notes_path }
-    @bread_crumbs["#{@note.investor.investor_name}"] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
-    @bread_crumbs["#{@note}"] = note_path(@note)
+    @bread_crumbs[@note.investor.investor_name.to_s] = investor_path(@note.investor, tab: 'notes-tab') if @note.investor.present?
+    @bread_crumbs[@note.to_s] = note_path(@note)
   end
-
 
   # Only allow a list of trusted parameters through.
   def note_params

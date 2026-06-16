@@ -147,7 +147,7 @@ class CapitalDistributionPaymentDocGenerator
   # Always stores folio-level keys (folio_* and current_payment_*).
   # When per_kyc: true, also stores KYC-level keys (dist_* and kyc_*) and kyc_amounts.
   # dist_fees (fund-wide totals) are computed once per fee type and shared between both levels.
-  def dist_notice_fees_context(fund_as_of, all_payments, capital_distribution_payment, capital_commitment, context, per_kyc: false) # rubocop:disable Metrics/CyclomaticComplexity, Metrics/MethodLength
+  def dist_notice_fees_context(fund_as_of, all_payments, capital_distribution_payment, capital_commitment, context, per_kyc: false)
     current_payment = all_payments.select { |p| p.id == capital_distribution_payment.id }
 
     # Partition KYC payments in Ruby to avoid an extra DB query (all_payments already loaded)

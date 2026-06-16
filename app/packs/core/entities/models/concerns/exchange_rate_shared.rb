@@ -27,7 +27,6 @@ module ExchangeRateShared
     "#{entity}/Exchange Rates/#{to_s.delete('->')}"
   end
 
-  # rubocop:disable Metrics/BlockLength
   class_methods do
     def latest_rates_before(end_date, entity_id)
       rates =
@@ -35,7 +34,7 @@ module ExchangeRateShared
                                 .order(:from, :to, as_of: :desc)
 
       latest_rates = rates.to_a.group_by { |r| [r.from, r.to] }
-                          .transform_values(&:first)
+                               .transform_values(&:first)
 
       # Example usage:
       latest_rates.each do |(from, to), rate|

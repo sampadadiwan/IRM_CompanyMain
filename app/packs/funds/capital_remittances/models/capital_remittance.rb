@@ -122,7 +122,6 @@ class CapitalRemittance < ApplicationRecord
         CapitalRemittanceNotifier.with(record: self, entity_id:, email_method:).deliver_later(user)
       end
 
-      # rubocop:disable Rails/SkipsModelValidations
       update_column(:notification_sent, true)
       # rubocop:enable Rails/SkipsModelValidations
     end

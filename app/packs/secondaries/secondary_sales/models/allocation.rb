@@ -106,7 +106,6 @@ class Allocation < ApplicationRecord
   end
 
   after_save :update_verified
-  # rubocop:disable Rails/SkipsModelValidations
   def update_verified
     Allocation.transaction do
       interest.update_column(:verified, verified)

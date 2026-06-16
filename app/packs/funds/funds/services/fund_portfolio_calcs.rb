@@ -318,7 +318,7 @@ class FundPortfolioCalcs < FundRatioCalcs
         cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sell #{sell.portfolio_company_name} #{sell.quantity}")
       end
 
-      api.portfolio_cashflows.actual.where(payment_date: ..@end_date).each do |pcf|
+      api.portfolio_cashflows.actual.where(payment_date: ..@end_date).find_each do |pcf|
         amount = convert_amount(@fund, pcf.amount_cents, pcf.payment_date, use_tracking_currency)
         cf << XirrTransaction.new(amount, date: pcf.payment_date, notes: "Portfolio Income") if amount.positive?
       end
@@ -347,7 +347,7 @@ class FundPortfolioCalcs < FundRatioCalcs
       bought_amount = api_as_of.bought_amount.to_f
 
       total_val = fmv + sold_amount
-      _, bought_amount = apply_static_formulas('MOIC', total_val, bought_amount, false)
+      adj_total_val, bought_amount = apply_static_formulas('MOIC', total_val, bought_amount, false)
       adj_fmv, adj_cost_of_remaining = apply_static_formulas('Value to Cost', fmv, cost_of_remaining, false)
 
       next unless adj_cost_of_remaining.positive?
@@ -357,9 +357,9 @@ class FundPortfolioCalcs < FundRatioCalcs
       # Legacy Bug: API MOIC was returning absolute FMV in cents + (sold/bought) ratio instead of a proper multiple.
       # Reverting to buggy version to keep tests passing, as XLSX expectations rely on this.
       # Proper formula should be: moic = total_val / bought_amount.to_f
-      legacy_moic = fmv + (bought_amount.positive? ? (sold_amount / bought_amount.to_f) : 0)
+      moic = bought_amount.positive? ? (adj_total_val / bought_amount.to_f) : 0.0
 
-      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (adj_fmv / adj_cost_of_remaining), moic: legacy_moic, cash_flows: }
+      @api_cost_map[api.id] = { name: api.to_s, value_to_cost: (adj_fmv / adj_cost_of_remaining), moic: moic, cash_flows: }
     end
     @api_cost_map
   end

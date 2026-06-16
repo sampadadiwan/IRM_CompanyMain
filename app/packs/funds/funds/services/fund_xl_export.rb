@@ -28,7 +28,7 @@ class FundXlExport
         pivot_table.data_sheet = fund_ratios_sheet
         pivot_table.rows = ['Folio No']
         pivot_table.columns = ['Name']
-        pivot_table.data = [ref: 'Value', num_fmt: 4]
+        pivot_table.data = [{ ref: 'Value', num_fmt: 4 }]
         pivot_table.pages = ['End Date']
       end
     end
@@ -49,7 +49,7 @@ class FundXlExport
         pivot_table.data_sheet = fund_units_sheet
         pivot_table.rows = ['Folio No']
         pivot_table.columns = ['Unit Type']
-        pivot_table.data = [ref: 'Quantity', num_fmt: 4]
+        pivot_table.data = [{ ref: 'Quantity', num_fmt: 4 }]
         pivot_table.pages = ['Reason']
       end
     end
@@ -72,7 +72,7 @@ class FundXlExport
         pivot_table.data_sheet = account_entries_sheet
         pivot_table.rows = ['Folio']
         pivot_table.columns = ['Entry Type', 'Name']
-        pivot_table.data = [ref: 'Amount', num_fmt: 4]
+        pivot_table.data = [{ ref: 'Amount', num_fmt: 4 }]
         pivot_table.pages = ['Cumulative', 'Reporting Date']
       end
     end

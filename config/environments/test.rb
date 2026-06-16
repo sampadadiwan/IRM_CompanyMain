@@ -181,7 +181,7 @@ Rails.application.configure do
     ["PortfolioInvestment",          :valuation],
     # NonIndividualKyc: document_folder included for all KYC bulk actions but only accessed
     # when the action involves document folder operations (not all paths use it).
-    ["NonIndividualKyc",             :document_folder],
+    ["NonIndividualKyc",             :document_folder]
   ].each do |klass, assoc|
     Bullet.add_safelist type: :unused_eager_loading, class_name: klass, association: assoc
   end

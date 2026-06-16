@@ -89,7 +89,6 @@ class CapitalRemittanceDocGenerator
     context
   end
 
-  # rubocop:disable Metrics/MethodLength
   def call_notice_per_kyc_context(fund_as_of, capital_remittance, capital_commitment, context)
     # All remittances with the same kyc
     call_capital_remittances = fund_as_of.capital_remittances.includes(:capital_commitment).where(capital_call_id: capital_remittance.capital_call_id)
@@ -168,7 +167,6 @@ class CapitalRemittanceDocGenerator
 
     context.store :kyc_amounts, TemplateDecorator.decorate(kyc_amounts)
   end
-  # rubocop:enable Metrics/MethodLength
 
   def call_notice_folio_level_fees_context(fund_as_of, capital_remittance, context)
     call_remittances = fund_as_of.capital_remittances.where(capital_call_id: capital_remittance.capital_call_id)

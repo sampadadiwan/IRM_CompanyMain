@@ -97,7 +97,6 @@ class FundRatiosScenarioJob < ApplicationJob
                                  class: badge_class, target: '_blank', rel: 'noopener')
                      ]
                    end.join
-
       notify("#{@run.run_type.humanize} ratio calculations are now complete.<br> #{links_html}", user_id) unless suppress_notification
     rescue StandardError => e
       notify("Error in fund ratios: #{e.message}", user_id, level: "danger")

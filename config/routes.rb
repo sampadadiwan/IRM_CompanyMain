@@ -89,7 +89,7 @@ Rails.application.routes.draw do
   root "entities#dashboard"
 
   resources :user_guides, only: %i[index show]
-  resources :release_notes, only: %i[index show], constraints: { id: /[^\/]+/ }
+  resources :release_notes, only: %i[index show], constraints: { id: %r{[^/]+} }
   resources :features, only: [:index]
   get 'features/*id', to: 'features#show', as: :feature, format: false
 
