@@ -18,7 +18,7 @@
   folder_id = @folder&.id || owner&.document_folder_id || params[:folder_id]
   @folder ||= Folder.find(folder_id) if folder_id.present?
   show_action_buttons = params[:show_action_buttons].to_s != "false" # default to true
-  show_action_buttons = false if current_user.curr_role_investor?
+  #show_action_buttons = false if current_user.curr_role_investor?
 %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4" id="docs_index">
