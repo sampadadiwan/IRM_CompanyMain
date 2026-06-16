@@ -82,12 +82,12 @@ class Investor < ApplicationRecord
   validates :category, :investor_name, presence: true
 
   # Ensure investor_name is unique per entity_id
-  validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
+  validates :investor_name, uniqueness: { scope: :entity_id, message: "Please enter a unique stakeholder name, this name already exists in your stakeholder list" }
   validates :investor_name, length: { maximum: 255 }
   normalizes :investor_name, with: ->(investor_name) { investor_name.strip.squeeze(" ") }
   alias_attribute :name, :investor_name
   # Ensure unique investor_entity_id per entity_id
-  validates :investor_entity_id, uniqueness: { scope: :entity_id, message: ": Investment firm already exists as an investor. Duplicate Investor." }
+  validates :investor_entity_id, uniqueness: { scope: :entity_id, message: "Already exists as a Stakeholder." }
 
   validates :category, length: { maximum: 100 }
   validates :city, length: { maximum: 50 }
@@ -98,8 +98,11 @@ class Investor < ApplicationRecord
   validates :primary_email, length: { maximum: 255 }
   validates_format_of :primary_email, with: URI::MailTo::EMAIL_REGEXP, multiline: true
 
-  validates_uniqueness_of :primary_email, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."
-  validates_uniqueness_of :investor_name, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."
+  validates_uniqueness_of :primary_email, scope: :entity_id, message: "already assigned to an existing Stakeholder."
+
+  # The investor_entity_id duplicate is a side effect of the name/email match (see #update_name),
+  # so it's redundant noise once either of those is already flagged.
+  validate :suppress_redundant_entity_duplicate_error
 
   validates :tag_list, length: { maximum: 120 }
 
@@ -198,6 +201,10 @@ class Investor < ApplicationRecord
   def check_and_update_sector
     # Sector is only relevant for Portfolio Companies, so if the category is changed to something else, we should clear the sector
     self.sector = "" if category != "Portfolio Company"
+  end
+
+  def suppress_redundant_entity_duplicate_error
+    errors.delete(:investor_entity_id) if errors[:investor_name].any? || errors[:primary_email].any?
   end
 
   def setup_permissions(investor_entity)

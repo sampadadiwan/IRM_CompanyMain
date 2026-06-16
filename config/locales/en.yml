@@ -22,6 +22,9 @@ en:
         name: Class / Series / Unit Type
       investor_kyc:
         full_name: Investing Entity
+      investor:
+        investor_name: Stakeholder name
+        investor_entity_id: "Stakeholder Entity"
       offer:
         final_agreement: Accept SPA
   capital_call:
