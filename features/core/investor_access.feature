@@ -33,7 +33,7 @@ Scenario Outline: Investor show page Investor Access turbo response checks
 
   Examples:
   	|entity              |investor                         |msg	|
-  	|entity_type=Company |investor_name=Accelo1;primary_email=a@b1.c   |Investor was successfully created|
+  	|entity_type=Company |investor_name=Accelo1;primary_email=a@b1.c   |Stakeholder was successfully created|
 
 
 Scenario Outline: Investor show page Investor Access turbo response checks
@@ -82,7 +82,7 @@ Scenario Outline: Investor show page Investor Access turbo response checks
 
   Examples:
   	|entity              |investor                         |msg	|
-  	|entity_type=Company |investor_name=Accelo2;primary_email=a@b2.c   |Investor was successfully created|
+  	|entity_type=Company |investor_name=Accelo2;primary_email=a@b2.c   |Stakeholder was successfully created|
 
 Scenario Outline: All Investor Accesses page turbo response checks
   Given Im logged in as a user "first_name=Mohith" for an entity "<entity>"
@@ -143,4 +143,4 @@ Scenario Outline: All Investor Accesses page turbo response checks
 
   Examples:
   	|entity              |investor                         |msg	|
-  	|entity_type=Company |investor_name=Accelo3;primary_email=a@b3.c   |Investor was successfully created|
+  	|entity_type=Company |investor_name=Accelo3;primary_email=a@b3.c   |Stakeholder was successfully created|

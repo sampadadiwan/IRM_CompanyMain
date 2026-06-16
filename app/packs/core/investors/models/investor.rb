@@ -83,6 +83,7 @@ class Investor < ApplicationRecord
 
   # Ensure investor_name is unique per entity_id
   validates :investor_name, uniqueness: { scope: :entity_id, message: "already exists as an investor. Duplicate Investor." }
+  validates :investor_name, length: { maximum: 255 }
   normalizes :investor_name, with: ->(investor_name) { investor_name.strip.squeeze(" ") }
   alias_attribute :name, :investor_name
   # Ensure unique investor_entity_id per entity_id
@@ -94,6 +95,7 @@ class Investor < ApplicationRecord
   normalizes :pan, with: ->(pan) { pan.strip.squeeze(" ") }
 
   validates :primary_email, presence: true, if: proc { |e| e.new_record? }
+  validates :primary_email, length: { maximum: 255 }
   validates_format_of :primary_email, with: URI::MailTo::EMAIL_REGEXP, multiline: true
 
   validates_uniqueness_of :primary_email, scope: :entity_id, message: "already exists as an investor. Duplicate Investor."
@@ -101,7 +103,7 @@ class Investor < ApplicationRecord
 
   validates :tag_list, length: { maximum: 120 }
 
-  validates :sector, length: { maximum: 200 }
+  validates :sector, length: { maximum: 255 }
 
   scope :with_tag_list, lambda { |tags|
     tags = tags.split(",").map(&:strip) unless tags.is_a?(Array)
