@@ -295,7 +295,8 @@ class FundsController < ApplicationController
 
   def trigger_adhoc_notification
     @custom_notification = CustomNotification.find(params[:custom_notification_id])
-    @fund.adhoc_notification(@custom_notification.id)
+    commitment_ids = params[:commitment_ids].presence # nil when blank → all commitments
+    @fund.adhoc_notification(@custom_notification.id, commitment_ids:)
     redirect_back_or_to(fund_path(@fund), notice: "Notification trigger started for #{@fund.name}.")
   end
 

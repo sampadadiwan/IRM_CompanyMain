@@ -798,3 +798,110 @@ Given('I go to fund page with debug mode enabled') do
    @fund ||= Fund.last
   visit(fund_url(@fund, debug: true))
 end
+
+# ── Fund Commitment Adhoc Notification steps ─────────────────────────────────
+
+# Creates a fund-level CustomNotification wired to the adhoc_notification mailer method
+Given('there is an adhoc custom notification for the fund with subject {string}') do |subject|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    enabled: true
+  )
+end
+
+# Same but with attachment_names so the mailer picks up docs from each commitment
+Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string}') do |subject, attachment_names|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    attachment_names: attachment_names.presence,
+    enabled: true
+  )
+end
+
+# Uploads a real file as a document on the first commitment so attachment_names can find it
+And('the first commitment has document {string} with file {string}') do |doc_name, file_name|
+  cc = @fund.capital_commitments.order(:id).first
+  Document.create!(
+    entity: cc.entity,
+    name: doc_name,
+    owner: cc,
+    folder: cc.document_folder,
+    user: @user,
+    file: File.new("public/sample_uploads/#{file_name}", "r")
+  )
+end
+
+# Trigger with no commitment_ids → nil → FundNotificationJob sends to all commitments
+When('the adhoc notification is triggered for all commitments') do
+  @fund.adhoc_notification(@custom_notification.id)
+end
+
+# Trigger with only the first commitment's id
+When('the adhoc notification is triggered for the first commitment only') do
+  first_cc = @fund.capital_commitments.order(:id).first
+  @fund.adhoc_notification(@custom_notification.id, commitment_ids: [first_cc.id])
+end
+
+# Every commitment's notification_users should have received the email
+Then('all commitment investors receive the notification email') do
+  @fund.capital_commitments.each do |cc|
+    recipients = cc.investor.notification_users(cc)
+    puts "## Commitment #{cc} — #{recipients.count} recipient(s)"
+    expect(recipients).not_to be_empty, "notification_users is empty for commitment #{cc} — check InvestorAccess / AccessRight setup"
+    recipients.each do |user|
+      open_email(user.email)
+      puts "## Checking email for #{user.email}: #{current_email&.subject.inspect}"
+      expect(current_email).not_to be_nil, "No email delivered to #{user.email}"
+      expect(current_email.subject).to include @custom_notification.subject
+    end
+  end
+end
+
+# Only the first commitment's users should have received the email
+Then('only the first commitment investor receives the notification email') do
+  first_cc = @fund.capital_commitments.order(:id).first
+  recipients = first_cc.investor.notification_users(first_cc)
+  puts "## First commitment #{first_cc} — #{recipients.count} recipient(s)"
+  expect(recipients).not_to be_empty, "notification_users is empty for first commitment #{first_cc}"
+  recipients.each do |user|
+    open_email(user.email)
+    puts "## Checking email for #{user.email}: #{current_email&.subject.inspect}"
+    expect(current_email).not_to be_nil, "No email delivered to #{user.email}"
+    expect(current_email.subject).to include @custom_notification.subject
+  end
+end
+
+# The second commitment's users must NOT have received any email
+And('the second commitment investor does not receive a notification email') do
+  second_cc = @fund.capital_commitments.order(:id).second
+  second_cc.investor.notification_users(second_cc).each do |user|
+    open_email(user.email)
+    puts "## Checking no email for #{user.email}: #{current_email&.subject.inspect}"
+    expect(current_email).to be_nil, "Unexpected email '#{current_email&.subject}' delivered to #{user.email}"
+  end
+end
+
+# The email to each commitment investor should have the named document attached
+And('the notification email has the document {string} attached') do |doc_name|
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      filenames = current_email.attachments.map(&:filename)
+      puts "## Attachments for #{user.email}: #{filenames.inspect}"
+      expect(filenames.any? { |f| f.include?(doc_name) }).to be(true),
+        "Expected attachment containing '#{doc_name}' but got #{filenames.inspect}"
+    end
+  end
+end
+
+# ── End Fund Commitment Adhoc Notification steps ──────────────────────────────

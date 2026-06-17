@@ -146,18 +146,107 @@
       </td>
     </tr>
   </table>
-  <div>
-    <%= link_to  t_common(:edit), edit_custom_notification_path(@custom_notification), {class: "btn btn-outline-primary"} if policy(@custom_notification).update? %>
+  <%# Action row: Edit + Send Notification + Delete %>
+  <div class="d-flex align-items-center gap-2 mt-2">
+    <%= link_to t_common(:edit), edit_custom_notification_path(@custom_notification), class: "btn btn-outline-primary" if policy(@custom_notification).update? %>
 
     <% if @custom_notification.enabled && @custom_notification.owner_type == "Fund" && policy(@custom_notification.owner).trigger_adhoc_notification? %>
-      <%
-        email_list_link = link_to('View Who Gets Notified', show_email_list_fund_path(@custom_notification.owner), class: 'mb-1 badge bg-primary-subtle text-primary', target: "_blank")
-        msg = "This will trigger a notification to all investors of this fund. <br> #{email_list_link} <br> Proceed?"
-      %>
-      <%= button_to "Send Notification", trigger_adhoc_notification_fund_path(@custom_notification.owner, custom_notification_id: @custom_notification.id), method: :patch, class: "btn btn-primary", form_class: "d-inline", data: { action: "click->confirm#popup", msg: msg, turbo: false, method: :patch } %>
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#sendNotificationModal">
+        <i class="ti ti-send"></i> Send Notification
+      </button>
     <% end %>
 
-    <%= button_to t_common(:delete), @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false} if policy(@custom_notification).destroy? %>
+    <%= button_to t_common(:delete), @custom_notification, method: :delete, class: "btn btn-outline-danger", form_class: "d-inline deleteButton", data: { action: "click->confirm#popup", turbo: false } if policy(@custom_notification).destroy? %>
+  </div>
+
+<% end %>
+
+<% if @custom_notification.enabled && @custom_notification.owner_type == "Fund" && policy(@custom_notification.owner).trigger_adhoc_notification? %>
+  <%
+    fund = @custom_notification.owner
+    commitment_options = fund.capital_commitments.map { |cc| [cc.to_s, cc.id] }.sort_by(&:first)
+    email_list_link = link_to('View Who Gets Notified', show_email_list_fund_path(fund), class: 'badge bg-primary-subtle text-primary', target: "_blank")
+  %>
+  <div class="modal fade" id="sendNotificationModal" tabindex="-1" aria-labelledby="sendNotificationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="sendNotificationModalLabel">
+            <i class="ti ti-send me-1"></i> Send Notification — <%= @custom_notification.subject %>
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <%= form_with url: trigger_adhoc_notification_fund_path(fund, custom_notification_id: @custom_notification.id), method: :patch, local: true do |f| %>
+          <div class="modal-body">
+
+            <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+              <div class="fw-bold text-dark small">What happens when you click Send</div>
+              <div class="text-muted small">Emails are queued immediately and delivered in the background.</div>
+            </div>
+
+            <div class="d-flex flex-column gap-2 mb-3">
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#dbeafe;">
+                  <i class="ti ti-mail fs-5" style="color:#2563eb;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Individual email per investor</div>
+                  <div class="text-muted small mt-1">Each selected commitment holder receives a personalised email with their name, folio ID, and fund details resolved from the template.</div>
+                </div>
+              </div>
+
+              <% if @custom_notification.attachment_names.present? %>
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#dcfce7;">
+                  <i class="ti ti-paperclip fs-5" style="color:#16a34a;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Commitment documents auto-attached</div>
+                  <div class="text-muted small mt-1">
+                    Documents named <strong><%= @custom_notification.attachment_names %></strong> will be fetched from each commitment and attached to that investor's email.
+                  </div>
+                </div>
+              </div>
+              <% end %>
+
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#fef3c7;">
+                  <i class="ti ti-users fs-5" style="color:#d97706;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Sent to approved investor contacts only</div>
+                  <div class="text-muted small mt-1">Only users with an approved, email-enabled InvestorAccess for each commitment receive the email. <%= email_list_link %></div>
+                </div>
+              </div>
+            </div>
+
+            <hr class="my-3">
+
+            <div class="mb-1">
+              <label class="form-label fw-semibold">Select Commitments to Notify</label>
+              <small class="text-muted d-block mb-2">Leave blank to notify <strong>all</strong> commitments in this fund.</small>
+              <%= f.select :commitment_ids,
+                           commitment_options,
+                           { include_hidden: false },
+                           multiple: true,
+                           class: "form-control select2",
+                           style: "width:100%",
+                           data: { placeholder: "All commitments (leave blank for all)" } %>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal"><%= t_common(:cancel) %></button>
+            <%= f.submit "Send Notification", class: "btn btn-primary", data: { disable_with: "Sending..." } %>
+          </div>
+        <% end %>
+
+      </div>
+    </div>
   </div>
 <% end %>
 <%= render "custom_notifications/details", custom_notification: @custom_notification %>

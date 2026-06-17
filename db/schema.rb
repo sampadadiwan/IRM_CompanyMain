@@ -192,12 +192,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.index ["owner_type", "owner_id"], name: "index_agent_charts_on_owner"
   end
 
+  create_table "agent_chat_message_feedbacks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "agent_chat_message_id", null: false
+    t.string "channel", limit: 20, default: "web", null: false
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.json "guide_files_searched"
+    t.integer "judge_actionability"
+    t.integer "judge_completeness"
+    t.integer "judge_grounding"
+    t.json "judge_issues"
+    t.integer "judge_total"
+    t.text "notes"
+    t.string "rating", limit: 10
+    t.text "resolution_notes"
+    t.bigint "reviewed_by_id"
+    t.string "status", limit: 25, default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["agent_chat_message_id"], name: "index_agent_chat_message_feedbacks_on_agent_chat_message_id", unique: true
+    t.index ["entity_id", "status"], name: "idx_feedbacks_entity_status"
+    t.index ["entity_id"], name: "index_agent_chat_message_feedbacks_on_entity_id"
+    t.index ["rating"], name: "index_agent_chat_message_feedbacks_on_rating"
+    t.index ["reviewed_by_id"], name: "index_agent_chat_message_feedbacks_on_reviewed_by_id"
+    t.index ["status"], name: "index_agent_chat_message_feedbacks_on_status"
+    t.index ["user_id"], name: "index_agent_chat_message_feedbacks_on_user_id"
+  end
+
   create_table "agent_chat_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "agent_chat_session_id", null: false
+    t.string "channel", limit: 20, default: "web", null: false
     t.text "content", null: false
     t.datetime "created_at", null: false
+    t.boolean "guide_search_hit", default: false, null: false
     t.json "metadata"
     t.string "role", limit: 20, null: false
+    t.json "tool_calls_summary"
     t.datetime "updated_at", null: false
     t.index ["agent_chat_session_id"], name: "index_agent_chat_messages_on_agent_chat_session_id"
   end
@@ -207,11 +237,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.bigint "chattable_id"
     t.string "chattable_type", limit: 50
     t.datetime "created_at", null: false
+    t.string "status", limit: 20, default: "active", null: false
     t.bigint "support_agent_id", null: false
     t.datetime "updated_at", null: false
     t.index ["analyst_id"], name: "index_agent_chat_sessions_on_analyst_id"
     t.index ["chattable_type", "chattable_id"], name: "index_agent_chat_sessions_on_chattable"
-    t.index ["support_agent_id", "chattable_type", "chattable_id", "analyst_id"], name: "index_agent_chat_sessions_uniqueness", unique: true
+    t.index ["status"], name: "index_agent_chat_sessions_on_status"
+    t.index ["support_agent_id", "chattable_type", "chattable_id", "analyst_id"], name: "index_agent_chat_sessions_lookup"
     t.index ["support_agent_id"], name: "index_agent_chat_sessions_on_support_agent_id"
   end
 
@@ -1100,6 +1132,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.index ["owner_type", "owner_id"], name: "index_custom_notifications_on_owner"
   end
 
+  create_table "customer_support_escalations", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "agent_chat_session_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.string "reason", limit: 30, null: false
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_id"
+    t.string "status", limit: 20, default: "open", null: false
+    t.text "summary"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["agent_chat_session_id"], name: "index_customer_support_escalations_on_agent_chat_session_id"
+    t.index ["entity_id", "status"], name: "idx_escalations_entity_status"
+    t.index ["entity_id"], name: "index_customer_support_escalations_on_entity_id"
+    t.index ["resolved_by_id"], name: "index_customer_support_escalations_on_resolved_by_id"
+    t.index ["status"], name: "index_customer_support_escalations_on_status"
+    t.index ["user_id"], name: "index_customer_support_escalations_on_user_id"
+  end
+
   create_table "dashboard_widgets", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "dashboard_name", limit: 30
@@ -1457,6 +1508,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.string "cc"
     t.boolean "ckyc_kra_enabled"
     t.datetime "created_at", null: false
+    t.boolean "cs_judge_enabled", default: true, null: false
+    t.string "cs_judge_model"
     t.text "custom_dashboards"
     t.integer "custom_flags", default: 0
     t.string "db_dumps_custom_days"
@@ -3912,6 +3965,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
+  add_foreign_key "agent_chat_message_feedbacks", "agent_chat_messages"
+  add_foreign_key "agent_chat_message_feedbacks", "entities"
+  add_foreign_key "agent_chat_message_feedbacks", "users"
+  add_foreign_key "agent_chat_message_feedbacks", "users", column: "reviewed_by_id"
   add_foreign_key "agent_chat_messages", "agent_chat_sessions"
   add_foreign_key "agent_chat_sessions", "support_agents"
   add_foreign_key "agent_chat_sessions", "users", column: "analyst_id"
@@ -4015,6 +4072,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
   add_foreign_key "commitment_adjustments", "funds"
   add_foreign_key "custom_notifications", "entities"
   add_foreign_key "custom_notifications", "folders", column: "document_folder_id"
+  add_foreign_key "customer_support_escalations", "agent_chat_sessions"
+  add_foreign_key "customer_support_escalations", "entities"
+  add_foreign_key "customer_support_escalations", "users"
+  add_foreign_key "customer_support_escalations", "users", column: "resolved_by_id"
   add_foreign_key "dashboard_widgets", "entities"
   add_foreign_key "deal_activities", "deal_investors"
   add_foreign_key "deal_activities", "deals"

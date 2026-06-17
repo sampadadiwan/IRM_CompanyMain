@@ -192,12 +192,42 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.index ["owner_type", "owner_id"], name: "index_agent_charts_on_owner"
   end
 
-  create_table "agent_chat_messages", force: :cascade do |t|
+  create_table "agent_chat_message_feedbacks", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "agent_chat_message_id", null: false
+    t.string "channel", limit: 20, default: "web", null: false
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.json "guide_files_searched"
+    t.integer "judge_actionability"
+    t.integer "judge_completeness"
+    t.integer "judge_grounding"
+    t.json "judge_issues"
+    t.integer "judge_total"
+    t.text "notes"
+    t.string "rating", limit: 10
+    t.text "resolution_notes"
+    t.bigint "reviewed_by_id"
+    t.string "status", limit: 25, default: "open", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id"
+    t.index ["agent_chat_message_id"], name: "index_agent_chat_message_feedbacks_on_agent_chat_message_id", unique: true
+    t.index ["entity_id", "status"], name: "idx_feedbacks_entity_status"
+    t.index ["entity_id"], name: "index_agent_chat_message_feedbacks_on_entity_id"
+    t.index ["rating"], name: "index_agent_chat_message_feedbacks_on_rating"
+    t.index ["reviewed_by_id"], name: "index_agent_chat_message_feedbacks_on_reviewed_by_id"
+    t.index ["status"], name: "index_agent_chat_message_feedbacks_on_status"
+    t.index ["user_id"], name: "index_agent_chat_message_feedbacks_on_user_id"
+  end
+
+  create_table "agent_chat_messages", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "agent_chat_session_id", null: false
+    t.string "channel", limit: 20, default: "web", null: false
     t.text "content", null: false
     t.datetime "created_at", null: false
+    t.boolean "guide_search_hit", default: false, null: false
     t.json "metadata"
     t.string "role", limit: 20, null: false
+    t.json "tool_calls_summary"
     t.datetime "updated_at", null: false
     t.index ["agent_chat_session_id"], name: "index_agent_chat_messages_on_agent_chat_session_id"
   end
@@ -207,11 +237,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.bigint "chattable_id"
     t.string "chattable_type", limit: 50
     t.datetime "created_at", null: false
+    t.string "status", limit: 20, default: "active", null: false
     t.bigint "support_agent_id", null: false
     t.datetime "updated_at", null: false
     t.index ["analyst_id"], name: "index_agent_chat_sessions_on_analyst_id"
-    t.index %w[chattable_type chattable_id], name: "index_agent_chat_sessions_on_chattable"
-    t.index %w[support_agent_id chattable_type chattable_id analyst_id], name: "index_agent_chat_sessions_uniqueness", unique: true
+    t.index ["chattable_type", "chattable_id"], name: "index_agent_chat_sessions_on_chattable"
+    t.index ["status"], name: "index_agent_chat_sessions_on_status"
+    t.index ["support_agent_id", "chattable_type", "chattable_id", "analyst_id"], name: "index_agent_chat_sessions_lookup"
     t.index ["support_agent_id"], name: "index_agent_chat_sessions_on_support_agent_id"
   end
 
@@ -262,8 +294,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.datetime "updated_at", null: false
     t.index ["created_by_id"], name: "index_agent_schedules_on_created_by_id"
     t.index ["entity_id"], name: "index_agent_schedules_on_entity_id"
-    t.index %w[next_run_at enabled], name: "idx_agent_schedules_polling"
-    t.index %w[support_agent_id entity_id], name: "idx_unique_agent_entity", unique: true
+    t.index ["next_run_at", "enabled"], name: "idx_agent_schedules_polling"
+    t.index ["support_agent_id", "entity_id"], name: "idx_unique_agent_entity", unique: true
     t.index ["support_agent_id"], name: "index_agent_schedules_on_support_agent_id"
     t.check_constraint "(`run_on_day` is null) or ((`run_on_day` >= 0) and (`run_on_day` <= 31))", name: "valid_run_on_day"
     t.check_constraint "`frequency` in ('daily','weekly','monthly','bimonthly','quarterly','half_yearly')", name: "valid_frequency"
@@ -1097,6 +1129,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.index ["document_folder_id"], name: "index_custom_notifications_on_document_folder_id"
     t.index ["entity_id"], name: "index_custom_notifications_on_entity_id"
     t.index %w[owner_type owner_id], name: "index_custom_notifications_on_owner"
+  end
+
+  create_table "customer_support_escalations", force: :cascade do |t|
+    t.bigint "agent_chat_session_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.string "reason", limit: 30, null: false
+    t.datetime "resolved_at"
+    t.bigint "resolved_by_id"
+    t.string "status", limit: 20, default: "open", null: false
+    t.text "summary"
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["agent_chat_session_id"], name: "index_customer_support_escalations_on_agent_chat_session_id"
+    t.index ["entity_id", "status"], name: "idx_escalations_entity_status"
+    t.index ["entity_id"], name: "index_customer_support_escalations_on_entity_id"
+    t.index ["resolved_by_id"], name: "index_customer_support_escalations_on_resolved_by_id"
+    t.index ["status"], name: "index_customer_support_escalations_on_status"
+    t.index ["user_id"], name: "index_customer_support_escalations_on_user_id"
   end
 
   create_table "dashboard_widgets", force: :cascade do |t|
