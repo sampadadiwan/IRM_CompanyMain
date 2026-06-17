@@ -3,6 +3,8 @@ class DistributionFee < ApplicationRecord
   belongs_to :fund
   belongs_to :capital_distribution
   validates :name, :start_date, :end_date, presence: true
+  validates :name, :audit_name, length: { maximum: 65 }, allow_blank: true
+  validates :fee_type, length: { maximum: 20 }, allow_blank: true
 
   TYPES = ["FV For Redemption", "Income", "Expense", "Tax", "Reinvestment", "Display Only"].freeze
 

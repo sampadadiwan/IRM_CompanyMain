@@ -6,6 +6,8 @@ class AiCheck < ApplicationRecord
 
   default_scope { order(created_at: :desc) }
 
+  validates :status, length: { maximum: 5 }, allow_blank: true
+
   def to_s
     parent ? "#{parent} - #{owner}" : owner.to_s
   end

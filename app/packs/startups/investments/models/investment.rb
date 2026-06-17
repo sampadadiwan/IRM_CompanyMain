@@ -13,6 +13,8 @@ class Investment < ApplicationRecord
   validates :investment_type, presence: true, inclusion: { in: TYPES }
   validates :funding_round, :currency, :investment_date, presence: true
   validates :instrument_name, length: { maximum: 50 }, allow_blank: true
+  validates :funding_round, length: { maximum: 40 }
+  validates :currency, length: { maximum: 3 }
 
   STANDARD_COLUMNS = { "Portfolio Company; text-col" => "portfolio_company_name; text-col",
                        "Category; text-col" => "category; text-col",

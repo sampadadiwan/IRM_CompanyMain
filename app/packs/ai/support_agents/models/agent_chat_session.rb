@@ -13,4 +13,6 @@ class AgentChatSession < ApplicationRecord
   belongs_to :chattable, polymorphic: true, optional: true
 
   has_many :agent_chat_messages, dependent: :destroy
+
+  validates :chattable_type, length: { maximum: 50 }, allow_blank: true
 end

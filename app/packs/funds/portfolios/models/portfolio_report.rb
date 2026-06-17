@@ -4,6 +4,8 @@ class PortfolioReport < ApplicationRecord
 
   belongs_to :entity
   has_many :portfolio_report_sections,  dependent: :destroy
+
+  validates :tags, length: { maximum: 100 }, allow_blank: true
   has_many :portfolio_report_extracts,  dependent: :destroy
   has_many :portfolio_report_templates, dependent: :destroy
   has_many :portfolio_report_drafts,    dependent: :destroy

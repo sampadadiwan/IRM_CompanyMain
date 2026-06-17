@@ -5,6 +5,9 @@
 class PortfolioReportSection < ApplicationRecord
   belongs_to :portfolio_report
   validates :name, :data, presence: true
+  validates :name, length: { maximum: 50 }
+  validates :icon, length: { maximum: 50 }, allow_blank: true
+  validates :tags, length: { maximum: 100 }, allow_blank: true
 
   # We stuff the documents to be used to generate this section here
   attr_accessor :documents

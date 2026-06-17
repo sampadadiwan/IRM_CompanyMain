@@ -4,6 +4,9 @@ class SupportAgentReport < ApplicationRecord
 
   enum :status, { pending: "Pending", completed: "Completed", failed: "Failed" }
 
+  validates :owner_name, length: { maximum: 50 }, allow_blank: true
+  validates :support_agent_name, length: { maximum: 50 }, allow_blank: true
+
   scope :latest_only, -> { where(latest: true) }
 
   after_create :mark_as_latest!

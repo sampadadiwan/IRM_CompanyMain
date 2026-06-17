@@ -9,6 +9,7 @@ class ApplicationController < ActionController::Base
   include WithEmailPreview
   include WithLocale
   include WithSetupCustomFields
+  include WithTurboFlash
   include UserGuideHelper
 
   before_action :prepare_exception_notifier

@@ -26,6 +26,7 @@ class KycData < ApplicationRecord
             if: :ckyc?
   validates :PAN, format: { with: /\A[A-Z]{5}[0-9]{4}[A-Z]\z/, message: "must be a valid PAN number" }
   validates :PAN, uniqueness: { scope: %i[source investor_kyc_id], message: "should be unique for the same source and KYC" }
+  validates :status, length: { maximum: 20 }, allow_blank: true
 
   def can_resend_otp?
     return false if otp_resend_count.to_i >= 3

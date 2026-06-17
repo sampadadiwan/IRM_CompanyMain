@@ -4,6 +4,8 @@ class FundReport < ApplicationRecord
   belongs_to :fund
   belongs_to :entity
 
+  validates :name, length: { maximum: 50 }, allow_blank: true
+
   STANDARD_COLUMNS = {
     "Id; num-col" => "id; num-col",
     "Name; text-col" => "name; text-col",

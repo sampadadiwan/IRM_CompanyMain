@@ -11,6 +11,9 @@ class EntitySetting < ApplicationRecord
 
   validates :from_email, length: { maximum: 100 }
   validates :mailbox, length: { maximum: 30 }
+  validates :investor_presentations_email, length: { maximum: 100 }, allow_blank: true
+  validates :kpi_reminder_frequency, length: { maximum: 10 }, allow_blank: true
+  validates :regulatory_env, length: { maximum: 20 }, allow_blank: true
   validates :db_dumps_retention_period, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
   validates :db_dumps_interval, numericality: { only_integer: true, greater_than: 0 }, if: -> { db_dumps_frequency&.interval? }
   validates :db_dumps_custom_days, presence: true, if: -> { db_dumps_frequency&.custom_days? }

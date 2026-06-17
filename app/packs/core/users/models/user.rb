@@ -142,6 +142,7 @@ class User < ApplicationRecord
   validates :curr_role, :dept, length: { maximum: 20 }
   validates :entity_type, length: { maximum: 25 }
   validates :call_code, length: { maximum: 3 }
+  validates :advisor_entity_roles, length: { maximum: 100 }, allow_blank: true
 
   scope :support_users, -> { joins(:roles).where("roles.name =?", "support") }
   scope :super_users, -> { joins(:roles).where("roles.name =?", "super") }
