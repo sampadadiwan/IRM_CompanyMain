@@ -121,49 +121,71 @@
 
     </div>
     <hr class="my-4">
-<%# MCP configuration section — only visible when CapHive admin has enabled enable_mcp permission for this entity.
-    Entity admins (company_admin role) can then configure mcp_enabled, allowed roles, and allowed AI clients. %>
-<% if entity.permissions.enable_mcp? %>
+    <h5>CS Agent — Response Quality Judge</h5>
+    <small class="text-muted d-block mb-3">Automatically score every Customer Support Agent response using an LLM judge (Completeness, Grounding, Actionability).</small>
 
-<h5>AI Client Integration (MCP)</h5>
-<small class="text-muted d-block mb-3">Allow external AI clients (Claude, ChatGPT, Gemini) to query fund and portfolio data.</small>
-
-<div class="form-group">
-  <%= entity_setting_subform.label :mcp_enabled, "Enable AI Client Integration" %>
-  <%= entity_setting_subform.check_box :mcp_enabled, class: "form-check-input" %>
-  <small class="text-muted">When enabled, authorized users can connect AI clients to access data based on their role and permissions.</small>
-</div>
-
-<div class="form-group">
-  <label>Allow access for</label>
-  <div class="form-check">
-    <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_roles_list][]", "employee",
-        entity_setting_subform.object.mcp_allowed_roles_list.include?("employee"),
-        class: "form-check-input", id: "mcp_role_employee" %>
-    <%= label_tag "mcp_role_employee", "Fund Managers", class: "form-check-label" %>
-  </div>
-  <div class="form-check">
-    <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_roles_list][]", "investor",
-        entity_setting_subform.object.mcp_allowed_roles_list.include?("investor"),
-        class: "form-check-input", id: "mcp_role_investor" %>
-    <%= label_tag "mcp_role_investor", "Investors (LPs)", class: "form-check-label" %>
-  </div>
-</div>
-
-<div class="form-group">
-  <label>Allowed AI Clients</label>
-  <small class="text-muted d-block mb-2">Leave all unchecked to allow all registered AI clients.</small>
-  <% Doorkeeper::Application.all.each do |app| %>
-    <div class="form-check">
-      <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_clients_list][]", app.name,
-          entity_setting_subform.object.mcp_allowed_clients_list.include?(app.name),
-          class: "form-check-input", id: "mcp_client_#{app.id}" %>
-      <%= label_tag "mcp_client_#{app.id}", app.name, class: "form-check-label" %>
+    <div class="form-group">
+      <%= entity_setting_subform.label :cs_judge_enabled, "Enable LLM-as-Judge" %>
+      <%= entity_setting_subform.check_box :cs_judge_enabled, class: "form-check-input" %>
+      <small class="text-muted">When enabled, every CS agent response is auto-scored. Disable to save LLM costs.</small>
     </div>
-  <% end %>
-</div>
 
-  <% end %>
+    <div class="form-group">
+      <%= entity_setting_subform.label :cs_judge_model, "Judge Model" %>
+      <%= entity_setting_subform.select :cs_judge_model,
+          options_for_select(
+            entity_setting_subform.object.available_llm_models.flat_map { |label, models| models.map { |m| [m[0], m[1]] } },
+            entity_setting_subform.object.cs_judge_model
+          ),
+          { include_blank: "Default (#{entity_setting_subform.object.cs_judge_model_name})" },
+          class: "form-control" %>
+      <small class="text-muted">Choose the model for scoring. Leave blank to use the default (<%= entity_setting_subform.object.cs_judge_model_name %>).</small>
+    </div>
+
+    <hr class="my-4">
+    <%# MCP configuration section — only visible when CapHive admin has enabled enable_mcp permission for this entity.
+        Entity admins (company_admin role) can then configure mcp_enabled, allowed roles, and allowed AI clients. %>
+    <% if entity.permissions.enable_mcp? %>
+
+    <h5>AI Client Integration (MCP)</h5>
+    <small class="text-muted d-block mb-3">Allow external AI clients (Claude, ChatGPT, Gemini) to query fund and portfolio data.</small>
+
+    <div class="form-group">
+      <%= entity_setting_subform.label :mcp_enabled, "Enable AI Client Integration" %>
+      <%= entity_setting_subform.check_box :mcp_enabled, class: "form-check-input" %>
+      <small class="text-muted">When enabled, authorized users can connect AI clients to access data based on their role and permissions.</small>
+    </div>
+
+    <div class="form-group">
+      <label>Allow access for</label>
+      <div class="form-check">
+        <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_roles_list][]", "employee",
+            entity_setting_subform.object.mcp_allowed_roles_list.include?("employee"),
+            class: "form-check-input", id: "mcp_role_employee" %>
+        <%= label_tag "mcp_role_employee", "Fund Managers", class: "form-check-label" %>
+      </div>
+      <div class="form-check">
+        <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_roles_list][]", "investor",
+            entity_setting_subform.object.mcp_allowed_roles_list.include?("investor"),
+            class: "form-check-input", id: "mcp_role_investor" %>
+        <%= label_tag "mcp_role_investor", "Investors (LPs)", class: "form-check-label" %>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Allowed AI Clients</label>
+      <small class="text-muted d-block mb-2">Leave all unchecked to allow all registered AI clients.</small>
+      <% Doorkeeper::Application.all.each do |app| %>
+        <div class="form-check">
+          <%= check_box_tag "entity[entity_setting_attributes][mcp_allowed_clients_list][]", app.name,
+              entity_setting_subform.object.mcp_allowed_clients_list.include?(app.name),
+              class: "form-check-input", id: "mcp_client_#{app.id}" %>
+          <%= label_tag "mcp_client_#{app.id}", app.name, class: "form-check-label" %>
+        </div>
+      <% end %>
+    </div>
+
+    <% end %>
 <% end %>
 <div class="form-group">
   <%= form.label :enable_support %>

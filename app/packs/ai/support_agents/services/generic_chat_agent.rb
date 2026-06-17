@@ -5,8 +5,10 @@
 #
 # @see BaseChatProvider
 # @see AgentChatSession
-
+#
 class GenericChatAgent < SupportAgentService
+  class MaxToolIterationsExceeded < StandardError; end
+
   DESCRIPTION = "Provides multi-turn AI chat for any configured support agent using context-aware chat providers."
 
   LONG_DESCRIPTION = <<~DESC
@@ -49,23 +51,49 @@ class GenericChatAgent < SupportAgentService
     ctx[:analyst] = analyst
     ctx[:chattable] = ctx[:target]
 
-    ctx[:chat_session] = AgentChatSession.find_or_create_by!(
+    # @return [AgentChatSession] active session, or a new one if the last session is idle
+    # Starts a new session if the previous one has been idle for more than 30 minutes,
+    # preventing unbounded context growth across unrelated support queries.
+    existing_session = AgentChatSession.where(
       chattable: ctx[:target],
       support_agent: @support_agent,
       analyst_id: analyst&.id
-    )
+    ).order(updated_at: :desc).first
+
+    ctx[:chat_session] = if existing_session.nil? || session_expired?(existing_session)
+                           AgentChatSession.create!(
+                             chattable: ctx[:target],
+                             support_agent: @support_agent,
+                             analyst_id: analyst&.id
+                           )
+                         else
+                           existing_session
+                         end
+
+    if ctx[:chat_session].escalated?
+      ctx[:ai_response] = "Your conversation has been escalated to the Caphive support team and is being reviewed. " \
+                          "You'll receive a response shortly. If your issue has been resolved, please start a new chat session."
+      ctx[:skip_to_persist] = true
+    end
+
+    true
   end
 
   def resolve_provider(ctx, **)
+    return true if ctx[:skip_to_persist]
+
     ctx[:provider] = BaseChatProvider.resolve(
       support_agent: @support_agent,
       target: ctx[:chattable],
       analyst: ctx[:analyst]
     )
     ctx[:context] = ctx[:provider].build_context
+    ctx[:provider].chat_session = ctx[:chat_session] if ctx[:provider].respond_to?(:chat_session=)
   end
 
   def setup_ruby_llm_chat(ctx, **)
+    return true if ctx[:skip_to_persist]
+
     provider = ctx[:provider]
 
     instructions = provider.system_prompt
@@ -83,16 +111,20 @@ class GenericChatAgent < SupportAgentService
   end
 
   def execute_chat(ctx, **)
-    chat = ctx[:chat]
+    return true if ctx[:skip_to_persist]
 
-    # Context is already embedded in the system instructions via setup_ruby_llm_chat.
-    # Do NOT duplicate it in the user message — Gemini interprets "use this data to answer"
-    # as a signal to compute from context, which prevents it from calling tools like
-    # the stress scenario tool for "what if" questions.
+    chat = ctx[:chat]
+    provider = ctx[:provider]
+
+    register_tool_call_cap(chat, provider)
+
     t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
     response = chat.ask(ctx[:user_message])
     Rails.logger.info("[Generic chat agent] execute_chat took #{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round}ms ")
     ctx[:ai_response] = response.content.to_s.presence || "(no response)"
+  rescue MaxToolIterationsExceeded => e
+    Rails.logger.warn "[GenericChatAgent] #{e.message} — auto-escalating session #{ctx[:chat_session]&.id}"
+    auto_escalate(ctx)
   rescue StandardError => e
     Rails.logger.error "[GenericChatAgent] chat.ask failed: #{e.class} — #{e.message}"
     ctx[:ai_response] = "I'm sorry, I encountered an error processing your request. Please try again."
@@ -105,12 +137,70 @@ class GenericChatAgent < SupportAgentService
     session.agent_chat_messages.create!(role: "user", content: ctx[:user_message])
 
     # Save assistant response
-    session.agent_chat_messages.create!(role: "assistant", content: ctx[:ai_response])
+    assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ctx[:ai_response])
+
+    # Enqueue LLM-as-judge for CS agent responses
+    ResponseJudgeJob.perform_later(assistant_message.id) if @support_agent.agent_type == "CustomerSupportAgent"
   end
 
   def load_conversation_history(chat_session, chat)
     chat_session.agent_chat_messages.order(:created_at).each do |msg|
       chat.add_message(role: msg.role, content: msg.content)
     end
+  end
+
+  # Registers a before_tool_call hook that raises after max_tool_iterations calls.
+  # @param chat [RubyLLM::Chat] the chat instance
+  # @param provider [BaseChatProvider] the current provider
+  # @return [void]
+  def register_tool_call_cap(chat, provider)
+    max_iterations = provider.max_tool_iterations
+    return unless max_iterations
+
+    tool_call_count = 0
+    chat.before_tool_call do |_tool_call|
+      tool_call_count += 1
+      raise MaxToolIterationsExceeded, "Tool call limit (#{max_iterations}) exceeded" if tool_call_count > max_iterations
+    end
+  end
+
+  # Auto-escalates the session to the CS team when the tool cap is exceeded.
+  # Only fires for CustomerSupportAgent; other agent types get a generic error.
+  # @param ctx [Hash] the Trailblazer context
+  # @return [void]
+  def auto_escalate(ctx)
+    unless ctx[:support_agent]&.agent_type == "CustomerSupportAgent"
+      ctx[:ai_response] = "I'm sorry, I encountered an issue processing your request. Please try again."
+      return
+    end
+
+    session = ctx[:chat_session]
+    analyst = ctx[:analyst]
+    entity = ctx[:provider]&.support_agent&.entity
+
+    if session && analyst && entity
+      CustomerSupportEscalationService.escalate!(
+        session: session,
+        user: analyst,
+        entity: entity,
+        reason: "max_iterations",
+        summary: "Auto-escalated: agent exceeded #{ctx[:provider].max_tool_iterations} tool call iterations without producing a final answer."
+      )
+      ctx[:ai_response] = "I wasn't able to find a complete answer after several attempts. " \
+                          "I've connected you with the Caphive support team — they'll review your conversation and get back to you shortly."
+    else
+      ctx[:ai_response] = "I'm sorry, I encountered an issue processing your request. Please try again or contact support."
+    end
+  end
+
+  # @param session [AgentChatSession] the session to check
+  # @return [Boolean] true if the session's last message is older than 30 minutes
+  SESSION_IDLE_TIMEOUT = 30.minutes # rubocop:disable Lint/UselessConstantScoping
+
+  def session_expired?(session)
+    last_message = session.agent_chat_messages.order(created_at: :desc).first
+    return true if last_message.nil?
+
+    last_message.created_at < SESSION_IDLE_TIMEOUT.ago
   end
 end

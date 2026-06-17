@@ -10,6 +10,7 @@
        data-agent-chat-chattable-type-value="<%= chattable.class.name %>"
        data-agent-chat-chattable-id-value="<%= chattable.id %>"
        data-agent-chat-session-id-value="0"
+       data-agent-chat-feedback-enabled-value="<%= support_agent.agent_type == 'CustomerSupportAgent' %>"
        data-agent-chat-expanded-value="false"
        data-agent-chat-content-container-value="<%= local_assigns.fetch(:content_container_selector, "").to_s %>"
 
@@ -50,7 +51,7 @@
          style="bottom: 90px; right: 24px; width: 420px; height: 70vh; max-height: 700px; z-index: 1052; border: 1px solid #dee2e6;">
 
 
-      <!-- Header -->
+           <!-- Header -->
       <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom bg-primary text-white rounded-top-3" data-action="mousedown->agent-chat#startDrag"
         style="cursor: grab;">
         <div class="d-flex align-items-center gap-2">
@@ -59,9 +60,14 @@
         </div>
         <div class="d-flex gap-1">
   <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-1"
-          data-action="click->agent-chat#clearChat" title="Clear chat">
-    <i class="bi bi-trash"></i>
-    <span class="small">Clear</span>
+          data-action="click->agent-chat#toggleSessions" title="Past sessions">
+    <i class="bi bi-clock-history"></i>
+    <span class="small">History</span>
+  </button>
+  <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-1"
+          data-action="click->agent-chat#newChat" title="New conversation">
+    <i class="bi bi-plus-lg"></i>
+    <span class="small">New</span>
   </button>
   <button class="btn btn-sm btn-outline-light d-flex align-items-center gap-1"
           data-agent-chat-target="maximizeBtn"
@@ -79,6 +85,16 @@
 
 
       </div>
+
+      <!-- Session sidebar (hidden by default) -->
+      <div data-agent-chat-target="sessionList"
+           class="d-none border-bottom bg-white overflow-auto"
+           style="max-height: 350px; min-height: 150px;"
+
+      >
+        <div class="p-2 text-muted small text-center">Loading sessions...</div>
+      </div>
+
 
       <!-- Messages -->
       <div data-agent-chat-target="messages"

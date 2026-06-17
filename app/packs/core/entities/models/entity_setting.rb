@@ -156,6 +156,18 @@ class EntitySetting < ApplicationRecord
     self.mcp_allowed_clients = Array(clients).compact_blank.to_json
   end
 
+  # --- CS Agent Judge Settings ---
+
+  # @return [Boolean] whether LLM-as-judge is enabled for CS agent responses
+  def cs_judge_enabled?
+    cs_judge_enabled == true
+  end
+
+  # @return [String] the LLM model to use for CS agent response judging
+  def cs_judge_model_name
+    cs_judge_model.presence || ENV.fetch("CS_JUDGE_MODEL", "gpt-4o-mini")
+  end
+
   # rubocop : enable Rails/SkipsModelValidations
 
   private

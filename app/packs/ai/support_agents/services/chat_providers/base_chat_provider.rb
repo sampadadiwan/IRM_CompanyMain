@@ -38,6 +38,11 @@ class BaseChatProvider
     []
   end
 
+  # @return [Integer, nil] maximum tool call iterations before auto-escalation, nil for no cap
+  def max_tool_iterations
+    nil
+  end
+
   # Factory: resolves the right provider based on agent_type.
   # Each agent type maps to a domain-specific provider that supplies
   # the system prompt, context data, and tools for the chat.
@@ -49,6 +54,7 @@ class BaseChatProvider
                      when "PortfolioCompanyAgent" then defined?(PortfolioCompanyChatProvider) ? PortfolioCompanyChatProvider : DefaultChatProvider
                      when "LpAssistantAgent" then defined?(LpChatProvider) ? LpChatProvider : DefaultChatProvider
                      when "PortfolioAssistantAgent" then defined?(PortfolioAssistantChatProvider) ? PortfolioAssistantChatProvider : DefaultChatProvider
+                     when "CustomerSupportAgent" then defined?(FmCsChatProvider) ? FmCsChatProvider : DefaultChatProvider
                      # PRD §12.3 — PresentationChatProvider loads SupportAgentReport.json_fields
                      # as context so the GP can ask follow-ups without re-running the agent.
                      when "PresentationAnalystAgent" then defined?(PresentationChatProvider) ? PresentationChatProvider : DefaultChatProvider

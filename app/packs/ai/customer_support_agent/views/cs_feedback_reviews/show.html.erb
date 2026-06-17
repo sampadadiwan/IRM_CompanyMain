@@ -1,0 +1,227 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Feedback Review #<%= @feedback.id %></h1>
+  <%= link_to "Back to Reviews", cs_feedback_reviews_path, class: "btn btn-outline-secondary btn-sm" %>
+</div>
+
+<div class="row">
+  <%# ── Left column: Conversation context ── %>
+  <div class="col-lg-8">
+    <%# User question %>
+    <div class="card mb-3">
+      <div class="card-header bg-light">
+        <strong>User Question</strong>
+        <span class="text-muted ms-2"><%= @user_question&.created_at&.strftime("%d %b %Y %H:%M") %></span>
+      </div>
+      <div class="card-body">
+        <p class="mb-1 text-muted small">
+          <%= @session.analyst&.name %> &middot; <%= @feedback.entity&.name %>
+        </p>
+        <div><%= @user_question&.content || "—" %></div>
+      </div>
+    </div>
+
+    <%# Agent response %>
+    <div class="card mb-3">
+      <div class="card-header bg-light">
+        <strong>Agent Response</strong>
+        <span class="text-muted ms-2"><%= @message.created_at.strftime("%d %b %Y %H:%M") %></span>
+      </div>
+      <div class="card-body">
+        <div class="markdown-body"><%= render_markdown(@message.content) %></div>
+      </div>
+    </div>
+
+    <%# Tool calls summary %>
+    <% if @message.tool_calls_summary.present? %>
+      <div class="card mb-3">
+        <div class="card-header bg-light"><strong>Tool Calls</strong></div>
+        <div class="card-body">
+          <% tool_calls = JSON.parse(@message.tool_calls_summary) rescue [] %>
+          <% tool_calls.each do |tc| %>
+            <div class="mb-2 p-2 border rounded bg-light">
+              <strong><%= tc["tool_name"] || tc["name"] %></strong>
+              <% if tc["query"].present? %>
+                <br><small class="text-muted">Query: <code><%= tc["query"] %></code></small>
+              <% end %>
+              <% if tc["files_searched"].present? %>
+                <br><small class="text-muted">Files: <%= Array(tc["files_searched"]).join(", ") %></small>
+              <% end %>
+              <% if tc["row_count"].present? %>
+                <br><small class="text-muted">Rows returned: <%= tc["row_count"] %></small>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Guide files searched %>
+    <% if @feedback.guide_files_searched.present? %>
+      <div class="card mb-3">
+        <div class="card-header bg-light"><strong>Guide Files Searched</strong></div>
+        <div class="card-body">
+          <% files = JSON.parse(@feedback.guide_files_searched) rescue [] %>
+          <ul class="mb-0">
+            <% files.each do |f| %>
+              <li><code><%= f %></code></li>
+            <% end %>
+          </ul>
+          <% if @message.guide_search_hit %>
+            <span class="badge bg-success mt-2">Hit</span>
+          <% else %>
+            <span class="badge bg-warning mt-2">No Match</span>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Re-test section %>
+    <div class="card mb-3">
+      <div class="card-header bg-light">
+        <strong>Re-test</strong>
+      </div>
+      <%= turbo_frame_tag "retest_result" do %>
+        <div class="card-body">
+          <% if @retest_response.present? %>
+            <div class="alert alert-info mb-2">
+              <strong>New response</strong> (session #<%= @retest_session_id %>):
+            </div>
+            <div class="markdown-body border rounded p-3 bg-light"><%= render_markdown(@retest_response) %></div>
+          <% elsif @retest_error.present? %>
+            <div class="alert alert-danger"><%= @retest_error %></div>
+          <% else %>
+            <p class="text-muted mb-2">Replay the original question through the agent and compare the new response with the original above.</p>
+            <%= button_to "Re-test this question",
+                  retest_cs_feedback_review_path(@feedback),
+                  method: :post,
+                  class: "btn btn-outline-warning btn-sm",
+                  data: { confirm: "This will run the question through the agent again. Proceed?", turbo_frame: "retest_result" } %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <%# ── Right column: Scores + Actions ── %>
+  <div class="col-lg-4">
+    <%# Status %>
+    <div class="card mb-3">
+      <div class="card-header bg-light"><strong>Status</strong></div>
+      <div class="card-body">
+        <% status_colors = { "open" => "secondary", "needs_review" => "warning", "resolved" => "success",
+                              "dismissed" => "info", "pending_engineering" => "primary" } %>
+        <span class="badge bg-<%= status_colors[@feedback.status] || 'secondary' %> fs-6">
+          <%= @feedback.status.titleize %>
+        </span>
+        <% if @feedback.reviewed_by.present? %>
+          <p class="mt-2 mb-0 text-muted small">
+            Reviewed by <%= @feedback.reviewed_by.name %> 
+          </p>
+        <% end %>
+        <% if @feedback.resolution_notes.present? %>
+          <p class="mt-1 mb-0 small"><em><%= @feedback.resolution_notes %></em></p>
+        <% end %>
+      </div>
+    </div>
+
+    <%# User feedback %>
+    <div class="card mb-3">
+      <div class="card-header bg-light"><strong>User Feedback</strong></div>
+      <div class="card-body">
+        <% if @feedback.rated? %>
+          <% if @feedback.rating == "negative" %>
+            <span class="badge bg-danger">Negative</span>
+          <% else %>
+            <span class="badge bg-success">Positive</span>
+          <% end %>
+          <% if @feedback.notes.present? %>
+            <p class="mt-2 mb-0 small"><em>"<%= @feedback.notes %>"</em></p>
+          <% end %>
+        <% else %>
+          <span class="text-muted">No user rating</span>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Judge scores %>
+    <div class="card mb-3">
+      <div class="card-header bg-light"><strong>Judge Scores</strong></div>
+      <div class="card-body">
+        <% if @feedback.judged? %>
+          <table class="table table-sm mb-2">
+            <tr>
+              <td>Completeness</td>
+              <td class="text-end fw-bold"><%= @feedback.judge_completeness %>/3</td>
+            </tr>
+            <tr>
+              <td>Grounding</td>
+              <td class="text-end fw-bold"><%= @feedback.judge_grounding %>/3</td>
+            </tr>
+            <tr>
+              <td>Actionability</td>
+              <td class="text-end fw-bold"><%= @feedback.judge_actionability %>/3</td>
+            </tr>
+            <tr class="table-active">
+              <td><strong>Total</strong></td>
+              <td class="text-end fw-bold <%= @feedback.judge_total <= 4 ? 'text-danger' : '' %>">
+                <%= @feedback.judge_total %>/9
+              </td>
+            </tr>
+          </table>
+          <% if @feedback.judge_issues.present? %>
+            <% issues = JSON.parse(@feedback.judge_issues) rescue [] %>
+            <% if issues.any? %>
+              <p class="mb-1 small text-muted">Issues flagged:</p>
+              <ul class="small">
+                <% issues.each do |issue| %>
+                  <li><%= issue %></li>
+                <% end %>
+              </ul>
+            <% end %>
+          <% end %>
+        <% else %>
+          <span class="text-muted">Not yet judged</span>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Linked escalation %>
+    <% if @escalation.present? %>
+      <div class="card mb-3 border-warning">
+        <div class="card-header bg-warning bg-opacity-25"><strong>Open Escalation</strong></div>
+        <div class="card-body">
+          <p class="mb-1"><strong>Reason:</strong> <%= @escalation.reason.titleize %></p>
+          <p class="mb-1"><strong>Summary:</strong> <%= @escalation.summary %></p>
+          <p class="mb-0 text-muted small">Created <%= @escalation.created_at.strftime("%d %b %Y %H:%M") %></p>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Actions %>
+    <% unless @feedback.status.in?(%w[resolved dismissed]) %>
+      <div class="card mb-3">
+        <div class="card-header bg-light"><strong>Actions</strong></div>
+        <div class="card-body">
+          <%= form_with url: cs_feedback_review_path(@feedback), method: :patch, local: true do |f| %>
+            <div class="mb-3">
+              <%= f.label :resolution_notes, "Notes (required)", class: "form-label" %>
+              <%= f.text_area :resolution_notes, class: "form-control form-control-sm", rows: 3,
+                    required: true, placeholder: "e.g. Updated KYC guide section 3.2 with PAN resubmission steps" %>
+            </div>
+            <div class="d-grid gap-2">
+              <%= f.submit "Resolve", name: "status", value: "resolved",
+                    class: "btn btn-success btn-sm",
+                    data: { confirm: "Mark as resolved?" } %>
+              <%= f.submit "Dismiss", name: "status", value: "dismissed",
+                    class: "btn btn-outline-info btn-sm",
+                    data: { confirm: "Dismiss this item?" } %>
+              <%= f.submit "Pending Engineering", name: "status", value: "pending_engineering",
+                    class: "btn btn-outline-primary btn-sm",
+                    data: { confirm: "Mark as pending engineering?" } %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

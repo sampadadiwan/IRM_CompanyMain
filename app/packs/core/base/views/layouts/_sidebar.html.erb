@@ -242,6 +242,12 @@
       <% end %>
       <% if current_user&.support? %>
         <li class="sidebar-item">
+          <a class="sidebar-link" href="/cs_feedback_reviews">
+            <span><i class="ti ti-message-report"></i></span>
+            <span class="hide-menu">CS Reviews</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
           <a class="sidebar-link" href="/features">
             <span><i class="ti ti-flag"></i></span>
             <span class="hide-menu"><%= t('top_menus.features') %></span>

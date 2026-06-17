@@ -1,0 +1,32 @@
+<%
+  session = escalation.agent_chat_session
+%>
+<tr>
+  <td><%= escalation.entity&.name %></td>
+  <td><%= session&.analyst&.name || "Unknown" %></td>
+  <td>
+    <% reason_colors = { "customer_requested" => "info", "low_confidence" => "warning",
+                          "complex_issue" => "primary", "max_iterations" => "danger" } %>
+    <span class="badge bg-<%= reason_colors[escalation.reason] || 'secondary' %>">
+      <%= escalation.reason.titleize %>
+    </span>
+  </td>
+  <td title="<%= escalation.summary %>">
+    <%= truncate(escalation.summary.to_s, length: 100) %>
+  </td>
+  <td>
+    <% status_colors = { "open" => "warning", "resolved" => "success", "dismissed" => "info" } %>
+    <span class="badge bg-<%= status_colors[escalation.status] || 'secondary' %>">
+      <%= escalation.status.titleize %>
+    </span>
+  </td>
+  <td><%= escalation.created_at.strftime("%d %b %Y %H:%M") %></td>
+  <td>
+    <%# Link to the feedback review for the last assistant message in this session %>
+   <% last_feedback = @feedback_by_session_id[session&.id] %>
+
+    <% if last_feedback %>
+      <%= link_to "View", cs_feedback_review_path(last_feedback), class: "btn btn-sm btn-outline-primary" %>
+    <% end %>
+  </td>
+</tr>

@@ -5,3 +5,13 @@
     <%= render "dashboard_widgets/dashboard", dashboard_name: DashboardWidget::FM_LANDING_PAGE, show_nav: false %>
 
 </div>
+    <%
+    cs_agent = SupportAgent.find_by(
+        entity_id: current_user.entity_id,
+        agent_type: "CustomerSupportAgent",
+        enabled: true
+    )
+    %>
+    <% if cs_agent&.chat_enabled? %>
+    <%= render "support_agents/chat_panel", support_agent: cs_agent, chattable: current_user %>
+    <% end %>
