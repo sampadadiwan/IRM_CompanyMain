@@ -28,10 +28,10 @@ class SupportAgentChatFeedbacksController < ApplicationController
       user: current_user,
       entity: @support_agent.entity,
       channel: @message.channel || "web",
-      rating: params[:rating],
-      notes: params[:notes],
       status: @feedback.new_record? ? "open" : @feedback.status
     )
+    @feedback.rating = params[:rating] if params.key?(:rating)
+    @feedback.notes = params[:notes] if params.key?(:notes)
 
     authorize @feedback
 

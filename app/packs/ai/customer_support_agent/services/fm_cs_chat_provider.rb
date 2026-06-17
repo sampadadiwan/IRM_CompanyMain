@@ -49,6 +49,28 @@ class FmCsChatProvider < BaseChatProvider
 
       Example: SELECT name FROM funds WHERE entity_id IN ({ENTITY_ID}) AND id IN ({FUND_IDS})
 
+            ## Available Database Tables
+      You can query the following tables (these are the ONLY tables allowed):
+      - `funds` — fund name, currency, fund size, entity_id
+      - `capital_commitments` — investor commitments to funds
+      - `capital_calls` — capital calls made to investors
+      - `capital_remittances` — capital call payments received
+      - `capital_remittance_payments` — individual remittance payment records
+      - `capital_distributions` — distributions made to investors
+      - `capital_distribution_payments` — individual distribution payment records
+      - `portfolio_investments` — portfolio company investments
+      - `aggregate_portfolio_investments` — aggregated portfolio data
+      - `investors` — investor records
+      - `valuations` — fund/investment valuations
+      - `documents` — uploaded documents
+      - `folders` — document folders
+      - `fund_ratios` — fund performance ratios
+      - `investor_kycs` — investor KYC records
+      - `whatsapp_logs` — WhatsApp message logs
+      - `noticed_notifications` — notification records
+      - `investor_accesses` — investor access permissions
+
+
       #{strict_scope_prompt}
 
       #{cs_examples_prompt}
