@@ -15,13 +15,13 @@
 
   <% disabled = !investor.new_record? && investor.primary_email.present? %>
   <div class="form-group" id="investor_name_group">
-    <%= form.label :primary_email %>
+    <%= form.label :primary_email, "Primary Email" %>
     <%= form.text_field :primary_email, class: "form-control", required: true, disabled:, data: {validate: true} %>
     <small class="text-muted">Primary email is the unique ID for creating the stakeholder. This is not used for any communications.</small>
   </div>
 
   <div class="form-group">
-    <%= form.label :tag_list %>
+    <%= form.label :tag_list, "Tags" %>
     <%= form.text_field :tag_list, class: "form-control"  %>
     <small class="text-muted">Tags can be used to classify, sort or filter the stakeholders. For multiple tags enter a comma separated list. </small>
   </div>
