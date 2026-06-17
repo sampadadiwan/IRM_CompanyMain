@@ -22,4 +22,6 @@ class AgentChatMessage < ApplicationRecord
   end
 
   attribute :metadata, default: {}
+
+  validates :role, length: { maximum: 20 }, allow_blank: true
 end

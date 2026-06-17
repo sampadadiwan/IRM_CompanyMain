@@ -15,6 +15,9 @@ class Valuation < ApplicationRecord
 
   ADDITIONAL_COLUMNS_FROM = ["investment_instrument"].freeze
 
+  validates :category, length: { maximum: 10 }, allow_blank: true
+  validates :sub_category, length: { maximum: 100 }, allow_blank: true
+
   COMPUTE_VAL_BRIDGE_CF = "compute_value_bridge".freeze
 
   belongs_to :entity

@@ -51,3 +51,11 @@ Scenario Outline: Login Incorrectly
   	|user		|msg	|
   	|	      |Invalid email or password|
 
+Scenario: Invited user receives a confirmation email branded with their entity name
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  And the user has role "company_admin"
+  And I am at the users page
+  When I create a new user "first_name=Tim;email=invitee@gmail.com"
+  Then an user should be created
+  And the new user receives a confirmation email welcoming them to their entity
+

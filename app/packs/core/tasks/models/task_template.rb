@@ -3,6 +3,8 @@ class TaskTemplate < ApplicationRecord
   acts_as_list scope: %i[for_class entity_id]
 
   validates :details, :for_class, presence: true
+  validates :for_class, length: { maximum: 40 }
+  validates :tag_list, length: { maximum: 100 }, allow_blank: true
   validates :due_in_days, numericality: { only_integer: true, greater_than_or_equal_to: 0 }
   FOR_CLASS = %w[CapitalCommitment CapitalCall CapitalRemittance CapitalDistribution IndividualKyc NonIndividualKyc Offer Interest].freeze
 

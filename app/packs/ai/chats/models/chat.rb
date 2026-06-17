@@ -9,6 +9,7 @@ class Chat < ApplicationRecord
   belongs_to :owner, polymorphic: true
   belongs_to :entity
   validates :name, presence: true
+  validates :assistant_type, length: { maximum: 50 }, allow_blank: true
 
   def model_id
     super || @model_string

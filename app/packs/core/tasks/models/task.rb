@@ -29,6 +29,7 @@ class Task < ApplicationRecord
 
   validates :details, presence: true
   validates :tags, length: { maximum: 50 }
+  validates :category, length: { maximum: 40 }, allow_blank: true
   # validates :category, inclusion: { in: CATEGORIES, allow_blank: true }
 
   has_many :reminders, as: :owner, dependent: :destroy

@@ -3,6 +3,8 @@ class CallFee < ApplicationRecord
   belongs_to :fund
   belongs_to :capital_call
   validates :name, :start_date, :end_date, :fee_type, presence: true
+  validates :name, length: { maximum: 50 }
+  validates :fee_type, length: { maximum: 20 }
 
   NESTED_ATTRIBUTES = %i[id name start_date end_date fee_type notes _destroy].freeze
   NESTED_ATTRIBUTES_WITH_FORMULA = %i[id name start_date end_date fee_type notes _destroy formula].freeze

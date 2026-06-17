@@ -9,6 +9,8 @@ class ESignature < ApplicationRecord
   acts_as_list scope: :document
 
   validates :label, length: { maximum: 50 }
+  validates :email, length: { maximum: 60 }, allow_blank: true
+  validates :signature_type, length: { maximum: 10 }, allow_blank: true
 
   # validates_presence_of :email, if: -> { !document.template }
   normalizes :email, with: ->(v) { v&.gsub(/\s+/, '') }

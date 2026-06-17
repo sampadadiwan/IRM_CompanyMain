@@ -130,6 +130,17 @@ Given('I go to all investor accesses page') do
   visit("/investor_accesses")
 end
 
+# Confirms DeviseMailer brands the new stakeholder's confirmation email with the entity
+# that actually granted them access (investor_access.entity), not the investor entity
+# their User record belongs to -- since that's who really invited them.
+Then('the new stakeholder receives a confirmation email welcoming them to the granting entity') do
+  @investor_access ||= InvestorAccess.last
+  open_email(@investor_access.user.email)
+  puts "\n####Email subject####\n"
+  puts current_email.subject
+  expect(current_email.subject).to eq("Welcome to CapHive (#{@investor_access.entity_name})")
+end
+
 
 
 Given('another user has investor access {string} in the investor') do |arg|

@@ -59,6 +59,7 @@ class InvestmentInstrument < ApplicationRecord
   validates :name, uniqueness: { scope: %i[portfolio_company_id] }
   validates :category, length: { maximum: 15 }
   validates :sub_category, :sector, length: { maximum: 100 }
+  validates :investment_domicile, length: { maximum: 15 }, allow_blank: true
   validate :prevent_currency_change, on: :update
 
   # validate reporting fields

@@ -291,7 +291,7 @@ class InvestorsController < ApplicationController
       authorize(new_investor, :update?)
 
       InvestorMergeJob.perform_later(old_investor.id, new_investor.id, current_user.id)
-      redirect_to investor_url(new_investor), notice: "Investor merge in progress, please check back in a few mins"
+      redirect_to investor_url(new_investor), notice: "Stakeholder merge in progress, please check back in a few mins"
     end
   end
 
@@ -345,7 +345,7 @@ class InvestorsController < ApplicationController
         redirect_url = params[:back_to].presence || investor_url(@investor)
         format.turbo_stream do
           @frame = params[:turbo_frame] || params[:investor][:turbo_frame] || "new_deal_investor"
-          UserAlert.new(user_id: current_user.id, message: "Investor was successfully created!", level: "success").broadcast
+          UserAlert.new(user_id: current_user.id, message: "Stakeholder was successfully created!", level: "success").broadcast
           if params[:redirect_frame_to].present?
             # Explicit redirect URL for the turbo frame
             render turbo_stream: [
@@ -364,7 +364,7 @@ class InvestorsController < ApplicationController
         if return_to.present?
           return_to = "#{return_to}#{return_to.include?('?') ? '&' : '?'}portfolio_company_id=#{@investor.id}"
         end
-        format.html { redirect_to (return_to || redirect_url), notice: "Investor was successfully created." }
+        format.html { redirect_to (return_to || redirect_url), notice: "Stakeholder was successfully created." }
 
         format.json { render :show, status: :created, location: @investor }
       else
@@ -374,7 +374,7 @@ class InvestorsController < ApplicationController
         format.json { render json: @investor.errors, status: :unprocessable_entity }
         format.turbo_stream do
           @frame = params[:turbo_frame] || params[:investor][:turbo_frame] || "new_deal_investor"
-          @alert = "Investor could not be created!"
+          @alert = "Stakeholder could not be created!"
           @alert += " #{@investor.errors.full_messages.join(', ')}"
           render turbo_stream: [
             turbo_stream.prepend(@frame, partial: "layouts/alerts", locals: { alert: @alert })
@@ -388,7 +388,7 @@ class InvestorsController < ApplicationController
   def update
     respond_to do |format|
       if @investor.update(investor_params)
-        format.html { redirect_to investor_url(@investor), notice: "Investor was successfully updated." }
+        format.html { redirect_to investor_url(@investor), notice: "Stakeholder was successfully updated." }
         format.json { render :show, status: :ok, location: @investor }
       else
         format.html { render :edit, status: :unprocessable_entity }
@@ -402,7 +402,7 @@ class InvestorsController < ApplicationController
     @investor.destroy
 
     respond_to do |format|
-      format.html { redirect_to investors_url, notice: "Investor was successfully deleted." }
+      format.html { redirect_to investors_url, notice: "Stakeholder was successfully deleted." }
       format.json { head :no_content }
     end
   end
@@ -430,7 +430,7 @@ class InvestorsController < ApplicationController
   def set_investor
     @investor = Investor.find(params[:id])
     authorize @investor
-    @bread_crumbs = { Investors: investors_path, "#{@investor.investor_name}": investor_path(@investor) }
+    @bread_crumbs = { Stakeholders: investors_path, "#{@investor.investor_name}": investor_path(@investor) }
   end
 
   # Only allow a list of trusted parameters through.

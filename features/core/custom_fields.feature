@@ -46,19 +46,60 @@ Scenario Outline: Import form custom fields
    |entity_type=Investment Fund;enable_funds=true  |form_custom_fields.xlsx  |13    |
 
 
-# Error scenario: required custom file field left blank triggers validation error
-Scenario Outline: Submitting KYC without a required custom file shows a validation error
+# Fund employees (company_admin) save KYCs as partial/draft records all the time — e.g.
+# before the investor has handed over every supporting document — and come back to
+# complete them later. No mandatory field, standard or custom, may block that kind of
+# save when a fund employee is the one saving — every fill_in is skipped here, leaving
+# full_name, PAN, birth_date, address, bank details, etc. blank, on top of whichever
+# custom fields are configured.
+#
+# Regression test: InvestorKycCreate#check_required_file_custom_fields used to run this
+# check unconditionally (even for non-validating/draft saves), which silently blocked
+# fund employees from saving a new KYC unless every required file was already attached.
+# See app/packs/core/investor_kycs/services/investor_kyc_create.rb.
+Scenario Outline: Fund employee can save a new KYC with no mandatory fields filled in - standard or custom
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given the entity has custom fields "<custom_fields>" for "IndividualKyc"
   Given there is an existing investor "investor_name=Investor 1"
-  When I try to save a new InvestorKyc "PAN=ABCD9876F" without any files
-  Then I should see the "<error_msg>"
+  When I try to save a new InvestorKyc as a fund employee with no mandatory fields filled in
+  Then I should see the "Investor kyc was successfully saved."
+  And the saved investor kyc should have no mandatory fields filled in
+  And I should not see the kyc document "<missing_doc>"
 
   Examples:
-    | custom_fields                               | error_msg          |
-    | name=F1;field_type=File;required=true       | can't be blank     |
-    | name=F1;field_type=File;required=true#name=F2;field_type=File;required=false | can't be blank |
+    | custom_fields                                                                  | missing_doc |
+    | name=F1;field_type=File;required=true                                         | F1          |
+    | name=F1;field_type=File;required=true#name=F2;field_type=File;required=false  | F1          |
+    | name=F1;field_type=File;required=true#name=F3;field_type=TextField;required=true | F1        |
+
+# Once the fund employee has saved the partial KYC above, they should be able to come
+# back, attach the previously-missing required file, and save again to complete it.
+Scenario: Fund employee completes a previously partial KYC by adding the missing required file
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has custom fields "name=F1;field_type=File;required=true" for "IndividualKyc"
+  Given there is an existing investor "investor_name=Investor 1"
+  When I try to save a new InvestorKyc as a fund employee with no mandatory fields filled in
+  Then I should see the "Investor kyc was successfully saved."
+  And I should not see the kyc document "F1"
+  When I edit the investor kyc and upload the missing custom file "F1"
+  Then I should see the kyc documents "F1"
+
+# Contrast with the scenario above: investors are still required to fill in every
+# mandatory field, standard and custom, before they can submit their KYC. This was the
+# correct behavior before the regression and must not change.
+@kyc_magic_link
+Scenario: Investor cannot submit a KYC while mandatory fields are missing - standard or custom
+  Given there is a user "first_name=FundAdmin" for an entity "name=Urban3;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has custom fields "name=F3;field_type=TextField;required=true" for "IndividualKyc"
+  Given there is an existing investor "investor_name=Investor 3" with "1" users
+  Given there is a KYC for the investor with submission_status "link_sent" and no mandatory fields filled in
+  When I open the KYC edit page as the investor via a valid signed link
+  And I click "Submit KYC" and confirm the dialog
+  Then I should see the "can't be blank"
+  And the investor kyc submission_status should not be "completed"
 
 
 # Edge case: non-File field types (NumberField, DateField) work correctly as KYC custom fields

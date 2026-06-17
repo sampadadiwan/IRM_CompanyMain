@@ -78,6 +78,8 @@ class Fund < ApplicationRecord
   validates :commitment_doc_list, length: { maximum: 100 }
   validates :name, :tag_list, :unit_types, length: { maximum: 255 }
   validates :category, length: { maximum: 15 }
+  validates :portfolio_cost_type, length: { maximum: 10 }, allow_blank: true
+  validates :units_allocation_engine, length: { maximum: 50 }, allow_blank: true
 
   scope :ordered, lambda {
     order(Arel.sql("

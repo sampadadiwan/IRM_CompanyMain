@@ -21,6 +21,27 @@ Given('there is a KYC for the investor with submission_status {string}') do |sta
   puts @investor_kyc.to_json
 end
 
+# Same as above but blanks every standard mandatory field (everything the model's
+# `presence: true` validation covers except kyc_type, which defaults at the DB level
+# and is effectively always set by the wizard's Individual/Non Individual step).
+# Saved with validate:false purely to get a persisted fixture in this state — the
+# scenario itself proves the investor's full *submit* still gets blocked server-side.
+Given('there is a KYC for the investor with submission_status {string} and no mandatory fields filled in') do |status|
+  @investor_kyc = FactoryBot.build(
+    :investor_kyc,
+    entity: @entity,
+    investor: @investor,
+    submission_status: status,
+    completed_by_investor: %w[completed verified].include?(status),
+    verified: status == "verified",
+    full_name: nil, PAN: nil, birth_date: nil, address: nil, corr_address: nil,
+    bank_name: nil, bank_branch: nil, bank_account_type: nil, bank_account_number: nil, ifsc_code: nil
+  )
+  @investor_kyc.save!(validate: false)
+  puts "\n########### InvestorKyc (no mandatory fields filled in) ############"
+  puts @investor_kyc.to_json
+end
+
 # ─────────────────────────────────────────────────────────────────────────────
 # LOGIN
 # ─────────────────────────────────────────────────────────────────────────────
@@ -142,6 +163,11 @@ end
 Then('the investor kyc submission_status should be {string}') do |expected|
   @investor_kyc.reload
   expect(@investor_kyc.submission_status).to eq(expected)
+end
+
+Then('the investor kyc submission_status should not be {string}') do |unexpected|
+  @investor_kyc.reload
+  expect(@investor_kyc.submission_status).not_to eq(unexpected)
 end
 
 Then('the link_sent_at timestamp is set on the investor kyc') do

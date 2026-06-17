@@ -4,6 +4,12 @@ class DashboardWidget < ApplicationRecord
   belongs_to :owner, polymorphic: true, optional: true
 
   validates :dashboard_name, :widget_name, :size, :tags, presence: true
+  validates :dashboard_name, length: { maximum: 30 }
+  validates :widget_name, length: { maximum: 30 }
+  validates :name, length: { maximum: 20 }, allow_blank: true
+  validates :size, length: { maximum: 10 }
+  validates :tag_list, length: { maximum: 20 }, allow_blank: true
+  validates :tags, length: { maximum: 100 }
 
   scope :enabled, -> { where(enabled: true) }
   scope :disabled, -> { where(enabled: false) }

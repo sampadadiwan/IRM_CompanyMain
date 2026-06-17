@@ -7,6 +7,8 @@ class StockAdjustment < ApplicationRecord
   belongs_to :user
 
   validates :adjustment, numericality: true
+  validates :category, length: { maximum: 10 }, allow_blank: true
+  validates :sub_category, length: { maximum: 100 }, allow_blank: true
 
   after_create_commit :apply_stock_adjustment
 

@@ -13,8 +13,8 @@ Scenario Outline: Create new investor
 
   Examples:
   	|user	      |entity               |investor     |msg	|
-  	|  	        |entity_type=Company  |category=LP |Investor was successfully created|
-    |  	        |entity_type=Company  |category=LP |Investor was successfully created|
+  	|  	        |entity_type=Company  |category=LP |Stakeholder was successfully created|
+    |  	        |entity_type=Company  |category=LP |Stakeholder was successfully created|
 
 Scenario Outline: Investor email validation error
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -41,8 +41,8 @@ Scenario Outline: Create new investor
 
   Examples:
   	|user	      |entity               |investor     |msg	|
-  	|  	        |entity_type=Company  |category=LP |Investor was successfully created|
-    |  	        |entity_type=Company  |category=LP |Investor was successfully created|
+  	|  	        |entity_type=Company  |category=LP |Stakeholder was successfully created|
+    |  	        |entity_type=Company  |category=LP |Stakeholder was successfully created|
 
 
 Scenario Outline: Update investor
@@ -56,8 +56,8 @@ Scenario Outline: Update investor
 
   Examples:
   	|user	      |entity               |investor    | investor_update  | msg	|
-  	|  	        |entity_type=Company  |category=LP | tag_list=Cool    | Investor was successfully updated|
-    |  	        |entity_type=Company  |category=LP | tag_list=Cool    | Investor was successfully updated|
+  	|  	        |entity_type=Company  |category=LP | tag_list=Cool    | Stakeholder was successfully updated|
+    |  	        |entity_type=Company  |category=LP | tag_list=Cool    | Stakeholder was successfully updated|
 
 Scenario Outline: Send KYC notification
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -73,7 +73,7 @@ Scenario Outline: Send KYC notification
 
   Examples:
     |user	      |entity               |investor     |msg	|
-    |  	        |entity_type=Company  |name=valory |Investor was successfully created|
+    |  	        |entity_type=Company  |name=valory |Stakeholder was successfully created|
 
 Scenario Outline: Send KYC notification error
   Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -88,7 +88,7 @@ Scenario Outline: Send KYC notification error
 
   Examples:
     |user	      |entity               |investor     |msg	|
-    |  	        |entity_type=Company  |name=Radiant |Investor was successfully created|
+    |  	        |entity_type=Company  |name=Radiant |Stakeholder was successfully created|
 
 
 Scenario Outline: Create new investor from exiting entity
@@ -104,8 +104,8 @@ Scenario Outline: Create new investor from exiting entity
 
   Examples:
   	|entity              |investor                         |msg	|
-  	|entity_type=Company |investor_name=Accelo;primary_email=a@b.c   |Investor was successfully created|
-    |entity_type=Company |investor_name=Bearings;primary_email=a@b.c |Investor was successfully created|
+  	|entity_type=Company |investor_name=Accelo;primary_email=a@b.c   |Stakeholder was successfully created|
+    |entity_type=Company |investor_name=Bearings;primary_email=a@b.c |Stakeholder was successfully created|
 
 @import
 Scenario Outline: Import investor access

@@ -45,6 +45,11 @@ export default class extends Controller {
   // Build the JSON body sent on every save. Override in each subclass.
   collectPayload() { return {} }
 
+  // Called right after an edited element's value is committed to the DOM,
+  // before the save request fires. Override to update derived/dependent UI
+  // (e.g. totals computed from the edited field) optimistically.
+  onFieldChanged(_el) {}
+
   // ── Private ──────────────────────────────────────────────────────────────
 
   #makeContentEditable(el) {
@@ -65,6 +70,7 @@ export default class extends Controller {
       el.contentEditable = "false"
       el.classList.remove("inline-editing")
       el.removeEventListener("keydown", onKeydown)
+      this.onFieldChanged(el)
       this.#save()
     }
 
@@ -104,6 +110,7 @@ export default class extends Controller {
       const val = Math.min(100, Math.max(0, parseInt(input.value) || 0))
       el.textContent = val
       input.replaceWith(el)
+      this.onFieldChanged(el)
       this.#save()
     }
 

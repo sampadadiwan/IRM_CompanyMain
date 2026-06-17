@@ -3,24 +3,27 @@
     <%= form.label :investor_name, "New Stakeholder Name" %>
     <%= form.text_field :investor_name, class: "form-control", autocomplete: false %>
     <%= form.text_field :investor_entity_id, class: "form-control", hidden: true %>
+    <small class="text-muted">Enter a unique stakeholder name</small>
   </div>
 
   <div class="form-group">
     <%= form.label :category %>
     <!-- Even though this is not a custom field, its class is set to custom_field to enable other custom_fields to be dependent on this -->
     <%= form.select :category, Investor.INVESTOR_CATEGORIES(current_user.entity) , {include_blank: true}, class: "form-control custom_field", data: { action: "investor#toggleSector" }  %>
+    <small class="text-muted">Select the category grouping for the stakeholder</small>
   </div>
 
   <% disabled = !investor.new_record? && investor.primary_email.present? %>
   <div class="form-group" id="investor_name_group">
     <%= form.label :primary_email %>
     <%= form.text_field :primary_email, class: "form-control", required: true, disabled:, data: {validate: true} %>
+    <small class="text-muted">Primary email is the unique ID for creating the stakeholder. This is not used for any communications.</small>
   </div>
 
   <div class="form-group">
     <%= form.label :tag_list %>
     <%= form.text_field :tag_list, class: "form-control"  %>
-    <small class="text-muted">Comma separated list of tags to classify the Stakeholder</small>
+    <small class="text-muted">Tags can be used to classify, sort or filter the stakeholders. For multiple tags enter a comma separated list. </small>
   </div>
 
   <div class="form-group" data-investor-target="sectorField" style="<%= investor.category == 'Portfolio Company' ? '' : 'display: none;' %>">
@@ -32,6 +35,7 @@
   <div class="form-group" id="investor_name_group">
     <%= form.label :city %>
     <%= form.text_field :city, class: "form-control" %>
+    <small class="text-muted">City where the Stakeholder is based</small>
   </div>
 
 

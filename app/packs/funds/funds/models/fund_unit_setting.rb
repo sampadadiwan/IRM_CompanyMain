@@ -8,6 +8,7 @@ class FundUnitSetting < ApplicationRecord
   belongs_to :fund
 
   validates :name, length: { maximum: 40 }
+  validates :isin, length: { maximum: 15 }, allow_blank: true
   validates_uniqueness_of :name, scope: :fund_id, message: "already exists for this fund"
   validate :allowed_unit_type
 

@@ -54,6 +54,11 @@ class PortfolioInvestment < ApplicationRecord
   validate  :sell_quantity_allowed
   validate  :capital_distribution_id_kosher
   validates :portfolio_company_name, length: { maximum: 100 }
+  validates :category, length: { maximum: 10 }, allow_blank: true
+  validates :folio_id, length: { maximum: 40 }, allow_blank: true
+  validates :investment_domicile, length: { maximum: 10 }, allow_blank: true
+  validates :sector, length: { maximum: 100 }, allow_blank: true
+  validates :sub_category, length: { maximum: 100 }, allow_blank: true
   validates :portfolio_company_name, uniqueness: { scope: %i[investment_date ex_expenses_base_amount_cents quantity investment_instrument_id fund_id entity_id ref_id] }
 
   ##########################################################

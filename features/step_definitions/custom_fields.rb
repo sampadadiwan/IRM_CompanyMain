@@ -389,6 +389,35 @@ When('I try to save a new InvestorKyc {string} without any files') do |args|
   click_on("Save")
 end
 
+# Regression coverage for InvestorKycCreate#check_required_file_custom_fields: a fund
+# employee's "save partial, complete later" workflow must work even when EVERY mandatory
+# field is left blank, not just File custom fields. Skips all fill_in calls and clicks
+# straight through the wizard to Save.
+When('I try to save a new InvestorKyc as a fund employee with no mandatory fields filled in') do
+  @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity)
+  class_name = @investor_kyc.type_from_kyc_type.underscore
+
+  visit(investor_kycs_path)
+  click_on("New KYC")
+  click_on("Individual")
+  select(@investor_kyc.investor.investor_name, from: "#{class_name}_investor_id")
+  click_on("Next")
+  sleep(1)
+  click_on("Next")
+  sleep(1)
+  click_on("Save")
+end
+
+Then('the saved investor kyc should have no mandatory fields filled in') do
+  @investor_kyc = InvestorKyc.last
+  # full_name is excluded: InvestorKycsController#new auto-fills it from the selected
+  # investor's name (investor_kycs_controller.rb:111) regardless of role, so it is never
+  # blank even when nothing else was typed into the form.
+  %i[PAN birth_date address bank_name bank_branch bank_account_number ifsc_code].each do |field|
+    @investor_kyc.public_send(field).should be_blank
+  end
+end
+
 When('I try to create a custom field {string} for {string} without options') do |args, form_class|
   ft = @entity.form_types.where(name: form_class, tag: "Default").first_or_initialize
   cf = ft.form_custom_fields.build

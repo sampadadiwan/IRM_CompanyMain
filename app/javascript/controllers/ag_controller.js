@@ -1,7 +1,7 @@
 import  BaseAgGrid from "controllers/base_ag_grid"
 export default class extends BaseAgGrid {
 
-  static values = { gridDivName: String };
+  static values = { gridDivName: String, hideActions: Boolean };
 
   columnDefs() {
 
@@ -42,11 +42,13 @@ export default class extends BaseAgGrid {
     });
 
     // columnDefs.push(textColumn(controller, "created_at", "Created At"));
-    columnDefs.push({
-      field: "dt_actions",
-      cellRenderer: this.html,
-      headerName: "Actions",
-    });
+    if (!this.hideActionsValue) {
+      columnDefs.push({
+        field: "dt_actions",
+        cellRenderer: this.html,
+        headerName: "Actions",
+      });
+    }
 
     const lastColIndex = columnDefs.length - 2;
     if (columnDefs[lastColIndex]) {

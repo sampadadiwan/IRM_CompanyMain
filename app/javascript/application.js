@@ -1,3 +1,4 @@
+// No bundler needed: HTTP/2 multiplexing means many small files carry no material performance penalty vs one large bundle. Caching is also better — only changed files invalidate their cache entry. See: https://github.com/rails/importmap-rails
 // Configure your import map in config/importmap.rb. Read more: https://github.com/rails/importmap-rails
 import "@hotwired/turbo-rails"
 import "@rails/actiontext"

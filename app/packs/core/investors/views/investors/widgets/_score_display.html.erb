@@ -103,6 +103,7 @@
     </div>
     <div class="progress" style="height: 22px; border-radius: 6px; background: #e9ecef;">
       <div class="progress-bar <%= bar_class %> fw-semibold" role="progressbar"
+           data-field="overall_score_bar"
            style="width: <%= overall %>%; font-size: 0.85rem;"
            aria-valuenow="<%= overall %>" aria-valuemin="0" aria-valuemax="100">
         <%= overall %>
@@ -174,6 +175,7 @@
                   <span class="text-muted" style="font-size: 0.65rem;">0</span>
                   <div class="progress flex-grow-1" style="height: 18px; border-radius: 4px; background: #e9ecef;">
                     <div class="progress-bar <%= dim_bar %> fw-semibold" role="progressbar"
+                         data-dim-field="score-bar"
                          style="width: <%= dim_score %>%; font-size: 0.78rem;"
                          aria-valuenow="<%= dim_score %>" aria-valuemin="0" aria-valuemax="100">
                       <%= dim_score %>
@@ -229,7 +231,7 @@
               </td>
               <td class="text-muted fw-bold" style="font-size: 1rem; text-align: center; vertical-align: middle; padding: 0;">=</td>
               <td class="text-center align-middle">
-                <span class="badge <%= dim_bar %> fs-6 px-2"><%= contribution %></span>
+                <span class="badge <%= dim_bar %> fs-6 px-2" data-dim-field="contribution"><%= contribution %></span>
               </td>
             </tr>
           <% end %>
@@ -240,7 +242,7 @@
             <td colspan="3" class="text-end text-muted fst-italic pe-2">Overall score (sum of contributions)</td>
             <td class="text-muted" style="text-align: center; vertical-align: middle;">100%</td>
             <td class="text-muted fw-bold" style="text-align: center; vertical-align: middle; padding: 0;">=</td>
-            <td class="text-center fw-bold fs-6"><%= computed %></td>
+            <td class="text-center fw-bold fs-6" data-field="computed_total"><%= computed %></td>
           </tr>
         </tfoot>
       </table>
@@ -277,13 +279,14 @@
             <%# Progress bar %>
             <div class="progress mb-1" style="height: 14px; border-radius: 4px; background: #e9ecef;">
               <div class="progress-bar <%= dim_bar %>" role="progressbar"
+                   data-dim-field="score-bar"
                    style="width: <%= dim_score %>%; font-size: 0.72rem;"
                    aria-valuenow="<%= dim_score %>" aria-valuemin="0" aria-valuemax="100">
               </div>
             </div>
             <%# Weight + contribution in muted small text %>
             <div class="text-muted mb-1" style="font-size: 0.72rem;">
-              Weight <%= (dim_weight * 100).round %>% &nbsp;·&nbsp; Contribution <strong><%= contribution %></strong>
+              Weight <%= (dim_weight * 100).round %>% &nbsp;·&nbsp; Contribution <strong data-dim-field="contribution"><%= contribution %></strong>
             </div>
             <%# Rationale %>
             <% if dim["rationale"].present? || can_edit %>
@@ -320,7 +323,7 @@
         <%# Total row %>
         <% computed = dimensions.sum { |d| d["score"].to_i * d["weight"].to_f }.round(1) %>
         <div class="text-end text-muted fst-italic pb-1" style="font-size: 0.78rem;">
-          Overall score: <strong class="fs-6 text-dark"><%= computed %></strong>
+          Overall score: <strong class="fs-6 text-dark" data-field="computed_total"><%= computed %></strong>
         </div>
       </div>
 

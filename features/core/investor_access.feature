@@ -33,7 +33,7 @@ Scenario Outline: Investor show page Investor Access turbo response checks
 
   Examples:
   	|entity              |investor                         |msg	|
-  	|entity_type=Company |investor_name=Accelo1;primary_email=a@b1.c   |Investor was successfully created|
+  	|entity_type=Company |investor_name=Accelo1;primary_email=a@b1.c   |Stakeholder was successfully created|
 
 
 Scenario Outline: Investor show page Investor Access turbo response checks
@@ -82,7 +82,7 @@ Scenario Outline: Investor show page Investor Access turbo response checks
 
   Examples:
   	|entity              |investor                         |msg	|
-  	|entity_type=Company |investor_name=Accelo2;primary_email=a@b2.c   |Investor was successfully created|
+  	|entity_type=Company |investor_name=Accelo2;primary_email=a@b2.c   |Stakeholder was successfully created|
 
 Scenario Outline: All Investor Accesses page turbo response checks
   Given Im logged in as a user "first_name=Mohith" for an entity "<entity>"
@@ -143,4 +143,22 @@ Scenario Outline: All Investor Accesses page turbo response checks
 
   Examples:
   	|entity              |investor                         |msg	|
-  	|entity_type=Company |investor_name=Accelo3;primary_email=a@b3.c   |Investor was successfully created|
+  	|entity_type=Company |investor_name=Accelo3;primary_email=a@b3.c   |Stakeholder was successfully created|
+
+Scenario: New stakeholder is welcomed with an email branded by the granting entity
+  Given Im logged in as a user "first_name=Mohith" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  Given there is an existing investor entity "investor_name=Accelo4;primary_email=a@b4.c"
+  And I am at the investor page
+  When I create a new investor "investor_name=Accelo4;primary_email=a@b4.c" for the existing investor entity
+  Then I should see the "Stakeholder was successfully created"
+  And an investor should be created
+  And an investor entity should not be created
+  And I should see the investor details on the details page
+  And investor access stakeholders are "not visible"
+  Given I click on "New Users"
+  Given I fill the investor access form with "email=newstakeholder@email.com;first_name=Newby;last_name=Stakeholder;phone=1234567899;approved=true"
+  Given I click on "Save"
+  Then I should see the "Added newstakeholder@email.com to investor users"
+  And I should see the new investor access in the investor access list
+  And the new stakeholder receives a confirmation email welcoming them to the granting entity

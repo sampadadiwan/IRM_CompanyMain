@@ -36,4 +36,6 @@ class AgentChatSession < ApplicationRecord
   def active?
     status == "active"
   end
+
+  validates :chattable_type, length: { maximum: 50 }, allow_blank: true
 end

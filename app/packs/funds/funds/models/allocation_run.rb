@@ -5,6 +5,8 @@ class AllocationRun < ApplicationRecord
   belongs_to :fund
   belongs_to :user
 
+  validates :template_name, length: { maximum: 50 }, allow_blank: true
+
   scope :locked, -> { where(locked: true) }
 
   def self.locked_and_overlapping(fund_id, start_date, end_date)

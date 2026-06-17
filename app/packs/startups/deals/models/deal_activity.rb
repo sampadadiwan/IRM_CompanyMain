@@ -27,6 +27,7 @@ class DealActivity < ApplicationRecord
   validates :title, :days, presence: true
   validates :status, length: { maximum: 20 }
   validates :completed, length: { maximum: 5 }
+  validates :status_temp, length: { maximum: 20 }, allow_blank: true
 
   scope :templates, ->(deal) { where(deal_id: deal.id).where(deal_investor_id: nil).order(:sequence) }
   scope :not_templates, ->(deal) { where(deal_id: deal.id).where.not(deal_investor_id: nil).order(:sequence) }

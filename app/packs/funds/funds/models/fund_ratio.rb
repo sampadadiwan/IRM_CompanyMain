@@ -56,6 +56,7 @@ class FundRatio < ApplicationRecord
   }.freeze
 
   validates :display_value, :label, length: { maximum: 50 }
+  validates :scenario, length: { maximum: 40 }, allow_blank: true
   validates :name, :owner_type, length: { maximum: 255 }
 
   scope :latest, -> { where(latest: true) }

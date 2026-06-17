@@ -13,7 +13,12 @@ class InvestorKycCreate < InvestorKycAction
   # Checks required File-type custom fields BEFORE save because company admins use save(validate:false),
   # which bypasses model validations. File fields store docs as Documents (not json_fields), so we
   # check the in-memory documents association rather than json_fields.
-  def check_required_file_custom_fields(_ctx, investor_kyc:, **)
+  # Skipped entirely when this is an interim/draft save (validate: false) — that flag exists precisely
+  # so investors and fund employees can save partial KYCs and complete them later.
+  def check_required_file_custom_fields(ctx, investor_kyc:, **)
+    validate = ctx[:validate].nil? ? ctx[:investor_user] : ctx[:validate]
+    return true unless validate
+
     # Use type_from_kyc_type to resolve the STI subclass name; class.name may still be InvestorKyc here
     # because setup_form_type / set_investor_name run in before_save, not before_validation.
     type_name = investor_kyc.respond_to?(:type_from_kyc_type) ? (investor_kyc.type_from_kyc_type || investor_kyc.class.name) : investor_kyc.class.name

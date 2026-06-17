@@ -11,6 +11,9 @@ class AgentChart < ApplicationRecord
 
   STATUSES = %w[draft ready failed].freeze
   validates :status, inclusion: { in: STATUSES }
+  validates :status, length: { maximum: 10 }, allow_blank: true
+  validates :kpi_before_period, length: { maximum: 10 }, allow_blank: true
+  validates :llm_model, length: { maximum: 20 }, allow_blank: true
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[title prompt status tag_list kpi_names created_at updated_at]
