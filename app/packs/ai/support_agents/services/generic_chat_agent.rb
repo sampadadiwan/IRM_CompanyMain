@@ -89,6 +89,7 @@ class GenericChatAgent < SupportAgentService
     )
     ctx[:context] = ctx[:provider].build_context
     ctx[:provider].chat_session = ctx[:chat_session] if ctx[:provider].respond_to?(:chat_session=)
+    true
   end
 
   def setup_ruby_llm_chat(ctx, **)
@@ -122,12 +123,15 @@ class GenericChatAgent < SupportAgentService
     response = chat.ask(ctx[:user_message])
     Rails.logger.info("[Generic chat agent] execute_chat took #{((Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0) * 1000).round}ms ")
     ctx[:ai_response] = response.content.to_s.presence || "(no response)"
+    true
   rescue MaxToolIterationsExceeded => e
     Rails.logger.warn "[GenericChatAgent] #{e.message} — auto-escalating session #{ctx[:chat_session]&.id}"
     auto_escalate(ctx)
+    true
   rescue StandardError => e
     Rails.logger.error "[GenericChatAgent] chat.ask failed: #{e.class} — #{e.message}"
     ctx[:ai_response] = "I'm sorry, I encountered an error processing your request. Please try again."
+    true
   end
 
   def persist_conversation(ctx, **)
@@ -141,6 +145,7 @@ class GenericChatAgent < SupportAgentService
 
     # Enqueue LLM-as-judge for CS agent responses
     ResponseJudgeJob.perform_later(assistant_message.id) if @support_agent.agent_type == "CustomerSupportAgent"
+    true
   end
 
   def load_conversation_history(chat_session, chat)
