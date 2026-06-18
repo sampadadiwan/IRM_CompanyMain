@@ -104,10 +104,14 @@ class ApplicationMailer < ActionMailer::Base
     end
 
     if @custom_notification && @custom_notification.attachment_names.present? && @notification && @notification.model.respond_to?(:documents)
-      @custom_notification.attachment_names.split(',').each do |name|
-        # Get the document with the name from the model
-        document = @notification.model.documents.where("name like ?", "%#{name}%").first
-        # Attach it to the email
+      fuzzy_match = @custom_notification.fuzzy_match
+      @custom_notification.attachment_names.split(',').map(&:strip).compact_blank.each do |name|
+        # Get the most recently created document matching the name
+        document = if fuzzy_match
+                     @notification.model.documents.where("name like ?", "%#{name}%").order(created_at: :desc).first
+                   else
+                     @notification.model.documents.where(name: name).order(created_at: :desc).first
+                   end
         attach_doc(document) if document.present?
       end
     end

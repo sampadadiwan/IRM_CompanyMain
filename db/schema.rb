@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_15_124643) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1114,6 +1114,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_15_140001) do
     t.boolean "enabled", default: true
     t.bigint "entity_id", null: false
     t.string "for_type", limit: 100
+    t.boolean "fuzzy_match", default: false, null: false
     t.boolean "is_erb", default: false
     t.boolean "latest", default: true
     t.bigint "owner_id", null: false

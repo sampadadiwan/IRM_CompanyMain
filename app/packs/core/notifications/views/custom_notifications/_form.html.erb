@@ -82,6 +82,12 @@
       <%= form.text_field :attachment_names, class: "form-control"  %>
     </div>
 
+    <div class="form-group">
+      <%= form.label :fuzzy_match, "Close match" %>
+      <%= form.check_box :fuzzy_match, class: "form-check-input"  %>
+      <small class="form-text text-muted">This will search and attach documents that closely match with the name</small>
+    </div>
+
     <% if current_user.support? %>
 
       <div class="form-group">
