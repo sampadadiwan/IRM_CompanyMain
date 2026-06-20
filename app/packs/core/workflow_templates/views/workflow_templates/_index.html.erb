@@ -1,10 +1,13 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Workflow Templates</h1>
-  <% if policy(WorkflowTemplate.new(entity_id: current_user.entity_id)).new? %>
-    <%= link_to new_workflow_template_path, class: "btn btn-outline-primary" do %>
-      <i class="ti ti-playlist-add"></i> New Template
+  <div class="d-flex align-items-center gap-2">
+    <%= user_guide_info_icon %>
+    <% if policy(WorkflowTemplate.new(entity_id: current_user.entity_id)).new? %>
+      <%= link_to new_workflow_template_path, class: "btn btn-outline-primary" do %>
+        <i class="ti ti-playlist-add"></i> New Template
+      <% end %>
     <% end %>
-  <% end %>
+  </div>
 </div>
 
 <div class="table-responsive" data-controller="datatable">

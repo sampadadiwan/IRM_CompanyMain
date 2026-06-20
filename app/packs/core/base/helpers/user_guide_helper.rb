@@ -12,6 +12,8 @@ module UserGuideHelper
     'approvals' => 'approvals_user_guide.md',
     'tasks' => 'tasks_user_guide.md',
     'task_templates' => 'tasks_user_guide.md',
+    'workflow_templates' => 'workflow_templates_user_guide.md',
+    'workflow_instances' => 'workflow_templates_user_guide.md',
     'e_signatures' => 'esigning_user_guide.md',
     'report_builder' => 'report_builder_user_guide.md',
     'reports' => 'report_builder_user_guide.md',

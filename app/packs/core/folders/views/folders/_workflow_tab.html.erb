@@ -54,10 +54,13 @@
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h6 class="fw-bold mb-0">Past Workflows</h6>
     <% if policy(folder).assign_workflow? && available_templates.any? && active_instance.nil? %>
-      <button type="button" class="btn btn-primary btn-sm"
-              data-bs-toggle="modal" data-bs-target="#launchWorkflowModal">
-        <i class="ti ti-player-play me-1"></i>Launch Workflow
-      </button>
+      <div class="d-flex align-items-center gap-2">
+        <%= user_guide_icon_for('workflow_templates', tooltip: 'Workflow Templates Guide') %>
+        <button type="button" class="btn btn-primary"
+                data-bs-toggle="modal" data-bs-target="#launchWorkflowModal">
+          <i class="ti ti-player-play me-1"></i>Launch Workflow
+        </button>
+      </div>
     <% end %>
   </div>
 
