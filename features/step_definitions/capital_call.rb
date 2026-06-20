@@ -824,7 +824,6 @@ Then('call notice is generated for the remittances') do
   end
   click_on("Generate Documents")
   click_on("Proceed")
-  sleep(2)
   # With :inline job adapter the job runs synchronously and the completion flash
   # ("N documents generated successfully") replaces the async "started" flash
   # before any fixed sleep could catch it.  Accept either message.

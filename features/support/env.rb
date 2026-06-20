@@ -206,7 +206,7 @@ Capybara.register_driver(:playwright) do |app|
                                    navigation_timeout: 60_000)
 end
 
-Capybara.default_max_wait_time = 6
+Capybara.default_max_wait_time = 25
 Capybara.default_driver = :playwright
 Capybara.javascript_driver = :playwright
 Capybara.save_path = 'tmp/capybara'

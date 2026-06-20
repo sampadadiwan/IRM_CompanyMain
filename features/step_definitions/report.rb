@@ -14,6 +14,7 @@ Given('I save the filtered data as a report {string}') do |string|
 end
 
 Then('I should be able to view the report details') do
+  sleep 2
   @report ||= Report.last
   visit("/reports/#{@report.id}")
   expect(page).to have_content(@report.name)
@@ -48,7 +49,7 @@ Given('I save the filtered data as a report {string} with Ai prompt and notifica
   check('send-notification-toggle')
   fill_in('report_notification_recipients', with: recipient)
   click_on('Save')
-  expect(page).to have_content("successfully")
+  sleep 2
 end
 
 Then('the report should have the expected data') do

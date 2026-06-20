@@ -179,7 +179,7 @@ Given('Given I upload a offer file {string}') do |file_name|
     click_on("Upload Offers")
     fill_in('import_upload_name', with: "Test Upload")
     attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-    sleep(3)  # JS direct-upload to /upload endpoint; larger window for parallel load
+    sleep(8)  # JS direct-upload to /upload endpoint; larger window for parallel load
     click_on("Save")
     expect(page).to have_content("Import Upload:", wait: 15)
     #sleep(4)

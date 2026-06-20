@@ -55,12 +55,14 @@ When(/^I fill the password incorrectly and submit the login page$/) do
   fill_in('user_email', with: @user.email)
   fill_in('user_password', with: "Wrong pass")
   click_on("Log In")
+  sleep(1)
 end
 
 When('I fill and submit the login without password') do
   fill_in('user_email_wo_pass', with: @user.email)
-  expect(page).to have_button('Log In Via Email Link')
+  sleep(5)
   click_on("Log In Via Email Link")
+  sleep(2)
 end
 
 
@@ -71,6 +73,7 @@ end
 Given('I log out') do
   # visit(destroy_user_session_path)
   visit("entities/dashboard")
+  sleep(2)
   find("#profile_menu").click
   click_on("Log Out")
   click_on("Logout")

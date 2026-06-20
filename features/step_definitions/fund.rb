@@ -429,7 +429,7 @@ Given('Given I upload {string} file for {string} of the fund') do |file, tab|
 
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(3)  # JS direct-upload to /upload endpoint; larger window for parallel load
+  sleep(8)  # JS direct-upload to /upload endpoint; larger window for parallel load
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)
   ImportUploadJob.perform_now(ImportUpload.last.id)
