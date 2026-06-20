@@ -52,7 +52,7 @@
 
   <%# ── Past Workflows header with Launch button on the right ──────────────── %>
   <div class="d-flex align-items-center justify-content-between mb-3">
-    <h6 class="fw-bold mb-0">Past Workflows</h6>
+    <h1 class="h3 mb-0 text-gray-800">Past Workflows</h1>
     <% if policy(folder).assign_workflow? && available_templates.any? && active_instance.nil? %>
       <div class="d-flex align-items-center gap-2">
         <%= user_guide_icon_for('workflow_templates', tooltip: 'Workflow Templates Guide') %>

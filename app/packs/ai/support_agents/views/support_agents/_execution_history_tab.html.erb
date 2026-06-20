@@ -1,4 +1,12 @@
 <% logs = execution_logs || [] %>
+<% is_esign = support_agent.agent_type == "EsignMonitorAgent" %>
+<% tz = agent_schedule&.timezone || support_agent.entity&.timezone || 'UTC' %>
+
+<%# Pre-fetch the EsignMonitor report once for the per-document detail section %>
+<% esign_report = is_esign ?
+     SupportAgentReport.where(support_agent: support_agent, owner_type: "Entity", owner_id: support_agent.entity_id)
+                       .order(updated_at: :desc).first
+     : nil %>
 
 <div id="execution_history_<%= support_agent.id %>" data-controller="execution-history">
   <h6 class="text-muted mb-3">Execution History</h6>
@@ -22,12 +30,25 @@
         <tbody>
           <% logs.each do |log| %>
             <tr class="<%= 'table-danger' if log.status_failed? %>" data-execution-id="<%= log.id %>">
+
+              <%# Date/Time cell — includes run timing inline %>
               <td>
-                <%= log.created_at.in_time_zone(agent_schedule&.timezone || support_agent.entity&.timezone || 'UTC').strftime('%d-%b-%Y %H:%M') %>
+                <div><%= log.created_at.in_time_zone(tz).strftime('%d-%b-%Y %H:%M') %></div>
                 <% if log.attempt_number > 1 %>
-                  <br><small class="text-muted">(Attempt <%= log.attempt_number %>)</small>
+                  <small class="text-muted">(Attempt <%= log.attempt_number %>)</small>
+                <% end %>
+                <% if log.started_at %>
+                  <div class="exec-run-timing">
+                    <i class="ti ti-player-play"></i>
+                    <%= log.started_at.in_time_zone(tz).strftime('%H:%M:%S %Z') %>
+                    <% if log.completed_at %>
+                      <span class="mx-1 text-muted">→</span>
+                      <%= log.completed_at.in_time_zone(tz).strftime('%H:%M:%S') %>
+                    <% end %>
+                  </div>
                 <% end %>
               </td>
+
               <td>
                 <% if log.trigger_type_scheduled? %>
                   <span class="badge bg-secondary">Scheduled</span>
@@ -38,34 +59,34 @@
                   <% end %>
                 <% end %>
               </td>
+
               <td>
                 <% case log.status %>
                 <% when 'queued' %>
-                  <span class="badge bg-secondary">
-                    <i class="ti ti-clock me-1"></i>Queued
-                  </span>
+                  <span class="badge bg-secondary"><i class="ti ti-clock me-1"></i>Queued</span>
                 <% when 'running' %>
-                  <span class="badge bg-primary">
-                    <span class="spinner-border spinner-border-sm me-1" role="status"></span>Running
-                  </span>
+                  <span class="badge bg-primary"><span class="spinner-border spinner-border-sm me-1" role="status"></span>Running</span>
                 <% when 'completed' %>
-                  <span class="badge bg-success">
-                    <i class="ti ti-check me-1"></i>Completed
-                  </span>
+                  <span class="badge bg-success"><i class="ti ti-check me-1"></i>Completed</span>
                 <% when 'failed' %>
-                  <span class="badge bg-danger">
-                    <i class="ti ti-x me-1"></i>Failed
-                  </span>
+                  <span class="badge bg-danger"><i class="ti ti-x me-1"></i>Failed</span>
                 <% when 'partial_success' %>
-                  <span class="badge bg-warning text-dark">
-                    <i class="ti ti-alert-triangle me-1"></i>Partial
-                  </span>
-
+                  <span class="badge bg-warning text-dark"><i class="ti ti-alert-triangle me-1"></i>Partial</span>
+                <% end %>
+                <% if log.result_summary.present? %>
+                  <div class="exec-mini-stats">
+                    <% if is_esign %>
+                      <%= esign_execution_oneliner(log.result_summary) %>
+                    <% else %>
+                      <% s = log.result_summary.transform_keys(&:to_s) %>
+                      <%= s["processed"].to_i %> processed<% if s["failed"].to_i > 0 %><span class="text-danger ms-1">· <%= s["failed"] %> failed</span><% end %>
+                    <% end %>
+                  </div>
                 <% end %>
               </td>
-              <td>
-                <%= log.duration_formatted || '-' %>
-              </td>
+
+              <td><%= log.duration_formatted || '-' %></td>
+
               <td>
                 <button type="button"
                         class="btn btn-sm btn-outline-secondary"
@@ -77,29 +98,86 @@
                 </button>
               </td>
             </tr>
+
+            <%# ── Expanded detail row ── %>
             <tr class="collapse" id="execution-details-<%= log.id %>">
-              <td colspan="5" class="bg-light">
-                <div class="p-2">
-                  <div class="row">
-                    <div class="col-md-6">
-                      <p class="mb-1"><strong>Started:</strong> <%= log.started_at&.in_time_zone(agent_schedule&.timezone || 'UTC')&.strftime('%d-%b-%Y %H:%M:%S %Z') || 'Not started' %></p>
-                      <p class="mb-1"><strong>Completed:</strong> <%= log.completed_at&.in_time_zone(agent_schedule&.timezone || 'UTC')&.strftime('%d-%b-%Y %H:%M:%S %Z') || 'Not completed' %></p>
-                      <p class="mb-1"><strong>Attempt:</strong> <%= log.attempt_number %></p>
-                    </div>
-                    <div class="col-md-6">
-                      <% if log.status_failed? && log.error_message.present? %>
-                        <p class="mb-1"><strong>Error:</strong></p>
-                        <div class="alert alert-danger py-1 px-2 mb-1">
-                          <small><%= log.error_message %></small>
-                        </div>
-                      <% end %>
-                      <% if log.result_summary.present? %>
-                        <p class="mb-1"><strong>Result Summary:</strong></p>
-                        <pre class="bg-white p-2 border rounded mb-0" style="font-size: 0.8em; max-height: 150px; overflow-y: auto;"><%= JSON.pretty_generate(log.result_summary) rescue log.result_summary %></pre>
-                      <% end %>
+              <td colspan="5" class="p-0 bg-light">
+
+                <% if log.status_failed? && log.error_message.present? %>
+                  <%# Error panel %>
+                  <div class="p-3">
+                    <div class="alert alert-danger py-2 px-3 mb-0">
+                      <i class="ti ti-alert-circle me-1"></i>
+                      <strong>Error:</strong> <small><%= log.error_message %></small>
                     </div>
                   </div>
-                </div>
+
+                <% elsif is_esign && log.result_summary.present? %>
+                  <%# EsignMonitorAgent: two insight cards %>
+                  <% findings_html  = esign_findings_html(log.result_summary) %>
+                  <% next_steps     = esign_next_steps_items(log.result_summary) %>
+                  <div class="exec-insight-cards">
+                    <div class="exec-insight-card exec-insight-card--found">
+                      <div class="exec-insight-card__header">
+                        <i class="ti ti-file-search"></i> What the Agent Found
+                      </div>
+                      <div class="exec-insight-card__body">
+                        <%= findings_html %>
+                      </div>
+                    </div>
+
+                    <% if next_steps %>
+                      <div class="exec-insight-card exec-insight-card--steps">
+                        <div class="exec-insight-card__header">
+                          <i class="ti ti-list-check"></i> Next Steps
+                        </div>
+                        <div class="exec-insight-card__body">
+                          <ol class="mb-0 ps-3">
+                            <% next_steps.each do |step| %>
+                              <li><%= step %></li>
+                            <% end %>
+                          </ol>
+                        </div>
+                      </div>
+                    <% else %>
+                      <div class="exec-insight-card exec-insight-card--steps exec-insight-card--clean">
+                        <div class="exec-insight-card__header">
+                          <i class="ti ti-list-check"></i> Next Steps
+                        </div>
+                        <div class="exec-insight-card__body">
+                          <ol class="mb-0 ps-3">
+                            <li class="text-muted">No action required — pipeline is healthy.</li>
+                          </ol>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+
+                <% elsif log.result_summary.present? %>
+                  <%# Generic agents: stat pills %>
+                  <div class="p-3">
+                    <div class="exec-detail-label mb-2">Result Summary</div>
+                    <%= format_result_summary(log.result_summary) %>
+                  </div>
+                <% end %>
+
+                <%# ── Per-document table (latest run only) ── %>
+                <% if is_esign && log == logs.first && esign_report %>
+                  <% all_issues = esign_report.json_fields["esign_issues"] || [] %>
+                  <% doc_issues = all_issues.reject { |i| i["type"] == "info" } %>
+                  <% if doc_issues.present? %>
+                    <div class="p-3 pt-2 border-top">
+                      <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="exec-detail-label mb-0">
+                          <i class="ti ti-files me-1"></i>Document Detail
+                        </div>
+                        <small class="text-muted">latest run · <%= doc_issues.size %> document<%= doc_issues.size != 1 ? "s" : "" %></small>
+                      </div>
+                      <%= format_esign_issues_table(all_issues) %>
+                    </div>
+                  <% end %>
+                <% end %>
+
               </td>
             </tr>
           <% end %>
@@ -107,7 +185,6 @@
       </table>
     </div>
 
-    <%# Pagination - if using Kaminari or similar %>
     <% if logs.respond_to?(:total_pages) && logs.total_pages > 1 %>
       <div class="d-flex justify-content-center mt-3">
         <%= paginate logs %>

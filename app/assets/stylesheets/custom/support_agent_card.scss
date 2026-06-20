@@ -421,6 +421,260 @@
   background: #fdfdfe;
 }
 
+// ── Execution History: expanded detail panel ──────────────────────────────────
+
+.execution-detail-panel {
+  padding: 0;
+
+  .execution-detail-timing,
+  .execution-detail-stats {
+    padding: 16px 20px;
+  }
+
+  .execution-detail-timing {
+    border-right: 1px solid #e2e8f0;
+
+    [data-bs-theme=dark] & { border-right-color: #334155; }
+  }
+
+  .exec-detail-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin-bottom: 10px;
+  }
+}
+
+// ── Stat pills in the expanded detail row ────────────────────────────────────
+
+.exec-stat-pills {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.exec-stat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 72px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+
+  &__value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  &__label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 4px;
+  }
+
+  &--neutral {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #64748b;
+
+    [data-bs-theme=dark] & {
+      background: #1e293b;
+      border-color: #334155;
+      color: #94a3b8;
+    }
+  }
+
+  &--success {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+    color: #16a34a;
+
+    [data-bs-theme=dark] & {
+      background: #052e16;
+      border-color: #14532d;
+      color: #86efac;
+    }
+  }
+
+  &--danger {
+    background: #fef2f2;
+    border-color: #fecaca;
+    color: #dc2626;
+
+    [data-bs-theme=dark] & {
+      background: #2d0a0a;
+      border-color: #7f1d1d;
+      color: #fca5a5;
+    }
+  }
+}
+
+// ── Mini stat line under status badge in table row ───────────────────────────
+
+.exec-mini-stats {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+// ── EsignMonitor issue list in expanded detail ───────────────────────────────
+
+.esign-issue-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  padding: 4px 0;
+  font-size: 0.85rem;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid #f1f5f9;
+
+    [data-bs-theme=dark] & { border-bottom-color: #1e293b; }
+  }
+
+  &__icon {
+    margin-top: 1px;
+    flex-shrink: 0;
+    font-size: 0.9rem;
+  }
+
+  &__text {
+    line-height: 1.45;
+  }
+}
+
+// ── Execution row: inline run timing ─────────────────────────────────────────
+
+.exec-run-timing {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  margin-top: 3px;
+
+  .ti { font-size: 0.68rem; margin-right: 2px; }
+
+  [data-bs-theme=dark] & { color: #64748b; }
+}
+
+// ── EsignMonitor: two insight cards ──────────────────────────────────────────
+
+.exec-insight-cards {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #e2e8f0;
+
+  [data-bs-theme=dark] & { border-bottom-color: #334155; }
+}
+
+.exec-insight-card {
+  flex: 1;
+  border-right: 1px solid #e2e8f0;
+  border-top: 3px solid transparent;
+
+  [data-bs-theme=dark] & { border-right-color: #334155; }
+
+  &:last-child { border-right: none; }
+
+  &--found {
+    border-top-color: #6366f1;
+    background: #fafafe;
+
+    [data-bs-theme=dark] & { background: #1a1a2e; }
+
+    .exec-insight-card__header { color: #4f46e5; }
+  }
+
+  &--steps {
+    border-top-color: #f59e0b;
+    background: #fdfcf7;
+
+    [data-bs-theme=dark] & { background: #1e1a0a; }
+
+    .exec-insight-card__header { color: #b45309; }
+  }
+
+  &--clean {
+    border-top-color: #10b981;
+    background: #f8fdfb;
+
+    [data-bs-theme=dark] & { background: #0a1e14; }
+
+    .exec-insight-card__header { color: #059669; }
+  }
+
+  &__header {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    padding: 10px 16px 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 2px;
+
+    [data-bs-theme=dark] & { border-bottom-color: rgba(255,255,255,0.05); }
+
+    .ti { font-size: 0.85rem; }
+  }
+
+  &__body {
+    padding: 8px 16px 12px;
+
+    // Match vertical spacing to table-sm row padding (0.25rem top+bottom per row)
+    ol li {
+      padding: 0.25rem 0;
+    }
+  }
+}
+
+
+// ── EsignMonitor: per-document table ─────────────────────────────────────────
+
+.esign-doc-table {
+  margin-bottom: 0 !important;
+
+  td, th { vertical-align: middle; }
+
+  // suppress row hover/highlight so table looks read-only
+  tbody tr:hover td {
+    background-color: inherit !important;
+    box-shadow: none !important;
+  }
+  tbody tr td { background-color: transparent !important; }
+}
+
+// ── EsignMonitor: pending signer pills ───────────────────────────────────────
+
+.esign-signer-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin: 2px 3px 2px 0;
+  white-space: nowrap;
+
+  [data-bs-theme=dark] & {
+    background: #1e3a5f;
+    color: #93c5fd;
+    border-color: #1e40af;
+  }
+
+  .ti { font-size: 0.7rem; }
+}
+
+
 // ── Inline Editor: shared styles for all double-click inline editing ──────────
 
 .inline-editable {

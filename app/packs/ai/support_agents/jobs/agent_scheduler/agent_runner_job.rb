@@ -166,7 +166,7 @@ class AgentRunnerJob
   # @return [void]
   def handle_success(result)
     status = result[:status] || :completed
-    @execution_log.mark_completed!(result[:summary], status: status)
+    @execution_log.mark_completed!(enrich_summary(result[:summary]), status: status)
 
     # Update schedule last_run_at
     @schedule&.update_columns(last_run_at: Time.current)
@@ -196,6 +196,35 @@ class AgentRunnerJob
     else
       send_failure_notification
     end
+  end
+
+  # Merges agent-specific document-level stats into the result summary.
+  # For agents that produce SupportAgentReports (e.g. EsignMonitorAgent), the
+  # generic {total, processed, failed} entity count is meaningless — this method
+  # reads the freshly-saved report and adds domain-specific counts so the
+  # execution history can show a real narrative instead of "1 processed".
+  #
+  # @param base [Hash] the generic entity-count summary
+  # @return [Hash] enriched summary (passthrough for agents that don't override)
+  def enrich_summary(base)
+    return base unless @support_agent.agent_type == "EsignMonitorAgent"
+
+    report = SupportAgentReport.find_by(
+      support_agent: @support_agent,
+      owner_type: "Entity",
+      owner_id: @entity.id
+    )
+    return base unless report
+
+    issues = report.json_fields["esign_issues"] || []
+    base.merge(
+      docs_checked:    issues.count { |i| i["type"] == "notified" },
+      notified:        issues.count { |i| i["type"] == "notified" },
+      expired_flagged: issues.count { |i| i["type"] == "expired" }
+    )
+  rescue StandardError => e
+    Rails.logger.error("[AgentRunnerJob] enrich_summary failed: #{e.message}")
+    base
   end
 
   # Determines if this execution should be retried based on schedule configuration.

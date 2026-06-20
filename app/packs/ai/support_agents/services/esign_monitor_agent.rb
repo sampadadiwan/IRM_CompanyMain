@@ -3,46 +3,54 @@
 # Monitors the e-signing pipeline for stuck or expired documents.
 #
 # EsignMonitorAgent runs at the entity level. It finds documents in "requested"
-# e-sign status that have been waiting longer than a configured threshold, fires
-# resends via the existing resend_for_esign? path, and surfaces expired/voided
-# documents for manual ops action.
+# e-sign status that have been waiting longer than a configured threshold, flags
+# expired/voided documents, and emails stakeholders with a full status report
+# including which specific signers have not yet signed.
 #
 # json_fields configuration:
-#   send_reminders      — "true"/"false" (default true) — resend stuck requests
+#   notify_tag          — employee tag for report recipients (e.g. "admin")
 #   flag_expired        — "true"/"false" (default true) — surface expired/voided docs
-#   reminder_after_days — integer (default 3) — days in "requested" before resend fires
+#   reminder_after_days — integer (default 3) — days in "requested" before inclusion
+#
+# Note: no automatic resending is performed. The agent is an observer/notifier only.
+# Manual resend must be done from the document page.
 #
 # @see SupportAgentService
 class EsignMonitorAgent < SupportAgentService
-  DESCRIPTION = "Monitors the e-signing pipeline: resends stuck requests and flags expired or voided documents."
+  DESCRIPTION = "Monitors the e-signing pipeline: surfaces stuck requests and expired documents, then emails stakeholders with a full status report."
 
   LONG_DESCRIPTION = <<~DESC
-    Monitors the e-signature pipeline and takes corrective action on stuck or expired documents.
-    Targets the entity itself and scans all documents currently in "requested" e-sign status.
+    Monitors the e-signature pipeline and notifies stakeholders about stuck or expired documents.
+    Targets the entity itself and scans documents where sent_for_esign is true (deliberately
+    initiated through the e-sign workflow) — documents that were never sent for e-sign are excluded.
 
     Actions:
-    • Send Reminders — if a document has been in "requested" state longer than reminder_after_days
-      (default 3 days), it fires a resend via the existing resend_for_esign path.
-      Controlled by send_reminders (true/false).
-    • Flag Expired — surfaces documents in expired or voided e-sign state for manual ops action.
+    • Find Pending — identifies documents stuck in "requested" state longer than reminder_after_days
+      (default 3 days) that have at least one pending signatory.
+    • Flag Expired — surfaces documents in expired, cancelled, or voided e-sign state for manual ops action.
       Controlled by flag_expired (true/false).
+    • Notify Team — sends an email report to tagged employees (notify_tag) or the entity primary email,
+      listing stuck documents with their pending signatories and expired documents that need manual attention.
+      No documents are automatically resent — the email is the action.
 
     No LLM calls — entirely deterministic. Designed to run on a daily schedule. Results are saved
-    as a SupportAgentReport listing each actioned document with its status and outcome.
+    as a SupportAgentReport listing each document with its status and pending signatories.
+
+    Config: notify_tag (employee tag for recipients), flag_expired (true/false), reminder_after_days (integer)
   DESC
 
   STEP_LABELS = {
-    initialize_agent: "Initialize",
-    find_pending_esigns: "Find Pending",
-    send_esign_reminders: "Send Reminders",
-    flag_expired_esigns: "Flag Expired",
+    initialize_agent:         "Initialize",
+    find_pending_esigns:      "Find Pending",
+    flag_expired_esigns:      "Flag Expired",
+    notify_stakeholders:      "Notify Team",
     generate_progress_reports: "Save Report"
   }.freeze
 
   step :initialize_agent
   step :find_pending_esigns
-  step :send_esign_reminders
   step :flag_expired_esigns
+  step :notify_stakeholders
   step :generate_progress_reports
 
   def targets(entity_id)
@@ -59,15 +67,19 @@ class EsignMonitorAgent < SupportAgentService
     @support_agent.enabled?
   end
 
-  # Queries documents in "requested" state that have been waiting too long.
-  # Always runs — read-only, no side effects.
+  # Queries documents in "requested" state that have been waiting too long
+  # and have at least one e-signature recipient on file.
   def find_pending_esigns(ctx, target:, **)
     reminder_after_days = @support_agent.json_fields["reminder_after_days"]&.to_i || 3
 
     ctx[:pending_docs] = Document
                          .where(entity_id: target.id)
+                         .sent_for_esign
                          .esign_status_requested
                          .where(updated_at: ...reminder_after_days.days.ago)
+                         .joins(:e_signatures)
+                         .where.not(e_signatures: { email: [nil, ""] })
+                         .distinct
                          .includes(:e_signatures)
 
     count = ctx[:pending_docs].size
@@ -80,48 +92,7 @@ class EsignMonitorAgent < SupportAgentService
     true
   end
 
-  # Resends e-sign requests for eligible stuck documents.
-  #
-  # Configurable: send_reminders — "true"/"false"
-  def send_esign_reminders(ctx, **)
-    unless enabled?("send_reminders")
-      ctx[:issues][:esign_issues] << {
-        type: :info, message: "Reminders skipped via configuration", severity: :success
-      }
-      Rails.logger.debug { "[EsignMonitorAgent] send_reminders disabled, skipping." }
-      return true
-    end
-
-    ctx[:pending_docs].each do |doc|
-      if doc.resend_for_esign?
-        # Delegate to the same service the controller uses — no user_id for scheduled runs
-        result = ResendDocumentForEsign.call(document: doc, user_id: nil)
-        if result.success?
-          ctx[:issues][:esign_issues] << {
-            type: :reminded, name: doc.name,
-            message: "Resend queued", severity: :success
-          }
-          Rails.logger.info { "[EsignMonitorAgent] Resend queued for Document ID=#{doc.id} (#{doc.name})" }
-        else
-          ctx[:issues][:esign_issues] << {
-            type: :resend_failed, name: doc.name,
-            message: "Resend failed: #{result[:errors]}",
-            severity: :warning
-          }
-        end
-      else
-        ctx[:issues][:esign_issues] << {
-          type: :skipped, name: doc.name,
-          message: "Not eligible for resend — check document approval and e-signature configuration",
-          severity: :warning
-        }
-        Rails.logger.debug { "[EsignMonitorAgent] Document ID=#{doc.id} not eligible for resend" }
-      end
-    end
-    true
-  end
-
-  # Surfaces documents with expired, cancelled, or voided e-sign status for manual action.
+  # Surfaces documents with expired, cancelled, or voided e-sign status.
   #
   # Configurable: flag_expired — "true"/"false"
   def flag_expired_esigns(ctx, target:, **)
@@ -135,12 +106,16 @@ class EsignMonitorAgent < SupportAgentService
 
     expired_docs = Document
                    .where(entity_id: target.id)
+                   .sent_for_esign
                    .where(esign_status: %w[expired cancelled voided])
+                   .joins(:e_signatures)
+                   .where.not(e_signatures: { email: [nil, ""] })
+                   .distinct
 
     expired_docs.each do |doc|
       ctx[:issues][:esign_issues] << {
         type: :expired, name: doc.name,
-        message: "E-sign #{doc.esign_status} — resend or re-initiate manually",
+        message: "E-sign #{doc.esign_status} — re-initiate manually from the document page",
         severity: :blocking
       }
     end
@@ -155,7 +130,81 @@ class EsignMonitorAgent < SupportAgentService
     true
   end
 
+  # Builds per-document issue entries with signatory detail, then sends one
+  # consolidated email to tagged employees (or entity primary_email).
+  # Does not resend any documents — notification only.
+  def notify_stakeholders(ctx, target:, **)
+    pending_docs    = ctx[:pending_docs]
+    expired_issues  = ctx[:issues][:esign_issues].select { |i| i[:type] == :expired }
+
+    # Record per-document signatory detail for the report
+    pending_docs.each do |doc|
+      pending_signers = doc.e_signatures.not_signed.select { |s| s.email.present? }
+      signer_labels   = pending_signers.map { |s| s.label.presence || s.email }
+
+      ctx[:issues][:esign_issues] << {
+        type: :notified,
+        name: doc.name,
+        message: pending_signers.any? ? "Pending: #{signer_labels.join(', ')}" : "No signers identified",
+        severity: :warning,
+        pending_signers: pending_signers.map { |s| { email: s.email, label: s.label } }
+      }
+    end
+
+    if pending_docs.empty? && expired_issues.empty?
+      ctx[:issues][:esign_issues] << {
+        type: :info, message: "Nothing to report — notification skipped", severity: :success
+      }
+      Rails.logger.info { "[EsignMonitorAgent] No issues found, skipping email." }
+      return true
+    end
+
+    # Resolve recipients: notify_tag employees, fall back to entity primary_email
+    notify_tag = @support_agent.json_fields["notify_tag"]
+    recipients = if notify_tag.present?
+                   target.employees.where(tag: notify_tag).pluck(:email).compact
+                 else
+                   [target.primary_email].compact
+                 end
+
+    if recipients.empty?
+      ctx[:issues][:esign_issues] << {
+        type: :info, message: "No recipients configured — set notify_tag in agent settings", severity: :warning
+      }
+      Rails.logger.warn { "[EsignMonitorAgent] No recipients for entity #{target.id}, skipping email." }
+      return true
+    end
+
+    EsignMonitorMailer.with(
+      entity_id:          target.id,
+      support_agent_id:   @support_agent.id,
+      pending_docs_data:  build_pending_docs_data(pending_docs),
+      expired_issues:     expired_issues.map { |i| { name: i[:name], message: i[:message] } },
+      recipients:         recipients
+    ).stuck_documents_report.deliver_later
+
+    ctx[:issues][:esign_issues] << {
+      type: :info,
+      message: "Status report emailed to #{recipients.join(', ')}",
+      severity: :success
+    }
+    Rails.logger.info { "[EsignMonitorAgent] Status report emailed to #{recipients.join(', ')}" }
+    true
+  end
+
   def generate_progress_reports(ctx, target:, support_agent:, **)
     super(ctx, model: target, support_agent: support_agent)
+  end
+
+  # Serialises pending documents into a plain-hash structure safe to pass as mailer params.
+  def build_pending_docs_data(docs)
+    docs.map do |doc|
+      pending_signers = doc.e_signatures.not_signed.select { |s| s.email.present? }
+      {
+        name:           doc.name,
+        days_waiting:   ((Time.current - doc.updated_at) / 1.day).floor,
+        pending_signers: pending_signers.map { |s| { email: s.email, label: s.label } }
+      }
+    end
   end
 end

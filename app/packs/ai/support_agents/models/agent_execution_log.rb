@@ -134,13 +134,15 @@ class AgentExecutionLog < ApplicationRecord
 
   # Returns a human-readable formatted duration string.
   #
-  # @return [String, nil] formatted duration (e.g., "2m 30s"), or nil if not available
+  # @return [String, nil] formatted duration (e.g., "2m 30s", "5s", "< 1s"), or nil if not available
   def duration_formatted
     return nil unless duration
+    return "< 1s" if duration < 1
+    return "#{duration.to_i}s" if duration < 60
 
     minutes = (duration / 60).to_i
     seconds = (duration % 60).to_i
-    "#{minutes}m #{seconds}s"
+    seconds.zero? ? "#{minutes}m" : "#{minutes}m #{seconds}s"
   end
 
   # Determines if this execution can be retried based on schedule retry settings.
