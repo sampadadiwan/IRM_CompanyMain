@@ -57,6 +57,8 @@ Before do |scenario|
   puts "Capybara.app_host: #{Capybara.app_host}"
   puts "Capybara.server_host: #{Capybara.server_host}"
   puts "Capybara.server_port: #{Capybara.server_port}"
+  # Inline adapter delivers synchronously into this array; clear between scenarios
+  ActionMailer::Base.deliveries.clear
 end
 
 # After do |scenario|
@@ -204,7 +206,7 @@ Capybara.register_driver(:playwright) do |app|
                                    navigation_timeout: 60_000)
 end
 
-Capybara.default_max_wait_time = 25
+Capybara.default_max_wait_time = 6
 Capybara.default_driver = :playwright
 Capybara.javascript_driver = :playwright
 Capybara.save_path = 'tmp/capybara'

@@ -205,7 +205,7 @@ Given('Given I upload an investor access file for employees') do
 
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(3)  # JS direct-upload to /upload endpoint; larger window for parallel load
+  expect(page).to have_no_css('.direct-upload--pending', wait: 15)
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -266,7 +266,7 @@ Given('Given I upload an investors file large for the fund') do
   # sleep(3)
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investors-large.xlsx'), make_visible: true)
-  sleep(2)
+  expect(page).to have_no_css('.direct-upload--pending', wait: 15)
   click_on("Save")
   # sleep(5)
   expect(page).to have_content("Import Upload:")
@@ -282,7 +282,7 @@ Given('Given I upload an investors file for the company') do
   # sleep(1)
   fill_in('import_upload_name', with: "Test Investor Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(2)
+  expect(page).to have_no_css('.direct-upload--pending', wait: 15)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
   # sleep(2)
@@ -360,7 +360,7 @@ Given('Given I upload investors file {string} for the fund') do |file_name|
   # sleep(1)
   fill_in('import_upload_name', with: "Investor Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  sleep(2)
+  expect(page).to have_no_css('.direct-upload--pending', wait: 15)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
   # sleep(2)
@@ -503,7 +503,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
       end
     end
   end
-  sleep(4)
+  expect(page).to have_no_css('.direct-upload--pending', wait: 15)
 
   fill_in("#{class_name}_full_name", with: @investor_kyc.full_name)
   fill_in("#{class_name}_PAN", with: @investor_kyc.PAN)
@@ -526,7 +526,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   #     end
   #   end
   # end
-  sleep(2)
+  expect(page).to have_no_css('.direct-upload--pending', wait: 15)
 
   fill_in("#{class_name}_address", with: @investor_kyc.address)
   fill_in("#{class_name}_corr_address", with: @investor_kyc.corr_address)
@@ -557,7 +557,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
       end
     end
   end
-  sleep(2)
+  expect(page).to have_no_css('.direct-upload--pending', wait: 15)
 
   if args.include?("properties")
     @investor_kyc.properties.each do |key, value|
@@ -595,18 +595,18 @@ When('I edit the investor kyc and upload the missing custom file {string}') do |
   field_id = FormCustomField.to_name(custom_field_name)
 
   visit(edit_investor_kyc_path(@investor_kyc))
-  sleep(1)
+  expect(page).to have_button('Next')
   click_on("Next")
-  sleep(1)
+  expect(page).to have_button('Next')
   click_on("Next")
-  sleep(1)
+  expect(page).to have_button('Save')
 
   page.attach_file('./public/sample_uploads/Offer_1_SPA.pdf') do
     within "#custom_file_#{field_id}" do
       click_on 'Choose file'
     end
   end
-  sleep(2)
+  expect(page).to have_no_css('.direct-upload--pending', wait: 15)
 
   click_on("Save")
   expect(page).to have_content("successfully")
@@ -747,7 +747,7 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   select(owner_tag, from: "document_owner_tag")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{name}.docx"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(10)  # JS direct-upload to /upload endpoint; larger window for parallel load
+  expect(page).to have_no_css('.direct-upload--pending', wait: 20)
   check("document_template")
   click_on("Save")
   expect(page).to have_content("successfully")
@@ -820,7 +820,6 @@ Then('we Generate Commitment Agreement for the first capital commitment with cor
   steps %(
     Then we Generate Commitment Agreement for the first capital commitment again
   )
-  sleep 3
 end
 
 Then('we Generate Commitment Agreement for the first capital commitment again') do
@@ -869,7 +868,6 @@ Given('we Generate All Documents for the first capital commitment') do
 end
 
 Then('we get the email with error {string}') do |error|
-  sleep(1)
   @user = User.first
   current_email = nil
   emails_sent_to(@user.email).each do |email|
@@ -881,7 +879,6 @@ Then('we get the email with error {string}') do |error|
 end
 
 Then('we get the email with error {string} and subject {string}') do |error, subject|
-  sleep(1)
   @user = User.first
   current_email = nil
   emails_sent_to(@user.email).each do |email|
@@ -955,7 +952,6 @@ Then('the document has {string} e_signatures') do |_string|
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  sleep(4)
 end
 
 Then('the document has {string} e_signatures by Docusign') do |_string|
@@ -972,7 +968,6 @@ Then('the document has {string} e_signatures by Docusign') do |_string|
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  sleep(2)
   visit(document_path(@doc))
 end
 
@@ -1002,7 +997,6 @@ Then('the document is signed by the signatories') do
   allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
   allow_any_instance_of(DigioEsignHelper).to receive(:retrieve_signed).and_return(retrieve_signed_response_signed)
 
-  sleep(3)
   visit(current_path)
   # sleep(2)
   click_on("Signatures")
@@ -1015,20 +1009,15 @@ Then('the document is signed by the docusign signatories') do
   allow_any_instance_of(ApiCreator).to receive(:create_envelope_api).and_return(docusign_envelope_api)
   allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(%w[completed completed], ESignature.pluck(:email)))
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
-  sleep(5)
   visit(current_url)
-  # sleep(3)
   click_on("Signatures")
-  # sleep(2)
   # click_on("Get eSignatures' updates")
 end
 
 Then('the esign completed document is present') do
   # allow_any_instance_of(DigioEsignHelper).to receive(:download).and_return(download_response)
   @doc = Document.where(owner_tag: "Generated").last
-  sleep(4)
   visit(document_path(@doc))
-  sleep(1)
   click_on("Signatures")
   expected_status = "Signed"
   expect(page).to have_content(expected_status)
@@ -1043,7 +1032,6 @@ Then('the docusign esign completed document is present') do
   allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(%w[completed completed], ESignature.pluck(:email), "completed"))
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
   click_on("Get eSignatures' updates")
-  sleep(5)
   visit(document_path(@doc))
   click_on("Signatures")
   expected_status = "Signed"
@@ -1103,15 +1091,11 @@ Then('the document is partially signed') do
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  sleep(3)
   visit(current_path)
   click_on("Signatures")
-  # sleep(1)
   click_on("Get eSignatures' updates")
   visit(current_path)
   click_on("Signatures")
-  # sleep(2)
-  # page should contain status requested
   expect(page).to have_content("Requested")
   expect(page).to have_content("Signed")
 end
@@ -1129,13 +1113,10 @@ Then('the document is partially signed by Docusign') do
   click_on("Signatures")
   # sleep(1)
   click_on("Send For eSignatures")
-  sleep(2)
   visit(document_path(@doc))
   visit(current_path)
   click_on("Signatures")
-  # sleep(1)
   click_on("Get eSignatures' updates")
-  sleep(3)
   visit(current_path)
   click_on("Signatures")
   # page should contain status requested
@@ -1160,8 +1141,7 @@ Then('the docusign document esign is cancelled') do
   click_on("Signatures")
   # sleep(1)
   click_on("Cancel eSignatures")
-  sleep(3)
-  expect(@doc.reload.esign_status.downcase).to(eq("cancelled"))
+  eventually { expect(@doc.reload.esign_status.downcase).to(eq("cancelled")) }
 end
 
 Then('the document can be resent for esign') do
@@ -1171,15 +1151,11 @@ Then('the document can be resent for esign') do
   # sleep(2)
   expect(page).to have_content("Re-Send for eSignatures")
   click_on("Re-Send for eSignatures")
-  sleep(2)
   visit(current_path)
   click_on("Signatures")
-  # sleep(1)
   click_on("Get eSignatures' updates")
   visit(current_path)
   click_on("Signatures")
-  # sleep(2)
-  # page should contain status requested
   expect(page).to have_content("Requested")
   expect(page).to have_content("Signed")
 end
@@ -1193,12 +1169,9 @@ Then('the docusign document can be resent for esign') do
   # sleep(2)
   expect(page).to have_content("Re-Send for eSignatures")
   click_on("Re-Send for eSignatures")
-  sleep(3)
   visit(current_path)
   click_on("Signatures")
-  # sleep(1)
   click_on("Get eSignatures' updates")
-  sleep(4)
   visit(current_path)
   click_on("Signatures")
   # page should contain status requested
@@ -1674,10 +1647,7 @@ end
 When('I filter the investors with {string}') do |string|
   @investor_kyc = InvestorKyc.find_by(full_name: string)
   InvestorKycIndex.import!
-  sleep(1)
   fill_in("search_input", with: string)
-  sleep(0.5)
-  # press enter key
   find("#search_input").send_keys(:return)
 end
 

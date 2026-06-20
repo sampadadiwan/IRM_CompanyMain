@@ -22,6 +22,7 @@ Sidekiq.configure_server do |config|
 
     # Used to update the tracking currency for all funds
 
+    Sidekiq::Cron::Job.create(name: 'WorkflowAutoReminderJob', cron: 'every day at 06:00', class: 'WorkflowAutoReminderJob')
     Sidekiq::Cron::Job.create(name: 'RecurringTaskGeneratorJob', cron: 'every day at 01:00', class: 'RecurringTaskGeneratorJob')
     Sidekiq::Cron::Job.create(name: 'MultiSiteUserSyncAllJob', cron: 'every day at 01:00', class: 'MultiSiteUserSyncAllJob')
     Sidekiq::Cron::Job.create(name: 'TrackingCurrencyJob', cron: 'every day at 01:00', class: 'TrackingCurrencyJob')

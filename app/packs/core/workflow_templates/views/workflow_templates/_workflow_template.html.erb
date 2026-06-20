@@ -1,0 +1,18 @@
+<tr id="<%= dom_id workflow_template %>">
+  <td><%= link_to workflow_template.name, workflow_template_path(workflow_template) %></td>
+  <td><%= workflow_template.workflow_steps.size %></td>
+  <td><%= workflow_template.active_folder_count %></td>
+  <td><%= display_boolean workflow_template.attach_document_in_email %></td>
+  <td>
+    <% if policy(workflow_template).edit? %>
+      <%= link_to edit_workflow_template_path(workflow_template), class: "btn btn-sm btn-outline-secondary" do %>
+        <i class="ti ti-edit"></i>
+      <% end %>
+      <%= button_to workflow_template_path(workflow_template), method: :delete,
+            class: "btn btn-sm btn-outline-danger", form_class: "d-inline deleteButton",
+            data: { action: "click->confirm#popup", turbo: false } do %>
+        <i class="ti ti-trash"></i>
+      <% end %>
+    <% end %>
+  </td>
+</tr>

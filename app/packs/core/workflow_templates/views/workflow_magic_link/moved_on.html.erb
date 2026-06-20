@@ -1,0 +1,47 @@
+<% if @previous_response %>
+  <%# Actor just submitted and the workflow advanced (quorum met or step resolved) %>
+  <%
+    s = @previous_response.state.downcase
+    c = s =~ /approv/ ? "success" : s =~ /reject/ ? "danger" : s =~ /tentative/ ? "warning" : "info"
+    icon = s =~ /approv/ ? "ti-circle-check" : s =~ /reject/ ? "ti-circle-x" : "ti-circle-dot"
+  %>
+  <% content_for :title, "Response Recorded" %>
+  <div class="container py-4 py-md-5" style="max-width: 520px;">
+    <%= render FormCard.new(title: "<i class='ti ti-circle-check text-success me-1'></i>Response recorded", controller: "none") do %>
+      <div class="text-center py-2">
+        <i class="ti <%= icon %> text-<%= c %>" style="font-size:3rem;"></i>
+        <h5 class="fw-bold mt-3 mb-2">Thank you!</h5>
+        <p class="mb-4 text-muted">
+          Your decision of
+          <span class="badge bg-<%= c %>-subtle text-<%= c %> border border-<%= c %>-subtle px-2">
+            <%= @previous_response.state %>
+          </span>
+          has been saved.
+        </p>
+        <% if @previous_response.note.present? %>
+          <span class="small mb-3">"<%= @previous_response.note %>"</span>
+        <% end %>
+        <p class="text-muted small mt-3 mb-0">
+          <i class="ti ti-arrow-right me-1"></i>
+          The workflow has advanced. No further action is needed on this link.
+        </p>
+      </div>
+    <% end %>
+  </div>
+
+<% else %>
+  <%# Step advanced by someone else before this actor responded %>
+  <% content_for :title, "Step Already Progressed" %>
+  <div class="container py-4 py-md-5" style="max-width: 520px;">
+    <%= render FormCard.new(title: "<i class='ti ti-checkbox text-info me-1'></i>Step already progressed", controller: "none") do %>
+      <div class="text-center py-2">
+        <i class="ti ti-checkbox text-info" style="font-size:3rem; opacity:0.7;"></i>
+        <p class="mt-3 mb-0 text-muted">
+          The workflow has moved on from the step this link was issued for —
+          either enough reviewers have already responded or an admin advanced it manually.
+          No action is needed from you.
+        </p>
+      </div>
+    <% end %>
+  </div>
+<% end %>

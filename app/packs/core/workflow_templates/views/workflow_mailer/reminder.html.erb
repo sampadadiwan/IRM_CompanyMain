@@ -1,0 +1,20 @@
+<h3>Hello <%= @user.full_name %>,</h3>
+
+<p>
+  This is a reminder that your response is still pending for a document review
+  on folder <strong><%= @folder.name %></strong>.
+</p>
+
+<p>
+  <strong>Workflow:</strong> <%= @instance.template_name %><br>
+  <strong>Waiting on step:</strong> <%= @step[:name] %>
+</p>
+
+<p>
+  <%= link_to "Review & Respond", @magic_link,
+        style: "display:inline-block;padding:10px 20px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px" %>
+</p>
+
+<p style="color:#888;font-size:0.85em;">
+  This link is unique to you. Please do not share it.
+</p>

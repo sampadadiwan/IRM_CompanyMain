@@ -1,0 +1,140 @@
+<%# Standalone page — unauthenticated actors land here via magic link %>
+<% content_for :title, "Review & Respond — #{@step[:name]}" %>
+
+<div class="container py-4 py-md-5" style="max-width: 600px;">
+
+  <%# ── Context header ─────────────────────────────────────────────────────── %>
+  <div class="mb-4">
+    <div class="d-flex align-items-center gap-2 mb-1">
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+        <i class="ti ti-layout-kanban me-1"></i><%= @instance.template_name %>
+      </span>
+    </div>
+    <h4 class="fw-bold mb-0"><%= @folder.name %></h4>
+    <p class="text-muted small mb-0">
+      <i class="ti ti-user me-1"></i>Reviewing as <strong><%= @actor&.full_name %></strong>
+    </p>
+  </div>
+
+  <%# ── Step card ──────────────────────────────────────────────────────────── %>
+  <%= render FormCard.new(title: "<i class='ti ti-circle-number-#{@step[:position]}'></i>&nbsp;#{h(@step[:name])}", controller: "none") do %>
+
+    <% if @step[:description].present? %>
+      <div class="border-start border-4 border-primary ps-3 py-1 mb-4 text-body">
+        <i class="ti ti-info-circle text-primary me-1"></i>
+        <span class="small"><%= @step[:description] %></span>
+      </div>
+    <% end %>
+
+    <% if @existing_response %>
+      <%# Already responded — show confirmation state %>
+      <%
+        resp_icon  = case @existing_response.state.downcase
+                     when /approv/ then "ti-circle-check"
+                     when /reject/ then "ti-circle-x"
+                     else "ti-circle-dot"
+                     end
+        resp_color = case @existing_response.state.downcase
+                     when /approv/ then "success"
+                     when /reject/ then "danger"
+                     else "info"
+                     end
+      %>
+      <div class="text-center py-3">
+        <i class="ti <%= resp_icon %> text-<%= resp_color %>" style="font-size:3rem;"></i>
+        <h5 class="mt-3 mb-1 fw-bold">Response recorded</h5>
+        <p class="mb-2 text-muted">
+          You submitted
+          <span class="badge bg-<%= resp_color %>-subtle text-<%= resp_color %> border border-<%= resp_color %>-subtle px-2">
+            <%= @existing_response.state %>
+          </span>
+        </p>
+        <% if @existing_response.note.present? %>
+          <blockquote class="blockquote-footer mt-2 small">
+            "<%= @existing_response.note %>"
+          </blockquote>
+        <% end %>
+        <p class="text-muted small mt-3 mb-0">
+          <i class="ti ti-clock me-1"></i>
+          Submitted <%= time_ago_in_words(@existing_response.responded_at) %> ago.
+          You can use another state link from the email to change your mind — the last submission wins.
+        </p>
+      </div>
+
+    <% else %>
+      <%# Response form %>
+      <% states = @step[:states].to_s.split(",").map(&:strip).reject(&:blank?) %>
+
+      <%= form_with url: submit_workflow_magic_link_path(@token), method: :post do |form| %>
+
+        <%# State selector — visual card buttons %>
+        <div class="mb-4">
+          <label class="form-label fw-semibold mb-2">
+            <i class="ti ti-flag me-1 text-muted"></i>Your decision
+          </label>
+          <p class="text-muted small mb-3">
+            Select a state below. Your response is not recorded until you click <strong>Submit</strong>.
+          </p>
+          <div class="d-flex flex-column gap-2">
+            <% states.each_with_index do |state, idx| %>
+              <%
+                s_down = state.downcase
+                icon  = if s_down =~ /approv/       then "ti-circle-check"
+                        elsif s_down =~ /reject/     then "ti-circle-x"
+                        elsif s_down =~ /tentative/  then "ti-clock"
+                        elsif s_down =~ /info|need/  then "ti-help-circle"
+                        else "ti-circle-dot"
+                        end
+                color = if s_down =~ /approv/       then "success"
+                        elsif s_down =~ /reject/     then "danger"
+                        elsif s_down =~ /tentative/  then "warning"
+                        else "secondary"
+                        end
+              %>
+              <label class="wf-state-option border rounded-3 px-3 py-3 d-flex align-items-center gap-3 cursor-pointer"
+                     for="state_<%= idx %>"
+                     data-color="<%= color %>">
+                <%= form.radio_button :state, state,
+                      id: "state_#{idx}",
+                      class: "form-check-input flex-shrink-0 mt-0",
+                      style: "width:1.15em;height:1.15em;",
+                      checked: idx.zero? %>
+                <i class="ti <%= icon %> text-<%= color %>" style="font-size:1.3rem; flex-shrink:0;"></i>
+                <span class="fw-semibold"><%= state %></span>
+                <% if idx.zero? %>
+                  <span class="badge bg-light text-muted border ms-auto" style="font-size:0.7rem;">default</span>
+                <% end %>
+              </label>
+            <% end %>
+          </div>
+        </div>
+
+        <%# Note field %>
+        <div class="mb-4">
+          <label class="form-label fw-semibold mb-1" for="wf_note">
+            <i class="ti ti-message me-1 text-muted"></i>Note
+            <span class="text-muted fw-normal">(optional)</span>
+          </label>
+          <%= form.text_area :note, id: "wf_note", rows: 3, class: "form-control",
+                placeholder: "Add your reasoning, concerns, or questions here…" %>
+          <div class="form-text">
+            <i class="ti ti-lock me-1"></i>Your note is stored with your response in the audit trail.
+          </div>
+        </div>
+
+        <%# Submit %>
+        <%= form.submit "Submit Response",
+              class: "btn btn-primary w-100 py-2 fw-semibold",
+              style: "font-size:1rem;" %>
+
+        <p class="text-muted text-center mt-3 mb-0" style="font-size:0.78rem;">
+          <i class="ti ti-shield-lock me-1"></i>
+          This link is personal to you. Do not share it. It expires when this step advances.
+        </p>
+
+      <% end %>
+    <% end %>
+
+  <% end %>
+
+</div>

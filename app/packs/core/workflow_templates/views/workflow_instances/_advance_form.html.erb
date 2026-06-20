@@ -1,0 +1,13 @@
+<%# Admin tiebreaker / manual advance form %>
+<%= form_with(url: advance_folder_workflow_instance_path(folder, instance), method: :post,
+              class: "d-flex align-items-end gap-2 mt-2") do |form| %>
+
+  <%= select_tag :state,
+        options_for_select(step[:states].to_s.split(",").map(&:strip)),
+        class: "form-control", style: "max-width:200px" %>
+
+  <%= text_field_tag :note, nil, class: "form-control", style: "max-width:300px",
+        placeholder: "Admin note (optional)" %>
+
+  <%= submit_tag "Set State", class: "btn btn-warning btn-sm" %>
+<% end %>

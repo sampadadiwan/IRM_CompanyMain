@@ -281,7 +281,7 @@ Then("I should only see my own mappings") do
   expect(@mappings).not_to include(@other_mapping) if @other_mapping
 end
 
-Then("I should be denied access") do
+Then("I should be denied access to the mapping") do
   policy = SupportClientMappingPolicy.new(@user, @mapping || SupportClientMapping)
   if @mapping.nil?
     expect(policy.index?).to be false

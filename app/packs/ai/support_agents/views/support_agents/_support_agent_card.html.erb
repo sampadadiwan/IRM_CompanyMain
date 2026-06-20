@@ -1,5 +1,5 @@
 <% col_class ||= "col-md-4 mb-4" %>
-<div class="<%= col_class %>">
+<div class="<%= col_class %>" data-filter-agents-target="card">
   <div class="support-agent-card" id="<%= dom_id support_agent %>">
     <div class="card-header-custom">
       <div class="agent-info">
@@ -9,6 +9,11 @@
         <span class="agent-type-badge">
           <%= support_agent.agent_type %>
         </span>
+        <% if support_agent.category.present? %>
+          <span class="badge bg-secondary-subtle text-secondary-emphasis me-2">
+            <%= support_agent.category %>
+          </span>
+        <% end %>
       </div>
       <span class="agent-model-badge" title="AI Model">
         <i class="ti ti-cpu"></i> <%= support_agent.llm_model %>

@@ -15,6 +15,7 @@ class SupportAgent < ApplicationRecord
   include SupportAgentHelper
 
   AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent].freeze
+  CATEGORIES = %w[Ops Finance Portfolio Onboarding Other].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy

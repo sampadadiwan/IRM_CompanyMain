@@ -1,0 +1,21 @@
+<%# Actor response form — states come from the step snapshot %>
+<%= form_with(
+      url: folder_workflow_instance_workflow_actor_responses_path(folder, instance),
+      method: :post) do |form| %>
+
+  <div class="form-group mb-2">
+    <%= label_tag :state, "Your decision" %>
+    <%= select_tag "workflow_actor_response[state]",
+          options_for_select(step[:states].to_s.split(",").map(&:strip)),
+          class: "form-control", style: "max-width:240px" %>
+  </div>
+
+  <div class="form-group mb-3">
+    <%= label_tag :note, "Note (optional)" %>
+    <%= text_area_tag "workflow_actor_response[note]", nil,
+          class: "form-control", rows: 2,
+          placeholder: "Add a comment to accompany your decision…" %>
+  </div>
+
+  <%= submit_tag "Submit Response", class: "btn btn-primary btn-sm" %>
+<% end %>

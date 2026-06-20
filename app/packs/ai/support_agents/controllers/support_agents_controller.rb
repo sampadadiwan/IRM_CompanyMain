@@ -536,7 +536,7 @@ class SupportAgentsController < ApplicationController
   # @return [ActionController::Parameters] permitted parameters
   def support_agent_params
     permitted = params.require(:support_agent).permit(
-      :name, :description, :entity_id, :form_type_id, :agent_type, :json_fields,
+      :name, :description, :category, :entity_id, :form_type_id, :agent_type, :json_fields,
       :document_folder_id, :with_steps, :enabled, :llm_model,
       properties: {},
       documents_attributes: Document::NESTED_ATTRIBUTES

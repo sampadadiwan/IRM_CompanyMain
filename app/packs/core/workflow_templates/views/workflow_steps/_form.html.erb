@@ -1,0 +1,75 @@
+<%# Standalone step form — used for new/edit step pages (not nested in template form) %>
+<%= render FormCard.new(title: "Step: #{step.name.presence || 'New'}") do %>
+  <%= form_with(model: [@workflow_template, step], validate: true) do |form| %>
+    <% if step.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% step.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%= form.hidden_field :position %>
+
+    <div class="form-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "form-control", placeholder: "e.g. Legal Review" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :description %>
+      <%= form.text_area :description, class: "form-control", rows: 2 %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :states, "Allowable states (comma-separated)" %>
+      <%= form.text_field :states, class: "form-control",
+            placeholder: "Approved,Rejected,Needs Info" %>
+      <small class="text-muted">First value is the displayed default.</small>
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 form-group">
+        <%= form.label :quorum_rule, "Quorum rule" %>
+        <%= form.select :quorum_rule, WorkflowStep.quorum_rules.keys.map { |k|
+              [k.humanize, k] }, {}, class: "form-control" %>
+      </div>
+
+      <div class="col-md-6 form-group" data-controller="workflow-step">
+        <%= form.label :on_reject_rule, "On reject" %>
+        <%= form.select :on_reject_rule, WorkflowStep.on_reject_rules.keys.map { |k|
+              [k.humanize, k] }, {}, class: "form-control",
+              data: { action: "change->workflow-step#toggleGoToStep" } %>
+
+        <div data-workflow-step-target="goToStepField" class="mt-2">
+          <%= form.label :on_reject_target_step, "Go to step #" %>
+          <%= form.number_field :on_reject_target_step, class: "form-control", min: 1 %>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :reminder_interval_days, "Reminder interval override (days)" %>
+      <%= form.number_field :reminder_interval_days, class: "form-control", min: 0,
+            placeholder: "Leave blank to inherit template default" %>
+      <small class="text-muted">Set 0 to disable reminders on this step.</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :actor_user_ids, "Actors (entity employees)" %>
+      <%= form.select :actor_user_ids,
+            entity_users_for_select.map { |u| [u.full_name, u.id] },
+            { include_blank: false },
+            { multiple: true, class: "form-control select2",
+              data: { placeholder: "Select actors..." } } %>
+      <small class="text-muted">Only employees of this organisation can be actors.</small>
+    </div>
+
+    <div class="form-group">
+      <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+      <%= link_to "Cancel", workflow_template_path(@workflow_template), class: "btn btn-link" %>
+    </div>
+  <% end %>
+<% end %>

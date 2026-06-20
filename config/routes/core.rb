@@ -2,6 +2,13 @@ resources :validation_rules, only: %i[index new create edit update destroy] do
   post :evaluate, on: :collection
 end
 
+# Workflow templates (company_admin only for mutations; all employees read-only)
+resources :workflow_templates do
+  resources :workflow_steps, except: %i[index show] do
+    post :reorder, on: :collection
+  end
+end
+
 # Company-admin-facing UI: view all rules + manage their entity's overrides
 resources :validation_rule_overrides, only: %i[index new create edit update destroy]
 
@@ -166,12 +173,26 @@ resources :import_uploads do
 end
 
 resources :folders do
-  get 'download', on: :member
-  post 'generate_report', on: :member
-  get 'generate_report', on: :member
-  get 'data_rooms', on: :collection
-  put :restore_deleted, on: :member
-  get :show_deleted, on: :collection
+  get  'download',         on: :member
+  post 'generate_report',  on: :member
+  get  'generate_report',  on: :member
+  get  'data_rooms',       on: :collection
+  put  :restore_deleted,   on: :member
+  get  :show_deleted,      on: :collection
+
+  # Workflow instance lifecycle — nested under the folder they belong to
+  resources :workflow_instances, only: %i[create show] do
+    member do
+      post :advance             # admin sets resolved state (tiebreaker / override)
+      post :reset               # admin resets to step 1
+      post :archive             # admin archives a stalled instance
+      post :send_reminder       # admin triggers immediate reminder to pending actors
+      get  :export_audit_trail  # download full state-change history as CSV
+    end
+
+    # Actor responses — nested under their instance
+    resources :workflow_actor_responses, only: %i[create]
+  end
 end
 
 resources :investor_accesses do
@@ -253,6 +274,10 @@ end
 resources :doc_shares do
   get 'view', on: :collection
 end
+
+# Workflow magic-link routes — no auth required; the signed token is the credential
+get  'workflow_magic_links/:token',        to: 'workflow_magic_link#show',   as: :workflow_magic_link
+post 'workflow_magic_links/:token/submit', to: 'workflow_magic_link#submit', as: :submit_workflow_magic_link
 
 resources :entities do
   get 'search', on: :collection

@@ -17,7 +17,7 @@ module WithTurboFlash
     # would produce an empty partial and silently clear #page_alerts.
     return unless flash[:notice].present? || flash[:alert].present?
 
-    # ── Critical: never steal flash from a redirect ────────────────────────
+    # ── Critical: never steal flash from a redirect ──────────────────────────
     # When the action did a redirect_to (e.g. after a successful create/update),
     # the flash is meant for the *next* page, which will render it through the
     # standard _alerts.html.erb partial in the layout.  If we append a turbo-

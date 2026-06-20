@@ -1,0 +1,204 @@
+<%# Workflow tab panel inside the folder details view %>
+<% active_instance = folder.workflow_instances.instance_active.first %>
+<% available_templates = WorkflowTemplate.where(entity_id: folder.entity_id).order(:name) %>
+<% past_instances = folder.workflow_instances.where.not(status: :active).order(created_at: :desc).limit(5) %>
+<div class="p-3">
+
+  <%# ── Active Workflow — only shown when one is running ───────────────────── %>
+  <% if active_instance %>
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <h6 class="fw-bold mb-0">Active Workflow</h6>
+    </div>
+    <div class="card border mb-3">
+      <div class="card-body p-3">
+        <div class="d-flex justify-content-between align-items-start gap-2">
+          <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <i class="ti ti-workflow text-primary"></i>
+              <span class="fw-semibold"><%= active_instance.template_name %></span>
+              <span class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+            </div>
+            <div class="text-muted small">
+              Step <%= active_instance.current_step_position %>:
+              <strong><%= active_instance.current_step_data&.dig(:name) %></strong>
+              &nbsp;&middot;&nbsp;
+              Launched <%= time_ago_in_words(active_instance.created_at) %> ago
+              by <%= active_instance.launched_by&.full_name %>
+            </div>
+          </div>
+          <% if policy(folder).assign_workflow? %>
+            <div class="d-flex gap-2 flex-shrink-0">
+              <%= button_to "Reset to Step 1",
+                    reset_folder_workflow_instance_path(folder, active_instance),
+                    method: :post,
+                    data: { confirm: "Reset the workflow to step 1? All current responses will be archived." },
+                    class: "btn btn-sm btn-outline-warning" %>
+              <%= button_to "Archive",
+                    archive_folder_workflow_instance_path(folder, active_instance),
+                    method: :post,
+                    data: { confirm: "Archive this workflow? This cannot be undone." },
+                    class: "btn btn-sm btn-outline-secondary" %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+    <%= link_to folder_workflow_instance_path(folder, active_instance),
+          class: "btn btn-outline-primary btn-sm mb-3" do %>
+      <i class="ti ti-chart-gantt me-1"></i>View Full Workflow Timeline
+    <% end %>
+    <hr>
+  <% end %>
+
+  <%# ── Past Workflows header with Launch button on the right ──────────────── %>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h6 class="fw-bold mb-0">Past Workflows</h6>
+    <% if policy(folder).assign_workflow? && available_templates.any? && active_instance.nil? %>
+      <button type="button" class="btn btn-primary btn-sm"
+              data-bs-toggle="modal" data-bs-target="#launchWorkflowModal">
+        <i class="ti ti-player-play me-1"></i>Launch Workflow
+      </button>
+    <% end %>
+  </div>
+
+  <% if past_instances.any? %>
+    <table class="table table-sm table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Template</th>
+          <th>Status</th>
+          <th>Launched</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% past_instances.each do |inst| %>
+          <%
+            st_color = case inst.status
+                       when "complete"  then "success"
+                       when "rejected"  then "danger"
+                       when "archived"  then "secondary"
+                       else "secondary"
+                       end
+          %>
+          <tr>
+            <td class="align-middle"><%= inst.template_name %></td>
+            <td class="align-middle">
+              <span class="badge bg-<%= st_color %>-subtle text-<%= st_color %> border border-<%= st_color %>-subtle">
+                <%= inst.status.humanize %>
+              </span>
+            </td>
+            <td class="align-middle text-muted small"><%= inst.created_at.strftime("%b %d, %Y") %></td>
+            <td class="align-middle">
+              <%= link_to "View", folder_workflow_instance_path(folder, inst),
+                    class: "btn btn-sm btn-outline-secondary" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% elsif active_instance.nil? %>
+    <p class="text-muted small mb-0">
+      <% if available_templates.any? %>
+        No workflows have been run for this folder yet. Click <strong>Launch Workflow</strong> to start one.
+      <% else %>
+        No review templates exist yet.
+        <%= link_to "Create a template", new_workflow_template_path %> to enable workflows for this folder.
+      <% end %>
+    </p>
+  <% end %>
+
+</div>
+
+<%# ── Launch Workflow modal ───────────────────────────────────────────────── %>
+<% if policy(folder).assign_workflow? && available_templates.any? && active_instance.nil? %>
+  <div class="modal fade" id="launchWorkflowModal" tabindex="-1"
+       aria-labelledby="launchWorkflowModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="launchWorkflowModalLabel">
+            <i class="ti ti-player-play me-1 text-primary"></i>Launch Review Workflow
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <%= form_with url: folder_workflow_instances_path(folder), method: :post, local: true do |f| %>
+          <div class="modal-body">
+
+            <div class="mb-4">
+              <label class="form-label fw-semibold" for="launch_workflow_template_id">
+                Select Review Template
+              </label>
+              <%= f.select :workflow_template_id,
+                    available_templates.map { |wt|
+                      ["#{wt.name} (#{wt.workflow_steps.size} step(s))", wt.id]
+                    },
+                    { include_blank: "— Choose a template —",
+                      selected: folder.workflow_template_id },
+                    class: "form-select",
+                    id: "launch_workflow_template_id",
+                    required: true %>
+              <div class="form-text">
+                <%= link_to "Manage templates", workflow_templates_path, target: "_blank" %>
+              </div>
+            </div>
+
+            <div class="border-start border-4 border-primary ps-3 py-1 mb-3">
+              <div class="fw-bold text-dark small">What happens next</div>
+              <div class="text-muted small">The following will happen immediately on launch:</div>
+            </div>
+
+            <div class="d-flex flex-column gap-2">
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#eff6ff;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#dbeafe;">
+                  <i class="ti ti-mail fs-5" style="color:#2563eb;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Step 1 actors notified by email</div>
+                  <div class="text-muted small mt-1">
+                    Each actor assigned to step 1 receives an email with a personalised magic link
+                    so they can review and respond without logging in.
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#f0fdf4;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#dcfce7;">
+                  <i class="ti ti-list-check fs-5" style="color:#16a34a;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Progress tracked on this page</div>
+                  <div class="text-muted small mt-1">
+                    Monitor step responses, send reminders, and advance or reset the workflow
+                    from the timeline view.
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-start gap-3 p-3 rounded-3" style="background:#fffbeb;">
+                <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                      style="width:36px;height:36px;background:#fef3c7;">
+                  <i class="ti ti-copy fs-5" style="color:#d97706;"></i>
+                </span>
+                <div>
+                  <div class="fw-semibold text-dark lh-sm">Template snapshot taken</div>
+                  <div class="text-muted small mt-1">
+                    The template is snapshotted at launch — future edits won't affect this
+                    running workflow.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <%= f.submit "Launch Workflow", class: "btn btn-primary" %>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+<% end %>

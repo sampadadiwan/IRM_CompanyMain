@@ -18,8 +18,6 @@ When('I create a new deal {string}') do |arg1|
   fill_in('deal_amount', with: @deal.amount)
   fill_in('deal_status', with: @deal.status)
   click_on("Save")
-  sleep(3)
-
   expect(page).to have_content("Deal was successfully created")
   expect(page).to have_content(@deal.name)
 end
@@ -67,7 +65,7 @@ When('I click on a Kanban Card and edit the form') do
   ##sleep(0.25)
   fill_in('Tags', with: "Random, Tag")
   click_button('Save')
-  sleep(1)
+  expect(page).to have_css('.offcanvas-close')
   first(".offcanvas-close").click
   expect(all(".kanban-card").first.text).to include("Random")
   expect(all(".kanban-card").first.text).to include("Tag")
@@ -77,8 +75,7 @@ When("I click on a Kanban Card's tags") do
   KanbanCardIndex.import!
   expect(all(".kanban-card").count).to(eq(2))
   click_link("Random")
-  sleep(2)
-  expect(all(".kanban-card").count).to(eq(1))
+  expect(page).to have_css('.kanban-card', count: 1)
 end
 
 When("I move card from one column to another") do
@@ -94,7 +91,7 @@ When("I move card from one column to another") do
     );
   JS
   all(".move-to-next-column").first.click
-  sleep(3)
+  sleep(1)
   expect(KanbanCard.first.audits.last.audited_changes.keys).to(include("kanban_column_id"))
 end
 
@@ -348,11 +345,10 @@ def select_investor_and_save(investor_id, tags)
   ##sleep(2)
   investor = Investor.find(investor_id)
   first('#add_new_card').click
-  sleep(1)
+  expect(page).to have_select('deal_investor_investor_id')
   select(investor.investor_name, from: "deal_investor_investor_id")
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags)
-  sleep(0.5)
   click_button('Save')
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   expect(page).to have_content("Deal Investor was successfully created", wait: 10)
@@ -408,7 +404,7 @@ def select_investor_by_name_and_save(name, tags)
   input_field.set(tags)
   ##sleep(0.5)
   click_button('Save')
-  sleep(5)
+  expect(page).to have_content("successfully")
 end
 
 When('I click on the action dropdown and create a Kanban Column') do
@@ -416,7 +412,6 @@ When('I click on the action dropdown and create a Kanban Column') do
   ##sleep(0.5)
   find_by_id('kanban_column_name').set('New Column')
   click_button('Save')
-  sleep(1)
   expect(page.text).to(include('New Column'))
 end
 
@@ -441,7 +436,6 @@ When('I click on the action dropdown and dont select any Investor and save') do
   first('#add_new_card').click
   ##sleep(1)
   click_button('Save')
-  sleep(1)
 end
 
 Then('i click on the details button') do
@@ -489,7 +483,7 @@ When('I edit the deal "card_view_attrs={string}"') do |string|
   #   find('li.select2-results__option', text: "#{attr}").click
   # end
   click_on("Save")
-  sleep(2)
+  expect(page).to have_content("successfully")
 end
 
 
@@ -574,7 +568,7 @@ Given('I add widgets for the deal') do
     trix_editors[0].set("#{widget[:title]} Intro")
     trix_editors[1].set("#{widget[:title]} Details")
     attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
-    sleep(0.5)
+    expect(page).to have_no_css('.direct-upload--pending', wait: 10)
     click_on("Save")
     expect(page).to have_content("successfully")
   end
@@ -630,7 +624,7 @@ Given('I click on the Add Item and create a new Stakeholder {string} and save') 
   select("LP", from: "investor_category")
   fill_in('investor_primary_email', with: @inv.primary_email)
   click_on("Save")
-  sleep(3)
+  expect(page).to have_content("successfully")
   visit(deal_path(@deal))
 end
 
@@ -648,7 +642,7 @@ def select_investor_name_and_save(investor_name, tags)
   input_field = find_by_id('deal_investor_tags')
   input_field.set(tags) if tags.present?
   click_button('Save')
-  sleep(2)
+  expect(page).to have_content("successfully")
 end
 
 Given('I give deal access to {string}') do |investor_name|
@@ -666,7 +660,6 @@ Given('I give deal access to {string}') do |investor_name|
   find('.select2-search__field').set(investor_name)
   find('li.select2-results__option', text: investor_name).click
   click_on("Save")
-  sleep(1)
 end
 
 When('I go to the deal access overview') do
@@ -697,7 +690,6 @@ Given('I give {string} access to {string} from the deal access overview') do |ac
   check("access_right_cascade") if access_type == "folder"
 
   click_on("Save")
-  sleep(1)
 end
 
 Given('I delete {string} access to {string} from the deal access overview') do |access_type, investor_name|
@@ -747,10 +739,8 @@ When('I click Deal Documents in the overview') do
 end
 
 Then('I should see the deal documents') do
-  sleep(1)
   temp_url = current_url+"&&no_folders=true"
   visit(temp_url)
-  sleep(1)
   expect(page).to have_content("Documents: Deal Documents")
   @deal.deal_documents_folder.documents.each do |doc|
     puts "Checking for #{doc.name}"
@@ -806,7 +796,7 @@ When('I edit the deal grid columns with field {string} label {string} and positi
 
   _add_grid_column_row(field, label, position)
   click_button('Save')
-  sleep(1)
+  expect(page).to have_content("successfully")
 end
 
 # Adds a single grid column row without saving (used when building multiple rows).
@@ -818,15 +808,14 @@ end
 
 When('I save the deal form') do
   click_button('Save')
-  sleep(1)
+  expect(page).to have_content("successfully")
 end
 
 # Navigates to the deal show page and ensures the Investors tab / list view is visible.
 Given('I visit the deal list view') do
   @deal.reload
   visit(deal_path(@deal))
-  # Wait for AG Grid to initialize
-  sleep(2)
+  expect(page).to have_css('.ag-root-wrapper', wait: 10)
 end
 
 # Verifies a column header exists in the AG Grid column definitions (visible or scrolled off-screen).
@@ -856,7 +845,7 @@ end
 # ---------------------------------------------------------------------------
 def _add_grid_column_row(field, label, position)
   click_button('+ Add Column')
-  sleep(0.3)
+  expect(page).to have_css("[data-deal-grid-columns-target='row']")
 
   # The new row is the last one in the rows container
   row = all("[data-deal-grid-columns-target='row']").last
@@ -869,6 +858,4 @@ def _add_grid_column_row(field, label, position)
     pos_select = find("[data-field='position']")
     pos_select.find("option[value='#{position.downcase}']").select_option
   end
-
-  sleep(0.2)
 end

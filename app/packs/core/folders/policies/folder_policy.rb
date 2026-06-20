@@ -46,4 +46,9 @@ class FolderPolicy < ApplicationPolicy
   def send_for_esign?
     user.entity_id == record.entity_id
   end
+
+  # Only company_admin can assign / remove a workflow template on a folder
+  def assign_workflow?
+    user.company_admin? && belongs_to_entity?(user, record)
+  end
 end

@@ -1,0 +1,27 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Workflow Templates</h1>
+  <% if policy(WorkflowTemplate.new(entity_id: current_user.entity_id)).new? %>
+    <%= link_to new_workflow_template_path, class: "btn btn-outline-primary" do %>
+      <i class="ti ti-playlist-add"></i> New Template
+    <% end %>
+  <% end %>
+</div>
+
+<div class="table-responsive" data-controller="datatable">
+  <table class="table table-bordered dataTable jqDataTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Steps</th>
+        <th>Folders Using</th>
+        <th>Attach Doc in Email</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% workflow_templates.each do |wt| %>
+        <%= render wt %>
+      <% end %>
+    </tbody>
+  </table>
+</div>

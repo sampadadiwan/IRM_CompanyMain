@@ -3,44 +3,73 @@
   short_desc      = (agent_cls.const_get(:DESCRIPTION)      if agent_cls&.const_defined?(:DESCRIPTION))      || support_agent.description
   long_desc       = (agent_cls.const_get(:LONG_DESCRIPTION) if agent_cls&.const_defined?(:LONG_DESCRIPTION))
 %>
-<table class="table table-bordered dataTable">
+
+<%# ── Key-value details table ──────────────────────────────────────── %>
+<table class="table table-bordered dataTable agent-detail-table">
+  <colgroup>
+    <col style="width: 160px;">
+    <col>
+  </colgroup>
   <tr>
-    <td>Name</td>
+    <td class="align-top">Name</td>
     <td><%= support_agent.name %></td>
   </tr>
   <tr>
-    <td>Description</td>
+    <td class="align-top">Category</td>
     <td>
-      <%= short_desc %>
-      <% if long_desc.present? %>
-        <div class="mt-3 p-0 rounded overflow-hidden border" style="background:#f8fafc;">
-          <div class="agent-about-panel" style="border-top-width:2px;">
-            <%= format_agent_description(long_desc) %>
-          </div>
-        </div>
+      <% if support_agent.category.present? %>
+        <span class="badge bg-secondary-subtle text-secondary-emphasis"><%= support_agent.category %></span>
+      <% else %>
+        <span class="text-muted">—</span>
       <% end %>
     </td>
   </tr>
   <tr>
-    <td>Entity</td>
+    <td class="align-top">Entity</td>
     <td><%= support_agent.entity_id %></td>
   </tr>
   <tr>
-    <td>Form Type</td>
+    <td class="align-top">Form Type</td>
     <td><%= support_agent.form_type_id %></td>
   </tr>
   <tr>
-    <td>Agent Type</td>
+    <td class="align-top">Agent Type</td>
     <td><%= support_agent.agent_type %></td>
   </tr>
   <tr>
-    <td>AI Model</td>
-    <td><%= support_agent.llm_model %></td>
+    <td class="align-top">AI Model</td>
+    <td><code class="text-secondary"><%= support_agent.llm_model %></code></td>
   </tr>
   <%= render "support_agents/custom_field_rows", support_agent: support_agent, timestamps_and_snapshot: true %>
 </table>
 
-<div class="mt-3">
+<%# ── Description card ─────────────────────────────────────────────── %>
+<div class="card border-0 shadow-sm mt-4" style="border-radius: 12px; overflow: hidden;">
+  <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+    <i class="ti ti-info-circle text-primary fs-5"></i>
+    <h5 class="mb-0 fw-semibold">About This Agent</h5>
+  </div>
+  <div class="card-body p-4">
+    <p class="mb-0" style="font-size: 1rem; line-height: 1.65; color: #334155;">
+      <%= short_desc %>
+    </p>
+
+    <% if long_desc.present? %>
+      <hr class="my-4">
+      <div class="d-flex align-items-center gap-2 mb-3">
+        <i class="ti ti-file-text text-secondary"></i>
+        <h6 class="mb-0 fw-semibold text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08em;">
+          Detailed Description
+        </h6>
+      </div>
+      <div class="agent-about-panel p-0" style="background: transparent; border: none;">
+        <%= format_agent_description(long_desc) %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="mt-4">
   <% if policy(support_agent).update? %>
     <%= link_to "Edit", edit_support_agent_path(support_agent), class: "btn btn-outline-primary" %>
     <%= button_to "Run Now", run_with_steps_support_agent_path(support_agent),

@@ -1,0 +1,615 @@
+// =============================================================================
+//  Workflow Template — shared primitives (used inside FormCards)
+// =============================================================================
+
+// ── Meta stat tiles ───────────────────────────────────────────────────────
+.wf-meta-tile {
+  background: var(--bs-body-bg, #fff);
+  border: 1px solid var(--bs-border-color, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 165px;
+  flex: 1 1 auto;
+
+  .wf-meta-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  .wf-meta-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--bs-secondary-color, #6c757d);
+    margin-bottom: 2px;
+    line-height: 1.1;
+  }
+
+  .wf-meta-value {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--bs-body-color, #212529);
+    line-height: 1.2;
+  }
+}
+
+// ── State pills ───────────────────────────────────────────────────────────
+.wf-state-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  line-height: 1.5;
+
+  &.wf-state-approved  { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+  &.wf-state-rejected  { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+  &.wf-state-tentative { background: #fef9c3; color: #854d0e; border-color: #fef08a; }
+  &.wf-state-default   { background: var(--bs-secondary-bg, #e9ecef);
+                         color: var(--bs-secondary-color, #495057); }
+}
+
+// ── Actor chips ───────────────────────────────────────────────────────────
+.wf-actor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px 2px 2px;
+  border-radius: 14px;
+  background: var(--bs-secondary-bg, #eef2f7);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--bs-body-color, #374151);
+  white-space: nowrap;
+  border: 1px solid var(--bs-border-color, #e2e8f0);
+  line-height: 1.2;
+  height: 26px;
+
+  .wf-actor-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #5d87ff, #4567d4);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+  }
+}
+
+// ── Rule badge ────────────────────────────────────────────────────────────
+.wf-rule-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  background: var(--bs-secondary-bg, #e9ecef);
+  color: var(--bs-body-color, #374151);
+  white-space: nowrap;
+  line-height: 1.3;
+  border: 1px solid transparent;
+
+  &.wf-rule-danger  { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
+  &.wf-rule-warning { background: #fef9c3; color: #854d0e; border-color: #fef08a; }
+  &.wf-rule-info    { background: #dbeafe; color: #1e40af; border-color: #bfdbfe; }
+  &.wf-rule-success { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+}
+
+// ── Add step button ───────────────────────────────────────────────────────
+.wf-add-step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border: 2px dashed var(--bs-border-color, #d1d5db);
+  border-radius: 14px;
+  cursor: pointer;
+  color: var(--bs-secondary-color, #6b7280);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--bs-primary, #5d87ff);
+    color: var(--bs-primary, #5d87ff);
+    background: rgba(93, 135, 255, 0.04);
+  }
+
+  i { font-size: 1rem; }
+}
+
+
+// =============================================================================
+//  WFFD — WorkFlow Flow Diagram  (vertical spine layout)
+// =============================================================================
+//
+//   Desktop layout (≥ 768px) — 5-column grid:
+//
+//     Col1    Col2     Col3          Col4    Col5
+//     (52px)  (24px)   (300-440px)   (32px)  (auto, ≤ 240px)
+//     ┌────┐ ┌────┐  ┌───────────┐  ┌────┐  ┌─────────────────┐
+//     │ ●  │ │ ── │  │  Card     │  │· · │  │ ⌗ Quorum         │
+//     │ 1  │ │    │  │  ...      │  │   │  │ ● actor 1        │
+//     │    │ │    │  │           │  │   │  │ ● actor 2        │
+//     └────┘ └────┘  └───────────┘  └────┘  └─────────────────┘
+//                 ↑ reject rule spans Col2-Col5 ↓
+//
+//   Mobile layout (< 768px) — sidebar stacks below the card:
+//
+//     Col1    Col2     Col3
+//     (44px)  (16px)   (1fr)
+//     ┌────┐ ┌────┐  ┌───────────┐
+//     │ ●  │ │ ── │  │  Card     │
+//     │ 1  │ │    │  │  ...      │
+//     │    │ │    │  │ ──────────│
+//     │    │ │    │  │ ⌗ Quorum   │
+//     │    │ │    │  │ ● actor   │
+//     └────┘ └────┘  └───────────┘
+//       ↑ reject rule full-width below
+
+.wffd {
+  --wffd-spine-color: #cbd5e1;
+  --wffd-spine-width: 3px;
+  --wffd-dot-size:   32px;
+  --wffd-card-top:   14px;
+
+  // Desktop sizing
+  --wffd-spine-col:  52px;
+  --wffd-conn-col:   24px;
+  --wffd-card-min:   300px;
+  --wffd-card-max:   440px;
+  --wffd-quorum-col: 32px;
+  --wffd-sidebar-min: 170px;
+  --wffd-sidebar-max: 230px;
+
+  position: relative;
+
+
+  // ── Vertical spine line ──────────────────────────────────────────────
+  &::before {
+    content: "";
+    position: absolute;
+    left: calc(var(--wffd-spine-col) / 2 - var(--wffd-spine-width) / 2);
+    top: 0;
+    bottom: 0;
+    width: var(--wffd-spine-width);
+    background: var(--wffd-spine-color);
+    border-radius: 2px;
+    z-index: 0;
+  }
+
+
+  // ── Terminus nodes (Start / Complete) ─────────────────────────────────
+  .wffd-terminus {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    position: relative;
+    z-index: 1;
+    padding-left: calc(var(--wffd-spine-col) / 2 - 14px);
+  }
+
+  .wffd-spine-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .wffd-dot-start {
+    background: var(--bs-primary, #5d87ff);
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(93, 135, 255, 0.15);
+    i { font-size: 0.7rem; margin-left: 1px; }
+  }
+
+  .wffd-dot-done {
+    background: var(--bs-success, #22c55e);
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
+    i { font-size: 0.85rem; }
+  }
+
+  .wffd-terminus-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--bs-secondary-color, #6c757d);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .wffd-terminus-done {
+    color: var(--bs-success, #22c55e);
+  }
+
+
+  // ── Step wrap (CSS Grid) ──────────────────────────────────────────────
+  .wffd-step-wrap {
+    display: grid;
+    grid-template-columns:
+      var(--wffd-spine-col)
+      var(--wffd-conn-col)
+      minmax(var(--wffd-card-min), var(--wffd-card-max))
+      var(--wffd-quorum-col)
+      minmax(var(--wffd-sidebar-min), var(--wffd-sidebar-max));
+    grid-template-areas:
+      "dot connector card quorum-line sidebar"
+      ".    .         reject reject   reject";
+    column-gap: 0;
+    row-gap: 0;
+    position: relative;
+    z-index: 1;
+    margin-top: 20px;
+  }
+
+
+  // ── Step dot (number circle on the spine) ─────────────────────────────
+  .wffd-step-dot {
+    grid-area: dot;
+    width: var(--wffd-dot-size);
+    height: var(--wffd-dot-size);
+    border-radius: 50%;
+    background: #fff;
+    border: 3px solid var(--bs-primary, #5d87ff);
+    color: var(--bs-primary, #5d87ff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.78rem;
+    font-weight: 800;
+    position: relative;
+    z-index: 2;
+    justify-self: center;
+    align-self: start;
+    margin-top: calc(var(--wffd-card-top) + 8px);
+    box-shadow: 0 0 0 3px #fff, 0 2px 4px rgba(93, 135, 255, 0.2);
+  }
+
+
+  // ── Horizontal connector (spine dot → card) ──────────────────────────
+  .wffd-card-connector {
+    grid-area: connector;
+    position: relative;
+    align-self: start;
+    margin-top: calc(var(--wffd-card-top) + 8px);
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: -8px;
+      top: calc(var(--wffd-dot-size) / 2 - 1px);
+      height: 2px;
+      background: var(--wffd-spine-color);
+    }
+  }
+
+
+  // ── Step card ─────────────────────────────────────────────────────────
+  .wffd-card {
+    grid-area: card;
+    background: #fff;
+    border: 1px solid var(--bs-border-color, #e2e8f0);
+    border-left: 3px solid var(--bs-primary, #5d87ff);
+    border-radius: 10px;
+    padding: var(--wffd-card-top) 18px;
+    position: relative;
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+    min-width: 0;   // allow content shrink for grid
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+  }
+
+  .wffd-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .wffd-card-title {
+    flex: 1;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--bs-body-color, #212529);
+    line-height: 1.3;
+    min-width: 0;
+    word-break: break-word;
+  }
+
+  .wffd-card-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+    opacity: 0.4;
+    transition: opacity 0.15s ease;
+
+    .wffd-card:hover &,
+    .wffd-card:focus-within & {
+      opacity: 1;
+    }
+
+    .btn {
+      padding: 1px 6px;
+      font-size: 0.8rem;
+    }
+  }
+
+  .wffd-card-desc {
+    font-size: 0.8rem;
+    color: var(--bs-secondary-color, #6c757d);
+    line-height: 1.45;
+    margin-bottom: 10px;
+    word-break: break-word;
+  }
+
+  .wffd-default-tag {
+    font-weight: 400;
+    opacity: 0.6;
+    margin-left: 2px;
+    font-size: 0.65rem;
+  }
+
+  .wffd-step-rule {
+    font-size: 0.68rem !important;
+    padding: 2px 8px !important;
+  }
+
+
+  // ── Quorum connector column (dashed line between card and sidebar) ──
+  .wffd-quorum-line-col {
+    grid-area: quorum-line;
+    position: relative;
+    align-self: start;
+    margin-top: calc(var(--wffd-card-top) + 8px + var(--wffd-dot-size) / 2 - 4px);
+    height: 0;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 0;
+      border-top: 2px dashed #94a3b8;
+    }
+  }
+
+
+  // ── Sidebar (quorum badge + actor chips) ──────────────────────────────
+  .wffd-sidebar {
+    grid-area: sidebar;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: calc(var(--wffd-card-top) + 8px);
+    min-width: 0;
+  }
+
+  .wffd-quorum-row {
+    display: flex;
+    align-items: center;
+  }
+
+  .wffd-quorum-badge {
+    flex-shrink: 0;
+  }
+
+  .wffd-actors {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .wffd-actors-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+
+  // ── Reject rule (spans below the card, with back-arrow to spine) ────
+  .wffd-reject-rule {
+    grid-area: reject;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 0 4px;
+    margin-left: calc(var(--wffd-conn-col) + 4px);
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: calc(-1 * var(--wffd-conn-col) - 4px);
+      top: 50%;
+      width: calc(var(--wffd-conn-col));
+      height: 0;
+      border-top: 1.5px dashed #fbbf24;
+      opacity: 0.6;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: calc(-1 * var(--wffd-conn-col) - 8px);
+      top: calc(50% - 3px);
+      width: 0;
+      height: 0;
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      border-right: 5px solid #fbbf24;
+      opacity: 0.7;
+    }
+  }
+
+  .wffd-reject-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: #b45309;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+
+  // =====================================================================
+  //  MOBILE — stacked layout (below 768px)
+  // =====================================================================
+  //  The 5-column desktop grid needs ≥ 580px to fit. On phones, switch to
+  //  a 3-column grid (spine / conn / content) and let the sidebar stack
+  //  underneath the card. The dashed quorum connector rotates to vertical.
+  @media (max-width: 767.98px) {
+    --wffd-spine-col:  44px;
+    --wffd-conn-col:   16px;
+    --wffd-card-min:   0;
+    --wffd-card-max:   1fr;
+    --wffd-quorum-col: 0px;        // hidden on mobile (sidebar stacks below)
+    --wffd-sidebar-min: 0;
+    --wffd-sidebar-max: 1fr;
+    --wffd-dot-size:   28px;
+    --wffd-card-top:   12px;
+
+    // Spine line moves closer to the dot
+    &::before {
+      left: calc(var(--wffd-spine-col) / 2 - var(--wffd-spine-width) / 2);
+    }
+
+    // Terminus padding matches the new spine column
+    .wffd-terminus {
+      padding-left: calc(var(--wffd-spine-col) / 2 - 14px);
+    }
+
+    // Switch step-wrap to 3 columns: dot / conn / card+sidebar stack
+    .wffd-step-wrap {
+      grid-template-columns:
+        var(--wffd-spine-col)
+        var(--wffd-conn-col)
+        1fr;
+      grid-template-areas:
+        "dot connector card"
+        "dot connector sidebar"
+        ".    .         reject";
+    }
+
+    // Hide the horizontal quorum connector column entirely
+    .wffd-quorum-line-col {
+      display: none;
+    }
+
+    // Sidebar sits in its own row below the card; add a vertical visual
+    // link between the card and sidebar so the relationship is still clear.
+    .wffd-sidebar {
+      padding-top: 10px;
+      padding-left: 4px;
+      border-left: 2px dashed #94a3b8;
+      margin-left: 0;
+      gap: 6px;
+    }
+
+    .wffd-actors-inner {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    // Step dot smaller on mobile
+    .wffd-step-dot {
+      margin-top: calc(var(--wffd-card-top) + 6px);
+    }
+
+    .wffd-card-connector {
+      margin-top: calc(var(--wffd-card-top) + 6px);
+    }
+
+    // Reject rule: full-width below, no back-arrow (no spine distance to cover)
+    .wffd-reject-rule {
+      margin-left: calc(var(--wffd-conn-col) + 4px);
+
+      &::before,
+      &::after {
+        display: none;
+      }
+    }
+  }
+
+
+  // =====================================================================
+  //  SMALL PHONES (below 480px)
+  // =====================================================================
+  @media (max-width: 479.98px) {
+    --wffd-spine-col: 36px;
+    --wffd-conn-col:  12px;
+    --wffd-dot-size:  24px;
+    --wffd-card-top:  10px;
+
+    .wffd-card {
+      padding: var(--wffd-card-top) 14px;
+    }
+
+    .wffd-card-title {
+      font-size: 0.9rem;
+    }
+
+    .wffd-card-desc {
+      font-size: 0.78rem;
+    }
+
+    .wffd-step-dot {
+      font-size: 0.72rem;
+    }
+
+    .wffd-terminus-label {
+      font-size: 0.72rem;
+    }
+  }
+}
+
+
+// =============================================================================
+//  Magic-link response page — state option cards
+// =============================================================================
+
+.wf-state-option {
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  background: var(--bs-body-bg, #fff);
+  min-height: 52px;
+
+  &:hover {
+    background: var(--bs-tertiary-bg, #f8f9fa);
+    border-color: var(--bs-primary, #5d87ff) !important;
+  }
+
+  &:has(input:checked) {
+    border-color: var(--bs-primary, #5d87ff) !important;
+    background: rgba(var(--bs-primary-rgb, 93, 135, 255), 0.06);
+  }
+}

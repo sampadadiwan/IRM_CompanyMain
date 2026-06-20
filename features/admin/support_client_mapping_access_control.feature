@@ -26,10 +26,10 @@ Feature: Support Client Mapping Access Control (Policy)
     Given a user exists with role "employee"
     And I am logged in as the employee user
     When I view the support client mappings index
-    Then I should be denied access
+    Then I should be denied access to the mapping
 
   Scenario: Support user cannot switch if mapping is disabled
     Given the mapping is disabled
     And I am logged in as the support user
     When I try to switch to the client entity context
-    Then I should be denied access
+    Then I should be denied access to the mapping

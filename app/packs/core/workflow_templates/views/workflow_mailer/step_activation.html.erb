@@ -1,0 +1,30 @@
+<h3>Hello <%= @user.full_name %>,</h3>
+
+<p>
+  Your input is required for a document review workflow on folder
+  <strong><%= @folder.name %></strong>.
+</p>
+
+<p>
+  <strong>Workflow:</strong> <%= @instance.template_name %><br>
+  <strong>Current step:</strong> <%= @step[:name] %>
+  <% if @step[:description].present? %>
+     : <%= @step[:description] %>
+  <% end %>
+</p>
+
+<p>
+  Please click the button below to record your response.
+  The link is personalised and does not require you to log in.
+</p>
+
+<p>
+  <%= link_to "Review & Respond", @magic_link,
+        style: "display:inline-block;padding:10px 20px;background:#0d6efd;color:#fff;text-decoration:none;border-radius:4px" %>
+</p>
+
+<p style="color:#888;font-size:0.85em;">
+  This link is unique to you. Please do not share it.
+  If the step has already progressed when you open the link,
+  no action is needed.
+</p>

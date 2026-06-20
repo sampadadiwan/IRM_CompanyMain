@@ -3,6 +3,9 @@
       <h6 class="m-0 font-weight-bold text-primary <%=@header_css_class%>">
           <%= @title.html_safe %>
       </h6>
+      <% if @note.present? %>
+        <small class="text-muted d-block mt-1"><%= @note.html_safe %></small>
+      <% end %>
   </div>
   <div class="card-body">
     <%= content %>

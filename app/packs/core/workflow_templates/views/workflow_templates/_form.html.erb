@@ -1,0 +1,76 @@
+<%= render FormCard.new(title: "Workflow Template: #{workflow_template.name.presence || 'New'}") do %>
+  <%= form_with(model: workflow_template, validate: true) do |form| %>
+    <% if workflow_template.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% workflow_template.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <div class="form-group">
+      <%= form.label :name %>
+      <%= form.text_field :name, class: "form-control", placeholder: "e.g. Two-Stage LP Review" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :description %>
+      <%= form.text_area :description, class: "form-control", rows: 2,
+            placeholder: "Optional — shown to actors in notification emails" %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :reminder_interval_days, "Auto-reminder interval (days)" %>
+      <%= form.number_field :reminder_interval_days, class: "form-control", min: 1,
+            placeholder: "Leave blank to disable auto-reminders" %>
+      <small class="text-muted">
+        Pending actors are re-emailed after this many days of inactivity.
+        Individual steps can override or disable this.
+      </small>
+    </div>
+
+    <div class="form-group form-check">
+      <%= form.check_box :attach_document_in_email, class: "form-check-input" %>
+      <%= form.label :attach_document_in_email, "Attach document to notification emails" %>
+      <small class="text-muted d-block">
+        Actors receive the document file in the email so they can review without logging in.
+        Files over 10 MB fall back to a secure link.
+      </small>
+    </div>
+
+    <%# ── Steps ───────────────────────────────────────────────────────────── %>
+    <hr>
+    <h6 class="font-weight-bold">Steps
+      <small class="text-muted fw-normal ms-2">Drag to reorder</small>
+    </h6>
+
+    <%# Stimulus nested-form controller handles add/remove rows %>
+    <div data-controller="nested-form"
+         data-nested-form-wrapper-selector-value=".step-row"
+         data-nested-form-target="target">
+
+      <%= form.fields_for :workflow_steps do |step_form| %>
+        <%= render "workflow_steps/step_row", step_form: step_form,
+              entity_users: entity_users_for_select %>
+      <% end %>
+
+      <template data-nested-form-target="template">
+        <%= form.fields_for :workflow_steps, WorkflowStep.new, child_index: "NEW_RECORD" do |step_form| %>
+          <%= render "workflow_steps/step_row", step_form: step_form,
+                entity_users: entity_users_for_select %>
+        <% end %>
+      </template>
+
+      <%= link_to "#", class: "btn btn-outline-secondary btn-sm mt-2",
+            data: { action: "nested-form#add" } do %>
+        <i class="ti ti-plus"></i> Add Step
+      <% end %>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= form.submit t_common(:save), class: "btn btn-outline-primary" %>
+    </div>
+  <% end %>
+<% end %>

@@ -61,12 +61,12 @@
     <% if belongs_to_entity_id?(current_user, @folder.entity_id) %>
       <tr>
           <td>
-            Defaults 
+            Defaults
           </td>
           <td>
-            Download <%= display_boolean @folder.download %>     
-            &nbsp;&nbsp; Printing <%= display_boolean @folder.printing %>   
-            &nbsp;&nbsp; Original <%= display_boolean @folder.orignal  %>   
+            Download <%= display_boolean @folder.download %>
+            &nbsp;&nbsp; Printing <%= display_boolean @folder.printing %>
+            &nbsp;&nbsp; Original <%= display_boolean @folder.orignal  %>
             <% if @folder.entity.enable_ai_chat %>
               &nbsp;&nbsp; Knowledge Base <%= display_boolean @folder.knowledge_base %>
             <% end %>
@@ -74,7 +74,7 @@
       </tr>
 
     <% end %>
-                  
+
 
 
 
@@ -82,18 +82,18 @@
 
 
   <div>
-    
+
     <%= link_to "Upload / Edit" , edit_folder_path(@folder), {class: "btn btn-outline-primary" } if @folder.level !=0 && policy(@folder).update? %>
 
-    <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id, 
-        "folder[parent_id]": @folder.id), 
-        {class: "btn btn-outline-success"} %> 
+    <%= link_to "Create Sub Folder", new_folder_path("folder[entity_id]": current_user.entity_id,
+        "folder[parent_id]": @folder.id),
+        {class: "btn btn-outline-success"} %>
 
-    <%= button_to t_common(:delete) , @folder, method: :delete, class: "btn btn-outline-danger" , 
-        form_class: "deleteButton" , 
-        data: {action: "click->confirm#popup" , turbo:false} if policy(@folder).destroy? %> |
+    <%= button_to t_common(:delete) , @folder, method: :delete, class: "btn btn-outline-danger" ,
+        form_class: "deleteButton" ,
+        data: {action: "click->confirm#popup" , turbo:false} if policy(@folder).destroy? %>
 
-    <%= link_to "All Documents", documents_path, {class: "btn btn-outline-success"} %> 
+    <%= link_to "All Docs", documents_path, {class: "btn btn-outline-success"} %>
   </div>
 
   <%= render "folders/folder_details" , folder: @folder %>

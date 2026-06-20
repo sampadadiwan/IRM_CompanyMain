@@ -1737,11 +1737,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
     t.boolean "printing", default: false
     t.boolean "private", default: false
     t.datetime "updated_at", null: false
+    t.bigint "workflow_template_id"
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
-    t.index %w[full_path owner_id owner_type entity_id deleted_at], name: "index_folders_on_full_path_and_owner_entity_with_deleted_at", unique: true
-    t.index %w[owner_type owner_id], name: "index_folders_on_owner"
+    t.index ["full_path", "owner_id", "owner_type", "entity_id", "deleted_at"], name: "index_folders_on_full_path_and_owner_entity_with_deleted_at", unique: true
+    t.index ["owner_type", "owner_id"], name: "index_folders_on_owner"
+    t.index ["workflow_template_id"], name: "index_folders_on_workflow_template_id"
   end
 
   create_table "form_custom_fields", force: :cascade do |t|
@@ -3506,6 +3508,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
 
   create_table "support_agents", force: :cascade do |t|
     t.string "agent_type", limit: 30
+    t.string "category"
     t.datetime "created_at", null: false
     t.string "description"
     t.bigint "document_folder_id"
@@ -3862,6 +3865,89 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
     t.index ["user_id"], name: "index_viewed_bies_on_user_id"
   end
 
+  create_table "workflow_actor_responses", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "actor_id", null: false
+    t.boolean "archived", default: false, null: false
+    t.integer "channel", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.text "note"
+    t.datetime "responded_at", null: false
+    t.string "state", null: false
+    t.integer "step_position", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workflow_instance_id", null: false
+    t.index ["actor_id"], name: "index_workflow_actor_responses_on_actor_id"
+    t.index ["workflow_instance_id", "step_position", "actor_id"], name: "index_wf_actor_responses_on_instance_step_actor"
+    t.index ["workflow_instance_id"], name: "index_workflow_actor_responses_on_workflow_instance_id"
+  end
+
+  create_table "workflow_instances", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "current_step_position", default: 1, null: false
+    t.bigint "folder_id", null: false
+    t.bigint "launched_by_id", null: false
+    t.integer "status", default: 0, null: false
+    t.json "template_snapshot", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workflow_template_id", null: false
+    t.index ["folder_id", "status"], name: "index_workflow_instances_on_folder_and_status"
+    t.index ["folder_id"], name: "index_workflow_instances_on_folder_id"
+    t.index ["launched_by_id"], name: "index_workflow_instances_on_launched_by_id"
+    t.index ["workflow_template_id"], name: "index_workflow_instances_on_workflow_template_id"
+  end
+
+  create_table "workflow_state_changes", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "actor_id"
+    t.integer "channel", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.string "from_state"
+    t.text "note"
+    t.integer "step_position", null: false
+    t.string "to_state", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workflow_instance_id", null: false
+    t.index ["actor_id"], name: "index_workflow_state_changes_on_actor_id"
+    t.index ["workflow_instance_id", "step_position"], name: "index_wf_state_changes_on_instance_and_step"
+    t.index ["workflow_instance_id"], name: "index_workflow_state_changes_on_workflow_instance_id"
+  end
+
+  create_table "workflow_step_actors", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.bigint "workflow_step_id", null: false
+    t.index ["user_id"], name: "index_workflow_step_actors_on_user_id"
+    t.index ["workflow_step_id", "user_id"], name: "index_workflow_step_actors_unique", unique: true
+    t.index ["workflow_step_id"], name: "index_workflow_step_actors_on_workflow_step_id"
+  end
+
+  create_table "workflow_steps", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.integer "on_reject_rule", default: 0, null: false
+    t.integer "on_reject_target_step"
+    t.integer "position", null: false
+    t.integer "quorum_rule", default: 0, null: false
+    t.integer "reminder_interval_days"
+    t.string "states", default: "Approved,Rejected,Needs Info", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "workflow_template_id", null: false
+    t.index ["workflow_template_id", "position"], name: "index_workflow_steps_on_template_and_position", unique: true
+    t.index ["workflow_template_id"], name: "index_workflow_steps_on_workflow_template_id"
+  end
+
+  create_table "workflow_templates", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.boolean "attach_document_in_email", default: false, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.bigint "entity_id", null: false
+    t.string "name", null: false
+    t.integer "reminder_interval_days"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
+  end
+
   add_foreign_key "access_rights", "entities"
   add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
   add_foreign_key "access_rights", "users"
@@ -3971,6 +4057,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
   add_foreign_key "commitment_adjustments", "funds"
   add_foreign_key "custom_notifications", "entities"
   add_foreign_key "custom_notifications", "folders", column: "document_folder_id"
+  add_foreign_key "customer_support_escalations", "agent_chat_sessions"
+  add_foreign_key "customer_support_escalations", "entities"
+  add_foreign_key "customer_support_escalations", "users"
+  add_foreign_key "customer_support_escalations", "users", column: "resolved_by_id"
   add_foreign_key "dashboard_widgets", "entities"
   add_foreign_key "deal_activities", "deal_investors"
   add_foreign_key "deal_activities", "deals"
@@ -4026,11 +4116,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
   add_foreign_key "favorites", "users"
   add_foreign_key "fees", "entities"
   add_foreign_key "folders", "entities"
+  add_foreign_key "folders", "workflow_templates"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
   add_foreign_key "fund_formulas", "entities"
   add_foreign_key "fund_formulas", "funds"
+  add_foreign_key "fund_ratio_run_templates", "entities"
+  add_foreign_key "fund_ratio_run_templates", "funds", column: "anchor_fund_id"
+  add_foreign_key "fund_ratio_run_templates", "users"
   add_foreign_key "fund_ratio_runs", "entities"
+  add_foreign_key "fund_ratio_runs", "fund_ratio_run_templates"
   add_foreign_key "fund_ratio_runs", "funds", column: "anchor_fund_id"
   add_foreign_key "fund_ratio_runs", "users"
   add_foreign_key "fund_ratios", "capital_commitments"
@@ -4172,11 +4267,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
   add_foreign_key "portfolio_investments", "investment_instruments"
   add_foreign_key "portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_investments", "valuations"
+  add_foreign_key "portfolio_report_drafts", "documents", column: "generated_document_id"
+  add_foreign_key "portfolio_report_drafts", "investors", column: "portfolio_company_id"
+  add_foreign_key "portfolio_report_drafts", "portfolio_report_templates"
+  add_foreign_key "portfolio_report_drafts", "portfolio_reports"
+  add_foreign_key "portfolio_report_drafts", "users"
   add_foreign_key "portfolio_report_extracts", "entities"
   add_foreign_key "portfolio_report_extracts", "investors", column: "portfolio_company_id"
   add_foreign_key "portfolio_report_extracts", "portfolio_report_sections"
   add_foreign_key "portfolio_report_extracts", "portfolio_reports"
   add_foreign_key "portfolio_report_sections", "portfolio_reports"
+  add_foreign_key "portfolio_report_templates", "documents", column: "style_document_id"
+  add_foreign_key "portfolio_report_templates", "portfolio_reports"
   add_foreign_key "portfolio_reports", "entities"
   add_foreign_key "portfolio_reports", "folders", column: "document_folder_id"
   add_foreign_key "portfolio_scenarios", "entities"
@@ -4209,6 +4311,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
   add_foreign_key "secondary_sales", "form_types", column: "interest_form_type_id"
   add_foreign_key "secondary_sales", "form_types", column: "offer_form_type_id"
   add_foreign_key "secondary_sales", "form_types", column: "secondary_sale_form_type_id"
+  add_foreign_key "simulation_events", "simulation_runs"
+  add_foreign_key "simulation_runs", "kyc_onboardings"
   add_foreign_key "stamp_papers", "entities"
   add_foreign_key "stock_adjustments", "entities"
   add_foreign_key "stock_adjustments", "investment_instruments"
@@ -4254,4 +4358,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
   add_foreign_key "video_kycs", "users"
   add_foreign_key "viewed_bies", "entities"
   add_foreign_key "viewed_bies", "users"
+  add_foreign_key "workflow_actor_responses", "users", column: "actor_id"
+  add_foreign_key "workflow_actor_responses", "workflow_instances"
+  add_foreign_key "workflow_instances", "folders"
+  add_foreign_key "workflow_instances", "users", column: "launched_by_id"
+  add_foreign_key "workflow_instances", "workflow_templates"
+  add_foreign_key "workflow_state_changes", "users", column: "actor_id"
+  add_foreign_key "workflow_state_changes", "workflow_instances"
+  add_foreign_key "workflow_step_actors", "users"
+  add_foreign_key "workflow_step_actors", "workflow_steps"
+  add_foreign_key "workflow_steps", "workflow_templates"
+  add_foreign_key "workflow_templates", "entities"
 end

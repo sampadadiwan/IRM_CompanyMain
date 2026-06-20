@@ -11,8 +11,98 @@
     </ul>
   </div>
 </div>
-<div class="row g-4" style="align-items: flex-start;">
-  <% @support_agents.each do |support_agent| %>
-    <%= render "support_agent_card", support_agent: support_agent %>
+
+<div data-controller="filter-agents">
+  <%# ── Search bar ────────────────────────────────────────────── %>
+  <div class="input-group mb-4">
+    <input type="text"
+           data-filter-agents-target="query"
+           data-action="input->filter-agents#filter"
+           class="form-control border-end-0"
+           placeholder="Filter agents by name, category, description…"
+           autofocus>
+    <span class="input-group-text bg-white border-start-0">
+      <i class="ti ti-search text-secondary"></i>
+    </span>
+    <button class="btn btn-outline-secondary"
+            data-action="click->filter-agents#clear"
+            data-filter-agents-target="clearButton"
+            type="button"
+            style="display: none;">
+      <i class="ti ti-x"></i>
+    </button>
+  </div>
+
+  <%
+    # Map each predefined category to a color + icon + soft background for the section accent
+    category_styles = {
+      "Ops"        => { color: "#4f46e5", icon: "ti-settings" },
+      "Finance"    => { color: "#059669", icon: "ti-currency-dollar" },
+      "Portfolio"  => { color: "#7c3aed", icon: "ti-chart-pie" },
+      "Onboarding" => { color: "#0891b2", icon: "ti-user-plus" },
+      "Other"      => { color: "#64748b", icon: "ti-dots" }
+    }
+    uncategorized_style = { color: "#94a3b8", icon: "ti-help" }
+    default_style       = { color: "#475569", icon: "ti-tag" }
+
+    category_order = SupportAgent::CATEGORIES
+
+    # Sort: predefined categories in CATEGORIES order → custom values alphabetically → nil last
+    sorted_groups = @support_agents.group_by(&:category).sort_by do |cat, _agents|
+      if cat.nil?
+        [2, "", ""]
+      elsif category_order.include?(cat)
+        [0, category_order.index(cat), ""]
+      else
+        [1, cat.to_s.downcase, ""]
+      end
+    end
+  %>
+
+  <% sorted_groups.each do |category, agents| %>
+    <%
+      label = category.presence || "Uncategorized"
+      style = if category.nil?
+                uncategorized_style
+              elsif category_styles.key?(category)
+                category_styles[category]
+              else
+                default_style
+              end
+      count = agents.size
+
+      # Dynamic column class so single- and double-card sections fill the row nicely
+      col_class = case count
+                  when 1 then "col-xl-6 col-lg-8 offset-xl-3 offset-lg-2 mb-4"
+                  when 2 then "col-xl-6 col-lg-6 mb-4"
+                  else        "col-xl-4 col-lg-6 mb-4"
+                  end
+
+      # Subtle section tint so the group reads as a "shelf" with the cards floating on top
+      bg_tint = style[:color].then { |c| "#{c}0A" } # ~4% alpha hex
+    %>
+    <section class="support-agent-category-section mb-5"
+             data-filter-agents-target="section"
+             style="border-left: 4px solid <%= style[:color] %>; background: <%= bg_tint %>; border-radius: 0 12px 12px 0; padding: 1rem 1.25rem 0.25rem;">
+      <header class="d-flex align-items-center gap-2 mb-3 pt-1">
+        <h4 class="h5 mb-0 d-flex align-items-center gap-2" style="color: <%= style[:color] %>;">
+          <i class="ti <%= style[:icon] %>"></i>
+          <%= label %>
+        </h4>
+        <span class="badge rounded-pill" style="background: <%= style[:color] %>; color: #fff;"><%= count %></span>
+      </header>
+
+      <div class="row g-4" style="align-items: flex-start;">
+        <% agents.each do |support_agent| %>
+          <%= render "support_agent_card", support_agent: support_agent, col_class: col_class %>
+        <% end %>
+      </div>
+    </section>
   <% end %>
+
+  <%# ── No results message ────────────────────────────────────────── %>
+  <div data-filter-agents-target="noResults" class="d-none text-center py-5">
+    <i class="ti ti-search-off" style="font-size: 2.5rem; color: #94a3b8;"></i>
+    <p class="mt-3 text-secondary fs-5">No agents match your filter</p>
+  </div>
 </div>

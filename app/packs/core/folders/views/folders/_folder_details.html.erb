@@ -5,6 +5,9 @@
       <% unless (["Fund", "Deal", "SecondarySale"].include?(folder.owner_type) && params[:debug].blank? && !folder_with_access_rights.include?(folder.name)) %>
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#access-rights-tab">Access Rights</a>
       <% end %>
+      <% if policy(folder).assign_workflow? %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+      <% end %>
 
     </nav>
 
@@ -27,6 +30,13 @@
                         entity: folder.entity, show_steps: false, no_folders: true %>
           </div>
         </div>
+
+        <%# Workflow tab — company_admin only %>
+        <% if policy(folder).assign_workflow? %>
+          <div id="workflow-tab" class="tab-pane fade">
+            <%= render "folders/workflow_tab", folder: folder %>
+          </div>
+        <% end %>
 
     </div>
 

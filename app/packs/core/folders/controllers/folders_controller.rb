@@ -59,6 +59,10 @@ class FoldersController < ApplicationController
     @folder.entity_id = @folder.parent.entity_id
     authorize @folder
 
+    # Strip workflow_template_id on create just as update does — any entity member
+    # can POST folder[workflow_template_id] so we must enforce the permission here too
+    @folder.workflow_template_id = nil if folder_params.key?(:workflow_template_id) && !policy(@folder).assign_workflow?
+
     setup_doc_user(@folder)
 
     respond_to do |format|
@@ -75,9 +79,14 @@ class FoldersController < ApplicationController
   # PATCH/PUT /folders/1 or /folders/1.json
   def update
     setup_doc_user(@folder)
+    # Strip workflow_template_id if the user lacks assign_workflow? permission
+    safe_params = folder_params
+    if safe_params.key?(:workflow_template_id) && !policy(@folder).assign_workflow?
+      safe_params = safe_params.except(:workflow_template_id)
+    end
 
     respond_to do |format|
-      if @folder.update(folder_params)
+      if @folder.update(safe_params)
         format.html { redirect_to folder_url(@folder), notice: "Folder was successfully updated." }
         format.json { render :show, status: :ok, location: @folder }
       else
@@ -107,6 +116,6 @@ class FoldersController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def folder_params
-    params.require(:folder).permit(:name, :knowledge_base, :parent_id, :full_path, :level, :entity_id, :download, :printing, :orignal, docs: [], documents_attributes: Document::NESTED_ATTRIBUTES)
+    params.require(:folder).permit(:name, :knowledge_base, :parent_id, :full_path, :level, :entity_id, :download, :printing, :orignal, :workflow_template_id, docs: [], documents_attributes: Document::NESTED_ATTRIBUTES)
   end
 end
