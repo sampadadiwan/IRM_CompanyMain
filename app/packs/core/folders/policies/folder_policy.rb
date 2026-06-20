@@ -47,8 +47,9 @@ class FolderPolicy < ApplicationPolicy
     user.entity_id == record.entity_id
   end
 
-  # Only company_admin can assign / remove a workflow template on a folder
+  # Only company_admin can assign / remove a workflow template on a folder,
+  # and only when the entity has workflow_templates enabled.
   def assign_workflow?
-    user.company_admin? && belongs_to_entity?(user, record)
+    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
   end
 end

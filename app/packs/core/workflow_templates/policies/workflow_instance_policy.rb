@@ -8,17 +8,17 @@ class WorkflowInstancePolicy < ApplicationPolicy
 
   # Any entity employee may view an instance for a folder they can access
   def show?
-    belongs_to_entity?(user, record.folder)
+    workflow_templates_enabled? && belongs_to_entity?(user, record.folder)
   end
 
   # Only company_admin can launch a new instance
   def create?
-    user.company_admin? && belongs_to_entity?(user, record.folder)
+    workflow_templates_enabled? && user.company_admin? && belongs_to_entity?(user, record.folder)
   end
 
   # Admin-only: manually push a step to a specific resolved state (tiebreaker / override)
   def advance?
-    user.company_admin? && belongs_to_entity?(user, record.folder)
+    workflow_templates_enabled? && user.company_admin? && belongs_to_entity?(user, record.folder)
   end
 
   # Admin-only: reset instance to step 1
@@ -38,6 +38,12 @@ class WorkflowInstancePolicy < ApplicationPolicy
 
   # Any entity employee with view access can export the audit trail CSV
   def export_audit_trail?
-    belongs_to_entity?(user, record.folder)
+    workflow_templates_enabled? && belongs_to_entity?(user, record.folder)
+  end
+
+  private
+
+  def workflow_templates_enabled?
+    user.entity&.permissions&.enable_workflow_templates?
   end
 end

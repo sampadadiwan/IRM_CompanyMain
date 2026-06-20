@@ -8,16 +8,16 @@ class WorkflowTemplatePolicy < ApplicationPolicy
 
   # Scope already filters to user.entity_id; authorize(class) has no .entity_id, so return true
   def index?
-    true
+    workflow_templates_enabled?
   end
 
   def show?
-    belongs_to_entity?(user, record)
+    workflow_templates_enabled? && belongs_to_entity?(user, record)
   end
 
   # Only company_admin can mutate templates
   def create?
-    user.company_admin? && belongs_to_entity?(user, record)
+    workflow_templates_enabled? && user.company_admin? && belongs_to_entity?(user, record)
   end
 
   def new?
@@ -34,5 +34,11 @@ class WorkflowTemplatePolicy < ApplicationPolicy
 
   def destroy?
     create?
+  end
+
+  private
+
+  def workflow_templates_enabled?
+    user.entity&.permissions&.enable_workflow_templates?
   end
 end

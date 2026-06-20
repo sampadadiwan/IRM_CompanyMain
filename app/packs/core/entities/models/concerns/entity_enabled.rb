@@ -14,7 +14,7 @@ module EntityEnabled
     # inserting in the middle shifts bit positions and corrupts existing data.
     # @see EntityDashboard for Administrate field rendering
     # @note enable_mcp gates AI client integration (MCP server access) as a chargeable feature
-    flag :permissions, %i[enable_documents enable_deals enable_investments enable_unused enable_secondary_sale enable_funds enable_inv_opportunities enable_options enable_captable enable_investors enable_account_entries enable_units enable_fund_portfolios enable_kpis enable_kycs enable_support enable_approvals enable_reports enable_whatsapp enable_kanban enable_import_uploads enable_investor_advisors enable_form_types enable_user_llm_chat enable_doc_llm_validation enable_compliance enable_sebi_fields enable_ai_chat enable_snapshots enable_data_rooms enable_ckyc enable_kra enable_tracking_currency enable_mcp]
+    flag :permissions, %i[enable_documents enable_deals enable_investments enable_unused enable_secondary_sale enable_funds enable_inv_opportunities enable_options enable_captable enable_investors enable_account_entries enable_units enable_fund_portfolios enable_kpis enable_kycs enable_support enable_approvals enable_reports enable_whatsapp enable_kanban enable_import_uploads enable_investor_advisors enable_form_types enable_user_llm_chat enable_doc_llm_validation enable_compliance enable_sebi_fields enable_ai_chat enable_snapshots enable_data_rooms enable_ckyc enable_kra enable_tracking_currency enable_mcp enable_workflow_templates]
 
     flag :customization_flags, %i[investor_kyc_custom_cols capital_commitment_custom_cols capital_remittance_custom_cols capital_distribution_payment_custom_cols investor_custom_cols enable_exchange_rate_commitment_adjustment]
 
