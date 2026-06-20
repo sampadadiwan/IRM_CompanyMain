@@ -92,7 +92,7 @@ class EsignMonitorAgent < SupportAgentService
     true
   end
 
-  # Surfaces documents with expired, cancelled, or voided e-sign status.
+  # Surfaces documents with expired, cancelled, voided, or failed e-sign status.
   #
   # Configurable: flag_expired — "true"/"false"
   def flag_expired_esigns(ctx, target:, **)
@@ -104,29 +104,35 @@ class EsignMonitorAgent < SupportAgentService
       return true
     end
 
-    expired_docs = Document
+    flagged_docs = Document
                    .where(entity_id: target.id)
                    .sent_for_esign
-                   .where(esign_status: %w[expired cancelled voided])
+                   .where(esign_status: %w[expired cancelled voided failed])
                    .joins(:e_signatures)
                    .where.not(e_signatures: { email: [nil, ""] })
                    .distinct
 
-    expired_docs.each do |doc|
+    flagged_docs.each do |doc|
+      message = if doc.esign_status == "failed"
+                  "E-sign failed — check provider logs and re-initiate manually"
+                else
+                  "E-sign #{doc.esign_status} — re-initiate manually from the document page"
+                end
+
       ctx[:issues][:esign_issues] << {
         type: :expired, name: doc.name,
-        message: "E-sign #{doc.esign_status} — re-initiate manually from the document page",
+        message: message,
         severity: :blocking
       }
     end
 
-    if expired_docs.empty?
+    if flagged_docs.empty?
       ctx[:issues][:esign_issues] << {
-        type: :info, message: "No expired or voided e-sign documents", severity: :success
+        type: :info, message: "No expired, voided, or failed e-sign documents", severity: :success
       }
     end
 
-    Rails.logger.info { "[EsignMonitorAgent] Found #{expired_docs.size} expired/voided e-sign document(s)" }
+    Rails.logger.info { "[EsignMonitorAgent] Found #{flagged_docs.size} expired/voided/failed e-sign document(s)" }
     true
   end
 
@@ -135,11 +141,12 @@ class EsignMonitorAgent < SupportAgentService
   # Does not resend any documents — notification only.
   def notify_stakeholders(ctx, target:, **)
     pending_docs    = ctx[:pending_docs]
-    expired_issues  = ctx[:issues][:esign_issues].select { |i| i[:type] == :expired }
+    expired_issues  = ctx[:issues][:esign_issues].select { |i| i[:type].to_s == "expired" }
 
-    # Record per-document signatory detail for the report
+    # Record per-document signatory detail for the report.
+    # Filter in Ruby — e_signatures are already eager-loaded; calling a scope would re-query.
     pending_docs.each do |doc|
-      pending_signers = doc.e_signatures.not_signed.select { |s| s.email.present? }
+      pending_signers = doc.e_signatures.select { |s| s.email.present? && s.status != "signed" }
       signer_labels   = pending_signers.map { |s| s.label.presence || s.email }
 
       ctx[:issues][:esign_issues] << {
@@ -197,12 +204,13 @@ class EsignMonitorAgent < SupportAgentService
   end
 
   # Serialises pending documents into a plain-hash structure safe to pass as mailer params.
+  # Filters in Ruby — e_signatures are already eager-loaded by find_pending_esigns.
   def build_pending_docs_data(docs)
     docs.map do |doc|
-      pending_signers = doc.e_signatures.not_signed.select { |s| s.email.present? }
+      pending_signers = doc.e_signatures.select { |s| s.email.present? && s.status != "signed" }
       {
-        name:           doc.name,
-        days_waiting:   ((Time.current - doc.updated_at) / 1.day).floor,
+        name:            doc.name,
+        days_waiting:    ((Time.current - doc.updated_at) / 1.day).floor,
         pending_signers: pending_signers.map { |s| { email: s.email, label: s.label } }
       }
     end

@@ -102,12 +102,9 @@ tbody tr:hover td{
 
 
 .no_hover_table {
-  tbody tr:nth-child(even):hover td{
+  tbody tr:hover td {
     background-color: unset !important;
-  }
-
-  tbody tr:nth-child(odd):hover td {
-      background-color: unset !important;
+    box-shadow: none !important;
   }
 }
 
