@@ -1509,6 +1509,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
     t.string "cc"
     t.boolean "ckyc_kra_enabled"
     t.datetime "created_at", null: false
+    t.boolean "cs_judge_enabled", default: true, null: false
+    t.string "cs_judge_model"
     t.text "custom_dashboards"
     t.integer "custom_flags", default: 0
     t.string "db_dumps_custom_days"

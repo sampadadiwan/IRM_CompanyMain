@@ -34,8 +34,6 @@ Scenario Outline: Login Successfully, without password
   And the user receives an email with "<subject>" in the subject
   And when I click on the link in the email "<link>"
   Then I should see the "<login_msg>"
-  And the user should be confirmed
-
   Examples:
   	|user	  |login_msg	            | subject                         | link         | msg |
   	|  	    |Signed in successfully| Login Link: Expires in 10 minutes |Click To Login|If that address is registered, a login link is on its way.|
@@ -50,12 +48,4 @@ Scenario Outline: Login Incorrectly
   Examples:
   	|user		|msg	|
   	|	      |Invalid email or password|
-
-Scenario: Invited user receives a confirmation email branded with their entity name
-  Given Im logged in as a user "" for an entity "entity_type=Company"
-  And the user has role "company_admin"
-  And I am at the users page
-  When I create a new user "first_name=Tim;email=invitee@gmail.com"
-  Then an user should be created
-  And the new user receives a confirmation email welcoming them to their entity
 

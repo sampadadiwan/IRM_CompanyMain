@@ -150,8 +150,6 @@ class UsersController < ApplicationController
     end
 
     ActiveRecord::Base.connected_to(role: :writing) do
-      # Confirm user if not confirmed, as they have used their email link to login
-      @user.confirm unless @user.confirmed?
       sign_in @user
       # Set support_user_id in session so the audit trail records who actually made changes.
       # See ApplicationController#current_user_or_support_user and config/initializers/audited.rb

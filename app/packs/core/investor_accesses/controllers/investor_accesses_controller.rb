@@ -66,7 +66,6 @@ class InvestorAccessesController < ApplicationController
   def new
     @investor_access = InvestorAccess.new(investor_access_params)
     @investor_access.approved = true
-    @investor_access.send_confirmation = true
 
     authorize @investor_access
 
@@ -186,7 +185,7 @@ class InvestorAccessesController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def investor_access_params
-    params.require(:investor_access).permit(:investor_id, :user_id, :email, :cc, :approved, :send_confirmation,
+    params.require(:investor_access).permit(:investor_id, :user_id, :email, :cc, :approved,
                                             :phone, :whatsapp_enabled, :granted_by, :entity_id, :first_name, :last_name, :call_code, :email_enabled, :tag_list)
   end
 end

@@ -110,7 +110,7 @@ class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable, :trackable,
-         :recoverable, :rememberable, :validatable, :confirmable, :lockable, :api
+         :recoverable, :rememberable, :validatable, :lockable, :api
 
   # Override Devise::Models::Trackable to ensure the sign-in tracking
   # writes (sign_in_count, current_sign_in_at, etc.) always go to the

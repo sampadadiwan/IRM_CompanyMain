@@ -59,9 +59,6 @@ When(/^I fill the password incorrectly and submit the login page$/) do
 end
 
 When('I fill and submit the login without password') do
-  @user.confirmed_at = nil
-  @user.save
-
   fill_in('user_email_wo_pass', with: @user.email)
   sleep(5)
   click_on("Log In Via Email Link")

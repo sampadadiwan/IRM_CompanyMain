@@ -11,7 +11,6 @@ class FetchOrCreateUser < Trailblazer::Operation
                       email: email, entity_id: entity_id, password: password)
 
       if user.valid?
-        user.confirm
         created_new_user = user.save
         user.add_role(role) if created_new_user
       else

@@ -12,19 +12,12 @@ module Users
 
       yield resource if block_given?
       if resource.persisted?
-        if resource.active_for_authentication?
-          set_flash_message! :notice, :signed_up
-          sign_up(resource_name, resource)
-          respond_with resource, location: after_sign_up_path_for(resource)
-        else
-          set_flash_message! :notice, :"signed_up_but_#{resource.inactive_message}"
-          expire_data_after_sign_in!
-          respond_with resource, location: after_inactive_sign_up_path_for(resource)
-        end
+        # create is always called by an authenticated admin (authenticate_user! above),
+        # so we redirect to the new user's page without signing them in.
+        redirect_to user_path(resource), notice: "User was successfully created."
       else
         clean_up_passwords resource
         set_minimum_password_length
-        # respond_with resource
         redirect_to new_user_path(params.to_unsafe_h), alert: resource.errors.full_messages.join(", ")
       end
     end

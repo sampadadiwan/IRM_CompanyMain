@@ -118,12 +118,6 @@ class InvestorAccess < ApplicationRecord
                    entity_id: investor.investor_entity_id, password: SecureRandom.hex(8))
       u.call_code = call_code if call_code.present?
 
-      # Upload of IAs has a col to prevent confirmations, lets honour that
-      unless send_confirmation
-        Rails.logger.debug { "############# Skipping Confirmation for #{u.email}" }
-        u.skip_confirmation!
-      end
-
       # Save the user
       u.save
 

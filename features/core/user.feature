@@ -14,10 +14,10 @@ Scenario Outline: Create new user
 
   Examples:
   	|roles                      |entity                     |user                                 |msg	|
-  	|investor	  |entity_type=Investor             |first_name=Mohith;email=m1@gmail.com |A message with a confirmation link has been sent to your email address.|
-    |employee   	                |entity_type=Company        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
-    |investor  	        |entity_type=Investment Advisor        |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
-    |investor  	        |entity_type=Family Office  |first_name=Tim;email=m2@gmail.com    |A message with a confirmation link has been sent to your email address.|
+  	|investor	  |entity_type=Investor             |first_name=Mohith;email=m1@gmail.com |User was successfully created.|
+    |employee   	                |entity_type=Company        |first_name=Tim;email=m2@gmail.com    |User was successfully created.|
+    |investor  	        |entity_type=Investment Advisor        |first_name=Tim;email=m2@gmail.com    |User was successfully created.|
+    |investor  	        |entity_type=Family Office  |first_name=Tim;email=m2@gmail.com    |User was successfully created.|
     
 # Scenario Outline: Update a user
 #   Given Im logged in as a user "" for an entity "entity_type=Company"

@@ -59,7 +59,6 @@ Rails.application.routes.draw do
     # We no longer allow users to register on their own
     registrations: "users/registrations",
     passwords: "users/passwords",
-    confirmations: 'users/confirmations',
     sessions: 'users/sessions'
   }
 

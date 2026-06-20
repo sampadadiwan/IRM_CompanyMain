@@ -27,7 +27,6 @@ class UserDashboard < Administrate::BaseDashboard
     active: Field::BooleanEmoji,
     enable_support: Field::BooleanEmoji,
     whatsapp_enabled: Field::BooleanEmoji,
-    confirmed_at: Field::DateTime,
     roles: Field::HasMany,
     curr_role: Field::Select.with_options(collection: ["", "employee", "investor"]),
     regions: Field::String,
@@ -70,7 +69,6 @@ class UserDashboard < Administrate::BaseDashboard
     enable_support
     last_sign_in_at
     sign_in_count
-    confirmed_at
     curr_role
     entity_type
     advisor_entity

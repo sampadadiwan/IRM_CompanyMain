@@ -225,7 +225,6 @@ FactoryBot.define do
     email { Faker::Internet.email }
     cc { Faker::Internet.email }
     phone { rand(10**10) }
-    send_confirmation { false }
     approved { true }
   end
 

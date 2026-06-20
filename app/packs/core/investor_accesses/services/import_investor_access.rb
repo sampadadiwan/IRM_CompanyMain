@@ -1,7 +1,7 @@
 class ImportInvestorAccess < ImportUtil
   step nil, delete: :create_custom_fields
 
-  STANDARD_HEADERS = ["Stakeholder", "First Name", "Last Name", "Email", "Email Enabled", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved", "Send Confirmation Email"].freeze
+  STANDARD_HEADERS = ["Stakeholder", "First Name", "Last Name", "Email", "Email Enabled", "Cc", "Country Code", "Phone", "WhatsApp Enabled", "Approved"].freeze
 
   def standard_headers
     STANDARD_HEADERS
@@ -31,8 +31,7 @@ class ImportInvestorAccess < ImportUtil
                             email: user_data["Email"], email_enabled:, phone: user_data["Phone"].to_s,
                             approved:, whatsapp_enabled:, cc: user_data["Cc"],
                             entity_id: import_upload.entity_id, investor_id: investor.id,
-                            granted_by: import_upload.user_id, import_upload_id: import_upload.id,
-                            send_confirmation: user_data["Send Confirmation Email"] == "Yes")
+                            granted_by: import_upload.user_id, import_upload_id: import_upload.id)
 
     Rails.logger.debug { "Saving InvestorAccess with email '#{ia.email}'" }
     ia.save!
