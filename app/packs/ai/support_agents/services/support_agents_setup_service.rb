@@ -60,6 +60,7 @@ class SupportAgentsSetupService
     # ── New agent FormTypes (created when missing) ─────────────────────────────
     {
       tag: "KycDocExtractorAgent",
+      category: "Onboarding",
       agent: {
         name:       "KYC Doc Extractor",
         with_steps: false,
@@ -75,6 +76,7 @@ class SupportAgentsSetupService
     },
     {
       tag: "DistributionReadinessAgent",
+      category: "Finance",
       agent: {
         name:       "Distribution Readiness",
         with_steps: true,
@@ -111,6 +113,7 @@ class SupportAgentsSetupService
     },
     {
       tag: "EsignMonitorAgent",
+      category: "Ops",
       agent: {
         name:       "E-Sign Monitor",
         with_steps: false,
@@ -143,6 +146,7 @@ class SupportAgentsSetupService
     },
     {
       tag: "DataQualityAgent",
+      category: "Ops",
       agent: {
         name:       "Data Quality",
         with_steps: false,
@@ -195,6 +199,7 @@ class SupportAgentsSetupService
     },
     {
       tag: "NoteSummarizerAgent",
+      category: "Ops",
       agent: {
         name:       "Note Summarizer",
         with_steps: false,
@@ -235,6 +240,7 @@ class SupportAgentsSetupService
     },
     {
       tag: "DealManagementAgent",
+      category: "Portfolio",
       agent: {
         name:       "Deal Management",
         with_steps: false,
@@ -324,6 +330,7 @@ class SupportAgentsSetupService
     },
     {
       tag: "PortfolioScoringAgent",
+      category: "Portfolio",
       agent: {
         name:       "Portfolio Scoring Agent",
         with_steps: false,
@@ -376,6 +383,7 @@ class SupportAgentsSetupService
     # ── PresentationAnalystAgent ─────────────────────────────────────────────────
     {
       tag: "PresentationAnalystAgent",
+      category: "Portfolio",
       agent: {
         name:       "Investor Presentation Analyst",
         with_steps: true, # shows the 7-step progress panel in the agent UI
@@ -424,6 +432,38 @@ class SupportAgentsSetupService
                      "Must support a large context window (≥500K tokens) to process full presentations " \
                      "without truncation. Default: gemini-3-flash (1M token context)." }
       ]
+    },
+
+    # ── Additional agents (category provisioning only) ───────────────────────────
+    {
+      tag: "FundStatsAgent",
+      category: "Ops",
+      agent: { name: "Fund Stats", with_steps: false, json_fields: {} },
+      fields: []
+    },
+    {
+      tag: "PortfolioReportAgent",
+      category: "Portfolio",
+      agent: { name: "Portfolio Report", with_steps: false, json_fields: {} },
+      fields: []
+    },
+    {
+      tag: "CallNoticeAgent",
+      category: "Ops",
+      agent: { name: "Call Notice", with_steps: false, json_fields: {} },
+      fields: []
+    },
+    {
+      tag: "CashFlowAssistantAgent",
+      category: "Ops",
+      agent: { name: "Cash Flow Assistant", with_steps: false, json_fields: {} },
+      fields: []
+    },
+    {
+      tag: "DealsReportAgent",
+      category: "Deal",
+      agent: { name: "Deals Report", with_steps: false, json_fields: {} },
+      fields: []
     }
   ].freeze
 
@@ -546,15 +586,20 @@ class SupportAgentsSetupService
         with_steps:   agent_cfg[:with_steps],
         enabled:      true,
         llm_model:    DEFAULT_LLM_MODEL,
+        category:     cfg[:category],
         json_fields:  agent_cfg[:json_fields] || {}
       )
       sa.save!
       log "    [agent] Created #{tag} (ID=#{sa.id})"
     else
+      updates = {}
       # Merge new json_fields keys without overwriting existing values set via UI
       merged = agent_cfg[:json_fields].merge(sa.json_fields || {})
-      sa.update!(json_fields: merged)
-      log "    [agent] Updated #{tag} (ID=#{sa.id}) — merged json_fields"
+      updates[:json_fields] = merged
+      # Backfill category on existing records that lack one
+      updates[:category] = cfg[:category] if sa.category.blank? && cfg[:category]
+      sa.update!(updates)
+      log "    [agent] Updated #{tag} (ID=#{sa.id}) — merged json_fields#{', set category' if updates.key?(:category)}"
     end
 
     setup_schedule(sa, agent_cfg[:schedule]) if agent_cfg[:schedule]
