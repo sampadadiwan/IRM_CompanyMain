@@ -43,6 +43,38 @@ class DealManagementAgent < SupportAgentService
   CHARS_PER_DOC        = 5_000   # per-document text cap before truncation
   CHARS_TOTAL          = 50_000  # per-investor total cap; oldest docs truncated first
 
+  # Built-in scoring rubric used when no scoring_skill_file is uploaded.
+  # Upload a custom scoring_skill_file document to override this with a deal-specific rubric.
+  DEFAULT_SCORING_RUBRIC = <<~RUBRIC.freeze
+    You are an expert deal analyst evaluating an investor's likelihood to commit to this deal.
+    Score the investor across these four dimensions (weights must sum to 1.0):
+
+    1. Engagement & Responsiveness (weight 0.30)
+       How actively is the investor participating? Are activities completed on time?
+       Are there overdue steps, stagnant periods, or prompt responses?
+
+    2. Document Readiness (weight 0.25)
+       Have they submitted required documents (term sheets, KYC, agreements)?
+       Are activity attachments present and recent?
+
+    3. Commitment Signals (weight 0.25)
+       Do notes and documents signal intent to invest?
+       Is a specific amount discussed? Is the investor asking detailed diligence questions?
+
+    4. Pipeline Health (weight 0.20)
+       Where is the investor in the pipeline? Are they progressing through stages?
+       Are there any blockers or red flags in their activity history?
+
+    Scoring guidelines:
+    - 90–100: Exceptional — clear commitment, all docs ready, fast responses
+    - 80–89 : Strong — actively engaged, minor gaps only
+    - 70–79 : Good — on track, some follow-ups needed
+    - 60–69 : Adequate — engaged but slow or missing items
+    - 50–59 : Mixed — inconsistent engagement or significant gaps
+    - 40–49 : Underperforming — stalled, missing key documents or responses
+    - 0–39  : Distressed — no activity, unlikely to commit without intervention
+  RUBRIC
+
   STEP_LABELS = {
     initialize_agent: "Initialize",
     check_deal_progress: "Deal Progress",
@@ -418,8 +450,8 @@ class DealManagementAgent < SupportAgentService
   # Creates a new report each run (not upsert) so history accumulates.
   # mark_as_latest! flips the latest flag on the new record and clears it on all prior ones.
   def generate_progress_reports(ctx, support_agent:, deal: nil, **)
-    step_report = ctx[:support_agent_report]
-    mark_step_running(step_report, :generate_progress_reports) if step_report
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :generate_progress_reports) if report
 
     alert_user(ctx, "Saving report for '#{deal&.name}'…", :info)
 
@@ -427,9 +459,12 @@ class DealManagementAgent < SupportAgentService
 
     has_blocking = ctx[:issues].values.flatten.any? { |i| i[:severity] == :blocking }
 
-    report = SupportAgentReport.new(owner: deal, support_agent: support_agent)
-    report.status = has_blocking ? SupportAgentReport.statuses[:failed] : SupportAgentReport.statuses[:completed]
-    report.json_fields = ctx[:issues].transform_keys(&:to_s).merge(
+    # Use the step-tracking report (from initialize_report_with_steps) if available,
+    # otherwise find or create one (non-step scheduled/batch runs).
+    report ||= SupportAgentReport.find_or_initialize_by(owner: deal, support_agent: support_agent)
+
+    # Merge issues data into existing json_fields — preserves steps from initialize_report_with_steps
+    report.json_fields = (report.json_fields || {}).merge(ctx[:issues].transform_keys(&:to_s)).merge(
       "final_status" => has_blocking ? "blocked" : "ready",
       "completed_at" => Time.current.iso8601,
       "run_at" => ctx[:run_at] || Time.current.iso8601,
@@ -439,14 +474,15 @@ class DealManagementAgent < SupportAgentService
       "score_leaderboard" => ctx[:score_leaderboard] || [],
       "health_scores" => ctx[:health_scores] || {}
     )
+    report.status = has_blocking ? :failed : :completed
     report.save!
     report.mark_as_latest!
 
     ctx[:support_agent_report] = report
 
-    if step_report
-      mark_step_success(step_report, :generate_progress_reports, message: "Report ##{report.id} saved")
-      finalize_report(step_report, status: has_blocking ? "blocked" : "ready")
+    if report
+      mark_step_success(report, :generate_progress_reports, message: "Report ##{report.id} saved")
+      finalize_report(report, status: has_blocking ? "blocked" : "ready")
     end
 
     Rails.logger.info { "[DealManagementAgent] Report ##{report.id} saved (latest=true) for Deal##{deal&.id}" }
@@ -454,7 +490,7 @@ class DealManagementAgent < SupportAgentService
     true
   rescue StandardError => e
     Rails.logger.error { "[DealManagementAgent] Failed to save report: #{e.message}" }
-    mark_step_failed(step_report, :generate_progress_reports, message: e.message) if step_report
+    mark_step_failed(report, :generate_progress_reports, message: e.message) if report
     true
   end
 
@@ -506,30 +542,37 @@ class DealManagementAgent < SupportAgentService
     summary_text = nil
     score_data   = nil
 
-    if docs.any?
-      summary_text = generate_investor_summary(ctx, di, doc_text, period_label) if enabled?("summarize_notes")
-      score_data   = score_investor(ctx, di, doc_text, summary_text) if enabled?("score_investors")
-
-      if score_data
-        # Write back to DealInvestor (update_columns bypasses validations/callbacks — safe here)
-        if di.class.column_names.include?("ai_score")
-          di.update_columns(
-            ai_score: score_data["overall_score"].to_i,
-            ai_grade: score_data["grade"].to_s.first(10)
-          )
-        end
-
-        score_leaderboard << {
-          investor_id: di.id,
-          investor_name: di.investor_name,
-          status: di.status,
-          ai_score: score_data["overall_score"].to_i,
-          ai_grade: score_data["grade"].to_s
-        }
-      end
-    else
-      Rails.logger.info { "[DealManagementAgent] No documents for #{di.investor_name} — LLM calls skipped" }
+    # summarize_notes requires documents (nothing to summarise without them)
+    if docs.any? && enabled?("summarize_notes")
+      summary_text = generate_investor_summary(ctx, di, doc_text, period_label)
     end
+
+    # score_investors can run even without documents — activity history and notes provide signal
+    if enabled?("score_investors")
+      score_data = score_investor(ctx, di, doc_text, summary_text)
+    else
+      Rails.logger.info { "[DealManagementAgent] score_investors disabled — skipping for #{di.investor_name}" } unless docs.empty?
+    end
+
+    if score_data
+      # Write back to DealInvestor (update_columns bypasses validations/callbacks — safe here)
+      if di.class.column_names.include?("ai_score")
+        di.update_columns(
+          ai_score: score_data["overall_score"].to_i,
+          ai_grade: score_data["grade"].to_s.first(10)
+        )
+      end
+
+      score_leaderboard << {
+        investor_id: di.id,
+        investor_name: di.investor_name,
+        status: di.status,
+        ai_score: score_data["overall_score"].to_i,
+        ai_grade: score_data["grade"].to_s
+      }
+    end
+
+    Rails.logger.info { "[DealManagementAgent] No documents for #{di.investor_name} — summary skipped" } if docs.empty?
 
     save_investor_report(
       di, score_data,
@@ -594,18 +637,17 @@ class DealManagementAgent < SupportAgentService
   end
 
   # LLM scoring call for a single investor. Returns parsed score hash or nil on failure.
+  # scoring_skill_file is optional — falls back to DEFAULT_SCORING_RUBRIC when not uploaded.
   def score_investor(ctx, di, doc_text, summary_text)
-    skill_doc = scoring_skill_file_doc
-    unless skill_doc
-      Rails.logger.warn { "[DealManagementAgent] No scoring_skill_file — skipping score for #{di.investor_name}" }
-      return nil
+    skill_content = nil
+    skill_doc     = scoring_skill_file_doc
+
+    if skill_doc
+      skill_content = read_document_text(skill_doc)
+      Rails.logger.warn { "[DealManagementAgent] scoring_skill_file is empty — using default rubric" } if skill_content.blank?
     end
 
-    skill_content = read_document_text(skill_doc)
-    if skill_content.blank?
-      Rails.logger.warn { "[DealManagementAgent] scoring_skill_file is empty — skipping score" }
-      return nil
-    end
+    skill_content = DEFAULT_SCORING_RUBRIC if skill_content.blank?
 
     min_pts  = [@support_agent.json_fields["min_points_per_section"].to_i, 3].max
     prompt   = build_scoring_prompt(di, ctx[:deal], skill_content, doc_text, summary_text, min_pts)

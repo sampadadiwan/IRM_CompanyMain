@@ -1,0 +1,274 @@
+<%
+  progress_issues = (data["progress_issues"] || []).map(&:with_indifferent_access)
+  document_issues = (data["document_issues"] || []).map(&:with_indifferent_access)
+  extracted_terms = (data["extracted_terms"] || {}).with_indifferent_access
+  leaderboard     = (data["score_leaderboard"] || []).map(&:with_indifferent_access)
+
+  # Load per-investor reports to show full score details.
+  # Use support_agent_id directly to avoid N+1 via association load.
+  # When multiple runs exist for the same investor, keep the most recent one.
+  investor_ids = leaderboard.map { |r| r[:investor_id] }.compact
+  investor_reports = if investor_ids.any?
+    SupportAgentReport
+      .where(owner_type: "DealInvestor", owner_id: investor_ids, support_agent_id: report.support_agent_id)
+      .order(created_at: :desc)
+      .each_with_object({}) { |r, h| h[r.owner_id] ||= r }
+  else
+    {}
+  end
+
+  severity_badge = { "blocking" => "danger", "warning" => "warning", "success" => "success" }
+  severity_icon  = { "blocking" => "ti-alert-triangle", "warning" => "ti-alert-circle", "success" => "ti-check" }
+
+  bar_class_for = ->(score) {
+    case score
+    when 80..100 then "bg-success"
+    when 60..79  then "bg-primary"
+    when 40..59  then "bg-warning"
+    else              "bg-danger"
+    end
+  }
+%>
+
+<div class="p-3">
+  <div class="row g-4">
+
+    <%# ── Left column: Issues + Extracted Terms ── %>
+    <div class="col-md-5">
+
+      <%# Progress Issues %>
+      <h6 class="fw-bold mb-2"><i class="ti ti-activity me-1"></i>Progress Issues</h6>
+      <% if progress_issues.any? %>
+        <ul class="list-unstyled mb-3">
+          <% progress_issues.each do |issue| %>
+            <% sev = issue[:severity].to_s %>
+            <% next if issue[:message].blank? %>
+            <li class="d-flex align-items-start gap-2 mb-1">
+              <span class="badge bg-<%= severity_badge[sev] || 'secondary' %> mt-1" style="font-size:0.65rem;">
+                <i class="ti <%= severity_icon[sev] || 'ti-info-circle' %>"></i>
+                <%= sev.humanize %>
+              </span>
+              <span class="small"><%= issue[:message] %></span>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-muted small">No progress data recorded.</p>
+      <% end %>
+
+      <%# Document Checklist %>
+      <h6 class="fw-bold mb-2"><i class="ti ti-file-check me-1"></i>Document Checklist</h6>
+      <% if document_issues.any? %>
+        <ul class="list-unstyled mb-3">
+          <% document_issues.each do |issue| %>
+            <% sev = issue[:severity].to_s %>
+            <% next if issue[:message].blank? %>
+            <li class="d-flex align-items-start gap-2 mb-1">
+              <span class="badge bg-<%= severity_badge[sev] || 'secondary' %> mt-1" style="font-size:0.65rem;">
+                <i class="ti <%= severity_icon[sev] || 'ti-info-circle' %>"></i>
+                <%= sev.humanize %>
+              </span>
+              <span class="small"><%= issue[:message] %></span>
+            </li>
+          <% end %>
+        </ul>
+      <% else %>
+        <p class="text-muted small">No document checklist configured.</p>
+      <% end %>
+
+      <%# Extracted Deal Terms %>
+      <% filled_terms = extracted_terms.reject { |_, v| v.blank? } %>
+      <% if filled_terms.any? %>
+        <h6 class="fw-bold mb-2"><i class="ti ti-file-text me-1"></i>Extracted Deal Terms</h6>
+        <table class="table table-sm table-bordered mb-0">
+          <tbody>
+            <% filled_terms.each do |key, value| %>
+              <tr>
+                <td class="text-muted small" style="width:45%;"><%= key.to_s.humanize %></td>
+                <td class="small fw-semibold"><%= value %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+
+      <%# Run metadata %>
+      <div class="mt-3 text-muted" style="font-size:0.78rem;">
+        <% if data["run_at"].present? %>
+          <i class="ti ti-clock me-1"></i> Run at <%= Time.parse(data["run_at"]).strftime("%d %b %Y, %H:%M") rescue data["run_at"] %>
+        <% end %>
+        <% if data["final_status"].present? %>
+          &nbsp;·&nbsp; <i class="ti ti-flag me-1"></i><strong><%= data["final_status"] %></strong>
+        <% end %>
+      </div>
+    </div>
+
+    <%# ── Right column: Investor Scores (score_display-style) ── %>
+    <div class="col-md-7">
+      <h6 class="fw-bold mb-2"><i class="ti ti-trophy me-1"></i>Investor Scores</h6>
+      <% if leaderboard.any? %>
+        <% leaderboard.each do |row| %>
+          <%
+            inv_id   = row[:investor_id].to_i
+            inv_name = row[:investor_name].to_s
+            inv_rep  = investor_reports[inv_id]
+            score    = inv_rep&.json_fields&.dig("score") || {}
+            overall  = score["overall_score"].to_i
+            grade    = score["grade"].to_s
+            summary  = score["summary"].to_s
+            dims     = Array(score["dimensions"])
+            strengths = Array(score["strengths"])
+            risks     = Array(score["risks"])
+            recs      = Array(score["recommendations"])
+            bar_cls  = bar_class_for.call(overall)
+          %>
+          <div class="border rounded mb-3 overflow-hidden">
+            <%# Investor header %>
+            <div class="d-flex align-items-center gap-2 px-3 py-2 bg-white border-bottom">
+              <strong class="flex-grow-1"><%= inv_name %></strong>
+              <% if overall > 0 %>
+                <span class="badge fs-6 px-2 py-1 <%= bar_cls %>"><%= grade %> (<%= overall %>)</span>
+              <% else %>
+                <span class="badge bg-secondary">Not scored</span>
+              <% end %>
+            </div>
+
+            <% if overall > 0 %>
+              <div class="p-3">
+                <%# Score bar %>
+                <div class="mb-2">
+                  <div class="progress" style="height:18px; border-radius:4px;">
+                    <div class="progress-bar <%= bar_cls %> fw-semibold"
+                         style="width:<%= overall %>%; font-size:0.85rem;">
+                      <%= overall %> / 100
+                    </div>
+                  </div>
+                </div>
+
+                <%# Summary %>
+                <% if summary.present? %>
+                  <p class="small mb-3" style="line-height:1.5; color:#1a1a2e;"><%= summary %></p>
+                <% end %>
+
+                <%# Dimensions %>
+                <% if dims.any? %>
+                  <h6 class="text-uppercase fw-bold mb-2" style="font-size:0.7rem; letter-spacing:0.08em;">Scoring Dimensions</h6>
+                  <table class="table table-sm table-bordered mb-2" style="font-size:0.8rem;">
+                    <thead class="table-light">
+                      <tr>
+                        <th>Dimension</th>
+                        <th class="text-center" style="width:80px;">Score</th>
+                        <th class="text-center" style="width:70px;">Weight</th>
+                        <th class="text-center" style="width:90px;">Contribution</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <% dims.each do |dim| %>
+                        <%
+                          ds  = dim["score"].to_i
+                          dw  = dim["weight"].to_f
+                          dc  = (ds * dw).round(1)
+                          dcl = bar_class_for.call(ds)
+                          dp  = Array(dim["positives"])
+                          dco = Array(dim["concerns"])
+                        %>
+                        <tr class="align-middle">
+                          <td>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                              <span class="fw-semibold" style="min-width:140px;"><%= dim["name"] %></span>
+                              <div class="progress flex-grow-1" style="height:12px;">
+                                <div class="progress-bar <%= dcl %>" style="width:<%= ds %>%;"></div>
+                              </div>
+                            </div>
+                            <% if dim["rationale"].present? %>
+                              <div class="text-muted" style="font-size:0.74rem;"><%= dim["rationale"] %></div>
+                            <% end %>
+                            <% if dp.any? || dco.any? %>
+                              <div class="row g-0 mt-1">
+                                <div class="col-6">
+                                  <ul class="mb-0 ps-3" style="font-size:0.75rem; color:#5aab7e;">
+                                    <% dp.each { |p| %><li><%= p %></li><% } %>
+                                  </ul>
+                                </div>
+                                <div class="col-6">
+                                  <ul class="mb-0 ps-3" style="font-size:0.75rem; color:#e07070;">
+                                    <% dco.each { |c| %><li><%= c %></li><% } %>
+                                  </ul>
+                                </div>
+                              </div>
+                            <% end %>
+                          </td>
+                          <td class="text-center align-middle">
+                            <span class="badge <%= dcl %>"><%= ds %></span>
+                          </td>
+                          <td class="text-center align-middle text-muted small"><%= (dw * 100).round %>%</td>
+                          <td class="text-center align-middle">
+                            <span class="badge <%= dcl %>"><%= dc %></span>
+                          </td>
+                        </tr>
+                      <% end %>
+                    </tbody>
+                    <tfoot class="table-light">
+                      <% computed = dims.sum { |d| d["score"].to_i * d["weight"].to_f }.round(1) %>
+                      <tr style="font-size:0.76rem;">
+                        <td colspan="3" class="text-end text-muted fst-italic pe-2">Overall (sum of contributions)</td>
+                        <td class="text-center fw-bold"><%= computed %></td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                <% end %>
+
+                <%# Strengths / Risks / Recommendations %>
+                <% if strengths.any? || risks.any? || recs.any? %>
+                  <div class="row g-2">
+                    <% if strengths.any? %>
+                      <div class="col-md-4">
+                        <div class="p-2 rounded" style="background:#f0fdf4; border:1px solid #bbf7d0;">
+                          <div class="fw-bold small text-success mb-1"><i class="ti ti-circle-check"></i> Strengths</div>
+                          <ul class="mb-0 ps-3" style="font-size:0.78rem; line-height:1.5;">
+                            <% strengths.each { |s| %><li><%= s %></li><% } %>
+                          </ul>
+                        </div>
+                      </div>
+                    <% end %>
+                    <% if risks.any? %>
+                      <div class="col-md-4">
+                        <div class="p-2 rounded" style="background:#fff5f5; border:1px solid #fecaca;">
+                          <div class="fw-bold small text-danger mb-1"><i class="ti ti-alert-triangle"></i> Risks</div>
+                          <ul class="mb-0 ps-3" style="font-size:0.78rem; line-height:1.5;">
+                            <% risks.each { |r| %><li><%= r %></li><% } %>
+                          </ul>
+                        </div>
+                      </div>
+                    <% end %>
+                    <% if recs.any? %>
+                      <div class="col-md-4">
+                        <div class="p-2 rounded" style="background:#eff6ff; border:1px solid #bfdbfe;">
+                          <div class="fw-bold small text-primary mb-1"><i class="ti ti-arrow-right"></i> Recommendations</div>
+                          <ul class="mb-0 ps-3" style="font-size:0.78rem; line-height:1.5;">
+                            <% recs.each { |r| %><li><%= r %></li><% } %>
+                          </ul>
+                        </div>
+                      </div>
+                    <% end %>
+                  </div>
+                <% end %>
+
+              </div>
+            <% elsif inv_rep&.json_fields&.dig("summary_text").present? %>
+              <%# No score but there's a summary text from summarize_notes %>
+              <div class="p-3">
+                <p class="small text-muted mb-0" style="white-space:pre-wrap;"><%= inv_rep.json_fields["summary_text"].truncate(600) %></p>
+              </div>
+            <% else %>
+              <div class="p-3 text-muted small">No score data — enable <strong>score_investors</strong> and re-run to score this investor.</div>
+            <% end %>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="text-muted small">No investors processed in this run.</p>
+      <% end %>
+    </div>
+
+  </div>
+</div>

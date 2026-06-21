@@ -65,7 +65,7 @@ class AgentReportsQuery
   # Reports scoped to +Deal+ owners (DealsReportAgent only).
   # @return [ActiveRecord::Relation<SupportAgentReport>]
   def deal_reports
-    return SupportAgentReport.none unless agent_type?("DealsReportAgent")
+    return SupportAgentReport.none unless agent_type?("DealsReportAgent") || agent_type?("DealManagementAgent")
 
     agent_reports("Deal").order(updated_at: :desc)
   end

@@ -1,4 +1,5 @@
 <%
+  is_deal_mgmt = local_assigns[:support_agent]&.agent_type == "DealManagementAgent"
   format_amount = ->(cents, curr) {
     cents.present? ? Money.new(cents.to_i, curr).format : "--"
   }
@@ -20,7 +21,81 @@
   <div class="alert alert-secondary">
     <i class="ti ti-info-circle"></i> No deal reports yet. Run the agent to generate reports.
   </div>
+<% elsif is_deal_mgmt %>
+  <%# DealManagementAgent — shows issues summary, extracted terms, score leaderboard %>
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover">
+      <thead class="table-light">
+        <tr>
+          <th>Deal</th>
+          <th>Status</th>
+          <th>Issues</th>
+          <th>Score</th>
+          <th>Terms Extracted</th>
+          <th>Last Run</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% deal_reports.each do |report| %>
+          <% data    = report.json_fields.with_indifferent_access %>
+          <% owner   = report.owner %>
+          <%# JSON round-trips turn symbol keys into strings; check both to be safe %>
+          <% all_issues     = [*(data["progress_issues"] || []), *(data["document_issues"] || [])] %>
+          <% blocking_count = all_issues.count { |i| (i["severity"] || i[:severity]).to_s == "blocking" } %>
+          <% warning_count  = all_issues.count { |i| (i["severity"] || i[:severity]).to_s == "warning" } %>
+          <% terms_count    = (data["extracted_terms"] || {}).count { |_, v| v.present? } %>
+          <% leaderboard    = (data["score_leaderboard"] || []).first(3) %>
+          <% status_badge   = report.status == "completed" ? "success" : "danger" %>
+          <tr>
+            <td><strong><%= owner&.name || "Deal ##{report.owner_id}" %></strong></td>
+            <td><span class="badge bg-<%= status_badge %>"><%= report.status %></span></td>
+            <td>
+              <% if blocking_count > 0 %>
+                <span class="text-danger"><%= blocking_count %> blocking</span>
+              <% end %>
+              <% if warning_count > 0 %>
+                <%= ", " if blocking_count > 0 %>
+                <span class="text-warning"><%= warning_count %> warning(s)</span>
+              <% end %>
+              <% if blocking_count == 0 && warning_count == 0 %>
+                <span class="text-success">✓ No issues</span>
+              <% end %>
+            </td>
+            <td style="font-size:13px;">
+              <% if leaderboard.any? %>
+                <%= leaderboard.map { |r| "#{r["investor_name"] || r[:investor_name]}: #{r["ai_score"] || r[:ai_score]}" }.join(", ") %>
+              <% else %>
+                <span class="text-muted">--</span>
+              <% end %>
+            </td>
+            <td><%= terms_count > 0 ? "#{terms_count} term(s)" : "--" %></td>
+            <td style="color:#888; font-size:12px;">
+              <%= report.updated_at.strftime("%d %b %Y, %H:%M") %>
+            </td>
+            <td class="text-nowrap">
+              <% if owner.present? %>
+                <%= link_to "View Deal", deal_path(owner), class: "btn btn-sm btn-outline-primary", target: "_top" %>
+              <% end %>
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-1"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#deal-mgmt-detail-<%= report.id %>">
+                <i class="ti ti-chevron-down"></i> Details
+              </button>
+            </td>
+          </tr>
+          <%# Expandable detail row %>
+          <tr class="collapse" id="deal-mgmt-detail-<%= report.id %>">
+            <td colspan="7" class="bg-light p-0">
+              <%= render 'deal_management_report_detail', report: report, data: data %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
 <% else %>
+  <%# DealsReportAgent — shows deal summary with amounts, fill rate, pipeline stage distribution %>
   <div class="table-responsive mb-4">
     <table class="table table-bordered table-hover">
       <thead class="table-light">
