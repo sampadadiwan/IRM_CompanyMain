@@ -278,14 +278,10 @@ commands = [
                         </li>
                         <% if @fund.entity.support_agents.set?(:fund_stats_agent) %>
                           <li>
-                            <%= button_to "Run Fund Stats",
-                                run_support_agents_path(
-                                  agent_type:  "FundStatsAgent",
-                                  target_type: "Fund",
-                                  target_id:   @fund.id
-                                ),
-                                method: :post, class: "dropdown-item ti ti-chart-histogram",
-                                data: { turbo_stream: true } %>
+                            <button type="button" class="dropdown-item ti ti-chart-histogram"
+                                    data-bs-toggle="modal" data-bs-target="#run-fund-stats-agent-modal">
+                              Run Fund Stats
+                            </button>
                           </li>
                         <% end %>
                         <li>
@@ -301,6 +297,7 @@ commands = [
                       </ul>
                     </li>
                   </div>
+
                 <% end %>
                 <% if @fund.entity.permissions.enable_units? %>
                   <div class="dropdown-divider"></div>
@@ -322,6 +319,20 @@ commands = [
               </div>
             </div>
           </div>
+
+          <% if @fund.entity.support_agents.set?(:fund_stats_agent) %>
+            <%
+              fund_stats_agent_record = SupportAgent.find_by(entity_id: @fund.entity_id, agent_type: "FundStatsAgent")
+              fund_stats_desc = fund_stats_agent_record&.description || "Analyzes fund performance and generates consolidated fund statistics."
+            %>
+            <%= render "support_agents/agent_run_modal",
+                       modal_id:         "run-fund-stats-agent-modal",
+                       agent_type:       "FundStatsAgent",
+                       target_type:      "Fund",
+                       target_id:        @fund.id,
+                       description:      fund_stats_desc,
+                       long_description: FundStatsAgent::LONG_DESCRIPTION %>
+          <% end %>
           <% if policy(@fund).delete_all? && params[:delete_all].present? %>
             <div class="btn-group">
               <div class="dropdown">

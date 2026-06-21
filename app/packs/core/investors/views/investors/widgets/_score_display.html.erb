@@ -403,12 +403,26 @@
   <%# ── Re-score button ──────────────────────────────────────────────────── %>
   <% if can_run %>
     <div class="mt-3 pt-2 border-top">
-      <%= button_to run_support_agents_path(agent_type: scoring_agent.agent_type, target_id: investor.id, method: :post),
-                    class: "btn btn-sm btn-outline-secondary",
-                    data: { bs_toggle: "tooltip", bs_title: "Generate a new score for this company" } do %>
+      <button type="button" class="btn btn-sm btn-outline-secondary"
+              data-bs-toggle="modal" data-bs-target="#re-score-modal">
         <i class="ti ti-refresh"></i> Re-score
-      <% end %>
+      </button>
     </div>
   <% end %>
 
 </div>
+
+<%
+  score_agent_type = scoring_agent&.agent_type
+  score_desc      = (score_agent_type&.constantize&.const_get(:DESCRIPTION) rescue nil)
+  score_long_desc = (score_agent_type&.constantize&.const_get(:LONG_DESCRIPTION) rescue nil)
+%>
+<% if can_run && score_desc.present? %>
+  <%= render "support_agents/agent_run_modal",
+             modal_id:         "re-score-modal",
+             agent_type:       score_agent_type,
+             target_id:        investor.id,
+             description:      score_desc,
+             long_description: score_long_desc,
+             btn_text:         "Re-score" %>
+<% end %>

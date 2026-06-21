@@ -75,6 +75,9 @@ class DealManagementAgent < SupportAgentService
   # ── Step 1 ── Load agent + LLM, validate deal, initialise issues hash.
   # Returns false to halt pipeline when deal is Closed or agent is disabled.
   def initialize_agent(ctx, target: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :initialize_agent) if report
+
     super # loads @support_agent, ctx[:support_agent], ctx[:llm]
 
     deal       = target
@@ -91,24 +94,31 @@ class DealManagementAgent < SupportAgentService
     unless deal.is_a?(Deal)
       Rails.logger.error { "[DealManagementAgent] Target is not a Deal (#{deal.class})" }
       alert_user(ctx, "Deal Management Agent: invalid target — aborting", :danger)
+      mark_step_failed(report, :initialize_agent, message: "Invalid target — #{deal.class}") if report
       return false
     end
 
     if deal.status != "Open"
+      mark_step_skipped(report, :initialize_agent, message: "Deal is #{deal.status}") if report
       alert_user(ctx, "Deal Management Agent: '#{deal.name}' is #{deal.status} — skipping", :warning)
       return false
     end
 
     alert_user(ctx, "Deal Management Agent started for '#{deal.name}'", :info)
+    mark_step_success(report, :initialize_agent, message: "Initialized for '#{deal.name}'") if report
     @support_agent.enabled?
   end
 
   # ── Step 2 ── Stagnation and overdue activity detection across all active investors.
   # Toggled by check_progress (Yes/No). Always returns true so pipeline continues.
   def check_deal_progress(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :check_deal_progress) if report
+
     alert_user(ctx, "Deal Progress: checking stagnation and overdue activities…", :info)
     unless enabled?("check_progress")
       ctx[:issues][:progress_issues] << { type: :info, message: "Progress check disabled", severity: :success }
+      mark_step_skipped(report, :check_deal_progress, message: "Disabled") if report
       alert_user(ctx, "Deal Progress: disabled — skipped", :info)
       return true
     end
@@ -166,11 +176,13 @@ class DealManagementAgent < SupportAgentService
     overdue  = ctx[:issues][:progress_issues].count { |i| i[:type] == :overdue }
     Rails.logger.info { "[DealManagementAgent] Progress: #{stagnant} stagnant, #{overdue} overdue activities" }
     if stagnant.zero? && overdue.zero?
+      mark_step_success(report, :check_deal_progress, message: "All investors on track") if report
       alert_user(ctx, "Deal Progress: all investors on track ✓", :success)
     else
       parts = []
       parts << "#{stagnant} stagnant investor#{'s' if stagnant != 1}" if stagnant.positive?
       parts << "#{overdue} overdue activit#{'ies' if overdue != 1}#{'y' if overdue == 1}" if overdue.positive?
+      mark_step_success(report, :check_deal_progress, message: "#{parts.join(', ')} found") if report
       alert_user(ctx, "Deal Progress: #{parts.join(', ')} found", :warning)
     end
     true
@@ -179,9 +191,13 @@ class DealManagementAgent < SupportAgentService
   # ── Step 3 ── Verify required documents exist in the deal data room.
   # Toggled by check_documents (Yes/No). Case-insensitive name matching.
   def check_document_checklist(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :check_document_checklist) if report
+
     alert_user(ctx, "Document Checklist: verifying required documents…", :info)
     unless enabled?("check_documents")
       ctx[:issues][:document_issues] << { type: :info, severity: :success, message: "Document checklist disabled" }
+      mark_step_skipped(report, :check_document_checklist, message: "Disabled") if report
       alert_user(ctx, "Document Checklist: disabled — skipped", :info)
       return true
     end
@@ -195,6 +211,7 @@ class DealManagementAgent < SupportAgentService
         severity: :success,
         message: "No required documents configured — checklist skipped"
       }
+      mark_step_skipped(report, :check_document_checklist, message: "No docs configured") if report
       return true
     end
 
@@ -221,8 +238,10 @@ class DealManagementAgent < SupportAgentService
     missing = ctx[:issues][:document_issues].count { |i| i[:severity] == :blocking }
     Rails.logger.info { "[DealManagementAgent] Checklist: #{required.size} required, #{missing} missing" }
     if missing.zero?
+      mark_step_success(report, :check_document_checklist, message: "All #{required.size} docs present") if report
       alert_user(ctx, "Document Checklist: all #{required.size} required documents present ✓", :success)
     else
+      mark_step_success(report, :check_document_checklist, message: "#{missing} of #{required.size} missing") if report
       alert_user(ctx, "Document Checklist: #{missing} of #{required.size} documents missing", :warning)
     end
     true
@@ -232,9 +251,13 @@ class DealManagementAgent < SupportAgentService
   # Runs once per deal; cached when documents and prompt are both unchanged.
   # Toggled by extract_terms (Yes/No). Always returns true (soft-fail).
   def extract_deal_terms(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :extract_deal_terms) if report
+
     alert_user(ctx, "Extract Terms: reading deal data room…", :info)
     unless enabled?("extract_terms")
       ctx[:extracted_terms] = nil
+      mark_step_skipped(report, :extract_deal_terms, message: "Disabled") if report
       alert_user(ctx, "Extract Terms: disabled — skipped", :info)
       return true
     end
@@ -242,6 +265,7 @@ class DealManagementAgent < SupportAgentService
     docs = deal.deal_documents_folder.documents.to_a
     if docs.empty?
       Rails.logger.info { "[DealManagementAgent] No documents in deal data room — skipping term extraction" }
+      mark_step_skipped(report, :extract_deal_terms, message: "No documents in data room") if report
       alert_user(ctx, "Extract Terms: no documents in data room — skipped", :warning)
       return true
     end
@@ -260,6 +284,7 @@ class DealManagementAgent < SupportAgentService
          jf["term_extraction_prompt_used"] == current_prompt &&
          jf["extracted_terms"].present?
         Rails.logger.info { "[DealManagementAgent] Term extraction cache HIT — carrying forward" }
+        mark_step_success(report, :extract_deal_terms, message: "Cached (#{jf['extracted_terms'].count { |_, v| v.present? }} terms)") if report
         alert_user(ctx, "Extract Terms: using cached results (documents unchanged) ✓", :success)
         ctx[:extracted_terms]             = jf["extracted_terms"]
         ctx[:term_extraction_fingerprint] = current_fingerprint
@@ -292,15 +317,18 @@ class DealManagementAgent < SupportAgentService
       ctx[:term_extraction_prompt_used] = current_prompt
       filled = ctx[:extracted_terms].count { |_, v| v.present? }
       Rails.logger.info { "[DealManagementAgent] Terms extracted: #{ctx[:extracted_terms].keys.join(', ')}" }
+      mark_step_success(report, :extract_deal_terms, message: "#{filled} term(s) extracted") if report
       alert_user(ctx, "Extract Terms: #{filled} term(s) extracted ✓", :success)
     else
       Rails.logger.warn { "[DealManagementAgent] LLM returned no parseable JSON for term extraction" }
+      mark_step_success(report, :extract_deal_terms, message: "No parseable JSON returned") if report
       alert_user(ctx, "Extract Terms: LLM returned no parseable terms", :warning)
     end
     true
   rescue StandardError => e
     Rails.logger.error { "[DealManagementAgent] Term extraction failed: #{e.message}" }
     ctx[:term_extraction_error] = e.message
+    mark_step_failed(report, :extract_deal_terms, message: e.message) if report
     alert_user(ctx, "Extract Terms: failed — #{e.message}", :danger)
     true # soft-fail
   end
@@ -308,6 +336,9 @@ class DealManagementAgent < SupportAgentService
   # ── Step 5 ── Per-investor loop: collect docs, summarise, score, save report.
   # Always runs regardless of toggle state (inner LLM calls are individually toggled).
   def run_investor_pipeline(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :run_investor_pipeline) if report
+
     investors         = active_deal_investors(deal)
     score_leaderboard = []
     period_start, period_end, period_label = resolve_period
@@ -326,6 +357,8 @@ class DealManagementAgent < SupportAgentService
     end
 
     ctx[:score_leaderboard] = score_leaderboard.sort_by { |r| -(r[:ai_score] || 0) }
+    scored_count = score_leaderboard.count { |r| r[:ai_score].present? }
+    mark_step_success(report, :run_investor_pipeline, message: "#{investors.size} investor(s), #{scored_count} scored") if report
     alert_user(ctx, "Investor Pipeline: all investors processed ✓", :success)
     true
   end
@@ -333,6 +366,9 @@ class DealManagementAgent < SupportAgentService
   # ── Step 6 ── Pipeline digest + optional blocker alert to notify_email.
   # Runs only when notify_email is present. Always returns true.
   def send_email_digest(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :send_email_digest) if report
+
     alert_user(ctx, "Email Digest: preparing pipeline digest…", :info)
     notify_email = @support_agent.json_fields["notify_email"].to_s.strip
     if notify_email.blank?
@@ -341,6 +377,7 @@ class DealManagementAgent < SupportAgentService
         severity: :success,
         message: "notify_email not configured — digest skipped"
       }
+      mark_step_skipped(report, :send_email_digest, message: "No notify_email configured") if report
       alert_user(ctx, "Email Digest: no notify_email configured — skipped", :info)
       return true
     end
@@ -365,11 +402,13 @@ class DealManagementAgent < SupportAgentService
       message: "Pipeline digest queued to #{notify_email}#{' (includes blocker alert)' if has_blocking}"
     }
     Rails.logger.info { "[DealManagementAgent] Digest queued to #{notify_email}" }
+    mark_step_success(report, :send_email_digest, message: "Sent to #{notify_email}") if report
     alert_user(ctx, "Email Digest: sent to #{notify_email}#{has_blocking ? ' ⚠ blockers included' : ' ✓'}", has_blocking ? :warning : :success)
     true
   rescue StandardError => e
     Rails.logger.error { "[DealManagementAgent] Digest email failed: #{e.message}" }
     ctx[:issues][:digest_issues] << { type: :error, severity: :success, message: "Digest failed: #{e.message}" }
+    mark_step_failed(report, :send_email_digest, message: e.message) if report
     alert_user(ctx, "Email Digest: failed — #{e.message}", :danger)
     true # email failure must not block report save
   end
@@ -379,6 +418,9 @@ class DealManagementAgent < SupportAgentService
   # Creates a new report each run (not upsert) so history accumulates.
   # mark_as_latest! flips the latest flag on the new record and clears it on all prior ones.
   def generate_progress_reports(ctx, support_agent:, deal: nil, **)
+    step_report = ctx[:support_agent_report]
+    mark_step_running(step_report, :generate_progress_reports) if step_report
+
     alert_user(ctx, "Saving report for '#{deal&.name}'…", :info)
 
     ctx[:issues].each_value { |issues| issues.reject! { |i| i[:message].blank? } }
@@ -401,11 +443,18 @@ class DealManagementAgent < SupportAgentService
     report.mark_as_latest!
 
     ctx[:support_agent_report] = report
+
+    if step_report
+      mark_step_success(step_report, :generate_progress_reports, message: "Report ##{report.id} saved")
+      finalize_report(step_report, status: has_blocking ? "blocked" : "ready")
+    end
+
     Rails.logger.info { "[DealManagementAgent] Report ##{report.id} saved (latest=true) for Deal##{deal&.id}" }
     alert_user(ctx, "Deal Management Agent complete#{has_blocking ? ' — blockers found, check the report' : ' ✓'}", has_blocking ? :warning : :success)
     true
   rescue StandardError => e
     Rails.logger.error { "[DealManagementAgent] Failed to save report: #{e.message}" }
+    mark_step_failed(step_report, :generate_progress_reports, message: e.message) if step_report
     true
   end
 

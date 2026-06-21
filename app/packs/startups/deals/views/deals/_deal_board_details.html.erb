@@ -78,9 +78,10 @@
                   <span class="text-muted small">Last run: <%= deal_report.updated_at.strftime("%d %b %Y, %H:%M") %></span>
                   <%= link_to "Full Report", support_agent_path(deal_agent, tab: "deal_reports"), class: "btn btn-sm btn-outline-secondary", data: { turbo: false } %>
                 <% end %>
-                <%= button_to "Run Now",
-                      run_support_agents_path(agent_type: "DealManagementAgent", target_type: "Deal", target_id: deal.id),
-                      method: :post, class: "btn btn-sm btn-primary", data: { turbo: false } %>
+                <button type="button" class="btn btn-sm btn-primary"
+                        data-bs-toggle="modal" data-bs-target="#run-deal-mgmt-agent-modal">
+                  <i class="ti ti-robot"></i> Run Now
+                </button>
               </div>
             </div>
             <% if deal_report %>
@@ -154,6 +155,16 @@
               <div class="card-body text-muted small">No report yet — click <strong>Run Now</strong> to analyse this deal.</div>
             <% end %>
           </div>
+
+          <% if deal_agent %>
+            <%= render "support_agents/agent_run_modal",
+                       modal_id:         "run-deal-mgmt-agent-modal",
+                       agent_type:       "DealManagementAgent",
+                       target_type:      "Deal",
+                       target_id:        deal.id,
+                       description:      DealManagementAgent::DESCRIPTION,
+                       long_description: DealManagementAgent::LONG_DESCRIPTION %>
+          <% end %>
         </div>
       <% end %>
 

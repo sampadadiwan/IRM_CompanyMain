@@ -87,16 +87,10 @@
 
           <% if @investor.category == "Portfolio Company" %>
             <% if @investor.entity.support_agents.set?(:portfolio_company_agent) %>
-              <%= button_to run_support_agents_path(
-                    agent_type:  "PortfolioCompanyAgent",
-                    target_type: "Investor",
-                    target_id:   @investor.id
-                  ),
-                  method: :post,
-                  class: "dropdown-item",
-                  data: { turbo_stream: true, bs_toggle: "tooltip", bs_title: "Checks the portfolio company data and generates updated AI charts based on prompts which have been set up" } do %>
+              <button type="button" class="dropdown-item"
+                      data-bs-toggle="modal" data-bs-target="#run-portfolio-company-agent-modal">
                 <i class="ti ti-robot"></i> Run Portfolio Company Agent
-              <% end %>
+              </button>
 
               <%= link_to assistant_path('assistant', assistant_type: 'PortfolioCompanyAssistant', owner_id: @investor.id, owner_type: "Investor"),
                           class: "dropdown-item d-flex align-items-center",
@@ -115,16 +109,10 @@
             <% end %>
 
             <% if @investor.entity.support_agents.set?(:portfolio_scoring_agent) %>
-              <%= button_to run_support_agents_path(
-                    agent_type: "PortfolioScoringAgent",
-                    target_type: "Investor",
-                    target_id:   @investor.id
-                  ),
-                  method: :post,
-                  class: "dropdown-item",
-                  data: { turbo_stream: true, bs_toggle: "tooltip", bs_title: "Scores this portfolio company using the configured skill for its sector (#{@investor.sector.presence || 'sector not set'})" } do %>
+              <button type="button" class="dropdown-item"
+                      data-bs-toggle="modal" data-bs-target="#run-scoring-agent-modal">
                 <i class="ti ti-chart-bar"></i> Run Scoring Agent
-              <% end %>
+              </button>
             <% else %>
               <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Portfolio Scoring Agent is disabled. Contact support to enable it">
                 <i class="ti ti-chart-bar"></i> Run Scoring Agent
@@ -133,16 +121,10 @@
             <% end %>
 
             <% if @investor.entity.support_agents.set?(:presentation_analyst_agent) %>
-              <%= button_to run_support_agents_path(
-                    agent_type: "PresentationAnalystAgent",
-                    target_type: "Investor",
-                    target_id:   @investor.id
-                  ),
-                  method: :post,
-                  class: "dropdown-item",
-                  data: { turbo_stream: true, bs_toggle: "tooltip", bs_title: "Reads investor presentations across all periods and generates a pre-board briefing and Management Accountability Score" } do %>
+              <button type="button" class="dropdown-item"
+                      data-bs-toggle="modal" data-bs-target="#run-presentation-analyst-modal">
                 <i class="ti ti-files"></i> Run Presentation Analyst
-              <% end %>
+              </button>
             <% else %>
               <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="Presentation Analyst Agent is disabled. Contact support to enable it">
                 <i class="ti ti-files"></i> Run Presentation Analyst
@@ -170,6 +152,39 @@
         </div>
       </div>
     </div>
+
+    <%# ── Agent Run Confirmation Modals ──────────────────────────────────── %>
+    <% if @investor.category == "Portfolio Company" %>
+      <% if @investor.entity.support_agents.set?(:portfolio_company_agent) %>
+        <%= render "support_agents/agent_run_modal",
+                   modal_id:         "run-portfolio-company-agent-modal",
+                   agent_type:       "PortfolioCompanyAgent",
+                   target_type:      "Investor",
+                   target_id:        @investor.id,
+                   description:      PortfolioCompanyAgent::DESCRIPTION,
+                   long_description: PortfolioCompanyAgent::LONG_DESCRIPTION %>
+      <% end %>
+
+      <% if @investor.entity.support_agents.set?(:portfolio_scoring_agent) %>
+        <%= render "support_agents/agent_run_modal",
+                   modal_id:         "run-scoring-agent-modal",
+                   agent_type:       "PortfolioScoringAgent",
+                   target_type:      "Investor",
+                   target_id:        @investor.id,
+                   description:      PortfolioScoringAgent::DESCRIPTION,
+                   long_description: PortfolioScoringAgent::LONG_DESCRIPTION %>
+      <% end %>
+
+      <% if @investor.entity.support_agents.set?(:presentation_analyst_agent) %>
+        <%= render "support_agents/agent_run_modal",
+                   modal_id:         "run-presentation-analyst-modal",
+                   agent_type:       "PresentationAnalystAgent",
+                   target_type:      "Investor",
+                   target_id:        @investor.id,
+                   description:      PresentationAnalystAgent::DESCRIPTION,
+                   long_description: PresentationAnalystAgent::LONG_DESCRIPTION %>
+      <% end %>
+    <% end %>
 
   </div>
 </div>

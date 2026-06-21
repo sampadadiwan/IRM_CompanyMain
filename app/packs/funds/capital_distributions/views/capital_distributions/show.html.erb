@@ -263,17 +263,26 @@
 
               <% if @capital_distribution.entity.support_agents.set?(:distribution_readiness_agent) %>
                 <div class="dropdown-divider"></div>
-                <%= button_to "Run Readiness Check",
-                    run_support_agents_path(
-                      agent_type:  "DistributionReadinessAgent",
-                      target_type: "CapitalDistribution",
-                      target_id:   @capital_distribution.id
-                    ),
-                    method: :post, class: "dropdown-item ti ti-shield-check" %>
+                <button type="button" class="dropdown-item ti ti-shield-check"
+                        data-bs-toggle="modal" data-bs-target="#run-distribution-readiness-modal">
+                  Run Readiness Check
+                </button>
               <% end %>
             </div>
         </div>
     </div>
+
+    <% if @capital_distribution.entity.support_agents.set?(:distribution_readiness_agent) %>
+      <%= render "support_agents/agent_run_modal",
+                 modal_id:         "run-distribution-readiness-modal",
+                 agent_type:       "DistributionReadinessAgent",
+                 target_type:      "CapitalDistribution",
+                 target_id:        @capital_distribution.id,
+                 description:      DistributionReadinessAgent::DESCRIPTION,
+                 long_description: DistributionReadinessAgent::LONG_DESCRIPTION,
+                 btn_text:         "Run Readiness Check",
+                 modal_title:      "Run Readiness Check" %>
+    <% end %>
   <% end %>
 </div>
 

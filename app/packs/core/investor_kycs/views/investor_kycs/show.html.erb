@@ -218,9 +218,10 @@
             <% end %>
 
             <% if @investor_kyc.entity.support_agents.set?(:kyc_onboarding_agent) %>
-              <%= button_to run_support_agents_path(agent_type: "KycOnboardingAgent", target_id: @investor_kyc.id, method: :post), class: "dropdown-item" do %>
+              <button type="button" class="dropdown-item"
+                      data-bs-toggle="modal" data-bs-target="#run-kyc-onboarding-agent-modal">
                 <i class="ti ti-robot"></i> Run Kyc Onboarding Agent
-              <% end %>
+              </button>
             <% else %>
               <!-- kyc_onboarding_agent disabled: show greyed-out item so users know the feature exists -->
               <span class="dropdown-item disabled text-muted" style="opacity:0.65; pointer-events:auto; cursor:default;" data-bs-toggle="tooltip" data-bs-title="KYC Onboarding Agent is disabled. Contact support to enable it">
@@ -229,25 +230,35 @@
               </span>
             <% end %>
 
+        </div>
+      </div>
+    </div>
+
+    <% if @investor_kyc.entity.support_agents.set?(:kyc_onboarding_agent) %>
+      <%= render "support_agents/agent_run_modal",
+                 modal_id:         "run-kyc-onboarding-agent-modal",
+                 agent_type:       "KycOnboardingAgent",
+                 target_id:        @investor_kyc.id,
+                 description:      KycOnboardingAgent::DESCRIPTION,
+                 long_description: KycOnboardingAgent::LONG_DESCRIPTION,
+                 btn_text:         "Run Kyc Onboarding Agent" %>
+    <% end %>
+
+    <% if policy(@investor_kyc).preview? %>
+      <div class="btn-group">
+        <div class="dropdown">
+          <button class="btn btn-outline-primary dropdown-toggle" type="button"
+                  data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <i class="ti ti-settings"></i> Preview Notifications
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+
+            <%= render "/investor_kycs/preview_notifications", investor_kyc: @investor_kyc %>
+
           </div>
         </div>
       </div>
-
-      <% if policy(@investor_kyc).preview? %>
-        <div class="btn-group">
-          <div class="dropdown">
-            <button class="btn btn-outline-primary dropdown-toggle" type="button"
-                    data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-              <i class="ti ti-settings"></i> Preview Notifications
-            </button>
-            <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-
-              <%= render "/investor_kycs/preview_notifications", investor_kyc: @investor_kyc %>
-
-            </div>
-          </div>
-        </div>
-      <% end %>
+    <% end %>
 
     <% else %>
 

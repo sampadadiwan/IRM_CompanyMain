@@ -64,22 +64,7 @@
         <h5 class="mb-0 fw-semibold">About This Agent</h5>
       </div>
       <div class="card-body p-4">
-        <p class="mb-0" style="font-size: 1rem; line-height: 1.65; color: #334155;">
-          <%= short_desc %>
-        </p>
-
-        <% if long_desc.present? %>
-          <hr class="my-4">
-          <div class="d-flex align-items-center gap-2 mb-3">
-            <i class="ti ti-file-text text-secondary"></i>
-            <h6 class="mb-0 fw-semibold text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08em;">
-              Detailed Description
-            </h6>
-          </div>
-          <div class="agent-about-panel p-0" style="background: transparent; border: none;">
-            <%= format_agent_description(long_desc) %>
-          </div>
-        <% end %>
+        <%= render "support_agents/agent_description_content", short_desc: short_desc, long_desc: long_desc %>
       </div>
 
       <%# ── Action buttons ── %>

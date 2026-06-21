@@ -40,11 +40,10 @@
         &nbsp;·&nbsp; Sector: <strong><%= @investor.sector %></strong>
       </small>
       <% if can_run %>
-        <%= button_to run_support_agents_path(agent_type: agent_type, target_id: @investor.id, method: :post),
-                      class: "btn btn-sm btn-outline-primary",
-                      data: { bs_toggle: "tooltip", bs_title: "Re-run the Scoring Agent for this company" } do %>
+        <button type="button" class="btn btn-sm btn-outline-primary"
+                data-bs-toggle="modal" data-bs-target="#run-scoring-agent-modal">
           <i class="ti ti-refresh"></i> Re-run Scoring Agent
-        <% end %>
+        </button>
       <% end %>
     </div>
 
@@ -53,15 +52,27 @@
       <i class="ti ti-chart-bar" style="font-size: 2rem; opacity: 0.3;"></i>
       <p class="mt-2 mb-3">No scoring data available for this company.</p>
       <% if can_run %>
-        <%= button_to run_support_agents_path(agent_type: agent_type, target_id: @investor.id, method: :post),
-                      class: "btn btn-sm btn-primary",
-                      data: { bs_toggle: "tooltip", bs_title: "Run the Scoring Agent to generate a score for this company" } do %>
+        <button type="button" class="btn btn-sm btn-primary"
+                data-bs-toggle="modal" data-bs-target="#run-scoring-agent-modal">
           <i class="ti ti-robot"></i> Run Scoring Agent
-        <% end %>
+        </button>
       <% elsif scoring_agent.nil? %>
         <small>No Scoring Agent configured for this entity.</small>
       <% end %>
     </div>
   <% end %>
 
+<% end %>
+
+<%
+  scoring_desc      = (agent_type.constantize::DESCRIPTION rescue nil)
+  scoring_long_desc = (agent_type.constantize::LONG_DESCRIPTION rescue nil)
+%>
+<% if can_run && scoring_desc.present? %>
+  <%= render "support_agents/agent_run_modal",
+             modal_id:         "run-scoring-agent-modal",
+             agent_type:       agent_type,
+             target_id:        @investor.id,
+             description:      scoring_desc,
+             long_description: scoring_long_desc %>
 <% end %>

@@ -31,9 +31,10 @@
       <% end %>
       <% unless current_user.curr_role_investor? %>
         <% if current_user.entity.support_agents.set?(:fund_stats_agent) %>
-          <%= button_to run_support_agents_path(agent_type: "FundStatsAgent", target_id: current_user.entity.id, method: :post), class: "btn btn-outline-info" do %>
+          <button type="button" class="btn btn-outline-info"
+                  data-bs-toggle="modal" data-bs-target="#run-fund-stats-agent-modal">
             <i class="ti ti-robot"></i> Run Fund Stats Agent
-          <% end %>
+          </button>
         <% else %>
           <!-- fund_stats_agent disabled: visible but non-functional -->
           <span data-bs-toggle="tooltip" title="Fund Stats Agent is disabled. Contact support to enable it">
@@ -50,6 +51,19 @@
         </a>
       <% end %>
     </span>
+
+    <% if current_user.entity.support_agents.set?(:fund_stats_agent) %>
+      <%
+        fund_stats_agent_record = SupportAgent.find_by(entity_id: current_user.entity_id, agent_type: "FundStatsAgent")
+        fund_stats_desc = fund_stats_agent_record&.description || "Analyzes fund performance and generates consolidated fund statistics."
+      %>
+      <%= render "support_agents/agent_run_modal",
+                 modal_id:         "run-fund-stats-agent-modal",
+                 agent_type:       "FundStatsAgent",
+                 target_id:        current_user.entity.id,
+                 description:      fund_stats_desc,
+                 long_description: FundStatsAgent::LONG_DESCRIPTION %>
+    <% end %>
   </div>
   <div class="table-responsive" data-controller="datatable" data-datatable-responsive-details-value=false>
     <table id="funds" class="table table-bordered dataTable jqDataTable">

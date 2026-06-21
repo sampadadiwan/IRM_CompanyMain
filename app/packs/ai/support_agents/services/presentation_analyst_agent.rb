@@ -143,11 +143,16 @@ class PresentationAnalystAgent < SupportAgentService
   def initialize_agent(ctx, target: nil, **)
     super # sets @support_agent, ctx[:support_agent], ctx[:llm] via SupportAgentService
 
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :initialize_agent) if report
+
     ctx[:investor]       = target
     ctx[:period_records] = [] # accumulated per-period extracted records
     ctx[:issues]         = { collection_issues: [], extraction_issues: [], analysis_issues: [] }
 
     Rails.logger.info { "[PresentationAnalystAgent] Initializing for #{target&.investor_name} (ID=#{target&.id})" }
+
+    mark_step_success(report, :initialize_agent, message: "Initialized for #{target&.investor_name}") if report
 
     # Returning false here short-circuits the pipeline with no error — correct
     # behaviour when the agent is disabled or the target is not a portfolio company
@@ -162,6 +167,9 @@ class PresentationAnalystAgent < SupportAgentService
   #
   # PRD §12.1 — presentation_doc_names, max_periods, kpi_tag_list config fields.
   def collect_presentations(ctx, investor: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :collect_presentations) if report
+
     allowed_names = presentation_doc_names # from custom field CSV, or DEFAULT_DOC_NAMES
     tag_list      = @support_agent.json_fields["kpi_tag_list"].presence || "Actual"
     max_periods = @support_agent.json_fields["max_periods"].to_i
@@ -200,6 +208,7 @@ class PresentationAnalystAgent < SupportAgentService
         message: "No presentation documents found matching: #{allowed_names.join(', ')}",
         severity: :blocking
       }
+      mark_step_skipped(report, :collect_presentations, message: "No presentations found") if report
       Rails.logger.warn { "[PresentationAnalystAgent] No presentations found for #{investor.investor_name}" }
       return true
     end
@@ -213,6 +222,7 @@ class PresentationAnalystAgent < SupportAgentService
       message: "Found #{ctx[:presentation_docs].size} presentation(s) across #{ctx[:presentation_docs].pluck(:period_label).join(', ')}",
       severity: :success
     }
+    mark_step_success(report, :collect_presentations, message: "Found #{ctx[:presentation_docs].size} presentation(s)") if report
     true
   end
 
@@ -225,6 +235,9 @@ class PresentationAnalystAgent < SupportAgentService
   # Soft-fail: a single document read/parse error logs and moves on rather than
   # failing the whole company (mirrors NoteSummarizerAgent's soft-fail pattern).
   def extract_intelligence(ctx, investor: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :extract_intelligence) if report
+
     ctx[:presentation_docs].each do |entry|
       # read_document_text handles download + text extraction; returns nil on failure
       text = read_document_text(entry[:document])
@@ -264,6 +277,7 @@ class PresentationAnalystAgent < SupportAgentService
     end
 
     if ctx[:period_records].empty?
+      mark_step_skipped(report, :extract_intelligence, message: "No records extracted") if report
       ctx[:issues][:analysis_issues] << {
         type: :info, message: "No records extracted — analysis skipped", severity: :blocking
       }
@@ -271,6 +285,7 @@ class PresentationAnalystAgent < SupportAgentService
       return true
     end
 
+    mark_step_success(report, :extract_intelligence, message: "Extracted #{ctx[:period_records].size} period record(s)") if report
     Rails.logger.info { "[PresentationAnalystAgent] Extracted #{ctx[:period_records].size} period record(s) for #{investor.investor_name}" }
     true
   end
@@ -285,8 +300,12 @@ class PresentationAnalystAgent < SupportAgentService
   #   all_periods     — one LLM call with all records. More accurate. Default.
   #   sliding_window  — one call per adjacent pair (N-1 → N). Cheaper for many periods.
   def compare_across_periods(ctx, investor: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :compare_across_periods) if report
+
     # Need at least two periods to compare; single-period runs skip this step
     if ctx[:period_records].size < 2
+      mark_step_skipped(report, :compare_across_periods, message: "Only one period") if report
       ctx[:cross_period_flags] = {}
       ctx[:issues][:analysis_issues] << {
         type: :info, message: "Only one period — cross-period analysis skipped", severity: :success
@@ -310,10 +329,12 @@ class PresentationAnalystAgent < SupportAgentService
       message: "Cross-period analysis complete (#{strategy}) — #{total_flags} flag(s) across #{ctx[:period_records].size} periods",
       severity: :success
     }
+    mark_step_success(report, :compare_across_periods, message: "#{total_flags} flag(s) across #{ctx[:period_records].size} periods") if report
     Rails.logger.info { "[PresentationAnalystAgent] Cross-period analysis: #{total_flags} flags (strategy=#{strategy})" }
     true
   rescue StandardError => e
     Rails.logger.error { "[PresentationAnalystAgent] Comparator failed: #{e.message}" }
+    mark_step_failed(report, :compare_across_periods, message: e.message) if report
     ctx[:cross_period_flags] = {} # empty flags → scoring still runs, questions skipped
     true # soft-fail so store_results runs
   end
@@ -353,11 +374,18 @@ class PresentationAnalystAgent < SupportAgentService
   # last run (SHA-256 match), we reuse the previous question set with zero LLM cost.
   # This makes re-running the agent cheap on stable portfolios.
   def generate_analyst_qs(ctx, investor: nil, support_agent: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :generate_analyst_qs) if report
+
     # Nothing to ask if extraction produced no records
-    return true if ctx[:period_records].empty?
+    if ctx[:period_records].empty?
+      mark_step_skipped(report, :generate_analyst_qs, message: "No records to analyze") if report
+      return true
+    end
 
     # Skip if the enable_questions flag is explicitly disabled (default: on)
     unless questions_enabled?
+      mark_step_skipped(report, :generate_analyst_qs, message: "Questions disabled") if report
       ctx[:analyst_questions] = []
       ctx[:issues][:analysis_issues] << {
         type: :info, message: "Question generation disabled via enable_questions setting", severity: :success
@@ -391,6 +419,7 @@ class PresentationAnalystAgent < SupportAgentService
         message: "Flags unchanged — reusing #{prev_questions.size} questions from previous run (no LLM call)",
         severity: :success
       }
+      mark_step_success(report, :generate_analyst_qs, message: "Reusing #{prev_questions.size} questions") if report
       Rails.logger.info { "[PresentationAnalystAgent] Digest match — skipping question generation for #{investor.investor_name}" }
       return true
     end
@@ -403,6 +432,7 @@ class PresentationAnalystAgent < SupportAgentService
 
     ctx[:analyst_questions] = questions || []
     ctx[:flags_digest]      = flags_digest
+    mark_step_success(report, :generate_analyst_qs, message: "Generated #{ctx[:analyst_questions].size} questions") if report
     ctx[:issues][:analysis_issues] << {
       type: :info,
       message: "Generated #{ctx[:analyst_questions].size} briefing questions",
@@ -412,6 +442,7 @@ class PresentationAnalystAgent < SupportAgentService
     true
   rescue StandardError => e
     Rails.logger.error { "[PresentationAnalystAgent] Question generation failed: #{e.message}" }
+    mark_step_failed(report, :generate_analyst_qs, message: e.message) if report
     # Fall back to the previous run's questions rather than losing them entirely
     ctx[:analyst_questions] = prev_questions || []
     ctx[:flags_digest]      = flags_digest
@@ -428,8 +459,12 @@ class PresentationAnalystAgent < SupportAgentService
   # PRD §6: "How this differs from PortfolioScoringAgent" — this measures management
   # communication behaviour, not company fundamentals.
   def compute_scores(ctx, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :compute_scores) if report
+
     # Skip if the enable_scoring flag is explicitly disabled (default: on)
     unless scoring_enabled?
+      mark_step_skipped(report, :compute_scores, message: "Scoring disabled") if report
       ctx[:score] = nil
       ctx[:issues][:analysis_issues] << {
         type: :info, message: "Scoring disabled via enable_scoring setting", severity: :success
@@ -462,10 +497,12 @@ class PresentationAnalystAgent < SupportAgentService
       message: "Management Accountability Score: #{overall}/100 (#{score_to_grade(overall)})",
       severity: :success
     }
+    mark_step_success(report, :compute_scores, message: "Score: #{ctx[:score]['overall_score']}/100 (#{ctx[:score]['grade']})") if report
     Rails.logger.info { "[PresentationAnalystAgent] Score: #{overall} #{score_to_grade(overall)} for #{ctx[:investor]&.investor_name}" }
     true
   rescue StandardError => e
     Rails.logger.error { "[PresentationAnalystAgent] Scoring failed: #{e.message}" }
+    mark_step_failed(report, :compute_scores, message: e.message) if report
     ctx[:score] = nil
     true # soft-fail — a missing score should not block storing the questions and flags
   end
@@ -562,6 +599,9 @@ class PresentationAnalystAgent < SupportAgentService
   # (sets latest=false). The chat provider queries order(created_at: :desc).first
   # so it always reads the newest run regardless.
   def store_results(ctx, investor: nil, support_agent: nil, **)
+    step_report = ctx[:support_agent_report]
+    mark_step_running(step_report, :store_results) if step_report
+
     has_blocking = ctx[:issues].values.flatten.any? { |i| i[:severity] == :blocking }
 
     # Clean out blank messages (mirrors SupportAgentService#generate_progress_reports)
@@ -591,7 +631,7 @@ class PresentationAnalystAgent < SupportAgentService
       "run_at" => now,
       "completed_at" => now,
       # Persist which features were active during this run so the UI can hide sections accordingly
-      "scoring_enabled"   => scoring_enabled?,
+      "scoring_enabled" => scoring_enabled?,
       "questions_enabled" => questions_enabled?
     )
 
@@ -601,10 +641,17 @@ class PresentationAnalystAgent < SupportAgentService
     report.save! # after_create callback fires mark_as_latest! atomically
 
     ctx[:support_agent_report] = report
+
+    if step_report
+      mark_step_success(step_report, :store_results, message: "Report ##{report.id} saved")
+      finalize_report(step_report, status: has_blocking ? "blocked" : "ready")
+    end
+
     Rails.logger.info { "[PresentationAnalystAgent] Report saved ID=#{report.id} status=#{report.status}" }
     true
   rescue StandardError => e
     Rails.logger.error { "[PresentationAnalystAgent] store_results failed: #{e.message}" }
+    mark_step_failed(step_report, :store_results, message: e.message) if step_report
     false
   end
 
@@ -923,13 +970,13 @@ class PresentationAnalystAgent < SupportAgentService
   # Defaults to enabled so existing agents and new agents without the field work as before.
   def scoring_enabled?
     val = @support_agent.json_fields["enable_scoring"].to_s.strip.downcase
-    val.blank? || !%w[no false 0 disabled].include?(val)
+    val.blank? || %w[no false 0 disabled].exclude?(val)
   end
 
   # Returns true unless enable_questions is explicitly set to "No"/"false"/etc.
   def questions_enabled?
     val = @support_agent.json_fields["enable_questions"].to_s.strip.downcase
-    val.blank? || !%w[no false 0 disabled].include?(val)
+    val.blank? || %w[no false 0 disabled].exclude?(val)
   end
 
   # ─── LLM Response Helpers ─────────────────────────────────────────────────────

@@ -124,6 +124,9 @@ class NoteSummarizerAgent < SupportAgentService
   def initialize_agent(ctx, target: nil, **)
     super # loads @support_agent and ctx[:llm] via base class
 
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :initialize_agent) if report
+
     investor = target
     ctx[:investor] = investor
 
@@ -152,6 +155,7 @@ class NoteSummarizerAgent < SupportAgentService
         "(#{ctx[:period_start]}..#{ctx[:period_end]})"
     end
 
+    mark_step_success(report, :initialize_agent, message: "Initialized for #{investor&.investor_name}") if report
     @support_agent.enabled?
   end
 
@@ -165,11 +169,15 @@ class NoteSummarizerAgent < SupportAgentService
   #
   # @param ctx [Hash] execution context; reads :investor, :period_start, :period_end
   def tag_untagged_notes(ctx, investor: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :tag_untagged_notes) if report
+
     # Honour the enable/disable toggle — default on if the field is absent
     unless enabled?("auto_tag_notes")
       ctx[:issues][:tagging_issues] << {
         type: :info, message: "Auto-tagging disabled — skipped", severity: :success
       }
+      mark_step_skipped(report, :tag_untagged_notes, message: "Auto-tagging disabled") if report
       return true
     end
 
@@ -193,6 +201,7 @@ class NoteSummarizerAgent < SupportAgentService
       ctx[:issues][:tagging_issues] << {
         type: :info, message: "No untagged notes in period — skipped", severity: :success
       }
+      mark_step_skipped(report, :tag_untagged_notes, message: "No untagged notes in period") if report
       return true
     end
 
@@ -246,9 +255,11 @@ class NoteSummarizerAgent < SupportAgentService
       message: "Auto-tagged #{tagged_count} of #{untagged_notes.size} untagged note(s)",
       severity: :success
     }
+    mark_step_success(report, :tag_untagged_notes, message: "Tagged #{tagged_count} note(s)") if report
     true
   rescue StandardError => e
     # Soft-fail — tagging is best-effort, must not block the summary
+    mark_step_failed(report, :tag_untagged_notes, message: e.message) if report
     Rails.logger.error { "[NoteSummarizerAgent] Auto-tagging failed: #{e.message}" }
     ctx[:issues][:tagging_issues] << {
       type: :info, message: "Auto-tagging failed (#{e.message}) — continuing without tags", severity: :success
@@ -262,6 +273,9 @@ class NoteSummarizerAgent < SupportAgentService
   # @param ctx [Hash] execution context; writes :notes and :note_count
   # @param investor [Investor] current target
   def collect_notes(ctx, investor: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :collect_notes) if report
+
     # Scope to the investor + entity so notes from other entities are never leaked.
     # Exclude auto-generated summary notes (tagged "summary") so they are never
     # included in future summaries — they exist only for reference.
@@ -304,6 +318,7 @@ class NoteSummarizerAgent < SupportAgentService
       Rails.logger.info { "[NoteSummarizerAgent] #{ctx[:note_count]} notes collected for investor=#{investor.id}" }
     end
 
+    mark_step_success(report, :collect_notes, message: "#{ctx[:note_count]} note(s) collected") if report
     true
   end
 
@@ -314,6 +329,9 @@ class NoteSummarizerAgent < SupportAgentService
   # @param ctx [Hash] execution context; reads :notes, writes :summary_text
   # @param investor [Investor] current target (used for logging)
   def generate_summary(ctx, investor: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :generate_summary) if report
+
     # Skip LLM call when there are no notes — saves cost and avoids a meaningless request
     if ctx[:notes].empty?
       ctx[:issues][:summary_issues] << {
@@ -321,6 +339,7 @@ class NoteSummarizerAgent < SupportAgentService
         message: "No notes to summarize — LLM call skipped",
         severity: :success
       }
+      mark_step_skipped(report, :generate_summary, message: "No notes to summarize") if report
       return true
     end
 
@@ -353,10 +372,12 @@ class NoteSummarizerAgent < SupportAgentService
       severity: :success
     }
     Rails.logger.info { "[NoteSummarizerAgent] Summary generated for investor=#{investor.id}" }
+    mark_step_success(report, :generate_summary, message: "#{ctx[:summary_text]&.length} chars generated") if report
     true
   rescue StandardError => e
     # Soft-fail: record the error in issues so the report reflects the failure
     # without crashing the batch run for other investors
+    mark_step_failed(report, :generate_summary, message: e.message) if report
     Rails.logger.error { "[NoteSummarizerAgent] LLM call failed for investor=#{investor.id}: #{e.message}" }
     ctx[:issues][:summary_issues] << {
       type: :error,
@@ -376,11 +397,15 @@ class NoteSummarizerAgent < SupportAgentService
   # @param ctx [Hash] execution context; reads :summary_text, :period_label, :period_start
   # @param investor [Investor] note owner
   def save_summary_as_note(ctx, investor: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :save_summary_as_note) if report
+
     # Skip if there is nothing to write (no notes in period or LLM failure)
     if ctx[:summary_text].blank?
       ctx[:issues][:summary_issues] << {
         type: :info, message: "No summary to save as note — skipped", severity: :success
       }
+      mark_step_skipped(report, :save_summary_as_note, message: "No summary to save") if report
       return true
     end
 
@@ -414,9 +439,11 @@ class NoteSummarizerAgent < SupportAgentService
       severity: :success
     }
     Rails.logger.info { "[NoteSummarizerAgent] Summary note #{note.id} saved for investor=#{investor.id}" }
+    mark_step_success(report, :save_summary_as_note, message: "Note ##{note&.id} saved") if report
     true
   rescue StandardError => e
     # Soft-fail — note write failure must not block the report save
+    mark_step_failed(report, :save_summary_as_note, message: e.message) if report
     Rails.logger.error { "[NoteSummarizerAgent] Failed to save summary note for investor=#{investor.id}: #{e.message}" }
     ctx[:issues][:summary_issues] << {
       type: :info, message: "Could not save summary as note: #{e.message}", severity: :success
@@ -432,6 +459,9 @@ class NoteSummarizerAgent < SupportAgentService
   # @param investor [Investor] used as the report owner (model: arg to base class)
   # @param support_agent [SupportAgent] current agent record
   def generate_progress_reports(ctx, support_agent:, investor: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :generate_progress_reports) if report
+
     # Base class writes ctx[:issues] into json_fields and persists the report
     super(ctx, model: investor, support_agent: support_agent)
 
@@ -450,6 +480,9 @@ class NoteSummarizerAgent < SupportAgentService
     # MySQL doesn't detect JSON field mutations automatically — must mark dirty
     report.json_fields_will_change!
     report.save!
+
+    mark_step_success(report, :generate_progress_reports, message: "Report saved") if report
+    finalize_report(report, status: "ready") if report
 
     true
   end

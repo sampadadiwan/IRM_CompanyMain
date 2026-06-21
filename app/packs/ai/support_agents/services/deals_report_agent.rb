@@ -18,6 +18,30 @@
 # @see SupportAgentService
 # @see DealsReportRenderer
 class DealsReportAgent < SupportAgentService
+  DESCRIPTION = "Analyzes all open deals for an entity and generates a fundraising status report with per-deal summaries."
+
+  LONG_DESCRIPTION = <<~DESC
+    Iterates over all open deals (or a configured subset) and produces a detailed
+    fundraising status report for each deal. Results are saved as individual
+    SupportAgentReport records per deal and an email summary is sent to configured
+    recipients.
+
+    Per-deal analysis includes:
+    • Fundraising targets vs committed, pending, and declined amounts.
+    • Fill rate percentage and deal health classification (on_track / needs_attention).
+    • Activity step distribution — how many investors are at each pipeline stage.
+    • Top investors ranked by committed amount.
+    • Staleness detection — deals flagged when no investor activity occurs past the
+      configured threshold (default: 30 days).
+
+    Configuration via json_fields:
+    • deal_ids — comma-separated Deal IDs (blank = all Open deals).
+    • report_recipients — comma-separated email addresses for the summary email.
+    • stale_days — integer threshold for staleness detection (default: 30).
+    • Content flags: include_greeting, include_updates, include_tasks_due,
+      include_tasks_overdue, include_stale_items (all default true).
+  DESC
+
   STEP_LABELS = {
     initialize_agent: "Initialize",
     load_deals: "Load Deals",

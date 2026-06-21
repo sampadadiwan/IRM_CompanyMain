@@ -1,0 +1,54 @@
+<%# frozen_string_literal: true %>
+<% if false %>
+  --------------------------------------------------------------------------------
+  Reusable confirmation modal for running a support agent.
+
+  Usage:
+    render "support_agents/agent_run_modal", modal_id: "run-portfolio-agent-modal",
+      agent_type: "PortfolioCompanyAgent", target_type: "Investor",
+      target_id: @investor.id, description: PortfolioCompanyAgent::DESCRIPTION
+
+  Required params: modal_id, agent_type, target_id, description
+  Optional params: target_type, long_description, extra_params, btn_text, modal_title
+  --------------------------------------------------------------------------------
+<% end %>
+
+<%
+  agent_label = local_assigns[:modal_title].presence || "Run #{agent_type.underscore.humanize.titleize}"
+  submit_text = local_assigns[:btn_text].presence || "Run Agent"
+  long_desc   = local_assigns[:long_description]
+%>
+
+<div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="<%= modal_id %>Label">
+          <i class="ti ti-robot me-2"></i><%= agent_label %>
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= form_with url: run_support_agents_path, method: :post,
+                    data: { controller: "modal-form", action: "turbo:submit-end->modal-form#close" } do |f| %>
+        <%= f.hidden_field :agent_type, value: agent_type %>
+        <% if local_assigns[:target_type].present? %>
+          <%= f.hidden_field :target_type, value: target_type %>
+        <% end %>
+        <%= f.hidden_field :target_id, value: target_id %>
+        <% (local_assigns[:extra_params] || {}).each do |key, value| %>
+          <%= f.hidden_field key, value: value %>
+        <% end %>
+
+        <div class="modal-body">
+          <%= render "support_agents/agent_description_content", short_desc: description, long_desc: long_desc %>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit submit_text, class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

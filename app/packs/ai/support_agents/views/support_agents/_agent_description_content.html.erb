@@ -1,0 +1,10 @@
+<%# frozen_string_literal: true %>
+<%# ── Shared description rendering: short description + optional formatted long description ── %>
+<%# Required locals: short_desc %>
+<%# Optional locals: long_desc %>
+
+<% if local_assigns[:long_desc].present? %>
+  <div class="agent-about-panel p-0" style="background: transparent; border: none;">
+    <%= format_agent_description(long_desc) %>
+  </div>
+<% end %>

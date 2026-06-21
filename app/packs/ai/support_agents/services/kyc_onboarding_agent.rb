@@ -17,6 +17,19 @@ class KycOnboardingAgent < SupportAgentService
     Supports both scheduled (daily/weekly) and event-driven runs (on new InvestorKyc, document
     upload, or field update). Results are saved as SupportAgentReports with per-step issue tracking.
   DESC
+
+  STEP_LABELS = {
+    initialize_agent: "Initialize",
+    check_field_completeness: "Field Completeness",
+    check_document_presence: "Document Presence",
+    check_document_validity: "Document Validity",
+    check_field_to_document_consistency: "Field-Doc Consistency",
+    check_expiry_status: "Expiry Status",
+    send_reminders: "Send Reminders",
+    trigger_aml_if_complete: "Trigger AML",
+    generate_progress_reports: "Save Report"
+  }.freeze
+
   # KycOnboardingAgent orchestrates a multi-step verification pipeline
   # for InvestorKYC records. It checks fields, validates documents
   # against expected content/labels, ensures consistency, creates reports,
@@ -77,12 +90,15 @@ class KycOnboardingAgent < SupportAgentService
   # @return [Boolean] truthy if KYC is completed and eligible for processing
   def initialize_agent(ctx, target:, **)
     super
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :initialize_agent) if report
     investor_kyc = target
     # Initialize execution ctx with a single investor_kyc
     # Setup history, logging, or state tracking for this run
     Rails.logger.debug { "[KycOnboardingAgent] Initializing agent for InvestorKyc ID=#{investor_kyc.id}" }
     ctx[:investor_kyc] = investor_kyc
     ctx[:issues] = { field_issues: [], document_issues: [], aml_report: [] }
+    mark_step_success(report, :initialize_agent, message: "Initialized for InvestorKyc #{investor_kyc.id}") if report
     # Only process if completed by investor and agent is enabled
     investor_kyc.completed_by_investor && @support_agent.enabled?
   end
@@ -94,6 +110,9 @@ class KycOnboardingAgent < SupportAgentService
   # @param investor_kyc [InvestorKyc] record being checked
   # @return [Hash] updated context
   def check_field_completeness(ctx, investor_kyc:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :check_field_completeness) if report
+
     if enabled?("validate_fields")
 
       Rails.logger.debug { "[KycOnboardingAgent] Starting field completeness check for InvestorKyc ID=#{investor_kyc.id}" }
@@ -104,10 +123,13 @@ class KycOnboardingAgent < SupportAgentService
       validate_required_attributes(ctx, investor_kyc, invalid_tokens)
       validate_custom_fields(ctx, investor_kyc, invalid_tokens)
 
+      mark_step_success(report, :check_field_completeness, message: "Checked fields - #{ctx[:issues][:field_issues].count} issues") if report
+
       Rails.logger.debug { "[KycOnboardingAgent] Field completeness check completed. Issues found: #{ctx[:issues][:field_issues].count}" }
       ctx
     else
       Rails.logger.debug { "[KycOnboardingAgent] Field validation is disabled, skipping check." }
+      mark_step_skipped(report, :check_field_completeness, message: "Disabled") if report
       true
     end
   end
@@ -174,13 +196,20 @@ class KycOnboardingAgent < SupportAgentService
   # Verifies all required documents (from form fields and support_agent config)
   # are uploaded by the investor.
   def check_document_presence(ctx, investor_kyc:, support_agent:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :check_document_presence) if report
     super(ctx, model: investor_kyc, support_agent: support_agent)
+    mark_step_success(report, :check_document_presence, message: "Documents checked") if report
+    true
   end
 
   # Uses LLM to validate each uploaded document against its label.
   # Records mismatched or unparsable responses as issues.
   # Returns true in all branches so Trailblazer continues to the next step.
   def check_document_validity(ctx, investor_kyc:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :check_document_validity) if report
+
     if enabled?("validate_documents")
       llm = ctx[:llm]
 
@@ -231,9 +260,11 @@ class KycOnboardingAgent < SupportAgentService
       Rails.logger.debug { "[KycOnboardingAgent] Document label consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
     else
       Rails.logger.debug { "[KycOnboardingAgent] Document validation is disabled, skipping check." }
+      mark_step_skipped(report, :check_document_validity, message: "Disabled") if report
     end
     # Explicit true so Trailblazer does not route to the failure track.
     # Document issues are collected above; the step itself always succeeds.
+    mark_step_success(report, :check_document_validity, message: "Document validity checked") if report
     true
   end
 
@@ -241,21 +272,33 @@ class KycOnboardingAgent < SupportAgentService
   # to the SupportAgent instance already configured.
   # Returns true in all branches so Trailblazer continues to the next step.
   def check_field_to_document_consistency(ctx, investor_kyc:, support_agent:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :check_field_to_document_consistency) if report
+
     if enabled?("validate_documents")
       support_agent.check_field_to_document_consistency(ctx, investor_kyc)
       Rails.logger.debug { "[KycOnboardingAgent] Field-to-document consistency check finished. Issues found: #{ctx[:issues][:document_issues].count}" }
     else
       Rails.logger.debug { "[KycOnboardingAgent] Document validation is disabled, skipping field-to-document consistency check." }
+      mark_step_skipped(report, :check_field_to_document_consistency, message: "Disabled") if report
     end
     # Explicit true so Trailblazer does not route to the failure track regardless
     # of what support_agent.check_field_to_document_consistency returns.
+    mark_step_success(report, :check_field_to_document_consistency, message: "Consistency checked") if report
     true
   end
 
   # Generates per-investor/fund reports summarizing issues and state.
   # Stores report as persisted SupportAgentReport record.
   def generate_progress_reports(ctx, investor_kyc:, support_agent:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :generate_progress_reports) if report
     super(ctx, model: investor_kyc, support_agent: support_agent)
+    if report
+      mark_step_success(report, :generate_progress_reports, message: "Report saved")
+      finalize_report(report, status: "ready")
+    end
+    true
   end
 
   # Checks whether the KYC record is expired or approaching expiry.
@@ -265,8 +308,12 @@ class KycOnboardingAgent < SupportAgentService
   #   check_expiry        — "true"/"false" (default true)
   #   expiry_warning_days — comma-separated day thresholds, e.g. "60,30,15"
   def check_expiry_status(ctx, investor_kyc:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :check_expiry_status) if report
+
     unless enabled?("check_expiry")
       Rails.logger.debug { "[KycOnboardingAgent] Expiry check disabled, skipping." }
+      mark_step_skipped(report, :check_expiry_status, message: "Disabled") if report
       return true
     end
 
@@ -274,6 +321,7 @@ class KycOnboardingAgent < SupportAgentService
 
     if expiry_date.nil?
       ctx[:issues][:field_issues] << { type: :info, message: "No expiry date set", severity: :success }
+      mark_step_success(report, :check_expiry_status, message: "No expiry date set") if report
       return true
     end
 
@@ -291,6 +339,7 @@ class KycOnboardingAgent < SupportAgentService
         severity: :blocking
       }
       Rails.logger.warn { "[KycOnboardingAgent] KYC expired for InvestorKyc ID=#{investor_kyc.id}" }
+      mark_step_success(report, :check_expiry_status, message: "Expired on #{expiry_date}") if report
     elsif warning_thresholds.any? { |d| days_remaining <= d }
       ctx[:issues][:field_issues] << {
         type: :kyc_expiring_soon,
@@ -298,12 +347,14 @@ class KycOnboardingAgent < SupportAgentService
         severity: :warning
       }
       Rails.logger.info { "[KycOnboardingAgent] KYC expiring soon for InvestorKyc ID=#{investor_kyc.id}: #{days_remaining} days remaining" }
+      mark_step_success(report, :check_expiry_status, message: "Expires in #{days_remaining} days") if report
     else
       ctx[:issues][:field_issues] << {
         type: :info,
         message: "KYC valid until #{expiry_date} (#{days_remaining} days remaining)",
         severity: :success
       }
+      mark_step_success(report, :check_expiry_status, message: "Valid until #{expiry_date}") if report
     end
     true
   end
@@ -313,8 +364,12 @@ class KycOnboardingAgent < SupportAgentService
   # Configurable via json_fields:
   #   send_reminder — "true"/"false" (default true)
   def send_reminders(ctx, investor_kyc:, support_agent:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :send_reminders) if report
+
     unless enabled?("send_reminder")
       Rails.logger.debug { "[KycOnboardingAgent] Reminder sending disabled, skipping." }
+      mark_step_skipped(report, :send_reminders, message: "Disabled") if report
       return true
     end
 
@@ -323,6 +378,7 @@ class KycOnboardingAgent < SupportAgentService
 
     if expiry_issues.empty?
       Rails.logger.debug { "[KycOnboardingAgent] No expiry issues for InvestorKyc ID=#{investor_kyc.id} — skipping reminder." }
+      mark_step_skipped(report, :send_reminders, message: "No expiry issues to send") if report
       return true
     end
 
@@ -332,6 +388,8 @@ class KycOnboardingAgent < SupportAgentService
       entity_id: support_agent.entity_id
     ).expiry_alert.deliver_later
 
+    mark_step_success(report, :send_reminders, message: "Reminder queued") if report
+
     Rails.logger.info { "[KycOnboardingAgent] Expiry alert queued for InvestorKyc ID=#{investor_kyc.id}" }
     true
   end
@@ -340,14 +398,16 @@ class KycOnboardingAgent < SupportAgentService
   # Skips gracefully when AML is disabled, no active employee exists, or blocking issues remain.
   # Returns true in all branches so Trailblazer marks the operation as successful.
   def trigger_aml_if_complete(ctx, investor_kyc:, support_agent:, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :trigger_aml_if_complete) if report
+
     unless enabled?("trigger_aml")
       Rails.logger.debug { "[KycOnboardingAgent] AML triggering is disabled, skipping." }
+      mark_step_skipped(report, :trigger_aml_if_complete, message: "Disabled") if report
       return true
     end
 
     Rails.logger.debug { "[KycOnboardingAgent] Checking AML trigger condition for InvestorKyc ID=#{investor_kyc.id} for #{support_agent.id}" }
-
-    report = ctx[:support_agent_report]
 
     # Guard: entity must have at least one active employee to act as the AML requestor.
     # entity is eager-loaded via targets; employees.active is a filtered query.
@@ -356,6 +416,7 @@ class KycOnboardingAgent < SupportAgentService
       Rails.logger.warn { "[KycOnboardingAgent] No active employee found for entity — skipping AML trigger for InvestorKyc ID=#{investor_kyc.id}" }
       report.json_fields["aml_report"] << { message: "Not triggered - no active entity employee found", type: "skipped" }
       report.save
+      mark_step_skipped(report, :trigger_aml_if_complete, message: "No active employee") if report
       return true
     end
 
@@ -366,10 +427,12 @@ class KycOnboardingAgent < SupportAgentService
       # ctx[:issues] keys before merging into json_fields (ensuring DB/in-memory consistency).
       report.json_fields["aml_report"] << { message: "Triggered", triggered_at: Time.current, type: "completed" }
       report.save
+      mark_step_success(report, :trigger_aml_if_complete, message: "AML triggered") if report
     else
       report.json_fields["aml_report"] << { message: "Not triggered - KYC incomplete or blocking issues present", type: "skipped" }
       report.save
       Rails.logger.info { "[KycOnboardingAgent] KYC not complete or has blocking issues, skipping AML trigger for InvestorKyc ID=#{investor_kyc.id}" }
+      mark_step_skipped(report, :trigger_aml_if_complete, message: "Blocking issues present") if report
     end
 
     true

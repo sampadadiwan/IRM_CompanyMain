@@ -119,13 +119,10 @@
                   class: "btn btn-sm btn-outline-secondary",
                   data: { turbo: false } %>
           <% end %>
-          <%= button_to "Run Now",
-                run_support_agents_path(agent_type: "DealManagementAgent",
-                                        target_type: "Deal",
-                                        target_id: deal.id),
-                method: :post,
-                class: "btn btn-sm btn-primary",
-                data: { turbo: false } %>
+          <button type="button" class="btn btn-sm btn-primary"
+                  data-bs-toggle="modal" data-bs-target="#run-deal-management-agent-modal">
+            <i class="ti ti-robot"></i> Run Now
+          </button>
         </div>
       </div>
 
@@ -221,6 +218,19 @@
         </div>
       <% end %>
     </div>
+
+    <% if deal_agent %>
+      <%= render "support_agents/agent_run_modal",
+                 modal_id:         "run-deal-management-agent-modal",
+                 agent_type:       "DealManagementAgent",
+                 target_type:      "Deal",
+                 target_id:        deal.id,
+                 description:      DealManagementAgent::DESCRIPTION,
+                 long_description: DealManagementAgent::LONG_DESCRIPTION %>
+    <% end %>
+
+    <%# Progress panel target — populated by Turbo Stream response when agent runs %>
+    <div id="progress_panel_new" class="container-fluid px-0 pb-3 mt-3"></div>
   <% end %>
 
 

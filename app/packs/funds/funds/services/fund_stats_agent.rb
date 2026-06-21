@@ -1,6 +1,24 @@
 # See SupportAgentJob for context on how this class is used.
 class FundStatsAgent < SupportAgentService
   DESCRIPTION = "Compiles and emails periodic fund statistics, including commitments, stakeholder activity, and portfolio investment updates.".freeze
+
+  LONG_DESCRIPTION = <<~DESC.freeze
+    Compiles a comprehensive periodic statistics digest for each fund and emails it
+    to configured recipients. Runs against all funds in the entity (or a single fund
+    if targeted).
+
+    Stats compiled:
+    • Capital Commitments — new commitments in the period vs overall totals.
+    • Stakeholder Activity — new investors, LPs, and portfolio companies added.
+    • Capital Calls — calls issued and collected amounts in the period.
+    • Portfolio Investments — new investments and fair-market values.
+    • KYC Records — KYC completion activity in the period.
+    • Documents — generated documents in the period.
+
+    The report is sent via email through FundStatsMailer and the full stats payload
+    is saved to the SupportAgentReport for review.
+  DESC
+
   step :initialize_agent
   # == Core Functions ==
   step :commitment_stats

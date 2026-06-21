@@ -35,70 +35,13 @@ class SupportAgentsController < ApplicationController
                       .recent
                       .limit(20)
 
-    @fund_reports = if @support_agent.agent_type == "CashFlowAssistantAgent"
-                      SupportAgentReport
-                        .where(support_agent: @support_agent, owner_type: "Fund")
-                        .includes(:owner)
-                        .order(updated_at: :desc)
-                    else
-                      SupportAgentReport.none
-                    end
-
-    @portfolio_reports = if @support_agent.agent_type == "PortfolioCompanyAgent"
-                           reports = SupportAgentReport
-                                     .where(support_agent: @support_agent, owner_type: "Investor")
-                                     .includes(:owner)
-
-                           # Filter by specific owner if owner_id param is provided
-                           reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-
-                           reports.order(updated_at: :desc)
-                         else
-                           SupportAgentReport.none
-                         end
-
-    # Load latest scoring report per company for PortfolioScoringAgent
-    @scoring_reports = if @support_agent.agent_type == "PortfolioScoringAgent"
-                         reports = SupportAgentReport
-                                   .where(support_agent: @support_agent, owner_type: "Investor")
-                                   .includes(:owner)
-                         reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-                          # Only include reports with scoring data; newest first
-                          reports.where("json_fields LIKE '%\"score\"%'").order(created_at: :desc)
-                       else
-                         SupportAgentReport.none
-                       end
-
-    # Load note summaries per investor for NoteSummarizerAgent
-    @note_summaries = if @support_agent.agent_type == "NoteSummarizerAgent"
-                        reports = SupportAgentReport
-                                  .where(support_agent: @support_agent, owner_type: "Investor")
-                                  .includes(:owner)
-                        reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-                        reports.order(updated_at: :desc)
-                      else
-                        SupportAgentReport.none
-                      end
-
-    # Load presentation analyst reports for PresentationAnalystAgent
-    @presentation_reports = if @support_agent.agent_type == "PresentationAnalystAgent"
-                              reports = SupportAgentReport
-                                        .where(support_agent: @support_agent, owner_type: "Investor")
-                                        .includes(:owner)
-                              reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-                              reports.order(created_at: :desc)
-                            else
-                              SupportAgentReport.none
-                            end
-
-    @deal_reports = if @support_agent.agent_type == "DealsReportAgent"
-                      SupportAgentReport
-                        .where(support_agent: @support_agent, owner_type: "Deal")
-                        .includes(:owner)
-                        .order(updated_at: :desc)
-                    else
-                      SupportAgentReport.none
-                    end
+    query = AgentReportsQuery.new(@support_agent, params)
+    @fund_reports         = query.fund_reports
+    @portfolio_reports    = query.portfolio_reports
+    @scoring_reports      = query.scoring_reports
+    @note_summaries       = query.note_summaries
+    @presentation_reports = query.presentation_reports
+    @deal_reports         = query.deal_reports
   end
 
   # Initializes a new support agent for creation.
@@ -230,7 +173,7 @@ class SupportAgentsController < ApplicationController
       end
       @report = SupportAgentReport.find_or_initialize_by(owner: target, support_agent: @support_agent)
       @report.assign_attributes(
-        status:      :pending,
+        status: :pending,
         json_fields: { "steps" => steps, "final_status" => "running", "triggered_by" => "manual",
                        "triggered_by_user_id" => current_user.id, "run_at" => Time.current.iso8601 }
       )
@@ -239,11 +182,11 @@ class SupportAgentsController < ApplicationController
 
     SupportAgentJob.perform_later(
       support_agent_id: @support_agent.id,
-      target_id:        params[:target_id],
-      target_type:      params[:target_type],
-      user_id:          current_user.id,
-      with_steps:       target.present?,
-      execution_mode:   target.present? ? :single_company_with_steps : :adhoc_batch
+      target_id: params[:target_id],
+      target_type: params[:target_type],
+      user_id: current_user.id,
+      with_steps: target.present?,
+      execution_mode: target.present? ? :single_company_with_steps : :adhoc_batch
     )
 
     respond_to do |format|
@@ -253,7 +196,7 @@ class SupportAgentsController < ApplicationController
           render turbo_stream: turbo_stream.replace(
             "progress_panel_new",
             partial: "support_agents/progress_panel",
-            locals:  { report: @report, support_agent: @support_agent, target: target }
+            locals: { report: @report, support_agent: @support_agent, target: target }
           )
         else
           flash.now[:notice] = "Support agent job has been queued."
