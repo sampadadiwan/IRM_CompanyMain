@@ -17,7 +17,9 @@
     <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">Custom Notifications</a>
-    <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#agent-settings-tab">Agent Settings</a>
+    <% if deal.entity.support_agents.set?(:deals_report_agent) %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#agent-settings-tab">Agent Settings</a>
+    <% end %>
   </nav>
   <div class="tab-content">
     <div id="charts-tab" class="tab-pane fade in show active">
@@ -80,8 +82,10 @@
         <% end %>
       </div>
     </div>
-    <div id="agent-settings-tab" class="tab-pane fade">
-      <%= render "deals/deal_agent_settings", deal: deal %>
-    </div>
+    <% if deal.entity.support_agents.set?(:deals_report_agent) %>
+      <div id="agent-settings-tab" class="tab-pane fade">
+        <%= render "deals/deal_agent_settings", deal: deal %>
+      </div>
+    <% end %>
   </div>
 </div>

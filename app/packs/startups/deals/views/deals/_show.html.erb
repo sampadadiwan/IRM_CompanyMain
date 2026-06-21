@@ -95,142 +95,27 @@
   </table>
 
   <% if current_user.entity_id == deal.entity_id %>
-    <div>
-      <%= link_to  t_common(:edit), edit_deal_path(deal), {class: "btn btn-outline-primary"} %> |
-      <%= button_to t_common(:delete), deal, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: {action: "click->confirm#popup", turbo:false}  %>
-
-    </div>
-  <% end %>
-
-  <%# ── Deal Management Agent panel ───────────────────────────────────────── %>
-  <% if current_user.entity_id == deal.entity_id && deal.entity.support_agents.set?(:deal_management_agent) %>
-    <% deal_agent = SupportAgent.find_by(entity_id: deal.entity_id, agent_type: "DealManagementAgent", enabled: true) %>
-    <% deal_report = SupportAgentReport.find_by(owner: deal, support_agent: deal_agent) %>
-    <div class="card mt-4">
-      <div class="card-header d-flex align-items-center justify-content-between">
-        <strong><i class="ti ti-robot me-1"></i> Deal Management Agent</strong>
-        <div class="d-flex align-items-center gap-2">
-          <% if deal_report %>
-            <span class="text-muted small">
-              Last run: <%= deal_report.updated_at.strftime("%d %b %Y, %H:%M") %>
-            </span>
-            <%= link_to "View Full Report",
-                  support_agent_path(deal_agent, tab: "deal_reports"),
-                  class: "btn btn-sm btn-outline-secondary",
-                  data: { turbo: false } %>
-          <% end %>
-          <button type="button" class="btn btn-sm btn-primary"
+    <div class="d-flex align-items-center gap-2 mt-2">
+      <%= link_to t_common(:edit), edit_deal_path(deal), class: "btn btn-outline-primary" %>
+      <%= button_to t_common(:delete), deal, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: { action: "click->confirm#popup", turbo: false } %>
+      <% if deal.entity.support_agents.set?(:deal_management_agent) %>
+        <% deal_agent = SupportAgent.find_by(entity_id: deal.entity_id, agent_type: "DealManagementAgent", enabled: true) %>
+        <% if deal_agent %>
+          <button type="button" class="btn btn-outline-secondary"
                   data-bs-toggle="modal" data-bs-target="#run-deal-management-agent-modal">
-            <i class="ti ti-robot"></i> Run Now
+            <i class="ti ti-robot me-1"></i> Run Deal Agent
           </button>
-        </div>
-      </div>
-
-      <% if deal_report %>
-        <% jf          = deal_report.json_fields || {} %>
-        <% progress    = jf["progress_issues"]  || [] %>
-        <% doc_issues  = jf["document_issues"]  || [] %>
-        <% terms       = jf["extracted_terms"]  || {} %>
-        <% leaderboard = jf["score_leaderboard"] || [] %>
-        <div class="card-body">
-          <div class="row g-3">
-
-            <%# Progress summary %>
-            <div class="col-md-6">
-              <div class="small text-muted text-uppercase mb-1"><i class="ti ti-activity"></i> Progress</div>
-              <% stagnant_count = progress.count { |i| i["type"] == "stagnant" } %>
-              <% overdue_count  = progress.count { |i| i["type"] == "overdue"  } %>
-              <% if stagnant_count == 0 && overdue_count == 0 %>
-                <span class="text-success small"><i class="ti ti-check"></i> All investors on track</span>
-              <% else %>
-                <% if stagnant_count > 0 %>
-                  <div class="text-danger small"><i class="ti ti-clock"></i> <%= stagnant_count %> stagnant investor<%= stagnant_count > 1 ? 's' : '' %></div>
-                <% end %>
-                <% if overdue_count > 0 %>
-                  <div class="text-warning small"><i class="ti ti-calendar-x"></i> <%= overdue_count %> overdue activit<%= overdue_count > 1 ? 'ies' : 'y' %></div>
-                <% end %>
-              <% end %>
-            </div>
-
-            <%# Document checklist %>
-            <div class="col-md-6">
-              <div class="small text-muted text-uppercase mb-1"><i class="ti ti-file-check"></i> Documents</div>
-              <% missing_count = doc_issues.count { |i| i["type"] == "missing" } %>
-              <% present_count = doc_issues.count { |i| i["type"] == "present" } %>
-              <% if doc_issues.empty? %>
-                <span class="text-muted small">No checklist configured</span>
-              <% elsif missing_count == 0 %>
-                <span class="text-success small"><i class="ti ti-check"></i> All <%= present_count %> required documents present</span>
-              <% else %>
-                <span class="text-danger small"><i class="ti ti-x"></i> <%= missing_count %> document<%= missing_count > 1 ? 's' : '' %> missing</span>
-              <% end %>
-            </div>
-
-            <%# Extracted terms (compact) %>
-            <% if terms.any? %>
-              <div class="col-12">
-                <div class="small text-muted text-uppercase mb-1"><i class="ti ti-file-text"></i> Deal Terms</div>
-                <div class="d-flex flex-wrap gap-2">
-                  <% terms.compact.first(6).each do |key, value| %>
-                    <span class="badge bg-light text-dark border">
-                      <span class="text-muted" style="font-size:0.65rem;"><%= key.to_s.humanize %>:</span>
-                      <strong><%= value %></strong>
-                    </span>
-                  <% end %>
-                  <% if terms.compact.size > 6 %>
-                    <span class="text-muted small align-self-center">+<%= terms.compact.size - 6 %> more →
-                      <%= link_to "view all", support_agent_path(deal_agent, tab: "deal_reports"), data: { turbo: false } %>
-                    </span>
-                  <% end %>
-                </div>
-              </div>
-            <% end %>
-
-            <%# Investor score leaderboard %>
-            <% if leaderboard.any? %>
-              <div class="col-12">
-                <div class="small text-muted text-uppercase mb-1"><i class="ti ti-trophy"></i> Investor Scores</div>
-                <div class="d-flex flex-column gap-1">
-                  <% leaderboard.first(5).each do |row| %>
-                    <% score = (row["ai_score"] || row[:ai_score]).to_i %>
-                    <% grade = (row["ai_grade"] || row[:ai_grade]).to_s %>
-                    <% bar_class = score >= 80 ? "bg-success" : score >= 60 ? "bg-primary" : score >= 40 ? "bg-warning" : "bg-danger" %>
-                    <div class="d-flex align-items-center gap-2">
-                      <span class="small" style="width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                        <%= row["investor_name"] || row[:investor_name] %>
-                      </span>
-                      <div class="progress flex-grow-1" style="height:6px;">
-                        <div class="progress-bar <%= bar_class %>" style="width:<%= score %>%;"></div>
-                      </div>
-                      <span class="small fw-bold" style="width:28px;"><%= score %></span>
-                      <span class="badge <%= bar_class %> small" style="width:36px;"><%= grade %></span>
-                    </div>
-                  <% end %>
-                </div>
-              </div>
-            <% end %>
-
-          </div>
-        </div>
-      <% else %>
-        <div class="card-body text-muted small">
-          No report yet — click <strong>Run Now</strong> to analyse this deal.
-        </div>
+          <%= render "support_agents/agent_run_modal",
+                     modal_id:         "run-deal-management-agent-modal",
+                     agent_type:       "DealManagementAgent",
+                     target_type:      "Deal",
+                     target_id:        deal.id,
+                     description:      DealManagementAgent::DESCRIPTION,
+                     long_description: DealManagementAgent::LONG_DESCRIPTION %>
+        <% end %>
       <% end %>
     </div>
-
-    <% if deal_agent %>
-      <%= render "support_agents/agent_run_modal",
-                 modal_id:         "run-deal-management-agent-modal",
-                 agent_type:       "DealManagementAgent",
-                 target_type:      "Deal",
-                 target_id:        deal.id,
-                 description:      DealManagementAgent::DESCRIPTION,
-                 long_description: DealManagementAgent::LONG_DESCRIPTION %>
-    <% end %>
-
-    <%# Progress panel target — populated by Turbo Stream response when agent runs %>
-    <div id="progress_panel_new" class="container-fluid px-0 pb-3 mt-3"></div>
+    <div id="progress_panel_new" class="mt-3"></div>
   <% end %>
 
 

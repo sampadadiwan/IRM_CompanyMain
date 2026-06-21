@@ -144,11 +144,23 @@
 
     <div class="d-flex gap-2">
       <%= f.submit "Save Settings", class: "btn btn-primary" %>
-      <%= link_to "Run Now", run_now_deal_path(deal), method: :post,
-            class: "btn btn-outline-success",
-            data: { confirm: "Queue a report run now?" } if agent.present? %>
+      <% if agent.present? %>
+        <button type="button" class="btn btn-outline-success"
+                data-bs-toggle="modal" data-bs-target="#run-deals-report-agent-modal">
+          <i class="ti ti-robot me-1"></i> Run Now
+        </button>
+      <% end %>
     </div>
 
+  <% end %>
+
+  <% if agent.present? %>
+    <%= render "support_agents/agent_run_modal",
+               modal_id:         "run-deals-report-agent-modal",
+               agent_type:       "DealsReportAgent",
+               target_id:        deal.entity_id,
+               description:      DealsReportAgent::DESCRIPTION,
+               long_description: DealsReportAgent::LONG_DESCRIPTION %>
   <% end %>
 </div>
 
