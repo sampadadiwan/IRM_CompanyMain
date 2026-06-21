@@ -266,17 +266,13 @@ class SupportAgentsController < ApplicationController
       return redirect_to(request.referer || support_agents_path, notice: "#{@support_agent.name} queued.")
     end
 
-    # Check if already running for single-target runs
-    existing_report = SupportAgentReport.find_by(owner: target, support_agent: @support_agent)
-    return render json: { status: "error", message: "Agent already running for this target" }, status: :unprocessable_entity if existing_report&.running?
-
     # Enqueue the job with execution_mode = single_company_with_steps
     SupportAgentJob.perform_later(
       support_agent_id: @support_agent.id,
       target_id: params[:target_id],
       target_type: params[:target_type],
       user_id: current_user.id,
-      with_steps: @support_agent.with_steps,
+      with_steps: true,
       execution_mode: :single_company_with_steps
     )
 

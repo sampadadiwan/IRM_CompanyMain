@@ -107,14 +107,16 @@ class SupportAgentJob < ApplicationJob
             return
           end
         elsif target_id.present? && target_type.present?
-          targets = if target_type == "Entity"
-                      # Entity provided: run for all portfolio companies in that entity
+          targets = if target_type == "Entity" && execution_mode == :single_company_with_steps
+                      # Step UI runs keep the entity as a single target so the step panel
+                      # report (owner: Entity) stays in sync with the job's broadcasts.
+                      [Entity.find(target_id)]
+                    elsif target_type == "Entity"
+                      # Scheduled/batch runs expand to individual sub-targets (e.g. Funds)
                       support_agent.agent.new.targets(target_id)
                     elsif target_type == "Investor"
-                      # Specific investor provided: run for just that one
                       [Investor.find(target_id)]
                     else
-                      # Other target types (for other agents like KycOnboardingAgent)
                       [target_type.constantize.find(target_id)]
                     end
         else

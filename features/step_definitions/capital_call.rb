@@ -837,7 +837,11 @@ Then('remittance notice must be generated for each remittance') do
   @capital_call ||= @fund.capital_calls.first
   call_template_name = @capital_call.fund.documents.where(owner_tag: "Call Template").last.name
   @capital_call.capital_remittances.each do |cr|
-    cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+    expected_name = "#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}"
+    # The generate-docs job runs inline but ActionCable broadcasts "started" before
+    # docs are committed, so the previous step can return while the job is mid-flight.
+    # Retry until this remittance's document lands in the DB.
+    eventually { cr.documents.pluck(:name).include?(expected_name).should == true }
   end
 end
 
@@ -953,7 +957,7 @@ Then('remittance notice must be generated for the latest remittance for each kyc
     if group.size == 1
       cr = group.first
       puts "Only one remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id}, checking if notice is generated"
-      cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+      eventually { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
       next
     end
 
@@ -964,7 +968,7 @@ Then('remittance notice must be generated for the latest remittance for each kyc
     end
     group.last.tap do |cr|
       puts "Checking remittance #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id} IS generated"
-      cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+      eventually { cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true }
     end
   end
 end

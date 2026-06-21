@@ -1,87 +1,105 @@
 <%
-  agent_cls       = support_agent.agent_type.constantize rescue nil
-  short_desc      = (agent_cls.const_get(:DESCRIPTION)      if agent_cls&.const_defined?(:DESCRIPTION))      || support_agent.description
-  long_desc       = (agent_cls.const_get(:LONG_DESCRIPTION) if agent_cls&.const_defined?(:LONG_DESCRIPTION))
+  agent_cls  = support_agent.agent_type.constantize rescue nil
+  short_desc = (agent_cls.const_get(:DESCRIPTION)      if agent_cls&.const_defined?(:DESCRIPTION))      || support_agent.description
+  long_desc  = (agent_cls.const_get(:LONG_DESCRIPTION) if agent_cls&.const_defined?(:LONG_DESCRIPTION))
 %>
 
-<%# ── Key-value details table ──────────────────────────────────────── %>
-<table class="table table-bordered dataTable agent-detail-table">
-  <colgroup>
-    <col style="width: 160px;">
-    <col>
-  </colgroup>
-  <tr>
-    <td class="align-top">Name</td>
-    <td><%= support_agent.name %></td>
-  </tr>
-  <tr>
-    <td class="align-top">Category</td>
-    <td>
-      <% if support_agent.category.present? %>
-        <span class="badge bg-secondary-subtle text-secondary-emphasis"><%= support_agent.category %></span>
-      <% else %>
-        <span class="text-muted">—</span>
+<%# ── Two-column layout: attributes left, description right ─────────── %>
+<div class="row g-4 align-items-start">
+
+  <%# ── Left column: key-value attributes ──────────────────────────── %>
+  <div class="col-md-5">
+    <div class="card border-0 shadow-sm h-100" style="border-radius: 12px; overflow: hidden;">
+      <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+        <i class="ti ti-list-details text-primary fs-5"></i>
+        <h5 class="mb-0 fw-semibold">Details</h5>
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-bordered dataTable agent-detail-table mb-0">
+          <colgroup>
+            <col style="width: 130px;">
+            <col>
+          </colgroup>
+          <tr>
+            <td class="align-top">Name</td>
+            <td><%= support_agent.name %></td>
+          </tr>
+          <tr>
+            <td class="align-top">Category</td>
+            <td>
+              <% if support_agent.category.present? %>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis"><%= support_agent.category %></span>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </td>
+          </tr>
+          <tr>
+            <td class="align-top">Entity</td>
+            <td><%= support_agent.entity_id %></td>
+          </tr>
+          <tr>
+            <td class="align-top">Form Type</td>
+            <td><%= support_agent.form_type_id %></td>
+          </tr>
+          <tr>
+            <td class="align-top">Agent Type</td>
+            <td><%= support_agent.agent_type %></td>
+          </tr>
+          <tr>
+            <td class="align-top">AI Model</td>
+            <td><code class="text-secondary"><%= support_agent.llm_model %></code></td>
+          </tr>
+          <%= render "support_agents/custom_field_rows", support_agent: support_agent, timestamps_and_snapshot: true %>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Right column: description + actions + progress ─────────────── %>
+  <div class="col-md-7">
+    <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+      <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+        <i class="ti ti-info-circle text-primary fs-5"></i>
+        <h5 class="mb-0 fw-semibold">About This Agent</h5>
+      </div>
+      <div class="card-body p-4">
+        <p class="mb-0" style="font-size: 1rem; line-height: 1.65; color: #334155;">
+          <%= short_desc %>
+        </p>
+
+        <% if long_desc.present? %>
+          <hr class="my-4">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="ti ti-file-text text-secondary"></i>
+            <h6 class="mb-0 fw-semibold text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08em;">
+              Detailed Description
+            </h6>
+          </div>
+          <div class="agent-about-panel p-0" style="background: transparent; border: none;">
+            <%= format_agent_description(long_desc) %>
+          </div>
+        <% end %>
+      </div>
+
+      <%# ── Action buttons ── %>
+      <% if policy(support_agent).update? %>
+        <div class="card-footer bg-white border-top d-flex align-items-center gap-2 py-3">
+          <%= link_to "Edit", edit_support_agent_path(support_agent), class: "btn btn-outline-primary" %>
+          <%= button_to "Run Now", run_with_steps_support_agent_path(support_agent),
+              method: :post,
+              params: { target_type: "Entity", target_id: support_agent.entity_id },
+              class: "btn btn-primary",
+              data: { confirm: "Run #{support_agent.name} now?" } %>
+          <%= button_to "Delete", support_agent, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: { action: "click->confirm#popup", turbo: false } %>
+        </div>
       <% end %>
-    </td>
-  </tr>
-  <tr>
-    <td class="align-top">Entity</td>
-    <td><%= support_agent.entity_id %></td>
-  </tr>
-  <tr>
-    <td class="align-top">Form Type</td>
-    <td><%= support_agent.form_type_id %></td>
-  </tr>
-  <tr>
-    <td class="align-top">Agent Type</td>
-    <td><%= support_agent.agent_type %></td>
-  </tr>
-  <tr>
-    <td class="align-top">AI Model</td>
-    <td><code class="text-secondary"><%= support_agent.llm_model %></code></td>
-  </tr>
-  <%= render "support_agents/custom_field_rows", support_agent: support_agent, timestamps_and_snapshot: true %>
-</table>
 
-<%# ── Description card ─────────────────────────────────────────────── %>
-<div class="card border-0 shadow-sm mt-4" style="border-radius: 12px; overflow: hidden;">
-  <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
-    <i class="ti ti-info-circle text-primary fs-5"></i>
-    <h5 class="mb-0 fw-semibold">About This Agent</h5>
-  </div>
-  <div class="card-body p-4">
-    <p class="mb-0" style="font-size: 1rem; line-height: 1.65; color: #334155;">
-      <%= short_desc %>
-    </p>
-
-    <% if long_desc.present? %>
-      <hr class="my-4">
-      <div class="d-flex align-items-center gap-2 mb-3">
-        <i class="ti ti-file-text text-secondary"></i>
-        <h6 class="mb-0 fw-semibold text-secondary text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.08em;">
-          Detailed Description
-        </h6>
+      <%# ── Progress panel (populated by Run Now via Turbo Stream) ── %>
+      <div class="px-3 pb-3">
+        <div id="progress_panel_new"></div>
       </div>
-      <div class="agent-about-panel p-0" style="background: transparent; border: none;">
-        <%= format_agent_description(long_desc) %>
-      </div>
-    <% end %>
+    </div>
   </div>
+
 </div>
-
-<div class="mt-4">
-  <% if policy(support_agent).update? %>
-    <%= link_to "Edit", edit_support_agent_path(support_agent), class: "btn btn-outline-primary" %>
-    <%= button_to "Run Now", run_with_steps_support_agent_path(support_agent),
-    method: :post,
-    params: { target_type: "Entity", target_id: support_agent.entity_id },
-    class: "btn btn-primary",
-    data: { confirm: "Run #{support_agent.name} now?" } %>
-
-    <%= button_to "Delete", support_agent, method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton", data: { action: "click->confirm#popup", turbo: false } %>
-  <% end %>
-</div>
-
-<div id="progress_panel_new"></div>
-
-
