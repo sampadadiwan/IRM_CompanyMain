@@ -10,11 +10,66 @@ class SupportAgentsController < ApplicationController
   before_action :set_support_agent, only: %i[show edit update destroy]
 
   # Lists all support agents accessible by the current user.
+  # Also computes a setup preview for the "Setup All Agents" modal when the user has permission.
   #
   # @return [void]
   def index
     @q = SupportAgent.ransack(params[:q])
     @support_agents = policy_scope(@q.result)
+    @setup_preview  = compute_setup_preview if policy(:support_agent).setup?
+  end
+
+  # Renders the LLM API key configuration screen.
+  #
+  # @return [void]
+  def llm_keys
+    authorize :support_agent, :llm_keys?
+    @entity_setting = current_user.entity.entity_setting
+  end
+
+  # Saves LLM API keys and the default model to EntitySetting.
+  # Blank key fields are skipped (existing key preserved) unless the
+  # matching clear_* checkbox is checked (explicit removal).
+  #
+  # @return [void]
+  def update_llm_keys
+    authorize :support_agent, :update_llm_keys?
+    @entity_setting = current_user.entity.entity_setting
+
+    attrs = {}
+    LlmModels::PROVIDERS.each_value do |provider|
+      field = provider[:key_field].to_s
+      submitted_value = params.dig(:entity_setting, field)
+      clear_checked   = params.dig(:entity_setting, "clear_#{field}") == "1"
+
+      if clear_checked
+        attrs[field] = nil         # explicit removal
+      elsif submitted_value.present?
+        attrs[field] = submitted_value.strip  # new value
+      end
+      # blank + not clearing → omit from attrs (keep existing)
+    end
+
+    default_model = params.dig(:entity_setting, :default_llm_model)
+    attrs[:default_llm_model] = default_model.presence
+
+    if @entity_setting.update(attrs)
+      redirect_to llm_keys_support_agents_path, notice: "LLM keys saved."
+    else
+      render :llm_keys, status: :unprocessable_entity
+    end
+  end
+
+  # Runs SupportAgentsSetupService for the current entity.
+  # Idempotent — creates missing agents, extends existing ones, never overwrites UI-configured values.
+  #
+  # @return [void]
+  def setup
+    authorize :support_agent, :setup?
+    SupportAgentsSetupService.new(current_user.entity_id).call
+    redirect_to support_agents_path, notice: "Support agents provisioned successfully."
+  rescue StandardError => e
+    redirect_to support_agents_path, alert: "Setup failed: #{e.message}"
   end
 
   # Displays a single support agent.
@@ -581,6 +636,56 @@ class SupportAgentsController < ApplicationController
     target_type.constantize.find_by(id: target_id)
   rescue NameError
     nil
+  end
+
+  # Computes what SupportAgentsSetupService will do for the current entity without executing.
+  # Returns an array of hashes, one per config entry, each with:
+  #   :tag    — agent_type string
+  #   :name   — human name (from config or existing agent)
+  #   :status — :create | :update | :extend | :current | :skipped
+  #   :detail — human-readable one-liner describing the pending change
+  def compute_setup_preview
+    entity_id = current_user.entity_id
+
+    SupportAgentsSetupService::SUPPORT_AGENT_FORM_CONFIGS.map do |cfg|
+      tag = cfg[:tag]
+
+      if cfg[:extend_only]
+        ft = FormType.find_by(entity_id: entity_id, name: "SupportAgent", tag: tag)
+        unless ft
+          next { tag: tag, name: tag.humanize, status: :skipped,
+                 detail: "FormType not found — agent not yet provisioned" }
+        end
+
+        existing_names = ft.form_custom_fields.pluck(:name)
+        new_fields     = cfg[:fields].reject { |f| existing_names.include?(f[:name]) }
+
+        if new_fields.any?
+          { tag: tag, name: tag.humanize, status: :extend,
+            detail: "#{new_fields.size} new field(s) will be added: #{new_fields.map { |f| f[:name] }.join(', ')}" }
+        else
+          { tag: tag, name: tag.humanize, status: :current, detail: "All fields already configured" }
+        end
+
+      else
+        agent_cfg = cfg[:agent]
+        sa        = SupportAgent.find_by(entity_id: entity_id, agent_type: tag)
+
+        if sa.nil?
+          { tag: tag, name: agent_cfg[:name], status: :create,
+            detail: "New agent will be created" }
+        else
+          incoming_keys = (agent_cfg[:json_fields] || {}).keys
+          missing_keys  = incoming_keys - (sa.json_fields || {}).keys
+          if missing_keys.any?
+            { tag: tag, name: agent_cfg[:name], status: :update,
+              detail: "#{missing_keys.size} new config key(s) will be merged: #{missing_keys.join(', ')}" }
+          else
+            { tag: tag, name: agent_cfg[:name], status: :current, detail: "Already fully configured" }
+          end
+        end
+      end
+    end.compact
   end
 
   # Returns a human-friendly display name for the target type.

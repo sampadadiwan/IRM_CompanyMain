@@ -5,6 +5,9 @@ end
 resources :support_agents do
   collection do
     post  'run'
+    post  'setup'
+    get   'llm_keys'
+    patch 'llm_keys', action: 'update_llm_keys'
     get   'note_summaries'
     patch 'update_score'
     patch 'update_note_summary'

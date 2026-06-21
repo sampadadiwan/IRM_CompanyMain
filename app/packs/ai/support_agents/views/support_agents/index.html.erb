@@ -1,16 +1,86 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
   <h1 class="h3 mb-0 text-gray-800">Support Agents</h1>
-  <div class="dropdown">
-    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="newSupportAgentDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-      New Support Agent
-    </button>
-    <ul class="dropdown-menu" aria-labelledby="newSupportAgentDropdown">
-      <% FormType.where(entity_id: current_user.entity_id, name: "SupportAgent").each do |form_type| %>
-        <li><%= link_to form_type.tag, new_support_agent_path(support_agent: { form_type_id: form_type.id, agent_type: form_type.tag }), class: "dropdown-item" %></li>
+  <div class="d-flex align-items-center gap-2">
+    <%= user_guide_info_icon %>
+    <% if policy(:support_agent).llm_keys? %>
+      <%= link_to llm_keys_support_agents_path, class: "btn btn-outline-secondary" do %>
+        <i class="ti ti-key me-1"></i> LLM Keys
       <% end %>
-    </ul>
+    <% end %>
+    <% if @setup_preview %>
+      <button class="btn btn-success"
+              type="button"
+              data-bs-toggle="modal"
+              data-bs-target="#setupAgentsModal">
+        <i class="ti ti-wand me-1"></i> Setup All Agents
+      </button>
+    <% end %>
+    <div class="dropdown">
+      <button class="btn btn-outline-primary dropdown-toggle" type="button" id="newSupportAgentDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        New Support Agent
+      </button>
+      <ul class="dropdown-menu" aria-labelledby="newSupportAgentDropdown">
+        <% FormType.where(entity_id: current_user.entity_id, name: "SupportAgent").each do |form_type| %>
+          <li><%= link_to form_type.tag, new_support_agent_path(support_agent: { form_type_id: form_type.id, agent_type: form_type.tag }), class: "dropdown-item" %></li>
+        <% end %>
+      </ul>
+    </div>
   </div>
 </div>
+
+<%# ── Setup All Agents modal ───────────────────────────────────────────────── %>
+<% if @setup_preview %>
+  <%
+    to_create = @setup_preview.select { |r| r[:status] == :create }
+    to_change = @setup_preview.select { |r| [:extend, :update].include?(r[:status]) }
+    has_work  = to_create.any? || to_change.any?
+  %>
+  <div class="modal fade" id="setupAgentsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title">Setup Support Agents</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body pt-2">
+          <% if has_work %>
+            <p class="text-muted mb-3">The following changes will be made. Existing settings are never overwritten.</p>
+            <ul class="list-unstyled mb-0">
+              <% to_create.each do |row| %>
+                <li class="d-flex align-items-center gap-2 py-1">
+                  <i class="ti ti-circle-plus text-success flex-shrink-0"></i>
+                  <span><%= row[:name] %></span>
+                  <span class="badge bg-success-subtle text-success ms-auto">New</span>
+                </li>
+              <% end %>
+              <% to_change.each do |row| %>
+                <li class="d-flex align-items-center gap-2 py-1">
+                  <i class="ti ti-refresh text-primary flex-shrink-0"></i>
+                  <span><%= row[:name] %></span>
+                  <span class="badge bg-primary-subtle text-primary ms-auto">Update</span>
+                </li>
+              <% end %>
+            </ul>
+          <% else %>
+            <p class="text-muted mb-0">All agents are already configured. Running setup again is safe and makes no changes.</p>
+          <% end %>
+        </div>
+
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <%= button_to has_work ? "Run Setup" : "Run Anyway",
+                        setup_support_agents_path,
+                        method: :post,
+                        class: "btn btn-success",
+                        data: { turbo: false } %>
+        </div>
+
+      </div>
+    </div>
+  </div>
+<% end %>
 
 <div data-controller="filter-agents">
   <%# ── Search bar ────────────────────────────────────────────── %>

@@ -99,7 +99,7 @@ module UserGuideHelper
     'chats' => 'ai_features_user_guide.md',
     'faq_threads' => 'ai_features_user_guide.md',
     'report_insights' => 'ai_features_user_guide.md',
-    'support_agents' => 'ai_features_user_guide.md',
+    'support_agents' => 'support_agents_user_guide.md',
     'agent_schedules' => 'ai_features_user_guide.md',
     'support_agent_chats' => 'ai_features_user_guide.md',
     'agent_charts' => 'ai_features_user_guide.md',

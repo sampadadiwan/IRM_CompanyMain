@@ -29,6 +29,7 @@ class PortfolioReportTemplatesController < ApplicationController
     @template = @portfolio_report.portfolio_report_templates.build(template_params)
     authorize @template
     if @template.save
+      attach_style_file if style_file_param.present?
       redirect_to portfolio_report_path(@portfolio_report), notice: "Template created."
     else
       render :new, status: :unprocessable_entity
@@ -39,6 +40,7 @@ class PortfolioReportTemplatesController < ApplicationController
   def update
     authorize @template
     if @template.update(template_params)
+      attach_style_file if style_file_param.present?
       redirect_to portfolio_report_path(@portfolio_report), notice: "Template updated."
     else
       render :edit, status: :unprocessable_entity
@@ -66,6 +68,27 @@ class PortfolioReportTemplatesController < ApplicationController
 
   def set_template
     @template = PortfolioReportTemplate.find(params[:id])
+  end
+
+  def style_file_param
+    params.dig(:portfolio_report_template, :style_file)
+  end
+
+  # Creates a Document from the uploaded file and sets it as the template's style_document.
+  # Called after save so the template already has an id and a document_folder to attach to.
+  def attach_style_file
+    doc = Document.create!(
+      entity_id: @portfolio_report.entity_id,
+      owner:     @template,
+      folder:    @portfolio_report.document_folder,
+      owner_tag: "Style",
+      name:      style_file_param.original_filename,
+      orignal:   true,
+      user:      current_user,
+      download:  true,
+      file:      style_file_param
+    )
+    @template.update_column(:style_document_id, doc.id)
   end
 
   def template_params

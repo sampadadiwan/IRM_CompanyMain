@@ -1,0 +1,169 @@
+<%
+  provider_meta = {
+    openai:     { icon: "ti-brand-openai",    color: "#10a37f", bg: "#10a37f14",
+                  docs_url: "https://platform.openai.com/api-keys",
+                  hint: "Create a key at platform.openai.com → API Keys" },
+    anthropic:  { icon: "ti-sparkles",        color: "#d97706", bg: "#d9770614",
+                  docs_url: "https://console.anthropic.com/account/keys",
+                  hint: "Create a key at console.anthropic.com → API Keys" },
+    gemini:     { icon: "ti-brand-google",    color: "#4285f4", bg: "#4285f414",
+                  docs_url: "https://aistudio.google.com/app/apikey",
+                  hint: "Create a key at Google AI Studio → Get API Key" },
+    openrouter: { icon: "ti-route",           color: "#6d28d9", bg: "#6d28d914",
+                  hint: "Create a key at openrouter.ai → Keys" }
+  }
+
+  configured_count = LlmModels::PROVIDERS.count { |_, p| @entity_setting.send(p[:key_field]).present? }
+%>
+
+<div class="d-flex align-items-center gap-3 mb-4">
+  <%= link_to support_agents_path, class: "btn btn-sm btn-outline-secondary" do %>
+    <i class="ti ti-arrow-left me-1"></i> Back to Agents
+  <% end %>
+  <div>
+    <h1 class="h3 mb-0 text-gray-800">AI Provider Keys</h1>
+    <p class="text-muted mb-0 mt-1">
+      Configure API keys for each LLM provider. Agents use these keys when running — a key is required before a provider's models can be selected.
+    </p>
+  </div>
+</div>
+
+<%= form_with url: llm_keys_support_agents_path, method: :patch, local: true, data: { turbo: false } do |form| %>
+  <%# ── Default model ──────────────────────────────────────────────────────── %>
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+    <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+      <i class="ti ti-cpu text-primary fs-5"></i>
+      <h5 class="mb-0 fw-semibold">Default LLM Model</h5>
+    </div>
+    <div class="card-body p-4">
+      <p class="text-muted mb-3">
+        Used when no model is set on an individual agent.
+        <% if configured_count == 0 %>
+          <span class="text-warning">Add at least one API key below to enable model selection.</span>
+        <% end %>
+      </p>
+      <div style="max-width: 380px;">
+        <% available = @entity_setting.available_llm_models %>
+        <% if available.any? %>
+          <%# available = [["Provider Label", [["Model Name", "model-id"], ...]], ...] %>
+          <select name="entity_setting[default_llm_model]" class="form-select">
+            <option value="">— No default (use agent setting)</option>
+            <% available.each do |provider_label, models| %>
+              <optgroup label="<%= provider_label %>">
+                <% models.each do |model_label, model_id| %>
+                  <option value="<%= model_id %>" <%= 'selected' if @entity_setting.default_llm_model == model_id %>>
+                    <%= model_label %>
+                  </option>
+                <% end %>
+              </optgroup>
+            <% end %>
+          </select>
+        <% else %>
+          <select class="form-select" disabled>
+            <option>— No providers configured yet —</option>
+          </select>
+          <%# hidden field so the param exists even when select is disabled %>
+          <input type="hidden" name="entity_setting[default_llm_model]" value="<%= @entity_setting.default_llm_model %>">
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# ── Provider cards ─────────────────────────────────────────────────────── %>
+  <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+    <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
+      <i class="ti ti-key text-primary fs-5"></i>
+      <h5 class="mb-0 fw-semibold">API Keys</h5>
+      <span class="badge bg-<%= configured_count > 0 ? 'success' : 'secondary' %>-subtle text-<%= configured_count > 0 ? 'success' : 'secondary' %> ms-auto">
+        <%= configured_count %> / <%= LlmModels::PROVIDERS.size %> configured
+      </span>
+    </div>
+
+    <div class="card-body p-0">
+      <% LlmModels::PROVIDERS.each_with_index do |(provider_key, provider), idx| %>
+        <%
+          field      = provider[:key_field].to_s
+          current    = @entity_setting.send(provider[:key_field])
+          meta       = provider_meta[provider_key] || { icon: "ti-key", color: "#64748b", bg: "#64748b14" }
+          configured = current.present?
+          input_id   = "key_#{field}"
+          models_list = provider[:models].map { |m| m[0] }.join(", ")
+        %>
+        <div class="p-4 <%= idx < LlmModels::PROVIDERS.size - 1 ? 'border-bottom' : '' %>"
+             style="background: <%= configured ? meta[:bg] : 'transparent' %>; transition: background 0.2s;">
+          <div class="d-flex align-items-start gap-3">
+
+            <%# Provider icon pill %>
+            <div class="d-flex align-items-center justify-content-center rounded-3 flex-shrink-0"
+                 style="width:44px; height:44px; background:<%= meta[:color] %>18; border: 1px solid <%= meta[:color] %>30;">
+              <i class="ti <%= meta[:icon] %> fs-4" style="color:<%= meta[:color] %>;"></i>
+            </div>
+
+            <%# Label + status %>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="fw-semibold fs-6"><%= provider[:label] %></span>
+                <% if configured %>
+                  <span class="badge bg-success-subtle text-success">
+                    <i class="ti ti-check me-1"></i>Configured
+                  </span>
+                <% else %>
+                  <span class="badge bg-secondary-subtle text-secondary">Not set</span>
+                <% end %>
+              </div>
+              <p class="text-muted mb-3" style="font-size:0.83rem;">
+                Models unlocked: <%= models_list %>
+              </p>
+
+              <%# Key input row %>
+              <div class="d-flex align-items-center gap-2" style="max-width:520px;">
+                <div class="input-group">
+                  <input type="password"
+                         id="<%= input_id %>"
+                         name="entity_setting[<%= field %>]"
+                         class="form-control font-monospace"
+                         autocomplete="new-password"
+                         placeholder="<%= configured ? 'Enter new key to replace' : 'Paste API key here' %>"
+                         style="letter-spacing: 0.05em;">
+                  <button class="btn btn-outline-secondary"
+                          type="button"
+                          onclick="var f=document.getElementById('<%= input_id %>'); f.type = f.type==='password' ? 'text' : 'password'; this.querySelector('i').classList.toggle('ti-eye'); this.querySelector('i').classList.toggle('ti-eye-off');"
+                          title="Show / hide key">
+                    <i class="ti ti-eye"></i>
+                  </button>
+                </div>
+                <% if configured %>
+                  <div class="form-check form-check-inline ms-1 flex-shrink-0" title="Check to remove this key on save">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           id="clear_<%= field %>"
+                           name="entity_setting[clear_<%= field %>]"
+                           value="1">
+                    <label class="form-check-label text-danger small" for="clear_<%= field %>">Remove</label>
+                  </div>
+                <% end %>
+              </div>
+
+              <% if configured %>
+                <small class="text-muted d-block mt-1">
+                  Leave blank to keep the existing key. Check "Remove" to delete it.
+                </small>
+              <% end %>
+
+              <% if meta[:hint].present? %>
+                <small class="text-muted d-block mt-1">
+                  <i class="ti ti-info-circle me-1"></i><%= meta[:hint] %>
+                </small>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="card-footer bg-white border-top d-flex align-items-center gap-2 py-3">
+      <%= form.submit "Save Keys", class: "btn btn-primary" %>
+      <%= link_to "Cancel", support_agents_path, class: "btn btn-outline-secondary" %>
+    </div>
+  </div>
+<% end %>

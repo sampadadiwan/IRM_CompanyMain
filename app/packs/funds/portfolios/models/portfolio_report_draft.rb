@@ -9,7 +9,7 @@ class PortfolioReportDraft < ApplicationRecord
 
   delegate :entity_id, :entity, to: :portfolio_report
 
-  STATUSES = %w[configuring generating review approved exporting exported].freeze
+  STATUSES = %w[configuring generating review approved exporting exported failed].freeze
   KPI_PERIOD_TYPES = KpiReport::PERIODS
 
   enum :status, STATUSES.index_with(&:itself)

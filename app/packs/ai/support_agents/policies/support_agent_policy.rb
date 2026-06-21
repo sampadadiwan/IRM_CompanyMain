@@ -51,6 +51,18 @@ class SupportAgentPolicy < ApplicationPolicy
     update?
   end
 
+  def setup?
+    user.has_cached_role?(:company_admin) || support?
+  end
+
+  def llm_keys?
+    setup?
+  end
+
+  def update_llm_keys?
+    setup?
+  end
+
   def run?
     update?
   end

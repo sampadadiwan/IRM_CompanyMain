@@ -22,18 +22,32 @@ class PortfolioReportWordTemplateService
   PLACEHOLDER_RE = /\[\[\s*(.+?)\s*\]\]/im
   W_NS = { "w" => "http://schemas.openxmlformats.org/wordprocessingml/2006/main" }.freeze
 
+  # Returns true when the uploaded .docx contains Sablon «variable» markers.
+  def self.has_sablon_placeholders?(docx_path)
+    xml = read_document_xml(docx_path)
+    # Zip streams return ASCII-8BIT; search for the UTF-8 bytes of « (\xC2\xAB) in binary.
+    xml ? xml.b.include?("\xC2\xAB".b) : false
+  end
+
   # Returns true when the uploaded .docx contains at least one [[ ]] marker.
   def self.has_placeholders?(docx_path)
+    xml = read_document_xml(docx_path)
+    return false unless xml
+
+    doc = Nokogiri::XML(xml)
+    doc.xpath("//w:r/w:t", W_NS).any? { |t| t.text.include?("[[") }
+  end
+
+  # Extracts word/document.xml content from a .docx (zip) file; returns nil on error.
+  def self.read_document_xml(docx_path)
     Zip::File.open(docx_path) do |zip|
       entry = zip.find_entry("word/document.xml")
-      return false unless entry
-
-      doc = Nokogiri::XML(entry.get_input_stream.read)
-      doc.xpath("//w:r/w:t", W_NS).any? { |t| t.text.include?("[[") }
+      entry&.get_input_stream&.read
     end
   rescue StandardError
-    false
+    nil
   end
+  private_class_method :read_document_xml
 
   def initialize(draft)
     @draft         = draft

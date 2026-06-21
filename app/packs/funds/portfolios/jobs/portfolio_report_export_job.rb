@@ -30,9 +30,8 @@ class PortfolioReportExportJob < ApplicationJob
     UserAlert.new(user_id: user_id, message: msg, level: "success").broadcast
   rescue StandardError => e
     Rails.logger.error { "[ExportJob] failed draft=#{draft_id}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}" }
-    # Revert to approved so the user can see export failed and retry
     begin
-      draft.update_columns(status: "approved")
+      draft.update_columns(status: "failed")
     rescue StandardError
       nil
     end
@@ -148,7 +147,11 @@ class PortfolioReportExportJob < ApplicationJob
   def generate_word(draft, portco, user, template)
     if template.style_document.present?
       template.style_document.file.download do |style_tmp|
-        if PortfolioReportWordTemplateService.has_placeholders?(style_tmp.path)
+        if PortfolioReportWordTemplateService.has_sablon_placeholders?(style_tmp.path)
+          # Sablon mode — full «variable» interpolation with rich context
+          bytes = PortfolioReportSablonWordService.new(draft).generate(style_tmp.path)
+          save_and_upload(draft, portco, user, bytes, ext: "docx")
+        elsif PortfolioReportWordTemplateService.has_placeholders?(style_tmp.path)
           # Placeholder mode — fill [[ markers ]] in the user's own Word design
           bytes = PortfolioReportWordTemplateService.new(draft).generate(style_tmp.path)
           save_and_upload(draft, portco, user, bytes, ext: "docx")

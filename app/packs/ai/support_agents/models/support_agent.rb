@@ -117,6 +117,16 @@ class SupportAgent < ApplicationRecord
     end
   end
 
+  # Returns true when the entity's support_agents bitflag for this agent is set.
+  # Used by the show page to disable the Run Now button for unlicensed agents.
+  # Defaults to true for unknown agent types so the UI remains usable.
+  def entity_flag_enabled?
+    flag = SupportAgentsSetupService.flag_for(agent_type)
+    entity.support_agents.set?(flag)
+  rescue StandardError
+    true
+  end
+
   # Required by WithFolder so Document#setup_folder can resolve a folder for attached skill files.
   def folder_path
     "Support Agents/#{agent_type}"

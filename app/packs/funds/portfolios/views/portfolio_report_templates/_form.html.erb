@@ -4,6 +4,7 @@
                 url: portfolio_report_template.new_record? ?
                        portfolio_report_portfolio_report_templates_path(portfolio_report) :
                        portfolio_report_template_path(portfolio_report_template),
+                multipart: true,
                 validate: true do |f| %>
 
     <% if portfolio_report_template.errors.any? %>
@@ -32,38 +33,58 @@
 
     <%# ── Style reference file ─────────────────────────────────────────────── %>
     <div class="mb-4">
-      <%= f.label :style_document_id, "Style reference file" %>
-      <%
-        style_docs = portfolio_report_template.new_record? ? [] : portfolio_report_template.documents.order(:name)
-        options    = style_docs.map { |d| [d.name, d.id] }
-      %>
-      <%= f.select :style_document_id, options,
-                   { include_blank: "— none uploaded yet —" },
-                   class: "form-control" %>
+      <label class="form-label fw-semibold">Style file</label>
 
-      <%# Two modes depending on whether the uploaded file contains [[ ]] placeholders %>
-      <div class="mt-2 d-flex gap-2 flex-wrap">
+      <%# Current file badge %>
+      <% if portfolio_report_template.style_document.present? %>
+        <div class="mb-2">
+          <i class="ti ti-file-check text-success me-1"></i>
+          <span class="text-success fw-semibold"><%= portfolio_report_template.style_document.name %></span>
+          <span class="text-muted ms-1">(current — upload a new file below to replace)</span>
+        </div>
+      <% end %>
+
+      <%# Direct upload — creates + assigns a Document in one step %>
+      <div class="mb-2">
+        <%= f.label :style_file, "Upload .docx / .pptx", class: "form-label" %>
+        <%= f.file_field :style_file, class: "form-control", accept: ".docx,.pptx" %>
+      </div>
+
+      <%# Fallback picker for previously uploaded files %>
+      <% style_docs = portfolio_report_template.new_record? ? [] : portfolio_report_template.documents.order(:name) %>
+      <% if style_docs.any? %>
+        <details class="mt-1">
+          <summary class="text-primary small" style="cursor:pointer;">
+            Or pick a previously uploaded file
+          </summary>
+          <div class="mt-2">
+            <%= f.select :style_document_id, style_docs.map { |d| [d.name, d.id] },
+                         { include_blank: "— none —" },
+                         class: "form-control" %>
+          </div>
+        </details>
+      <% end %>
+
+      <%# Mode badges %>
+      <div class="mt-3 d-flex gap-2 flex-wrap">
         <span class="badge bg-light text-secondary border">
-          <strong>Theme-only mode</strong> — upload a <code>.docx</code>/<code>.pptx</code>
-          with no placeholders. Styles, fonts, margins, and headers carry over; content layout is auto-generated.
+          <strong>Theme-only</strong> — no placeholders; styles, fonts &amp; margins carry over
         </span>
         <span class="badge bg-light text-secondary border">
-          <strong>Placeholder mode</strong> — design your own file and insert
-          <code>[[ markers ]]</code> where content should go. Full layout control.
+          <strong>[[ markers ]]</strong> — Word/PPT placeholder mode
+        </span>
+        <span class="badge bg-light text-secondary border">
+          <strong>«sablon»</strong> — full Sablon variable interpolation (Word only)
         </span>
       </div>
 
       <%# Placeholder reference — collapsed by default %>
       <details class="mt-2">
         <summary class="text-primary small" style="cursor:pointer;">
-          Available placeholders <small class="text-muted">(click to expand)</small>
+          Available placeholders &amp; Sablon variables <small class="text-muted">(click to expand)</small>
         </summary>
         <div class="mt-2 p-3 bg-light border rounded small">
-          <p class="mb-2 text-muted">
-            Type any of these markers verbatim inside a text box (Word paragraph or PPT text shape).
-            The export engine replaces the entire paragraph or shape with live data.
-            Markers are case-insensitive and tolerate extra spaces.
-          </p>
+          <p class="mb-2 fw-semibold">[[ marker ]] placeholders (Word &amp; PPT)</p>
           <table class="table table-sm table-bordered mb-3">
             <thead class="table-dark">
               <tr><th>Marker</th><th>What it produces</th></tr>
@@ -74,33 +95,39 @@
               <tr><td><code>[[ template name ]]</code></td><td>This template's name</td></tr>
               <tr><td><code>[[ period ]]</code></td><td>Date range, e.g. "Jan 2024 – Jun 2024"</td></tr>
               <tr><td><code>[[ prepared date ]]</code></td><td>Export date</td></tr>
-              <tr><td><code>[[ kpi table ]]</code></td>
-                  <td>Full KPI data table — for PPT the shape's own size is used as the table bounds</td></tr>
-              <tr><td><code>[[ all sections ]]</code></td>
-                  <td>Every section as Heading 2 + bullets in configured order</td></tr>
+              <tr><td><code>[[ kpi table ]]</code></td><td>Full KPI data table</td></tr>
+              <tr><td><code>[[ all sections ]]</code></td><td>Every section as Heading 2 + bullets</td></tr>
+              <% portfolio_report.portfolio_report_sections.order(:id).each do |section| %>
+                <tr>
+                  <td><code>[[ section: <%= section.name %> ]]</code></td>
+                  <td>Bullets for "<%= section.name %>"</td>
+                </tr>
+              <% end %>
             </tbody>
           </table>
 
-          <%# Section-specific placeholders — list actual section names %>
-          <% sections = portfolio_report.portfolio_report_sections.order(:id) %>
-          <% if sections.any? %>
-            <p class="mb-1 fw-semibold">Per-section placeholders:</p>
-            <div class="d-flex flex-wrap gap-1">
-              <% sections.each do |section| %>
-                <code class="bg-white border rounded px-2 py-1">[[ section: <%= section.name %> ]]</code>
-              <% end %>
-            </div>
-            <p class="text-muted mt-1 mb-0">
-              Each produces the bullet-point narrative for that section.
-              Section name matching is case-insensitive.
-            </p>
-          <% end %>
+          <p class="mb-2 fw-semibold mt-3">«=variable» Sablon variables (Word only)</p>
+          <table class="table table-sm table-bordered mb-0">
+            <thead class="table-dark">
+              <tr><th>Variable</th><th>What it produces</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>«=portfolio_company.investor_name»</code></td><td>Company name</td></tr>
+              <tr><td><code>«=report.name»</code></td><td>Portfolio report name</td></tr>
+              <tr><td><code>«=template.name»</code></td><td>Template name</td></tr>
+              <tr><td><code>«=period»</code></td><td>Date range string</td></tr>
+              <tr><td><code>«=current_date»</code></td><td>Export date</td></tr>
+              <tr><td><code>«=sections:each(section)»</code> … <code>«=sections:endEach»</code></td><td>Loop over sections</td></tr>
+              <tr><td><code>«=section.name»</code></td><td>Section heading (inside loop)</td></tr>
+              <tr><td><code>«=section.bullets:each(bullet)»</code> … <code>«=section.bullets:endEach»</code></td><td>Loop over bullet strings</td></tr>
+              <tr><td><code>«=bullet»</code></td><td>One bullet string (inside loop)</td></tr>
+              <tr><td><code>«=kpis:each(kpi)»</code> … <code>«=kpis:endEach»</code></td><td>Loop over KPI rows</td></tr>
+              <tr><td><code>«=kpi.header»</code></td><td>KPI metric name (inside loop)</td></tr>
+              <tr><td><code>«=report_data.field_name»</code></td><td>AI-extracted field from latest extract</td></tr>
+            </tbody>
+          </table>
         </div>
       </details>
-
-      <small class="text-muted d-block mt-1">
-        Save the template first, then upload your file via the <strong>Style Files</strong> section below and select it here.
-      </small>
     </div>
 
     <%# ── KPI layout ───────────────────────────────────────────────────────── %>
