@@ -66,7 +66,8 @@
 
 <%
   scoring_desc      = (agent_type.constantize::DESCRIPTION rescue nil)
-  scoring_long_desc = (agent_type.constantize::LONG_DESCRIPTION rescue nil)
+  scoring_long_desc = (agent_type.constantize::SINGLE_LONG_DESCRIPTION rescue nil) ||
+                      (agent_type.constantize::LONG_DESCRIPTION rescue nil)
 %>
 <% if can_run && scoring_desc.present? %>
   <%= render "support_agents/agent_run_modal",

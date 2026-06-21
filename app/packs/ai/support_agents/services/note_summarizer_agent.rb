@@ -36,6 +36,23 @@ class NoteSummarizerAgent < SupportAgentService
     which notes are collected), auto_tag_notes (Yes/No), available_tags (tag vocabulary).
   DESC
 
+  # Used when launching for a single investor (not a full entity batch).
+  SINGLE_LONG_DESCRIPTION = <<~DESC
+    Generates an LLM-powered summary of this investor's notes for the configured
+    monthly or quarterly lookback period.
+
+    Steps:
+    • Auto-Tag Notes — finds untagged notes and asks the LLM to assign tags.
+    • Collect Notes — queries notes within the period, applying tag_filter if set.
+      Always excludes notes already tagged "summary" to avoid re-summarising prior runs.
+    • Generate Summary — produces three sections: Key Themes, Action Items (or "None
+      identified"), and Relationship Status (Active / In Discussion / Dormant).
+    • Save Note — writes the summary back as a Note tagged summary,quarter or summary,month.
+      Idempotent — overwrites the existing summary for the same period date.
+
+    Config: summary_period (Month/Quarter), tag_filter, auto_tag_notes, available_tags.
+  DESC
+
   # Human-readable labels shown in the step progress panel
   STEP_LABELS = {
     initialize_agent: "Initialize",

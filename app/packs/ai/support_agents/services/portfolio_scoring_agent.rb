@@ -18,6 +18,22 @@ class PortfolioScoringAgent < SupportAgentService
     Batch processing: sequential across all portfolio companies that have a sector.
   DESC
 
+  # Used when launching for a single portfolio company investor (not a full entity batch).
+  SINGLE_LONG_DESCRIPTION = <<~DESC.freeze
+    Scores this portfolio company using its sector-specific LLM skill prompt. Uploads
+    documents, KPI data, and valuations as context, then asks the LLM to produce a
+    structured investment score.
+
+    Steps:
+    • Load Skill — reads the sector-specific skill prompt from the agent's custom fields.
+    • Gather Data — collects documents, KPI reports, and valuations for this company.
+    • Generate Score — sends all context and the skill prompt to the configured LLM.
+      Expects keys: overall_score, grade, summary, dimensions.
+    • Store Score — persists the structured score and saves a SupportAgentReport.
+
+    Requires a sector to be set on the company to match a skill prompt.
+  DESC
+
   REQUIRED_SCORE_KEYS = %w[overall_score grade summary dimensions].freeze
   SUPPORTED_DOC_EXTENSIONS = %w[.pdf .txt .md .xlsx .xls .pptx .ppt .docx .doc .csv].freeze
 

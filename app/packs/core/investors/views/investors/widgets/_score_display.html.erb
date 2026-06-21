@@ -415,7 +415,8 @@
 <%
   score_agent_type = scoring_agent&.agent_type
   score_desc      = (score_agent_type&.constantize&.const_get(:DESCRIPTION) rescue nil)
-  score_long_desc = (score_agent_type&.constantize&.const_get(:LONG_DESCRIPTION) rescue nil)
+  score_long_desc = (score_agent_type&.constantize&.const_get(:SINGLE_LONG_DESCRIPTION) rescue nil) ||
+                    (score_agent_type&.constantize&.const_get(:LONG_DESCRIPTION) rescue nil)
 %>
 <% if can_run && score_desc.present? %>
   <%= render "support_agents/agent_run_modal",

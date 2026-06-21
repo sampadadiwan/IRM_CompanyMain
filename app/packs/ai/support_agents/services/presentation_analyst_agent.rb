@@ -48,6 +48,22 @@ class PresentationAnalystAgent < SupportAgentService
     PRD: docs/ai/investor_presentation_analyst_prd.md
   DESC
 
+  # Used when launching for a single portfolio company investor (not a full entity batch).
+  SINGLE_LONG_DESCRIPTION = <<~DESC
+    Reads investor presentation documents for this portfolio company, extracts structured
+    intelligence per period, then compares across periods to surface commitment misses,
+    dropped risks, and metric anomalies. Produces a pre-board briefing (8–12 grounded
+    questions) and a Management Accountability Score (0–100).
+
+    Steps:
+    • Collect Presentations — finds KPI report documents matching the configured names.
+    • Extract Intelligence — reads each document and extracts 8 structured categories per period.
+    • Cross-Period Analysis — compares across periods to produce five comparison lenses.
+    • Generate Briefing — 8–12 grounded questions for the board meeting.
+    • Score — computes a Management Accountability Score from the cross-period flags.
+    • Save — persists everything to SupportAgentReport.json_fields.
+  DESC
+
   # PRD §12.1 — Configuration. These match the agent's FormType custom fields.
   # Human-readable labels shown in the Trailblazer step progress panel.
   STEP_LABELS = {

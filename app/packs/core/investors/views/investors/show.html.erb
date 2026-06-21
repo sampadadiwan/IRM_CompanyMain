@@ -162,7 +162,7 @@
                    target_type:      "Investor",
                    target_id:        @investor.id,
                    description:      PortfolioCompanyAgent::DESCRIPTION,
-                   long_description: PortfolioCompanyAgent::LONG_DESCRIPTION %>
+                   long_description: PortfolioCompanyAgent::SINGLE_LONG_DESCRIPTION %>
       <% end %>
 
       <% if @investor.entity.support_agents.set?(:portfolio_scoring_agent) %>
@@ -172,7 +172,7 @@
                    target_type:      "Investor",
                    target_id:        @investor.id,
                    description:      PortfolioScoringAgent::DESCRIPTION,
-                   long_description: PortfolioScoringAgent::LONG_DESCRIPTION %>
+                   long_description: PortfolioScoringAgent::SINGLE_LONG_DESCRIPTION %>
       <% end %>
 
       <% if @investor.entity.support_agents.set?(:presentation_analyst_agent) %>
@@ -182,7 +182,7 @@
                    target_type:      "Investor",
                    target_id:        @investor.id,
                    description:      PresentationAnalystAgent::DESCRIPTION,
-                   long_description: PresentationAnalystAgent::LONG_DESCRIPTION %>
+                   long_description: PresentationAnalystAgent::SINGLE_LONG_DESCRIPTION %>
       <% end %>
     <% end %>
 

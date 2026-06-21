@@ -18,6 +18,22 @@ class KycOnboardingAgent < SupportAgentService
     upload, or field update). Results are saved as SupportAgentReports with per-step issue tracking.
   DESC
 
+  # Used when launching for a single InvestorKYC record (not a full entity batch).
+  SINGLE_LONG_DESCRIPTION = <<~DESC.freeze
+    Runs a complete KYC verification pipeline for this investor KYC record.
+    Checks field completeness, document presence, validity, and expiry, then
+    sends any reminders and triggers AML screening if all checks pass.
+
+    Steps:
+    • Field Completeness — checks that all mandatory fields are populated.
+    • Document Presence — verifies required document types have been uploaded.
+    • Document Validity — validates document content and labels against expected criteria.
+    • Field-to-Document Consistency — ensures field values match the uploaded documents.
+    • Expiry Status — flags documents approaching or past their expiry date.
+    • Send Reminders — notifies this investor about missing or expiring items.
+    • Trigger AML — initiates AML screening once all checks pass.
+  DESC
+
   STEP_LABELS = {
     initialize_agent: "Initialize",
     check_field_completeness: "Field Completeness",

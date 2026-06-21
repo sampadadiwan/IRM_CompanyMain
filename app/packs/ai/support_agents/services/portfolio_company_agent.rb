@@ -15,6 +15,19 @@ class PortfolioCompanyAgent < SupportAgentService
     A batch summary notification is sent after all companies are processed (suppressed for scheduled
     runs). Results are saved as SupportAgentReports and power the portfolio dashboard widget.
   DESC
+
+  # Used when launching for a single portfolio company investor (not a full entity batch).
+  SINGLE_LONG_DESCRIPTION = <<~DESC.freeze
+    Checks data health for this portfolio company — KPI submissions, required document
+    presence, and valuation accuracy. Results are saved as a SupportAgentReport and
+    displayed on the portfolio dashboard widget.
+
+    Steps:
+    • KPI Submission Check — verifies KPI reports have been submitted for expected periods.
+    • Document Presence — checks that all required documents are uploaded.
+    • Valuation Check — flags a missing or stale valuation entry.
+  DESC
+
   step :initialize_agent
   # == Core Functions ==
   step :check_kpi_submission
