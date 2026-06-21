@@ -32,8 +32,8 @@
 
       <div class="d-flex justify-content-between align-items-center">
         <div class="status-section">
-          <span class="status-indicator <%= support_agent.enabled ? 'enabled' : 'disabled' %>"></span>
-          <%= support_agent.enabled ? 'Active' : 'Disabled' %>
+          <span class="status-indicator <%= support_agent.entity_flag_enabled? ? 'enabled' : 'disabled' %>"></span>
+          <%= support_agent.entity_flag_enabled? ? 'Enabled' : 'Disabled' %>
         </div>
         <div class="text-muted small">
           <i class="ti ti-clock"></i> <%= l support_agent.updated_at, format: :short %>

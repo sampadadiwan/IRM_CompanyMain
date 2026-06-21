@@ -62,6 +62,7 @@
       <div class="card-header bg-white border-bottom d-flex align-items-center gap-2 py-3">
         <i class="ti ti-info-circle text-primary fs-5"></i>
         <h5 class="mb-0 fw-semibold">About This Agent</h5>
+        <span class="ms-auto badge <%= support_agent.entity_flag_enabled? ? 'bg-success' : 'bg-danger' %>"><%= support_agent.entity_flag_enabled? ? 'Enabled' : 'Disabled' %></span>
       </div>
       <div class="card-body p-4">
         <%= render "support_agents/agent_description_content", short_desc: short_desc, long_desc: long_desc %>
