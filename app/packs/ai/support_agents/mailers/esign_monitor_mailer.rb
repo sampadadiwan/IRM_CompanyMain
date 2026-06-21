@@ -15,7 +15,7 @@
 #   pending_docs_data — Array of { name:, days_waiting:, pending_signers: [{email:, label:}] }
 #   expired_issues    — Array of { name:, message: } from flag_expired_esigns issues
 #   recipients        — Array<String> email addresses
-class EsignMonitorMailer < ApplicationMailer
+class EsignMonitorMailer < SupportAgentBaseMailer
   def stuck_documents_report
     @support_agent  = SupportAgent.find(params[:support_agent_id])
     @pending_docs   = Array(params[:pending_docs_data])

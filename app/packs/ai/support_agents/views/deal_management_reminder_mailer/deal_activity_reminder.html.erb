@@ -1,38 +1,23 @@
-<p>
-  <% if @days_until_due.negative? %>
-    <strong style="color:#c00;">Overdue by <%= @days_until_due.abs %> day<%= @days_until_due.abs == 1 ? '' : 's' %></strong>
-  <% elsif @days_until_due.zero? %>
-    <strong style="color:#e67e00;">Due Today</strong>
-  <% else %>
-    Due in <strong><%= @days_until_due %> day<%= @days_until_due == 1 ? '' : 's' %></strong>
-  <% end %>
-</p>
+<%
+  if @days_until_due.negative?
+    tone  = :danger
+    label = "Overdue by #{@days_until_due.abs} day#{@days_until_due.abs == 1 ? '' : 's'}"
+  elsif @days_until_due.zero?
+    tone  = :warning
+    label = "Due Today"
+  else
+    tone  = :info
+    label = "Due in #{@days_until_due} day#{@days_until_due == 1 ? '' : 's'}"
+  end
+%>
 
-<table style="width:100%; border-collapse:collapse; margin:16px 0;">
-  <tr>
-    <td style="padding:8px; border:1px solid #ddd; background:#f5f5f5; width:140px;"><strong>Deal</strong></td>
-    <td style="padding:8px; border:1px solid #ddd;"><%= @deal.name %></td>
-  </tr>
-  <tr>
-    <td style="padding:8px; border:1px solid #ddd; background:#f5f5f5;"><strong>Investor</strong></td>
-    <td style="padding:8px; border:1px solid #ddd;"><%= @investor_name %></td>
-  </tr>
-  <tr>
-    <td style="padding:8px; border:1px solid #ddd; background:#f5f5f5;"><strong>Activity</strong></td>
-    <td style="padding:8px; border:1px solid #ddd;"><%= @activity.title %></td>
-  </tr>
-  <tr>
-    <td style="padding:8px; border:1px solid #ddd; background:#f5f5f5;"><strong>Due Date</strong></td>
-    <td style="padding:8px; border:1px solid #ddd;"><%= @activity.by_date&.strftime("%d %b %Y") || "—" %></td>
-  </tr>
-  <% if @activity.details.present? %>
-  <tr>
-    <td style="padding:8px; border:1px solid #ddd; background:#f5f5f5;"><strong>Details</strong></td>
-    <td style="padding:8px; border:1px solid #ddd;"><%= @activity.details.to_plain_text %></td>
-  </tr>
-  <% end %>
-</table>
+<%= sa_banner(title: "Activity Reminder", label: label, subtitle: "#{h @deal.name} · #{h @entity.name}", tone: tone) %>
 
-<p style="color:#888; font-size:12px;">
-  This reminder was sent by the Deal Management Agent for <%= @entity.name %>.
-</p>
+<%= sa_kv_table(rows: [
+  ["Deal",     h(@deal.name)],
+  ["Investor", h(@investor_name)],
+  ["Activity", h(@activity.title)],
+  ["Due Date", @activity.by_date&.strftime("%d %b %Y") || "—"]
+] + (@activity.details.present? ? [["Details", h(@activity.details.to_plain_text)]] : [])) %>
+
+<%= sa_footer("This reminder was sent by the Deal Management Agent for #{h @entity.name}.") %>

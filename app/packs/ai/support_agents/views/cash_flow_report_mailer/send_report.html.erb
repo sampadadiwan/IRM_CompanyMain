@@ -5,115 +5,66 @@
 
   sub = @entity.sub_domain
 
-  status_label = { "surplus" => "Surplus", "watch" => "Watch", "shortfall" => "Shortfall", "blocked" => "Blocked" }
-  status_color = { "surplus" => "#2e7d32", "watch" => "#e65100", "shortfall" => "#c62828", "blocked" => "#757575" }
-  status_bg    = { "surplus" => "#e8f5e9", "watch" => "#fff3e0", "shortfall" => "#ffebee", "blocked" => "#f5f5f5" }
-
   shortfall_funds = @fund_results.select { |f| f[:fund_status] == "shortfall" }
+  watch_funds     = @fund_results.select { |f| f[:fund_status] == "watch" }
   ready_funds     = @fund_results.select { |f| f[:fund_status] && f[:fund_status] != "blocked" }
   blocked_funds   = @fund_results.select { |f| f[:fund_status] == "blocked" }
 
-  overall_color = shortfall_funds.any? ? "#c62828" : @fund_results.any? { |f| f[:fund_status] == "watch" } ? "#e65100" : "#2e7d32"
-  overall_bg    = shortfall_funds.any? ? "#ffebee" : @fund_results.any? { |f| f[:fund_status] == "watch" } ? "#fff3e0" : "#e8f5e9"
-  overall_label = shortfall_funds.any? ? "Action Required" : @fund_results.any? { |f| f[:fund_status] == "watch" } ? "Monitor" : "All Clear"
+  overall_tone  = shortfall_funds.any? ? :danger : watch_funds.any? ? :warning : :success
+  overall_label = shortfall_funds.any? ? "Action Required" : watch_funds.any? ? "Monitor" : "All Clear"
+  overall_sub   = "#{ready_funds.size} of #{@fund_results.size} funds reporting" +
+                  (shortfall_funds.any? ? " — #{shortfall_funds.size} shortfall#{shortfall_funds.size != 1 ? 's' : ''} need attention" : "") +
+                  (blocked_funds.any? ? " — #{blocked_funds.size} blocked (stale data)" : "")
 %>
 
-<p style="margin:0 0 20px">
-  This is an automated cash flow analysis report for <strong><%= @entity.name %></strong>
-  covering <%= @fund_results.size %> fund<%= "s" if @fund_results.size != 1 %>.
-  Review any shortfalls and initiate capital calls promptly.
-</p>
+<%= sa_intro("This is an automated cash flow analysis report for <strong>#{h @entity.name}</strong> covering #{@fund_results.size} fund#{@fund_results.size != 1 ? 's' : ''}. Review any shortfalls and initiate capital calls promptly.".html_safe) %>
 
-<!-- Overall status banner -->
-<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px">
-  <tr>
-    <td style="background:<%= overall_bg %>;border-left:4px solid <%= overall_color %>;border-radius:4px;padding:16px 20px">
-      <div style="font-size:11px;font-weight:700;color:<%= overall_color %>;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">
-        Overall Status — <%= Time.zone.today.strftime("%B %Y") %>
-      </div>
-      <div style="font-size:28px;font-weight:700;color:<%= overall_color %>;line-height:1"><%= overall_label %></div>
-      <div style="font-size:12px;color:#555;margin-top:6px">
-        <%= ready_funds.size %> of <%= @fund_results.size %> funds reporting
-        <% if shortfall_funds.any? %>
-          &mdash; <strong style="color:#c62828"><%= shortfall_funds.size %> shortfall<%= "s" if shortfall_funds.size != 1 %> need attention</strong>
-        <% end %>
-        <% if blocked_funds.any? %>
-          &mdash; <span style="color:#757575"><%= blocked_funds.size %> blocked (stale data)</span>
-        <% end %>
-      </div>
-    </td>
-  </tr>
-</table>
+<%= sa_banner(
+  title:    "Overall Status — #{Time.zone.today.strftime('%B %Y')}",
+  label:    overall_label,
+  subtitle: overall_sub,
+  tone:     overall_tone
+) %>
 
 <% if shortfall_funds.any? %>
-<!-- Action required callout -->
-<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px">
-  <tr>
-    <td style="background:#ffebee;border:1px solid #ef9a9a;border-radius:4px;padding:14px 18px">
-      <div style="font-size:13px;font-weight:700;color:#c62828;margin-bottom:8px">ACTION REQUIRED</div>
-      <% shortfall_funds.each do |f| %>
-        <div style="font-size:13px;color:#333;margin-bottom:4px">
-          <strong><%= f[:name] %></strong> &mdash;
-          capital call of <strong><%= format_amount.call(f[:recommended_call], @currency) %></strong> recommended.
-          <a href="<%= capital_calls_url(subdomain: sub) %>" style="color:#1565c0;text-decoration:none;font-weight:600">Raise Call &rarr;</a>
-        </div>
-      <% end %>
-    </td>
-  </tr>
-</table>
+  <%= sa_callout(
+    tone:    :danger,
+    heading: "Action Required",
+    body:    shortfall_funds.map { |f|
+      "#{h f[:name]} &mdash; capital call of <strong>#{format_amount.call(f[:recommended_call], @currency)}</strong> recommended. <a href=\"#{capital_calls_url(subdomain: sub)}\" style=\"color:#{SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none\">Raise Call &rarr;</a>"
+    }.join("<br>").html_safe
+  ) %>
 <% end %>
 
-<!-- Portfolio summary table -->
-<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:8px">
-  <tr>
-    <td style="padding-bottom:4px;border-bottom:2px solid #333">
-      <span style="font-size:15px;font-weight:700;color:#333">Portfolio Summary</span>
-    </td>
-  </tr>
-</table>
+<%= sa_section(title: "Portfolio Summary", top_margin: false) %>
 
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:32px">
-  <thead>
-    <tr style="background:#f5f5f5">
-      <th style="padding:9px 12px;text-align:left;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">Fund</th>
-      <th style="padding:9px 12px;text-align:left;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">Status</th>
-      <th style="padding:9px 12px;text-align:right;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">Net Position</th>
-      <th style="padding:9px 12px;text-align:right;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">Runway</th>
-      <th style="padding:9px 12px;text-align:left;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">Action</th>
-    </tr>
-  </thead>
+  <%= sa_th("Fund", "Status", ["Net Position", {align: :right}], ["Runway", {align: :right}], "Action") %>
   <tbody>
     <% @fund_results.each do |fund| %>
       <% fs = fund[:fund_status] || fund[:status] %>
-      <% sc = status_color[fs] || "#333" %>
-      <% sb = status_bg[fs] || "#f5f5f5" %>
+      <% tone = sa_tone_for(fs) %>
       <tr>
-        <td style="padding:10px 12px;border:1px solid #e0e0e0;font-weight:500"><%= fund[:name] %></td>
-        <td style="padding:10px 12px;border:1px solid #e0e0e0">
-          <span style="background:<%= sb %>;color:<%= sc %>;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap">
-            <%= status_label[fs] || fs&.titleize %>
-          </span>
+        <%= sa_td(fund[:name].to_s, bold: true) %>
+        <td style="padding:9px 12px;border:1px solid #e0e0e0">
+          <%= sa_badge(label: fs&.titleize || "—", tone: tone) %>
         </td>
         <% if fs == "blocked" %>
-          <td style="padding:10px 12px;border:1px solid #e0e0e0;text-align:right;color:#999">&mdash;</td>
-          <td style="padding:10px 12px;border:1px solid #e0e0e0;text-align:right;color:#999">&mdash;</td>
-          <td style="padding:10px 12px;border:1px solid #e0e0e0;color:#757575;font-size:12px">Update stale data</td>
+          <%= sa_td("&mdash;".html_safe, align: :right, color: "#aaa") %>
+          <%= sa_td("&mdash;".html_safe, align: :right, color: "#aaa") %>
+          <%= sa_td("Update stale data", color: "#757575") %>
         <% else %>
-          <td style="padding:10px 12px;border:1px solid #e0e0e0;text-align:right;font-weight:<%= fs == "shortfall" ? "700" : "400" %>;color:<%= sc %>">
-            <%= format_amount.call(fund[:net_position], @currency) %>
-          </td>
-          <td style="padding:10px 12px;border:1px solid #e0e0e0;text-align:right">
-            <%= fund[:runway_days] >= 999 ? "180+ days" : "#{fund[:runway_days]} days" %>
-          </td>
-          <td style="padding:10px 12px;border:1px solid #e0e0e0">
+          <%= sa_td(format_amount.call(fund[:net_position], @currency), align: :right, bold: fs == "shortfall", color: SA_COLORS[tone][:text]) %>
+          <%= sa_td(fund[:runway_days] >= 999 ? "180+ days" : "#{fund[:runway_days]} days", align: :right) %>
+          <td style="padding:9px 12px;border:1px solid #e0e0e0">
             <% if fs == "shortfall" %>
-              <a href="<%= capital_calls_url(subdomain: sub) %>" style="color:#c62828;font-weight:600;text-decoration:none">
+              <a href="<%= capital_calls_url(subdomain: sub) %>" style="color:#{SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none">
                 Call <%= format_amount.call(fund[:recommended_call], @currency) %> &rarr;
               </a>
             <% elsif fs == "watch" %>
-              <span style="color:#e65100">Monitor</span>
+              <span style="color:#{SA_COLORS[:warning][:text]}">Monitor</span>
             <% else %>
-              <span style="color:#2e7d32">None</span>
+              <span style="color:#{SA_COLORS[:success][:text]}">None</span>
             <% end %>
           </td>
         <% end %>
@@ -122,62 +73,32 @@
   </tbody>
 </table>
 
-<!-- Per-fund detail sections -->
 <% ready_funds.each do |fund| %>
   <% fs = fund[:fund_status] %>
-  <% sc = status_color[fs] || "#333" %>
+  <% tone = sa_tone_for(fs) %>
 
-  <!-- Section header -->
-  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:28px">
-    <tr>
-      <td style="padding-bottom:8px;border-bottom:1px solid #e0e0e0">
-        <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
-          <tr>
-            <td style="font-size:14px;font-weight:700;color:#333"><%= fund[:name] %> &mdash; Detail</td>
-            <td style="text-align:right">
-              <a href="<%= capital_commitments_url(subdomain: sub) %>" style="font-size:12px;color:#1565c0;text-decoration:none;font-weight:600">View Commitments &rarr;</a>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+  <%= sa_section(
+    title:     "#{fund[:name]} — Detail",
+    link_text: "View Commitments",
+    link_url:  capital_commitments_url(subdomain: sub)
+  ) %>
 
-  <!-- Key metrics -->
-  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-top:10px;margin-bottom:8px">
-    <tr>
-      <td style="padding:7px 12px;border:1px solid #e0e0e0;color:#555">Cash Available</td>
-      <td style="padding:7px 12px;border:1px solid #e0e0e0;text-align:right"><%= format_amount.call(fund[:cash_available], @currency) %></td>
-    </tr>
-    <tr style="background:#fafafa">
-      <td style="padding:7px 12px;border:1px solid #e0e0e0;color:#555">Upcoming Investments</td>
-      <td style="padding:7px 12px;border:1px solid #e0e0e0;text-align:right"><%= format_amount.call(fund[:upcoming_investments], @currency) %></td>
-    </tr>
-    <tr>
-      <td style="padding:7px 12px;border:1px solid #e0e0e0;color:#555">Estimated Expenses</td>
-      <td style="padding:7px 12px;border:1px solid #e0e0e0;text-align:right"><%= format_amount.call(fund[:estimated_expenses], @currency) %></td>
-    </tr>
-    <tr style="background:#fafafa">
-      <td style="padding:7px 12px;border:1px solid #e0e0e0;color:#555">Buffer Required</td>
-      <td style="padding:7px 12px;border:1px solid #e0e0e0;text-align:right"><%= format_amount.call(fund[:buffer_required], @currency) %></td>
-    </tr>
-    <tr style="border-top:2px solid #333">
-      <td style="padding:9px 12px;border:1px solid #e0e0e0;font-weight:700">Net Position</td>
-      <td style="padding:9px 12px;border:1px solid #e0e0e0;text-align:right;font-weight:700;color:<%= sc %>">
-        <%= format_amount.call(fund[:net_position], @currency) %>
-      </td>
-    </tr>
-  </table>
+  <%= sa_kv_table(rows: [
+    ["Cash Available",       format_amount.call(fund[:cash_available], @currency)],
+    ["Upcoming Investments", format_amount.call(fund[:upcoming_investments], @currency)],
+    ["Estimated Expenses",   format_amount.call(fund[:estimated_expenses], @currency)],
+    ["Buffer Required",      format_amount.call(fund[:buffer_required], @currency)],
+    ["Net Position",         format_amount.call(fund[:net_position], @currency), { tone: tone, bold: true }]
+  ]) %>
 
   <% if fund[:cash_breakdown]&.any? %>
-    <!-- Cash breakdown -->
-    <p style="font-size:12px;font-weight:600;color:#555;margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.5px">Cash by Entity</p>
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">
+    <p style="font-size:12px;font-weight:700;color:#555;margin:12px 0 6px;text-transform:uppercase;letter-spacing:0.5px">Cash by Entity</p>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:12px">
       <% fund[:cash_breakdown].each do |entry| %>
         <tr>
           <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;font-size:13px"><%= entry[:entity_name] %></td>
           <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px"><%= format_amount.call(entry[:amount_cents], @currency) %></td>
-          <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;color:#999;font-size:12px">
+          <td style="padding:6px 10px;border-bottom:1px solid #f0f0f0;color:#aaa;font-size:12px">
             <% if entry[:last_updated] %>
               <%= (Time.zone.today - entry[:last_updated]).to_i %> days ago
             <% end %>
@@ -188,53 +109,20 @@
   <% end %>
 
   <% if fs == "shortfall" %>
-    <!-- Shortfall help text -->
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:12px">
-      <tr>
-        <td style="padding:10px 14px;background:#fff8f8;border-left:3px solid #ef9a9a;border-radius:2px">
-          <span style="font-size:12px;color:#555;line-height:1.5">
-            This fund has insufficient cash to cover upcoming investments and expenses. Raise a capital call of
-            <strong><%= format_amount.call(fund[:recommended_call], @currency) %></strong> to restore the required buffer.
-            <a href="<%= capital_calls_url(subdomain: sub) %>" style="color:#c62828;font-weight:600;text-decoration:none">Raise Capital Call &rarr;</a>
-          </span>
-        </td>
-      </tr>
-    </table>
+    <%= sa_callout(
+      tone: :danger,
+      body: "This fund has insufficient cash to cover upcoming investments and expenses. Raise a capital call of <strong>#{format_amount.call(fund[:recommended_call], @currency)}</strong> to restore the required buffer. <a href=\"#{capital_calls_url(subdomain: sub)}\" style=\"color:#{SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none\">Raise Capital Call &rarr;</a>".html_safe
+    ) %>
   <% elsif fs == "watch" %>
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:12px">
-      <tr>
-        <td style="padding:10px 14px;background:#fffde7;border-left:3px solid #ffe082;border-radius:2px">
-          <span style="font-size:12px;color:#555;line-height:1.5">
-            Runway is within the watch threshold. No immediate action required, but monitor cash position closely over the next few weeks.
-          </span>
-        </td>
-      </tr>
-    </table>
+    <%= sa_callout(
+      tone: :warning,
+      body: "Runway is within the watch threshold. No immediate action required, but monitor cash position closely over the next few weeks.".html_safe
+    ) %>
   <% end %>
 <% end %>
 
-<!-- CTA button when action needed -->
 <% if shortfall_funds.any? %>
-  <table role="presentation" class="btn btn-outline-primary" style="margin-top:32px">
-    <tbody>
-      <tr>
-        <td>
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-            <tbody>
-              <tr>
-                <td><a href="<%= capital_calls_url(subdomain: sub) %>" target="_blank">Open CapHive to Raise Capital Calls</a></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <%= sa_cta(label: "Open CapHive to Raise Capital Calls", url: capital_calls_url(subdomain: sub)) %>
 <% end %>
 
-<!-- Footer -->
-<p style="font-size:11px;color:#aaa;margin-top:36px;padding-top:16px;border-top:1px solid #eee;line-height:1.5">
-  Report generated: <%= Time.zone.now.strftime("%d %b %Y, %I:%M %p") %> &bull;
-  <%= ready_funds.size %> of <%= @fund_results.size %> funds have current data.
-  This report runs automatically — configure recipients in the Cash Flow Assistant Agent settings in CapHive.
-</p>
+<%= sa_footer("Report generated: #{Time.zone.now.strftime('%d %b %Y, %I:%M %p')} · #{ready_funds.size} of #{@fund_results.size} funds have current data. This report runs automatically — configure recipients in the Cash Flow Assistant Agent settings in CapHive.") %>

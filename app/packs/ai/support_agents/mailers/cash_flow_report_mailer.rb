@@ -5,7 +5,7 @@
 # "Action Required" subject line.
 #
 # @see CashFlowAssistantAgent
-class CashFlowReportMailer < ApplicationMailer
+class CashFlowReportMailer < SupportAgentBaseMailer
   helper CurrencyHelper
 
   def send_report

@@ -3,11 +3,9 @@
   stale_fx_days  = @support_agent.json_fields["stale_fx_days"]&.to_i || 30
   sub            = @fund.entity.sub_domain
 
-  score_color = @health_score == 100 ? "#2e7d32" : @health_score >= 50 ? "#e65100" : "#c62828"
-  score_bg    = @health_score == 100 ? "#e8f5e9" : @health_score >= 50 ? "#fff3e0" : "#ffebee"
-
   active_checks  = @check_results.reject { |r| r[:status] == :skipped }
   passing_checks = active_checks.count { |r| r[:status] == :pass }
+  score_tone     = @health_score == 100 ? :success : @health_score >= 50 ? :warning : :danger
 
   check_help = {
     "Commitment Overflows" => "LP collected amount exceeds their total commitment.",
@@ -37,54 +35,29 @@
   ].select { |s| @issues[s[:key]].any? }
 %>
 
-<p style="margin:0 0 20px">
-  This is an automated data quality report from the nightly integrity check for <strong><%= @fund.name %></strong>.
-  Review and resolve any issues below to keep your fund data accurate and your investors informed.
-</p>
+<%= sa_intro("This is an automated data quality report from the nightly integrity check for <strong>#{h @fund.name}</strong>. Review and resolve any issues below to keep your fund data accurate and your investors informed.".html_safe) %>
 
-<!-- Health score banner -->
-<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:28px">
-  <tr>
-    <td style="background:<%= score_bg %>;border-left:4px solid <%= score_color %>;border-radius:4px;padding:16px 20px">
-      <div style="font-size:11px;font-weight:700;color:<%= score_color %>;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Health Score</div>
-      <div style="font-size:40px;font-weight:700;color:<%= score_color %>;line-height:1"><%= @health_score %>%</div>
-      <div style="font-size:12px;color:#555;margin-top:6px">
-        <%= passing_checks %> of <%= active_checks.size %> checks passing
-        <% if @health_score < 100 %> &mdash; <strong style="color:<%= score_color %>"><%= active_checks.size - passing_checks %> require attention</strong><% end %>
-      </div>
-    </td>
-  </tr>
-</table>
+<%= sa_banner(
+  title:    "Health Score",
+  label:    "#{@health_score}%",
+  subtitle: "#{passing_checks} of #{active_checks.size} checks passing#{@health_score < 100 ? " &mdash; <strong>#{active_checks.size - passing_checks} require attention</strong>" : ''}",
+  tone:     score_tone
+) %>
 
-<!-- Check summary -->
+<%= sa_section(title: "Check Summary", top_margin: false) %>
+
 <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:32px">
-  <thead>
-    <tr style="background:#f5f5f5">
-      <th style="padding:9px 12px;text-align:left;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">Check</th>
-      <th style="padding:9px 12px;text-align:left;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">Status</th>
-      <th style="padding:9px 12px;text-align:right;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">Issues</th>
-      <th style="padding:9px 12px;text-align:left;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.5px">What this checks</th>
-    </tr>
-  </thead>
+  <%= sa_th("Check", "Status", ["Issues", {align: :right}], "What this checks") %>
   <tbody>
     <% @check_results.each do |result| %>
-      <%
-        badge_color = result[:status] == :pass ? "#2e7d32" : result[:status] == :fail ? "#c62828" : "#757575"
-        badge_bg    = result[:status] == :pass ? "#e8f5e9" : result[:status] == :fail ? "#ffebee" : "#f5f5f5"
-      %>
+      <% tone = sa_tone_for(result[:status].to_s) %>
       <tr>
-        <td style="padding:10px 12px;border:1px solid #e0e0e0;font-weight:500"><%= result[:name] %></td>
-        <td style="padding:10px 12px;border:1px solid #e0e0e0">
-          <span style="background:<%= badge_bg %>;color:<%= badge_color %>;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap">
-            <%= result[:status].to_s.upcase %>
-          </span>
+        <%= sa_td(result[:name].to_s, bold: true) %>
+        <td style="padding:9px 12px;border:1px solid #e0e0e0">
+          <%= sa_badge(label: result[:status].to_s.upcase, tone: tone) %>
         </td>
-        <td style="padding:10px 12px;border:1px solid #e0e0e0;text-align:right;font-weight:<%= result[:status] == :fail ? '700' : '400' %>;color:<%= result[:status] == :fail ? '#c62828' : '#333' %>">
-          <%= result[:count] || "&mdash;".html_safe %>
-        </td>
-        <td style="padding:10px 12px;border:1px solid #e0e0e0;color:#666;font-size:12px">
-          <%= check_help[result[:name]] %>
-        </td>
+        <%= sa_td(result[:count]&.to_s || "&mdash;".html_safe, align: :right, bold: result[:status] == :fail, color: result[:status] == :fail ? SA_COLORS[:danger][:text] : nil) %>
+        <%= sa_td(check_help[result[:name]].to_s, color: "#666") %>
       </tr>
     <% end %>
   </tbody>
@@ -92,97 +65,42 @@
 
 <% if failed_sections.any? %>
 
-  <!-- Fix-it list heading -->
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
     <tr>
-      <td style="padding-bottom:4px;border-bottom:2px solid #c62828">
-        <span style="font-size:17px;font-weight:700;color:#c62828">Fix-it List</span>
+      <td style="padding-bottom:4px;border-bottom:2px solid #{SA_COLORS[:danger][:text]}">
+        <span style="font-size:17px;font-weight:700;color:#{SA_COLORS[:danger][:text]}">Fix-it List</span>
         <span style="font-size:12px;color:#666;margin-left:8px">Resolve these issues to improve your health score</span>
       </td>
     </tr>
   </table>
 
   <% failed_sections.each do |section| %>
-    <!-- Section: <%= section[:name] %> -->
-    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:24px">
-      <!-- Section header row -->
-      <tr>
-        <td style="padding-bottom:8px">
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
-            <tr>
-              <td style="font-size:14px;font-weight:700;color:#333"><%= section[:name] %></td>
-              <td style="text-align:right">
-                <a href="<%= section[:url] %>" style="font-size:12px;color:#1565c0;text-decoration:none;font-weight:600">Fix in CapHive &rarr;</a>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-      <!-- Help text -->
-      <tr>
-        <td style="padding:10px 14px;background:#f9f9f9;border-left:3px solid #bdbdbd;border-radius:2px;margin-bottom:10px">
-          <span style="font-size:12px;color:#555;line-height:1.5"><%= section[:help] %></span>
-        </td>
-      </tr>
-      <!-- Spacer -->
-      <tr><td style="height:8px"></td></tr>
-      <!-- Issues table -->
-      <tr>
-        <td>
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse">
-            <thead>
-              <tr style="background:#f5f5f5">
-                <th style="padding:8px 12px;text-align:left;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase">Name</th>
-                <th style="padding:8px 12px;text-align:left;border:1px solid #e0e0e0;font-size:11px;font-weight:700;color:#555;text-transform:uppercase">Issue</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @issues[section[:key]].each do |item| %>
-                <tr>
-                  <td style="padding:9px 12px;border:1px solid #e0e0e0;font-weight:500"><%= item["name"] %></td>
-                  <td style="padding:9px 12px;border:1px solid #e0e0e0;color:#c62828"><%= item["reason"] %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-        </td>
-      </tr>
+    <%= sa_section(title: section[:name], link_text: "Fix in CapHive", link_url: section[:url]) %>
+
+    <%= sa_callout(tone: :muted, body: section[:help].html_safe) %>
+
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px">
+      <%= sa_th("Name", "Issue") %>
+      <tbody>
+        <% @issues[section[:key]].each do |item| %>
+          <tr>
+            <%= sa_td(item["name"].to_s, bold: true) %>
+            <%= sa_td(item["reason"].to_s, color: SA_COLORS[:danger][:text]) %>
+          </tr>
+        <% end %>
+      </tbody>
     </table>
   <% end %>
 
-  <!-- CTA button -->
-  <table role="presentation" class="btn btn-outline-primary" style="margin-top:32px">
-    <tbody>
-      <tr>
-        <td>
-          <table role="presentation" border="0" cellpadding="0" cellspacing="0">
-            <tbody>
-              <tr>
-                <td><a href="<%= capital_commitments_url(subdomain: sub) %>" target="_blank">Open CapHive to Fix Issues</a></td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  <%= sa_cta(label: "Open CapHive to Fix Issues", url: capital_commitments_url(subdomain: sub)) %>
 
 <% else %>
 
-  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top:24px">
-    <tr>
-      <td style="background:#e8f5e9;border-left:4px solid #2e7d32;border-radius:4px;padding:16px 20px">
-        <strong style="color:#2e7d32">All checks passed.</strong>
-        <span style="color:#333"> No issues found for <%= @fund.name %>. Great work keeping your data clean.</span>
-      </td>
-    </tr>
-  </table>
+  <%= sa_callout(
+    tone: :success,
+    body: "<strong>All checks passed.</strong> No issues found for #{h @fund.name}. Great work keeping your data clean.".html_safe
+  ) %>
 
 <% end %>
 
-<!-- Report footer -->
-<p style="font-size:11px;color:#aaa;margin-top:36px;padding-top:16px;border-top:1px solid #eee;line-height:1.5">
-  This report runs nightly for <strong><%= @fund.name %></strong>.
-  Valuation threshold: <%= stale_val_days %> days &bull; FX rate threshold: <%= stale_fx_days %> days.
-  To change these thresholds or disable individual checks, update the Data Quality Agent configuration in CapHive.
-</p>
+<%= sa_footer("This report runs nightly for #{h @fund.name}. Valuation threshold: #{stale_val_days} days · FX rate threshold: #{stale_fx_days} days. To change these thresholds or disable individual checks, update the Data Quality Agent configuration in CapHive.") %>

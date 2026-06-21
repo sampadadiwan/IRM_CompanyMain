@@ -1,50 +1,58 @@
-<h3>Cash Flow Report - Data Status</h3>
-<p>
-  The cash flow report for <strong><%= @support_agent.entity.name %></strong>
-  is scheduled to run on <strong><%= @next_run_at.strftime("%d-%b-%Y") %></strong>
-  (<%= @days_until_run %> day<%= @days_until_run == 1 ? '' : 's' %> from now).
-</p>
+<%
+  sub            = @support_agent.entity.sub_domain
+  blocked_funds  = @fund_statuses.select { |f| f[:status] == "blocked" }
+  ready_funds    = @fund_statuses.reject { |f| f[:status] == "blocked" }
+  overall_tone   = blocked_funds.any? ? :warning : :success
+  overall_label  = blocked_funds.any? ? "Data Update Needed" : "All Data Current"
+  run_date       = @next_run_at.strftime("%d %b %Y")
+%>
 
-<table style="width:100%; border-collapse:collapse; margin:20px 0;">
-  <tr style="background:#f0f0f0;">
-    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Fund</th>
-    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Status</th>
-    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Details</th>
-  </tr>
-  <% @fund_statuses.each do |fund| %>
-    <tr>
-      <td style="padding:8px; border:1px solid #ddd;"><%= fund[:name] %></td>
-      <td style="padding:8px; border:1px solid #ddd;">
-        <% if fund[:status] == "ready" %>
-          <span style="color:green;">Fresh</span>
-        <% else %>
-          <span style="color:red; font-weight:bold;">STALE</span>
-        <% end %>
-      </td>
-      <td style="padding:8px; border:1px solid #ddd;">
-        <% if fund[:status] == "ready" %>
-          No action needed
-          <% if fund[:last_cash_update] %>
-            (last updated <%= (Time.zone.today - fund[:last_cash_update]).to_i %> days ago)
+<%= sa_intro("The Cash Flow Report for <strong>#{h @support_agent.entity.name}</strong> is scheduled to run on <strong>#{run_date}</strong> (#{@days_until_run} day#{@days_until_run == 1 ? '' : 's'} from now). The table below shows the data readiness for each fund.".html_safe) %>
+
+<%= sa_banner(
+  title:    "Data Readiness — #{run_date}",
+  label:    overall_label,
+  subtitle: "#{ready_funds.size} of #{@fund_statuses.size} funds have current data",
+  tone:     overall_tone
+) %>
+
+<%= sa_section(title: "Fund Data Status", link_text: "Update cash data", link_url: capital_calls_url(subdomain: sub), top_margin: false) %>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:24px">
+  <%= sa_th("Fund", "Status", "Details") %>
+  <tbody>
+    <% @fund_statuses.each do |fund| %>
+      <% tone = fund[:status] == "ready" ? :success : :warning %>
+      <tr>
+        <%= sa_td(fund[:name], bold: true) %>
+        <td style="padding:9px 12px;border:1px solid #e0e0e0">
+          <%= sa_badge(label: fund[:status] == "ready" ? "Fresh" : "Stale", tone: tone) %>
+        </td>
+        <td style="padding:9px 12px;border:1px solid #e0e0e0;font-size:13px;color:#555">
+          <% if fund[:status] == "ready" %>
+            No action needed<% if fund[:last_cash_update] %> — last updated <%= (Time.zone.today - fund[:last_cash_update]).to_i %> days ago<% end %>
+          <% else %>
+            <ul style="margin:0;padding-left:16px">
+              <% fund[:block_reasons]&.each do |reason| %>
+                <li><%= reason %></li>
+              <% end %>
+            </ul>
           <% end %>
-        <% else %>
-          <ul style="margin:0; padding-left:16px;">
-            <% fund[:block_reasons]&.each do |reason| %>
-              <li><%= reason %></li>
-            <% end %>
-          </ul>
-        <% end %>
-      </td>
-    </tr>
-  <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
 </table>
 
-<% if @fund_statuses.any? { |f| f[:status] == "blocked" } %>
-  <p style="color:#c00; font-weight:bold;">
-    Please update the stale data before the report date.
-  </p>
+<% if blocked_funds.any? %>
+  <%= sa_callout(
+    tone:    :warning,
+    heading: "Action Required Before #{run_date}",
+    body:    "#{blocked_funds.size} fund#{blocked_funds.size == 1 ? '' : 's'} #{blocked_funds.size == 1 ? 'has' : 'have'} stale data. Please update the data listed above so the cash flow report generates correctly.".html_safe
+  ) %>
+  <%= sa_cta(label: "Update Cash Data in CapHive", url: capital_calls_url(subdomain: sub)) %>
 <% else %>
-  <p style="color:green;">
-    All fund data is current. Report will generate on schedule.
-  </p>
+  <%= sa_callout(tone: :success, body: "All fund data is current. The report will generate on schedule — no action needed.".html_safe) %>
 <% end %>
+
+<%= sa_footer("This reminder is sent automatically by the Cash Flow Assistant Agent for #{h @support_agent.entity.name}. You can manage schedules and recipients in CapHive.") %>

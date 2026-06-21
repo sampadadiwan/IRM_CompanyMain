@@ -1,4 +1,6 @@
 class DataQualityMailer < ApplicationMailer
+  helper SupportAgentEmailHelper
+
   def quality_report(support_agent, fund, ctx)
     @support_agent = support_agent
     @fund          = fund

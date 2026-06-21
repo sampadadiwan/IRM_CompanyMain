@@ -4,7 +4,7 @@
 # DealsReportAgent run. Flags deals needing attention in the subject line.
 #
 # @see DealsReportAgent
-class DealsReportMailer < ApplicationMailer
+class DealsReportMailer < SupportAgentBaseMailer
   helper CurrencyHelper
 
   def send_report

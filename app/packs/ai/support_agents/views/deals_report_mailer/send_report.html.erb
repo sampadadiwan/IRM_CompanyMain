@@ -2,132 +2,93 @@
   format_amount = ->(cents, currency) {
     cents.present? ? Money.new(cents.to_i, currency).format : "--"
   }
-  status_label = {
-    "complete"        => "Complete",
-    "on_track"        => "On Track",
-    "needs_attention" => "Needs Attention",
-    "closed"          => "Closed"
-  }
-  status_color = {
-    "complete"        => "green",
-    "on_track"        => "#1a73e8",
-    "needs_attention" => "red",
-    "closed"          => "#888"
-  }
+
+  attention_deals = @deal_results.select { |d| d[:deal_status] == "needs_attention" }
+  stale_deals     = @deal_results.select { |d| d[:stale] }
+
+  overall_tone  = attention_deals.any? ? :danger : stale_deals.any? ? :warning : :success
+  overall_label = attention_deals.any? ? "Action Required" : stale_deals.any? ? "Monitor" : "On Track"
+  overall_sub   = "#{@deal_results.size} deal#{@deal_results.size == 1 ? '' : 's'} — #{attention_deals.size} need#{attention_deals.size == 1 ? 's' : ''} attention"
+
+  status_label = { "complete" => "Complete", "on_track" => "On Track", "needs_attention" => "Needs Attention", "closed" => "Closed" }
 %>
 
-<h3>Deal Fundraising Update — <%= Time.zone.today.strftime("%B %Y") %></h3>
-<p>Report for <strong><%= @support_agent.entity.name %></strong></p>
+<%= sa_intro("Deal fundraising update for <strong>#{h @support_agent.entity.name}</strong> &mdash; #{Time.zone.today.strftime('%B %Y')}.".html_safe) %>
 
-<% if @include_greeting %>
-  <% @deal_results.each do |deal| %>
-    <p>
-      Hello – Here's your Deal report for <strong><%= deal[:deal_name] %></strong>.
-      The deal is <strong><%= deal[:fill_rate] %>%</strong> complete
-      with an additional <strong><%= format_amount.call(deal[:pending_cents], deal[:currency] || "INR") %></strong> in the pipeline.
-    </p>
-  <% end %>
-<% end %>
-<% attention_deals = @deal_results.select { |d| d[:deal_status] == "needs_attention" } %>
+<%= sa_banner(title: "Deal Fundraising — #{Time.zone.today.strftime('%B %Y')}", label: overall_label, subtitle: overall_sub, tone: overall_tone) %>
+
 <% if attention_deals.any? %>
-  <div style="background:#fff3f3; border:1px solid #fcc; padding:12px; margin:16px 0; border-radius:4px;">
-    <strong style="color:red;">ACTION REQUIRED:</strong>
-    <ul style="margin:8px 0 0 0; padding-left:16px;">
-      <% attention_deals.each do |d| %>
-        <li><%= d[:deal_name] %>: Fill rate <%= d[:fill_rate] %>% — needs investor engagement</li>
-      <% end %>
-    </ul>
-  </div>
+  <%= sa_callout(
+    tone:    :danger,
+    heading: "Action Required",
+    body:    attention_deals.map { |d|
+      "#{h d[:deal_name]}: Fill rate #{d[:fill_rate]}% — needs investor engagement."
+    }.join("<br>").html_safe
+  ) %>
 <% end %>
 
-<% stale_deals = @deal_results.select { |d| d[:stale] } %>
 <% if @include_stale_items && stale_deals.any? %>
-  <div style="background:#fff8e1; border:1px solid #ffe082; padding:12px; margin:16px 0; border-radius:4px;">
-    <strong style="color:#cc8800;">⚠ No-Activity Items:</strong>
-    <ul style="margin:8px 0 0 0; padding-left:16px;">
-      <% stale_deals.each do |d| %>
-        <li><%= d[:deal_name] %>: <%= d[:stale_days] %> days since last activity</li>
-      <% end %>
-    </ul>
-  </div>
+  <%= sa_callout(
+    tone:    :warning,
+    heading: "No Activity",
+    body:    stale_deals.map { |d|
+      "#{h d[:deal_name]}: #{d[:stale_days]} days since last activity."
+    }.join("<br>").html_safe
+  ) %>
 <% end %>
 
-<h4>Deal Summary</h4>
-<table style="width:100%; border-collapse:collapse; margin:12px 0;">
-  <tr style="background:#f0f0f0;">
-    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Deal</th>
-    <th style="padding:8px; border:1px solid #ddd; text-align:left;">Status</th>
-    <th style="padding:8px; border:1px solid #ddd; text-align:right;">Target</th>
-    <th style="padding:8px; border:1px solid #ddd; text-align:right;">Committed</th>
-    <th style="padding:8px; border:1px solid #ddd; text-align:right;">Fill %</th>
-    <th style="padding:8px; border:1px solid #ddd; text-align:center;">Investors</th>
-  </tr>
-  <% @deal_results.each do |deal| %>
-    <% ds = deal[:deal_status].to_s %>
-    <% curr = deal[:currency] || "INR" %>
-    <tr>
-      <td style="padding:8px; border:1px solid #ddd;"><strong><%= deal[:deal_name] %></strong></td>
-      <td style="padding:8px; border:1px solid #ddd; color:<%= status_color[ds] %>; font-weight:bold;">
-        <%= status_label[ds] || ds.titleize %>
-      </td>
-      <td style="padding:8px; border:1px solid #ddd; text-align:right;">
-        <%= format_amount.call(deal[:target_cents], curr) %>
-      </td>
-      <td style="padding:8px; border:1px solid #ddd; text-align:right; color:green;">
-        <%= format_amount.call(deal[:committed_cents], curr) %>
-      </td>
-      <td style="padding:8px; border:1px solid #ddd; text-align:right; color:<%= status_color[ds] %>; font-weight:bold;">
-        <%= deal[:fill_rate] %>%
-      </td>
-      <td style="padding:8px; border:1px solid #ddd; text-align:center;">
-        <span style="color:green;"><%= deal[:active_count] %> active</span> /
-        <span style="color:#1a73e8;"><%= deal[:pending_count] %> pending</span> /
-        <span style="color:red;"><%= deal[:declined_count] %> declined</span>
-      </td>
-    </tr>
-  <% end %>
+<%= sa_section(title: "Deal Summary", top_margin: false) %>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:32px">
+  <%= sa_th("Deal", "Status", ["Target", {align: :right}], ["Committed", {align: :right}], ["Fill %", {align: :right}], ["Investors", {align: :center}]) %>
+  <tbody>
+    <% @deal_results.each do |deal| %>
+      <% ds = deal[:deal_status].to_s %>
+      <% tone = sa_tone_for(ds) %>
+      <% curr = deal[:currency] || "INR" %>
+      <tr>
+        <%= sa_td("<strong>#{h deal[:deal_name]}</strong>".html_safe) %>
+        <td style="padding:9px 12px;border:1px solid #e0e0e0">
+          <%= sa_badge(label: status_label[ds] || ds.titleize, tone: tone) %>
+        </td>
+        <%= sa_td(format_amount.call(deal[:target_cents], curr), align: :right) %>
+        <%= sa_td(format_amount.call(deal[:committed_cents], curr), align: :right, color: SA_COLORS[:success][:text]) %>
+        <%= sa_td("#{deal[:fill_rate]}%", align: :right, bold: ds == "needs_attention", color: SA_COLORS[tone][:text]) %>
+        <td style="padding:9px 12px;border:1px solid #e0e0e0;text-align:center;font-size:12px">
+          <span style="color:#{SA_COLORS[:success][:text]}">#{deal[:active_count]} active</span> /
+          <span style="color:#{SA_COLORS[:info][:text]}">#{deal[:pending_count]} pending</span> /
+          <span style="color:#{SA_COLORS[:danger][:text]}">#{deal[:declined_count]} declined</span>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
 </table>
 
-<!-- ── Per-Deal Detail ────────────────────────────────────── -->
 <% @deal_results.each do |deal| %>
   <% curr = deal[:currency] || "INR" %>
   <% ds = deal[:deal_status].to_s %>
-  <hr style="margin:24px 0;">
-  <h4><%= deal[:deal_name] %> — Detail</h4>
+  <% tone = sa_tone_for(ds) %>
 
-  <table style="width:100%; border-collapse:collapse; margin:8px 0;">
-    <tr>
-      <td style="padding:4px 8px;">Target Raise</td>
-      <td style="padding:4px 8px; text-align:right;"><%= format_amount.call(deal[:target_cents], curr) %></td>
-    </tr>
-    <tr>
-      <td style="padding:4px 8px;">Committed</td>
-      <td style="padding:4px 8px; text-align:right; color:green;"><%= format_amount.call(deal[:committed_cents], curr) %></td>
-    </tr>
-    <tr>
-      <td style="padding:4px 8px;">Pending</td>
-      <td style="padding:4px 8px; text-align:right; color:#1a73e8;"><%= format_amount.call(deal[:pending_cents], curr) %></td>
-    </tr>
-    <tr>
-      <td style="padding:4px 8px;">Declined</td>
-      <td style="padding:4px 8px; text-align:right; color:red;"><%= format_amount.call(deal[:declined_cents], curr) %></td>
-    </tr>
-    <tr style="font-weight:bold; border-top:1px solid #ddd;">
-      <td style="padding:4px 8px;">Remaining to Close</td>
-      <td style="padding:4px 8px; text-align:right;"><%= format_amount.call(deal[:remaining_cents], curr) %></td>
-    </tr>
-  </table>
+  <%= sa_section(title: "#{deal[:deal_name]} — Detail") %>
+
+  <%= sa_kv_table(rows: [
+    ["Target Raise",      format_amount.call(deal[:target_cents], curr)],
+    ["Committed",         format_amount.call(deal[:committed_cents], curr), { tone: :success }],
+    ["Pending",           format_amount.call(deal[:pending_cents], curr), { tone: :info }],
+    ["Declined",          format_amount.call(deal[:declined_cents], curr), { tone: :danger }],
+    ["Remaining to Close", format_amount.call(deal[:remaining_cents], curr), { bold: true }]
+  ]) %>
 
   <% step_dist = deal[:step_distribution] %>
   <% if @include_updates && step_dist.present? && step_dist.any? %>
-    <strong>Investor Pipeline by Step</strong>
-    <table style="width:100%; border-collapse:collapse; margin:6px 0;">
+    <p style="font-size:12px;font-weight:700;color:#555;margin:16px 0 6px;text-transform:uppercase;letter-spacing:0.5px">Investor Pipeline by Step</p>
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:12px">
       <% step_dist.each do |step| %>
         <% step = step.is_a?(Hash) ? step.with_indifferent_access : step %>
         <tr>
-          <td style="padding:4px 8px; color:#888;"><%= step[:sequence] %>.</td>
-          <td style="padding:4px 8px;"><%= step[:step_title] %></td>
-          <td style="padding:4px 8px; text-align:right; font-weight:bold;"><%= step[:investor_count] %></td>
+          <%= sa_td(step[:sequence].to_s, color: "#aaa", nowrap: true) %>
+          <%= sa_td(step[:step_title].to_s) %>
+          <%= sa_td(step[:investor_count].to_s, align: :right, bold: true) %>
         </tr>
       <% end %>
     </table>
@@ -142,12 +103,11 @@
                                     .order(:due_date) : []
     %>
     <% if tasks_due.any? %>
-      <strong>Tasks Due (next 7 days)</strong>
-      <ul style="margin:4px 0 8px 16px;">
-        <% tasks_due.each do |t| %>
-          <li><%= t.title %> — due <%= t.due_date&.strftime("%b %d") %></li>
-        <% end %>
-      </ul>
+      <%= sa_callout(
+        tone: :info,
+        heading: "Tasks Due (next 7 days)",
+        body: tasks_due.map { |t| "#{h t.title} — due #{t.due_date&.strftime('%b %d')}" }.join("<br>").html_safe
+      ) %>
     <% end %>
   <% end %>
 
@@ -160,12 +120,13 @@
                                         .order(:due_date) : []
     %>
     <% if tasks_overdue.any? %>
-      <strong style="color:red;">Tasks Overdue</strong>
-      <ul style="margin:4px 0 8px 16px;">
-        <% tasks_overdue.each do |t| %>
-          <li style="color:red;"><%= t.title %> — was due <%= t.due_date&.strftime("%b %d") %></li>
-        <% end %>
-      </ul>
+      <%= sa_callout(
+        tone: :danger,
+        heading: "Overdue Tasks",
+        body: tasks_overdue.map { |t| "#{h t.title} — was due #{t.due_date&.strftime('%b %d')}" }.join("<br>").html_safe
+      ) %>
     <% end %>
   <% end %>
 <% end %>
+
+<%= sa_footer("Sent automatically by the Deals Report Agent for #{h @support_agent.entity.name}. Configure recipients and frequency in CapHive.") %>

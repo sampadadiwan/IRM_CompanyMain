@@ -5,7 +5,7 @@
 # stale data and how many days remain until the next run.
 #
 # @see CashFlowStalenessReminderService
-class CashFlowReminderMailer < ApplicationMailer
+class CashFlowReminderMailer < SupportAgentBaseMailer
   helper CurrencyHelper
 
   def send_reminder

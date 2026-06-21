@@ -14,7 +14,7 @@
 #   score_leaderboard [Array<Hash>]
 #   health_scores     [Hash]
 #   has_blocking      [Boolean]
-class DealManagementDigestMailer < ApplicationMailer
+class DealManagementDigestMailer < SupportAgentBaseMailer
   def pipeline_digest
     @support_agent     = SupportAgent.find(params[:support_agent_id])
     @deal              = Deal.find(params[:deal_id])

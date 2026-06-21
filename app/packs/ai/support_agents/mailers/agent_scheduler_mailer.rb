@@ -4,7 +4,7 @@
 # Follows the same patterns as other Caphive mailers.
 #
 # @see AgentSchedulerNotifier
-class AgentSchedulerMailer < ApplicationMailer
+class AgentSchedulerMailer < SupportAgentBaseMailer
   helper ApplicationHelper
 
   before_action :set_execution_context

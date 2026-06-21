@@ -11,7 +11,7 @@
 #   investor_name    [String]
 #   notify_email     [String]  recipient address from agent config
 #   days_until_due   [Integer] negative = overdue, 0 = due today, positive = upcoming
-class DealManagementReminderMailer < ApplicationMailer
+class DealManagementReminderMailer < SupportAgentBaseMailer
   def deal_activity_reminder
     @support_agent  = SupportAgent.find(params[:support_agent_id])
     @deal           = Deal.find(params[:deal_id])

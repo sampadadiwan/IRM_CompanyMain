@@ -1,132 +1,111 @@
 <%
-  deal_url    = deal_url(@deal)
-  report_url  = support_agent_url(@support_agent, tab: "deal_reports")
+  deal_url   = deal_url(@deal)
+  report_url = support_agent_url(@support_agent, tab: "deal_reports")
+
+  stagnant = @progress_issues.select { |i| i["type"] == "stagnant" || i[:type] == :stagnant }
+  overdue  = @progress_issues.select { |i| i["type"] == "overdue"  || i[:type] == :overdue }
+
+  blocking_docs = @document_issues.select { |i| (i["severity"] || i[:severity]).to_s == "blocking" }
+  present_docs  = @document_issues.select { |i| (i["severity"] || i[:severity]).to_s == "success" && (i["type"] || i[:type]).to_s == "present" }
+
+  has_issues     = @has_blocking || stagnant.any? || overdue.any? || blocking_docs.any?
+  overall_tone   = has_issues ? :danger : :success
+  overall_label  = has_issues ? "Attention Required" : "On Track"
+  overall_sub    = "#{h @deal.name} · #{@entity.name} · #{@run_at.strftime('%d %b %Y %H:%M')}"
 %>
 
-<h3 style="margin-top:0;">
-  <% if @has_blocking %>
-    <span style="color:#c00;">&#9888; Deal Alert</span>
-  <% else %>
-    Deal Management Digest
-  <% end %>
-  &mdash; <a href="<%= deal_url %>" style="color:inherit;"><%= @deal.name %></a>
-</h3>
-<p style="color:#888; font-size:12px;">
-  Run at <%= @run_at.strftime("%d %b %Y %H:%M") %> &middot; <%= @entity.name %> &middot;
-  <a href="<%= deal_url %>">Open Deal</a> &middot;
-  <a href="<%= report_url %>">Full Report</a>
+<%= sa_banner(
+  title:    "Deal Management Digest",
+  label:    overall_label,
+  subtitle: overall_sub,
+  tone:     overall_tone
+) %>
+
+<p style="margin:0 0 20px;font-size:13px;color:#555">
+  <a href="<%= deal_url %>" style="color:#1565c0;text-decoration:none;font-weight:600">Open Deal &rarr;</a>
+  &nbsp;&nbsp;&middot;&nbsp;&nbsp;
+  <a href="<%= report_url %>" style="color:#1565c0;text-decoration:none;font-weight:600">Full Report &rarr;</a>
 </p>
 
-<%# ── Progress ──────────────────────────────────────────────────────────── %>
-<% stagnant = @progress_issues.select { |i| i["type"] == "stagnant" || i[:type] == :stagnant } %>
-<% overdue  = @progress_issues.select { |i| i["type"] == "overdue"  || i[:type] == :overdue } %>
+<%= sa_section(title: "Deal Progress", top_margin: false) %>
 
-<h4>Deal Progress</h4>
 <% if stagnant.any? || overdue.any? %>
   <% if stagnant.any? %>
-    <p style="color:#c00;"><strong>Stagnant investors (no activity &gt; <%= @support_agent.json_fields["stagnant_days"] || 7 %> days):</strong></p>
-    <ul>
-      <% stagnant.each do |i| %>
-        <li>
-          <%= i["message"] || i[:message] %>
-          &mdash; <a href="<%= deal_url %>">View Deal</a>
-        </li>
-      <% end %>
-    </ul>
+    <%= sa_callout(
+      tone:    :warning,
+      heading: "Stagnant Investors (no activity > #{@support_agent.json_fields['stagnant_days'] || 7} days)",
+      body:    stagnant.map { |i|
+        msg = h(i["message"] || i[:message])
+        "#{msg} &mdash; <a href=\"#{deal_url}\" style=\"color:#1565c0\">View Deal</a>"
+      }.join("<br>").html_safe
+    ) %>
   <% end %>
+
   <% if overdue.any? %>
-    <p style="color:#c00;"><strong>Overdue activities:</strong></p>
-    <ul>
-      <% overdue.each do |i| %>
-        <% act_id = i["activity_id"] || i[:activity_id] %>
-        <li>
-          <%= i["message"] || i[:message] %>
-          <% if act_id.present? %>
-            &mdash; <a href="<%= deal_activity_url(act_id) %>">View Activity</a>
-          <% end %>
-        </li>
-      <% end %>
-    </ul>
+    <%= sa_callout(
+      tone:    :danger,
+      heading: "Overdue Activities",
+      body:    overdue.map { |i|
+        act_id = i["activity_id"] || i[:activity_id]
+        msg    = h(i["message"] || i[:message])
+        link   = act_id.present? ? " &mdash; <a href=\"#{deal_activity_url(act_id)}\" style=\"color:#1565c0\">View Activity</a>" : ""
+        "#{msg}#{link}"
+      }.join("<br>").html_safe
+    ) %>
   <% end %>
 <% else %>
-  <p style="color:green;">&#10003; No stagnant investors or overdue activities.</p>
+  <%= sa_callout(tone: :success, body: "No stagnant investors or overdue activities.".html_safe) %>
 <% end %>
 
-<%# ── Document Checklist ────────────────────────────────────────────────── %>
-<% blocking_docs = @document_issues.select { |i| (i["severity"] || i[:severity]).to_s == "blocking" } %>
-<% present_docs  = @document_issues.select { |i| (i["severity"] || i[:severity]).to_s == "success" && (i["type"] || i[:type]).to_s == "present" } %>
-
 <% if @document_issues.any? %>
-  <h4>
-    Document Checklist
-    &mdash; <a href="<%= deal_url %>" style="font-size:12px; font-weight:normal;">Open data room</a>
-  </h4>
+  <%= sa_section(title: "Document Checklist", link_text: "Open data room", link_url: deal_url) %>
+
   <% if blocking_docs.any? %>
-    <ul>
-      <% blocking_docs.each do |i| %>
-        <li style="color:#c00;">&#10007; <%= i["document_name"] || i[:document_name] %> <em>(missing)</em></li>
-      <% end %>
-      <% present_docs.each do |i| %>
-        <li style="color:green;">&#10003; <%= i["document_name"] || i[:document_name] %></li>
-      <% end %>
-    </ul>
+    <%= sa_callout(
+      tone:    :danger,
+      heading: "Missing Required Documents",
+      body:    [
+        blocking_docs.map { |i| "&#10007; #{h(i['document_name'] || i[:document_name])} <em>(missing)</em>" },
+        present_docs.map  { |i| "<span style=\"color:#{SA_COLORS[:success][:text]}\">&#10003; #{h(i['document_name'] || i[:document_name])}</span>" }
+      ].flatten.join("<br>").html_safe
+    ) %>
   <% else %>
-    <p style="color:green;">&#10003; All required documents are present.</p>
+    <%= sa_callout(tone: :success, body: "All required documents are present.".html_safe) %>
   <% end %>
 <% end %>
 
-<%# ── Investor Scores ───────────────────────────────────────────────────── %>
 <% if @score_leaderboard.any? %>
-  <h4>
-    Investor Scores
-    &mdash; <a href="<%= report_url %>" style="font-size:12px; font-weight:normal;">Full score breakdown</a>
-  </h4>
-  <table style="width:100%; border-collapse:collapse; margin:8px 0;">
-    <tr style="background:#f0f0f0;">
-      <th style="padding:6px 8px; border:1px solid #ddd; text-align:left;">Investor</th>
-      <th style="padding:6px 8px; border:1px solid #ddd; text-align:left;">Status</th>
-      <th style="padding:6px 8px; border:1px solid #ddd; text-align:right;">Score</th>
-      <th style="padding:6px 8px; border:1px solid #ddd; text-align:center;">Grade</th>
-    </tr>
-    <% @score_leaderboard.each do |r| %>
-      <% inv_id = r["investor_id"] || r[:investor_id] %>
-      <tr>
-        <td style="padding:6px 8px; border:1px solid #ddd;">
-          <% if inv_id.present? %>
-            <a href="<%= report_url %>#inv-<%= inv_id %>"><%= r["investor_name"] || r[:investor_name] %></a>
-          <% else %>
-            <%= r["investor_name"] || r[:investor_name] %>
-          <% end %>
-        </td>
-        <td style="padding:6px 8px; border:1px solid #ddd;"><%= r["status"] || r[:status] %></td>
-        <td style="padding:6px 8px; border:1px solid #ddd; text-align:right;"><strong><%= r["ai_score"] || r[:ai_score] %></strong></td>
-        <td style="padding:6px 8px; border:1px solid #ddd; text-align:center;"><strong><%= r["ai_grade"] || r[:ai_grade] %></strong></td>
-      </tr>
-    <% end %>
+  <%= sa_section(title: "Investor Scores", link_text: "Full score breakdown", link_url: report_url) %>
+
+  <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:8px">
+    <%= sa_th("Investor", "Status", ["Score", {align: :right}], ["Grade", {align: :center}]) %>
+    <tbody>
+      <% @score_leaderboard.each do |r| %>
+        <% inv_id = r["investor_id"] || r[:investor_id] %>
+        <% inv_name = r["investor_name"] || r[:investor_name] %>
+        <tr>
+          <td style="padding:9px 12px;border:1px solid #e0e0e0">
+            <% if inv_id.present? %>
+              <a href="<%= report_url %>#inv-<%= inv_id %>" style="color:#1565c0;text-decoration:none"><%= inv_name %></a>
+            <% else %>
+              <%= inv_name %>
+            <% end %>
+          </td>
+          <%= sa_td((r["status"] || r[:status]).to_s) %>
+          <%= sa_td("<strong>#{r['ai_score'] || r[:ai_score]}</strong>".html_safe, align: :right) %>
+          <%= sa_td("<strong>#{r['ai_grade'] || r[:ai_grade]}</strong>".html_safe, align: :center) %>
+        </tr>
+      <% end %>
+    </tbody>
   </table>
-  <p style="font-size:12px; color:#888;">
-    Each of 5 dimensions scored 0–20 &nbsp;·&nbsp; Grade: A ≥ 85, B ≥ 70, C ≥ 55, D ≥ 40, F &lt; 40
+  <p style="font-size:12px;color:#aaa;margin:4px 0 20px">
+    Each of 5 dimensions scored 0–20 &nbsp;&middot;&nbsp; Grade: A &ge; 85, B &ge; 70, C &ge; 55, D &ge; 40, F &lt; 40
   </p>
 <% end %>
 
-<%# ── Extracted Terms ───────────────────────────────────────────────────── %>
 <% if @extracted_terms.present? %>
-  <h4>Extracted Deal Terms</h4>
-  <table style="width:100%; border-collapse:collapse; margin:8px 0;">
-    <% @extracted_terms.each do |key, value| %>
-      <% next if value.nil? %>
-      <tr>
-        <td style="padding:6px 8px; border:1px solid #ddd; background:#f5f5f5; width:220px;"><%= key.to_s.humanize %></td>
-        <td style="padding:6px 8px; border:1px solid #ddd;"><%= value %></td>
-      </tr>
-    <% end %>
-  </table>
+  <%= sa_section(title: "Extracted Deal Terms") %>
+  <%= sa_kv_table(rows: @extracted_terms.reject { |_, v| v.nil? }.map { |k, v| [k.to_s.humanize, v] }) %>
 <% end %>
 
-<%# ── Footer ─────────────────────────────────────────────────────────────── %>
-<hr style="border:none; border-top:1px solid #eee; margin:24px 0 16px;">
-<p style="color:#888; font-size:12px; margin:0;">
-  Sent by the Deal Management Agent &middot; <%= @entity.name %> &middot;
-  <a href="<%= deal_url %>">Open Deal</a> &middot;
-  <a href="<%= report_url %>">Full Report</a>
-</p>
+<%= sa_footer("Sent by the Deal Management Agent · #{h @entity.name} · <a href=\"#{deal_url}\" style=\"color:#aaa\">Open Deal</a> · <a href=\"#{report_url}\" style=\"color:#aaa\">Full Report</a>".html_safe) %>
