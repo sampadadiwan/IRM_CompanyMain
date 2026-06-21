@@ -311,4 +311,12 @@ agents_config.each do |cfg|
   end
 end
 
+# ---------------------------------------------------------------------------
+# 4. Enable all support_agents flags for entity 157
+# ---------------------------------------------------------------------------
+entity = Entity.find(ENTITY_ID)
+Entity.support_agents.keys.each { |flag| entity.support_agents.set(flag) }
+entity.save!
+puts "\nEnabled support_agents flags: #{Entity.support_agents.keys.join(', ')}"
+
 puts "\nDone."

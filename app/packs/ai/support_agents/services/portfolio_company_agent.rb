@@ -103,7 +103,10 @@ class PortfolioCompanyAgent < SupportAgentService
   #
   # @param ctx [Hash] Trailblazer execution context
   # @param target portfolio_company [Investor] record under verification
-  def initialize_agent(ctx, target: nil, **)
+  def initialize_agent(ctx, target: nil, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :initialize_agent) if report
+
     super
 
     portfolio_company = target
@@ -115,14 +118,17 @@ class PortfolioCompanyAgent < SupportAgentService
     # subsequent steps. Log explicitly so the silent halt is visible in the run log.
     unless portfolio_company.category == "Portfolio Company"
       Rails.logger.info { "[#{self.class.name}] Skipping Investor ID=#{portfolio_company.id} — category is '#{portfolio_company.category}', expected 'Portfolio Company'" }
+      mark_step_failed(report, :initialize_agent, message: "Not a Portfolio Company") if report
       return false
     end
 
     unless @support_agent.enabled?
       Rails.logger.info { "[#{self.class.name}] Skipping Investor ID=#{portfolio_company.id} — support agent is disabled" }
+      mark_step_failed(report, :initialize_agent, message: "Agent is disabled") if report
       return false
     end
 
+    mark_step_success(report, :initialize_agent, message: "Agent initialized") if report
     true
   end
 
@@ -130,7 +136,10 @@ class PortfolioCompanyAgent < SupportAgentService
   # Adds issues to ctx[:issues][:kpi_issues] if submission is missing, incomplete, or delayed.
   #
   # @param ctx [Hash] Trailblazer execution context
-  def check_kpi_submission(ctx, portfolio_company: nil, **)
+  def check_kpi_submission(ctx, portfolio_company: nil, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :check_kpi_submission) if report
+
     due_period = @support_agent.json_fields["due_period"] || "Quarter"
     days_before_due_period_end = @support_agent.json_fields["days_before_due_period_end"]&.to_i || 15
     due_date = Date.end_of_period(due_period) - days_before_due_period_end.days
@@ -146,6 +155,7 @@ class PortfolioCompanyAgent < SupportAgentService
         severity: :success
       }
       Rails.logger.debug { "[#{self.class.name}] Last quarter KPIs submitted for Investor ID=#{portfolio_company.id}" }
+      mark_step_success(report, :check_kpi_submission, message: "KPIs found") if report
     else
       ctx[:issues][:kpi_issues] << {
         key: :kpi,
@@ -154,6 +164,7 @@ class PortfolioCompanyAgent < SupportAgentService
         severity: :blocking
       }
       Rails.logger.warn { "[#{self.class.name}] Last quarter KPIs missing for Investor ID=#{portfolio_company.id}" }
+      mark_step_failed(report, :check_kpi_submission, message: "KPIs missing") if report
     end
     true
   end
@@ -165,9 +176,13 @@ class PortfolioCompanyAgent < SupportAgentService
   #   send_kpi_reminder — "true"/"false" (default true)
   #   reminder_days     — comma-separated offsets from period start, e.g. "7,14,21"
   #   due_period        — reporting period, e.g. "Quarter" (shared with check_kpi_submission)
-  def send_kpi_reminder(ctx, portfolio_company:, support_agent:, **)
+  def send_kpi_reminder(ctx, portfolio_company:, support_agent:, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :send_kpi_reminder) if report
+
     unless enabled?("send_kpi_reminder")
       Rails.logger.debug { "[#{self.class.name}] KPI reminder disabled, skipping." }
+      mark_step_skipped(report, :send_kpi_reminder, message: "Disabled") if report
       return true
     end
 
@@ -177,6 +192,7 @@ class PortfolioCompanyAgent < SupportAgentService
         key: :reminder, type: :info,
         message: "KPIs submitted — no reminder needed", severity: :success
       }
+      mark_step_skipped(report, :send_kpi_reminder, message: "KPIs submitted — no reminder needed") if report
       return true
     end
 
@@ -226,27 +242,38 @@ class PortfolioCompanyAgent < SupportAgentService
       message: "KPI reminder sent (day #{days_elapsed} of #{due_period})", severity: :success
     }
     Rails.logger.info { "[#{self.class.name}] KPI reminder sent for Investor ID=#{portfolio_company.id}" }
+    mark_step_success(report, :send_kpi_reminder, message: "Reminder sent") if report
     true
   end
 
   # Verifies if mandatory documents are present for compliance and operational checks.
   # Adds issues to ctx[:issues][:document_issues] if any required documents are missing or invalid.
-  def check_document_presence(ctx, support_agent:, **)
+  def check_document_presence(ctx, support_agent:, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :check_document_presence) if report
+
     # Guard: skip document check when there is no KPI report to check against.
     # @last_kpi_report is nil when check_kpi_submission found no submission for the
     # period; passing nil as model: would trigger the base class "No record found"
     # blocking issue, which is misleading and duplicates the KPI blocking issue.
-    return true if @last_kpi_report.nil?
+    if @last_kpi_report.nil?
+      mark_step_skipped(report, :check_document_presence, message: "No KPI report to check against") if report
+      return true
+    end
 
     ctx[:check_all_docs] = true
     super(ctx, model: @last_kpi_report, support_agent: support_agent)
+    mark_step_success(report, :check_document_presence, message: "Documents checked") if report
   end
 
   # Validates valuations reported for the portfolio_company.
   # Adds issues to ctx[:issues][:valuation_issues] if there are missing valuations, stale entries, or anomalies.
   #
   # @param ctx [Hash] Trailblazer execution context
-  def check_valuations(ctx, portfolio_company: nil, **)
+  def check_valuations(ctx, portfolio_company: nil, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :check_valuations) if report
+
     valuation_period = @support_agent.json_fields["valuation_period"] || "Quarter"
     days_before_valuation_period_end = @support_agent.json_fields["days_before_valuation_period_end"]&.to_i || 15
     valuation_due_date = Date.end_of_period(valuation_period) - days_before_valuation_period_end.days
@@ -261,6 +288,7 @@ class PortfolioCompanyAgent < SupportAgentService
         severity: :success
       }
       Rails.logger.debug { "[#{self.class.name}] Recent valuations found for Investor ID=#{portfolio_company.id}" }
+      mark_step_success(report, :check_valuations, message: "Valuation found") if report
     else
       ctx[:issues][:valuation_issues] << {
         key: :valuation,
@@ -269,6 +297,7 @@ class PortfolioCompanyAgent < SupportAgentService
         severity: :blocking
       }
       Rails.logger.warn { "[#{self.class.name}] Missing valuations for Investor ID=#{portfolio_company.id}" }
+      mark_step_failed(report, :check_valuations, message: "Valuations missing") if report
     end
     true
   end
@@ -278,7 +307,10 @@ class PortfolioCompanyAgent < SupportAgentService
   #
   # Called for both single-company (with steps) and batch (adhoc/scheduled) runs.
   # Batch coordination (looping, chart job, notifications) is handled by process_batch.
-  def generate_progress_reports(ctx, support_agent:, portfolio_company: nil, **)
+  def generate_progress_reports(ctx, support_agent:, portfolio_company: nil, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :generate_progress_reports) if report
+
     super(ctx, model: portfolio_company, support_agent: support_agent)
 
     # Persist the reminder timestamp directly into json_fields AFTER super saves the
@@ -288,11 +320,18 @@ class PortfolioCompanyAgent < SupportAgentService
     # reject! cleanup loop in the base class to raise NoMethodError (String#reject!
     # is not defined in Ruby 3.x).
     if ctx[:last_kpi_reminder_sent_at]
-      report = ctx[:support_agent_report]
-      report.json_fields["last_kpi_reminder_sent_at"] = ctx[:last_kpi_reminder_sent_at]
-      report.json_fields_will_change!
-      report.save
+      report_obj = ctx[:support_agent_report] || report
+      if report_obj
+        report_obj.json_fields["last_kpi_reminder_sent_at"] = ctx[:last_kpi_reminder_sent_at]
+        report_obj.json_fields_will_change!
+        report_obj.save
+      end
     end
+
+    mark_step_success(report, :generate_progress_reports, message: "Report saved") if report
+
+    has_blocking = ctx[:issues]&.values&.flatten&.any? { |issue| issue[:severity] == :blocking }
+    finalize_report(report, status: has_blocking ? "blocked" : "ready") if report
 
     broadcast_portco_row(target: portfolio_company)
     # Only enqueue an individual chart job when NOT running inside process_batch.

@@ -56,7 +56,7 @@
         <td style="padding:9px 12px;border:1px solid #e0e0e0">
           <%= sa_badge(label: result[:status].to_s.upcase, tone: tone) %>
         </td>
-        <%= sa_td(result[:count]&.to_s || "&mdash;".html_safe, align: :right, bold: result[:status] == :fail, color: result[:status] == :fail ? SA_COLORS[:danger][:text] : nil) %>
+        <%= sa_td(result[:count]&.to_s || "&mdash;".html_safe, align: :right, bold: result[:status] == :fail, color: result[:status] == :fail ? SupportAgentEmailHelper::SA_COLORS[:danger][:text] : nil) %>
         <%= sa_td(check_help[result[:name]].to_s, color: "#666") %>
       </tr>
     <% end %>
@@ -67,8 +67,8 @@
 
   <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%">
     <tr>
-      <td style="padding-bottom:4px;border-bottom:2px solid #{SA_COLORS[:danger][:text]}">
-        <span style="font-size:17px;font-weight:700;color:#{SA_COLORS[:danger][:text]}">Fix-it List</span>
+      <td style="padding-bottom:4px;border-bottom:2px solid #{SupportAgentEmailHelper::SA_COLORS[:danger][:text]}">
+        <span style="font-size:17px;font-weight:700;color:#{SupportAgentEmailHelper::SA_COLORS[:danger][:text]}">Fix-it List</span>
         <span style="font-size:12px;color:#666;margin-left:8px">Resolve these issues to improve your health score</span>
       </td>
     </tr>
@@ -85,7 +85,7 @@
         <% @issues[section[:key]].each do |item| %>
           <tr>
             <%= sa_td(item["name"].to_s, bold: true) %>
-            <%= sa_td(item["reason"].to_s, color: SA_COLORS[:danger][:text]) %>
+            <%= sa_td(item["reason"].to_s, color: SupportAgentEmailHelper::SA_COLORS[:danger][:text]) %>
           </tr>
         <% end %>
       </tbody>

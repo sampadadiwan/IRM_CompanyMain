@@ -31,7 +31,7 @@
     tone:    :danger,
     heading: "Action Required",
     body:    shortfall_funds.map { |f|
-      "#{h f[:name]} &mdash; capital call of <strong>#{format_amount.call(f[:recommended_call], @currency)}</strong> recommended. <a href=\"#{capital_calls_url(subdomain: sub)}\" style=\"color:#{SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none\">Raise Call &rarr;</a>"
+      "#{h f[:name]} &mdash; capital call of <strong>#{format_amount.call(f[:recommended_call], @currency)}</strong> recommended. <a href=\"#{capital_calls_url(subdomain: sub)}\" style=\"color:#{SupportAgentEmailHelper::SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none\">Raise Call &rarr;</a>"
     }.join("<br>").html_safe
   ) %>
 <% end %>
@@ -54,17 +54,17 @@
           <%= sa_td("&mdash;".html_safe, align: :right, color: "#aaa") %>
           <%= sa_td("Update stale data", color: "#757575") %>
         <% else %>
-          <%= sa_td(format_amount.call(fund[:net_position], @currency), align: :right, bold: fs == "shortfall", color: SA_COLORS[tone][:text]) %>
+          <%= sa_td(format_amount.call(fund[:net_position], @currency), align: :right, bold: fs == "shortfall", color: SupportAgentEmailHelper::SA_COLORS[tone][:text]) %>
           <%= sa_td(fund[:runway_days] >= 999 ? "180+ days" : "#{fund[:runway_days]} days", align: :right) %>
           <td style="padding:9px 12px;border:1px solid #e0e0e0">
             <% if fs == "shortfall" %>
-              <a href="<%= capital_calls_url(subdomain: sub) %>" style="color:#{SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none">
+              <a href="<%= capital_calls_url(subdomain: sub) %>" style="color:#{SupportAgentEmailHelper::SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none">
                 Call <%= format_amount.call(fund[:recommended_call], @currency) %> &rarr;
               </a>
             <% elsif fs == "watch" %>
-              <span style="color:#{SA_COLORS[:warning][:text]}">Monitor</span>
+              <span style="color:#{SupportAgentEmailHelper::SA_COLORS[:warning][:text]}">Monitor</span>
             <% else %>
-              <span style="color:#{SA_COLORS[:success][:text]}">None</span>
+              <span style="color:#{SupportAgentEmailHelper::SA_COLORS[:success][:text]}">None</span>
             <% end %>
           </td>
         <% end %>
@@ -111,7 +111,7 @@
   <% if fs == "shortfall" %>
     <%= sa_callout(
       tone: :danger,
-      body: "This fund has insufficient cash to cover upcoming investments and expenses. Raise a capital call of <strong>#{format_amount.call(fund[:recommended_call], @currency)}</strong> to restore the required buffer. <a href=\"#{capital_calls_url(subdomain: sub)}\" style=\"color:#{SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none\">Raise Capital Call &rarr;</a>".html_safe
+      body: "This fund has insufficient cash to cover upcoming investments and expenses. Raise a capital call of <strong>#{format_amount.call(fund[:recommended_call], @currency)}</strong> to restore the required buffer. <a href=\"#{capital_calls_url(subdomain: sub)}\" style=\"color:#{SupportAgentEmailHelper::SA_COLORS[:danger][:text]};font-weight:600;text-decoration:none\">Raise Capital Call &rarr;</a>".html_safe
     ) %>
   <% elsif fs == "watch" %>
     <%= sa_callout(

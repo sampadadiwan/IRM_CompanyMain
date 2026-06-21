@@ -52,12 +52,12 @@
           <%= sa_badge(label: status_label[ds] || ds.titleize, tone: tone) %>
         </td>
         <%= sa_td(format_amount.call(deal[:target_cents], curr), align: :right) %>
-        <%= sa_td(format_amount.call(deal[:committed_cents], curr), align: :right, color: SA_COLORS[:success][:text]) %>
-        <%= sa_td("#{deal[:fill_rate]}%", align: :right, bold: ds == "needs_attention", color: SA_COLORS[tone][:text]) %>
+        <%= sa_td(format_amount.call(deal[:committed_cents], curr), align: :right, color: SupportAgentEmailHelper::SA_COLORS[:success][:text]) %>
+        <%= sa_td("#{deal[:fill_rate]}%", align: :right, bold: ds == "needs_attention", color: SupportAgentEmailHelper::SA_COLORS[tone][:text]) %>
         <td style="padding:9px 12px;border:1px solid #e0e0e0;text-align:center;font-size:12px">
-          <span style="color:#{SA_COLORS[:success][:text]}">#{deal[:active_count]} active</span> /
-          <span style="color:#{SA_COLORS[:info][:text]}">#{deal[:pending_count]} pending</span> /
-          <span style="color:#{SA_COLORS[:danger][:text]}">#{deal[:declined_count]} declined</span>
+          <span style="color:#{SupportAgentEmailHelper::SA_COLORS[:success][:text]}">#{deal[:active_count]} active</span> /
+          <span style="color:#{SupportAgentEmailHelper::SA_COLORS[:info][:text]}">#{deal[:pending_count]} pending</span> /
+          <span style="color:#{SupportAgentEmailHelper::SA_COLORS[:danger][:text]}">#{deal[:declined_count]} declined</span>
         </td>
       </tr>
     <% end %>

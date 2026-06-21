@@ -87,7 +87,14 @@
 
           <% if @investor.category == "Portfolio Company" %>
             <% if @investor.entity.support_agents.set?(:portfolio_company_agent) %>
-              <%= button_to run_support_agents_path(agent_type: "PortfolioCompanyAgent", target_id: @investor.id, method: :post), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: "Checks the portfolio company data and generates updated AI charts based on prompts which have been set up"} do %>
+              <%= button_to run_support_agents_path(
+                    agent_type:  "PortfolioCompanyAgent",
+                    target_type: "Investor",
+                    target_id:   @investor.id
+                  ),
+                  method: :post,
+                  class: "dropdown-item",
+                  data: { bs_toggle: "tooltip", bs_title: "Checks the portfolio company data and generates updated AI charts based on prompts which have been set up" } do %>
                 <i class="ti ti-robot"></i> Run Portfolio Company Agent
               <% end %>
 
@@ -156,6 +163,8 @@
 
   </div>
 </div>
+
+<div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
 
 <div id="investor_associated_details" class="associated_entity">
   <%= render "investors/investor_details" , investor: @investor %>

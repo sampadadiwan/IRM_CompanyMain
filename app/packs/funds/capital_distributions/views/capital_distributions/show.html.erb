@@ -260,12 +260,24 @@
                   generate_docs_capital_distribution_path(@capital_distribution),
                   method: :patch, class: "dropdown-item ti ti-files",
                   form_class: "deleteButton", data: {action: "click->confirm#popup", method: :patch, msg: "This will generate the distribution notices for all payments in this distribution. Proceed?"} if policy(@capital_distribution).generate_docs? %>
+
+              <% if @capital_distribution.entity.support_agents.set?(:distribution_readiness_agent) %>
+                <div class="dropdown-divider"></div>
+                <%= button_to "Run Readiness Check",
+                    run_support_agents_path(
+                      agent_type:  "DistributionReadinessAgent",
+                      target_type: "CapitalDistribution",
+                      target_id:   @capital_distribution.id
+                    ),
+                    method: :post, class: "dropdown-item ti ti-shield-check" %>
+              <% end %>
             </div>
         </div>
     </div>
   <% end %>
 </div>
 
+<div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
 
 <input id="click_tab" value="payments-tab" hidden="hidden"/>
 <%= render "/capital_distributions/details", capital_distribution: @capital_distribution %>

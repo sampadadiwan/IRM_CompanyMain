@@ -212,21 +212,55 @@ class SupportAgentsController < ApplicationController
     render json: { error: "Not found" }, status: :not_found
   end
 
-  # Enqueues a support agent job for execution without step tracking.
+  # Enqueues a support agent job for execution.
+  # When a specific target is supplied and the request is Turbo, initialises a
+  # step-tracked report and streams the progress panel back so the caller gets
+  # real-time updates without a page reload.
   #
   # @return [void]
   def run
     @support_agent = SupportAgent.find_by(agent_type: params[:agent_type], entity_id: current_user.entity_id)
     authorize @support_agent
-    # Enqueue the job to run the support agent
+
+    target = resolve_target(params[:target_type], params[:target_id])
+
+    if target
+      steps = @support_agent.agent.step_definitions.map do |s|
+        { "step" => s[:step], "id" => s[:id], "label" => s[:label], "short_label" => s[:short_label], "status" => "pending" }
+      end
+      @report = SupportAgentReport.find_or_initialize_by(owner: target, support_agent: @support_agent)
+      @report.assign_attributes(
+        status:      :pending,
+        json_fields: { "steps" => steps, "final_status" => "running", "triggered_by" => "manual",
+                       "triggered_by_user_id" => current_user.id, "run_at" => Time.current.iso8601 }
+      )
+      @report.save!
+    end
+
     SupportAgentJob.perform_later(
       support_agent_id: @support_agent.id,
-      target_id: params[:target_id],
-      target_type: params[:target_type],
-      user_id: current_user.id
+      target_id:        params[:target_id],
+      target_type:      params[:target_type],
+      user_id:          current_user.id,
+      with_steps:       target.present?,
+      execution_mode:   target.present? ? :single_company_with_steps : :adhoc_batch
     )
-    # Redirect to referrer or support_agents_path if no referrer
-    redirect_to(request.referer || support_agents_path, notice: "Support agent job has been queued.")
+
+    respond_to do |format|
+      format.html { redirect_to(request.referer || support_agents_path, notice: "Support agent job has been queued.") }
+      format.turbo_stream do
+        if target && @report
+          render turbo_stream: turbo_stream.replace(
+            "progress_panel_new",
+            partial: "support_agents/progress_panel",
+            locals:  { report: @report, support_agent: @support_agent, target: target }
+          )
+        else
+          flash.now[:notice] = "Support agent job has been queued."
+          render turbo_stream: turbo_stream.replace("page_alerts", partial: "layouts/alerts")
+        end
+      end
+    end
   end
 
   # Runs the agent with step-by-step progress tracking.
@@ -594,6 +628,16 @@ class SupportAgentsController < ApplicationController
     # Must match the whitelist in SupportAgentJob
     allowed_types = %w[Investor InvestorKyc CapitalCall Fund]
     allowed_types.include?(target_type)
+  end
+
+  # Resolves a target record from type + id params without special-casing.
+  # Returns nil if either param is blank or the class cannot be resolved.
+  def resolve_target(target_type, target_id)
+    return nil if target_type.blank? || target_id.blank?
+
+    target_type.constantize.find_by(id: target_id)
+  rescue NameError
+    nil
   end
 
   # Returns a human-friendly display name for the target type.

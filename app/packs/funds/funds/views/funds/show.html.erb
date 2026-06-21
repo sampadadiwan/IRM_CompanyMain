@@ -276,6 +276,17 @@ commands = [
                             <i class="ti ti-list-details"></i>Show Email List
                           <% end %>
                         </li>
+                        <% if @fund.entity.support_agents.set?(:fund_stats_agent) %>
+                          <li>
+                            <%= button_to "Run Fund Stats",
+                                run_support_agents_path(
+                                  agent_type:  "FundStatsAgent",
+                                  target_type: "Fund",
+                                  target_id:   @fund.id
+                                ),
+                                method: :post, class: "dropdown-item ti ti-chart-histogram" %>
+                          </li>
+                        <% end %>
                         <li>
                           <%= button_to generate_tracking_numbers_fund_path(@fund), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {bs_toggle: "tooltip", bs_title: "In case a second tracking currency (i.e. a reference currency amount converting all payments, account entries etc based on the exchange rates uploaded for the relevant dates) is set up for your fund, select this option to generate the numbers now. By default the numbers are generated every night"} do %>
                             <i class="ti ti-barcode"></i>Generate Tracking Numbers
@@ -333,6 +344,9 @@ commands = [
     <% end %>
   </div>
 <% end %>
+
+<div id="progress_panel_new" class="container-fluid px-3 pb-3"></div>
+
 <% unless @fund.snapshot %>
   <%= render "/funds/fund_details", fund: @fund %>
 <% end %>

@@ -1043,11 +1043,15 @@ Then('the docusign esign completed document is present') do
   allow_any_instance_of(DocusignEsignHelper).to receive(:get_recipients).and_return(docusign_envelope_recipients_api(%w[completed completed], ESignature.pluck(:email), "completed"))
   allow_any_instance_of(DocusignEsignHelper).to receive(:download).and_return(docusign_download_response)
   click_on("Get eSignatures' updates")
+  # Turbo submits the form asynchronously so click_on returns before the server
+  # finishes the request.  The ActionCable "eSign status updated" alert is only
+  # broadcast after EsignUpdateJob commits the "signed" statuses, so waiting for
+  # it guarantees the DB is ready before we reload the page below.
+  expect(page).to have_content("eSign status updated", wait: 20)
   visit(document_path(@doc))
   click_on("Signatures")
   expected_status = "Signed"
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  # Increased wait: under parallel load the in-process webhook job takes longer.
   expect(page).to have_content(expected_status, wait: 20)
   visit(capital_commitment_path(@capital_commitment))
   expect(page).to have_content("Signed", wait: 20).once

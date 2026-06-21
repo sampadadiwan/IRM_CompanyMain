@@ -71,7 +71,7 @@
         <% issue = issue.with_indifferent_access %>
         <tr>
           <%= sa_td(issue[:name].to_s, bold: true) %>
-          <%= sa_td(issue[:message].to_s, color: SA_COLORS[:danger][:text]) %>
+          <%= sa_td(issue[:message].to_s, color: SupportAgentEmailHelper::SA_COLORS[:danger][:text]) %>
         </tr>
       <% end %>
     </tbody>
