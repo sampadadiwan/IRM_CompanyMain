@@ -13,6 +13,9 @@
   recs       = Array(score["recommendations"])
   coverage   = score["data_coverage"] || {}
 
+  # LLM may return data_coverage values as scalars (3) or arrays (["Q1","Q2","Q3"])
+  coverage_count = ->(val) { val.is_a?(Array) ? val.count : val.to_i }
+
   bar_class = case overall
               when 80..100 then "bg-success"
               when 60..79  then "bg-primary"
@@ -88,9 +91,9 @@
       <% end %>
       <% if coverage.present? %>
         <div class="mt-1">
-          <span class="badge bg-light text-dark border"><i class="ti ti-chart-bar"></i> <%= coverage["kpi_periods"].to_i %> KPI periods</span>
-          <span class="badge bg-light text-dark border"><i class="ti ti-coin"></i> <%= coverage["valuations_used"].to_i %> valuations</span>
-          <span class="badge bg-light text-dark border"><i class="ti ti-file"></i> <%= coverage["documents_read"].to_i %> docs</span>
+          <span class="badge bg-light text-dark border"><i class="ti ti-chart-bar"></i> <%= coverage_count.call(coverage["kpi_periods"]) %> KPI periods</span>
+          <span class="badge bg-light text-dark border"><i class="ti ti-coin"></i> <%= coverage_count.call(coverage["valuations_used"]) %> valuations</span>
+          <span class="badge bg-light text-dark border"><i class="ti ti-file"></i> <%= coverage_count.call(coverage["documents_read"]) %> docs</span>
         </div>
       <% end %>
     </div>

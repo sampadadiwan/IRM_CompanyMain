@@ -94,7 +94,7 @@
                   ),
                   method: :post,
                   class: "dropdown-item",
-                  data: { bs_toggle: "tooltip", bs_title: "Checks the portfolio company data and generates updated AI charts based on prompts which have been set up" } do %>
+                  data: { turbo_stream: true, bs_toggle: "tooltip", bs_title: "Checks the portfolio company data and generates updated AI charts based on prompts which have been set up" } do %>
                 <i class="ti ti-robot"></i> Run Portfolio Company Agent
               <% end %>
 
@@ -115,9 +115,14 @@
             <% end %>
 
             <% if @investor.entity.support_agents.set?(:portfolio_scoring_agent) %>
-              <%= button_to run_support_agents_path(agent_type: "PortfolioScoringAgent", target_id: @investor.id, method: :post),
-                            class: "dropdown-item",
-                            data: { bs_toggle: "tooltip", bs_title: "Scores this portfolio company using the configured skill for its sector (#{@investor.sector.presence || 'sector not set'})" } do %>
+              <%= button_to run_support_agents_path(
+                    agent_type: "PortfolioScoringAgent",
+                    target_type: "Investor",
+                    target_id:   @investor.id
+                  ),
+                  method: :post,
+                  class: "dropdown-item",
+                  data: { turbo_stream: true, bs_toggle: "tooltip", bs_title: "Scores this portfolio company using the configured skill for its sector (#{@investor.sector.presence || 'sector not set'})" } do %>
                 <i class="ti ti-chart-bar"></i> Run Scoring Agent
               <% end %>
             <% else %>
@@ -128,9 +133,14 @@
             <% end %>
 
             <% if @investor.entity.support_agents.set?(:presentation_analyst_agent) %>
-              <%= button_to run_support_agents_path(agent_type: "PresentationAnalystAgent", target_id: @investor.id, method: :post),
-                            class: "dropdown-item",
-                            data: { bs_toggle: "tooltip", bs_title: "Reads investor presentations across all periods and generates a pre-board briefing and Management Accountability Score" } do %>
+              <%= button_to run_support_agents_path(
+                    agent_type: "PresentationAnalystAgent",
+                    target_type: "Investor",
+                    target_id:   @investor.id
+                  ),
+                  method: :post,
+                  class: "dropdown-item",
+                  data: { turbo_stream: true, bs_toggle: "tooltip", bs_title: "Reads investor presentations across all periods and generates a pre-board briefing and Management Accountability Score" } do %>
                 <i class="ti ti-files"></i> Run Presentation Analyst
               <% end %>
             <% else %>

@@ -284,7 +284,8 @@ commands = [
                                   target_type: "Fund",
                                   target_id:   @fund.id
                                 ),
-                                method: :post, class: "dropdown-item ti ti-chart-histogram" %>
+                                method: :post, class: "dropdown-item ti ti-chart-histogram",
+                                data: { turbo_stream: true } %>
                           </li>
                         <% end %>
                         <li>

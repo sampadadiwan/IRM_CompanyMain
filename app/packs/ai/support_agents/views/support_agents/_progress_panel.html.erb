@@ -31,22 +31,21 @@
     </div>
 
     <div class="d-flex align-items-center gap-2">
+      <%# Link to Agent show page %>
+      <%= link_to support_agent_path(support_agent),
+                  class: "btn btn-sm btn-outline-secondary",
+                  target: "_blank", rel: "noopener",
+                  data: { bs_toggle: "tooltip", bs_title: "View agent details and reports" } do %>
+        <i class="ti ti-external-link"></i>
+      <% end %>
+
       <%# Status badge %>
       <span id="status_badge_<%= report&.id || 'new' %>">
         <%= render "support_agents/status_badge", report: report %>
       </span>
 
-      <%# Run/Cancel button %>
-      <% if report.nil? || !report.running? %>
-        <%= button_to "Run Agent",
-            run_with_steps_support_agent_path(support_agent, target_type: target.class.name, target_id: target.id),
-            method: :post,
-            class: "btn btn-primary btn-sm",
-            data: { 
-              action: "click->support-agent-progress#run",
-              
-            } %>
-      <% else %>
+      <%# Cancel button (only when running) %>
+      <% if report&.running? %>
         <%= button_to "Cancel",
             cancel_support_agent_path(support_agent, report_id: report.id),
             method: :post,
@@ -120,7 +119,7 @@
       <% else %>
         <p class="text-muted mb-0">
           <i class="ti ti-info-circle"></i> 
-          Click "Run Agent" to validate this capital call before sending notices.
+          No recent run. Run this agent from the <%= link_to "agent settings page", support_agent_path(support_agent) %>.
         </p>
       <% end %>
     </div>

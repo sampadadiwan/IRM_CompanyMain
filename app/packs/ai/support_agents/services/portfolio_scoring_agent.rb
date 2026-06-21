@@ -82,21 +82,40 @@ class PortfolioScoringAgent < SupportAgentService
   private
 
   # Loads the investor and support_agent into context.
-  def initialize_agent(ctx, target: nil, **)
+  def initialize_agent(ctx, target: nil, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :initialize_agent) if report
+
     super
+
     investor = target
     ctx[:investor] = investor
     Rails.logger.info { "[PortfolioScoringAgent] Initializing for Investor ID=#{investor.id} sector=#{investor.sector}" }
-    investor.category == "Portfolio Company" && @support_agent.enabled?
+
+    unless investor.category == "Portfolio Company"
+      mark_step_failed(report, :initialize_agent, message: "Not a Portfolio Company") if report
+      return false
+    end
+    unless @support_agent.enabled?
+      mark_step_failed(report, :initialize_agent, message: "Agent is disabled") if report
+      return false
+    end
+
+    mark_step_success(report, :initialize_agent, message: "Agent initialized") if report
+    true
   end
 
   # Downloads the skill markdown file for the investor's sector.
   # Always returns true so store_score can persist a failed report on any error path.
-  def load_sector_skill(ctx, investor: nil, **)
+  def load_sector_skill(ctx, investor: nil, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :load_sector_skill) if report
+
     sector = investor.sector.to_s.strip
     if sector.blank?
       Rails.logger.warn { "[PortfolioScoringAgent] Investor ID=#{investor.id} has no sector set — skipping" }
       ctx[:skill_error] = "No sector configured on this portfolio company"
+      mark_step_skipped(report, :load_sector_skill, message: "No sector set") if report
       return true
     end
 
@@ -104,25 +123,34 @@ class PortfolioScoringAgent < SupportAgentService
     unless skill_doc
       Rails.logger.warn { "[PortfolioScoringAgent] No skill configured for sector '#{sector}' on agent ID=#{@support_agent.id}" }
       ctx[:skill_error] = "No skill file configured for sector: #{sector}"
+      mark_step_failed(report, :load_sector_skill, message: "No skill for sector #{sector}") if report
       return true
     end
 
     skill_content = read_document_text(skill_doc)
     if skill_content.blank?
       ctx[:skill_error] = "Skill file for sector '#{sector}' is empty or could not be read"
+      mark_step_failed(report, :load_sector_skill, message: "Skill file empty/unreadable") if report
       return true
     end
 
     ctx[:sector]        = sector
     ctx[:skill_content] = skill_content
     Rails.logger.info { "[PortfolioScoringAgent] Loaded skill for sector '#{sector}' (#{skill_content.length} chars)" }
+    mark_step_success(report, :load_sector_skill, message: "Skill loaded for #{sector}") if report
     true
   end
 
   # Gathers all available structured and unstructured data for the portfolio company.
   # Skips the expensive gather if a skill error was recorded in a prior step.
-  def gather_portco_data(ctx, investor: nil, **)
-    return true if ctx[:skill_error]
+  def gather_portco_data(ctx, investor: nil, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :gather_portco_data) if report
+
+    if ctx[:skill_error]
+      mark_step_skipped(report, :gather_portco_data, message: "Skipped due to skill error") if report
+      return true
+    end
 
     ctx[:portco_data] = {
       company_name: investor.investor_name,
@@ -134,13 +162,20 @@ class PortfolioScoringAgent < SupportAgentService
       documents: gather_document_texts(investor)
     }
     Rails.logger.info { "[PortfolioScoringAgent] Data gathered for #{investor.investor_name}: #{ctx[:portco_data].keys.join(', ')}" }
+    mark_step_success(report, :gather_portco_data, message: "Data gathered") if report
     true
   end
 
   # Calls the LLM with the skill prompt + gathered data. Extracts and validates the JSON score.
   # Always returns true so store_score always runs — errors are carried in ctx[:score_error].
-  def generate_score(ctx, investor: nil, **)
-    return true if ctx[:skill_error]
+  def generate_score(ctx, investor: nil, support_agent_report: nil, **)
+    report = support_agent_report
+    mark_step_running(report, :generate_score) if report
+
+    if ctx[:skill_error]
+      mark_step_skipped(report, :generate_score, message: "Skipped due to skill error") if report
+      return true
+    end
 
     prompt = build_scoring_prompt(ctx[:skill_content], ctx[:portco_data])
     Rails.logger.info { "[PortfolioScoringAgent] Sending scoring prompt (#{prompt.length} chars) to LLM for #{investor.investor_name}" }
@@ -152,17 +187,25 @@ class PortfolioScoringAgent < SupportAgentService
     ctx[:score]     = score
     ctx[:score_raw] = raw_content
     Rails.logger.info { "[PortfolioScoringAgent] Score generated for #{investor.investor_name}: overall=#{score['overall_score']} grade=#{score['grade']}" }
+    mark_step_success(report, :generate_score, message: "Score: #{score['overall_score']} (#{score['grade']})") if report
     true
   rescue StandardError => e
     Rails.logger.error { "[PortfolioScoringAgent] LLM scoring failed for Investor ID=#{investor.id}: #{e.message}" }
     ctx[:score_error] = e.message
+    mark_step_failed(report, :generate_score, message: e.message) if report
     true
   end
 
-  # Persists the score as a new SupportAgentReport (history is preserved across runs).
-  def store_score(ctx, investor: nil, support_agent: nil, **)
+  # Persists the score as a new SupportAgentReport (preserving history).
+  # When run with steps, also finalizes the step-tracked report so the progress
+  # panel shows completion — the step report links to the scoring report via
+  # its json_fields["scoring_report_id"].
+  def store_score(ctx, investor: nil, support_agent: nil, support_agent_report: nil, **)
+    steps_report = support_agent_report
+    mark_step_running(steps_report, :store_score) if steps_report
+
     if ctx[:score]
-      report = SupportAgentReport.create!(
+      scoring_report = SupportAgentReport.create!(
         owner: investor,
         support_agent: support_agent,
         status: :completed,
@@ -174,7 +217,10 @@ class PortfolioScoringAgent < SupportAgentService
           "completed_at" => Time.current.iso8601
         }
       )
-      Rails.logger.info { "[PortfolioScoringAgent] Score stored — SupportAgentReport ID=#{report.id} for Investor ID=#{investor.id}" }
+      Rails.logger.info { "[PortfolioScoringAgent] Score stored — SupportAgentReport ID=#{scoring_report.id}" }
+
+      mark_step_success(steps_report, :store_score, message: "Score saved (report ##{scoring_report.id})") if steps_report
+      finalize_report(steps_report, status: "ready") if steps_report
     else
       error_msg = ctx[:skill_error] || ctx[:score_error] || "Unknown scoring error"
       SupportAgentReport.create!(
@@ -190,6 +236,9 @@ class PortfolioScoringAgent < SupportAgentService
         }
       )
       Rails.logger.warn { "[PortfolioScoringAgent] Score failed for Investor ID=#{investor.id}: #{error_msg}" }
+
+      mark_step_failed(steps_report, :store_score, message: error_msg) if steps_report
+      finalize_report(steps_report, status: "blocked") if steps_report
     end
     true
   end

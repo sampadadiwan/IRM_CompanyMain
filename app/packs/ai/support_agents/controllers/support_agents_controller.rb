@@ -63,8 +63,8 @@ class SupportAgentsController < ApplicationController
                                    .where(support_agent: @support_agent, owner_type: "Investor")
                                    .includes(:owner)
                          reports = reports.where(owner_id: params[:owner_id]) if params[:owner_id].present?
-                         # Return the latest report per owner so we can show a per-company summary
-                         reports.order(created_at: :desc)
+                          # Only include reports with scoring data; newest first
+                          reports.where("json_fields LIKE '%\"score\"%'").order(created_at: :desc)
                        else
                          SupportAgentReport.none
                        end
