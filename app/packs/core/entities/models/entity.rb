@@ -173,7 +173,20 @@ class Entity < ApplicationRecord
     self.instrument_types = instrument_types.split(",").map(&:strip).join(",") if instrument_types
     self.currency ||= "INR"
     self.entity_setting ||= EntitySetting.new
-    self.sub_domain ||= name.gsub(/[[:space:]]/, '').underscore.dasherize + rand(1000).to_s
+    self.sub_domain ||= generate_unique_sub_domain
+  end
+
+  # rand(1000) gave only 1000 possible suffixes per name, which collides too
+  # often against the global unique index on sub_domain once entities sharing
+  # a name (e.g. repeated "Investor Entity" fixtures) are created repeatedly.
+  def generate_unique_sub_domain
+    base = name.gsub(/[[:space:]]/, '').underscore.dasherize
+    candidate = nil
+    loop do
+      candidate = "#{base}#{SecureRandom.hex(4)}"
+      break unless Entity.exists?(sub_domain: candidate)
+    end
+    candidate
   end
 
   scope :for_investor, lambda { |user|
