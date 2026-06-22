@@ -743,8 +743,11 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   expect(page).to have_button("Actions", wait: 15)  # page fully loaded before interacting
   click_on("Actions")
   find('#misc_action_menu', wait: 10).hover  # wait for dropdown, then reveal submenu
-  expect(page).to have_link("New Template", wait: 10)  # wait for submenu to open
-  click_on("New Template")
+  new_template_link = find_link("New Template", wait: 10)  # wait for submenu to open
+  # bypass Playwright's hover/stability checks: the link has a Bootstrap tooltip
+  # (data-bs-toggle="tooltip") that fades in on real mouse hover and intermittently
+  # blocks/destabilizes the click
+  page.execute_script("arguments[0].click()", new_template_link.native)
   fill_in('document_name', with: name)
 
   select(owner_tag, from: "document_owner_tag")
