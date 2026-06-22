@@ -87,7 +87,8 @@ Rails.application.routes.draw do
   # Defines the root path route ("/")
   root "entities#dashboard"
 
-  resources :user_guides, only: %i[index show]
+  resources :user_guides, only: [:index]
+  get 'user_guides/*id', to: 'user_guides#show', as: :user_guide, format: false
   resources :release_notes, only: %i[index show], constraints: { id: %r{[^/]+} }
   resources :features, only: [:index]
   get 'features/*id', to: 'features#show', as: :feature, format: false

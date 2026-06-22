@@ -1,4 +1,8 @@
-<%= render FormCard.new(title: "#{@support_agent}") do %>
+<%
+  guide_icon = user_guide_icon_for(@support_agent.agent_type, tooltip: "#{@support_agent.name} User Guide")
+  agent_title = "<span class='d-flex align-items-center gap-2'>#{@support_agent} #{guide_icon}</span>"
+%>
+<%= render FormCard.new(title: agent_title) do %>
 <% active_tab = params[:tab].presence || 'general' %>
 
   <div class="associated_entity" data-controller="tabs">

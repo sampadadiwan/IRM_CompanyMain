@@ -41,34 +41,41 @@
     <div data-list-filter-target="noResults" class="alert alert-warning d-none mx-3">
       No user guides found matching your search.
     </div>
-    <div id="note-full-container" class="note-has-grid row">
-      <% @guides.each do |guide| %>
-        <% type = ["note-social", "note-important", "note-business"].sample %>
-        <div class="col-md-4 single-note-item all-category mb-4 <%= type %>" data-list-filter-target="item">
-          <div class="card card-body h-100 mb-0 shadow-sm border-0">
-            <span class="side-stick"></span>
-            <h6 class="note-title text-truncate w-75 mb-0">
-              <%= link_to guide[:title], user_guide_path(guide[:id]), class: "fw-bolder text-dark", target: "_blank" %>
-            </h6>
-            <p class="note-date fs-2 text-muted mb-3">
-              Documentation
-            </p>
-            <div class="note-content">
-              <p class="note-inner-content text-muted mb-4" style="min-height:50px;">
-                <%= guide[:description] %>
+    <% @grouped_guides.each do |group, guides| %>
+      <% if group.present? %>
+        <h5 class="px-2 mt-3 mb-2 text-muted fw-semibold">
+          <i class="ti ti-folder me-1"></i><%= group %>
+        </h5>
+      <% end %>
+      <div class="note-has-grid row">
+        <% guides.each do |guide| %>
+          <% type = ["note-social", "note-important", "note-business"].sample %>
+          <div class="col-md-4 single-note-item all-category mb-4 <%= type %>" data-list-filter-target="item">
+            <div class="card card-body h-100 mb-0 shadow-sm border-0">
+              <span class="side-stick"></span>
+              <h6 class="note-title text-truncate w-75 mb-0">
+                <%= link_to guide[:title], user_guide_path(id: guide[:id]), class: "fw-bolder text-dark", target: "_blank" %>
+              </h6>
+              <p class="note-date fs-2 text-muted mb-3">
+                <%= group.present? ? group : "Documentation" %>
               </p>
-            </div>
-            <div class="d-flex align-items-center mt-auto pt-3 border-top">
-              <%= link_to user_guide_path(guide[:id]), class: "btn btn-sm btn-primary rounded-pill px-3", target: "_blank" do %>
-                View Guide
-              <% end %>
-              <div class="ms-auto">
-                <i class="ti ti-book fs-5 text-muted"></i>
+              <div class="note-content">
+                <p class="note-inner-content text-muted mb-4" style="min-height:50px;">
+                  <%= guide[:description] %>
+                </p>
+              </div>
+              <div class="d-flex align-items-center mt-auto pt-3 border-top">
+                <%= link_to user_guide_path(id: guide[:id]), class: "btn btn-sm btn-primary rounded-pill px-3", target: "_blank" do %>
+                  View Guide
+                <% end %>
+                <div class="ms-auto">
+                  <i class="ti ti-book fs-5 text-muted"></i>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      <% end %>
-    </div>
+        <% end %>
+      </div>
+    <% end %>
   </div>
 </div>

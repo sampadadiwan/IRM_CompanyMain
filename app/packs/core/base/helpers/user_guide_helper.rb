@@ -111,7 +111,30 @@ module UserGuideHelper
     # Settings & Utilities
     'exchange_rates' => 'tracking_currency_guide.md',
     'db_dumps' => 'db_dumps_user_guide.md',
-    'outlook_addin' => 'outlook_setup_user_guide.md'
+    'outlook_addin' => 'outlook_setup_user_guide.md',
+
+    # Support Agents — keyed by SupportAgent#agent_type so each agent's show page can
+    # link straight to its own dedicated guide instead of the generic overview guide.
+    'KycOnboardingAgent' => 'agents/kyc_onboarding_agent_user_guide.md',
+    'KycDocExtractorAgent' => 'agents/kyc_doc_extractor_agent_user_guide.md',
+    'PortfolioCompanyAgent' => 'agents/portfolio_company_agent_user_guide.md',
+    'DistributionReadinessAgent' => 'agents/distribution_readiness_agent_user_guide.md',
+    'EsignMonitorAgent' => 'agents/esign_monitor_agent_user_guide.md',
+    'DataQualityAgent' => 'agents/data_quality_agent_user_guide.md',
+    'PortfolioScoringAgent' => 'agents/portfolio_scoring_agent_user_guide.md',
+    'NoteSummarizerAgent' => 'agents/note_summarizer_agent_user_guide.md',
+    'DealManagementAgent' => 'agents/deal_management_agent_user_guide.md',
+    'DealsReportAgent' => 'agents/deals_report_agent_user_guide.md',
+    'PresentationAnalystAgent' => 'agents/presentation_analyst_agent_user_guide.md',
+    'RtaReconciliationAgent' => 'agents/rta_reconciliation_agent_user_guide.md',
+    'CallNoticeAgent' => 'agents/call_notice_agent_user_guide.md',
+    'CashFlowAssistantAgent' => 'agents/cash_flow_assistant_agent_user_guide.md',
+    'PortfolioReportAgent' => 'agents/portfolio_report_agent_user_guide.md',
+    'CustomerSupportAgent' => 'customer_support_agent_user_guide.md',
+    # No dedicated guide yet — fall back to the general overview guide.
+    'FundStatsAgent' => 'support_agents_user_guide.md',
+    'LpAssistantAgent' => 'support_agents_user_guide.md',
+    'PortfolioAssistantAgent' => 'support_agents_user_guide.md'
   }.freeze
 
   def current_user_guide_path
