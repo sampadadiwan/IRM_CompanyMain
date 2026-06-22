@@ -70,6 +70,35 @@ Then('when I click on the link in the email {string}') do |link|
   current_email.click_link link
 end
 
+When('I request a password reset') do
+  visit("/users/password/new")
+  fill_in('user_email', with: @user.email)
+  click_on("Reset Password")
+end
+
+When('I click on the link in the email {string}') do |link|
+  current_email.click_link link
+end
+
+When('I set my new password to {string}') do |new_password|
+  fill_in('user_password', with: new_password)
+  fill_in('user_password_confirmation', with: new_password)
+  # The Reset Password submit input on this page uses type="Submit" (capital S),
+  # which click_on's case-sensitive selector misses even though browsers treat it as submit.
+  find(:xpath, "//input[@value='Reset Password']").click
+end
+
+Then('I should be able to log in with the password {string}') do |password|
+  # Resetting the password signs the user in automatically, so log out first
+  # to prove the new password (not the stale session) is what authenticates.
+  steps %(Given I log out)
+  visit("/users/sign_in")
+  fill_in('user_email', with: @user.email)
+  fill_in('user_password', with: password)
+  click_on("Log In")
+  expect(page).not_to have_current_path('/users/sign_in', wait: 15)
+end
+
 Given('I log out') do
   # visit(destroy_user_session_path)
   visit("entities/dashboard")
