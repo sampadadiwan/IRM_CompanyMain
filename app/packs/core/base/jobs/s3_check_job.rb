@@ -27,7 +27,10 @@ class S3CheckJob < ApplicationJob
     # definitively whether replication is done, still pending, or failed, instead of a
     # fixed time window that can both false-alarm (replication slower than the window)
     # and false-negative (file no longer the latest by the next run, so never re-checked).
-    replication_status = source_latest_file.replication_status
+    # `source_latest_file` is an Aws::S3::ObjectSummary (from bucket.objects), which has no
+    # replication_status of its own — it only comes from a HeadObject call, so we fetch the
+    # full Aws::S3::Object resource (which lazily calls head_object) to read it.
+    replication_status = source_bucket.object(source_latest_file.key).replication_status
     case replication_status
     when "COMPLETED"
       # Already replicated — proceed to verify it landed in the destination bucket.
