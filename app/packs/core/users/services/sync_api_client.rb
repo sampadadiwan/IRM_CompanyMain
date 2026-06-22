@@ -33,9 +33,9 @@ class SyncApiClient
 
   REGION_BASE_URLS = if Rails.env.production?
                        {
-                         "US" => "https://caphive.us/",
-                         "IN" => "https://caphive.com/",
-                         "SG" => "https://caphive.sg/"
+                         "US" => "https://app.caphive.us/",
+                         "IN" => "https://app.caphive.com/",
+                         "SG" => "https://app.caphive.sg/"
                        }.freeze
                      else
                        {

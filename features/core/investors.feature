@@ -163,3 +163,75 @@ Scenario: Investor Entity Update
   Examples:
   |user	      |entity               |deal                             |msg	| investor1 |
   |  	        |entity_type=Company  |name=Series A;amount_cents=10000 |Deal was successfully created|Good Investor|
+
+Scenario Outline: Email change creates new entity
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  And I update the investor email to "new@example.com"
+  Then I should see the "Stakeholder was successfully updated"
+  Then a new entity should have been created with email "new@example.com"
+  Then the investor should now be linked to the entity with email "new@example.com"
+
+  Examples:
+    |user |entity               |investor    |
+    |     |entity_type=Company  |category=LP |
+
+Scenario Outline: Email change links to existing entity
+  Given an entity exists with email "existing@example.com"
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  And I update the investor email to "existing@example.com"
+  Then I should see the "Stakeholder was successfully updated"
+  Then the investor should now be linked to the entity with email "existing@example.com"
+
+  Examples:
+    |user |entity               |investor    |
+    |     |entity_type=Company  |category=LP |
+
+Scenario Outline: Email update to same entity is a no-op
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  Then I remember the current investor entity
+  And I update the investor email to "old@example.com"
+  Then the investor entity should still be the same
+
+  Examples:
+    |user |entity               |investor                                       |
+    |     |entity_type=Company  |category=LP;primary_email=old@example.com      |
+
+Scenario Outline: Email change moves exclusive user to new entity
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  And the investor has an investor access for user "<user_email>"
+  Then I remember the current investor entity
+  And I update the investor email to "new@example.com"
+  Then the user "<user_email>" should belong to the new entity
+
+  Examples:
+    |user |entity               |investor    | user_email       |
+    |     |entity_type=Company  |category=LP | exclusive@test.com |
+
+Scenario Outline: Email change does NOT move shared user
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  And I am at the investor page
+  When I create a new investor "<investor>"
+  And the investor has an investor access for user "<user_email>"
+  And the user "<user_email>" also belongs to another investor
+  Then I remember the current investor entity
+  And I update the investor email to "new@example.com"
+  Then the user "<user_email>" should still belong to the old entity
+
+  Examples:
+    |user |entity               |investor    | user_email       |
+    |     |entity_type=Company  |category=LP | shared@test.com  |
+
+

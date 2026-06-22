@@ -3,7 +3,7 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["sectorField"]
+  static targets = ["sectorField", "primaryEmailField", "primaryEmailEditFlag", "editEmailButton", "editEmailModal"]
 
 
 connect() {
@@ -36,6 +36,28 @@ connect() {
   close(event) {
     console.log("closeForm");
     $(".dynamic_form").remove();
+  }
+
+  // Unlocks the primary_email field client-side AND flips the primary_email_edit
+  // hidden field so the form submission carries that intent to the server. Without
+  // the hidden field, a server re-render on a validation failure would re-disable
+  // the field (its `disabled` state is derived from params[:primary_email_edit]),
+  // silently discarding the user's in-progress edit.
+  enableEmailEditing() {
+    if (this.hasPrimaryEmailFieldTarget) {
+      this.primaryEmailFieldTarget.removeAttribute("disabled")
+      this.primaryEmailFieldTarget.focus()
+    }
+    if (this.hasPrimaryEmailEditFlagTarget) {
+      this.primaryEmailEditFlagTarget.value = "true"
+    }
+    if (this.hasEditEmailButtonTarget) {
+      this.editEmailButtonTarget.remove()
+    }
+    if (this.hasEditEmailModalTarget) {
+      const modal = bootstrap.Modal.getInstance(this.editEmailModalTarget)
+      modal?.hide()
+    }
   }
 }
 

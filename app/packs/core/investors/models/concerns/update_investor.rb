@@ -3,6 +3,7 @@ module UpdateInvestor
 
   included do
     after_commit :update_association_name, only: :update?
+    before_validation :reassign_entity_on_email_change, if: :persisted?
 
     # Be very careful using this method, it is used to move all investors associations to a new investor
     def self.merge(old_investor, new_investor, allow_cross_entity: false)
@@ -83,6 +84,10 @@ module UpdateInvestor
       end
     end
 
+    # After email-based entity reassignment (reassign_entity_on_email_change) the
+    # new entity already carries the matching email, so this update_column is a
+    # no-op (setting the same value). Kept for the edge case where the entity's
+    # email was blank and the investor is the sole stakeholder for that entity.
     # If the primary email changes, we need to update the investor_entity as well
     investor_entity.update_column(:primary_email, primary_email) if saved_change_to_primary_email? && (sole_investor? || investor_entity.primary_email.blank?)
   end
@@ -119,13 +124,109 @@ module UpdateInvestor
     end
   end
 
+  # When primary_email changes on an existing investor, find or create an Entity
+  # with the new email and reassign investor_entity_id.
+  #
+  # Mirrors the new-record behavior in #update_name (investor.rb)
+  # which does the same lookup/creation during initial investor creation.
+  #
+  # The reassignment triggers the existing after_commit :change_investor_entity
+  # callback which cascades to deal_investors, investor_accesses, and
+  # investor_notice_entries that reference the old entity.
+  #
+  # Edge cases:
+  # - No entity with the new email → creates one with entity_type: "Investor",
+  #   copies permissions from the fund via setup_permissions
+  # - New email matches same entity already assigned → early return, no-op
+  # - New email matches entity already used by another investor in same fund
+  #   → caught by validates :investor_entity_id, uniqueness: { scope: :entity_id }
+  #   on the Investor model
+  # - Email cleared to blank → early return, no reassignment
+  def reassign_entity_on_email_change
+    return if primary_email.blank? || !primary_email_changed?
+
+    new_entity = with_entity_email_lock(primary_email.strip) { find_or_build_investor_entity }
+
+    unless new_entity.persisted?
+      setup_permissions(new_entity)
+
+      unless new_entity.save
+        errors.add(:primary_email, "could not save entity: #{new_entity.errors.full_messages.join(', ')}")
+        return
+      end
+    end
+
+    return if new_entity.id == investor_entity_id
+
+    # Tell change_investor_entity (after_commit) that this reassignment came from
+    # an email change, so it knows to also move exclusive users along with it.
+    # Other callers that set investor_entity_id directly (e.g. the manual
+    # "Investor Entity Update" admin flow) should NOT move users as a side effect.
+    @reassign_entity_due_to_email_change = true
+    self.investor_entity = new_entity
+  end
+
+  # Find (by email, falling back to pan) or build an Entity to use as this
+  # investor's investor_entity. Shared by #update_name (new-record creation, in
+  # investor.rb) and #reassign_entity_on_email_change (existing-record email
+  # change) so the two paths can't drift on what counts as "the same" entity.
+  def find_or_build_investor_entity
+    email = primary_email.presence&.strip
+    e = email ? Entity.where(primary_email: email).first : nil
+    e ||= pan.present? ? Entity.where(pan: pan.strip).first : nil
+    e ||= Entity.new(name: investor_name.strip, entity_type: "Investor", pan:, primary_email: email)
+    e
+  end
+
   private
+
+  # MySQL session-level advisory lock keyed by email, to close the TOCTOU window
+  # between "look up Entity by email" and "create Entity with that email" — there
+  # is no unique index on entities.primary_email, so without this, two concurrent
+  # requests reassigning different investors to the same new email could each
+  # create their own duplicate Entity.
+  #
+  # GET_LOCK/RELEASE_LOCK are MySQL-specific (production uses mysql2; test envs
+  # may run sqlite3, which has no equivalent and doesn't need one — it has no
+  # real cross-connection concurrency).
+  def with_entity_email_lock(email)
+    return yield unless mysql_adapter?
+
+    lock_name = "investor_entity_email:#{email}"
+    ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql(["SELECT GET_LOCK(?, 10)", lock_name]))
+    begin
+      yield
+    ensure
+      ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql(["SELECT RELEASE_LOCK(?)", lock_name]))
+    end
+  end
+
+  def mysql_adapter?
+    ActiveRecord::Base.connection.adapter_name.casecmp?("mysql2")
+  end
 
   def sole_investor?
     exclude_category = %w[Trust Founder Employee].include?(category)
     Investor.where(investor_entity_id:).one? && !exclude_category
   end
 
+  # Cascade an investor_entity_id change to records that reference the old entity.
+  # Runs via after_commit after the investor's own investor_entity_id is persisted.
+  #
+  # Covers: entity.investor_accesses, entity.deal_investors, InvestorNoticeEntry
+  # (all scoped by entity_id to this fund).
+  #
+  # Also moves users of this investor's investor_accesses to the new entity,
+  # but only if they have a single investor_access (i.e. they are not shared
+  # across multiple investors). Shared users keep their current entity_id.
+  #
+  # NOTE: This is an after_commit callback — if the cascading updates fail, the
+  # investor's investor_entity_id is already committed and cannot be rolled back.
+  # This is a pre-existing architectural constraint.
+  #
+  # NOTE: update_column / update_all bypass model callbacks (Chewy index updates,
+  # Audited logging, etc). Ensure that models receiving these updates do not
+  # require callback-triggered side effects for entity_id changes.
   def change_investor_entity
     ActiveRecord::Base.transaction do
       # update_column(:investor_entity_id, investor_entity.id)
@@ -136,9 +237,36 @@ module UpdateInvestor
       entity.investor_accesses.where(investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
       entity.deal_investors.where(investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
       InvestorNoticeEntry.where(entity_id:, investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
+
+      # Only move users when this reassignment came from an email change (see
+      # reassign_entity_on_email_change) — other callers that set
+      # investor_entity_id directly (e.g. the manual "Investor Entity Update"
+      # admin flow) reassign the investor's own entity link only and should not
+      # move any users as a side effect.
+      if @reassign_entity_due_to_email_change
+        @reassign_entity_due_to_email_change = false
+        # Move users of this investor's investor_accesses to the new entity,
+        # but only if they are exclusive to this investor (single investor_access).
+        user_ids = investor_accesses.where.not(user_id: nil).distinct.pluck(:user_id)
+        if user_ids.present?
+          exclusive_user_ids = User.where(id: user_ids)
+                                   .left_joins(:investor_accesses)
+                                   .group(:id)
+                                   .having("COUNT(investor_accesses.id) = 1")
+                                   .pluck(:id)
+          User.where(id: exclusive_user_ids).update_all(entity_id: investor_entity_id)
+        end
+      end
     end
   rescue StandardError => e
     Rails.logger.error "Error updating investor entity: #{e.message}"
-    errors.add(:investor_entity_id, "Could not be updated - #{e.message}")
+    Rails.error.report(
+      e,
+      context: {
+        investor_id: id,
+        investor_entity_id:,
+        source: "update_investor.change_investor_entity"
+      }
+    )
   end
 end

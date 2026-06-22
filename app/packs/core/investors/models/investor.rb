@@ -180,12 +180,14 @@ class Investor < ApplicationRecord
   def update_name
     self.last_interaction_date ||= Time.zone.today - 10.years
 
-    # Ensure we have an investor entity
-    e = primary_email ? Entity.where(primary_email: primary_email.strip).first : nil
-    e ||= pan.present? ? Entity.where(pan: pan.strip).first : nil
-
-    # We dont have this entity in our DB, lets create one.
-    e ||= Entity.create(name: investor_name.strip, entity_type: "Investor", pan:, primary_email:)
+    # Ensure we have an investor entity (find by email, falling back to pan, else build new).
+    # Shared with reassign_entity_on_email_change (update_investor.rb) so the two paths can't
+    # drift on what counts as "the same" entity.
+    e = if primary_email.present?
+          with_entity_email_lock(primary_email.strip) { find_or_build_investor_entity }
+        else
+          find_or_build_investor_entity
+        end
 
     errors.add(:investor_name, "is not valid. #{e.errors.full_messages}") unless e.valid?
     setup_permissions(e)

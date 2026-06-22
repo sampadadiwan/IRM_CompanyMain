@@ -13,12 +13,27 @@
     <small class="text-muted">Select the category grouping for the stakeholder</small>
   </div>
 
-  <% disabled = !investor.new_record? && investor.primary_email.present? %>
+  <% disabled = !investor.new_record? && investor.primary_email.present? && !params[:primary_email_edit].present? %>
   <div class="form-group" id="investor_name_group">
     <%= form.label :primary_email, "Primary Email" %>
-    <%= form.text_field :primary_email, class: "form-control", required: true, disabled:, data: {validate: true} %>
+    <div class="d-flex align-items-center gap-2">
+      <%= form.text_field :primary_email, class: "form-control", required: true, disabled:, data: {validate: true, investor_target: "primaryEmailField"} %>
+      <% if disabled %>
+        <button type="button" id="editEmailBtn" class="btn btn-outline-warning btn-sm flex-shrink-0"
+                data-investor-target="editEmailButton" data-bs-toggle="modal" data-bs-target="#editEmailModal">
+          <i class="ti ti-pencil"></i> Edit Email
+        </button>
+      <% end %>
+    </div>
+    <%# Round-trips the unlock intent with the form submission. Without this, a server
+        re-render after a validation failure would re-disable the field above, since
+        `disabled` is derived from params[:primary_email_edit] which a plain client-side
+        DOM unlock never sends. %>
+    <%= hidden_field_tag :primary_email_edit, params[:primary_email_edit].presence || "false", data: {investor_target: "primaryEmailEditFlag"} %>
     <small class="text-muted">Primary email is the unique ID for creating the stakeholder. This is not used for any communications.</small>
   </div>
+
+
 
   <div class="form-group">
     <%= form.label :tag_list, "Tags" %>

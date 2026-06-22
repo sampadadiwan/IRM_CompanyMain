@@ -1690,6 +1690,86 @@ When('I filter the investors with {string}') do |string|
   find("#search_input").send_keys(:return)
 end
 
+When('I update the investor email to {string}') do |new_email|
+  @investor ||= Investor.last
+  visit(edit_investor_path(@investor, primary_email_edit: true))
+
+  fill_in('investor_primary_email', with: new_email)
+  click_on("Save")
+end
+
+Given('an entity exists with email {string}') do |email|
+  @existing_entity = FactoryBot.create(:entity, primary_email: email, entity_type: "Investor")
+end
+
+Then('the investor should now be linked to the entity with email {string}') do |email|
+  @investor = Investor.last
+  linked_entity = @investor.investor_entity
+  expect(linked_entity.primary_email).to eq(email)
+end
+
+Then('a new entity should have been created with email {string}') do |email|
+  expect(Entity.where(primary_email: email).count).to eq(1)
+end
+
+Then('the investor entity should still be the same') do
+  @investor.reload
+  expect(@investor.investor_entity_id).to eq(@original_investor_entity_id)
+end
+
+Then('I remember the current investor entity') do
+  @investor ||= Investor.last
+  @original_investor_entity_id = @investor.investor_entity_id
+end
+
+Given('the investor has an investor access for user {string}') do |email|
+  @investor = Investor.last
+  @test_user = FactoryBot.create(:user, email: email, entity_id: @investor.investor_entity_id)
+  FactoryBot.create(:investor_access,
+    investor: @investor,
+    entity: @entity,
+    user: @test_user,
+    email: email,
+    approved: true)
+end
+
+Then('the user {string} should belong to the new entity') do |email|
+  user = User.find_by(email: email)
+  new_entity_id = @investor.reload.investor_entity_id
+  expect(user.entity_id).to eq(new_entity_id),
+    "Expected user #{email} entity_id #{user.entity_id} to match new investor_entity_id #{new_entity_id}"
+end
+
+Given('the user {string} also belongs to another investor') do |email|
+  # Create a second investor in a separate entity (different fund) with
+  # investor_entity_id matching the user's entity_id. This gives the user
+  # 2 investor_accesses total (across funds).
+  # Uses insert! to bypass callbacks/validations that would interfere with
+  # the existing scenario investor (Investor.last must remain unchanged).
+  other_entity = FactoryBot.create(:entity, entity_type: "Company")
+  second_investor = FactoryBot.create(:investor, entity: other_entity, investor_entity_id: @test_user.entity_id)
+  InvestorAccess.insert!(
+    {
+      investor_id: second_investor.id,
+      entity_id: other_entity.id,
+      user_id: @test_user.id,
+      email: email,
+      first_name: @test_user.first_name,
+      last_name: @test_user.last_name,
+      approved: true,
+      investor_entity_id: @test_user.entity_id,
+      created_at: Time.current,
+      updated_at: Time.current
+    }
+  )
+end
+
+Then('the user {string} should still belong to the old entity') do |email|
+  user = User.find_by(email: email)
+  expect(user.entity_id).to eq(@original_investor_entity_id),
+    "Expected user #{email} entity_id #{user.entity_id} to remain #{@original_investor_entity_id}"
+end
+
 Then('I should see the filtered investors with {string}') do |string|
   expect(page).to have_content(string)
   expect(page).to have_content(@investor_kyc.investor_name)
