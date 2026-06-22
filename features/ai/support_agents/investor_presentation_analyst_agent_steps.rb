@@ -15,7 +15,7 @@
 
 # ─── Dummy Presentation Text ──────────────────────────────────────────────────
 # Realistic investor update text written to Tempfiles and attached to KPI reports.
-# Concise enough to fit comfortably in one gemini-3-flash call while containing
+# Concise enough to fit comfortably in one gemini-3-flash-preview call while containing
 # all the signals the extraction and comparator prompts are designed to surface:
 # commitments, risks, dropped initiatives, objective changes, metric trends.
 
@@ -130,15 +130,15 @@ def build_presentation_agent(entity, extra_fields = {})
   SupportAgent.find_or_create_by!(agent_type: "PresentationAnalystAgent", entity: entity) do |a|
     a.name       = "Investor Presentation Analyst"
     a.enabled    = true
-    # gemini-3-flash has a 1M token context window — required for full-document processing.
+    # gemini-3-flash-preview has a 1M token context window — required for full-document processing.
     # PRD §4.1: "Full document needs to be processed — gemini has a 1M context."
-    a.llm_model  = "gemini-3-flash"
+    a.llm_model  = "gemini-3-flash-preview"
     a.json_fields = {
       "presentation_doc_names" => "Investor Update, Board Deck, Management Presentation, Quarterly Update, Investor Presentation",
       "max_periods"            => "8",
       "kpi_tag_list"           => "Actual",
       "comparison_strategy"    => "all_periods",
-      "llm_model"              => "gemini-3-flash",
+      "llm_model"              => "gemini-3-flash-preview",
       "enable_scoring"         => "Yes",
       "enable_questions"       => "Yes"
     }.merge(extra_fields)
@@ -198,6 +198,48 @@ end
 
 Given("the agent is configured with presentation_doc_names {string}") do |names|
   @agent.update!(json_fields: @agent.json_fields.merge("presentation_doc_names" => names))
+end
+
+# Stubs LlmService.ruby_llm_chat with fixed canned responses (by prompt type) so the
+# digest-caching scenario can verify the caching logic itself — comparing a SHA-256 of
+# cross_period_flags across two runs — without live-LLM wording drift between runs
+# producing a different digest from identical input. Stubbed at the service layer
+# (not allow_any_instance_of(RubyLLM::Chat)) — see kyc_onboarding_agent_steps.rb for why.
+Given("the LLM gives deterministic responses for digest caching") do
+  extraction_response = <<~JSON
+    ```json
+    {"management_narrative": "Steady execution, no notable tone shift.", "commitments": [],
+     "risks": [], "accomplishments": [], "forward_plans": [], "strategic_objectives": [],
+     "key_metrics": [], "initiatives": []}
+    ```
+  JSON
+
+  comparator_response = <<~JSON
+    ```json
+    {"commitment_tracker": [], "risk_evolution": [], "objective_drift": [],
+     "initiative_graveyard": [], "metric_anomalies": []}
+    ```
+  JSON
+
+  questions_response = <<~JSON
+    ```json
+    [{"question": "ARR growth decelerated — what changed in the sales motion?",
+      "category": "Metrics", "source_period": "Q4 2025", "source_evidence": "ARR $6.1M"}]
+    ```
+  JSON
+
+  mock_chat = double("chat")
+  allow(mock_chat).to receive(:ask) do |prompt|
+    content = if prompt.include?("EXTRACTION RULES:")
+                extraction_response
+              elsif prompt.include?("Compare these investor presentations")
+                comparator_response
+              else
+                questions_response
+              end
+    OpenStruct.new(content: content)
+  end
+  allow(LlmService).to receive(:ruby_llm_chat).and_return(mock_chat)
 end
 
 # ─── Presentation Document Creation ──────────────────────────────────────────
@@ -349,10 +391,6 @@ Then("the analyst report should have {int} period_record(s)") do |count|
     "#{records.map { |r| r['period_label'] }.inspect}"
 end
 
-Then("the analyst report should have {int} period_record") do |count|
-  step "the analyst report should have #{count} period_records"
-end
-
 Then("each period_record should contain the eight extraction categories") do
   records = @report.json_fields["period_records"] || []
   expected_keys = %w[management_narrative commitments risks accomplishments
@@ -484,15 +522,6 @@ end
 
 # ─── Assertions — Batch ───────────────────────────────────────────────────────
 
-Then("the batch result should show {int} successes and {int} errors") do |success_count, error_count|
-  expect(@batch_result[:successes].count).to eq(success_count),
-    "Expected #{success_count} successes but got #{@batch_result[:successes].count}: " \
-    "#{@batch_result[:successes].inspect}"
-  expect(@batch_result[:errors].count).to eq(error_count),
-    "Expected #{error_count} errors but got #{@batch_result[:errors].count}: " \
-    "#{@batch_result[:errors].inspect}"
-end
-
 Then("an analyst report should exist for Acme Analytics") do
   expect(presentation_report(@portfolio_company)).to be_present,
     "Expected a SupportAgentReport for Acme Analytics but none was found"
@@ -506,7 +535,12 @@ end
 
 # ─── Second Portfolio Company (batch scenario) ────────────────────────────────
 
-Given("there is also a portfolio company {string}") do |args|
+Given("there is also a portfolio company for batch run {string}") do |args|
+  # "there is an existing portfolio company" (investor.rb) overwrites @portfolio_company
+  # with whatever it just created — preserve and restore Acme's reference so later steps
+  # like "Acme Analytics has a Q4 2025 investor presentation..." don't target Beta Corp instead.
+  acme = @portfolio_company
   steps %(Given there is an existing portfolio company "#{args}")
   @beta_corp = @investor
+  @portfolio_company = acme
 end

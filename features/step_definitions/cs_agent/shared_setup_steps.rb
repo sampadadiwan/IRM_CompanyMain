@@ -2,7 +2,7 @@
 
 # Shared setup steps used across all CS agent feature files.
 
-Before do
+Before('@cs_agent') do
   # Stub LLM so tests never call a real AI provider.
   # Returns context-appropriate responses based on the user message.
   fake_chat = double("RubyLLM::Chat",

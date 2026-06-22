@@ -43,9 +43,9 @@ class SupportAgentsController < ApplicationController
       clear_checked   = params.dig(:entity_setting, "clear_#{field}") == "1"
 
       if clear_checked
-        attrs[field] = nil         # explicit removal
+        attrs[field] = nil # explicit removal
       elsif submitted_value.present?
-        attrs[field] = submitted_value.strip  # new value
+        attrs[field] = submitted_value.strip # new value
       end
       # blank + not clearing → omit from attrs (keep existing)
     end
@@ -97,6 +97,7 @@ class SupportAgentsController < ApplicationController
     @note_summaries       = query.note_summaries
     @presentation_reports = query.presentation_reports
     @deal_reports         = query.deal_reports
+    @rta_reports          = query.rta_reports
   end
 
   # Initializes a new support agent for creation.
@@ -222,6 +223,22 @@ class SupportAgentsController < ApplicationController
 
     target = resolve_target(params[:target_type], params[:target_id])
 
+    # RtaReconciliationAgent: save the uploaded PDF as a Document now (before the async job runs)
+    rta_pdf_document_id = nil
+    if params[:agent_type] == "RtaReconciliationAgent" && params[:rta_pdf].present?
+      doc = Document.new(
+        name: "RTA Statement (PDF)",
+        entity: current_user.entity,
+        owner: target,
+        user: current_user,
+        send_email: false,
+        orignal: true
+      )
+      doc.file = params[:rta_pdf]
+      doc.save!
+      rta_pdf_document_id = doc.id
+    end
+
     if target
       steps = @support_agent.agent.step_definitions.map do |s|
         { "step" => s[:step], "id" => s[:id], "label" => s[:label], "short_label" => s[:short_label], "status" => "pending" }
@@ -241,7 +258,8 @@ class SupportAgentsController < ApplicationController
       target_type: params[:target_type],
       user_id: current_user.id,
       with_steps: target.present?,
-      execution_mode: target.present? ? :single_company_with_steps : :adhoc_batch
+      execution_mode: target.present? ? :single_company_with_steps : :adhoc_batch,
+      rta_pdf_document_id: rta_pdf_document_id
     )
 
     respond_to do |format|
@@ -647,7 +665,7 @@ class SupportAgentsController < ApplicationController
   def compute_setup_preview
     entity_id = current_user.entity_id
 
-    SupportAgentsSetupService::SUPPORT_AGENT_FORM_CONFIGS.map do |cfg|
+    SupportAgentsSetupService::SUPPORT_AGENT_FORM_CONFIGS.filter_map do |cfg|
       tag = cfg[:tag]
 
       if cfg[:extend_only]
@@ -685,7 +703,7 @@ class SupportAgentsController < ApplicationController
           end
         end
       end
-    end.compact
+    end
   end
 
   # Returns a human-friendly display name for the target type.

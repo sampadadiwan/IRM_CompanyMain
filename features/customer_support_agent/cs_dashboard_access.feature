@@ -1,3 +1,4 @@
+@cs_agent
 Feature: CS Dashboard Access Control
   As a support team member
   I want to access the CS Feedback Reviews dashboard

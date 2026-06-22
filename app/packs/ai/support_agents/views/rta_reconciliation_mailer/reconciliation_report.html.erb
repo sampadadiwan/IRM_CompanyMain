@@ -1,0 +1,88 @@
+<%
+  breaks   = @issues.count { |i| (i[:severity] || i["severity"]).to_s == "blocking" }
+  warnings = @issues.count { |i| (i[:severity] || i["severity"]).to_s == "warning" }
+  tone     = breaks > 0 ? :danger : (warnings > 0 ? :warning : :success)
+  label    = breaks > 0 ? "#{breaks} Break(s) Found" : "All Matched"
+  subtitle = [@fund.name, @amc, @statement_date].compact.join(" · ")
+%>
+
+<%= sa_banner(title: "RTA Reconciliation Report", label: label, subtitle: subtitle, tone: tone) %>
+
+<p style="margin:0 0 20px;font-size:13px;color:#555">
+  Health score: <strong><%= @health_score %>%</strong> &nbsp;&middot;&nbsp;
+  <%= @scheme_results.size %> scheme(s) reconciled
+</p>
+
+<% @scheme_results.each do |sr| %>
+  <%
+    scheme_breaks = (sr[:folio_results] || []).count { |f| f[:status] == :break }
+    scheme_tone   = sr[:status] == :warning ? :warning : (scheme_breaks > 0 ? :danger : :success)
+    scheme_label  = sr[:status] == :warning ? "Skipped — ISIN not found" :
+                    (scheme_breaks > 0 ? "#{scheme_breaks} Break(s)" : "Matched")
+  %>
+  <%= sa_section(title: "#{sr[:isin]} — #{sr[:scheme]}", top_margin: true) %>
+
+  <% if sr[:status] == :warning %>
+    <%= sa_callout(tone: :warning, heading: "ISIN Not Found", body: h(sr[:message])) %>
+  <% else %>
+    <table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px">
+      <tr style="background:#f5f5f5">
+        <th style="text-align:left;padding:6px 10px;border:1px solid #ddd">Metric</th>
+        <th style="text-align:right;padding:6px 10px;border:1px solid #ddd">RTA</th>
+        <th style="text-align:right;padding:6px 10px;border:1px solid #ddd">CapHive</th>
+        <th style="text-align:right;padding:6px 10px;border:1px solid #ddd">Diff</th>
+        <th style="text-align:center;padding:6px 10px;border:1px solid #ddd">Status</th>
+      </tr>
+      <tr>
+        <td style="padding:6px 10px;border:1px solid #ddd">Summary (Closing Units)</td>
+        <td style="text-align:right;padding:6px 10px;border:1px solid #ddd"><%= number_with_precision(sr[:extracted_summary]&.dig(:closing_units), precision: 4) %></td>
+        <td style="text-align:right;padding:6px 10px;border:1px solid #ddd"><%= number_with_precision(sr[:caphive_total_units], precision: 4) %></td>
+        <td style="text-align:right;padding:6px 10px;border:1px solid #ddd"><%= number_with_precision(sr[:summary_diff], precision: 4) %></td>
+        <td style="text-align:center;padding:6px 10px;border:1px solid #ddd;color:<%= sr[:summary_match] ? '#2e7d32' : '#c62828' %>">
+          <%= sr[:summary_match] ? "✓ Match" : "✗ Break" %>
+        </td>
+      </tr>
+    </table>
+
+    <% folio_breaks = (sr[:folio_results] || []).select { |f| f[:status] == :break || f[:status] == :unmatched } %>
+    <% if folio_breaks.any? %>
+      <%= sa_callout(tone: :danger, heading: "Folio Breaks", body: "#{folio_breaks.size} folio(s) below need attention.") %>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px">
+        <tr style="background:#fce4ec">
+          <th style="text-align:left;padding:5px 8px;border:1px solid #ddd">Folio</th>
+          <th style="text-align:left;padding:5px 8px;border:1px solid #ddd">Investor</th>
+          <th style="text-align:right;padding:5px 8px;border:1px solid #ddd">RTA Units</th>
+          <th style="text-align:right;padding:5px 8px;border:1px solid #ddd">CapHive Units</th>
+          <th style="text-align:right;padding:5px 8px;border:1px solid #ddd">Diff</th>
+        </tr>
+        <% folio_breaks.each do |f| %>
+          <tr>
+            <td style="padding:5px 8px;border:1px solid #ddd"><%= h f[:folio_number] %></td>
+            <td style="padding:5px 8px;border:1px solid #ddd"><%= h f[:investor_name] %></td>
+            <td style="text-align:right;padding:5px 8px;border:1px solid #ddd"><%= f[:rta_closing_units] %></td>
+            <td style="text-align:right;padding:5px 8px;border:1px solid #ddd"><%= f[:caphive_units] || "—" %></td>
+            <td style="text-align:right;padding:5px 8px;border:1px solid #ddd"><%= f[:diff] || "N/A" %></td>
+          </tr>
+        <% end %>
+      </table>
+    <% end %>
+
+    <% pending = sr[:pending_request_folios] || [] %>
+    <% if pending.any? %>
+      <%= sa_callout(
+        tone: :warning,
+        heading: "Pending Requests (#{pending.size})",
+        body: pending.map { |p| "Folio #{h p[:folio_number]}: #{h p[:detail]}" }.join("<br>").html_safe
+      ) %>
+    <% end %>
+
+    <% missing = sr[:missing_rta_folios] || [] %>
+    <% if missing.any? %>
+      <%= sa_callout(
+        tone: :warning,
+        heading: "CapHive Folios Missing from RTA (#{missing.size})",
+        body: missing.map { |m| "Folio #{h m[:folio_id]}" }.join(", ").html_safe
+      ) %>
+    <% end %>
+  <% end %>
+<% end %>

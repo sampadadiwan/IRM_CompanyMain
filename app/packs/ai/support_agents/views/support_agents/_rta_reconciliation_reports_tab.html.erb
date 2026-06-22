@@ -1,0 +1,482 @@
+<%# frozen_string_literal: true %>
+<%# Reconciliation History tab for RtaReconciliationAgent on the SupportAgent show page. %>
+<%# Each row is one run; the expandable detail shows fund-wide coverage, per-scheme summary, and folio-level breaks. %>
+
+<p class="text-muted small mb-3">
+  <i class="ti ti-info-circle"></i>
+  Each run compares an uploaded RTA unit statement against CapHive's own records — first at the
+  unit-class (ISIN) level, then folio by folio — and separately checks whether every unit class the
+  fund holds is even set up to be checked at all. Hover the
+  <i class="ti ti-help-circle rta-help-icon"></i> icons below for what each figure means.
+</p>
+
+<% if rta_reports.empty? %>
+  <div class="alert alert-secondary">
+    <i class="ti ti-info-circle"></i> No reconciliation reports yet. Run the agent from a Fund page to generate a report.
+  </div>
+<% else %>
+  <div class="table-responsive mb-4" data-controller="tooltip">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr>
+          <th>Fund</th>
+          <th>Statement Date</th>
+          <th>AMC</th>
+          <th class="text-center">
+            Health
+            <i class="ti ti-help-circle rta-help-icon" data-bs-toggle="tooltip"
+               title="Share of checks that passed cleanly — summary and folio matches count as a pass; breaks, missing ISIN configuration, and missing schemes count against it. Pending requests and other advisories don't."></i>
+          </th>
+          <th class="text-center">Schemes</th>
+          <th class="text-center">
+            Folio Breaks
+            <i class="ti ti-help-circle rta-help-icon" data-bs-toggle="tooltip"
+               title="Folios where RTA and CapHive units don't agree within tolerance, plus folios in the statement that CapHive has no record of."></i>
+          </th>
+          <th>Run At</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rta_reports.each do |report| %>
+          <% data      = report.json_fields.with_indifferent_access %>
+          <% health    = data[:health_score].to_i %>
+          <% schemes   = (data[:scheme_results] || []) %>
+          <% aggregate = data[:aggregate] || {} %>
+          <% readiness = data[:unit_readiness] || [] %>
+          <% coverage  = data[:scheme_coverage] || [] %>
+          <% not_isin_configured = readiness.reject { |r| r[:isin_configured] } %>
+          <% missing_schemes     = coverage.select { |c| !c[:covered] && c[:units_at_stake].to_f.nonzero? } %>
+          <% all_folios   = schemes.flat_map { |sr| sr[:folio_results] || [] } %>
+          <% folio_breaks = all_folios.select { |f| f[:status].to_s.in?(%w[break unmatched]) } %>
+          <% tone    = health == 100 ? "success" : health >= 50 ? "warning" : "danger" %>
+          <tr>
+            <td>
+              <% if report.owner.present? %>
+                <%= link_to report.owner.name, fund_path(report.owner), data: { turbo: false } %>
+              <% else %>
+                <span class="text-muted">—</span>
+              <% end %>
+            </td>
+            <td><%= data[:statement_date].presence || "—" %></td>
+            <td><%= data[:amc].presence || "—" %></td>
+            <td class="text-center">
+              <span class="badge rounded-pill bg-<%= tone %>-subtle text-<%= tone %>-emphasis"><%= health %>%</span>
+            </td>
+            <td class="text-center"><%= schemes.size %></td>
+            <td class="text-center">
+              <% if folio_breaks.any? %>
+                <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">
+                  <i class="ti ti-alert-triangle"></i> <%= folio_breaks.size %> of <%= all_folios.size %>
+                </span>
+              <% else %>
+                <span class="badge rounded-pill bg-success-subtle text-success-emphasis">
+                  <i class="ti ti-check"></i> <%= all_folios.size %> matched
+                </span>
+              <% end %>
+            </td>
+            <td><%= report.updated_at&.strftime("%b %d, %Y %H:%M") %></td>
+            <td>
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#rta-detail-<%= report.id %>">
+                <i class="ti ti-chevron-down"></i>
+              </button>
+            </td>
+          </tr>
+          <tr class="collapse" id="rta-detail-<%= report.id %>">
+            <td colspan="8" class="bg-light p-3">
+
+              <%# ── Run metadata — quiet, single line ───────────────────────── %>
+              <% source_doc = Document.find_by(id: data[:source_document_id]) if data[:source_document_id].present? %>
+              <p class="rta-meta-line text-muted small mb-3">
+                <% if source_doc&.file.present? %>
+                  <%= link_to source_doc.file_url(response_content_disposition: "inline; filename=#{source_doc.name_with_extension}"),
+                              class: "badge rounded-pill bg-primary-subtle text-primary text-decoration-none",
+                              target: "_blank", rel: "noopener" do %>
+                    <i class="ti ti-download"></i> Statement #<%= source_doc.id %>
+                  <% end %>
+                <% else %>
+                  <i class="ti ti-file-text"></i> No source document
+                <% end %>
+                &middot; Extracted by <%= data[:llm_model].presence || "—" %>
+                &middot; Tolerance <%= data[:tolerance_units].presence || "0" %> units<% if data[:tolerance_pct].to_f.positive? %> / <%= data[:tolerance_pct] %>%<% end %>
+                <i class="ti ti-help-circle rta-help-icon" data-bs-toggle="tooltip"
+                   title="The tolerance in force when this run was judged — kept with the report so a later change to the agent's settings doesn't reinterpret old runs."></i>
+              </p>
+
+              <%# ── Three-tier coverage: fund-wide → ISIN-eligible → this statement ── %>
+              <div class="row g-3 mb-2">
+                <div class="col-md-4">
+                  <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                      <div class="d-flex flex-row">
+                        <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-info">
+                          <i class="ti ti-building-bank fs-6"></i>
+                        </div>
+                        <div class="ms-3 align-self-center">
+                          <h4 class="mb-0 fs-5">
+                            Fund-wide
+                            <i class="ti ti-help-circle rta-help-icon" data-bs-toggle="tooltip"
+                               title="Every unit type this fund holds with a non-zero balance, regardless of whether it's configured for reconciliation."></i>
+                          </h4>
+                          <span class="text-muted small"><%= number_with_precision(aggregate[:fund_wide_units], precision: 0) %> units &middot; <%= aggregate[:fund_unit_types_total] %> types</span>
+                        </div>
+                        <div class="ms-auto align-self-center">
+                          <h2 class="fs-7 mb-0"><%= aggregate[:fund_wide_folio_count] %></h2>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                      <div class="d-flex flex-row">
+                        <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-primary">
+                          <i class="ti ti-key fs-6"></i>
+                        </div>
+                        <div class="ms-3 align-self-center">
+                          <h4 class="mb-0 fs-5">
+                            ISIN-configured
+                            <i class="ti ti-help-circle rta-help-icon" data-bs-toggle="tooltip"
+                               title="The subset of fund-wide holdings that have an ISIN set up in CapHive — only these can ever be matched against an RTA statement."></i>
+                          </h4>
+                          <span class="text-muted small">
+                            <%= number_with_precision(aggregate[:isin_eligible_units], precision: 0) %> units
+                            <% if aggregate[:fund_unit_types_missing_isin].to_i > 0 %>
+                              &middot; <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis"><%= aggregate[:fund_unit_types_missing_isin] %> not set up</span>
+                            <% end %>
+                          </span>
+                        </div>
+                        <div class="ms-auto align-self-center">
+                          <h2 class="fs-7 mb-0"><%= aggregate[:isin_eligible_folio_count] %></h2>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body">
+                      <div class="d-flex flex-row">
+                        <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
+                          <i class="ti ti-file-check fs-6"></i>
+                        </div>
+                        <div class="ms-3 align-self-center">
+                          <h4 class="mb-0 fs-5">
+                            This statement
+                            <i class="ti ti-help-circle rta-help-icon" data-bs-toggle="tooltip"
+                               title="What this specific upload actually included — the subset of ISIN-configured holdings this statement mentioned at all."></i>
+                          </h4>
+                          <span class="text-muted small"><%= number_with_precision(aggregate[:rta_total_units], precision: 0) %> units reconciled</span>
+                        </div>
+                        <div class="ms-auto align-self-center">
+                          <h2 class="fs-7 mb-0"><%= aggregate[:folios_in_statement] %></h2>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="text-muted small mb-3">
+                Each card narrows from the one before it — what the fund holds, what's set up to be checked, what this upload actually covered.
+              </p>
+
+              <%# ── Configuration gap: fund-wide, not specific to this statement ───── %>
+              <% if not_isin_configured.any? %>
+                <div class="card border-danger-subtle mb-3">
+                  <div class="card-header bg-danger-subtle text-danger-emphasis fw-semibold">
+                    <i class="ti ti-alert-triangle"></i> Not reconcilable — no ISIN configured
+                  </div>
+                  <div class="card-body">
+                    <p class="card-text small text-muted">
+                      These hold real investor balances but have no ISIN, so this agent can never match
+                      them to any statement. Add an ISIN under the fund's Unit Settings to fix.
+                    </p>
+                    <table class="table table-sm mb-0">
+                      <thead>
+                        <tr><th>Unit Type</th><th class="text-end">Folios</th><th class="text-end">Units</th><th>Issue</th></tr>
+                      </thead>
+                      <tbody>
+                        <% not_isin_configured.each do |r| %>
+                          <tr>
+                            <td class="fw-semibold"><%= r[:unit_type] %></td>
+                            <td class="text-end"><%= r[:folio_count] %></td>
+                            <td class="text-end"><%= number_with_precision(r[:units], precision: 2) %></td>
+                            <td>
+                              <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">
+                                <%= r[:fund_unit_setting_configured] ? "No ISIN" : "Not configured" %>
+                              </span>
+                            </td>
+                          </tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              <% end %>
+
+              <%# ── Statement coverage gap: ISIN configured but absent from THIS upload ── %>
+              <% if missing_schemes.any? %>
+                <div class="card border-warning-subtle mb-3">
+                  <div class="card-header bg-warning-subtle text-warning-emphasis fw-semibold">
+                    <i class="ti ti-alert-triangle"></i> Configured, but missing from this statement
+                  </div>
+                  <div class="card-body">
+                    <p class="card-text small text-muted">
+                      These have an ISIN on file but weren't in this upload — check whether the AMC's
+                      statement is incomplete for this period.
+                    </p>
+                    <table class="table table-sm mb-0">
+                      <thead>
+                        <tr><th>ISIN</th><th>Unit Type</th><th class="text-end">Folios</th><th class="text-end">Units</th></tr>
+                      </thead>
+                      <tbody>
+                        <% missing_schemes.each do |c| %>
+                          <tr>
+                            <td><%= c[:isin] %></td>
+                            <td><%= c[:unit_type] %></td>
+                            <td class="text-end"><%= c[:folio_count] %></td>
+                            <td class="text-end"><%= number_with_precision(c[:units_at_stake], precision: 2) %></td>
+                          </tr>
+                        <% end %>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              <% end %>
+
+              <%# ── Per-scheme detail ─────────────────────────────────────────── %>
+              <% schemes.each do |sr| %>
+                <% sr = sr.with_indifferent_access %>
+
+                <% if sr[:status].to_s == "warning" %>
+                  <%# ISIN in the PDF but not configured in FundUnitSetting — scheme was skipped, not reconciled. %>
+                  <div class="card border-0 border-start border-4 border-secondary shadow-sm mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                      <div>
+                        <div class="fw-semibold"><%= sr[:isin] %></div>
+                        <div class="small text-muted">Unrecognized ISIN — not matched to any CapHive unit type</div>
+                      </div>
+                      <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis">Skipped</span>
+                    </div>
+                    <div class="card-body py-2">
+                      <p class="small text-muted mb-0"><i class="ti ti-info-circle"></i> <%= sr[:message] %></p>
+                    </div>
+                  </div>
+                  <% next %>
+                <% end %>
+
+                <% extracted_closing = sr.dig(:extracted_summary, :closing_units) %>
+                <% folios     = sr[:folio_results] || [] %>
+                <% matched    = folios.count { |f| f[:status].to_s == "match" } %>
+                <% broken     = folios.select { |f| f[:status].to_s == "break" } %>
+                <% unmatched  = folios.select { |f| f[:status].to_s == "unmatched" } %>
+                <% missing    = sr[:missing_rta_folios] || [] %>
+                <% pending    = sr[:pending_request_folios] || [] %>
+                <% continuity_breaks = folios.select { |f| f.dig(:opening_balance_continuity, :continuous) == false } %>
+                <% name_mismatches   = folios.select { |f| f[:investor_name_mismatch] } %>
+                <% border_color = sr[:summary_match] ? "success" : "danger" %>
+
+                <div class="card border-0 border-start border-4 border-<%= border_color %> shadow-sm mb-3">
+                  <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                    <div>
+                      <div class="fw-semibold"><%= sr[:isin] %> — <%= sr[:scheme] %></div>
+                      <div class="small text-muted">
+                        <%= folios.size %> folio(s) in statement &middot;
+                        <%= matched %> matched, <%= broken.size %> broke, <%= unmatched.size %> not in CapHive
+                        <% if missing.any? %> &middot; <%= missing.size %> missing from statement<% end %>
+                      </div>
+                    </div>
+                    <% if sr[:summary_match] %>
+                      <span class="badge rounded-pill bg-success-subtle text-success-emphasis"
+                            data-bs-toggle="tooltip" title="RTA and CapHive closing units agree within tolerance.">
+                        <i class="ti ti-check"></i> Matched
+                      </span>
+                    <% else %>
+                      <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis"
+                            data-bs-toggle="tooltip" title="<%= number_with_precision(sr[:summary_diff], precision: 4) %> units apart — exceeds tolerance.">
+                        <i class="ti ti-x"></i> Break
+                      </span>
+                    <% end %>
+                  </div>
+
+                  <div class="card-body">
+                    <div class="row g-3 mb-3">
+                      <div class="col-4">
+                        <div class="card border-bottom border-info mb-0 h-100" data-bs-toggle="tooltip" title="Closing units for this scheme, as extracted from the uploaded statement.">
+                          <div class="card-body">
+                            <div class="d-flex align-items-center">
+                              <div>
+                                <h3 class="fw-bold mb-1"><%= number_with_precision(extracted_closing, precision: 2) %></h3>
+                                <p class="text-info mb-0">RTA Units</p>
+                              </div>
+                              <div class="ms-auto">
+                                <span class="bg-info-subtle text-info rounded-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                                  <i class="ti ti-file-text fs-2"></i>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <div class="card border-bottom border-secondary mb-0 h-100" data-bs-toggle="tooltip" title="Sum of CapHive's capital commitment balances for this unit type.">
+                          <div class="card-body">
+                            <div class="d-flex align-items-center">
+                              <div>
+                                <h3 class="fw-bold mb-1"><%= number_with_precision(sr[:caphive_total_units], precision: 2) %></h3>
+                                <p class="text-secondary mb-0">CapHive Units</p>
+                              </div>
+                              <div class="ms-auto">
+                                <span class="bg-secondary-subtle text-secondary rounded-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                                  <i class="ti ti-database fs-2"></i>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="col-4">
+                        <% diff_color = sr[:summary_match] ? "success" : "danger" %>
+                        <div class="card border-bottom border-<%= diff_color %> mb-0 h-100"
+                             data-bs-toggle="tooltip" title="Absolute difference between RTA and CapHive. Flagged as a break once it exceeds the tolerance shown above.">
+                          <div class="card-body">
+                            <div class="d-flex align-items-center">
+                              <div>
+                                <h3 class="fw-bold mb-1 text-<%= diff_color %>"><%= number_with_precision(sr[:summary_diff], precision: 2) %></h3>
+                                <p class="text-<%= diff_color %> mb-0">Diff</p>
+                              </div>
+                              <div class="ms-auto">
+                                <span class="bg-<%= diff_color %>-subtle text-<%= diff_color %> rounded-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                                  <i class="ti ti-<%= sr[:summary_match] ? 'check' : 'x' %> fs-2"></i>
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <% movement = sr[:movement] %>
+                    <% if movement.present? %>
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <p class="small text-muted fw-semibold mb-0">
+                          <i class="ti ti-arrows-exchange" data-bs-toggle="tooltip"
+                             title="Compares units added (subscribed) and removed (redeemed) per the RTA for this period against CapHive's own unit ledger over the same dates — catches a discrepancy a closing-balance match alone could miss."></i>
+                          Units added vs. removed since the last statement (<%= movement[:period_start] %>)
+                        </p>
+                        <% if movement[:matched] %>
+                          <span class="badge rounded-pill bg-success-subtle text-success-emphasis">Matched</span>
+                        <% else %>
+                          <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Break</span>
+                        <% end %>
+                      </div>
+                      <div class="table-responsive mb-3">
+                        <table class="table table-sm mb-0" style="max-width: 280px;">
+                          <thead>
+                            <tr><th></th><th class="text-end">RTA</th><th class="text-end">CapHive</th></tr>
+                          </thead>
+                          <tbody>
+                            <tr>
+                              <td>Subscribed</td>
+                              <td class="text-end"><%= number_with_precision(movement[:rta_subscribed_units], precision: 1) %></td>
+                              <td class="text-end"><%= number_with_precision(movement[:caphive_subscribed_units], precision: 1) %></td>
+                            </tr>
+                            <tr>
+                              <td>Redeemed</td>
+                              <td class="text-end"><%= number_with_precision(movement[:rta_redeemed_units], precision: 1) %></td>
+                              <td class="text-end"><%= number_with_precision(movement[:caphive_redeemed_units], precision: 1) %></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    <% else %>
+                      <p class="small text-muted fst-italic mb-3">
+                        <i class="ti ti-arrows-exchange"></i> No prior run yet, so units added/removed since then can't be checked.
+                      </p>
+                    <% end %>
+
+                    <% if broken.any? || unmatched.any? %>
+                      <div class="table-responsive mb-2">
+                        <table class="table table-sm mb-0">
+                          <thead>
+                            <tr>
+                              <th>Folio</th>
+                              <th>Investor</th>
+                              <th class="text-end">RTA Units</th>
+                              <th class="text-end">CapHive Units</th>
+                              <th class="text-end">Diff</th>
+                              <th>Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <% (broken + unmatched).each do |f| %>
+                              <tr>
+                                <td><%= f[:folio_number] %></td>
+                                <td><%= f[:investor_name] %></td>
+                                <td class="text-end"><%= f[:rta_closing_units].nil? ? "—" : number_with_precision(f[:rta_closing_units], precision: 4) %></td>
+                                <td class="text-end"><%= f[:caphive_units].nil? ? "—" : number_with_precision(f[:caphive_units], precision: 4) %></td>
+                                <td class="text-end"><%= f[:diff].nil? ? "—" : number_with_precision(f[:diff], precision: 4) %></td>
+                                <td>
+                                  <% if f[:status].to_s == "break" %>
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger-emphasis">Break</span>
+                                  <% else %>
+                                    <span class="badge rounded-pill bg-secondary-subtle text-secondary-emphasis"
+                                          data-bs-toggle="tooltip" title="This folio is in the statement but CapHive has no matching commitment for it.">Not in CapHive</span>
+                                  <% end %>
+                                </td>
+                              </tr>
+                            <% end %>
+                          </tbody>
+                        </table>
+                      </div>
+                    <% end %>
+
+                    <% if missing.any? %>
+                      <p class="small text-warning-emphasis mb-1">
+                        <i class="ti ti-alert-triangle" data-bs-toggle="tooltip" title="Non-zero CapHive balance not listed anywhere in this statement — could mean a closed/transferred folio, or an incomplete statement."></i>
+                        In CapHive but absent from statement:
+                        <%= missing.map { |m| "#{m[:folio_id]} (#{m[:investor_name]}, #{number_with_precision(m[:units], precision: 1)}u)" }.join(", ") %>
+                      </p>
+                    <% end %>
+
+                    <% if continuity_breaks.any? %>
+                      <p class="small text-warning-emphasis mb-1">
+                        <i class="ti ti-history" data-bs-toggle="tooltip" title="This period's RTA opening balance should equal the prior run's RTA closing balance. A mismatch can hide a real change even when today's closing balance happens to match CapHive."></i>
+                        Opening balance doesn't match prior statement's closing balance:
+                        <%= continuity_breaks.map { |f| "#{f[:folio_number]} (#{f.dig(:opening_balance_continuity, :prior_closing_units)} → #{f.dig(:opening_balance_continuity, :this_opening_units)})" }.join(", ") %>
+                      </p>
+                    <% end %>
+
+                    <% if name_mismatches.any? %>
+                      <p class="small text-warning-emphasis mb-1">
+                        <i class="ti ti-user-exclamation" data-bs-toggle="tooltip" title="The folio number matched a CapHive commitment, but the investor name on the statement differs from CapHive's record — possible stale folio reassignment or folio-number collision."></i>
+                        Investor name differs from CapHive's record:
+                        <%= name_mismatches.map { |f| "#{f[:folio_number]} (\"#{f[:investor_name]}\" vs \"#{f[:caphive_investor_name]}\")" }.join(", ") %>
+                      </p>
+                    <% end %>
+
+                    <% if pending.any? %>
+                      <p class="small text-warning-emphasis mb-0">
+                        <i class="ti ti-clock" data-bs-toggle="tooltip" title="RTA noted an open subscription/redemption that hasn't settled yet — a difference here may resolve on its own."></i>
+                        Pending requests may explain a difference here:
+                        <%= pending.map { |p| "#{p[:folio_number]} (#{p[:detail]})" }.join(", ") %>
+                      </p>
+                    <% end %>
+                  </div>
+                </div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="text-muted small">
+    <i class="ti ti-calendar"></i>
+    Last run: <%= rta_reports.first&.updated_at&.strftime("%b %d, %Y at %H:%M") %>
+  </p>
+<% end %>

@@ -70,6 +70,17 @@ class AgentReportsQuery
     agent_reports("Deal").order(updated_at: :desc)
   end
 
+  # Reports scoped to +Fund+ owners (RtaReconciliationAgent only).
+  # Excludes the bare progress-tracking row (one per fund, reused/overwritten on
+  # every run to drive the live step panel) — only rows carrying actual
+  # reconciliation results (one new row per run) should show as history.
+  # @return [ActiveRecord::Relation<SupportAgentReport>]
+  def rta_reports
+    return SupportAgentReport.none unless agent_type?("RtaReconciliationAgent")
+
+    agent_reports("Fund").where("json_fields LIKE '%\"scheme_results\":%'").order(updated_at: :desc).limit(50)
+  end
+
   private
 
   # Checks whether the current support agent matches a given type.

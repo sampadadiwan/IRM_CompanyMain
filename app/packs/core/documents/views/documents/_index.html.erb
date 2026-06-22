@@ -95,11 +95,12 @@
                 <% end %>
               <% end %>
               <%# Show "Create AI Portfolio Report" only if user has LLM access and entity has portfolio company agent enabled %>
-              <% if current_user.enable_user_llm_chat && current_user.entity&.support_agents&.portfolio_company_agent? && @folder && @folder.owner.is_a?(Investor) && @folder.owner.category == 'Portfolio Company' %>
+              <% if current_user.entity&.support_agents&.portfolio_company_agent? && @folder && @folder.owner.is_a?(Investor) && @folder.owner.category == 'Portfolio Company' %>
                 <% if @folder.documents.any? %>
-                  <%= link_to new_ai_portfolio_report_path(portfolio_company_id: @folder.owner.id),
+                  <%= button_to create_from_folder_ai_portfolio_reports_path(folder_id: folder_id),
+                    method: :post,
                     class: "dropdown-item d-flex align-items-center",
-                    data: { turbo: false } do %>
+                    data: { msg: "This will generate an AI portfolio report from the #{@folder.documents.count} document(s) in this folder. Proceed?", action: "click->confirm#popup", method: :post } do %>
                     <i class="ti ti-robot"></i> Create AI Portfolio Report (<%= @folder.documents.count %> docs)
                   <% end %>
                 <% else %>

@@ -5,7 +5,7 @@
 #
 class SpecificFundAssistant < BaseAssistant
   DESCRIPTION = "I can help you with details, capital calls, commitments, and performance of a specific fund.".freeze
-  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
+  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash-preview').freeze
 
   STRATEGIC_QUERIES = [
     "Provide a concise summary of this fund's profile and current status.",

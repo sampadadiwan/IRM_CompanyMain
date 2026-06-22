@@ -5,7 +5,7 @@
 #
 class PortfolioAssistant < BaseAssistant
   DESCRIPTION = "I can help you with portfolio companies, valuations, investments, cap tables, KPIs, fund ratios, and documents.".freeze
-  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
+  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash-preview').freeze
 
   def initialize(user:, chat: nil)
     super

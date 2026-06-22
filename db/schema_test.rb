@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_22_100001) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -175,7 +175,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_18_124643) do
     t.text "error"
     t.integer "import_upload_id"
     t.integer "kpi_before", default: 12
-    t.string "kpi_before_period", limit: 10, default: "Months"
+    t.string "kpi_before_period", limit: 10, default: "Month"
     t.string "kpi_names"
     t.string "llm_model", limit: 20
     t.bigint "owner_id"

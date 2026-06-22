@@ -1,0 +1,46 @@
+<%# frozen_string_literal: true %>
+<%#
+  RTA-specific run modal with PDF upload.
+  Required locals: modal_id, fund, description
+  Optional locals: long_description
+%>
+
+<% long_desc = local_assigns[:long_description] %>
+
+<div class="modal fade" id="<%= modal_id %>" tabindex="-1" aria-labelledby="<%= modal_id %>Label" aria-hidden="true">
+  <div class="modal-dialog modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="<%= modal_id %>Label">
+          <i class="ti ti-file-check me-2"></i>Run RTA Reconciliation
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <%= form_with url: run_support_agents_path, method: :post, multipart: true,
+                    data: { controller: "modal-form", action: "turbo:submit-end->modal-form#close" } do |f| %>
+        <%= f.hidden_field :agent_type, value: "RtaReconciliationAgent" %>
+        <%= f.hidden_field :target_type, value: "Fund" %>
+        <%= f.hidden_field :target_id,   value: fund.id %>
+
+        <div class="modal-body">
+          <%= render "support_agents/agent_description_content", short_desc: description, long_desc: long_desc %>
+
+          <div class="mb-3 mt-3">
+            <label class="form-label fw-semibold" for="rta_pdf_upload">
+              RTA Statement PDF <span class="text-danger">*</span>
+            </label>
+            <%= f.file_field :rta_pdf, id: "rta_pdf_upload", accept: "application/pdf",
+                             class: "form-control", required: true %>
+            <div class="form-text">Upload the unit statement PDF from your RTA (e.g. CAMS, KFintech).</div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-danger" data-bs-dismiss="modal">Cancel</button>
+          <%= f.submit "Run Reconciliation", class: "btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+</div>

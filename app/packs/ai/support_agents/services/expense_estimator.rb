@@ -52,7 +52,7 @@ class ExpenseEstimator
         .fund_entries
         .where(entry_type: @expense_tags)
         .where(reporting_date: cutoff..)
-        .group("DATE_FORMAT(reporting_date, '%Y-%m-01')")
+        .group(self.class.date_trunc_sql)
         .sum(:amount_cents)
         .each do |month, amount|
           month_key = month.to_date.beginning_of_month
@@ -61,6 +61,16 @@ class ExpenseEstimator
     end
 
     totals.sort_by(&:first).map { |month, total| { month: month, total: total } }
+  end
+
+  # Returns the SQL expression to truncate a date column to its month boundary.
+  # SQLite uses strftime; MySQL uses DATE_FORMAT.
+  def self.date_trunc_sql
+    if Rails.env.test?
+      "strftime('%Y-%m-01', reporting_date)"
+    else
+      "DATE_FORMAT(reporting_date, '%Y-%m-01')"
+    end
   end
 
   # 4+ data points: fit a line, predict next N months

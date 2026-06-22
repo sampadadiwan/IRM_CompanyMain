@@ -17,17 +17,15 @@ Feature: Agent Charts
     Then I should see "Revenue Chart" in the agent charts table
     And I should see "Plot revenue over time" in the agent charts table
 
-  Scenario: Create an agent chart with KPIs and chart height
+  Scenario: Create an agent chart with KPIs
     When I visit the new agent chart page
     And I fill in the agent chart form with:
       | title       | Cost vs Revenue         |
       | prompt      | Bar chart: cost vs rev  |
-      | chart_height| 550                     |
     And I select KPI "Revenue" for the agent chart
     And I submit the agent chart form
     Then I should see "Agent chart was successfully created"
     And the agent chart status should be "Draft"
-    And I should see chart height "550" on the agent chart show page
 
   Scenario: Edit an agent chart
     Given there is an agent chart "title=Old Title;prompt=Old prompt"
@@ -78,8 +76,9 @@ Feature: Agent Charts
   # ── Tag filtering ─────────────────────────────────────────────────────────────
 
   Scenario: Agent chart job uses tag_list to match portfolio companies
-    Given there is an agent chart "title=Tagged Chart;prompt=Plot revenue;tag_list=saas"
+    Given there is an agent chart "title=Tagged Chart;prompt=Plot revenue;tag_list=saas;kpi_names=Revenue"
     And the portfolio company has tag "saas"
+    And KPI data "name=Revenue;value=500" exists for the portfolio company
     And the LLM is mocked to return a valid bar chart spec
     When the agent chart job runs for all tagged portfolio companies
     Then the agent chart should have a spec for the portfolio company

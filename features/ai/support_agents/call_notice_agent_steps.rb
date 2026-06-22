@@ -50,7 +50,11 @@ end
 
 # KYC steps
 Given('all investors have verified KYC') do
-  @investor_kyc.update!(verified: true)
+  # Must set submission_status (not just verified) because InvestorKyc's
+  # after_save :sync_boolean_fields_from_status callback overrides the
+  # verified column to match submission_status. Setting the status to
+  # :verified triggers the callback to set verified=true automatically.
+  @investor_kyc.update!(submission_status: :verified)
 end
 
 Given('an investor has unverified KYC') do

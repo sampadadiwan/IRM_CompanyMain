@@ -1,3 +1,4 @@
+@cs_agent
 Feature: FM User Chat with Customer Support Agent
   As a fund manager user
   I want to chat with the Customer Support Agent

@@ -392,7 +392,7 @@ class SupportAgentsSetupService
           "max_periods"            => "8",
           "kpi_tag_list"           => "Actual",
           "comparison_strategy"    => "all_periods",
-          "llm_model"              => "gemini-3-flash",
+          "llm_model"              => "gemini-3-flash-preview",
           "chat_config"            => { "enabled" => "true" }
         },
         schedule: {
@@ -430,7 +430,54 @@ class SupportAgentsSetupService
           field_type: "TextField", label: "LLM model", meta_data: "", position: 5,
           help_text: "LLM model name used for all extraction, comparison, and question-generation calls. " \
                      "Must support a large context window (≥500K tokens) to process full presentations " \
-                     "without truncation. Default: gemini-3-flash (1M token context)." }
+                     "without truncation. Default: gemini-3-flash-preview (1M token context)." }
+      ]
+    },
+
+    # ── RtaReconciliationAgent ────────────────────────────────────────────────
+    {
+      tag: "RtaReconciliationAgent",
+      agent: {
+        name:       "RTA Reconciliation",
+        with_steps: true,
+        json_fields: {
+          "tolerance_units"        => "0.01",
+          "tolerance_pct"          => "0",
+          "check_pending_requests" => "Yes",
+          "send_report"            => "Yes",
+          "notify_email"           => ""
+          # No default schedule — runs on-demand at statement upload time
+        }
+      },
+      # No File field here for the statement itself — it's uploaded per-run through the
+      # dedicated run modal (rta_run_modal.html.erb), not through the agent's config form.
+      fields: [
+        { name: "tolerance_units",
+          field_type: "NumberField", label: "Tolerance (units)", meta_data: "", position: 1,
+          help_text: "Maximum absolute unit difference per folio or summary that is still treated as " \
+                     "a match. Accommodates minor rounding in RTA PDFs. Default: 0.01." },
+        { name: "tolerance_pct",
+          field_type: "NumberField", label: "Tolerance (%)", meta_data: "", position: 2,
+          help_text: "Maximum percentage difference. A break is flagged only when both absolute and " \
+                     "percentage differences exceed their respective tolerances. Set to 0 to use " \
+                     "absolute tolerance only (default)." },
+        { name: "check_pending_requests",
+          field_type: "Select", label: "Flag pending requests", meta_data: "Yes,No", position: 3,
+          help_text: "When Yes, folios where the RTA statement shows pending transactions (e.g. " \
+                     "Pending TXN, Outstanding Requests) are flagged as warnings. These are not " \
+                     "breaks but signal in-flight transactions that may cause a discrepancy next period." },
+        { name: "send_report",
+          field_type: "Select", label: "Email report after run", meta_data: "Yes,No", position: 4,
+          help_text: "When Yes, emails the reconciliation summary — scheme match status, break count, " \
+                     "and folio-level detail — to the address in 'Notify email' after each run." },
+        { name: "notify_email",
+          field_type: "TextField", label: "Notify email", meta_data: "", position: 5,
+          help_text: "Email address to receive the reconciliation report. Required when 'Email report " \
+                     "after run' is Yes. Leave blank to skip email delivery." },
+        { name: "statement_date",
+          field_type: "DateField", label: "Statement date override", meta_data: "", position: 6,
+          help_text: "Optional. When set, overrides the statement period-end date extracted from the " \
+                     "PDF. Use when the RTA's date format is non-standard and extraction is incorrect." }
       ]
     },
 

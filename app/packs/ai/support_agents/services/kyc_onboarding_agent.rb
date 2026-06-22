@@ -312,7 +312,9 @@ class KycOnboardingAgent < SupportAgentService
     super(ctx, model: investor_kyc, support_agent: support_agent)
     if report
       mark_step_success(report, :generate_progress_reports, message: "Report saved")
-      finalize_report(report, status: "ready")
+      has_blocking = ctx[:issues][:field_issues].any? { |i| i[:severity] == :blocking } ||
+                      ctx[:issues][:document_issues].any? { |i| i[:severity] == :blocking }
+      finalize_report(report, status: has_blocking ? "blocked" : "ready")
     end
     true
   end

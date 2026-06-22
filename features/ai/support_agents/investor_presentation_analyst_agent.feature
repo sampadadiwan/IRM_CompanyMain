@@ -71,12 +71,15 @@ Feature: Investor Presentation Analyst Agent
 
   # ── Digest caching — questions reused when flags unchanged ───────────────────
 
-  @llm
   Scenario: Questions are reused when cross-period flags have not changed
     # Run the agent twice on the same presentations with no data changes.
     # The second run should detect the same flags_digest and reuse the cached questions
     # rather than making a new LLM call for question generation.
-    Given Acme Analytics has a Q1 2025 investor presentation attached to a KPI report
+    # LLM responses are stubbed deterministically here — this scenario tests the
+    # caching logic itself, not live-LLM output, which can legitimately vary in
+    # wording between identical calls and would make an exact digest match flaky.
+    Given the LLM gives deterministic responses for digest caching
+    And Acme Analytics has a Q1 2025 investor presentation attached to a KPI report
     And Acme Analytics has a Q4 2025 investor presentation showing a missed ARR target
     When I run the investor presentation analyst agent for Acme Analytics
     Then the analyst report should store a flags_digest
@@ -135,7 +138,7 @@ Feature: Investor Presentation Analyst Agent
   Scenario: Batch run processes multiple portfolio companies sequentially
     # process_batch mirrors PortfolioScoringAgent: sequential, soft-fail per company.
     # Both companies have one presentation each → single-period runs.
-    Given there is also a portfolio company "name=Beta Corp;category=Portfolio Company"
+    Given there is also a portfolio company for batch run "name=Beta Corp;category=Portfolio Company"
     And each company has one investor presentation
     When I run the investor presentation analyst agent in batch mode for both companies
     Then the batch result should show 2 successes and 0 errors

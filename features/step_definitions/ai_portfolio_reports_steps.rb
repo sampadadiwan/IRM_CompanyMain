@@ -1,6 +1,11 @@
 Given('I am logged in as an analyst') do
   @entity = FactoryBot.create(:entity)
   @user = FactoryBot.create(:user, entity: @entity)
+  # "Create AI Portfolio Report" only shows up when the user has LLM chat access
+  # and the entity has the portfolio company agent enabled (see documents/_index.html.erb).
+  @user.permissions.set!(:enable_user_llm_chat)
+  @entity.permissions.set!(:enable_user_llm_chat)
+  @entity.support_agents.set!(:portfolio_company_agent)
   @investor_user = @user  # Set this for the login step
   steps %(
     Given I login as the investor user

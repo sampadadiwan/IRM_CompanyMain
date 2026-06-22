@@ -705,3 +705,22 @@
   line-height: 1.2 !important;
   text-align: center;
 }
+
+
+// ── RTA Reconciliation: help-icon affordance ──────────────────────────────────
+// Tables in this report use plain Bootstrap classes (table table-sm) directly —
+// no custom table styling, to avoid fighting this app's existing theme.
+
+.rta-help-icon {
+  cursor: help;
+  font-size: 0.82em;
+  color: #cbd5e1;
+  margin-left: 3px;
+
+  &:hover, &:focus { color: #64748b; }
+
+  [data-bs-theme=dark] & {
+    color: #475569;
+    &:hover, &:focus { color: #94a3b8; }
+  }
+}

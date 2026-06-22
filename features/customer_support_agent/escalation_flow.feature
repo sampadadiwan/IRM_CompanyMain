@@ -1,3 +1,4 @@
+@cs_agent
 Feature: Customer Support Escalation Flow
   As a fund manager or support team member
   I want conversations to be escalated to human support when needed

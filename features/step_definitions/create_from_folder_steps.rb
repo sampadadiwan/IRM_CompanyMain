@@ -16,9 +16,20 @@ Given('the portfolio company has a folder with a document') do
 
   @document = FactoryBot.create(:document, folder: @folder, entity: @entity, user: @user)
 
-@document.file = File.open(Rails.root.join('public/sample_uploads/SignedDoc.pdf'), "rb")
-@document.save!
+  @document.file = File.open(Rails.root.join('public/sample_uploads/SignedDoc.pdf'), "rb")
+  @document.save!
 
+  # GenerateSectionContentJob runs synchronously under Cucumber's :inline ActiveJob
+  # adapter, inside the create_from_folder request. It calls PortfolioReportAgent
+  # once per section (16 section types) and, for chart-eligible sections, a separate
+  # live LlmService.ruby_llm_chat call to check for chartable data. Stub both so the
+  # request completes well within Capybara's request timeout instead of making 14+
+  # real LLM calls.
+  allow(PortfolioReportAgent).to receive(:call).and_return(double("result", success?: true))
+  allow(LlmService).to receive(:ruby_llm_chat).and_return(double("chat", ask: double("response", content: "[]")))
+  # The job also sleeps 2s per section for rate limiting (15 sections = 30s), which on
+  # top of the above pushes the request past Capybara's 60s pending-request timeout.
+  allow_any_instance_of(GenerateSectionContentJob).to receive(:sleep)
 end
 
 

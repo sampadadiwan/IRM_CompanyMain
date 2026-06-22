@@ -66,6 +66,7 @@ Given('KPI data {string} exists for the portfolio company') do |args|
 
   @kpi_report = KpiReport.create!(
     entity:               @entity,
+    user:                 @user,
     portfolio_company_id: @investor.id,
     as_of:                Date.today,
     period:               "Month"
@@ -112,8 +113,11 @@ end
 # ── Form interaction steps ────────────────────────────────────────────────────
 
 When('I fill in the agent chart form with:') do |table|
+  # Locate by the Rails-generated field id rather than the attribute name — Capybara's
+  # field matcher requires an exact id/name match (no substring), and label text like
+  # "Chart Height (px, optional)" doesn't contain the snake_case attribute name either.
   table.rows_hash.each do |field, value|
-    fill_in field, with: value
+    fill_in "agent_chart_#{field}", with: value
   end
 end
 
@@ -130,13 +134,14 @@ When('I submit the agent chart form') do
 end
 
 When('I update the title to {string}') do |new_title|
-  fill_in "title", with: new_title
+  fill_in "agent_chart_title", with: new_title
 end
 
 When('I delete the agent chart') do
-  # Deletion uses a Turbo-disabled form with a confirm controller.
-  # Clicking the Delete button directly bypasses the JS confirm popup in headless mode.
+  # Deletion uses a Turbo-disabled form with a confirm controller that shows a
+  # custom modal (not a native JS confirm()) — must click through "Proceed".
   click_button "Delete"
+  click_on("Proceed")
 end
 
 When('I select the portfolio company from the Charts dropdown') do
@@ -183,6 +188,9 @@ Then('I should not see {string} in the agent charts table') do |text|
 end
 
 Then('the agent chart status should be {string}') do |expected_status|
+  # On create, @agent_chart isn't set by a Given step — resolve it from the show page
+  # URL instead of querying right after the click, which would race the server's commit.
+  @agent_chart ||= AgentChart.find(current_path[%r{/agent_charts/(\d+)}, 1])
   # Reload from DB rather than relying on instance variable which may be stale.
   actual = @agent_chart.reload.status.humanize
   expect(actual).to eq(expected_status)
@@ -220,7 +228,7 @@ Then('the spec should have a string key for the portfolio company id') do
   spec = @agent_chart.reload.spec
   # Keys must be strings after JSON round-trip; an integer key would produce a
   # silent miss when the view looks up spec[params[:portfolio_company_id]].
-  expect(spec.keys).to all(be_a(String))
+  expect(spec.keys.all? { |key| key.is_a?(String) }).to be true
   expect(spec[@investor.id.to_s]).to be_present
 end
 

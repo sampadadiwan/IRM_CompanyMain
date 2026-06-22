@@ -14,11 +14,14 @@ class SupportAgent < ApplicationRecord
   include WithFolder
   include SupportAgentHelper
 
-  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent].freeze
+  AGENT_TYPES = %w[KycOnboardingAgent KycDocExtractorAgent PortfolioCompanyAgent FundStatsAgent PortfolioReportAgent CallNoticeAgent CashFlowAssistantAgent DistributionReadinessAgent EsignMonitorAgent DataQualityAgent LpAssistantAgent PortfolioAssistantAgent PortfolioScoringAgent NoteSummarizerAgent DealsReportAgent PresentationAnalystAgent CustomerSupportAgent RtaReconciliationAgent DealManagementAgent].freeze
   CATEGORIES = %w[Ops Finance Portfolio Onboarding Other].freeze
 
   belongs_to :entity
   has_one :agent_schedule, dependent: :destroy
+
+  # Matches the fallback used by db/migrate/archive/20260514100003_backfill_llm_model_for_support_agents.rb
+  attribute :llm_model, :string, default: "gemini-3-flash-preview"
 
   scope :enabled, -> { where(enabled: true) }
 
@@ -111,6 +114,13 @@ class SupportAgent < ApplicationRecord
         "Which risks disappeared without a stated resolution?",
         "Compare the ARR targets stated across all periods.",
         "What happened to the [initiative name] — when did it last appear?"
+      ]
+    when "RtaReconciliationAgent"
+      [
+        "Are all folios matched?",
+        "Which folios have breaks?",
+        "Are there any pending requests?",
+        "Show the last reconciliation summary."
       ]
     else
       []

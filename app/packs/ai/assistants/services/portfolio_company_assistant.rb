@@ -5,7 +5,7 @@
 #
 class PortfolioCompanyAssistant < BaseAssistant
   DESCRIPTION = "I can help you with this portfolio company's valuations, investments, cap table, KPIs, fund ratios, and documents.".freeze
-  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
+  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash-preview').freeze
 
   MONTHLY_REPORT_QUERIES = [
     "Provide a detailed snapshot and one-page summary of this company. Include its name, current stage, sector, profile, total invested, current FMV, and performance multiples.",

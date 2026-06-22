@@ -32,7 +32,7 @@ class PresentationAnalystAgent < SupportAgentService
     Steps:
     • Collect Presentations — finds KPI report documents whose names match the
       presentation_doc_names CSV config (default: "Investor Update, Board Deck, ...").
-    • Extract Intelligence — reads each matched document in full (gemini-3-flash, 1M
+    • Extract Intelligence — reads each matched document in full (gemini-3-flash-preview, 1M
       token context) and extracts 8 structured categories per period.
     • Cross-Period Analysis — one LLM call across all period records (or sliding-window
       pairs for cost saving) to produce five comparison lenses.
@@ -43,7 +43,7 @@ class PresentationAnalystAgent < SupportAgentService
 
     Config: presentation_doc_names (CSV), max_periods (default 8), kpi_tag_list
     (default Actual), comparison_strategy (all_periods | sliding_window),
-    llm_model (default gemini-3-flash).
+    llm_model (default gemini-3-flash-preview).
 
     PRD: docs/ai/investor_presentation_analyst_prd.md
   DESC

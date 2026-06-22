@@ -284,6 +284,14 @@ commands = [
                             </button>
                           </li>
                         <% end %>
+                        <% if @fund.entity.support_agents.set?(:rta_reconciliation_agent) && policy(@fund).update? %>
+                          <li>
+                            <button type="button" class="dropdown-item ti ti-file-check"
+                                    data-bs-toggle="modal" data-bs-target="#run-rta-reconciliation-modal">
+                              Run RTA Reconciliation
+                            </button>
+                          </li>
+                        <% end %>
                         <li>
                           <%= button_to generate_tracking_numbers_fund_path(@fund), method: :post, class: "dropdown-item", form_class: "deleteButton", data: {bs_toggle: "tooltip", bs_title: "In case a second tracking currency (i.e. a reference currency amount converting all payments, account entries etc based on the exchange rates uploaded for the relevant dates) is set up for your fund, select this option to generate the numbers now. By default the numbers are generated every night"} do %>
                             <i class="ti ti-barcode"></i>Generate Tracking Numbers
@@ -332,6 +340,13 @@ commands = [
                        target_id:        @fund.id,
                        description:      fund_stats_desc,
                        long_description: FundStatsAgent::LONG_DESCRIPTION %>
+          <% end %>
+          <% if @fund.entity.support_agents.set?(:rta_reconciliation_agent) && policy(@fund).update? %>
+            <%= render "support_agents/rta_run_modal",
+                       modal_id:         "run-rta-reconciliation-modal",
+                       fund:             @fund,
+                       description:      RtaReconciliationAgent::DESCRIPTION,
+                       long_description: RtaReconciliationAgent::LONG_DESCRIPTION %>
           <% end %>
           <% if policy(@fund).delete_all? && params[:delete_all].present? %>
             <div class="btn-group">

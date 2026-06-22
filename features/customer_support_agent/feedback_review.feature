@@ -1,3 +1,4 @@
+@cs_agent
 Feature: CS Feedback Review Actions
   As a support team member
   I want to review, re-test, and resolve flagged agent responses

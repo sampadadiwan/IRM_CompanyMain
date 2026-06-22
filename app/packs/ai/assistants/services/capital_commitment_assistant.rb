@@ -8,7 +8,7 @@ require 'erb'
 #
 class CapitalCommitmentAssistant < BaseAssistant
   DESCRIPTION = "I can help you with your capital commitment details, remittances, distributions, fund units, and documents.".freeze
-  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash').freeze
+  AI_MODEL = ENV.fetch('DEFAULT_MODEL', 'gemini-3-flash-preview').freeze
 
   MONTHLY_REPORT_QUERIES = [
     'Create a monthly LP report for this commitment as of today. Start with a 1-page summary: commitment size, called-to-date, remaining unfunded, distributed-to-date, and net cash flow to date.',

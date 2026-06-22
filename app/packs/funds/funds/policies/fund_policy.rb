@@ -114,4 +114,8 @@ class FundPolicy < FundBasePolicy
   def destroy?
     Rails.env.test? ? permissioned_employee?(:destroy) : support?
   end
+
+  def run_agent?
+    permissioned_employee?(:update)
+  end
 end

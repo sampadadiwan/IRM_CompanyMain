@@ -277,6 +277,7 @@ class PortfolioCompanyAgent < SupportAgentService
     ctx[:check_all_docs] = true
     super(ctx, model: @last_kpi_report, support_agent: support_agent)
     mark_step_success(report, :check_document_presence, message: "Documents checked") if report
+    true
   end
 
   # Validates valuations reported for the portfolio_company.

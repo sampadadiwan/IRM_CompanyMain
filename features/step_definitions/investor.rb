@@ -99,9 +99,12 @@ Given('there is an existing investor {string}') do |arg1|
   steps %(
         Given there is an existing investor entity "#{arg1}"
     )
-  @investor = FactoryBot.create(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
-  # key_values(@investor, arg1)
-  # @investor.save!
+  @investor = FactoryBot.build(:investor, investor_entity_id: @investor_entity.id, entity_id: @entity.id)
+  # Only apply attrs the Investor model actually has — arg1 is shared with the nested
+  # "investor entity" step above, and keys like "entity_type" only apply to the entity.
+  investor_attrs = arg1.split(";").select { |kv| @investor.respond_to?("#{kv.split('=').first}=") }.join(";")
+  key_values(@investor, investor_attrs) if investor_attrs.present?
+  @investor.save!
 
   puts "\n####Investor####\n"
   puts @investor.to_json

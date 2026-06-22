@@ -137,14 +137,16 @@ Given("the KYC has {string} uploaded as {string}") do |filename, label|
   )
 end
 
-# Stubs RubyLLM::Chat#ask so the agent always sees matches:false.
+# Stubs LlmService.ruby_llm_chat so the agent always sees matches:false.
 # Required because doc.file.url returns a web-relative path (/uploads/...) that
 # RubyLLM cannot resolve to a filesystem path in the test environment, meaning
-# the LLM never sees the actual file content. The stub exercises the code path
-# for handling a mismatch response without depending on LLM intelligence.
+# the LLM never sees the actual file content. Stubbed at the service layer (not
+# allow_any_instance_of(RubyLLM::Chat)) — see call_notice_agent_steps.rb for why
+# that direct-instance stub doesn't reliably intercept #ask.
 Given("the LLM will flag the document as not matching its label") do
   mismatch_json = '{"matches": false, "explanation": "Document does not match the specified label."}'
-  allow_any_instance_of(RubyLLM::Chat).to receive(:ask).and_return(mismatch_json)
+  mock_chat = double("chat", ask: mismatch_json)
+  allow(LlmService).to receive(:ruby_llm_chat).and_return(mock_chat)
 end
 
 Given("the KYC has no documents uploaded") do
