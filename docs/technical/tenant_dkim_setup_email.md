@@ -26,26 +26,3 @@ Thanks,
 [Your name]
 
 ---
-
-Technical details (for IT)
-
-We use Amazon SES to send mail on behalf of [tenant domain]. To authenticate this domain, please add the following DNS records:
-
-1. DKIM
-   See the attached CSV for the exact CNAME records to add. These are domain-specific keys generated for [tenant domain] and must be added exactly as provided.
-
-2. SPF - add (or update if one already exists - a domain can only have one SPF record) a TXT record:
-   Type: TXT
-   Host: [tenant domain]
-   Value: v=spf1 include:amazonses.com ~all
-
-   If you already send mail from this domain via another service (Office 365, Google Workspace, etc.), merge that service's include: into the same record rather than adding a second SPF record - multiple SPF records will break validation.
-
-3. DMARC (recommended) - add a TXT record:
-   Type: TXT
-   Host: _dmarc.[tenant domain]
-   Value: v=DMARC1; p=quarantine; rua=mailto:[IT contact]@[tenant domain]
-
-   Start with p=quarantine (or p=none for monitoring-only initially) rather than p=reject, to avoid risk of legitimate mail being blocked while this rolls out.
-
-Once these are live, we'll verify domain and DKIM status in the SES console and confirm back to you. No changes are needed on our side or in how you currently interact with the platform.
