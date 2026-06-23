@@ -43,6 +43,16 @@
     </td>
   </tr>
 
+  <% if policy(@capital_commitment).period_report? %>
+    <tr>
+      <td colspan="2">
+        <%= link_to "View Account Entries Period Report",
+              folio_report_account_entry_reports_path(capital_commitment_id: @capital_commitment.id),
+              class: "btn btn-sm btn-outline-info" %>
+      </td>
+    </tr>
+  <% end %>
+
   <tr class="btn-outline-success">
     <td colspan="2">
       <h1>Summary</h1>

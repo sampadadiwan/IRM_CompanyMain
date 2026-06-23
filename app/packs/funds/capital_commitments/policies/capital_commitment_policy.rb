@@ -16,6 +16,12 @@ class CapitalCommitmentPolicy < FundBasePolicy
       permissioned_investor?
   end
 
+  # Account Entries Period Report, folio-level - mirrors show? (own folio is visible
+  # to the investor it belongs to). Not an alias of report?, which maps to update?.
+  def period_report?
+    show?
+  end
+
   def performance_chart?
     show?
   end

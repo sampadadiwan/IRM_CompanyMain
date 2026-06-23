@@ -28,14 +28,7 @@ module AccountEntryChartsHelper
     end
 
     # Time-series aggregation (Month, Quarter or Year)
-    group_field = case aggregate_by.to_s.downcase
-                  when 'year'
-                    "DATE_FORMAT(reporting_date, '%Y-12-31')"
-                  when 'month'
-                    "LAST_DAY(reporting_date)"
-                  else # quarter
-                    "LAST_DAY(DATE_ADD(DATE_FORMAT(reporting_date, '%Y-01-01'), INTERVAL (QUARTER(reporting_date) * 3 - 1) MONTH))"
-                  end
+    group_field = AccountEntryPeriodGrouping.group_field_sql(aggregate_by)
 
     # Get the raw data: { [period, name] => sum }
     raw_data = entries.group(Arel.sql(group_field), :name).sum(:amount_cents)

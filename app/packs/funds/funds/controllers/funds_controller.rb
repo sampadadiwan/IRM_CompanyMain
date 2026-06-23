@@ -315,6 +315,6 @@ class FundsController < ApplicationController
                                  :collected_amount, :commitment_doc_list, :master_fund_id,
                                  :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
                                  :currency, :unit_types, :units_allocation_engine, :form_type_id, :first_close_date, :show_portfolios, :show_fund_units, :last_close_date, :tracking_currency,
-                                 :esign_emails, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
+                                 :esign_emails, :enable_ai_commentary, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end
 end

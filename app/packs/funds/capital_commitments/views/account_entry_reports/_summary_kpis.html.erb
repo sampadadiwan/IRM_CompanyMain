@@ -1,0 +1,56 @@
+<%
+  kpis = report.summary_kpis
+%>
+<div class="row mb-4">
+  <div class="col-md-4">
+    <div class="card border-bottom border-success">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div>
+            <h4 class="card-title fs-7"><%= number_with_delimiter kpis[:entry_count] %></h4>
+            <p class="card-subtitle text-success">Entry Count</p>
+          </div>
+          <div class="ms-auto">
+            <span class="text-success display-6">
+              <i class="ti ti-receipt"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-bottom border-info">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div>
+            <h4 class="card-title fs-7"><%= number_with_delimiter kpis[:distinct_folio_count] %></h4>
+            <p class="card-subtitle text-info">Folios Touched</p>
+          </div>
+          <div class="ms-auto">
+            <span class="text-info display-6">
+              <i class="ti ti-folder"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card border-bottom border-warning">
+      <div class="card-body">
+        <div class="d-flex align-items-center">
+          <div>
+            <h4 class="card-title fs-7"><%= number_with_delimiter kpis[:distinct_entry_names] %></h4>
+            <p class="card-subtitle text-warning">Distinct Entry Names</p>
+          </div>
+          <div class="ms-auto">
+            <span class="text-warning display-6">
+              <i class="ti ti-tag"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

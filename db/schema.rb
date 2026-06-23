@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_22_100001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_23_100002) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -92,6 +92,26 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_100001) do
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
     t.index ["parent_type", "parent_id", "fund_id", "name", "deleted_at", "cumulative"], name: "idx_ae_parent_fund_name_flags"
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
+  end
+
+  create_table "account_entry_report_insights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
+    t.bigint "capital_commitment_id"
+    t.json "content"
+    t.datetime "created_at", null: false
+    t.string "data_fingerprint"
+    t.date "end_date", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "fund_id", null: false
+    t.datetime "generated_at"
+    t.bigint "generated_by_id"
+    t.string "section_key", null: false
+    t.date "start_date", null: false
+    t.string "status"
+    t.datetime "updated_at", null: false
+    t.index ["capital_commitment_id"], name: "index_account_entry_report_insights_on_capital_commitment_id"
+    t.index ["entity_id"], name: "index_account_entry_report_insights_on_entity_id"
+    t.index ["fund_id", "capital_commitment_id", "start_date", "end_date", "section_key"], name: "idx_ae_report_insights_scope"
+    t.index ["fund_id"], name: "index_account_entry_report_insights_on_fund_id"
   end
 
   create_table "action_mailbox_inbound_emails", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
@@ -2041,6 +2061,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_100001) do
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.boolean "editable_formulas", default: false
+    t.boolean "enable_ai_commentary", default: true, null: false
     t.bigint "entity_id", null: false
     t.string "esign_emails"
     t.date "first_close_date"

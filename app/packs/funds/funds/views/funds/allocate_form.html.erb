@@ -102,9 +102,19 @@
 
   <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Previous Runs</h1>
+    <div>
+      <% if policy(@fund).period_report? %>
+        <%= form_with url: fund_report_account_entry_reports_path, method: :get, local: true, class: "d-inline-flex align-items-end gap-2" do |f| %>
+          <%= f.hidden_field :fund_id, value: @fund.id, id: nil %>
+          <%= f.date_field :start_date, value: start_date, class: "form-control form-control-sm", title: "Report start date" %>
+          <%= f.date_field :end_date, value: end_date, class: "form-control form-control-sm", title: "Report end date" %>
+          <%= f.submit "View Account Entries Report", class: "btn btn-sm btn-outline-success" %>
+        <% end %>
+      <% end %>
       <% if policy(AllocationRun).unlock_all? && @fund.present? %>
-      <%= button_to "Unlock All", unlock_all_allocation_runs_path(fund_id: @fund.id), class: "btn btn-sm btn-outline-warning", method: :patch, form_class: "deleteButton", data: { action: "click->confirm#popup", method: :patch, msg: "Are you sure you want to unlock all AllocationRuns?" } %>
-    <% end %>
+        <%= button_to "Unlock All", unlock_all_allocation_runs_path(fund_id: @fund.id), class: "btn btn-sm btn-outline-warning", method: :patch, form_class: "deleteButton", data: { action: "click->confirm#popup", method: :patch, msg: "Are you sure you want to unlock all AllocationRuns?" } %>
+      <% end %>
+    </div>
   </div>
 
   <table class="table table-bordered dataTable jqDataTable">
@@ -198,6 +208,7 @@
               <% end %>
             <% end %>
             <%= link_to "Account Entries", account_entries_path(filter: true, fund_id: @fund.id, q: ransack_query_params_multiple([["allocation_run_id", :eq, runs.id], ["reporting_date", :eq, l(runs.end_date)]])), class: "btn btn-sm btn-outline-info" if runs.created_at > Date.local_parse("29/03/2025") %>
+            <%= link_to "View Report", fund_report_account_entry_reports_path(fund_id: @fund.id, start_date: runs.start_date, end_date: runs.end_date), class: "btn btn-sm btn-outline-success" if policy(@fund).period_report? %>
           </td>
         </tr>
       <% end %>

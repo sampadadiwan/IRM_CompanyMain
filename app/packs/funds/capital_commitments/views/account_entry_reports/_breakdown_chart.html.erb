@@ -1,0 +1,9 @@
+<%
+  breakdown = report.breakdown_by_name
+  chart_data = breakdown.transform_values { |cents| (cents / 100.0).round(2) }
+%>
+<% if chart_data.present? %>
+  <%= pie_chart chart_data, donut: true, prefix: "#{fund.currency}:" %>
+<% else %>
+  <p class="text-muted">No account entries for this period.</p>
+<% end %>

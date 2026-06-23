@@ -7,6 +7,12 @@ class FundPolicy < FundBasePolicy
     show?
   end
 
+  # Cross-folio aggregate data (Account Entries Period Report, fund-level) - employees only,
+  # unlike report?/show? which also admit permissioned investors for single-fund views.
+  def period_report?
+    user.enable_funds && permissioned_employee?
+  end
+
   def generate_reports?
     update?
   end

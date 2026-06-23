@@ -1,0 +1,20 @@
+<table class="table table-bordered table-sm">
+  <thead>
+    <tr>
+      <th>Reporting Date</th>
+      <th>Name</th>
+      <th>Entry Type</th>
+      <th class="text-end">Amount</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% entries.each do |entry| %>
+      <tr>
+        <td><%= l(entry.reporting_date) %></td>
+        <td><%= entry.name %></td>
+        <td><%= entry.entry_type %></td>
+        <td class="text-end"><%= money_to_currency entry.amount, params %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

@@ -66,6 +66,12 @@ resources :account_entries do
   post 'explain', on: :member
 end
 
+resources :account_entry_reports, only: [] do
+  get 'fund_report', on: :collection
+  get 'folio_report', on: :collection
+  post 'generate_commentary', on: :collection
+end
+
 resources :fund_units
 
 resources :fund_ratios do

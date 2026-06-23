@@ -1,0 +1,12 @@
+<%
+  trend = report.trailing_trend
+  series_data = trend.map do |name, periods|
+    { name: name, data: periods.transform_keys { |d| d.is_a?(Date) ? d.strftime("%b %Y") : d.to_s }
+                               .transform_values { |cents| (cents / 100.0).round(2) } }
+  end
+%>
+<% if series_data.present? %>
+  <%= column_chart series_data, prefix: "#{fund.currency}:" %>
+<% else %>
+  <p class="text-muted">Not enough history to show a trend.</p>
+<% end %>

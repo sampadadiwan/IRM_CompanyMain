@@ -1,0 +1,32 @@
+<%
+  regenerate_path = generate_commentary_account_entry_reports_path(
+    fund_id: fund.id, capital_commitment_id: capital_commitment&.id,
+    section_key: section_key, start_date: start_date, end_date: end_date
+  )
+%>
+<div class="mt-2 mb-3 ai-commentary small border-start border-3 ps-2">
+  <% if !fund.enable_ai_commentary && insight.nil? %>
+    <p class="text-muted mb-1">AI commentary is disabled for this report.</p>
+  <% elsif insight.nil? %>
+    <p class="text-muted mb-1">No AI commentary yet.</p>
+  <% elsif insight.status == "complete" %>
+    <p class="mb-1"><%= insight.content["narrative"] %></p>
+    <% if insight.content["anomalies"].present? %>
+      <ul class="mb-1">
+        <% insight.content["anomalies"].each do |anomaly| %>
+          <li class="text-warning">
+            <strong><%= anomaly["metric"] %>:</strong> <%= anomaly["note"] %>
+            (<%= anomaly["deviation_pct"] %>% vs trailing average)
+          </li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% elsif %w[pending generating].include?(insight.status) %>
+    <p class="text-muted mb-1"><i class="ti ti-loader"></i> Generating AI commentary&hellip; refresh in a moment.</p>
+  <% elsif insight.status == "error" %>
+    <p class="text-danger mb-1">AI commentary failed to generate.</p>
+  <% end %>
+
+  <%= button_to (insight.nil? || insight.status == "error" ? "Generate" : "Regenerate"),
+        regenerate_path, method: :post, class: "btn btn-sm btn-outline-secondary" %>
+</div>
