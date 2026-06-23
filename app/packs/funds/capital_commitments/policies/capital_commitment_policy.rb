@@ -42,6 +42,10 @@ class CapitalCommitmentPolicy < FundBasePolicy
     update?
   end
 
+  def preview?
+    update?
+  end
+
   def generate_documentation?
     record.investor_kyc&.verified && update? && !record.esign_completed
   end

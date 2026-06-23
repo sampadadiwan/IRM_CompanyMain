@@ -88,6 +88,22 @@
               <% end %>
             <% end %>
 
+            <% if policy(@capital_commitment).preview? %>
+              <% adhoc_notifications = @capital_commitment.fund.custom_notifications.enabled.adhoc_notifications %>
+              <% if adhoc_notifications.any? %>
+                <div class="dropdown-divider"></div>
+
+                <% preview_target = Rails.env.test? ? "_top" : "_blank" %> <!-- Playwright requires the same window to check details -->
+                <% adhoc_notifications.each_with_index do |adhoc_notification, i| %>
+                  <% label = adhoc_notification.tag.presence || adhoc_notification.subject %>
+                  <%= link_to preview_capital_commitment_path(@capital_commitment, email_method: "adhoc_notification", custom_notification_id: adhoc_notification.id),
+                              id: "capital_commitment_preview_adhoc_notification_#{i}_btn", class: "dropdown-item", data: { turbo: false }, target: preview_target do %>
+                    <i class="ti ti-mail"></i>Preview Adhoc Notification (<%= label %>)
+                  <% end %>
+                <% end %>
+              <% end %>
+            <% end %>
+
           </div>
         </div>
       </div>

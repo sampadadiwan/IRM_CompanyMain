@@ -12,6 +12,7 @@ class Fund < ApplicationRecord
 
   include ForInvestor
   include WithCustomField
+  include WithCustomNotifications
   include RansackerAmounts.new(fields: %w[collected_amount committed_amount call_amount distribution_amount])
 
   update_index('fund') do

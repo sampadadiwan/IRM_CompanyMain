@@ -149,6 +149,7 @@ resources :capital_commitments do
   put :restore_deleted, on: :member
   get 'performance_chart', on: :member
   get :show_deleted, on: :collection
+  get 'preview', on: :member
 end
 
 resources :funds do

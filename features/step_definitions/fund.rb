@@ -904,4 +904,30 @@ And('the notification email has the document {string} attached') do |doc_name|
   end
 end
 
+When('I open the actions menu on the first capital commitment') do
+  first_cc = @fund.capital_commitments.order(:id).first
+  visit(capital_commitment_path(first_cc))
+  find("#commitment_actions").click
+end
+
+Then('I see a preview adhoc notification button') do
+  expect(page).to have_css("[id^='capital_commitment_preview_adhoc_notification_']")
+end
+
+Then('I see {int} preview adhoc notification buttons') do |count|
+  expect(page).to have_css("[id^='capital_commitment_preview_adhoc_notification_']", count: count)
+end
+
+Then('I do not see a preview adhoc notification button') do
+  expect(page).not_to have_css("[id^='capital_commitment_preview_adhoc_notification_']")
+end
+
+When('I click the preview adhoc notification button for {string}') do |label|
+  click_on("Preview Adhoc Notification (#{label})")
+end
+
+Then('I see the adhoc notification preview with subject {string}') do |subject|
+  expect(page).to have_content(subject)
+end
+
 # ── End Fund Commitment Adhoc Notification steps ──────────────────────────────
