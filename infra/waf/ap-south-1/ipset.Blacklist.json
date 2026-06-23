@@ -1,0 +1,11 @@
+{
+  "name": "Blacklist",
+  "id": "a0c0475a-9f36-4c04-8d03-aebbb11ef7a9",
+  "arn": "arn:aws:wafv2:ap-south-1:825199636520:regional/ipset/Blacklist/a0c0475a-9f36-4c04-8d03-aebbb11ef7a9",
+  "description": "Blacklist",
+  "ip_address_version": "IPV4",
+  "addresses": [
+    "3.235.60.240/32",
+    "103.127.136.254/32"
+  ]
+}

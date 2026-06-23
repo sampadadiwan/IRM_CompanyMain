@@ -1,0 +1,177 @@
+{
+  "name": "CapHive",
+  "id": "9c60a75f-55d8-494d-ac45-50f952132fcc",
+  "arn": "arn:aws:wafv2:ap-south-1:825199636520:regional/webacl/CapHive/9c60a75f-55d8-494d-ac45-50f952132fcc",
+  "default_action": {
+    "allow": {}
+  },
+  "description": "",
+  "rules": [
+    {
+      "name": "AWS-AWSManagedRulesAmazonIpReputationList",
+      "priority": 0,
+      "statement": {
+        "managed_rule_group_statement": {
+          "vendor_name": "AWS",
+          "name": "AWSManagedRulesAmazonIpReputationList"
+        }
+      },
+      "override_action": {
+        "none": {}
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloud_watch_metrics_enabled": true,
+        "metric_name": "AWS-AWSManagedRulesAmazonIpReputationList"
+      }
+    },
+    {
+      "name": "AWS-AWSManagedRulesCommonRuleSet",
+      "priority": 1,
+      "statement": {
+        "managed_rule_group_statement": {
+          "vendor_name": "AWS",
+          "name": "AWSManagedRulesCommonRuleSet",
+          "rule_action_overrides": [
+            {
+              "name": "SizeRestrictions_QUERYSTRING",
+              "action_to_use": {
+                "allow": {}
+              }
+            },
+            {
+              "name": "SizeRestrictions_BODY",
+              "action_to_use": {
+                "allow": {}
+              }
+            },
+            {
+              "name": "CrossSiteScripting_BODY",
+              "action_to_use": {
+                "allow": {}
+              }
+            }
+          ]
+        }
+      },
+      "override_action": {
+        "none": {}
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloud_watch_metrics_enabled": true,
+        "metric_name": "AWS-AWSManagedRulesCommonRuleSet"
+      }
+    },
+    {
+      "name": "AWS-AWSManagedRulesKnownBadInputsRuleSet",
+      "priority": 2,
+      "statement": {
+        "managed_rule_group_statement": {
+          "vendor_name": "AWS",
+          "name": "AWSManagedRulesKnownBadInputsRuleSet"
+        }
+      },
+      "override_action": {
+        "none": {}
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloud_watch_metrics_enabled": true,
+        "metric_name": "AWS-AWSManagedRulesKnownBadInputsRuleSet"
+      }
+    },
+    {
+      "name": "AWS-AWSManagedRulesLinuxRuleSet",
+      "priority": 3,
+      "statement": {
+        "managed_rule_group_statement": {
+          "vendor_name": "AWS",
+          "name": "AWSManagedRulesLinuxRuleSet"
+        }
+      },
+      "override_action": {
+        "none": {}
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloud_watch_metrics_enabled": true,
+        "metric_name": "AWS-AWSManagedRulesLinuxRuleSet"
+      }
+    },
+    {
+      "name": "AWS-AWSManagedRulesSQLiRuleSet",
+      "priority": 4,
+      "statement": {
+        "managed_rule_group_statement": {
+          "vendor_name": "AWS",
+          "name": "AWSManagedRulesSQLiRuleSet"
+        }
+      },
+      "override_action": {
+        "none": {}
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloud_watch_metrics_enabled": true,
+        "metric_name": "AWS-AWSManagedRulesSQLiRuleSet"
+      }
+    },
+    {
+      "name": "Blacklist",
+      "priority": 5,
+      "statement": {
+        "ip_set_reference_statement": {
+          "arn": "arn:aws:wafv2:ap-south-1:825199636520:regional/ipset/Blacklist/a0c0475a-9f36-4c04-8d03-aebbb11ef7a9"
+        }
+      },
+      "action": {
+        "block": {}
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloud_watch_metrics_enabled": true,
+        "metric_name": "Blacklist"
+      }
+    },
+    {
+      "name": "Block_PHP_Requests",
+      "priority": 6,
+      "statement": {
+        "byte_match_statement": {
+          "search_string": ".php",
+          "field_to_match": {
+            "uri_path": {}
+          },
+          "text_transformations": [
+            {
+              "priority": 0,
+              "type": "NONE"
+            }
+          ],
+          "positional_constraint": "ENDS_WITH"
+        }
+      },
+      "action": {
+        "block": {}
+      },
+      "visibility_config": {
+        "sampled_requests_enabled": true,
+        "cloud_watch_metrics_enabled": true,
+        "metric_name": "Block_PHP_Requests"
+      }
+    }
+  ],
+  "visibility_config": {
+    "sampled_requests_enabled": true,
+    "cloud_watch_metrics_enabled": true,
+    "metric_name": "CapHive"
+  },
+  "capacity": 1328,
+  "managed_by_firewall_manager": false,
+  "label_namespace": "awswaf:825199636520:webacl:CapHive:",
+  "retrofitted_by_firewall_manager": false,
+  "on_source_d_do_s_protection_config": {
+    "alb_low_reputation_mode": "ACTIVE_UNDER_DDOS"
+  }
+}
