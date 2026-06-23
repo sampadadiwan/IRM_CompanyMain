@@ -1,6 +1,11 @@
 class DealMailer < ApplicationMailer
   append_view_path "app/packs/startups/deals/mailers/views"
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "deal_name" => ->(m) { m.instance_variable_get(:@deal)&.name },
+    "investor_name" => ->(m) { m.instance_variable_get(:@deal_investor)&.investor&.name }
+  ).freeze
+
   before_action :set_deal_data
 
   def set_deal_data

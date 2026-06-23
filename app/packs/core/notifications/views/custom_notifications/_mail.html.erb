@@ -8,8 +8,8 @@
         %>
         <%= raw rendered_content %>
     <% else %>
-        <!-- Render the HTML content -->
-        <%= @custom_notification.body.html_safe %>
+        <!-- Render the HTML content, substituting any {{placeholder}} tokens -->
+        <%= @custom_notification.render_safe_body(controller) %>
     <% end %>
     
     <!-- Anything else passed into the block -->

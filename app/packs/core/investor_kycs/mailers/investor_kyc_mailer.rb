@@ -2,6 +2,12 @@ class InvestorKycMailer < ApplicationMailer
   helper ApplicationHelper
   helper CurrencyHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "investor_name" => ->(m) { m.instance_variable_get(:@investor_kyc)&.full_name },
+    "fund_name" => ->(m) { m.instance_variable_get(:@investor_kyc)&.entity&.name },
+    "committed_amount" => ->(m) { m.instance_variable_get(:@investor_kyc)&.committed_amount&.format }
+  ).freeze
+
   before_action :set_kyc
   def set_kyc
     @investor_kyc = InvestorKyc.find(params[:investor_kyc_id])

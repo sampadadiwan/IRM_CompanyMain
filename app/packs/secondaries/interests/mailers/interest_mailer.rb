@@ -3,6 +3,11 @@ class InterestMailer < ApplicationMailer
   helper InterestsHelper
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "secondary_sale_name" => ->(m) { m.instance_variable_get(:@secondary_sale)&.name },
+    "interest_amount" => ->(m) { m.instance_variable_get(:@interest)&.amount&.format }
+  ).freeze
+
   before_action :set_interest
   def set_interest
     @interest = Interest.find params[:interest_id]

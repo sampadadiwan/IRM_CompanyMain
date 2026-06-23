@@ -2,6 +2,11 @@ class InvestmentOpportunityMailer < ApplicationMailer
   helper CurrencyHelper
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "company_name" => ->(m) { m.instance_variable_get(:@investment_opportunity)&.company_name },
+    "fund_name" => ->(m) { m.instance_variable_get(:@investment_opportunity)&.entity&.name }
+  ).freeze
+
   before_action :set_investment_opportunity
   def set_investment_opportunity
     @investment_opportunity = InvestmentOpportunity.find(params[:investment_opportunity_id])

@@ -2,6 +2,10 @@ class SecondarySaleMailer < ApplicationMailer
   helper CurrencyHelper
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "secondary_sale_name" => ->(m) { m.instance_variable_get(:@secondary_sale)&.name }
+  ).freeze
+
   before_action :set_secondary_sale
   def set_secondary_sale
     @secondary_sale = SecondarySale.find(params[:secondary_sale_id])

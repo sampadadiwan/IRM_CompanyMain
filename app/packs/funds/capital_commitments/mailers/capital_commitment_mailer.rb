@@ -2,6 +2,14 @@ class CapitalCommitmentMailer < ApplicationMailer
   helper CurrencyHelper
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "investor_name" => ->(m) { m.instance_variable_get(:@capital_commitment)&.investor&.name },
+    "fund_name" => ->(m) { m.instance_variable_get(:@fund)&.name },
+    "committed_amount" => ->(m) { m.instance_variable_get(:@capital_commitment)&.committed_amount&.format },
+    "kyc_full_name" => ->(m) { m.instance_variable_get(:@capital_commitment)&.investor_kyc&.full_name },
+    "folio_id" => ->(m) { m.instance_variable_get(:@capital_commitment)&.folio_id }
+  ).freeze
+
   before_action :set_capital_commitment
 
   def set_capital_commitment

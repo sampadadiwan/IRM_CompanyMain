@@ -814,6 +814,19 @@ Given('there is an adhoc custom notification for the fund with subject {string}'
   )
 end
 
+# Body uses {{placeholder}} tokens resolved per-commitment by CapitalCommitmentMailer::PLACEHOLDERS
+Given('there is an adhoc custom notification for the fund with placeholders and subject {string}') do |subject|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: "Dear {{investor_name}}, your commitment to {{fund_name}} of {{committed_amount}} is confirmed. Unsupported: {{not_a_real_placeholder}}.",
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    enabled: true
+  )
+end
+
 # Same but with attachment_names so the mailer picks up docs from each commitment
 Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string}') do |subject, attachment_names|
   @custom_notification = CustomNotification.create!(

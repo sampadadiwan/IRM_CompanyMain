@@ -249,6 +249,35 @@ Given('there is a custom notification in place for the approval with subject {st
   @custom_notification = CustomNotification.create!(entity: @approval.entity, subject:, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @approval, email_method:)
 end
 
+# is_erb defaults to false, so this exercises CustomNotification#render_safe_body via ApprovalMailer::PLACEHOLDERS
+Given('there is a custom notification with placeholders in place for the approval with subject {string} with email_method {string}') do |subject, email_method|
+  @custom_notification = CustomNotification.create!(
+    entity: @approval.entity,
+    subject:,
+    body: "Hello {{user_full_name}}, regarding {{approval_title}}. Unsupported placeholder: {{not_a_real_placeholder}}.",
+    whatsapp: Faker::Lorem.sentences.join(". "),
+    owner: @approval,
+    email_method:
+  )
+end
+
+Then('the investor gets the approval custom notification with placeholders substituted') do
+  @custom_notification.should_not be_nil
+
+  @approval.pending_investors.collect(&:emails).flatten.each do |email|
+    open_email(email)
+
+    # Known placeholder resolved to the real value, and the literal token is gone
+    expect(current_email.body).to have_content(@approval.title)
+    expect(current_email.body).not_to have_content("{{approval_title}}")
+
+    # Unknown placeholder is left as-is rather than silently dropped or evaluated
+    expect(current_email.body).to have_content("{{not_a_real_placeholder}}")
+  end
+
+  clear_emails
+end
+
 Then('I should see the approval response details for each response') do
   @approval.approval_responses.each do |response|
     within("#approval_response_#{response.id}") do

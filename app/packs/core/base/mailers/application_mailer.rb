@@ -2,6 +2,17 @@ class ApplicationMailer < ActionMailer::Base
   default from: ENV.fetch("SUPPORT_EMAIL_FROM", nil)
   layout "mailer"
 
+  # Safe, non-ERB placeholders clients can type into a CustomNotification body, e.g. {{user_full_name}}.
+  # Resolved against the mailer instance's own ivars in CustomNotification#render_safe_body - never eval'd.
+  # Subclasses add their own via PLACEHOLDERS = superclass::PLACEHOLDERS.merge(...).freeze
+  PLACEHOLDERS = {
+    "user_full_name" => ->(m) { m.instance_variable_get(:@user)&.full_name },
+    "user_first_name" => ->(m) { m.instance_variable_get(:@user)&.first_name },
+    "user_last_name" => ->(m) { m.instance_variable_get(:@user)&.last_name },
+    "user_email" => ->(m) { m.instance_variable_get(:@user)&.email },
+    "entity_name" => ->(m) { m.instance_variable_get(:@entity)&.name }
+  }.freeze
+
   after_deliver :mark_delivered
   def mark_delivered
     begin

@@ -2,6 +2,15 @@ class CapitalDistributionPaymentsMailer < ApplicationMailer
   helper CurrencyHelper
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "investor_name" => ->(m) { m.instance_variable_get(:@capital_distribution_payment)&.investor&.name },
+    "fund_name" => ->(m) { m.instance_variable_get(:@capital_distribution_payment)&.fund&.name },
+    "net_payable_amount" => ->(m) { m.instance_variable_get(:@capital_distribution_payment)&.net_payable&.format },
+    "kyc_full_name" => ->(m) { m.instance_variable_get(:@capital_distribution_payment)&.capital_commitment&.investor_kyc&.full_name },
+    "folio_id" => ->(m) { m.instance_variable_get(:@capital_distribution_payment)&.folio_id },
+    "committed_amount" => ->(m) { m.instance_variable_get(:@capital_distribution_payment)&.capital_commitment&.committed_amount&.format }
+  ).freeze
+
   before_action :set_dist_payment
   def set_dist_payment
     @capital_distribution_payment = CapitalDistributionPayment.find params[:capital_distribution_payment_id]

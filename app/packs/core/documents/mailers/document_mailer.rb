@@ -1,6 +1,13 @@
 class DocumentMailer < ApplicationMailer
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "document_name" => ->(m) { m.instance_variable_get(:@document)&.name },
+    "kyc_full_name" => ->(m) { m.instance_variable_get(:@document)&.investor_kyc&.full_name },
+    "folio_id" => ->(m) { m.instance_variable_get(:@document)&.capital_commitment&.folio_id },
+    "committed_amount" => ->(m) { m.instance_variable_get(:@document)&.capital_commitment&.committed_amount&.format }
+  ).freeze
+
   before_action :set_document
   def set_document
     @document = Document.find params[:document_id]

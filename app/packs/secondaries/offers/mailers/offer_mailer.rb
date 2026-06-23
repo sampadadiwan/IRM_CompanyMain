@@ -2,6 +2,11 @@ class OfferMailer < ApplicationMailer
   helper CurrencyHelper
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "secondary_sale_name" => ->(m) { m.instance_variable_get(:@secondary_sale)&.name },
+    "offer_amount" => ->(m) { m.instance_variable_get(:@offer)&.amount&.format }
+  ).freeze
+
   before_action :set_offer
   def set_offer
     @offer = Offer.find params[:offer_id]

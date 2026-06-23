@@ -1,6 +1,10 @@
 class AccessRightsMailer < ApplicationMailer
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "owner_name" => ->(m) { m.instance_variable_get(:@access_right)&.owner&.name }
+  ).freeze
+
   def send_notification
     @access_right = AccessRight.includes(:owner, :investor).find(params[:access_right_id])
 

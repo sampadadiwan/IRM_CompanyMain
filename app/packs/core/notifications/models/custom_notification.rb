@@ -49,36 +49,99 @@ class CustomNotification < ApplicationRecord
     show_details_link
   end
 
+  # Mailer class(es) that can handle this notification's for_type/owner_type. CapitalCall is the only
+  # owner_type backed by two mailers (remittance vs payment), so this returns an array everywhere.
+  def mailer_classes
+    if for_type == "InvestorKyc"
+      [InvestorKycMailer]
+    elsif for_type == "Send Document"
+      [DocumentMailer]
+    elsif for_type == "InvestmentOpportunity"
+      [InvestmentOpportunityMailer]
+    elsif owner_type == "CapitalCall"
+      [CapitalRemittanceMailer, CapitalRemittancePaymentMailer]
+    elsif owner_type == "CapitalDistribution"
+      [CapitalDistributionPaymentsMailer]
+    elsif owner_type == "Fund"
+      [CapitalCommitmentMailer]
+    elsif owner_type == "Deal"
+      [DealMailer]
+    elsif owner
+      ["#{owner.class.name}Mailer".safe_constantize].compact
+    else
+      []
+    end
+  end
+
+  # rubocop:disable Lint/DuplicateBranch -- InvestorKyc/CapitalDistribution bodies coincide today but
+  # for_type is checked ahead of owner_type intentionally, in case that ever diverges
   def email_methods
     mailer_methods = if for_type == "InvestorKyc"
-                       "InvestorKycMailer".constantize.instance_methods(false).map(&:to_s)
+                       mailer_classes.first.instance_methods(false).map(&:to_s)
                      elsif for_type == "Send Document"
                        %w[send_document]
                      elsif for_type == "InvestmentOpportunity"
                        InvestmentOpportunity::NOTIFICATION_METHODS
                      elsif owner_type == "CapitalCall"
-                       "CapitalRemittanceMailer".constantize.instance_methods(false).map(&:to_s) +
-                         "CapitalRemittancePaymentMailer".constantize.instance_methods(false).map(&:to_s)
+                       mailer_classes.flat_map { |klass| klass.instance_methods(false).map(&:to_s) }
                      elsif owner_type == "CapitalDistribution"
-                       "CapitalDistributionPaymentsMailer".constantize.instance_methods(false).map(&:to_s)
+                       mailer_classes.first.instance_methods(false).map(&:to_s)
                      elsif owner_type == "Fund"
-                       "CapitalCommitmentMailer".constantize.instance_methods(false).map(&:to_s) + ["adhoc_notification"]
+                       mailer_classes.first.instance_methods(false).map(&:to_s) + ["adhoc_notification"]
                      elsif owner_type == "Deal"
                        %w[adhoc_notification deal_activity_move]
                      elsif owner
-                       "#{owner.class.name}Mailer".constantize.instance_methods(false).map(&:to_s)
+                       mailer_classes.first&.instance_methods(false)&.map(&:to_s) || []
 
                      else
                        []
                      end
+    # rubocop:enable Lint/DuplicateBranch
 
     mailer_methods.filter { |method| !method.start_with?("set_") }
+  end
+
+  # The mailer that actually owns a given email_method's PLACEHOLDERS. Falls back to the primary
+  # (first) candidate for methods like "adhoc_notification" that are inherited from ApplicationMailer
+  # rather than redefined on the subclass, so they don't show up in instance_methods(false).
+  def mailer_class_for(method_name)
+    mailer_classes.find { |klass| klass.instance_methods(false).map(&:to_s).include?(method_name.to_s) } || mailer_classes.first
+  end
+
+  def placeholders_for(method_name)
+    klass = mailer_class_for(method_name)
+    return [] unless klass
+
+    klass::PLACEHOLDERS.keys.sort
+  end
+
+  # { email_method => [placeholder_name, ...] } for every email_method available to this notification.
+  # Drives the "Insert placeholder" picker in the body editor - see _form.html.erb
+  def placeholders_by_email_method
+    email_methods.index_with { |method_name| placeholders_for(method_name) }
   end
 
   def render_erb_string
     renderer = ERB.new(body)
     # You need to set up the binding context. Here it’s done with the top-level binding, but it might be your controller or view context.
     renderer.result(binding)
+  end
+
+  PLACEHOLDER_REGEXP = /\{\{\s*(\w+)\s*\}\}/
+
+  # Safe alternative to render_erb_string for clients who can't write ERB: substitutes {{name}}
+  # tokens against the rendering mailer's PLACEHOLDERS allowlist. Never evaluates arbitrary code.
+  # Unknown placeholders are left as-is so clients notice typos instead of getting silent blanks.
+  def render_safe_body(mailer)
+    placeholders = mailer.class::PLACEHOLDERS
+    # rubocop:disable Rails/OutputSafety -- body is the client's own rich-text HTML (same as the
+    # pre-existing non-erb path); only the substituted placeholder values are freshly html_escape'd above
+    body.to_s.gsub(PLACEHOLDER_REGEXP) do |match|
+      resolver = placeholders[Regexp.last_match(1)]
+      value = resolver&.call(mailer)
+      value.present? ? ERB::Util.html_escape(value.to_s) : match
+    end.html_safe
+    # rubocop:enable Rails/OutputSafety
   end
 
   def folder_path

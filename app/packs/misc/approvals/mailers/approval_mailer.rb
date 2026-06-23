@@ -1,6 +1,11 @@
 class ApprovalMailer < ApplicationMailer
   helper ApplicationHelper
 
+  PLACEHOLDERS = ApplicationMailer::PLACEHOLDERS.merge(
+    "approval_title" => ->(m) { m.instance_variable_get(:@approval)&.title },
+    "approval_status" => ->(m) { m.instance_variable_get(:@approval_response)&.status }
+  ).freeze
+
   before_action :set_approval
   def set_approval
     @approval_response = ApprovalResponse.find params[:approval_response_id]

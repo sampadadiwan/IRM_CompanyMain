@@ -1,6 +1,6 @@
 <%= render FormCard.new(title: "Custom Notification : #{custom_notification.owner}") do %>
 
-  <%= form_with(model: custom_notification, validate: true) do |form| %>
+  <%= form_with(model: custom_notification, validate: true, data: { controller: "notification-placeholders", "notification-placeholders-placeholders-value": custom_notification.placeholders_by_email_method.to_json }) do |form| %>
     <% if custom_notification.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(custom_notification.errors.count, "error") %> prohibited this custom_notification from being saved:</h2>
@@ -21,13 +21,15 @@
     <div data-controller="adhoc-notification">
       <div class="form-group">
         <%= form.label :email_method, "For Notification" %>
-        <%= form.select :email_method, custom_notification.email_methods.map{|x| [x.humanize, x]}.sort, {}, class: "form-control", "data-action": "change->adhoc-notification#change"  %>
+        <%= form.select :email_method, custom_notification.email_methods.map{|x| [x.humanize, x]}.sort, {}, class: "form-control", "data-action": "change->adhoc-notification#change change->notification-placeholders#emailMethodChanged", "data-notification-placeholders-target": "emailMethodSelect"  %>
+        <small class="form-text text-muted">Which automatic email this template replaces. Only this one notification is customized - all others keep sending the default email.</small>
       </div>
 
       <% if custom_notification.owner.respond_to?(:adhoc_notifications_to) %>
       <div class="form-group" id="adhoc_notifications_to_form_group">
         <%= form.label :to %>
         <%= form.select :to, custom_notification.owner.adhoc_notifications_to.sort, {include_blank: true}, class: "form-control"  %>
+        <small class="form-text text-muted">Which group of people should receive this notification. Leave blank to use the default recipients for this type of notification.</small>
       </div>
       <% end %>
     </div>
@@ -35,29 +37,37 @@
     <div class="form-group">
       <%= form.label :tag %>
       <%= form.text_field :tag, class: "form-control"  %>
-      <small class="form-text text-muted">Tag to identify this notification</small>
+      <small class="form-text text-muted">An internal label to help you find this template later. Recipients never see this.</small>
     </div>
 
     <div class="form-group">
       <%= form.label :subject %>
       <%= form.text_field :subject, class: "form-control"  %>
+      <small class="form-text text-muted">The subject line recipients see in their inbox. Placeholders are not supported here, only in the body below.</small>
     </div>
 
     <div class="form-group">
       <%= form.label :body %>
-      <%= form.rich_text_area :body, class: "form-control trix"  %>
+      <small class="form-text text-muted d-block mb-2">Write the email body, then use the dropdown below to personalize it. Selecting a placeholder inserts a token like <code>{{investor_name}}</code> into the text, which is automatically replaced with the real value for each recipient when the email is sent. The placeholders on offer depend on the notification chosen above. Any token you type by hand that isn't recognized (e.g. a typo) is sent as plain text rather than being replaced, so double-check spelling if typing one manually.</small>
+      <div class="mb-2" style="max-width: 320px;">
+        <select id="custom_notification_placeholder_picker" class="form-control" data-notification-placeholders-target="placeholderSelect" data-action="change->notification-placeholders#insert">
+          <option value="">+ Insert placeholder...</option>
+        </select>
+      </div>
+      <%= form.rich_text_area :body, class: "form-control trix", data: { "notification-placeholders-target": "editor" }  %>
     </div>
 
     <div class="form-group">
       <%= form.label :whatsapp %>
       <%= form.text_area :whatsapp, class: "form-control"  %>
+      <small class="form-text text-muted">A short, plain-text version of this message sent over WhatsApp where it's enabled. Avoid the characters &amp; ^ # ` ~ - WhatsApp won't display them correctly.</small>
     </div>
 
     <% if custom_notification.owner_type == "CapitalCall" %>
         <div class="form-group">
           <%= form.label :show_details %>
           <%= form.check_box :show_details, class: "form-check-input"  %>
-          <small class="form-text text-muted">This will insert a table to the end of the email outlining all the details of that remittance</small>
+          <small class="form-text text-muted">Adds a table at the end of the email listing the full breakdown of this capital call/remittance (amount, fees, due date, etc).</small>
         </div>
     <% end %>
 
@@ -80,12 +90,13 @@
     <div class="form-group">
       <%= form.label :attachment_names %>
       <%= form.text_field :attachment_names, class: "form-control"  %>
+      <small class="form-text text-muted">Comma-separated names of documents already uploaded against this record (e.g. "Statement of Account, KYC Certificate"). The most recently uploaded document matching each name is attached automatically. Leave blank to send no attachments.</small>
     </div>
 
     <div class="form-group">
       <%= form.label :fuzzy_match, "Close match" %>
       <%= form.check_box :fuzzy_match, class: "form-check-input"  %>
-      <small class="form-text text-muted">This will search and attach documents that closely match with the name</small>
+      <small class="form-text text-muted">Match attachment names above loosely - any document whose name contains the text you entered - instead of requiring an exact match.</small>
     </div>
 
     <% if current_user.support? %>
@@ -93,7 +104,7 @@
       <div class="form-group">
         <%= form.label :is_erb, "Dynamic Template" %>
         <%= form.check_box :is_erb, class: "form-check-input"  %>
-        <small class="form-text text-muted">Check if this is a dynamic template</small>
+        <small class="form-text text-muted">Support only. Renders the body as ERB with full access to the underlying record, instead of running it through the placeholder picker above. Clients cannot edit a template once this is on.</small>
       </div>
 
     <% end %>
@@ -101,13 +112,13 @@
     <div class="form-group">
       <%= form.label :show_details_link %>
       <%= form.check_box :show_details_link, class: "form-check-input"  %>
-      <small class="form-text text-muted">Show view details link in the email</small>
+      <small class="form-text text-muted">Adds a "View Details" link at the bottom of the email so recipients can open this record directly.</small>
     </div>
 
     <div class="form-group">
       <%= form.label :enabled %>
       <%= form.check_box :enabled, class: "form-check-input"  %>
-      <small class="form-text text-muted">Enable / Disable</small>
+      <small class="form-text text-muted">When off, this template is saved but won't be used - the default email is sent instead.</small>
     </div>
 
     <div class="form-group">

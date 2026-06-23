@@ -21,8 +21,21 @@ Scenario Outline: Approval Notifications
 
   Examples:
   	|user	    |entity               |approval                 |msg	|   subject | reminder |
-  	|  	        |entity_type=Company  |title=Test approval;enable_approval_show_kycs=true;response_enabled_email=true      |Approval was successfully created| Please respond to approval| Reminder 1 | 
+  	|  	        |entity_type=Company  |title=Test approval;enable_approval_show_kycs=true;response_enabled_email=true      |Approval was successfully created| Please respond to approval| Reminder 1 |
     |  	        |entity_type=Company  |title=Merger Approval;enable_approval_show_kycs=false;response_enabled_email=false    |Approval was successfully created| Approval from XYZ| Reminder 2 |
+
+
+Scenario: Custom notification body placeholders are substituted safely, without ERB
+  Given there is a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  Given the user has role "approver"
+  Given there is an existing investor "" with "1" users
+  Given there is an approval "title=Placeholder Approval;enable_approval_show_kycs=false;response_enabled_email=false" for the entity
+  Given the investors are added to the approval
+  Then the approval responses are generated with status "Pending"
+  Given there is a custom notification with placeholders in place for the approval with subject "Please respond" with email_method "notify_new_approval"
+  When the approval is approved internally
+  Then the investor gets the approval custom notification with placeholders substituted
 
 
 Scenario Outline: KYC Notifications - not investor_user
