@@ -172,7 +172,7 @@
 <% if @custom_notification.enabled && @custom_notification.owner_type == "Fund" && policy(@custom_notification.owner).trigger_adhoc_notification? %>
   <%
     fund = @custom_notification.owner
-    commitment_options = fund.capital_commitments.map { |cc| [cc.to_s, cc.id] }.sort_by(&:first)
+    commitment_options = fund.capital_commitments.includes(:investor_kyc).map { |cc| [cc.to_s, cc.id] }.sort_by(&:first)
     email_list_link = link_to('View Who Gets Notified', show_email_list_fund_path(fund), class: 'badge bg-primary-subtle text-primary', target: "_blank")
   %>
   <div class="modal fade" id="sendNotificationModal" tabindex="-1" aria-labelledby="sendNotificationModalLabel" aria-hidden="true">
