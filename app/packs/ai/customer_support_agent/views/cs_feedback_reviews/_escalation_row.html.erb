@@ -22,11 +22,7 @@
   </td>
   <td><%= escalation.created_at.strftime("%d %b %Y %H:%M") %></td>
   <td>
-    <%# Link to the feedback review for the last assistant message in this session %>
-   <% last_feedback = @feedback_by_session_id[session&.id] %>
+    <%= link_to "View", customer_support_escalation_path(escalation), class: "btn btn-sm btn-outline-primary" %>
 
-    <% if last_feedback %>
-      <%= link_to "View", cs_feedback_review_path(last_feedback), class: "btn btn-sm btn-outline-primary" %>
-    <% end %>
   </td>
 </tr>

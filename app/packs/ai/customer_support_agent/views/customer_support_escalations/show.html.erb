@@ -1,0 +1,65 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Escalation #<%= @escalation.id %></h1>
+  <%= link_to "Back to Reviews", cs_feedback_reviews_path(tab: "escalations"), class: "btn btn-outline-secondary btn-sm" %>
+</div>
+
+<div class="row">
+  <%# Left column: Conversation %>
+  <div class="col-lg-8">
+    <div class="card mb-3">
+      <div class="card-header bg-light">
+        <strong>Conversation</strong>
+        <span class="text-muted ms-2">Session #<%= @session.id %></span>
+      </div>
+      <div class="card-body">
+        <% @messages.each do |msg| %>
+          <div class="mb-3 p-2 rounded <%= msg.role == 'user' ? 'bg-light' : 'border' %>">
+            <strong class="<%= msg.role == 'user' ? 'text-primary' : 'text-success' %>">
+              <%= msg.role == 'user' ? (@user&.name || 'User') : 'Agent' %>
+            </strong>
+            <span class="text-muted small ms-2"><%= msg.created_at.strftime("%H:%M") %></span>
+            <div class="mt-1 <%= msg.role == 'assistant' ? 'markdown-body' : '' %>"><%= render_markdown(msg.content) %></div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  </div>
+
+  <%# Right column: Escalation details %>
+  <div class="col-lg-4">
+    <div class="card mb-3 border-warning">
+      <div class="card-header bg-warning bg-opacity-25"><strong>Escalation Details</strong></div>
+      <div class="card-body">
+        <p class="mb-1"><strong>Entity:</strong> <%= @entity&.name %></p>
+        <p class="mb-1"><strong>User:</strong> <%= @user&.name %> (<%= @user&.email %>)</p>
+        <p class="mb-1"><strong>Reason:</strong> <%= @escalation.reason.titleize %></p>
+        <p class="mb-1"><strong>Summary:</strong> <%= @escalation.summary %></p>
+        <p class="mb-1"><strong>Status:</strong>
+          <% status_colors = { "open" => "warning", "resolved" => "success", "dismissed" => "info" } %>
+          <span class="badge bg-<%= status_colors[@escalation.status] || 'secondary' %>">
+            <%= @escalation.status.titleize %>
+          </span>
+        </p>
+        <p class="mb-0 text-muted small">Created <%= @escalation.created_at.strftime("%d %b %Y %H:%M") %></p>
+      </div>
+    </div>
+
+    <% if @escalation.open? %>
+      <div class="card mb-3">
+        <div class="card-header bg-light"><strong>Actions</strong></div>
+        <div class="card-body">
+          <div class="d-grid gap-2">
+            <%= button_to "Resolve", customer_support_escalation_path(@escalation),
+                  method: :patch, params: { status: "resolved" },
+                  class: "btn btn-success btn-sm",
+                  data: { confirm: "Mark as resolved?" } %>
+            <%= button_to "Dismiss", customer_support_escalation_path(@escalation),
+                  method: :patch, params: { status: "dismissed" },
+                  class: "btn btn-outline-info btn-sm",
+                  data: { confirm: "Dismiss this escalation?" } %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -163,9 +163,15 @@ class EntitySetting < ApplicationRecord
     cs_judge_enabled == true
   end
 
-  # @return [String] the LLM model to use for CS agent response judging
+  # Resolves the LLM model for CS agent response judging.
+  # Fallback: cs_judge_model → CS_JUDGE_MODEL env → entity default → DEFAULT_MODEL env → gpt-4o-mini
+  #
+  # @return [String] the resolved model name
   def cs_judge_model_name
-    cs_judge_model.presence || ENV.fetch("CS_JUDGE_MODEL", "gpt-4o-mini")
+    cs_judge_model.presence ||
+      ENV.fetch("CS_JUDGE_MODEL", nil) ||
+      default_llm_model.presence ||
+      ENV.fetch("DEFAULT_MODEL", "gpt-4o-mini")
   end
 
   # rubocop : enable Rails/SkipsModelValidations
