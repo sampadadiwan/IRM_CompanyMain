@@ -158,7 +158,9 @@ class Report < ApplicationRecord
 
   def is_dynamic?
     uri = URI.parse(url)
-    decoded_url = "?#{CGI.unescape(uri.query)}" if uri.query.present?
+    return false if uri.query.blank?
+
+    decoded_url = "?#{CGI.unescape(uri.query)}"
     decoded_url.include?("{") && decoded_url.include?("}")
   end
 

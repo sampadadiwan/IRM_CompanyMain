@@ -177,11 +177,12 @@ class ReportBuilderXlsxExporter
   end
 
   def col_letter(n)
+    return "A" if n <= 0
+
     result = ""
-    loop do
+    while n.positive?
       n, rem = (n - 1).divmod(26)
       result = (65 + rem).chr + result
-      break if n.zero?
     end
     result
   end

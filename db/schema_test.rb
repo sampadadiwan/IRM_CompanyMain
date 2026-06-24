@@ -3267,14 +3267,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_100001) do
   end
 
   create_table "report_schedules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.boolean "active"
     t.datetime "created_at", null: false
-    t.string "cron_expression"
+    t.boolean "enabled"
     t.string "frequency"
     t.datetime "last_run_at"
+    t.datetime "next_run_at"
     t.text "recipients"
     t.bigint "report_id", null: false
+    t.integer "run_on_day"
+    t.time "run_at_time", default: "2000-01-01 09:00:00", null: false
+    t.string "timezone", limit: 50, default: "UTC", null: false
     t.datetime "updated_at", null: false
+    t.index ["next_run_at", "enabled"], name: "idx_report_schedules_polling"
     t.index ["report_id"], name: "index_report_schedules_on_report_id"
   end
 

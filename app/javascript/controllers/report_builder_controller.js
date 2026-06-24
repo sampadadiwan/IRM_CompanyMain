@@ -446,18 +446,18 @@ export default class extends Controller {
   // ── Scheduling ────────────────────────────────────────────────────────
 
   toggleSchedule(e) {
-    const active = e.target.checked
+    const enabled = e.target.checked
     const section = this.element.querySelector("#scheduleSettings")
-    section.classList.toggle("d-none", !active)
+    section.classList.toggle("d-none", !enabled)
     this.updateSchedule()
   }
 
   updateSchedule() {
-    const active = this.element.querySelector("#scheduleActiveToggle").checked
+    const enabled = this.element.querySelector("#scheduleEnabledToggle").checked
     const frequency = this.scheduleFrequencyTarget.value
     const recipients = this.scheduleRecipientsTarget.value
 
-    this._patch(this.scheduleUrlValue, { active, frequency, recipients })
+    this._patch(this.scheduleUrlValue, { enabled, frequency, recipients })
       .then(() => this._toast("Schedule saved"))
   }
 

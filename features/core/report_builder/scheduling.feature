@@ -1,57 +1,59 @@
-Feature: ReportBuilderSchedulerJob#due? — timezone-aware schedule evaluation
+Feature: ReportBuilderSchedulerJob — automated report delivery
 
-  Checks that the scheduler correctly determines when a scheduled report is
-  due to run, based on frequency and last_run_at. Tests use Time.current
-  so DST transitions are handled by Rails (no hardcoded UTC offsets).
+  ReportSchedule shares its due-date math with AgentSchedule via the Schedulable
+  concern + NextRunCalculator: creating/editing a schedule precomputes next_run_at,
+  and the scheduler job just polls ReportSchedule.due (next_run_at <= now, enabled).
 
   Background:
     Given a report builder entity and user
     And a report builder report exists for the entity
 
-  # ── NIL last_run_at ──────────────────────────────────────────────────────
+  # ── Cron wiring ──────────────────────────────────────────────────────────
+  # No DB needed: parses config/schedule.rb the same way `whenever` does at
+  # deploy time, without touching the real system crontab.
 
-  Scenario: A schedule with no previous run is always due
-    Given a "daily" schedule with last_run_at "nil"
-    When I check if the schedule is due
-    Then the schedule should be due
+  Scenario: config/schedule.rb wires ReportBuilderSchedulerJob into the hourly cron
+    When I render the whenever crontab from config/schedule.rb
+    Then the rendered crontab should invoke "ReportBuilderSchedulerJob.perform_later"
 
-  # ── DAILY ────────────────────────────────────────────────────────────────
+  # ── next_run_at calculation (shared with AgentSchedule via Schedulable) ───
 
-  Scenario: Daily schedule is due when last run was before today's 9 AM slot
-    Given a "daily" schedule with last_run_at "2 days ago"
-    When I check if the schedule is due
-    Then the schedule should be due
+  Scenario: Creating a schedule computes a future next_run_at
+    Given a "daily" schedule for the report
+    Then the schedule's next_run_at should be in the future
 
-  Scenario: Daily schedule is due when last run was before 9 AM today
-    Given a "daily" schedule with last_run_at "today before 9am"
-    When I check if the schedule is due
-    Then the schedule should be due
+  # ── ReportBuilderSchedulerJob#perform — end-to-end ────────────────────────
+  # ReportBuilderSchedulerJob#perform is what config/schedule.rb invokes hourly
+  # in production via `runner "ReportBuilderSchedulerJob.perform_later"`. These
+  # scenarios cover the full chain: scheduler -> export job -> document + email.
 
-  Scenario: Daily schedule is not due when already run after 9 AM today
-    Given a "daily" schedule with last_run_at "today after 9am"
-    When I check if the schedule is due
-    Then the schedule should not be due
+  Scenario: Running the scheduler triggers an export and emails recipients for a due schedule
+    Given the entity has a root folder
+    And a "daily" schedule for the report
+    And the schedule's next_run_at is in the past
+    And the email queue is empty
+    When I run the report builder scheduler job
+    Then an email should be delivered
+    And the delivered email subject should include "Test Report"
+    And the schedule's last_run_at should be updated
+    And the schedule's next_run_at should be in the future
 
-  # ── WEEKLY ───────────────────────────────────────────────────────────────
+  Scenario: Running the scheduler does nothing for a schedule that is not due yet
+    Given the entity has a root folder
+    And a "daily" schedule for the report
+    And the schedule's next_run_at is in the future
+    And the email queue is empty
+    When I run the report builder scheduler job
+    Then no email should be delivered
+    And the schedule's last_run_at should not have changed
+    And the schedule's next_run_at should not have changed
 
-  Scenario: Weekly schedule is due when last run was before this Monday's 9 AM slot
-    Given a "weekly" schedule with last_run_at "last Monday"
-    When I check if the schedule is due
-    Then the schedule should be due
-
-  Scenario: Weekly schedule is not due when already run after this Monday's 9 AM slot
-    Given a "weekly" schedule with last_run_at "this Monday after 9am"
-    When I check if the schedule is due
-    Then the schedule should not be due
-
-  # ── MONTHLY ──────────────────────────────────────────────────────────────
-
-  Scenario: Monthly schedule is due when last run was before this month's 1st 9 AM
-    Given a "monthly" schedule with last_run_at "last month 1st"
-    When I check if the schedule is due
-    Then the schedule should be due
-
-  Scenario: Monthly schedule is not due when already run after this month's 1st 9 AM
-    Given a "monthly" schedule with last_run_at "this 1st after 9am"
-    When I check if the schedule is due
-    Then the schedule should not be due
+  Scenario: Running the scheduler skips disabled schedules even when due
+    Given the entity has a root folder
+    And a "daily" schedule for the report
+    And the schedule's next_run_at is in the past
+    And the schedule is disabled
+    And the email queue is empty
+    When I run the report builder scheduler job
+    Then no email should be delivered
+    And the schedule's last_run_at should not have changed

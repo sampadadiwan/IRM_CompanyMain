@@ -42,11 +42,13 @@ class ReportBuilderController < ApplicationController
 
   # POST /report_builder
   def create
+    name = params[:name].to_s.strip.presence || "Untitled Report"
+
     @report = Report.new(
       user: current_user,
       entity: current_user.entity,
       curr_role: current_user.curr_role,
-      name: "Untitled Report",
+      name: name,
       report_builder: true,
       url: "/report_builder",
       template: {
@@ -324,7 +326,7 @@ class ReportBuilderController < ApplicationController
     if schedule.update(
       frequency: params[:frequency],
       recipients: recipients,
-      active: params[:active] == "true"
+      enabled: params[:enabled] == "true"
     )
       render json: { ok: true }
     else

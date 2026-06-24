@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_23_100002) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1315,6 +1315,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_23_100002) do
     t.json "json_fields"
     t.string "name"
     t.string "slug"
+    t.integer "stagnant_days", default: 7, null: false
     t.date "start_date"
     t.string "status", limit: 20
     t.string "tags", limit: 100
@@ -3358,14 +3359,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_23_100002) do
   end
 
   create_table "report_schedules", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
-    t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
-    t.string "cron_expression"
+    t.boolean "enabled", default: true, null: false
     t.string "frequency", null: false
     t.datetime "last_run_at"
+    t.datetime "next_run_at"
     t.text "recipients", null: false
     t.bigint "report_id", null: false
+    t.time "run_at_time", default: "2000-01-01 09:00:00", null: false
+    t.integer "run_on_day"
+    t.string "timezone", limit: 50, default: "UTC", null: false
     t.datetime "updated_at", null: false
+    t.index ["next_run_at", "enabled"], name: "idx_report_schedules_polling"
     t.index ["report_id"], name: "index_report_schedules_on_report_id"
   end
 
@@ -3818,9 +3823,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_23_100002) do
     t.bigint "advisor_entity_id"
     t.string "advisor_entity_roles", limit: 100
     t.string "call_code", limit: 3, default: "91"
-    t.datetime "confirmation_sent_at"
-    t.string "confirmation_token"
-    t.datetime "confirmed_at"
     t.datetime "created_at", null: false
     t.string "curr_role", limit: 20
     t.datetime "current_sign_in_at"
@@ -3862,7 +3864,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_23_100002) do
     t.string "unlock_token"
     t.datetime "updated_at", null: false
     t.boolean "whatsapp_enabled", default: false
-    t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["entity_id"], name: "index_users_on_entity_id"

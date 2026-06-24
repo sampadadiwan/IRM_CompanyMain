@@ -546,44 +546,57 @@ Given("a report builder report exists for the entity") do
   @report = build_report(entity: @entity, user: @user, root_model: "Investor")
 end
 
-Given("a {string} schedule with last_run_at {string}") do |frequency, time_desc|
-  last_run_at = case time_desc
-                when "nil"       then nil
-                when "2 days ago" then 2.days.ago
-                when "yesterday" then 1.day.ago
-                when "today before 9am" then Time.current.beginning_of_day + 8.hours
-                when "today after 9am"  then Time.current.beginning_of_day + 10.hours
-                when "this Monday after 9am" then Time.current.beginning_of_week(:monday) + 10.hours
-                when "last Monday"      then 1.week.ago.beginning_of_week(:monday) + 10.hours
-                when "this 1st after 9am" then Time.current.beginning_of_month + 10.hours
-                when "last month 1st"   then 1.month.ago.beginning_of_month + 10.hours
-                else raise "Unknown time_desc: #{time_desc}"
-                end
-
+Given("a {string} schedule for the report") do |frequency|
   @schedule = ReportSchedule.create!(
     report:      @report,
     frequency:   frequency,
     recipients:  ["test@example.com"],
-    active:      true,
-    last_run_at: last_run_at
+    enabled:     true
   )
 end
 
-When("I check if the schedule is due") do
-  # Freeze at 10 AM so daily/weekly/monthly 9 AM slots have already passed,
-  # keeping the assertion deterministic regardless of when the test runs.
-  travel_to(Time.current.beginning_of_day + 10.hours) do
-    job = ReportBuilderSchedulerJob.new
-    @schedule_due = job.send(:due?, @schedule)
-  end
+Given("the schedule's next_run_at is in the future") do
+  @schedule.update_column(:next_run_at, 1.hour.from_now)
 end
 
-Then("the schedule should be due") do
-  expect(@schedule_due).to be true
+Given("the entity has a root folder") do
+  @root_folder = FactoryBot.create(:folder, entity: @entity, level: 0, name: "/")
+  @entity.update_column(:root_folder_id, @root_folder.id)
 end
 
-Then("the schedule should not be due") do
-  expect(@schedule_due).to be false
+Given("the schedule is disabled") do
+  @schedule.update!(enabled: false)
+end
+
+When("I run the report builder scheduler job") do
+  @original_next_run_at = @schedule.next_run_at
+  ReportBuilderSchedulerJob.new.perform
+  @schedule.reload
+end
+
+Then("the schedule's next_run_at should not have changed") do
+  expect(@schedule.next_run_at).to eq(@original_next_run_at)
+end
+
+Then("the schedule's last_run_at should be updated") do
+  expect(@schedule.last_run_at).to be_within(5.seconds).of(Time.current)
+end
+
+Then("the schedule's last_run_at should not have changed") do
+  expect(@schedule.last_run_at).to be_nil
+end
+
+Then("no email should be delivered") do
+  expect(ActionMailer::Base.deliveries).to be_empty
+end
+
+When("I render the whenever crontab from config\\/schedule.rb") do
+  require "whenever"
+  @rendered_crontab = Whenever::JobList.new(string: File.read(Rails.root.join("config/schedule.rb"))).generate_cron_output
+end
+
+Then("the rendered crontab should invoke {string}") do |snippet|
+  expect(@rendered_crontab).to include(snippet)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -650,7 +663,7 @@ end
 
 When("I configure the schedule with frequency {string} and recipient {string}") do |freq, email|
   rb_patch "/report_builder/#{@created_report.id}/schedule",
-           params: { frequency: freq, recipients: email, active: "true" }
+           params: { frequency: freq, recipients: email, enabled: "true" }
 end
 
 When("I request the preview for the report") do

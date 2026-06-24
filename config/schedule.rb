@@ -36,3 +36,8 @@ end
 every 1.year, at: 'December 15 03:00am', roles: [:primary] do
   rake "partitions:ensure_account_entries"
 end
+
+# Runs every hour; ReportBuilderSchedulerJob itself decides which ReportSchedules are due
+every 1.hour, roles: [:primary] do
+  runner "ReportBuilderSchedulerJob.perform_later"
+end

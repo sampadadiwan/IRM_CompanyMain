@@ -49,7 +49,7 @@
   end
 %>
 
-<div data-controller="report-builder command-palette"
+<div data-controller="report-builder command-palette tooltip"
      data-report-builder-aggregate-url-value="<%= update_report_builder_aggregate_path(@report) %>"
      data-report-builder-sort-url-value="<%= update_report_builder_sort_path(@report) %>"
      data-report-builder-name-url-value="<%= update_report_builder_name_path(@report) %>"
@@ -307,6 +307,7 @@
           <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom">
             <h6 class="card-title mb-0 d-flex align-items-center gap-2">
               <i class="ti ti-git-merge text-primary"></i> Relations & Joins
+              <i class="ti ti-info-circle text-muted" data-bs-toggle="tooltip" data-bs-placement="top" title="Each card below is an association joined onto the root model. By default a join contributes aggregate columns (sum, count, avg, latest…). Use Pivot Configuration inside a card to instead spread that join's rows into one column per category."></i>
             </h6>
             <button class="btn btn-link btn-xs p-0" type="button" data-bs-toggle="collapse" data-bs-target="#joinMapCollapse">
               <i class="ti ti-sitemap"></i> Map
@@ -366,6 +367,7 @@
                       <div class="d-flex align-items-center justify-content-between mb-2">
                         <span class="small fw-bold text-secondary text-uppercase" style="font-size: 0.65rem; letter-spacing: 0.05em">
                           <i class="ti ti-layout-columns me-1"></i>Pivot Configuration
+                          <i class="ti ti-info-circle" data-bs-toggle="tooltip" data-bs-placement="top" title="Optional. Turns this join into dynamic columns: one output column per distinct value of 'Categories', filled with 'Value' aggregated by 'Aggregate'. Leave unset to keep this join as plain aggregate columns instead."></i>
                         </span>
                         <% if pivot_active %>
                           <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill fs-1">Active</span>
@@ -426,7 +428,8 @@
                   <div class="d-flex align-items-center">
                     <div class="input-group input-group-sm shadow-sm border rounded overflow-hidden flex-grow-1">
                       <select name="relation_json" class="form-select border-0 bg-white"
-                              data-action="change->report-builder#joinSelectChanged">
+                              data-action="change->report-builder#joinSelectChanged"
+                              title="Attach another association from the root model as a new join card above.">
                         <option value="">+ Add new relation…</option>
                         <% available_joins.each do |assoc| %>
                           <option value="<%= assoc.to_json %>">
@@ -607,42 +610,6 @@
           </div>
         </div>
 
-        <%# View & Sharing Card %>
-        <div class="card border shadow-sm mt-4">
-          <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom">
-            <h6 class="card-title mb-0 d-flex align-items-center gap-2">
-              <i class="ti ti-layout-grid text-primary"></i> View & Sharing
-            </h6>
-          </div>
-          <div class="card-body p-3">
-            <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="isViewToggle" 
-                     <%= @report.is_view ? 'checked' : '' %>
-                     data-action="change->report-builder#toggleView">
-              <label class="form-check-label fw-bold" for="isViewToggle">Save as View</label>
-              <div class="form-text small">Make this report available as a live view on index pages.</div>
-            </div>
-
-            <div id="viewTargetSection" class="<%= @report.is_view ? '' : 'd-none' %> mb-3">
-              <label class="form-label small fw-bold">Target Page</label>
-              <select class="form-select form-select-sm" data-action="change->report-builder#updateViewTarget" data-report-builder-target="viewTarget">
-                <option value="">— select page —</option>
-                <option value="investors_index" <%= @report.view_target == 'investors_index' ? 'selected' : '' %>>Investors Index</option>
-                <option value="funds_index" <%= @report.view_target == 'funds_index' ? 'selected' : '' %>>Funds Index</option>
-                <option value="commitments_index" <%= @report.view_target == 'commitments_index' ? 'selected' : '' %>>Commitments Index</option>
-              </select>
-            </div>
-
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="sharedToggle" 
-                     <%= @report.shared ? 'checked' : '' %>
-                     data-action="change->report-builder#toggleShared">
-              <label class="form-check-label fw-bold" for="sharedToggle">Share with Team</label>
-              <div class="form-text small">Allow other users in your entity to see and run this report.</div>
-            </div>
-          </div>
-        </div>
-
         <%# Schedule Card %>
         <div class="card border shadow-sm mt-4">
           <div class="card-header bg-white py-3 d-flex align-items-center justify-content-between border-bottom">
@@ -653,13 +620,13 @@
           <div class="card-body p-3">
             <% schedule = @report.report_schedule || ReportSchedule.new %>
             <div class="form-check form-switch mb-3">
-              <input class="form-check-input" type="checkbox" id="scheduleActiveToggle" 
-                     <%= schedule.active ? 'checked' : '' %>
+              <input class="form-check-input" type="checkbox" id="scheduleEnabledToggle"
+                     <%= schedule.enabled ? 'checked' : '' %>
                      data-action="change->report-builder#toggleSchedule">
-              <label class="form-check-label fw-bold" for="scheduleActiveToggle">Enable Scheduling</label>
+              <label class="form-check-label fw-bold" for="scheduleEnabledToggle">Enable Scheduling</label>
             </div>
 
-            <div id="scheduleSettings" class="<%= schedule.active ? '' : 'd-none' %>">
+            <div id="scheduleSettings" class="<%= schedule.enabled ? '' : 'd-none' %>">
               <div class="mb-3">
                 <label class="form-label small fw-bold">Frequency</label>
                 <select class="form-select form-select-sm" data-action="change->report-builder#updateSchedule" data-report-builder-target="scheduleFrequency">
@@ -697,7 +664,7 @@
               </h6>
               <p class="text-muted small mb-0 mt-1">
                 Showing up to <strong>50 rows</strong> — a quick sample to check your setup.
-                <i class="ti ti-info-circle ms-1" title="Previewing is fast because it only fetches a tiny slice. Running the full report (especially with joins, pivots, or many rows) takes more time and database work — use Download to get all your data."></i>
+                <i class="ti ti-info-circle ms-1" data-bs-toggle="tooltip" data-bs-placement="top" title="Previewing is fast because it only fetches a tiny slice. Running the full report (especially with joins, pivots, or many rows) takes more time and database work — use Download to get all your data."></i>
                 To get all your data, use <strong>Download as Excel</strong>.
               </p>
             </div>
