@@ -97,25 +97,29 @@ Design decisions to discuss before implementing are called out per module.
 | 1 | `CustomerSupportEscalationService#escalate!` — creates record, locks session (`status: "escalated"`), emails CS via mailer | Req §5 |
 | 2 | Wire `EscalateToHumanTool` → calls escalation service | Done in Module 2 |
 | 3 | `CustomerSupportEscalationMailer` — emails `SUPPORT_EMAIL_TO` with entity, user, reason, summary, last 10 messages | Req §5 |
-| 4 | Escalation guard in `GenericChatAgent#initialize_chat` — check `session.escalated?`, skip LLM, return canned message | Req §5 |
-| 5 | **ReAct loop cap:** Configurable `max_tool_iterations` on `BaseChatProvider` (default nil), overridden to 15 in `FmCsChatProvider`. `before_tool_call` callback counts calls, raises `MaxToolIterationsExceeded`, auto-escalates with reason `max_iterations` | Req §3, §5 |
+| 4 | Escalation notice in `GenericChatAgent#initialize_chat` — check `session.escalated?`, store notice in `ctx[:escalation_notice]`, prepend to AI response (user continues chatting) | Req §5 (updated 2026-06-23) |
+| 5 | **ReAct loop cap:** Configurable `max_tool_iterations` on `BaseChatProvider` (default nil), overridden to 6 in `FmCsChatProvider`. `before_tool_call` callback counts calls, raises `MaxToolIterationsExceeded`, auto-escalates with reason `max_iterations` | Req §3, §5 |
 | 6 | **Resume from escalation:** `CustomerSupportEscalation#resolve!` flips session back to `status: "active"` | Req §5 |
+| 7 | **Escalation detail view:** `CustomerSupportEscalationsController` (show/update) + `CustomerSupportEscalationPolicy` (IDOR-safe via SupportClientMapping scope) + `show.html.erb` (2-column: last 2 messages + details + resolve/dismiss) | Added 2026-06-23 |
 
 **Design decisions resolved:**
 - ReAct cap lives in `GenericChatAgent` (shared), configurable via `BaseChatProvider#max_tool_iterations`. CS-only override in `FmCsChatProvider`.
-- Cap is 15 individual tool calls (not 6 LLM iterations) because `before_tool_call` fires per tool, not per round-trip.
-- Escalation guard is in `initialize_chat` (not `execute_chat`) because `load_conversation_history` in `setup_ruby_llm_chat` crashes on sessions with prior tool-call messages.
-- Phase 1 locks the entire session on escalation (Option A). Future Option B: per-message escalation so agent can still answer unrelated questions.
-- Mailer sends to `ENV["SUPPORT_EMAIL_TO"]` directly, bypasses `setup_defaults`/`send_mail` (not an entity→user email).
+- Cap is 6 individual tool calls (not 15) because `before_tool_call` fires per tool, not per round-trip.
+- **Escalation does NOT block the user from chatting (updated 2026-06-23).** `initialize_chat` stores an escalation notice in `ctx`; `persist_conversation` prepends it to the AI response. User sees both the acknowledgment and the agent's answer.
+- Mailer sends to entity-mapped support users via `SupportClientMapping` (fallback: `ENV["SUPPORT_EMAIL_TO"]`).
 - `customer_support_agent` added to `ai_view_paths` in `config/application.rb` for mailer template resolution.
+- **Escalation detail page** at `/customer_support_escalations/:id` — shows last 2 messages at escalation time (filtered by `created_at <= escalation.created_at + 1s`), escalation details, resolve/dismiss buttons. Scoped by `SupportClientMapping` to prevent IDOR.
 
 **Bugs fixed during testing:**
 - Trailblazer steps need `return true` (not bare `return`) to signal success
 - `SearchUserGuidesTool` improved: filename-priority ranking + dedup overlapping matches (was returning only TOC lines)
+- (2026-06-23) Escalation blocking chat: users couldn't continue after escalation. Fixed by switching from session lock to notice-prepend pattern.
+- (2026-06-23) ResponseJudgeJob enqueued even when judge disabled. Fixed by guarding on `cs_judge_enabled?`.
+- (2026-06-23) Judge model defaulting to gpt-4o-mini instead of following entity default. Fixed fallback chain.
 
 **Phase 2 addition:** WATI `assignConversation` API call for WhatsApp escalations.
 
-**Deliverable:** Ask "I need to talk to a human" → agent escalates, session locked, CS email sent. ✅
+**Deliverable:** Ask "I need to talk to a human" → agent escalates, CS email sent, user can continue chatting with notice. ✅
 
 ---
 
@@ -153,13 +157,14 @@ Design decisions to discuss before implementing are called out per module.
 | 4 | Upsert into `agent_chat_message_feedbacks` — creates or updates the feedback row (user rating may already exist) | |
 | 5 | Auto-flag: if `judge_total < 5`, set `status: "needs_review"` | Req §7 |
 | 6 | Migration: `cs_judge_enabled` (boolean, default true) + `cs_judge_model` (string) on `entity_settings` | Entity-configurable |
-| 7 | `EntitySetting#cs_judge_enabled?` + `cs_judge_model_name` helper methods | Fallback: ENV → gpt-4o-mini |
+| 7 | `EntitySetting#cs_judge_enabled?` + `cs_judge_model_name` helper methods | Fallback: cs_judge_model → CS_JUDGE_MODEL env → default_llm_model → DEFAULT_MODEL env → gpt-4o-mini |
 | 8 | Entity settings UI: toggle + model select on entity edit form + show page | |
 
 **Design decisions resolved:**
-- **Open Question #7 RESOLVED:** Judge model is entity-configurable via `EntitySetting#cs_judge_model`. Fallback chain: entity setting → `ENV["CS_JUDGE_MODEL"]` → `gpt-4o-mini`.
+- **Open Question #7 RESOLVED:** Judge model is entity-configurable via `EntitySetting#cs_judge_model`. Fallback chain: `cs_judge_model` → `ENV["CS_JUDGE_MODEL"]` → `default_llm_model` → `ENV["DEFAULT_MODEL"]` → `gpt-4o-mini`.
 - Judge runs for **CustomerSupportAgent only** — gated in `GenericChatAgent#persist_conversation` on `agent_type`.
 - Enqueue in `GenericChatAgent` (shared file) with CS-only gate — keeps the hook close to message persistence.
+- **Judge job only enqueued when `cs_judge_enabled?` is true** — previously always enqueued regardless of setting.
 - Entity admin can **disable** judging entirely via `cs_judge_enabled` toggle (saves LLM costs).
 - Job queue: `:low` with 2 retry attempts. Upsert logic preserves user ratings when judge scores arrive.
 
