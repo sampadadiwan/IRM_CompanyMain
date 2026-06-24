@@ -231,7 +231,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "channel", limit: 20, default: "web", null: false
     t.text "content", null: false
     t.datetime "created_at", null: false
-    t.boolean "guide_search_hit", default: false, null: false
+    t.boolean "guide_search_hit", default: false
     t.json "metadata"
     t.string "role", limit: 20, null: false
     t.json "tool_calls_summary"
@@ -279,16 +279,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   create_table "agent_schedules", force: :cascade do |t| 
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
-    t.boolean "enabled", default: false, null: false
+    t.boolean "enabled", default: false
     t.bigint "entity_id", null: false
     t.json "failure_notification_user_ids"
     t.string "frequency", limit: 20, null: false
     t.datetime "last_run_at"
     t.datetime "next_run_at"
-    t.boolean "notify_caphive_on_error", default: true, null: false
-    t.boolean "notify_on_failure", default: true, null: false
-    t.boolean "notify_on_partial_success", default: true, null: false
-    t.boolean "notify_on_success", default: false, null: false
+    t.boolean "notify_caphive_on_error", default: true
+    t.boolean "notify_on_failure", default: true
+    t.boolean "notify_on_partial_success", default: true
+    t.boolean "notify_on_success", default: false
     t.integer "retry_count", default: 0, null: false
     t.integer "retry_interval_minutes", default: 0, null: false
     t.time "run_at_time", null: false
@@ -438,7 +438,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.datetime "updated_at", null: false
     t.datetime "updated_at_document_only"
     t.datetime "updated_at_web_included"
-    t.boolean "web_search_enabled", default: false, null: false
+    t.boolean "web_search_enabled", default: false
     t.index ["ai_portfolio_report_id"], name: "index_ai_report_sections_on_ai_portfolio_report_id"
   end
   create_table "ai_rules", force: :cascade do |t| 
@@ -563,7 +563,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "owner_type"
     t.integer "pending_count", default: 0
     t.integer "rejected_count", default: 0
-    t.boolean "response_enabled_email", default: false, null: false
+    t.boolean "response_enabled_email", default: false
     t.string "response_status"
     t.string "title"
     t.datetime "updated_at", null: false
@@ -820,7 +820,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.json "json_fields"
     t.decimal "net_of_account_entries_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "net_payable_cents", precision: 20, scale: 2, default: "0.0"
-    t.boolean "notification_sent", default: false, null: false
+    t.boolean "notification_sent", default: false
     t.date "payment_date"
     t.decimal "percentage", precision: 12, scale: 8, default: "0.0"
     t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
@@ -885,7 +885,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   create_table "capital_remittance_payments", force: :cascade do |t| 
     t.decimal "amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "capital_remittance_id", null: false
-    t.boolean "convert_to_fund_currency", default: true, null: false
+    t.boolean "convert_to_fund_currency", default: true
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.bigint "entity_id", null: false
@@ -970,7 +970,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   create_table "chats", force: :cascade do |t| 
     t.string "assistant_type", limit: 50
     t.datetime "created_at", null: false
-    t.boolean "enable_broadcast", default: true, null: false
+    t.boolean "enable_broadcast", default: true
     t.bigint "entity_id"
     t.bigint "model_id"
     t.string "name"
@@ -1084,7 +1084,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.boolean "enabled", default: true
     t.bigint "entity_id", null: false
     t.string "for_type", limit: 100
-    t.boolean "fuzzy_match", default: false, null: false
+    t.boolean "fuzzy_match", default: false
     t.boolean "is_erb", default: false
     t.boolean "latest", default: true
     t.bigint "owner_id", null: false
@@ -1133,7 +1133,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.bigint "owner_id"
     t.string "owner_type"
     t.integer "position"
-    t.boolean "show_menu", default: true, null: false
+    t.boolean "show_menu", default: true
     t.string "size", limit: 10
     t.string "tag_list", limit: 20
     t.string "tags", limit: 100
@@ -1292,7 +1292,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "audit_name", limit: 65
     t.bigint "capital_distribution_id", null: false
     t.datetime "created_at", null: false
-    t.boolean "cumulative", default: false, null: false
+    t.boolean "cumulative", default: false
     t.date "end_date"
     t.bigint "entity_id", null: false
     t.string "entry_type"
@@ -1335,7 +1335,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.index ["document_id"], name: "index_doc_shares_on_document_id"
   end
   create_table "documents", force: :cascade do |t| 
-    t.boolean "approved", default: false, null: false
+    t.boolean "approved", default: false
     t.bigint "approved_by_id"
     t.date "as_of"
     t.datetime "created_at", null: false
@@ -1354,7 +1354,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.integer "impressions_count", default: 0
     t.json "json_fields"
     t.datetime "last_status_updated_at"
-    t.boolean "locked", default: false, null: false
+    t.boolean "locked", default: false
     t.string "name"
     t.boolean "orignal"
     t.bigint "owner_id"
@@ -1364,12 +1364,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "provider_doc_id"
     t.boolean "public_visibility", default: false
     t.text "qna"
-    t.boolean "send_email", null: false
-    t.boolean "sent_for_esign", default: false, null: false
+    t.boolean "send_email"
+    t.boolean "sent_for_esign", default: false
     t.datetime "sent_for_esign_date"
-    t.boolean "signature_enabled", default: false, null: false
+    t.boolean "signature_enabled", default: false
     t.string "tag_list", limit: 120
-    t.boolean "template", default: false, null: false
+    t.boolean "template", default: false
     t.string "template_docs_to_append"
     t.string "text", default: "--- []\n"
     t.datetime "updated_at", null: false
@@ -1457,7 +1457,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.index ["sub_domain"], name: "index_entities_on_sub_domain", unique: true
   end
   create_table "entity_settings", force: :cascade do |t| 
-    t.boolean "ai_kpi_reader_shadow", default: false, null: false
+    t.boolean "ai_kpi_reader_shadow", default: false
     t.boolean "aml_enabled", default: false
     t.string "anthropic_api_key"
     t.string "append_to_commitment_agreement"
@@ -1466,7 +1466,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "cc"
     t.boolean "ckyc_kra_enabled"
     t.datetime "created_at", null: false
-    t.boolean "cs_judge_enabled", default: true, null: false
+    t.boolean "cs_judge_enabled", default: true
     t.string "cs_judge_model"
     t.text "custom_dashboards"
     t.integer "custom_flags", default: 0
@@ -1498,13 +1498,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.integer "kpi_reminder_before"
     t.string "kpi_reminder_frequency", limit: 10
     t.string "kyc_bank_account_types"
-    t.boolean "kyc_doc_first_wizard", default: false, null: false
+    t.boolean "kyc_doc_first_wizard", default: false
     t.text "kyc_docs_note"
     t.date "last_snapshot_on"
     t.string "mailbox", limit: 30
     t.string "mcp_allowed_clients", default: "[]"
     t.string "mcp_allowed_roles", default: "[\"employee\"]"
-    t.boolean "mcp_enabled", default: false, null: false
+    t.boolean "mcp_enabled", default: false
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
@@ -1524,7 +1524,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.boolean "trial"
     t.date "trial_end_date"
     t.datetime "updated_at", null: false
-    t.boolean "use_ai_kpi_reader", default: false, null: false
+    t.boolean "use_ai_kpi_reader", default: false
     t.string "valuation_math"
     t.string "value_bridge_cols"
     t.string "whatsapp_endpoint"
@@ -1621,7 +1621,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "investor_name", limit: 100
     t.bigint "investor_signatory_id"
     t.json "json_fields"
-    t.boolean "show_data_room", default: false, null: false
+    t.boolean "show_data_room", default: false
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
     t.boolean "verified", default: false
@@ -1645,7 +1645,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.index ["user_id"], name: "index_faq_threads_on_user_id"
   end
   create_table "favorites", force: :cascade do |t| 
-    t.boolean "blocked", default: false, null: false
+    t.boolean "blocked", default: false
     t.datetime "created_at", null: false
     t.bigint "favoritable_id"
     t.string "favoritable_type"
@@ -1706,7 +1706,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "condition_state", limit: 5, default: "show"
     t.datetime "created_at", null: false
     t.string "field_type", limit: 20
-    t.boolean "filter_in_search", default: false, null: false
+    t.boolean "filter_in_search", default: false
     t.bigint "form_type_id", null: false
     t.boolean "has_attachment", default: false
     t.text "help_text"
@@ -1748,7 +1748,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.index ["sluggable_type", "sluggable_id"], name: "index_friendly_id_slugs_on_sluggable_type_and_sluggable_id"
   end
   create_table "fund_formulas", force: :cascade do |t| 
-    t.boolean "add_to_commitment_cache", default: true, null: false
+    t.boolean "add_to_commitment_cache", default: true
     t.text "ai_description"
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
@@ -1975,7 +1975,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.boolean "editable_formulas", default: false
-    t.boolean "enable_ai_commentary", default: true, null: false
+    t.boolean "enable_ai_commentary", default: true
     t.bigint "entity_id", null: false
     t.string "esign_emails"
     t.date "first_close_date"
@@ -2284,7 +2284,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   create_table "investor_kpi_mappings", force: :cascade do |t| 
     t.string "ancestry", collation: "NOCASE"
     t.string "autofill"
-    t.boolean "base_for_common_size", default: false, null: false
+    t.boolean "base_for_common_size", default: false
     t.string "category", limit: 40
     t.integer "child_count", default: 0
     t.string "compute_formula"
@@ -2360,7 +2360,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.datetime "link_sent_at"
     t.text "notification_msg"
     t.integer "onboarding_nudge_count", default: 0, null: false
-    t.boolean "onboarding_nudges_paused", default: false, null: false
+    t.boolean "onboarding_nudges_paused", default: false
     t.string "onboarding_state"
     t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.text "pan_verification_response"
@@ -2540,11 +2540,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   create_table "kpi_reports", force: :cascade do |t| 
     t.text "analysis"
     t.date "as_of"
-    t.boolean "autofill_completed", default: false, null: false
+    t.boolean "autofill_completed", default: false
     t.datetime "created_at", null: false
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
-    t.boolean "enable_portco_upload", default: false, null: false
+    t.boolean "enable_portco_upload", default: false
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.bigint "import_upload_id"
@@ -2813,7 +2813,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.index ["token"], name: "index_oauth_access_tokens_on_token", unique: true
   end
   create_table "oauth_applications", force: :cascade do |t| 
-    t.boolean "confidential", default: true, null: false
+    t.boolean "confidential", default: true
     t.datetime "created_at", null: false
     t.string "name", null: false
     t.text "redirect_uri", null: false
@@ -3019,7 +3019,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.bigint "orignal_id"
     t.bigint "portfolio_company_id", null: false
     t.string "portfolio_company_name", limit: 100
-    t.boolean "proforma", default: false, null: false
+    t.boolean "proforma", default: false
     t.decimal "quantity", precision: 24, scale: 8, default: "0.0"
     t.decimal "quantity_as_of_date", precision: 10, default: "0"
     t.bigint "ref_id", default: 0, null: false
@@ -3107,7 +3107,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   end
   create_table "portfolio_report_templates", force: :cascade do |t| 
     t.integer "auto_generate_day", default: 1
-    t.boolean "auto_generate_enabled", default: false, null: false
+    t.boolean "auto_generate_enabled", default: false
     t.string "auto_generate_frequency"
     t.datetime "auto_generate_last_run_at"
     t.json "branding"
@@ -3217,7 +3217,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   end
   create_table "report_schedules", force: :cascade do |t| 
     t.datetime "created_at", null: false
-    t.boolean "enabled", default: true, null: false
+    t.boolean "enabled", default: true
     t.string "frequency", null: false
     t.datetime "last_run_at"
     t.datetime "next_run_at"
@@ -3237,7 +3237,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "curr_role", limit: 10, default: "employee"
     t.text "description"
     t.bigint "entity_id"
-    t.boolean "is_view", default: false, null: false
+    t.boolean "is_view", default: false
     t.datetime "last_run_at"
     t.text "metadata"
     t.string "model"
@@ -3250,9 +3250,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.string "notification_start_unit", default: "days"
     t.datetime "notify_last_run_at"
     t.datetime "notify_next_run_at"
-    t.boolean "report_builder", default: false, null: false
+    t.boolean "report_builder", default: false
     t.boolean "send_notification", default: false
-    t.boolean "shared", default: false, null: false
+    t.boolean "shared", default: false
     t.string "tag_list"
     t.json "template"
     t.text "template_xls_data"
@@ -3461,7 +3461,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   create_table "support_agent_reports", force: :cascade do |t| 
     t.datetime "created_at", null: false
     t.json "json_fields"
-    t.boolean "latest", default: false, null: false
+    t.boolean "latest", default: false
     t.bigint "owner_id", null: false
     t.string "owner_name", limit: 50
     t.string "owner_type", null: false
@@ -3479,7 +3479,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.datetime "created_at", null: false
     t.string "description"
     t.bigint "document_folder_id"
-    t.boolean "enabled", default: true, null: false
+    t.boolean "enabled", default: true
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.json "json_fields"
@@ -3714,7 +3714,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   create_table "validation_rule_overrides", force: :cascade do |t| 
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
-    t.boolean "enabled", default: true, null: false
+    t.boolean "enabled", default: true
     t.bigint "entity_id", null: false
     t.string "message_override"
     t.json "param_overrides", null: false
@@ -3731,9 +3731,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.datetime "created_at", null: false
     t.bigint "created_by_id"
     t.text "description"
-    t.boolean "enabled", default: false, null: false
+    t.boolean "enabled", default: false
     t.bigint "entity_id"
-    t.boolean "is_default", default: false, null: false
+    t.boolean "is_default", default: false
     t.string "message_template", null: false
     t.string "name", null: false
     t.json "params", null: false
@@ -3762,7 +3762,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.decimal "per_share_value_cents", precision: 20, scale: 8, default: "0.0"
     t.text "report_data"
     t.string "sub_category", limit: 100
-    t.boolean "synthetic", default: false, null: false
+    t.boolean "synthetic", default: false
     t.datetime "updated_at", null: false
     t.decimal "valuation_cents", precision: 20, scale: 2, default: "0.0"
     t.date "valuation_date"
@@ -3810,7 +3810,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
   end
   create_table "workflow_actor_responses", force: :cascade do |t| 
     t.bigint "actor_id", null: false
-    t.boolean "archived", default: false, null: false
+    t.boolean "archived", default: false
     t.integer "channel", default: 0, null: false
     t.datetime "created_at", null: false
     t.text "note"
@@ -3876,7 +3876,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.index ["workflow_template_id"], name: "index_workflow_steps_on_workflow_template_id"
   end
   create_table "workflow_templates", force: :cascade do |t| 
-    t.boolean "attach_document_in_email", default: false, null: false
+    t.boolean "attach_document_in_email", default: false
     t.datetime "created_at", null: false
     t.text "description"
     t.bigint "entity_id", null: false

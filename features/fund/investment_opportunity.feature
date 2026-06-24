@@ -1,6 +1,7 @@
 Feature: Investment Opportunity
   Can create and view a investment_opportunity as a company
 
+@notification
 Scenario Outline: Create new investment_opportunity
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_inv_opportunities=true;enable_documents=true"
   Given the user has role "company_admin"
@@ -23,6 +24,20 @@ Scenario Outline: Create new investment_opportunity
   	|investment_opportunity |notify_open_for_interests                                          | notify_allocation | notification_sent |
   	|company_name=IO 1   |subject=IO1 is now open;email_method=notify_open_for_interests | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
     |company_name=IO 2   |subject=IO2 is now open;email_method=notify_open_for_interests | subject=Allocation completed;email_method=notify_open_for_interests;tag=IO | Yes |
+
+@notification
+Scenario: IO notification placeholder substitution
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund;enable_inv_opportunities=true;enable_documents=true"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "1" users
+  And I am at the investment_opportunities page
+  When I create a new investment_opportunity "company_name=Placeholder IO"
+  Then I should see the "opportunity was successfully created"
+  And an investment_opportunity should be created
+  And I should see the investment_opportunity details on the details page
+  Given there is a custom notification with placeholders for the IO with subject "IO Placeholder Test" and email_method "notify_open_for_interests"
+  When the "notify_open_for_interests" notification is sent
+  Then the IO notification placeholders are resolved correctly
 
 
 @notification

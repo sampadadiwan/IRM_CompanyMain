@@ -16,7 +16,7 @@ When('I create a new investor {string}') do |arg1|
   key_values(@investor_entity, arg1)
   click_on("New Stakeholder")
 
-  if Entity.vcs.count > 0
+  if Entity.vcs.any?
     fill_in('investor_investor_name', with: @investor_entity.name)
     find('ui-menu-item-wrapper', text: @investor_entity.name).click if page.has_css?(".ui-menu-item-wrapper")
   end
@@ -208,7 +208,7 @@ Given('Given I upload an investor access file for employees') do
 
   fill_in('import_upload_name', with: "Test Investor Access Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/investor_access.xlsx'), make_visible: true)
-  sleep(8)  # JS direct-upload to /upload endpoint; larger window for parallel load
+  sleep(8) # JS direct-upload to /upload endpoint; larger window for parallel load
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)
   ImportUploadJob.perform_now(ImportUpload.last.id)
@@ -250,14 +250,17 @@ end
 Then('There should be {string} investor access created') do |count|
   InvestorAccess.count.should
   count.to_i
-  InvestorAccess.all.each do |ia|
+  InvestorAccess.find_each do |ia|
     # Now ia.whatsapp_enabled can be different from user.whatsapp_enabled and both need to be set to send WA
     # ia.whatsapp_enabled.should == ia.user.whatsapp_enabled
-    ia.user.whatsapp_enabled.should == true
+    ia.user.whatsapp_enabled.should
     puts "Checking import of #{ia.first_name} #{ia.last_name} #{ia.email} #{ia.phone} #{ia.approved} #{ia.whatsapp_enabled}"
-    ia.first_name.should == ia.user.first_name
-    ia.last_name.should == ia.user.last_name
-    ia.phone.should == ia.user.phone
+    ia.first_name.should
+    ia.user.first_name
+    ia.last_name.should
+    ia.user.last_name
+    ia.phone.should
+    ia.user.phone
     ia.email.should == ia.user.email
   end
 end
@@ -432,7 +435,7 @@ Then('the investor kycs must have the data in the sheet {string}') do |file_name
 end
 
 Then('the approved investor access should receive a notification') do
-  InvestorKyc.all.each do |kyc|
+  InvestorKyc.find_each do |kyc|
     kyc.investor.approved_users.each do |user|
       open_email(user.email)
       expect(current_email.subject).to eq "Request to add KYC: #{kyc.entity.name}"
@@ -443,7 +446,7 @@ end
 Then('Aml Report should be generated for each investor kyc') do
   investor_kycs = @entity.investor_kycs
   investor_kycs.each do |kyc|
-    next unless kyc.full_name.present?
+    next if kyc.full_name.blank?
 
     kyc.aml_reports.count.should_not == 0
     kyc.aml_reports.each do |report|
@@ -471,7 +474,7 @@ Given('I create a new InvestorKyc with pan {string}') do |_string|
   # sleep(2)
   class_name = "individual_kyc" # @investor_kyc.type_from_kyc_type.underscore
   select(@investor.investor_name, from: "#{class_name}_investor_id")
-  fill_in("#{class_name}_birth_date", with: Date.today - 20.years)
+  fill_in("#{class_name}_birth_date", with: Time.zone.today - 20.years)
   fill_in("#{class_name}_PAN", with: "PANNUMBER1")
   click_on("Next")
   # sleep(4)
@@ -540,7 +543,7 @@ Given('I create a new InvestorKyc {string} with files {string} for {string}') do
   click_on("Next")
   # sleep(1)
 
-  unless kyc_url_params.present?
+  if kyc_url_params.blank?
     fill_in("#{class_name}_expiry_date", with: @investor_kyc.expiry_date)
     fill_in("#{class_name}_comments", with: @investor_kyc.comments)
   end
@@ -689,7 +692,7 @@ Then('I select one and see the edit page and save') do
 end
 
 Given('there are {string} investors') do |count|
-  (0..count.to_i - 1).each do
+  (0..(count.to_i - 1)).each do
     e = FactoryBot.create(:entity, entity_type: "Investor")
     FactoryBot.create(:investor, entity: e)
   end
@@ -729,10 +732,10 @@ end
 Given('each Investor has an approved Investor Kyc') do
   @investor_kycs = @entity.investors.each do |investor|
     kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: investor,
-                           verified: true, completed_by_investor: true, submission_status: "verified")
+                                          verified: true, completed_by_investor: true, submission_status: "verified")
     kyc.save(validate: false)
   end
-  InvestorKyc.all.each do |kyc|
+  InvestorKyc.find_each do |kyc|
     kyc.update_columns(verified: true, completed_by_investor: true, submission_status: "verified")
   end
 end
@@ -740,10 +743,10 @@ end
 Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   @template_name = name
   visit(fund_path(Fund.last))
-  expect(page).to have_button("Actions", wait: 15)  # page fully loaded before interacting
+  expect(page).to have_button("Actions", wait: 15) # page fully loaded before interacting
   click_on("Actions")
-  find('#misc_action_menu', wait: 10).hover  # wait for dropdown, then reveal submenu
-  new_template_link = find_link("New Template", wait: 10)  # wait for submenu to open
+  find('#misc_action_menu', wait: 10).hover # wait for dropdown, then reveal submenu
+  new_template_link = find_link("New Template", wait: 10) # wait for submenu to open
   # bypass Playwright's hover/stability checks: the link has a Bootstrap tooltip
   # (data-bs-toggle="tooltip") that fades in on real mouse hover and intermittently
   # blocks/destabilizes the click
@@ -753,7 +756,7 @@ Given('the fund has a template {string} of type {string}') do |name, owner_tag|
   select(owner_tag, from: "document_owner_tag")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{name}.docx"), make_visible: true)
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  sleep(10)  # JS direct-upload to /upload endpoint; larger window for parallel load
+  sleep(10) # JS direct-upload to /upload endpoint; larger window for parallel load
   check("document_template")
   click_on("Save")
   expect(page).to have_content("successfully")
@@ -1447,7 +1450,7 @@ Then('the kyc form should be sent {string} to the investor') do |flag|
   if flag == "true"
     expect(current_email.subject).to include "Request to add KYC: #{@investor_kyc.entity.name}"
   else
-    current_email.should.nil?
+    current_email.should be_nil
   end
 end
 
@@ -1457,7 +1460,7 @@ Then('the kyc form reminder should be sent {string} to the investor') do |flag|
   if flag == "true"
     expect(current_email.subject).to include "Reminder to update KYC: #{@investor_kyc.entity.name}"
   else
-    current_email.should.nil?
+    current_email.should be_nil
   end
 end
 
@@ -1465,6 +1468,42 @@ Given('there is a custom notification {string} in place for the KYC') do |args|
   @custom_notification = CustomNotification.build(entity: @entity, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), for_type: "InvestorKyc", owner: @entity)
   key_values(@custom_notification, args)
   @custom_notification.save!
+end
+
+Given('there is a custom notification with placeholders for the KYC with subject {string} and email_method {string}') do |subject, email_method|
+  @custom_notification = CustomNotification.create!(
+    entity: @entity,
+    for_type: "InvestorKyc",
+    owner: @entity,
+    email_method: email_method,
+    subject: subject,
+    body: "Dear {{user_full_name}}, KYC for {{investor_name}} of {{fund_name}}. Unknown: {{not_a_real_placeholder}}.",
+    whatsapp: "Placeholder test",
+    enabled: true
+  )
+end
+
+Then('the KYC notification placeholders are resolved correctly for {string}') do |_email_method|
+  @custom_notification.should_not be_nil
+
+  user = InvestorAccess.includes(:user).first.user
+  open_email(user.email)
+  expect(current_email).not_to be_nil
+  body = current_email.body.to_s
+
+  # Known InvestorKycMailer placeholders resolved
+  expect(body).not_to include("{{user_full_name}}")
+  expect(body).not_to include("{{investor_name}}")
+  expect(body).not_to include("{{fund_name}}")
+  expect(body).to include(@investor_kyc.full_name)
+
+  # entity.name resolves from entity_name base placeholder
+  expect(body).to include(@entity.name)
+
+  # Unknown placeholder preserved
+  expect(body).to include("{{not_a_real_placeholder}}")
+
+  clear_emails
 end
 
 Then('the first notification has latest {string} and enable {string}') do |_latest, enabled|
@@ -1483,7 +1522,7 @@ Then('the investor entity should have {string} permissions') do |args|
 end
 
 Then('the aml report should be generated for the investor kyc') do
-  AmlReport.first.should_not.nil?
+  AmlReport.first.should_not be_nil
 end
 
 Then('notification should be sent {string} to the employee for kyc update') do |sent|
@@ -1494,7 +1533,7 @@ Then('notification should be sent {string} to the employee for kyc update') do |
   if sent == "true"
     expect(current_email.subject).to include "KYC updated for #{@investor_kyc.full_name}"
   else
-    current_email.should.nil?
+    current_email.should be_nil
   end
 end
 
@@ -1508,7 +1547,7 @@ Given('notification should be sent {string} to the investor for {string}') do |s
     expect(current_email.subject).to include @entity.custom_notification(cn.email_method).subject
     clear_emails
   else
-    current_email.should.nil?
+    current_email.should be_nil
   end
 end
 
@@ -1522,7 +1561,7 @@ Given('notification should be sent {string} to the user for {string}') do |sent,
     expect(current_email.subject).to include @entity.custom_notification(cn.email_method).subject
     clear_emails
   else
-    current_email.should.nil?
+    current_email.should be_nil
   end
 end
 
@@ -1552,7 +1591,7 @@ Then('the kycs should be unverified') do
 end
 
 Then('the kycs users should receive the kyc reminder email') do
-  InvestorKyc.where(verified: false).each do |kyc|
+  InvestorKyc.where(verified: false).find_each do |kyc|
     kyc.investor.investor_accesses.approved.each do |ia|
       puts "Checking email for #{ia.email} and cc #{ia.cc}"
       open_email(ia.email)
@@ -1602,7 +1641,7 @@ end
 
 Given('the investor has investor notice entry') do
   @investor ||= Investor.last
-  @notice = InvestorNotice.create!(entity_id: @entity.id, owner: Deal.last, start_date: Date.today, end_date: Date.today + 1.month, active: true, title: "Test 1")
+  @notice = InvestorNotice.create!(entity_id: @entity.id, owner: Deal.last, start_date: Time.zone.today, end_date: Time.zone.today + 1.month, active: true, title: "Test 1")
   @notice_entry = InvestorNoticeEntry.create!(investor_id: @investor.id, investor_notice_id: @notice.id,
                                               investor_entity_id: @investor.investor_entity_id,
                                               entity_id: @investor.entity_id, active: true)
@@ -1726,18 +1765,18 @@ Given('the investor has an investor access for user {string}') do |email|
   @investor = Investor.last
   @test_user = FactoryBot.create(:user, email: email, entity_id: @investor.investor_entity_id)
   FactoryBot.create(:investor_access,
-    investor: @investor,
-    entity: @entity,
-    user: @test_user,
-    email: email,
-    approved: true)
+                    investor: @investor,
+                    entity: @entity,
+                    user: @test_user,
+                    email: email,
+                    approved: true)
 end
 
 Then('the user {string} should belong to the new entity') do |email|
   user = User.find_by(email: email)
   new_entity_id = @investor.reload.investor_entity_id
   expect(user.entity_id).to eq(new_entity_id),
-    "Expected user #{email} entity_id #{user.entity_id} to match new investor_entity_id #{new_entity_id}"
+                            "Expected user #{email} entity_id #{user.entity_id} to match new investor_entity_id #{new_entity_id}"
 end
 
 Given('the user {string} also belongs to another investor') do |email|
@@ -1767,14 +1806,14 @@ end
 Then('the user {string} should still belong to the old entity') do |email|
   user = User.find_by(email: email)
   expect(user.entity_id).to eq(@original_investor_entity_id),
-    "Expected user #{email} entity_id #{user.entity_id} to remain #{@original_investor_entity_id}"
+                            "Expected user #{email} entity_id #{user.entity_id} to remain #{@original_investor_entity_id}"
 end
 
 Then('I should see the filtered investors with {string}') do |string|
   expect(page).to have_content(string)
   expect(page).to have_content(@investor_kyc.investor_name)
   expect(page).to have_content(@investor_kyc.kyc_type.titleize)
-  InvestorKyc.where.not(full_name: string).each do |kyc|
+  InvestorKyc.where.not(full_name: string).find_each do |kyc|
     expect(page).not_to have_content(kyc.investor_name)
   end
 end

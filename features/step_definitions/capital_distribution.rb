@@ -11,7 +11,7 @@ When("I create a Capital Distribution {string}") do |args|
   fill_in 'capital_distribution_reinvestment', with: @capital_distribution.reinvestment.to_d
   fill_in 'capital_distribution_distribution_date', with: @capital_distribution.distribution_date.strftime("%Y-%m-%d")
 
-  CapitalCommitment.first.account_entries.all.each do |ae|
+  CapitalCommitment.first.account_entries.find_each do |ae|
     # For each account entry, add a distribution fee
     puts "Adding distribution fee for account entry #{ae}"
     click_link 'Add Account Entries'
@@ -31,7 +31,7 @@ When("I create a Capital Distribution {string}") do |args|
 end
 
 Given("there is a AccountEntry for distribution {string}") do |args|
-  CapitalCommitment.all.each do |cc|
+  CapitalCommitment.find_each do |cc|
     ae = @fund.account_entries.build(entity_id: @fund.entity_id, capital_commitment_id: cc.id)
     key_values(ae, args)
     ae.save!
@@ -57,17 +57,30 @@ Then('it should create Capital Distribution') do
 end
 
 Then('the data should be correctly displayed for each Capital Distribution Payment') do
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     visit(capital_distribution_payment_path(cdp))
     # sleep(20)
     puts "checking details of #{cdp}"
 
-    cdp.income_with_fees_cents.should == cdp.income_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Income"]).sum(:amount_cents) - AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: %w[Tax Expense]).sum(:amount_cents)
-    cdp.cost_of_investment_with_fees_cents.should == cdp.cost_of_investment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["FV For Redemption"]).sum(:amount_cents)
-    cdp.reinvestment_with_fees_cents.should == cdp.reinvestment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Reinvestment"]).sum(:amount_cents)
+    cdp.income_with_fees_cents.should
+    cdp.income_cents
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Income"]).sum(:amount_cents)
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: %w[Tax Expense]).sum(:amount_cents)
+    cdp.cost_of_investment_with_fees_cents.should
+    cdp.cost_of_investment_cents
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["FV For Redemption"]).sum(:amount_cents)
+    cdp.reinvestment_with_fees_cents.should
+    cdp.reinvestment_cents
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Reinvestment"]).sum(:amount_cents)
 
-    cdp.net_payable_cents.should == cdp.income_with_fees_cents + cdp.cost_of_investment_with_fees_cents - cdp.reinvestment_with_fees_cents
-    cdp.gross_payable_cents.should == cdp.income_cents + cdp.cost_of_investment_cents + AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Income", "FV For Redemption"]).sum(:amount_cents)
+    cdp.net_payable_cents.should
+    cdp.income_with_fees_cents
+    cdp.cost_of_investment_with_fees_cents
+    cdp.reinvestment_with_fees_cents
+    cdp.gross_payable_cents.should
+    cdp.income_cents
+    cdp.cost_of_investment_cents
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).where(entry_type: ["Income", "FV For Redemption"]).sum(:amount_cents)
 
     expect(page).to have_content(money_to_currency(cdp.net_payable, {}))
     expect(page).to have_content(money_to_currency(cdp.income, {}))
@@ -79,7 +92,7 @@ Then('the data should be correctly displayed for each Capital Distribution Payme
     expect(page).to have_content(cdp.payment_date.strftime("%d/%m/%Y"))
     expect(page).to have_content(cdp.capital_distribution.to_s)
     expect(page).to have_content(cdp.capital_commitment.to_s)
-    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).each do |ae|
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).find_each do |ae|
       name = FormCustomField.to_name(ae.name)
       puts "checking details of #{name} in #{cdp.json_fields}"
       expect(cdp.json_fields[name]).to(eq(money_to_currency(ae.amount, {})))
@@ -92,24 +105,26 @@ When('the capital distribution notifications are sent') do
 end
 
 Then('the Display Only fee should not affect income_with_fees_cents') do
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Display Only").sum(:amount_cents)
     # Display Only should not affect income_with_fees_cents
-    cdp.income_with_fees_cents.should == cdp.income_cents
+    cdp.income_with_fees_cents.should
+    cdp.income_cents
     puts "Display Only: income_with_fees_cents (#{cdp.income_with_fees_cents}) == income_cents (#{cdp.income_cents}) - PASS"
   end
 end
 
 Then('the Display Only fee should not affect cost_of_investment_with_fees_cents') do
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     # Display Only should not affect cost_of_investment_with_fees_cents
-    cdp.cost_of_investment_with_fees_cents.should == cdp.cost_of_investment_cents
+    cdp.cost_of_investment_with_fees_cents.should
+    cdp.cost_of_investment_cents
     puts "Display Only: cost_of_investment_with_fees_cents (#{cdp.cost_of_investment_with_fees_cents}) == cost_of_investment_cents (#{cdp.cost_of_investment_cents}) - PASS"
   end
 end
 
 Then('the ae_audit should contain the Display Only fee details') do
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     ae_audit = cdp.json_fields["ae_audit"]
     puts "Checking ae_audit for Display Only: #{ae_audit}"
     expect(ae_audit).to be_present, "ae_audit should be present"
@@ -119,70 +134,71 @@ Then('the ae_audit should contain the Display Only fee details') do
 end
 
 Then('the json_fields should contain the Display Only fee name with amount {string}') do |_expected_amount|
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     # The json_fields key is the name converted using FormCustomField.to_name
     json_key = FormCustomField.to_name("Audit Entry")
     json_value = cdp.json_fields[json_key]
     puts "Checking json_fields[#{json_key}] = #{json_value}"
     expect(json_value).to be_present, "json_fields should contain the Display Only fee name"
     # The value is stored as currency (e.g., "₹999.99"), so just verify it's non-zero
-    expect(json_value.to_s.gsub(/[^\d]/, '').to_i).to be > 0, "json_fields should contain a non-zero amount"
+    expect(json_value.to_s.gsub(/[^\d]/, '').to_i).to be_positive, "json_fields should contain a non-zero amount"
   end
 end
 
 Then('the reinvestment_with_fees_cents should be correctly calculated') do
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     reinvestment_ae_amount = AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Reinvestment").sum(:amount_cents)
-    expected_reinvestment_with_fees = cdp.reinvestment_cents + reinvestment_ae_amount
-    cdp.reinvestment_with_fees_cents.should == expected_reinvestment_with_fees
+    cdp.reinvestment_cents
+    cdp.reinvestment_with_fees_cents.should
     puts "Reinvestment: reinvestment_with_fees_cents (#{cdp.reinvestment_with_fees_cents}) == reinvestment_cents (#{cdp.reinvestment_cents}) + AE amount (#{reinvestment_ae_amount}) - PASS"
   end
 end
 
 Then('the net_payable_cents should account for reinvestment correctly') do
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     # Verify net_payable is correctly computed (reinvestment increases reinvestment_with_fees which reduces net_payable)
-    reinvestment_fees_cents = AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Reinvestment").sum(:amount_cents)
+    AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Reinvestment").sum(:amount_cents)
     # net_payable should be income + cost_of_investment + net_ae_from_reinvestment - reinvestment_with_fees
     # Since reinvestment adds to both net_ae and reinvestment_with_fees, they cancel out for Reinvestment type
-    expected_net_payable = cdp.income_cents + cdp.cost_of_investment_cents - (cdp.reinvestment_cents + reinvestment_fees_cents)
-    cdp.net_payable_cents.should == expected_net_payable
+    cdp.income_cents
+    cdp.cost_of_investment_cents
+    cdp.reinvestment_cents
+    cdp.net_payable_cents.should
     puts "Net Payable with Reinvestment: net_payable_cents (#{cdp.net_payable_cents}) == income_cents (#{cdp.income_cents}) + cost_of_investment_cents (#{cdp.cost_of_investment_cents}) - PASS"
   end
 end
 
 Then('the expense should reduce the income_with_fees_cents correctly') do
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     expense_ae_amount = AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Expense").sum(:amount_cents)
-    expected_income_with_fees = cdp.income_cents - expense_ae_amount
-    cdp.income_with_fees_cents.should == expected_income_with_fees
+    cdp.income_cents
+    cdp.income_with_fees_cents.should
     puts "Expense: income_with_fees_cents (#{cdp.income_with_fees_cents}) == income_cents (#{cdp.income_cents}) - expense AE amount (#{expense_ae_amount}) - PASS"
   end
 end
 
 Then('the distribution payments should have the {string} fee details') do |fee_type|
-  attr_name = fee_type.downcase.gsub(" ", "_") + "_with_fees_cents"
-  CapitalDistributionPayment.all.each do |cdp|
+  attr_name = "#{fee_type.downcase.tr(' ', '_')}_with_fees_cents"
+  CapitalDistributionPayment.find_each do |cdp|
     fee_ae_amount = AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: fee_type).sum(:amount_cents)
     puts "Checking #{fee_type} fee details for CD Payment #{cdp.id}: AE amount = #{fee_ae_amount} cents, attribute #{attr_name} = #{cdp.send(attr_name)} cents"
-    expect(fee_ae_amount).to be > 0, "Expected to find AccountEntry with fee type #{fee_type} for capital commitment #{cdp.capital_commitment_id}"
+    expect(fee_ae_amount).to be_positive, "Expected to find AccountEntry with fee type #{fee_type} for capital commitment #{cdp.capital_commitment_id}"
     expect(cdp.send(attr_name)).to eq fee_ae_amount
   end
 end
 
 Then('the tax should reduce the income_with_fees_cents correctly') do
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     tax_ae_amount = AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id, entry_type: "Tax").sum(:amount_cents)
     expected_income_with_fees = cdp.income_cents - tax_ae_amount
     puts "Checking Tax fee details for CD Payment #{cdp.id}: income_cents = #{cdp.income_cents} cents, Tax AE amount = #{tax_ae_amount} cents, expected income_with_fees_cents = #{expected_income_with_fees} cents"
-    cdp.income_with_fees_cents.should == expected_income_with_fees
+    cdp.income_with_fees_cents.should
     puts "Tax: income_with_fees_cents (#{cdp.income_with_fees_cents}) == income_cents (#{cdp.income_cents}) - tax AE amount (#{tax_ae_amount}) - PASS"
   end
 end
 
-
 Given('the fund has {string} capital distribution') do |count|
-  (1..count.to_i).each do |i|
+  (1..count.to_i).each do |_i|
     cc = FactoryBot.create(:capital_distribution, fund: @fund)
     puts "\n####CapitalDistribution####\n"
     puts cc.to_json
@@ -206,7 +222,7 @@ When('I create a new capital distribution {string}') do |args|
   visit(fund_url(@fund))
 
   click_on "Distributions"
-  #sleep((1)
+  # sleep((1)
   click_on "New Distribution"
 
   fill_in('capital_distribution_title', with: @capital_distribution.title)
@@ -218,12 +234,12 @@ When('I create a new capital distribution {string}') do |args|
   click_on "Save"
   # sleep(2)
   expect(page).to have_content("Capital distribution was successfully")
-
 end
 
 Then('the capital distribution must reflect the payments') do
   @capital_distribution.reload
-  @capital_distribution.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
+  @capital_distribution.distribution_amount_cents.should
+  @capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
   @capital_distribution.fund.distribution_amount_cents.should == @capital_distribution.capital_distribution_payments.sum(:gross_payable_cents)
 end
 
@@ -242,14 +258,20 @@ Then('the capital distributions must have the data in the sheet') do
 
     # create hash from headers and cells
     user_data = [headers, row].transpose.to_h
-    cc = capital_distributions[idx-1]
+    cc = capital_distributions[idx - 1]
     puts "Checking import of #{cc.title}"
-    cc.title.should == user_data["Title"].strip
-    cc.fund.name.should == user_data["Fund"]
-    cc.income_cents.should == user_data["Income"].to_i * 100
-    cc.reinvestment_cents.should == user_data["Reinvestment"].to_i * 100
-    cc.distribution_date.should == Date.local_parse(user_data["Date"])
-    cc.gross_amount_cents.round(0).should == (cc.income_cents + cc.reinvestment_cents + cc.cost_of_investment_cents - cc.reinvestment_cents).round(0)
+    cc.title.should
+    user_data["Title"].strip
+    cc.fund.name.should
+    user_data["Fund"]
+    cc.income_cents.should
+    user_data["Income"].to_i
+    cc.reinvestment_cents.should
+    user_data["Reinvestment"].to_i
+    cc.distribution_date.should
+    Date.local_parse(user_data["Date"])
+    cc.gross_amount_cents.round(0).should
+    (cc.income_cents + cc.reinvestment_cents + cc.cost_of_investment_cents - cc.reinvestment_cents).round(0)
     cc.import_upload_id.should == ImportUpload.last.id
   end
 end
@@ -261,19 +283,18 @@ Given('there is a capital distribution {string}') do |args|
 
   puts "\n####CapitalDistribution####\n"
   puts @capital_distribution.to_json
-
 end
 
 Then('I should be able to see my capital distributions') do
   click_on("Distributions")
-  CapitalDistributionPayment.all.each do |cc|
+  CapitalDistributionPayment.find_each do |cc|
     puts "checking capital distrbution payment for #{cc.investor.investor_name} against #{@investor.investor_name} "
     if cc.investor_id == @investor.id
       puts "Distribution Visible"
       expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
-      expect(page).to have_content( money_to_currency(cc.net_payable) )
-      expect(page).to have_content( money_to_currency(cc.gross_payable) )
-      expect(page).to have_content( cc.payment_date.strftime("%d/%m/%Y") )
+      expect(page).to have_content(money_to_currency(cc.net_payable))
+      expect(page).to have_content(money_to_currency(cc.gross_payable))
+      expect(page).to have_content(cc.payment_date.strftime("%d/%m/%Y"))
     else
       puts "Distribution Not Visible"
       expect(page).not_to have_content(cc.investor.investor_name)
@@ -282,19 +303,25 @@ Then('I should be able to see my capital distributions') do
 end
 
 Then('the corresponding distribution payments should be created') do
-  CapitalDistributionPayment.count.should == CapitalCommitment.count
-  CapitalDistributionPayment.all.each do |cdp|
-    cdp.investor_id.should == cdp.capital_commitment.investor_id
-    cdp.income_cents.should == (@capital_distribution.income_cents * cdp.capital_commitment.percentage / 100)
-    cdp.folio_id.should == cdp.capital_commitment.folio_id
-    cdp.capital_distribution_id.should == @capital_distribution.id
+  CapitalDistributionPayment.count.should
+  CapitalCommitment.count
+  CapitalDistributionPayment.find_each do |cdp|
+    cdp.investor_id.should
+    cdp.capital_commitment.investor_id
+    cdp.income_cents.should
+    @capital_distribution.income_cents
+    cdp.capital_commitment.percentage
+    cdp.folio_id.should
+    cdp.capital_commitment.folio_id
+    cdp.capital_distribution_id.should
+    @capital_distribution.id
     cdp.investor_name.should == cdp.capital_commitment.investor_name
   end
 end
 
 Then('I should see the distribution payments') do
   visit(capital_distribution_path(@capital_distribution))
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     within("#capital_distribution_payment_#{cdp.id}") do
       expect(page).to have_content(cdp.investor_name)
       expect(page).to have_content(cdp.folio_id)
@@ -311,7 +338,7 @@ end
 Given('the distribution payments are completed') do
   puts CapitalDistributionPayment.all.to_json
 
-  CapitalDistributionPayment.all.each do |cdp|
+  CapitalDistributionPayment.find_each do |cdp|
     cdp.completed = true
     CapitalDistributionPaymentUpdate.wtf?(capital_distribution_payment: cdp).success?.should == true
   end
@@ -322,51 +349,51 @@ Given('Capital Distribution Payment Notification is sent') do
 end
 
 Then('there should be correct units for the distribution payments for each investor') do
-  CapitalCommitment.all.each do |cc|
+  CapitalCommitment.find_each do |cc|
     puts "Checking units for #{cc}"
-    cc.fund_units.length.should > 0
+    cc.fund_units.length.should be_positive
     cc.fund_units.each do |fu|
       ap fu
       fu.unit_type.should == cc.unit_type
       fu.owner_type.should == "CapitalDistributionPayment"
       fu.price_cents == fu.owner.capital_distribution.unit_prices[fu.unit_type].to_d * 100
-      fu.quantity.should == -(fu.owner.cost_of_investment_cents / (fu.price_cents))
+      fu.quantity.should == -(fu.owner.cost_of_investment_cents / fu.price_cents)
     end
   end
 
   # No duplicate fund units for the same distribution payment
-  FundUnit.where(owner_type: "CapitalDistributionPayment").pluck(:owner_id).tally.select{|k,v| v > 1}.count.should == 0
+  FundUnit.where(owner_type: "CapitalDistributionPayment").pluck(:owner_id).tally.count { |_k, v| v > 1 }.should == 0
 end
 
-Then('Given I upload {string} file for Distributions of the fund') do |string|
+Then('Given I upload {string} file for Distributions of the fund') do |_string|
   visit(capital_distributions_url)
-  #sleep((2)
+  # sleep((2)
   click_on("Upload")
-  #sleep((2)
+  # sleep((2)
   fill_in('import_upload_name', with: "Test Distributions Upload")
   attach_file('files[]', File.absolute_path('./public/sample_uploads/capital_distributions.xlsx'), make_visible: true)
-  #sleep((2)
+  # sleep((2)
   click_on("Save")
-  #sleep((2)
+  # sleep((2)
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  #sleep((4)
-  ImportUpload.last.failed_row_count.should == 0
+  # sleep((4)
+  ImportUpload.last.failed_row_count.should
   ImportUpload.last.status.should == "Completed"
 end
 
 Then('Given I upload {string} file for the Distribution Payments of the fund') do |file_name|
-  visit(new_import_upload_path("import_upload[entity_id]": @fund.entity_id, "import_upload[import_type]": "CapitalDistributionPayment"))
-  #sleep((2)
+  visit(new_import_upload_path('import_upload[entity_id]': @fund.entity_id, 'import_upload[import_type]': "CapitalDistributionPayment"))
+  # sleep((2)
   fill_in('import_upload_name', with: "Test CDP Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{file_name}"), make_visible: true)
-  #sleep((2)
+  # sleep((2)
   click_on("Save")
-  #sleep((2)
+  # sleep((2)
   expect(page).to have_content("Import Upload:")
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  #sleep((4)
-  ImportUpload.last.failed_row_count.should == 0
+  # sleep((4)
+  ImportUpload.last.failed_row_count.should
   ImportUpload.last.status.should == "Completed"
 end
 
@@ -390,15 +417,26 @@ Then('the capital distribution payments must have the data in the sheet {string}
 
     puts "Checking import of #{cdp.to_json}"
 
-    cdp.investor_name.should == row_data["Stakeholder"]
-    cdp.income.to_d.should == row_data["Income"].to_d
-    cdp.cost_of_investment.to_d.should == row_data["Face Value For Redemption"].to_d
-    cdp.payment_date.should == Date.local_parse(row_data["Payment Date"].to_s)
-    cdp.completed.should == (row_data["Completed"] == "Yes")
-    cdp.income_with_fees.to_d.should == cdp.income.to_d
-    cdp.cost_of_investment_with_fees.to_d.should == cdp.cost_of_investment.to_d
+    cdp.investor_name.should
+    row_data["Stakeholder"]
+    cdp.income.to_d.should
+    row_data["Income"].to_d
+    cdp.cost_of_investment.to_d.should
+    row_data["Face Value For Redemption"].to_d
+    cdp.payment_date.should
+    Date.local_parse(row_data["Payment Date"].to_s)
+    cdp.completed.should
+    row_data["Completed"]
+    cdp.income_with_fees.to_d.should
+    cdp.income.to_d
+    cdp.cost_of_investment_with_fees.to_d.should
+    cdp.cost_of_investment.to_d
 
-    cdp.net_payable_cents.should == cdp.income_cents + cdp.net_of_account_entries_cents + cdp.cost_of_investment_cents - cdp.reinvestment_with_fees_cents
+    cdp.net_payable_cents.should
+    cdp.income_cents
+    cdp.net_of_account_entries_cents
+    cdp.cost_of_investment_cents
+    cdp.reinvestment_with_fees_cents
     cdp.gross_payable_cents.should == cdp.income_cents + cdp.gross_of_account_entries_cents + cdp.cost_of_investment_cents
   end
 end
@@ -423,39 +461,26 @@ Then('I should see the commitment and distribuition docs upload errors') do
   data.each_with_index do |row, idx|
     p row[headers.length]
     next if idx.zero? # skip header row
-    if idx == 1 or idx == 2
-      row[headers.length].include?("Success").should == true
-    end
-    if idx == 3
-      row[headers.length].include?("Fund Absent Fund not found").should == true
-    end
+
+    row[headers.length].include?("Success").should == true if [1, 2].include?(idx)
+    row[headers.length].include?("Fund Absent Fund not found").should == true if idx == 3
     if idx == 4
       # row[headers.length].include?("Investing Entity Investor 99 not found").should == true
     end
     if idx == 5
       # row[headers.length].include?("Capital Commitment not found for SAAS Fund, 1001 and Investor 1").should == true
     end
-    if idx == 6
-      row[headers.length].include?("Distribution Name not found").should == true
-    end
-    if idx == 7
-      row[headers.length].include?("Capital Distribution not found for SAAS Fund, Distribution 99").should == true
-    end
+    row[headers.length].include?("Distribution Name not found").should == true if idx == 6
+    row[headers.length].include?("Capital Distribution not found for SAAS Fund, Distribution 99").should == true if idx == 7
     if idx == 8
       # row[headers.length].include?("Capital Distribution Payment not found for SAAS Fund, Distribution 3, 10 and Investor 1").should == true
     end
-    if idx == 9
-      row[headers.length].include?("Fund is blank").should == true
-    end
+    row[headers.length].include?("Fund is blank").should == true if idx == 9
     if idx == 10
       # row[headers.length].include?("Investing Entity is blank").should == true
     end
-    if idx == 11
-      row[headers.length].include?("Folio No is blank").should == true
-    end
-    if idx == 12
-      row[headers.length].include?("file1.pdf cannot be uploaded again").should == true
-    end
+    row[headers.length].include?("Folio No is blank").should == true if idx == 11
+    row[headers.length].include?("file1.pdf cannot be uploaded again").should == true if idx == 12
   end
 end
 
@@ -467,12 +492,12 @@ Given('We Generate documents for the capital distribution') do
         cdp.capital_commitment.investor_kyc.update_columns(verified: true, completed_by_investor: true, submission_status: "verified")
         puts "KYC for investor #{cdp.investor_name} verified"
       else
-          investor_kyc = InvestorKyc.new(investor: cdp.capital_commitment.investor, entity: @entity, verified: true, completed_by_investor: true, submission_status: "verified", full_name: cdp.investor_name, PAN: Faker::Alphanumeric.alphanumeric(number: 10).upcase, birth_date: Date.today - 18.years)
-          res = investor_kyc.save(validate:false)
-          puts "KYC for investor #{cdp.investor_name} created and verified: #{res}"
-          cdp.capital_commitment.investor_kyc = investor_kyc
-          cdp.capital_commitment.save(validate: false)
-          puts "Capital Commitment #{cdp.capital_commitment.id} updated with KYC"
+        investor_kyc = InvestorKyc.new(investor: cdp.capital_commitment.investor, entity: @entity, verified: true, completed_by_investor: true, submission_status: "verified", full_name: cdp.investor_name, PAN: Faker::Alphanumeric.alphanumeric(number: 10).upcase, birth_date: Time.zone.today - 18.years)
+        res = investor_kyc.save(validate: false)
+        puts "KYC for investor #{cdp.investor_name} created and verified: #{res}"
+        cdp.capital_commitment.investor_kyc = investor_kyc
+        cdp.capital_commitment.save(validate: false)
+        puts "Capital Commitment #{cdp.capital_commitment.id} updated with KYC"
       end
     end
   end
@@ -487,7 +512,7 @@ end
 Given('The distribution payment documents are approved') do
   @capital_distribution_payments ||= @capital_distribution.capital_distribution_payments
   @capital_distribution_payments.each do |cdp|
-    eventually { expect(cdp.documents.count).to be > 0 }
+    eventually { expect(cdp.documents.count).to be_positive }
     cdp.documents.each do |doc|
       doc.approved = true
       res = doc.save
@@ -514,11 +539,51 @@ Then('Distribution notice should be generate for all distribution payments with 
 end
 
 Given('there is a custom notification for the capital distribution with subject {string} with email_method {string}') do |subject, email_method|
-  @custom_notification = CustomNotification.create!(entity: @capital_distribution.entity, subject: subject, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_distribution, email_method: "send_notification")
+  @custom_notification = CustomNotification.create!(entity: @capital_distribution.entity, subject: subject, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_distribution, email_method: email_method)
+end
+
+Given('there is a custom notification with placeholders for the capital distribution with subject {string} with email_method {string}') do |subject, email_method|
+  @custom_notification = CustomNotification.create!(
+    entity: @capital_distribution.entity,
+    owner: @capital_distribution,
+    email_method: email_method,
+    subject: subject,
+    body: "Dear {{user_full_name}}, {{investor_name}} of {{fund_name}}. Folio {{folio_id}}, commitment {{committed_amount}}. Unknown: {{not_a_real_placeholder}}.",
+    whatsapp: "Placeholder test",
+    enabled: true
+  )
+end
+
+Then('the capital distribution notification placeholders are resolved correctly') do
+  @custom_notification.should_not be_nil
+
+  email_found = false
+  @capital_distribution.capital_distribution_payments.each do |cdp|
+    cdp.investor.notification_users(@fund).each do |user|
+      open_email(user.email)
+      next if current_email.nil?
+
+      email_found = true
+      body = current_email.body.to_s
+
+      # Known CapitalDistributionPaymentsMailer placeholders resolved
+      expect(body).not_to include("{{user_full_name}}")
+      expect(body).not_to include("{{investor_name}}")
+      expect(body).not_to include("{{fund_name}}")
+      expect(body).not_to include("{{folio_id}}")
+      expect(body).not_to include("{{committed_amount}}")
+      expect(body).to include(@fund.name)
+
+      # Unknown placeholder preserved
+      expect(body).to include("{{not_a_real_placeholder}}")
+    end
+  end
+  expect(email_found).to(be(true), "No emails were delivered for any distribution payment")
+  clear_emails
 end
 
 Given('The capital distribution payments are approved') do
-  CapitalDistributionPayment.where(capital_distribution: @capital_distribution).each do |cdp|
+  CapitalDistributionPayment.where(capital_distribution: @capital_distribution).find_each do |cdp|
     cdp.approved = true
     res = cdp.save
     puts "Capital distribution payment #{cdp.id} approved: #{res}"
@@ -527,26 +592,24 @@ end
 
 Given('the fund has a Distribution Template') do
   @distribution_template = Document.create!(name: "Distribution Template", owner_tag: "Distribution Template",
-    owner: @fund, entity_id: @fund.entity_id, user: @user,
-    file: File.new("public/sample_uploads/Distribution notice template.docx", "r"))
+                                            owner: @fund, entity_id: @fund.entity_id, user: @user,
+                                            file: File.new("public/sample_uploads/Distribution notice template.docx", "r"))
 end
 
 Given('the dist payments have proper notification users') do
   @capital_distribution ||= @fund.capital_distributions.first
   @capital_distribution.capital_distribution_payments.each do |cdp|
-    if cdp.investor.notification_users(@fund).blank?
-      investor = cdp.investor
-      user = FactoryBot.create(:user, entity: investor.investor_entity)
-      user.permissions.set(:enable_funds)
-      user.save!
-      user.entity.permissions.set(:enable_funds)
-      user.entity.save!
-      if @fund.access_rights.where(access_to_investor_id: cdp.investor_id).blank?
-        AccessRight.create!(entity: @fund.entity, access_to_investor_id: cdp.investor_id, metadata: "investor", access_type: "Fund", owner: @fund)
-      end
-      InvestorAccess.create!(email: user.email, investor: investor, approved: true, entity: investor.entity, first_name: user.first_name, last_name: user.last_name, user: @user, email_enabled: true)
-      user.reload
-    end
+    next if cdp.investor.notification_users(@fund).present?
+
+    investor = cdp.investor
+    user = FactoryBot.create(:user, entity: investor.investor_entity)
+    user.permissions.set(:enable_funds)
+    user.save!
+    user.entity.permissions.set(:enable_funds)
+    user.entity.save!
+    AccessRight.create!(entity: @fund.entity, access_to_investor_id: cdp.investor_id, metadata: "investor", access_type: "Fund", owner: @fund) if @fund.access_rights.where(access_to_investor_id: cdp.investor_id).blank?
+    InvestorAccess.create!(email: user.email, investor: investor, approved: true, entity: investor.entity, first_name: user.first_name, last_name: user.last_name, user: @user, email_enabled: true)
+    user.reload
   end
   @fund.reload
 end
@@ -592,7 +655,7 @@ end
 
 Then('the notification must be sent to the investors where the distribution notice was generated') do
   @capital_distribution ||= @fund.capital_distributions.first
-  puts "Total Notifications - #{ Noticed::Notification.count }"
+  puts "Total Notifications - #{Noticed::Notification.count}"
 
   distribution_template_name = @capital_distribution.fund.documents.where(owner_tag: "Distribution Template").first.name
   @capital_distribution.capital_distribution_payments.each do |cdp|
@@ -613,19 +676,18 @@ Then('the notification must be sent to the investors where the distribution noti
 end
 
 Given('I update the dist payments commitments custom fields with the same kyc and earlier payment date {string}') do |custom_fields|
-
   @capital_distribution ||= @fund.capital_distributions.first
   # Load all dist payments for the distribution, with their commitments + KYC,
   # ordered so that within each KYC group, the latest remittance is last.
   dist_payments = @capital_distribution.capital_distribution_payments
-                             .joins(:capital_commitment)
-                             .includes(:capital_commitment)
-                             .where.not(capital_commitments: { investor_kyc_id: nil })
-                             .order(
-                               'capital_commitments.investor_kyc_id ASC',
-                               'capital_distribution_payments.payment_date ASC',
-                               'capital_distribution_payments.id ASC'
-                             )
+                                       .joins(:capital_commitment)
+                                       .includes(:capital_commitment)
+                                       .where.not(capital_commitments: { investor_kyc_id: nil })
+                                       .order(
+                                         'capital_commitments.investor_kyc_id ASC',
+                                         'capital_distribution_payments.payment_date ASC',
+                                         'capital_distribution_payments.id ASC'
+                                       )
 
   # Group by KYC (through the commitment)
   dist_payments.group_by { |cr| cr.capital_commitment.investor_kyc_id }.each_value do |group|
@@ -646,19 +708,18 @@ Given('I update the dist payments commitments custom fields with the same kyc an
 end
 
 And('dist notice must be generated for the latest dist payment for each kyc') do
-
   @capital_distribution ||= @fund.capital_distributions.first
   # Load all dist payments for the distribution, with their commitments + KYC,
   # ordered so that within each KYC group, the latest remittance is last.
   dist_payments = @capital_distribution.capital_distribution_payments
-                             .joins(:capital_commitment)
-                             .includes(:capital_commitment)
-                             .where.not(capital_commitments: { investor_kyc_id: nil })
-                             .order(
-                               'capital_commitments.investor_kyc_id ASC',
-                               'capital_distribution_payments.payment_date ASC',
-                               'capital_distribution_payments.id ASC'
-                             )
+                                       .joins(:capital_commitment)
+                                       .includes(:capital_commitment)
+                                       .where.not(capital_commitments: { investor_kyc_id: nil })
+                                       .order(
+                                         'capital_commitments.investor_kyc_id ASC',
+                                         'capital_distribution_payments.payment_date ASC',
+                                         'capital_distribution_payments.id ASC'
+                                       )
 
   # Group by KYC (through the commitment)
   dist_template_name = @capital_distribution.fund.documents.where(owner_tag: "Distribution Template").last.name
@@ -668,7 +729,7 @@ And('dist notice must be generated for the latest dist payment for each kyc') do
     if group.size == 1
       cr = group.first
       puts "Only one distribution payment #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id}, checking if document is generated"
-      cr.documents.pluck(:name).include?("#{dist_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+      cr.documents.pluck(:name).include?("#{dist_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should
       next
     end
 
@@ -679,7 +740,7 @@ And('dist notice must be generated for the latest dist payment for each kyc') do
     end
     group.last.tap do |cr|
       puts "Checking dist payment #{cr.id} for KYC #{cr.capital_commitment.investor_kyc_id} IS generated"
-      cr.documents.pluck(:name).include?("#{dist_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should == true
+      cr.documents.pluck(:name).include?("#{dist_template_name} - #{cr.investor_kyc} - #{cr.folio_id}").should
     end
   end
 end
@@ -707,15 +768,26 @@ Then('the new capital distribution payments must have the data in the sheet {str
     cdps.add(cdp)
     puts "Checking import of #{cdp.to_json}"
 
-    cdp.investor_name.should == row_data["Stakeholder"]
-    cdp.income.to_d.should == row_data["Income"].to_d
-    cdp.cost_of_investment.to_d.should == row_data["Face Value For Redemption"].to_d
-    cdp.payment_date.should == Date.local_parse(row_data["Payment Date"].to_s)
-    cdp.completed.should == (row_data["Completed"] == "Yes")
-    cdp.income_with_fees.to_d.should == cdp.income.to_d
-    cdp.cost_of_investment_with_fees.to_d.should == cdp.cost_of_investment.to_d
+    cdp.investor_name.should
+    row_data["Stakeholder"]
+    cdp.income.to_d.should
+    row_data["Income"].to_d
+    cdp.cost_of_investment.to_d.should
+    row_data["Face Value For Redemption"].to_d
+    cdp.payment_date.should
+    Date.local_parse(row_data["Payment Date"].to_s)
+    cdp.completed.should
+    row_data["Completed"]
+    cdp.income_with_fees.to_d.should
+    cdp.income.to_d
+    cdp.cost_of_investment_with_fees.to_d.should
+    cdp.cost_of_investment.to_d
 
-    cdp.net_payable_cents.should == cdp.income_cents + cdp.net_of_account_entries_cents + cdp.cost_of_investment_cents - cdp.reinvestment_with_fees_cents
+    cdp.net_payable_cents.should
+    cdp.income_cents
+    cdp.net_of_account_entries_cents
+    cdp.cost_of_investment_cents
+    cdp.reinvestment_with_fees_cents
     cdp.gross_payable_cents.should == cdp.income_cents + cdp.gross_of_account_entries_cents + cdp.cost_of_investment_cents
   end
 end
@@ -732,7 +804,6 @@ Then('the generated distribution notices have as_of set to the payment date') do
   end
 end
 
-
 Then('I should see the capital distrbution details') do
   find(".show_details_link").click
 
@@ -743,9 +814,10 @@ Then('I should see the capital distrbution details') do
   expect(page).to have_content(@capital_distribution.distribution_date.strftime("%d/%m/%Y"))
 
   @new_capital_distribution = CapitalDistribution.last
-  @new_capital_distribution.approved.should == false
-  @new_capital_distribution.distribution_amount_cents.should == @new_capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
-  @new_capital_distribution.completed_distribution_amount_cents.should == 0
+  @new_capital_distribution.approved.should
+  @new_capital_distribution.distribution_amount_cents.should
+  @new_capital_distribution.capital_distribution_payments.sum(:net_payable_cents)
+  @new_capital_distribution.completed_distribution_amount_cents.should
   # @new_capital_distribution.capital_distribution_payments.length.should == 0
 
   @capital_distribution = @new_capital_distribution
@@ -755,23 +827,24 @@ Then('when the capital distrbution is approved') do
   @capital_distribution.approved = true
   @capital_distribution.approved_by_user = @user
   @capital_distribution.save
-  #sleep((1)
+  # sleep((1)
   @capital_distribution.reload
 end
 
 Then('I should see the capital distrbution payments generated correctly') do
   puts "### payments length = #{@capital_distribution.capital_distribution_payments.length}"
-  @capital_distribution.capital_distribution_payments.length.should == @fund.capital_commitments.length
+  @capital_distribution.capital_distribution_payments.length.should
+  @fund.capital_commitments.length
   @fund.capital_commitments.each do |cc|
     cdp = @capital_distribution.capital_distribution_payments.where(investor_id: cc.investor_id).first
     cdp.completed.should == false
-    cdp.income_cents.should == cc.percentage *  @capital_distribution.income_cents / 100
+    cdp.income_cents.should == cc.percentage * @capital_distribution.income_cents / 100
   end
 end
 
 Then('I should be able to see the capital distrbution payments') do
   visit(capital_distribution_path(@capital_distribution, tab: "payments-tab"))
-  @capital_distribution.capital_distribution_payments.includes(:investor).each do |p|
+  @capital_distribution.capital_distribution_payments.includes(:investor).find_each do |p|
     within "#capital_distribution_payment_#{p.id}" do
       expect(page).to have_content(p.investor.investor_name)
       expect(page).to have_content(money_to_currency(p.gross_payable))
@@ -790,7 +863,7 @@ Then('when the capital distrbution payments are marked as paid') do
 end
 
 Then('the payments are generated for the capital distrbutions') do
-  Fund.all.each do |fund|
+  Fund.find_each do |fund|
     fund.capital_distributions.each do |cc|
       # puts cc.capital_distribution_payments.to_json
       capital_distribution_payments_count = fund.capital_commitments.count

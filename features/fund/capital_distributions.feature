@@ -104,6 +104,35 @@ Scenario Outline: Capital Distribution Payment custom notification
    	|user	    |entity                                 |fund                 |msg	|
    	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
 
+@notification
+Scenario Outline: Capital Distribution Payment custom notification with placeholders
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital distribution "cost_of_investment_cents=10050000;"
+  Then I should see the capital distrbution details
+  Then when the capital distrbution is approved
+  Then I should see the capital distrbution payments generated correctly
+  And I should be able to see the capital distrbution payments
+  Given the fund has a template "Distribution Template" of type "Distribution Template"
+  Given there is a custom notification with placeholders for the capital distribution with subject "Custom Dist Placeholder" with email_method "send_notification"
+  And We Generate documents for the capital distribution
+  And The distribution payment documents are approved
+  Then Distribution notice should be generate for all distribution payments with verified KYC
+  And when the capital distrbution payments are marked as paid
+  Then the capital distribution must reflect the payments
+  When the capital distribution notifications are sent
+  Then the capital distribution notification placeholders are resolved correctly
+
+  Examples:
+    |user     |entity                                 |fund                 |msg   |
+    |           |entity_type=Investment Fund;enable_funds=true  |name=Test fund      |Fund was successfully created|
+
 Scenario Outline: Capital Distribution with Display Only fee type
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"

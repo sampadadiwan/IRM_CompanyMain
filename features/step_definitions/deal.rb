@@ -153,7 +153,7 @@ end
 Then('the deal should be started') do
   @deal.reload
   @deal.start_date.should_not
-  @deal.deal_activities.should_not.nil?
+  @deal.deal_activities.should_not be_nil
 end
 
 Given('given there is a deal {string} for the entity') do |arg1|

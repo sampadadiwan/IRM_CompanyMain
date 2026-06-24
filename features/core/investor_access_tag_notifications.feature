@@ -1,3 +1,4 @@
+@notification
 Feature: InvestorAccess tag_list — subscription-based notification filtering
   Investor contacts can be tagged with notification topics (e.g. "CapitalCall", "KYC").
   A contact with no tags receives all notifications.
@@ -195,3 +196,28 @@ Feature: InvestorAccess tag_list — subscription-based notification filtering
       |               | receives |
       | SecondarySale | receives |
       | KYC           | skips    |
+
+  Scenario: Interest notification placeholder substitution
+    Given there is an existing investor "" with "1" users
+    And there is a secondary sale for the entity
+    And there is an interest from the investor in the secondary sale
+    Given there is a custom notification with placeholders for the interest with subject "Interest Placeholder Test"
+    When the interest notification is sent with placeholders
+    Then the interest notification placeholders are resolved correctly
+
+  Scenario: Secondary sale notification placeholder substitution
+    Given there is an existing investor "" with "1" users
+    And there is a secondary sale for the entity
+    And there is an interest from the investor in the secondary sale
+    Given there is a custom notification with placeholders for the secondary sale with subject "SecondarySale Placeholder Test"
+    When the secondary sale notification is sent with placeholders
+    Then the secondary sale notification placeholders are resolved correctly
+
+  Scenario: Offer notification placeholder substitution
+    Given there is an existing investor "" with "1" users
+    And there is a secondary sale for the entity
+    And there is an interest from the investor in the secondary sale
+    And there is an offer for the investor in the secondary sale
+    Given there is a custom notification with placeholders for the offer with subject "Offer Placeholder Test"
+    When the offer notification is sent with placeholders
+    Then the offer notification placeholders are resolved correctly

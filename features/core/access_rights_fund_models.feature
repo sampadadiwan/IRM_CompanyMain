@@ -116,6 +116,13 @@ Feature: Fund child model access rights
     And there is a capital remittance payment for the fund
     Then the user "investor@example.com" should be denied "show" on the record
 
+  @notification
+  Scenario: Capital remittance payment notification placeholder substitution
+    And there is a capital remittance payment for the fund
+    Given there is a custom notification with placeholders for the capital call with subject "CRP Placeholder Test"
+    When the remittance payment notification is sent with placeholders
+    Then the remittance payment notification placeholders are resolved correctly
+
   # ---------------------------------------------------------------------------
   # CapitalDistributionPayment — employee OR investor
   # ---------------------------------------------------------------------------

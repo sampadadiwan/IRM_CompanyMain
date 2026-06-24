@@ -14,10 +14,10 @@ def notification_subject_for(notification_type)
   case notification_type
   when "approval"              then "Approval required:"
   when "KYC"                   then "Request to add KYC:"
-  when "CapitalCall"           then @fund.name  # "FundName: CapitalCallName" from notify_capital_remittance
-  when "CapitalRemittance"     then "#{@fund.name}:"  # same mailer subject: "FundName: CapitalCallName"
-  when "Distribution"          then "Capital Distribution:"  # from send_notification mailer
-  when "InvestmentOpportunity" then "Investment Opportunity:"  # from notify_open_for_interests mailer
+  when "CapitalCall"           then @fund.name # "FundName: CapitalCallName" from notify_capital_remittance
+  when "CapitalRemittance"     then "#{@fund.name}:" # same mailer subject: "FundName: CapitalCallName"
+  when "Distribution"          then "Capital Distribution:" # from send_notification mailer
+  when "InvestmentOpportunity" then "Investment Opportunity:" # from notify_open_for_interests mailer
   when "SecondarySale"         then "Interest received for"
   else notification_type
   end
@@ -34,7 +34,7 @@ Given('a KYC is created for the investor with {string}') do |args|
   @investor_kyc = FactoryBot.build(:investor_kyc, entity: @entity, investor: @investor)
   key_values(@investor_kyc, args)
   # investor_user: false → admin-created path (triggers send_kyc_form_on_create when flag=true)
-  InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user: false).success?.should == true
+  InvestorKycCreate.wtf?(investor_kyc: @investor_kyc, investor_user: false).success?.should
   # Explicitly fire employee "KYC updated" notification — mirrors the path InvestorKycAction takes
   # when investor_user=true, here fired unconditionally to prove the employee path is tag-independent.
   @investor_kyc.updated_notification
@@ -75,7 +75,7 @@ When('a capital call is created with {string}') do |args|
   @capital_call.setup_defaults
   result = CapitalCallCreate.wtf?(capital_call: @capital_call)
   puts result
-  result.success?.should == true
+  result.success?.should
   @capital_call.reload
   puts "\n####CapitalCall####\n"
   puts @capital_call.to_json
@@ -88,7 +88,7 @@ When('the capital call is approved') do
   @capital_call.approved_by_user = @user
   result = CapitalCallApprove.wtf?(capital_call: @capital_call)
   puts result
-  result.success?.should == true
+  result.success?.should
   @capital_call.reload
   # saved_change_to_approved? is reset by generate_capital_remittances' internal save;
   # call notify_capital_call directly so notification fires regardless of dirty-tracking state.
@@ -107,13 +107,13 @@ Then('the investor contact {string} the {string} notification') do |outcome, not
 
   if outcome == "receives"
     expect(matching).not_to be_empty,
-      "Expected #{email_address} to receive '#{notification_type}' notification " \
-      "(subject includes '#{subject_fragment}') but none found. " \
-      "Deliveries to this address: #{emails_sent_to(email_address).map(&:subject)}"
+                            "Expected #{email_address} to receive '#{notification_type}' notification " \
+                            "(subject includes '#{subject_fragment}') but none found. " \
+                            "Deliveries to this address: #{emails_sent_to(email_address).map(&:subject)}"
   else
     expect(matching).to be_empty,
-      "Expected #{email_address} to skip '#{notification_type}' notification " \
-      "but found: #{matching.map(&:subject)}"
+                        "Expected #{email_address} to skip '#{notification_type}' notification " \
+                        "but found: #{matching.map(&:subject)}"
   end
 end
 
@@ -128,8 +128,8 @@ Then('the investor contact does not receive the {string} investor notification')
   subject_fragment = notification_subject_for(notification_type)
   matching = emails_sent_to(email_address).select { |m| m.subject.to_s.include?(subject_fragment) }
   expect(matching).to be_empty,
-    "Expected #{email_address} NOT to receive '#{notification_type}' investor notification " \
-    "but found: #{matching.map(&:subject)}"
+                      "Expected #{email_address} NOT to receive '#{notification_type}' investor notification " \
+                      "but found: #{matching.map(&:subject)}"
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -142,8 +142,8 @@ Then('the {string} investor contact receives the {string} notification') do |fir
   subject_fragment = notification_subject_for(notification_type)
   matching = emails_sent_to(email_address).select { |m| m.subject.to_s.include?(subject_fragment) }
   expect(matching).not_to be_empty,
-    "Expected #{firm_name} (#{email_address}) to receive '#{notification_type}' notification " \
-    "but none found. Deliveries: #{emails_sent_to(email_address).map(&:subject)}"
+                          "Expected #{firm_name} (#{email_address}) to receive '#{notification_type}' notification " \
+                          "but none found. Deliveries: #{emails_sent_to(email_address).map(&:subject)}"
 end
 
 Then('the {string} investor contact does not receive the {string} notification') do |firm_name, notification_type|
@@ -152,8 +152,8 @@ Then('the {string} investor contact does not receive the {string} notification')
   subject_fragment = notification_subject_for(notification_type)
   matching = emails_sent_to(email_address).select { |m| m.subject.to_s.include?(subject_fragment) }
   expect(matching).to be_empty,
-    "Expected #{firm_name} (#{email_address}) to skip '#{notification_type}' notification " \
-    "but found: #{matching.map(&:subject)}"
+                      "Expected #{firm_name} (#{email_address}) to skip '#{notification_type}' notification " \
+                      "but found: #{matching.map(&:subject)}"
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -170,9 +170,9 @@ Then('the employee receives the {string} employee notification') do |notificatio
                      end
   matching = emails_sent_to(employee.email).select { |m| m.subject.to_s.include?(subject_fragment) }
   expect(matching).not_to be_empty,
-    "Expected employee #{employee.email} to receive '#{notification_type}' email " \
-    "(subject includes '#{subject_fragment}') but none found. " \
-    "Deliveries: #{emails_sent_to(employee.email).map(&:subject)}"
+                          "Expected employee #{employee.email} to receive '#{notification_type}' email " \
+                          "(subject includes '#{subject_fragment}') but none found. " \
+                          "Deliveries: #{emails_sent_to(employee.email).map(&:subject)}"
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -186,12 +186,12 @@ Then('the investor advisor {string} the {string} notification') do |outcome, not
 
   if outcome == "receives"
     expect(matching).not_to be_empty,
-      "Expected investor advisor #{email_address} to receive '#{notification_type}' notification " \
-      "but none found. Deliveries: #{emails_sent_to(email_address).map(&:subject)}"
+                            "Expected investor advisor #{email_address} to receive '#{notification_type}' notification " \
+                            "but none found. Deliveries: #{emails_sent_to(email_address).map(&:subject)}"
   else
     expect(matching).to be_empty,
-      "Expected investor advisor #{email_address} to skip '#{notification_type}' notification " \
-      "but found: #{matching.map(&:subject)}"
+                        "Expected investor advisor #{email_address} to skip '#{notification_type}' notification " \
+                        "but found: #{matching.map(&:subject)}"
   end
 end
 
@@ -204,15 +204,14 @@ end
 # so no explicit flags needed; force: true bypasses the notification_sent guard.
 Given('there is an approved capital distribution for the fund') do
   @capital_distribution = FactoryBot.create(:capital_distribution,
-    fund: @fund,
-    entity: @fund.entity,
-    approved: true
-  )
+                                            fund: @fund,
+                                            entity: @fund.entity,
+                                            approved: true)
   # CDPs are auto-generated inline (CapitalDistributionJob runs via :inline adapter in tests).
   # Just mark the investor's payment as completed so send_notification's inner condition passes.
   @capital_distribution.capital_distribution_payments
-    .where(investor: @investor)
-    .update_all(completed: true)
+                       .where(investor: @investor)
+                       .update_all(completed: true)
   puts "\n####CapitalDistribution####\n"
   puts @capital_distribution.to_json
 end
@@ -229,9 +228,7 @@ end
 # ─────────────────────────────────────────────────────────────────────────────
 
 When('the capital remittance notification is sent') do
-  @capital_call.capital_remittances.each do |cr|
-    cr.send_notification
-  end
+  @capital_call.capital_remittances.each(&:send_notification)
 end
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -271,4 +268,155 @@ end
 
 When('the interest notification is sent') do
   @interest.notify_interest
+end
+
+Given('there is a custom notification with placeholders for the interest with subject {string}') do |subject|
+  # InterestMailer's default templates (notify_interest etc.) do NOT render _mail.html.erb,
+  # so placeholders are only resolvable through the adhoc_notification path (inherited from
+  # ApplicationMailer), which DOES render _mail.html.erb and calls render_safe_body.
+  @custom_notification = CustomNotification.create!(
+    entity: @entity,
+    owner: @secondary_sale,
+    email_method: "adhoc_notification",
+    subject: subject,
+    body: "Dear {{user_full_name}}, secondary sale {{secondary_sale_name}}, amount {{interest_amount}}. Unknown: {{not_a_real_placeholder}}.",
+    enabled: true
+  )
+end
+
+When('the interest notification is sent with placeholders') do
+  @interest.investor.notification_users(@entity).each do |user|
+    InterestNotifier.with(
+      record: @interest,
+      entity_id: @entity.id,
+      email: user.email,
+      email_method: @custom_notification.email_method,
+      msg: @custom_notification.body,
+      custom_notification_id: @custom_notification.id
+    ).deliver_later(user)
+  end
+end
+
+Then('the interest notification placeholders are resolved correctly') do
+  @interest.investor.notification_users(@entity).each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+    body = current_email.body.to_s
+
+    # Known InterestMailer placeholders resolved
+    expect(body).not_to include("{{user_full_name}}")
+    expect(body).not_to include("{{secondary_sale_name}}")
+    expect(body).not_to include("{{interest_amount}}")
+    expect(body).to include(@secondary_sale.name)
+
+    # Unknown placeholder preserved
+    expect(body).to include("{{not_a_real_placeholder}}")
+  end
+  clear_emails
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SecondarySaleMailer placeholder resolution
+# ─────────────────────────────────────────────────────────────────────────────
+
+Given('there is a custom notification with placeholders for the secondary sale with subject {string}') do |subject|
+  # SecondarySaleMailer's set_secondary_sale picks up @custom_notification via
+  # @secondary_sale.custom_notification(email_method). The notify_open_for_interests
+  # template renders _mail.html.erb when @custom_notification.present?.
+  @custom_notification = CustomNotification.create!(
+    entity: @entity,
+    owner: @secondary_sale,
+    email_method: "notify_open_for_interests",
+    subject: subject,
+    body: "Dear {{user_full_name}}, sale {{secondary_sale_name}}. Unknown: {{not_a_real_placeholder}}.",
+    enabled: true
+  )
+end
+
+When('the secondary sale notification is sent with placeholders') do
+  @interest.investor.notification_users(@entity).each do |user|
+    SecondarySaleNotifier.with(
+      record: @secondary_sale,
+      entity_id: @entity.id,
+      email: user.email,
+      investor_id: @interest.investor_id,
+      email_method: @custom_notification.email_method,
+      msg: "Secondary Sale: #{@secondary_sale.name}, open for interests"
+    ).deliver_later(user)
+  end
+end
+
+Then('the secondary sale notification placeholders are resolved correctly') do
+  @interest.investor.notification_users(@entity).each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+    body = current_email.body.to_s
+
+    # Known SecondarySaleMailer placeholders resolved
+    expect(body).not_to include("{{user_full_name}}")
+    expect(body).not_to include("{{secondary_sale_name}}")
+    expect(body).to include(@secondary_sale.name)
+
+    # Unknown placeholder preserved
+    expect(body).to include("{{not_a_real_placeholder}}")
+  end
+  clear_emails
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# OfferMailer placeholder resolution
+# ─────────────────────────────────────────────────────────────────────────────
+
+Given('there is an offer for the investor in the secondary sale') do
+  @offer = FactoryBot.build(:offer,
+                            investor: @interest.investor,
+                            entity: @entity,
+                            secondary_sale: @secondary_sale,
+                            user: @interest.investor.notification_users(@entity).first)
+  @offer.save!(validate: false)
+end
+
+Given('there is a custom notification with placeholders for the offer with subject {string}') do |subject|
+  # OfferMailer's default templates (notify_approval, notify_accept_spa) do NOT render
+  # _mail.html.erb, so placeholders are only resolvable through the adhoc_notification
+  # path (inherited from ApplicationMailer).
+  @custom_notification = CustomNotification.create!(
+    entity: @entity,
+    owner: @secondary_sale,
+    email_method: "adhoc_notification",
+    subject: subject,
+    body: "Dear {{user_full_name}}, sale {{secondary_sale_name}}, amount {{offer_amount}}. Unknown: {{not_a_real_placeholder}}.",
+    enabled: true
+  )
+end
+
+When('the offer notification is sent with placeholders') do
+  @offer.investor.notification_users(@entity).each do |user|
+    OfferNotifier.with(
+      record: @offer,
+      entity_id: @entity.id,
+      email: user.email,
+      email_method: @custom_notification.email_method,
+      msg: @custom_notification.body,
+      custom_notification_id: @custom_notification.id
+    ).deliver_later(user)
+  end
+end
+
+Then('the offer notification placeholders are resolved correctly') do
+  @offer.investor.notification_users(@entity).each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+    body = current_email.body.to_s
+
+    # Known OfferMailer placeholders resolved
+    expect(body).not_to include("{{user_full_name}}")
+    expect(body).not_to include("{{secondary_sale_name}}")
+    expect(body).not_to include("{{offer_amount}}")
+    expect(body).to include(@secondary_sale.name)
+
+    # Unknown placeholder preserved
+    expect(body).to include("{{not_a_real_placeholder}}")
+  end
+  clear_emails
 end

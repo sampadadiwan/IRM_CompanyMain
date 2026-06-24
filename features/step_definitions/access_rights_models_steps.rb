@@ -58,13 +58,13 @@ Given('there is a capital remittance for the fund') do
   commitment  = FactoryBot.create(:capital_commitment, fund: @fund, entity: @fund.entity, investor: investor)
   capital_call = FactoryBot.create(:capital_call, fund: @fund, entity: @fund.entity)
   @record = FactoryBot.create(:capital_remittance,
-    fund:                         @fund,
-    entity:                       @fund.entity,
-    capital_call:                 capital_call,
-    capital_commitment:           commitment,
-    investor:                     investor,
-    folio_id:                     SecureRandom.hex(8),
-    folio_committed_amount_cents: 10_000_000)
+                              fund: @fund,
+                              entity: @fund.entity,
+                              capital_call: capital_call,
+                              capital_commitment: commitment,
+                              investor: investor,
+                              folio_id: SecureRandom.hex(8),
+                              folio_committed_amount_cents: 10_000_000)
 end
 
 # CapitalRemittancePayment — depends on a fully valid CapitalRemittance (see above).
@@ -73,17 +73,72 @@ Given('there is a capital remittance payment for the fund') do
   commitment   = FactoryBot.create(:capital_commitment, fund: @fund, entity: @fund.entity, investor: investor)
   capital_call = FactoryBot.create(:capital_call, fund: @fund, entity: @fund.entity)
   capital_remittance = FactoryBot.create(:capital_remittance,
-    fund:                         @fund,
-    entity:                       @fund.entity,
-    capital_call:                 capital_call,
-    capital_commitment:           commitment,
-    investor:                     investor,
-    folio_id:                     SecureRandom.hex(8),
-    folio_committed_amount_cents: 10_000_000)
+                                         fund: @fund,
+                                         entity: @fund.entity,
+                                         capital_call: capital_call,
+                                         capital_commitment: commitment,
+                                         investor: investor,
+                                         folio_id: SecureRandom.hex(8),
+                                         folio_committed_amount_cents: 10_000_000)
   @record = FactoryBot.create(:capital_remittance_payment,
-    fund:               @fund,
-    entity:             @fund.entity,
-    capital_remittance: capital_remittance)
+                              fund: @fund,
+                              entity: @fund.entity,
+                              capital_remittance: capital_remittance)
+end
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CapitalRemittancePaymentMailer placeholder resolution
+# ─────────────────────────────────────────────────────────────────────────────
+
+Given('there is a custom notification with placeholders for the capital call with subject {string}') do |subject|
+  capital_call = @record.capital_remittance.capital_call
+  @custom_notification = CustomNotification.create!(
+    entity: @entity,
+    owner: capital_call,
+    email_method: "notify_capital_remittance_payment",
+    subject: subject,
+    body: "Dear {{user_full_name}}, fund {{fund_name}}, call {{capital_call_name}}, payment {{payment_amount}}, folio {{folio_id}}. Unknown: {{not_a_real_placeholder}}.",
+    enabled: true
+  )
+end
+
+When('the remittance payment notification is sent with placeholders') do
+  investor = @investor || @fund.investors.first
+  investor.notification_users(@fund, with_tag: 'CapitalCall').each do |user|
+    CapitalRemittancePaymentNotifier.with(
+      record: @record,
+      entity_id: @entity.id,
+      email: user.email,
+      email_method: @custom_notification.email_method,
+      msg: @custom_notification.body
+    ).deliver_later(user)
+  end
+end
+
+Then('the remittance payment notification placeholders are resolved correctly') do
+  investor       = @investor || @fund.investors.first
+  capital_call   = @record.capital_remittance.capital_call
+  capital_remit  = @record.capital_remittance
+
+  investor.notification_users(@fund, with_tag: 'CapitalCall').each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+    body = current_email.body.to_s
+
+    # Known CapitalRemittancePaymentMailer placeholders resolved
+    expect(body).not_to include("{{user_full_name}}")
+    expect(body).not_to include("{{fund_name}}")
+    expect(body).not_to include("{{capital_call_name}}")
+    expect(body).not_to include("{{payment_amount}}")
+    expect(body).not_to include("{{folio_id}}")
+    expect(body).to include(@fund.name)
+    expect(body).to include(capital_call.name)
+    expect(body).to include(capital_remit.folio_id)
+
+    # Unknown placeholder preserved
+    expect(body).to include("{{not_a_real_placeholder}}")
+  end
+  clear_emails
 end
 
 # CapitalDistributionPayment — two tricky constraints:
@@ -98,23 +153,23 @@ Given('there is a capital distribution payment for the fund') do
   folio_id    = "cdp-#{SecureRandom.hex(6)}"
   # Commitment with same folio_id so ensure_commitment callback resolves it on the payment
   FactoryBot.create(:capital_commitment, fund: @fund, entity: @fund.entity,
-    investor: investor, folio_id: folio_id)
+                                         investor: investor, folio_id: folio_id)
   # generate_payments:false prevents inline CapitalDistributionJob from consuming our folio_id
   capital_distribution = FactoryBot.create(:capital_distribution, fund: @fund, entity: @fund.entity,
-    generate_payments: false)
+                                                                  generate_payments: false)
   @record = FactoryBot.create(:capital_distribution_payment,
-    fund:                 @fund,
-    entity:               @fund.entity,
-    capital_distribution: capital_distribution,
-    investor:             investor,
-    folio_id:             folio_id)
+                              fund: @fund,
+                              entity: @fund.entity,
+                              capital_distribution: capital_distribution,
+                              investor: investor,
+                              folio_id: folio_id)
 end
 
 # AccountEntry — include investor so permissioned_investor? can check investor_entity_id.
 # Without investor, the entity-scope check record.investor.investor_entity_id crashes on nil.
 Given('there is an account entry for the fund') do
   @record = FactoryBot.create(:account_entry, fund: @fund, entity: @fund.entity,
-    investor: @investor || @fund.investors.first)
+                                              investor: @investor || @fund.investors.first)
 end
 
 # CommitmentAdjustment — requires a CapitalCommitment and as_of date.
@@ -124,11 +179,11 @@ Given('there is a commitment adjustment for the fund') do
   investor   = @investor || @fund.investors.first
   commitment = FactoryBot.create(:capital_commitment, fund: @fund, entity: @fund.entity, investor: investor)
   @record = FactoryBot.create(:commitment_adjustment,
-    fund:               @fund,
-    entity:             @fund.entity,
-    capital_commitment: commitment,
-    adjustment_type:    'Top Up',
-    as_of:              commitment.commitment_date)
+                              fund: @fund,
+                              entity: @fund.entity,
+                              capital_commitment: commitment,
+                              adjustment_type: 'Top Up',
+                              as_of: commitment.commitment_date)
 end
 
 # PortfolioScenario — no factory; build directly.
@@ -136,10 +191,11 @@ end
 Given('there is a portfolio scenario for the fund') do
   user    = @target_user || @fund.entity.employees.first
   @record = PortfolioScenario.create!(
-    fund:   @fund,
+    fund: @fund,
     entity: @fund.entity,
-    user:   user,
-    name:   'Test Scenario')
+    user: user,
+    name: 'Test Scenario'
+  )
 end
 
 # ExcusedInvestor — the factory has a stale folio_id attribute that no longer exists on the model.
@@ -162,10 +218,10 @@ Given('there is a fund unit for the fund') do
   investor   = @investor || @fund.investors.first
   commitment = FactoryBot.create(:capital_commitment, fund: @fund, entity: @fund.entity, investor: investor)
   @record = FactoryBot.create(:fund_unit,
-    fund:               @fund,
-    entity:             @fund.entity,
-    investor:           investor,
-    capital_commitment: commitment)
+                              fund: @fund,
+                              entity: @fund.entity,
+                              investor: investor,
+                              capital_commitment: commitment)
 end
 
 # PortfolioInvestment — renamed to avoid conflict with validation_rules.rb step of same name.
@@ -175,36 +231,40 @@ end
 Given('there is a portfolio investment record for the fund') do
   # portfolio_company must exist before instrument (belongs_to :portfolio_company without optional:true)
   pc_entity = Entity.create!(
-    name:          "PC Entity #{SecureRandom.hex(4)}",
-    entity_type:   'Investor',
-    primary_email: "pc#{SecureRandom.hex(4)}@example.com")
+    name: "PC Entity #{SecureRandom.hex(4)}",
+    entity_type: 'Investor',
+    primary_email: "pc#{SecureRandom.hex(4)}@example.com"
+  )
   portfolio_company = Investor.new(
-    entity:          @fund.entity,
+    entity: @fund.entity,
     investor_entity: pc_entity,
-    investor_name:   pc_entity.name,
-    category:        'Portfolio Company')
+    investor_name: pc_entity.name,
+    category: 'Portfolio Company'
+  )
   portfolio_company.save!(validate: false)
   instrument = FactoryBot.create(:investment_instrument,
-    entity:            @fund.entity,
-    portfolio_company: portfolio_company)
+                                 entity: @fund.entity,
+                                 portfolio_company: portfolio_company)
   aggregate = AggregatePortfolioInvestment.new(
-    fund:                  @fund,
-    entity:                @fund.entity,
-    portfolio_company:     portfolio_company,
-    investment_instrument: instrument)
+    fund: @fund,
+    entity: @fund.entity,
+    portfolio_company: portfolio_company,
+    investment_instrument: instrument
+  )
   aggregate.save!(validate: false)
   @record = PortfolioInvestment.new(
-    fund:                           @fund,
-    entity:                         @fund.entity,
-    investment_instrument:          instrument,
-    portfolio_company:              portfolio_company,
+    fund: @fund,
+    entity: @fund.entity,
+    investment_instrument: instrument,
+    portfolio_company: portfolio_company,
     aggregate_portfolio_investment: aggregate,
-    amount_cents:                   10_000_000,
-    investment_date:                Date.today - 1.month,
-    quantity:                       100,
-    sub_category:                   'Equity',
-    category:                       'Unlisted',
-    excused_folio_ids:              [])
+    amount_cents: 10_000_000,
+    investment_date: Time.zone.today - 1.month,
+    quantity: 100,
+    sub_category: 'Equity',
+    category: 'Unlisted',
+    excused_folio_ids: []
+  )
   @record.save!(validate: false)
 end
 
@@ -250,13 +310,14 @@ Given('there is an expression of interest for the investment opportunity') do
   # 110_000_000 paise = 1,100,000 rupees, which clears the minimum and stays below fund_raise_amount.
   @record = ExpressionOfInterest.create!(
     investment_opportunity: @io,
-    entity:                 @io.entity,
-    investor:               investor,
-    eoi_entity:             eoi_entity,
-    user:                   eoi_user,
-    amount_cents:           110_000_000,
-    approved:               false,
-    verified:               false)
+    entity: @io.entity,
+    investor: investor,
+    eoi_entity: eoi_entity,
+    user: eoi_user,
+    amount_cents: 110_000_000,
+    approved: false,
+    verified: false
+  )
 end
 
 # ---------------------------------------------------------------------------
@@ -291,12 +352,13 @@ Given('there is a document in the folder {string}') do |folder_name|
   folder = Folder.find_by!(name: name)
   user   = folder.entity.employees.first
   @doc_record = Document.create!(
-    name:   'Test Document',
-    text:   'Sample text',
+    name: 'Test Document',
+    text: 'Sample text',
     entity: folder.entity,
     folder: folder,
-    user:   user,
-    file:   File.new('public/img/whatsappQR.png', 'r'))
+    user: user,
+    file: File.new('public/img/whatsappQR.png', 'r')
+  )
 end
 
 # Creates a Document with public_visibility=true; visible regardless of entity.
@@ -306,13 +368,14 @@ Given('there is a public document in the folder {string}') do |folder_name|
   folder = Folder.find_by!(name: name)
   user   = folder.entity.employees.first
   @doc_record = Document.create!(
-    name:              'Public Document',
-    text:              'Public sample text',
-    entity:            folder.entity,
-    folder:            folder,
-    user:              user,
+    name: 'Public Document',
+    text: 'Public sample text',
+    entity: folder.entity,
+    folder: folder,
+    user: user,
     public_visibility: true,
-    file:              File.new('public/img/whatsappQR.png', 'r'))
+    file: File.new('public/img/whatsappQR.png', 'r')
+  )
 end
 
 # Creates a Valuation owned by the most recently created fund (@fund).
@@ -321,13 +384,14 @@ end
 Given('there is a valuation for the fund') do
   # currency is a computed method (no DB column); owner.currency provides it at runtime
   @valuation_record = Valuation.new(
-    owner:                  @fund,
-    entity:                 @fund.entity,
-    category:               'Unlisted',
-    sub_category:           'Equity',
-    valuation_date:         Date.today - 1.month,
-    valuation_cents:        100_000_000,
-    per_share_value_cents:  100_000)
+    owner: @fund,
+    entity: @fund.entity,
+    category: 'Unlisted',
+    sub_category: 'Equity',
+    valuation_date: Time.zone.today - 1.month,
+    valuation_cents: 100_000_000,
+    per_share_value_cents: 100_000
+  )
   @valuation_record.save!(validate: false)
 end
 
@@ -337,13 +401,14 @@ Given('there is a task for the entity {string} assigned to {string}') do |entity
   user      = User.find_by!(email: email)
   # for_entity_id is checked in TaskPolicy.create? for non-employee users
   @task_record = Task.create!(
-    details:     'Test task',
-    entity:      entity,
-    for_entity:  entity,
-    user:        user,
+    details: 'Test task',
+    entity: entity,
+    for_entity: entity,
+    user: user,
     assigned_to: user,
     for_support: false,
-    completed:   false)
+    completed: false
+  )
 end
 
 # ---------------------------------------------------------------------------
@@ -356,7 +421,7 @@ Then('the user {string} should be allowed {string} on the record') do |email, ac
   actions.split(',').each do |action|
     result = Pundit.policy(user, @record).send("#{action.strip}?")
     expect(result).to be_truthy,
-      "expected #{email} to be allowed #{action} on #{@record.class.name} but was denied"
+                      "expected #{email} to be allowed #{action} on #{@record.class.name} but was denied"
   end
 end
 
@@ -366,7 +431,7 @@ Then('the user {string} should be denied {string} on the record') do |email, act
   actions.split(',').each do |action|
     result = Pundit.policy(user, @record).send("#{action.strip}?")
     expect(result).to be_falsey,
-      "expected #{email} to be denied #{action} on #{@record.class.name} but was allowed"
+                      "expected #{email} to be denied #{action} on #{@record.class.name} but was allowed"
   end
 end
 
@@ -381,7 +446,7 @@ Then('the user {string} should be allowed {string} on the investor record') do |
   actions.split(',').each do |action|
     result = Pundit.policy(user, @investor).send("#{action.strip}?")
     expect(result).to be_truthy,
-      "expected #{email} to be allowed #{action} on investor #{@investor.investor_name} but was denied"
+                      "expected #{email} to be allowed #{action} on investor #{@investor.investor_name} but was denied"
   end
 end
 
@@ -391,7 +456,7 @@ Then('the user {string} should be denied {string} on the investor record') do |e
   actions.split(',').each do |action|
     result = Pundit.policy(user, @investor).send("#{action.strip}?")
     expect(result).to be_falsey,
-      "expected #{email} to be denied #{action} on investor #{@investor.investor_name} but was allowed"
+                      "expected #{email} to be denied #{action} on investor #{@investor.investor_name} but was allowed"
   end
 end
 
@@ -401,7 +466,7 @@ Then('the user {string} should be allowed {string} on the kyc record') do |email
   actions.split(',').each do |action|
     result = Pundit.policy(user, @kyc_record).send("#{action.strip}?")
     expect(result).to be_truthy,
-      "expected #{email} to be allowed #{action} on InvestorKyc but was denied"
+                      "expected #{email} to be allowed #{action} on InvestorKyc but was denied"
   end
 end
 
@@ -411,7 +476,7 @@ Then('the user {string} should be denied {string} on the kyc record') do |email,
   actions.split(',').each do |action|
     result = Pundit.policy(user, @kyc_record).send("#{action.strip}?")
     expect(result).to be_falsey,
-      "expected #{email} to be denied #{action} on InvestorKyc but was allowed"
+                      "expected #{email} to be denied #{action} on InvestorKyc but was allowed"
   end
 end
 
@@ -421,7 +486,7 @@ Then('the user {string} should be allowed {string} on the document record') do |
   actions.split(',').each do |action|
     result = Pundit.policy(user, @doc_record).send("#{action.strip}?")
     expect(result).to be_truthy,
-      "expected #{email} to be allowed #{action} on Document but was denied"
+                      "expected #{email} to be allowed #{action} on Document but was denied"
   end
 end
 
@@ -431,7 +496,7 @@ Then('the user {string} should be denied {string} on the document record') do |e
   actions.split(',').each do |action|
     result = Pundit.policy(user, @doc_record).send("#{action.strip}?")
     expect(result).to be_falsey,
-      "expected #{email} to be denied #{action} on Document but was allowed"
+                      "expected #{email} to be denied #{action} on Document but was allowed"
   end
 end
 
@@ -441,7 +506,7 @@ Then('the user {string} should be allowed {string} on the folder record') do |em
   actions.split(',').each do |action|
     result = Pundit.policy(user, @folder_record).send("#{action.strip}?")
     expect(result).to be_truthy,
-      "expected #{email} to be allowed #{action} on Folder but was denied"
+                      "expected #{email} to be allowed #{action} on Folder but was denied"
   end
 end
 
@@ -451,7 +516,7 @@ Then('the user {string} should be denied {string} on the folder record') do |ema
   actions.split(',').each do |action|
     result = Pundit.policy(user, @folder_record).send("#{action.strip}?")
     expect(result).to be_falsey,
-      "expected #{email} to be denied #{action} on Folder but was allowed"
+                      "expected #{email} to be denied #{action} on Folder but was allowed"
   end
 end
 
@@ -461,7 +526,7 @@ Then('the user {string} should be allowed {string} on the valuation record') do 
   actions.split(',').each do |action|
     result = Pundit.policy(user, @valuation_record).send("#{action.strip}?")
     expect(result).to be_truthy,
-      "expected #{email} to be allowed #{action} on Valuation but was denied"
+                      "expected #{email} to be allowed #{action} on Valuation but was denied"
   end
 end
 
@@ -471,7 +536,7 @@ Then('the user {string} should be denied {string} on the valuation record') do |
   actions.split(',').each do |action|
     result = Pundit.policy(user, @valuation_record).send("#{action.strip}?")
     expect(result).to be_falsey,
-      "expected #{email} to be denied #{action} on Valuation but was allowed"
+                      "expected #{email} to be denied #{action} on Valuation but was allowed"
   end
 end
 
@@ -481,7 +546,7 @@ Then('the user {string} should be allowed {string} on the task record') do |emai
   actions.split(',').each do |action|
     result = Pundit.policy(user, @task_record).send("#{action.strip}?")
     expect(result).to be_truthy,
-      "expected #{email} to be allowed #{action} on Task but was denied"
+                      "expected #{email} to be allowed #{action} on Task but was denied"
   end
 end
 
@@ -491,6 +556,6 @@ Then('the user {string} should be denied {string} on the task record') do |email
   actions.split(',').each do |action|
     result = Pundit.policy(user, @task_record).send("#{action.strip}?")
     expect(result).to be_falsey,
-      "expected #{email} to be denied #{action} on Task but was allowed"
+                      "expected #{email} to be denied #{action} on Task but was allowed"
   end
 end

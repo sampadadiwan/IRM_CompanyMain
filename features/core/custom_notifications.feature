@@ -72,6 +72,18 @@ Scenario Outline: KYC Notifications - investor_user
     |true         | PAN=ABCD9870;send_kyc_form_to_user=true | true         | subject=KYC New 1;email_method=notify_kyc_required | subject=KYC Updated 1;email_method=notify_kyc_updated | subject=KYC Reminder 1;email_method=kyc_required_reminder |
     |true         | PAN=ABCD9876;send_kyc_form_to_user=true| true          | subject=KYC New 2;email_method=notify_kyc_required | subject=KYC Updated 2;email_method=notify_kyc_updated | subject=KYC Reminder 1;email_method=kyc_required_reminder |
 
+Scenario Outline: KYC notification placeholder substitution
+  Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is an existing investor "name=Investor 1" with "1" users
+  Given there is a custom notification with placeholders for the KYC with subject "<subject>" and email_method "notify_kyc_required"
+  Given a InvestorKyc is created with details "PAN=KYC1234;send_kyc_form_to_user=true" by "false"
+  Then the KYC notification placeholders are resolved correctly for "notify_kyc_required"
+
+  Examples:
+    | subject |
+    | KYC Placeholder Test |
+
 Scenario Outline: Custom Notifications - update latest
   Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"
@@ -106,7 +118,20 @@ Scenario Outline: Capital call with custom notification
     | custom_notification_new|
     | subject=Remittance is due for fund;email_method=notify_capital_remittance |
 
-
+Scenario: Capital call notification placeholder substitution
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund" 
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
+  Given the fund has capital call template
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
+  Given there is a custom notification with placeholders in place for the Call with email_method "notify_capital_remittance"
+  Then when the capital call is approved
+  Then the capital remittance notification placeholders are resolved correctly
 
 
 Scenario Outline: Incoming Email for a capital commitment

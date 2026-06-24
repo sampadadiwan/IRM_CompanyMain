@@ -241,6 +241,7 @@ Examples:
   |user	    |entity                       |document   |
   |  	      |entity_type=Investment Fund  |test doc   |
 
+@notification
 Scenario Outline: Send a document as Custom Notification
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
@@ -254,3 +255,14 @@ Scenario Outline: Send a document as Custom Notification
 Examples:
   |user     |entity                       |document   |
   |         |entity_type=Investment Fund  |test doc   |
+
+@notification
+Scenario: Send a document as Custom Notification with placeholders
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Test fund" for the entity
+  And user goes to add a new document "test doc" for the fund
+  Then user should be able to save the document
+  Given there is a Custom Notification with placeholders for the entity
+  Then user sends a single document using that Custom Notification
+  Then the document notification placeholders are resolved correctly

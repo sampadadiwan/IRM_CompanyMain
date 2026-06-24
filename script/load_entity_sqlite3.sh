@@ -1796,7 +1796,7 @@ INDEX_tasks='
   CREATE INDEX "idx_tasks_task_template_id" ON "tasks"("task_template_id");
   CREATE INDEX "idx_tasks_user_id" ON "tasks"("user_id");
 '
-COLS_users=("id" "accept_terms" "accepted_terms_on" "access_rights_cache" "access_rights_cached_permissions" "active" "advisor_entity_id" "advisor_entity_roles" "call_code" "confirmation_sent_at" "confirmation_token" "confirmed_at" "created_at" "curr_role" "current_sign_in_at" "current_sign_in_ip" "deleted_at" "dept" "email" "enable_support" "encrypted_password" "entity_id" "entity_type" "extended_permissions" "failed_attempts" "first_name" "form_type_id" "investor_advisor_id" "json_fields" "last_name" "last_sign_in_at" "last_sign_in_ip" "last_synced_at" "last_synced_ccf_hex" "locked_at" "permissions" "phone" "primary_region" "primary_region_id" "regions" "remember_created_at" "reset_password_sent_at" "reset_password_token" "sale_notification" "session_token" "sign_in_count" "signature_data" "system_created" "tag_list" "unlock_token" "updated_at" "whatsapp_enabled")
+COLS_users=("id" "accept_terms" "accepted_terms_on" "access_rights_cache" "access_rights_cached_permissions" "active" "advisor_entity_id" "advisor_entity_roles" "call_code" "confirmation_sent_at" "confirmation_token" "created_at" "curr_role" "current_sign_in_at" "current_sign_in_ip" "deleted_at" "dept" "email" "enable_support" "encrypted_password" "entity_id" "entity_type" "extended_permissions" "failed_attempts" "first_name" "form_type_id" "investor_advisor_id" "json_fields" "last_name" "last_sign_in_at" "last_sign_in_ip" "last_synced_at" "last_synced_ccf_hex" "locked_at" "permissions" "phone" "primary_region" "primary_region_id" "regions" "remember_created_at" "reset_password_sent_at" "reset_password_token" "sale_notification" "session_token" "sign_in_count" "signature_data" "system_created" "tag_list" "unlock_token" "updated_at" "whatsapp_enabled")
 TEXT_COLS_users=("access_rights_cache" "advisor_entity_roles" "call_code" "confirmation_token" "curr_role" "current_sign_in_ip" "dept" "email" "encrypted_password" "entity_type" "first_name" "json_fields" "last_name" "last_sign_in_ip" "last_synced_ccf_hex" "phone" "primary_region" "regions" "reset_password_token" "session_token" "signature_data" "tag_list" "unlock_token")
 SCHEMA_users='
   "id" BIGINT PRIMARY KEY,
@@ -1810,7 +1810,6 @@ SCHEMA_users='
   "call_code" VARCHAR(255),
   "confirmation_sent_at" DATETIME,
   "confirmation_token" VARCHAR(255),
-  "confirmed_at" DATETIME,
   "created_at" DATETIME,
   "curr_role" VARCHAR(255),
   "current_sign_in_at" DATETIME,

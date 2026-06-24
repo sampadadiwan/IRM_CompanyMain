@@ -96,8 +96,8 @@ Then('an document should be created') do
   puts @created_doc.to_json
 
   @created_doc.name.should == @document.name
-  @created_doc.download.should == (@document.download.nil? ? false : @document.download)
-  @created_doc.printing.should == (@document.printing.nil? ? false : @document.printing)
+  (!!@created_doc.download).should == (!!@document.download)
+  (!!@created_doc.printing).should == (!!@document.printing)
   @created_doc.tag_list.should == @document.tag_list if @document.tag_list
   @created_doc.user_id.should == @user.id
   if @created_doc.owner != nil
@@ -329,6 +329,34 @@ Given('there is a Custom Notification for the entity') do
   @document = Document.first
   allow_any_instance_of(Document).to receive(:notification_users).and_return([@user])
   @custom_notification = FactoryBot.create(:custom_notification, entity: @entity, owner: @entity, for_type: "Send Document", body: Faker::Lorem.paragraphs.join(". "), email_method: "send_document")
+end
+
+Given('there is a Custom Notification with placeholders for the entity') do
+  @document = Document.first
+  allow_any_instance_of(Document).to receive(:notification_users).and_return([@user])
+  @custom_notification = CustomNotification.create!(
+    entity: @entity,
+    owner: @entity,
+    for_type: "Send Document",
+    email_method: "send_document",
+    subject: "Document with Placeholders",
+    body: "Dear {{user_full_name}}, document {{document_name}} is ready. Unknown: {{not_a_real_placeholder}}.",
+    enabled: true
+  )
+end
+
+Then('the document notification placeholders are resolved correctly') do
+  open_email(@user.email)
+  expect(current_email).not_to be_nil
+  body = current_email.body.to_s
+
+  # Known DocumentMailer placeholders resolved
+  expect(body).not_to include("{{user_full_name}}")
+  expect(body).not_to include("{{document_name}}")
+  expect(body).to include(@document.name)
+
+  # Unknown placeholder preserved
+  expect(body).to include("{{not_a_real_placeholder}}")
 end
 
 Then('user sends a single document using that Custom Notification') do

@@ -52,3 +52,10 @@ Feature: Deal Activity Move Notifications
     And the deal activity "Financial DD" has "notify_investor" enabled
     When I move the deal investor "Global VC" to stage "Financial DD"
     Then no deal notification email should be sent to "investor@vc.com"
+
+  @javascript
+  Scenario: Custom notification placeholders are resolved for deal activity move
+    Given there is a custom notification with placeholders for the deal with method "deal_activity_move" and subject "Deal Placeholder Test"
+    And the deal activity "Financial DD" has "notify_employees" enabled
+    When I move the deal investor "Global VC" to stage "Financial DD"
+    Then the deal notification placeholders are resolved correctly

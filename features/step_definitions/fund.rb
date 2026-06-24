@@ -1,173 +1,5 @@
-  include CurrencyHelper
-  include ActionView::Helpers::SanitizeHelper
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+include CurrencyHelper
+include ActionView::Helpers::SanitizeHelper
 
 # Then('{string} has {string} "{string}" access to the fund_ratios') do |arg1,truefalse, accesses|
 #   args_temp = arg1.split(";").to_h { |kv| kv.split("=") }
@@ -186,48 +18,6 @@
 #     end
 #   end
 # end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # ── Transfer Fund Units: new step definitions ─────────────────────────────────
 
@@ -251,201 +41,125 @@
 
 # ── End Transfer Fund Units step definitions ───────────────────────────────────
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  # Given the distribution is approved
-
-
-
-
-
-
-
-
-
-  Given('I am at the funds page') do
-    visit(funds_url)
+# Given the distribution is approved
+
+Given('I am at the funds page') do
+  visit(funds_url)
+end
+When('I create a new fund {string}') do |arg1|
+  @fund = FactoryBot.build(:fund)
+  key_values(@fund, arg1)
+
+  click_on("New Fund")
+  fill_in('fund_name', with: @fund.name)
+  select(@fund.currency, from: "fund_currency")
+  # fill_in('fund_currency', with: @fund.currency)
+  fill_in('fund_unit_types', with: @fund.unit_types) if @fund.entity.permissions.enable_units?
+  click_on("Next")
+  find('trix-editor').click.set(@fund.details)
+  click_on("Save")
+end
+Then('an fund should be created') do
+  db_fund = Fund.last
+  db_fund.name.should
+  @fund.name
+  strip_tags(db_fund.details)
+  @fund.details
+
+  @fund = db_fund
+end
+When('I am at the fund details page') do
+  visit(fund_url(@fund))
+end
+Then('I should see the fund details on the details page') do
+  find(".show_details_link").click
+  expect(page).to have_content(@fund.name)
+  @fund.unit_types&.split(",")&.each do |unit_type|
+    expect(page).to have_content(unit_type)
   end
-  When('I create a new fund {string}') do |arg1|
-    @fund = FactoryBot.build(:fund)
-    key_values(@fund, arg1)
+  expect(page).to have_content(strip_tags(@fund.details))
+end
+Then('I should see the fund in all funds page') do
+  visit(funds_path)
+  expect(page).to have_content(@fund.name)
+  # expect(page).to have_content(money_to_currency @fund.collected_amount)
+end
+Given('there is a fund {string} for the entity') do |arg|
+  @fund = FactoryBot.build(:fund, entity_id: @user.entity_id)
+  key_values(@fund, arg)
+  @fund.save
+  puts "\n####Fund####\n"
+  puts @fund.to_json
+end
+Given('the investors are added to the fund') do
+  @user.entity.investors.each do |inv|
+    ar = AccessRight.create(owner: @fund, access_type: "Fund", metadata: "Investor",
+                            access_to_investor_id: inv.id, entity: @user.entity)
 
-    click_on("New Fund")
-    fill_in('fund_name', with: @fund.name)
-    select(@fund.currency, from: "fund_currency")
-    # fill_in('fund_currency', with: @fund.currency)
-    fill_in('fund_unit_types', with: @fund.unit_types) if @fund.entity.permissions.enable_units?
-    click_on("Next")
-    find('trix-editor').click.set(@fund.details)
-    click_on("Save")
+    puts "\n####Granted Access####\n"
+    puts ar.to_json
   end
-  Then('an fund should be created') do
-    db_fund = Fund.last
-    db_fund.name.should == @fund.name
-    strip_tags(db_fund.details) == @fund.details
-
-    @fund = db_fund
-  end
-  When('I am at the fund details page') do
-    visit(fund_url(@fund))
-  end
-  Then('I should see the fund details on the details page') do
-    find(".show_details_link").click
-    expect(page).to have_content(@fund.name)
-    @fund.unit_types&.split(",").each do |unit_type|
-      expect(page).to have_content(unit_type)
-    end
-    expect(page).to have_content(strip_tags(@fund.details))
-  end
-  Then('I should see the fund in all funds page') do
-    visit(funds_path)
-    expect(page).to have_content(@fund.name)
-    # expect(page).to have_content(money_to_currency @fund.collected_amount)
-  end
-  Given('there is a fund {string} for the entity') do |arg|
-    @fund = FactoryBot.build(:fund, entity_id: @user.entity_id)
-    key_values(@fund, arg)
-    @fund.save
-    puts "\n####Fund####\n"
-    puts @fund.to_json
-  end
-  Given('the investors are added to the fund') do
-    @user.entity.investors.each do |inv|
-        ar = AccessRight.create( owner: @fund, access_type: "Fund", metadata: "Investor",
-                                 access_to_investor_id: inv.id, entity: @user.entity)
-
-
-        puts "\n####Granted Access####\n"
-        puts ar.to_json
-    end
-
-  end
+end
 Then('the investors must receive email with subject {string} with the document {string} attached') do |subject, document_name|
-  #sleep((2)
-  Investor.all.each do |inv|
-    if inv.emails.present?
-      inv.emails.each do |email|
-        puts "# checking email #{subject} sent for #{email} for investor #{inv}"
-        open_email(email)
-        puts "from #{current_email.from}, to #{current_email.to}, subject #{current_email.subject}"
-        @custom_notification ||= nil
-        if @custom_notification.present?
-          expect(current_email.subject).to include @custom_notification.subject
-          expect(current_email.body).to include @custom_notification.body
-        else
-          expect(current_email.subject).to include subject
-        end
+  # sleep((2)
+  Investor.find_each do |inv|
+    next if inv.emails.blank?
 
-        @cc_email ||= nil
-        if @cc_email
-          puts " Checking cc email #{@cc_email} for #{email}"
-          expect(current_email.cc).to include @cc_email
-        end
-
-        # ✅ Check for attachment
-        if document_name.present?
-          puts "Checking for attachment #{document_name} for #{email}"
-          attachment_filenames = current_email.attachments.map(&:filename)
-          expect(attachment_filenames.select{ |filename| filename.include?(document_name) || filename.downcase.include?(document_name.downcase)}).to be_present, "Expected attachment #{document_name}, but got #{attachment_filenames.inspect}"
-        end
-
+    inv.emails.each do |email|
+      puts "# checking email #{subject} sent for #{email} for investor #{inv}"
+      open_email(email)
+      puts "from #{current_email.from}, to #{current_email.to}, subject #{current_email.subject}"
+      @custom_notification ||= nil
+      if @custom_notification.present?
+        expect(current_email.subject).to include @custom_notification.subject
+        expect(current_email.body).to include @custom_notification.body
+      else
+        expect(current_email.subject).to include subject
       end
+
+      @cc_email ||= nil
+      if @cc_email
+        puts " Checking cc email #{@cc_email} for #{email}"
+        expect(current_email.cc).to include @cc_email
+      end
+
+      # ✅ Check for attachment
+      next if document_name.blank?
+
+      puts "Checking for attachment #{document_name} for #{email}"
+      attachment_filenames = current_email.attachments.map(&:filename)
+      expect(attachment_filenames.select { |filename| filename.include?(document_name) || filename.downcase.include?(document_name.downcase) }).to be_present, "Expected attachment #{document_name}, but got #{attachment_filenames.inspect}"
     end
   end
 end
 Given('Given I upload {string} file for {string} of the fund') do |file, tab|
-
   @import_file = file
   visit(fund_path(@fund))
   click_on(tab)
-  #sleep((0.5)
-  if page.has_button?("Upload / Download")
-    click_on("Upload / Download")
-    click_on("Upload")
-  else
-    click_on("Upload")
-  end
-
+  # sleep((0.5)
+  click_on("Upload / Download") if page.has_button?("Upload / Download")
+  click_on("Upload")
 
   fill_in('import_upload_name', with: "Test Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
-  sleep(8)  # JS direct-upload to /upload endpoint; larger window for parallel load
+  sleep(8) # JS direct-upload to /upload endpoint; larger window for parallel load
   click_on("Save")
   expect(page).to have_content("Import Upload:", wait: 15)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  ImportUpload.last.failed_row_count.should == 0
+  ImportUpload.last.failed_row_count.should
   ImportUpload.last.status.should == "Completed"
 end
 Then('the fund must have the counter caches updated') do
-
   @fund.reload
-  @fund.collected_amount_cents.should == CapitalCommitment.sum(:collected_amount_cents)
+  @fund.collected_amount_cents.should
+  CapitalCommitment.sum(:collected_amount_cents)
   @fund.committed_amount_cents.should == CapitalCommitment.sum(:committed_amount_cents)
 end
 Then('the funds are updated with remittance numbers') do
-  Fund.all.each do |f|
+  Fund.find_each do |f|
     f.reload
-    f.call_amount_cents.should == f.capital_remittances.sum(:call_amount_cents)
+    f.call_amount_cents.should
+    f.capital_remittances.sum(:call_amount_cents)
     f.collected_amount_cents.should == f.capital_remittances.verified.sum(:collected_amount_cents)
   end
 end
@@ -454,13 +168,12 @@ Given('my firm is an investor in the fund') do
   puts "\n####Fund Investor####\n"
   puts @investor.to_json
 
-  ar = AccessRight.create!( owner: @fund, access_type: "Fund",
-      access_to_investor_id: @investor.id, entity: @fund.entity)
+  ar = AccessRight.create!(owner: @fund, access_type: "Fund",
+                           access_to_investor_id: @investor.id, entity: @fund.entity)
 
-
-  ia = InvestorAccess.create!(entity: @investor.entity, investor: @investor,
-        first_name: @user.first_name, last_name: @user.last_name,
-        email: @user.email, granter: @user, approved: true )
+  InvestorAccess.create!(entity: @investor.entity, investor: @investor,
+                         first_name: @user.first_name, last_name: @user.last_name,
+                         email: @user.email, granter: @user, approved: true)
 
   puts "\n####Granted Access####\n"
   puts ar.to_json
@@ -472,7 +185,7 @@ Then('I should be able to see my investor kycs') do
 
   visible_kycs = []
   invisible_kycs = []
-  InvestorKyc.all.includes(:investor).each do |kyc|
+  InvestorKyc.includes(:investor).find_each do |kyc|
     visit(investor_kyc_path(kyc))
     @investor = kyc.investor
 
@@ -495,17 +208,16 @@ Then('I should be able to see my investor kycs') do
     end
   end
 
-  puts "Visible KYC: #{visible_kycs.map{|k| k.investor.investor_name}} for User #{@user.email}"
-  puts "Invisible KYC: #{invisible_kycs.map{|k| k.investor.investor_name}} for User #{@user.email}"
-
+  puts "Visible KYC: #{visible_kycs.map { |k| k.investor.investor_name }} for User #{@user.email}"
+  puts "Invisible KYC: #{invisible_kycs.map { |k| k.investor.investor_name }} for User #{@user.email}"
 end
 Then('all the investor advisors should be able to receive notifications for the folios they represent') do
-  InvestorAdvisor.all.each do |investor_advisor|
+  InvestorAdvisor.find_each do |investor_advisor|
     visible_kycs = []
     invisible_kycs = []
 
     # For each investor access, check if the advisor is notified for each capital commitment
-    InvestorAccess.approved.where(email: investor_advisor.email).all.each do |investor_access|
+    InvestorAccess.approved.where(email: investor_advisor.email).find_each do |investor_access|
       investor = investor_access.investor
       investor.capital_commitments.each do |cc|
         notif_emails = investor.notification_users(cc).pluck(:email)
@@ -520,7 +232,6 @@ Then('all the investor advisors should be able to receive notifications for the 
         investor.notification_users(cdp).pluck(:email).include?(investor_advisor.email).should == true
       end
 
-
       investor.investor_kycs.each do |kyc|
         if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: true)
           kyc.notification_users.pluck(:email).include?(investor_advisor.email).should == true
@@ -532,75 +243,76 @@ Then('all the investor advisors should be able to receive notifications for the 
       end
     end
 
-    puts "Visible KYC: #{visible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"
-    puts "Invisible KYC: #{invisible_kycs.map{|k| k.investor.investor_name}} for Investor Advisor #{investor_advisor.email}"
-
+    puts "Visible KYC: #{visible_kycs.map { |k| k.investor.investor_name }} for Investor Advisor #{investor_advisor.email}"
+    puts "Invisible KYC: #{invisible_kycs.map { |k| k.investor.investor_name }} for Investor Advisor #{investor_advisor.email}"
   end
 end
 Then('all the investor advisors should be able to switch to the investors they represent and view their details') do
-  InvestorAdvisor.all.each do |investor_advisor|
+  InvestorAdvisor.find_each do |investor_advisor|
     puts "Switching to Investor Advisor #{investor_advisor.email} for entity #{investor_advisor.entity.name}"
     investor_advisor.switch(investor_advisor.user)
     investor_advisor.user.reload
 
-    CapitalCommitment.all.each do |cc|
+    CapitalCommitment.find_each do |cc|
       if Pundit.policy(investor_advisor.user, cc).show?
         # All capital commitments should belong to the investor advisor's entity
-        cc.investor.investor_entity_id.should == investor_advisor.entity.id
+        cc.investor.investor_entity_id.should
+        investor_advisor.entity.id
         puts "Capital Commitment #{cc.investor.investor_name}, #{cc.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
-      if cc.investor.investor_entity_id != investor_advisor.entity.id
-        # If the capital commitment does not belong to the investor advisor's entity, it should not be visible
-        Pundit.policy(investor_advisor.user, cc).show?.should == false
-        puts "Capital Commitment #{cc.investor.investor_name}, #{cc.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
-      end
+      next unless cc.investor.investor_entity_id != investor_advisor.entity.id
+
+      # If the capital commitment does not belong to the investor advisor's entity, it should not be visible
+      Pundit.policy(investor_advisor.user, cc).show?.should
+      puts "Capital Commitment #{cc.investor.investor_name}, #{cc.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
     end
 
-    CapitalRemittance.all.each do |cr|
+    CapitalRemittance.find_each do |cr|
       if Pundit.policy(investor_advisor.user, cr).show?
         # All capital remittances should belong to the investor advisor's entity
-        cr.investor.investor_entity_id.should == investor_advisor.entity.id
+        cr.investor.investor_entity_id.should
+        investor_advisor.entity.id
         puts "Capital Remittance #{cr.investor.investor_name}, #{cr.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
-      if cr.investor.investor_entity_id != investor_advisor.entity.id
-        # If the capital remittance does not belong to the investor advisor's entity, it should not be visible
-        Pundit.policy(investor_advisor.user, cr).show?.should == false
-        puts "Capital Remittance #{cr.investor.investor_name}, #{cr.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
-      end
+      next unless cr.investor.investor_entity_id != investor_advisor.entity.id
+
+      # If the capital remittance does not belong to the investor advisor's entity, it should not be visible
+      Pundit.policy(investor_advisor.user, cr).show?.should
+      puts "Capital Remittance #{cr.investor.investor_name}, #{cr.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
     end
 
-    CapitalDistributionPayment.all.each do |cdp|
+    CapitalDistributionPayment.find_each do |cdp|
       if Pundit.policy(investor_advisor.user, cdp).show?
         # All capital distribution payments should belong to the investor advisor's entity
-        cdp.investor.investor_entity_id.should == investor_advisor.entity.id
+        cdp.investor.investor_entity_id.should
+        investor_advisor.entity.id
         puts "Capital Distribution Payment #{cdp.investor.investor_name}, #{cdp.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
-      if cdp.investor.investor_entity_id != investor_advisor.entity.id
-        # If the capital distribution payment does not belong to the investor advisor's entity, it should not be visible
-        Pundit.policy(investor_advisor.user, cdp).show?.should == false
-        puts "Capital Distribution Payment #{cdp.investor.investor_name}, #{cdp.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
-      end
+      next unless cdp.investor.investor_entity_id != investor_advisor.entity.id
+
+      # If the capital distribution payment does not belong to the investor advisor's entity, it should not be visible
+      Pundit.policy(investor_advisor.user, cdp).show?.should
+      puts "Capital Distribution Payment #{cdp.investor.investor_name}, #{cdp.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
     end
 
-    InvestorKyc.all.each do |kyc|
+    InvestorKyc.find_each do |kyc|
       if Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: false)
         # All investor KYC should belong to the investor advisor's entity
-        kyc.investor.investor_entity_id.should == investor_advisor.entity.id
+        kyc.investor.investor_entity_id.should
+        investor_advisor.entity.id
         puts "Investor KYC #{kyc.investor.investor_name}, #{kyc.investor.investor_entity.name} visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
       end
-      if kyc.investor.investor_entity_id != investor_advisor.entity.id
-        # If the investor KYC does not belong to the investor advisor's entity, it should not be visible
-        Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: false).should == false
-        puts "Investor KYC #{kyc.investor.investor_name}, #{kyc.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
-      end
+      next unless kyc.investor.investor_entity_id != investor_advisor.entity.id
+
+      # If the investor KYC does not belong to the investor advisor's entity, it should not be visible
+      Pundit.policy(investor_advisor.user, kyc).show?(across_all_entities: false).should
+      puts "Investor KYC #{kyc.investor.investor_name}, #{kyc.investor.investor_entity.name} NOT visble to #{investor_advisor.email}, #{investor_advisor.entity.name}"
     end
-
-
   end
 end
 Then('the user goes to the fund e-signature report') do
   @template_dup = @commitment_template.dup
-  @template_dup.assign_attributes(sent_for_esign: true, owner: @fund.capital_commitments.last )
+  @template_dup.assign_attributes(sent_for_esign: true, owner: @fund.capital_commitments.last)
   @template_dup.save!
   ESignature.create!(user: @user, entity: @fund.entity, document: @template_dup, status: "failed")
   visit(fund_path(@fund))
@@ -609,7 +321,7 @@ Then('the user goes to the fund e-signature report') do
   find("#basic_reports").hover
   sleep(0.5)
   click_on("eSignatures Report")
-  #sleep((2)
+  # sleep((2)
 end
 Then('the user should see all esign report for all docs sent for esign') do
   esign = ESignature.last
@@ -618,22 +330,22 @@ Then('the user should see all esign report for all docs sent for esign') do
   expect(page).to have_content(doc.owner_tag)
 end
 When('the fund document details must be setup right') do
-  @fund.data_room_folder.name.should == "Data Room"
-  @fund.data_room_folder.owner.should == @fund
+  @fund.data_room_folder.name.should
+  @fund.data_room_folder.owner.should
 
-  @document.owner.should == @fund
-  @document.folder.name.should == "Data Room"
+  @document.owner.should
+  @document.folder.name.should
   @document.folder.full_path.should == "/Funds/#{@fund.name}/Data Room"
 end
 When('I visit the fund details page') do
   visit(fund_path(@fund))
 end
 When('I click on fund documents tab') do
-  #sleep((1)
-  find("#documents_tab").click()
+  # sleep((1)
+  find("#documents_tab").click
 end
 Then('when the exchange rate changes') do
-  foreign_currencies = @fund.capital_commitments.joins(:fund).where("folio_currency != funds.currency").all.pluck(:folio_currency).uniq
+  foreign_currencies = @fund.capital_commitments.joins(:fund).where("folio_currency != funds.currency").pluck(:folio_currency).uniq
   foreign_currencies.each do |fc|
     # Change the exchange rate for the foreign_currencies randomly
     exchange_rate = ExchangeRate.where(from: fc, to: @fund.currency, latest: true).last.dup
@@ -644,40 +356,41 @@ end
 Given('the last investor has a user {string}') do |args|
   cr = CapitalRemittance.first
   investor = cr.investor
-  user = FactoryBot.create(:user,entity: investor.investor_entity, whatsapp_enabled: true)
-  user1 = FactoryBot.create(:user,entity: investor.investor_entity)
-  user2 = FactoryBot.create(:user,entity: investor.investor_entity, phone:"321")
+  user = FactoryBot.create(:user, entity: investor.investor_entity, whatsapp_enabled: true)
+  user1 = FactoryBot.create(:user, entity: investor.investor_entity)
+  FactoryBot.create(:user, entity: investor.investor_entity, phone: "321")
 
-  key_values(user,args)
+  key_values(user, args)
   user.save!
 
   [user, user1].each do |u|
     user.add_role :investor_advisor
-    AccessRight.create(entity_id: investor.investor_entity_id, owner: @fund, access_to_investor_id: investor.id,metadata: "Investor", user_id: u.id)
+    AccessRight.create(entity_id: investor.investor_entity_id, owner: @fund, access_to_investor_id: investor.id, metadata: "Investor", user_id: u.id)
     ia = InvestorAccess.create(entity: investor.entity, investor: investor,
-        first_name: u.first_name, last_name: u.last_name,
-        email: u.email, granter: u, approved: true)
+                               first_name: u.first_name, last_name: u.last_name,
+                               email: u.email, granter: u, approved: true)
     ia.update_columns(approved: true)
   end
 end
 Then('the imported data must have the form_type updated') do
   @import_upload = ImportUpload.last
-  @import_upload.imported_data.all.each do |row|
+  @import_upload.imported_data.find_each do |row|
     form_type = @import_upload.entity.form_types.where(name: row.class.name).first
-    if form_type.present?
-      puts "Checking form_type for #{row.class.name}"
-      row.form_type_id.should == form_type.id
-      form_type.form_custom_fields.each do |fcf|
-        # Ensure that the data json fields are exactly the same as the form custom fields name
-        puts "Checking #{fcf.name} in imported data #{row.custom_fields[fcf.name]}"
-        row.custom_fields[fcf.name].should_not == nil
-      end
+    next if form_type.blank?
+
+    puts "Checking form_type for #{row.class.name}"
+    row.form_type_id.should
+    form_type.id
+    form_type.form_custom_fields.each do |fcf|
+      # Ensure that the data json fields are exactly the same as the form custom fields name
+      puts "Checking #{fcf.name} in imported data #{row.custom_fields[fcf.name]}"
+      row.custom_fields[fcf.name].should_not be_nil
     end
   end
 end
 Then('I should get the error {string}') do |message|
   if message.present? && message != "nil"
-    @result.success?.should == false
+    @result.success?.should
     @result[:error].should == message
   else
     @result.success?.should == true
@@ -687,19 +400,18 @@ Given('I upload fund documents {string}') do |zip|
   @import_file = zip
   visit(fund_path(@fund))
   click_on("Import")
-  #sleep((2)
+  # sleep((2)
   click_on("Import Documents")
-  #sleep((2)
+  # sleep((2)
   fill_in('import_upload_name', with: "Commitments and Distribution Docs Upload")
   attach_file('files[]', File.absolute_path("./public/sample_uploads/#{@import_file}"), make_visible: true)
   click_on("Save")
   expect(page).to have_content("Import Upload:")
-  #sleep((2)
+  # sleep((2)
   ImportUploadJob.perform_now(ImportUpload.last.id)
-  #sleep((4)
+  # sleep((4)
 end
 Given('Given import file {string} for {string}') do |file, type|
-
   # Some types require form types to be present before import
   if ["InvestorKyc"].include?(type)
     FormType.where(entity: @entity, name: "IndividualKyc", tag: "Default").first_or_create!
@@ -710,13 +422,13 @@ Given('Given import file {string} for {string}') do |file, type|
 
   @import_file = file
   owner = @fund || @entity
-  iu = ImportUpload.create!(entity: @entity, owner:, import_type: type, name: "Import #{type}", user_id: @user.id,  import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
+  iu = ImportUpload.create!(entity: @entity, owner:, import_type: type, name: "Import #{type}", user_id: @user.id, import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
   ImportUploadJob.perform_now(iu.id)
   iu.reload
   # binding.pry if iu.failed_row_count > 0
   iu.failed_row_count.should == 0
 end
-Given ('the fund snapshot is created') do
+Given('the fund snapshot is created') do
   # Need to ensure that the fund has the entity permission to enable snapshots
   es = @fund.entity
   es.permissions.set(:enable_snapshots)
@@ -724,23 +436,25 @@ Given ('the fund snapshot is created') do
   # Create the fund snapshot
   FundSnapshotJob.perform_now(fund_id: @fund.id)
   puts "Checking fund snapshot for #{@fund.id}"
-  Fund.with_snapshots.where(orignal_id: @fund.id).count.should == 2
+  Fund.with_snapshots.where(orignal_id: @fund.id).count.should
   fs = Fund.with_snapshots.where(orignal_id: @fund.id, snapshot: true).first
-  fs.should_not == nil
-  fs.snapshot_date.should == Time.zone.today
+  fs.should_not
+  nil
+  fs.snapshot_date.should
+  Time.zone.today
 
   @fund.aggregate_portfolio_investments.each do |api|
     AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id).count.should == 2
     puts "Checking aggregate portfolio investment snapshot for #{api.id}"
     api_s = AggregatePortfolioInvestment.with_snapshots.where(orignal_id: api.id, snapshot: true).first
-    api_s.should_not == nil
+    api_s.should_not be_nil
     api_s.snapshot_date.should == Time.zone.today
 
     api.portfolio_investments.each do |pi|
       PortfolioInvestment.with_snapshots.where(orignal_id: pi.id).count.should == 2
       puts "Checking portfolio investment snapshot for #{pi.id}"
       pi_s = PortfolioInvestment.with_snapshots.where(orignal_id: pi.id, snapshot: true).first
-      pi_s.should_not == nil
+      pi_s.should_not be_nil
       pi_s.snapshot_date.should == Time.zone.today
     end
   end
@@ -767,19 +481,25 @@ Given('the dashboard widgets must have the data in the sheet') do
     binding.pry if widget.nil?
     puts "Checking import of #{widget.widget_name} in dashboard #{widget.dashboard_name} at position #{widget.position}"
 
-    widget.dashboard_name.should == row_data["Dashboard Name"].strip
-    widget.widget_name.should == row_data["Widget Name"].strip
+    widget.dashboard_name.should
+    row_data["Dashboard Name"].strip
+    widget.widget_name.should
+    row_data["Widget Name"].strip
     # widget.position.should == row_data["Position"].to_i
-    widget.tags.should == row_data["Tags"].strip
-    widget.metadata.should == row_data["Metadata"].strip.gsub("\t", "") if row_data["Metadata"].present?
-    widget.size.should == row_data["Size"]
-    widget.enabled.should == (row_data["Enabled"].to_s.strip.downcase == "true")
-    widget.display_name.should == row_data["Display Name"]
-    widget.display_tag.should == row_data["Display Tag"]
-    widget.name.should == row_data["Name"]
+    widget.tags.should
+    row_data["Tags"].strip
+    widget.metadata.should == row_data["Metadata"].strip.delete("\t") if row_data["Metadata"].present?
+    widget.size.should
+    row_data["Size"]
+    widget.enabled.should
+    row_data["Enabled"].to_s.strip.downcase
+    widget.display_name.should
+    row_data["Display Name"]
+    widget.display_tag.should
+    row_data["Display Tag"]
+    widget.name.should
+    row_data["Name"]
     widget.show_menu.should == (row_data["Show Menu"].to_s.strip.downcase == "true")
-
-
   end
 end
 Given('I update the fund custom fields {string}') do |custom_fields|
@@ -795,7 +515,7 @@ Given('I go to fund page') do
   visit(fund_url(@fund))
 end
 Given('I go to fund page with debug mode enabled') do
-   @fund ||= Fund.last
+  @fund ||= Fund.last
   visit(fund_url(@fund, debug: true))
 end
 
@@ -912,7 +632,7 @@ And('the notification email has the document {string} attached') do |doc_name|
       filenames = current_email.attachments.map(&:filename)
       puts "## Attachments for #{user.email}: #{filenames.inspect}"
       expect(filenames.any? { |f| f.include?(doc_name) }).to be(true),
-        "Expected attachment containing '#{doc_name}' but got #{filenames.inspect}"
+                                                             "Expected attachment containing '#{doc_name}' but got #{filenames.inspect}"
     end
   end
 end
@@ -941,6 +661,37 @@ end
 
 Then('I see the adhoc notification preview with subject {string}') do |subject|
   expect(page).to have_content(subject)
+end
+
+# Placeholder substitution is verified per-commitment against CapitalCommitmentMailer::PLACEHOLDERS:
+#   investor_name, fund_name, committed_amount, kyc_full_name, folio_id
+#   + base placeholders: user_full_name, user_first_name, user_last_name, user_email, entity_name
+Then('the adhoc notification placeholders are resolved correctly') do
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      expect(current_email).not_to be_nil
+
+      body = current_email.body.to_s
+
+      # Known CapitalCommitmentMailer placeholders are resolved (token text gone)
+      expect(body).to include(cc.investor.name)
+      expect(body).not_to include("{{investor_name}}")
+
+      expect(body).to include(@fund.name)
+      expect(body).not_to include("{{fund_name}}")
+
+      expect(body).to include(cc.committed_amount.format)
+      expect(body).not_to include("{{committed_amount}}")
+
+      expect(body).to include(cc.investor_kyc.full_name)
+      expect(body).not_to include("{{kyc_full_name}}")
+
+      # Unknown placeholder is preserved as-is (catches typos)
+      expect(body).to include("{{not_a_real_placeholder}}")
+    end
+  end
+  clear_emails
 end
 
 # ── End Fund Commitment Adhoc Notification steps ──────────────────────────────

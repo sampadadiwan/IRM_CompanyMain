@@ -305,3 +305,39 @@ Then('notification should be sent {string} to the IO investors for {string}') do
     end
   end
 end
+
+Given('there is a custom notification with placeholders for the IO with subject {string} and email_method {string}') do |subject, email_method|
+  @custom_notification = CustomNotification.create!(
+    entity: @entity,
+    owner: @investment_opportunity,
+    email_method: email_method,
+    subject: subject,
+    body: "Dear {{user_full_name}}, {{company_name}} by {{fund_name}}. Unknown: {{not_a_real_placeholder}}.",
+    enabled: true
+  )
+end
+
+Then('the IO notification placeholders are resolved correctly') do
+  @custom_notification.should_not be_nil
+  tag = @custom_notification.tag
+
+  @investment_opportunity.investors.each do |investor|
+    investor.investor_accesses.where("tags LIKE ?", "%#{tag}%").each do |ia|
+      user = ia.user
+      open_email(user.email)
+      expect(current_email).not_to be_nil
+      body = current_email.body.to_s
+
+      # Known InvestmentOpportunityMailer placeholders resolved
+      expect(body).not_to include("{{user_full_name}}")
+      expect(body).not_to include("{{company_name}}")
+      expect(body).not_to include("{{fund_name}}")
+      expect(body).to include(@investment_opportunity.company_name)
+      expect(body).to include(@entity.name)
+
+      # Unknown placeholder preserved
+      expect(body).to include("{{not_a_real_placeholder}}")
+    end
+  end
+  clear_emails
+end

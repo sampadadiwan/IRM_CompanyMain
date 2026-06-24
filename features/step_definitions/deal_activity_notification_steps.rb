@@ -142,6 +142,31 @@ Given('there is a custom notification for the deal with method {string} and subj
   )
 end
 
+Given('there is a custom notification with placeholders for the deal with method {string} and subject {string}') do |method, subject|
+  CustomNotification.create!(
+    entity: @deal.entity,
+    owner: @deal,
+    email_method: method,
+    subject: subject,
+    body: "Deal {{deal_name}} moved, investor {{investor_name}}. Unknown: {{not_a_real_placeholder}}.",
+    enabled: true
+  )
+end
+
+Then('the deal notification placeholders are resolved correctly') do
+  open_email(@user.email)
+  expect(current_email).not_to be_nil
+  body = current_email.body.to_s
+
+  # Known DealMailer placeholders resolved
+  expect(body).not_to include("{{deal_name}}")
+  expect(body).not_to include("{{investor_name}}")
+  expect(body).to include(@deal.name)
+
+  # Unknown placeholder preserved
+  expect(body).to include("{{not_a_real_placeholder}}")
+end
+
 # Variant of 'the investor ... has an approved user ...' that also sets a tag_list
 # on the InvestorAccess so tag-based notification filtering can be tested.
 Given('the investor {string} has an approved user {string} with tag_list {string}') do |investor_name, email, tag|
@@ -172,5 +197,5 @@ end
 Then('no deal notification email should be sent to {string}') do |email|
   matching = emails_sent_to(email).select { |m| m.subject.to_s.include?("Deal Update:") }
   expect(matching).to be_empty,
-    "Expected no deal notification email to #{email} but found: #{matching.map(&:subject)}"
+                      "Expected no deal notification email to #{email} but found: #{matching.map(&:subject)}"
 end

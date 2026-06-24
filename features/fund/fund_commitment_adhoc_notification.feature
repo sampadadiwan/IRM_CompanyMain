@@ -77,3 +77,14 @@ Feature: Fund Commitment Adhoc Notification
     Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
     When I open the actions menu on the first capital commitment
     Then I do not see a preview adhoc notification button
+
+  Scenario: Placeholders are resolved in adhoc notification body
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with placeholders and subject "Placeholder Test"
+    When the adhoc notification is triggered for all commitments
+    Then the adhoc notification placeholders are resolved correctly
