@@ -44,6 +44,8 @@ resources :cs_feedback_reviews, only: %i[index show update] do
   end
 end
 
+resources :customer_support_escalations, only: %i[show update]
+
 resources :agent_charts do
   post 'regenerate', on: :member
 end

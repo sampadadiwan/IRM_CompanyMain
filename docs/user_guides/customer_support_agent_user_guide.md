@@ -197,9 +197,12 @@ Sometimes the agent determines it cannot fully answer your question. When this h
 
 ### What Happens Next
 
-- The support team will review your question and the agent's conversation
-- They may reach out to you via email or through the platform
-- Once the issue is resolved, your chat session is unlocked and you can continue asking questions
+- **You can continue chatting** in the same session — the agent will still answer your new questions.
+- Each subsequent response will include a note at the top: *"Note: Your earlier query has been escalated to our support team and is being reviewed."* This reminds you that the escalated issue is still being handled by the support team.
+- The support team will review your escalated question and may reach out to you via email or through the platform.
+- Once the support team resolves the escalation, the note will no longer appear.
+
+You do **not** need to start a new conversation after an escalation — the agent remains available to help with other questions while the escalated issue is being reviewed separately.
 
 ### Reasons for Escalation
 
@@ -378,7 +381,7 @@ The Escalation Queue shows conversations where the agent decided it could not an
 | **Summary** | The agent's summary of the issue (truncated; hover to see full text) |
 | **Status** | Open (yellow), Resolved (green), or Dismissed (blue) |
 | **Date** | When the escalation was created |
-| **Action** | "View" button to open the linked feedback review page |
+| **Action** | "View" button to open the escalation detail page |
 
 ### Escalation Reasons
 
@@ -561,22 +564,36 @@ After you have improved a guide or made changes that should improve the agent's 
 
 ## Handling Escalations
 
-When the agent escalates a conversation, the FM user's chat session is **locked** — the agent stops responding until the escalation is resolved.
+When the agent escalates a conversation, the FM user can **continue chatting** in the same session. The agent keeps answering new questions, but each response includes a note reminding the user that their escalated query is being reviewed by the support team.
+
+### Escalation Detail Page
+
+Clicking **"View"** on an escalation row opens a dedicated escalation detail page (not the feedback review page). This page shows:
+
+**Left column — Conversation at escalation point:**
+- The last 2 messages (the user's escalation-triggering question and the agent's response) at the time the escalation was created
+
+**Right column — Escalation details:**
+- Entity name, user name and email
+- Escalation reason (Customer Requested, Low Confidence, Complex Issue, or Max Iterations)
+- Summary of the issue (written by the agent)
+- Current status (Open, Resolved, or Dismissed)
+- Resolve and Dismiss action buttons (shown only for open escalations)
 
 ### Escalation Workflow
 
 1. **Escalation appears** in the Escalation Queue with status "Open"
-2. **Review the context** — Click "View" to see the full conversation, the agent's attempted answers, and the escalation reason/summary
+2. **Review the context** — Click "View" to open the escalation detail page and see the conversation at the point of escalation
 3. **Take action** — This may involve:
    - Reaching out to the user via email to answer their question directly
    - Updating a guide so the agent can handle similar questions in future
    - Investigating a platform issue if the question revealed a bug
-4. **Resolve the escalation** — On the detail page, write resolution notes and click "Resolve"
-5. **Session unlocked** — The user's chat session is automatically unlocked, and the agent can handle new messages from that user
+4. **Resolve the escalation** — On the detail page, click "Resolve". A confirmation dialog will appear.
+5. **Session updated** — The session status changes back to "active" and the escalation notice no longer appears in the user's responses
 
 ### If the Escalation is Not Actionable
 
-If the escalation was triggered inappropriately (e.g. the user was testing the system, or the question was outside the platform's scope), you can **Dismiss** it with a note explaining why.
+If the escalation was triggered inappropriately (e.g. the user was testing the system, or the question was outside the platform's scope), you can **Dismiss** it on the escalation detail page. A confirmation dialog will appear before the action is applied.
 
 ---
 
@@ -601,13 +618,13 @@ The dashboard respects your **Support Client Mapping** — you will only see fee
 ## Frequently Asked Questions (Support Team)
 
 **Q: How quickly should I respond to escalations?**
-A: Escalations represent users who are waiting for help. Aim to review open escalations within the same business day. The user's chat session is locked until you resolve the escalation.
+A: Escalations represent users who need help with a specific question. Although the user can continue chatting with the agent for other questions, the escalated issue remains unresolved until you act on it. Aim to review open escalations within the same business day.
 
 **Q: Can I see conversations from entities I am not mapped to?**
 A: No. The dashboard is strictly scoped to your mapped entities. If you need access to another entity's data, ask your admin to update your Support Client Mapping.
 
 **Q: What happens when I resolve an escalation?**
-A: The linked chat session is unlocked (status changes from "escalated" back to "active"), and the user can resume chatting with the agent. Your resolution notes are saved for audit purposes.
+A: The linked chat session status changes from "escalated" back to "active", and the escalation notice no longer appears in the user's responses. The user can already chat during escalation, but resolving removes the reminder note. Your resolution is recorded for audit purposes.
 
 **Q: How does the automated judge work?**
 A: Every agent response is automatically scored by a separate AI model on three dimensions (completeness, grounding, actionability) out of 3 each, totalling 9. This happens asynchronously in the background — you do not need to trigger it. Responses scoring below 5 automatically appear in the Feedback Queue.

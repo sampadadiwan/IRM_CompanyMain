@@ -69,12 +69,7 @@ class GenericChatAgent < SupportAgentService
                          else
                            existing_session
                          end
-
-    if ctx[:chat_session].escalated?
-      ctx[:ai_response] = "Your conversation has been escalated to the Caphive support team and is being reviewed. " \
-                          "You'll receive a response shortly. If your issue has been resolved, please start a new chat session."
-      ctx[:skip_to_persist] = true
-    end
+    ctx[:escalation_notice] = "Note: Your earlier query has been escalated to our support team and is being reviewed." if ctx[:chat_session].escalated?
 
     true
   end
@@ -140,11 +135,15 @@ class GenericChatAgent < SupportAgentService
     # Save user message
     session.agent_chat_messages.create!(role: "user", content: ctx[:user_message])
 
-    # Save assistant response
-    assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ctx[:ai_response])
+    # Prepend escalation notice if session was previously escalated
+    ai_response = ctx[:ai_response]
+    ai_response = "#{ctx[:escalation_notice]}\n\n#{ai_response}" if ctx[:escalation_notice].present?
 
-    # Enqueue LLM-as-judge for CS agent responses
-    ResponseJudgeJob.perform_later(assistant_message.id) if @support_agent.agent_type == "CustomerSupportAgent"
+    # Save assistant response
+    assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ai_response)
+
+    # Enqueue LLM-as-judge for CS agent responses (only if judge is enabled)
+    ResponseJudgeJob.perform_later(assistant_message.id) if @support_agent.agent_type == "CustomerSupportAgent" && @support_agent.entity&.entity_setting&.cs_judge_enabled?
     true
   end
 
