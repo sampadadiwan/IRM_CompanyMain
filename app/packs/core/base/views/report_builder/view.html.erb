@@ -23,16 +23,20 @@
       <h6 class="m-0 font-weight-bold text-primary">Filters</h6>
     </div>
     <div class="card-body">
-      <%= search_form_for @q, url: view_report_builder_path(@report), method: :get, class: "row g-3" do |f| %>
-        <div class="col-md-10">
-          <div class="input-group">
-            <span class="input-group-text bg-light border-end-0"><i class="ti ti-search"></i></span>
-            <%= f.search_field :investor_name_cont, class: "form-control border-start-0", placeholder: "Search by name..." %>
+      <% if @search_predicate %>
+        <%= search_form_for @q, url: view_report_builder_path(@report), method: :get, class: "row g-3" do |f| %>
+          <div class="col-md-10">
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0"><i class="ti ti-search"></i></span>
+              <%= f.search_field @search_predicate, class: "form-control border-start-0", placeholder: "Search..." %>
+            </div>
           </div>
-        </div>
-        <div class="col-md-2">
-          <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
-        </div>
+          <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+          </div>
+        <% end %>
+      <% else %>
+        <p class="text-muted small mb-0">No searchable text column available for this report's root model.</p>
       <% end %>
     </div>
   </div>

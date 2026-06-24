@@ -29,7 +29,8 @@ class CapitalCommitment < ApplicationRecord
     "Tracking Committed; num-col" => "tracking_committed_amount; num-col",
     "Tracking Collected; num-col" => "tracking_collected_amount; num-col",
     "Tracking Distributed; num-col" => "tracking_distribution_amount; num-col",
-    "Tracking Adjusted; num-col" => "tracking_adjustment_amount; num-col"
+    "Tracking Adjusted; num-col" => "tracking_adjustment_amount; num-col",
+    "Folio Committed; num-col" => "folio_committed_amount; num-col"
   }.freeze
 
   ADDITIONAL_COLUMNS_FROM = %w[investor_kyc investor].freeze

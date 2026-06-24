@@ -118,6 +118,7 @@ class ReportBuilderController < ApplicationController
 
     # Mimic standard index variables
     @q = @report.root_class.ransack(params[:q])
+    @search_predicate = default_search_predicate(@report)
 
     render :view
   end
@@ -172,7 +173,12 @@ class ReportBuilderController < ApplicationController
   def add_column
     authorize @report, :update?
 
-    key  = params[:key].to_s
+    key = params[:key].to_s
+    unless column_key_allowed?(key)
+      return redirect_to edit_report_builder_path(@report),
+                         alert: "Column '#{key}' is not a valid column for this report."
+    end
+
     name = params[:name].presence || key.split(".").last.humanize
     unless @report.grid_view_preferences.exists?(key: key)
       # Get the next sequence number
@@ -472,6 +478,67 @@ class ReportBuilderController < ApplicationController
 
   def set_report
     @report = Report.find(params[:id])
+  end
+
+  # Picks a sensible default Ransack "_cont" predicate for the quick-search
+  # box on the view page — the first selected string column on the root
+  # model, falling back to any string column on the root model.
+  def default_search_predicate(report)
+    root_class = report.root_class
+    columns_hash = root_class.columns_hash
+
+    candidate = report.grid_view_preferences
+                      .order(:sequence)
+                      .pluck(:key)
+                      .map { |k| k.split(";").first.strip }
+                      .find { |k| k.exclude?(".") && columns_hash[k]&.type == :string }
+
+    candidate ||= root_class.column_names.find { |c| columns_hash[c].type == :string }
+    candidate ? "#{candidate}_cont" : nil
+  rescue StandardError
+    nil
+  end
+
+  # Rejects any column key that doesn't resolve to a real, allowed column on
+  # the root model (or on a model reachable via an actual association chain
+  # from a configured join). This is the boundary that keeps GridViewPreference
+  # keys safe to later use in QueryEngine#merge (root.send(...)) and in raw
+  # SQL identifier interpolation (ChildAggregator/PivotAggregator).
+  def column_key_allowed?(key)
+    clean = key.to_s.split(";").first.strip
+    return false if clean.blank?
+
+    config = ReportBuilderConfig.new(@report.template)
+    return false unless config.valid?
+
+    if clean.include?(".")
+      parts         = clean.split(".")
+      field         = parts.pop
+      relation_path = parts.join(".")
+
+      klass = resolve_join_klass(config.root_class, relation_path)
+      return false unless klass
+
+      columns_for_model(klass).any? { |c| c[:key] == field }
+    else
+      columns_for_model(config.root_class).any? { |c| c[:key] == clean }
+    end
+  rescue StandardError
+    false
+  end
+
+  # Walks real AR reflections from the root class along a dotted relation
+  # path (e.g. "capital_commitments.fund") so a key can only be allowed if it
+  # corresponds to an actual declared association — never an arbitrary string.
+  def resolve_join_klass(root_class, relation_path)
+    klass = root_class
+    relation_path.to_s.split(".").each do |part|
+      reflection = klass.reflect_on_association(part.to_sym)
+      return nil unless reflection
+
+      klass = reflection.klass
+    end
+    klass
   end
 
   def deep_merge(base, delta)

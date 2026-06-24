@@ -2,7 +2,13 @@ class PortfolioInvestmentPolicy < FundBasePolicy
   class Scope < FundBasePolicy::Scope
     def resolve
       if user.curr_role == "investor"
-        super.joins(:fund).where("funds.show_portfolios = true")
+        # Same feeder->master bridge as AggregatePortfolioInvestmentPolicy --
+        # see app/packs/funds/portfolios/policies/feeder_master_fund_access.rb.
+        # Plain investors only hold an AccessRight on the feeder fund, but
+        # PortfolioInvestment rows usually belong to the master fund.
+        scope.joins(:fund)
+             .where(fund_id: FeederMasterFundAccess.eligible_ids_for_investor(user))
+             .where("funds.show_portfolios = true")
       else
         super
       end
@@ -15,7 +21,14 @@ class PortfolioInvestmentPolicy < FundBasePolicy
 
   def show?
     (user.enable_funds && permissioned_employee?) ||
-      (record.fund.show_portfolios && FundPolicy.new(user, record.fund).permissioned_investor?)
+      (record.fund.show_portfolios &&
+        (
+          # Direct case: investor has an AccessRight on this exact fund.
+          FundPolicy.new(user, record.fund).permissioned_investor? ||
+          # Bridge case: this is a master fund and the investor has an
+          # AccessRight on one of its feeder funds instead.
+          (user.curr_role == "investor" && FeederMasterFundAccess.accessible_to_investor?(user, record.fund))
+        ))
   end
 
   def create?

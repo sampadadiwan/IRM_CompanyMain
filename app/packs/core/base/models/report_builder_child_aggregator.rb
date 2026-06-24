@@ -30,7 +30,7 @@ class ReportBuilderChildAggregator
 
   # Returns Hash { root_id => { gvp_key => value } }
   def call
-    return {} if root_ids.empty? || gvp_keys.empty?
+    return {} if root_ids.empty? || valid_gvp_keys.empty?
 
     result = Hash.new { |h, k| h[k] = {} }
     run_group_aggregates(result)
@@ -41,6 +41,32 @@ class ReportBuilderChildAggregator
   private
 
   attr_reader :join_config, :root_ids, :aggregates, :gvp_keys
+
+  # Drops any key whose column doesn't resolve to a real DB column (walking
+  # association reflections for dotted paths). This is the boundary that
+  # keeps column names safe to interpolate as raw SQL identifiers below —
+  # mirrors ReportBuilderPivotAggregator#valid_columns?.
+  def valid_gvp_keys
+    @valid_gvp_keys ||= gvp_keys.select { |k| column_path_valid?(bare_col(k)) }
+  end
+
+  def column_path_valid?(col)
+    parts = col.to_s.split(".")
+    target_col = parts.pop
+    target_klass = child_class
+
+    parts.each do |part|
+      reflection = target_klass.reflect_on_association(part.to_sym)
+      return false unless reflection
+
+      target_klass = reflection.klass
+    end
+
+    allowed = target_klass.column_names.to_set
+    allowed.include?(target_col) || allowed.include?("#{target_col}_cents")
+  rescue StandardError
+    false
+  end
 
   def relation    = join_config[:relation].to_s
   def child_class = join_config[:base_class].to_s.constantize
@@ -81,12 +107,12 @@ class ReportBuilderChildAggregator
   end
 
   def group_keys
-    gvp_keys.reject { |k| aggregates[clean_key(k)] == "latest" }
-            .select { |k| GROUP_SQL.key?(aggregates[clean_key(k)]) }
+    valid_gvp_keys.reject { |k| aggregates[clean_key(k)] == "latest" }
+                  .select { |k| GROUP_SQL.key?(aggregates[clean_key(k)]) }
   end
 
   def latest_keys
-    gvp_keys.select { |k| aggregates[clean_key(k)] == "latest" }
+    valid_gvp_keys.select { |k| aggregates[clean_key(k)] == "latest" }
   end
 
   def run_group_aggregates(result)

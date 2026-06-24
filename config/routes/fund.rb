@@ -74,10 +74,7 @@ end
 
 resources :fund_units
 
-resources :fund_ratios do
-  get 'generate', on: :collection
-  post 'generate', on: :collection
-end
+resources :fund_ratios
 
 resources :fund_ratio_runs, only: %i[index show]
 

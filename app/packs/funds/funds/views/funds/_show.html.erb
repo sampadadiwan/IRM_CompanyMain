@@ -17,7 +17,7 @@
           Master Fund
         </td>
         <td>
-          <%= link_to fund.master_fund %>
+          <%= link_to fund.master_fund.name, fund_path(fund.master_fund) %>
         </td>
       </tr>
       <% end %>
@@ -39,7 +39,7 @@
           <%= fund.currency %>
         </td>
       </tr>
-            
+
       <tr>
         <td>
           Tag List
@@ -105,7 +105,7 @@
           </tr>
 
       <% end %>
-      
+
 
       <% if policy(fund).update? %>
         <tr>
@@ -116,7 +116,7 @@
             <%= money_to_currency fund.committed_amount, params %>
           </td>
         </tr>
-        
+
         <tr>
           <td>
             Capital Call Amount
@@ -163,7 +163,7 @@
               <%= fund.tracking_currency %>
             </td>
           </tr>
-          
+
           <tr>
             <td>
               Tracking Committed Amount
@@ -216,7 +216,7 @@
         <% end %>
 
         <%= display_custom_fields(fund,collapsed: false) if current_user %>
-        
+
         <tr>
           <td>
             Commitment Document List
@@ -237,7 +237,7 @@
 
         <tr>
           <td>
-            Show Valuations to LPs 
+            Show Valuations to LPs
           </td>
           <td>
             <%= display_boolean fund.show_valuations %>

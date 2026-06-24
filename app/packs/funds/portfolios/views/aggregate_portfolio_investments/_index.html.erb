@@ -99,7 +99,8 @@
         <% end %>
       <% end %>
     <% end %>
-    <% if fund && fund.master_fund_id.present? %>
+    <!-- Show Master Fund Portfolio link if fund is a sub-fund and master fund has portfolios and  master_fund.show_portfolios-->
+    <% if fund && fund.master_fund_id.present? && fund.master_fund.show_portfolios %>
       <%= link_to "Master Fund Portfolio", aggregate_portfolio_investments_path(fund_id: fund.master_fund_id), class: "btn btn-outline-secondary ti ti-home" %>
     <% end %>
   </div>
@@ -107,7 +108,7 @@
 <%= render "aggregate_portfolio_investments/analytics", fund: fund, investor: investor %>
 <%= render "aggregate_portfolio_investments/stats",  aggregate_portfolio_investments:, fund: fund unless params[:grid_only].present? %>
 <!-- Table Header with our without fund -->
-<% 
+<%
   api_turbo_frame = "aggregate_portfolio_investments_frame"
 
   default_columns_map = if params[:fund_id].present?

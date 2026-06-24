@@ -65,9 +65,6 @@ class ReportBuilderQueryEngine
     scope = apply_sort(scope)
     scope = scope.limit(limit) if limit
 
-    needed_cols = root_db_columns
-    scope = scope.select(:id, *needed_cols) if needed_cols.any?
-
     records = scope.to_a
     [records, records.map(&:id)]
   end
@@ -76,24 +73,6 @@ class ReportBuilderQueryEngine
     key = config.sort[:key].to_s.split(";").first&.strip.to_s
     dir = config.sort[:dir] == "desc" ? "DESC" : "ASC"
     key.present? && config.root_class.column_names.include?(key) ? scope.order("#{key} #{dir}") : scope
-  end
-
-  def root_db_columns
-    col_names = config.root_class.column_names
-    (@gvp_columns ||= report.grid_view_preferences.reorder(:sequence, :id).to_a)
-      .map(&:key)
-      .reject { |k| k.include?(".") }
-      .map    { |k| k.split(";").first.strip }
-      .flat_map do |k|
-        if col_names.include?(k)
-          [k]
-        elsif col_names.include?("#{k}_cents")
-          ["#{k}_cents"]
-        else
-          []
-        end
-      end
-      .uniq
   end
 
   # ── Pass 2 ──────────────────────────────────────────────────────────────

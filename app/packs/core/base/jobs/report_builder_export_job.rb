@@ -53,7 +53,7 @@ class ReportBuilderExportJob < ApplicationJob
 
         # 5. Notify User (if not scheduled or also notify owner)
         download_url = Rails.application.routes.url_helpers.document_path(document)
-        message = "Your report <strong>#{report.name}</strong> is ready. <a href='#{download_url}' class='fw-bold text-decoration-underline'>Click here to download</a>."
+        message = "Your report <strong>#{report.name}</strong> is ready. <a href='#{download_url}' target='_blank' class='btn btn-success btn-sm'>Click here to download</a>."
         UserAlert.new(user_id: user.id, entity_id: entity.id, message:, level: "success").broadcast
       ensure
         temp_file.close

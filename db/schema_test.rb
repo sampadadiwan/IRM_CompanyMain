@@ -2032,6 +2032,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_22_100001) do
     t.decimal "distribution_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.bigint "document_folder_id"
     t.boolean "editable_formulas", default: false
+    t.boolean "enable_ai_commentary", default: true, null: false
     t.bigint "entity_id", null: false
     t.string "esign_emails"
     t.date "first_close_date"

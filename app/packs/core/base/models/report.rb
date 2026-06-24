@@ -17,6 +17,11 @@ class Report < ApplicationRecord
   validates :category, length: { maximum: 30 }
   validate :validate_notification_recipients
 
+  # The report builder's root model, resolved from the template JSON.
+  def root_class
+    ReportBuilderConfig.new(template).root_class
+  end
+
   def validate_notification_recipients
     return if notification_recipients.blank?
 

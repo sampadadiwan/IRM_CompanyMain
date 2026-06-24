@@ -23,10 +23,6 @@ class FundRatioPolicy < FundBasePolicy
     false
   end
 
-  def generate?
-    true
-  end
-
   def new?
     create?
   end

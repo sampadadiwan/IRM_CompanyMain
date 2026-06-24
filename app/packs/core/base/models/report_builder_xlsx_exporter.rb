@@ -166,7 +166,7 @@ class ReportBuilderXlsxExporter
       "#{key.to_s.humanize}: #{Array(val).join(', ')}"
     end
 
-    config.joins.find_each do |join|
+    config.joins.each do |join| # rubocop:disable Rails/FindEach -- config.joins is a plain Array, not an AR::Relation
       (join[:child_filters] || {}).each do |key, val|
         parts << "#{join[:relation].to_s.humanize} – #{key.to_s.humanize}: #{Array(val).join(', ')}"
       end
