@@ -10,7 +10,9 @@
 <% end %>
 
 <td>
-    <%= note.on.is_a?(Date) ? l(note.on) : l(Date.local_parse(note.on)) %>
+    <% if note.on.present? %>
+        <%= note.on.is_a?(Date) ? l(note.on) : l(Date.local_parse(note.on)) %>
+    <% end %>
 </td>
 <td>
     <%= note.tags %>
