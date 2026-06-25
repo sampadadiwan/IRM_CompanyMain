@@ -6,7 +6,7 @@
 
 # ap_south_1
 server "54.147.171.162", user: "ubuntu", roles: %w[primary app db web]
-# server "13.217.203.38", user: "ubuntu", roles: %w[app web] if ENV["LB"]
+server "35.153.176.117", user: "ubuntu", roles: %w[app web]
 # ap_south_2
 # server "", user: "ubuntu", roles: %w[primary app db web]
 # server "", user: "ubuntu", roles: %w[app web] if ENV["LB"]
