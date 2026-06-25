@@ -25,8 +25,13 @@ class DealInvestorPolicy < DealBasePolicy
   end
 
   def create?
-    (belongs_to_entity?(user, record) && DealPolicy.new(user, record.deal).update?) ||
-      DealPolicy.new(user, record.deal).update? ||
+    deal_update_permission = if record.deal.present?
+                               DealPolicy.new(user, record.deal).update?
+                             else
+                               false
+                             end
+    (belongs_to_entity?(user, record) && deal_update_permission) ||
+      deal_update_permission ||
       permissioned_rm?(:update) ||
       support?
   end
