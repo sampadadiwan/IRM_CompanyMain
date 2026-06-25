@@ -91,9 +91,11 @@ class KycDocGenerator
     capital_commitments_before_end_date = capital_commitments.where(commitment_date: ..end_date)
 
     # Get all capital remittances for the investor, including associated capital commitment, capital call, and fund, ordered by remittance date
-    remittances = investor_kyc.capital_remittances.includes(:capital_commitment, :capital_call, :fund).order(:remittance_date)
+    remittances = investor_kyc.capital_remittances.includes(:capital_commitment, :capital_call, :fund)
     # Filter remittances by fund_id if provided
     remittances = remittances.where(fund_id: fund_id) if fund_id
+    remittances_payment_date_ordering = remittances.order(:payment_date)
+    remittances = remittances.order(:remittance_date)
 
     # Get all capital distribution payments for the investor, including associated capital commitment, fund, and capital distribution
     distribution_payments = investor_kyc.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution)
@@ -135,7 +137,7 @@ class KycDocGenerator
       capital_remittances: TemplateDecorator.decorate_collection(remittances),
       capital_remittances_between_dates: TemplateDecorator.decorate_collection(remittances.where(remittance_date: start_date..).where(remittance_date: ..end_date)),
       capital_remittances_before_end_date: TemplateDecorator.decorate_collection(remittances.where(remittance_date: ..end_date)),
-      capital_remittances_before_end_date_by_payment_date: TemplateDecorator.decorate_collection(remittances.where(payment_date: ..end_date)),
+      capital_remittances_before_end_date_by_payment_date: TemplateDecorator.decorate_collection(remittances_payment_date_ordering.where(payment_date: ..end_date)),
       remittance_fund_units_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.fund_units.for_remittances.where(issue_date: ..end_date, owner_id: remittances.pluck(:id)).order(issue_date: :asc)),
 
       capital_remittance_payments: TemplateDecorator.decorate_collection(capital_remittance_payments),
