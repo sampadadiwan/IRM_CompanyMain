@@ -134,7 +134,7 @@ gem "view_component"
 
 # Validates using javascript
 gem 'client_side_validations'
-gem 'rack-attack'
+# gem 'rack-attack'
 
 # for making external API calls
 gem 'httparty'
