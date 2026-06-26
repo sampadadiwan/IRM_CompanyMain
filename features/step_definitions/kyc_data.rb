@@ -139,7 +139,7 @@ end
 Then('the page should display the correct KYC details') do
   %i[full_name PAN birth_date perm_address corr_address].each do |field|
     res = @kyc_data.send(field.to_s)
-    res = res.strftime("%d %B, %Y") if field == :birth_date && res.present?
+    res = I18n.l(res, format: :day_month_year) if field == :birth_date && res.present?
     expect(page).to have_content(res)
   end
 end
