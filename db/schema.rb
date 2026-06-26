@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_24_100000) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -73,6 +73,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.integer "ref_id", default: 0, null: false
     t.date "reporting_date", null: false
     t.string "rule_for", limit: 10, default: "Accounting"
+    t.bigint "temp_sqlite_id"
     t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "updated_at", precision: nil, null: false
     t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
@@ -92,6 +93,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_071000) do
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
     t.index ["parent_type", "parent_id", "fund_id", "name", "deleted_at", "cumulative"], name: "idx_ae_parent_fund_name_flags"
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
+    t.index ["temp_sqlite_id", "allocation_run_id", "entry_type"], name: "idx_account_entries_temp_sqlite_id"
   end
 
   create_table "account_entry_report_insights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
