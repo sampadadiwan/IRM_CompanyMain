@@ -78,6 +78,13 @@ Rails.application.routes.draw do
     get 'cross_site_login', on: :collection
   end
 
+  resource :two_factor, only: [:new, :create], controller: 'users/two_factor' do
+    get  :enroll
+    post :verify_enrollment
+    post :send_whatsapp
+    get  :backup_codes
+  end
+
   post "/internal/sync/users",         to: "users_sync#upsert"
   post "/internal/sync/users/disable", to: "users_sync#disable"
   post "/internal/sync/users/digest",  to: "users_sync#digest" # optional reconciliation

@@ -150,6 +150,18 @@ class UsersController < ApplicationController
     end
 
     ActiveRecord::Base.connected_to(role: :writing) do
+      if @user.two_factor_enabled?
+        if @user.otp_secret.blank?
+          session[:otp_user_id] = @user.id
+          redirect_to enroll_two_factor_path
+          return
+        else
+          session[:otp_user_id] = @user.id
+          redirect_to new_two_factor_path
+          return
+        end
+      end
+
       sign_in @user
       # Set support_user_id in session so the audit trail records who actually made changes.
       # See ApplicationController#current_user_or_support_user and config/initializers/audited.rb
@@ -259,12 +271,12 @@ class UsersController < ApplicationController
   def user_params
     permitted = if current_user.has_cached_role?(:company_admin)
                   params.require(:user).permit(:first_name, :last_name, :email,
-                                               :phone, :whatsapp_enabled, :signature, :call_code,
+                                               :phone, :whatsapp_enabled, :two_factor_enabled, :signature, :call_code,
                                                :dept, :sale_notification, :enable_support, :tag_list, :entity_id,
                                                role_name: [], permissions: [], extended_permissions: [], properties: {}, preferences: {})
                 else
                   params.require(:user).permit(:first_name, :last_name, :email,
-                                               :phone, :whatsapp_enabled, :signature, :call_code,
+                                               :phone, :whatsapp_enabled, :two_factor_enabled, :signature, :call_code,
                                                :dept, :sale_notification, :enable_support, :tag_list, properties: {})
                 end
 

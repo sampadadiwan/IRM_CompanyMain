@@ -27,6 +27,7 @@ class UserDashboard < Administrate::BaseDashboard
     active: Field::BooleanEmoji,
     enable_support: Field::BooleanEmoji,
     whatsapp_enabled: Field::BooleanEmoji,
+    two_factor_enabled: Field::BooleanEmoji,
     roles: Field::HasMany,
     curr_role: Field::Select.with_options(collection: ["", "employee", "investor"]),
     regions: Field::String,
@@ -49,6 +50,7 @@ class UserDashboard < Administrate::BaseDashboard
     created_at
     entity
     curr_role
+    two_factor_enabled
   ].freeze
 
   # SHOW_PAGE_ATTRIBUTES
@@ -65,6 +67,7 @@ class UserDashboard < Administrate::BaseDashboard
     email
     phone
     whatsapp_enabled
+    two_factor_enabled
     active
     enable_support
     last_sign_in_at
@@ -89,6 +92,7 @@ class UserDashboard < Administrate::BaseDashboard
     password_confirmation
     phone
     whatsapp_enabled
+    two_factor_enabled
     active
     enable_support
     curr_role

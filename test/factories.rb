@@ -797,6 +797,11 @@ FactoryBot.define do
     phone { rand(10**10) }
     accept_terms { true }
     permissions { User.permissions.keys }
+
+    trait :with_two_factor do
+      two_factor_enabled { true }
+      otp_secret { User.generate_otp_secret }
+    end
   end
 
   factory :entity do

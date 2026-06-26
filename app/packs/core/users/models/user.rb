@@ -5,6 +5,7 @@ class User < ApplicationRecord
   # AccessRightsCache removed: permission checks now use live DB queries (ApplicationPolicy)
   # instead of the serialized access_rights_cache column on users.
   include CanonicalFingerprint
+  include TwoFactorAuthenticatable
 
   include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions])
 
@@ -110,7 +111,8 @@ class User < ApplicationRecord
   # Include default devise modules. Others available are:
   # :confirmable, :lockable, :timeoutable, :trackable and :omniauthable
   devise :database_authenticatable, :registerable, :trackable,
-         :recoverable, :rememberable, :validatable, :lockable, :api
+         :recoverable, :rememberable, :validatable, :lockable, :api,
+         :two_factor_authenticatable
 
   # Override Devise::Models::Trackable to ensure the sign-in tracking
   # writes (sign_in_count, current_sign_in_at, etc.) always go to the
@@ -353,7 +355,7 @@ class User < ApplicationRecord
   end
 
   def self.ransackable_attributes(_auth_object = nil)
-    %w[first_name last_name email phone whatsapp_enabled advisor_entity_id].sort
+    %w[first_name last_name email phone whatsapp_enabled two_factor_enabled advisor_entity_id].sort
   end
 
   def active_for_authentication?

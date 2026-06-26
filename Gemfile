@@ -57,6 +57,8 @@ gem "sidekiq-cron"
 
 gem 'devise'
 gem 'devise-api', github: 'nejdetkadir/devise-api', branch: 'main'
+gem 'devise-two-factor', '~> 6.4'
+gem 'rqrcode', '~> 2.0'
 gem 'hashie'
 gem 'has_scope'
 gem "pundit"

@@ -1,0 +1,56 @@
+<%# app/packs/core/users/views/users/two_factor/enroll.html.erb %>
+<div id="two_factor_enroll_page">
+  <div class="login-container">
+    <div class="login-header">
+      <h2 class="h3 mb-2 fw-normal">Set Up Two-Factor Authentication</h2>
+      <p class="text-muted">Scan this QR code with your authenticator app</p>
+    </div>
+
+    <div class="login-body text-center">
+      <%- flash.each do |name, msg| -%>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+      <%- end -%>
+
+      <div class="mb-4">
+        <p class="text-muted mb-3">
+          1. Install Google Authenticator, Authy, or any TOTP authenticator app.
+        </p>
+        <p class="text-muted mb-3">
+          2. Scan this QR code:
+        </p>
+
+        <div class="d-inline-block p-3 bg-white rounded border mb-3">
+          <%= raw @qr_code.as_svg(
+            module_size: 4,
+            standalone: true,
+            use_path: true
+          ) %>
+        </div>
+
+        <p class="text-muted mb-3">
+          Or enter this key manually: <code><%= @user.otp_secret.scan(/.{4}/).join(' ') %></code>
+        </p>
+      </div>
+
+      <p class="text-muted mb-3">
+        3. Enter the 6-digit code from your app to confirm:
+      </p>
+
+      <%= form_tag verify_enrollment_two_factor_path, data: { turbo: false } do %>
+        <div class="form-group">
+          <%= text_field_tag :otp_code, nil,
+                class: "form-control-modern text-center",
+                placeholder: "000000",
+                inputmode: "numeric",
+                autocomplete: "one-time-code",
+                required: true %>
+        </div>
+
+        <button type="submit" class="glow-edge btn btn-primary w-100" data-disable-with="Verifying...">
+          <span>Confirm & Enable 2FA</span>
+          <i class="fas fa-shield-alt"></i>
+        </button>
+      <% end %>
+    </div>
+  </div>
+</div>

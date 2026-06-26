@@ -106,6 +106,12 @@
           </td>
         </tr>
 
+        <% if @user == current_user %>
+          <tr>
+            <td>Two-Factor Authentication</td>
+            <td><%= display_boolean @user.two_factor_enabled %></td>
+          </tr>
+        <% end %>
 
         <tr>
           <td>

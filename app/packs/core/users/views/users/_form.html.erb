@@ -109,6 +109,14 @@
       <%= form.check_box :enable_support, class: "form-check-input" %>
     </div>
 
+    <% if user.id.present? && current_user == user %>
+      <div class="form-group">
+        <%= form.label :two_factor_enabled, "Enable Two-Factor Authentication" %>
+        <%= form.check_box :two_factor_enabled, class: "form-check-input" %>
+        <small class="form-text text-muted">Require a verification code from your authenticator app when signing in</small>
+      </div>
+    <% end %>
+
     <%= custom_form_fields(user, form) %>
 
 

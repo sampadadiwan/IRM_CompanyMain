@@ -263,6 +263,7 @@ module DocumentGeneratorBase
 
     # Upload the generated file
     generated_document.file = File.open(file_name, "rb")
+    model.reload # Reload to get latest lock_version (destroying docs above touches the owner, incrementing lock_version)
     generated_document.from_template = doc_template
     generated_document.owner = model
     generated_document.owner_tag = "Generated"

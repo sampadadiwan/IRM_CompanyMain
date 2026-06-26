@@ -684,7 +684,7 @@ Then('the adhoc notification placeholders are resolved correctly') do
       expect(body).to include(cc.committed_amount.format)
       expect(body).not_to include("{{committed_amount}}")
 
-      expect(body).to include(cc.investor_kyc.full_name)
+      expect(body).to include(cc.investor_kyc&.full_name || "")
       expect(body).not_to include("{{kyc_full_name}}")
 
       # Unknown placeholder is preserved as-is (catches typos)

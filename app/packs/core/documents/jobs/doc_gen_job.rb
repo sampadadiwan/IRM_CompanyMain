@@ -111,11 +111,11 @@ class DocGenJob < ApplicationJob
   def completed(succeeded, _failed, user_id)
     # Send email if there are any errors
     if @error_msg.present?
-      @main_error = "Document generation completed with #{@error_msg.length} errors."
+      @main_error = "#{generator} Document generation completed with #{@error_msg.length} errors."
       email_errors
-      send_errors_notification("Document generation completed with #{@error_msg.length} errors. Error email sent with details.", @error_msg, user_id, "danger")
+      send_errors_notification("#{generator} Document generation completed with #{@error_msg.length} errors. Error email sent with details.", @error_msg, user_id, "danger")
     else
-      msg = "#{pluralize(succeeded, 'document')} generated successfully."
+      msg = "#{generator} #{pluralize(succeeded, 'document')} generated successfully."
       logger.info msg
       send_notification(msg, user_id, "success")
     end

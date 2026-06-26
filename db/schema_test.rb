@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_24_100000) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_26_060131) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3655,6 +3655,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_100000) do
     t.bigint "advisor_entity_id"
     t.string "advisor_entity_roles", limit: 100
     t.string "call_code", limit: 3, default: "91"
+    t.integer "consumed_timestep"
     t.datetime "created_at", null: false
     t.string "curr_role", limit: 20
     t.datetime "current_sign_in_at"
@@ -3678,6 +3679,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_100000) do
     t.datetime "last_synced_at"
     t.string "last_synced_ccf_hex", limit: 64
     t.datetime "locked_at"
+    t.text "otp_backup_codes"
+    t.text "otp_secret"
     t.bigint "permissions", default: 0, null: false
     t.string "phone", limit: 100
     t.json "preferences"
@@ -3693,6 +3696,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_24_100000) do
     t.text "signature_data"
     t.boolean "system_created", default: false
     t.string "tag_list"
+    t.boolean "two_factor_enabled", default: false, null: false
     t.string "unlock_token"
     t.datetime "updated_at", null: false
     t.boolean "whatsapp_enabled", default: false

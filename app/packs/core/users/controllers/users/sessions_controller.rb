@@ -1,14 +1,34 @@
 module Users
   class SessionsController < Devise::SessionsController
     def create
-      super do |user|
-        user.update(session_token: SecureRandom.hex(64)) # Rotate session token
-        cookies[:session_token] = { value: user.session_token, httponly: true, secure: !Rails.env.local? }
+      self.resource = warden.authenticate!(auth_options)
+
+      if resource.two_factor_enabled?
+        if resource.otp_secret.blank?
+          # First-time 2FA setup — generate secret and redirect to enrollment
+          session[:otp_user_id] = resource.id
+          sign_out(resource)
+          redirect_to enroll_two_factor_path
+        else
+          # 2FA required — store user in session, don't sign in yet
+          session[:otp_user_id] = resource.id
+          sign_out(resource)
+          redirect_to new_two_factor_path
+        end
+      else
+        # Standard login (no 2FA)
+        sign_in(resource)
+        resource.update(session_token: SecureRandom.hex(64))
+        cookies[:session_token] = { value: resource.session_token, httponly: true, secure: !Rails.env.local? }
+        set_flash_message!(:notice, :signed_in)
+        redirect_to after_sign_in_path_for(resource)
       end
+    rescue ActiveRecord::RecordNotUnique
+      retry
     end
 
     def destroy
-      reset_session # Ensures session is completely cleared
+      reset_session
       super
     end
   end

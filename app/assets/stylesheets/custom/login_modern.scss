@@ -1,6 +1,6 @@
 /* Modern Login Page Styles */
 
-#login_page_x {
+#login_page_x, #two_factor_page, #two_factor_enroll_page, #two_factor_backup_page {
   min-height: 90vh;
   display: flex;
   align-items: center;
@@ -92,7 +92,7 @@
   }
 }
 
-#login_page_x {
+#login_page_x, #two_factor_page, #two_factor_enroll_page, #two_factor_backup_page {
   .login-container {
     width: 100%;
     max-width: 450px;
