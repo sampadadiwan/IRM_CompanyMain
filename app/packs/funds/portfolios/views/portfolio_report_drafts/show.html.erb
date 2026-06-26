@@ -7,7 +7,7 @@
       <h4 class="mb-1"><%= @draft.portfolio_company %> — <%= @draft.portfolio_report_template.name %></h4>
       <p class="text-muted mb-0 small">
         <%= @draft.kpi_period_type %> <%= @draft.kpi_tag %> &middot;
-        <%= @draft.start_date.strftime("%b %Y") %> to <%= @draft.end_date.strftime("%b %Y") %>
+        <%= l(@draft.start_date, format: :month_year) %> to <%= l(@draft.end_date, format: :month_year) %>
         &middot; <%= @draft.n_periods %> periods
       </p>
     </div>

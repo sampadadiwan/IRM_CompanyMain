@@ -30,7 +30,7 @@
                 </td>
                 <td>
                   <span class="text-muted">
-                    <%= record.deleted_at&.strftime("%B %d, %Y at %I:%M %p") %>
+                    <%= record.deleted_at ? l(record.deleted_at, format: :long_date_time) : "" %>
                   </span>
                 </td>
                 <td class="text-end pe-4">

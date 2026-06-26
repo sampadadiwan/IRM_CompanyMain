@@ -199,7 +199,7 @@ Then("I should see the analyst name and entity name") do
 end
 
 Then("I should see when the escalation was created") do
-  expect(page).to have_content(@escalation.created_at.strftime("%d %b %Y"))
+  expect(page).to have_content(I18n.l(@escalation.created_at.to_date, format: :abbr_month_day_year))
     .or have_content(@escalation.created_at.strftime("%Y"))
 end
 

@@ -28,7 +28,7 @@
     <div class="d-flex align-items-center gap-2 mb-1">
       <span class="text-muted small"><%= @instance.template_name %></span>
       <span class="text-muted small">·</span>
-      <span class="text-muted small"><%= @instance.created_at.strftime("%b %d, %Y") %></span>
+      <span class="text-muted small"><%= l(@instance.created_at.to_date, format: :abbr_month_day_year) %></span>
     </div>
     <h5 class="fw-bold mb-0"><%= @folder.name %></h5>
   </div>
@@ -112,7 +112,7 @@
                 <%= resolved.to_state %>
               </span>
               <span class="text-muted ms-1" style="font-size:0.7rem;">
-                <i class="ti ti-clock me-1"></i><%= resolved.created_at.strftime("%b %d, %H:%M") %>
+                <i class="ti ti-clock me-1"></i><%= l(resolved.created_at.to_date, format: :short) %>, <%= l(resolved.created_at, format: :time_only) %>
               </span>
             </div>
             <%# Show every actor's individual response %>
@@ -296,7 +296,7 @@
             %>
             <tr class="<%= e[:archived] ? 'opacity-50' : '' %>">
               <td class="ps-3 text-muted" style="font-size:0.8rem; white-space:nowrap;">
-                <%= e[:at].strftime("%b %d, %H:%M") %>
+                <%= l(e[:at].to_date, format: :short) %>, <%= l(e[:at], format: :time_only) %>
                 <% if e[:archived] %>
                   <span class="badge bg-secondary-subtle text-secondary border ms-1" style="font-size:0.62rem;">archived</span>
                 <% end %>

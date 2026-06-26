@@ -103,13 +103,13 @@ end
 
 Then('I should not see the KPI Reports') do
   KpiReport.all.each do |kpi_report|
-    page.should_not have_content(kpi_report.as_of.strftime("%d/%m/%Y"))
+    page.should_not have_content(I18n.l(kpi_report.as_of))
   end
 end
 
 Then('I should see the KPI Report') do
   KpiReport.all.each do |kpi_report|
-    page.should have_content(kpi_report.as_of.strftime("%b %Y"))
+    page.should have_content(I18n.l(kpi_report.as_of, format: :month_year))
   end
 end
 

@@ -19,7 +19,7 @@
 <% end %>
 
 <% if @signed_id.present? %>
-    <p><small>This link is valid until <%= @link_expiry.strftime('%B %-d, %Y') %>.</small></p>
+    <p><small>This link is valid until <%= I18n.l(@link_expiry, format: :long) %>.</small></p>
     <p class="btn btn-outline-primary"><%= link_to "Fill in KYC", edit_investor_kyc_url(id: :shared, signed_id: @signed_id, subdomain: @investor_kyc.entity.sub_domain) if @custom_notification.nil? || @custom_notification&.show_link %></p>
 <% else %>
     <p class="btn btn-outline-primary"><%= link_to "Login to Access", edit_investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain, investor_advisor_id: params[:investor_advisor_id]) if @custom_notification.nil? || @custom_notification&.show_link %></p>

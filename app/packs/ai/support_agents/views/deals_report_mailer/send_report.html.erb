@@ -13,9 +13,9 @@
   status_label = { "complete" => "Complete", "on_track" => "On Track", "needs_attention" => "Needs Attention", "closed" => "Closed" }
 %>
 
-<%= sa_intro("Deal fundraising update for <strong>#{h @support_agent.entity.name}</strong> &mdash; #{Time.zone.today.strftime('%B %Y')}.".html_safe) %>
+<%= sa_intro("Deal fundraising update for <strong>#{h @support_agent.entity.name}</strong> &mdash; #{I18n.l(Time.zone.today, format: :month_year_full)}.".html_safe) %>
 
-<%= sa_banner(title: "Deal Fundraising — #{Time.zone.today.strftime('%B %Y')}", label: overall_label, subtitle: overall_sub, tone: overall_tone) %>
+<%= sa_banner(title: "Deal Fundraising — #{I18n.l(Time.zone.today, format: :month_year_full)}", label: overall_label, subtitle: overall_sub, tone: overall_tone) %>
 
 <% if attention_deals.any? %>
   <%= sa_callout(
@@ -106,7 +106,7 @@
       <%= sa_callout(
         tone: :info,
         heading: "Tasks Due (next 7 days)",
-        body: tasks_due.map { |t| "#{h t.title} — due #{t.due_date&.strftime('%b %d')}" }.join("<br>").html_safe
+        body: tasks_due.map { |t| "#{h t.title} — due #{t.due_date ? I18n.l(t.due_date, format: :short) : ''}" }.join("<br>").html_safe
       ) %>
     <% end %>
   <% end %>
@@ -123,7 +123,7 @@
       <%= sa_callout(
         tone: :danger,
         heading: "Overdue Tasks",
-        body: tasks_overdue.map { |t| "#{h t.title} — was due #{t.due_date&.strftime('%b %d')}" }.join("<br>").html_safe
+        body: tasks_overdue.map { |t| "#{h t.title} — was due #{t.due_date ? I18n.l(t.due_date, format: :short) : ''}" }.join("<br>").html_safe
       ) %>
     <% end %>
   <% end %>

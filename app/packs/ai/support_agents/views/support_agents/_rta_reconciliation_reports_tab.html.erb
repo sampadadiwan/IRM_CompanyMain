@@ -75,7 +75,7 @@
                 </span>
               <% end %>
             </td>
-            <td><%= report.updated_at&.strftime("%b %d, %Y %H:%M") %></td>
+            <td><%= report.updated_at ? l(report.updated_at, format: :abbr_date_time) : "" %></td>
             <td>
               <button type="button" class="btn btn-sm btn-outline-secondary"
                       data-bs-toggle="collapse"
@@ -477,6 +477,6 @@
 
   <p class="text-muted small">
     <i class="ti ti-calendar"></i>
-    Last run: <%= rta_reports.first&.updated_at&.strftime("%b %d, %Y at %H:%M") %>
+    Last run: <%= rta_reports.first&.updated_at ? l(rta_reports.first.updated_at, format: :abbr_date_time) : "" %>
   </p>
 <% end %>

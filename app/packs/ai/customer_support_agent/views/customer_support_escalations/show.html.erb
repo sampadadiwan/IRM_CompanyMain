@@ -17,7 +17,7 @@
             <strong class="<%= msg.role == 'user' ? 'text-primary' : 'text-success' %>">
               <%= msg.role == 'user' ? (@user&.name || 'User') : 'Agent' %>
             </strong>
-            <span class="text-muted small ms-2"><%= msg.created_at.strftime("%H:%M") %></span>
+            <span class="text-muted small ms-2"><%= l(msg.created_at, format: :time_only) %></span>
             <div class="mt-1 <%= msg.role == 'assistant' ? 'markdown-body' : '' %>"><%= render_markdown(msg.content) %></div>
           </div>
         <% end %>
@@ -40,7 +40,7 @@
             <%= @escalation.status.titleize %>
           </span>
         </p>
-        <p class="mb-0 text-muted small">Created <%= @escalation.created_at.strftime("%d %b %Y %H:%M") %></p>
+        <p class="mb-0 text-muted small">Created <%= l(@escalation.created_at, format: :abbr_date_time) %></p>
       </div>
     </div>
 

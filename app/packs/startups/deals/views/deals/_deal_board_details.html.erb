@@ -75,7 +75,7 @@
               <strong><i class="ti ti-robot me-1"></i> Deal Management Agent</strong>
               <div class="d-flex align-items-center gap-2">
                 <% if deal_report %>
-                  <span class="text-muted small">Last run: <%= deal_report.updated_at.strftime("%d %b %Y, %H:%M") %></span>
+                  <span class="text-muted small">Last run: <%= l(deal_report.updated_at, format: :abbr_date_time) %></span>
                   <%= link_to "Full Report", support_agent_path(deal_agent, tab: "deal_reports"), class: "btn btn-sm btn-outline-secondary", data: { turbo: false } %>
                 <% end %>
                 <button type="button" class="btn btn-sm btn-primary"

@@ -17,7 +17,7 @@
   ["Deal",     h(@deal.name)],
   ["Investor", h(@investor_name)],
   ["Activity", h(@activity.title)],
-  ["Due Date", @activity.by_date&.strftime("%d %b %Y") || "—"]
+  ["Due Date", @activity.by_date ? I18n.l(@activity.by_date, format: :abbr_month_day_year) : "—" || "—"]
 ] + (@activity.details.present? ? [["Details", h(@activity.details.to_plain_text)]] : [])) %>
 
 <%= sa_footer("This reminder was sent by the Deal Management Agent for #{h @entity.name}.") %>

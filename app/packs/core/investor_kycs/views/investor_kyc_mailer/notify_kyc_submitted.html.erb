@@ -10,7 +10,7 @@
         <% else %>
             The investor <strong><%= @investor_kyc.full_name %></strong> has submitted their KYC for review.
             <% if @investor_kyc.submitted_at.present? %>
-              <br>Submitted on <%= @investor_kyc.submitted_at.strftime('%B %-d, %Y') %>.
+              <br>Submitted on <%= I18n.l(@investor_kyc.submitted_at.to_date, format: :long) %>.
             <% end %>
         <% end %>
     </p>

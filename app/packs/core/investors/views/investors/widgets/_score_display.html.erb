@@ -71,11 +71,11 @@
     </div>
     <%# Metadata top-right %>
     <div class="text-end text-muted small lh-lg">
-      <div>Scored <strong><%= scored_at.strftime("%d %b %Y") %></strong></div>
+      <div>Scored <strong><%= l(scored_at, format: :abbr_month_day_year) %></strong></div>
       <div>Sector: <strong><%= sector %></strong></div>
       <% if manually_edited %>
         <div class="text-muted" style="font-size: 0.7rem;">
-          <i class="ti ti-edit"></i> Edited <%= edited_at ? Time.parse(edited_at).strftime("%d %b %Y") : "" %>
+          <i class="ti ti-edit"></i> Edited <%= edited_at ? l(Time.parse(edited_at).to_date, format: :abbr_month_day_year) : "" %>
         </div>
       <% end %>
       <% if can_edit %>

@@ -10,7 +10,7 @@
       <th></th>
       <% pivot.groups.each do |group| %>
         <% pivot.dates_by_group[group].each do |date| %>
-          <th><%= date.strftime("%d %b %Y") %></th>
+          <th><%= l(date, format: :abbr_month_day_year) %></th>
         <% end %>
       <% end %>
     </tr>

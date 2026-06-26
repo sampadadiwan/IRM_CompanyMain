@@ -42,7 +42,7 @@ Then('I should see the investment_opportunity details on the details page') do
   expect(page).to have_content(@investment_opportunity.company_name)
   expect(page).to have_content(money_to_currency(@investment_opportunity.fund_raise_amount))
   expect(page).to have_content(money_to_currency(@investment_opportunity.min_ticket_size))
-  expect(page).to have_content(@investment_opportunity.last_date.strftime("%d/%m/%Y"))
+  expect(page).to have_content(I18n.l(@investment_opportunity.last_date))
   expect(page).to have_content(@investment_opportunity.currency)
   expect(page).to have_content(@investment_opportunity.details.to_plain_text)
 end
@@ -58,7 +58,7 @@ Then('I should see the investment_opportunity in all investment_opportunities pa
     force_units = "Lakhs"
   end
   expect(page).to have_content(money_to_currency(@investment_opportunity.min_ticket_size, { force_units: }))
-  expect(page).to have_content(@investment_opportunity.last_date.strftime("%d/%m/%Y"))
+  expect(page).to have_content(I18n.l(@investment_opportunity.last_date))
 end
 
 Given('there is an investment_opportunity {string}') do |arg1|

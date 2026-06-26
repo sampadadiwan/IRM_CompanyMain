@@ -4,7 +4,7 @@
   <% end %>
   <div class="card-title m-0 text-center">
     <span><%= owner %></span>
-    <h5><%= @current_day.strftime('%B %d, %Y') %></h5>
+    <h5><%= l(@current_day, format: :long) %></h5>
   </div>
   <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, day: (@current_day + 1.day).strftime('%Y-%m-%d'), view: @view), data: { turbo: false } do %>
     <i class="ti ti-arrow-right"></i>
@@ -33,7 +33,7 @@
               <% events_in_hour.each do |event| %>
                 <div class="event-item-day">
                   <%= link_to event_path(event), class: 'event-item', data: { turbo: false } do %>
-                    <%= event.title %> - <%= event.start_time.strftime('%I:%M %p') %>
+                    <%= event.title %> - <%= l(event.start_time, format: :time_only) %>
                   <% end %>
                 </div>
               <% end %>

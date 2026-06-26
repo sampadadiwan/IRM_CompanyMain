@@ -57,7 +57,7 @@
       <div>
         <strong>KYC Already Submitted</strong> — your KYC has been received. The fund team will review it shortly.
         <% if investor_kyc.submitted_at.present? %>
-          <br><small class="text-muted">Submitted on <%= investor_kyc.submitted_at.strftime('%B %-d, %Y') %></small>
+          <br><small class="text-muted">Submitted on <%= l(investor_kyc.submitted_at.to_date, format: :long) %></small>
         <% end %>
       </div>
     </div>

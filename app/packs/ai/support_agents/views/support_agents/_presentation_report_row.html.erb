@@ -69,7 +69,7 @@
     <span class="badge <%= sc %>"><%= st %></span>
   </td>
 
-  <td class="text-muted small"><%= report.created_at.strftime("%d %b %Y, %H:%M") %></td>
+  <td class="text-muted small"><%= l(report.created_at, format: :abbr_date_time) %></td>
 
   <td>
     <% if row_action == :collapse %>

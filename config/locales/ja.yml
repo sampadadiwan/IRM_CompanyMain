@@ -57,6 +57,13 @@ ja:
       default: "%Y/%m/%d"
       long: "%Y年%m月%d日"
       short: "%m月%d日"
+      month_year: "%Y年%m月"
+      abbr_month_day_year: "%Y/%m/%d"
+      day_month_year: "%Y年%m月%d日"
+      month_year_full: "%Y年%m月"
+      chart_month_year: "%Y/%m"
+      chart_abbr_month_year: "%Y/%m"
+      chart_year: "%Y"
   deal:
     create: ディールが作成されました
     destroy: ディールが削除されました
@@ -318,6 +325,13 @@ ja:
       default: "%Y/%m/%d %H:%M"
       long: "%Y年%m月%d日"
       short: "%m月%d日"
+      month_year: "%Y年%m月"
+      abbr_month_day_year: "%Y/%m/%d"
+      day_month_year: "%Y年%m月%d日"
+      month_year_full: "%Y年%m月"
+      time_only: "%H:%M"
+      abbr_date_time: "%Y/%m/%d %H:%M"
+      long_date_time: "%Y年%m月%d日 %H:%M"
   top_menus:
     access_rights: アクセス権
     account_settings: アカウント設定

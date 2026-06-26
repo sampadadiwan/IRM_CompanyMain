@@ -9,7 +9,7 @@
     <%= kyc_data.PAN %>
   </td>
   <td>
-    <%= kyc_data.birth_date&.strftime("%d/%m/%Y") %>
+    <%= kyc_data.birth_date ? l(kyc_data.birth_date) : "" %>
   </td>
   <td>
     <%= kyc_data.source&.upcase %>

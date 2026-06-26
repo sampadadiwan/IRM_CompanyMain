@@ -38,7 +38,7 @@
   Then('I should see the approval details on the details page') do
     # find(".show_details_link").click
     expect(page).to have_content(@approval.title)
-    expect(page).to have_content(@approval.due_date.strftime("%d/%m/%Y"))
+    expect(page).to have_content(I18n.l(@approval.due_date))
     expect(page).to have_content(@approval.agreements_reference.body.to_plain_text)
     within("#approval_#{@approval.id}") do
         within(".approved_count") do
@@ -56,7 +56,7 @@
   Then('I should see the approval in all approvals page') do
     visit(approvals_url)
     expect(page).to have_content(@approval.title)
-    expect(page).to have_content(@approval.due_date.strftime("%d/%m/%Y"))
+    expect(page).to have_content(I18n.l(@approval.due_date))
     # expect(page).to have_content(@approval.agreements_reference)
     within("#approval_#{@approval.id}") do
         within(".responses_count") do

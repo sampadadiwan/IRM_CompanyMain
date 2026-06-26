@@ -16,7 +16,7 @@
 
       <tr>
         <td>Date</td>
-        <td><%= @event.start_time.strftime("%B %d, %Y at %I:%M %p") %></td>
+        <td><%= l(@event.start_time, format: :long_date_time) %></td>
       </tr>
 
       <tr>

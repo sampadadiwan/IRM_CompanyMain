@@ -30,11 +30,11 @@
       </div>
       <div class="col-md-2">
         <small class="text-muted">Created:</small><br>
-        <strong><%= report.created_at.strftime("%b %d, %Y") %></strong>
+        <strong><%= l(report.created_at.to_date, format: :abbr_month_day_year) %></strong>
       </div>
       <div class="col-md-3">
         <small class="text-muted">Updated:</small><br>
-        <strong><%= report.updated_at.strftime("%b %d, %Y %I:%M %p") %></strong>
+        <strong><%= l(report.updated_at, format: :long_date_time) %></strong>
       </div>
     </div>
 

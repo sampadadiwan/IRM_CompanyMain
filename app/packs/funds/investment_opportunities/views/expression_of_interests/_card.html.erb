@@ -61,7 +61,7 @@
                   <i class="ti ti-calendar text-primary fs-6"></i>
                 </div>
                 <div class="text-wrap">
-                  <h4 class="mb-0 fs-6"><%= expression_of_interest.created_at.strftime("%d %b %Y") %></h4>
+                  <h4 class="mb-0 fs-6"><%= l(expression_of_interest.created_at.to_date, format: :abbr_month_day_year) %></h4>
                   <p class="fs-3 mb-0">Date of Expression</p>
                 </div>
               </div>

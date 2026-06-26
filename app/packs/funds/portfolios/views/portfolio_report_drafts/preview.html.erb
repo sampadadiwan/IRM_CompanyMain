@@ -67,9 +67,9 @@
   <div class="meta">
     <%= @draft.portfolio_report_template.name %> &nbsp;|&nbsp;
     <%= @draft.kpi_period_type %> <%= @draft.kpi_tag %> &nbsp;|&nbsp;
-    <%= @draft.start_date.strftime("%b %Y") %> – <%= @draft.end_date.strftime("%b %Y") %>
+    <%= l(@draft.start_date, format: :month_year) %> – <%= l(@draft.end_date, format: :month_year) %>
     &nbsp;|&nbsp; <%= @draft.n_periods %> periods
-    &nbsp;|&nbsp; Generated <%= @draft.updated_at.strftime("%d %b %Y") %>
+    &nbsp;|&nbsp; Generated <%= l(@draft.updated_at.to_date, format: :abbr_month_day_year) %>
   </div>
 
   <%# KPI Table %>

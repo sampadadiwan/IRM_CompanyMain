@@ -7,7 +7,7 @@
 <%= sa_intro("The <strong>E-Sign Monitor</strong> has completed its scan for <strong>#{h @entity&.name}</strong> and found #{total_issues} item#{total_issues == 1 ? '' : 's'} that need#{total_issues == 1 ? 's' : ''} attention.".html_safe) %>
 
 <%= sa_banner(
-  title:    "E-Sign Status — #{Time.zone.today.strftime('%B %Y')}",
+  title:    "E-Sign Status — #{I18n.l(Time.zone.today, format: :month_year_full)}",
   label:    overall_label,
   subtitle: "#{@pending_docs.size} pending signature#{@pending_docs.size == 1 ? '' : 's'} · #{@expired_issues.size} expired/voided",
   tone:     overall_tone

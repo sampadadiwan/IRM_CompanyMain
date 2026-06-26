@@ -35,11 +35,11 @@
                 <%= report.status.humanize %>
               </span>
             </td>
-            <td><%= report.report_date&.strftime('%Y-%m-%d') %></td>
+            <td><%= report.report_date ? l(report.report_date) : "" %></td>
             <!--<td>
               <%= report.ai_report_sections.select(&:completed?).count %>/<%= report.ai_report_sections.count %>
             </td>-->
-            <td><%= report.created_at.strftime('%Y-%m-%d %H:%M') %></td>
+            <td><%= l(report.created_at) %></td>
             <td>
               
               <% # 1. OPEN Button: Enabled for Finalized (goes to collated report), Disabled for Draft %>

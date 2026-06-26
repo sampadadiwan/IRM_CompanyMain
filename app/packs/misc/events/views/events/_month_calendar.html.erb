@@ -4,7 +4,7 @@
   <% end %>
   <div class="card-title m-0 text-center">
     <span><%= owner %></span>
-    <h5><%= @current_month.strftime('%B %Y') %></h5>
+    <h5><%= l(@current_month, format: :month_year_full) %></h5>
   </div>
   <%= link_to events_path(owner_id: @owner&.id, owner_type: @owner&.class.to_s, month: @next_month.strftime('%Y-%m'), view: @view), data: { turbo: false } do %>
     <i class="ti ti-arrow-right"></i>
@@ -38,7 +38,7 @@
                 <div class="events" style="position: relative; z-index: 2;">
                   <% @events_by_day[day]&.each do |event| %>
                     <div data-toggle="tooltip" 
-                         title="Event: <%= event.title %> | Date: <%= event.start_time.strftime('%B %d, %Y') %> | Owner: <%= @owner.name %>">
+                         title="Event: <%= event.title %> | Date: <%= l(event.start_time.to_date, format: :long) %> | Owner: <%= @owner.name %>">
                     <%= link_to event_path(event), class: "event-item", data: { turbo: false } do %>
                       <%= event.title %>
                     <% end %>

@@ -40,12 +40,12 @@
           <tr>
             <td><%= draft.portfolio_report_template.name %></td>
             <td class="small text-muted">
-              <%= draft.start_date.strftime("%b %Y") %> – <%= draft.end_date.strftime("%b %Y") %>
+              <%= l(draft.start_date, format: :month_year) %> – <%= l(draft.end_date, format: :month_year) %>
             </td>
             <td>
               <span class="badge bg-<%= status_badge %>"><%= draft.status.humanize %></span>
             </td>
-            <td class="small text-muted"><%= draft.created_at.strftime("%d %b %Y") %></td>
+            <td class="small text-muted"><%= l(draft.created_at.to_date, format: :abbr_month_day_year) %></td>
             <td class="text-end">
               <%# Primary action depends on status %>
               <% if draft.review? %>

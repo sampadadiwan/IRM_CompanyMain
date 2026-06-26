@@ -46,7 +46,7 @@
         DOB
       </td>
       <td>
-        <%= kyc_data.birth_date&.strftime("%d/%m/%Y") %>
+        <%= kyc_data.birth_date ? l(kyc_data.birth_date) : "" %>
         <% if kyc_data.birth_date_match %>
           <span class="badge bg-success">Match</span>
         <% else %>
@@ -159,7 +159,7 @@
             Created
         </td>
         <td>
-            <%= kyc_data.created_at.strftime("%d/%m/%Y %H:%M:%S") %>
+            <%= l(kyc_data.created_at) %>
         </td>
     </tr>
     
@@ -168,7 +168,7 @@
             Updated
         </td>
         <td>
-            <%= kyc_data.updated_at.strftime("%d/%m/%Y %H:%M:%S") %>
+            <%= l(kyc_data.updated_at) %>
         </td>
     </tr>
 

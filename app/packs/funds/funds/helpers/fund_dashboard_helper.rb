@@ -32,7 +32,7 @@ module FundDashboardHelper
       ratios_by_date = ratios.group_by { |v| v.end_date.beginning_of_month }
       all_dates.map do |date|
         vals = ratios_by_date[date]
-        [date.strftime("%b %y"), vals ? vals[-1].value&.round(2) : nil]
+        [I18n.l(date, format: :chart_abbr_month_year), vals ? vals[-1].value&.round(2) : nil]
       end
     end
 
@@ -187,7 +187,7 @@ module FundDashboardHelper
         name: cumulative ? "#{name} - Cumulative" : name,
         data: all_periods.map do |period|
           label = case aggregate_by.to_s
-                  when "month", "quarter" then period.strftime("%m/%y")
+                  when "month", "quarter" then I18n.l(period, format: :chart_month_year)
                   when "year"             then period.year.to_s
                   else                         period.to_s
                   end

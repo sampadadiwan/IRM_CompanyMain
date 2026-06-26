@@ -91,7 +91,7 @@
                 <%= inst.status.humanize %>
               </span>
             </td>
-            <td class="align-middle text-muted small"><%= inst.created_at.strftime("%b %d, %Y") %></td>
+            <td class="align-middle text-muted small"><%= l(inst.created_at.to_date, format: :abbr_month_day_year) %></td>
             <td class="align-middle">
               <%= link_to "View", folder_workflow_instance_path(folder, inst),
                     class: "btn btn-sm btn-outline-secondary" %>

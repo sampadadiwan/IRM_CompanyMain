@@ -2,7 +2,7 @@
     find(".show_details_link").click
     expect(page).to have_content(@sale.name)
     # expect(page).to have_content(@sale.start_date.strftime("%d/%m/%Y"))
-    expect(page).to have_content(@sale.end_date.strftime("%d/%m/%Y"))
+    expect(page).to have_content(I18n.l(@sale.end_date))
     if @sale.price_type == "Fixed Price"
       expect(page).to have_content(@sale.final_price)
     else

@@ -310,9 +310,9 @@
     <h2 class="cover-subtitle">Portfolio Company Report</h2>
 
     <div class="cover-meta">
-      <p><strong>Report Date:</strong> <%= @report.report_date&.strftime('%B %d, %Y') || Date.today.strftime('%B %d, %Y') %></p>
+      <p><strong>Report Date:</strong> <%= @report.report_date ? l(@report.report_date, format: :long) : l(Date.today, format: :long) %></p>
       <p><strong>Prepared By:</strong> <%= @report.analyst&.name || "Analyst" %></p>
-      <p><strong>Generated:</strong> <%= Time.current.strftime('%B %d, %Y at %I:%M %p') %></p>
+      <p><strong>Generated:</strong> <%= l(Time.current, format: :long_date_time) %></p>
     </div>
   </div>
 
@@ -333,7 +333,7 @@
   </div>
 
   <div class="page-footer">
-    <%= @report.portfolio_company&.name %> - Portfolio Report | Generated on <%= Date.today.strftime('%B %d, %Y') %>
+    <%= @report.portfolio_company&.name %> - Portfolio Report | Generated on <%= l(Date.today, format: :long) %>
   </div>
 </body>
 </html>

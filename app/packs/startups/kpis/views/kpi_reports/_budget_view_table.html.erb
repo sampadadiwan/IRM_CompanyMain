@@ -48,12 +48,12 @@
                     <th rowspan="2" class="text_col">Particulars</th>
                     <% quarterly_reports.map { |r| r.as_of.is_a?(String) ? Date.local_parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
                         <th colspan="<%= tag_lists_to_display.count + (show_achievement_column ? 1 : 0) %>" class="text-center">
-                            <%= as_of_date.strftime("%b-%y") %>
+                            <%= l(as_of_date, format: :month_year) %>
                         </th>
                     <% end %>
                     <% year_reports.map { |r| r.as_of.is_a?(String) ? Date.local_parse(r.as_of) : r.as_of }.compact.uniq.sort.each do |as_of_date| %>
                         <th colspan="<%= tag_lists_to_display.count + (show_achievement_column ? 1 : 0) %>" class="text-center">
-                            <%= as_of_date.strftime("%b-%y") %>
+                            <%= l(as_of_date, format: :month_year) %>
                         </th>
                     <% end %>
                 </tr>

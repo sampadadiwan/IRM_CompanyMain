@@ -18,7 +18,7 @@
 <body style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
 
   <h2>Cash Flow Report — <%= fund_name %></h2>
-  <p style="color:#888;">Generated: <%= generated_at.strftime("%d-%b-%Y, %I:%M %p") %> |
+  <p style="color:#888;">Generated: <%= l(generated_at, format: :long_date_time) %> |
      Agent: <%= support_agent.name %></p>
 
   <% if fund_status == "shortfall" %>

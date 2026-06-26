@@ -89,7 +89,7 @@ Then('the data should be correctly displayed for each Capital Distribution Payme
     expect(page).to have_content(money_to_currency(cdp.cost_of_investment_with_fees, {}))
     expect(page).to have_content(money_to_currency(cdp.reinvestment, {}))
 
-    expect(page).to have_content(cdp.payment_date.strftime("%d/%m/%Y"))
+    expect(page).to have_content(I18n.l(cdp.payment_date))
     expect(page).to have_content(cdp.capital_distribution.to_s)
     expect(page).to have_content(cdp.capital_commitment.to_s)
     AccountEntry.where(capital_commitment_id: cdp.capital_commitment_id).find_each do |ae|
@@ -294,7 +294,7 @@ Then('I should be able to see my capital distributions') do
       expect(page).to have_content(@investor.investor_name) if @user.curr_role != "investor"
       expect(page).to have_content(money_to_currency(cc.net_payable))
       expect(page).to have_content(money_to_currency(cc.gross_payable))
-      expect(page).to have_content(cc.payment_date.strftime("%d/%m/%Y"))
+      expect(page).to have_content(I18n.l(cc.payment_date))
     else
       puts "Distribution Not Visible"
       expect(page).not_to have_content(cc.investor.investor_name)
@@ -328,7 +328,7 @@ Then('I should see the distribution payments') do
       expect(page).to have_content(money_to_currency(cdp.gross_payable))
       expect(page).to have_content(money_to_currency(cdp.net_payable))
       # expect(page).to have_content(money_to_currency(cdp.cost_of_investment))
-      expect(page).to have_content(cdp.payment_date.strftime("%d/%m/%Y"))
+      expect(page).to have_content(I18n.l(cdp.payment_date))
       # expect(page).to have_content(money_to_currency(cdp.reinvestment))
       expect(page).to have_content(cdp.completed ? "Yes" : "No")
     end
@@ -811,7 +811,7 @@ Then('I should see the capital distrbution details') do
   expect(page).to have_content(money_to_currency(@capital_distribution.gross_amount))
   expect(page).to have_content(money_to_currency(@capital_distribution.reinvestment))
   expect(page).to have_content(money_to_currency(@capital_distribution.income))
-  expect(page).to have_content(@capital_distribution.distribution_date.strftime("%d/%m/%Y"))
+  expect(page).to have_content(I18n.l(@capital_distribution.distribution_date))
 
   @new_capital_distribution = CapitalDistribution.last
   @new_capital_distribution.approved.should
@@ -849,7 +849,7 @@ Then('I should be able to see the capital distrbution payments') do
       expect(page).to have_content(p.investor.investor_name)
       expect(page).to have_content(money_to_currency(p.gross_payable))
       expect(page).to have_content(money_to_currency(p.net_payable))
-      expect(page).to have_content(p.payment_date.strftime("%d/%m/%Y"))
+      expect(page).to have_content(I18n.l(p.payment_date))
       expect(page).to have_content(p.completed ? "Yes" : "No")
     end
   end

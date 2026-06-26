@@ -158,7 +158,7 @@ module ApplicationHelper
     format = format.present? ? format.to_s : "default"
     format = format&.to_sym
     if format == :ordinal
-      "#{ordinal(date.day)} #{date.strftime('%b %Y')}"
+      "#{ordinal(date.day)} #{l(date, format: :month_year)}"
     else
       l(date, format: format)
     end

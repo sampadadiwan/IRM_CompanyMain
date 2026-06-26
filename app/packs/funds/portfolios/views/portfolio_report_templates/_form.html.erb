@@ -241,7 +241,7 @@
           <div class="col-md-5 d-flex align-items-end pb-2">
             <small class="text-muted">
               <i class="ti ti-clock me-1"></i>
-              Last run: <%= portfolio_report_template.auto_generate_last_run_at.strftime("%d %b %Y") %>
+              Last run: <%= l(portfolio_report_template.auto_generate_last_run_at.to_date, format: :abbr_month_day_year) %>
             </small>
           </div>
         <% end %>

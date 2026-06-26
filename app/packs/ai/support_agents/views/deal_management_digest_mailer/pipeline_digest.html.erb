@@ -11,7 +11,7 @@
   has_issues     = @has_blocking || stagnant.any? || overdue.any? || blocking_docs.any?
   overall_tone   = has_issues ? :danger : :success
   overall_label  = has_issues ? "Attention Required" : "On Track"
-  overall_sub    = "#{h @deal.name} · #{@entity.name} · #{@run_at.strftime('%d %b %Y %H:%M')}"
+  overall_sub    = "#{h @deal.name} · #{@entity.name} · #{I18n.l(@run_at, format: :abbr_date_time)}"
 %>
 
 <%= sa_banner(

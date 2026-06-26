@@ -36,7 +36,7 @@
       <div class="glass-card" style="padding: 40px; border: 1px solid var(--palette-border);">
         <div style="margin-bottom: 40px;">
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Date Prepared</div>
-          <div style="font-size: 1.25rem; font-weight: 600; color: var(--palette-primary);"><%= Time.current.strftime("%B %d, %Y") %></div>
+          <div style="font-size: 1.25rem; font-weight: 600; color: var(--palette-primary);"><%= l(Time.current.to_date, format: :long) %></div>
         </div>
         <div>
           <div style="font-size: 0.75rem; font-weight: 700; color: var(--palette-accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px;">Classification</div>

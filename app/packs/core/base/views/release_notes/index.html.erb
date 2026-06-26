@@ -51,7 +51,7 @@
               <%= link_to note[:title], release_note_path(note[:id]), class: "fw-bolder text-dark", target: "_blank" %>
             </h6>
             <p class="note-date fs-2 text-muted mb-3">
-              <%= note[:date].strftime("%b %d, %Y") %>
+              <%= l(note[:date], format: :abbr_month_day_year) %>
             </p>
             <div class="note-content">
               <p class="note-inner-content text-muted mb-4" style="min-height:140px; font-size: 0.85rem; line-height: 1.6;">

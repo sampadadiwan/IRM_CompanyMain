@@ -25,7 +25,7 @@
             <div class="events-list-day">
                 <div class="event-item-day">
                   <%= link_to event_path(event), class: 'event-item', data: { turbo: false } do %>
-                    <%= event.title %> - <%= event.start_time.strftime('%I:%M %p') %>
+                    <%= event.title %> - <%= l(event.start_time, format: :time_only) %>
                   <% end %>
                 </div>
             </div>

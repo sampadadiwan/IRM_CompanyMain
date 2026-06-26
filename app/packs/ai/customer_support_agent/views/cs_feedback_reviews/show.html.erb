@@ -10,7 +10,7 @@
     <div class="card mb-3">
       <div class="card-header bg-light">
         <strong>User Question</strong>
-        <span class="text-muted ms-2"><%= @user_question&.created_at&.strftime("%d %b %Y %H:%M") %></span>
+        <span class="text-muted ms-2"><%= @user_question&.created_at ? l(@user_question.created_at, format: :abbr_date_time) : "" %></span>
       </div>
       <div class="card-body">
         <p class="mb-1 text-muted small">
@@ -24,7 +24,7 @@
     <div class="card mb-3">
       <div class="card-header bg-light">
         <strong>Agent Response</strong>
-        <span class="text-muted ms-2"><%= @message.created_at.strftime("%d %b %Y %H:%M") %></span>
+        <span class="text-muted ms-2"><%= l(@message.created_at, format: :abbr_date_time) %></span>
       </div>
       <div class="card-body">
         <div class="markdown-body"><%= render_markdown(@message.content) %></div>
@@ -192,7 +192,7 @@
         <div class="card-body">
           <p class="mb-1"><strong>Reason:</strong> <%= @escalation.reason.titleize %></p>
           <p class="mb-1"><strong>Summary:</strong> <%= @escalation.summary %></p>
-          <p class="mb-0 text-muted small">Created <%= @escalation.created_at.strftime("%d %b %Y %H:%M") %></p>
+          <p class="mb-0 text-muted small">Created <%= l(@escalation.created_at, format: :abbr_date_time) %></p>
         </div>
       </div>
     <% end %>

@@ -18,7 +18,7 @@
         <% end %>
         <th>Name</th>
         <% all_dates.each do |date| %>
-          <th class="text-end"><%= date.strftime("%b %y") %></th>
+          <th class="text-end"><%= l(date, format: :month_year) %></th>
         <% end %>
       </tr>
     </thead>

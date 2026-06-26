@@ -20,7 +20,7 @@
       <%= escalation.status.titleize %>
     </span>
   </td>
-  <td><%= escalation.created_at.strftime("%d %b %Y %H:%M") %></td>
+  <td><%= l(escalation.created_at, format: :abbr_date_time) %></td>
   <td>
     <%= link_to "View", customer_support_escalation_path(escalation), class: "btn btn-sm btn-outline-primary" %>
 

@@ -6,6 +6,12 @@ en:
       long: "%B %d, %Y"
       short: "%b %d"
       month_year: "%b %Y"
+      abbr_month_day_year: "%d %b %Y"
+      day_month_year: "%d %B %Y"
+      month_year_full: "%B %Y"
+      chart_month_year: "%m/%y"
+      chart_abbr_month_year: "%b %y"
+      chart_year: "%Y"
   investor_kyc:
     tax_id: "PAN / Tax ID"
     bank_routing_number: "IFSC Code"
@@ -329,6 +335,12 @@ en:
       long: "%B %d, %Y"
       short: "%b %d"
       month_year: "%b %Y"
+      abbr_month_day_year: "%d %b %Y"
+      day_month_year: "%d %B %Y"
+      month_year_full: "%B %Y"
+      time_only: "%H:%M"
+      abbr_date_time: "%d %b %Y %H:%M"
+      long_date_time: "%B %d, %Y at %I:%M %p"
   top_menus:
     access_rights: Access Rights
     account_settings: Account Settings

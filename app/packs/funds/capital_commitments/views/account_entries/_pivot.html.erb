@@ -50,7 +50,7 @@
       <% end %>
       <% @pivot.groups.each do |group| %>
         <% @pivot.dates_by_group[group].each do |date| %>
-          <th><%= date.strftime("%b %Y") %></th>
+          <th><%= l(date, format: :month_year) %></th>
         <% end %>
       <% end %>
     </tr>

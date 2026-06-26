@@ -110,9 +110,9 @@ module CapitalRemittanceDashboardHelper
       cumulative_amount += period_totals[period] / 100.0
       label = case aggregate_by.to_s
               when "quarter", "month"
-                period.strftime("%m/%y")
+                I18n.l(period, format: :chart_month_year)
               when "year"
-                period.strftime("%Y")
+                I18n.l(period, format: :chart_year)
               else
                 period.to_s
               end

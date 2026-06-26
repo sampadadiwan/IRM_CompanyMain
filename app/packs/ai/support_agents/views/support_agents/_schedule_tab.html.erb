@@ -256,7 +256,7 @@
       <div>
         <strong>Scheduled...</strong>
         <% if last_exec.agent_schedule&.next_run_at %>
-          <br><small>Scheduled for: <%= last_exec.agent_schedule.next_run_at.in_time_zone(schedule.timezone).strftime('%d-%b-%Y %H:%M %Z') %></small>
+          <br><small>Scheduled for: <%= l(last_exec.agent_schedule.next_run_at.in_time_zone(schedule.timezone), format: :abbr_date_time) %> <%= last_exec.agent_schedule.next_run_at.in_time_zone(schedule.timezone).strftime('%Z') %></small>
         <% end %>
       </div>
     </div>
@@ -267,7 +267,7 @@
       <div>
         <strong>Running...</strong>
         <% if last_exec.started_at %>
-          <br><small>Started: <%= last_exec.started_at.in_time_zone(schedule.timezone).strftime('%d-%b-%Y %H:%M %Z') %></small>
+          <br><small>Started: <%= l(last_exec.started_at.in_time_zone(schedule.timezone), format: :abbr_date_time) %> <%= last_exec.started_at.in_time_zone(schedule.timezone).strftime('%Z') %></small>
           <% if last_exec.triggered_by %>
             <br><small>Triggered by: <%= last_exec.triggered_by.full_name %> (Manual)</small>
           <% end %>
@@ -280,7 +280,7 @@
             <p class="mb-1">
               <strong>Next scheduled run:</strong><br>
               <% if schedule.enabled? && schedule.next_run_at %>
-                <%= schedule.next_run_at.in_time_zone(schedule.timezone).strftime('%a, %d-%b-%Y %H:%M %Z') %>
+                <%= l(schedule.next_run_at.in_time_zone(schedule.timezone), format: :abbr_date_time) %> <%= schedule.next_run_at.in_time_zone(schedule.timezone).strftime('%Z') %>
               <% else %>
                 <span class="text-muted">Not scheduled</span>
               <% end %>
@@ -290,7 +290,7 @@
             <p class="mb-1">
               <strong>Last run:</strong><br>
               <% if schedule.last_run_at %>
-                <%= schedule.last_run_at.in_time_zone(schedule.timezone).strftime('%a, %d-%b-%Y %H:%M %Z') %>
+                <%= l(schedule.last_run_at.in_time_zone(schedule.timezone), format: :abbr_date_time) %> <%= schedule.last_run_at.in_time_zone(schedule.timezone).strftime('%Z') %>
                 <% if (last_exec = schedule.last_execution) %>
                   (<span class="<%= { 'completed' => 'text-success', 'partial_success' => 'text-warning' }.fetch(last_exec.status, 'text-danger') %>"><%= last_exec.status.humanize %></span>)
 

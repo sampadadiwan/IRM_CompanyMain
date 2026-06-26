@@ -36,7 +36,7 @@
         </div>
       </div>
       <small class="text-muted d-block mb-3">
-        Scored: <%= latest_report.created_at.strftime("%d %b %Y %H:%M") %>
+        Scored: <%= l(latest_report.created_at, format: :abbr_date_time) %>
         &nbsp;·&nbsp; Sector: <strong><%= @investor.sector %></strong>
       </small>
       <% if can_run %>

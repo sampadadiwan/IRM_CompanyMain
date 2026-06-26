@@ -71,7 +71,7 @@
             </td>
             <td><%= terms_count > 0 ? "#{terms_count} term(s)" : "--" %></td>
             <td style="color:#888; font-size:12px;">
-              <%= report.updated_at.strftime("%d %b %Y, %H:%M") %>
+              <%= l(report.updated_at, format: :abbr_date_time) %>
             </td>
             <td class="text-nowrap">
               <% if owner.present? %>
@@ -140,7 +140,7 @@
               <span class="text-danger"><%= data[:declined_count] %> declined</span>
             </td>
             <td style="color:#888; font-size:12px;">
-              <%= report.updated_at.strftime("%d %b %Y, %H:%M") %>
+              <%= l(report.updated_at, format: :abbr_date_time) %>
             </td>
             <td>
               <% deal = report.owner %>

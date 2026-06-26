@@ -34,7 +34,7 @@
     </div>
     <div class="message-meta mt-1 px-2">
       <span class="text-muted-extra-small">
-        <%= Time.current.strftime("%H:%M") %>
+        <%= l(Time.current, format: :time_only) %>
       </span>
     </div>
   </div>

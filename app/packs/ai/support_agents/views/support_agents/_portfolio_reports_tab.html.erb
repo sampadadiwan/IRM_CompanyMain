@@ -38,7 +38,7 @@
             <td>
               <% if data[:run_at].present? %>
                 <% run_at = Time.zone.parse(data[:run_at]) rescue nil %>
-                <%= run_at ? run_at.strftime("%b %d, %Y at %I:%M %p") : "--" %>
+                <%= run_at ? l(run_at, format: :long_date_time) : "--" %>
               <% else %>
                 --
               <% end %>
@@ -62,7 +62,7 @@
                   <br><small class="text-muted">
                     <%= support_agent.agent_schedule.frequency.titleize %>
                     <% if support_agent.agent_schedule.run_at_time.present? %>
-                      at <%= support_agent.agent_schedule.run_at_time.strftime('%H:%M') %>
+                      at <%= l(support_agent.agent_schedule.run_at_time, format: :time_only) %>
                     <% end %>
                   </small>
                 <% end %>
@@ -94,6 +94,6 @@
 
   <p class="text-muted small">
     <i class="ti ti-calendar"></i>
-    Last updated: <%= portfolio_reports.first&.updated_at&.strftime("%b %d, %Y at %I:%M %p") %>
+    Last updated: <%= portfolio_reports.first&.updated_at ? l(portfolio_reports.first.updated_at, format: :long_date_time) : "" %>
   </p>
 <% end %>

@@ -722,7 +722,7 @@ Then('I should see the investor kyc details on the details page') do
   expect(page).to have_content(@investor_kyc.investor.investor_name)
   expect(page).to have_content(@investor_kyc.PAN)
   expect(page).to have_content(@investor_kyc.full_name)
-  expect(page).to have_content(@investor_kyc.birth_date.strftime("%d %B, %Y")) if @investor_kyc.birth_date
+  expect(page).to have_content(I18n.l(@investor_kyc.birth_date, format: :day_month_year)) if @investor_kyc.birth_date
   expect(page).to have_content(@investor_kyc.address)
   expect(page).to have_content(@investor_kyc.corr_address)
   expect(page).to have_content(@investor_kyc.bank_account_number)

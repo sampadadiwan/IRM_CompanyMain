@@ -19,7 +19,7 @@
                     <td><%= value[0] %></td>
                     <td><%= value[1] %></td>
                     <td><%= audit.user&.name %></td>
-                    <td><%= audit.created_at.strftime("%d %b %Y %H:%M:%S") %></td>
+                    <td><%= l(audit.created_at) %></td>
                 </tr>
             <% end %>
         <% end %>

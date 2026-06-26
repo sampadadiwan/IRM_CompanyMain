@@ -52,7 +52,7 @@
     <div class="px-3 py-2 d-flex justify-content-between align-items-center border-top">
       <small class="text-muted">
         <i class="ti ti-calendar me-1"></i>
-        Last run: <%= reports.first.created_at.strftime("%d %b %Y at %H:%M") %>
+        Last run: <%= l(reports.first.created_at, format: :abbr_date_time) %>
       </small>
       <% if can_run %>
         <button type="button" class="btn btn-sm btn-outline-secondary"

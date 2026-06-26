@@ -4,7 +4,7 @@
   ready_funds    = @fund_statuses.reject { |f| f[:status] == "blocked" }
   overall_tone   = blocked_funds.any? ? :warning : :success
   overall_label  = blocked_funds.any? ? "Data Update Needed" : "All Data Current"
-  run_date       = @next_run_at.strftime("%d %b %Y")
+  run_date       = I18n.l(@next_run_at.to_date, format: :abbr_month_day_year)
 %>
 
 <%= sa_intro("The Cash Flow Report for <strong>#{h @support_agent.entity.name}</strong> is scheduled to run on <strong>#{run_date}</strong> (#{@days_until_run} day#{@days_until_run == 1 ? '' : 's'} from now). The table below shows the data readiness for each fund.".html_safe) %>

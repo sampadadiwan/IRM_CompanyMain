@@ -35,7 +35,7 @@
             <i class="ti ti-ticket fs-6"></i>
           </div>
           <div class="ms-3 align-self-center">
-            <h3 class="mb-0 fs-6"><%=  deal.start_date&.strftime("%d %b %Y") %></h3>
+            <h3 class="mb-0 fs-6"><%= deal.start_date ? l(deal.start_date, format: :abbr_month_day_year) : "" %></h3>
             <span class="text-muted">Start Date</span>
           </div>
         </div>

@@ -105,7 +105,7 @@
           <% if report.running? %>
             <i class="ti ti-clock"></i> Started <%= time_ago_in_words(report.run_at) %> ago
           <% else %>
-            <i class="ti ti-calendar"></i> Last run: <%= report.run_at&.strftime("%b %d, %Y at %I:%M %p") %>
+            <i class="ti ti-calendar"></i> Last run: <%= report.run_at ? l(report.run_at, format: :long_date_time) : "" %>
             <% if report.total_duration %>
               &middot; <i class="ti ti-hourglass"></i> Duration: <%= report.total_duration %>
             <% end %>

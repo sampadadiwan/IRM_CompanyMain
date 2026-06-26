@@ -50,9 +50,9 @@ module AccountEntryChartsHelper
 
         label = if date
                   if aggregate_by.to_s.downcase == 'year'
-                    date.strftime("%Y")
+                    I18n.l(date, format: :chart_year)
                   else
-                    date.strftime("%m/%y")
+                    I18n.l(date, format: :chart_month_year)
                   end
                 else
                   period.to_s

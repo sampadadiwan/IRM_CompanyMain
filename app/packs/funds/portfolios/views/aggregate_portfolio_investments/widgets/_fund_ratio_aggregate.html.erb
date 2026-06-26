@@ -265,7 +265,7 @@
                         <tr>
                           <td class="small"><%= label %></td>
                           <td class="small text-end fw-bold"><%= "#{"%.#{decimals}f" % fr.value} #{ratio_name.upcase.include?('IRR') ? '%' : 'x'}" %></td>
-                          <td class="small text-end text-muted"><%= fr.end_date&.strftime("%b %-d, %Y") %></td>
+                          <td class="small text-end text-muted"><%= fr.end_date ? l(fr.end_date, format: :abbr_month_day_year) : "" %></td>
                           <td class="small text-end">
                             <% if fr.fund_ratio_run %>
                               <%= link_to "View", fund_ratio_run_path(fr.fund_ratio_run), target: "_blank", class: "text-decoration-none small" %>
@@ -371,7 +371,7 @@
                         <tr>
                           <td class="small"><%= label %></td>
                           <td class="small text-end fw-bold"><%= fr.display_value.presence || "#{"%.#{decimals}f" % fr.value} #{ratio_name.upcase.include?('IRR') ? '%' : 'x'}" %></td>
-                          <td class="small text-end text-muted"><%= fr.end_date&.strftime("%b %-d, %Y") %></td>
+                          <td class="small text-end text-muted"><%= fr.end_date ? l(fr.end_date, format: :abbr_month_day_year) : "" %></td>
                           <td class="small text-end">
                             <% if fr.fund_ratio_run %>
                               <%= link_to "View", fund_ratio_run_path(fr.fund_ratio_run), target: "_blank", class: "text-decoration-none small" %>

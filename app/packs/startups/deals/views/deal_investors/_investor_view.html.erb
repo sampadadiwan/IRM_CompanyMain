@@ -43,7 +43,7 @@
                         <i class="ti ti-calendar"></i>
                         <span>Start Date</span>
                         </div>
-                        <span class="value"><%= deal.start_date&.strftime("%d %b %Y") || deal.created_at.strftime("%d %b %Y") %></span>
+                        <span class="value"><%= deal.start_date ? l(deal.start_date, format: :abbr_month_day_year) : l(deal.created_at.to_date, format: :abbr_month_day_year) %></span>
                     </div>
                     </div>
 

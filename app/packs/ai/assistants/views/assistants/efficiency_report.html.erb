@@ -189,7 +189,7 @@
               <td colspan="3">
                 <i class="ti ti-message-2 mr-1"></i> Interaction #<%= idx + 1 %>
                 <% if interaction[:user_msg] %>
-                   <span class="text-muted small ml-2"><%= interaction[:user_msg].created_at.strftime("%Y-%m-%d %H:%M:%S") %></span>
+                   <span class="text-muted small ml-2"><%= l(interaction[:user_msg].created_at) %></span>
                 <% end %>
               </td>
             </tr>

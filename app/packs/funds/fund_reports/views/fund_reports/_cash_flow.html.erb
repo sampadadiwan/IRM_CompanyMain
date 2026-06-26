@@ -3,7 +3,7 @@
 %>
 
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
-    <h1 class="h4 mb-0 text-gray-800" style="width:100%">Cash-Flow <%= "(#{fund_report.start_date.strftime("%-d %b, %Y")} - #{fund_report.end_date.strftime("%-d %b, %Y")})" %></h1>
+    <h1 class="h4 mb-0 text-gray-800" style="width:100%">Cash-Flow <%= "(#{l(fund_report.start_date, format: :abbr_month_day_year)} - #{l(fund_report.end_date, format: :abbr_month_day_year)})" %></h1>
     <span>
         <div class="btn-group">
             <div class="dropdown">

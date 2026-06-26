@@ -337,7 +337,7 @@ Then('I should see the capital call details') do
   expect(page).to have_content(@capital_call.close_percentages["First Close"].to_i) if @capital_call.call_basis == "Percentage of Commitment"
   expect(page).to have_content(money_to_currency(@capital_call.amount_to_be_called)) if @capital_call.amount_to_be_called_cents.positive?
 
-  expect(page).to have_content(@capital_call.due_date.strftime("%d/%m/%Y"))
+  expect(page).to have_content(I18n.l(@capital_call.due_date))
 end
 
 Then('the remittances must be marked with notification sent') do

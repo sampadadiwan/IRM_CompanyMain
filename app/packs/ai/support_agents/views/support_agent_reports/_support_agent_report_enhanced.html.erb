@@ -195,10 +195,10 @@
               Created
             </div>
             <div class="fw-bold text-dark" style="font-size: 0.85rem;">
-              <%= support_agent_report.created_at.strftime('%d %b %Y') %>
+              <%= l(support_agent_report.created_at.to_date, format: :abbr_month_day_year) %>
             </div>
             <div class="text-muted" style="font-size: 0.75rem;">
-              <%= support_agent_report.created_at.strftime('%H:%M') %>
+              <%= l(support_agent_report.created_at, format: :time_only) %>
             </div>
           </div>
 
@@ -207,10 +207,10 @@
               Last Updated
             </div>
             <div class="fw-bold text-dark" style="font-size: 0.85rem;">
-              <%= support_agent_report.updated_at.strftime('%d %b %Y') %>
+              <%= l(support_agent_report.updated_at.to_date, format: :abbr_month_day_year) %>
             </div>
             <div class="text-muted" style="font-size: 0.75rem;">
-              <%= support_agent_report.updated_at.strftime('%H:%M') %>
+              <%= l(support_agent_report.updated_at, format: :time_only) %>
             </div>
           </div>
 

@@ -65,7 +65,7 @@
                 <span class="badge bg-secondary"><%= report.status.to_s.titleize %></span>
               <% end %>
             </td>
-            <td class="text-muted small"><%= report.created_at.strftime("%d %b %Y, %H:%M") %></td>
+            <td class="text-muted small"><%= l(report.created_at, format: :abbr_date_time) %></td>
             <td>
               <button type="button" class="btn btn-sm btn-outline-secondary"
                       data-bs-toggle="collapse"
@@ -98,6 +98,6 @@
   </div>
   <p class="text-muted small">
     <i class="ti ti-calendar"></i>
-    Last run: <%= scoring_reports.first&.created_at&.strftime("%d %b %Y at %H:%M") %>
+    Last run: <%= scoring_reports.first&.created_at ? l(scoring_reports.first.created_at, format: :abbr_date_time) : "" %>
   </p>
 <% end %>

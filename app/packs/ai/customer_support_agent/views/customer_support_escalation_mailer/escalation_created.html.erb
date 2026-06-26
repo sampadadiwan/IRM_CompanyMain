@@ -23,7 +23,7 @@
   </tr>
   <tr>
     <td style="padding: 8px; font-weight: bold;">Escalated at:</td>
-    <td style="padding: 8px;"><%= @escalation.created_at.strftime('%d %b %Y %H:%M UTC') %></td>
+    <td style="padding: 8px;"><%= l(@escalation.created_at, format: :abbr_date_time) %> UTC</td>
   </tr>
 </table>
 

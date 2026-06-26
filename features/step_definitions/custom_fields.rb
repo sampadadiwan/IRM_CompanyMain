@@ -211,7 +211,7 @@ Then('I should see the investor kyc details on the details page and regulatory f
   visit(investor_kyc_path(@kyc))
   expect(page).to have_content(@kyc.full_name)
   expect(page).to have_content(@kyc.PAN)
-  expect(page).to have_content(@kyc.birth_date.strftime("%d %B, %Y"))
+  expect(page).to have_content(I18n.l(@kyc.birth_date, format: :day_month_year))
   expect(page).to have_content(@kyc.address)
   expect(page).to have_content(@kyc.corr_address)
   expect(page).to have_content(@kyc.bank_account_number)

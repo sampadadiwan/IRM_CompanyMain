@@ -75,7 +75,8 @@ class TemplateDecorator < ApplicationDecorator
       # for example date_format_investment_date
       # It will return the date in the format of "dd Month yyyy"
       attr_name = method_name.to_s.gsub("date_format_", "")
-      return send(attr_name)&.strftime("%d %B %Y")
+      date_val = send(attr_name)
+      return date_val ? I18n.l(date_val, format: :day_month_year) : nil
 
     elsif method_name.to_s.starts_with?("format_nd_")
       # This is used in the template to format a number attribute without decimal places

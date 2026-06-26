@@ -11,7 +11,7 @@
   </tr>
   <tr>
     <td style="padding: 8px 16px 8px 0; color: #666;">Completed at:</td>
-    <td style="padding: 8px 0;"><%= @execution_log.completed_at&.in_time_zone(@schedule&.timezone || 'UTC')&.strftime('%d-%b-%Y %H:%M %Z') %></td>
+    <td style="padding: 8px 0;"><%= @execution_log.completed_at ? l(@execution_log.completed_at.in_time_zone(@schedule&.timezone || 'UTC'), format: :abbr_date_time) : "" %> <%= @schedule&.timezone || 'UTC' %></td>
   </tr>
   <% if @execution_log.result_summary.present? %>
   <tr>
@@ -22,7 +22,7 @@
   <% if @schedule %>
   <tr>
     <td style="padding: 8px 16px 8px 0; color: #666;">Schedule:</td>
-    <td style="padding: 8px 0;"><%= @schedule.frequency.humanize %> at <%= @schedule.run_at_time&.strftime('%H:%M') %></td>
+    <td style="padding: 8px 0;"><%= @schedule.frequency.humanize %> at <%= @schedule.run_at_time ? l(@schedule.run_at_time, format: :time_only) : "" %></td>
   </tr>
   <% end %>
 </table>

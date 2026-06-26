@@ -156,13 +156,13 @@ end
         Portfolio Company Report
       </h2>
       <p style="font-size: 12pt; color: #666666; margin-top: 60px;">
-        <strong>Report Date:</strong> <%= @report.report_date&.strftime('%B %d, %Y') || Date.today.strftime('%B %d, %Y') %>
+        <strong>Report Date:</strong> <%= @report.report_date ? l(@report.report_date, format: :long) : l(Date.today, format: :long) %>
       </p>
       <p style="font-size: 12pt; color: #666666;">
         <strong>Prepared By:</strong> <%= @report.analyst&.name || "Analyst" %>
       </p>
       <p style="font-size: 12pt; color: #666666;">
-        <strong>Generated:</strong> <%= Time.current.strftime('%B %d, %Y at %I:%M %p') %>
+        <strong>Generated:</strong> <%= l(Time.current, format: :long_date_time) %>
       </p>
     </div>
     <!-- Table of Contents -->
@@ -190,7 +190,7 @@ end
     <% end %>
     <!-- Footer -->
     <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #cccccc; text-align: center; font-size: 10pt; color: #999999;">
-      <p><%= @report.portfolio_company&.name %> - Portfolio Report | Generated on <%= Date.today.strftime('%B %d, %Y') %></p>
+      <p><%= @report.portfolio_company&.name %> - Portfolio Report | Generated on <%= l(Date.today, format: :long) %></p>
     </div>
   </body>
 </html>

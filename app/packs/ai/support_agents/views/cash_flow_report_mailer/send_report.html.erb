@@ -20,13 +20,11 @@
 <%= sa_intro("This is an automated cash flow analysis report for <strong>#{h @entity.name}</strong> covering #{@fund_results.size} fund#{@fund_results.size != 1 ? 's' : ''}. Review any shortfalls and initiate capital calls promptly.".html_safe) %>
 
 <%= sa_banner(
-  title:    "Overall Status — #{Time.zone.today.strftime('%B %Y')}",
+  title:    "Overall Status — #{I18n.l(Time.zone.today, format: :month_year_full)}",
   label:    overall_label,
   subtitle: overall_sub,
   tone:     overall_tone
 ) %>
-
-<% if shortfall_funds.any? %>
   <%= sa_callout(
     tone:    :danger,
     heading: "Action Required",
@@ -125,4 +123,4 @@
   <%= sa_cta(label: "Open CapHive to Raise Capital Calls", url: capital_calls_url(subdomain: sub)) %>
 <% end %>
 
-<%= sa_footer("Report generated: #{Time.zone.now.strftime('%d %b %Y, %I:%M %p')} · #{ready_funds.size} of #{@fund_results.size} funds have current data. This report runs automatically — configure recipients in the Cash Flow Assistant Agent settings in CapHive.") %>
+<%= sa_footer("Report generated: #{I18n.l(Time.zone.now, format: :long_date_time)} · #{ready_funds.size} of #{@fund_results.size} funds have current data. This report runs automatically — configure recipients in the Cash Flow Assistant Agent settings in CapHive.") %>

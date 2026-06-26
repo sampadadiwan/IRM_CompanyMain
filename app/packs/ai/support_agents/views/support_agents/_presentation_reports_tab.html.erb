@@ -41,7 +41,7 @@
 
   <p class="text-muted small">
     <i class="ti ti-calendar me-1"></i>
-    Last run: <%= presentation_reports.first&.created_at&.strftime("%d %b %Y at %H:%M") %>
+    Last run: <%= presentation_reports.first&.created_at ? l(presentation_reports.first.created_at, format: :abbr_date_time) : "" %>
   </p>
 
 <% end %>

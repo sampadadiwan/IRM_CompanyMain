@@ -33,17 +33,17 @@
 
               <%# Date/Time cell — includes run timing inline %>
               <td>
-                <div><%= log.created_at.in_time_zone(tz).strftime('%d-%b-%Y %H:%M') %></div>
+                <div><%= l(log.created_at.in_time_zone(tz), format: :abbr_date_time) %></div>
                 <% if log.attempt_number > 1 %>
                   <small class="text-muted">(Attempt <%= log.attempt_number %>)</small>
                 <% end %>
                 <% if log.started_at %>
                   <div class="exec-run-timing">
                     <i class="ti ti-player-play"></i>
-                    <%= log.started_at.in_time_zone(tz).strftime('%H:%M:%S %Z') %>
+                    <%= l(log.started_at.in_time_zone(tz), format: :time_only) %> <%= log.started_at.in_time_zone(tz).strftime('%Z') %>
                     <% if log.completed_at %>
                       <span class="mx-1 text-muted">→</span>
-                      <%= log.completed_at.in_time_zone(tz).strftime('%H:%M:%S') %>
+                      <%= l(log.completed_at.in_time_zone(tz), format: :time_only) %>
                     <% end %>
                   </div>
                 <% end %>

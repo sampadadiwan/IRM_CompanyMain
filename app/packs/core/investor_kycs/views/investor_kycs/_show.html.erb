@@ -44,7 +44,7 @@
 
             <div class="col-md-6">
               <label class="text-muted text-uppercase fw-bold fs-1 mb-1"><%= (investor_kyc.kyc_type == "individual") ? "Date Of Birth" : "Date Of Incorporation" %></label>
-              <div class="fs-4 fw-medium "><%= investor_kyc.birth_date&.strftime("%d %B, %Y") %></div>
+              <div class="fs-4 fw-medium "><%= investor_kyc.birth_date ? l(investor_kyc.birth_date, format: :day_month_year) : "" %></div>
             </div>
 
             <div class="col-md-6">
@@ -197,10 +197,10 @@
                     <span class="text-end">
                         <span class="badge <%= submission_status_badge_class %>"><%= investor_kyc.submission_status.humanize %></span>
                         <% if investor_kyc.submitted_at.present? %>
-                            <div class="small text-muted">Submitted <%= investor_kyc.submitted_at.strftime('%b %-d, %Y') %></div>
+                            <div class="small text-muted">Submitted <%= l(investor_kyc.submitted_at.to_date, format: :abbr_month_day_year) %></div>
                         <% end %>
                         <% if investor_kyc.link_sent_at.present? && !investor_kyc.submission_completed? && !investor_kyc.submission_verified? %>
-                            <div class="small text-muted">Link sent <%= investor_kyc.link_sent_at.strftime('%b %-d, %Y') %></div>
+                            <div class="small text-muted">Link sent <%= l(investor_kyc.link_sent_at.to_date, format: :abbr_month_day_year) %></div>
                         <% end %>
                     </span>
                 </li>
