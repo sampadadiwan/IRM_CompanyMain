@@ -240,13 +240,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_060131) do
   end
   create_table "agent_chat_sessions", force: :cascade do |t|
     t.bigint "analyst_id", null: false
+    t.string "channel", limit: 20, default: "web", null: false
     t.bigint "chattable_id"
     t.string "chattable_type", limit: 50
     t.datetime "created_at", null: false
     t.string "status", limit: 20, default: "active", null: false
     t.bigint "support_agent_id", null: false
     t.datetime "updated_at", null: false
+    t.json "wa_metadata"
+    t.string "wa_state", limit: 30
     t.index ["analyst_id"], name: "index_agent_chat_sessions_on_analyst_id"
+    t.index ["channel"], name: "index_agent_chat_sessions_on_channel"
     t.index ["chattable_type", "chattable_id"], name: "index_agent_chat_sessions_on_chattable"
     t.index ["status"], name: "index_agent_chat_sessions_on_status"
     t.index ["support_agent_id", "chattable_type", "chattable_id", "analyst_id"], name: "index_agent_chat_sessions_lookup"

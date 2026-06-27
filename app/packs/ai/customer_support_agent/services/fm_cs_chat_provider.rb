@@ -74,6 +74,8 @@ class FmCsChatProvider < BaseChatProvider
       #{strict_scope_prompt}
 
       #{cs_examples_prompt}
+
+      #{whatsapp_formatting_prompt if channel == 'whatsapp'}
     PROMPT
   end
 
@@ -152,6 +154,20 @@ class FmCsChatProvider < BaseChatProvider
       Below are examples of good support responses. Follow this style:
 
       #{content}
+    PROMPT
+  end
+
+  def whatsapp_formatting_prompt
+    <<~PROMPT
+
+      ## WhatsApp Formatting
+      This conversation is on WhatsApp. Adjust your formatting:
+      - Use plain text, NOT HTML tables or tags
+      - Use *bold* for emphasis (WhatsApp bold syntax)
+      - Use line breaks and vertical bars for tabular data
+      - Keep responses concise — under 2000 characters when possible
+      - For documents, provide the download URL as a plain link
+      - Do NOT output chart or canvas HTML — describe data in plain text instead
     PROMPT
   end
 end

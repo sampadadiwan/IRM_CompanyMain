@@ -16,11 +16,16 @@ class AgentChatSession < ApplicationRecord
   has_many :customer_support_escalations, dependent: :destroy
 
   STATUSES = %w[active escalated resolved].freeze
+  CHANNELS = %w[web whatsapp].freeze
+  WA_STATES = %w[awaiting_agent_selection awaiting_fund_selection active].freeze
 
   validates :status, presence: true, inclusion: { in: STATUSES }
+  validates :channel, presence: true, inclusion: { in: CHANNELS }
+  validates :wa_state, inclusion: { in: WA_STATES }, allow_nil: true
 
   scope :active, -> { where(status: "active") }
   scope :escalated, -> { where(status: "escalated") }
+  scope :for_whatsapp, -> { where(channel: "whatsapp") }
 
   # @return [Boolean]
   def escalated?

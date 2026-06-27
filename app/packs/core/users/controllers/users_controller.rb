@@ -19,10 +19,8 @@ class UsersController < ApplicationController
   end
 
   def whatsapp_webhook
-    if current_user.enable_user_llm_chat
-      user = User.find_by(phone: params[:waId][-10..], call_code: params[:waId][..-11])
-      WhatsappChatJob.perform_later(user.id, params[:text]) if user && UserPolicy.new(user, user).whatsapp_webhook?
-    end
+    WhatsappAgentJob.perform_later(params.to_json)
+
     render json: "Ok"
   end
 

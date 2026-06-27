@@ -54,17 +54,20 @@ class GenericChatAgent < SupportAgentService
     # @return [AgentChatSession] active session, or a new one if the last session is idle
     # Starts a new session if the previous one has been idle for more than 30 minutes,
     # preventing unbounded context growth across unrelated support queries.
+    channel = ctx[:channel] || "web"
     existing_session = AgentChatSession.where(
       chattable: ctx[:target],
       support_agent: @support_agent,
-      analyst_id: analyst&.id
+      analyst_id: analyst&.id,
+      channel: channel
     ).order(updated_at: :desc).first
 
     ctx[:chat_session] = if existing_session.nil? || session_expired?(existing_session)
                            AgentChatSession.create!(
                              chattable: ctx[:target],
                              support_agent: @support_agent,
-                             analyst_id: analyst&.id
+                             analyst_id: analyst&.id,
+                             channel: channel
                            )
                          else
                            existing_session
@@ -80,7 +83,8 @@ class GenericChatAgent < SupportAgentService
     ctx[:provider] = BaseChatProvider.resolve(
       support_agent: @support_agent,
       target: ctx[:chattable],
-      analyst: ctx[:analyst]
+      analyst: ctx[:analyst],
+      channel: ctx[:channel] || "web"
     )
     ctx[:context] = ctx[:provider].build_context
     ctx[:provider].chat_session = ctx[:chat_session] if ctx[:provider].respond_to?(:chat_session=)
@@ -132,15 +136,17 @@ class GenericChatAgent < SupportAgentService
   def persist_conversation(ctx, **)
     session = ctx[:chat_session]
 
+    channel = ctx[:channel] || "web"
+
     # Save user message
-    session.agent_chat_messages.create!(role: "user", content: ctx[:user_message])
+    session.agent_chat_messages.create!(role: "user", content: ctx[:user_message], channel: channel)
 
     # Prepend escalation notice if session was previously escalated
     ai_response = ctx[:ai_response]
     ai_response = "#{ctx[:escalation_notice]}\n\n#{ai_response}" if ctx[:escalation_notice].present?
 
     # Save assistant response
-    assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ai_response)
+    assistant_message = session.agent_chat_messages.create!(role: "assistant", content: ai_response, channel: channel)
 
     # Enqueue LLM-as-judge for CS agent responses (only if judge is enabled)
     ResponseJudgeJob.perform_later(assistant_message.id) if @support_agent.agent_type == "CustomerSupportAgent" && @support_agent.entity&.entity_setting&.cs_judge_enabled?

@@ -11,15 +11,17 @@
 # @see CashFlowChatProvider
 
 class BaseChatProvider
-  attr_reader :support_agent, :target, :analyst
+  attr_reader :support_agent, :target, :analyst, :channel
 
   # @param support_agent [SupportAgent]
   # @param target [Object] the entity/subject of this chat (e.g. a Fund, a User)
   # @param analyst [User] the user who is chatting
-  def initialize(support_agent:, target:, analyst:)
+  # @param channel [String] delivery channel — "web" or "whatsapp"
+  def initialize(support_agent:, target:, analyst:, channel: "web")
     @support_agent = support_agent
     @target = target
     @analyst = analyst
+    @channel = channel || "web"
   end
 
   # @return [String] system prompt for the LLM. Must be overridden.
@@ -46,7 +48,7 @@ class BaseChatProvider
   # Factory: resolves the right provider based on agent_type.
   # Each agent type maps to a domain-specific provider that supplies
   # the system prompt, context data, and tools for the chat.
-  def self.resolve(support_agent:, target:, analyst:)
+  def self.resolve(support_agent:, target:, analyst:, channel: "web")
     provider_class = case support_agent.agent_type
                      when "CashFlowAssistantAgent" then defined?(CashFlowChatProvider) ? CashFlowChatProvider : DefaultChatProvider
                      when "CallNoticeAgent" then defined?(CallNoticeChatProvider) ? CallNoticeChatProvider : DefaultChatProvider
@@ -62,7 +64,7 @@ class BaseChatProvider
                      else DefaultChatProvider
                      end
 
-    provider_class.new(support_agent: support_agent, target: target, analyst: analyst)
+    provider_class.new(support_agent: support_agent, target: target, analyst: analyst, channel: channel)
   end
 
   private

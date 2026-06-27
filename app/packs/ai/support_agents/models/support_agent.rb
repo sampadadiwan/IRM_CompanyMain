@@ -24,6 +24,13 @@ class SupportAgent < ApplicationRecord
   attribute :llm_model, :string, default: "gemini-3-flash-preview"
 
   scope :enabled, -> { where(enabled: true) }
+  scope :for_user, lambda { |user|
+    joins(entity: :entity_setting).where(
+      entity_id: Investor.where(investor_entity_id: user.entity_id).pluck(:entity_id) + [user.entity_id]
+    ).where(
+      "(entity_settings.openai_api_key IS NOT NULL AND entity_settings.openai_api_key != '') OR (entity_settings.gemini_api_key IS NOT NULL AND entity_settings.gemini_api_key != '') OR (entity_settings.anthropic_api_key IS NOT NULL AND entity_settings.anthropic_api_key != '') OR (entity_settings.openrouter_api_key IS NOT NULL AND entity_settings.openrouter_api_key != '')"
+    )
+  }
 
   private
 
