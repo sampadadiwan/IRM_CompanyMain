@@ -16,40 +16,24 @@ class SendOtpToWhatsappJob < ApplicationJob
       return
     end
 
-    message = "Your IRM verification code is: #{code}. It expires in 30 seconds."
-    phone = user.phone_with_call_code
-    endpoint = Rails.application.credentials[:WHATSAPP_API_ENDPOINT]
-    token = Rails.application.credentials[:WHATSAPP_ACCESS_TOKEN]
+    # Strip leading '+' so the phone number matches the API's expected format (e.g. "917721046692")
+    phone = user.phone_with_call_code.to_s.delete_prefix("+")
 
-    Rails.logger.info "[SendOtpToWhatsappJob] endpoint=#{endpoint}"
-    Rails.logger.info "[SendOtpToWhatsappJob] Sending OTP via WhatsApp session message to #{phone}"
+    Rails.logger.info "[SendOtpToWhatsappJob] Sending OTP via code_verification template to #{phone}"
 
     begin
-      response = WhatsappGeneralNotification.send_session_message(
-        { whatsapp_number: phone, message: message },
-        endpoint: endpoint,
-        token: token
+      # Uses the "code_verification" WATI template registered on the CapHive platform account —
+      # this is a single shared template across all tenants, not per-entity.
+      # The custom_param name must stay "1"; it is the positional variable name assigned
+      # by WATI when the template was created and cannot be changed without re-registering the template.
+      response = WhatsappGeneralNotification.send_template_message(
+        { recipients: [{ phone_number: phone, custom_params: [{ name: "1", value: code.to_s }] }] },
+        template_name: "code_verification"
       )
-      Rails.logger.info "[SendOtpToWhatsappJob] Session message response: #{response}"
-      Rails.logger.info "[SendOtpToWhatsappJob] Session message sent successfully to #{phone}"
+      Rails.logger.info "[SendOtpToWhatsappJob] Template message sent successfully to #{phone}, response: #{response}"
     rescue StandardError => e
-      Rails.logger.warn "[SendOtpToWhatsappJob] Session message failed for #{phone}: #{e.message}"
-      entity = user.entity
-      if entity&.entity_setting&.fetch_whatsapp_endpoint.present?
-        Rails.logger.info "[SendOtpToWhatsappJob] Falling back to template message for #{phone}"
-        WhatsappGeneralNotification.send_message(
-          endpoint: entity.entity_setting.fetch_whatsapp_endpoint,
-          token: entity.entity_setting.fetch_whatsapp_token,
-          template_name: entity.entity_setting.fetch_whatsapp_template(:otp_verification),
-          whatsapp_number: phone,
-          entity_name: entity.name,
-          message: "Your verification code is: #{code}",
-          link: ""
-        )
-        Rails.logger.info "[SendOtpToWhatsappJob] Template message sent successfully to #{phone}"
-      else
-        Rails.logger.warn "[SendOtpToWhatsappJob] No WhatsApp endpoint configured for entity #{entity&.id}, cannot send fallback"
-      end
+      Rails.logger.error "[SendOtpToWhatsappJob] Failed to send OTP to #{phone}: #{e.message}"
+      raise # re-raise so ActiveJob can retry according to queue configuration
     end
   end
 end
