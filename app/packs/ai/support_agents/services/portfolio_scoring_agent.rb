@@ -1,7 +1,13 @@
-class PortfolioScoringAgent < SupportAgentService
-  DESCRIPTION = "Scores portfolio companies using sector-specific LLM skill prompts uploaded as custom fields.".freeze
+# frozen_string_literal: true
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+# Scores portfolio companies using sector-specific LLM skill prompts.
+# Uploads documents, KPI data, and valuations as context for structured scoring.
+#
+# @see SupportAgentService
+class PortfolioScoringAgent < SupportAgentService
+  DESCRIPTION = "Scores portfolio companies using sector-specific LLM skill prompts uploaded as custom fields."
+
+  LONG_DESCRIPTION = <<~DESC
     Scores each portfolio company using sector-specific LLM skill prompts. Uploads documents,
     KPI data, and valuations as context, then asks the LLM to produce a structured investment score.
 
@@ -19,7 +25,7 @@ class PortfolioScoringAgent < SupportAgentService
   DESC
 
   # Used when launching for a single portfolio company investor (not a full entity batch).
-  SINGLE_LONG_DESCRIPTION = <<~DESC.freeze
+  SINGLE_LONG_DESCRIPTION = <<~DESC
     Scores this portfolio company using its sector-specific LLM skill prompt. Uploads
     documents, KPI data, and valuations as context, then asks the LLM to produce a
     structured investment score.
@@ -64,35 +70,25 @@ class PortfolioScoringAgent < SupportAgentService
     end
   end
 
-  # Batch processor — shared by adhoc and scheduled runs.
-  # Sequential (no threading) so each wtf? call sees a clean context.
-  # :scheduled mode suppresses the batch summary email/notification.
+  # Batch processor — delegates to SupportAgentService.run_batch for
+  # progress broadcasting, error collection, and summary notification.
+  #
+  # @param support_agent_id [Integer]
+  # @param targets [Array, ActiveRecord::Relation] Investor records to process
+  # @param user_id [Integer, nil] nil for scheduled runs
+  # @param entity_id [Integer]
+  # @param execution_mode [Symbol] :adhoc_batch or :scheduled
+  # @return [Hash] { successes: [...], errors: [...] }
   def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch)
-    support_agent = SupportAgent.find(support_agent_id)
     targets = targets.includes(:portfolio_kpi_reports, :valuations, :portfolio_investments, :documents) if targets.respond_to?(:includes)
 
-    successes = []
-    errors    = []
-
-    targets.to_a.each do |target|
-      support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
-      successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
-    rescue StandardError => e
-      Rails.logger.error { "[PortfolioScoringAgent] process_batch error for Target ID=#{target.id}: #{e.message}" }
-      Rails.logger.error { e.backtrace.join("\n") }
-      errors << { target_id: target.id, target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}", error: e.message }
-    end
-
-    if execution_mode != :scheduled
-      begin
-        batch_target_type = targets.first.class.name if targets.any?
-        SupportAgentJob.new.send(:send_batch_summary, support_agent, successes, errors, user_id, batch_target_type) if defined?(SupportAgentJob)
-      rescue StandardError => e
-        Rails.logger.error { "[PortfolioScoringAgent] process_batch: failed to send batch summary: #{e.message}" }
-      end
-    end
-
-    { successes: successes, errors: errors }
+    run_batch(
+      support_agent_id: support_agent_id,
+      targets: targets,
+      user_id: user_id,
+      entity_id: entity_id,
+      execution_mode: execution_mode
+    )
   end
 
   private

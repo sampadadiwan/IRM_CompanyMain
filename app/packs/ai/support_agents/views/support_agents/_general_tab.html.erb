@@ -90,7 +90,12 @@
       <%# ── Progress panel (populated by Run Now via Turbo Stream) ── %>
       <div class="px-3 pb-3">
         <div id="progress_panel_new"></div>
+        <div id="batch_progress_panel"></div>
       </div>
+
+      <%# Subscribe to batch progress broadcasts for this agent %>
+      <%= turbo_stream_from "batch_progress_#{support_agent.id}" %>
+
     </div>
   </div>
 

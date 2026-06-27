@@ -1,3 +1,11 @@
+# frozen_string_literal: true
+
+# Base class for all support agent services using the Trailblazer step pipeline.
+# Provides step broadcasting, report management, batch progress broadcasting,
+# and a shared batch runner for agents with process_batch.
+#
+# @see SupportAgent
+# @see SupportAgentJob
 class SupportAgentService < Trailblazer::Operation
   # Class-level step labels that can be overridden by subclasses
   STEP_LABELS = {}.freeze
@@ -219,5 +227,137 @@ class SupportAgentService < Trailblazer::Operation
   def cancelled?(report)
     report.reload
     report.json_fields["cancelled_at"].present?
+  end
+
+  # --- Batch progress broadcasting ---
+
+  # Broadcasts per-target progress during a batch run.
+  # The show page subscribes to "batch_progress_#{support_agent.id}"
+  # and the partial replaces #batch_progress_panel.
+  #
+  # @param support_agent [SupportAgent] the agent running the batch
+  # @param current [Integer] 1-based index of the current target
+  # @param total [Integer] total number of targets
+  # @param target_name [String] display name of the current target
+  # @param user_id [Integer] the user who triggered the run
+  # @param successes [Integer] count of successfully processed targets so far
+  # @param errors [Integer] count of failed targets so far
+  # @return [void]
+  def self.broadcast_batch_progress(support_agent:, current:, total:, target_name:, user_id:, successes: 0, errors: 0)
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "batch_progress_#{support_agent.id}",
+      target: "batch_progress_panel",
+      partial: "support_agents/batch_progress_panel",
+      locals: {
+        support_agent: support_agent,
+        current: current,
+        total: total,
+        target_name: target_name,
+        successes: successes,
+        errors: errors,
+        status: :running
+      }
+    )
+  end
+
+  # Broadcasts batch completion to update the progress panel
+  # and trigger a reports tab reload via Stimulus.
+  #
+  # @param support_agent [SupportAgent] the agent that completed the batch
+  # @param user_id [Integer] the user who triggered the run
+  # @param successes [Integer] total successful targets
+  # @param errors [Integer] total failed targets
+  # @param total [Integer] total targets processed
+  # @return [void]
+  def self.broadcast_batch_complete(support_agent:, user_id:, successes:, errors:, total:)
+    Turbo::StreamsChannel.broadcast_replace_to(
+      "batch_progress_#{support_agent.id}",
+      target: "batch_progress_panel",
+      partial: "support_agents/batch_progress_panel",
+      locals: {
+        support_agent: support_agent,
+        current: total,
+        total: total,
+        target_name: nil,
+        successes: successes,
+        errors: errors,
+        status: :complete
+      }
+    )
+  end
+
+  # Shared batch runner for agents with process_batch.
+  # Handles the loop, progress broadcasting, error collection, and summary notification.
+  # Agent-specific post-batch work (e.g. chart jobs) is done via the after_batch block.
+  #
+  # @param support_agent_id [Integer]
+  # @param targets [Array, ActiveRecord::Relation] records to process
+  # @param user_id [Integer, nil]
+  # @param entity_id [Integer]
+  # @param execution_mode [Symbol] :adhoc_batch or :scheduled
+  # @yield [successes] optional block called after all targets are processed (e.g. to enqueue chart jobs)
+  # @yieldparam successes [Array<Hash>] array of {id:, name:} for successfully processed targets
+  # @return [Hash] { successes: [...], errors: [...] }
+  def self.run_batch(support_agent_id:, targets:, user_id:, entity_id:, execution_mode: :adhoc_batch)
+    support_agent = SupportAgent.find(support_agent_id)
+    targets_array = targets.to_a
+    total = targets_array.size
+
+    successes = []
+    errors = []
+
+    targets_array.each_with_index do |target, index|
+      target_name = target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"
+
+      broadcast_batch_progress(
+        support_agent: support_agent,
+        current: index + 1,
+        total: total,
+        target_name: target_name,
+        user_id: user_id,
+        successes: successes.size,
+        errors: errors.size
+      )
+
+      result = support_agent.agent.wtf?(
+        support_agent_id: support_agent_id,
+        target: target,
+        user_id: user_id,
+        entity_id: entity_id,
+        batch_mode: true
+      )
+
+      if result.failure?
+        Rails.logger.warn { "#{support_agent.agent_type}.run_batch pipeline failure for Target ID=#{target.id}" }
+        errors << { target_id: target.id, target_name: target_name, error: "Pipeline failure (step returned false)" }
+      else
+        successes << { id: target.id, name: target_name }
+      end
+    rescue StandardError => e
+      Rails.logger.error { "#{support_agent.agent_type}.run_batch error for Target ID=#{target.id}: #{e.message}" }
+      Rails.logger.error { e.backtrace.join("\n") }
+      errors << { target_id: target.id, target_name: target_name, error: e.message }
+    end
+
+    yield(successes) if block_given?
+
+    broadcast_batch_complete(
+      support_agent: support_agent,
+      user_id: user_id,
+      successes: successes.size,
+      errors: errors.size,
+      total: total
+    )
+
+    if execution_mode != :scheduled
+      begin
+        batch_target_type = targets_array.first.class.name if targets_array.any?
+        SupportAgentJob.new.send(:send_batch_summary, support_agent, successes, errors, user_id, batch_target_type) if defined?(SupportAgentJob)
+      rescue StandardError => e
+        Rails.logger.error { "#{support_agent.agent_type}.run_batch: failed to send batch summary: #{e.message}" }
+      end
+    end
+
+    { successes: successes, errors: errors }
   end
 end

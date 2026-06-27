@@ -1,7 +1,13 @@
-class PortfolioCompanyAgent < SupportAgentService
-  DESCRIPTION = "Monitors portfolio companies for KPI submissions, document presence, and valuation accuracy.".freeze
+# frozen_string_literal: true
 
-  LONG_DESCRIPTION = <<~DESC.freeze
+# Deterministic compliance checker for portfolio companies — validates KPI
+# submissions, document presence, and valuation currency. No LLM calls.
+#
+# @see SupportAgentService
+class PortfolioCompanyAgent < SupportAgentService
+  DESCRIPTION = "Monitors portfolio companies for KPI submissions, document presence, and valuation accuracy."
+
+  LONG_DESCRIPTION = <<~DESC
     Monitors every portfolio company for data health — KPI submissions, required document presence,
     and valuation accuracy. Runs as a batch across all Portfolio Company investors for the entity.
 
@@ -17,7 +23,7 @@ class PortfolioCompanyAgent < SupportAgentService
   DESC
 
   # Used when launching for a single portfolio company investor (not a full entity batch).
-  SINGLE_LONG_DESCRIPTION = <<~DESC.freeze
+  SINGLE_LONG_DESCRIPTION = <<~DESC
     Checks data health for this portfolio company — KPI submissions, required document
     presence, and valuation accuracy. Results are saved as a SupportAgentReport and
     displayed on the portfolio dashboard widget.
@@ -45,68 +51,30 @@ class PortfolioCompanyAgent < SupportAgentService
     end
   end
 
-  # Batch processor for PortfolioCompanyAgent — shared by adhoc and scheduled runs.
-  #
-  # EXECUTION MODES:
-  # - :adhoc_batch  — triggered manually from the portfolio agent run UI
-  # - :scheduled    — triggered by AgentRunnerJob (cron); no per-company chat UI,
-  #                   chart job runs silently, batch summary notification is suppressed
-  #
-  # Processes targets sequentially (one Trailblazer call per company), collects
-  # successes/errors, enqueues a single AgentChartJob for all processed ids,
-  # and emits a batch summary notification (skipped for :scheduled mode).
+  # Batch processor for PortfolioCompanyAgent — delegates to the shared
+  # SupportAgentService.run_batch for progress broadcasting and error handling.
   #
   # @param support_agent_id [Integer]
   # @param targets [Array, ActiveRecord::Relation] Investor records to process
   # @param user_id [Integer, nil] nil for scheduled runs
   # @param entity_id [Integer]
   # @param execution_mode [Symbol] :adhoc_batch or :scheduled
+  # @return [Hash] { successes: [...], errors: [...] }
   def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch)
-    support_agent = SupportAgent.find(support_agent_id)
-
-    # Preload commonly used associations to avoid N+1 queries
     targets = targets.includes(:portfolio_kpi_reports, :documents, :valuations) if targets.respond_to?(:includes)
 
-    successes = []
-    errors = []
-
-    # Batch mode always runs with_steps=false (no step-by-step UI for batch)
-    # Sequential processing (no threading) per user requirement
-    targets.to_a.each do |target|
-      result = support_agent.agent.wtf?(support_agent_id: support_agent_id, target: target, user_id: user_id, entity_id: entity_id, batch_mode: true)
-      target_name = target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"
-      # wtf? returns a Trailblazer result object and never raises for step-level failures
-      # (a step returning false routes to the failure track without raising). Inspect
-      # result.failure? so those silent pipeline aborts show up in the errors list.
-      if result.failure?
-        Rails.logger.warn { "PortfolioCompanyAgent.process_batch pipeline failure for Target ID=#{target.id}" }
-        errors << { target_id: target.id, target_name: target_name, error: "Pipeline failure (step returned false)" }
-      else
-        successes << { id: target.id, name: target_name }
-      end
-    rescue StandardError => e
-      Rails.logger.error { "PortfolioCompanyAgent.process_batch error for Target ID=#{target.id}: #{e.message}" }
-      Rails.logger.error { e.backtrace.join("\n") }
-      errors << { target_id: target.id, target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}", error: e.message }
-    end
-
-    # Enqueue a single AgentChartJob for all processed portfolio companies
-    if successes.any?
-      processed_ids = successes.pluck(:id)
-      AgentChartJob.perform_later(user_id, portfolio_company_ids: processed_ids.uniq, execution_mode: execution_mode)
-    end
-
-    # Send batch summary notification (skip for :scheduled mode, charts will notify separately)
-    if execution_mode != :scheduled
-      begin
-        batch_target_type = targets.first.class.name if targets.any?
-        SupportAgentJob.new.send(:send_batch_summary, support_agent, successes, errors, user_id, batch_target_type) if defined?(SupportAgentJob)
-      rescue StandardError => e
-        Rails.logger.error { "PortfolioCompanyAgent.process_batch: failed to send batch summary: #{e.message}" }
+    run_batch(
+      support_agent_id: support_agent_id,
+      targets: targets,
+      user_id: user_id,
+      entity_id: entity_id,
+      execution_mode: execution_mode
+    ) do |successes|
+      if successes.any?
+        processed_ids = successes.pluck(:id)
+        AgentChartJob.perform_later(user_id, portfolio_company_ids: processed_ids.uniq, execution_mode: execution_mode)
       end
     end
-
-    { successes: successes, errors: errors }
   end
 
   private
@@ -352,6 +320,7 @@ class PortfolioCompanyAgent < SupportAgentService
     # process_batch enqueues a single bulk AgentChartJob for all companies at the end.
     # ctx[:batch_mode] is set to true by process_batch to suppress per-company jobs.
     AgentChartJob.perform_later(ctx[:user_id], portfolio_company_id: portfolio_company.id) unless ctx[:batch_mode]
+
     true
   end
 

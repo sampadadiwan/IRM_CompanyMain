@@ -80,55 +80,25 @@ class NoteSummarizerAgent < SupportAgentService
     end
   end
 
-  # Batch processor — shared by adhoc and scheduled runs.
-  # Mirrors the pattern in PortfolioScoringAgent: sequential processing,
-  # optional batch summary notification (suppressed for :scheduled mode).
+  # Batch processor — delegates to SupportAgentService.run_batch for
+  # progress broadcasting, error collection, and summary notification.
   #
   # @param support_agent_id [Integer]
   # @param targets [Array, ActiveRecord::Relation] Investor records to process
   # @param user_id [Integer, nil] nil for scheduled runs
   # @param entity_id [Integer]
   # @param execution_mode [Symbol] :adhoc_batch or :scheduled
+  # @return [Hash] { successes: [...], errors: [...] }
   def self.process_batch(support_agent_id:, targets:, user_id:, entity_id:, with_steps: false, execution_mode: :adhoc_batch)
-    support_agent = SupportAgent.find(support_agent_id)
-
-    # Preload notes to avoid N+1 when iterating investors sequentially
     targets = targets.includes(:notes) if targets.respond_to?(:includes)
 
-    successes = []
-    errors    = []
-
-    targets.to_a.each do |target|
-      # One Trailblazer call per investor — each gets its own ctx and report
-      support_agent.agent.wtf?(
-        support_agent_id: support_agent_id,
-        target: target,
-        user_id: user_id,
-        entity_id: entity_id,
-        batch_mode: true
-      )
-      successes << { id: target.id, name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}" }
-    rescue StandardError => e
-      Rails.logger.error { "[NoteSummarizerAgent] process_batch error for Target ID=#{target.id}: #{e.message}" }
-      Rails.logger.error { e.backtrace.join("\n") }
-      errors << {
-        target_id: target.id,
-        target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}",
-        error: e.message
-      }
-    end
-
-    # Batch summary notification — suppressed for scheduled runs (no user to notify)
-    if execution_mode != :scheduled
-      begin
-        batch_target_type = targets.first.class.name if targets.any?
-        SupportAgentJob.new.send(:send_batch_summary, support_agent, successes, errors, user_id, batch_target_type) if defined?(SupportAgentJob)
-      rescue StandardError => e
-        Rails.logger.error { "[NoteSummarizerAgent] process_batch: failed to send batch summary: #{e.message}" }
-      end
-    end
-
-    { successes: successes, errors: errors }
+    run_batch(
+      support_agent_id: support_agent_id,
+      targets: targets,
+      user_id: user_id,
+      entity_id: entity_id,
+      execution_mode: execution_mode
+    )
   end
 
   private

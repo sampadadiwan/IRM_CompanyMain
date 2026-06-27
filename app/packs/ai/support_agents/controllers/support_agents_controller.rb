@@ -299,21 +299,42 @@ class SupportAgentsController < ApplicationController
     target = find_target(params[:target_type], params[:target_id])
     return render json: { status: "error", message: "Target not found" }, status: :not_found unless target
 
-    # PortfolioCompanyAgent running against an entire Entity has no meaningful step UI
-    # (it processes all portfolio companies as a batch). Delegate straight to process_batch
-    # via SupportAgentJob in :adhoc_batch mode and redirect — no progress panel.
-    # DealsReportAgent also runs against an Entity and iterates over deals internally.
-    if (@support_agent.agent_type == "PortfolioCompanyAgent" && params[:target_type] == "Entity") ||
-       @support_agent.agent_type == "DealsReportAgent"
-      SupportAgentJob.perform_later(
-        support_agent_id: @support_agent.id,
-        target_id: params[:target_id],
-        target_type: params[:target_type],
-        user_id: current_user.id,
-        with_steps: true,
-        execution_mode: :adhoc_batch
-      )
-      return redirect_to(request.referer || support_agents_path, notice: "#{@support_agent.name} queued.")
+    # When target is an Entity, check if the agent expands it into multiple sub-targets.
+    # If so, run as batch with live progress panel instead of step UI.
+    if params[:target_type] == "Entity"
+      batch_targets = @support_agent.agent.new.targets(params[:target_id].to_i)
+      target_count = batch_targets.respond_to?(:count) ? batch_targets.count : batch_targets.size
+
+      if target_count != 1 || !batch_targets.first.is_a?(Entity)
+        SupportAgentJob.perform_later(
+          support_agent_id: @support_agent.id,
+          target_id: params[:target_id],
+          target_type: params[:target_type],
+          user_id: current_user.id,
+          with_steps: true,
+          execution_mode: :adhoc_batch
+        )
+
+        respond_to do |format|
+          format.html { redirect_to(request.referer || support_agents_path, notice: "#{@support_agent.name} queued.") }
+          format.turbo_stream do
+            render turbo_stream: turbo_stream.replace(
+              "batch_progress_panel",
+              partial: "support_agents/batch_progress_panel",
+              locals: {
+                support_agent: @support_agent,
+                current: 0,
+                total: target_count,
+                target_name: nil,
+                successes: 0,
+                errors: 0,
+                status: :queued
+              }
+            )
+          end
+        end
+        return
+      end
     end
 
     # Enqueue the job with execution_mode = single_company_with_steps

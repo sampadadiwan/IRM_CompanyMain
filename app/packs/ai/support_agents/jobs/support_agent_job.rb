@@ -130,7 +130,22 @@ class SupportAgentJob < ApplicationJob
         # A batch run is when multiple targets are processed in one job
         is_batch_run = targets.many?
 
-        targets.each do |target|
+        targets.each_with_index do |target, index|
+          target_name = target.try(:investor_name) || target.try(:name) || "ID=#{target.id}"
+
+          # Broadcast batch progress for multi-target runs without step UI
+          if is_batch_run
+            SupportAgentService.broadcast_batch_progress(
+              support_agent: support_agent,
+              current: index + 1,
+              total: targets.size,
+              target_name: target_name,
+              user_id: user_id,
+              successes: successes.size,
+              errors: errors.size
+            )
+          end
+
           # Determine if this target should run with step UI
           # Only single_company_with_steps mode uses with_steps for individual targets
           target_with_steps = (execution_mode == :single_company_with_steps) && with_steps
@@ -168,34 +183,41 @@ class SupportAgentJob < ApplicationJob
             # For non-batch runs send immediate notifications
             send_notification(message, user_id, "success")
           end
-        rescue StandardError => e
-          error_msg = "#{support_agent.agent_type} error processing Target ID=#{target.id}: #{e.message}"
-          Rails.logger.error { error_msg }
-          Rails.logger.error { e.backtrace.join("\n") }
+                rescue StandardError => e
+                  error_msg = "#{support_agent.agent_type} error processing Target ID=#{target.id}: #{e.message}"
+                  Rails.logger.error { error_msg }
+                  Rails.logger.error { e.backtrace.join("\n") }
 
-          error_detail = {
-            support_agent: support_agent.agent_type,
-            target_id: target.id,
-            target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}",
-            error: e.message
-          }
-          errors << error_detail
+                  error_detail = {
+                    support_agent: support_agent.agent_type,
+                    target_id: target.id,
+                    target_name: target.try(:investor_name) || target.try(:name) || "ID=#{target.id}",
+                    error: e.message
+                  }
+                  errors << error_detail
 
-          # For batch runs, collect errors; for single runs, send immediate notification
-          send_notification(error_msg, user_id, "danger") unless is_batch_run
+                  # For batch runs, collect errors; for single runs, send immediate notification
+                  send_notification(error_msg, user_id, "danger") unless is_batch_run
 
-          # Mark the report as failed so it can be re-run
-          if target_with_steps && report.present?
-            report.json_fields["final_status"] = "error"
-            report.json_fields["error_message"] = e.message
-            report.json_fields["completed_at"] = Time.current.iso8601
-            report.status = :failed
-            report.save!
-          end
+                  # Mark the report as failed so it can be re-run
+                  if target_with_steps && report.present?
+                    report.json_fields["final_status"] = "error"
+                    report.json_fields["error_message"] = e.message
+                    report.json_fields["completed_at"] = Time.current.iso8601
+                    report.status = :failed
+                    report.save!
+                  end
         end
-
-        # Send summarized notification for any batch runs
+        # Broadcast batch completion and send summarized notification
         if is_batch_run
+          SupportAgentService.broadcast_batch_complete(
+            support_agent: support_agent,
+            user_id: user_id,
+            successes: successes.size,
+            errors: errors.size,
+            total: targets.size
+          )
+
           # Use the first target's class name as the batch target type for summary
           batch_target_type = targets.first.class.name
           send_batch_summary(support_agent, successes, errors, user_id, batch_target_type)

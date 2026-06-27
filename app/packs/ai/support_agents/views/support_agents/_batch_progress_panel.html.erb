@@ -1,0 +1,73 @@
+<%# Batch progress panel — replaced via Turbo Stream during batch runs.
+    Locals: support_agent, current, total, target_name, successes, errors, status %>
+<% percent = total.to_i > 0 ? ((current.to_f / total) * 100).round : 0 %>
+<% is_complete = status.to_sym == :complete %>
+<% has_errors = errors.to_i > 0 %>
+
+<div id="batch_progress_panel"
+     class="card mb-3 mt-3 border"
+     data-controller="batch-progress"
+     data-batch-progress-support-agent-id-value="<%= support_agent.id %>"
+     data-batch-progress-status-value="<%= status %>">
+
+  <%# Header %>
+  <div class="card-header bg-light d-flex justify-content-between align-items-center py-2">
+    <div class="d-flex align-items-center gap-2">
+      <% unless is_complete %>
+        <span class="spinner-border spinner-border-sm text-primary"></span>
+      <% end %>
+      <strong><%= support_agent.name %> — Batch Run</strong>
+    </div>
+    <div>
+      <% if is_complete %>
+        <span class="badge <%= has_errors ? 'bg-warning text-dark' : 'bg-success' %>">
+          Complete
+        </span>
+      <% else %>
+        <span class="badge bg-primary">
+          <%= current %> / <%= total %>
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="card-body py-3">
+    <%# Progress bar %>
+    <div class="progress mb-2" style="height: 20px;">
+      <div class="progress-bar <%= is_complete ? (has_errors ? 'bg-warning' : 'bg-success') : 'progress-bar-striped progress-bar-animated' %>"
+           role="progressbar"
+           style="width: <%= percent %>%"
+           aria-valuenow="<%= percent %>"
+           aria-valuemin="0"
+           aria-valuemax="100">
+        <%= percent %>%
+      </div>
+    </div>
+
+    <%# Current target or completion summary %>
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="text-muted small">
+        <% if is_complete %>
+          <i class="ti ti-check"></i>
+          Processed <strong><%= total %></strong> target<%= total == 1 ? '' : 's' %>
+        <% else %>
+          <i class="ti ti-loader"></i>
+          Processing <strong><%= current %></strong> of <strong><%= total %></strong>
+          <% if target_name.present? %>
+            — <span class="text-dark"><%= target_name %></span>
+          <% end %>
+        <% end %>
+      </div>
+      <div class="d-flex gap-3 small">
+        <span class="text-success">
+          <i class="ti ti-check"></i> <%= successes %> succeeded
+        </span>
+        <% if has_errors %>
+          <span class="text-danger">
+            <i class="ti ti-x"></i> <%= errors %> failed
+          </span>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
