@@ -13,7 +13,7 @@
 
       <div class="alert alert-success text-center mb-3">
         <i class="fab fa-whatsapp"></i>
-        Code sent to <strong><%= @user.phone_with_call_code %></strong>
+        Code sent to <strong><%= @user.masked_phone_with_call_code %></strong>
       </div>
 
       <%= form_tag verify_whatsapp_enrollment_two_factor_path, data: { turbo: false } do %>

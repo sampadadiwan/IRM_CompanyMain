@@ -18,7 +18,7 @@
       <% if @user.whatsapp_mode? %>
         <div class="alert alert-success text-center mb-3">
           <i class="fab fa-whatsapp"></i>
-          Code sent to <strong><%= @user.phone_with_call_code %></strong>
+          Code sent to <strong><%= @user.masked_phone_with_call_code %></strong>
         </div>
       <% end %>
 

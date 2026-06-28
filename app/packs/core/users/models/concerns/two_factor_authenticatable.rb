@@ -1,6 +1,14 @@
 module TwoFactorAuthenticatable
   extend ActiveSupport::Concern
 
+  # Shows call code + masked phone, e.g. "+91 xxxxxxx805"
+  def masked_phone_with_call_code
+    return "" if phone.blank?
+    digits = phone.to_s
+    masked = "#{"x" * [digits.length - 3, 0].max}#{digits.last(3)}"
+    "+#{call_code} #{masked}"
+  end
+
   def whatsapp_mode?
     two_factor_mode == "whatsapp"
   end
