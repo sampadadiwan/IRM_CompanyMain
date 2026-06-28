@@ -1,8 +1,26 @@
 module TwoFactorAuthenticatable
   extend ActiveSupport::Concern
 
+  def whatsapp_mode?
+    two_factor_mode == "whatsapp"
+  end
+
+  def authenticator_mode?
+    two_factor_mode == "authenticator"
+  end
+
   def generate_otp_secret
     self.otp_secret = User.generate_otp_secret
+  end
+
+  # Ensures a secret exists (generates + saves if blank), then sends current TOTP code via WhatsApp.
+  # Used for whatsapp_mode enrollment and auto-send at login.
+  def ensure_otp_secret_and_send_whatsapp!
+    if otp_secret.blank?
+      generate_otp_secret
+      save!
+    end
+    send_otp_via_whatsapp
   end
 
   def send_otp_via_whatsapp

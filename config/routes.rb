@@ -79,8 +79,12 @@ Rails.application.routes.draw do
   end
 
   resource :two_factor, only: [:new, :create], controller: 'users/two_factor' do
-    get  :enroll
-    post :verify_enrollment
+    get  :select_mode           # choose WhatsApp vs Authenticator
+    post :select_mode, action: :select_mode_post
+    get  :enroll                # authenticator mode: QR code setup
+    post :verify_enrollment     # authenticator mode: confirm TOTP code
+    get  :enroll_whatsapp       # whatsapp mode: confirm phone + send test code
+    post :verify_whatsapp_enrollment  # whatsapp mode: verify test code
     post :send_whatsapp
     get  :backup_codes
   end

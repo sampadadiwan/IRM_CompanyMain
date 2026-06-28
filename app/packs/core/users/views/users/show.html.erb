@@ -108,8 +108,16 @@
 
         <% if @user == current_user %>
           <tr>
-            <td>Two-Factor Authentication</td>
-            <td><%= display_boolean @user.two_factor_enabled %></td>
+            <td>
+              Two-Factor Authentication
+              <%= user_guide_icon_for('two_factor', tooltip: 'Two-Factor Authentication Guide') %>
+            </td>
+            <td>
+              <%= display_boolean @user.two_factor_enabled %>
+              <% if @user.two_factor_enabled && @user.two_factor_mode.present? %>
+                <span class="badge bg-secondary ms-1"><%= @user.two_factor_mode.titleize %></span>
+              <% end %>
+            </td>
           </tr>
         <% end %>
 

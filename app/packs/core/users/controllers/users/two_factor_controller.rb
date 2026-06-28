@@ -9,6 +9,8 @@ module Users
     before_action :require_otp_session
     skip_before_action :verify_authenticity_token, only: [:send_whatsapp]
 
+    # ── Login verification ──────────────────────────────────────────────────
+
     def new
       @user = User.find(session[:otp_user_id])
     end
@@ -31,6 +33,40 @@ module Users
         end
       end
     end
+
+    # ── Mode selection ──────────────────────────────────────────────────────
+
+    def select_mode
+      @user = User.find(session[:otp_user_id])
+    end
+
+    def select_mode_post
+      @user = User.find(session[:otp_user_id])
+      mode = params[:two_factor_mode]
+
+      unless %w[authenticator whatsapp].include?(mode)
+        flash.now[:alert] = "Please select a mode."
+        render :select_mode and return
+      end
+
+      # Whatsapp mode requires the user to have WhatsApp enabled
+      if mode == "whatsapp" && !@user.whatsapp_enabled?
+        flash.now[:alert] = "WhatsApp is not enabled for your account. Please choose Authenticator."
+        render :select_mode and return
+      end
+
+      ActiveRecord::Base.connected_to(role: :writing) do
+        @user.update!(two_factor_mode: mode)
+      end
+
+      if mode == "whatsapp"
+        redirect_to enroll_whatsapp_two_factor_path
+      else
+        redirect_to enroll_two_factor_path
+      end
+    end
+
+    # ── Authenticator enrollment ────────────────────────────────────────────
 
     def enroll
       @user = User.find(session[:otp_user_id])
@@ -64,6 +100,36 @@ module Users
         render :enroll
       end
     end
+
+    # ── WhatsApp enrollment ─────────────────────────────────────────────────
+
+    def enroll_whatsapp
+      @user = User.find(session[:otp_user_id])
+
+      ActiveRecord::Base.connected_to(role: :writing) do
+        # Generate secret silently — user never sees it; WhatsApp delivers the code
+        @user.ensure_otp_secret_and_send_whatsapp!
+      end
+      session[:otp_whatsapp_sent_at] = Time.current.to_s
+    end
+
+    def verify_whatsapp_enrollment
+      @user = User.find(session[:otp_user_id])
+
+      if @user.validate_and_consume_otp!(params[:otp_code])
+        ActiveRecord::Base.connected_to(role: :writing) do
+          @user.update!(two_factor_enabled: true)
+        end
+        sign_in(@user)
+        reset_otp_session
+        redirect_to root_path, notice: "Two-factor authentication via WhatsApp is now enabled."
+      else
+        flash.now[:alert] = "Invalid code. Please try again."
+        render :enroll_whatsapp
+      end
+    end
+
+    # ── WhatsApp send (login verification page) ─────────────────────────────
 
     def send_whatsapp
       @user = User.find(session[:otp_user_id])

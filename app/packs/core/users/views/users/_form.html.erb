@@ -111,9 +111,14 @@
 
     <% if user.id.present? && current_user == user %>
       <div class="form-group">
-        <%= form.label :two_factor_enabled, "Enable Two-Factor Authentication" %>
+        <div class="d-flex align-items-center gap-2">
+          <%= form.label :two_factor_enabled, "Enable Two-Factor Authentication" %>
+          <%= user_guide_icon_for('two_factor', tooltip: 'Two-Factor Authentication Guide') %>
+        </div>
         <%= form.check_box :two_factor_enabled, class: "form-check-input" %>
-        <small class="form-text text-muted">Require a verification code from your authenticator app when signing in</small>
+        <small class="form-text text-muted">
+          Require a verification code when signing in. You will choose between WhatsApp or an authenticator app on your next login.
+        </small>
       </div>
     <% end %>
 

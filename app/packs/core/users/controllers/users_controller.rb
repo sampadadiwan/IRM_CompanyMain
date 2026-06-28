@@ -149,9 +149,17 @@ class UsersController < ApplicationController
 
     ActiveRecord::Base.connected_to(role: :writing) do
       if @user.two_factor_enabled?
-        if @user.otp_secret.blank?
+        if @user.two_factor_mode.nil?
+          # Mode not yet chosen — send to selection screen before enrollment
           session[:otp_user_id] = @user.id
-          redirect_to enroll_two_factor_path
+          redirect_to select_mode_two_factor_path
+          return
+        elsif @user.whatsapp_mode?
+          # WhatsApp mode — auto-send OTP before showing verification page
+          session[:otp_user_id] = @user.id
+          @user.send_otp_via_whatsapp
+          session[:otp_whatsapp_sent_at] = Time.current.to_s
+          redirect_to new_two_factor_path
           return
         else
           session[:otp_user_id] = @user.id

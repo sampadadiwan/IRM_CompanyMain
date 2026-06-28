@@ -4,13 +4,22 @@ module Users
       self.resource = warden.authenticate!(auth_options)
 
       if resource.two_factor_enabled?
-        if resource.otp_secret.blank?
-          # First-time 2FA setup — generate secret and redirect to enrollment
+        if resource.two_factor_mode.nil?
+          # Mode not yet chosen — send to selection screen before enrollment
           session[:otp_user_id] = resource.id
           sign_out(resource)
-          redirect_to enroll_two_factor_path
+          redirect_to select_mode_two_factor_path
+        elsif resource.whatsapp_mode?
+          # WhatsApp mode — auto-send OTP before showing verification page
+          session[:otp_user_id] = resource.id
+          sign_out(resource)
+          ActiveRecord::Base.connected_to(role: :writing) do
+            resource.send_otp_via_whatsapp
+          end
+          session[:otp_whatsapp_sent_at] = Time.current.to_s
+          redirect_to new_two_factor_path
         else
-          # 2FA required — store user in session, don't sign in yet
+          # Authenticator mode — user reads code from their app
           session[:otp_user_id] = resource.id
           sign_out(resource)
           redirect_to new_two_factor_path

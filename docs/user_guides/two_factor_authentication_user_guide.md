@@ -1,6 +1,6 @@
 # Two-Factor Authentication User Guide
 
-**Two-Factor Authentication (2FA)** adds an extra layer of security to your account. After entering your password, you'll be asked for a one-time code from an authenticator app, sent via WhatsApp, or one of your backup codes. This guide covers setting up, using, and managing 2FA.
+**Two-Factor Authentication (2FA)** adds an extra layer of security to your account. After entering your password, you will be asked for a one-time code before you are signed in. This guide covers enabling 2FA, choosing your delivery method, and logging in.
 
 ---
 
@@ -8,12 +8,12 @@
 
 1. [Overview](#overview)
 2. [Enabling 2FA](#enabling-2fa)
-3. [Setting Up an Authenticator App](#setting-up-an-authenticator-app)
-4. [Logging in with 2FA](#logging-in-with-2fa)
-5. [Using Backup Codes](#using-backup-codes)
-6. [Receiving Codes via WhatsApp](#receiving-codes-via-whatsapp)
-7. [Disabling 2FA](#disabling-2fa)
-8. [Worked Example](#worked-example)
+3. [Choosing Your Verification Method](#choosing-your-verification-method)
+4. [WhatsApp Mode — Setup](#whatsapp-mode--setup)
+5. [Authenticator App Mode — Setup](#authenticator-app-mode--setup)
+6. [Logging In with 2FA](#logging-in-with-2fa)
+7. [Using Backup Codes](#using-backup-codes)
+8. [Disabling 2FA](#disabling-2fa)
 9. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
@@ -23,18 +23,19 @@
 When 2FA is enabled, signing in requires two things:
 
 1. **Something you know** — your password
-2. **Something you have** — your phone (authenticator app or WhatsApp)
-
-The one-time code is a **TOTP** (Time-based One-Time Password) that refreshes every 30 seconds. It works offline — no internet or cellular connection needed for the authenticator app.
+2. **Something you have** — your phone (WhatsApp message or authenticator app)
 
 ```mermaid
-flowchart LR
-    A[Password] --> B{2FA enabled?}
-    B -->|No| C[Logged in]
-    B -->|Yes| D[Enter TOTP code]
-    D --> E{Valid?}
-    E -->|Yes| C
-    E -->|No| F[Retry / backup code]
+sequenceDiagram
+    participant U as You
+    participant S as System
+    participant P as Your Phone
+
+    U->>S: Enter email + password
+    S->>S: Password correct
+    S->>P: Send code (WhatsApp) or prompt app
+    U->>S: Enter 6-digit code
+    S->>U: Signed in
 ```
 
 ---
@@ -43,110 +44,130 @@ flowchart LR
 
 You can only enable or disable 2FA for your own account.
 
-1. Go to your **Profile** page (click your name/avatar in the top-right corner)
+1. Go to your **Profile** page (click your name in the top-right corner)
 2. Click **Edit Profile**
-3. Check the **Enable Two-Factor Authentication** checkbox
-4. Click **Update**
+3. Check the **Enable Two-Factor Authentication** box
+4. Click **Save**
 
-```
-The next time you log in, you'll be guided through the setup process.
-```
-
-2FA does not take effect immediately — it activates once you complete the enrollment flow on your next login.
+2FA does not take effect immediately. The next time you log in, you will be guided through choosing a verification method and completing setup.
 
 ---
 
-## Setting Up an Authenticator App
+## Choosing Your Verification Method
 
-The first time you log in after enabling 2FA, you'll be taken to the enrollment page.
+The first time you log in after enabling 2FA, you will see the **Set Up Two-Factor Authentication** screen with two options:
+
+| Option | How it works | Best for |
+|---|---|---|
+| **WhatsApp** | A code is automatically sent to your WhatsApp each time you log in | Users who prefer simplicity and always have their phone |
+| **Authenticator App** | You read a code from an app on your phone (works offline) | Users who want the most secure option |
+
+> If WhatsApp is not enabled for your account, the WhatsApp option will be shown as unavailable. Contact your administrator to enable it.
+
+```mermaid
+sequenceDiagram
+    participant U as You
+    participant S as System
+
+    U->>S: Log in (first time after enabling 2FA)
+    S->>U: Choose your method
+    alt WhatsApp selected
+        S->>U: Send test code to WhatsApp
+        U->>S: Enter code to confirm
+        S->>U: WhatsApp mode active
+    else Authenticator selected
+        S->>U: Show QR code
+        U->>S: Scan + enter code from app
+        S->>U: Authenticator mode active + backup codes shown
+    end
+```
+
+---
+
+## WhatsApp Mode — Setup
+
+1. On the mode selection screen, choose **WhatsApp**
+2. A 6-digit code is immediately sent to your WhatsApp number
+3. Enter the code and click **Confirm & Enable 2FA**
+4. You are signed in — setup is complete
+
+No app to install. No QR code to scan. Each time you log in going forward, a code is sent to your WhatsApp automatically.
+
+> WhatsApp mode does not generate backup codes. If you lose access to your WhatsApp number, contact your administrator to reset your 2FA.
+
+---
+
+## Authenticator App Mode — Setup
 
 ### Step 1: Install an Authenticator App
 
-If you don't already have one, install any TOTP-compatible app on your phone:
+If you do not already have one, install any of the following on your phone:
 
 - Google Authenticator (iOS / Android)
 - Authy (iOS / Android)
 - Microsoft Authenticator (iOS / Android)
-- 1Password (if you use it for passwords)
 
 ### Step 2: Scan the QR Code
 
-The enrollment page shows a QR code. Open your authenticator app, tap **Add** (or **+**), scan the QR code, and a new entry will appear.
+The setup page shows a QR code. Open your authenticator app, tap **Add** or **+**, and scan the code. A new entry will appear in the app showing a 6-digit code that refreshes every 30 seconds.
 
-If you can't scan the QR code, you can enter the **secret key** shown on screen manually.
+If you cannot scan, tap **Enter key manually** in your app and type the secret key shown on screen.
 
-### Step 3: Verify the Setup
+### Step 3: Enter the Code
 
-Enter the 6-digit code shown in your authenticator app and click **Verify**.
+Enter the 6-digit code currently shown in your app and click **Confirm & Enable 2FA**.
+
+### Step 4: Save Your Backup Codes
+
+You will be shown **8 backup codes**. Save these immediately — they are shown only once and cannot be recovered. Store them in a password manager, safe, or printed copy.
 
 ```mermaid
-flowchart LR
-    A[Install authenticator app] --> B[Scan QR code]
-    B --> C[Enter code from app]
-    C --> D{Correct?}
-    D -->|Yes| E[2FA enabled]
-    D -->|No| F[Try again]
-    F --> C
+sequenceDiagram
+    participant U as You
+    participant A as Authenticator App
+    participant S as System
+
+    U->>A: Install app + scan QR code
+    A->>U: Show 6-digit code
+    U->>S: Enter code
+    S->>U: Show 8 backup codes
+    U->>U: Save backup codes
+    S->>U: Signed in
 ```
-
-- **If the code is correct:** 2FA is activated, and you'll see your **backup codes** (save these immediately).
-- **If the code is wrong:** The page refreshes with an error. Try generating a new code from your app — the codes refresh every 30 seconds.
-
-### Important
-
-> **Write down or download your backup codes before continuing.** Once you leave the backup codes page, they cannot be shown again.
 
 ---
 
-## Logging in with 2FA
+## Logging In with 2FA
 
-Once 2FA is set up, every login requires a verification code.
+### WhatsApp Mode
 
-### Standard Login Flow
+1. Enter your email and password
+2. A code is automatically sent to your WhatsApp
+3. Enter the code on the verification screen and click **Verify**
+4. If you did not receive the code, click **Resend code via WhatsApp**
 
-1. Enter your **email** and **password** on the login page
-2. After a valid password, you're redirected to the **2FA verification page**
-3. Open your authenticator app and read the 6-digit code
-4. Enter the code and click **Verify**
-5. If the code is correct, you're logged in
+### Authenticator App Mode
 
-### What if the code doesn't work?
-
-- Codes refresh every 30 seconds — wait and try the new one
-- Check that your phone's clock is **set to automatic** (time sync issues cause incorrect codes)
-- You can click **Send code via WhatsApp** (if available) to receive the current code by message
-- Use a **backup code** as a fallback
+1. Enter your email and password
+2. Open your authenticator app and read the current 6-digit code
+3. Enter the code and click **Verify**
+4. If your WhatsApp is also enabled on your account, you may optionally click **Send code via WhatsApp** instead
 
 ### Failed Attempts
 
-After **3 failed attempts**, your session is reset and you'll need to sign in again from the beginning. This prevents brute-force guessing.
+After **3 failed attempts**, your session is reset and you must sign in again from the beginning.
+
+Codes refresh every 30 seconds — if one fails, wait for the next one and try again. Make sure your phone's clock is set to automatic (time sync issues cause codes to be rejected).
 
 ---
 
 ## Using Backup Codes
 
-When you first enable 2FA, you are given **8 backup codes**. Each code can be used **once**.
+Backup codes are available for **Authenticator App mode** only. You receive 8 codes when you complete setup. Each code can be used **once**.
 
-**Format:** `XXXXXXXX-XXXXXXXX` (16 hex characters, e.g. `A1B2C3D4-E5F6G7H8`)
+To use a backup code, enter it on the verification screen instead of a 6-digit code.
 
-### How to use a backup code
-
-1. On the 2FA verification page, enter a backup code instead of a TOTP code
-2. The code is consumed and cannot be used again
-3. After using a code, visit your profile to **regenerate backup codes** if needed
-
-> **Keep backup codes in a safe place** (password manager, safe, or printed copy). If you lose access to your authenticator app and have no backup codes, you'll need an administrator to disable 2FA for your account.
-
----
-
-## Receiving Codes via WhatsApp
-
-If your account has a WhatsApp-enabled phone number, you can receive the current TOTP code via WhatsApp.
-
-1. On the 2FA verification page, click **Send code via WhatsApp**
-2. The current code is sent to your WhatsApp number
-3. Enter the code you received
-4. Rate limit: you can request a code via WhatsApp once every **30 seconds**
+> After using a backup code, visit your profile to regenerate a fresh set if needed. If you run out of backup codes and lose your authenticator app, contact your administrator.
 
 ---
 
@@ -154,46 +175,32 @@ If your account has a WhatsApp-enabled phone number, you can receive the current
 
 1. Go to your **Profile** page
 2. Click **Edit Profile**
-3. Uncheck the **Enable Two-Factor Authentication** checkbox
-4. Click **Update**
+3. Uncheck **Enable Two-Factor Authentication**
+4. Click **Save**
 
-2FA is now disabled. You'll no longer be asked for a code at login.
+2FA is immediately disabled. You will no longer be asked for a code at login.
 
-> If an administrator needs to disable 2FA for you (e.g. you lost your phone and backup codes), contact your support team.
-
----
-
-## Worked Example
-
-### Enabling and using 2FA for the first time
-
-1. Log in to your account with your email and password
-2. Go to your **Profile** → **Edit Profile**
-3. Check **Enable Two-Factor Authentication** and click **Update**
-4. **Log out** and log back in with your email and password
-5. You're redirected to the **2FA Setup** page showing a QR code
-6. Open **Google Authenticator** on your phone, tap **+** → **Scan QR code**
-7. A new entry appears — enter the 6-digit code shown on your phone
-8. Click **Verify** — you're shown **8 backup codes**
-9. **Save the backup codes** (take a screenshot, write them down, or save in a password manager)
-10. Click **Continue to Dashboard** — you're now logged in with 2FA active
-11. **Next login:** Enter your password, then the 6-digit code from your authenticator app — done
+> If you cannot log in because you have lost access to your code (no WhatsApp, no app, no backup codes), contact your administrator to disable 2FA for your account.
 
 ---
 
 ## Frequently Asked Questions
 
-**Can I use multiple authenticator apps?**
-You can scan the same QR code (or enter the same secret key) into multiple apps on different devices. All will generate the same codes.
+**Can I switch from WhatsApp mode to Authenticator mode (or vice versa)?**
+Not directly from your profile yet. Contact your administrator to reset your 2FA setup — you will then be prompted to choose again on your next login.
 
-**What happens if I lose my phone?**
-Use a backup code to log in, then disable 2FA from your profile and re-enable it on a new phone. If you have no backup codes, contact an administrator.
+**I chose WhatsApp mode but I am not receiving codes.**
+Check that your WhatsApp number is registered correctly. Ask your administrator to verify that WhatsApp is enabled on your account and that the phone number is correct.
 
-**Does 2FA apply to API logins or magic links?**
-Yes — 2FA verification is required for magic link logins if 2FA is enabled. API token authentication bypasses 2FA (the token itself is a second factor).
+**What if I lose my phone?**
+- WhatsApp mode: contact your administrator to disable 2FA.
+- Authenticator mode: use a backup code to log in, then disable and re-enable 2FA with your new phone.
 
-**Can an administrator enable 2FA for me?**
-Administrators can toggle the 2FA setting, but you'll need to complete the QR code enrollment on your next login to set it up.
+**Does 2FA apply to magic link logins?**
+Yes — if 2FA is enabled, you must complete verification after clicking a magic link too.
 
-**Why am I being asked for a 2FA code on every login?**
-That's expected behavior. With 2FA enabled, a code is required each time you sign in. If you'd like to remove this requirement, disable 2FA in your profile settings.
+**Can an administrator enable 2FA for me without my involvement?**
+Administrators can toggle the 2FA setting on your account, but you must complete the setup (choose method and confirm) on your own next login.
+
+**Why does the WhatsApp option appear greyed out?**
+Your account does not have a WhatsApp-enabled phone number. Contact your administrator to enable it.

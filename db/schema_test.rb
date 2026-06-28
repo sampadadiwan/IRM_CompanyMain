@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_26_060131) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_28_000002) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -3701,6 +3701,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_26_060131) do
     t.boolean "system_created", default: false
     t.string "tag_list"
     t.boolean "two_factor_enabled", default: false, null: false
+    t.string "two_factor_mode"
     t.string "unlock_token"
     t.datetime "updated_at", null: false
     t.boolean "whatsapp_enabled", default: false

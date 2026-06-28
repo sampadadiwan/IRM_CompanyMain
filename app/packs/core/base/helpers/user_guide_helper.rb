@@ -34,6 +34,7 @@ module UserGuideHelper
     # User & Role Management
     'users' => 'user_role_management_user_guide.md',
     'roles' => 'user_role_management_user_guide.md',
+    'two_factor' => 'two_factor_authentication_user_guide.md',
 
     # Portfolio Report Generation
     'portfolio_reports' => 'portfolio_report_drafts_user_guide.md',

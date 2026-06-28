@@ -143,12 +143,35 @@ module CapHive
                              :app
                            end
 
-    # Active Record encryption — required by devise-two-factor for otp_secret
-    # Set via env vars in production/staging, falls back to dev keys for local/test
+    # Active Record encryption — required by devise-two-factor for otp_secret.
+    #
+    # Local/test use hardcoded dev keys (safe — never used in production).
+    # Staging/production read from Rails credentials. To add keys to an environment:
+    #
+    #   1. Generate keys (run once per environment, never reuse across envs):
+    #        bundle exec rails db:encryption:init
+    #
+    #   2. Edit the credentials file for that environment, e.g. for staging.in:
+    #        RAILS_ENV=staging EDITOR="nano" bundle exec rails credentials:edit --environment staging.in
+    #      (substitute staging.us / production.in / production.us as needed)
+    #
+    #   3. Paste the block from step 1 under an `active_record_encryption:` key:
+    #        active_record_encryption:
+    #          primary_key: <value from step 1>
+    #          deterministic_key: <value from step 1>
+    #          key_derivation_salt: <value from step 1>
+    #
+    #   WARNING: Never rotate these keys after users have enrolled in 2FA — doing so
+    #   permanently breaks decryption of all existing otp_secret values in the database.
     if Rails.env.local? || Rails.env.test?
-      config.active_record.encryption.primary_key = "83c289e1ed3247d95938943c48c9b5ac35dac2d6fa6fd8a942016c025e5c6714"
-      config.active_record.encryption.deterministic_key = "d7b7d8e9f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7"
+      config.active_record.encryption.primary_key         = "83c289e1ed3247d95938943c48c9b5ac35dac2d6fa6fd8a942016c025e5c6714"
+      config.active_record.encryption.deterministic_key   = "d7b7d8e9f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7"
       config.active_record.encryption.key_derivation_salt = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1"
+    else
+      enc = Rails.application.credentials.active_record_encryption
+      config.active_record.encryption.primary_key         = enc.fetch(:primary_key)
+      config.active_record.encryption.deterministic_key   = enc.fetch(:deterministic_key)
+      config.active_record.encryption.key_derivation_salt = enc.fetch(:key_derivation_salt)
     end
   end
 end

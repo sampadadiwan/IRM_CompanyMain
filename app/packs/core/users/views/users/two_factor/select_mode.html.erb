@@ -1,0 +1,62 @@
+<%# Two-factor mode selection: WhatsApp (simple) or Authenticator (secure) %>
+<div id="two_factor_select_mode_page">
+  <div class="login-container">
+    <div class="login-header">
+      <h2 class="h3 mb-2 fw-normal">Set Up Two-Factor Authentication</h2>
+      <p class="text-muted">Choose how you'd like to receive your verification codes</p>
+    </div>
+
+    <div class="login-body">
+      <%- flash.each do |name, msg| -%>
+        <%= content_tag :div, msg, id: "flash_#{name}", class: "alert alert-info text-center" if msg.is_a?(String) %>
+      <%- end -%>
+
+      <%= form_tag select_mode_two_factor_path, method: :post, data: { turbo: false } do %>
+        <div class="d-flex flex-column gap-3 mb-4">
+
+          <label class="d-flex align-items-start gap-3 p-3 border rounded <%= @user.whatsapp_enabled? ? 'cursor-pointer' : 'opacity-50 bg-light' %>">
+            <%= radio_button_tag :two_factor_mode, "whatsapp", false,
+                  class: "mt-1 flex-shrink-0",
+                  disabled: !@user.whatsapp_enabled? %>
+            <div>
+              <div class="fw-semibold">
+                <i class="fab fa-whatsapp text-success"></i> WhatsApp
+              </div>
+              <% if @user.whatsapp_enabled? %>
+                <div class="text-muted">
+                  A code is sent to your WhatsApp each time you log in. Simpler — no app to install.
+                </div>
+              <% else %>
+                <div class="text-muted">
+                  A code is sent to your WhatsApp each time you log in.
+                  <span class="text-warning fw-semibold">WhatsApp is not enabled for your account — contact your administrator.</span>
+                </div>
+              <% end %>
+            </div>
+          </label>
+
+          <label class="d-flex align-items-start gap-3 p-3 border rounded cursor-pointer">
+            <%= radio_button_tag :two_factor_mode, "authenticator", !@user.whatsapp_enabled?, class: "mt-1 flex-shrink-0" %>
+            <div>
+              <div class="fw-semibold">
+                <i class="fas fa-shield-alt text-primary"></i> Authenticator App
+              </div>
+              <div class="text-muted">
+                Use Google Authenticator, Authy, or any TOTP app. More secure — works offline.
+                <% if @user.whatsapp_enabled? %>
+                  You can still opt to receive codes via WhatsApp at login.
+                <% end %>
+              </div>
+            </div>
+          </label>
+
+        </div>
+
+        <button type="submit" class="glow-edge btn btn-primary w-100" data-disable-with="Continuing...">
+          <span>Continue</span>
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      <% end %>
+    </div>
+  </div>
+</div>
