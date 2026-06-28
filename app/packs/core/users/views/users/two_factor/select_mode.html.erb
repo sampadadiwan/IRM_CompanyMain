@@ -24,7 +24,7 @@
               </div>
               <% if @user.whatsapp_enabled? %>
                 <div class="text-muted">
-                  A code is sent to your WhatsApp each time you log in. Simpler — no app to install.
+                  A code is sent to <strong><%= @user.masked_phone_with_call_code %></strong> each time you log in. Simpler — no app to install.
                 </div>
               <% else %>
                 <div class="text-muted">
