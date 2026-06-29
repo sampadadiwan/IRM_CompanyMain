@@ -7,7 +7,7 @@ class DealPolicy < ApplicationPolicy
         scope.for_investor(user)
       elsif user.entity_type == "Group Company"
         scope.where(entity_id: user.entity.child_ids)
-      elsif %w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)
+      elsif (%w[employee].include?(user.curr_role) && user.has_cached_role?(:company_admin)) || user.support?
         scope.where(entity_id: user.entity_id)
       elsif %w[employee].include? user.curr_role
         scope.for_employee(user)
@@ -27,7 +27,7 @@ class DealPolicy < ApplicationPolicy
 
   # Investors access deals via overview?, not show? — see commit 068e7a711.
   def show?
-    permissioned_employee? && user.enable_deals
+    (user.support? && user.enable_deals) || (permissioned_employee? && user.enable_deals)
   end
 
   def consolidated_access_rights?
