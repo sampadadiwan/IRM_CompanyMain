@@ -772,8 +772,8 @@ Given('we Generate Investor Statement for the first capital commitment') do
   click_on("Generate Investor Statement")
   @start_date = Date.local_parse "01/01/2020"
   @end_date = Date.local_parse "01/01/2021"
-  fill_in('start_date', with: @start_date)
-  fill_in('end_date', with: @end_date)
+  fill_in('capital_commitment_start_date', with: @start_date)
+  fill_in('capital_commitment_end_date',   with: @end_date)
   # sleep(1)
   click_on("Generate Investor Statement")
   # sleep(2)
@@ -797,8 +797,8 @@ Then('we Generate Investor Statement for the first capital commitment with diffe
   click_on("Generate Investor Statement")
   @start_date = Date.local_parse "01/02/2020"
   @end_date = Date.local_parse "01/02/2021"
-  fill_in('start_date', with: @start_date)
-  fill_in('end_date', with: @end_date)
+  fill_in('capital_commitment_start_date', with: @start_date)
+  fill_in('capital_commitment_end_date',   with: @end_date)
   click_on("Generate Investor Statement")
 end
 

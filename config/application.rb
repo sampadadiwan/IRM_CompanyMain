@@ -79,6 +79,8 @@ module CapHive
       Devise::Mailer.layout "mailer" # simple.haml or simple.erb
     end
 
+    config.action_view.default_form_builder = "LocaleDateFormBuilder"
+
     config.cache_store = :solid_cache_store
 
     config.time_zone = 'New Delhi'

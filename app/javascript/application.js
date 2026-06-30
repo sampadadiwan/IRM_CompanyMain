@@ -20,6 +20,14 @@ import "custom/turbo_handler"
 
 window.bootstrap = bootstrap
 
+// LocaleDateFormBuilder is the app's default form builder; register it as an alias so
+// ClientSideValidations resolves the correct add/remove error handlers (it keys on the
+// Ruby form builder class name stored in the form's data-client-side-validations attribute).
+if (window.ClientSideValidations?.formBuilders) {
+  ClientSideValidations.formBuilders["LocaleDateFormBuilder"] =
+    ClientSideValidations.formBuilders["ActionView::Helpers::FormBuilder"]
+}
+
 /**
  * Global initialization for third-party scripts and UI components.
  */

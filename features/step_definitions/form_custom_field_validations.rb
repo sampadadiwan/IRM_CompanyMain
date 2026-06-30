@@ -168,7 +168,14 @@ end
 # would only commit "TOOLO", defeating the server-side validation test.
 def set_custom_field(page, field_name, value)
   field_id = "investor_properties_#{field_name}"
-  page.execute_script("document.getElementById(#{field_id.to_json}).value = #{value.to_json}")
+  # Set value then fire 'input' so the locale-date Stimulus controller syncs the hidden ISO field
+  page.execute_script(<<~JS)
+    var el = document.getElementById(#{field_id.to_json});
+    if (el) {
+      el.value = #{value.to_json};
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  JS
 end
 
 When('I fill in custom field {string} with {string}') do |field_name, value|

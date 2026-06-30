@@ -2,6 +2,84 @@ module ApplicationHelper
   include Pagy::Backend
   include Pagy::Frontend
 
+  # Renders a locale-formatted display input with a calendar icon that opens the native
+  # browser date picker. The actual submission uses a hidden ISO input so date parsing
+  # is unaffected by locale on the server side.
+  def date_field_tag(name, value = nil, options = {})
+    date        = coerce_date_tag(value)
+    css_class   = options.delete(:class) || "form-control"
+    # Derive id the same way Rails does for tag helpers: replace [] with _ and strip trailing _
+    field_id    = options.delete(:id) || name.to_s.delete("]").gsub(/[^a-zA-Z0-9_:.-]/, "_").gsub(/_+/, "_").gsub(/_\z/, "")
+    i18n_format = I18n.t("date.formats.default")
+    locale_val  = date ? l(date) : ""
+    iso_val     = date ? date.iso8601 : ""
+
+    # Extract interactive/constraint attributes — they belong on the visible and picker inputs.
+    # required/disabled on a type="hidden" input are ignored by browsers; min/max have no
+    # meaning there either. We apply them to the display input and the native picker instead.
+    disabled    = options.delete(:disabled)
+    required    = options.delete(:required)
+    readonly    = options.delete(:readonly)
+    min_val     = options.delete(:min)
+    max_val     = options.delete(:max)
+    # Deep-merge so the caller's data attributes survive alongside our Stimulus target marker
+    caller_data = options.delete(:data) || {}
+    hidden_data = caller_data.deep_merge({ "locale-date-target": "hidden" })
+
+    content_tag(:div, class: "input-group",
+      data: { controller: "locale-date", "locale-date-format-value": i18n_format }
+    ) do
+      # Display-only text input — has the id so Capybara/tests can find it; no name, never submitted
+      display = tag.input(
+        type:         "text",
+        id:           field_id,
+        value:        locale_val,
+        class:        css_class,
+        autocomplete: "off",
+        disabled:     disabled,
+        required:     required,
+        readonly:     readonly,
+        data:         {
+          "locale-date-target": "display",
+          action: "click->locale-date#openPicker input->locale-date#inputChanged"
+        }
+      )
+      # Hidden ISO input — carries the actual value for form submission; id suppressed (lives on display)
+      hidden = hidden_field_tag(name, iso_val,
+        options.merge(id: nil, data: hidden_data)
+      )
+      icon_span = content_tag(:span, class: "input-group-text",
+        style: "cursor:pointer;",
+        data:  { action: "click->locale-date#openPicker" }
+      ) do
+        concat tag.i(class: "fas fa-calendar", style: "pointer-events:none;")
+        # Zero-size invisible input — only purpose is to receive showPicker() and fire change events
+        concat tag.input(
+          type:     "date",
+          value:    iso_val,
+          min:      min_val,
+          max:      max_val,
+          disabled: disabled,
+          style:    "position:absolute; width:0; height:0; opacity:0; overflow:hidden;",
+          data:     { "locale-date-target": "picker", action: "change->locale-date#pickerChanged" }
+        )
+      end
+      display + hidden + icon_span
+    end
+  end
+
+  private
+
+  def coerce_date_tag(value)
+    return nil if value.blank?
+    return value.to_date if value.is_a?(Date) || value.is_a?(Time)
+    Date.local_parse(value.to_s)
+  rescue StandardError
+    nil
+  end
+
+  public
+
   attr_accessor :use_custom_colors
 
   def t_common(key)

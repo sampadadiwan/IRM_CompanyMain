@@ -1,3 +1,5 @@
+require 'bcrypt'
+
 module TwoFactorAuthenticatable
   extend ActiveSupport::Concern
 
@@ -38,7 +40,7 @@ module TwoFactorAuthenticatable
 
   def generate_backup_codes!
     codes = 8.times.map { SecureRandom.hex(4).upcase.insert(4, '-') }
-    hashed = codes.map { |c| BCrypt::Password.create(c) }
+    hashed = codes.map { |c| ::BCrypt::Password.create(c) }
     update!(otp_backup_codes: hashed.to_json)
     codes # return plaintext for one-time display
   end
@@ -46,7 +48,7 @@ module TwoFactorAuthenticatable
   def consume_backup_code!(code)
     codes = JSON.parse(otp_backup_codes || '[]')
     remaining = codes.reject do |hashed|
-      BCrypt::Password.new(hashed) == code
+      ::BCrypt::Password.new(hashed) == code
     end
     update!(otp_backup_codes: remaining.to_json)
     remaining.size != codes.size # true if consumed

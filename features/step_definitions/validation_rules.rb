@@ -431,7 +431,7 @@ When('I visit the generate fund ratios page for the fund') do
 end
 
 When('I fill the fund ratios end date with {string}') do |date|
-  fill_in "end_date", with: date
+  fill_in "fund_end_date", with: date
 end
 
 When('I submit the fund ratios form') do

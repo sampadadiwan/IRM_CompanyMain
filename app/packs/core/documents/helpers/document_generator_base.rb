@@ -11,6 +11,27 @@ module DocumentGeneratorBase
     file_path = File.expand_path("#{file_name}.docx")
     Rails.logger.debug { "#{self.class} Generating document at #{file_path}" }
     template.render_to_file(file_path, context)
+
+    # Run DOCX post-processors atomically: take a backup so we can restore the original
+    # if either step fails mid-write, preventing a half-processed file from being used.
+    backup_path = "#{file_path}.bak"
+    FileUtils.cp(file_path, backup_path)
+    begin
+      # Fix ghost list-numbering so sub-item counters match their section headings.
+      DocxNumberingFixer.fix!(file_path)
+
+      # Bake resolved style properties (fonts, sizes, indentation) directly into
+      # paragraphs/runs so LibreOffice doesn't mis-read the style inheritance
+      # chain and produce wrong fonts or indentation in the PDF.
+      DocxFormattingPreserver.apply!(file_path)
+    rescue StandardError => e
+      Rails.logger.error { "[DocumentGeneratorBase] DOCX post-processing failed (#{e.class}): #{e.message}; restoring original" }
+      FileUtils.mv(backup_path, file_path)
+      raise
+    ensure
+      FileUtils.rm_f(backup_path) if File.exist?(backup_path)
+    end
+
     if to_pdf
       # Convert to PDF with accessibility tags
       convert_to_accessible_pdf(file_name, template_name)

@@ -71,7 +71,9 @@ Then('the KYC form should be populated with the CKYC data') do
   expect(find_field("individual_kyc_PAN").value).to eq(@kyc_data.PAN)
 
   if @kyc_data.birth_date.present?
-    expect(find_field("individual_kyc_birth_date").value).to eq(@kyc_data.birth_date.strftime("%Y-%m-%d"))
+    # Display input shows locale-formatted text; read the hidden ISO field for the actual value
+    iso_value = find("input[name='individual_kyc[birth_date]']", visible: false).value
+    expect(iso_value).to eq(@kyc_data.birth_date.strftime("%Y-%m-%d"))
   end
   click_on("Next")
   expect(page).to have_content("Address")
@@ -92,7 +94,9 @@ Then('I fill in the form and it is populated with the CKYC data') do
   end
 
   if @kyc_data.birth_date.present?
-    expect(find_field("individual_kyc_birth_date").value).to eq(@kyc_data.birth_date.strftime("%Y-%m-%d"))
+    # Display input shows locale-formatted text; read the hidden ISO field for the actual value
+    iso_value = find("input[name='individual_kyc[birth_date]']", visible: false).value
+    expect(iso_value).to eq(@kyc_data.birth_date.strftime("%Y-%m-%d"))
   end
   click_on("Next")
 
@@ -174,7 +178,9 @@ Then('the KYC form should be populated with the KRA data') do
   expect(find_field("individual_kyc_PAN").value).to eq(@kyc_data.PAN)
 
   if @kyc_data.birth_date.present?
-    expect(find_field("individual_kyc_birth_date").value).to eq(@kyc_data.birth_date.strftime("%Y-%m-%d"))
+    # Display input shows locale-formatted text; read the hidden ISO field for the actual value
+    iso_value = find("input[name='individual_kyc[birth_date]']", visible: false).value
+    expect(iso_value).to eq(@kyc_data.birth_date.strftime("%Y-%m-%d"))
   end
   click_on("Next")
   expect(find_field("individual_kyc_address").value).to eq(@kyc_data.perm_address)

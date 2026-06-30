@@ -9,8 +9,8 @@ When('I create a Capital Call with percentage of commitment') do
   # sleep(1)
   fill_in "capital_call[close_percentages][First Close]", with: "10"
   fill_in "capital_call[close_percentages][Second Close]", with: "20"
-  find('input[name="capital_call[call_date]"]').set('2024-09-13')
-  find('input[name="capital_call[due_date]"]').set('2024-11-13')
+  fill_in 'capital_call_call_date', with: '2024-09-13'
+  fill_in 'capital_call_due_date',  with: '2024-11-13'
   allow(UpdateDocumentFolderPathJob).to receive(:perform_later).and_return(nil)
   click_on('Save')
   expect(page).to have_content("Capital call was successfully")

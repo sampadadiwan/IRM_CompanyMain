@@ -446,8 +446,14 @@ Given('we Generate Investor Statements from commitments index page') do
   sleep(0.5)
   @start_date = Time.zone.parse("01/01/2022")
   @end_date = Time.zone.parse("31/12/2022")
-  fill_in("fund_start_date", with: @start_date)
-  fill_in("fund_end_date", with: @end_date)
+  start_iso = @start_date.to_date.iso8601
+  end_iso   = @end_date.to_date.iso8601
+  # Playwright blocks .set() on type="hidden" inputs (actionability check requires visibility).
+  # LocaleDateFormBuilder renders a hidden ISO field for submission alongside a visible display input.
+  # The "View Account Entries Report" form on the same page also has start_date/end_date hidden inputs,
+  # so we disambiguate by scoping the querySelector to the allocation form action.
+  page.execute_script("document.querySelector(\"form[action*='allocate'] input[name='start_date']\").value = '#{start_iso}'")
+  page.execute_script("document.querySelector(\"form[action*='allocate'] input[name='end_date']\").value = '#{end_iso}'")
   select("Investing Entity", from: "fund_statement_for")
   @template = @fund.documents.templates.where(name: @template_name, owner_tag: "Investor Statement Template").last
   expect(@template).to be_present
