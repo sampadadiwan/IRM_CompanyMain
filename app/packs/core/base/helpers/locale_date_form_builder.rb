@@ -10,9 +10,11 @@ class LocaleDateFormBuilder < ActionView::Helpers::FormBuilder
     # This handles nested builders where object_name is e.g. "individual_kyc[properties]".
     sanitized_name = object_name.to_s.delete("]").gsub(/[^a-zA-Z0-9_:.-]/, "_").gsub(/_+/, "_").gsub(/_\z/, "")
     field_id       = options.delete(:id) || (sanitized_name.blank? ? method.to_s : "#{sanitized_name}_#{method}")
-    i18n_format = I18n.t("date.formats.default")
-    locale_val  = date ? @template.l(date) : ""
-    iso_val     = date ? date.iso8601 : ""
+    i18n_format  = I18n.t("date.formats.default")
+    # Human-readable version of the strftime format, used as placeholder and tooltip
+    format_hint  = i18n_format.gsub("%d", "dd").gsub("%m", "mm").gsub("%Y", "yyyy")
+    locale_val   = date ? @template.l(date) : ""
+    iso_val      = date ? date.iso8601 : ""
 
     # Extract interactive/constraint attributes — they belong on the visible and picker inputs.
     # required/disabled on a type="hidden" input are ignored by browsers; min/max have no
@@ -27,19 +29,23 @@ class LocaleDateFormBuilder < ActionView::Helpers::FormBuilder
     hidden_data = caller_data.deep_merge({ "locale-date-target": "hidden" })
 
     @template.content_tag(:div, class: "input-group",
-      data: { controller: "locale-date", "locale-date-format-value": i18n_format }
+      data: { controller: "locale-date tooltip", "locale-date-format-value": i18n_format }
     ) do
       # Display-only text input — has the id so Capybara/tests can find it; no name, never submitted
       display = @template.tag.input(
-        type:         "text",
-        id:           field_id,
-        value:        locale_val,
-        class:        css_class,
-        autocomplete: "off",
-        disabled:     disabled,
-        required:     required,
-        readonly:     readonly,
-        data:         {
+        type:                "text",
+        id:                  field_id,
+        value:               locale_val,
+        placeholder:         format_hint,
+        title:               "Enter date in #{format_hint} format",
+        "data-bs-toggle":    "tooltip",
+        "data-bs-placement": "top",
+        class:               css_class,
+        autocomplete:        "off",
+        disabled:            disabled,
+        required:            required,
+        readonly:            readonly,
+        data:                {
           "locale-date-target": "display",
           action: "click->locale-date#openPicker input->locale-date#inputChanged"
         }
