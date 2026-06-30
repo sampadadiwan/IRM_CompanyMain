@@ -89,7 +89,13 @@ module DocumentGeneratorBase
     # Write to a temp file first to avoid overwriting the source file (spa_path.pdf)
     # while it is still being read by HexaPDF (lazy loading).
     temp_output_path = "#{spa_path}_temp.pdf"
-    combined_pdf.write(temp_output_path, optimize: true)
+    begin
+      combined_pdf.write(temp_output_path, optimize: true)
+    rescue StandardError => e
+      Rails.logger.warn("PDF validation error for #{spa_path}: #{e.message}")
+      combined_pdf.write(temp_output_path, optimize: true, validate: false)
+    end
+
     FileUtils.mv(temp_output_path, "#{spa_path}.pdf")
   ensure
     header_footer_download_path.each { |file_path| FileUtils.rm_f(file_path) }
@@ -366,7 +372,12 @@ module DocumentGeneratorBase
     # Write to a temp file first to avoid overwriting the source file (pdf_path)
     # while it is still being read by HexaPDF (lazy loading).
     temp_output_path = "#{pdf_path}.tmp"
-    pdf.write(temp_output_path, optimize: true)
+    begin
+      pdf.write(temp_output_path, optimize: true)
+    rescue StandardError => e
+      Rails.logger.warn("PDF validation error for #{pdf_path}: #{e.message}")
+      pdf.write(temp_output_path, optimize: true, validate: false)
+    end
     FileUtils.mv(temp_output_path, pdf_path)
   end
 
