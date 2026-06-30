@@ -79,7 +79,14 @@ class DocxFormattingPreserver
       # Rewrite abstractNum level pPr in numbering.xml so LibreOffice reads
       # the correct ind/tab values directly from the list definition — paragraph
       # overrides alone are not reliably honoured by LibreOffice for num tabs.
-      patch_numbering_levels!(body_doc, num_doc) if num_doc
+      if num_doc
+        dominant = patch_numbering_levels!(body_doc, num_doc)
+        # Stamp every list paragraph with an explicit w:ind so that paragraph-style
+        # w:firstLine values (e.g. from "Bod" style) cannot bleed through.
+        # LibreOffice reads firstLine from the style chain if the paragraph has no
+        # direct ind, causing the first line to appear more indented than wrap lines.
+        enforce_list_ind!(body_doc, num_doc, dominant) if dominant&.any?
+      end
 
       Zip::OutputStream.open(tmp_path) do |out|
         zip.each do |entry|
@@ -220,7 +227,7 @@ class DocxFormattingPreserver
       end
     end
 
-    return if dominant.empty?
+    return {} if dominant.empty?
 
     # Update each abstractNum level whose ind differs from what paragraphs use
     num_doc.xpath("//w:abstractNum", ns).each do |abn|
@@ -263,6 +270,75 @@ class DocxFormattingPreserver
           "[DocxFormattingPreserver] abstractNum=#{abstract_id} ilvl=#{ilvl} " \
             "ind updated to left=#{dom[:left]} hanging=#{dom[:hanging]}"
         end
+      end
+    end
+
+    dominant
+  end
+
+  # Stamp every list paragraph with an explicit w:ind so LibreOffice cannot inherit
+  # w:firstLine from the paragraph style chain (e.g. "Bod" style has w:firstLine="720").
+  # LO applies the style's firstLine when the paragraph has no direct ind, causing the
+  # first line to appear more indented than the wrap lines.
+  #
+  # For paragraphs WITHOUT a direct ind, we pick the ind values in priority order:
+  #   1. dominant[abstractNum_ilvl] — most common values seen across all paragraphs
+  #   2. abstractNum level's current ind — already corrected by patch_numbering_levels!
+  # We fall through to the abstractNum level so paragraphs at levels with no direct-ind
+  # contributors still get protected against style firstLine bleed.
+  def enforce_list_ind!(body_doc, num_doc, dominant)
+    ns = { "w" => W_NS }
+
+    # Build numId -> abstractNumId mapping
+    num_to_abstract = {}
+    num_doc.xpath("//w:num", ns).each do |num|
+      nid = wattr(num, "numId")
+      ab  = num.at_xpath("w:abstractNumId", ns)
+      num_to_abstract[nid] = wattr(ab, "val") if nid && ab
+    end
+
+    # Build abstractNum_ilvl -> {left, hanging} from the (already-patched) numbering.xml
+    abstract_lvl_ind = {}
+    num_doc.xpath("//w:abstractNum", ns).each do |abn|
+      abid = wattr(abn, "abstractNumId")
+      abn.xpath("w:lvl", ns).each do |lvl|
+        ilvl = wattr(lvl, "ilvl")
+        ind  = lvl.at_xpath("w:pPr/w:ind", ns)
+        next unless ind
+        left = wattr(ind, "left")&.to_i
+        hang = wattr(ind, "hanging")&.to_i || 0
+        abstract_lvl_ind["#{abid}_#{ilvl}"] = { left: left, hanging: hang } if left
+      end
+    end
+
+    body_doc.xpath("//w:body//w:p", ns).each do |para|
+      pPr    = para.at_xpath("w:pPr", ns)
+      next unless pPr
+      numPr  = pPr.at_xpath("w:numPr", ns)
+      next unless numPr
+      nid_el  = numPr.at_xpath("w:numId",  ns)
+      ilvl_el = numPr.at_xpath("w:ilvl",   ns)
+      next unless nid_el && ilvl_el
+      nid  = wattr(nid_el,  "val")
+      ilvl = wattr(ilvl_el, "val")
+      next if nid == "0"
+
+      abstract_id = num_to_abstract[nid]
+      next unless abstract_id
+
+      ind = pPr.at_xpath("w:ind", ns)
+      if ind
+        # Has direct ind — strip firstLine only; keep existing left/hanging.
+        ind.attribute_with_ns("firstLine", W_NS)&.remove
+      else
+        # No direct ind — add one to block style-chain firstLine inheritance.
+        # Prefer dominant values; fall back to the abstractNum level's own ind.
+        dom = dominant["#{abstract_id}_#{ilvl}"] || abstract_lvl_ind["#{abstract_id}_#{ilvl}"]
+        next unless dom
+        frag = Nokogiri::XML::DocumentFragment.parse(
+          "<w:ind xmlns:w=\"#{W_NS}\" w:left=\"#{dom[:left]}\" w:hanging=\"#{dom[:hanging]}\"/>"
+        )
+        pPr.add_child(frag.first_element_child)
       end
     end
   end
@@ -377,15 +453,20 @@ class DocxFormattingPreserver
       style_id  = style_el ? wattr(style_el, "val") : "Normal"
       resolved  = @style_cache[style_id] || @style_cache["Normal"] || { pPr: {}, rPr: {} }
 
-      # Bake missing paragraph-level properties
-      bake_props!(pPr, resolved[:pPr], PARA_TAGS)
+      # For list paragraphs skip baking ind and tabs — indentation is owned by the
+      # abstractNum level in numbering.xml (already corrected by patch_numbering_levels!).
+      # Injecting a style's w:ind (e.g. Bod style has w:firstLine="720") causes
+      # LibreOffice to combine it with the list-level left, shifting the first line
+      # further right than the wrap lines.
+      list_para = pPr.at_xpath("w:numPr", ns)
+      bake_tags = list_para ? PARA_TAGS - %w[ind tabs] : PARA_TAGS
+      bake_props!(pPr, resolved[:pPr], bake_tags)
 
-      # For numbered-list paragraphs: remove stale w:val="num" tab stops that
-      # don't match the paragraph's own w:ind[@left].  LibreOffice picks the
-      # first "num" tab whose position fits the rendered label width, so a rogue
-      # earlier tab causes the text-start position to jump around as the label
-      # grows (e.g. "1.1.9." vs "1.1.10.").
-      normalize_num_tabs!(pPr) if pPr.at_xpath("w:numPr", ns)
+      if list_para
+        # Strip firstLine from any existing direct w:ind on list paragraphs —
+        # prevents original-template firstLine values from persisting.
+        pPr.at_xpath("w:ind", ns)&.attribute_with_ns("firstLine", W_NS)&.remove
+      end
 
       # Resolve run-level defaults for this paragraph style
       para_rPr_defaults = resolved[:rPr]
