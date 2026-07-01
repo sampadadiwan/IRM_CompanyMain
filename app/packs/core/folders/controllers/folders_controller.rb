@@ -1,5 +1,8 @@
 class FoldersController < ApplicationController
+  include HasWorkflowable
+
   before_action :set_folder, only: %i[show edit update destroy download generate_report]
+  before_action :set_workflowable, only: [:show]  # runs after set_folder so @folder is available
   after_action :verify_authorized, except: %i[index data_rooms]
 
   # GET /folders or /folders.json

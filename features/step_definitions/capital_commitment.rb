@@ -461,7 +461,7 @@ Given('we Generate Investor Statements from commitments index page') do
   click_on("Submit")
   # Use have_selector with visible: :all because Bootstrap's fade transition can briefly make the notice
   # element non-visible to Selenium; we just need to confirm the flash was set (redirect succeeded).
-  expect(page).to have_selector("#notice", text: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", visible: :all, wait: 10)
+  expect(page).to have_selector("#notice", text: "Fund account entries allocation in progress. Please wait for a few minutes and refresh the page.", visible: :all, wait: 15)
 end
 
 Then('the {string} is successfully generated for all intended commitments') do |template_name|

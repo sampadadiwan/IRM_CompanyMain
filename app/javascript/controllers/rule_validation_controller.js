@@ -24,7 +24,8 @@ export default class extends Controller {
   }
 
   connect() {
-    this._debounceTimer = null
+    this._debounceTimer  = null
+    this._fetchAbortCtrl = null  // AbortController for any in-flight evaluate fetch
 
     // Store bound references so they can be removed in disconnect()
     this._boundOnFieldBlur  = this._onFieldBlur.bind(this)
@@ -44,6 +45,7 @@ export default class extends Controller {
 
   disconnect() {
     clearTimeout(this._debounceTimer)
+    this._fetchAbortCtrl?.abort()
     this._blurFields.forEach(field => field.removeEventListener("blur", this._boundOnFieldBlur))
     this._form?.removeEventListener("submit", this._boundOnFormSubmit)
   }
@@ -52,6 +54,9 @@ export default class extends Controller {
 
   _onFieldBlur() {
     clearTimeout(this._debounceTimer)
+    // Abort any still-running blur fetch before scheduling the next one —
+    // no point delivering stale results while the user is still tabbing through fields.
+    this._fetchAbortCtrl?.abort()
     // Wait 400ms after the user leaves the field before calling the server,
     // so rapid tab-throughs don't spam requests
     this._debounceTimer = setTimeout(() => this._runEvaluation(false), 400)
@@ -66,8 +71,13 @@ export default class extends Controller {
 
     event.preventDefault()
 
+    // Cancel any pending blur-debounce and abort any in-flight blur evaluation so the
+    // server isn't handling a stale request when the submit's evaluation arrives.
+    clearTimeout(this._debounceTimer)
+    this._fetchAbortCtrl?.abort()
+
     const results = await this._runEvaluation(true)
-    if (!results) return  // fetch failed — let normal submit proceed
+    if (!results) { this._submitWithForceSave(form); return }  // fetch failed — submit anyway (mirrors Rails-side policy: a broken rule engine must not block saves)
 
     const { warnings, blockers } = results
 
@@ -79,7 +89,7 @@ export default class extends Controller {
         return
       }
       // No confirm message — submit immediately
-      form.submit()
+      this._submitWithForceSave(form)
       return
     }
 
@@ -105,6 +115,9 @@ export default class extends Controller {
       attributes[match ? match[1] : key] = value
     })
 
+    // Each call gets its own AbortController so the previous caller can cancel it.
+    this._fetchAbortCtrl = new AbortController()
+
     try {
       const response = await fetch(this.evaluateUrlValue, {
         method:  "POST",
@@ -116,7 +129,8 @@ export default class extends Controller {
           target_model: this.targetModelValue,
           record_id:    this.recordIdValue || null,
           attributes
-        })
+        }),
+        signal: this._fetchAbortCtrl.signal
       })
 
       if (!response.ok) return null
@@ -128,7 +142,8 @@ export default class extends Controller {
 
       return data
     } catch (err) {
-      console.warn("[rule-validation] evaluate fetch failed:", err)
+      // AbortError is expected when a newer blur or the form-submit cancels this fetch.
+      if (err.name !== "AbortError") console.warn("[rule-validation] evaluate fetch failed:", err)
       return null
     }
   }
@@ -239,16 +254,27 @@ export default class extends Controller {
 
     document.getElementById("ruleModalConfirm")?.addEventListener("click", () => {
       bsModal.hide()
-      let hiddenFlag = form.querySelector("input[name='force_save']")
-      if (!hiddenFlag) {
-        hiddenFlag = document.createElement("input")
-        hiddenFlag.type = "hidden"
-        hiddenFlag.name = "force_save"
-        form.appendChild(hiddenFlag)
-      }
-      hiddenFlag.value = "1"
-      form.submit()
+      this._submitWithForceSave(form)
     })
+  }
+
+  // Sets force_save=1 on the form and calls requestSubmit() so Turbo Drive handles the
+  // navigation. Using requestSubmit() (vs the lower-level form.submit()) fires the
+  // submit event, which Turbo listens for and wraps in a fetch-based navigation. The
+  // Stimulus handler sees force_save=1 and returns without calling preventDefault(),
+  // so the submission proceeds normally.
+  _submitWithForceSave(form) {
+    let flag = form.querySelector("input[name='force_save']")
+    if (!flag) {
+      flag = document.createElement("input")
+      flag.type = "hidden"
+      flag.name = "force_save"
+      form.appendChild(flag)
+    }
+    flag.value = "1"
+    // requestSubmit() fires the submit event (needed by Turbo Drive); the Stimulus
+    // listener exits early because force_save=1 is now set.
+    form.requestSubmit()
   }
 
   // Returns the innerHTML of the element matching confirmMessageSelectorValue, or null.

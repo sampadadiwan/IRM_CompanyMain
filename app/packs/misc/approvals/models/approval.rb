@@ -1,4 +1,5 @@
 class Approval < ApplicationRecord
+  include Workflowable
   include Trackable.new
   include WithFolder
   include WithCustomField
@@ -32,6 +33,11 @@ class Approval < ApplicationRecord
   def to_s
     title
   end
+
+  # Workflowable interface uses all defaults from the concern:
+  #   workflow_display_name → to_s (→ title)
+  #   workflow_url          → approval_path(self)
+  #   workflow_attachable_files → []
 
   def default_response_status
     self.response_status ||= "Approved,Pending,Rejected"

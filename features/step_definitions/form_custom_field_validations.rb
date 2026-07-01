@@ -168,14 +168,25 @@ end
 # would only commit "TOOLO", defeating the server-side validation test.
 def set_custom_field(page, field_name, value)
   field_id = "investor_properties_#{field_name}"
-  # Set value then fire 'input' so the locale-date Stimulus controller syncs the hidden ISO field
-  page.execute_script(<<~JS)
-    var el = document.getElementById(#{field_id.to_json});
-    if (el) {
+  # Strip min/max/pattern BEFORE assigning the value so Chrome's native date
+  # picker does not silently ignore out-of-range values. We do this here rather
+  # than only in I submit the investor form so the value is accepted by the DOM
+  # before any input-event handlers run. Fire 'input' afterward so any Stimulus
+  # controllers that track the field (e.g. locale-date sync) stay in sync.
+  result = page.evaluate_script(<<~JS)
+    (function() {
+      var el = document.getElementById(#{field_id.to_json});
+      if (!el) return { found: false };
+      ['min', 'max', 'minlength', 'maxlength', 'pattern'].forEach(function(attr) {
+        el.removeAttribute(attr);
+      });
       el.value = #{value.to_json};
       el.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+      return { found: true, valueback: el.value };
+    })()
   JS
+  raise "Custom field #{field_id} not found in DOM" unless result["found"]
+  raise "Value not accepted by browser: expected #{value.inspect}, got #{result["valueback"].inspect}" unless result["valueback"] == value
 end
 
 When('I fill in custom field {string} with {string}') do |field_name, value|
@@ -195,19 +206,20 @@ When("I fill in custom field {string} with today's date") do |field_name|
 end
 
 When('I submit the investor form') do
-  # Strip HTML5 constraint attributes from every custom field input so the browser
-  # does not block the submit. Server-side Rails validation is what's under test;
-  # client-side constraints (min, max, minlength, maxlength, required, pattern) would
+  # Strip HTML5 constraint attributes from ALL form inputs so the browser does not
+  # block the submit. Server-side Rails validation is what's under test; client-side
+  # constraints (required, min, max, minlength, maxlength, pattern) on ANY field —
+  # including standard ones like primary_email which has required: true — would
   # swallow the submit event and prevent Rails validation from running at all.
   page.execute_script(<<~JS)
-    document.querySelectorAll('.custom_field').forEach(function(el) {
+    document.querySelectorAll('form input, form select, form textarea').forEach(function(el) {
       ['required', 'min', 'max', 'minlength', 'maxlength', 'pattern'].forEach(function(attr) {
         el.removeAttribute(attr);
       });
     });
   JS
   click_on "Save"
-  sleep(1)
+  sleep(2)
 end
 
 Then('I should see {string} on the page') do |text|

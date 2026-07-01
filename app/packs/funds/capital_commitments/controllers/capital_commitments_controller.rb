@@ -1,9 +1,11 @@
 class CapitalCommitmentsController < ApplicationController
   include DocumentHelper
   include WithCustomFieldFilter
+  include HasWorkflowable
 
   before_action :set_capital_commitment, only: %i[show edit update destroy generate_documentation
                                                   report generate_soa generate_soa_form transfer_fund_units performance_chart preview]
+  before_action :set_workflowable, only: [:show]  # runs after set_capital_commitment so @capital_commitment is available
 
   after_action :verify_authorized, only: %i[show edit update destroy generate_documentation
                                             report generate_soa generate_soa_form performance_chart]

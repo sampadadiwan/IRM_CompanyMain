@@ -6,7 +6,7 @@ class WorkflowTemplatesController < ApplicationController
     authorize WorkflowTemplate
     @workflow_templates = policy_scope(WorkflowTemplate)
                           .where(entity_id: current_user.entity_id)
-                          .includes(:workflow_steps)
+                          .includes(:workflow_steps, :workflow_auto_assignment_rules)
                           .order(:name)
   end
 
@@ -49,9 +49,10 @@ class WorkflowTemplatesController < ApplicationController
   end
 
   def destroy
-    if @workflow_template.active_folder_count.positive?
+    count = @workflow_template.active_workflowable_count
+    if count.positive?
       redirect_to workflow_templates_path,
-                  alert: "Cannot delete a template that is assigned to #{@workflow_template.active_folder_count} folder(s). Remove it from all folders first."
+                  alert: "Cannot delete a template assigned to #{count} object(s). Remove the assignment first."
       return
     end
 
@@ -78,7 +79,7 @@ class WorkflowTemplatesController < ApplicationController
 
   def workflow_template_params
     params.require(:workflow_template).permit(
-      :name, :description, :reminder_interval_days, :attach_document_in_email,
+      :name, :description, :reminder_interval_days, :attach_document_in_email, :workflowable_type,
       workflow_steps_attributes: [
         :id, :position, :name, :description, :states,
         :quorum_rule, :on_reject_rule, :on_reject_target_step,

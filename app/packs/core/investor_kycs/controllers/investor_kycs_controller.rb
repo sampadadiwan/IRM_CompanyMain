@@ -1,5 +1,6 @@
 class InvestorKycsController < ApplicationController
   include WithCustomFieldFilter
+  include HasWorkflowable
 
   helper InvestorKycAnalyticsHelper
   after_action :verify_policy_scoped, only: [:index] # add send_reminder_to_all?
@@ -8,6 +9,7 @@ class InvestorKycsController < ApplicationController
   skip_before_action :authenticate_user!, only: %i[show edit update extract_docs_data doc_first_upload processing], if: -> { params[:signed_id].present? }
 
   before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
+  before_action :set_workflowable, only: [:show]  # runs after set_investor_kyc so @investor_kyc is available
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc investor_pending]
 
   has_scope :uncalled, type: :boolean

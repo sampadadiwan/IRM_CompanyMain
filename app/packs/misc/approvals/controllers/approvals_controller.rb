@@ -1,5 +1,8 @@
 class ApprovalsController < ApplicationController
+  include HasWorkflowable
+
   before_action :set_approval, only: %i[show edit update destroy approve close send_reminder]
+  before_action :set_workflowable, only: [:show]  # runs after set_approval so @approval is available
   after_action :verify_policy_scoped, only: %i[]
 
   # GET /approvals or /approvals.json

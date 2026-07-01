@@ -1,4 +1,5 @@
 class CapitalCommitment < ApplicationRecord
+  include Workflowable
   include WithFolder
   include WithExchangeRate
   include WithCustomField
@@ -235,6 +236,11 @@ class CapitalCommitment < ApplicationRecord
       "#{investor_name}, Folio: #{folio_id}"
     end
   end
+
+  # Workflowable interface uses all defaults from the concern:
+  #   workflow_display_name → to_s
+  #   workflow_url          → capital_commitment_path(self)
+  #   workflow_attachable_files → []
 
   def for_friendly_id
     "#{folio_id}-#{id}"

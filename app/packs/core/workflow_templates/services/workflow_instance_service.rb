@@ -1,24 +1,27 @@
 class WorkflowInstanceService
-  # Launches a new workflow instance for the folder.
-  # Raises ArgumentError if the folder has no template or already has an active instance.
-  def self.launch(folder, launched_by:)
-    raise ArgumentError, "This folder has no workflow template assigned." unless folder.workflow_template
+  # Launches a new workflow instance for any workflowable object (Folder, Document, etc.).
+  # Raises ArgumentError if the object has no template assigned or already has an active instance.
+  def self.launch(workflowable, launched_by:)
+    raise ArgumentError, "This object has no workflow template assigned." unless workflowable.workflow_template
 
-    # Lock the folder row to serialise concurrent launches — prevents two active instances
+    # Lock the workflowable row to serialise concurrent launches — prevents two active instances
     ActiveRecord::Base.transaction do
-      folder.lock!
-      if folder.workflow_instances.instance_active.exists?
-        raise ArgumentError, "A workflow is already in progress for this folder. Complete or archive it first."
+      workflowable.lock!
+      if workflowable.workflow_instances.instance_active.exists?
+        raise ArgumentError, "A workflow is already in progress for this object. Complete or archive it first."
       end
 
-      template = folder.workflow_template
-      instance = WorkflowInstance.create!(
-        folder:                folder,
-        workflow_template:     template,
-        launched_by:           launched_by,
-        template_snapshot:     build_snapshot(template),
+      assignment = workflowable.workflow_assignment
+      template   = assignment.workflow_template
+      instance   = WorkflowInstance.create!(
+        workflowable:        workflowable,
+        workflow_assignment:  assignment,
+        workflow_template:    template,
+        entity_id:            workflowable.entity_id,
+        launched_by:          launched_by,
+        template_snapshot:    build_snapshot(template),
         current_step_position: first_step_position(template),
-        status:                :active
+        status:               :active
       )
       # Notify first-step actors outside the transaction so a mailer failure
       # does not roll back the newly created instance
@@ -26,7 +29,8 @@ class WorkflowInstanceService
     end.tap { |inst| notify_step_actors(inst, inst.current_step_position) }
   end
 
-  # Resets an active instance back to step 1, archiving all current actor responses.
+  # Resets an active instance back to step 1, archiving all actor responses.
+  # Step-1 actors are re-notified so they know to re-vote from scratch.
   def self.reset(instance)
     raise ArgumentError, "Only active instances can be reset." unless instance.instance_active?
 
@@ -34,21 +38,24 @@ class WorkflowInstanceService
     raise ArgumentError, "Cannot reset: this workflow has no steps in its snapshot." if first_pos.zero?
 
     ActiveRecord::Base.transaction do
+      # Archive ALL active responses across every step — the whole run is wiped
       instance.workflow_actor_responses.active.update_all(archived: true)
       instance.update!(current_step_position: first_pos, status: :active)
 
-      # Use the first step's first state as the to_state sentinel so the audit trail
-      # displays a real state label rather than a raw "reset" string
-      first_state = instance.snapshot_steps.first&.dig(:states).to_s.split(",").first&.strip || "reset"
+      # Audit entry using to_state "reset" so the view can exclude it from the
+      # resolved-state display while keeping it visible in the full audit trail
       WorkflowStateChange.create!(
         workflow_instance: instance,
         step_position:     first_pos,
         from_state:        nil,
-        to_state:          first_state,
+        to_state:          "reset",
         note:              "Workflow reset to step 1",
         channel:           :ui
       )
     end
+
+    # Notify first-step actors outside the transaction (same pattern as launch)
+    notify_step_actors(instance, first_pos)
   end
 
   private
@@ -65,7 +72,7 @@ class WorkflowInstanceService
 
       WorkflowMailer.with(
         user_id:       actor.id,
-        entity_id:     instance.folder.entity_id,
+        entity_id:     instance.entity_id,
         instance_id:   instance.id,
         step_position: step_position
       ).step_activation.deliver_later

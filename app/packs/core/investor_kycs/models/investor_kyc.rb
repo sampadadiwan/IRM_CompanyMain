@@ -1,4 +1,5 @@
 class InvestorKyc < ApplicationRecord
+  include Workflowable
   STANDARD_COLUMNS = { "Investor; text-col" => "investor_name; text-col",
                        "Investing Entity; text-col" => "full_name; text-col",
                        "Type; text-col" => "kyc_type; text-col",
@@ -326,6 +327,13 @@ class InvestorKyc < ApplicationRecord
 
   def to_s
     full_name || investor_name
+  end
+
+  # workflow_display_name uses Workflowable default (to_s → full_name || investor_name).
+  # workflow_url uses Workflowable default (investor_kyc_path).
+  # Override workflow_attachable_files: documents are polymorphically linked, not a direct association.
+  def workflow_attachable_files
+    Document.where(owner: self).to_a
   end
 
   def enable_kyc

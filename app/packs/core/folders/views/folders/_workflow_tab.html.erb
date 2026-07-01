@@ -1,6 +1,7 @@
 <%# Workflow tab panel inside the folder details view %>
 <% active_instance = folder.workflow_instances.instance_active.first %>
-<% available_templates = WorkflowTemplate.where(entity_id: folder.entity_id).order(:name) %>
+<%# Only offer templates scoped to Folder (or unscoped) so the wrong type cannot be launched here %>
+<% available_templates = WorkflowTemplate.for_workflowable_type("Folder").where(entity_id: folder.entity_id).order(:name) %>
 <% past_instances = folder.workflow_instances.where.not(status: :active).order(created_at: :desc).limit(5) %>
 <div class="p-3">
 
@@ -28,13 +29,14 @@
           </div>
           <% if policy(folder).assign_workflow? %>
             <div class="d-flex gap-2 flex-shrink-0">
+              <%# Standalone workflow instance paths — no folder_id param needed %>
               <%= button_to "Reset to Step 1",
-                    reset_folder_workflow_instance_path(folder, active_instance),
+                    reset_workflow_instance_path(active_instance),
                     method: :post,
                     data: { confirm: "Reset the workflow to step 1? All current responses will be archived." },
                     class: "btn btn-sm btn-outline-warning" %>
               <%= button_to "Archive",
-                    archive_folder_workflow_instance_path(folder, active_instance),
+                    archive_workflow_instance_path(active_instance),
                     method: :post,
                     data: { confirm: "Archive this workflow? This cannot be undone." },
                     class: "btn btn-sm btn-outline-secondary" %>
@@ -43,7 +45,7 @@
         </div>
       </div>
     </div>
-    <%= link_to folder_workflow_instance_path(folder, active_instance),
+    <%= link_to workflow_instance_path(active_instance),
           class: "btn btn-outline-primary btn-sm mb-3" do %>
       <i class="ti ti-chart-gantt me-1"></i>View Full Workflow Timeline
     <% end %>
@@ -93,7 +95,7 @@
             </td>
             <td class="align-middle text-muted small"><%= l(inst.created_at.to_date, format: :abbr_month_day_year) %></td>
             <td class="align-middle">
-              <%= link_to "View", folder_workflow_instance_path(folder, inst),
+              <%= link_to "View", workflow_instance_path(inst),
                     class: "btn btn-sm btn-outline-secondary" %>
             </td>
           </tr>
@@ -125,7 +127,10 @@
           </h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <%= form_with url: folder_workflow_instances_path(folder), method: :post, local: true do |f| %>
+        <%# POST to standalone /workflow_instances; workflowable identified by type+id params %>
+        <%= form_with url: workflow_instances_path, method: :post, local: true do |f| %>
+          <%= f.hidden_field :workflowable_type, value: "Folder" %>
+          <%= f.hidden_field :workflowable_id,   value: folder.id %>
           <div class="modal-body">
 
             <div class="mb-4">
@@ -137,7 +142,7 @@
                       ["#{wt.name} (#{wt.workflow_steps.size} step(s))", wt.id]
                     },
                     { include_blank: "— Choose a template —",
-                      selected: folder.workflow_template_id },
+                      selected: folder.workflow_assignment&.workflow_template_id },
                     class: "form-select",
                     id: "launch_workflow_template_id",
                     required: true %>

@@ -9,9 +9,9 @@ class WorkflowMagicLinkController < ApplicationController
   # GET /workflow_magic_links/:token
   # Shows the step's response form (or already-responded / moved-on / invalid states).
   def show
-    @token  = params[:token]
-    @folder = @instance.folder
-    @step   = @instance.current_step_data
+    @token        = params[:token]
+    @workflowable = @instance.workflowable
+    @step         = @instance.current_step_data
     # Guard: current_step_data is nil only if the snapshot is corrupt/missing the step
     return render(:invalid, status: :unprocessable_entity) if @step.nil?
 

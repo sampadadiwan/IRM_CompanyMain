@@ -7,6 +7,8 @@ resources :workflow_templates do
   resources :workflow_steps, except: %i[index show] do
     post :reorder, on: :collection
   end
+  # Auto-assignment rules are nested under their template
+  resources :workflow_auto_assignment_rules, except: %i[show]
 end
 
 # Company-admin-facing UI: view all rules + manage their entity's overrides
@@ -182,20 +184,21 @@ resources :folders do
   get  'data_rooms',       on: :collection
   put  :restore_deleted,   on: :member
   get  :show_deleted,      on: :collection
+end
 
-  # Workflow instance lifecycle — nested under the folder they belong to
-  resources :workflow_instances, only: %i[create show] do
-    member do
-      post :advance             # admin sets resolved state (tiebreaker / override)
-      post :reset               # admin resets to step 1
-      post :archive             # admin archives a stalled instance
-      post :send_reminder       # admin triggers immediate reminder to pending actors
-      get  :export_audit_trail  # download full state-change history as CSV
-    end
-
-    # Actor responses — nested under their instance
-    resources :workflow_actor_responses, only: %i[create]
+# Workflow instances are standalone — not nested under any workflowable object.
+# workflowable_type and workflowable_id are passed as params on create.
+resources :workflow_instances, only: %i[index create show] do
+  member do
+    post :advance             # admin sets resolved state (tiebreaker / override)
+    post :reset               # admin resets to step 1
+    post :archive             # admin archives a stalled instance
+    post :send_reminder       # admin triggers immediate reminder to pending actors
+    get  :export_audit_trail  # download full state-change history as CSV
   end
+
+  # Actor responses nested under their instance (no folder nesting)
+  resources :workflow_actor_responses, only: %i[create]
 end
 
 resources :investor_accesses do

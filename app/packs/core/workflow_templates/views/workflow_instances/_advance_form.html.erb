@@ -1,5 +1,5 @@
-<%# Admin tiebreaker / manual advance form %>
-<%= form_with(url: advance_folder_workflow_instance_path(folder, instance), method: :post,
+<%# Admin tiebreaker / manual advance form — no folder param needed (standalone route) %>
+<%= form_with(url: advance_workflow_instance_path(instance), method: :post,
               class: "d-flex align-items-end gap-2 mt-2") do |form| %>
 
   <%= select_tag :state,

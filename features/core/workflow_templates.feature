@@ -1,6 +1,6 @@
 Feature: Workflow Templates
-  Admins can define reusable workflow templates with ordered steps and assign them to folders.
-  Non-admins cannot mutate templates.
+  Admins can define reusable workflow templates with ordered steps and assign them to any object
+  (folders, documents, deals, etc.) via a WorkflowAssignment. Non-admins cannot mutate templates.
 
   # ── Template CRUD ────────────────────────────────────────────────────────────
 

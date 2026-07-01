@@ -1,7 +1,26 @@
 <tr id="<%= dom_id workflow_template %>">
   <td><%= link_to workflow_template.name, workflow_template_path(workflow_template) %></td>
-  <td><%= workflow_template.workflow_steps.size %></td>
-  <td><%= workflow_template.active_folder_count %></td>
+  <td>
+    <% if workflow_template.workflowable_type.present? %>
+      <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+        <%= workflow_template.workflowable_type.underscore.humanize %>
+      </span>
+    <% else %>
+      <span class="text-muted">Any</span>
+    <% end %>
+  </td>
+  <td>
+    <% if workflow_template.workflow_steps.any? %>
+      <ol class="mb-0 ps-3 d-flex flex-column gap-1">
+        <% workflow_template.workflow_steps.each do |step| %>
+          <li><%= step.name %></li>
+        <% end %>
+      </ol>
+    <% else %>
+      <span class="text-muted">None</span>
+    <% end %>
+  </td>
+  <td><%= workflow_template.workflow_auto_assignment_rules.size %></td>
   <td><%= display_boolean workflow_template.attach_document_in_email %></td>
   <td>
     <% if policy(workflow_template).edit? %>

@@ -15,6 +15,26 @@
       <%= form.text_field :name, class: "form-control", placeholder: "e.g. Two-Stage LP Review" %>
     </div>
 
+    <%# workflowable_type — locked once saved so the template is only offered for the matching object type %>
+    <div class="form-group">
+      <%= form.label :workflowable_type, "Applies to" %>
+      <% type_options = WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS.map { |t| [t.underscore.humanize, t] } %>
+      <%= form.select :workflowable_type,
+            type_options,
+            { include_blank: "— Any object type —" },
+            class: "form-select",
+            disabled: workflow_template.persisted? && workflow_template.workflowable_type.present? %>
+      <% if workflow_template.persisted? && workflow_template.workflowable_type.present? %>
+        <%# Re-emit hidden field because disabled selects are not submitted %>
+        <%= form.hidden_field :workflowable_type %>
+        <small class="text-muted">Type cannot be changed after the template has been saved.</small>
+      <% else %>
+        <small class="text-muted">
+          Restrict this template to a specific object type. Leave blank to allow it on any type.
+        </small>
+      <% end %>
+    </div>
+
     <div class="form-group">
       <%= form.label :description %>
       <%= form.text_area :description, class: "form-control", rows: 2,

@@ -3,7 +3,7 @@
  if @bread_crumbs
 %>
 
-  <div class="card bg-secondary-subtle shadow-none position-relative overflow-hidden mb-4 breadcrumbs">
+  <div class="card bg-secondary-subtle shadow-none position-relative mb-4 breadcrumbs">
     <div class="card-body px-4 py-3">
       <div class="row align-items-center">
         <div class="col-md-10 col-sm-10" >
@@ -48,6 +48,69 @@
             <% if guide_path %>
               <%= link_to guide_path, target: "_blank", "data-bs-toggle": "tooltip", title: "User Guide", class: "fs-5 btn mb-1 btn-info rounded-circle round d-inline-flex align-items-center justify-content-center" do %>
                 <i class="ti ti-info-circle"></i>
+              <% end %>
+            <% end %>
+
+            <%# Workflow breadcrumb action — two modes:
+                1. Pending actor: highlighted dropdown with inline response form so the
+                   actor can complete their step without leaving this page.
+                2. Observer/admin: plain kanban icon linking to the instance show page. %>
+            <% if defined?(@workflowable_pending_step) && @workflowable_pending_step.present? %>
+              <%# ── Actor inline-response dropdown ───────────────────────────── %>
+              <div class="dropdown d-inline-block">
+                <button class="btn btn-warning btn-sm d-inline-flex align-items-center gap-1 mb-1"
+                        type="button"
+                        data-bs-toggle="dropdown"
+                        data-bs-auto-close="outside"
+                        aria-expanded="false"
+                        title="You have a pending workflow step">
+                  <i class="ti ti-pencil-check"></i>
+                  <span class="d-none d-md-inline"><%= @workflowable_pending_step[:name] %></span>
+                </button>
+
+                <div class="dropdown-menu dropdown-menu-end p-3 shadow" style="min-width:300px;">
+                  <p class="fw-semibold mb-1 small text-muted text-uppercase">
+                    <i class="ti ti-layout-kanban me-1"></i><%= @workflowable_instance.template_name %>
+                  </p>
+                  <h6 class="mb-3">Step <%= @workflowable_instance.current_step_position %>: <%= @workflowable_pending_step[:name] %></h6>
+
+                  <%= form_with url: workflow_instance_workflow_actor_responses_path(@workflowable_instance),
+                        method: :post, data: { turbo: false } do |f| %>
+
+                    <div class="mb-2">
+                      <%= f.label :state, "Your decision", class: "form-label small fw-semibold mb-1" %>
+                      <%= f.select "workflow_actor_response[state]",
+                            @workflowable_pending_step[:states].to_s.split(",").map(&:strip),
+                            {},
+                            class: "form-select form-select-sm" %>
+                    </div>
+
+                    <div class="mb-3">
+                      <%= f.label :note, "Note (optional)", class: "form-label small fw-semibold mb-1" %>
+                      <%= f.text_area "workflow_actor_response[note]", rows: 2,
+                            class: "form-control form-control-sm",
+                            placeholder: "Add a comment…" %>
+                    </div>
+
+                    <%= f.submit "Submit Response",
+                          class: "btn btn-primary btn-sm w-100" %>
+                  <% end %>
+
+                  <div class="mt-2 text-end">
+                    <%= link_to "View full workflow →",
+                          workflow_instance_path(@workflowable_instance),
+                          class: "text-muted small" %>
+                  </div>
+                </div>
+              </div>
+
+            <% elsif defined?(@workflowable_instance) && @workflowable_instance.present? %>
+              <%# ── Observer: plain link to the workflow instance page ──────── %>
+              <%= link_to workflow_instance_path(@workflowable_instance),
+                    "data-bs-toggle": "tooltip",
+                    title: "View active workflow",
+                    class: "fs-5 btn mb-1 btn-secondary rounded-circle round d-inline-flex align-items-center justify-content-center" do %>
+                <i class="ti ti-layout-kanban"></i>
               <% end %>
             <% end %>
 

@@ -1,0 +1,58 @@
+<%# Form for creating or editing a WorkflowAutoAssignmentRule %>
+<%= render FormCard.new(title: rule.persisted? ? "Edit Auto-Assignment Rule" : "New Auto-Assignment Rule") do %>
+  <%= form_with(model: [workflow_template, rule]) do |f| %>
+    <% if rule.errors.any? %>
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          <% rule.errors.each do |e| %>
+            <li><%= e.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%# The workflowable_type is inherited from the template; show it read-only %>
+    <div class="form-group">
+      <label class="form-label">Applies to</label>
+      <input class="form-control" type="text"
+             value="<%= rule.workflowable_type.presence || 'Any (inherited from template)' %>"
+             readonly disabled>
+      <%= f.hidden_field :workflowable_type %>
+    </div>
+
+    <div class="form-group">
+      <%= f.label :priority, "Priority (lower number runs first)" %>
+      <%= f.number_field :priority, class: "form-control", min: 0,
+            placeholder: "0 = highest priority" %>
+      <small class="text-muted">
+        When multiple rules match, the one with the lowest priority number wins.
+      </small>
+    </div>
+
+    <div class="form-group form-check">
+      <%= f.check_box :auto_launch, class: "form-check-input" %>
+      <%= f.label :auto_launch, "Automatically launch a workflow instance after assigning the template" %>
+    </div>
+
+    <%# Conditions — JSON array, edited via a simple textarea for now %>
+    <div class="form-group">
+      <%= f.label :conditions_json, "Conditions (JSON)" %>
+      <%= f.text_area :conditions_json,
+            value: JSON.pretty_generate(Array(rule.conditions)),
+            class: "form-control font-monospace",
+            rows: 6,
+            placeholder: '[{"attribute":"kyc_type","operator":"eq","value":"Individual"}]' %>
+      <small class="text-muted">
+        An empty array <code>[]</code> matches every new record (catch-all).
+        Each condition: <code>{"attribute": "column_name", "operator": "eq|in|present|blank|…", "value": "…"}</code>.
+        Operators: eq, not_eq, gt, lt, gte, lte, in, not_in, present, blank.
+        Only DB column names are permitted as attributes.
+      </small>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= f.submit t_common(:save), class: "btn btn-outline-primary" %>
+      <%= link_to "Cancel", workflow_template_path(workflow_template), class: "btn btn-outline-secondary ms-2" %>
+    </div>
+  <% end %>
+<% end %>

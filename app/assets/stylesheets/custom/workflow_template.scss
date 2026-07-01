@@ -93,6 +93,17 @@
   }
 }
 
+// Instance mode: fix the chip to a uniform width so every connector dash
+// (chip → status pill) starts at the same x-position, regardless of name length.
+.wffd-actor-row-instance .wf-actor-chip {
+  width: 148px;
+
+  .wf-actor-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 // ── Rule badge ────────────────────────────────────────────────────────────
 .wf-rule-badge {
   display: inline-flex;
@@ -180,7 +191,7 @@
   --wffd-card-max:   440px;
   --wffd-quorum-col: 32px;
   --wffd-sidebar-min: 170px;
-  --wffd-sidebar-max: 230px;
+  --wffd-sidebar-max: 260px;
 
   position: relative;
 
@@ -292,6 +303,23 @@
     box-shadow: 0 0 0 3px #fff, 0 2px 4px rgba(93, 135, 255, 0.2);
   }
 
+  // ── Instance-mode step-dot status modifiers ───────────────────────────
+  .wffd-step-dot-done {
+    background: var(--bs-success, #22c55e);
+    border-color: var(--bs-success, #22c55e);
+    color: #fff;
+  }
+
+  .wffd-step-dot-current {
+    box-shadow: 0 0 0 3px #fff, 0 0 0 6px rgba(93, 135, 255, 0.25);
+  }
+
+  .wffd-step-dot-pending {
+    background: #fff;
+    border-color: #cbd5e1;
+    color: #94a3b8;
+  }
+
 
   // ── Horizontal connector (spine dot → card) ──────────────────────────
   .wffd-card-connector {
@@ -327,6 +355,21 @@
     &:hover {
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
     }
+  }
+
+  // ── Instance-mode card status modifiers ────────────────────────────────
+  //    Left border colour tracks step status: done = green, current = amber, pending = grey.
+  .wffd-card-done {
+    border-left-color: var(--bs-success, #22c55e);
+  }
+
+  .wffd-card-current {
+    border-left-color: var(--bs-warning, #f59e0b);
+  }
+
+  .wffd-card-pending {
+    border-left-color: #94a3b8;
+    opacity: 0.72;
   }
 
   .wffd-card-header {
@@ -433,6 +476,46 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
+  }
+
+  // ── Instance-mode: actor chip + colour-matched connector + state pill ──
+  //    Full response detail (channel/time/note) lives in the pill's tooltip.
+  .wffd-actor-row {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0;
+  }
+
+  .wf-actor-chip {
+    flex-shrink: 0;
+  }
+
+  // Connector: a short dashed lead-in, colour-matched to the response outcome,
+  // capped with a small dot where it meets the state pill.
+  .wffd-actor-connector {
+    position: relative;
+    width: 16px;
+    height: 0;
+    border-top: 1.5px dashed #94a3b8;
+    flex-shrink: 0;
+    margin-inline: 6px 8px;
+
+    &::after {
+      content: "";
+      position: absolute;
+      right: -3px;
+      top: -3px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+
+    &.wffd-actor-connector-approved  { border-color: #86efac; &::after { background: #22c55e; } }
+    &.wffd-actor-connector-rejected  { border-color: #fca5a5; &::after { background: #ef4444; } }
+    &.wffd-actor-connector-tentative { border-color: #fde047; &::after { background: #eab308; } }
+    &.wffd-actor-connector-pending   { border-color: #cbd5e1; &::after { background: #cbd5e1; } }
   }
 
 

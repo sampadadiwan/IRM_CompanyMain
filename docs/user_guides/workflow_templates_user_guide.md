@@ -1,6 +1,6 @@
 # Workflow Templates & Workflows User Guide
 
-The **Workflow** feature lets you define reusable multi-step review and approval processes ("templates") and then run them ("launch an instance") against any folder. Actors assigned to each step respond via email magic link or directly in the app, and the system advances through the steps automatically based on the quorum rule you configured. Every action is captured in an immutable audit trail.
+The **Workflow** feature lets you define reusable multi-step review and approval processes ("templates") and run them against any supported object in the platform — folders, investor KYC records, capital commitments, and approvals. Actors assigned to each step respond via an email magic link or directly in the app, and the system advances through the steps automatically based on the quorum rule you configured. Every action is captured in an immutable audit trail.
 
 ---
 
@@ -11,17 +11,20 @@ The **Workflow** feature lets you define reusable multi-step review and approval
 3. [Creating a Workflow Template](#creating-a-workflow-template)
 4. [Configuring Steps](#configuring-steps)
 5. [Managing Templates](#managing-templates)
-6. [Assigning a Template to a Folder](#assigning-a-template-to-a-folder)
-7. [Launching a Workflow](#launching-a-workflow)
-8. [Tracking Progress — the Timeline View](#tracking-progress--the-timeline-view)
-9. [How Actors Respond](#how-actors-respond)
-10. [Quorum Rules & Step Resolution](#quorum-rules--step-resolution)
-11. [Rejection Handling](#rejection-handling)
-12. [Manual Controls — Reset, Archive, Remind](#manual-controls--reset-archive-remind)
-13. [Auto-Reminders](#auto-reminders)
-14. [Audit Trail & CSV Export](#audit-trail--csv-export)
-15. [Worked Example](#worked-example)
-16. [Frequently Asked Questions](#frequently-asked-questions)
+6. [Supported Object Types](#supported-object-types)
+7. [Assigning a Template to an Object](#assigning-a-template-to-an-object)
+8. [Launching a Workflow](#launching-a-workflow)
+9. [Tracking Progress — the Timeline View](#tracking-progress--the-timeline-view)
+10. [How Actors Respond](#how-actors-respond)
+11. [Quorum Rules & Step Resolution](#quorum-rules--step-resolution)
+12. [Rejection Handling](#rejection-handling)
+13. [Manual Controls — Reset, Archive, Remind](#manual-controls--reset-archive-remind)
+14. [Auto-Reminders](#auto-reminders)
+15. [Auto-Assignment Rules](#auto-assignment-rules)
+16. [Breadcrumb Workflow Indicator](#breadcrumb-workflow-indicator)
+17. [Audit Trail & CSV Export](#audit-trail--csv-export)
+18. [Worked Example](#worked-example)
+19. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -34,8 +37,10 @@ The **Workflow** feature lets you define reusable multi-step review and approval
 | **Actor** | An internal user (employee of your organisation) assigned to respond to a step. |
 | **State** | The label an actor submits (e.g., "Approved", "Rejected"). The first state in the list is the *passing* state; all others trigger the rejection rule. |
 | **Quorum rule** | How many actors must respond before the step resolves: Any One, All, or Majority. |
-| **Workflow Instance** | A single run of a template on a specific folder. The template is snapshotted at launch so future edits to the template do not affect the running workflow. |
+| **Workflow Instance** | A single run of a template on a specific object. The template is snapshotted at launch so future edits do not affect the running workflow. |
 | **Magic link** | A personalised, signed URL emailed to each actor so they can respond without logging in. The link becomes invalid once the step advances. |
+| **Object type** | The kind of record a template applies to — Folder, Investor KYC, Capital Commitment, or Approval. |
+| **Auto-assignment rule** | A rule that automatically assigns a template (and optionally launches it) when a matching object is created or updated. |
 
 ---
 
@@ -43,7 +48,7 @@ The **Workflow** feature lets you define reusable multi-step review and approval
 
 | Role | What they can do |
 |------|-----------------|
-| **Company Admin** | Create, edit, and delete workflow templates; assign templates to folders; launch, reset, archive, and advance workflows; send manual reminders; export audit trails. |
+| **Company Admin** | Create, edit, and delete workflow templates; configure auto-assignment rules; assign templates to objects; launch, reset, archive, and advance workflows; send manual reminders; export audit trails. |
 | **Regular user (actor)** | Respond to steps they are assigned to — both in-app and via magic link in email. |
 
 ---
@@ -51,18 +56,21 @@ The **Workflow** feature lets you define reusable multi-step review and approval
 ## Creating a Workflow Template
 
 1. Navigate to **Workflow Templates** from the main navigation.
-2. Click **New Workflow Template**.
+2. Click **New Template**.
 3. Fill in the template fields:
 
 | Field | Description |
 |-------|-------------|
 | **Name** | Required. Must be unique within your organisation. |
+| **Applies to** | Restricts this template to a specific object type (Folder, Investor KYC, Capital Commitment, or Approval). Leave blank to allow it on any type. **Cannot be changed after the template is saved.** |
 | **Description** | Optional free text describing when to use this template. |
 | **Reminder interval (days)** | If set, actors who haven't responded will receive an automatic reminder email every N days. Leave blank to disable auto-reminders for all steps (individual steps can override this). |
-| **Attach documents in email** | When enabled, all documents in the folder are attached to every step-activation and reminder email sent for this workflow. |
+| **Attach documents in email** | When enabled, relevant documents are attached to every step-activation and reminder email for this workflow. |
 
 4. Add at least one step (see [Configuring Steps](#configuring-steps)).
-5. Click **Create Workflow Template**.
+5. Click **Save**.
+
+> **Tip:** Setting the "Applies to" type is strongly recommended. It prevents a KYC workflow from accidentally being launched on a folder, and enables auto-assignment rules to target the right objects.
 
 ---
 
@@ -80,56 +88,80 @@ Each step in the template represents a sequential gate. Steps run in position or
 | **Quorum rule** | See [Quorum Rules](#quorum-rules--step-resolution). |
 | **On reject rule** | What happens when the step resolves to a non-passing state. See [Rejection Handling](#rejection-handling). |
 | **Jump to step** | Only shown when *On reject rule* is "Go to step N". Enter the target step position. |
-| **Reminder interval (days)** | Overrides the template-level default for this step specifically. Set to 0 to disable reminders on this step. Leave blank to inherit the template default. |
+| **Reminder interval (days)** | Overrides the template-level default for this step. Set to 0 to disable reminders on this step. Leave blank to inherit the template default. |
 | **Actors** | Internal users assigned to this step. Select from your organisation's members. |
-
-> **Tip:** Actors must be employees (members) of your organisation. External parties can only respond via the magic link in their email — they cannot be assigned as actors.
 
 ---
 
 ## Managing Templates
 
+### Template list
+
+The **Workflow Templates** list shows each template's name, the object type it applies to, a numbered list of its steps, how many objects it is currently assigned to, and whether it attaches documents to emails.
+
 ### Editing a template
 
-Navigate to **Workflow Templates**, click the template name, then **Edit**. Changes to a template do **not** affect any workflow instances that are already running — those are locked to the snapshot taken at launch.
+Navigate to **Workflow Templates**, click the template name, then **Edit Template**. Changes to a template do **not** affect any workflow instances that are already running — those are locked to the snapshot taken at launch.
+
+Note that the **Applies to** type cannot be changed once the template has been saved.
 
 ### Deleting a template
 
 A template can only be deleted if:
-- It is not currently assigned to any folder.
+- It is not currently assigned to any object.
 - It has no associated workflow history (completed, rejected, or archived instances).
 
-If either condition is not met, you will see an error. Remove the template from all folders and archive all instances first.
+If either condition is not met, you will see an error. Remove the template from all objects and archive all instances first.
 
 ---
 
-## Assigning a Template to a Folder
+## Supported Object Types
 
-A folder must have a workflow template assigned before a workflow can be launched on it.
+Workflows can be run on any of the following record types:
 
-1. Open the folder.
-2. Go to the **Workflow** tab.
-3. If no workflow is active, a **Launch Workflow** button appears — clicking it opens a modal where you can select (or change) the template at launch time, which also updates the folder's assigned template.
+| Object type | Where to find it |
+|-------------|-----------------|
+| **Folder** | Data room folders in the Documents section. |
+| **Investor KYC** | KYC records under the Investors section. |
+| **Capital Commitment** | Commitment records under a fund's investor list. |
+| **Approval** | Approval items in the Approvals section. |
 
-Alternatively, if you want to pre-assign a template without launching immediately, use the folder's edit/settings page.
+When creating a template you can leave "Applies to" blank to allow the template on any type, or restrict it to one type for stricter governance. A type-restricted template cannot be assigned to the wrong kind of object.
 
-To remove a template from a folder without launching, clear the template assignment from the folder settings.
+---
+
+## Assigning a Template to an Object
+
+An object must have a workflow template assigned before a workflow can be launched on it. Assignment can happen in three ways:
+
+### 1. Manually at launch time
+
+Open the object, go to its **Workflow** tab (or the equivalent panel), and click **Launch Workflow**. The launch modal includes a template dropdown filtered to templates that match this object's type. Selecting a template here both assigns it and immediately launches the workflow.
+
+### 2. Manually via the object's settings
+
+Some objects support pre-assigning a template from an edit or settings page without launching immediately.
+
+### 3. Automatically via auto-assignment rules
+
+Admins can configure rules on a template that automatically assign it (and optionally launch a workflow instance) when a matching object is created or updated. See [Auto-Assignment Rules](#auto-assignment-rules).
 
 ---
 
 ## Launching a Workflow
 
-1. Open the folder and click the **Workflow** tab.
-2. Click **Launch Workflow** (visible only when no workflow is currently active on this folder).
-3. Select the review template from the dropdown (or confirm the pre-assigned one).
-4. Click **Launch Workflow**.
+1. Open the object (folder, KYC, commitment, or approval).
+2. Go to the **Workflow** tab or panel.
+3. Click **Launch Workflow** (visible only when no workflow is currently active on this object).
+4. Select the review template from the dropdown.
+5. Click **Launch Workflow**.
 
 **What happens immediately on launch:**
 - The template is snapshotted — future edits to the template will not affect this run.
 - The workflow instance is created and set to **Active**, at Step 1.
-- Every actor assigned to Step 1 receives a step-activation email containing a personalised magic link.
+- Every actor assigned to Step 1 receives a step-activation email with a personalised magic link.
 
-Only one workflow can be active on a folder at a time. If you try to launch while one is running you will see an error.
+Only one workflow can be active on an object at a time.
 
 ```mermaid
 sequenceDiagram
@@ -139,16 +171,16 @@ sequenceDiagram
 
   Admin->>System: Launch Workflow (select template)
   System->>System: Snapshot template + steps + actors
-  System->>System: Create WorkflowInstance (status: Active, step: 1)
-  System->>Step1Actors: Send step-activation email with magic link
+  System->>System: Create Workflow Instance (Active, Step 1)
+  System->>Step1Actors: Step-activation email with magic link
   Note over Step1Actors: Actors respond (in-app or via magic link)
   Step1Actors->>System: Submit state (e.g. Approved)
   System->>System: Evaluate quorum rule
   alt Quorum met — passing state
     System->>System: Advance to next step
-    System->>Step2Actors: Send step-activation email
+    System->>Step2Actors: Step-activation email
   else Quorum met — non-passing state
-    System->>System: Apply on_reject_rule (stop / previous_step / restart / go_to_step_n)
+    System->>System: Apply rejection rule (stop / previous step / restart / go to step N)
   end
 ```
 
@@ -156,32 +188,39 @@ sequenceDiagram
 
 ## Tracking Progress — the Timeline View
 
-Click **View Full Workflow Timeline** on the Workflow tab (or navigate directly via the workflow instance link) to open the full detail page.
+Click the workflow link in the object's Workflow tab (or use the [breadcrumb indicator](#breadcrumb-workflow-indicator)) to open the full timeline page.
+
+The header card shows:
+- A button linking to the **workflow template** used, so you can quickly review the template definition.
+- The date the workflow was launched.
+- The current status badge (Active, Complete, Rejected, Archived).
+- The name of the object the workflow is running on, linked back to that object's page.
+- Admin action buttons (Remind, Reset, Archive, Advance) when the workflow is active.
 
 ### Step pipeline
 
-The pipeline at the top shows every step in the workflow with a visual indicator:
+The pipeline shows every step with a visual indicator:
 
 - **Blue filled circle** — current active step.
 - **Green check** — step has been resolved (passed).
 - **Grey outline** — step not yet reached.
 
-Completed steps show the resolved state badge (green for Approved, red for Rejected, etc.) plus the individual actor responses beneath it.
+Completed steps show the resolved state badge plus the individual actor responses beneath them.
 
 ### Actor responses panel
 
-Below the pipeline, when the workflow is active, a table lists every actor assigned to the current step with their response status:
+Below the pipeline, a table lists every actor assigned to the current step:
 
 | Column | Meaning |
 |--------|---------|
 | Actor | The assigned user's name. |
-| Response | Their current state badge (e.g., Approved) or a "Pending" badge if they haven't responded yet. |
+| Response | Their current state badge or "Pending" if they haven't responded. |
 | When | How long ago they responded. |
-| Note | Any free-text note they attached to their response. |
+| Note | Any free-text note they attached. |
 
 ### Tiebreaker panel
 
-If actors submit conflicting responses and the quorum rule cannot automatically resolve them (e.g., a tied majority vote), a **Tiebreaker needed** alert appears. Admins can use the advance form to set the final state manually and unblock the workflow.
+If actors submit conflicting responses and the quorum rule cannot automatically resolve them, a **Tiebreaker needed** alert appears. Admins can use the advance form to set the final state manually.
 
 ---
 
@@ -189,86 +228,186 @@ If actors submit conflicting responses and the quorum rule cannot automatically 
 
 ### In-app response
 
-Actors who are logged in will see a **Your Response** card on the workflow timeline view. They select a state from the list and optionally add a note, then submit.
+Actors who are logged in will see a **Your Response** card on the workflow timeline view. They select a state and optionally add a note, then submit.
 
 ### Magic link (email)
 
-Every step-activation email contains a personalised magic link. Actors click it and land on a lightweight standalone page — no login required — where they:
+Every step-activation email contains a personalised magic link. Actors click it and land on a lightweight page — no login required — where they:
 
-1. See the folder name, template name, and their actor identity.
+1. See the object's name with a **View** button to open the full record in a new tab (so they can review it in context before responding).
 2. Read the step description (if any).
 3. Select a state using visual card buttons.
 4. Optionally add a note.
 5. Click **Submit Response**.
 
-The magic link is signed with the actor's ID, instance ID, and step position. It becomes invalid (shows a "Moved on" page) as soon as the step advances. If an actor changes their mind, they can resubmit using a new state link from the same email — the **last submission wins** (earlier responses for that step are archived).
+The magic link becomes invalid once the step advances. If an actor changes their mind before the step advances, they can resubmit — the **last submission wins**.
+
+```mermaid
+sequenceDiagram
+  participant Actor
+  participant Email
+  participant MagicLinkPage
+  participant System
+
+  System->>Email: Step-activation email with magic link
+  Email->>Actor: Delivered
+  Actor->>MagicLinkPage: Click magic link
+  MagicLinkPage->>Actor: Show object name + View button + step description + state options
+  Actor->>MagicLinkPage: Optionally click View to open the object in a new tab
+  Actor->>MagicLinkPage: Select state + optional note → Submit
+  MagicLinkPage->>System: Record response
+  System->>System: Evaluate quorum; advance if met
+```
 
 ---
 
 ## Quorum Rules & Step Resolution
 
-The quorum rule determines when the system considers a step complete and evaluates the outcome:
-
 | Rule | Behaviour |
 |------|-----------|
-| **Any one** | The first actor to respond resolves the step immediately. Other actors' subsequent responses are ignored (or archived if the step has already advanced). |
-| **All** | Every actor must respond before the step can resolve. The final resolution state is derived once all responses are in. |
-| **Majority** | More than half of the actors must respond with the same state. If votes are tied or no majority emerges, an admin tiebreaker is required. |
+| **Any one** | The first actor to respond resolves the step immediately. |
+| **All** | Every actor must respond before the step can resolve. |
+| **Majority** | More than half of the actors must respond with the same state. Ties require an admin tiebreaker. |
 
-**Resolution logic:** The step resolves to the *passing state* (first in the states list) if the quorum condition is met with that state. If any non-passing state meets the quorum, the on_reject_rule fires.
+**Resolution logic:** The step resolves to the passing state (first in the states list) if the quorum condition is met with that state. If a non-passing state meets the quorum, the rejection rule fires.
 
 ---
 
 ## Rejection Handling
 
-When a step resolves to a **non-passing state**, the `On reject rule` determines what happens next:
-
 | Rule | What happens |
 |------|-------------|
 | **Stop** | The workflow ends immediately with status **Rejected**. |
-| **Previous step** | The workflow reverts to the immediately preceding step. Actor responses on the current step are archived so actors can re-vote. If the rejection happens at step 1, the workflow stops. |
-| **Restart** | All actor responses across all steps are archived and the workflow resets to step 1. Step 1 actors are notified again. |
-| **Go to step N** | The workflow jumps to the specified step. Responses for the current step are archived. |
+| **Previous step** | The workflow reverts to the immediately preceding step. Current responses are archived so actors can re-vote. At step 1, the workflow stops. |
+| **Restart** | All responses across all steps are archived and the workflow resets to step 1. Step 1 actors are notified again. |
+| **Go to step N** | The workflow jumps to the specified step. Current responses are archived. |
 
 ---
 
 ## Manual Controls — Reset, Archive, Remind
 
-These buttons appear on the workflow timeline view for admins when a workflow is active:
+These appear on the timeline view for admins when a workflow is active:
 
 ### Reset to Step 1
 
-Resets the workflow to step 1. All current actor responses are archived (kept in the audit trail but no longer active). Step 1 actors are **not** automatically re-notified — use **Send Reminder** or launch a new instance if needed.
-
-Use case: the wrong template was launched, or a significant change was made and you want everyone to re-review from the beginning.
+Resets the workflow to step 1 and archives all current actor responses. Step 1 actors are **not** automatically re-notified — use **Send Reminder** after resetting.
 
 ### Archive
 
-Immediately ends the workflow and sets its status to **Archived**. The workflow history is preserved. Use this when you want to close a workflow without completing it (e.g., the deal fell through).
+Ends the workflow immediately with status **Archived**. The full history is preserved.
 
 ### Remind (Send Reminder)
 
-Immediately sends a reminder email to every actor on the current step who has not yet responded. A `manual reminder sent by <admin>` entry is written to the audit trail. Only available while the workflow is active.
+Immediately emails every actor on the current step who has not yet responded. A manual reminder entry is written to the audit trail.
 
 ---
 
 ## Auto-Reminders
 
-If `reminder_interval_days` is set on the template (or overridden on individual steps), the system automatically sends reminder emails to pending actors on a daily background job.
+If `Reminder interval (days)` is set on the template (or overridden on individual steps), the system automatically sends reminder emails to pending actors on a daily background job.
 
-**Reminder scheduling logic:**
+**Logic:**
 1. The job runs daily.
-2. For each active workflow instance, it checks the current step's effective reminder interval (step override → template default → no reminders if neither is set).
-3. It calculates the time since the last reminder (or since launch, if no reminder has been sent yet).
-4. If that interval has elapsed, it sends reminder emails to every actor who has not yet responded and records a `reminder_sent` state change in the audit trail.
+2. For each active workflow, it checks the current step's effective reminder interval.
+3. If the interval has elapsed since the last reminder (or since launch), it sends reminder emails to every actor who has not yet responded.
 
-Setting `reminder_interval_days` to `0` on a step disables auto-reminders for that step, even if the template has a non-zero default.
+Setting the step's reminder interval to **0** disables auto-reminders for that step even if the template has a non-zero default.
+
+---
+
+## Auto-Assignment Rules
+
+Auto-assignment rules let you automatically assign a workflow template to an object the moment it is created or reaches a certain state — without any manual action from an admin.
+
+### Where to configure rules
+
+1. Go to **Workflow Templates** and open the template you want to auto-assign.
+2. Scroll to the **Auto-assignment Rules** panel at the bottom of the template page.
+3. Click **Add Rule**.
+
+### Rule fields
+
+| Field | Description |
+|-------|-------------|
+| **Applies to** | Inherited from the template's type. Read-only. |
+| **Priority** | Lower number = higher priority. When multiple rules match, the one with the lowest priority number wins. |
+| **Conditions** | An optional set of attribute checks. If left empty, the rule matches every new object of the correct type (catch-all). |
+| **Auto-launch** | When enabled, a workflow instance is launched immediately after the template is assigned — no admin action required. |
+
+### How conditions work
+
+Each condition checks a single field on the object:
+
+| Operator | Matches when… |
+|----------|--------------|
+| `eq` | The field equals the value. |
+| `not_eq` | The field does not equal the value. |
+| `gt` / `lt` / `gte` / `lte` | The field is greater/less than the value (numeric). |
+| `in` / `not_in` | The field is (or isn't) one of a list of values. |
+| `present` | The field has any non-blank value. |
+| `blank` | The field is empty or null. |
+
+All conditions in a rule must match simultaneously (AND logic). An empty conditions list always matches.
+
+### When rules are evaluated
+
+Rules are evaluated in two situations:
+
+1. **When a new object is created** — immediately after it is saved for the first time.
+2. **When an existing object is updated** — if the update changes any field that a condition checks and the object does not already have a template assigned.
+
+This means you can configure a rule like "assign the AML Remediation Review to any Investor KYC where `verified` equals `true`" and it will trigger both when a KYC is created already-verified and when an existing KYC is later marked as verified.
+
+Once a template is assigned, the rule will not re-trigger on further updates — the object already has an assignment.
+
+```mermaid
+sequenceDiagram
+  participant Object as Object (KYC / Folder / etc.)
+  participant System
+  participant Admin
+
+  Object->>System: Created or updated
+  System->>System: Check — already has a template assigned?
+  alt Already assigned
+    System->>System: Skip (no-op)
+  else No template yet
+    System->>System: Load rules for this entity + object type, ordered by priority
+    System->>System: Evaluate each rule's conditions against the object
+    alt A rule matches
+      System->>System: Assign template to object
+      alt auto_launch = true
+        System->>System: Launch workflow instance
+        System->>Admin: Step 1 actor emails sent
+      else auto_launch = false
+        System->>Admin: Template silently assigned (no instance yet)
+      end
+    else No rule matches
+      System->>System: Skip (no-op)
+    end
+  end
+```
+
+### Example rules
+
+| Use case | Type | Condition | Auto-launch |
+|----------|------|-----------|-------------|
+| Assign AML review to all verified KYCs | Investor KYC | `verified eq true` | No |
+| Auto-launch IC vote on every new Approval | Approval | *(none — catch-all)* | Yes |
+| Assign LP data room review to folders named "Q3 2026" | Folder | `name eq Q3 2026` | No |
+
+---
+
+## Breadcrumb Workflow Indicator
+
+When you are viewing an object (folder, KYC, commitment, or approval) that has an **active workflow instance**, a small kanban icon appears in the breadcrumb bar at the top of the page. Clicking it takes you directly to the workflow timeline for that object, without having to navigate to the Workflow tab first.
+
+The icon is not shown when there is no active instance.
 
 ---
 
 ## Audit Trail & CSV Export
 
-Every actor vote and every system event (step advancement, rejection, reset, reminder) is recorded in an immutable audit trail visible at the bottom of the timeline view.
+Every actor vote and every system event (step advancement, rejection, reset, reminder) is recorded in an immutable audit trail at the bottom of the timeline view.
 
 | Column | Meaning |
 |--------|---------|
@@ -279,48 +418,43 @@ Every actor vote and every system event (step advancement, rejection, reset, rem
 | Channel | How the response was submitted: Dashboard (in-app), Email magic link, or Auto reminder. |
 | Note | Free-text note attached to the response. |
 
-Archived responses (from resets or reverts) are shown with reduced opacity and an "archived" badge — they are preserved for audit purposes but are not counted toward the active quorum.
+Archived responses (from resets or reverts) are shown with reduced opacity and an "archived" badge — preserved for audit but not counted toward the active quorum.
 
 ### Export to CSV
 
-Click **Export CSV** in the audit trail card header to download a CSV file containing all actor votes and resolution events sorted by timestamp. The file is named `workflow_audit_<instance_id>_<date>.csv`.
+Click **Export CSV** in the audit trail card header to download the full history as a CSV file named `workflow_audit_<id>_<date>.csv`.
 
 ---
 
 ## Worked Example
 
-**Scenario:** A fund manager needs a two-stage review before releasing a capital call document.
+**Scenario:** All newly verified investor KYC records should automatically go through an AML remediation review.
 
-**Step 1 — Legal Review (Any one actor, stop on reject):**
-- Actors: Alice (Legal), Bob (Legal)
-- States: `Approved, Rejected`
-- Either Alice or Bob can approve. If either rejects, the workflow stops.
+**Setup:**
+1. Create a template "AML Remediation Review" with `Applies to = Investor KYC` and two steps: "AML Report Review" (any one actor) and "Compliance Head Sign-off" (any one actor).
+2. On the template's show page, add an auto-assignment rule: condition `verified eq true`, auto-launch off, priority 0.
 
-**Step 2 — CFO Sign-off (All actors required, previous step on reject):**
-- Actors: Carol (CFO)
-- States: `Approved, Rejected`
-- Carol must approve. If Carol rejects, the workflow returns to Step 1 for re-review.
-
-**Flow:**
+**What happens when a KYC is marked verified:**
 
 ```mermaid
 sequenceDiagram
   participant Admin
-  participant Alice
-  participant Carol
+  participant System
+  participant ComplianceOfficer
 
-  Admin->>System: Launch "Capital Call Review" workflow on folder
-  System->>Alice: Step-activation email — "Legal Review"
-  Alice->>System: Submits "Approved" via magic link
-  System->>System: Any one quorum met → Step 1 passes
-  System->>Carol: Step-activation email — "CFO Sign-off"
-  Carol->>System: Submits "Rejected" via magic link
-  System->>System: on_reject_rule = previous_step → revert to Step 1
-  System->>Alice: (Admin manually sends reminder)
-  Alice->>System: Re-reviews, submits "Approved"
-  System->>Carol: Step-activation email (Step 2 again)
-  Carol->>System: Submits "Approved"
-  System->>System: All actors responded → Step 2 passes → Workflow complete ✓
+  Admin->>System: Mark KYC "Jane Smith" as verified
+  System->>System: after_update fires — check auto-assignment rules
+  System->>System: Rule matches (verified = true, no template yet)
+  System->>System: Assign "AML Remediation Review" to Jane Smith's KYC
+  Note over System: auto_launch = false — no instance created yet
+  Admin->>System: Opens Jane Smith's KYC → Workflow tab → Launch Workflow
+  System->>System: Create Workflow Instance (Active, Step 1)
+  System->>ComplianceOfficer: Step-activation email — "AML Report Review"
+  ComplianceOfficer->>System: Submits "Cleared" via magic link
+  System->>System: Any one quorum met → advance to Step 2
+  System->>ComplianceOfficer: Step-activation email — "Compliance Head Sign-off"
+  ComplianceOfficer->>System: Submits "Approved"
+  System->>System: Workflow complete ✓
 ```
 
 ---
@@ -328,22 +462,31 @@ sequenceDiagram
 ## Frequently Asked Questions
 
 **Can I edit a template while a workflow is running?**
-Yes. Edits to the template do not affect running instances — the template is snapshotted at launch. The snapshot is displayed in the timeline view under the template name.
+Yes. Edits do not affect running instances — those are locked to the snapshot taken at launch.
 
 **Can an actor change their response?**
-Yes, before the step advances. They can click a different state link in the same email — the last submission replaces the earlier one. Once the step advances, the magic link becomes invalid.
+Yes, before the step advances. They can resubmit using the same email link — the last submission replaces the earlier one. Once the step advances, the magic link is invalid.
 
-**What happens if I delete a user who is an actor?**
-The snapshot retains the user ID. The workflow continues, but the magic link for that user will not resolve to a valid actor and their slot in the actor table will show a blank name. Remove and re-add actors by resetting the workflow and updating the template before re-launching.
+**Can I see the object while responding via email?**
+Yes. The magic link page includes a **View** button next to the object's name. Clicking it opens the full record in a new tab so you can review the details before submitting your response.
 
-**Can I run multiple workflows on the same folder simultaneously?**
-No. Only one active workflow instance per folder is allowed at a time. You must archive or complete the current one before launching another.
+**Can I use the same template for different object types?**
+Only if the template's "Applies to" field is left blank (untyped). Once a type is set on a template, it can only be assigned to objects of that type.
+
+**Will auto-assignment trigger if I remove and re-add a template?**
+Yes — if you remove the template assignment from an object and then update the object in a way that matches a rule, the rule will fire again and re-assign the template.
+
+**What happens if no auto-assignment rule matches?**
+Nothing — the object simply has no template assigned. An admin can assign one manually at any time.
+
+**Can I run multiple workflows on the same object simultaneously?**
+No. Only one active workflow instance per object at a time. Archive or complete the current one before launching another.
 
 **Can I assign actors from a different organisation?**
-No. Actors must be employees (users) of the same organisation that owns the workflow template. External reviewers can only be sent a magic link if they are first added as a user in your organisation.
+No. Actors must be employees of the same organisation. External reviewers can only respond if they are first added as a user in your organisation.
 
 **How do I know if a step needs a tiebreaker?**
-A yellow warning alert labelled "Tiebreaker needed" will appear on the timeline view. Admins can use the advance form to select the final state manually.
+A yellow "Tiebreaker needed" alert appears on the timeline view. Admins can use the advance form to select the final state manually.
 
 **Is the audit trail tamper-proof?**
-The audit trail is append-only at the database level. Resetting or archiving a workflow archives existing responses rather than deleting them, so the full history is always preserved.
+The audit trail is append-only. Resets and archives preserve all history — responses are archived rather than deleted.

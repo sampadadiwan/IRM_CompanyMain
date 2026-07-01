@@ -1,5 +1,6 @@
 class Folder < ApplicationRecord
   include Trackable.new
+  include Workflowable
 
   has_ancestry orphan_strategy: :destroy, touch: true
 
@@ -10,9 +11,6 @@ class Folder < ApplicationRecord
   belongs_to :parent, class_name: "Folder", optional: true
   belongs_to :entity
   belongs_to :owner, polymorphic: true, optional: true
-  belongs_to :workflow_template, optional: true
-
-  has_many :workflow_instances, dependent: :destroy
   has_many :documents, dependent: :destroy
   accepts_nested_attributes_for :documents, allow_destroy: true
 
@@ -22,13 +20,6 @@ class Folder < ApplicationRecord
   normalizes :name, with: ->(name) { name.strip }
 
   validates :full_path, uniqueness: { scope: %i[owner_id owner_type entity_id], message: "combination must be unique" }
-
-  # Prevent changing or removing the template while a workflow is in progress
-  validate :cannot_change_template_with_active_instance,
-           if: -> { workflow_template_id_changed? && persisted? }
-  # Prevent assigning a template that belongs to a different entity
-  validate :workflow_template_must_belong_to_entity,
-           if: -> { workflow_template_id.present? && workflow_template_id_changed? }
 
   before_create :set_defaults
   after_create :set_parent_permissions, if: :parent
@@ -51,6 +42,12 @@ class Folder < ApplicationRecord
 
   def to_s
     name
+  end
+
+  # workflow_display_name and workflow_url use Workflowable defaults (to_s → name, folder_path).
+  # Override workflow_attachable_files because folders have documents to attach.
+  def workflow_attachable_files
+    documents.to_a
   end
 
   # Inherits access rights from the parent folder upon creation.
@@ -115,20 +112,5 @@ class Folder < ApplicationRecord
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[full_path name owner_type].sort
-  end
-
-  private
-
-  def cannot_change_template_with_active_instance
-    if workflow_instances.instance_active.exists?
-      errors.add(:workflow_template_id, "cannot be changed while a workflow is in progress. Archive the active workflow first.")
-    end
-  end
-
-  def workflow_template_must_belong_to_entity
-    return unless workflow_template
-    unless workflow_template.entity_id == entity_id
-      errors.add(:workflow_template_id, "must belong to the same organisation")
-    end
   end
 end

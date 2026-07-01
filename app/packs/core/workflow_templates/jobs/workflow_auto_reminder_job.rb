@@ -47,7 +47,7 @@ class WorkflowAutoReminderJob < ApplicationJob
 
       WorkflowMailer.with(
         user_id:       actor.id,
-        entity_id:     instance.folder.entity_id,
+        entity_id:     instance.entity_id,  # denormalized — no folder join needed
         instance_id:   instance.id,
         step_position: instance.current_step_position
       ).reminder.deliver_later

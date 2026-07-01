@@ -523,10 +523,9 @@ end
 # Manual QA 4.4: timestamp is rendered next to the status badge on the form.
 Then('the submitted_at timestamp is visible on the form') do
   @kpi_report.reload
-  # The view renders submitted_at in human format (e.g. "May 22"), not ISO8601.
-  month = @kpi_report.submitted_at.strftime('%b')
-  day   = @kpi_report.submitted_at.day.to_s
-  expect(page).to have_content("#{month} #{day}")
+  # The view renders submitted_at via I18n.l(date, format: :short) which uses "%b %d"
+  # (zero-padded day), so match with the same formatter rather than .day.to_s.
+  expect(page).to have_content(I18n.l(@kpi_report.submitted_at.to_date, format: :short))
 end
 
 # ── Scenario 22: Double-submit guard ─────────────────────────────────────────

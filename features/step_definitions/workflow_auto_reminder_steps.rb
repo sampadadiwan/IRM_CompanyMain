@@ -6,13 +6,15 @@ require 'csv'
 
 # Back-dates the instance's updated_at so the reminder job thinks it has been idle
 Given("the instance has been idle for {int} days") do |days|
-  @instance ||= @entity.folders.flat_map { |f| f.workflow_instances.instance_active.to_a }.first
+  # @instance is set by the preceding "has an active workflow instance" step;
+  # fall back to any active instance for this entity (works across all workflowable types)
+  @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
   @instance.update_columns(updated_at: days.days.ago)
 end
 
 Given("the actor {string} has already responded {string} to the current step") do |email, state|
   actor     = User.find_by!(email: email, entity: @entity)
-  @instance ||= @entity.folders.flat_map { |f| f.workflow_instances.instance_active.to_a }.first
+  @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
   WorkflowActorResponse.create!(
     workflow_instance: @instance,
     actor:             actor,
@@ -38,8 +40,7 @@ When("the auto-reminder job runs") do
 end
 
 When("I send a manual reminder for the active instance") do
-  @instance ||= @entity.folders.flat_map { |f| f.workflow_instances.instance_active.to_a }.first
-  @folder   ||= @instance.folder
+  @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
   ActionMailer::Base.deliveries.clear
 
   # Simulate the same logic as WorkflowInstancesController#send_reminder
@@ -51,9 +52,10 @@ When("I send a manual reminder for the active instance") do
     actor = User.find_by(id: actor_id)
     next unless actor
 
+    # entity_id is denormalized on the instance — no workflowable join needed
     WorkflowMailer.with(
       user_id:       actor.id,
-      entity_id:     @folder.entity_id,
+      entity_id:     @instance.entity_id,
       instance_id:   @instance.id,
       step_position: @instance.current_step_position
     ).reminder.deliver_later
@@ -71,7 +73,7 @@ When("I send a manual reminder for the active instance") do
 end
 
 When("I export the audit trail for the active instance") do
-  @instance ||= @entity.folders.flat_map { |f| f.workflow_instances.instance_active.to_a }.first
+  @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
   changes = @instance.workflow_state_changes.chronological.includes(:actor)
 
   @exported_csv = CSV.generate(headers: true) do |csv|
@@ -106,7 +108,7 @@ Then("no reminder email should be enqueued for {string}") do |email|
 end
 
 Then("a reminder state change should be logged for the instance") do
-  @instance ||= @entity.folders.flat_map { |f| f.workflow_instances.instance_active.to_a }.first
+  @instance ||= WorkflowInstance.where(entity_id: @entity.id).first
   logged = @instance.workflow_state_changes
                     .where(channel: :auto_reminder, to_state: "reminder_sent")
                     .exists?

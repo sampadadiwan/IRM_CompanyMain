@@ -28,8 +28,8 @@ def resolve_actor_list(actors_str)
 end
 
 Given("the instance is now at step {int}") do |step_pos|
-  # @instance is set by the preceding "has an active workflow instance" step; fall back to searching
-  @instance ||= @entity.folders.flat_map { |f| f.workflow_instances.instance_active.to_a }.first
+  # @instance is set by the preceding "has an active workflow instance" step; fall back to entity-scoped lookup
+  @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
   @instance.update!(current_step_position: step_pos)
 end
 
@@ -75,7 +75,7 @@ end
 
 When("I visit the magic link for actor {string} on the active instance at step {int}") do |email, step|
   actor     = User.find_by!(email: email, entity: @entity)
-  @instance ||= @entity.folders.flat_map { |f| f.workflow_instances.instance_active.to_a }.first
+  @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
   @token    = WorkflowMagicLinkService.new.generate_token(
     actor_id:      actor.id,
     instance_id:   @instance.id,
@@ -115,7 +115,7 @@ end
 When("I evaluate the magic link routing for actor {string} on the instance at step {int}") do |email, step|
   actor  = User.find_by!(email: email)
   # @instance is set by a preceding submit step; fall back to any non-archived instance for the entity
-  inst   = @instance || @entity.folders.flat_map { |f| f.workflow_instances.where.not(status: :archived).to_a }.first
+  inst   = @instance || WorkflowInstance.where(entity_id: @entity.id).where.not(status: :archived).first
   raise "No workflow instance found" unless inst
 
   token  = WorkflowMagicLinkService.new.generate_token(
@@ -178,7 +178,7 @@ end
 
 When("I submit {string} via magic link for actor {string} on step {int} of the active instance") do |state, email, step|
   actor     = User.find_by!(email: email, entity: @entity)
-  @instance ||= @entity.folders.flat_map { |f| f.workflow_instances.instance_active.to_a }.first
+  @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
   @token    = WorkflowMagicLinkService.new.generate_token(
     actor_id:      actor.id,
     instance_id:   @instance.id,

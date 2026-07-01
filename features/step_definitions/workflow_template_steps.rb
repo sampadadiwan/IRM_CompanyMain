@@ -29,11 +29,8 @@ Given("there is a workflow template {string}") do |params_str|
   )
 end
 
-Given("the folder {string} has workflow template {string}") do |folder_name, template_name|
-  folder   = Folder.find_by!(name: folder_name, entity: @entity)
-  template = WorkflowTemplate.find_by!(name: template_name, entity: @entity)
-  folder.update!(workflow_template: template)
-end
+# NOTE: Generic "the {word} {string} has workflow template {string}" step is in
+# workflow_instance_steps.rb and covers all workflowable types including Folder.
 
 # ── When ──────────────────────────────────────────────────────────────────────
 
@@ -89,12 +86,13 @@ end
 When("I assign the workflow template {string} to the folder {string}") do |template_name, folder_name|
   template = WorkflowTemplate.find_by!(name: template_name, entity: @entity)
   folder   = Folder.find_by!(name: folder_name, entity: @entity)
-  folder.update!(workflow_template: template)
+  folder.workflow_assignment&.destroy
+  folder.create_workflow_assignment!(workflow_template: template, created_by: @user)
 end
 
 When("I remove the workflow template from the folder {string}") do |folder_name|
   folder = Folder.find_by!(name: folder_name, entity: @entity)
-  folder.update!(workflow_template: nil)
+  folder.workflow_assignment&.destroy
 end
 
 # ── Then ──────────────────────────────────────────────────────────────────────
@@ -133,10 +131,10 @@ end
 
 Then("the folder {string} should have workflow template {string}") do |folder_name, template_name|
   folder = Folder.find_by!(name: folder_name, entity: @entity)
-  folder.workflow_template&.name.should == template_name
+  folder.reload.workflow_assignment&.workflow_template&.name.should == template_name
 end
 
 Then("the folder {string} should have no workflow template") do |folder_name|
   folder = Folder.find_by!(name: folder_name, entity: @entity)
-  folder.workflow_template.should be_nil
+  folder.reload.workflow_assignment.should be_nil
 end

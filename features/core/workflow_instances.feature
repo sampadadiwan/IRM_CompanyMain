@@ -1,8 +1,10 @@
 Feature: Workflow Instance Lifecycle
-  Admins can launch a folder-level workflow instance and advance it through steps.
-  Actors respond via the in-app UI. Non-admins cannot launch or override workflows.
+  Admins can launch a workflow instance for any workflowable object (e.g. a folder)
+  and advance it through steps via a polymorphic WorkflowAssignment. The same lifecycle
+  applies to Folder, InvestorKyc, CapitalCommitment, and Approval objects. Actors respond
+  via the in-app UI.
 
-  # ── Launch ───────────────────────────────────────────────────────────────────
+  # ── Launch (Folder) ────────────────────────────────────────────────────────────
 
   Scenario Outline: Admin launches a workflow for a folder
     Given Im logged in as a user "<user>" for an entity "<entity>"
@@ -27,6 +29,54 @@ Feature: Workflow Instance Lifecycle
     And the folder "LP Documents" has an active workflow instance for "LP Review"
     When I try to launch another workflow for folder "LP Documents"
     Then I should see a workflow launch error
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # ── Launch on InvestorKyc ───────────────────────────────────────────────────
+
+  Scenario Outline: Admin launches a workflow for an investor KYC
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=KYC Review" with 1 step "name=Initial Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has an investor_kyc "name=Test KYC"
+    And the investor_kyc "Test KYC" has workflow template "KYC Review"
+    When I launch the workflow for investor_kyc "Test KYC"
+    Then the investor_kyc "Test KYC" should have an active workflow instance
+    And the active instance should be at step 1
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # ── Launch on CapitalCommitment ─────────────────────────────────────────────
+
+  Scenario Outline: Admin launches a workflow for a capital commitment
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Commitment Review" with 1 step "name=Initial Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has a capital_commitment "name=Test Commitment"
+    And the capital_commitment "Test Commitment" has workflow template "Commitment Review"
+    When I launch the workflow for capital_commitment "Test Commitment"
+    Then the capital_commitment "Test Commitment" should have an active workflow instance
+    And the active instance should be at step 1
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # ── Launch on Approval ──────────────────────────────────────────────────────
+
+  Scenario Outline: Admin launches a workflow for an approval
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Approval Review" with 1 step "name=Initial Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has an approval "name=Test Approval"
+    And the approval "Test Approval" has workflow template "Approval Review"
+    When I launch the workflow for approval "Test Approval"
+    Then the approval "Test Approval" should have an active workflow instance
+    And the active instance should be at step 1
 
     Examples:
       | user | entity              |
@@ -163,6 +213,109 @@ Feature: Workflow Instance Lifecycle
     And the folder "Locked Folder" has an active workflow instance for "Locked Template"
     When I try to remove the workflow template from folder "Locked Folder"
     Then the folder "Locked Folder" should still have workflow template "Locked Template"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # ── Phase 4: Breadcrumb workflow link ─────────────────────────────────────────
+
+  # When an active workflow instance exists the breadcrumb bar shows a kanban icon
+  # linking to /workflow_instances/:id. When no instance is active, the icon is absent.
+
+  Scenario Outline: Breadcrumb shows workflow link when active instance exists
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Breadcrumb Test" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has a folder "name=Nav Folder"
+    And the folder "Nav Folder" has workflow template "Breadcrumb Test"
+    And the folder "Nav Folder" has an active workflow instance for "Breadcrumb Test"
+    When I visit the folder show page for "Nav Folder"
+    Then I should see the workflow link in the breadcrumb
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: Breadcrumb does not show workflow link when no active instance exists
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And the entity has a folder "name=Plain Folder"
+    When I visit the folder show page for "Plain Folder"
+    Then I should not see the workflow link in the breadcrumb
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # ── Polymorphic: any workflowable type can have template blocked from removal ──
+
+  Scenario Outline: Cannot remove template from investor_kyc while workflow is active
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=KYC Lock" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has an investor_kyc "name=Locked KYC"
+    And the investor_kyc "Locked KYC" has workflow template "KYC Lock"
+    And the investor_kyc "Locked KYC" has an active workflow instance for "KYC Lock"
+    When I try to remove the workflow template from investor_kyc "Locked KYC"
+    Then the investor_kyc "Locked KYC" should still have workflow template "KYC Lock"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # ── Phase 5: Template type scoping ────────────────────────────────────────────
+
+  # A template scoped to Folder cannot be assigned to an InvestorKyc, and vice versa.
+  # Auto-assignment rules trigger on new object creation when matching rules exist.
+
+  Scenario Outline: Cannot assign a Folder-scoped template to an InvestorKyc
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Folder Only Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Folder Only Template" has workflowable_type "Folder"
+    And the entity has an investor_kyc "name=Type Test KYC"
+    When I try to assign template "Folder Only Template" to investor_kyc "Type Test KYC"
+    Then the investor_kyc "Type Test KYC" should not have a workflow template
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: A matching auto-assignment rule assigns the template to a new folder
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Auto Folder Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Auto Folder Template" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Auto Folder Template" type "Folder" with conditions "[]" auto_launch false priority 0
+    When a new folder "name=Auto Assigned Folder" is created for the entity
+    Then the folder "Auto Assigned Folder" should have workflow template "Auto Folder Template"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: Auto-assignment rule with a condition only matches when attribute matches
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Conditioned Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Conditioned Template" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Conditioned Template" type "Folder" with conditions '[{"attribute":"name","operator":"eq","value":"Special Folder"}]' auto_launch false priority 0
+    When a new folder "name=Ordinary Folder" is created for the entity
+    Then the folder "Ordinary Folder" should not have a workflow template
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  Scenario Outline: Auto-assignment rule with auto_launch launches a workflow instance immediately
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Auto Launch Template" with 1 step "name=Step 1;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the workflow template "Auto Launch Template" has workflowable_type "Folder"
+    And there is an auto-assignment rule for template "Auto Launch Template" type "Folder" with conditions "[]" auto_launch true priority 0
+    When a new folder "name=Auto Launch Folder" is created for the entity
+    Then the folder "Auto Launch Folder" should have an active workflow instance
 
     Examples:
       | user | entity              |

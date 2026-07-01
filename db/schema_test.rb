@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_100006) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1717,13 +1717,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
     t.boolean "printing", default: false
     t.boolean "private", default: false
     t.datetime "updated_at", null: false
-    t.bigint "workflow_template_id"
     t.index ["ancestry"], name: "index_folders_on_ancestry"
     t.index ["deleted_at"], name: "index_folders_on_deleted_at"
     t.index ["entity_id"], name: "index_folders_on_entity_id"
     t.index ["full_path", "owner_id", "owner_type", "entity_id", "deleted_at"], name: "index_folders_on_full_path_and_owner_entity_with_deleted_at", unique: true
     t.index ["owner_type", "owner_id"], name: "index_folders_on_owner"
-    t.index ["workflow_template_id"], name: "index_folders_on_workflow_template_id"
   end
   create_table "form_custom_fields", force: :cascade do |t|
     t.string "condition_criteria", limit: 10, default: "eq"
@@ -2768,18 +2766,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
     t.datetime "created_at", null: false
     t.json "email"
     t.boolean "email_sent", default: false
+    t.bigint "entity_id"
     t.bigint "event_id", null: false
     t.datetime "read_at", precision: nil
     t.bigint "recipient_id", null: false
     t.string "recipient_type", null: false
     t.datetime "seen_at", precision: nil
     t.string "subject"
+    t.string "tracking_id"
     t.string "type"
     t.datetime "updated_at", null: false
     t.text "whatsapp"
     t.boolean "whatsapp_sent", default: false
+    t.index ["entity_id"], name: "index_noticed_notifications_on_entity_id"
     t.index ["event_id"], name: "index_noticed_notifications_on_event_id"
     t.index ["recipient_type", "recipient_id"], name: "index_noticed_notifications_on_recipient"
+    t.index ["tracking_id"], name: "index_noticed_notifications_on_tracking_id", unique: true
   end
   create_table "notifications", force: :cascade do |t|
     t.datetime "created_at", null: false
@@ -3860,19 +3862,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
     t.index ["workflow_instance_id", "step_position", "actor_id"], name: "index_wf_actor_responses_on_instance_step_actor"
     t.index ["workflow_instance_id"], name: "index_workflow_actor_responses_on_workflow_instance_id"
   end
-  create_table "workflow_instances", force: :cascade do |t|
+
+  create_table "workflow_assignments", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "created_by_id"
+    t.datetime "updated_at", null: false
+    t.bigint "workflow_template_id", null: false
+    t.bigint "workflowable_id", null: false
+    t.string "workflowable_type", null: false
+    t.index ["workflow_template_id"], name: "index_workflow_assignments_on_workflow_template_id"
+    t.index ["workflowable_type", "workflowable_id"], name: "index_workflow_assignments_on_workflowable", unique: true
+  end
+
+  create_table "workflow_instances", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.integer "current_step_position", default: 1, null: false
-    t.bigint "folder_id", null: false
-    t.bigint "launched_by_id", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "launched_by_id"
     t.integer "status", default: 0, null: false
     t.json "template_snapshot", null: false
     t.datetime "updated_at", null: false
+    t.bigint "workflow_assignment_id"
     t.bigint "workflow_template_id", null: false
-    t.index ["folder_id", "status"], name: "index_workflow_instances_on_folder_and_status"
-    t.index ["folder_id"], name: "index_workflow_instances_on_folder_id"
+    t.bigint "workflowable_id", null: false
+    t.string "workflowable_type", null: false
+    t.index ["entity_id"], name: "index_workflow_instances_on_entity_id"
     t.index ["launched_by_id"], name: "index_workflow_instances_on_launched_by_id"
+    t.index ["workflow_assignment_id"], name: "index_workflow_instances_on_workflow_assignment_id"
     t.index ["workflow_template_id"], name: "index_workflow_instances_on_workflow_template_id"
+    t.index ["workflowable_type", "workflowable_id", "status"], name: "index_workflow_instances_on_workflowable_and_status"
   end
   create_table "workflow_state_changes", force: :cascade do |t|
     t.bigint "actor_id"
@@ -3912,6 +3930,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
     t.index ["workflow_template_id", "position"], name: "index_workflow_steps_on_template_and_position", unique: true
     t.index ["workflow_template_id"], name: "index_workflow_steps_on_workflow_template_id"
   end
+  create_table "workflow_auto_assignment_rules", force: :cascade do |t|
+    t.bigint "entity_id", null: false
+    t.string "workflowable_type", null: false
+    t.bigint "workflow_template_id", null: false
+    t.bigint "created_by_id"
+    t.boolean "auto_launch", default: false, null: false
+    t.integer "priority", default: 0, null: false
+    t.text "conditions"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["entity_id", "workflowable_type", "priority"], name: "idx_wf_auto_rules_entity_type_priority"
+    t.index ["entity_id"], name: "index_workflow_auto_assignment_rules_on_entity_id"
+    t.index ["workflow_template_id"], name: "index_workflow_auto_assignment_rules_on_workflow_template_id"
+    t.index ["created_by_id"], name: "index_workflow_auto_assignment_rules_on_created_by_id"
+  end
+
   create_table "workflow_templates", force: :cascade do |t|
     t.boolean "attach_document_in_email", default: false
     t.datetime "created_at", null: false
@@ -3920,6 +3954,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
     t.string "name", null: false
     t.integer "reminder_interval_days"
     t.datetime "updated_at", null: false
+    t.string "workflowable_type"
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
   add_foreign_key "access_rights", "entities"
@@ -4095,7 +4130,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
   add_foreign_key "favorites", "users"
   add_foreign_key "fees", "entities"
   add_foreign_key "folders", "entities"
-  add_foreign_key "folders", "workflow_templates"
+  add_foreign_key "workflow_assignments", "workflow_templates"
   add_foreign_key "form_custom_fields", "form_types"
   add_foreign_key "form_types", "entities"
   add_foreign_key "fund_formulas", "entities"
@@ -4346,7 +4381,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
   add_foreign_key "viewed_bies", "users"
   add_foreign_key "workflow_actor_responses", "users", column: "actor_id"
   add_foreign_key "workflow_actor_responses", "workflow_instances"
-  add_foreign_key "workflow_instances", "folders"
   add_foreign_key "workflow_instances", "users", column: "launched_by_id"
   add_foreign_key "workflow_instances", "workflow_templates"
   add_foreign_key "workflow_state_changes", "users", column: "actor_id"

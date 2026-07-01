@@ -53,7 +53,10 @@ module NotificationExtensions
   end
 
   def entity_id
-    model&.entity_id if model.respond_to?(:entity_id)
+    # Prefer the persisted column (set by ApplicationMailer#mark_delivered during delivery).
+    # Falls back to deriving from event.record for notifications that predate bounce-tracking
+    # columns, and for callers that don't go through mark_delivered.
+    read_attribute(:entity_id).presence || (model&.entity_id if model.respond_to?(:entity_id))
   end
 end
 
