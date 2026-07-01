@@ -72,7 +72,6 @@ export default class extends BaseAgGrid {
         width: 350,
         minWidth: 350,
         suppressSizeToFit: true,
-        autoHeight: true,
         wrapText: true,
         cellRenderer: (params) => {
           if (params.data) {
@@ -94,11 +93,11 @@ export default class extends BaseAgGrid {
             const tooltipAttr = notes ? `data-bs-toggle="tooltip" data-bs-html="true" title="${notes.replace(/"/g, '"')}"` : '';
 
             return `
-              <div class="d-flex flex-row comment-row p-2 gap-3" style="white-space: normal !important; line-height: 1.2;">
-                <div class="flex-shrink-0">
+              <div class="d-flex flex-row comment-row" style="white-space: normal !important; line-height: 1.2; padding: 12px 16px; gap: 12px; height: 100%;">
+                <div class="flex-shrink-0 d-flex align-items-center">
                   <span>${avatarHtml}</span>
                 </div>
-                <div class="comment-text w-100">
+                <div class="comment-text w-100 d-flex flex-column justify-content-center">
                   <div class="d-flex align-items-center mb-1">
                     <h6 class="fw-medium mb-0 me-2">
                       <a href="#" data-action="click->deals-list-ag-grid#openSidepanel" data-id="${params.data.id}" class="text-dark" ${tooltipAttr}>${params.value}</a>
@@ -417,7 +416,7 @@ export default class extends BaseAgGrid {
         },
         onVirtualColumnsChanged: () => { this.initTooltips(); this.setRowIds(); },
         onBodyScroll: () => { this.initTooltips(); this.setRowIds(); },
-        onFirstDataRendered: () => { this.setRowIds(); },
+        onFirstDataRendered: () => { this.initTooltips(); this.setRowIds(); },
         getRowClass: (params) => {
             return params.data && params.data.id ? `deal_investor_${params.data.id}` : '';
         }
@@ -486,7 +485,7 @@ export default class extends BaseAgGrid {
     this.gridOptions.enableRangeSelection = true;
     this.gridOptions.enableCharts = true;
     this.gridOptions.rowGroupPanelShow = 'always';
-    this.gridOptions.domLayout = isMobile ? 'normal' : 'autoHeight';
+    this.gridOptions.domLayout = 'normal';
     this.gridOptions.suppressHorizontalScroll = false;
     this.gridOptions.suppressDragLeaveHidesColumns = true;
     this.gridOptions.suppressMakeColumnVisibleAfterUnGroup = true;

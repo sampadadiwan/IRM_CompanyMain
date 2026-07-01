@@ -1,9 +1,9 @@
 <div class="card shadow mb-4">
   <div class="card-header py-3 d-flex align-items-center justify-content-between">
     <h6 class="m-0 font-weight-bold text-primary">Investors</h6>
-    <button id="clear-grid-filters" 
-            class="btn btn-sm btn-outline-danger align-items-center gap-1" 
-            style="display: none;" 
+    <button id="clear-grid-filters"
+            class="btn btn-sm btn-outline-danger align-items-center gap-1"
+            style="display: none;"
             data-action="click->deals-list-ag-grid#clearFilters">
       <i class="ti ti-filter-off"></i> Clear Filters
     </button>
@@ -12,7 +12,7 @@
     <div
       id="deals_list_grid"
       class="<%= get_ag_theme %>"
-      style="min-height: 400px; width: 100%; min-width: 1500px;"
+      style="height: 500px; width: 100%; min-width: 1500px;"
       data-source="<%= deal_investors_path(params.to_unsafe_h.merge(format: :json, deal_id: deal.id, all: params[:all])) %>"
     >
     </div>

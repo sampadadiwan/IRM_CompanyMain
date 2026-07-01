@@ -50,6 +50,37 @@
     padding: 0 12px;
   }
 
+  /* Position body viewport below header to avoid overlap */
+  /* Position body viewport below header to avoid overlap */
+  #deals_list_grid .ag-body-viewport {
+    top: 60px !important;
+    height: calc(100% - 106px) !important;
+  }
+
+  #deals_list_grid .ag-body-horizontal-scroll-viewport {
+    overflow-x: auto !important;
+  }
+
+  /* Fix pagination display - keep it horizontal */
+  .ag-paging-panel {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .ag-paging-row-summary-panel {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 2px !important;
+    white-space: nowrap !important;
+  }
+
+  .ag-paging-row-summary-panel span {
+    display: inline !important;
+  }
+
   /* Increase padding and size of the top header area */
   .d-sm-flex.align-items-center.justify-content-between.mb-4.pt-4 {
     padding-top: 2.5rem !important;
@@ -246,7 +277,7 @@
   /* Responsive Grid Adjustments */
   @media (max-width: 767px) {
     #deals_list_grid {
-      height: 500px !important; 
+      height: 500px !important;
       min-height: 500px !important;
       min-width: 1000px !important; // Force minimum width to trigger scroll
     }
