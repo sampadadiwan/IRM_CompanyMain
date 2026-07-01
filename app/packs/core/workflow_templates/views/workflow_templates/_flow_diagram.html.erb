@@ -154,18 +154,20 @@
                 <i class="ti ti-clock"></i> Pending
               </span>
             <% end %>
-          <% elsif step.reminder_active %>
-            <div>
-              <% if step.reminder_interval_days.to_i.zero? %>
-                <span class="wf-rule-badge wf-rule-danger wffd-step-rule">
-                  <i class="ti ti-bell-off"></i> Reminder disabled
-                </span>
-              <% else %>
-                <span class="wf-rule-badge wf-rule-info wffd-step-rule">
-                  <i class="ti ti-clock"></i> Every <%= pluralize(step.reminder_interval_days, "day") %>
-                </span>
-              <% end %>
-            </div>
+          <% elsif step.template_mode? %>
+            <% if step.reminder_active %>
+              <div>
+                <% if step.reminder_interval_days.to_i.zero? %>
+                  <span class="wf-rule-badge wf-rule-danger wffd-step-rule">
+                    <i class="ti ti-bell-off"></i> Reminder disabled
+                  </span>
+                <% else %>
+                  <span class="wf-rule-badge wf-rule-info wffd-step-rule">
+                    <i class="ti ti-clock"></i> Every <%= pluralize(step.reminder_interval_days, "day") %>
+                  </span>
+                <% end %>
+              </div>
+            <% end %>
           <% end %>
         </div>
 
@@ -177,6 +179,11 @@
           <div class="wffd-quorum-row">
             <span class="wf-rule-badge <%= q_class %> wffd-quorum-badge">
               <i class="ti <%= q_icon %>"></i><%= q_label %>
+            </span>
+            <span class="wffd-notify-icon <%= step.notify_on_activation ? "wffd-notify-on" : "wffd-notify-off" %>"
+                  data-bs-toggle="tooltip"
+                  data-bs-title="<%= step.notify_on_activation ? "Emails actors when this step becomes active" : "Silent step — no email is sent when this step becomes active" %>">
+              <i class="ti <%= step.notify_on_activation ? "ti-mail" : "ti-mail-off" %>"></i>
             </span>
           </div>
 

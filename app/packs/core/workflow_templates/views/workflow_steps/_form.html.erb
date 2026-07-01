@@ -57,6 +57,16 @@
       <small class="text-muted">Set 0 to disable reminders on this step.</small>
     </div>
 
+    <div class="form-group form-check">
+      <%= form.check_box :notify_on_activation, class: "form-check-input" %>
+      <%= form.label :notify_on_activation, "Email actors when this step becomes active",
+            class: "form-check-label" %>
+      <small class="text-muted d-block">
+        Turn this off for steps that fire in bulk (e.g. an auto-assignment rule on import) so
+        actors aren't slammed with emails. Reminders and other steps are unaffected.
+      </small>
+    </div>
+
     <div class="form-group">
       <%= form.label :actor_user_ids, "Actors (entity employees)" %>
       <%= form.select :actor_user_ids,

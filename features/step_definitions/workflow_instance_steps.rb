@@ -308,6 +308,21 @@ Then("the step-1 actors should have received a re-notification email") do
   ActionMailer::Base.deliveries.count.should >= 2
 end
 
+# WorkflowMailer#step_activation always subjects its emails "Action Required: ...",
+# distinguishing it from #reminder ("Reminder: ..."). Used to assert notify_on_activation
+# suppression on both launch and reset (they share the same notify_step_actors code path).
+Then("a step-activation email should have been sent") do
+  activation_mails = ActionMailer::Base.deliveries.select { |m| m.subject.to_s.start_with?("Action Required") }
+  puts "\n[Assert notify] total deliveries: #{ActionMailer::Base.deliveries.count}, step_activation: #{activation_mails.count}"
+  activation_mails.should_not be_empty
+end
+
+Then("no step-activation email should have been sent") do
+  activation_mails = ActionMailer::Base.deliveries.select { |m| m.subject.to_s.start_with?("Action Required") }
+  puts "\n[Assert notify] total deliveries: #{ActionMailer::Base.deliveries.count}, step_activation: #{activation_mails.count}"
+  activation_mails.should be_empty
+end
+
 # Generic remove-template step for any workflowable type (folder, investor_kyc, capital_commitment, approval)
 When("I try to remove the workflow template from {word} {string}") do |type, obj_name|
   workflowable = find_workflowable!(type, obj_name)

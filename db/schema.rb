@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_01_100006) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_100007) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -256,13 +256,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_100006) do
 
   create_table "agent_chat_sessions", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.bigint "analyst_id", null: false
+    t.string "channel", limit: 20, default: "web", null: false
     t.bigint "chattable_id"
     t.string "chattable_type", limit: 50
     t.datetime "created_at", null: false
     t.string "status", limit: 20, default: "active", null: false
     t.bigint "support_agent_id", null: false
     t.datetime "updated_at", null: false
+    t.json "wa_metadata"
+    t.string "wa_state", limit: 30
     t.index ["analyst_id"], name: "index_agent_chat_sessions_on_analyst_id"
+    t.index ["channel"], name: "index_agent_chat_sessions_on_channel"
     t.index ["chattable_type", "chattable_id"], name: "index_agent_chat_sessions_on_chattable"
     t.index ["status"], name: "index_agent_chat_sessions_on_status"
     t.index ["support_agent_id", "chattable_type", "chattable_id", "analyst_id"], name: "index_agent_chat_sessions_lookup"
@@ -4110,6 +4114,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_01_100006) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.boolean "notify_on_activation", default: true, null: false
     t.integer "on_reject_rule", default: 0, null: false
     t.integer "on_reject_target_step"
     t.integer "position", null: false

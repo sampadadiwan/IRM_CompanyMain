@@ -19,6 +19,12 @@ Given("the entity has employees") do
   ]
 end
 
+# Disables the step-activation email for a single step (default is enabled).
+Given("step {int} of the workflow template is set to not notify actors") do |position|
+  step = @workflow_template.workflow_steps.find_by!(position: position)
+  step.update!(notify_on_activation: false)
+end
+
 Given("there is a workflow template {string}") do |params_str|
   attrs = parse_params(params_str)
   @workflow_template = WorkflowTemplate.create!(
@@ -137,4 +143,36 @@ end
 Then("the folder {string} should have no workflow template") do |folder_name|
   folder = Folder.find_by!(name: folder_name, entity: @entity)
   folder.reload.workflow_assignment.should be_nil
+end
+
+# ── Add / Remove step rows (Stimulus nested-form controller, requires @javascript) ──
+
+When("I visit the edit page for the workflow template {string}") do |name|
+  template = WorkflowTemplate.find_by!(name: name, entity: @entity)
+  visit edit_workflow_template_path(template)
+end
+
+When("I click {string} on the workflow template edit page") do |link_text|
+  @step_rows_before = page.all(".step-row", visible: :all).count
+  click_link(link_text)
+end
+
+Then("a new step row should appear on the page") do
+  expect(page).to have_css(".step-row", count: @step_rows_before + 1, visible: :all)
+end
+
+When("I remove the last step row via its remove button") do
+  within(all(".step-row", visible: :all).last) { find("a.btn-outline-danger").click }
+end
+
+# Persisted rows are hidden + flagged for destruction (not deleted from the DOM outright),
+# so accepts_nested_attributes_for still receives the id + _destroy=1 on submit.
+Then("the last step row should be hidden and marked for destruction") do
+  last_row = all(".step-row", visible: :all).last
+  expect(last_row[:class]).to include("d-none")
+  expect(last_row.find(".step-destroy-flag", visible: false).value).to eq("1")
+end
+
+When("I save the workflow template edit form") do
+  click_button("Save")
 end

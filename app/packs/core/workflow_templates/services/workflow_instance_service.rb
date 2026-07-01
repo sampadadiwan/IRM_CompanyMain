@@ -62,9 +62,12 @@ class WorkflowInstanceService
 
   # Sends step_activation emails to every actor assigned to the given step position.
   # Enqueued after the transaction commits so a delivery failure is non-fatal.
+  # Steps with notify_on_activation: false (e.g. a bulk auto-assignment step) are skipped
+  # entirely, so importing many workflowables at once doesn't slam actors with emails.
   def self.notify_step_actors(instance, step_position)
     step = instance.snapshot_steps.find { |s| s[:position].to_i == step_position }
     return unless step
+    return unless step[:notify_on_activation]
 
     Array(step[:actor_ids]).each do |actor_id|
       actor = User.find_by(id: actor_id)
@@ -102,6 +105,7 @@ class WorkflowInstanceService
           on_reject_rule:        step.on_reject_rule,
           on_reject_target_step: step.on_reject_target_step,
           reminder_interval_days: step.effective_reminder_interval,
+          notify_on_activation:  step.notify_on_activation,
           actor_ids:             step.workflow_step_actors.map(&:user_id)
         }
       }

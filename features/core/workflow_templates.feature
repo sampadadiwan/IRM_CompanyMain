@@ -95,3 +95,39 @@ Feature: Workflow Templates
     Examples:
       | user | entity              |
       |      | entity_type=Company |
+
+  # ── Add / Remove step rows on the edit page (Stimulus nested-form controller) ──
+  # These drive the actual browser JS rather than creating steps directly via the
+  # model, since a model-level test would not catch the Stimulus controller being
+  # missing (the regression this covers).
+
+  @javascript
+  Scenario Outline: Add Step inserts a new blank step row without a page reload
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Add Step Template" with 1 step "name=Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    When I visit the edit page for the workflow template "Add Step Template"
+    And I click "Add Step" on the workflow template edit page
+    Then a new step row should appear on the page
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  @javascript
+  Scenario Outline: Removing an existing step marks it for destruction instead of deleting it outright
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Remove Step Template" with 2 steps:
+      | name      | states            | quorum_rule | on_reject_rule | actors |
+      | Step One  | Approved,Rejected | any_one     | stop           | admin  |
+      | Step Two  | Approved,Rejected | any_one     | stop           | admin  |
+    When I visit the edit page for the workflow template "Remove Step Template"
+    And I remove the last step row via its remove button
+    Then the last step row should be hidden and marked for destruction
+    When I save the workflow template edit form
+    Then the template should have 1 step
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |

@@ -1,7 +1,7 @@
 class WorkflowStepDiagramPresenter
   attr_reader :mode, :position, :name, :description, :state_list,
               :quorum_rule, :on_reject_rule, :on_reject_target_step,
-              :reminder_interval_days, :reminder_active,
+              :reminder_interval_days, :reminder_active, :notify_on_activation,
               :actor_users, :workflow_step,
               :status, :resolved_state_change, :actor_responses
 
@@ -12,6 +12,7 @@ class WorkflowStepDiagramPresenter
         on_reject_rule: step.on_reject_rule, on_reject_target_step: step.on_reject_target_step,
         reminder_interval_days: step.effective_reminder_interval,
         reminder_active: step.reminder_interval_days_before_type_cast.present?,
+        notify_on_activation: step.notify_on_activation,
         actor_users: step.actor_users.to_a)
   end
 
@@ -34,6 +35,7 @@ class WorkflowStepDiagramPresenter
         on_reject_target_step: snap[:on_reject_target_step],
         reminder_interval_days: snap[:reminder_interval_days],
         reminder_active: snap[:reminder_interval_days].present?,
+        notify_on_activation: snap[:notify_on_activation],
         actor_users: actor_ids.filter_map { |id| actor_users_by_id[id] },
         status: status, resolved_state_change: resolved_state_change,
         actor_responses: actor_responses)
@@ -63,6 +65,10 @@ class WorkflowStepDiagramPresenter
     resolved_state_change.present?
   end
 
+  def silent?
+    !notify_on_activation
+  end
+
   def response_for(user)
     actor_responses.find { |r| r.actor_id == user.id }
   end
@@ -71,8 +77,8 @@ class WorkflowStepDiagramPresenter
 
   def initialize(mode:, position:, name:, description:, state_list:, quorum_rule:,
                  on_reject_rule:, on_reject_target_step:, reminder_interval_days:,
-                 reminder_active:, actor_users:, workflow_step: nil, status: nil,
-                 resolved_state_change: nil, actor_responses: [])
+                 reminder_active:, notify_on_activation:, actor_users:, workflow_step: nil,
+                 status: nil, resolved_state_change: nil, actor_responses: [])
     @mode = mode
     @position = position
     @name = name
@@ -83,6 +89,7 @@ class WorkflowStepDiagramPresenter
     @on_reject_target_step = on_reject_target_step
     @reminder_interval_days = reminder_interval_days
     @reminder_active = reminder_active
+    @notify_on_activation = notify_on_activation
     @actor_users = actor_users
     @workflow_step = workflow_step
     @status = status

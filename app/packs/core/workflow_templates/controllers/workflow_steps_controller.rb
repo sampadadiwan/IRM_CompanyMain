@@ -75,6 +75,7 @@ class WorkflowStepsController < ApplicationController
     params.require(:workflow_step).permit(
       :position, :name, :description, :states,
       :quorum_rule, :on_reject_rule, :on_reject_target_step, :reminder_interval_days,
+      :notify_on_activation,
       actor_user_ids: [],
       workflow_step_actors_attributes: [:id, :user_id, :_destroy]
     )

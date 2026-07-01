@@ -467,6 +467,28 @@
     flex-shrink: 0;
   }
 
+  // Always-visible per-step indicator of whether actors are emailed on activation.
+  .wffd-notify-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    margin-left: 6px;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .wffd-notify-on {
+    color: var(--bs-secondary-color, #94a3b8);
+  }
+
+  .wffd-notify-off {
+    background: #fef2f2;
+    color: #ef4444;
+  }
+
   .wffd-actors {
     display: flex;
     flex-direction: column;
