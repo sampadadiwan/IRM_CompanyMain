@@ -54,7 +54,7 @@ module WithESignatures
 
   def process_other_labels(model, e_signature)
     e_signatures_created = []
-    email = e_signature.notes
+    email = e_signature.notes&.strip&.downcase
     e_signatures_created << create_e_signature(email, e_signature.label, model, e_signature)
     e_signatures_created
   end

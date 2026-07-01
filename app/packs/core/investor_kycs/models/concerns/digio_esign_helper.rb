@@ -240,9 +240,9 @@ class DigioEsignHelper
         # if done here it wont download the signed document
         doc.update(esign_status: overall_status) unless overall_status.casecmp?("completed")
         # Update each esignature's status
-        esigns_by_email = doc.e_signatures.includes(:entity).index_by(&:email)
+        esigns_by_email = doc.e_signatures.includes(:entity).index_by { |e| e.email.downcase }
         response['signing_parties'].each do |signer|
-          esign = esigns_by_email[signer['identifier']]
+          esign = esigns_by_email[signer['identifier']&.downcase]
           esign&.update_esign_response(signer['status'], response)
           esign&.save
         end
@@ -314,7 +314,7 @@ class DigioEsignHelper
       signing_parties = params.dig('payload', 'document', 'signing_parties')
       # update contains the statuses of all signing parties
       signing_parties.each do |signer|
-        esign = doc.e_signatures.find_by(email: signer['identifier'])
+        esign = doc.e_signatures.find_by(email: signer['identifier']&.downcase)
         esign&.update_esign_response(signer['status'], params['payload'])
       end
       if doc.esign_log.present?
@@ -332,7 +332,7 @@ class DigioEsignHelper
   # used in digio callbacks
   def process_esign_failure(params)
     doc = Document.find_by(provider_doc_id: params.dig('payload', 'document', 'id'))
-    email = params.dig('payload', 'document', 'signer_identifier')
+    email = params.dig('payload', 'document', 'signer_identifier')&.downcase
     if doc.present?
       esign = doc.e_signatures.find_by(email:)
       esign&.update_esign_response("failed", params['payload'])
