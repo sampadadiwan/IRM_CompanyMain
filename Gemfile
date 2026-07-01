@@ -75,6 +75,7 @@ gem 'sassc-rails'
 gem "aws-sdk-ec2", require: false
 gem 'aws-sdk-iam'
 gem "aws-sdk-s3", require: false
+gem "aws-sdk-sns"
 # Elastic search client
 gem 'chewy'
 

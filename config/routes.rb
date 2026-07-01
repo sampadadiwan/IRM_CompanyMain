@@ -93,6 +93,8 @@ Rails.application.routes.draw do
   post "/internal/sync/users/disable", to: "users_sync#disable"
   post "/internal/sync/users/digest",  to: "users_sync#digest" # optional reconciliation
 
+  post "/ses_notifications", to: "ses_notifications#create"
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Defines the root path route ("/")

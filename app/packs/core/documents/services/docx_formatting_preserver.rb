@@ -475,6 +475,18 @@ class DocxFormattingPreserver
           i.attribute_with_ns("firstLine", W_NS)&.remove
           i.attribute_with_ns("firstLine", nil)&.remove
         end
+
+        # Strip any leading w:tab from the first content run of list paragraphs.
+        # LibreOffice's list mechanism auto-inserts a tab after the number label
+        # (landing on the num tab stop). A second w:tab in the content run then
+        # jumps to the *next* tab stop, pushing text further right than wrap lines.
+        # This was originally put in the template to position text after the label
+        # in Word, but is redundant (and harmful) in LibreOffice.
+        first_run = para.at_xpath("w:r", ns)
+        if first_run
+          first_content = first_run.xpath("w:*", ns).find { |c| c.name != "rPr" }
+          first_content.remove if first_content&.name == "tab"
+        end
       end
 
       # Resolve run-level defaults for this paragraph style

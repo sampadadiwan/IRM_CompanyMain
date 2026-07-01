@@ -349,6 +349,7 @@ ja:
     dark_theme: ダーク
     design_personalized_form: パーソナライズされたフォームのデザイン
     download_audit_trail: 監査証跡のダウンロード
+    email_bounces_and_complaints: Email Bounces & Complaints
     exchange_rates: 為替レート
     external_company_advisors: 外部会社アドバイザー
     favorites: お気に入り
@@ -372,6 +373,7 @@ ja:
     user: ユーザー
     user_profile: ユーザープロフィール
     view_all_checks: 全チェックの表示
+    view_bounce_report: View bounce & complaint report
   user:
     create: ユーザーが作成されました
     destroy: ユーザーが削除されました

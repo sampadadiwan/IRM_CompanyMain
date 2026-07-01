@@ -18,6 +18,15 @@
     <%= display_boolean notification.email_sent %>
   </td>
   <td>
+    <% if notification.bounced_at.present? %>
+      <span class="badge bg-danger" title="<%= [notification.bounce_type, notification.bounce_subtype].compact.join(' / ') %>">Bounced</span>
+    <% elsif notification.complained_at.present? %>
+      <span class="badge bg-danger" title="<%= notification.complaint_feedback_type %>">Complaint</span>
+    <% else %>
+      <span class="text-muted">—</span>
+    <% end %>
+  </td>
+  <td>
     <%= display_boolean notification.whatsapp_sent %>
   </td>
   <td>

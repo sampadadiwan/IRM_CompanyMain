@@ -358,6 +358,7 @@ en:
     dark_theme: Dark
     design_personalized_form: Design Personalized Form
     download_audit_trail: Download Audit Trail
+    email_bounces_and_complaints: Email Bounces & Complaints
     exchange_rates: Exchange Rates
     external_company_advisors: External Company Advisors
     favorites: Favorites
@@ -384,6 +385,7 @@ en:
     user: User
     user_profile: User Profile
     view_all_checks: View All Checks
+    view_bounce_report: View bounce & complaint report
     settings: Settings
     settings_with_caphive: Layouts & Colors
   user:

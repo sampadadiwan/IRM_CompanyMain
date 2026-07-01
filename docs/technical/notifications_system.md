@@ -19,6 +19,7 @@ This document is the authoritative technical reference for how notifications are
 11. [Configuration Reference](#11-configuration-reference)
 12. [Data Model](#12-data-model)
 13. [Adding a New Notifier](#13-adding-a-new-notifier)
+14. [Mailers Outside Noticed — Gap Analysis](#14-mailers-outside-noticed--gap-analysis)
 
 ---
 
@@ -815,3 +816,95 @@ MyThingNotifier
 - [ ] Mailer method ends with `send_mail(subject:)`
 - [ ] Email template exists at `views/<mailer_name>/<method>.html.erb`
 - [ ] `deliver_later` is called with the correct params and recipient list
+
+---
+
+## 14. Mailers Outside Noticed — Gap Analysis
+
+The following mailers send email directly through ActionMailer **without** going through a Noticed notifier. They therefore produce no `noticed_events`/`noticed_notifications` rows, no in-app alert, no WhatsApp delivery, and no `email_sent` audit trail.
+
+*(Base classes `ApplicationMailer`, `SupportAgentBaseMailer`, and Devise's `DeviseMailer` are excluded — they are not domain mailers.)*
+
+### 14.1 Cannot be wrapped in a Noticed notifier
+
+These mailers either target non-User recipients or have structural constraints that make Noticed integration impractical.
+
+| Mailer | Action(s) | Reason |
+|---|---|---|
+| `CustomerSupportEscalationMailer` | `escalation_created` | Recipients are internal CS staff resolved from `SupportClientMapping`, not FM User records |
+| `DocShareMailer` | `share_email` | Recipient is `doc_share.email` — an anonymous external address; no User record exists |
+| `ReportMailer` | `scheduled_report` | Sends a binary file attachment; Noticed's email delivery layer has no attachment API |
+| `EntityMailer` | `notify_created`, `doc_gen_errors`, `spa_job_errors`, `notify_errors`, `notify_info`, `send_report` | Pure internal ops/error alerting to `SUPPORT_EMAIL_TO`; recipients are not Users |
+
+### 14.2 Should be wrapped — clean User recipient, straightforward migration
+
+| Mailer | Action(s) | Recommended notifier | Priority |
+|---|---|---|---|
+| `WorkflowMailer` | `step_activation`, `reminder` | `WorkflowNotifier` | **High** — step activation is a significant in-app event; currently no notification bell entry |
+| `KycExpiryMailer` | `expiry_alert` | `KycExpiryNotifier` | **High** — compliance-critical; expiry alerts should be visible in-app and auditable |
+| `EntityMailer` | `kpi_reminder` | `KpiReminderNotifier` | Medium — entity employees are User records; fits the Noticed pattern cleanly |
+
+#### Proposed flow for `WorkflowNotifier`
+
+```mermaid
+sequenceDiagram
+    participant S as WorkflowInstanceService
+    participant N as WorkflowNotifier
+    participant DB as noticed_events / noticed_notifications
+    participant Q as Sidekiq
+    participant M as WorkflowMailer
+    participant U as User (browser)
+
+    S->>N: WorkflowNotifier.with(entity_id:, instance_id:, step_position:, user_id:).deliver_later(user)
+    N->>DB: INSERT noticed_event + noticed_notification
+    N->>Q: Enqueue email + in-app jobs
+    Q->>M: WorkflowMailer#step_activation(email_data)
+    M->>M: setup_defaults → resolve @from, @to
+    M->>M: Build magic link via WorkflowMagicLinkService
+    M-->>U: Email with magic link + optional doc attachments
+    Q-->>U: UserAlerts broadcast (notification bell)
+```
+
+### 14.3 Possible — recipient is a User, but validation required before migrating
+
+These mailers route to entity employees or tag-resolved users, but the exact recipient set is computed at send time from agent configuration rather than a fixed `user_id` param. Migration requires confirming that all resolved addresses are always User records.
+
+| Mailer | Action(s) | Blocker to resolve |
+|---|---|---|
+| `EsignMonitorMailer` | `stuck_documents_report` | Confirm `notify_tag` always resolves to entity employees (Users) — it falls back to `entity.primary_email` which may not be a User |
+| `ReportInsightMailer` | `send_report_insight_link`, `send_report_insight_summary` | Audit `report.fetch_recipient_emails` — if it can return external addresses, Noticed cannot be the sole delivery path |
+| `DataQualityMailer` | `quality_report` | `support_agent.json_fields["email"]` is a free-text config field; wrap only the employee-fallback path |
+| `FundStatsMailer` | `fund_stats_update` | Same constraint as `DataQualityMailer` |
+
+### 14.4 Partial fit — SupportAgent-configured recipient emails
+
+All AI support-agent mailers share the same pattern: recipients come from `params[:recipients]` or `json_fields["notify_email"]` — free-text addresses configured by the entity admin, not guaranteed to match a User record. Noticed requires a `recipient` that is a User (or acts-as-notifiable model).
+
+The practical path is a **dual-send**: fire the existing mailer for deliverability, *and* fire a notifier for the entity's admin users so they see a summary event in the notification bell — without trying to treat the configured email as a notifier recipient.
+
+| Mailer | Action(s) |
+|---|---|
+| `CashFlowReminderMailer` | `send_reminder` |
+| `CashFlowReportMailer` | `send_report` |
+| `DealManagementDigestMailer` | `pipeline_digest` |
+| `DealManagementReminderMailer` | `deal_activity_reminder` |
+| `DealsReportMailer` | `send_report` |
+| `RtaReconciliationMailer` | `reconciliation_report` |
+
+### 14.5 Known bug: `ReminderNotifier` points to wrong mailer
+
+`app/packs/core/reminders/models/reminder_notifier.rb` declares:
+
+```ruby
+def mailer_name(_notification = nil)
+  InvestorKycMailer   # ← should be ReminderMailer
+end
+```
+
+The notifier catalogue in Section 4 records it as wrapping `ReminderMailer`, but the code sends through `InvestorKycMailer#send_reminder` instead. `ReminderMailer` is therefore never called through Noticed. Fix: change `mailer_name` to return `ReminderMailer`.
+
+### 14.6 Out of scope
+
+| Mailer | Reason |
+|---|---|
+| `NudgeMailer` | Three-address sandbox routing (`to`/`cc`/`bcc`) via `sandbox_email` helper makes the Noticed single-recipient model a poor fit without significant refactoring |

@@ -1,0 +1,49 @@
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <h1 class="h3 mb-0 text-gray-800">Email Bounces &amp; Complaints</h1>
+</div>
+
+<%= form_with url: email_bounce_events_path, method: :get, local: true, class: "row g-2 mb-3" do |f| %>
+  <% if @entities %>
+    <div class="col-auto">
+      <%= f.select :entity_id, @entities.map { |e| [e.name, e.id] }, { include_blank: "All entities" }, { class: "form-select form-select-sm", onchange: "this.form.submit()" } %>
+    </div>
+  <% end %>
+  <div class="col-auto">
+    <%= f.select :event_type, EmailBounceEvent.event_types.keys.map { |t| [t.humanize, t] }, { include_blank: "All types" }, { class: "form-select form-select-sm", onchange: "this.form.submit()" } %>
+  </div>
+  <div class="col-auto">
+    <%= f.select :bounce_type, %w[Permanent Transient Undetermined], { include_blank: "All bounce types" }, { class: "form-select form-select-sm", onchange: "this.form.submit()" } %>
+  </div>
+  <div class="col-auto">
+    <%= f.date_field :occurred_at_after, value: params[:occurred_at_after], class: "form-control form-control-sm", placeholder: "From" %>
+  </div>
+  <div class="col-auto">
+    <%= f.date_field :occurred_at_before, value: params[:occurred_at_before], class: "form-control form-control-sm", placeholder: "To" %>
+  </div>
+  <div class="col-auto">
+    <%= f.submit "Filter", class: "btn btn-outline-primary btn-sm" %>
+  </div>
+<% end %>
+
+<div class="table-responsive">
+  <table id="email_bounce_events" class="table table-bordered dataTable">
+    <thead>
+      <tr>
+        <th>Recipient</th>
+        <th>Entity</th>
+        <th>Type</th>
+        <th>Reason</th>
+        <th>Diagnostic Code</th>
+        <th>Occurred At</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% @email_bounce_events.each do |email_bounce_event| %>
+        <%= render email_bounce_event %>
+      <% end %>
+    </tbody>
+  </table>
+
+  <%= raw pagy_bootstrap_nav(@pagy) %>
+</div>

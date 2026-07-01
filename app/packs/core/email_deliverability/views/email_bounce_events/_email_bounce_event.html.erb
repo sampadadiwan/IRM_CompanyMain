@@ -1,0 +1,30 @@
+<tr id="<%= dom_id email_bounce_event %>">
+  <td><%= email_bounce_event.recipient_email %></td>
+  <td><%= email_bounce_event.entity&.name || "—" %></td>
+  <td><%= email_bounce_event.event_type.humanize %></td>
+  <td>
+    <% if email_bounce_event.bounce? %>
+      <%= [email_bounce_event.bounce_type, email_bounce_event.bounce_subtype].compact.join(" / ").presence || "—" %>
+    <% else %>
+      <%= email_bounce_event.complaint_feedback_type.presence || "—" %>
+    <% end %>
+  </td>
+  <td><%= email_bounce_event.diagnostic_code.presence || "—" %></td>
+  <td><%= l(email_bounce_event.occurred_at) %></td>
+  <td>
+    <% count = affected_investor_access_count(email_bounce_event) %>
+    <% if count.positive? %>
+      <%= button_to "Disable Email",
+            disable_recipient_email_email_bounce_event_path(email_bounce_event),
+            class: "btn btn-outline-danger btn-sm",
+            form_class: "d-inline",
+            data: {
+              msg: "This will disable email for #{count} InvestorAccess #{'record'.pluralize(count)} sharing #{email_bounce_event.recipient_email}. Proceed?",
+              action: "click->confirm#popup",
+              method: :post
+            } %>
+    <% else %>
+      <span class="text-muted">—</span>
+    <% end %>
+  </td>
+</tr>

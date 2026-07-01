@@ -30,6 +30,17 @@
                         </div>
                     </a>
 
+                    <%= link_to email_bounce_events_path, class: "py-8 px-7 d-flex align-items-center" do %>
+                        <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
+                            <i class="ti ti-mail-cancel"></i>
+                        </span>
+                        <div class="w-75 d-inline-block v-middle ps-3">
+                            <h6 class="mb-1 fs-3 fw-semibold lh-base"><%= t('top_menus.email_bounces_and_complaints') %></h6>
+                            <span class="fs-2 d-block text-body-secondary"><%= t('top_menus.view_bounce_report') %></span>
+                        </div>
+                    <% end %>
+
+
                     <% unless current_user.curr_role == "investor" %>
                     <%= link_to release_notes_path, class: "py-8 px-7 d-flex align-items-center" do %>
                         <span class="d-flex align-items-center justify-content-center text-bg-light rounded-1 p-6 text-primary">
@@ -40,6 +51,8 @@
                             <span class="fs-2 d-block text-body-secondary">See what's new in this release</span>
                         </div>
                     <% end %>
+
+
                     <% end %>
                 </div>
 

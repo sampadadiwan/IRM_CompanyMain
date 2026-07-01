@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_06_28_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_01_084103) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1405,7 +1405,29 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_28_000002) do
     t.index ["entity_id"], name: "index_e_signatures_on_entity_id"
     t.index ["user_id"], name: "index_e_signatures_on_user_id"
   end
-  create_table "entities", force: :cascade do |t|
+
+  create_table "email_bounce_events", force: :cascade do |t|
+    t.string "bounce_subtype"
+    t.string "bounce_type"
+    t.string "complaint_feedback_type"
+    t.datetime "created_at", null: false
+    t.text "diagnostic_code"
+    t.bigint "entity_id"
+    t.string "event_type", null: false
+    t.bigint "noticed_notification_id"
+    t.datetime "occurred_at", null: false
+    t.json "raw_sns_message"
+    t.string "recipient_email", null: false
+    t.string "tracking_id"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_email_bounce_events_on_entity_id"
+    t.index ["event_type"], name: "index_email_bounce_events_on_event_type"
+    t.index ["noticed_notification_id"], name: "index_email_bounce_events_on_noticed_notification_id"
+    t.index ["recipient_email"], name: "index_email_bounce_events_on_recipient_email"
+    t.index ["tracking_id"], name: "index_email_bounce_events_on_tracking_id"
+  end
+
+  create_table "entities", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.boolean "active", default: true
     t.integer "active_deal_id"
     t.boolean "activity_details_required_for_na", default: false
@@ -2736,7 +2758,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_06_28_000002) do
     t.index ["entity_id"], name: "index_noticed_events_on_entity_id"
     t.index ["record_type", "record_id"], name: "index_noticed_events_on_record"
   end
+
   create_table "noticed_notifications", force: :cascade do |t|
+    t.string "bounce_subtype"
+    t.string "bounce_type"
+    t.datetime "bounced_at"
+    t.datetime "complained_at"
+    t.string "complaint_feedback_type"
     t.datetime "created_at", null: false
     t.json "email"
     t.boolean "email_sent", default: false

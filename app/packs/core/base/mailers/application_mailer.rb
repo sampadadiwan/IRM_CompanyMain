@@ -24,18 +24,36 @@ class ApplicationMailer < ActionMailer::Base
       db_mail_body = mail
     end
 
-    # Save the email sent, subject and email details
-    @notification&.update_columns(
-      email: { email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: db_mail_body } },
-      email_sent: true,
-      subject: message.subject.truncate(254)
-    )
+    # Save the email sent, subject and email details, plus bounce-tracking correlation
+    # (tracking_id/entity_id are only ever set when @notification is present — see
+    # tag_for_bounce_tracking; bounce tracking is notifier-driven sends only, by design).
+    # rubocop:disable Rails/SkipsModelValidations
+    begin
+      @notification&.update_columns(
+        email: { email: { to: @to, from: @from, cc: @cc, reply_to: @reply_to, params:, mail: db_mail_body } },
+        email_sent: true,
+        subject: message.subject.truncate(254),
+        entity_id: @entity&.id
+      )
+      # Set tracking_id only on first delivery — never overwrite an existing value.
+      # A re-send generates a fresh UUID but the first delivery's X-CapHive-Tracking-Id
+      # header is already in flight with SES; overwriting would orphan that correlation.
+      # The @email_tracking_id.present? guard also prevents a nil write if
+      # tag_for_bounce_tracking was skipped for any reason.
+      if @notification && @email_tracking_id.present?
+        Noticed::Notification.where(id: @notification.id, tracking_id: nil)
+                             .update_all(tracking_id: @email_tracking_id)
+      end
+    rescue StandardError => e
+      Rails.logger.error("mark_delivered DB write failed for notification #{@notification&.id}: #{e.message}")
+    end
     # rubocop:enable Rails/SkipsModelValidations
   end
 
   # This will cause the to from and cc to be set from the entity and user
   # Note it will ensure that
   before_action :setup_defaults
+  before_action :tag_for_bounce_tracking
   def setup_defaults
     # Set the notification if this email was triggered by a notification, used in mark_delivered()
     @notification = Noticed::Notification.find(params[:notification_id]) if params[:notification_id]
@@ -69,6 +87,23 @@ class ApplicationMailer < ActionMailer::Base
       # Ensure we send to sanbox if required
       @to = @entity.entity_setting.sandbox ? @entity.entity_setting.sandbox_emails : @user.email
     end
+  end
+
+  # Tags outgoing messages that are tied to a Noticed::Notification so SES bounce/complaint
+  # notifications can be correlated back to that specific notification — see mark_delivered.
+  # Deliberately scoped to notifier-driven sends only: mailers invoked directly without a
+  # notification (magic links, KYC reminders, AI digest mailers, etc.) are left untagged, so
+  # SES never publishes bounce/complaint events for them and they don't appear in the report.
+  # X-CapHive-Tracking-Id is echoed back by SES inside the SNS payload's mail.headers;
+  # X-SES-CONFIGURATION-SET tells SES which config set (and therefore which SNS topic) to
+  # publish Bounce/Complaint events to. The latter is only set when SES_CONFIGURATION_SET is
+  # configured (e.g. unset in dev/test), so plain SMTP sends there are unaffected.
+  def tag_for_bounce_tracking
+    return unless @notification
+
+    @email_tracking_id = SecureRandom.uuid
+    headers["X-CapHive-Tracking-Id"] = @email_tracking_id
+    headers["X-SES-CONFIGURATION-SET"] = ENV["SES_CONFIGURATION_SET"] if ENV["SES_CONFIGURATION_SET"].present?
   end
 
   def setup_cc

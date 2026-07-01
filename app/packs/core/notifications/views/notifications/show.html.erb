@@ -54,6 +54,23 @@
     </td>
   </tr>
 
+  <tr>
+    <td>
+      Bounced
+    </td>
+    <td>
+      <% if @notification.bounced_at.present? %>
+        <span class="badge bg-danger"><%= [@notification.bounce_type, @notification.bounce_subtype].compact.join(" / ") %></span>
+        at <%= l @notification.bounced_at %>
+      <% elsif @notification.complained_at.present? %>
+        <span class="badge bg-danger">Complaint<%= " (#{@notification.complaint_feedback_type})" if @notification.complaint_feedback_type.present? %></span>
+        at <%= l @notification.complained_at %>
+      <% else %>
+        <span class="text-muted">—</span>
+      <% end %>
+    </td>
+  </tr>
+
   <% if @notification.email %>
   <tr>
     <td>

@@ -56,6 +56,9 @@ end
 
 resources :report_insights
 resources :audits
+resources :email_bounce_events, only: [:index] do
+  post :disable_recipient_email, on: :member
+end
 resources :reminders do
   put :restore_deleted, on: :member
   get :show_deleted, on: :collection
