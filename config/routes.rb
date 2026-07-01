@@ -76,6 +76,7 @@ Rails.application.routes.draw do
     get 'cross_site_link', on: :member
 
     get 'cross_site_login', on: :collection
+    get 'redirect_to_subdomain', on: :collection
   end
 
   resource :two_factor, only: [:new, :create], controller: 'users/two_factor' do

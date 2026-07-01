@@ -1,12 +1,12 @@
 class UsersController < ApplicationController
-  before_action :authenticate_user!, except: %w[magic_link no_password_login welcome cross_site_login]
+  before_action :authenticate_user!, except: %w[magic_link no_password_login welcome cross_site_login redirect_to_subdomain]
   # skip_before_action :verify_authenticity_token, only: %i[magic_link]
 
   skip_before_action :verify_authenticity_token, :authenticate_user!, only: %i[signature_progress whatsapp_webhook]
   skip_before_action :set_current_entity, only: %i[whatsapp_webhook]
 
   before_action :set_user, only: %w[show update destroy edit]
-  after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook cross_site_login]
+  after_action :verify_authorized, except: %i[welcome index search reset_password accept_terms set_persona magic_link no_password_login whatsapp_webhook cross_site_login redirect_to_subdomain]
 
   def welcome; end
 
@@ -82,8 +82,8 @@ class UsersController < ApplicationController
     site = params[:site].to_sym
     token = CrossSiteLink.new.generate(current_user.email, purpose: :login, expires_in: 30.seconds, site: site)
 
-    # Build the target URL using the site param and the generated token
-    url = eval(ENV.fetch("SITES", nil))[site] + "/users/cross_site_login?token=#{token}"
+    # Route through redirect_to_subdomain so the target site can resolve the user's subdomain
+    url = eval(ENV.fetch("SITES", nil))[site] + "/users/redirect_to_subdomain?token=#{token}"
 
     # Redirect the user to the cross-site login URL
     redirect_to url, allow_other_host: true
@@ -107,6 +107,25 @@ class UsersController < ApplicationController
   rescue CrossSiteLink::VerificationError
     # Handle invalid or expired token
     render plain: "Invalid or expired link", status: :unauthorized
+  end
+
+  # Resolves the user's entity subdomain and redirects to the correct subdomain for cross-site login.
+  # Falls back to "app" if the entity has no sub_domain set.
+  def redirect_to_subdomain
+    payload = CrossSiteLink.new.peek(params[:token])
+    render(plain: "Invalid or expired link", status: :unauthorized) and return if payload.nil?
+
+    user = User.find_by(email: payload[:email])
+    render(plain: "User not found", status: :not_found) and return if user.nil?
+
+    # Use the entity's sub_domain or fall back to "app"
+    sub = user.entity&.sub_domain.presence || "app"
+
+    # Replace whatever subdomain is in the current host with the user's subdomain
+    host = request.host.sub(/\A[^.]+\./, "#{sub}.")
+    url  = "#{request.protocol}#{host}/users/cross_site_login?token=#{params[:token]}"
+
+    redirect_to url, allow_other_host: true
   end
 
   def no_password_login

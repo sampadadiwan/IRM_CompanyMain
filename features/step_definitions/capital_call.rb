@@ -894,12 +894,17 @@ Then('the notification must be sent to the investors where the call notice was g
     next unless cr.documents.pluck(:name).include?("#{call_template_name} - #{cr.investor_kyc} - #{cr.folio_id}")
 
     cr.investor.notification_users(@fund).each do |nu|
+      # The approve action submits via Turbo (requestSubmit), which Capybara's
+      # load-state wait doesn't block on, so CapitalCallJob may still be
+      # in-flight when this step runs. Retry until the notification email lands.
       current_email = nil
-      emails_sent_to(nu.email).each do |email|
-        puts "#{email.subject} #{email.to} #{email.cc} #{email.bcc}"
-        current_email = email if email.subject.include?("#{cr.fund.name}: #{cr.capital_call.name}")
+      eventually do
+        current_email = nil
+        emails_sent_to(nu.email).each do |email|
+          current_email = email if email.subject.include?("#{cr.fund.name}: #{cr.capital_call.name}")
+        end
+        current_email.should_not be_nil
       end
-      puts "Checking email to #{nu.email} for remittance #{cr.id}"
       expect(current_email.body).to include "Please refer to the attached notice for further details or click on the link below"
     end
   end

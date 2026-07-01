@@ -58,3 +58,24 @@ Feature: Multi-site user sync fanout
     And the UPSERT endpoint for "US" responds 500
     When I perform an upsert to "US" capturing errors
     Then a retryable sync error should occur
+
+  @cross-site-redirect
+  Scenario: redirect_to_subdomain uses the user's entity sub_domain
+    Given a user "alice@example.com" exists in region "IN" with regions "IN,US"
+    And the user's entity has sub_domain "svr"
+    And a cross-site login token is generated for "alice@example.com" targeting site "IN"
+    When I request redirect_to_subdomain on host "app.example.com"
+    Then I should be redirected to "svr.example.com" for cross-site login
+
+  @cross-site-redirect
+  Scenario: redirect_to_subdomain falls back to "app" when entity has no sub_domain
+    Given a user "bob@example.com" exists in region "IN" with regions "IN,US"
+    And the user's entity has no sub_domain
+    And a cross-site login token is generated for "bob@example.com" targeting site "IN"
+    When I request redirect_to_subdomain on host "app.example.com"
+    Then I should be redirected to "app.example.com" for cross-site login
+
+  @cross-site-redirect
+  Scenario: redirect_to_subdomain returns 401 for an invalid token
+    When I request redirect_to_subdomain with invalid token on host "app.example.com"
+    Then the response status should be 401

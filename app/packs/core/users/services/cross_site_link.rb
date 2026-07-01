@@ -17,6 +17,11 @@ class CrossSiteLink
     @verifier.generate(payload, expires_in: expires_in)
   end
 
+  # Decode token without checking purpose/site — use only to read email before redirecting
+  def peek(token)
+    @verifier.verified(token)
+  end
+
   # Verify token and return payload
   # Example: CrossSiteLink.new.verify(token, purpose: "login")
   def verify(token, purpose:, site:)
