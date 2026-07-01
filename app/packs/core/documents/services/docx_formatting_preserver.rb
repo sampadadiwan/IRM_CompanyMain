@@ -55,6 +55,9 @@ class DocxFormattingPreserver
 
   def apply!
     tmp_path = "#{@docx_path}.fmt_fix.tmp"
+    # DEBUG: save a copy of the pre-fix DOCX for inspection
+    debug_path = "/tmp/docx_debug_input.docx"
+    FileUtils.cp(@docx_path, debug_path) rescue nil
 
     Zip::File.open(@docx_path) do |zip|
       styles_xml = read_entry(zip, "word/styles.xml")
@@ -329,7 +332,10 @@ class DocxFormattingPreserver
       ind = pPr.at_xpath("w:ind", ns)
       if ind
         # Has direct ind — strip firstLine only; keep existing left/hanging.
+        # Cover both the standard namespaced form (w:firstLine) and the rare
+        # unqualified form that some editors emit without a namespace prefix.
         ind.attribute_with_ns("firstLine", W_NS)&.remove
+        ind.attribute_with_ns("firstLine", nil)&.remove
       else
         # No direct ind — add one to block style-chain firstLine inheritance.
         # Prefer dominant values; fall back to the abstractNum level's own ind.
@@ -465,7 +471,10 @@ class DocxFormattingPreserver
       if list_para
         # Strip firstLine from any existing direct w:ind on list paragraphs —
         # prevents original-template firstLine values from persisting.
-        pPr.at_xpath("w:ind", ns)&.attribute_with_ns("firstLine", W_NS)&.remove
+        pPr.at_xpath("w:ind", ns)&.tap do |i|
+          i.attribute_with_ns("firstLine", W_NS)&.remove
+          i.attribute_with_ns("firstLine", nil)&.remove
+        end
       end
 
       # Resolve run-level defaults for this paragraph style
