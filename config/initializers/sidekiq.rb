@@ -41,7 +41,7 @@ Sidekiq.configure_server do |config|
       Sidekiq::Cron::Job.create(name: 'FundSnapshotJob', cron: '0 2 30 6,9 *', class: 'FundSnapshotJob')
     end
 
-    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob') if Rails.env.production? || Rails.env.staging? # Rails.env.staging? works # rubocop:disable Rails/UnknownEnv
+    Sidekiq::Cron::Job.create(name: 'DbRestoreJob', cron: 'every 4 hours', class: 'DbRestoreJob') if Rails.env.production? # Rails.env.staging? works # rubocop:disable Rails/UnknownEnv
 
     Sidekiq::Cron::Job.create(name: 'ReplicationHealthJob', cron: 'every 5 minutes', class: 'ReplicationHealthJob')
 
