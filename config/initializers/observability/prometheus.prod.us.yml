@@ -11,16 +11,16 @@ scrape_configs:
   - job_name: 'rails_app'
     static_configs:
       - targets:
-          - '54.147.171.162:9394'   # primary app server (us-east-1)
-          - '35.153.176.117:9394'   # second app server  (us-east-1)
+          - '10.0.1.26:9394'   # primary app server (us-east-1)
+          - '10.0.2.166:9394'   # second app server  (us-east-1)
 
   # node_exporter (port 9100) — all US servers (app + DB)
   # App servers use public IPs; DB servers use VPC-internal IPs (no public IP).
   - job_name: node
     static_configs:
       - targets:
-          - '54.147.171.162:9100'   # primary app server
-          - '35.153.176.117:9100'   # second app server
+          - '10.0.1.26:9100'   # primary app server
+          - '10.0.2.166:9100'   # second app server
           - '10.0.3.214:9100'       # primary DB server (credentials[:DB_HOST])
           - '10.0.4.28:9100'        # replica DB server  (credentials[:DB_HOST_REPLICA])
 

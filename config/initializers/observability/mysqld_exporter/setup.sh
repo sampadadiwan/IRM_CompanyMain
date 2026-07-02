@@ -25,7 +25,7 @@ if [[ "$(id -u)" -ne 0 ]]; then
 fi
 
 NODE_EXPORTER_VERSION="1.8.2"
-MYSQL_EXPORTER_VERSION="0.15.1"
+MYSQL_EXPORTER_VERSION="0.16.0"
 MONITOR_USER="exporter"
 MONITOR_PASS="${MONITOR_PASS:?Set MONITOR_PASS env var before running}"
 MYSQL_ROOT_PASS="${MYSQL_ROOT_PASS:?Set MYSQL_ROOT_PASS env var before running}"
@@ -110,9 +110,11 @@ echo "  binary installed"
 
 # Create MySQL monitoring user — MYSQL_PWD avoids the password appearing in ps output
 echo "=== Creating MySQL monitoring user '${MONITOR_USER}'@'localhost' ==="
-# mysql_native_password required — mysqld_exporter uses the older auth protocol,
-# incompatible with MySQL 8.0's default caching_sha2_password.
-MYSQL_PWD="${MYSQL_ROOT_PASS}" mysql -u root <<SQL
+# Try mysql_native_password first (MySQL 5.7 / 8.0); fall back to default auth
+# plugin (caching_sha2_password) for MySQL 8.4+ where mysql_native_password was removed.
+if MYSQL_PWD="${MYSQL_ROOT_PASS}" mysql -u root -e "SELECT 1" &>/dev/null; then
+  if MYSQL_PWD="${MYSQL_ROOT_PASS}" mysql -u root -e "SHOW PLUGINS" | grep -i 'mysql_native_password' | grep -qi 'ACTIVE'; then
+    MYSQL_PWD="${MYSQL_ROOT_PASS}" mysql -u root <<SQL
 CREATE USER IF NOT EXISTS '${MONITOR_USER}'@'localhost'
   IDENTIFIED WITH mysql_native_password BY '${MONITOR_PASS}'
   WITH MAX_USER_CONNECTIONS 3;
@@ -121,7 +123,25 @@ ALTER USER '${MONITOR_USER}'@'localhost'
 GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO '${MONITOR_USER}'@'localhost';
 FLUSH PRIVILEGES;
 SQL
-echo "  user created (read-only, localhost only, max 3 connections)"
+    echo "  user created with mysql_native_password"
+  else
+    # MySQL 8.4+ — use default auth plugin (caching_sha2_password)
+    MYSQL_PWD="${MYSQL_ROOT_PASS}" mysql -u root <<SQL
+CREATE USER IF NOT EXISTS '${MONITOR_USER}'@'localhost'
+  IDENTIFIED BY '${MONITOR_PASS}'
+  WITH MAX_USER_CONNECTIONS 3;
+ALTER USER '${MONITOR_USER}'@'localhost'
+  IDENTIFIED BY '${MONITOR_PASS}';
+GRANT PROCESS, REPLICATION CLIENT, SELECT ON *.* TO '${MONITOR_USER}'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+    echo "  user created with default auth plugin (MySQL 8.4+)"
+  fi
+else
+  echo "  WARNING: could not connect to MySQL as root — skipping user creation"
+  echo "  Create the user manually and re-run, or ensure MYSQL_ROOT_PASS is correct"
+fi
+echo "  monitoring user setup complete (read-only, localhost only, max 3 connections)"
 
 # Dedicated system user for the exporter process
 useradd --system --no-create-home --shell /sbin/nologin mysqld_exporter 2>/dev/null || true

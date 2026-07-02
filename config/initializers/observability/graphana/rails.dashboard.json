@@ -67,7 +67,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 10306,
   "graphTooltip": 0,
-  "id": 2,
+  "id": 4,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -3500,6 +3500,6 @@
   "timezone": "",
   "title": "Rails Metrics",
   "uid": "L-0CZ_WVk",
-  "version": 11,
+  "version": 2,
   "weekStart": ""
 }

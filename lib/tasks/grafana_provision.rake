@@ -529,7 +529,7 @@ class GrafanaProvisioner
         expr:   'max by(instance)(mysql_global_status_threads_connected/mysql_global_variables_max_connections*100)',
         legend: '{{instance}}', unit: 'percent', warn: 60, crit: 80 },
       { title: 'Replication Lag',
-        expr:   'max by(instance)(mysql_slave_status_seconds_behind_master)',
+        expr:   'max by(instance)(mysql_slave_status_seconds_behind_source)',
         legend: '{{instance}}', unit: 's',       warn: 10, crit: 30 },
       { title: 'Slow Queries/min',
         expr:   'sum by(instance)(rate(mysql_global_status_slow_queries[5m]))*60',

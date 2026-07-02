@@ -166,7 +166,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "max(mysql_slave_status_seconds_behind_master{instance=~\"$instance\"})",
+          "expr": "max(mysql_slave_status_seconds_behind_source{instance=~\"$instance\"})",
           "legendFormat": "lag",
           "refId": "A"
         }
@@ -384,7 +384,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "mysql_slave_status_seconds_behind_master{instance=~\"$instance\"}",
+          "expr": "mysql_slave_status_seconds_behind_source{instance=~\"$instance\"}",
           "legendFormat": "lag ({{instance}})",
           "refId": "A"
         }
@@ -409,7 +409,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "mysql_slave_status_slave_io_running{instance=~\"$instance\"}",
+          "expr": "mysql_slave_status_replica_io_running{instance=~\"$instance\"}",
           "legendFormat": "IO running",
           "refId": "A"
         }
@@ -433,7 +433,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "mysql_slave_status_slave_sql_running{instance=~\"$instance\"}",
+          "expr": "mysql_slave_status_replica_sql_running{instance=~\"$instance\"}",
           "legendFormat": "SQL running",
           "refId": "A"
         }
@@ -457,7 +457,7 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "mysql_slave_status_master_log_pos{instance=~\"$instance\"} - mysql_slave_status_exec_master_log_pos{instance=~\"$instance\"}",
+          "expr": "mysql_slave_status_read_source_log_pos{instance=~\"$instance\"} - mysql_slave_status_exec_source_log_pos{instance=~\"$instance\"}",
           "legendFormat": "gap bytes ({{instance}})",
           "refId": "A"
         }
@@ -513,13 +513,13 @@
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "mysql_slave_status_slave_io_running{instance=~\"$instance\"}",
+          "expr": "mysql_slave_status_replica_io_running{instance=~\"$instance\"}",
           "legendFormat": "IO thread ({{instance}})",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "expr": "mysql_slave_status_slave_sql_running{instance=~\"$instance\"}",
+          "expr": "mysql_slave_status_replica_sql_running{instance=~\"$instance\"}",
           "legendFormat": "SQL thread ({{instance}})",
           "refId": "B"
         }
