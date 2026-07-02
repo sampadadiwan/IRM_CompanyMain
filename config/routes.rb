@@ -95,6 +95,7 @@ Rails.application.routes.draw do
   post "/internal/sync/users/digest",  to: "users_sync#digest" # optional reconciliation
 
   post "/ses_notifications", to: "ses_notifications#create"
+  post "/grafana/alert",    to: "grafana_alerts#alert"
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

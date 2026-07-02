@@ -64,6 +64,20 @@ class InfraReporter
                  'Excludes Docker bind-mounts (/etc/hostname etc.) which always appear full. ' \
                  'At 100% all writes fail — logs, uploads, and DB writes will error.',
     },
+    {
+      # Inodes: disk space can look fine while inodes are 100% full (e.g. millions of Rails tmp files).
+      # A filesystem at 10% space but 100% inodes cannot create any new files.
+      key:       :inodes,
+      label:     'Inodes',
+      unit:      '%',
+      warn:      70,
+      crit:      90,
+      window_fn: 'max_over_time',
+      query:     'max by(instance)((1-node_filesystem_files_free{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}/node_filesystem_files{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"})*100)',
+      desc:      'Filesystem inode usage %. Inodes are directory entries; a full inode table means ' \
+                 'no new files can be created even when disk space is available. ' \
+                 'Typical cause: millions of tiny Rails tmp/cache files.',
+    },
   ].freeze
 
   RAILS_METRICS = [
@@ -135,6 +149,62 @@ class InfraReporter
       desc:      'Average RSS (Resident Set Size) of Puma web worker processes in MB. ' \
                  'Steady growth over days suggests a memory leak. ' \
                  'High RSS causes the OS to swap, slowing all requests.',
+    },
+    {
+      # P95 latency catches tail latency spikes invisible to the average — 5% of users are waiting
+      # 3s+ even when average looks fine. Uses histogram_quantile over 5m rate buckets.
+      key:       :p95_latency,
+      label:     'P95 Latency',
+      unit:      'ms',
+      warn:      1_000,
+      crit:      3_000,
+      window_fn: 'avg_over_time',
+      query:     'histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000',
+      desc:      '95th-percentile HTTP response time. 5% of requests take at least this long. ' \
+                 'Spikes here affect real users even when average looks OK. ' \
+                 'Uses avg_over_time to smooth irate spikes on low-traffic periods.',
+    },
+    {
+      # Thread saturation: when all Puma threads are busy, new connections queue at the OS level.
+      # >90% sustained means users are waiting for a thread to free up before the request starts.
+      key:       :puma_threads,
+      label:     'Puma Threads',
+      unit:      '%',
+      warn:      70,
+      crit:      90,
+      window_fn: 'max_over_time',
+      query:     'avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100',
+      desc:      'Puma thread pool saturation — busy_threads / max_threads × 100. ' \
+                 'At 100% all threads are blocked; new requests queue at OS level. ' \
+                 'WARN at 70% is the cue to investigate slow queries or jobs holding threads.',
+    },
+    {
+      # Queue depth: high depth means Sidekiq workers cannot keep up with the enqueue rate.
+      # max() deduplicates the global counter reported by both app nodes.
+      key:       :sidekiq_depth,
+      label:     'Queue Depth',
+      unit:      ' jobs',
+      warn:      50,
+      crit:      200,
+      window_fn: 'max_over_time',
+      query:     'max(ruby_sidekiq_stats_enqueued)',
+      desc:      'Total number of jobs waiting in the Sidekiq default queue. ' \
+                 'A growing queue means workers cannot keep pace with the enqueue rate. ' \
+                 'Check worker count and whether any workers are stuck in long-running jobs.',
+    },
+    {
+      # Queue latency: how long the oldest queued job has been waiting to start.
+      # High latency with low depth = a small number of stuck jobs blocking the queue.
+      key:       :sidekiq_latency,
+      label:     'Queue Latency',
+      unit:      's',
+      warn:      60,
+      crit:      300,
+      window_fn: 'max_over_time',
+      query:     'max(ruby_sidekiq_queue_latency)',
+      desc:      'Age of the oldest unprocessed job in the Sidekiq queue (seconds). ' \
+                 'High latency with low depth = workers are stuck or blocked. ' \
+                 'CRIT at 5min means some tasks are timing out or waiting for locked resources.',
     },
   ].freeze
 
@@ -209,6 +279,48 @@ class InfraReporter
       query:     'max by(instance)(mysql_slave_status_master_log_pos-mysql_slave_status_exec_master_log_pos)/1048576',
       desc:      'Bytes of binlog written on primary but not yet applied on replica, in MB. ' \
                  '>100MB = replica falling behind. >500MB = binlogs piling up on primary disk; check disk usage.',
+    },
+    {
+      # InnoDB miss rate = reads_from_disk / read_requests. >1% means heavy disk I/O.
+      # A well-tuned buffer pool (sized to working set) keeps this near 0%.
+      key:       :db_innodb_miss,
+      label:     'InnoDB Miss',
+      unit:      '%',
+      warn:      0.5,
+      crit:      1,
+      window_fn: 'max_over_time',
+      query:     'max by(instance)(rate(mysql_global_status_innodb_buffer_pool_reads[5m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[5m]))*100',
+      desc:      'InnoDB buffer pool miss rate — reads satisfied from disk rather than RAM. ' \
+                 'Near 0% is normal (buffer pool caches the working set). ' \
+                 '>1% means MySQL is disk-bound; consider increasing innodb_buffer_pool_size.',
+    },
+    {
+      # Deadlocks happen when two transactions each hold a lock the other needs.
+      # Even 1/min is worth investigating: it means retries and degraded write throughput.
+      key:       :db_deadlocks,
+      label:     'Deadlocks',
+      unit:      '/min',
+      warn:      0.1,
+      crit:      1,
+      window_fn: 'max_over_time',
+      query:     'max by(instance)(rate(mysql_global_status_innodb_deadlocks[5m]))*60',
+      desc:      'MySQL InnoDB deadlocks per minute. Any sustained deadlock rate hurts write ' \
+                 'throughput and causes application retries. Fix by reviewing transaction ' \
+                 'ordering — both transactions must acquire locks in the same sequence.',
+    },
+    {
+      # Aborted connects = connection attempts that failed before the handshake completed.
+      # Common causes: Rails pool timeout, bad credentials, max_connections exceeded.
+      key:       :db_aborted,
+      label:     'Aborted Conns',
+      unit:      '/min',
+      warn:      2,
+      crit:      5,
+      window_fn: 'max_over_time',
+      query:     'max by(instance)(rate(mysql_global_status_aborted_connects[5m]))*60',
+      desc:      'MySQL aborted connections per minute (failed before handshake). ' \
+                 'Common causes: Rails pool timeout, wrong credentials, or max_connections reached. ' \
+                 'High rates mean some requests never reach the DB layer.',
     },
   ].freeze
 

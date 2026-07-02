@@ -14,7 +14,19 @@ contact_points:
       singleEmail: false
     disableResolveMessage: false
 
-# Root policy: all alerts → whole team, grouped to reduce noise, repeat every 4h
+  # WhatsApp via WATI — fires only for critical alerts.
+  # Set GRAFANA_WEBHOOK_TOKEN env var before running rake grafana:provision.
+  # The same token must be saved in Rails credentials[:grafana_webhook_token].
+  - name: Caphive WhatsApp
+    type: webhook
+    settings:
+      url: https://app.caphive.com/grafana/alert
+      httpMethod: POST
+      # ${GRAFANA_WEBHOOK_TOKEN} is expanded from ENV at provision time (not stored in git)
+      httpHeaders: '{"X-Webhook-Token":"${GRAFANA_WEBHOOK_TOKEN}"}'
+    disableResolveMessage: false
+
+# Root policy: all alerts → whole team; critical alerts also fire to WhatsApp
 notification_policy:
   receiver: Caphive Support
   group_by:
@@ -23,6 +35,17 @@ notification_policy:
   group_wait: 30s
   group_interval: 5m
   repeat_interval: 4h
+  routes:
+    # Critical severity: fire to WhatsApp immediately, then continue to email (continue: true)
+    - receiver: Caphive WhatsApp
+      matchers:
+        - name: severity
+          value: critical
+          isEqual: true
+      group_wait: 10s
+      group_interval: 5m
+      repeat_interval: 1h
+      continue: true
 
 # Grafana folder that will hold all alert rules
 alert_folder: CapHive Alerts
@@ -215,6 +238,116 @@ alert_rules:
       severity: critical
       category: database
 
+  # ── MySQL depth ─────────────────────────────────────────────────────────────
+
+  # Miss rate = 100% - hit rate. >1% means MySQL is frequently reading from disk.
+  - title: "MySQL InnoDB Buffer Pool Miss Rate High (>1%)"
+    group: database
+    expr: 'max(rate(mysql_global_status_innodb_buffer_pool_reads[5m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[5m]))*100'
+    threshold_gt: 1
+    for: 10m
+    summary: "InnoDB buffer pool miss rate >1% — MySQL is reading from disk; consider increasing innodb_buffer_pool_size"
+    labels:
+      severity: warning
+      category: database
+
+  - title: "MySQL Deadlocks Detected"
+    group: database
+    expr: 'max(rate(mysql_global_status_innodb_deadlocks[5m]))*60'
+    threshold_gt: 0
+    for: 2m
+    summary: "MySQL InnoDB deadlocks occurring — check application transaction ordering and lock acquisition order"
+    labels:
+      severity: warning
+      category: database
+
+  - title: "MySQL Aborted Connections High (>5/min)"
+    group: database
+    expr: 'max(rate(mysql_global_status_aborted_connects[5m]))*60'
+    threshold_gt: 5
+    for: 5m
+    summary: "MySQL aborted connections >5/min — check Rails database.yml pool size and connect_timeout settings"
+    labels:
+      severity: warning
+      category: database
+
+  # ── Rails depth ─────────────────────────────────────────────────────────────
+
+  - title: "P95 Request Latency Critical (>3s)"
+    group: rails
+    expr: 'histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000'
+    threshold_gt: 3000
+    for: 5m
+    summary: "95th percentile response time >3s — tail latency is high even if average looks OK"
+    labels:
+      severity: critical
+      category: rails
+
+  - title: "Puma Thread Saturation Critical (>90%)"
+    group: rails
+    expr: 'avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100'
+    threshold_gt: 90
+    for: 5m
+    summary: "Puma thread pool >90% busy — new requests are queueing; consider adding Puma workers"
+    labels:
+      severity: critical
+      category: rails
+
+  - title: "Sidekiq Queue Depth Critical (>200 jobs)"
+    group: rails
+    expr: 'max(ruby_sidekiq_stats_enqueued)'
+    threshold_gt: 200
+    for: 5m
+    summary: "Sidekiq main queue depth >200 — workers cannot keep up with enqueue rate"
+    labels:
+      severity: critical
+      category: rails
+
+  - title: "Sidekiq Queue Latency Critical (>5min)"
+    group: rails
+    expr: 'max(ruby_sidekiq_queue_latency)'
+    threshold_gt: 300
+    for: 5m
+    summary: "Sidekiq jobs waiting >5min to start — check worker count and whether workers are stuck"
+    labels:
+      severity: critical
+      category: rails
+
+  - title: "Sidekiq Dead Queue Growing (>5 jobs)"
+    group: rails
+    expr: 'max(ruby_sidekiq_stats_dead_size)'
+    threshold_gt: 5
+    for: 5m
+    summary: "Sidekiq dead queue has >5 permanently failed jobs — open Sidekiq UI to inspect errors"
+    labels:
+      severity: warning
+      category: rails
+
+  # ── Infrastructure depth ────────────────────────────────────────────────────
+
+  # Inode exhaustion: disk % can look fine while inodes are 100% full (e.g. millions of Rails tmp files).
+  - title: "Inode Usage Critical (>90%)"
+    group: infrastructure
+    expr: 'max by(instance)((1-node_filesystem_files_free{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}/node_filesystem_files{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"})*100)'
+    threshold_gt: 90
+    for: 5m
+    summary: "Filesystem inode usage >90% — disk space may show OK but no new files can be created"
+    labels:
+      severity: critical
+      category: infra
+
+  # OOM: kernel silently kills processes when RAM is exhausted. No other alert fires for this.
+  - title: "OOM Kill Detected"
+    group: infrastructure
+    expr: 'max(increase(node_vmstat_oom_kill[5m]))'
+    threshold_gt: 0
+    for: 1m
+    summary: "Linux OOM killer terminated a process — check /var/log/syslog to see which process was killed"
+    labels:
+      severity: critical
+      category: infra
+
+
 # Dashboard UIDs to patch and version-control
 dashboards:
   - uid: rYdddlPWk
@@ -228,3 +361,5 @@ dashboards:
     name: "Rails Metrics"
     patches:
       - add_controller_variable  # $controller dropdown for error breakdown filtering
+      - add_rails_depth_panels   # P95 latency, Puma thread saturation, Sidekiq depth/latency
+      - add_mysql_depth_panels   # InnoDB miss rate, deadlocks, aborted connections

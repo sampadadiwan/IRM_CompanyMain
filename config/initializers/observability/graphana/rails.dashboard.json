@@ -3074,6 +3074,237 @@
       ],
       "title": "Sidekiq Retry / Dead Queue",
       "type": "timeseries"
+    },
+    {
+      "type": "timeseries",
+      "title": "P95 Latency (ms)",
+      "description": "95th-percentile response time. 5% of users wait at least this long — invisible to the average but critical for perceived app speed.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9999
+      },
+      "id": 255,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000",
+          "legendFormat": "P95",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Puma Thread Saturation (%)",
+      "description": "Busy Puma threads / max threads. At 100% new requests queue at the OS level before Rails even sees them.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9999
+      },
+      "id": 256,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100",
+          "legendFormat": "saturation",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Sidekiq Queue Depth (jobs)",
+      "description": "Total jobs waiting in the Sidekiq enqueued queue. A growing queue means workers cannot keep pace.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9999
+      },
+      "id": 257,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(ruby_sidekiq_stats_enqueued)",
+          "legendFormat": "enqueued",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Sidekiq Queue Latency (s)",
+      "description": "Age of the oldest unprocessed job. Spikes here mean workers are stuck or blocked on a slow resource.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9999
+      },
+      "id": 258,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max(ruby_sidekiq_queue_latency)",
+          "legendFormat": "latency",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "InnoDB Buffer Pool Miss Rate (%)",
+      "description": "Cache miss rate — % of reads served from disk rather than RAM. >1% means MySQL is disk-bound; increase innodb_buffer_pool_size.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9999
+      },
+      "id": 468,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by(instance)(rate(mysql_global_status_innodb_buffer_pool_reads[5m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[5m]))*100",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "MySQL Deadlocks (/min)",
+      "description": "InnoDB deadlocks per minute. Even 1/min causes application retries and degraded write throughput.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 9999
+      },
+      "id": 469,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by(instance)(rate(mysql_global_status_innodb_deadlocks[5m]))*60",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "MySQL Aborted Connections (/min)",
+      "description": "Failed connection attempts per minute. High values indicate Rails pool timeout, wrong credentials, or max_connections exceeded.",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 9999
+      },
+      "id": 470,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "expr": "max by(instance)(rate(mysql_global_status_aborted_connects[5m]))*60",
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      }
     }
   ],
   "refresh": false,
@@ -3142,6 +3373,7 @@
         "definition": "label_values(ruby_http_requests_total{namespace=\"$namespace\"},controller)",
         "hide": 0,
         "includeAll": true,
+        "label": "Controller",
         "multi": true,
         "name": "controller",
         "options": [],
@@ -3153,8 +3385,7 @@
         "tagValuesQuery": "",
         "tagsQuery": "",
         "type": "query",
-        "useTags": false,
-        "label": "Controller"
+        "useTags": false
       },
       {
         "allValue": ".*",
@@ -3269,6 +3500,6 @@
   "timezone": "",
   "title": "Rails Metrics",
   "uid": "L-0CZ_WVk",
-  "version": 9,
+  "version": 10,
   "weekStart": ""
 }

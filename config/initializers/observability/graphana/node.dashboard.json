@@ -23734,8 +23734,10 @@
       "type": "row"
     },
     {
-      "type": "timeseries",
-      "title": "Disk Growth Rate (Δ%/hr)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "Rate of change of disk usage per hour via deriv() subquery. Values >2%/hr indicate rapid disk consumption.",
       "gridPos": {
         "h": 8,
@@ -23744,10 +23746,6 @@
         "y": 9999
       },
       "id": 423,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
       "targets": [
         {
           "datasource": {
@@ -23758,11 +23756,15 @@
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Disk Growth Rate (Δ%/hr)",
+      "type": "timeseries"
     },
     {
-      "type": "timeseries",
-      "title": "Memory Growth Rate (Δ%/hr)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
       "description": "Rate of change of memory usage per hour. Persistent positive trend may indicate a memory leak.",
       "gridPos": {
         "h": 8,
@@ -23771,10 +23773,6 @@
         "y": 9999
       },
       "id": 424,
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${datasource}"
-      },
       "targets": [
         {
           "datasource": {
@@ -23785,7 +23783,9 @@
           "legendFormat": "{{instance}}",
           "refId": "A"
         }
-      ]
+      ],
+      "title": "Memory Growth Rate (Δ%/hr)",
+      "type": "timeseries"
     }
   ],
   "refresh": "1m",
@@ -23931,6 +23931,6 @@
   "timezone": "browser",
   "title": "Node Exporter Full",
   "uid": "rYdddlPWk",
-  "version": 5,
+  "version": 7,
   "weekStart": ""
 }

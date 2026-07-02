@@ -33,6 +33,11 @@ namespace :grafana do
     task save: :environment do
       GrafanaProvisioner.new.save_dashboards
     end
+
+    desc "Create/update the CapHive Overview dashboard (current-state stat panels for all systems)"
+    task overview_dashboard: :environment do
+      GrafanaProvisioner.new.provision_overview_dashboard
+    end
   end
 end
 
@@ -61,6 +66,7 @@ class GrafanaProvisioner
     provision_notification_policy
     provision_alert_rules
     provision_dashboards
+    provision_overview_dashboard
     puts "\nDone. Commit config/initializers/observability/ to version control."
   end
 
@@ -70,14 +76,27 @@ class GrafanaProvisioner
     puts "\n=== Contact Points ==="
     existing = get('/api/v1/provisioning/contact-points')
     @spec[:contact_points].each do |cp|
-      found = existing.find { |e| e['name'] == cp[:name].to_s }
+      # Expand ${VAR_NAME} placeholders from ENV so secrets stay out of the YAML
+      resolved = deep_expand_env(cp)
+      found    = existing.find { |e| e['name'] == cp[:name].to_s }
       if found
-        put("/api/v1/provisioning/contact-points/#{found['uid']}", cp)
+        put("/api/v1/provisioning/contact-points/#{found['uid']}", resolved)
         puts "  Updated: #{cp[:name]}"
       else
-        post('/api/v1/provisioning/contact-points', cp)
+        post('/api/v1/provisioning/contact-points', resolved)
         puts "  Created: #{cp[:name]}"
       end
+    end
+  end
+
+  # Recursively expand ${VAR_NAME} in all string values from ENV.
+  # Missing ENV vars expand to empty string (Grafana will accept it; you will see auth failures).
+  def deep_expand_env(obj)
+    case obj
+    when Hash   then obj.transform_values { |v| deep_expand_env(v) }
+    when Array  then obj.map { |v| deep_expand_env(v) }
+    when String then obj.gsub(/\$\{([A-Z0-9_]+)\}/) { ENV[$1].to_s }
+    else obj
     end
   end
 
@@ -141,10 +160,12 @@ class GrafanaProvisioner
 
       (spec[:patches] || []).each do |patch|
         case patch.to_s
-        when 'fix_disk_queries'     then fix_disk_queries!(board)
-        when 'add_node_variable'    then add_template_variable!(board, node_variable)
+        when 'fix_disk_queries'        then fix_disk_queries!(board)
+        when 'add_node_variable'       then add_template_variable!(board, node_variable)
         when 'add_controller_variable' then add_template_variable!(board, controller_variable)
-        when 'add_roc_panels'       then add_roc_panels!(board)
+        when 'add_roc_panels'          then add_roc_panels!(board)
+        when 'add_rails_depth_panels'  then add_rails_depth_panels!(board)
+        when 'add_mysql_depth_panels'  then add_mysql_depth_panels!(board)
         end
       end
 
@@ -254,6 +275,325 @@ class GrafanaProvisioner
       list.unshift(var)
       puts "    add_template_variable: added $#{var['name']}"
     end
+  end
+
+  # Appends P95 latency, Puma thread saturation, and Sidekiq depth/latency panels.
+  def add_rails_depth_panels!(board)
+    panels = board['panels'] ||= []
+    max_id = panels.map { |p| p['id'].to_i }.max.to_i
+
+    if panels.any? { |p| p['title'].to_s.include?('P95 Latency') }
+      puts "    add_rails_depth_panels: already present, skipping"
+      return
+    end
+
+    new_panels = [
+      ts_panel(id: max_id + 200, title: 'P95 Latency (ms)', x: 0,
+        desc: '95th-percentile response time. 5% of users wait at least this long — ' \
+              'invisible to the average but critical for perceived app speed.',
+        expr: 'histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000',
+        legend: 'P95', unit: 'ms'),
+
+      ts_panel(id: max_id + 201, title: 'Puma Thread Saturation (%)', x: 12,
+        desc: 'Busy Puma threads / max threads. At 100% new requests queue at the OS level ' \
+              'before Rails even sees them.',
+        expr: 'avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100',
+        legend: 'saturation', unit: 'percent'),
+
+      ts_panel(id: max_id + 202, title: 'Sidekiq Queue Depth (jobs)', x: 0,
+        desc: 'Total jobs waiting in the Sidekiq enqueued queue. ' \
+              'A growing queue means workers cannot keep pace.',
+        expr: 'max(ruby_sidekiq_stats_enqueued)',
+        legend: 'enqueued', unit: 'short'),
+
+      ts_panel(id: max_id + 203, title: 'Sidekiq Queue Latency (s)', x: 12,
+        desc: 'Age of the oldest unprocessed job. ' \
+              'Spikes here mean workers are stuck or blocked on a slow resource.',
+        expr: 'max(ruby_sidekiq_queue_latency)',
+        legend: 'latency', unit: 's'),
+    ]
+
+    board['panels'] += new_panels
+    puts "    add_rails_depth_panels: appended #{new_panels.size} panels (P95, Puma, Sidekiq depth/latency)"
+  end
+
+  # Appends InnoDB buffer pool miss rate, deadlocks, and aborted connection panels.
+  def add_mysql_depth_panels!(board)
+    panels = board['panels'] ||= []
+    max_id = panels.map { |p| p['id'].to_i }.max.to_i
+
+    if panels.any? { |p| p['title'].to_s.include?('InnoDB') }
+      puts "    add_mysql_depth_panels: already present, skipping"
+      return
+    end
+
+    new_panels = [
+      ts_panel(id: max_id + 210, title: 'InnoDB Buffer Pool Miss Rate (%)', x: 0,
+        desc: 'Cache miss rate — % of reads served from disk rather than RAM. ' \
+              '>1% means MySQL is disk-bound; increase innodb_buffer_pool_size.',
+        expr: 'max by(instance)(rate(mysql_global_status_innodb_buffer_pool_reads[5m])/' \
+              'rate(mysql_global_status_innodb_buffer_pool_read_requests[5m]))*100',
+        legend: '{{instance}}', unit: 'percent'),
+
+      ts_panel(id: max_id + 211, title: 'MySQL Deadlocks (/min)', x: 12,
+        desc: 'InnoDB deadlocks per minute. Even 1/min causes application retries ' \
+              'and degraded write throughput.',
+        expr: 'max by(instance)(rate(mysql_global_status_innodb_deadlocks[5m]))*60',
+        legend: '{{instance}}', unit: 'short'),
+
+      ts_panel(id: max_id + 212, title: 'MySQL Aborted Connections (/min)', x: 0,
+        desc: 'Failed connection attempts per minute. High values indicate Rails pool ' \
+              'timeout, wrong credentials, or max_connections exceeded.',
+        expr: 'max by(instance)(rate(mysql_global_status_aborted_connects[5m]))*60',
+        legend: '{{instance}}', unit: 'short'),
+    ]
+
+    board['panels'] += new_panels
+    puts "    add_mysql_depth_panels: appended #{new_panels.size} panels (InnoDB miss, deadlocks, aborted)"
+  end
+
+  # Builds a Grafana timeseries panel hash. unit is a Grafana unit string (ms, percent, s, short).
+  def ts_panel(id:, title:, desc:, expr:, legend:, x:, unit: nil, w: 12, y: 9999)
+    ds_ref = { 'type' => 'prometheus', 'uid' => '${datasource}' }
+    panel  = {
+      'type'        => 'timeseries',
+      'title'       => title,
+      'description' => desc,
+      'gridPos'     => { 'h' => 8, 'w' => w, 'x' => x, 'y' => y },
+      'id'          => id,
+      'datasource'  => ds_ref,
+      'targets'     => [
+        { 'datasource' => ds_ref, 'expr' => expr,
+          'legendFormat' => legend, 'refId' => 'A' },
+      ],
+    }
+    panel['fieldConfig'] = { 'defaults' => { 'unit' => unit }, 'overrides' => [] } if unit
+    panel
+  end
+
+  # ── Overview dashboard ──────────────────────────────────────────────────────
+
+  # Creates/updates the CapHive Overview dashboard: one stat panel per key metric,
+  # colour-coded green/yellow/red matching alert rule thresholds.
+  # All panels use instant queries so they always show the current value, not a time series.
+  def provision_overview_dashboard
+    puts "\n=== Overview Dashboard ==="
+    ds_uid = datasource_uid
+    board  = build_overview_dashboard(ds_uid)
+
+    result = post('/api/dashboards/db', {
+      dashboard: board,
+      folderId:  0,
+      overwrite: true,
+      message:   'grafana:provision:overview_dashboard',
+    })
+
+    if result['status'] == 'success'
+      puts "  Pushed OK — CapHive Overview (version #{result['version']})"
+      FileUtils.mkdir_p(DASH_DIR)
+      File.write(DASH_DIR.join('overview.dashboard.json'), JSON.pretty_generate(board))
+      puts "  Saved: config/initializers/observability/graphana/overview.dashboard.json"
+    else
+      puts "  ERROR: #{result.inspect}"
+    end
+  end
+
+  def build_overview_dashboard(ds_uid)
+    ds_ref  = { 'type' => 'prometheus', 'uid' => ds_uid }
+    panels  = []
+    next_id = 1
+    y       = 0
+
+    # Each section: a row header followed by 4 stat panels (6 wide each = full 24-wide row)
+    sections = [
+      {
+        title: 'App Servers',
+        stats: [
+          { title: 'CPU %',
+            expr:   '100-(avg by(instance)(rate(node_cpu_seconds_total{mode="idle",instance!~"10.0.[34].*"}[5m]))*100)',
+            legend: '{{instance}}', unit: 'percent', warn: 70,  crit: 90  },
+          { title: 'Memory %',
+            expr:   '(node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance!~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}*100',
+            legend: '{{instance}}', unit: 'percent', warn: 70,  crit: 90  },
+          { title: 'Disk %',
+            expr:   'max by(instance)((node_filesystem_size_bytes{instance!~"10.0.[34].*",fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}-node_filesystem_free_bytes{instance!~"10.0.[34].*",fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"})/node_filesystem_size_bytes{instance!~"10.0.[34].*",fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}*100)',
+            legend: '{{instance}}', unit: 'percent', warn: 70,  crit: 90  },
+          { title: 'Inodes %',
+            expr:   'max by(instance)((1-node_filesystem_files_free{instance!~"10.0.[34].*",fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}/node_filesystem_files{instance!~"10.0.[34].*",fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"})*100)',
+            legend: '{{instance}}', unit: 'percent', warn: 70,  crit: 90  },
+        ],
+      },
+      {
+        title: 'DB Servers',
+        stats: [
+          { title: 'DB Memory %',
+            expr:   '(node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance=~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}*100',
+            legend: '{{instance}}', unit: 'percent', warn: 85,  crit: 95  },
+          { title: 'Connections %',
+            expr:   'max by(instance)(mysql_global_status_threads_connected/mysql_global_variables_max_connections*100)',
+            legend: '{{instance}}', unit: 'percent', warn: 60,  crit: 80  },
+          { title: 'Replication Lag',
+            expr:   'max by(instance)(mysql_slave_status_seconds_behind_master)',
+            legend: '{{instance}}', unit: 's',       warn: 10,  crit: 30  },
+          { title: 'Slow Queries/min',
+            expr:   'sum by(instance)(rate(mysql_global_status_slow_queries[5m]))*60',
+            legend: '{{instance}}', unit: 'short',   warn: 0.5, crit: 2   },
+        ],
+      },
+      {
+        title: 'MySQL Depth',
+        stats: [
+          { title: 'InnoDB Miss %',
+            expr:   'max by(instance)(rate(mysql_global_status_innodb_buffer_pool_reads[5m])/rate(mysql_global_status_innodb_buffer_pool_read_requests[5m]))*100',
+            legend: '{{instance}}', unit: 'percent', warn: 0.5, crit: 1   },
+          { title: 'Deadlocks/min',
+            expr:   'max by(instance)(rate(mysql_global_status_innodb_deadlocks[5m]))*60',
+            legend: '{{instance}}', unit: 'short',   warn: 0.1, crit: 1   },
+          { title: 'Aborted/min',
+            expr:   'max by(instance)(rate(mysql_global_status_aborted_connects[5m]))*60',
+            legend: '{{instance}}', unit: 'short',   warn: 2,   crit: 5   },
+          { title: 'Zombie Sleep',
+            expr:   'max by(instance)(mysql_info_schema_processlist_seconds{command="Sleep"})',
+            legend: '{{instance}}', unit: 's',       warn: 300, crit: 1800 },
+        ],
+      },
+      {
+        title: 'Rails App',
+        stats: [
+          { title: '5xx Rate %',
+            expr:   'sum(rate(ruby_http_requests_total{status=~"^5.*"}[5m]))/sum(rate(ruby_http_requests_total[5m]))*100',
+            legend: '5xx',         unit: 'percent', warn: 1,    crit: 5   },
+          { title: 'P95 Latency',
+            expr:   'histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000',
+            legend: 'P95',         unit: 'ms',      warn: 1000, crit: 3000 },
+          { title: 'Puma Threads %',
+            expr:   'avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100',
+            legend: 'saturation',  unit: 'percent', warn: 70,   crit: 90  },
+          { title: 'Web Memory (MB)',
+            expr:   'avg(ruby_rss{type=~"web|puma_worker"})/1024/1024',
+            legend: 'avg RSS',     unit: 'short',   warn: 400,  crit: 700 },
+        ],
+      },
+      {
+        title: 'Sidekiq',
+        stats: [
+          { title: 'Queue Depth',
+            expr:   'max(ruby_sidekiq_stats_enqueued)',
+            legend: 'jobs',    unit: 'short', warn: 50,  crit: 200 },
+          { title: 'Queue Latency',
+            expr:   'max(ruby_sidekiq_queue_latency)',
+            legend: 'latency', unit: 's',     warn: 60,  crit: 300 },
+          { title: 'Retry Queue',
+            expr:   'max(ruby_sidekiq_stats_retry_size)',
+            legend: 'jobs',    unit: 'short', warn: 5,   crit: 20  },
+          { title: 'Dead Queue',
+            expr:   'max(ruby_sidekiq_stats_dead_size)',
+            legend: 'jobs',    unit: 'short', warn: 1,   crit: 5   },
+        ],
+      },
+    ]
+
+    sections.each do |section|
+      panels << row_panel(id: next_id, title: section[:title], y: y)
+      next_id += 1
+      y        += 1
+
+      section[:stats].each_with_index do |s, i|
+        panels << stat_panel(id: next_id, ds_ref: ds_ref, x: i * 6, y: y, **s)
+        next_id += 1
+      end
+      y += 4
+    end
+
+    {
+      'uid'           => 'caphive-overview',
+      'title'         => 'CapHive Overview',
+      'tags'          => ['caphive', 'overview'],
+      'timezone'      => 'browser',
+      'schemaVersion' => 36,
+      'version'       => 1,
+      'refresh'       => '30s',  # auto-refresh every 30s — this is a live status board
+      'panels'        => panels,
+      'time'          => { 'from' => 'now-5m', 'to' => 'now' },
+      'timepicker'    => {},
+      'templating'    => { 'list' => [] },
+      'annotations'   => {
+        'list' => [
+          # Built-in Grafana alerts annotation (hidden by default)
+          {
+            'builtIn'    => 1,
+            'datasource' => { 'type' => 'grafana', 'uid' => '-- Grafana --' },
+            'enable'     => true,
+            'hide'       => true,
+            'iconColor'  => 'rgba(0, 211, 255, 1)',
+            'name'       => 'Annotations & Alerts',
+            'type'       => 'dashboard',
+          },
+          # Deploy markers from Capistrano — shows vertical lines when deploys happened
+          {
+            'datasource' => { 'type' => 'grafana', 'uid' => '-- Grafana --' },
+            'enable'     => true,
+            'hide'       => false,
+            'iconColor'  => '#5794F2',
+            'name'       => 'Deploys',
+            'type'       => 'tags',
+            'tags'       => ['deploy'],
+          },
+        ],
+      },
+    }
+  end
+
+  # Builds a Grafana stat panel (single large number, background colour from thresholds).
+  # unit is a Grafana unit string: percent, ms, s, short, bytes, etc.
+  def stat_panel(id:, title:, expr:, legend:, unit:, warn:, crit:, x:, y:, ds_ref:, w: 6, h: 4)
+    {
+      'type'        => 'stat',
+      'title'       => title,
+      'gridPos'     => { 'h' => h, 'w' => w, 'x' => x, 'y' => y },
+      'id'          => id,
+      'datasource'  => ds_ref,
+      'options'     => {
+        'reduceOptions' => { 'calcs' => ['lastNotNull'], 'fields' => '', 'values' => false },
+        'orientation'   => 'auto',
+        'colorMode'     => 'background',
+        'graphMode'     => 'none',
+        'justifyMode'   => 'auto',
+        'textMode'      => 'auto',
+      },
+      'fieldConfig' => {
+        'defaults' => {
+          'unit'       => unit,
+          'color'      => { 'mode' => 'thresholds' },
+          'thresholds' => {
+            'mode'  => 'absolute',
+            'steps' => [
+              { 'color' => 'green',  'value' => nil  },
+              { 'color' => 'yellow', 'value' => warn },
+              { 'color' => 'red',    'value' => crit },
+            ],
+          },
+          'mappings' => [],
+        },
+        'overrides' => [],
+      },
+      'targets' => [
+        { 'datasource' => ds_ref, 'expr' => expr,
+          'instant' => true, 'legendFormat' => legend, 'refId' => 'A' },
+      ],
+    }
+  end
+
+  # Grafana row panel — collapsible section header spanning the full 24-column width.
+  def row_panel(id:, title:, y:)
+    {
+      'type'      => 'row',
+      'title'     => title,
+      'gridPos'   => { 'h' => 1, 'w' => 24, 'x' => 0, 'y' => y },
+      'id'        => id,
+      'collapsed' => false,
+      'panels'    => [],
+    }
   end
 
   # Appends two rate-of-change panels at the bottom of the dashboard.
