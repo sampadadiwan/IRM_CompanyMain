@@ -26,6 +26,7 @@
     {
       "type": "stat",
       "title": "CPU %",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
@@ -94,6 +95,7 @@
     {
       "type": "stat",
       "title": "Memory %",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
@@ -162,6 +164,7 @@
     {
       "type": "stat",
       "title": "Disk %",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
@@ -220,7 +223,7 @@
             "type": "prometheus",
             "uid": "i4qUEiFHz"
           },
-          "expr": "max by(instance)((node_filesystem_size_bytes{instance!~\"10.0.[34].*\",fstype!~\"tmpfs|overlay\",mountpoint!~\"/etc/.*\"}-node_filesystem_free_bytes{instance!~\"10.0.[34].*\",fstype!~\"tmpfs|overlay\",mountpoint!~\"/etc/.*\"})/node_filesystem_size_bytes{instance!~\"10.0.[34].*\",fstype!~\"tmpfs|overlay\",mountpoint!~\"/etc/.*\"}*100)",
+          "expr": "max by(instance)((node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"}-node_filesystem_free_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"})/node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"}*100)",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -230,6 +233,7 @@
     {
       "type": "stat",
       "title": "Inodes %",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
@@ -288,7 +292,214 @@
             "type": "prometheus",
             "uid": "i4qUEiFHz"
           },
-          "expr": "max by(instance)((1-node_filesystem_files_free{instance!~\"10.0.[34].*\",fstype!~\"tmpfs|overlay\",mountpoint!~\"/etc/.*\"}/node_filesystem_files{instance!~\"10.0.[34].*\",fstype!~\"tmpfs|overlay\",mountpoint!~\"/etc/.*\"})*100)",
+          "expr": "max by(instance)((1-node_filesystem_files_free{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"}/node_filesystem_files{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"})*100)",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Disk I/O Wait %",
+      "description": "CPU time spent waiting for disk I/O. High iowait = disk bottleneck even when CPU % looks low.",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 5
+      },
+      "id": 6,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "i4qUEiFHz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 20
+              },
+              {
+                "color": "red",
+                "value": 40
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "i4qUEiFHz"
+          },
+          "expr": "avg by(instance)(rate(node_cpu_seconds_total{mode=\"iowait\",instance!~\"10.0.[34].*\"}[5m]))*100",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Net In (MB/s)",
+      "description": "Inbound network throughput in MB/s (excludes loopback and Docker veth interfaces).",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 5
+      },
+      "id": 7,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "i4qUEiFHz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "i4qUEiFHz"
+          },
+          "expr": "sum by(instance)(rate(node_network_receive_bytes_total{instance!~\"10.0.[34].*\",device!~\"lo|veth.*\"}[5m]))/1048576",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Net Out (MB/s)",
+      "description": "Outbound network throughput in MB/s (excludes loopback and Docker veth interfaces).",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 5
+      },
+      "id": 8,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "i4qUEiFHz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "i4qUEiFHz"
+          },
+          "expr": "sum by(instance)(rate(node_network_transmit_bytes_total{instance!~\"10.0.[34].*\",device!~\"lo|veth.*\"}[5m]))/1048576",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -302,22 +513,23 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 9
       },
-      "id": 6,
+      "id": 9,
       "collapsed": false,
       "panels": []
     },
     {
       "type": "stat",
       "title": "DB Memory %",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 6
+        "y": 10
       },
-      "id": 7,
+      "id": 10,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -379,13 +591,14 @@
     {
       "type": "stat",
       "title": "Connections %",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 6
+        "y": 10
       },
-      "id": 8,
+      "id": 11,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -447,13 +660,14 @@
     {
       "type": "stat",
       "title": "Replication Lag",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 6
+        "y": 10
       },
-      "id": 9,
+      "id": 12,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -515,13 +729,14 @@
     {
       "type": "stat",
       "title": "Slow Queries/min",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 6
+        "y": 10
       },
-      "id": 10,
+      "id": 13,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -587,22 +802,23 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 10
+        "y": 14
       },
-      "id": 11,
+      "id": 14,
       "collapsed": false,
       "panels": []
     },
     {
       "type": "stat",
       "title": "InnoDB Miss %",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 11
+        "y": 15
       },
-      "id": 12,
+      "id": 15,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -664,13 +880,14 @@
     {
       "type": "stat",
       "title": "Deadlocks/min",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 11
+        "y": 15
       },
-      "id": 13,
+      "id": 16,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -722,7 +939,7 @@
             "type": "prometheus",
             "uid": "i4qUEiFHz"
           },
-          "expr": "max by(instance)(rate(mysql_global_status_innodb_deadlocks[5m]))*60",
+          "expr": "max by(instance)(rate(mysql_info_schema_innodb_metrics_lock_lock_deadlocks_total[5m]))*60 or vector(0)",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -732,13 +949,14 @@
     {
       "type": "stat",
       "title": "Aborted/min",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 11
+        "y": 15
       },
-      "id": 14,
+      "id": 17,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -800,13 +1018,14 @@
     {
       "type": "stat",
       "title": "Zombie Sleep",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 11
+        "y": 15
       },
-      "id": 15,
+      "id": 18,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -858,7 +1077,7 @@
             "type": "prometheus",
             "uid": "i4qUEiFHz"
           },
-          "expr": "max by(instance)(mysql_info_schema_processlist_seconds{command=\"Sleep\"})",
+          "expr": "max by(instance)(mysql_info_schema_processlist_seconds{command=\"Sleep\"}) or vector(0)",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -872,22 +1091,23 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 19
       },
-      "id": 16,
+      "id": 19,
       "collapsed": false,
       "panels": []
     },
     {
       "type": "stat",
       "title": "5xx Rate %",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 16
+        "y": 20
       },
-      "id": 17,
+      "id": 20,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -939,7 +1159,7 @@
             "type": "prometheus",
             "uid": "i4qUEiFHz"
           },
-          "expr": "sum(rate(ruby_http_requests_total{status=~\"^5.*\"}[5m]))/sum(rate(ruby_http_requests_total[5m]))*100",
+          "expr": "sum(rate(ruby_http_requests_total{status=~\"5..\"}[5m]))/sum(rate(ruby_http_requests_total[5m]))*100 or vector(0)",
           "instant": true,
           "legendFormat": "5xx",
           "refId": "A"
@@ -948,14 +1168,15 @@
     },
     {
       "type": "stat",
-      "title": "P95 Latency",
+      "title": "P99 Latency",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 16
+        "y": 20
       },
-      "id": 18,
+      "id": 21,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -1007,23 +1228,24 @@
             "type": "prometheus",
             "uid": "i4qUEiFHz"
           },
-          "expr": "histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000",
+          "expr": "max(ruby_http_request_duration_seconds{quantile=\"0.99\"})*1000",
           "instant": true,
-          "legendFormat": "P95",
+          "legendFormat": "P99",
           "refId": "A"
         }
       ]
     },
     {
       "type": "stat",
-      "title": "Puma Threads %",
+      "title": "Req/s",
+      "description": "Total HTTP request rate across all app servers. Drop to near-zero = app down or traffic lost.",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 16
+        "y": 20
       },
-      "id": 19,
+      "id": 22,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -1044,7 +1266,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "unit": "percent",
+          "unit": "short",
           "color": {
             "mode": "thresholds"
           },
@@ -1057,11 +1279,11 @@
               },
               {
                 "color": "yellow",
-                "value": 70
+                "value": 500
               },
               {
                 "color": "red",
-                "value": 90
+                "value": 1000
               }
             ]
           },
@@ -1075,9 +1297,9 @@
             "type": "prometheus",
             "uid": "i4qUEiFHz"
           },
-          "expr": "avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100",
+          "expr": "sum(rate(ruby_http_requests_total[5m]))",
           "instant": true,
-          "legendFormat": "saturation",
+          "legendFormat": "req/s",
           "refId": "A"
         }
       ]
@@ -1085,13 +1307,14 @@
     {
       "type": "stat",
       "title": "Web Memory (MB)",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 16
+        "y": 20
       },
-      "id": 20,
+      "id": 23,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -1151,28 +1374,167 @@
       ]
     },
     {
+      "type": "stat",
+      "title": "Puma Thread Util %",
+      "description": "Running Puma threads / thread pool capacity. Near 100% means new requests are queuing.",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 24,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "i4qUEiFHz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "i4qUEiFHz"
+          },
+          "expr": "avg(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100",
+          "instant": true,
+          "legendFormat": "utilisation",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Puma Request Backlog",
+      "description": "Requests waiting in the OS accept queue because all Puma threads are busy. Any value >0 = fully saturated.",
+      "gridPos": {
+        "h": 4,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 25,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "i4qUEiFHz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 1
+              },
+              {
+                "color": "red",
+                "value": 5
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "i4qUEiFHz"
+          },
+          "expr": "max(ruby_puma_request_backlog) or vector(0)",
+          "instant": true,
+          "legendFormat": "backlog",
+          "refId": "A"
+        }
+      ]
+    },
+    {
       "type": "row",
       "title": "Sidekiq",
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 28
       },
-      "id": 21,
+      "id": 26,
       "collapsed": false,
       "panels": []
     },
     {
       "type": "stat",
       "title": "Queue Depth",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 21
+        "y": 29
       },
-      "id": 22,
+      "id": 27,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -1234,13 +1596,14 @@
     {
       "type": "stat",
       "title": "Queue Latency",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 21
+        "y": 29
       },
-      "id": 23,
+      "id": 28,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -1292,7 +1655,7 @@
             "type": "prometheus",
             "uid": "i4qUEiFHz"
           },
-          "expr": "max(ruby_sidekiq_queue_latency)",
+          "expr": "max(ruby_sidekiq_queue_latency_seconds) or vector(0)",
           "instant": true,
           "legendFormat": "latency",
           "refId": "A"
@@ -1302,13 +1665,14 @@
     {
       "type": "stat",
       "title": "Retry Queue",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 21
+        "y": 29
       },
-      "id": 24,
+      "id": 29,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"
@@ -1370,13 +1734,14 @@
     {
       "type": "stat",
       "title": "Dead Queue",
+      "description": "",
       "gridPos": {
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 21
+        "y": 29
       },
-      "id": 25,
+      "id": 30,
       "datasource": {
         "type": "prometheus",
         "uid": "i4qUEiFHz"

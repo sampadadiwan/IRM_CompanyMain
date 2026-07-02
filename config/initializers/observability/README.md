@@ -2,7 +2,7 @@
 
 Prometheus + Grafana monitoring for CapHive. Covers infrastructure metrics (CPU, memory, disk) and Rails application metrics (requests, errors, Sidekiq, Puma memory).
 
-Grafana: https://graphana.caphive.com  
+Grafana: https://graphana.caphive.com
 Prometheus: internal, scraped from the Grafana server on port 9090
 
 ---
@@ -218,7 +218,6 @@ thimmaiah@gmail.com
 shrikantgour018@gmail.com
 aniketpoptani100@gmail.com
 sampada.diwan@gmail.com
-garyali.neha@gmail.com
 ```
 
 Group wait 30s, group interval 5m, repeat every 4h. To change recipients, edit `grafana_provision.yml` and re-run `rake grafana:provision:contact_points`.

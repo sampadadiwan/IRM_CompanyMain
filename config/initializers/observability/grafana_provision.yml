@@ -10,7 +10,7 @@ contact_points:
     type: email
     settings:
       # Full team — update here when people join/leave, then re-run rake grafana:provision
-      addresses: thimmaiah@gmail.com;shrikantgour018@gmail.com;aniketpoptani100@gmail.com;sampada.diwan@gmail.com;garyali.neha@gmail.com
+      addresses: thimmaiah@gmail.com;shrikantgour018@gmail.com;aniketpoptani100@gmail.com;sampada.diwan@gmail.com
       singleEmail: false
     disableResolveMessage: false
 
@@ -253,7 +253,7 @@ alert_rules:
 
   - title: "MySQL Deadlocks Detected"
     group: database
-    expr: 'max(rate(mysql_global_status_innodb_deadlocks[5m]))*60'
+    expr: 'max(rate(mysql_info_schema_innodb_metrics_lock_lock_deadlocks_total[5m]))*60'
     threshold_gt: 0
     for: 2m
     summary: "MySQL InnoDB deadlocks occurring — check application transaction ordering and lock acquisition order"
@@ -273,22 +273,25 @@ alert_rules:
 
   # ── Rails depth ─────────────────────────────────────────────────────────────
 
-  - title: "P95 Request Latency Critical (>3s)"
+  # ruby_http_request_duration_seconds is a summary (not a histogram) — no _bucket metric.
+  # Available quantiles: 0.01, 0.1, 0.5, 0.9, 0.99. Using P99 (worst tail) for alerting.
+  - title: "P99 Request Latency Critical (>3s)"
     group: rails
-    expr: 'histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000'
+    expr: 'max(ruby_http_request_duration_seconds{quantile="0.99"})*1000'
     threshold_gt: 3000
     for: 5m
-    summary: "95th percentile response time >3s — tail latency is high even if average looks OK"
+    summary: "99th percentile response time >3s — tail latency is high even if average looks OK"
     labels:
       severity: critical
       category: rails
 
+  # ruby_puma_busy_threads doesn't exist in prometheus_exporter; use running/capacity ratio.
   - title: "Puma Thread Saturation Critical (>90%)"
     group: rails
-    expr: 'avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100'
+    expr: 'avg(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100'
     threshold_gt: 90
     for: 5m
-    summary: "Puma thread pool >90% busy — new requests are queueing; consider adding Puma workers"
+    summary: "Puma thread pool >90% utilised — new requests are queueing; consider adding Puma workers"
     labels:
       severity: critical
       category: rails
@@ -305,7 +308,7 @@ alert_rules:
 
   - title: "Sidekiq Queue Latency Critical (>5min)"
     group: rails
-    expr: 'max(ruby_sidekiq_queue_latency)'
+    expr: 'max(ruby_sidekiq_queue_latency_seconds)'
     threshold_gt: 300
     for: 5m
     summary: "Sidekiq jobs waiting >5min to start — check worker count and whether workers are stuck"
@@ -347,6 +350,15 @@ alert_rules:
       severity: critical
       category: infra
 
+
+# Read-only Grafana users — provisioned with Viewer org role.
+# Passwords come from ENV so they are never stored in git.
+# Set GRAFANA_VIEWER_PASSWORD before running rake grafana:provision (or grafana:provision:viewer_users).
+viewer_users:
+  - login: support
+    name: CapHive Support
+    email: support@caphive.com
+    password: ${GRAFANA_VIEWER_PASSWORD}
 
 # Dashboard UIDs to patch and version-control
 dashboards:

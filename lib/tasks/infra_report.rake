@@ -151,30 +151,30 @@ class InfraReporter
                  'High RSS causes the OS to swap, slowing all requests.',
     },
     {
-      # P95 latency catches tail latency spikes invisible to the average — 5% of users are waiting
-      # 3s+ even when average looks fine. Uses histogram_quantile over 5m rate buckets.
-      key:       :p95_latency,
-      label:     'P95 Latency',
+      # ruby_http_request_duration_seconds is a summary (not a histogram) — no _bucket metric.
+      # Available pre-computed quantiles: 0.01, 0.1, 0.5, 0.9, 0.99. Using P99 (worst tail).
+      key:       :p99_latency,
+      label:     'P99 Latency',
       unit:      'ms',
       warn:      1_000,
       crit:      3_000,
       window_fn: 'avg_over_time',
-      query:     'histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000',
-      desc:      '95th-percentile HTTP response time. 5% of requests take at least this long. ' \
-                 'Spikes here affect real users even when average looks OK. ' \
-                 'Uses avg_over_time to smooth irate spikes on low-traffic periods.',
+      query:     'max(ruby_http_request_duration_seconds{quantile="0.99"})*1000',
+      desc:      '99th-percentile HTTP response time. 1% of requests take at least this long. ' \
+                 'Spikes here affect real users even when average looks OK.',
     },
     {
       # Thread saturation: when all Puma threads are busy, new connections queue at the OS level.
       # >90% sustained means users are waiting for a thread to free up before the request starts.
+      # ruby_puma_busy_threads doesn't exist; use running_threads/thread_pool_capacity.
       key:       :puma_threads,
       label:     'Puma Threads',
       unit:      '%',
       warn:      70,
       crit:      90,
       window_fn: 'max_over_time',
-      query:     'avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100',
-      desc:      'Puma thread pool saturation — busy_threads / max_threads × 100. ' \
+      query:     'avg(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100',
+      desc:      'Puma thread pool saturation — running_threads / thread_pool_capacity × 100. ' \
                  'At 100% all threads are blocked; new requests queue at OS level. ' \
                  'WARN at 70% is the cue to investigate slow queries or jobs holding threads.',
     },
@@ -201,7 +201,7 @@ class InfraReporter
       warn:      60,
       crit:      300,
       window_fn: 'max_over_time',
-      query:     'max(ruby_sidekiq_queue_latency)',
+      query:     'max(ruby_sidekiq_queue_latency_seconds)',
       desc:      'Age of the oldest unprocessed job in the Sidekiq queue (seconds). ' \
                  'High latency with low depth = workers are stuck or blocked. ' \
                  'CRIT at 5min means some tasks are timing out or waiting for locked resources.',
@@ -303,7 +303,7 @@ class InfraReporter
       warn:      0.1,
       crit:      1,
       window_fn: 'max_over_time',
-      query:     'max by(instance)(rate(mysql_global_status_innodb_deadlocks[5m]))*60',
+      query:     'max by(instance)(rate(mysql_info_schema_innodb_metrics_lock_lock_deadlocks_total[5m]))*60',
       desc:      'MySQL InnoDB deadlocks per minute. Any sustained deadlock rate hurts write ' \
                  'throughput and causes application retries. Fix by reviewing transaction ' \
                  'ordering — both transactions must acquire locks in the same sequence.',
