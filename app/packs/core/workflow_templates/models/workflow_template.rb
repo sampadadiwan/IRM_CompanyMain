@@ -12,10 +12,12 @@ class WorkflowTemplate < ApplicationRecord
   # Order matters — this is the order shown in the select dropdown.
   WORKFLOWABLE_TYPE_OPTIONS = %w[Folder InvestorKyc CapitalCommitment Approval].freeze
 
+  before_validation { self.workflowable_type = nil if workflowable_type.blank? }
+
   validates :name, presence: true
   validates :name, uniqueness: { scope: :entity_id, message: "must be unique within your organisation" }
   validates :workflowable_type, inclusion: { in: WORKFLOWABLE_TYPE_OPTIONS, message: "is not a valid workflowable type" },
-                                allow_nil: true
+                                allow_nil: true, allow_blank: true
 
   # workflowable_type is immutable once set — changing it would orphan existing assignments
   validate :workflowable_type_immutable, on: :update

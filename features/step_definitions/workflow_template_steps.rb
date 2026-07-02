@@ -175,4 +175,6 @@ end
 
 When("I save the workflow template edit form") do
   click_button("Save")
+  # Wait for Turbo to complete navigation before subsequent DB assertions run
+  expect(page).to have_text("successfully updated")
 end
