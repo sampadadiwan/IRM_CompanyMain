@@ -1,0 +1,32 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  # rails_app: prometheus_exporter (port 9394) — app servers in the US region
+  # Using public IPs — if Prometheus runs inside the US VPC, switch these to private IPs.
+  - job_name: 'rails_app'
+    static_configs:
+      - targets:
+          - '54.147.171.162:9394'   # primary app server (us-east-1)
+          - '35.153.176.117:9394'   # second app server  (us-east-1)
+
+  # node_exporter (port 9100) — all US servers (app + DB)
+  # App servers use public IPs; DB servers use VPC-internal IPs (no public IP).
+  - job_name: node
+    static_configs:
+      - targets:
+          - '54.147.171.162:9100'   # primary app server
+          - '35.153.176.117:9100'   # second app server
+          - '10.0.3.214:9100'       # primary DB server (credentials[:DB_HOST])
+          - '10.0.4.28:9100'        # replica DB server  (credentials[:DB_HOST_REPLICA])
+
+  # mysqld_exporter (port 9104) — DB servers only
+  - job_name: mysqld
+    static_configs:
+      - targets:
+          - '10.0.3.214:9104'       # primary DB server
+          - '10.0.4.28:9104'        # replica DB server

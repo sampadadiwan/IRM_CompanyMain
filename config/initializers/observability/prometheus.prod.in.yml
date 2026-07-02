@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alerts.yml"
+
+scrape_configs:
+  # rails_app: prometheus_exporter (port 9394) — app servers in the IN VPC
+  - job_name: 'rails_app'
+    static_configs:
+      - targets:
+          - '10.0.1.56:9394'    # primary app server
+          - '10.0.2.137:9394'   # second app server
+
+  # node_exporter (port 9100) — all IN servers (app + DB)
+  - job_name: node
+    static_configs:
+      - targets:
+          - '10.0.1.56:9100'    # primary app server
+          - '10.0.2.137:9100'   # second app server
+          - '10.0.3.182:9100'   # primary DB server
+          - '10.0.4.78:9100'    # replica DB server
+
+  # mysqld_exporter (port 9104) — DB servers only
+  - job_name: mysqld
+    static_configs:
+      - targets:
+          - '10.0.3.182:9104'   # primary DB server
+          - '10.0.4.78:9104'    # replica DB server
