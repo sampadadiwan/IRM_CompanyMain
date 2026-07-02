@@ -57,13 +57,18 @@ Sidekiq.configure_server do |config|
   # prometheus_exporter knows how to unwrap the old ActiveJob wrapper class name but not the
   # new one used by Rails 7+ with Sidekiq 7+. Extend get_name to handle both so the real
   # job class (e.g. DocGenJob) appears in Prometheus instead of "Sidekiq::ActiveJob::Wrapper".
+  #
+  # Constants (JOB_WRAPPER_CLASS_NAME, DELAYED_CLASS_NAMES) are defined inside
+  # PrometheusExporter::Instrumentation::Sidekiq. class_eval with a block uses the block's
+  # lexical scope for constant lookup, so they must be fully qualified here.
   PrometheusExporter::Instrumentation::Sidekiq.class_eval do
     SIDEKIQ_ACTIVEJOB_WRAPPER = "Sidekiq::ActiveJob::Wrapper"
 
     def self.get_name(class_name, msg)
-      if class_name == JOB_WRAPPER_CLASS_NAME || class_name == SIDEKIQ_ACTIVEJOB_WRAPPER
+      prom = PrometheusExporter::Instrumentation::Sidekiq
+      if class_name == prom::JOB_WRAPPER_CLASS_NAME || class_name == SIDEKIQ_ACTIVEJOB_WRAPPER
         get_job_wrapper_name(msg)
-      elsif DELAYED_CLASS_NAMES.include?(class_name)
+      elsif prom::DELAYED_CLASS_NAMES.include?(class_name)
         get_delayed_name(msg, class_name)
       else
         class_name
