@@ -7,10 +7,12 @@ class WorkflowInstancesController < ApplicationController
   before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail]
 
   # GET /workflow_instances
-  # Lists all workflow instances visible to the current user's entity
+  # Lists all workflow instances visible to the current user's entity.
+  # Accepts optional workflow_template_id param to filter by template (used by the template show tab).
   def index
     @instances = policy_scope(WorkflowInstance).includes(:workflow_template, :workflowable)
                                                .order(created_at: :desc)
+    @instances = @instances.where(workflow_template_id: params[:workflow_template_id]) if params[:workflow_template_id].present?
     authorize WorkflowInstance
   end
 

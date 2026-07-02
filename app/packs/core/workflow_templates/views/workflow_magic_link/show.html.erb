@@ -3,48 +3,39 @@
 
 <div class="container py-4 py-md-5" style="max-width: 600px;">
 
-  <%# ── Context header ─────────────────────────────────────────────────────── %>
-  <div class="mb-4">
-    <div class="d-flex align-items-center gap-2 mb-1">
-      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
-        <i class="ti ti-layout-kanban me-1"></i><%= @instance.template_name %>
-      </span>
-    </div>
-    <%# Link back to the workflowable object if it has a URL; plain text fallback otherwise %>
-    <% workflowable_url = @workflowable.workflow_url rescue nil %>
-    <h4 class="fw-bold mb-0">
-      <% if workflowable_url %>
-        <%= link_to @workflowable.workflow_display_name, workflowable_url,
-              class: "text-decoration-none text-dark" %>
-      <% else %>
-        <%= @workflowable.workflow_display_name %>
-      <% end %>
-    </h4>
-    <p class="text-muted small mb-0">
-      <i class="ti ti-user me-1"></i>Reviewing as <strong><%= @actor&.full_name %></strong>
-    </p>
-  </div>
-
-  <%# ── Step card ──────────────────────────────────────────────────────────── %>
+  <%# ── Step card (context header lives at the top of the card body) ─────── %>
   <%= render FormCard.new(title: "<i class='ti ti-circle-number-#{@step[:position]}'></i>&nbsp;#{h(@step[:name])}", controller: "none") do %>
 
-    <%# Link to the source object so the actor can review it in context before responding %>
+    <%# Context + optional description, all inside the blue-border info box %>
     <% workflowable_url = @workflowable.workflow_url rescue nil %>
-    <% if workflowable_url %>
-      <div class="mb-3">
-        <%= link_to workflowable_url, target: "_blank", rel: "noopener noreferrer",
-              class: "btn btn-outline-secondary btn-sm" do %>
-          <i class="ti ti-external-link me-1"></i>View <%= @workflowable.workflow_display_name %>
+    <div class="border-start border-4 border-primary ps-3 py-2 mb-4 d-flex flex-column gap-1">
+      <div class="d-flex align-items-center gap-2 text-body small">
+        <i class="ti ti-layout-kanban flex-shrink-0"></i>
+        <span><%= @instance.template_name %></span>
+      </div>
+      <div class="d-flex align-items-center gap-2 text-body small">
+        <i class="ti ti-file-description flex-shrink-0"></i>
+        <% if workflowable_url %>
+          <%= link_to workflowable_url, class: "text-muted text-decoration-none",
+                target: "_blank", rel: "noopener noreferrer" do %>
+            <%= @workflowable.workflow_display_name %>
+            <i class="ti ti-external-link ms-1" style="font-size:0.85em;"></i>
+          <% end %>
+        <% else %>
+          <span><%= @workflowable.workflow_display_name %></span>
         <% end %>
       </div>
-    <% end %>
-
-    <% if @step[:description].present? %>
-      <div class="border-start border-4 border-primary ps-3 py-1 mb-4 text-body">
-        <i class="ti ti-info-circle text-primary me-1"></i>
-        <span class="small"><%= @step[:description] %></span>
+      <div class="d-flex align-items-center gap-2 text-body small">
+        <i class="ti ti-user flex-shrink-0"></i>
+        <span>Reviewing as <strong><%= @actor&.full_name %></strong></span>
       </div>
-    <% end %>
+      <% if @step[:description].present? %>
+        <div class="d-flex align-items-start gap-2 text-body small">
+          <i class="ti ti-info-circle flex-shrink-0 mt-1"></i>
+          <span><%= @step[:description] %></span>
+        </div>
+      <% end %>
+    </div>
 
     <% if @existing_response %>
       <%# Already responded — show confirmation state %>
@@ -74,7 +65,7 @@
             "<%= @existing_response.note %>"
           </blockquote>
         <% end %>
-        <p class="text-muted small mt-3 mb-0">
+        <p class="text-body small mt-3 mb-0">
           <i class="ti ti-clock me-1"></i>
           Submitted <%= time_ago_in_words(@existing_response.responded_at) %> ago.
           You can use another state link from the email to change your mind — the last submission wins.
@@ -92,7 +83,7 @@
           <label class="form-label fw-semibold mb-2">
             <i class="ti ti-flag me-1 text-muted"></i>Your decision
           </label>
-          <p class="text-muted small mb-3">
+          <p class="text-body small mb-3">
             Select a state below. Your response is not recorded until you click <strong>Submit</strong>.
           </p>
           <div class="d-flex flex-column gap-2">

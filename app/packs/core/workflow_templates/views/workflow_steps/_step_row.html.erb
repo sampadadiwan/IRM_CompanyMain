@@ -1,5 +1,7 @@
 <%# Inline step row used inside the nested template form %>
 <div class="step-row border rounded p-3 mb-3" data-controller="workflow-step">
+  <%# id must be inside the div so nested_form_controller.js can detect persisted rows via querySelector %>
+  <%= step_form.hidden_field :id %>
   <%= step_form.hidden_field :_destroy, class: "step-destroy-flag" %>
   <%= step_form.hidden_field :position, class: "step-position" %>
 
