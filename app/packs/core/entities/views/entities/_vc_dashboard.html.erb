@@ -1,13 +1,16 @@
 <% params[:units] ||= "Million" %>
 
 <%
-  # Get all GP entities based on the CapitalCommitments the user can see
+  # Collect all GP entities the current LP user has capital commitments with.
+  # policy_scope filters to only commitments the user is authorized to see.
   gp_entities = policy_scope(CapitalCommitment).includes(:entity).map(&:entity).uniq.compact.sort_by { |e| e.name.downcase }
 
-  # Determine selected entity:
-  # - If user submitted the form with an entity, use that.
-  # - If @current_entity is present, use that.
-  # - On initial load, default to the first GP entity, or current_user.entity_id.
+  # Resolve which GP entity to display:
+  #   1. Explicit form submission (user changed the dropdown) — params[:gp_entity_id] is set.
+  #      An empty value means "no selection", so fall back to the LP's own entity.
+  #   2. Subdomain-based resolution — @current_entity is set by set_current_entity when
+  #      the LP visits a GP's branded subdomain (e.g. acme.caphive.com).
+  #   3. Default on first load — use the first GP entity or the LP's own entity.
   if params.key?(:gp_entity_id)
     selected_entity_id = params[:gp_entity_id].presence || current_user.entity_id
   elsif defined?(@current_entity) && @current_entity.present?
@@ -17,34 +20,48 @@
   end
 
   selected_entity = gp_entities.find { |e| e.id.to_s == selected_entity_id.to_s }
+
+  # Build a JS map of entity_id => sub_domain used by the onchange handler below.
+  # When the LP picks a GP that has a subdomain configured, the browser is redirected
+  # to that subdomain (e.g. http://acme.caphive.com/) so @current_entity resolves
+  # correctly on the GP's branded site. Entities without a subdomain fall back to
+  # an in-page turbo frame update via this.form.requestSubmit().
+  gp_subdomain_map = gp_entities.each_with_object({}) { |e, h| h[e.id.to_s] = e.sub_domain.presence }
+  base_domain = ENV.fetch("BASE_DOMAIN", request.host)
 %>
 
+<%# Render the GP picker only on the dashboard pages and only when the LP has
+    multiple GPs. The div is rendered hidden here so it has access to Rails
+    helpers; gp_switcher_controller#connect moves it into #topbar_gp_dropdown. %>
 <% if (current_page?(root_path) || current_page?(dashboard_entities_path)) && gp_entities.any? %>
-  <div id="gp_dropdown_source" class="d-none">
+  <div id="gp_dropdown_source" class="d-none"
+       data-controller="gp-switcher"
+       data-gp-switcher-subdomains-value="<%= gp_subdomain_map.to_json %>"
+       data-gp-switcher-base-domain-value="<%= base_domain %>"
+       data-gp-switcher-protocol-value="<%= request.protocol %>">
     <div class="topbar-divider d-none d-lg-block"></div>
+    <%# form_with targets vc_dashboard_frame so that fallback (no-subdomain) GP
+        changes reload only the dashboard turbo frame, not the full page. %>
     <%= form_with url: dashboard_entities_path, method: :get, data: { turbo_frame: "vc_dashboard_frame" }, class: "d-inline-block px-2" do |f| %>
       <div class="d-flex align-items-center gap-2">
         <%= f.label :gp_entity_id, "GP:", class: "fw-bold mb-0 text-nowrap text-muted d-none" %>
         <%= f.select :gp_entity_id,
                      options_from_collection_for_select(gp_entities, :id, :name, selected_entity_id),
                      {},
-                     { class: "form-control", onchange: "this.form.requestSubmit()" } %>
+                     {
+                       class: "form-control",
+                       data: { action: "change->gp-switcher#switch" }
+                     } %>
       </div>
     <% end %>
   </div>
-  <script>
-    (function() {
-      var target = document.getElementById('topbar_gp_dropdown');
-      var source = document.getElementById('gp_dropdown_source');
-      if (target && source) {
-        target.innerHTML = source.innerHTML;
-        source.remove();
-      }
-    })();
-  </script>
 <% end %>
 
+<%# target="_top" ensures any full-page redirects from within the frame (e.g.
+    Devise sign-in redirect) break out of the frame and replace the whole page. %>
 <turbo-frame id="vc_dashboard_frame" target="_top">
+  <%# Show a contextual banner when the LP is viewing a GP's data rather than
+      their own entity, so it is always clear whose data is on screen. %>
   <% if selected_entity && selected_entity.id != current_user.entity_id %>
     <div class="alert alert-light-primary bg-primary-subtle border-primary border-opacity-25 d-flex align-items-center gap-3 mb-4 rounded-4 shadow-sm" role="alert">
       <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm" style="width: 40px; height: 40px;">
@@ -60,6 +77,9 @@
   <div data-controller="datatable">
       <%= render "dashboard_widgets/dashboard", dashboard_name: DashboardWidget::LP_LANDING_PAGE, show_nav: false, entity_id: selected_entity_id %>
      <%
+      # Only show the LP AI assistant if the user has an approved InvestorAccess
+      # for this GP entity — avoids surfacing a chat panel for GPs the user can
+      # see in the dropdown but hasn't been fully on-boarded with.
       has_approved_access = current_user.investor_accesses
                                     .where(entity_id: selected_entity_id, approved: true)
                                     .exists?

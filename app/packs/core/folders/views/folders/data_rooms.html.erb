@@ -17,7 +17,9 @@
       </tr>
     </thead>
     <tbody>
-      <% current_user.entity.investee_entities.where_permissions(:enable_data_rooms).each do |entity| %>
+      <% entities = current_user.entity.investee_entities.where_permissions(:enable_data_rooms) %>
+      <% entities = entities.where(id: params[:entity_id]) if params[:entity_id].present? %>
+      <% entities.each do |entity| %>
         <% if entity.data_room_folder %>
         <tr>
             <td>
