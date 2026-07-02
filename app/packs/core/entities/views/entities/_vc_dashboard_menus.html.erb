@@ -1,11 +1,11 @@
 <% if current_user.enable_funds %>
 <div class="row">
 
-    <% if @current_entity&.permissions&.enable_data_rooms? %>
+    <% if @current_entity&.permissions&.enable_data_rooms? && @current_entity&.data_room_folder %>
     <div class="col">
         <div class="card">
         <div class="card-body">
-            <a href="<%= data_rooms_folders_path(entity_id: @current_entity.id) %>">
+            <a href="<%= folder_documents_path(folder_id: @current_entity.data_room_folder.id, entity_id: @current_entity.id) %>">
                 <div class="d-flex flex-row align-items-center">
                 <div class="round-40 rounded-circle text-white d-flex align-items-center justify-content-center text-bg-success">
                     <i class="ti ti-folder fs-6"></i>

@@ -197,6 +197,9 @@ class Entity < ApplicationRecord
     investors.is_trust.first
   end
 
+  # The data room folder is a child of the root folder, with name "Data Room" and level 1
+  # There is only one Data Room folder per entity, and can have sub folders inside it
+  # Different LPs can have access to different sub folders within the data room, and these are shown to the LP when he clicks the dataroom link on the LP dashboard
   def data_room_folder
     root_folder.children.where(name: "Data Room", level: 1).first
   end
