@@ -1,0 +1,534 @@
+{
+  "uid": "mysql-overview",
+  "title": "MySQL Overview",
+  "tags": ["mysql", "database"],
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "1m",
+  "time": { "from": "now-6h", "to": "now" },
+  "timepicker": {},
+  "timezone": "browser",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Datasource",
+        "type": "datasource",
+        "query": "prometheus",
+        "refresh": 1,
+        "hide": 0
+      },
+      {
+        "name": "instance",
+        "label": "Instance",
+        "type": "query",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(mysql_up, instance)",
+        "refresh": 2,
+        "includeAll": true,
+        "allValue": ".+",
+        "multi": true,
+        "sort": 1,
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "id": 1,
+      "title": "MySQL Up",
+      "description": "1 = reachable, 0 = exporter cannot connect to MySQL",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "min(mysql_up{instance=~\"$instance\"})",
+          "legendFormat": "up",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            { "type": "value", "options": { "0": { "text": "DOWN", "color": "red" }, "1": { "text": "UP", "color": "green" } } }
+          ],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "colorMode": "background" }
+    },
+    {
+      "type": "stat",
+      "id": 2,
+      "title": "Uptime",
+      "description": "Seconds since MySQL started",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "avg(mysql_global_status_uptime{instance=~\"$instance\"})",
+          "legendFormat": "uptime",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "colorMode": "value" }
+    },
+    {
+      "type": "stat",
+      "id": 3,
+      "title": "Connections Used",
+      "description": "Current threads_connected / max_connections — alert fires at >80%",
+      "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "max(mysql_global_status_threads_connected{instance=~\"$instance\"} / mysql_global_variables_max_connections{instance=~\"$instance\"} * 100)",
+          "legendFormat": "connection %",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 60 }, { "color": "red", "value": 80 }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "colorMode": "background" }
+    },
+    {
+      "type": "stat",
+      "id": 4,
+      "title": "Queries / sec",
+      "description": "Total queries per second across all connections",
+      "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(rate(mysql_global_status_queries{instance=~\"$instance\"}[5m]))",
+          "legendFormat": "QPS",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "colorMode": "value" }
+    },
+    {
+      "type": "stat",
+      "id": 5,
+      "title": "Slow Queries / sec",
+      "description": "Queries exceeding long_query_time — alert fires when >1/s sustained for 10m",
+      "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum(rate(mysql_global_status_slow_queries{instance=~\"$instance\"}[5m]))",
+          "legendFormat": "slow/s",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.1 }, { "color": "red", "value": 1 }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "colorMode": "background" }
+    },
+    {
+      "type": "stat",
+      "id": 6,
+      "title": "Replication Lag",
+      "description": "Seconds replica is behind primary — alert fires at >30s",
+      "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "max(mysql_slave_status_seconds_behind_master{instance=~\"$instance\"})",
+          "legendFormat": "lag",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 30 }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "orientation": "auto", "colorMode": "background" }
+    },
+
+    {
+      "type": "timeseries",
+      "id": 10,
+      "title": "Connections",
+      "description": "Active connections vs. max_connections ceiling",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_global_status_threads_connected{instance=~\"$instance\"}",
+          "legendFormat": "connected ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_global_status_threads_running{instance=~\"$instance\"}",
+          "legendFormat": "running ({{instance}})",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_global_variables_max_connections{instance=~\"$instance\"}",
+          "legendFormat": "max_connections ({{instance}})",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "max_connections" }, "properties": [{ "id": "custom.lineStyle", "value": { "dash": [5, 5], "fill": "dash" } }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "red" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "id": 11,
+      "title": "Queries per Second",
+      "description": "QPS broken down by SELECTs, INSERTs, UPDATEs, DELETEs",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum by(instance)(rate(mysql_global_status_commands_total{command=~\"select\",instance=~\"$instance\"}[5m]))",
+          "legendFormat": "SELECTs ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum by(instance)(rate(mysql_global_status_commands_total{command=~\"insert\",instance=~\"$instance\"}[5m]))",
+          "legendFormat": "INSERTs ({{instance}})",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum by(instance)(rate(mysql_global_status_commands_total{command=~\"update\",instance=~\"$instance\"}[5m]))",
+          "legendFormat": "UPDATEs ({{instance}})",
+          "refId": "C"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "sum by(instance)(rate(mysql_global_status_commands_total{command=~\"delete\",instance=~\"$instance\"}[5m]))",
+          "legendFormat": "DELETEs ({{instance}})",
+          "refId": "D"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "reqps" } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "timeseries",
+      "id": 20,
+      "title": "InnoDB Buffer Pool Hit Rate",
+      "description": "% of reads served from buffer pool (RAM). Should be >99%. Drop indicates insufficient innodb_buffer_pool_size.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "(1 - rate(mysql_global_status_innodb_buffer_pool_reads{instance=~\"$instance\"}[5m]) / rate(mysql_global_status_innodb_buffer_pool_read_requests{instance=~\"$instance\"}[5m])) * 100",
+          "legendFormat": "hit rate ({{instance}})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 90,
+          "max": 100,
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 95 }, { "color": "green", "value": 99 }] },
+          "color": { "mode": "thresholds" },
+          "custom": { "thresholdsStyle": { "mode": "area" } }
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "id": 21,
+      "title": "InnoDB Buffer Pool Usage",
+      "description": "Bytes dirty (pending flush) vs. total pool size",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_global_status_innodb_buffer_pool_bytes_data{instance=~\"$instance\"}",
+          "legendFormat": "data ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_global_status_innodb_buffer_pool_bytes_dirty{instance=~\"$instance\"}",
+          "legendFormat": "dirty ({{instance}})",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_global_variables_innodb_buffer_pool_size{instance=~\"$instance\"}",
+          "legendFormat": "pool size ({{instance}})",
+          "refId": "C"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "bytes" },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "pool size" }, "properties": [{ "id": "custom.lineStyle", "value": { "dash": [5, 5], "fill": "dash" } }, { "id": "color", "value": { "mode": "fixed", "fixedColor": "gray" } }] }
+        ]
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "timeseries",
+      "id": 30,
+      "title": "Table Locks",
+      "description": "Table lock waits/sec — high values indicate contention; consider InnoDB row-level locking",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "rate(mysql_global_status_table_locks_waited{instance=~\"$instance\"}[5m])",
+          "legendFormat": "waits/s ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "rate(mysql_global_status_table_locks_immediate{instance=~\"$instance\"}[5m])",
+          "legendFormat": "immediate/s ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": { "defaults": { "unit": "short" } },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "id": 31,
+      "title": "Slow Queries",
+      "description": "Queries exceeding long_query_time — investigate with EXPLAIN or pt-query-digest",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "rate(mysql_global_status_slow_queries{instance=~\"$instance\"}[5m])",
+          "legendFormat": "slow/s ({{instance}})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 0.1 }, { "color": "red", "value": 1 }] },
+          "color": { "mode": "thresholds" },
+          "custom": { "thresholdsStyle": { "mode": "area" } }
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+
+    {
+      "type": "row",
+      "id": 40,
+      "title": "Replication",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 28 },
+      "collapsed": false,
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "id": 41,
+      "title": "Replication Lag (Seconds Behind Master)",
+      "description": "How far replica lags behind primary. Alert fires at >30s. NULL/no data = this is the primary.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 29 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_slave_status_seconds_behind_master{instance=~\"$instance\"}",
+          "legendFormat": "lag ({{instance}})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 10 }, { "color": "red", "value": 30 }] },
+          "color": { "mode": "thresholds" },
+          "custom": { "thresholdsStyle": { "mode": "area" } }
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "stat",
+      "id": 42,
+      "title": "IO Thread Running",
+      "description": "1 = replica I/O thread is connected to primary and receiving binlog events",
+      "gridPos": { "h": 4, "w": 6, "x": 12, "y": 29 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_slave_status_slave_io_running{instance=~\"$instance\"}",
+          "legendFormat": "IO running",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{ "type": "value", "options": { "0": { "text": "STOPPED", "color": "red" }, "1": { "text": "RUNNING", "color": "green" } } }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "type": "stat",
+      "id": 43,
+      "title": "SQL Thread Running",
+      "description": "1 = replica SQL thread is applying relay log events (replaying writes from primary)",
+      "gridPos": { "h": 4, "w": 6, "x": 18, "y": 29 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_slave_status_slave_sql_running{instance=~\"$instance\"}",
+          "legendFormat": "SQL running",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [{ "type": "value", "options": { "0": { "text": "STOPPED", "color": "red" }, "1": { "text": "RUNNING", "color": "green" } } }],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "green", "value": 1 }] },
+          "color": { "mode": "thresholds" }
+        }
+      },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" }
+    },
+    {
+      "type": "timeseries",
+      "id": 50,
+      "title": "Binlog Accumulation (Primary → Replica gap)",
+      "description": "Bytes of binlog written on primary but not yet applied on replica. Sustained growth = replica falling behind and binlogs piling up on primary disk.",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 37 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_slave_status_master_log_pos{instance=~\"$instance\"} - mysql_slave_status_exec_master_log_pos{instance=~\"$instance\"}",
+          "legendFormat": "gap bytes ({{instance}})",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 104857600 }, { "color": "red", "value": 524288000 }] },
+          "color": { "mode": "thresholds" },
+          "custom": { "thresholdsStyle": { "mode": "area" } }
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "id": 51,
+      "title": "Stale / Zombie Connections (Sleep time)",
+      "description": "How long the longest-sleeping connection has been idle. >1h = zombie connection not released by app pool. Check: SHOW PROCESSLIST; then KILL <id> for offenders.",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 37 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "max(mysql_info_schema_processlist_seconds{command=\"Sleep\",instance=~\"$instance\"})",
+          "legendFormat": "longest sleep ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "count(mysql_info_schema_processlist_seconds{command=\"Sleep\",instance=~\"$instance\"})",
+          "legendFormat": "sleep count ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 300 }, { "color": "red", "value": 1800 }] },
+          "color": { "mode": "thresholds" },
+          "custom": { "thresholdsStyle": { "mode": "area" } }
+        }
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    },
+    {
+      "type": "timeseries",
+      "id": 44,
+      "title": "Replication I/O & SQL Thread Status",
+      "description": "1 = running, 0 = stopped. Both should be 1 on replica; metric absent on primary.",
+      "gridPos": { "h": 4, "w": 12, "x": 12, "y": 33 },
+      "datasource": { "type": "prometheus", "uid": "${datasource}" },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_slave_status_slave_io_running{instance=~\"$instance\"}",
+          "legendFormat": "IO thread ({{instance}})",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "mysql_slave_status_slave_sql_running{instance=~\"$instance\"}",
+          "legendFormat": "SQL thread ({{instance}})",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": { "unit": "short", "min": 0, "max": 1 },
+        "overrides": []
+      },
+      "options": { "legend": { "displayMode": "list", "placement": "bottom" } }
+    }
+  ]
+}

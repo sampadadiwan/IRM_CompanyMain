@@ -1,0 +1,206 @@
+# Grafana provisioning config — applied by: GRAFANA_PASS=... bundle exec rake grafana:provision
+# Commit this file. The dashboards/ subdirectory is populated automatically on first run.
+# To recreate an environment from scratch:
+#   1. Deploy Grafana + Prometheus
+#   2. Set GRAFANA_URL / GRAFANA_USER / GRAFANA_PASS env vars
+#   3. Run: bundle exec rake grafana:provision
+
+contact_points:
+  - name: Caphive Support
+    type: email
+    settings:
+      # Full team — update here when people join/leave, then re-run rake grafana:provision
+      addresses: thimmaiah@gmail.com;shrikantgour018@gmail.com;aniketpoptani100@gmail.com;sampada.diwan@gmail.com;garyali.neha@gmail.com
+      singleEmail: false
+    disableResolveMessage: false
+
+# Root policy: all alerts → whole team, grouped to reduce noise, repeat every 4h
+notification_policy:
+  receiver: Caphive Support
+  group_by:
+    - grafana_folder
+    - alertname
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+
+# Grafana folder that will hold all alert rules
+alert_folder: CapHive Alerts
+
+alert_rules:
+  # ── Infrastructure ─────────────────────────────────────────────────────────
+
+  - title: "CPU Critical (>90%)"
+    group: infrastructure
+    # Same query used in infra_report.rake — no mountpoint filter needed for CPU
+    expr: '100-(avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))*100)'
+    threshold_gt: 90
+    for: 5m
+    summary: "CPU usage has exceeded 90% for 5 minutes"
+    labels:
+      severity: critical
+      category: infra
+
+  - title: "Memory Critical (>90%)"
+    group: infrastructure
+    expr: '(node_memory_MemTotal_bytes-node_memory_MemAvailable_bytes)/node_memory_MemTotal_bytes*100'
+    threshold_gt: 90
+    for: 5m
+    summary: "Memory usage has exceeded 90% for 5 minutes"
+    labels:
+      severity: critical
+      category: infra
+
+  - title: "Disk Critical (>90%)"
+    group: infrastructure
+    # max by(instance) + fstype!="tmpfs" — required for container nodes where root disk
+    # appears at /etc/hosts etc. rather than mountpoint="/". Mirrors the fix in infra_report.rake.
+    expr: 'max by(instance)((node_filesystem_size_bytes{fstype!="tmpfs"}-node_filesystem_free_bytes{fstype!="tmpfs"})/node_filesystem_size_bytes{fstype!="tmpfs"}*100)'
+    threshold_gt: 90
+    for: 5m
+    summary: "Disk usage has exceeded 90% on at least one filesystem"
+    labels:
+      severity: critical
+      category: infra
+
+  # ── Rails / Application ────────────────────────────────────────────────────
+
+  # 5xx only — real server failures. 4xx is excluded because bot 404s (controller=other)
+  # routinely dominate 4xx % on low-traffic periods and would cause constant false alerts.
+  - title: "Server Error Rate Critical (5xx >5%)"
+    group: rails
+    expr: 'sum(rate(ruby_http_requests_total{status=~"^5.*"}[5m]))/sum(rate(ruby_http_requests_total[5m]))*100'
+    threshold_gt: 5
+    for: 5m
+    summary: "HTTP 5xx server error rate has exceeded 5% for 5 minutes — real application failures"
+    labels:
+      severity: critical
+      category: rails
+
+  - title: "Avg Request Duration Critical (>2000ms)"
+    group: rails
+    expr: 'sum(irate(ruby_http_request_duration_seconds_sum[5m]))/sum(irate(ruby_http_request_duration_seconds_count[5m]))*1000'
+    threshold_gt: 2000
+    for: 5m
+    summary: "Average HTTP response time has exceeded 2 seconds for 5 minutes"
+    labels:
+      severity: critical
+      category: rails
+
+  - title: "Sidekiq Retry Queue Critical (>20 jobs)"
+    group: rails
+    expr: 'max(ruby_sidekiq_stats_retry_size)'
+    threshold_gt: 20
+    for: 5m
+    summary: "Sidekiq retry queue depth has exceeded 20 jobs — check for repeated job failures"
+    labels:
+      severity: critical
+      category: rails
+
+  - title: "Web Memory Critical (>700MB)"
+    group: rails
+    expr: 'avg(ruby_rss{type=~"web|puma_worker"})/1024/1024'
+    threshold_gt: 700
+    for: 5m
+    summary: "Puma web worker average RSS has exceeded 700MB — possible memory leak"
+    labels:
+      severity: critical
+      category: rails
+
+  # ── MySQL / Database ───────────────────────────────────────────────────────
+
+  # Fires when connections are within 20% of max_connections — at limit, new connections fail
+  - title: "MySQL Connections Critical (>80% of max)"
+    group: database
+    expr: 'max(mysql_global_status_threads_connected / mysql_global_variables_max_connections * 100)'
+    threshold_gt: 80
+    for: 5m
+    summary: "MySQL connection pool >80% full — {{ printf \"%.0f\" $values.A.Value }}% used"
+    labels:
+      severity: critical
+      category: database
+
+  # Replication lag: replica falling behind primary — data may be stale and diverge
+  - title: "MySQL Replication Lag Critical (>30s)"
+    group: database
+    expr: 'max(mysql_slave_status_seconds_behind_master{job="mysqld"})'
+    threshold_gt: 30
+    for: 5m
+    summary: "MySQL replica is {{ printf \"%.0f\" $values.A.Value }}s behind primary"
+    labels:
+      severity: critical
+      category: database
+
+  # Slow queries sustained above 1/s indicate missing indexes or expensive queries
+  - title: "MySQL Slow Queries High (>1/s)"
+    group: database
+    expr: 'sum(rate(mysql_global_status_slow_queries[5m]))'
+    threshold_gt: 1
+    for: 10m
+    summary: "MySQL slow query rate {{ printf \"%.1f\" $values.A.Value }}/s — check long_query_time queries"
+    labels:
+      severity: warning
+      category: database
+
+  # max(1 - up) = 1 when any DB target is down; 0 when all up.
+  # threshold_gt: 0 fires on any scrape failure without needing a threshold_lt operator.
+  - title: "MySQL Exporter Down"
+    group: database
+    expr: 'max(1 - up{job="mysqld"})'
+    threshold_gt: 0
+    for: 2m
+    summary: "mysqld_exporter is unreachable — DB monitoring blind"
+    labels:
+      severity: critical
+      category: database
+
+  # Binlog accumulation: replica's exec position falls far behind master's write position.
+  # Large gap = binlogs piling up on primary (disk risk) and data lagging on replica.
+  # Measured in bytes across the relay log; 500MB threshold = roughly a few binlog files.
+  - title: "MySQL Binlog Accumulation Critical (>500MB gap)"
+    group: database
+    expr: 'max(mysql_slave_status_master_log_pos - mysql_slave_status_exec_master_log_pos)'
+    threshold_gt: 524288000
+    for: 5m
+    summary: "Replica binlog gap >500MB — primary binlogs accumulating, replica falling behind"
+    labels:
+      severity: critical
+      category: database
+
+  # Zombie/stale connections: Sleep connections idle for >1 hour consume connection slots
+  # and may indicate app-side connection pool not releasing connections properly.
+  # Rails pool: 15 per server — connections should return within seconds after a request.
+  # >5min = pool not releasing; >30min = zombie (stuck transaction or leaked connection).
+  - title: "MySQL Stale Connections (Sleep >5min)"
+    group: database
+    expr: 'max(mysql_info_schema_processlist_seconds{command="Sleep"})'
+    threshold_gt: 300
+    for: 5m
+    summary: "MySQL has connections sleeping >5min — Rails pool may not be releasing connections"
+    labels:
+      severity: warning
+      category: database
+
+  - title: "MySQL Zombie Connections (Sleep >30min)"
+    group: database
+    expr: 'max(mysql_info_schema_processlist_seconds{command="Sleep"})'
+    threshold_gt: 1800
+    for: 5m
+    summary: "MySQL zombie connections sleeping >30min — kill them: SELECT id FROM information_schema.processlist WHERE command='Sleep' AND time>1800"
+    labels:
+      severity: critical
+      category: database
+
+# Dashboard UIDs to patch and version-control
+dashboards:
+  - uid: rYdddlPWk
+    name: "Node Exporter Full"
+    patches:
+      - fix_disk_queries       # replace mountpoint="/" with max by(instance) fstype!="tmpfs"
+      - add_node_variable      # $node dropdown for per-node filtering
+      - add_roc_panels         # Disk Growth Rate and Memory Growth Rate panels
+
+  - uid: L-0CZ_WVk
+    name: "Rails Metrics"
+    patches:
+      - add_controller_variable  # $controller dropdown for error breakdown filtering

@@ -1,0 +1,7 @@
+# /etc/.mysqld_exporter.cnf — credentials for mysqld_exporter monitoring user
+# Deploy to: /etc/.mysqld_exporter.cnf  (chmod 600, chown root:root)
+# This template is NOT committed with real credentials.
+# The setup.sh script writes the real file during installation.
+[client]
+user=exporter
+password=Monitor1234$

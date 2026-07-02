@@ -53,6 +53,24 @@ Sidekiq.default_configuration[:max_retries] = 2
 
 Sidekiq.configure_server do |config|
   require 'prometheus_exporter/instrumentation'
+
+  # prometheus_exporter knows how to unwrap the old ActiveJob wrapper class name but not the
+  # new one used by Rails 7+ with Sidekiq 7+. Extend get_name to handle both so the real
+  # job class (e.g. DocGenJob) appears in Prometheus instead of "Sidekiq::ActiveJob::Wrapper".
+  PrometheusExporter::Instrumentation::Sidekiq.class_eval do
+    SIDEKIQ_ACTIVEJOB_WRAPPER = "Sidekiq::ActiveJob::Wrapper"
+
+    def self.get_name(class_name, msg)
+      if class_name == JOB_WRAPPER_CLASS_NAME || class_name == SIDEKIQ_ACTIVEJOB_WRAPPER
+        get_job_wrapper_name(msg)
+      elsif DELAYED_CLASS_NAMES.include?(class_name)
+        get_delayed_name(msg, class_name)
+      else
+        class_name
+      end
+    end
+  end
+
   config.server_middleware do |chain|
     chain.add PrometheusExporter::Instrumentation::Sidekiq
   end
