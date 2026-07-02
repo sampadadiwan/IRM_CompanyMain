@@ -5,14 +5,15 @@ require 'base64'
 require 'date'
 
 namespace :infra do
-  desc "Generate HTML resource-usage report from Grafana/Prometheus (past 7 days, by day and week)"
+  desc "Generate HTML resource-usage report. ENV: GRAFANA_URL, GRAFANA_PASS, WINDOW=7d (e.g. 48h, 14d)"
   task report: :environment do
-    # Override any of these with ENV vars: GRAFANA_URL, GRAFANA_USER, GRAFANA_PASS, GRAFANA_DS_ID
+    # Override with ENV vars: GRAFANA_URL, GRAFANA_USER, GRAFANA_PASS, GRAFANA_DS_ID, WINDOW
     InfraReporter.new(
-      url:   ENV.fetch('GRAFANA_URL',  'https://graphana.caphive.com'),
-      user:  ENV.fetch('GRAFANA_USER', 'admin'),
-      pass:  ENV.fetch('GRAFANA_PASS', ''),
-      ds_id: ENV.fetch('GRAFANA_DS_ID', '1'),
+      url:    ENV.fetch('GRAFANA_URL',  'https://graphana.caphive.com'),
+      user:   ENV.fetch('GRAFANA_USER', 'admin'),
+      pass:   ENV.fetch('GRAFANA_PASS', ''),
+      ds_id:  ENV.fetch('GRAFANA_DS_ID', '1'),
+      window: ENV.fetch('WINDOW', '7d'),
     ).run
   end
 end
@@ -43,9 +44,11 @@ class InfraReporter
       warn:      70,
       crit:      90,
       window_fn: 'max_over_time',
-      query:     '(node_memory_MemTotal_bytes-node_memory_MemAvailable_bytes)/node_memory_MemTotal_bytes*100',
-      desc:      'Percentage of total RAM in use (including buffers/cache). ' \
-                 'Near 100% risks OOM kills — the kernel will start terminating processes.',
+      # Exclude DB servers (10.0.3.x, 10.0.4.x) — they run MySQL which holds 70-85% RAM in the
+      # InnoDB buffer pool by design. DB memory is tracked separately in MySQL/DB with higher thresholds.
+      query:     '(node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance!~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}*100',
+      desc:      'App server RAM usage %. DB servers are excluded here and tracked in the MySQL/DB section ' \
+                 'with higher thresholds since MySQL InnoDB buffer pool intentionally uses most RAM.',
     },
     {
       key:       :disk,
@@ -54,9 +57,11 @@ class InfraReporter
       warn:      70,
       crit:      90,
       window_fn: 'max_over_time',
-      # max by(instance): nodes are containers so root disk appears as /etc/hosts etc., not "/"
-      query:     'max by(instance)((node_filesystem_size_bytes{fstype!="tmpfs"}-node_filesystem_free_bytes{fstype!="tmpfs"})/node_filesystem_size_bytes{fstype!="tmpfs"}*100)',
-      desc:      'Highest disk usage % across all non-tmpfs filesystems on this node. ' \
+      # Exclude overlay (Docker container bind-mounts like /etc/hostname, /etc/hosts appear as
+      # tiny 100%-full overlay filesystems) and any /etc/* mountpoints for the same reason.
+      query:     'max by(instance)((node_filesystem_size_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}-node_filesystem_free_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"})/node_filesystem_size_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}*100)',
+      desc:      'Highest disk usage % across real (non-tmpfs, non-overlay) filesystems. ' \
+                 'Excludes Docker bind-mounts (/etc/hostname etc.) which always appear full. ' \
                  'At 100% all writes fail — logs, uploads, and DB writes will error.',
     },
   ].freeze
@@ -135,6 +140,18 @@ class InfraReporter
 
   MYSQL_METRICS = [
     {
+      key:       :db_memory,
+      label:     'DB Memory',
+      unit:      '%',
+      warn:      85,   # InnoDB buffer pool intentionally holds 70-85% RAM; only warn above 85%
+      crit:      95,
+      window_fn: 'max_over_time',
+      query:     '(node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance=~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}*100',
+      desc:      'DB server RAM usage %. MySQL InnoDB buffer pool keeps 70-85% of RAM occupied by design — ' \
+                 'this is healthy and means more data is cached. WARN only at 85%+ which indicates ' \
+                 'buffer pool pressure or a growing leak. CRIT at 95% means OOM risk.',
+    },
+    {
       key:       :db_connections,
       label:     'DB Conns',
       unit:      '%',
@@ -206,18 +223,51 @@ class InfraReporter
   def initialize(config)
     @config = config
     @now    = Time.now
+    parse_window(config[:window] || '7d')
+  end
+
+  # Parses "7d" or "48h" into @window_secs, @window_label, @prom_window.
+  # @prom_window is a Prometheus duration string used inside PromQL queries.
+  def parse_window(str)
+    if str =~ /\A(\d+)h\z/i
+      hours = $1.to_i
+      @window_secs  = hours * 3_600
+      @window_label = "#{hours}h"
+      @prom_window  = "#{hours}h"
+    elsif str =~ /\A(\d+)d\z/i
+      days = $1.to_i
+      @window_secs  = days * 86_400
+      @window_label = "#{days} days"
+      @prom_window  = "#{days}d"
+    else
+      warn "  Unrecognised WINDOW '#{str}', defaulting to 7d"
+      @window_secs  = 7 * 86_400
+      @window_label = '7 days'
+      @prom_window  = '7d'
+    end
+
+    # Bucket size for the main metrics table: sub-day windows use 1h buckets so that
+    # max_over_time wraps only the requested window, not an entire day of history.
+    if @window_secs < 86_400
+      @main_step          = 3_600
+      @main_bucket_window = '1h'
+    else
+      @main_step          = 86_400
+      @main_bucket_window = '1d'
+    end
   end
 
   def run
     puts "Querying #{@config[:url]} ..."
 
-    raw    = fetch_all_metrics
-    by_day = raw.transform_values { |series| group_by_day(series) }
-    weekly = raw.transform_values do |series|
+    raw      = fetch_all_metrics
+    by_period = raw.transform_values { |series| group_by_period(series) }
+    peak      = raw.transform_values do |series|
       series.transform_values { |pts| pts.compact.map(&:last).max&.round(2) }
     end
-    dates = ((@now - 6 * 86_400).to_date..@now.to_date).to_a
-    nodes = raw.transform_values { |s| s.keys.sort }
+    # periods is an ordered list of row keys: Date objects (daily) or Time objects (hourly)
+    periods = all_periods(raw)
+    nodes   = raw.transform_values { |s| s.keys.sort }
 
     puts "Fetching correlation data ..."
     error_endpoints   = fetch_error_endpoints
@@ -225,7 +275,7 @@ class InfraReporter
     hourly_jobs       = fetch_hourly_jobs
     hourly_mysql      = fetch_hourly_mysql
 
-    html = render(dates, nodes, by_day, weekly, error_endpoints, hourly_resources, hourly_jobs, hourly_mysql)
+    html = render(periods, nodes, by_period, peak, error_endpoints, hourly_resources, hourly_jobs, hourly_mysql)
     path = Rails.root.join('tmp', "infra_report_#{@now.strftime('%Y%m%d_%H%M%S')}.html")
     File.write(path, html)
     puts "Report saved: #{path}"
@@ -235,12 +285,14 @@ class InfraReporter
   private
 
   def fetch_all_metrics
-    start_ts = (@now - 7 * 86_400).to_i
+    # start_ts = now - window + step so the FIRST bucket's max_over_time window
+    # starts exactly at (now - window), not one bucket before it.
+    start_ts = (@now - @window_secs + @main_step).to_i
     end_ts   = @now.to_i
 
     ALL_METRICS.each_with_object({}) do |m, acc|
       print "  #{m[:label]} ..."
-      resp         = prom_range(m, t_start: start_ts, t_end: end_ts, step: 86_400)
+      resp         = prom_range(m, t_start: start_ts, t_end: end_ts, step: @main_step, window: @main_bucket_window)
       acc[m[:key]] = parse_matrix(resp)
       puts " #{acc[m[:key]].size} series"
     end
@@ -260,13 +312,41 @@ class InfraReporter
     end
   end
 
-  # { 'instance' => { Date => Float } }  — picks max non-nil point per calendar day
-  def group_by_day(series_hash)
+  # { 'instance' => { period_key => Float } }
+  # Daily mode:  period_key = Date  (one row per calendar day)
+  # Hourly mode: period_key = Time  (one row per step timestamp, truncated to the hour)
+  def group_by_period(series_hash)
     series_hash.transform_values do |points|
-      points
-        .group_by { |t, _| t.to_date }
-        .transform_values { |pairs| pairs.filter_map(&:last).max&.round(2) }
+      if @main_step == 3_600
+        # Hourly: one point per step — use the timestamp itself as the key
+        points.each_with_object({}) do |(t, v), h|
+          next if v.nil?
+          h[truncate_hour(t)] = [h[truncate_hour(t)], v].compact.max.round(2)
+        end
+      else
+        points
+          .group_by { |t, _| t.to_date }
+          .transform_values { |pairs| pairs.filter_map(&:last).max&.round(2) }
+      end
     end
+  end
+
+  # Returns an ordered list of all period keys present in raw data.
+  def all_periods(raw)
+    keys = raw.values.flat_map { |s| s.values.flat_map { |pts| pts.map(&:first) } }.map do |k|
+      @main_step == 3_600 ? truncate_hour(k) : k.to_date
+    end.uniq.sort
+    # Fill gaps: for daily mode add every calendar date in the window
+    if @main_step == 86_400
+      n_days = [(@window_secs / 86_400.0).ceil, 1].max
+      ((@now - (n_days - 1) * 86_400).to_date..@now.to_date).to_a
+    else
+      keys
+    end
+  end
+
+  def truncate_hour(t)
+    Time.at((t.to_i / 3_600) * 3_600)
   end
 
   # ── Correlation fetch methods ─────────────────────────────────────────────
@@ -275,8 +355,8 @@ class InfraReporter
   # [{ controller:, action:, errors:, total:, error_rate: }, ...]
   def fetch_error_endpoints
     print "  Error endpoints ..."
-    errors_resp = prom_instant('sum by(controller,action)(increase(ruby_http_requests_total{status=~"^[45].*"}[7d]))')
-    totals_resp = prom_instant('sum by(controller,action)(increase(ruby_http_requests_total[7d]))')
+    errors_resp = prom_instant("sum by(controller,action)(increase(ruby_http_requests_total{status=~\"^[45].*\"}[#{@prom_window}]))")
+    totals_resp = prom_instant("sum by(controller,action)(increase(ruby_http_requests_total[#{@prom_window}]))")
 
     errors = parse_labeled_vector(errors_resp)
     totals = parse_labeled_vector(totals_resp)
@@ -299,7 +379,7 @@ class InfraReporter
 
   # Returns { 'instance' => { Time => Float } } for each infra metric at hourly resolution
   def fetch_hourly_resources
-    start_ts = (@now - 7 * 86_400).to_i
+    start_ts = (@now - @window_secs + 3_600).to_i
     end_ts   = @now.to_i
 
     INFRA_METRICS.each_with_object({}) do |m, acc|
@@ -313,7 +393,7 @@ class InfraReporter
   # Returns { 'JobClassName' => { Time => Integer } } — jobs processed per hour
   def fetch_hourly_jobs
     print "  Sidekiq job timeline ..."
-    start_ts = (@now - 7 * 86_400).to_i
+    start_ts = (@now - @window_secs + 3_600).to_i
     end_ts   = @now.to_i
 
     resp = prom_range_query(
@@ -338,7 +418,7 @@ class InfraReporter
 
   # Returns { metric_key => { 'instance' => { Time => Float } } } at hourly resolution
   def fetch_hourly_mysql
-    start_ts = (@now - 7 * 86_400).to_i
+    start_ts = (@now - @window_secs + 3_600).to_i
     end_ts   = @now.to_i
 
     MYSQL_METRICS.each_with_object({}) do |m, acc|
@@ -555,7 +635,7 @@ class InfraReporter
 
     insights_html = insights.any? ? render_insights(insights) : ''
 
-    "<h2>Job &amp; Resource Correlation — Hourly Timeline (7 days)</h2>" \
+    "<h2>Job &amp; Resource Correlation — Hourly Timeline (#{@window_label})</h2>" \
       "#{legend}" \
       "#{insights_html}" \
       "<div style='max-height:500px;overflow-y:auto;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.08)'>" \
@@ -891,7 +971,7 @@ class InfraReporter
         "<th style='#{th_style}text-align:left'>Jobs in 2h lead window</th>" \
       "</tr></thead><tbody>#{rows}</tbody></table>" \
       "<p style='font-size:12px;color:#666;margin:4px 0 0'>Only hours with &gt;2%/hr growth shown. " \
-        "Trend = linear regression slope over 7 days.</p>"
+        "Trend = linear regression slope over #{@window_label}.</p>"
   end
 
   # ── Render: lag correlation section ──────────────────────────────────────
@@ -1000,10 +1080,10 @@ class InfraReporter
     end.join
 
     summary_row = "<tr style='font-weight:bold'>" \
-      "<td style='padding:6px 8px;background:#e9ecef;font-size:12px;border:1px solid #dee2e6'>7-day worst</td>" \
+      "<td style='padding:6px 8px;background:#e9ecef;font-size:12px;border:1px solid #dee2e6'>#{@window_label} worst</td>" \
       "#{summary_cells}</tr>"
 
-    "<h2>MySQL / DB Health — Hourly Timeline (7 days)</h2>" \
+    "<h2>MySQL / DB Health — Hourly Timeline (#{@window_label})</h2>" \
       "<div style='max-height:500px;overflow-y:auto;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,.08)'>" \
         "<table style='margin-bottom:0'>" \
           "<thead>#{header_row}#{summary_row}</thead>" \
@@ -1048,7 +1128,7 @@ class InfraReporter
 
   # ── Full HTML report ──────────────────────────────────────────────────────
 
-  def render(dates, nodes, by_day, weekly, error_endpoints, hourly_resources, hourly_jobs, hourly_mysql)
+  def render(periods, nodes, by_period, peak, error_endpoints, hourly_resources, hourly_jobs, hourly_mysql)
     # ── Shared correlation lookups (built once, used by multiple sections) ──
     res_cols   = build_res_cols(hourly_resources)
     res_lookup = build_res_lookup(hourly_resources)
@@ -1074,7 +1154,7 @@ class InfraReporter
     # Alert banner: every metric/node that hit CRIT this week
     crit_items = []
     ALL_METRICS.each do |m|
-      (weekly[m[:key]] || {}).each do |node, val|
+      (peak[m[:key]] || {}).each do |node, val|
         next unless val && val >= m[:crit]
         crit_items << "#{m[:label]} on #{node} peaked at <strong>#{format_value(val, m[:unit])}</strong>"
       end
@@ -1126,16 +1206,25 @@ class InfraReporter
     end.join("&emsp;&emsp;")
 
     # Weekly peak row
-    weekly_cells = all_columns.map { |c| td(weekly.dig(c[:metric][:key], c[:node]), c[:metric]) }.join
-    weekly_row   = "<tr style='font-weight:bold'>" \
-      "<td style='padding:8px 12px;background:#e9ecef'>7-day peak</td>#{weekly_cells}</tr>"
+    peak_cells = all_columns.map { |c| td(peak.dig(c[:metric][:key], c[:node]), c[:metric]) }.join
+    peak_row   = "<tr style='font-weight:bold'>" \
+      "<td style='padding:8px 12px;background:#e9ecef'>#{@window_label} peak</td>#{peak_cells}</tr>"
 
-    # Daily rows
-    day_rows = dates.map do |date|
-      is_today = (date == @now.to_date)
-      cells    = all_columns.map { |c| td(by_day.dig(c[:metric][:key], c[:node], date), c[:metric]) }.join
-      row_bg   = is_today ? '#e8f4fd' : '#fff'
-      label    = date.strftime('%a, %b %-d') + (is_today ? ' <em>(today)</em>' : '')
+    # Period rows — hourly or daily depending on window size
+    period_rows = periods.map do |period|
+      if @main_step == 3_600
+        # Hourly row — period is a Time object
+        is_now_hour = (period.to_i == truncate_hour(@now).to_i)
+        cells = all_columns.map { |c| td(by_period.dig(c[:metric][:key], c[:node], period), c[:metric]) }.join
+        row_bg = is_now_hour ? '#e8f4fd' : '#fff'
+        label  = period.strftime('%-d %b %H:%M') + (is_now_hour ? ' <em>(now)</em>' : '')
+      else
+        # Daily row — period is a Date object
+        is_today = (period == @now.to_date)
+        cells = all_columns.map { |c| td(by_period.dig(c[:metric][:key], c[:node], period), c[:metric]) }.join
+        row_bg = is_today ? '#e8f4fd' : '#fff'
+        label  = period.strftime('%a, %b %-d') + (is_today ? ' <em>(today)</em>' : '')
+      end
       "<tr style='background:#{row_bg}'><td style='padding:8px 12px'>#{label}</td>#{cells}</tr>"
     end.join
 
@@ -1144,7 +1233,7 @@ class InfraReporter
       <html lang="en">
       <head>
         <meta charset="utf-8">
-        <title>Infra &amp; App Report — #{@now.strftime('%Y-%m-%d')}</title>
+        <title>Infra &amp; App Report — #{@now.strftime('%Y-%m-%d')} (#{@window_label})</title>
         <style>
           * { box-sizing: border-box; }
           body {
@@ -1164,7 +1253,7 @@ class InfraReporter
         <h1>Infrastructure &amp; Application Report</h1>
         <p class="meta">
           Generated #{@now.strftime('%A, %B %-d %Y at %H:%M')}
-          &nbsp;&bull;&nbsp; Last 7 days
+          &nbsp;&bull;&nbsp; Last #{@window_label}
           &nbsp;&bull;&nbsp; Source: #{@config[:url]}
         </p>
 
@@ -1172,16 +1261,16 @@ class InfraReporter
 
         <div class="legend">#{legend_parts}</div>
 
-        <h2>Weekly Peak</h2>
+        <h2>Peak (#{@window_label})</h2>
         <table>
           <thead>#{header_rows}</thead>
-          <tbody>#{weekly_row}</tbody>
+          <tbody>#{peak_row}</tbody>
         </table>
 
-        <h2>Daily Breakdown — max value per day</h2>
+        <h2>#{@main_step == 3_600 ? 'Hourly' : 'Daily'} Breakdown — max per #{@main_step == 3_600 ? 'hour' : 'day'} (#{@window_label})</h2>
         <table>
           <thead>#{header_rows}</thead>
-          <tbody>#{day_rows}</tbody>
+          <tbody>#{period_rows}</tbody>
         </table>
 
         #{render_peak_cause_section(peak_events)}

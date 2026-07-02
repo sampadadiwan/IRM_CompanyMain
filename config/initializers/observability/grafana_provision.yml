@@ -41,21 +41,23 @@ alert_rules:
       severity: critical
       category: infra
 
+  # App servers only — DB servers are excluded and have their own alert below (MySQL buffer pool
+  # intentionally keeps 70-85% RAM occupied, so a 90% threshold would false-alarm constantly).
   - title: "Memory Critical (>90%)"
     group: infrastructure
-    expr: '(node_memory_MemTotal_bytes-node_memory_MemAvailable_bytes)/node_memory_MemTotal_bytes*100'
+    expr: '(node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance!~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}*100'
     threshold_gt: 90
     for: 5m
-    summary: "Memory usage has exceeded 90% for 5 minutes"
+    summary: "App server memory has exceeded 90% for 5 minutes"
     labels:
       severity: critical
       category: infra
 
   - title: "Disk Critical (>90%)"
     group: infrastructure
-    # max by(instance) + fstype!="tmpfs" — required for container nodes where root disk
-    # appears at /etc/hosts etc. rather than mountpoint="/". Mirrors the fix in infra_report.rake.
-    expr: 'max by(instance)((node_filesystem_size_bytes{fstype!="tmpfs"}-node_filesystem_free_bytes{fstype!="tmpfs"})/node_filesystem_size_bytes{fstype!="tmpfs"}*100)'
+    # Exclude overlay fstype and /etc/* mountpoints: Docker bind-mounts (/etc/hostname,
+    # /etc/hosts, /etc/resolv.conf) are tiny files that appear 100% full and cause false alerts.
+    expr: 'max by(instance)((node_filesystem_size_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}-node_filesystem_free_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"})/node_filesystem_size_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*"}*100)'
     threshold_gt: 90
     for: 5m
     summary: "Disk usage has exceeded 90% on at least one filesystem"
@@ -106,6 +108,28 @@ alert_rules:
     labels:
       severity: critical
       category: rails
+
+  # DB servers: InnoDB buffer pool holds 70-85% RAM by design. Alert only when memory
+  # genuinely grows beyond the buffer pool's steady state, indicating OOM risk.
+  - title: "DB Memory Critical (>95%)"
+    group: database
+    expr: '(node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance=~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}*100'
+    threshold_gt: 95
+    for: 5m
+    summary: "DB server memory >95% — OOM risk. Check for runaway queries or buffer pool leak."
+    labels:
+      severity: critical
+      category: database
+
+  - title: "DB Memory Warning (>85%)"
+    group: database
+    expr: '(node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance=~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}*100'
+    threshold_gt: 85
+    for: 15m
+    summary: "DB server memory sustained >85% — buffer pool may be under pressure."
+    labels:
+      severity: warning
+      category: database
 
   # ── MySQL / Database ───────────────────────────────────────────────────────
 

@@ -282,9 +282,9 @@ class GrafanaProvisioner
         {
           'datasource'   => ds_ref,
           'expr'         => 'deriv((max by(instance)(' \
-                            '(node_filesystem_size_bytes{fstype!="tmpfs",instance=~"$node"}' \
-                            '-node_filesystem_free_bytes{fstype!="tmpfs",instance=~"$node"})' \
-                            '/node_filesystem_size_bytes{fstype!="tmpfs",instance=~"$node"}' \
+                            '(node_filesystem_size_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*",instance=~"$node"}' \
+                            '-node_filesystem_free_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*",instance=~"$node"})' \
+                            '/node_filesystem_size_bytes{fstype!~"tmpfs|overlay",mountpoint!~"/etc/.*",instance=~"$node"}' \
                             '*100))[1h:5m])*3600',
           'legendFormat' => '{{instance}}',
           'refId'        => 'A',
