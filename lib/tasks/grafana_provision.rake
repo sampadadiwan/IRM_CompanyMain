@@ -821,7 +821,11 @@ class GrafanaProvisioner
           },
         },
       ],
-      noDataState:  'NoData',
+      # Default to OK so a Prometheus scrape gap doesn't fire the alert with a
+      # misleading summary (e.g. "5xx > 5%") when the real problem is no data.
+      # Set no_data_state: alerting in grafana_provision.yml only for "exporter down"
+      # rules where no data genuinely means the target is unreachable.
+      noDataState:  (rule[:no_data_state] || 'OK').to_s.camelize,
       execErrState: 'Error',
       for:          (rule[:for] || '5m').to_s,
       annotations:  { summary: rule[:summary].to_s },

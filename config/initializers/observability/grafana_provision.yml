@@ -37,11 +37,11 @@ notification_policy:
   repeat_interval: 4h
   routes:
     # Critical severity: fire to WhatsApp immediately, then continue to email (continue: true)
+    # Matchers must be strings ("label=value") — the object format {name,value,isEqual}
+    # is silently dropped by this Grafana version's provisioning API.
     - receiver: Caphive WhatsApp
       matchers:
-        - name: severity
-          value: critical
-          isEqual: true
+        - "severity=critical"
       group_wait: 10s
       group_interval: 5m
       repeat_interval: 1h
@@ -55,8 +55,8 @@ alert_rules:
 
   - title: "CPU Critical (>90%)"
     group: infrastructure
-    # Same query used in infra_report.rake — no mountpoint filter needed for CPU
-    expr: '100-(avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))*100)'
+    # max by(instance) so a single server at 100% fires even if others are idle
+    expr: 'max by(instance)(100-(avg by(instance)(rate(node_cpu_seconds_total{mode="idle"}[5m]))*100))'
     threshold_gt: 90
     for: 5m
     summary: "CPU usage has exceeded 90% for 5 minutes"
@@ -104,7 +104,7 @@ alert_rules:
 
   - title: "Avg Request Duration Critical (>2000ms)"
     group: rails
-    expr: 'sum(irate(ruby_http_request_duration_seconds_sum[5m]))/sum(irate(ruby_http_request_duration_seconds_count[5m]))*1000'
+    expr: 'sum(rate(ruby_http_request_duration_seconds_sum[5m]))/sum(rate(ruby_http_request_duration_seconds_count[5m]))*1000'
     threshold_gt: 2000
     for: 5m
     summary: "Average HTTP response time has exceeded 2 seconds for 5 minutes"
@@ -189,53 +189,64 @@ alert_rules:
       severity: warning
       category: database
 
-  # max(1 - up) = 1 when any DB target is down; 0 when all up.
-  # threshold_gt: 0 fires on any scrape failure without needing a threshold_lt operator.
+  # up{job=...} = 0 when the exporter is unreachable, 1 when healthy.
+  # no_data_state: alerting — if Prometheus has no data at all for these targets
+  # it means the exporter is also unreachable, so alerting is correct here.
   - title: "MySQL Exporter Down"
     group: database
     expr: 'max(1 - up{job="mysqld"})'
     threshold_gt: 0
     for: 2m
+    no_data_state: alerting
     summary: "mysqld_exporter is unreachable — DB monitoring blind"
     labels:
       severity: critical
       category: database
 
-  # Binlog accumulation: replica's exec position falls far behind master's write position.
-  # Large gap = binlogs piling up on primary (disk risk) and data lagging on replica.
-  # Measured in bytes across the relay log; 500MB threshold = roughly a few binlog files.
-  - title: "MySQL Binlog Accumulation Critical (>500MB gap)"
+  - title: "Rails Exporter Down"
+    group: rails
+    expr: 'max(1 - up{job="rails_app"})'
+    threshold_gt: 0
+    for: 2m
+    no_data_state: alerting
+    summary: "prometheus_exporter is unreachable on app servers — Rails metrics blind; check that the prometheus_exporter process is running"
+    labels:
+      severity: critical
+      category: rails
+
+
+  # ── Backup lock ────────────────────────────────────────────────────────────
+
+  # Detects the RCA pattern: backup holds LOCK INSTANCE FOR BACKUP → Rails migration
+  # queues behind it → migration holds metadata lock → all subsequent queries on that
+  # table pile up → looks like an app outage even though MySQL is running fine.
+  #
+  # Two complementary signals:
+  #   1. Connections blocked waiting for the backup lock (the victims)
+  #   2. The backup lock holder itself running for too long (the culprit)
+
+  # Signal 1: any connection stuck in "Waiting for backup lock" for >30s means
+  # a backup lock is being held and blocking progress right now.
+  - title: "MySQL Backup Lock Blocking Queries"
     group: database
-    expr: 'max(mysql_slave_status_master_log_pos - mysql_slave_status_exec_master_log_pos)'
-    threshold_gt: 524288000
-    for: 5m
-    summary: "Replica binlog gap >500MB — primary binlogs accumulating, replica falling behind"
+    expr: 'max(mysql_info_schema_processlist_seconds{state="Waiting for backup lock"})'
+    threshold_gt: 30
+    for: 1m
+    summary: "Queries are blocked waiting for a backup lock — backup may be running too long; check SHOW PROCESSLIST for LOCK INSTANCE FOR BACKUP"
     labels:
       severity: critical
       category: database
 
-  # Zombie/stale connections: Sleep connections idle for >1 hour consume connection slots
-  # and may indicate app-side connection pool not releasing connections properly.
-  # Rails pool: 15 per server — connections should return within seconds after a request.
-  # >5min = pool not releasing; >30min = zombie (stuck transaction or leaked connection).
-  - title: "MySQL Stale Connections (Sleep >5min)"
+  # Signal 2: the backup lock holder — a process running LOCK INSTANCE FOR BACKUP
+  # for more than 10 minutes is abnormal and risks blocking migrations.
+  - title: "MySQL Backup Lock Held Too Long (>10min)"
     group: database
-    expr: 'max(mysql_info_schema_processlist_seconds{command="Sleep"})'
-    threshold_gt: 300
-    for: 5m
-    summary: "MySQL has connections sleeping >5min — Rails pool may not be releasing connections"
+    expr: 'max(mysql_info_schema_processlist_seconds{info=~".*LOCK INSTANCE FOR BACKUP.*"})'
+    threshold_gt: 600
+    for: 1m
+    summary: "A LOCK INSTANCE FOR BACKUP has been held for >10 minutes — if a migration runs now it will cascade-block all queries on that table"
     labels:
       severity: warning
-      category: database
-
-  - title: "MySQL Zombie Connections (Sleep >30min)"
-    group: database
-    expr: 'max(mysql_info_schema_processlist_seconds{command="Sleep"})'
-    threshold_gt: 1800
-    for: 5m
-    summary: "MySQL zombie connections sleeping >30min — kill them: SELECT id FROM information_schema.processlist WHERE command='Sleep' AND time>1800"
-    labels:
-      severity: critical
       category: database
 
   # ── MySQL depth ─────────────────────────────────────────────────────────────
@@ -373,5 +384,5 @@ dashboards:
     name: "Rails Metrics"
     patches:
       - add_controller_variable  # $controller dropdown for error breakdown filtering
-      - add_rails_depth_panels   # P95 latency, Puma thread saturation, Sidekiq depth/latency
+      - add_rails_depth_panels   # P99 latency, Puma thread saturation, Sidekiq depth/latency
       - add_mysql_depth_panels   # InnoDB miss rate, deadlocks, aborted connections
