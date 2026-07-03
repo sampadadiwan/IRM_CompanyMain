@@ -13,6 +13,20 @@ class ApplicationMailer < ActionMailer::Base
     "entity_name" => ->(m) { m.instance_variable_get(:@entity)&.name }
   }.freeze
 
+  # Central hook so every subclass's mail(...) call goes through this, whether it's
+  # invoked directly or via send_mail below. Redirects sandboxed entities' mail on
+  # staging to letter_opener_web instead of actually sending it, so QA can review
+  # emails for a sandboxed entity without them reaching real inboxes.
+  def mail(headers = {}, &block)
+    message = super
+    message.delivery_method(:letter_opener_web) if use_letter_opener_web?
+    message
+  end
+
+  def use_letter_opener_web?
+    Rails.env.staging? && @entity&.entity_setting&.sandbox?
+  end
+
   after_deliver :mark_delivered
   def mark_delivered
     begin
