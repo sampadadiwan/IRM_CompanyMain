@@ -48,10 +48,10 @@ module WithEmailPreview
   # Determines the mailer class, email method, and custom notification ID
   # based on the resource and request parameters.
   def setup_mailer_and_method(resource)
-    mailer_class = resolve_mailer_class(resource)
     # Use provided email method or default to "notify_<resource_name>"
     email_method = params[:email_method].presence || "notify_#{resource_name(resource)}"
     custom_notification_id = params[:custom_notification_id]
+    mailer_class = resolve_mailer_class(resource, email_method, custom_notification_id)
 
     [mailer_class, email_method, custom_notification_id]
   end
@@ -70,7 +70,11 @@ module WithEmailPreview
                email_method:,
                custom_notification_id:,
                user_id: @investor_access.user_id,
-               entity_id: resource.try(:entity_id)
+               entity_id: resource.try(:entity_id),
+               # Only meaningful for FundInvestorKycMailer today (InvestorKyc has no single
+               # owning fund, so it can't be derived from the resource itself) — every other
+               # mailer simply doesn't read this param, so passing it through is harmless.
+               fund_id: params[:fund_id]
              )
              .public_send(email_method)
 
@@ -102,8 +106,24 @@ module WithEmailPreview
   end
 
   # Resolves the appropriate mailer class for a given resource.
-  # It tries several naming conventions to find the correct mailer.
-  def resolve_mailer_class(resource)
+  #
+  # When a custom_notification_id is present, defer to CustomNotification's own
+  # dispatch logic (mailer_class_for) instead of guessing from the resource's class
+  # name — needed because the same resource type can route to different mailers
+  # depending on email_method (e.g. an InvestorKyc resource resolves to
+  # InvestorKycMailer for notify_kyc_required, but to FundInvestorKycMailer for
+  # Fund's adhoc_kyc_notification — the class-name guess below only ever finds the
+  # former). Falls back to the guessing logic below whenever no custom_notification_id
+  # is given, or the lookup comes back empty — this keeps every existing preview
+  # caller that never/rarely passes custom_notification_id (capital_remittances,
+  # capital_distribution_payments, approval_responses) working unchanged.
+  def resolve_mailer_class(resource, email_method = nil, custom_notification_id = nil)
+    if custom_notification_id.present?
+      resolved = CustomNotification.find_by(id: custom_notification_id)&.mailer_class_for(email_method)
+      return resolved if resolved
+    end
+
+    # Tries several naming conventions to find the correct mailer.
     base = resource.class.name
     # Adjust base name for specific resource types
     base = "InvestorKyc" if %w[IndividualKyc NonIndividualKyc].include?(base)

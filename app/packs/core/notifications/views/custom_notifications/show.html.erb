@@ -172,7 +172,17 @@
 <% if @custom_notification.enabled && @custom_notification.owner_type == "Fund" && policy(@custom_notification.owner).trigger_adhoc_notification? %>
   <%
     fund = @custom_notification.owner
-    commitment_options = fund.capital_commitments.includes(:investor_kyc).map { |cc| [cc.to_s, cc.id] }.sort_by(&:first)
+    # "adhoc_kyc_notification" is FundInvestorKycMailer's own email_method — selecting it in
+    # the "For Notification" dropdown is what switches this modal over to the KYC picker below.
+    kyc_mode = @custom_notification.email_method == "adhoc_kyc_notification"
+    # Only one of these two ever renders (see kyc_mode branch below) — computed lazily so
+    # a fund with many commitments doesn't pay for the unused commitment_options query
+    # (or vice versa) on every page load.
+    commitment_options = kyc_mode ? [] : fund.capital_commitments.includes(:investor_kyc).map { |cc| [cc.to_s, cc.id] }.sort_by(&:first)
+    # .distinct collapses the duplicate rows that come from fund.investor_kycs being a
+    # has_many :through capital_commitments — otherwise a KYC linked to 3 commitments
+    # would appear 3 times in this list.
+    kyc_options = kyc_mode ? fund.investor_kycs.distinct.map { |k| [k.full_name, k.id] }.sort_by(&:first) : []
     email_list_link = link_to('View Who Gets Notified', show_email_list_fund_path(fund), class: 'badge bg-primary-subtle text-primary', target: "_blank")
   %>
   <div class="modal fade" id="sendNotificationModal" tabindex="-1" aria-labelledby="sendNotificationModalLabel" aria-hidden="true">
@@ -200,8 +210,13 @@
                   <i class="ti ti-mail fs-5" style="color:#2563eb;"></i>
                 </span>
                 <div>
-                  <div class="fw-semibold text-dark lh-sm">Individual email per investor</div>
-                  <div class="text-muted small mt-1">Each selected commitment holder receives a personalised email with their name, folio ID, and fund details resolved from the template.</div>
+                  <% if kyc_mode %>
+                    <div class="fw-semibold text-dark lh-sm">One email per investor KYC record</div>
+                    <div class="text-muted small mt-1">If an investor has several commitments in this fund sharing the same KYC record, they receive a single combined email — not one per commitment.</div>
+                  <% else %>
+                    <div class="fw-semibold text-dark lh-sm">Individual email per investor</div>
+                    <div class="text-muted small mt-1">Each selected commitment holder receives a personalised email with their name, folio ID, and fund details resolved from the template.</div>
+                  <% end %>
                 </div>
               </div>
 
@@ -212,10 +227,17 @@
                   <i class="ti ti-paperclip fs-5" style="color:#16a34a;"></i>
                 </span>
                 <div>
-                  <div class="fw-semibold text-dark lh-sm">Commitment documents auto-attached</div>
-                  <div class="text-muted small mt-1">
-                    Documents named <strong><%= @custom_notification.attachment_names %></strong> will be fetched from each commitment and attached to that investor's email.
-                  </div>
+                  <% if kyc_mode %>
+                    <div class="fw-semibold text-dark lh-sm">KYC documents auto-attached</div>
+                    <div class="text-muted small mt-1">
+                      Documents named <strong><%= @custom_notification.attachment_names %></strong> will be fetched from each investor's KYC record and attached to their email.
+                    </div>
+                  <% else %>
+                    <div class="fw-semibold text-dark lh-sm">Commitment documents auto-attached</div>
+                    <div class="text-muted small mt-1">
+                      Documents named <strong><%= @custom_notification.attachment_names %></strong> will be fetched from each commitment and attached to that investor's email.
+                    </div>
+                  <% end %>
                 </div>
               </div>
               <% end %>
@@ -234,17 +256,35 @@
 
             <hr class="my-3">
 
-            <div class="mb-1">
-              <label class="form-label fw-semibold">Select Commitments to Notify</label>
-              <small class="text-muted d-block mb-2">Leave blank to notify <strong>all</strong> commitments in this fund.</small>
-              <%= f.select :commitment_ids,
-                           commitment_options,
-                           { include_hidden: false },
-                           multiple: true,
-                           class: "form-control select2",
-                           style: "width:100%",
-                           data: { placeholder: "All commitments (leave blank for all)" } %>
-            </div>
+            <% if kyc_mode %>
+              <!-- KYC mode: this notification's email_method is "adhoc_kyc_notification", so
+                   the modal submits investor_kyc_ids instead of commitment_ids —
+                   FundNotificationJob branches on email_method to decide which of the two
+                   params to honor. -->
+              <div class="mb-1">
+                <label class="form-label fw-semibold">Select Investor KYCs to Notify</label>
+                <small class="text-muted d-block mb-2">Leave blank to notify <strong>all</strong> investor KYCs linked to this fund. An investor with multiple commitments sharing one KYC still receives exactly one email.</small>
+                <%= f.select :investor_kyc_ids,
+                             kyc_options,
+                             { include_hidden: false },
+                             multiple: true,
+                             class: "form-control select2",
+                             style: "width:100%",
+                             data: { placeholder: "All investor KYCs (leave blank for all)" } %>
+              </div>
+            <% else %>
+              <div class="mb-1">
+                <label class="form-label fw-semibold">Select Commitments to Notify</label>
+                <small class="text-muted d-block mb-2">Leave blank to notify <strong>all</strong> commitments in this fund.</small>
+                <%= f.select :commitment_ids,
+                             commitment_options,
+                             { include_hidden: false },
+                             multiple: true,
+                             class: "form-control select2",
+                             style: "width:100%",
+                             data: { placeholder: "All commitments (leave blank for all)" } %>
+              </div>
+            <% end %>
 
           </div>
           <div class="modal-footer">

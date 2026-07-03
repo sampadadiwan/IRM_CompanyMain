@@ -63,7 +63,11 @@ class CustomNotification < ApplicationRecord
     elsif owner_type == "CapitalDistribution"
       [CapitalDistributionPaymentsMailer]
     elsif owner_type == "Fund"
-      [CapitalCommitmentMailer]
+      # FundInvestorKycMailer backs the "adhoc_kyc_notification" email_method (one email
+      # per unique InvestorKyc, deduped across commitments that share one) — kept second
+      # so mailer_class_for's fallback (mailer_classes.first) still resolves the
+      # inherited-only "adhoc_notification" to CapitalCommitmentMailer.
+      [CapitalCommitmentMailer, FundInvestorKycMailer]
     elsif owner_type == "Deal"
       [DealMailer]
     elsif owner
@@ -87,7 +91,12 @@ class CustomNotification < ApplicationRecord
                      elsif owner_type == "CapitalDistribution"
                        mailer_classes.first.instance_methods(false).map(&:to_s)
                      elsif owner_type == "Fund"
-                       mailer_classes.first.instance_methods(false).map(&:to_s) + ["adhoc_notification"]
+                       # flat_map across both Fund mailers so FundInvestorKycMailer's own
+                       # adhoc_kyc_notification method is discovered automatically.
+                       # "adhoc_notification" is still appended manually because it's
+                       # inherited-only on CapitalCommitmentMailer (never redefined there),
+                       # so it never shows up via instance_methods(false).
+                       mailer_classes.flat_map { |klass| klass.instance_methods(false).map(&:to_s) } + ["adhoc_notification"]
                      elsif owner_type == "Deal"
                        %w[adhoc_notification deal_activity_move]
                      elsif owner

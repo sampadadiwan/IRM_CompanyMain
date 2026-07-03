@@ -14,10 +14,11 @@ Custom notifications let you send a bespoke email to some or all of your fund's 
 6. [Step 4 — Send the Notification](#step-4--send-the-notification)
 7. [Sending to All vs. Selected Commitments](#sending-to-all-vs-selected-commitments)
 8. [Who Receives the Email](#who-receives-the-email)
-9. [Dynamic (ERB) Templates](#dynamic-erb-templates)
-10. [Delivery Settings](#delivery-settings)
-11. [Checking Delivery Status](#checking-delivery-status)
-12. [Frequently Asked Questions](#frequently-asked-questions)
+9. [Notify by Investor KYC Instead of Commitment](#notify-by-investor-kyc-instead-of-commitment)
+10. [Dynamic (ERB) Templates](#dynamic-erb-templates)
+11. [Delivery Settings](#delivery-settings)
+12. [Checking Delivery Status](#checking-delivery-status)
+13. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -52,7 +53,7 @@ One notification template drives an individual personalised email to every recip
 | Term | Meaning |
 |---|---|
 | **Custom Notification** | A saved template (subject + body) attached to a Fund. One template → many individual emails. |
-| **Email Method** | The mailer method that renders the email. For fund adhoc notifications this is always `adhoc_notification`. |
+| **Email Method** | Chosen from the **For Notification** dropdown. For fund adhoc notifications this is either **Adhoc Notification** (per commitment, the default) or **Adhoc Kyc Notification** (per investor KYC record — see [Notify by Investor KYC Instead of Commitment](#notify-by-investor-kyc-instead-of-commitment)). |
 | **Attachment Names** | A comma-separated list of document names to auto-attach from each commitment. Each name can be an exact document name, or a pattern using `*` to match a family of similarly-named documents (e.g. `SOA_*_2026`). |
 | **Only Attach the Latest Match** | A checkbox that controls how many matching documents get attached per name/pattern: checked (default) attaches just the single most recently uploaded match; unchecked attaches every document that matches. |
 | **Notification Users** | The users who actually receive the email for each investor — determined by approved InvestorAccess records and email-enabled settings. |
@@ -72,7 +73,7 @@ One notification template drives an individual personalised email to every recip
 |---|---|---|
 | **Subject** | Yes | Email subject line (max 255 characters) |
 | **Body** | Yes | HTML email body. Use the rich-text editor for formatting. |
-| **For Notification** | Yes | Select `adhoc_notification` for fund commitment emails |
+| **For Notification** | Yes | Select **Adhoc Notification** for the standard, per-commitment flow described in this guide, or **Adhoc Kyc Notification** for the per-investor-KYC flow (see [Notify by Investor KYC Instead of Commitment](#notify-by-investor-kyc-instead-of-commitment)) |
 | **Enabled** | Yes | Must be enabled before the Send button appears |
 | **Tag** | No | Optional label for organising multiple notifications |
 | **Attachment Names** | No | Comma-separated document names to auto-attach (see Step 3) |
@@ -279,6 +280,51 @@ For each selected CapitalCommitment:
 
 ---
 
+## Notify by Investor KYC Instead of Commitment
+
+By default, a fund notification sends **one email per commitment**. If an
+investor holds several commitments in the same fund, they receive several
+separate emails. Some documents and updates, though, belong to the *investor's
+KYC record* rather than to any one commitment — a PAN card, an updated bank
+account form, a compliance document — and it doesn't make sense to send that
+same thing to the same investor two or three times just because they hold
+multiple commitments.
+
+Selecting **Adhoc Kyc Notification** in the **For Notification** dropdown (see
+[Step 1](#step-1--create-a-custom-notification)) switches the whole
+notification over to this mode:
+
+| | Adhoc Notification (default) | Adhoc Kyc Notification |
+|---|---|---|
+| One email per... | commitment | unique investor KYC record |
+| If an investor has 3 commitments sharing one KYC | 3 separate emails | **1 combined email** |
+| Attachment Names looks for documents on... | the commitment | the investor's KYC record |
+| ERB/placeholder data comes from... | the commitment (folio ID, committed amount, etc.) | the KYC record (investor name, fund name) |
+
+Everything else in this guide — writing the body, Attachment Names (including
+wildcards and "Only Attach the Latest Match"), delivery delay, WhatsApp,
+checking delivery status — works exactly the same way, just resolved against
+the investor's KYC record instead of a commitment.
+
+### Sending
+
+The **Send Notification** popup adapts automatically: instead of **Select
+Commitments to Notify**, you'll see **Select Investor KYCs to Notify**, listing
+every investor KYC record linked to this fund. Leave it blank to notify
+everyone, or pick specific investors the same way you would with commitments.
+If an investor has multiple commitments sharing one KYC, they still appear —
+and receive — only once.
+
+### Previewing before you send
+
+Because this mode is about the investor's KYC record rather than a specific
+commitment, the preview link lives on the **investor's KYC page** instead of a
+commitment page. Open the investor's KYC record, click **Preview
+Notifications**, and look for **Preview Adhoc Notification** entries — one per
+fund the KYC is linked to, since the same KYC can span more than one fund.
+
+---
+
 ## Dynamic (ERB) Templates
 
 Enable **Dynamic Template** on the notification to use ERB expressions in the body.
@@ -395,6 +441,10 @@ The button only appears when:
 **Q: Can I send to investors across multiple funds at once?**
 
 No. Each Custom Notification is attached to one specific fund. To send across funds, create a notification on each fund and send separately.
+
+**Q: My investor has multiple commitments — will they get duplicate emails?**
+
+With the default **Adhoc Notification** mode, yes — one email per commitment. If that's not what you want (e.g. for a document that belongs to the investor rather than any one commitment), switch **For Notification** to **Adhoc Kyc Notification**; see [Notify by Investor KYC Instead of Commitment](#notify-by-investor-kyc-instead-of-commitment). It sends exactly one combined email per investor KYC record, regardless of how many commitments share it.
 
 **Q: Does WhatsApp send even if email fails?**
 

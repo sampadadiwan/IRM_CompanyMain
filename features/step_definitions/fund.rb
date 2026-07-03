@@ -576,6 +576,57 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
   )
 end
 
+# "notify_via" here is the Gherkin-readable name for what's actually just a different
+# email_method value: "investor_kyc" -> "adhoc_kyc_notification" (FundInvestorKycMailer),
+# anything else -> the regular "adhoc_notification" (CapitalCommitmentMailer). There is no
+# separate notify_via field/column — this step just picks which mailer/iteration path runs.
+Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string} and notify_via {string}') do |subject, attachment_names, notify_via|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_notification",
+    attachment_names: attachment_names.presence,
+    enabled: true
+  )
+end
+
+# Links the fund's first two capital commitments (regardless of investor) to a single,
+# freshly-created InvestorKyc — mirrors the existing "The multiple commitments have the
+# same investor kycs linked" step (features/step_definitions/capital_commitment.rb:323),
+# but scoped to exactly the first two commitments so scenarios have a deterministic,
+# named handle (@shared_investor_kyc) to assert against afterwards.
+Given('the first two commitments share the same investor kyc') do
+  first_two = @fund.capital_commitments.order(:id).limit(2)
+  investor = first_two.first.investor
+  kyc = InvestorKyc.new(
+    investor: investor, entity: @fund.entity, verified: true,
+    completed_by_investor: true, submission_status: "verified", full_name: investor.investor_name
+  )
+  # InvestorKyc has many required fields (kyc_type, bank details, etc.) unrelated to what
+  # this scenario is testing — save(validate: false) is the existing precedent for building
+  # a minimal KYC fixture (see capital_commitment.rb's own investor-kyc-linking steps).
+  kyc.save(validate: false)
+  @shared_investor_kyc = kyc
+  first_two.each { |cc| cc.update!(investor_kyc_id: kyc.id) }
+end
+
+# Uploads a real file as a document directly on the shared InvestorKyc (via WithFolder's
+# documents association) so an "adhoc_kyc_notification" notification's attachment_names can
+# find it — analogous to "the first commitment has document ..." but for the KYC-mode owner.
+And('the shared investor kyc has document {string} with file {string}') do |doc_name, file_name|
+  Document.create!(
+    entity: @shared_investor_kyc.entity,
+    name: doc_name,
+    owner: @shared_investor_kyc,
+    folder: @shared_investor_kyc.document_folder,
+    user: @user,
+    file: File.new("public/sample_uploads/#{file_name}", "r")
+  )
+end
+
 # Uploads a real file as a document on the first commitment so attachment_names can find it
 And('the first commitment has document {string} with file {string}') do |doc_name, file_name|
   cc = @fund.capital_commitments.order(:id).first
@@ -642,6 +693,17 @@ When('the adhoc notification is triggered for the first commitment only') do
   @fund.adhoc_notification(@custom_notification.id, commitment_ids: [first_cc.id])
 end
 
+# Trigger with no investor_kyc_ids → nil → FundNotificationJob (for an "adhoc_kyc_notification"
+# email_method) sends to every unique investor_kyc linked to the fund
+When('the adhoc notification is triggered for all investor kycs') do
+  @fund.adhoc_notification(@custom_notification.id)
+end
+
+# Trigger with just the shared investor_kyc's id — proves the picker's selection also dedupes
+When('the adhoc notification is triggered for the shared investor kyc only') do
+  @fund.adhoc_notification(@custom_notification.id, investor_kyc_ids: [@shared_investor_kyc.id])
+end
+
 # Every commitment's notification_users should have received the email
 Then('all commitment investors receive the notification email') do
   @fund.capital_commitments.each do |cc|
@@ -691,6 +753,32 @@ And('the notification email has the document {string} attached') do |doc_name|
       expect(filenames.any? { |f| f.include?(doc_name) }).to be(true),
                                                              "Expected attachment containing '#{doc_name}' but got #{filenames.inspect}"
     end
+  end
+end
+
+# Proves the dedup: two commitments share @shared_investor_kyc, but its investor should
+# receive exactly one email with this subject — not two (one per commitment, the old behavior).
+Then('exactly one notification email is sent for the shared investor kyc') do
+  investor = @shared_investor_kyc.investor
+  recipients = investor.notification_users(@shared_investor_kyc)
+  expect(recipients).not_to be_empty, "notification_users is empty for shared investor kyc #{@shared_investor_kyc.id}"
+  recipients.each do |user|
+    matching = ActionMailer::Base.deliveries.select { |m| m.to.include?(user.email) && m.subject.include?(@custom_notification.subject) }
+    puts "## Matching deliveries for #{user.email}: #{matching.size}"
+    expect(matching.size).to eq(1), "Expected exactly 1 email to #{user.email} with subject '#{@custom_notification.subject}' but got #{matching.size}"
+  end
+end
+
+# KYC-mode counterpart to "the notification email has the document {string} attached" —
+# checks the shared investor kyc's recipient(s) instead of iterating every commitment.
+And('the investor kyc notification email has the document {string} attached') do |doc_name|
+  investor = @shared_investor_kyc.investor
+  investor.notification_users(@shared_investor_kyc).each do |user|
+    open_email(user.email)
+    filenames = current_email.attachments.map(&:filename)
+    puts "## Attachments for #{user.email}: #{filenames.inspect}"
+    expect(filenames.any? { |f| f.include?(doc_name) }).to be(true),
+                                                           "Expected attachment containing '#{doc_name}' but got #{filenames.inspect}"
   end
 end
 

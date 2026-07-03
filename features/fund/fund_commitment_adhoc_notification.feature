@@ -138,6 +138,34 @@ Feature: Fund Commitment Adhoc Notification
     Then I see the adhoc notification preview with subject "Statement Ready"
     And I see "SOA_FundA_03_2026" listed as an attachment in the preview
 
+  Scenario: Notification in Investor KYC mode sends one combined email when commitments share a KYC
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given the first two commitments share the same investor kyc
+    And the shared investor kyc has document "PAN Card" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "KYC Update" and attachment_names "PAN Card" and notify_via "investor_kyc"
+    When the adhoc notification is triggered for all investor kycs
+    Then exactly one notification email is sent for the shared investor kyc
+    And the investor kyc notification email has the document "PAN Card" attached
+
+  Scenario: Investor KYC mode honors the specific-KYC selection
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given the first two commitments share the same investor kyc
+    Given there is an adhoc custom notification for the fund with subject "KYC Update" and attachment_names "" and notify_via "investor_kyc"
+    When the adhoc notification is triggered for the shared investor kyc only
+    Then exactly one notification email is sent for the shared investor kyc
+
   Scenario: GP admin can preview the fund's adhoc notification from a capital commitment
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"

@@ -296,7 +296,11 @@ class FundsController < ApplicationController
   def trigger_adhoc_notification
     @custom_notification = CustomNotification.find(params[:custom_notification_id])
     commitment_ids = params[:commitment_ids].presence # nil when blank → all commitments
-    @fund.adhoc_notification(@custom_notification.id, commitment_ids:)
+    # Only populated by the "Select Investor KYCs to Notify" picker, which the view only
+    # renders when @custom_notification.email_method == "adhoc_kyc_notification" — harmless
+    # to always pass through since FundNotificationJob ignores whichever of the two doesn't apply.
+    investor_kyc_ids = params[:investor_kyc_ids].presence
+    @fund.adhoc_notification(@custom_notification.id, commitment_ids:, investor_kyc_ids:)
     redirect_back_or_to(fund_path(@fund), notice: "Notification trigger started for #{@fund.name}.")
   end
 

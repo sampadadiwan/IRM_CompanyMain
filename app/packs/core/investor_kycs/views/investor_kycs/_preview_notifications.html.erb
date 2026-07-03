@@ -27,3 +27,17 @@
                 class: "dropdown-item ti ti-mail" %>
   <% end %>
 <% end %>
+
+<%# Fund adhoc_kyc_notification previews — one InvestorKyc can be linked to commitments
+    across several funds (has_many :funds, through: :capital_commitments), so unlike
+    CapitalCommitment's single-fund case, each link is labeled with its fund name. %>
+<% @investor_kyc.funds.distinct.each do |fund| %>
+  <% fund.custom_notifications.enabled.where(email_method: "adhoc_kyc_notification").each_with_index do |custom_notification, i| %>
+    <% btn_id = "investor_kyc_preview_adhoc_kyc_notification_#{fund.id}_#{i}_btn" %>
+    <%= link_to "Preview Adhoc Notification (#{custom_notification.tag.presence || custom_notification.subject}) — #{fund.name}",
+                preview_investor_kyc_path(@investor_kyc.id, email_method: "adhoc_kyc_notification", custom_notification_id: custom_notification.id, fund_id: fund.id),
+                id: btn_id,
+                target: "_blank",
+                class: "dropdown-item ti ti-mail" %>
+  <% end %>
+<% end %>

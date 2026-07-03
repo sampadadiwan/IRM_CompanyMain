@@ -3,8 +3,8 @@
 <%
   # Collect all GP entities the current LP user has capital commitments with.
   # policy_scope filters to only commitments the user is authorized to see.
-  gp_entities = policy_scope(CapitalCommitment).includes(:entity).map(&:entity).uniq.compact.sort_by { |e| e.name.downcase }
-
+  # gp_entities = policy_scope(CapitalCommitment).includes(:entity).map(&:entity).uniq.compact.sort_by { |e| e.name.downcase }
+  gp_entities = InvestorAccess.where(user_id: current_user.id, approved: true).includes(:entity).map(&:entity).uniq.compact.sort_by { |e| e.name.downcase }
   # Resolve which GP entity to display:
   #   1. Explicit form submission (user changed the dropdown) — params[:gp_entity_id] is set.
   #      An empty value means "no selection", so fall back to the LP's own entity.
@@ -36,7 +36,7 @@
 <% if (current_page?(root_path) || current_page?(dashboard_entities_path)) && gp_entities.any? %>
   <div id="gp_dropdown_source" class="d-none"
        data-controller="gp-switcher"
-       data-gp-switcher-subdomains-value="<%= gp_subdomain_map.to_json %>"
+       data-gp-switcher-subdomains-value="<%= Rails.env.local? ? {} : gp_subdomain_map.to_json %>"
        data-gp-switcher-base-domain-value="<%= base_domain %>"
        data-gp-switcher-protocol-value="<%= request.protocol %>">
     <div class="topbar-divider d-none d-lg-block"></div>

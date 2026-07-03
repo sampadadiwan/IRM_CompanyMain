@@ -22,10 +22,15 @@ class CapitalCommitmentMailer < ApplicationMailer
     @subject = @custom_notification&.subject || @notification&.message
   end
 
+  # We can add more specific notification methods here if needed
+  # For now, adhoc_notification from ApplicationMailer is used by FundCommitmentNotifier
+
+  private
+
+  # private: this is an internal resolver for attach_custom_notification_documents, not a
+  # mailer action — public would leak it into CustomNotification#email_methods (which reads
+  # instance_methods(false) to populate the "For Notification" dropdown).
   def custom_notification_documents_owner
     @capital_commitment
   end
-
-  # We can add more specific notification methods here if needed
-  # For now, adhoc_notification from ApplicationMailer is used by FundCommitmentNotifier
 end

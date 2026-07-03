@@ -179,7 +179,12 @@ class ApplicationMailer < ActionMailer::Base
   # already-resolved resource ivar instead — which is the same object in production too
   # (each notifier passes record: self, and the mailer's before_action derives its ivar
   # from that same record's id).
-  def custom_notification_documents_owner
+  #
+  # private (scoped to just this method, not a `private` section — adhoc_notification and
+  # others below must stay public actions): keeps this internal resolver out of
+  # CustomNotification#email_methods, which reads instance_methods(false) on each mailer
+  # to populate the "For Notification" dropdown.
+  private def custom_notification_documents_owner
     @notification&.model
   end
 

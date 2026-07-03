@@ -3,6 +3,8 @@
 
    <input id="viewer_content_type" , value="<%=@document.file.content_type%>" hidden="hidden"></input>
    <input id="viewer_link" , value="<%=@document.file_url()%>" hidden="hidden"></input>
+   <input type="text" id="download_document" hidden="hidden" value="<%= @document.download %>" />
+   <input type="text" id="printing_document" hidden="hidden" value="<%= @document.printing %>" />
 
    <% if current_user %>
       <input id="viewer_watermark" value="<%= current_user.entity.name %>" hidden="hidden" />
