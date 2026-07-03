@@ -142,6 +142,15 @@ class ApplicationMailer < ActionMailer::Base
     @current_entity.entity_setting.from_email.presence || ENV.fetch("SUPPORT_EMAIL_FROM", nil)
   end
 
+  # attachment_names entries resolve independently along two axes:
+  #   pattern:      plain text -> exact match   |  contains '*' -> wildcard/substring match
+  #   multiplicity: latest_doc_only=true -> newest match only  |  false -> every match
+  #
+  # Examples (attachment_names entry -> latest_doc_only -> result):
+  #   "Statement of Account"    -> true  -> exact match,     newest "Statement of Account" only
+  #   "*Statement of Account*"  -> true  -> substring match, newest match only (old fuzzy_match=true behavior)
+  #   "SOA_*_03_2026"           -> false -> wildcard match,  every matching document attached
+  #   "Statement of Account"    -> false -> exact match,     every doc named exactly "Statement of Account" attached
   def attach_custom_notification_documents
     if @custom_notification && @custom_notification.documents.present?
       @custom_notification.documents.each do |document|
@@ -149,18 +158,29 @@ class ApplicationMailer < ActionMailer::Base
       end
     end
 
-    if @custom_notification && @custom_notification.attachment_names.present? && @notification && @notification.model.respond_to?(:documents)
-      fuzzy_match = @custom_notification.fuzzy_match
+    if @custom_notification && @custom_notification.attachment_names.present? && custom_notification_documents_owner.respond_to?(:documents)
+      latest_doc_only = @custom_notification.latest_doc_only
       @custom_notification.attachment_names.split(',').map(&:strip).compact_blank.each do |name|
-        # Get the most recently created document matching the name
-        document = if fuzzy_match
-                     @notification.model.documents.where("name like ?", "%#{name}%").order(created_at: :desc).first
-                   else
-                     @notification.model.documents.where(name: name).order(created_at: :desc).first
-                   end
-        attach_doc(document) if document.present?
+        documents = if name.include?('*')
+                      custom_notification_documents_owner.documents.where("name like ? ESCAPE ?", wildcard_to_like(name), '\\')
+                    else
+                      custom_notification_documents_owner.documents.where(name: name)
+                    end.order(created_at: :desc)
+        documents = documents.limit(1) if latest_doc_only
+        documents.each { |document| attach_doc(document) }
       end
     end
+  end
+
+  # The resource whose `documents` association should be searched when resolving
+  # CustomNotification#attachment_names. Defaults to the live Noticed::Notification's
+  # model (set only on real, notifier-driven sends). Preview builds no Notification, so
+  # subclasses reachable from WithEmailPreview override this to return their own
+  # already-resolved resource ivar instead — which is the same object in production too
+  # (each notifier passes record: self, and the mailer's before_action derives its ivar
+  # from that same record's id).
+  def custom_notification_documents_owner
+    @notification&.model
   end
 
   def attach_doc(document)
@@ -170,6 +190,12 @@ class ApplicationMailer < ActionMailer::Base
     file.close
     # Cleanup
     File.delete(file) if file.instance_of?(::File)
+  end
+
+  # Converts a '*' wildcard pattern (e.g. "SOA_*_03_2026") into a SQL LIKE pattern,
+  # escaping any literal %/_ characters in the non-wildcard parts.
+  def wildcard_to_like(name)
+    name.split('*', -1).map { |part| ActiveRecord::Base.sanitize_sql_like(part) }.join('%')
   end
 
   # Convinience method to send mail with simply the subject

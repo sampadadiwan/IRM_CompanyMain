@@ -4,7 +4,7 @@ Feature: Fund Commitment Adhoc Notification
   to all or a selected subset of fund commitment holders
 
   Scenario: Send notification to all commitments when no selection is made
-    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
     Given there is an existing investor "" with "1" users
     Given there is an existing investor "" with "1" users
@@ -16,7 +16,7 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
 
   Scenario: Send notification to a selected commitment only
-    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
     Given there is an existing investor "" with "1" users
     Given there is an existing investor "" with "1" users
@@ -29,7 +29,7 @@ Feature: Fund Commitment Adhoc Notification
     And the second commitment investor does not receive a notification email
 
   Scenario: Notification attaches commitment document matching attachment_names
-    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
     Given there is an existing investor "" with "1" users
     Given there is a fund "name=SAAS Fund" for the entity
@@ -40,6 +40,103 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     Then all commitment investors receive the notification email
     And the notification email has the document "Statement of Account" attached
+
+  Scenario: Notification attaches documents matching a wildcard attachment_names pattern
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "SOA_FundA_03_2026" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "SOA_*_03_2026"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has the document "SOA_FundA_03_2026" attached
+
+  Scenario: Notification attaches every matching document when latest_doc_only is unchecked
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "SOA_FundA_03_2026" with file "sample_kyc1.pdf"
+    And the first commitment has document "SOA_FundB_03_2026" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "SOA_*_03_2026" and latest_doc_only "false"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 2 documents attached
+
+  Scenario: Notification attaches only the newest wildcard match when latest_doc_only is checked
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "SOA_FundA_03_2026" with file "sample_kyc1.pdf" created 2 days ago
+    And the first commitment has document "SOA_FundB_03_2026" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "SOA_*_03_2026" and latest_doc_only "true"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 1 documents attached
+    And the notification email has the document "SOA_FundB_03_2026" attached
+    And the notification email does not have the document "SOA_FundA_03_2026" attached
+
+  Scenario: Notification attaches every copy of an exact-name match when latest_doc_only is unchecked
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and latest_doc_only "false"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 2 documents attached
+
+  Scenario: Notification reproduces old close-match behavior via a *text* wildcard pattern
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account v2 FINAL" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "*Statement of Account*"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 1 documents attached
+    And the notification email has the document "Statement of Account v2 FINAL" attached
+
+  Scenario: Notification sends successfully with zero attachments when attachment_names matches nothing
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Nonexistent Document"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 0 documents attached
+
+  Scenario: Preview shows the document that would be attached via attachment_names
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "SOA_FundA_03_2026" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "SOA_*_03_2026"
+    When I open the actions menu on the first capital commitment
+    When I click the preview adhoc notification button for "Statement Ready"
+    Then I see the adhoc notification preview with subject "Statement Ready"
+    And I see "SOA_FundA_03_2026" listed as an attachment in the preview
 
   Scenario: GP admin can preview the fund's adhoc notification from a capital commitment
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
@@ -79,7 +176,7 @@ Feature: Fund Commitment Adhoc Notification
     Then I do not see a preview adhoc notification button
 
   Scenario: Placeholders are resolved in adhoc notification body
-    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
     Given there is an existing investor "" with "1" users
     Given there is a fund "name=SAAS Fund" for the entity

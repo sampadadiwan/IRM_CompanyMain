@@ -561,6 +561,21 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
   )
 end
 
+# Same but with an explicit latest_doc_only, so a scenario can verify multiplicity independent of pattern type
+Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string} and latest_doc_only {string}') do |subject, attachment_names, latest_doc_only|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    attachment_names: attachment_names.presence,
+    latest_doc_only: latest_doc_only == "true",
+    enabled: true
+  )
+end
+
 # Uploads a real file as a document on the first commitment so attachment_names can find it
 And('the first commitment has document {string} with file {string}') do |doc_name, file_name|
   cc = @fund.capital_commitments.order(:id).first
@@ -572,6 +587,48 @@ And('the first commitment has document {string} with file {string}') do |doc_nam
     user: @user,
     file: File.new("public/sample_uploads/#{file_name}", "r")
   )
+end
+
+# Same as above but backdates created_at, so a scenario can deterministically control which of
+# several matching documents is "the newest" (latest_doc_only picks by created_at desc)
+And('the first commitment has document {string} with file {string} created {int} days ago') do |doc_name, file_name, days|
+  cc = @fund.capital_commitments.order(:id).first
+  doc = Document.create!(
+    entity: cc.entity,
+    name: doc_name,
+    owner: cc,
+    folder: cc.document_folder,
+    user: @user,
+    file: File.new("public/sample_uploads/#{file_name}", "r")
+  )
+  doc.update_column(:created_at, days.to_i.days.ago)
+end
+
+# Asserts each commitment investor's email has exactly `count` attachments — used to verify
+# latest_doc_only=false attaches every matching document instead of just the newest
+And('the notification email has {int} documents attached') do |count|
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      filenames = current_email.attachments.map(&:filename)
+      puts "## Attachments for #{user.email}: #{filenames.inspect}"
+      expect(filenames.size).to eq(count), "Expected #{count} attachment(s) but got #{filenames.inspect}"
+    end
+  end
+end
+
+# Negative counterpart to "the notification email has the document {string} attached" — used to
+# prove latest_doc_only=true excludes older matches, not just that the newer one happens to match
+And('the notification email does not have the document {string} attached') do |doc_name|
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      filenames = current_email.attachments.map(&:filename)
+      puts "## Attachments for #{user.email}: #{filenames.inspect}"
+      expect(filenames.any? { |f| f.include?(doc_name) }).to be(false),
+                                                              "Expected no attachment containing '#{doc_name}' but got #{filenames.inspect}"
+    end
+  end
 end
 
 # Trigger with no commitment_ids → nil → FundNotificationJob sends to all commitments
@@ -661,6 +718,11 @@ end
 
 Then('I see the adhoc notification preview with subject {string}') do |subject|
   expect(page).to have_content(subject)
+end
+
+Then('I see {string} listed as an attachment in the preview') do |doc_name|
+  expect(page).to have_css("h6", text: "Attachments:")
+  expect(page).to have_content(doc_name)
 end
 
 # Placeholder substitution is verified per-commitment against CapitalCommitmentMailer::PLACEHOLDERS:

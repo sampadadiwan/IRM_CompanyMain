@@ -22,6 +22,10 @@ class CapitalCommitmentMailer < ApplicationMailer
     @subject = @custom_notification&.subject || @notification&.message
   end
 
+  def custom_notification_documents_owner
+    @capital_commitment
+  end
+
   # We can add more specific notification methods here if needed
   # For now, adhoc_notification from ApplicationMailer is used by FundCommitmentNotifier
 end
