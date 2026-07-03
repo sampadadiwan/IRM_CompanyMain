@@ -195,6 +195,7 @@ group :development do
   # gem 'stimpack'
   # Use console on exceptions pages [https://github.com/rails/web-console]
   gem 'annotate'
+  gem "letter_opener", group: :development
   gem 'overcommit', require: false
   gem "web-console"
 
@@ -225,16 +226,6 @@ group :development do
   gem 'foreman'
 
   # gem 'capistrano-solid_queue', require: false
-end
-
-# letter_opener_web depends on letter_opener; both are needed wherever mail is
-# intercepted instead of actually sent. In staging this is gated per-entity to
-# entity_setting.sandbox=true (see ApplicationMailer#mail) and browsed via the
-# mounted engine rather than letter_opener's plain Launchy.open, which needs a
-# local browser and won't work on a headless staging box.
-group :development, :staging do
-  gem "letter_opener"
-  gem "letter_opener_web"
 end
 
 group :test do

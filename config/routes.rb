@@ -2,20 +2,6 @@ Rails.application.routes.draw do
   mount Rswag::Ui::Engine => '/api-docs'
   mount Rswag::Api::Engine => '/api-docs'
 
-  # Browse sandboxed emails intercepted by letter_opener_web (see ApplicationMailer#mail).
-  # Staging only, and gated behind the same role check as the admin panel since it exposes
-  # rendered email bodies.
-  if Rails.env.staging?
-    admin_only = lambda do |request|
-      user = request.env['warden']&.user
-      user&.has_role?(:super) || user&.has_role?(:support)
-    end
-
-    constraints(admin_only) do
-      mount LetterOpenerWeb::Engine, at: '/letter_opener'
-    end
-  end
-
   resources :portfolio_reports do
     resources :portfolio_report_templates, shallow: true
     member do
