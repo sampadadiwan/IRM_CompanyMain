@@ -53,7 +53,8 @@ One notification template drives an individual personalised email to every recip
 |---|---|
 | **Custom Notification** | A saved template (subject + body) attached to a Fund. One template → many individual emails. |
 | **Email Method** | The mailer method that renders the email. For fund adhoc notifications this is always `adhoc_notification`. |
-| **Attachment Names** | A comma-separated list of document names. The system finds documents with those names on each commitment and attaches them automatically. |
+| **Attachment Names** | A comma-separated list of document names to auto-attach from each commitment. Each name can be an exact document name, or a pattern using `*` to match a family of similarly-named documents (e.g. `SOA_*_2026`). |
+| **Only Attach the Latest Match** | A checkbox that controls how many matching documents get attached per name/pattern: checked (default) attaches just the single most recently uploaded match; unchecked attaches every document that matches. |
 | **Notification Users** | The users who actually receive the email for each investor — determined by approved InvestorAccess records and email-enabled settings. |
 | **ERB Body** | Optional: when "Dynamic Template" is on, the body is evaluated as Ruby/ERB so you can embed live data like `<%= @capital_commitment.folio_committed_amount %>`. |
 | **Latest** | Only the most recently created notification for a given method is active. Creating a new one automatically retires the previous version. |
@@ -75,6 +76,7 @@ One notification template drives an individual personalised email to every recip
 | **Enabled** | Yes | Must be enabled before the Send button appears |
 | **Tag** | No | Optional label for organising multiple notifications |
 | **Attachment Names** | No | Comma-separated document names to auto-attach (see Step 3) |
+| **Only Attach the Latest Match** | No | Checked by default. See Step 3 for how this interacts with Attachment Names. |
 
 5. Click **Save**
 
@@ -125,28 +127,68 @@ Upload files directly to the notification record. These same files are sent to e
 
 Use this for: fund-level letters, generic announcements, PDFs that are identical for all LPs.
 
-### B. Per-commitment attachments — `attachment_names`
+### B. Per-commitment attachments — Attachment Names
 
 Set **Attachment Names** to a comma-separated list of document names (e.g. `Statement of Account, K-1, Annual Report`).
 
-At send time, the mailer looks up each commitment's documents, finds any whose name contains a string from this list, and attaches them.
+At send time, the system looks up each commitment's documents and attaches any that match.
+
+**Exact match (default)**
+
+By default, each name in the list must match a document's name exactly. This is the safest option when your documents always use the same fixed name.
 
 ```
 Attachment Names field:  "Statement of Account, K-1"
 
 Investor A's commitment has:
-  ✓ "Statement of Account.pdf"   → attached
-  ✓ "K-1 2024.pdf"               → attached (partial match)
-  ✗ "Subscription Agreement.pdf" → not in the list, skipped
+  ✓ "Statement of Account"      → attached (exact match)
+  ✓ "K-1"                       → attached (exact match)
+  ✗ "Statement of Account v2"   → NOT attached — name doesn't match exactly
 
 Investor B's commitment has:
-  ✓ "Statement of Account.pdf"   → attached
-  ✗ no K-1 document              → silently skipped
+  ✗ no matching document        → silently skipped
 ```
+
+**Wildcard match — use `*` to match a family of documents**
+
+Add an asterisk (`*`) anywhere in a name to match documents whose name follows that pattern:
+
+| Pattern you type | Matches document names like | Notes |
+|---|---|---|
+| `SOA_*_2026` | `SOA_FundA_2026`, `SOA_FundB_2026` | `*` in the middle matches anything in between |
+| `*Statement of Account*` | `Statement of Account`, `Statement of Account v2 FINAL` | wrapping the whole name works like a "contains" search |
+| `Drawdown*` | `Drawdown Notice`, `Drawdown Notice - Signed` | `*` at the end matches anything after the fixed prefix |
+
+Use a wildcard when your generated documents include a date, investor code, or version suffix in the name, so you don't have to type an exact match for every variation.
+
+**Only Attach the Latest Match**
+
+Once a name or pattern matches more than one document on a commitment, this checkbox decides how many get attached:
+
+```
+Attachment Names: "SOA_*_2026"
+
+Investor A's commitment has two matching documents:
+  "SOA_Jan_2026"  (uploaded January)
+  "SOA_Mar_2026"  (uploaded March — more recent)
+
+Only Attach the Latest Match — checked (default):
+  ✓ "SOA_Mar_2026"   → attached
+  ✗ "SOA_Jan_2026"   → not attached (older)
+
+Only Attach the Latest Match — unchecked:
+  ✓ "SOA_Mar_2026"   → attached
+  ✓ "SOA_Jan_2026"   → attached
+```
+
+- **Checked (default):** only the single most recently uploaded matching document is attached — good for "always send the newest version" (e.g. the latest Statement of Account).
+- **Unchecked:** every matching document is attached — good when a wildcard pattern is meant to sweep up several related documents at once.
 
 Use this for: personalised statements, K-1s, account summaries — any document that has been generated per investor and stored against their commitment.
 
-> **Tip:** Document names do not need to match exactly — a document whose name *contains* the attachment name will be attached. Case-insensitive matching is applied.
+> **Tip:** Plain names (no `*`) must match exactly. Add a `*` if you want looser matching, or if you need to sweep up several similarly-named documents at once.
+
+> **Before you send:** Use the **Preview** button (available from each commitment's action menu once a notification exists) to see exactly which documents would be attached for that commitment — a good way to check that a pattern matches what you expect before sending to everyone.
 
 ---
 
@@ -319,9 +361,17 @@ If a commitment has no notification users (no approved, email-enabled InvestorAc
 
 Yes. Editing creates a new version. The old version is marked not-latest but retained for audit. The next time you click Send, the newest version is used.
 
-**Q: What if a commitment has no document matching my attachment_names?**
+**Q: What if a commitment has no document matching my Attachment Names?**
 
 That attachment is silently skipped for that commitment. The email is still sent — just without that particular file. Other matching documents on the same commitment are still attached.
+
+**Q: Can I use a wildcard in Attachment Names?**
+
+Yes. Add an asterisk (`*`) anywhere in a name to match a family of similarly-named documents, e.g. `SOA_*_2026`. See [Step 3](#step-3--attach-documents-from-each-commitment) for examples. Names without a `*` must still match exactly.
+
+**Q: A wildcard pattern matches several documents on the same commitment — how many get attached?**
+
+Depends on the **Only Attach the Latest Match** checkbox: checked (the default) attaches just the newest one, unchecked attaches all of them. See [Step 3](#step-3--attach-documents-from-each-commitment).
 
 **Q: Can the same notification be sent multiple times?**
 
