@@ -52,6 +52,26 @@ Scenario Outline: Add and delete cascading access rights to folder
   	|  	        |entity_type=Company  | A/B/C/D       | A                  |
     |  	        |entity_type=Company  | X/Y/Z         | X                  |
 
+Scenario Outline: Cascading access rights reach nested grandchild folders without re-triggering redundant jobs
+  # Regression test: replicate_to used to dup the cascade flag onto every replicated folder
+  # access right, so each descendant folder's copy would re-trigger its own FolderAccessJob
+  # for a subtree the original job already covered end-to-end.
+  Given there is a user "<user>" for an entity "<entity>"
+  Given the entity has a folder "name=Test Folder"
+  Then the folder should have no owner
+  Given the folder has children "<child_folder>"
+  And folder "<child_folder>" has sub-folders "<grandchild_folder>"
+  Given each folder has "1" documents
+  Given I am tracking FolderAccessJob enqueues
+  When the root folder is given access rights
+  Then FolderAccessJob should have been enqueued "1" times
+  And the child folders should have the same access rights
+  And the documents should have the same access rights
+
+  Examples:
+  	|user	    |entity               | child_folder | grandchild_folder |
+  	|  	        |entity_type=Company  | F2           | F3                 |
+
 Scenario Outline: Cannot Update a folder's name
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

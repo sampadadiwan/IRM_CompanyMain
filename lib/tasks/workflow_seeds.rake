@@ -17,6 +17,9 @@ namespace :workflow_seeds do
     entity = Entity.find_by(id: entity_id) || abort("Entity #{entity_id} not found")
     log    = ->(msg) { puts "[workflow_seeds] #{msg}" }
 
+    entity.permissions.set(:enable_workflow_templates)
+    entity.save
+
     # Use the first two employees as default actors across all templates.
     employees = entity.employees.to_a
     abort "No employees found for entity #{entity_id}" if employees.empty?

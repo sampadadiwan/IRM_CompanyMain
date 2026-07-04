@@ -163,6 +163,11 @@ class AccessRight < ApplicationRecord
     new_ar.access_type = new_owner.class.name
     # Don't send notifications for replicated access rights to avoid spamming users
     new_ar.notify = false
+    # Don't let replicated copies re-trigger cascading: Folder#access_rights_changed enqueues a
+    # FolderAccessJob for any saved access_right with cascade=true, and FolderAccessJob already
+    # walks the whole descendant subtree in one pass. Leaving cascade=true here made every
+    # replicated folder copy spawn its own redundant job for a subtree the caller already covered.
+    new_ar.cascade = false
     # Maintain link to the original access right for cascading deletions/updates
     new_ar.parent_access_right_id = parent_access_right_id || id
     new_ar.save(validate: validate)
@@ -176,6 +181,8 @@ class AccessRight < ApplicationRecord
         msg = "You have been granted access to #{owner_type} #{owner.name} by #{entity.name}"
         AccessRightNotifier.with(record: self, entity_id:, msg:).deliver_later(user)
       end
+    else
+      Rails.logger.info "AccessRightNotifier: Notification skipped for AccessRight #{id} (notify: #{notify}, owner_type: #{owner_type})"
     end
   end
 

@@ -83,13 +83,29 @@ When('the root folder is given access rights') do
   @root_folder_ar = AccessRight.create!(owner: @folder, user_id: @user.id, cascade: true, entity_id: @folder.entity_id)
 end
 
+Given('I am tracking FolderAccessJob enqueues') do
+  # Wrap perform_later so nested enqueues triggered inline (ActiveJob is :inline in Cucumber)
+  # are counted too, not just the first top-level call.
+  @folder_access_job_count = 0
+  allow(FolderAccessJob).to receive(:perform_later).and_wrap_original do |original_method, *args, &block|
+    @folder_access_job_count += 1
+    original_method.call(*args, &block)
+  end
+end
+
+Then('FolderAccessJob should have been enqueued {string} times') do |count|
+  @folder_access_job_count.should == count.to_i
+end
+
 Then('the child folders should have the same access rights') do
   @folder.reload.descendants.each do |folder|
     puts "Checking folder #{folder.name} access rights"
     # Filter by parent_access_right_id to ensure we are checking the CASCADING one
     ar = folder.access_rights.find_by(user_id: @user.id, parent_access_right_id: @root_folder_ar.id)
     ar.should_not be_nil
-    ar.cascade.should == true
+    # Replicated copies must not carry cascade=true forward, or Folder#access_rights_changed
+    # would enqueue another FolderAccessJob for a subtree the original job already covered.
+    ar.cascade.should == false
     ar.entity_id.should == @folder.entity_id
   end
 end
