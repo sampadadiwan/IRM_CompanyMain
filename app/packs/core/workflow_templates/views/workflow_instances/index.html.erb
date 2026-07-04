@@ -61,7 +61,7 @@
               </td>
               <td class="text-end pe-3">
                 <%= link_to "View", workflow_instance_path(inst),
-                      class: "btn btn-outline-secondary" %>
+                      class: "btn btn-outline-secondary", data: { turbo_frame: "_top" } %>
               </td>
             </tr>
           <% end %>

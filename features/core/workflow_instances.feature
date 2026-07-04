@@ -320,3 +320,47 @@ Feature: Workflow Instance Lifecycle
     Examples:
       | user | entity              |
       |      | entity_type=Company |
+
+  # ── Full-stack UI launch ──────────────────────────────────────────────────────
+  # Every other launch scenario in this file calls WorkflowInstanceService directly,
+  # which skips WorkflowInstancesController#create entirely — including the Pundit
+  # `authorize @instance` call. This scenario drives the real "Launch Workflow"
+  # modal in a browser so the controller + policy path actually gets exercised.
+
+  Scenario Outline: Admin launches a workflow from the folder's Launch Workflow modal
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=LP Review" with 1 step "name=Initial Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has a folder "name=LP Documents"
+    And the folder "LP Documents" has workflow template "LP Review"
+    When I visit the folder show page for "LP Documents"
+    And I open the Workflow tab
+    And I launch the workflow "LP Review" from the launch modal
+    Then I should see a flash notice containing "Workflow launched"
+    And the folder "LP Documents" should have an active workflow instance
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
+  # ── Full-stack UI navigation from the index list ──────────────────────────────
+  # Every other show-page assertion in this file loads instance data at the model
+  # level. This scenario clicks "View" from /workflow_instances the way a real user
+  # would, so a Turbo Frame regression (nested link never breaking out of the index's
+  # own turbo_frame_tag) actually gets caught instead of silently passing.
+
+  Scenario Outline: Viewing an instance from the workflow instances index opens the full page
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=LP Review" with 1 step "name=Initial Review;states=Approved,Rejected;quorum_rule=any_one;on_reject_rule=stop;actors=admin"
+    And the entity has a folder "name=LP Documents"
+    And the folder "LP Documents" has workflow template "LP Review"
+    And the folder "LP Documents" has an active workflow instance for "LP Review"
+    When I visit the workflow instances index page
+    And I click "View" for the instance on folder "LP Documents"
+    Then I should land on the workflow instance show page for "LP Documents"
+    And I should not see "Content missing"
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |

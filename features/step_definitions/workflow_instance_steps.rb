@@ -511,6 +511,43 @@ Then("the {word} {string} should not have a workflow template") do |type, obj_na
   assigned.should be_nil
 end
 
+# ── Full-stack UI: Launch Workflow modal on the folder page ───────────────────
+
+When("I open the Workflow tab") do
+  find("a[href='#workflow-tab']").click
+end
+
+# Opens the Bootstrap modal, picks the template (option text includes the step
+# count, e.g. "LP Review (1 step(s))", so match on prefix), and submits — a real
+# POST to WorkflowInstancesController#create, unlike the WorkflowInstanceService
+# calls used by every other launch step in this file.
+When("I launch the workflow {string} from the launch modal") do |template_name|
+  within("#workflow-tab") { click_button("Launch Workflow") }
+  within(".modal.show", wait: 5) do
+    find("option", text: /\A#{Regexp.escape(template_name)}/).select_option
+    click_button("Launch Workflow")
+  end
+end
+
+# ── Full-stack UI: navigating from the index list ─────────────────────────────
+
+When("I visit the workflow instances index page") do
+  visit workflow_instances_path
+end
+
+When("I click {string} for the instance on folder {string}") do |link_text, folder_name|
+  within(find("tr", text: folder_name)) { click_link(link_text) }
+end
+
+Then("I should land on the workflow instance show page for {string}") do |folder_name|
+  expect(page).to have_css(".breadcrumb-item.active", text: "Workflow")
+  expect(page).to have_link(folder_name)
+end
+
+Then("I should not see {string}") do |text|
+  expect(page).not_to have_content(text)
+end
+
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 private

@@ -35,7 +35,8 @@ class WorkflowInstancesController < ApplicationController
       workflowable.create_workflow_assignment!(workflow_template: template, created_by: current_user)
     end
 
-    @instance = WorkflowInstance.new(workflowable: workflowable, launched_by: current_user)
+    @instance = WorkflowInstance.new(workflowable: workflowable, launched_by: current_user,
+                                      entity_id: workflowable.entity_id)
     authorize @instance
 
     WorkflowInstanceService.launch(workflowable, launched_by: current_user)
