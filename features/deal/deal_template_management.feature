@@ -40,7 +40,7 @@ Feature: Deal Template Management
     And the imported templates are sequenced after the existing ones
 
   @import
-  Scenario: Importing with missing required columns marks the upload failed
+  Scenario: Importing with missing required columns disables Save with a column error
     Given there exists a deal "name=Series A;amount_cents=500000" for my company without templates
     When I import deal activity templates using an XLSX with missing columns
     Then the import should fail with a column error

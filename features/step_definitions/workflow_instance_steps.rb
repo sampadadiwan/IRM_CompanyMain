@@ -544,10 +544,6 @@ Then("I should land on the workflow instance show page for {string}") do |folder
   expect(page).to have_link(folder_name)
 end
 
-Then("I should not see {string}") do |text|
-  expect(page).not_to have_content(text)
-end
-
 # ── Private helpers ────────────────────────────────────────────────────────────
 
 private

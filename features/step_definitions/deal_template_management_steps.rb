@@ -48,6 +48,28 @@ ensure
   tmp_file.unlink
 end
 
+# Visits the new import-upload form and attaches a file whose header row is
+# missing required columns. The xlsx-preview Stimulus controller validates
+# headers client-side and disables Save before the form can ever be
+# submitted, so this never reaches the server (no ImportUpload is created).
+def attempt_deal_activity_template_import_with_missing_columns(tmp_file)
+  visit(new_import_upload_path(
+    "import_upload[entity_id]":   @user.entity_id,
+    "import_upload[import_type]": "DealActivityTemplate",
+    "import_upload[owner_type]":  "Deal",
+    "import_upload[owner_id]":    @deal.id
+  ))
+  fill_in("import_upload_name", with: "Test Template Upload")
+  attach_file("files[]", tmp_file.path, make_visible: true)
+
+  # Wait for the client-side validation banner to appear before asserting.
+  expect(page).to have_css('[data-xlsx-preview-target="status"] .alert-danger',
+                            text: /Missing required columns/i)
+ensure
+  tmp_file.close
+  tmp_file.unlink
+end
+
 # ── Given steps ───────────────────────────────────────────────────────────────
 
 # Creates a deal with skip_templates: true so no ENV-default activities are
@@ -122,7 +144,7 @@ end
 
 When('I import deal activity templates using an XLSX with missing columns') do
   tmp = build_deal_activity_template_workbook(2, missing_columns: true)
-  run_deal_activity_template_import(tmp)
+  attempt_deal_activity_template_import_with_missing_columns(tmp)
 end
 
 # ── Then steps: no-templates ─────────────────────────────────────────────────
@@ -167,7 +189,10 @@ Then('the imported templates are sequenced after the existing ones') do
 end
 
 Then('the import should fail with a column error') do
-  expect(@import_upload.status).to include("Column(s) not found")
+  # The Save button is disabled client-side, so the upload is never created
+  # server-side and there's no ImportUploadJob to run.
+  expect(page).to have_button("Save", disabled: true)
+  expect(ImportUpload.count).to eq(0)
 end
 
 Then('the deal investor activities should be regenerated to match the imported templates') do
