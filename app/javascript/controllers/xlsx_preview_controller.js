@@ -17,10 +17,20 @@ export default class extends Controller {
     // Revert to document-level listener but filter inside handleUpload to specific upload ID
     document.addEventListener("upload:complete", this.handleUpload.bind(this));
 
+    // A fresh connect should never leave a stale guard from a previous render blocking Save.
+    this.setSubmitGuard(false);
+
     const url = this.element.dataset.xlsxPreviewUrl;
     if (url) {
       this.loadFromUrl(url);
     }
+  }
+
+  // Disables or re-enables all submit buttons marked with data-xlsx-submit-guard.
+  setSubmitGuard(blocked) {
+    document.querySelectorAll("[data-xlsx-submit-guard]").forEach((el) => {
+      el.disabled = blocked;
+    });
   }
 
   disconnect() {
@@ -28,19 +38,14 @@ export default class extends Controller {
   }
 
   capSheetRange(sheet, maxRows = 20000, maxCols = 100) {
-    let range;
-
-    if (sheet["!ref"]) {
-      console.log(`📄 Original !ref from file: ${sheet["!ref"]}`);
-      range = XLSXLib.utils.decode_range(sheet["!ref"]);
-    } else {
-      console.log("⚠️ No !ref found, computing from actual cell addresses...");
-      const keys = Object.keys(sheet).filter(k => k[0] !== "!");
-      if (keys.length === 0) {
-        console.log("❌ Sheet has no cells, skipping");
-        return;
-      }
-
+    // Some files carry a stale/incorrect dimension tag (e.g. columns were added
+    // after the tag was last written) that undercounts the real populated range.
+    // SheetJS trusts "!ref" as-is, so relying on it alone can make real trailing
+    // columns look "missing". Always compute the actual bounding box from cell
+    // addresses and widen (never shrink) whatever "!ref" declares.
+    const keys = Object.keys(sheet).filter(k => k[0] !== "!");
+    let actualRange = null;
+    if (keys.length > 0) {
       let minRow = Infinity, maxRow = -1, minCol = Infinity, maxCol = -1;
       for (const addr of keys) {
         const { r, c } = XLSXLib.utils.decode_cell(addr);
@@ -49,8 +54,26 @@ export default class extends Controller {
         if (c < minCol) minCol = c;
         if (c > maxCol) maxCol = c;
       }
-      range = { s: { r: minRow, c: minCol }, e: { r: maxRow, c: maxCol } };
-      console.log(`🔄 Computed range from cells: ${XLSXLib.utils.encode_range(range)}`);
+      actualRange = { s: { r: minRow, c: minCol }, e: { r: maxRow, c: maxCol } };
+      console.log(`🔄 Computed range from cells: ${XLSXLib.utils.encode_range(actualRange)}`);
+    }
+
+    let range;
+    if (sheet["!ref"]) {
+      console.log(`📄 Original !ref from file: ${sheet["!ref"]}`);
+      range = XLSXLib.utils.decode_range(sheet["!ref"]);
+      if (actualRange) {
+        range.s.r = Math.min(range.s.r, actualRange.s.r);
+        range.s.c = Math.min(range.s.c, actualRange.s.c);
+        range.e.r = Math.max(range.e.r, actualRange.e.r);
+        range.e.c = Math.max(range.e.c, actualRange.e.c);
+      }
+    } else if (actualRange) {
+      console.log("⚠️ No !ref found, using range computed from actual cell addresses...");
+      range = actualRange;
+    } else {
+      console.log("❌ Sheet has no cells, skipping");
+      return;
     }
 
     const rowCount = range.e.r - range.s.r + 1;
@@ -178,6 +201,13 @@ export default class extends Controller {
     console.log("✅ useTabs:", useTabs, "📄 sheetNames:", sheetNames);
     console.log("💾 element.dataset:", this.element.dataset);
 
+    // The import job always reads sheet 0 server-side (Roo::Spreadsheet#sheet(0)),
+    // so header/STANDARD_COLUMNS validation must run against sheet 0 regardless of
+    // how many sheets the workbook has or whether they're rendered as tabs.
+    const firstSheet = workbook.Sheets[sheetNames[0]];
+    if (firstSheet) this.capSheetRange(firstSheet);
+    const missingOriginal = firstSheet ? this.checkHeaders(firstSheet, expectedHeaders) : [];
+
     if (useTabs && sheetNames.length > 1) {
       console.log("🧩 [DEBUG] Multiple sheets detected, building tabs...");
       let tabs = `<nav class="nav nav-pills nav-justified mb-3 align-items-center flex-row" role="tablist">`;
@@ -207,69 +237,49 @@ export default class extends Controller {
       this.tableTarget.innerHTML = `${tabs}${tabContents}`;
       this.cardTarget.classList.remove("d-none");
 
-      if (statusEl) {
-        statusEl.innerHTML = `<div class="alert alert-success">Loaded all ${sheetNames.length} sheets with tabs</div>`;
+      // Only overwrite the "loaded N sheets" success message if header validation
+      // didn't already report missing columns above.
+      if (statusEl && !missingOriginal.length) {
+        statusEl.innerHTML = `<div class="alert alert-success">Loaded all ${sheetNames.length} sheets with tabs. All required columns exist on "${sheetNames[0]}" (used for import).</div>`;
       }
       console.log("✅ [DEBUG] Multi-tab rendering complete.");
     } else {
       console.log("ℹ️ [DEBUG] Single sheet mode or useTabs disabled.");
-      const sheet = workbook.Sheets[sheetNames[0]];
-      if (!sheet) {
+      if (!firstSheet) {
         console.error("❌ [DEBUG] No sheet available to render!");
         return;
       }
-      this.capSheetRange(sheet);
-      console.log(`📊 [DEBUG] Single sheet '${sheetNames[0]}' ready for validation and rendering.`);
-      this.validateAndRender(sheet, expectedHeaders, workbook);
+      console.log(`📊 [DEBUG] Single sheet '${sheetNames[0]}' ready for rendering.`);
+      this.renderTable(firstSheet);
     }
   }
 
-  validateAndRender(sheet, expectedHeaders, workbook = null) {
+  // Compares the sheet's header row against expectedHeaders (STANDARD_COLUMNS),
+  // updates the status banner and the submit guard, and returns the list of
+  // missing header names (in their original casing).
+  checkHeaders(sheet, expectedHeaders) {
     const data = this.normalizeSheetData(sheet);
-    const [headers, ...rows] = data;
-    const actual = headers
+    const [headers] = data;
+    const actual = (headers || [])
       .map((h) => h?.toString().replace("*", "").trim().toLowerCase());
     const required = expectedHeaders.map((h) => h.trim().toLowerCase());
-    const missing = required.filter((h) => !actual.includes(h));
 
     const statusEl = this.statusElement;
-    if (required.length > 0) {
-      const missingOriginal = expectedHeaders.filter(
-        (h) => !actual.includes(h.trim().toLowerCase())
-      );
-      if (statusEl) {
-        statusEl.innerHTML = missingOriginal.length
-          ? `<div class="alert alert-danger">Missing required columns: ${missingOriginal.join(", ")}</div>`
-          : `<div class="alert alert-success">All required columns exist</div>`;
-      }
+    if (required.length === 0) {
+      this.setSubmitGuard(false);
+      return [];
     }
 
-    // Support multi-sheet rendering here too
-    const useTabs = this.element.dataset.xlsxPreviewTabs === "true";
-    if (workbook && useTabs && workbook.SheetNames.length > 1) {
-      let tabs = `<nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">`;
-      let tabContents = `<div class="tab-content">`;
-      workbook.SheetNames.forEach((sheetName, index) => {
-        const sheet = workbook.Sheets[sheetName];
-        this.capSheetRange(sheet);
-        const isActive = index === 0 ? "active" : "";
-        const tabId = `validate-sheet-${index}`;
-        tabs += `<li class="nav-item" role="presentation">
-                   <a class="nav-link ${isActive}" id="${tabId}-tab" data-bs-toggle="pill" data-bs-target="#${tabId}" role="tab">${sheetName}</a>
-                 </li>`;
-        tabContents += `<div class="tab-pane fade show ${isActive}" id="${tabId}" role="tabpanel">
-                          <div>${this.buildTableHtml(sheet)}</div>
-                        </div>`;
-      });
-      tabs += `</nav>`;
-      tabContents += `</div>`;
-      this.tableTarget.innerHTML = `${tabs}${tabContents}`;
-      this.cardTarget.classList.remove("d-none");
-      if (statusEl)
-        statusEl.innerHTML = `<div class="alert alert-success">Loaded all ${workbook.SheetNames.length} sheets with tabs</div>`;
-    } else {
-      this.renderTable(sheet);
+    const missingOriginal = expectedHeaders.filter(
+      (h) => !actual.includes(h.trim().toLowerCase())
+    );
+    if (statusEl) {
+      statusEl.innerHTML = missingOriginal.length
+        ? `<div class="alert alert-danger">Missing required columns: ${missingOriginal.join(", ")}</div>`
+        : `<div class="alert alert-success">All required columns exist</div>`;
     }
+    this.setSubmitGuard(missingOriginal.length > 0);
+    return missingOriginal;
   }
 
   renderTable(sheet) {

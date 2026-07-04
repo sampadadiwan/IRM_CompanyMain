@@ -123,4 +123,8 @@ class ImportUpload < ApplicationRecord
     importer = "Import#{import_type}".constantize.new
     importer.respond_to?(:standard_headers) ? importer.standard_headers : []
   end
+
+  def xlsx_upload?
+    import_type.present? && !DOC_TYPES.include?(import_type)
+  end
 end

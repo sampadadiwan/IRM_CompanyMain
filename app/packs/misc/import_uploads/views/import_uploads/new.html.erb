@@ -1,36 +1,21 @@
-<div class="row">    
-    <div class="col">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">
-                    Upload : <%=@import_upload.import_type%>
-                </h6>
-            </div>
-            <div class="card-body">
-                <%= render "form", import_upload: @import_upload %>
-            </div>
-        </div>
-    </div>
-
-    <% if @import_upload.import_type.blank? %>
-        <div class="col-lg-5 mb-4">        
-            <div class="card shadow mb-4">
-            <div class="card-header py-3">
-            <h6 class="m-0 font-weight-bold text-primary">
-                Templates
-            </h6>
-            </div>
-            <div class="card-body">
-                <table class="table table-bordered  dataTable">
-                    <% ImportUpload::SAMPLES.sort.each do |name, path| %>
-                    <tr>
-                        <td><%= link_to name.humanize, path %></td>
-                    </tr>
-                    <% end %>
-                </table>
-            </div>
-        </div>
-        </div>
+<%= render NewCard.new do %>
+    <%= render FormCard.new(title: "Upload : #{@import_upload.import_type}") do %>
+        <%= render "form", import_upload: @import_upload %>
     <% end %>
-    
-</div>
+<% end %>
+
+<%= render "xlsx_preview", import_upload: @import_upload %>
+
+<% if @import_upload.import_type.blank? %>
+    <%= render NewCard.new(col_md: "col-lg-5") do %>
+        <%= render FormCard.new(title: "Templates") do %>
+            <table class="table table-bordered  dataTable">
+                <% ImportUpload::SAMPLES.sort.each do |name, path| %>
+                <tr>
+                    <td><%= link_to name.humanize, path %></td>
+                </tr>
+                <% end %>
+            </table>
+        <% end %>
+    <% end %>
+<% end %>

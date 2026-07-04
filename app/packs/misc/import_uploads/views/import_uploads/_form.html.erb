@@ -51,29 +51,8 @@
   </div>
 
   <div class="form-group">
-    <%= form.button type: 'submit', class: "btn btn-outline-primary" do %>
+    <%= form.button type: 'submit', class: "btn btn-outline-primary", data: { xlsx_submit_guard: true } do %>
       <i class="ti ti-device-floppy"></i> <%= t_common(:save) %>
     <% end %>
   </div>
-
-
-
-  <!-- Stimulus XLSX Preview Controller -->
-  <div id="xlsx-preview" class="table-responsive"
-      data-controller="xlsx-preview"
-      data-headers='<%= import_upload.headers %>'
-      data-xlsx-preview-tabs="true">
-
-    <div data-xlsx-preview-target="card" class="mt-3 d-none">
-      <div class="card-header fw-bold">
-        <span class="h3" data-xlsx-preview-target="filename"></span>
-      </div>
-      <div class="" data-controller="datatable">
-        <div data-xlsx-preview-target="status"></div>
-        <div data-xlsx-preview-target="table"></div>
-      </div>
-    </div>
-
-  </div>
-
 <% end %>

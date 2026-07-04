@@ -1,0 +1,21 @@
+<% if import_upload.xlsx_upload? %>
+  <%= render FormCard.new(title: "Preview") do %>
+    <!-- Stimulus XLSX Preview Controller -->
+    <div id="xlsx-preview" class="table-responsive"
+        data-controller="xlsx-preview"
+        data-headers='<%= import_upload.headers.to_json %>'
+        data-xlsx-preview-tabs="true">
+
+      <div data-xlsx-preview-target="card" class="d-none">
+        <div class="fw-bold">
+          <span class="h3" data-xlsx-preview-target="filename"></span>
+        </div>
+        <div class="" data-controller="datatable">
+          <div data-xlsx-preview-target="status"></div>
+          <div data-xlsx-preview-target="table"></div>
+        </div>
+      </div>
+
+    </div>
+  <% end %>
+<% end %>
