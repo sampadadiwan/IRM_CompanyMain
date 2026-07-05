@@ -17,43 +17,247 @@
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
 
-    <!-- Custom styles for this template-->
-    <link rel="stylesheet" href="/modernize/css/styles.css" />
+    <style>
+        :root {
+            --caphive-orange: #ed8936;
+            --caphive-blue: #4299e1;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Nunito', 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            }
+        }
+
+        /* Drifting honeycomb hexagons in the background, nodding to the CapHive brand mark */
+        .hex-field {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .hex {
+            position: absolute;
+            width: 90px;
+            height: 52px;
+            background: linear-gradient(135deg, rgba(237, 137, 54, 0.15), rgba(66, 153, 225, 0.1));
+            clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+            animation: float-hex 16s ease-in-out infinite;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .hex {
+                background: linear-gradient(135deg, rgba(237, 137, 54, 0.12), rgba(66, 153, 225, 0.15));
+            }
+        }
+
+        .hex:nth-child(1) {
+            top: 8%;
+            left: 6%;
+            width: 60px;
+            height: 35px;
+            animation-delay: 0s;
+        }
+
+        .hex:nth-child(2) {
+            top: 70%;
+            left: 10%;
+            width: 110px;
+            height: 64px;
+            animation-delay: 2s;
+        }
+
+        .hex:nth-child(3) {
+            top: 20%;
+            left: 88%;
+            width: 80px;
+            height: 46px;
+            animation-delay: 4s;
+        }
+
+        .hex:nth-child(4) {
+            top: 78%;
+            left: 84%;
+            width: 55px;
+            height: 32px;
+            animation-delay: 1s;
+        }
+
+        .hex:nth-child(5) {
+            top: 45%;
+            left: 4%;
+            width: 40px;
+            height: 23px;
+            animation-delay: 3s;
+        }
+
+        .hex:nth-child(6) {
+            top: 48%;
+            left: 92%;
+            width: 45px;
+            height: 26px;
+            animation-delay: 5s;
+        }
+
+        @keyframes float-hex {
+
+            0%,
+            100% {
+                transform: translateY(0) rotate(0deg);
+            }
+
+            50% {
+                transform: translateY(-18px) rotate(8deg);
+            }
+        }
+
+        .error-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 480px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow:
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 48px 40px;
+            text-align: center;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .error-card {
+                background: rgba(30, 41, 59, 0.85);
+                border-color: rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        .error-logo {
+            max-width: 220px;
+            width: 100%;
+            height: auto;
+            margin-bottom: 28px;
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.08));
+        }
+
+        .error-code {
+            font-size: 6rem;
+            font-weight: 800;
+            line-height: 1;
+            margin: 0 0 8px;
+            background: linear-gradient(135deg, var(--caphive-orange) 0%, #f6ad55 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .error-title {
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: #1a202c;
+            margin: 0 0 12px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .error-title {
+                color: #f8fafc;
+            }
+        }
+
+        .error-message {
+            color: #718096;
+            font-size: 1rem;
+            margin: 0 0 32px;
+            line-height: 1.5;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .error-message {
+                color: #94a3b8;
+            }
+        }
+
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--caphive-orange) 0%, #dd6b20 100%);
+            box-shadow: 0 8px 16px -4px rgba(237, 137, 54, 0.4);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .btn-home:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -4px rgba(237, 137, 54, 0.5);
+            color: #fff;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
 
 </head>
 
-<body id="page-top">
+<body>
 
-    <!-- Page Wrapper -->
-    <div id="main-wrapper">
-        <div class="position-relative overflow-hidden min-vh-100 w-100 d-flex align-items-center justify-content-center">
-          <div class="d-flex align-items-center justify-content-center w-100">
-            <div class="row justify-content-center w-100">
-              <div class="col-lg-4">
-                <div class="text-center">
-                  <h1 class="fw-semibold mb-7 fs-9">Page Not Found</h1>
-                  <h4 class="fw-semibold mb-7">This page you are looking for could not be found.</h4>
-                  <a class="btn btn-outline-primary btn-lg" href="/" role="button">Back to Home</a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="dark-transparent sidebartoggler"></div>
-    <!-- End of Page Wrapper -->
+    <div class="hex-field">
+        <div class="hex"></div>
+        <div class="hex"></div>
+        <div class="hex"></div>
+        <div class="hex"></div>
+        <div class="hex"></div>
+        <div class="hex"></div>
+    </div>
 
-   
-
-    <!-- Bootstrap core JavaScript-->
-    <script src="/vendor/jquery/jquery.min.js"></script>
-    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-
-    <!-- Core plugin JavaScript-->
-    <script src="/vendor/jquery-easing/jquery.easing.min.js"></script>
-
-    <!-- Custom scripts for all pages-->
-    <script src="js/sb-admin-2.min.js"></script>
+    <div class="error-card">
+        <img src="/img/logo_big.png" alt="CapHive" class="error-logo">
+        <p class="error-code">404</p>
+        <h1 class="error-title">Lost in the hive</h1>
+        <p class="error-message">This page you are looking for could not be found. It may have moved or never
+            existed.</p>
+        <a class="btn-home" href="/"><i class="fas fa-home"></i> Back to Home</a>
+    </div>
 
 </body>
 
