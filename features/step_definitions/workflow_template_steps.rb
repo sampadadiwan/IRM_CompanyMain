@@ -152,6 +152,20 @@ When("I visit the edit page for the workflow template {string}") do |name|
   visit edit_workflow_template_path(template)
 end
 
+When("I fill in the Locked buttons field with {string}") do |value|
+  fill_in "workflow_template_gated_button_labels", with: value
+end
+
+Then("the workflow template {string} should have gated_button_labels {string}") do |name, expected|
+  template = WorkflowTemplate.find_by!(name: name, entity: @entity)
+  template.reload.gated_button_labels.should == expected
+end
+
+Then("the workflow template show page should list {string} as locked buttons") do |labels|
+  expect(page).to have_css(".wf-meta-label", text: /locked buttons/i)
+  expect(page).to have_css(".wf-meta-value", text: labels)
+end
+
 When("I click {string} on the workflow template edit page") do |link_text|
   @step_rows_before = page.all(".step-row", visible: :all).count
   click_link(link_text)

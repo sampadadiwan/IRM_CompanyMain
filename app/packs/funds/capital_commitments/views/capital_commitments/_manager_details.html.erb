@@ -30,6 +30,10 @@
     <% if capital_commitment.entity.permissions.enable_kycs? %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#kycs-tab">All KYCs</a>
     <% end %>
+
+    <% if policy(capital_commitment).assign_workflow? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+    <% end %>
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -120,6 +124,13 @@
             <% end %>
           </div>
     </div>
+
+    <%# Workflow tab — company_admin only %>
+    <% if policy(capital_commitment).assign_workflow? %>
+      <div id="workflow-tab" class="tab-pane fade">
+        <%= render "workflow_templates/workflow_tab", workflowable: capital_commitment %>
+      </div>
+    <% end %>
 
   </div>
 </div>

@@ -635,6 +635,8 @@ After the investor has submitted their KYC and all documents are in order, a com
 
 Once verified, the KYC is considered compliant and active.
 
+> **If Verify, Edit, or another button is greyed out:** your organisation may have a review workflow assigned to this KYC record. If so, the button stays disabled until that workflow completes successfully. Check the record's Workflow tab to see the review's current status — see the [Workflow Templates guide](workflow_templates_user_guide.md) for details.
+
 ### Requesting updates from the investor
 
 If something needs to be corrected:

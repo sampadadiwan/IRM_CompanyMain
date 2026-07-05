@@ -112,6 +112,36 @@ Feature: Fund Commitment Adhoc Notification
     And the notification email has 1 documents attached
     And the notification email has the document "Statement of Account v2 FINAL" attached
 
+  Scenario: Notification attaches a document whose name contains a comma when the pattern is quoted
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "SOA UNit 01 July,2025 to 31 December,2025 - AA Holdings LLP - ESF-AA" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "\"SOA UNit 01 July,2025 to 31 December,2025 - *\""
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 1 documents attached
+    And the notification email has the document "SOA UNit 01 July,2025 to 31 December,2025 - AA Holdings LLP - ESF-AA" attached
+
+  Scenario: Notification attaches documents for a comma-separated list mixing a quoted comma-containing name with a plain name
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "SOA UNit 01 July,2025 to 31 December,2025 - AA Holdings LLP - ESF-AA" with file "sample_kyc1.pdf"
+    And the first commitment has document "KYC Certificate" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "\"SOA UNit 01 July,2025 to 31 December,2025 - *\",KYC Certificate"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 2 documents attached
+    And the notification email has the document "SOA UNit 01 July,2025 to 31 December,2025 - AA Holdings LLP - ESF-AA" attached
+    And the notification email has the document "KYC Certificate" attached
+
   Scenario: Notification sends successfully with zero attachments when attachment_names matches nothing
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"

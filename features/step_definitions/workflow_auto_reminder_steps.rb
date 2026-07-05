@@ -26,8 +26,8 @@ Given("the actor {string} has already responded {string} to the current step") d
   # Run the full resolver+advancer chain so WorkflowStateChange records are written.
   # If the quorum is satisfied the instance advances (or completes), which is correct — the
   # reminder job won't pick up a non-active instance, and the audit trail has real rows.
-  result = WorkflowStepResolver.resolve(@instance.reload)
-  WorkflowAdvancer.advance(@instance, resolved_state: result[:resolved], actor: actor, channel: :ui) if result[:resolved]
+  result = WorkflowStepResolver.call(instance: @instance.reload)[:resolution]
+  WorkflowAdvancer.call(instance: @instance, resolved_state: result[:resolved], actor: actor, channel: :ui) if result[:resolved]
 end
 
 # ── When ──────────────────────────────────────────────────────────────────────

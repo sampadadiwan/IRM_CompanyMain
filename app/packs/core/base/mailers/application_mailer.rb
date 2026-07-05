@@ -160,7 +160,16 @@ class ApplicationMailer < ActionMailer::Base
 
     if @custom_notification && @custom_notification.attachment_names.present? && custom_notification_documents_owner.respond_to?(:documents)
       latest_doc_only = @custom_notification.latest_doc_only
-      @custom_notification.attachment_names.split(',').map(&:strip).compact_blank.each do |name|
+      # CSV.parse_line so a name containing a literal comma (e.g. a date range like
+      # "01 July,2025 to 31 December,2025") can be protected by wrapping it in quotes;
+      # unquoted entries still split on comma exactly like before. Falls back to a plain
+      # comma split if the value has unbalanced quotes, so a typo can't silently drop all attachments.
+      names = begin
+        CSV.parse_line(@custom_notification.attachment_names).to_a
+      rescue CSV::MalformedCSVError
+        @custom_notification.attachment_names.split(',')
+      end
+      names.compact.map(&:strip).compact_blank.each do |name|
         documents = if name.include?('*')
                       custom_notification_documents_owner.documents.where("name like ? ESCAPE ?", wildcard_to_like(name), '\\')
                     else

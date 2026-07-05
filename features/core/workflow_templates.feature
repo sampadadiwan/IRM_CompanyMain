@@ -31,6 +31,20 @@ Feature: Workflow Templates
       | user | entity              |
       |      | entity_type=Company |
 
+  Scenario Outline: Admin configures which buttons a template locks
+    Given Im logged in as a user "<user>" for an entity "<entity>"
+    And the user has role "company_admin"
+    And there is a workflow template "name=Lockable Template"
+    When I visit the edit page for the workflow template "Lockable Template"
+    And I fill in the Locked buttons field with "Approve, Edit"
+    And I save the workflow template edit form
+    Then the workflow template "Lockable Template" should have gated_button_labels "Approve, Edit"
+    And the workflow template show page should list "Approve, Edit" as locked buttons
+
+    Examples:
+      | user | entity              |
+      |      | entity_type=Company |
+
   Scenario Outline: Admin deletes a template that is not in use
     Given Im logged in as a user "<user>" for an entity "<entity>"
     And the user has role "company_admin"

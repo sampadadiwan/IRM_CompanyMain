@@ -15,7 +15,9 @@
   <!-- Show the main KYC details -->
   <%= render "investor_kycs/show", investor_kyc: @investor_kyc, ckyc_data: ckyc_data, kra_data: kra_data %>
 
-  <div>
+  <div data-controller="workflow-gate"
+       data-workflow-gate-labels-value="<%= (@workflow_gated_button_labels || []).to_json %>"
+       data-workflow-gate-reason-value="<%= @workflow_gate_status_label.present? ? "Blocked — workflow is #{@workflow_gate_status_label}" : '' %>">
 
     <% if policy(@investor_kyc).send_notification? %>
       <%= button_to send_notification_investor_kyc_path(
@@ -25,7 +27,8 @@
                   data: {
                     action: "click->confirm#popup",
                     method: :patch,
-                    msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to be made to the KYC #{@investor_kyc.full_name}. Proceed?"
+                    msg: "This will generate a notification to #{@investor_kyc.entity.name}, requesting for changes to be made to the KYC #{@investor_kyc.full_name}. Proceed?",
+                    workflow_gate_label: "Updates Required"
                   } do %>
         <i class="ti ti-message-2"></i>Updates Required
       <% end %>
@@ -35,14 +38,14 @@
   <div>
 
     <% if policy(@investor_kyc).update? %>
-      <%= link_to edit_investor_kyc_path(@investor_kyc), id: "investor_kyc_edit_btn", class: "btn btn-outline-primary" do %>
+      <%= link_to edit_investor_kyc_path(@investor_kyc), id: "investor_kyc_edit_btn", class: "btn btn-outline-primary", data: { workflow_gate_label: "Edit" } do %>
         <i class="ti ti-edit"></i> <%= t_common(:edit) %>
       <% end %>
     <% end %>
 
     <% if policy(@investor_kyc).destroy? %>
       <%= button_to @investor_kyc, id: "investor_kyc_destroy_btn", method: :delete, class: "btn btn-outline-danger", form_class: "deleteButton",
-          data: { action: "click->confirm#popup", turbo: false } do %>
+          data: { action: "click->confirm#popup", turbo: false, workflow_gate_label: "Delete" } do %>
         <i class="ti ti-trash"></i> <%= t_common(:delete) %>
       <% end %>
     <% end %>
@@ -51,13 +54,14 @@
     <% label_class = @investor_kyc.verified ? "btn btn-outline-warning" : "btn btn-outline-success" %>
     <% label_icon = @investor_kyc.verified ? "ti ti-user-x" : "ti ti-user-check" %>
     <% if policy(@investor_kyc).toggle_verified? %>
-      <%= button_to toggle_verified_investor_kyc_path(@investor_kyc), id: "investor_kyc_toggle_verified_btn", method: :put, class: label_class, form_class: "deleteButton" do %>
+      <%= button_to toggle_verified_investor_kyc_path(@investor_kyc), id: "investor_kyc_toggle_verified_btn", method: :put, class: label_class, form_class: "deleteButton",
+          data: { workflow_gate_label: label } do %>
         <i class="<%= label_icon %>"></i><%= label %>
       <% end %>
     <% end %>
 
     <% if policy(@investor_kyc).request_updates? %>
-      <button type="button" class="btn btn-outline-warning"
+      <button type="button" class="btn btn-outline-warning" data-workflow-gate-label="Request Updates"
               data-bs-toggle="modal" data-bs-target="#requestUpdatesModal">
         <i class="ti ti-refresh"></i> Request Updates
       </button>
@@ -152,7 +156,7 @@
             <%= render "/investor_kycs/send_notifications", investor_kyc: @investor_kyc %>
 
             <% if policy(@investor_kyc).generate_docs? %>
-              <%= link_to generate_docs_investor_kyc_path(@investor_kyc), id: "investor_kyc_generate_docs_btn", class: "dropdown-item" do %>
+              <%= link_to generate_docs_investor_kyc_path(@investor_kyc), id: "investor_kyc_generate_docs_btn", class: "dropdown-item", data: { workflow_gate_label: "Generate Docs" } do %>
                 <i class="ti ti-file-plus"></i>Generate Docs
               <% end %>
             <% end %>
@@ -162,7 +166,8 @@
                   id: "investor_kyc_validate_docs_with_ai_btn", method: :post, class: "dropdown-item", form_class: "deleteButton",
                   data: {
                     action: "click->confirm#popup", turbo: false, method: :post,
-                    msg: "This will try and validate the data in the documents and KYC. It will take a few minutes. Proceed?"
+                    msg: "This will try and validate the data in the documents and KYC. It will take a few minutes. Proceed?",
+                    workflow_gate_label: "Validate Document Data"
                   } do %>
                 <i class="ti brand-github-copilot"></i>Validate Document Data
               <% end %>
@@ -206,7 +211,7 @@
 
 
             <% if policy(@investor_kyc).generate_new_aml_report? %>
-              <%= button_to generate_new_aml_report_investor_kyc_path(@investor_kyc), id: "investor_kyc_generate_new_aml_report_btn", method: :put, class: "dropdown-item" do %>
+              <%= button_to generate_new_aml_report_investor_kyc_path(@investor_kyc), id: "investor_kyc_generate_new_aml_report_btn", method: :put, class: "dropdown-item", data: { workflow_gate_label: "Generate AML Report" } do %>
                 <i class="ti ti-shield-lock"></i>Generate AML Report
               <% end %>
             <% end %>

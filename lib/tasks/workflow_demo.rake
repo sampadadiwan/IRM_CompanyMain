@@ -138,13 +138,13 @@ namespace :workflow_demo do
     # ── Optionally launch the workflow ────────────────────────────────────────
     if args[:launch].to_s.strip.downcase == "launch"
       log.call("\nLaunching workflow instance...")
-      instance = WorkflowInstanceService.launch(folder, launched_by: admin)
+      instance = WorkflowInstanceLaunch.call(workflowable: folder, launched_by: admin)[:instance]
       log.call("  WorkflowInstance##{instance.id} launched — status=#{instance.status}, step=#{instance.current_step_position}")
       log.call("  Step-activation emails enqueued for step-1 actors.")
     else
       log.call("\nWorkflow NOT launched (pass 'launch' as second arg to auto-launch).")
       log.call("  To launch manually in Rails console:")
-      log.call("  WorkflowInstanceService.launch(Folder.find(#{folder.id}), launched_by: User.find(#{admin.id}))")
+      log.call("  WorkflowInstanceLaunch.call(workflowable: Folder.find(#{folder.id}), launched_by: User.find(#{admin.id}))")
     end
 
     # ── Summary ───────────────────────────────────────────────────────────────

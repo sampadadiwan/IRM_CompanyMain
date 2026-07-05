@@ -2,7 +2,7 @@ require 'csv'
 
 class WorkflowInstancesController < ApplicationController
   # Whitelist prevents arbitrary constant injection via workflowable_type param
-  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment Approval].freeze
+  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall Approval].freeze
 
   before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail]
 
@@ -39,10 +39,12 @@ class WorkflowInstancesController < ApplicationController
                                       entity_id: workflowable.entity_id)
     authorize @instance
 
-    WorkflowInstanceService.launch(workflowable, launched_by: current_user)
-    redirect_to back_url(workflowable), notice: "Workflow launched. Step 1 actors have been notified."
-  rescue ArgumentError => e
-    redirect_to back_url(workflowable), alert: e.message
+    result = WorkflowInstanceLaunch.call(workflowable: workflowable, launched_by: current_user)
+    if result.success?
+      redirect_to back_url(workflowable), notice: "Workflow launched. Step 1 actors have been notified."
+    else
+      redirect_to back_url(workflowable), alert: result[:errors]
+    end
   end
 
   # GET /workflow_instances/:id
@@ -53,7 +55,7 @@ class WorkflowInstancesController < ApplicationController
     @current_step  = @instance.current_step_data
     @actor_ids     = Array(@current_step&.dig(:actor_ids)).map(&:to_i)
     @is_actor      = @actor_ids.include?(current_user.id)
-    @resolution    = @instance.instance_active? ? WorkflowStepResolver.resolve(@instance) : nil
+    @resolution    = @instance.instance_active? ? WorkflowStepResolver.call(instance: @instance)[:resolution] : nil
     # All active responses grouped by step position — used by the step pipeline to show every actor
     @all_responses_by_step = @instance.workflow_actor_responses.active
                                       .includes(:actor)
@@ -101,8 +103,8 @@ class WorkflowInstancesController < ApplicationController
       return
     end
 
-    WorkflowAdvancer.advance(@instance, resolved_state: state, actor: current_user, channel: :ui,
-                             note: params[:note])
+    WorkflowAdvancer.call(instance: @instance, resolved_state: state, actor: current_user, channel: :ui,
+                          note: params[:note])
     redirect_to workflow_instance_path(@instance),
                 notice: "Step advanced to \"#{state}\"."
   end
@@ -110,19 +112,23 @@ class WorkflowInstancesController < ApplicationController
   # POST /workflow_instances/:id/reset
   def reset
     authorize @instance
-    WorkflowInstanceService.reset(@instance)
-    redirect_to workflow_instance_path(@instance), notice: "Workflow reset to step 1."
-  rescue ArgumentError => e
-    redirect_to workflow_instance_path(@instance), alert: e.message
+    result = WorkflowInstanceReset.call(instance: @instance)
+    if result.success?
+      redirect_to workflow_instance_path(@instance), notice: "Workflow reset to step 1."
+    else
+      redirect_to workflow_instance_path(@instance), alert: result[:errors]
+    end
   end
 
   # POST /workflow_instances/:id/archive
   def archive
     authorize @instance
-    WorkflowArchiver.archive(@instance)
-    redirect_to back_url(@instance.workflowable), notice: "Workflow archived."
-  rescue ArgumentError => e
-    redirect_to workflow_instance_path(@instance), alert: e.message
+    result = WorkflowArchiver.call(instance: @instance)
+    if result.success?
+      redirect_to back_url(@instance.workflowable), notice: "Workflow archived."
+    else
+      redirect_to workflow_instance_path(@instance), alert: result[:errors]
+    end
   end
 
   # POST /workflow_instances/:id/send_reminder

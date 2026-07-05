@@ -1,8 +1,10 @@
-<%# Workflow tab panel inside the folder details view %>
-<% active_instance = folder.workflow_instances.instance_active.first %>
-<%# Only offer templates scoped to Folder (or unscoped) so the wrong type cannot be launched here %>
-<% available_templates = WorkflowTemplate.for_workflowable_type("Folder").where(entity_id: folder.entity_id).order(:name) %>
-<% past_instances = folder.workflow_instances.where.not(status: :active).order(created_at: :desc).limit(5) %>
+<%# Workflow tab panel — usable inside any Workflowable object's details view.
+    Requires a `workflowable:` local (the object itself, e.g. a Folder, InvestorKyc,
+    CapitalCommitment, CapitalCall, or Approval). %>
+<% active_instance = workflowable.workflow_instances.instance_active.first %>
+<%# Only offer templates scoped to this object's type (or unscoped) so the wrong type cannot be launched here %>
+<% available_templates = WorkflowTemplate.for_workflowable_type(workflowable.class.name).where(entity_id: workflowable.entity_id).order(:name) %>
+<% past_instances = workflowable.workflow_instances.where.not(status: :active).order(created_at: :desc).limit(5) %>
 <div class="p-3">
 
   <%# ── Active Workflow — only shown when one is running ───────────────────── %>
@@ -27,9 +29,9 @@
               by <%= active_instance.launched_by&.full_name %>
             </div>
           </div>
-          <% if policy(folder).assign_workflow? %>
+          <% if policy(workflowable).assign_workflow? %>
             <div class="d-flex gap-2 flex-shrink-0">
-              <%# Standalone workflow instance paths — no folder_id param needed %>
+              <%# Standalone workflow instance paths — no owning-object id param needed %>
               <%= button_to "Reset to Step 1",
                     reset_workflow_instance_path(active_instance),
                     method: :post,
@@ -46,7 +48,7 @@
       </div>
     </div>
     <%= link_to workflow_instance_path(active_instance),
-          class: "btn btn-outline-primary btn-sm mb-3" do %>
+          class: "btn btn-outline-primary btn-sm mb-3", data: { turbo: false } do %>
       <i class="ti ti-chart-gantt me-1"></i>View Full Workflow Timeline
     <% end %>
     <hr>
@@ -55,7 +57,7 @@
   <%# ── Past Workflows header with Launch button on the right ──────────────── %>
   <div class="d-flex align-items-center justify-content-between mb-3">
     <h1 class="h3 mb-0 text-gray-800">Past Workflows</h1>
-    <% if policy(folder).assign_workflow? && available_templates.any? && active_instance.nil? %>
+    <% if policy(workflowable).assign_workflow? && available_templates.any? && active_instance.nil? %>
       <div class="d-flex align-items-center gap-2">
         <%= user_guide_icon_for('workflow_templates', tooltip: 'Workflow Templates Guide') %>
         <button type="button" class="btn btn-primary"
@@ -105,10 +107,10 @@
   <% elsif active_instance.nil? %>
     <p class="text-muted small mb-0">
       <% if available_templates.any? %>
-        No workflows have been run for this folder yet. Click <strong>Launch Workflow</strong> to start one.
+        No workflows have been run for this object yet. Click <strong>Launch Workflow</strong> to start one.
       <% else %>
         No review templates exist yet.
-        <%= link_to "Create a template", new_workflow_template_path %> to enable workflows for this folder.
+        <%= link_to "Create a template", new_workflow_template_path %> to enable workflows for this object.
       <% end %>
     </p>
   <% end %>
@@ -116,7 +118,7 @@
 </div>
 
 <%# ── Launch Workflow modal ───────────────────────────────────────────────── %>
-<% if policy(folder).assign_workflow? && available_templates.any? && active_instance.nil? %>
+<% if policy(workflowable).assign_workflow? && available_templates.any? && active_instance.nil? %>
   <div class="modal fade" id="launchWorkflowModal" tabindex="-1"
        aria-labelledby="launchWorkflowModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -129,8 +131,8 @@
         </div>
         <%# POST to standalone /workflow_instances; workflowable identified by type+id params %>
         <%= form_with url: workflow_instances_path, method: :post, local: true do |f| %>
-          <%= f.hidden_field :workflowable_type, value: "Folder" %>
-          <%= f.hidden_field :workflowable_id,   value: folder.id %>
+          <%= f.hidden_field :workflowable_type, value: workflowable.class.name %>
+          <%= f.hidden_field :workflowable_id,   value: workflowable.id %>
           <div class="modal-body">
 
             <div class="mb-4">
@@ -142,7 +144,7 @@
                       ["#{wt.name} (#{wt.workflow_steps.size} step(s))", wt.id]
                     },
                     { include_blank: "— Choose a template —",
-                      selected: folder.workflow_assignment&.workflow_template_id },
+                      selected: workflowable.workflow_assignment&.workflow_template_id },
                     class: "form-select",
                     id: "launch_workflow_template_id",
                     required: true %>

@@ -1,8 +1,16 @@
-class WorkflowArchiver
+class WorkflowArchiver < Trailblazer::Operation
   # Archives a stalled or superseded instance, which also unblocks template removal.
-  def self.archive(instance)
-    raise ArgumentError, "Only active instances can be archived." unless instance.instance_active?
+  step :check_active
+  step :archive
 
+  def check_active(ctx, instance:, **)
+    return true if instance.instance_active?
+
+    ctx[:errors] = "Only active instances can be archived."
+    false
+  end
+
+  def archive(_ctx, instance:, **)
     instance.update!(status: :archived)
   end
 end

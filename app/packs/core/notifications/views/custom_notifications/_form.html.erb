@@ -94,7 +94,11 @@
         Comma-separated names of documents already uploaded against this record
         (e.g. "Statement of Account, KYC Certificate"). Use * as a wildcard to
         match a family of documents, e.g. "SOA_*_03_2026" matches
-        "SOA_FundA_03_2026". Leave blank to send no attachments.
+        "SOA_FundA_03_2026". If a document name itself contains a comma (e.g. a
+        date range like "01 July,2025 to 31 December,2025"), wrap that name in
+        double quotes so it isn't split into separate entries, e.g.
+        "SOA Unit 01 July,2025 to 31 December,2025 - *". Leave blank to send no
+        attachments.
       </small>
     </div>
 

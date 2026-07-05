@@ -60,6 +60,17 @@
       </small>
     </div>
 
+    <div class="form-group">
+      <%= form.label :gated_button_labels, "Locked buttons" %>
+      <%= form.text_field :gated_button_labels, class: "form-control",
+            placeholder: "e.g. Approve, Edit" %>
+      <small class="text-muted">
+        Comma-separated button labels, typed exactly as they appear on the object's page.
+        These buttons are disabled while an object's workflow is incomplete or has failed,
+        and re-enable once it completes. Leave blank to lock nothing.
+      </small>
+    </div>
+
     <%# ── Steps ───────────────────────────────────────────────────────────── %>
     <hr>
     <h6 class="font-weight-bold">Steps

@@ -16,6 +16,10 @@
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#docs-validation-tab" >Doc Validations</a>
     <% end %>
 
+    <% if policy(@investor_kyc).assign_workflow? %>
+      <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+    <% end %>
+
   </nav>
 
 
@@ -56,6 +60,13 @@
           <%= render AuditTrail.new(@investor_kyc, css_class: "investor_kyc_audit_trail") %>
         </div>
       </div>
+      <% end %>
+
+      <%# Workflow tab — company_admin only %>
+      <% if policy(@investor_kyc).assign_workflow? %>
+        <div id="workflow-tab" class="tab-pane fade">
+          <%= render "workflow_templates/workflow_tab", workflowable: @investor_kyc %>
+        </div>
       <% end %>
   </div>
 

@@ -42,18 +42,18 @@ class WorkflowMagicLinkController < ApplicationController
       note:              note
     )
 
-    # Save the response inside a locked transaction; advance is called OUTSIDE so that
-    # deliver_later jobs fire only after the DB commits (advance has its own lock).
+    # Save the response inside a locked transaction; WorkflowAdvancer is called OUTSIDE so that
+    # deliver_later jobs fire only after the DB commits (WorkflowAdvancer has its own lock).
     resolved_state = nil
     ActiveRecord::Base.transaction do
       @instance.lock!
       response.save!
-      result         = WorkflowStepResolver.resolve(@instance.reload)
-      resolved_state = result[:resolved]
+      result         = WorkflowStepResolver.call(instance: @instance.reload)
+      resolved_state = result[:resolution][:resolved]
     end
     if resolved_state
-      WorkflowAdvancer.advance(
-        @instance,
+      WorkflowAdvancer.call(
+        instance:       @instance,
         resolved_state: resolved_state,
         actor:          actor,
         channel:        :email_magic_link
@@ -75,7 +75,7 @@ class WorkflowMagicLinkController < ApplicationController
   # Verifies the signed token, resolves the instance, and guards against stale/invalid links.
   # Sets @payload and @instance for both show and submit.
   def verify_magic_link_token
-    @payload = WorkflowMagicLinkService.new.verify_token(params[:token])
+    @payload = WorkflowMagicLinkVerify.call(token: params[:token])[:payload]
     return render(:invalid, status: :unprocessable_entity) unless @payload
 
     @instance = WorkflowInstance.find_by(id: @payload[:instance_id])

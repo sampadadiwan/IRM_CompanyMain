@@ -9,6 +9,10 @@
         <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">Notification</a>
       <% end %>
 
+      <% if policy(approval).assign_workflow? %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+      <% end %>
+
     </nav>
 
 
@@ -51,6 +55,13 @@
               <%= render "custom_notifications/index", custom_notifications: approval.custom_notifications, owner: approval %>
 
           </div>
+        </div>
+      <% end %>
+
+      <%# Workflow tab — company_admin only %>
+      <% if policy(approval).assign_workflow? %>
+        <div id="workflow-tab" class="tab-pane fade">
+          <%= render "workflow_templates/workflow_tab", workflowable: approval %>
         </div>
       <% end %>
 

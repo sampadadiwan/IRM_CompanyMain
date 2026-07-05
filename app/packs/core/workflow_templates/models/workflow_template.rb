@@ -10,7 +10,7 @@ class WorkflowTemplate < ApplicationRecord
 
   # All workflowable model names that may be scoped to a template.
   # Order matters — this is the order shown in the select dropdown.
-  WORKFLOWABLE_TYPE_OPTIONS = %w[Folder InvestorKyc CapitalCommitment Approval].freeze
+  WORKFLOWABLE_TYPE_OPTIONS = %w[Folder InvestorKyc CapitalCommitment CapitalCall Approval].freeze
 
   before_validation { self.workflowable_type = nil if workflowable_type.blank? }
 

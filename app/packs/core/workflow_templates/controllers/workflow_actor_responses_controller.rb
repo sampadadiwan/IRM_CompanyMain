@@ -14,19 +14,19 @@ class WorkflowActorResponsesController < ApplicationController
     authorize @response
 
     # Save the response inside a locked transaction so concurrent submissions for the
-    # same step are serialised. WorkflowAdvancer.advance is called OUTSIDE this
+    # same step are serialised. WorkflowAdvancer is called OUTSIDE this
     # transaction so that deliver_later jobs fire only after the DB commits.
     resolved_state = nil
     ActiveRecord::Base.transaction do
       @instance.lock!
       @response.save!
-      result          = WorkflowStepResolver.resolve(@instance.reload)
-      resolved_state  = result[:resolved]
+      result          = WorkflowStepResolver.call(instance: @instance.reload)
+      resolved_state  = result[:resolution][:resolved]
     end
-    # advance() acquires its own row-level lock and is safe to call outside a transaction.
+    # WorkflowAdvancer acquires its own row-level lock and is safe to call outside a transaction.
     if resolved_state
-      WorkflowAdvancer.advance(
-        @instance,
+      WorkflowAdvancer.call(
+        instance:       @instance,
         resolved_state: resolved_state,
         actor:          current_user,
         channel:        :ui

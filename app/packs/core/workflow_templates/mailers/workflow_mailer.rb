@@ -33,11 +33,11 @@ class WorkflowMailer < ApplicationMailer
     @instance_url = workflow_instance_url(@instance)
 
     # Build the personalised magic link for this actor + step
-    token        = WorkflowMagicLinkService.new.generate_token(
+    token        = WorkflowMagicLinkGenerate.call(
       actor_id:      @user.id,
       instance_id:   @instance.id,
       step_position: step_position
-    )
+    )[:token]
     @magic_link  = workflow_magic_link_url(token)
 
     # Optionally attach the workflowable's associated files to the email.

@@ -173,6 +173,12 @@ class InvestorKycPolicy < ApplicationPolicy
     extended_permissioned_employee?(perm)
   end
 
+  # Only company_admin can assign / remove a workflow template on a KYC record,
+  # and only when the entity has workflow_templates enabled.
+  def assign_workflow?
+    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
+  end
+
   private
 
   # Returns true when access was granted via a signed magic link token and

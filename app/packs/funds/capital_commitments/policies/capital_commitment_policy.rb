@@ -65,4 +65,10 @@ class CapitalCommitmentPolicy < FundBasePolicy
   def destroy?
     permissioned_employee?(:destroy)
   end
+
+  # Only company_admin can assign / remove a workflow template on a capital commitment,
+  # and only when the entity has workflow_templates enabled.
+  def assign_workflow?
+    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
+  end
 end

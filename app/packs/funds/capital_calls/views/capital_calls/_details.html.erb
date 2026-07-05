@@ -18,6 +18,10 @@
 
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#custom-notification-tab">
             Notification</a>
+
+      <% if policy(capital_call).assign_workflow? %>
+        <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#workflow-tab">Workflow</a>
+      <% end %>
     </nav>
 
     <div class="tab-content" data-controller="datatable">
@@ -35,6 +39,13 @@
               <%= render "custom_notifications/index", custom_notifications: capital_call.custom_notifications,owner: capital_call %>
           </div>
         </div>
+
+        <%# Workflow tab — company_admin only %>
+        <% if policy(capital_call).assign_workflow? %>
+          <div id="workflow-tab" class="tab-pane fade">
+            <%= render "workflow_templates/workflow_tab", workflowable: capital_call %>
+          </div>
+        <% end %>
 
     </div>
 

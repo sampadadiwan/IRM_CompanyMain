@@ -37,19 +37,19 @@ end
 
 When("I generate a magic link token for actor {string} instance {int} step {int}") do |email, instance_id, step|
   actor  = User.find_by!(email: email, entity: @entity)
-  @token = WorkflowMagicLinkService.new.generate_token(
+  @token = WorkflowMagicLinkGenerate.call(
     actor_id:      actor.id,
     instance_id:   instance_id,
     step_position: step
-  )
+  )[:token]
 end
 
 When("I verify a tampered magic link token") do
-  @verified_payload = WorkflowMagicLinkService.new.verify_token("invalid.tampered.token")
+  @verified_payload = WorkflowMagicLinkVerify.call(token: "invalid.tampered.token")[:payload]
 end
 
 Then("I can verify the token and recover the payload") do
-  @verified_payload = WorkflowMagicLinkService.new.verify_token(@token)
+  @verified_payload = WorkflowMagicLinkVerify.call(token: @token)[:payload]
   @verified_payload.should_not be_nil
 end
 
@@ -76,17 +76,17 @@ end
 When("I visit the magic link for actor {string} on the active instance at step {int}") do |email, step|
   actor     = User.find_by!(email: email, entity: @entity)
   @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
-  @token    = WorkflowMagicLinkService.new.generate_token(
+  @token    = WorkflowMagicLinkGenerate.call(
     actor_id:      actor.id,
     instance_id:   @instance.id,
     step_position: step
-  )
-  @ml_result = WorkflowMagicLinkService.new.verify_token(@token)
+  )[:token]
+  @ml_result = WorkflowMagicLinkVerify.call(token: @token)[:payload]
 end
 
 When("I visit the magic link page with token {string}") do |token|
   @token     = token
-  @ml_result = WorkflowMagicLinkService.new.verify_token(token)
+  @ml_result = WorkflowMagicLinkVerify.call(token: token)[:payload]
 end
 
 Then("the magic link page should show the response form") do
@@ -118,12 +118,12 @@ When("I evaluate the magic link routing for actor {string} on the instance at st
   inst   = @instance || WorkflowInstance.where(entity_id: @entity.id).where.not(status: :archived).first
   raise "No workflow instance found" unless inst
 
-  token  = WorkflowMagicLinkService.new.generate_token(
+  token  = WorkflowMagicLinkGenerate.call(
     actor_id:      actor.id,
     instance_id:   inst.id,
     step_position: step
-  )
-  payload = WorkflowMagicLinkService.new.verify_token(token)
+  )[:token]
+  payload = WorkflowMagicLinkVerify.call(token: token)[:payload]
 
   unless payload
     @ml_routing           = :invalid
@@ -179,11 +179,11 @@ end
 When("I submit {string} via magic link for actor {string} on step {int} of the active instance") do |state, email, step|
   actor     = User.find_by!(email: email, entity: @entity)
   @instance ||= WorkflowInstance.instance_active.find_by(entity_id: @entity.id)
-  @token    = WorkflowMagicLinkService.new.generate_token(
+  @token    = WorkflowMagicLinkGenerate.call(
     actor_id:      actor.id,
     instance_id:   @instance.id,
     step_position: step
-  )
+  )[:token]
   @submit_error = nil
   begin
     response = WorkflowActorResponse.create!(
@@ -194,9 +194,9 @@ When("I submit {string} via magic link for actor {string} on step {int} of the a
       responded_at:      Time.current,
       state:             state
     )
-    result = WorkflowStepResolver.resolve(@instance.reload)
-    WorkflowAdvancer.advance(@instance, resolved_state: result[:resolved],
-                             actor: actor, channel: :email_magic_link) if result[:resolved]
+    result = WorkflowStepResolver.call(instance: @instance.reload)[:resolution]
+    WorkflowAdvancer.call(instance: @instance, resolved_state: result[:resolved],
+                          actor: actor, channel: :email_magic_link) if result[:resolved]
     @last_magic_link_response = response
   rescue ActiveRecord::RecordInvalid => e
     @submit_error = e.message

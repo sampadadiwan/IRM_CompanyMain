@@ -1,4 +1,5 @@
 class CapitalCall < ApplicationRecord
+  include Workflowable
   include WithCustomField
   include WithFolder
   include WithNextSteps
@@ -155,4 +156,9 @@ class CapitalCall < ApplicationRecord
   def all_call_fees
     call_fees + fee_formulas
   end
+
+  # Workflowable interface uses all defaults from the concern:
+  #   workflow_display_name → to_s
+  #   workflow_url          → capital_call_path(self)
+  #   workflow_attachable_files → []
 end

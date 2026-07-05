@@ -1,7 +1,7 @@
 namespace :workflow_seeds do
   desc <<~DESC
-    Seed meaningful workflow templates for Folder, InvestorKyc, and Approval
-    workflowable types for a given entity.
+    Seed meaningful workflow templates for Folder, InvestorKyc, CapitalCall,
+    and Approval workflowable types for a given entity.
 
     Usage:
       rake 'workflow_seeds:seed[ENTITY_ID]'
@@ -258,6 +258,36 @@ namespace :workflow_seeds do
       log.call("         Auto-assignment rule: verified = true")
     end
 
+    # ── CapitalCall templates ─────────────────────────────────────────────────
+
+    log.call("")
+    log.call("── CapitalCall workflows ─────────────────────────────────")
+
+    create_template.call(
+      "Capital Call Approval",
+      workflowable_type:        "CapitalCall",
+      description:              "Verifies a capital call's figures before it is approved and " \
+                                "notices are sent out to investors.",
+      reminder_interval_days:   2,
+      attach_document_in_email: true,
+      # Disables the "Approve" button on the CapitalCall show page (matched by visible
+      # label, not DOM id) until this template's workflow instance completes.
+      gated_button_labels:      "Approve"
+    ) do |t|
+      add_step.call(t, 1, "Finance Review", [actor1],
+        states:          "Accurate,Needs Correction,Rejected",
+        quorum_rule:     :any_one,
+        on_reject_rule:  :stop,
+        description:     "Confirm the call amount, fund closes, and fee computations match the " \
+                         "underlying commitments before escalating for sign-off.")
+      add_step.call(t, 2, "Fund Manager Approval", [actor2],
+        states:          "Approved,Rejected",
+        quorum_rule:     :any_one,
+        on_reject_rule:  :previous_step,
+        description:     "Fund manager gives final approval. A rejection sends the call back to " \
+                         "Finance Review to correct the figures.")
+    end
+
     # ── Approval templates ────────────────────────────────────────────────────
 
     log.call("")
@@ -325,6 +355,7 @@ namespace :workflow_seeds do
     "KYC Onboarding Kick-off",
     "KYC Submission Review",
     "Post-Verification KYC Audit",
+    "Capital Call Approval",
     "Investment Committee Vote",
     "Legal & Compliance Clearance"
   ].freeze

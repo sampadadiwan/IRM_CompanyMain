@@ -272,6 +272,8 @@ Approval is the formal "go" step. It sends the notices and locks the call.
 3. The system checks that all notices are approved. If any are outstanding, approval is blocked with a clear message and you'll need to approve those notices first.
 4. Once approved, the call locks and records who approved it.
 
+> **If Approve is greyed out:** your organisation may have a review workflow configured for capital call approvals. If so, this call must complete that review before Approve becomes available again. Check the call's Workflow tab to see the review's current status — see the [Workflow Templates guide](workflow_templates_user_guide.md) for details.
+
 ### What happens on approval
 
 - If **Send Call Notice** is on, investors with an outstanding remittance receive their notice email (unless that investor is set to skip notices).

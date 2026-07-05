@@ -1,6 +1,6 @@
 # Workflow Templates & Workflows User Guide
 
-The **Workflow** feature lets you define reusable multi-step review and approval processes ("templates") and run them against any supported object in the platform — folders, investor KYC records, capital commitments, and approvals. Actors assigned to each step respond via an email magic link or directly in the app, and the system advances through the steps automatically based on the quorum rule you configured. Every action is captured in an immutable audit trail.
+The **Workflow** feature lets you define reusable multi-step review and approval processes ("templates") and run them against any supported object in the platform — folders, investor KYC records, capital commitments, capital calls, and approvals. Actors assigned to each step respond via an email magic link or directly in the app, and the system advances through the steps automatically based on the quorum rule you configured. Every action is captured in an immutable audit trail.
 
 ---
 
@@ -21,10 +21,11 @@ The **Workflow** feature lets you define reusable multi-step review and approval
 13. [Manual Controls — Reset, Archive, Remind](#manual-controls--reset-archive-remind)
 14. [Auto-Reminders](#auto-reminders)
 15. [Auto-Assignment Rules](#auto-assignment-rules)
-16. [Breadcrumb Workflow Indicator](#breadcrumb-workflow-indicator)
-17. [Audit Trail & CSV Export](#audit-trail--csv-export)
-18. [Worked Example](#worked-example)
-19. [Frequently Asked Questions](#frequently-asked-questions)
+16. [Locking Buttons Until a Workflow Resolves](#locking-buttons-until-a-workflow-resolves)
+17. [Breadcrumb Workflow Indicator](#breadcrumb-workflow-indicator)
+18. [Audit Trail & CSV Export](#audit-trail--csv-export)
+19. [Worked Example](#worked-example)
+20. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -39,8 +40,9 @@ The **Workflow** feature lets you define reusable multi-step review and approval
 | **Quorum rule** | How many actors must respond before the step resolves: Any One, All, or Majority. |
 | **Workflow Instance** | A single run of a template on a specific object. The template is snapshotted at launch so future edits do not affect the running workflow. |
 | **Magic link** | A personalised, signed URL emailed to each actor so they can respond without logging in. The link becomes invalid once the step advances. |
-| **Object type** | The kind of record a template applies to — Folder, Investor KYC, Capital Commitment, or Approval. |
+| **Object type** | The kind of record a template applies to — Folder, Investor KYC, Capital Commitment, Capital Call, or Approval. |
 | **Auto-assignment rule** | A rule that automatically assigns a template (and optionally launches it) when a matching object is created or updated. |
+| **Locked button** | A button on an object's page (identified by its label, e.g. "Approve") that a template disables while the object's workflow is incomplete or has failed. |
 
 ---
 
@@ -62,10 +64,11 @@ The **Workflow** feature lets you define reusable multi-step review and approval
 | Field | Description |
 |-------|-------------|
 | **Name** | Required. Must be unique within your organisation. |
-| **Applies to** | Restricts this template to a specific object type (Folder, Investor KYC, Capital Commitment, or Approval). Leave blank to allow it on any type. **Cannot be changed after the template is saved.** |
+| **Applies to** | Restricts this template to a specific object type (Folder, Investor KYC, Capital Commitment, Capital Call, or Approval). Leave blank to allow it on any type. **Cannot be changed after the template is saved.** |
 | **Description** | Optional free text describing when to use this template. |
 | **Reminder interval (days)** | If set, actors who haven't responded will receive an automatic reminder email every N days. Leave blank to disable auto-reminders for all steps (individual steps can override this). |
 | **Attach documents in email** | When enabled, relevant documents are attached to every step-activation and reminder email for this workflow. |
+| **Locked buttons** | Optional. A comma-separated list of button labels (e.g. `Approve, Edit`) to disable on the object's page while its workflow is incomplete or has failed. See [Locking Buttons Until a Workflow Resolves](#locking-buttons-until-a-workflow-resolves). |
 
 4. Add at least one step (see [Configuring Steps](#configuring-steps)).
 5. Click **Save**.
@@ -124,6 +127,7 @@ Workflows can be run on any of the following record types:
 | **Folder** | Data room folders in the Documents section. |
 | **Investor KYC** | KYC records under the Investors section. |
 | **Capital Commitment** | Commitment records under a fund's investor list. |
+| **Capital Call** | Capital call records under a fund's Capital Calls tab. |
 | **Approval** | Approval items in the Approvals section. |
 
 When creating a template you can leave "Applies to" blank to allow the template on any type, or restrict it to one type for stricter governance. A type-restricted template cannot be assigned to the wrong kind of object.
@@ -150,7 +154,7 @@ Admins can configure rules on a template that automatically assign it (and optio
 
 ## Launching a Workflow
 
-1. Open the object (folder, KYC, commitment, or approval).
+1. Open the object (folder, KYC, commitment, capital call, or approval).
 2. Go to the **Workflow** tab or panel.
 3. Click **Launch Workflow** (visible only when no workflow is currently active on this object).
 4. Select the review template from the dropdown.
@@ -397,9 +401,35 @@ sequenceDiagram
 
 ---
 
+## Locking Buttons Until a Workflow Resolves
+
+Some templates need to prevent certain actions on an object until its review process finishes successfully — for example, blocking the **Approve** button on a capital call until its approval workflow completes, or blocking the **Edit** button on an investor KYC record while a review is in progress.
+
+### How it works
+
+When creating or editing a template, use the **Locked buttons** field to list one or more button labels — typed exactly as they appear on the object's page (e.g. `Approve`, `Edit`, `Delete`). Separate multiple labels with commas.
+
+While an object's current workflow instance is:
+
+- **Incomplete** — still in progress, or
+- **Failed** — rejected,
+
+every listed button appears greyed out and cannot be clicked. Hovering over a locked button shows a short message explaining that it is blocked by an unresolved workflow.
+
+Once the workflow **completes successfully**, the buttons return to normal automatically — no admin action needed.
+
+### Important notes
+
+- **Opt-in per object.** An object that has never had a workflow launched against it is never locked, regardless of what a template's Locked buttons field says — the lock only takes effect once a workflow instance actually exists for that object.
+- **Type the label exactly.** Match the button's on-screen text precisely, including capitalisation and spacing.
+- **Currently available on:** Capital Call and Investor KYC pages. Other object types (Folder, Capital Commitment, Approval) do not yet support locking buttons this way.
+- **This is a safeguard, not access control.** Locking a button changes what you see and can click on the page. It is meant to prevent accidental clicks during an in-progress review, not to serve as a security restriction.
+
+---
+
 ## Breadcrumb Workflow Indicator
 
-When you are viewing an object (folder, KYC, commitment, or approval) that has an **active workflow instance**, a small kanban icon appears in the breadcrumb bar at the top of the page. Clicking it takes you directly to the workflow timeline for that object, without having to navigate to the Workflow tab first.
+When you are viewing an object (folder, KYC, commitment, capital call, or approval) that has an **active workflow instance**, a small kanban icon appears in the breadcrumb bar at the top of the page. Clicking it takes you directly to the workflow timeline for that object, without having to navigate to the Workflow tab first.
 
 The icon is not shown when there is no active instance.
 
@@ -490,3 +520,9 @@ A yellow "Tiebreaker needed" alert appears on the timeline view. Admins can use 
 
 **Is the audit trail tamper-proof?**
 The audit trail is append-only. Resets and archives preserve all history — responses are archived rather than deleted.
+
+**Can capital calls use workflows?**
+Yes. Capital Call is a supported object type — you can assign a template to a capital call and run a review before it is approved and notices are sent to investors, the same way you would for a folder or KYC record.
+
+**Why is a button on an object's page greyed out and won't respond to clicks?**
+It is most likely a locked button — the object has a workflow assigned that lists this button in its Locked buttons field, and that workflow hasn't completed successfully yet. Hover over the button to see the explanation, or check the object's Workflow tab to see the instance's current status. See [Locking Buttons Until a Workflow Resolves](#locking-buttons-until-a-workflow-resolves).

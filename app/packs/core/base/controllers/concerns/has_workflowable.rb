@@ -18,6 +18,10 @@ module HasWorkflowable
     return unless obj&.respond_to?(:workflow_instances)
 
     @workflowable = obj
+    # Button labels the current template wants JS-disabled while a workflow is unresolved.
+    # Empty array when not gated — views/JS treat that as "nothing to disable".
+    @workflow_gated_button_labels = obj.workflow_gated_button_labels
+    @workflow_gate_status_label   = obj.workflow_gate_status_label
 
     # Find the single active instance for this object (there can only be one at a time)
     instance = @workflowable.workflow_instances.instance_active.first

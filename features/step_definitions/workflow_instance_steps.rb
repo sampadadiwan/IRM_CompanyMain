@@ -140,6 +140,30 @@ Given("the entity has a capital_commitment {string}") do |attrs_str|
   @workflowable_store[["capital_commitment", attrs["name"]]] = cc
 end
 
+# Creates a minimal CapitalCall, bypassing complex validations.
+# capital_calls.fund_id is NOT NULL at the DB level — create a stub Fund.
+Given("the entity has a capital_call {string}") do |attrs_str|
+  attrs = parse_params(attrs_str)
+
+  fund = Fund.new(entity: @entity, currency: "INR")
+  fund.define_singleton_method(:create_data_room) {}
+  fund.save(validate: false)
+
+  cc = CapitalCall.new(
+    entity:            @entity,
+    fund:              fund,
+    name:              attrs["name"],
+    due_date:          Date.today + 14,
+    call_date:         Date.today,
+    percentage_called: 0,
+    call_basis:        "Upload"
+  )
+  cc.save(validate: false)
+
+  @workflowable_store ||= {}
+  @workflowable_store[["capital_call", attrs["name"]]] = cc
+end
+
 # Creates a minimal Approval.
 Given("the entity has an approval {string}") do |attrs_str|
   attrs = parse_params(attrs_str)
@@ -167,13 +191,13 @@ end
 # Creates an active workflow instance at step 1 for the named workflowable.
 Given("the {word} {string} has an active workflow instance for {string}") do |type, obj_name, _template_name|
   workflowable = find_workflowable!(type, obj_name)
-  @instance    = WorkflowInstanceService.launch(workflowable, launched_by: @user)
+  @instance    = WorkflowInstanceLaunch.call(workflowable: workflowable, launched_by: @user)[:instance]
 end
 
 # Creates an active instance already advanced to a specific step.
 Given("the {word} {string} has an active workflow instance for {string} at step {int}") do |type, obj_name, _template_name, step_pos|
   workflowable = find_workflowable!(type, obj_name)
-  @instance    = WorkflowInstanceService.launch(workflowable, launched_by: @user)
+  @instance    = WorkflowInstanceLaunch.call(workflowable: workflowable, launched_by: @user)[:instance]
   @instance.update!(current_step_position: step_pos)
 end
 
@@ -183,22 +207,20 @@ end
 When("I launch the workflow for {word} {string}") do |type, obj_name|
   workflowable  = find_workflowable!(type, obj_name)
   @launch_error = nil
-  @instance = begin
-    WorkflowInstanceService.launch(workflowable, launched_by: @user)
-  rescue ArgumentError => e
-    @launch_error = e.message
-    nil
+  result = WorkflowInstanceLaunch.call(workflowable: workflowable, launched_by: @user)
+  if result.success?
+    @instance = result[:instance]
+  else
+    @launch_error = result[:errors]
+    @instance = nil
   end
 end
 
 When("I try to launch another workflow for folder {string}") do |folder_name|
   folder = Folder.find_by!(name: folder_name, entity: @entity)
   @launch_error = nil
-  begin
-    WorkflowInstanceService.launch(folder, launched_by: @user)
-  rescue ArgumentError => e
-    @launch_error = e.message
-  end
+  result = WorkflowInstanceLaunch.call(workflowable: folder, launched_by: @user)
+  @launch_error = result[:errors] unless result.success?
 end
 
 When("the actor submits {string} on the current step of the active instance for {string}") do |state, folder_name|
@@ -212,8 +234,8 @@ When("the actor submits {string} on the current step of the active instance for 
     channel:           :ui,
     responded_at:      Time.current
   )
-  result = WorkflowStepResolver.resolve(@instance.reload)
-  WorkflowAdvancer.advance(@instance, resolved_state: result[:resolved], actor: @user, channel: :ui) if result[:resolved]
+  result = WorkflowStepResolver.call(instance: @instance.reload)[:resolution]
+  WorkflowAdvancer.call(instance: @instance, resolved_state: result[:resolved], actor: @user, channel: :ui) if result[:resolved]
 end
 
 # Generic version: actor submits a response on any workflowable type's active instance.
@@ -229,9 +251,9 @@ When("the actor submits {string} on the current step of the {word} {string}") do
     channel:           :ui,
     responded_at:      Time.current
   )
-  result = WorkflowStepResolver.resolve(@instance.reload)
+  result = WorkflowStepResolver.call(instance: @instance.reload)[:resolution]
   if result[:resolved]
-    WorkflowAdvancer.advance(@instance, resolved_state: result[:resolved], actor: @user, channel: :ui)
+    WorkflowAdvancer.call(instance: @instance, resolved_state: result[:resolved], actor: @user, channel: :ui)
     @instance.reload
     puts "  → advanced to step #{@instance.current_step_position}, status=#{@instance.status}"
   end
@@ -247,14 +269,14 @@ When("the actor {string} submits {string} on the current step") do |actor_name, 
     channel:           :ui,
     responded_at:      Time.current
   )
-  result = WorkflowStepResolver.resolve(@instance.reload)
-  WorkflowAdvancer.advance(@instance, resolved_state: result[:resolved], actor: actor, channel: :ui) if result[:resolved]
+  result = WorkflowStepResolver.call(instance: @instance.reload)[:resolution]
+  WorkflowAdvancer.call(instance: @instance, resolved_state: result[:resolved], actor: actor, channel: :ui) if result[:resolved]
 end
 
 When("I archive the active workflow for folder {string}") do |folder_name|
   folder    = Folder.find_by!(name: folder_name, entity: @entity)
   @instance = folder.workflow_instances.instance_active.first!
-  WorkflowArchiver.archive(@instance)
+  WorkflowArchiver.call(instance: @instance)
 end
 
 # Resets the active workflow instance for any workflowable type back to step 1.
@@ -263,22 +285,21 @@ When("I reset the active workflow for {word} {string}") do |type, obj_name|
   workflowable = find_workflowable!(type, obj_name)
   @instance    = workflowable.workflow_instances.instance_active.first!
   puts "\n[Reset] #{type} \"#{obj_name}\" — instance ##{@instance.id} at step #{@instance.current_step_position}"
-  WorkflowInstanceService.reset(@instance)
+  WorkflowInstanceReset.call(instance: @instance)
   @instance.reload
   puts "  → after reset: step=#{@instance.current_step_position}, status=#{@instance.status}"
   puts "  → active responses: #{@instance.workflow_actor_responses.active.count}"
 end
 
-# Tries to reset an instance that may not be active — captures any ArgumentError for assertion.
+# Tries to reset an instance that may not be active — captures any error for assertion.
 When("I try to reset the active workflow for {word} {string}") do |type, obj_name|
   workflowable = find_workflowable!(type, obj_name)
   @instance    = workflowable.workflow_instances.order(created_at: :desc).first!
   @reset_error = nil
-  begin
-    WorkflowInstanceService.reset(@instance)
-  rescue ArgumentError => e
-    @reset_error = e.message
-    puts "\n[Reset blocked] #{e.message}"
+  result = WorkflowInstanceReset.call(instance: @instance)
+  unless result.success?
+    @reset_error = result[:errors]
+    puts "\n[Reset blocked] #{result[:errors]}"
   end
 end
 
@@ -338,6 +359,7 @@ When("I visit the {word} show page for {string}") do |type, obj_name|
          when "folder"              then folder_path(workflowable)
          when "investor_kyc"        then investor_kyc_path(workflowable)
          when "capital_commitment"  then capital_commitment_path(workflowable)
+         when "capital_call"        then capital_call_path(workflowable)
          when "approval"            then approval_path(workflowable)
          else raise "No path helper for workflowable type: #{type}"
          end
@@ -410,7 +432,7 @@ end
 Then("the instance resolution for {string} should be {string}") do |folder_name, expected|
   folder    = Folder.find_by!(name: folder_name, entity: @entity)
   instance  = folder.workflow_instances.instance_active.first!
-  result    = WorkflowStepResolver.resolve(instance)
+  result    = WorkflowStepResolver.call(instance: instance)[:resolution]
   result.key?(expected.to_sym).should == true
 end
 
@@ -519,7 +541,7 @@ end
 
 # Opens the Bootstrap modal, picks the template (option text includes the step
 # count, e.g. "LP Review (1 step(s))", so match on prefix), and submits — a real
-# POST to WorkflowInstancesController#create, unlike the WorkflowInstanceService
+# POST to WorkflowInstancesController#create, unlike the WorkflowInstanceLaunch
 # calls used by every other launch step in this file.
 When("I launch the workflow {string} from the launch modal") do |template_name|
   within("#workflow-tab") { click_button("Launch Workflow") }
@@ -542,6 +564,36 @@ end
 Then("I should land on the workflow instance show page for {string}") do |folder_name|
   expect(page).to have_css(".breadcrumb-item.active", text: "Workflow")
   expect(page).to have_link(folder_name)
+end
+
+# ── Full-stack UI: in-app actor response on the instance page ─────────────────
+
+# Drives the real "Your Response" form on the workflow instance show page (a genuine
+# POST to WorkflowActorResponsesController#create), instead of the model-level
+# WorkflowActorResponse.create! used elsewhere in this file.
+When("I submit {string} via the in-app response form") do |state|
+  # Waits for the fully-rendered instance page before interacting with the form —
+  # avoids a race right after the full-page navigation from the Workflow tab's
+  # "View Full Workflow Timeline" link (a non-Turbo, traditional page load).
+  expect(page).to have_content("Your Response", wait: 10)
+  select state, from: "workflow_actor_response[state]"
+  click_on "Submit Response"
+  expect(page).to have_content("recorded", wait: 10)
+end
+
+Then("the {word} {string} should have workflow status {string}") do |type, obj_name, expected_status|
+  workflowable = find_workflowable!(type, obj_name)
+  # Polls briefly: with SQLite's connection-pool locking model, a write committed by the
+  # Puma server thread's connection can take a moment to become visible to this thread's
+  # connection under load — a single immediate read can observe stale state.
+  deadline = Time.current + 5.seconds
+  status   = nil
+  loop do
+    status = workflowable.workflow_instances.order(created_at: :desc).first!.status
+    break if status == expected_status || Time.current > deadline
+    sleep 0.2
+  end
+  status.should == expected_status
 end
 
 # ── Private helpers ────────────────────────────────────────────────────────────
@@ -575,6 +627,9 @@ def find_workflowable!(type, name)
     # folio_id is used as the name key for CapitalCommitment
     (@workflowable_store || {})[["capital_commitment", name]] ||
       CapitalCommitment.find_by!(folio_id: name, entity: @entity)
+  when "capital_call"
+    (@workflowable_store || {})[["capital_call", name]] ||
+      CapitalCall.find_by!(name: name, entity: @entity)
   when "approval"
     (@workflowable_store || {})[["approval", name]] ||
       Approval.find_by!(title: name, entity: @entity)

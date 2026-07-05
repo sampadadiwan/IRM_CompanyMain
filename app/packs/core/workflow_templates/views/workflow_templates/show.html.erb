@@ -67,6 +67,17 @@
         </div>
       </div>
     <% end %>
+    <% if @workflow_template.gated_button_labels.present? %>
+      <div class="wf-meta-tile">
+        <div class="wf-meta-icon bg-danger bg-opacity-10 text-danger">
+          <i class="ti ti-lock"></i>
+        </div>
+        <div>
+          <div class="wf-meta-label">Locked buttons</div>
+          <div class="wf-meta-value"><%= @workflow_template.gated_button_labels %></div>
+        </div>
+      </div>
+    <% end %>
   </div>
 
   <%# ── Flow diagram ─────────────────────────────────────────────────────── %>

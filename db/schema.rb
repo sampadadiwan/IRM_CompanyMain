@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_03_055255) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -4132,6 +4132,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_03_055255) do
     t.datetime "created_at", null: false
     t.text "description"
     t.bigint "entity_id", null: false
+    t.string "gated_button_labels"
     t.string "name", null: false
     t.integer "reminder_interval_days"
     t.datetime "updated_at", null: false

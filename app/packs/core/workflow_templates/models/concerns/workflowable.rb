@@ -45,6 +45,45 @@ module Workflowable
     []
   end
 
+  # The most recent non-archived instance for this object, or nil if none exists
+  # (never launched, or every instance so far has been archived/reset). Memoized —
+  # workflow_gated?, workflow_gated_button_labels, and workflow_gate_status_label
+  # are all typically called together on the same request-scoped object.
+  def current_workflow_instance
+    return @current_workflow_instance if defined?(@current_workflow_instance)
+
+    @current_workflow_instance = workflow_instances.where.not(status: :archived).order(created_at: :desc).first
+  end
+
+  # True while a workflow is blocking gated actions on this object: opt-in — an object
+  # that has never had a workflow launched against it is never gated. Both an in-progress
+  # (active) and a failed (rejected) instance keep the gate closed; only a completed
+  # instance opens it.
+  def workflow_gated?
+    instance = current_workflow_instance
+    instance.present? && !instance.instance_complete?
+  end
+
+  # Button labels (from the current instance's live template, not the frozen snapshot)
+  # that should be disabled while workflow_gated? is true. Empty when not gated or when
+  # the template sets no labels.
+  def workflow_gated_button_labels
+    return [] unless workflow_gated?
+
+    current_workflow_instance.workflow_template&.gated_button_labels.to_s.split(",").map(&:strip).reject(&:blank?)
+  end
+
+  # "Incomplete" (still active) or "Failed" (rejected) — nil when not gated.
+  def workflow_gate_status_label
+    instance = current_workflow_instance
+    return nil unless instance
+
+    return "Incomplete" if instance.instance_active?
+    return "Failed" if instance.instance_rejected?
+
+    nil
+  end
+
   private
 
   # Called after_create to apply any matching auto-assignment rule.
@@ -52,7 +91,7 @@ module Workflowable
   # does not respond to `entity` (e.g. test stubs without an association).
   def apply_workflow_auto_assignment
     return unless respond_to?(:entity) && entity.present?
-    WorkflowAutoAssignmentService.run(self)
+    WorkflowAutoAssignmentService.call(workflowable: self)
   rescue StandardError => e
     Rails.logger.warn("[Workflowable#apply_workflow_auto_assignment] #{self.class.name}##{id}: #{e.message}")
   end
@@ -64,7 +103,7 @@ module Workflowable
     return unless respond_to?(:entity) && entity.present?
     return if workflow_assignment.present?
     return unless WorkflowAutoAssignmentRule.where(entity: entity, workflowable_type: self.class.name).exists?
-    WorkflowAutoAssignmentService.run(self)
+    WorkflowAutoAssignmentService.call(workflowable: self)
   rescue StandardError => e
     Rails.logger.warn("[Workflowable#apply_workflow_auto_assignment_on_update] #{self.class.name}##{id}: #{e.message}")
   end

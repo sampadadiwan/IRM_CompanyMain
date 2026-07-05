@@ -54,7 +54,7 @@ One notification template drives an individual personalised email to every recip
 |---|---|
 | **Custom Notification** | A saved template (subject + body) attached to a Fund. One template → many individual emails. |
 | **Email Method** | Chosen from the **For Notification** dropdown. For fund adhoc notifications this is either **Adhoc Notification** (per commitment, the default) or **Adhoc Kyc Notification** (per investor KYC record — see [Notify by Investor KYC Instead of Commitment](#notify-by-investor-kyc-instead-of-commitment)). |
-| **Attachment Names** | A comma-separated list of document names to auto-attach from each commitment. Each name can be an exact document name, or a pattern using `*` to match a family of similarly-named documents (e.g. `SOA_*_2026`). |
+| **Attachment Names** | A comma-separated list of document names to auto-attach from each commitment. Each name can be an exact document name, or a pattern using `*` to match a family of similarly-named documents (e.g. `SOA_*_2026`). If a name itself contains a comma, wrap it in double quotes so it isn't split into separate entries. |
 | **Only Attach the Latest Match** | A checkbox that controls how many matching documents get attached per name/pattern: checked (default) attaches just the single most recently uploaded match; unchecked attaches every document that matches. |
 | **Notification Users** | The users who actually receive the email for each investor — determined by approved InvestorAccess records and email-enabled settings. |
 | **ERB Body** | Optional: when "Dynamic Template" is on, the body is evaluated as Ruby/ERB so you can embed live data like `<%= @capital_commitment.folio_committed_amount %>`. |
@@ -76,7 +76,7 @@ One notification template drives an individual personalised email to every recip
 | **For Notification** | Yes | Select **Adhoc Notification** for the standard, per-commitment flow described in this guide, or **Adhoc Kyc Notification** for the per-investor-KYC flow (see [Notify by Investor KYC Instead of Commitment](#notify-by-investor-kyc-instead-of-commitment)) |
 | **Enabled** | Yes | Must be enabled before the Send button appears |
 | **Tag** | No | Optional label for organising multiple notifications |
-| **Attachment Names** | No | Comma-separated document names to auto-attach (see Step 3) |
+| **Attachment Names** | No | Comma-separated document names to auto-attach (see Step 3). Wrap a name in double quotes if the name itself contains a comma. |
 | **Only Attach the Latest Match** | No | Checked by default. See Step 3 for how this interacts with Attachment Names. |
 
 5. Click **Save**
@@ -161,6 +161,21 @@ Add an asterisk (`*`) anywhere in a name to match documents whose name follows t
 | `Drawdown*` | `Drawdown Notice`, `Drawdown Notice - Signed` | `*` at the end matches anything after the fixed prefix |
 
 Use a wildcard when your generated documents include a date, investor code, or version suffix in the name, so you don't have to type an exact match for every variation.
+
+**Document names that contain a comma**
+
+Attachment Names uses a comma to separate one entry from the next, so if a document's own name contains a comma — for example a date range like `01 July,2025 to 31 December,2025` — wrap that whole name in double quotes. This tells the system the comma is part of the name, not a separator between two entries.
+
+```
+Document name:  SOA Unit 01 July,2025 to 31 December,2025 - AA Holdings LLP
+
+Attachment Names field:  "SOA Unit 01 July,2025 to 31 December,2025 - *", KYC Certificate
+
+  ✓ matches the document above          → attached (comma inside the quoted name is preserved)
+  ✓ "KYC Certificate"                   → attached (plain entry, unaffected by the quoting)
+```
+
+Only names that actually contain a comma need quotes — plain names and wildcard patterns without a comma work exactly as before, with no quoting needed.
 
 **Only Attach the Latest Match**
 
@@ -418,6 +433,10 @@ Yes. Add an asterisk (`*`) anywhere in a name to match a family of similarly-nam
 **Q: A wildcard pattern matches several documents on the same commitment — how many get attached?**
 
 Depends on the **Only Attach the Latest Match** checkbox: checked (the default) attaches just the newest one, unchecked attaches all of them. See [Step 3](#step-3--attach-documents-from-each-commitment).
+
+**Q: Do I need to put quotes around every document name in Attachment Names?**
+
+No. Only wrap a name in double quotes if the name itself contains a comma (for example a document name with a date range like `01 July,2025 to 31 December,2025`). Plain names and wildcard patterns without a comma work exactly as before, with no quoting needed. See [Step 3](#step-3--attach-documents-from-each-commitment) for an example.
 
 **Q: Can the same notification be sent multiple times?**
 
