@@ -119,7 +119,7 @@ Scenario Outline: Capital call with custom notification
     | subject=Remittance is due for fund;email_method=notify_capital_remittance |
 
 Scenario: Capital call notification placeholder substitution
-  Given Im logged in as a user "" for an entity "entity_type=Investment Fund" 
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
   Given the user has role "company_admin"
   Given there is a fund "name=SAAS Fund" for the entity
   And Given I upload an investors file for the fund
@@ -132,6 +132,205 @@ Scenario: Capital call notification placeholder substitution
   Given there is a custom notification with placeholders in place for the Call with email_method "notify_capital_remittance"
   Then when the capital call is approved
   Then the capital remittance notification placeholders are resolved correctly
+
+
+Scenario Outline: Capital call notification falls back to the fund-level default
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
+  Given the fund has capital call template
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
+  Given there is a custom notification "<fund_default>" in place for the Fund for Calls
+  Then when the capital call is approved
+  And notification should be sent "true" to the remittance investors for "<fund_default>"
+  Then the remittance investors should receive an email with subject including "<subject>"
+
+  Examples:
+    | fund_default                                                                    | subject                        |
+    | subject=Fund default remittance notice;email_method=notify_capital_remittance   | Fund default remittance notice |
+
+
+Scenario Outline: Capital call specific notification overrides the fund-level default
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
+  Given the fund has capital call template
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
+  Given there is a custom notification "<fund_default>" in place for the Fund for Calls
+  Given there is a custom notification "<call_specific>" in place for the Call
+  Then when the capital call is approved
+  Then the remittance investors should receive an email with subject including "<subject>"
+
+  Examples:
+    | fund_default                                                                    | call_specific                                                                   | subject                       |
+    | subject=Fund default remittance notice;email_method=notify_capital_remittance   | subject=Call specific remittance notice;email_method=notify_capital_remittance  | Call specific remittance notice |
+
+
+Scenario: Fund notifications tab offers a Call and a Distribution notification option
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  Given I open the fund notifications tab
+  Then the new notification dropdown should offer "New Fund Notification"
+  And the new notification dropdown should offer "New Call Notification"
+  And the new notification dropdown should offer "New Distribution Notification"
+  When I click "New Call Notification" in the new notification dropdown
+  Then the custom notification form should target owner_type "Fund" and for_type "CapitalCall"
+  And the custom notification form title should include "Call Notification"
+
+
+Scenario: Capital call notifications tab offers only a call-specific notification option
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
+  Given the fund has capital call template
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
+  Given I open the capital call notifications tab
+  Then the new notification dropdown should offer "New Call Notification"
+  And the new notification dropdown should not offer "New Fund Notification"
+  And the new notification dropdown should not offer "New Distribution Notification"
+  When I click "New Call Notification" in the new notification dropdown
+  Then the custom notification form should target owner_type "CapitalCall" and for_type ""
+  And the custom notification form title should include "Call Notification"
+
+
+Scenario Outline: Creating a call-specific notification warns when the fund already has a default for that email
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  And Given I upload an investors file for the fund
+  Given the investors have approved investor access
+  Given the fund has capital call template
+  Given the investors are added to the fund
+  And Given I upload "capital_commitments.xlsx" file for "Commitments" of the fund
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital call "percentage_called=20;call_basis=Percentage of Commitment"
+  Given there is a custom notification "<fund_default>" in place for the Fund for Calls
+  Given I open the capital call notifications tab
+  When I click "New Call Notification" in the new notification dropdown
+  When I select "Notify capital remittance" as the notification email type
+  Then I should see a warning that the fund default will be overridden
+  When I select "Notify capital remittance payment" as the notification email type
+  Then I should not see a warning about overriding the fund default
+
+  Examples:
+    | fund_default                                                                    |
+    | subject=Fund default remittance notice;email_method=notify_capital_remittance   |
+
+
+@notification
+Scenario Outline: Capital distribution notification falls back to the fund-level default
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital distribution "cost_of_investment_cents=10000000;"
+  Then I should see the capital distrbution details
+  Then when the capital distrbution is approved
+  Then I should see the capital distrbution payments generated correctly
+  And I should be able to see the capital distrbution payments
+  And when the capital distrbution payments are marked as paid
+  Then the capital distribution must reflect the payments
+  Given there is a custom notification "<fund_default>" in place for the Fund for Distributions
+  When the capital distribution notifications are sent
+  Then the investors must receive email with subject "<subject>" with the document "" attached
+
+  Examples:
+  	|user	    |entity                                         |fund                 |fund_default                                                              |subject                          |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund       |subject=Fund default distribution notice;email_method=send_notification  |Fund default distribution notice |
+
+
+@notification
+Scenario Outline: Capital distribution notifications tab offers only a distribution-specific notification option
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital distribution "cost_of_investment_cents=10000000;"
+  Then I should see the capital distrbution details
+  Given I open the capital distribution notifications tab
+  Then the new notification dropdown should offer "New Distribution Notification"
+  And the new notification dropdown should not offer "New Fund Notification"
+  And the new notification dropdown should not offer "New Call Notification"
+  When I click "New Distribution Notification" in the new notification dropdown
+  Then the custom notification form should target owner_type "CapitalDistribution" and for_type ""
+  And the custom notification form title should include "Distribution Notification"
+
+  Examples:
+  	|user	    |entity                                         |fund                 |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund       |
+
+
+@notification
+Scenario Outline: Creating a distribution-specific notification warns when the fund already has a default for that email
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital distribution "cost_of_investment_cents=10000000;"
+  Then I should see the capital distrbution details
+  Given there is a custom notification "<fund_default>" in place for the Fund for Distributions
+  Given I open the capital distribution notifications tab
+  When I click "New Distribution Notification" in the new notification dropdown
+  Then I should see a warning that the fund default will be overridden
+
+  Examples:
+  	|user	    |entity                                         |fund                 |fund_default                                                              |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund       |subject=Fund default distribution notice;email_method=send_notification  |
+
+
+@notification
+Scenario Outline: Capital distribution specific notification overrides the fund-level default
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "" with "2" users
+  Given there is an existing investor "" with "2" users
+  Given there is a fund "<fund>" for the entity
+  Given the investors are added to the fund
+  Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+  And Given the commitments have a cc "advisor@gmail.com"
+  When I create a new capital distribution "cost_of_investment_cents=10000000;"
+  Then I should see the capital distrbution details
+  Then when the capital distrbution is approved
+  Then I should see the capital distrbution payments generated correctly
+  And I should be able to see the capital distrbution payments
+  And when the capital distrbution payments are marked as paid
+  Then the capital distribution must reflect the payments
+  Given there is a custom notification "<fund_default>" in place for the Fund for Distributions
+  Given there is a custom notification for the capital distribution with subject "<dist_subject>" with email_method "send_notification"
+  When the capital distribution notifications are sent
+  Then the investors must receive email with subject "<dist_subject>" with the document "" attached
+
+  Examples:
+  	|user	    |entity                                         |fund                 |fund_default                                                              |dist_subject                  |
+  	|  	        |entity_type=Investment Fund;enable_funds=true  |name=Test fund       |subject=Fund default distribution notice;email_method=send_notification  |Distribution specific notice  |
 
 
 Scenario Outline: Incoming Email for a capital commitment

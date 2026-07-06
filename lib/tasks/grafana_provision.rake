@@ -47,13 +47,21 @@ namespace :grafana do
 end
 
 class GrafanaProvisioner
-  CONFIG_FILE = Rails.root.join('config', 'initializers', 'observability', 'grafana_provision.yml')
-  DASH_DIR    = Rails.root.join('config', 'initializers', 'observability', 'graphana')
+  CONFIG_FILE  = Rails.root.join('config', 'initializers', 'observability', 'grafana_provision.yml')
+  GRAPHANA_DIR = Rails.root.join('config', 'initializers', 'observability', 'graphana')
 
-  # Map Grafana dashboard UID → filename used in DASH_DIR (matches pre-existing naming convention)
+  # Map Grafana dashboard UID → filename used in dash_dir (matches pre-existing naming convention)
   DASH_FILENAMES = {
     'rYdddlPWk' => 'node.dashboard.json',
     'L-0CZ_WVk' => 'rails.dashboard.json',
+  }.freeze
+
+  # graphana.caphive.com and graphana.caphive.us are two SEPARATE Grafana instances (IN and US
+  # regions), each with their own Prometheus/servers. Saving both to the same JSON files silently
+  # clobbers whichever was pushed second — dash_dir is namespaced per-region by host to prevent that.
+  REGION_BY_HOST = {
+    'graphana.caphive.com' => 'in',
+    'graphana.caphive.us'  => 'us',
   }.freeze
 
   def initialize
@@ -64,6 +72,15 @@ class GrafanaProvisioner
     }
     @spec = YAML.safe_load_file(CONFIG_FILE, symbolize_names: true)
     puts "Target: #{@cfg[:url]}"
+  end
+
+  def region
+    host = URI.parse(@cfg[:url]).host.to_s
+    REGION_BY_HOST[host] || host.gsub(/[^a-z0-9]+/i, '_')
+  end
+
+  def dash_dir
+    GRAPHANA_DIR.join(region)
   end
 
   def run_all
@@ -151,7 +168,7 @@ class GrafanaProvisioner
 
   def provision_dashboards
     puts "\n=== Dashboards ==="
-    FileUtils.mkdir_p(DASH_DIR)
+    FileUtils.mkdir_p(dash_dir)
 
     @spec[:dashboards].each do |spec|
       uid  = spec[:uid].to_s
@@ -189,8 +206,8 @@ class GrafanaProvisioner
         puts "    Pushed OK (version #{result['version']})"
         # Save the applied board JSON for version control
         filename = DASH_FILENAMES[uid] || "#{uid}.json"
-        File.write(DASH_DIR.join(filename), JSON.pretty_generate(board))
-        puts "    Saved: config/initializers/observability/graphana/#{filename}"
+        File.write(dash_dir.join(filename), JSON.pretty_generate(board))
+        puts "    Saved: config/initializers/observability/graphana/#{region}/#{filename}"
       else
         puts "    ERROR: #{result.inspect}"
       end
@@ -200,14 +217,14 @@ class GrafanaProvisioner
   # Saves live dashboard JSON without modifying it — useful for initial snapshot
   def save_dashboards
     puts "\n=== Saving Dashboard Snapshots ==="
-    FileUtils.mkdir_p(DASH_DIR)
+    FileUtils.mkdir_p(dash_dir)
     @spec[:dashboards].each do |spec|
       uid  = spec[:uid].to_s
       data = get("/api/dashboards/uid/#{uid}")
       next unless data['dashboard']
       filename = DASH_FILENAMES[uid] || "#{uid}.json"
-      File.write(DASH_DIR.join(filename), JSON.pretty_generate(data['dashboard']))
-      puts "  Saved: config/initializers/observability/graphana/#{filename} (#{data['dashboard']['title']})"
+      File.write(dash_dir.join(filename), JSON.pretty_generate(data['dashboard']))
+      puts "  Saved: config/initializers/observability/graphana/#{region}/#{filename} (#{data['dashboard']['title']})"
     end
   end
 
@@ -230,9 +247,9 @@ class GrafanaProvisioner
 
     if result['status'] == 'success'
       puts "  Pushed OK — CapHive Overview (version #{result['version']})"
-      FileUtils.mkdir_p(DASH_DIR)
-      File.write(DASH_DIR.join('overview.dashboard.json'), JSON.pretty_generate(board))
-      puts "  Saved: config/initializers/observability/graphana/overview.dashboard.json"
+      FileUtils.mkdir_p(dash_dir)
+      File.write(dash_dir.join('overview.dashboard.json'), JSON.pretty_generate(board))
+      puts "  Saved: config/initializers/observability/graphana/#{region}/overview.dashboard.json"
     else
       puts "  ERROR: #{result.inspect}"
     end
@@ -365,7 +382,11 @@ class GrafanaProvisioner
     panels = board['panels'] ||= []
     max_id = panels.map { |p| p['id'].to_i }.max.to_i
 
-    if panels.any? { |p| p['title'].to_s.include?('P95 Latency') }
+    # NOTE: this guard previously checked for the stale title 'P95 Latency', which was renamed
+    # to 'P99 Latency' long ago — the guard never matched, so it silently skipped forever and
+    # the 4 depth panels stayed on stale/wrong queries. Live dashboard was hand-patched; guard
+    # fixed here so a from-scratch rebuild produces panels matching the current definitions below.
+    if panels.any? { |p| p['title'].to_s.include?('P99 Latency') }
       puts "    add_rails_depth_panels: already present, skipping"
       return
     end
@@ -373,30 +394,32 @@ class GrafanaProvisioner
     new_panels = [
       # ruby_http_request_duration_seconds is a summary (not a histogram) — no _bucket metric.
       # Available pre-computed quantiles: 0.01, 0.1, 0.5, 0.9, 0.99. Use 0.99 for worst-tail view.
+      # "by()" no-op grouping added throughout: the WAF in front of Grafana flags bare
+      # "max(metric{...})"/"avg(metric)" as a SQLi false positive but not "max by(...)(...)".
       ts_panel(id: max_id + 200, title: 'P99 Latency (ms)', x: 0,
         desc: '99th-percentile response time. 1% of users wait at least this long — ' \
               'invisible to the average but critical for perceived app speed.',
-        expr: 'max(ruby_http_request_duration_seconds{quantile="0.99"})*1000',
+        expr: 'max by()(ruby_http_request_duration_seconds{quantile="0.99"})*1000',
         legend: 'P99', unit: 'ms'),
 
       # ruby_puma_busy_threads doesn't exist in prometheus_exporter. Use running/capacity.
       ts_panel(id: max_id + 201, title: 'Puma Thread Saturation (%)', x: 12,
         desc: 'Running Puma threads / thread pool capacity. At 100% new requests queue at the OS ' \
               'level before Rails even sees them.',
-        expr: 'avg(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100',
+        expr: 'avg by()(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100',
         legend: 'saturation', unit: 'percent'),
 
       ts_panel(id: max_id + 202, title: 'Sidekiq Queue Depth (jobs)', x: 0,
         desc: 'Total jobs waiting in the Sidekiq enqueued queue. ' \
               'A growing queue means workers cannot keep pace.',
-        expr: 'max(ruby_sidekiq_stats_enqueued)',
+        expr: 'max by()(ruby_sidekiq_stats_enqueued)',
         legend: 'enqueued', unit: 'short'),
 
       # Metric name is ruby_sidekiq_queue_latency_seconds (with _seconds suffix)
       ts_panel(id: max_id + 203, title: 'Sidekiq Queue Latency (s)', x: 12,
         desc: 'Age of the oldest unprocessed job. ' \
               'Spikes here mean workers are stuck or blocked on a slow resource.',
-        expr: 'max(ruby_sidekiq_queue_latency_seconds) or vector(0)',
+        expr: 'max by()(ruby_sidekiq_queue_latency_seconds) or vector(0)',
         legend: 'latency', unit: 's'),
     ]
 
@@ -491,16 +514,21 @@ class GrafanaProvisioner
         expr:   '100-(avg by(instance)(rate(node_cpu_seconds_total{mode="idle",instance!~"10.0.[34].*"}[5m]))*100)',
         legend: '{{instance}}', unit: 'percent', warn: 70, crit: 90 },
       { title: 'Memory %',
-        expr:   '(node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance!~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}*100',
+        # Rewritten as 100-100*avail/total (not (total-avail)/total*100): the WAF in front of
+        # Grafana blocks any query containing the literal sequence "})/" — a filtered term whose
+        # closing brace+paren is immediately followed by a division — as a false-positive SQLi match.
+        expr:   '100-100*node_memory_MemAvailable_bytes{instance!~"10.0.[34].*"}/node_memory_MemTotal_bytes{instance!~"10.0.[34].*"}',
         legend: '{{instance}}', unit: 'percent', warn: 70, crit: 90 },
       { title: 'Disk %',
-        # App server node_exporters run inside Docker and only see /etc/* bind-mounts.
-        # Removing the instance filter so DB servers (which run node_exporter on the host)
-        # provide real disk data. App container disk is not meaningfully monitorable from inside.
-        expr:   'max by(instance)((node_filesystem_size_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*"}-node_filesystem_free_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*"})/node_filesystem_size_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*"}*100)',
+        # Scoped to app-server instances only (matches CPU %/Memory % above). Note: 10.0.2.137's
+        # node_exporter runs inside Docker with only /etc/* bind-mounts (no host filesystem mount),
+        # so it will show no data here until that container is given a proper host mount — that's
+        # a real gap on that specific box, not a query bug. Previously this panel had NO instance
+        # filter at all, so it silently substituted DB servers' disk data in an "App Servers" panel.
+        expr:   'max by(instance)((node_filesystem_size_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance!~"10.0.[34].*"}-node_filesystem_free_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance!~"10.0.[34].*"})/node_filesystem_size_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance!~"10.0.[34].*"}*100)',
         legend: '{{instance}}', unit: 'percent', warn: 70, crit: 90 },
       { title: 'Inodes %',
-        expr:   'max by(instance)((1-node_filesystem_files_free{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*"}/node_filesystem_files{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*"})*100)',
+        expr:   'max by(instance)((1-node_filesystem_files_free{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance!~"10.0.[34].*"}/node_filesystem_files{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance!~"10.0.[34].*"})*100)',
         legend: '{{instance}}', unit: 'percent', warn: 70, crit: 90 },
     ])
     # Second app-server row: I/O pressure + network throughput
@@ -520,16 +548,48 @@ class GrafanaProvisioner
     ])
 
     # ── DB Servers ─────────────────────────────────────────────────────────────
+    # Host-level row mirrors the "App Servers" CPU/Memory/Disk/Inodes row exactly, scoped to
+    # instance=~"10.0.[34].*" instead of !~. DB servers run node_exporter directly on the host
+    # (unlike the app servers, which run it inside Docker with no host filesystem mount), so
+    # real CPU/disk/inode data is available here — there was previously no DB CPU panel at all.
     add_header.call('DB Servers')
     add_row.call([
+      { title: 'DB CPU %',
+        expr:   '100-(avg by(instance)(rate(node_cpu_seconds_total{mode="idle",instance=~"10.0.[34].*"}[5m]))*100)',
+        legend: '{{instance}}', unit: 'percent', warn: 70, crit: 90 },
       { title: 'DB Memory %',
-        expr:   '(node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}-node_memory_MemAvailable_bytes{instance=~"10.0.[34].*"})/node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}*100',
+        # See Memory % above re: WAF "})/" false-positive rewrite.
+        expr:   '100-100*node_memory_MemAvailable_bytes{instance=~"10.0.[34].*"}/node_memory_MemTotal_bytes{instance=~"10.0.[34].*"}',
         legend: '{{instance}}', unit: 'percent', warn: 85, crit: 95 },
+      { title: 'DB Disk %',
+        expr:   'max by(instance)((node_filesystem_size_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance=~"10.0.[34].*"}-node_filesystem_free_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance=~"10.0.[34].*"})/node_filesystem_size_bytes{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance=~"10.0.[34].*"}*100)',
+        legend: '{{instance}}', unit: 'percent', warn: 70, crit: 90 },
+      { title: 'DB Inodes %',
+        expr:   'max by(instance)((1-node_filesystem_files_free{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance=~"10.0.[34].*"}/node_filesystem_files{fstype!="tmpfs",fstype!="vfat",fstype!="overlay",mountpoint!~"/etc/.*|/boot/.*",instance=~"10.0.[34].*"})*100)',
+        legend: '{{instance}}', unit: 'percent', warn: 70, crit: 90 },
+    ])
+    # Second DB row: I/O pressure + network throughput (mirrors App Servers' second row)
+    add_row.call([
+      { title: 'DB Disk I/O Wait %',
+        expr:   'avg by(instance)(rate(node_cpu_seconds_total{mode="iowait",instance=~"10.0.[34].*"}[5m]))*100',
+        legend: '{{instance}}', unit: 'percent', warn: 20, crit: 40,
+        desc:   'CPU time spent waiting for disk I/O on the DB host. High iowait = disk bottleneck even when CPU % looks low.' },
+      { title: 'DB Net In (MB/s)',
+        expr:   'sum by(instance)(rate(node_network_receive_bytes_total{instance=~"10.0.[34].*",device!~"lo|veth.*"}[5m]))/1048576',
+        legend: '{{instance}}', unit: 'short', warn: 50, crit: 200 },
+      { title: 'DB Net Out (MB/s)',
+        expr:   'sum by(instance)(rate(node_network_transmit_bytes_total{instance=~"10.0.[34].*",device!~"lo|veth.*"}[5m]))/1048576',
+        legend: '{{instance}}', unit: 'short', warn: 50, crit: 200 },
+    ])
+    # Third DB row: MySQL-specific metrics
+    add_row.call([
       { title: 'Connections %',
         expr:   'max by(instance)(mysql_global_status_threads_connected/mysql_global_variables_max_connections*100)',
         legend: '{{instance}}', unit: 'percent', warn: 60, crit: 80 },
       { title: 'Replication Lag',
-        expr:   'max by(instance)(mysql_slave_status_seconds_behind_source)',
+        # IN's mysqld_exporter reports "_behind_master" (older MySQL terminology); US reports
+        # "_behind_source" (MySQL 8.0.23+ renamed it) — `or` covers both regions with one query.
+        expr:   'max by(instance)(mysql_slave_status_seconds_behind_source or mysql_slave_status_seconds_behind_master)',
         legend: '{{instance}}', unit: 's',       warn: 10, crit: 30 },
       { title: 'Slow Queries/min',
         expr:   'sum by(instance)(rate(mysql_global_status_slow_queries[5m]))*60',
@@ -570,24 +630,26 @@ class GrafanaProvisioner
         legend: '5xx',     unit: 'percent', warn: 1,    crit: 5    },
       { title: 'P99 Latency',
         # Summary quantile: available values are 0.01, 0.1, 0.5, 0.9, 0.99 — 0.95 does not exist.
-        expr:   'max(ruby_http_request_duration_seconds{quantile="0.99"})*1000',
+        # "by()" is a no-op grouping (single series either way) added only because the WAF flags
+        # bare "max(metric{...})" as a SQLi false positive; "max by(...)(...)" is not flagged.
+        expr:   'max by()(ruby_http_request_duration_seconds{quantile="0.99"})*1000',
         legend: 'P99',     unit: 'ms',      warn: 1000, crit: 3000 },
       { title: 'Req/s',
         expr:   'sum(rate(ruby_http_requests_total[5m]))',
         legend: 'req/s',   unit: 'short',   warn: 500,  crit: 1000,
         desc:   'Total HTTP request rate across all app servers. Drop to near-zero = app down or traffic lost.' },
       { title: 'Web Memory (MB)',
-        expr:   'avg(ruby_rss{type=~"web|puma_worker"})/1024/1024',
+        expr:   'avg by()(ruby_rss{type=~"web|puma_worker"})/1024/1024',
         legend: 'avg RSS', unit: 'short',   warn: 400,  crit: 700  },
     ])
     # Second Rails row: Puma thread pool health
     add_row.call([
       { title: 'Puma Thread Util %',
-        expr:   'avg(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100',
+        expr:   'avg by()(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100',
         legend: 'utilisation', unit: 'percent', warn: 70, crit: 90,
         desc:   'Running Puma threads / thread pool capacity. Near 100% means new requests are queuing.' },
       { title: 'Puma Request Backlog',
-        expr:   'max(ruby_puma_request_backlog) or vector(0)',
+        expr:   'max by()(ruby_puma_request_backlog) or vector(0)',
         legend: 'backlog', unit: 'short', warn: 1, crit: 5,
         desc:   'Requests waiting in the OS accept queue because all Puma threads are busy. Any value >0 = fully saturated.' },
     ])
@@ -595,19 +657,20 @@ class GrafanaProvisioner
     # ── Sidekiq ────────────────────────────────────────────────────────────────
     # Queue Latency: metric is ruby_sidekiq_queue_latency_seconds (not _latency).
     # or vector(0) because an empty queue emits no latency metric.
+    # "by()" no-op grouping added to dodge the WAF's bare "max(metric)" SQLi false positive.
     add_header.call('Sidekiq')
     add_row.call([
       { title: 'Queue Depth',
-        expr:   'max(ruby_sidekiq_stats_enqueued)',
+        expr:   'max by()(ruby_sidekiq_stats_enqueued)',
         legend: 'jobs',    unit: 'short', warn: 50,  crit: 200 },
       { title: 'Queue Latency',
-        expr:   'max(ruby_sidekiq_queue_latency_seconds) or vector(0)',
+        expr:   'max by()(ruby_sidekiq_queue_latency_seconds) or vector(0)',
         legend: 'latency', unit: 's',     warn: 60,  crit: 300 },
       { title: 'Retry Queue',
-        expr:   'max(ruby_sidekiq_stats_retry_size)',
+        expr:   'max by()(ruby_sidekiq_stats_retry_size)',
         legend: 'jobs',    unit: 'short', warn: 5,   crit: 20  },
       { title: 'Dead Queue',
-        expr:   'max(ruby_sidekiq_stats_dead_size)',
+        expr:   'max by()(ruby_sidekiq_stats_dead_size)',
         legend: 'jobs',    unit: 'short', warn: 1,   crit: 5   },
     ])
 

@@ -425,7 +425,7 @@ The system can email investors automatically at key moments.
 
 - **Sent when:** the call is approved (if **Send Call Notice** is on).
 - **To:** each investor with an outstanding remittance, unless their commitment is set to **Skip Call Notice**.
-- **Contains:** the fund and call name, the approved notice document, and any documents you attached manually. A custom subject and body are used if your fund has a notification template.
+- **Contains:** the fund and call name, the approved notice document, and any documents you attached manually. A custom subject and body are used if a notification template applies (see [Custom Notification Templates](#custom-notification-templates) below).
 
 **Reminders:** click **Send Reminder** on the call to re-send to everyone still Pending or Overdue (the subject is prefixed "Reminder:"). You can also remind a single investor from their remittance. Once a notice has been sent to an investor, later sends are treated as reminders automatically.
 
@@ -447,6 +447,33 @@ Set **Skip Call Notice = Yes** on a commitment to permanently exclude that inves
 | Reminder | "Send Reminder" clicked | Pending / Overdue investors | Same as above |
 | Single reminder | From a remittance | One investor | Same as above |
 | Payment received | Remittance verified | The investor | Send Payment Notification |
+
+### Custom Notification Templates
+
+By default, the call notice, reminder, and payment-received emails use the system's standard wording. You can replace that wording with your own, at two levels:
+
+- **A fund-wide default** — open the fund, go to its **Notifications** tab, and choose **New Call Notification** from the **New Notification** menu. This template becomes the default for whichever email you select (call notice, reminder, or payment confirmation) across **every call in that fund** that doesn't already have its own override.
+- **A call-specific override** — open a specific call, go to its own **Notification** tab, and create a notification the same way. This applies only to that one call, for the email you select.
+
+A call's own template, when one exists, always takes priority over the fund's default for that same email. If you set up a call-specific template for an email that already has a fund-wide default, the form warns you that saving it will override the fund's default for that call.
+
+```mermaid
+sequenceDiagram
+    participant Call as Capital Call
+    participant Fund
+
+    Note over Call,Fund: An email is about to be sent (call notice, reminder, or payment confirmation)
+    alt This call has its own template for this email
+        Call-->>Call: Use the call's own template
+    else No template on the call
+        Fund-->>Fund: Does the fund have a default template for this email?
+        alt Yes
+            Fund-->>Call: Use the fund's default template
+        else No
+            Call-->>Call: Use the standard system wording
+        end
+    end
+```
 
 ---
 

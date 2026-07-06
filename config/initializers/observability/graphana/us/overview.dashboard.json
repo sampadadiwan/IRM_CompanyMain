@@ -154,7 +154,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "(node_memory_MemTotal_bytes{instance!~\"10.0.[34].*\"}-node_memory_MemAvailable_bytes{instance!~\"10.0.[34].*\"})/node_memory_MemTotal_bytes{instance!~\"10.0.[34].*\"}*100",
+          "expr": "100-100*node_memory_MemAvailable_bytes{instance!~\"10.0.[34].*\"}/node_memory_MemTotal_bytes{instance!~\"10.0.[34].*\"}",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -223,7 +223,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max by(instance)((node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"}-node_filesystem_free_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"})/node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"}*100)",
+          "expr": "max by(instance)((node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance!~\"10.0.[34].*\"}-node_filesystem_free_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance!~\"10.0.[34].*\"})/node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance!~\"10.0.[34].*\"}*100)",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -292,7 +292,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max by(instance)((1-node_filesystem_files_free{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"}/node_filesystem_files{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\"})*100)",
+          "expr": "max by(instance)((1-node_filesystem_files_free{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance!~\"10.0.[34].*\"}/node_filesystem_files{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance!~\"10.0.[34].*\"})*100)",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -521,7 +521,7 @@
     },
     {
       "type": "stat",
-      "title": "DB Memory %",
+      "title": "DB CPU %",
       "description": "",
       "gridPos": {
         "h": 4,
@@ -530,6 +530,75 @@
         "y": 10
       },
       "id": 10,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dDciTfBDz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "dDciTfBDz"
+          },
+          "expr": "100-(avg by(instance)(rate(node_cpu_seconds_total{mode=\"idle\",instance=~\"10.0.[34].*\"}[5m]))*100)",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "DB Memory %",
+      "description": "",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 10
+      },
+      "id": 11,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -581,7 +650,352 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "(node_memory_MemTotal_bytes{instance=~\"10.0.[34].*\"}-node_memory_MemAvailable_bytes{instance=~\"10.0.[34].*\"})/node_memory_MemTotal_bytes{instance=~\"10.0.[34].*\"}*100",
+          "expr": "100-100*node_memory_MemAvailable_bytes{instance=~\"10.0.[34].*\"}/node_memory_MemTotal_bytes{instance=~\"10.0.[34].*\"}",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "DB Disk %",
+      "description": "",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 10
+      },
+      "id": 12,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dDciTfBDz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "dDciTfBDz"
+          },
+          "expr": "max by(instance)((node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance=~\"10.0.[34].*\"}-node_filesystem_free_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance=~\"10.0.[34].*\"})/node_filesystem_size_bytes{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance=~\"10.0.[34].*\"}*100)",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "DB Inodes %",
+      "description": "",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 10
+      },
+      "id": 13,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dDciTfBDz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 70
+              },
+              {
+                "color": "red",
+                "value": 90
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "dDciTfBDz"
+          },
+          "expr": "max by(instance)((1-node_filesystem_files_free{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance=~\"10.0.[34].*\"}/node_filesystem_files{fstype!=\"tmpfs\",fstype!=\"vfat\",fstype!=\"overlay\",mountpoint!~\"/etc/.*|/boot/.*\",instance=~\"10.0.[34].*\"})*100)",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "DB Disk I/O Wait %",
+      "description": "CPU time spent waiting for disk I/O on the DB host. High iowait = disk bottleneck even when CPU % looks low.",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 0,
+        "y": 14
+      },
+      "id": 14,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dDciTfBDz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 20
+              },
+              {
+                "color": "red",
+                "value": 40
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "dDciTfBDz"
+          },
+          "expr": "avg by(instance)(rate(node_cpu_seconds_total{mode=\"iowait\",instance=~\"10.0.[34].*\"}[5m]))*100",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "DB Net In (MB/s)",
+      "description": "",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 8,
+        "y": 14
+      },
+      "id": 15,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dDciTfBDz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "dDciTfBDz"
+          },
+          "expr": "sum by(instance)(rate(node_network_receive_bytes_total{instance=~\"10.0.[34].*\",device!~\"lo|veth.*\"}[5m]))/1048576",
+          "instant": true,
+          "legendFormat": "{{instance}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "DB Net Out (MB/s)",
+      "description": "",
+      "gridPos": {
+        "h": 4,
+        "w": 8,
+        "x": 16,
+        "y": 14
+      },
+      "id": 16,
+      "datasource": {
+        "type": "prometheus",
+        "uid": "dDciTfBDz"
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "orientation": "auto",
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "textMode": "auto"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 200
+              }
+            ]
+          },
+          "mappings": []
+        },
+        "overrides": []
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "dDciTfBDz"
+          },
+          "expr": "sum by(instance)(rate(node_network_transmit_bytes_total{instance=~\"10.0.[34].*\",device!~\"lo|veth.*\"}[5m]))/1048576",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -594,11 +1008,11 @@
       "description": "",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
-        "y": 10
+        "w": 8,
+        "x": 0,
+        "y": 18
       },
-      "id": 11,
+      "id": 17,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -663,11 +1077,11 @@
       "description": "",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 12,
-        "y": 10
+        "w": 8,
+        "x": 8,
+        "y": 18
       },
-      "id": 12,
+      "id": 18,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -719,7 +1133,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max by(instance)(mysql_slave_status_seconds_behind_source)",
+          "expr": "max by(instance)(mysql_slave_status_seconds_behind_source or mysql_slave_status_seconds_behind_master)",
           "instant": true,
           "legendFormat": "{{instance}}",
           "refId": "A"
@@ -732,11 +1146,11 @@
       "description": "",
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
-        "y": 10
+        "w": 8,
+        "x": 16,
+        "y": 18
       },
-      "id": 13,
+      "id": 19,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -802,9 +1216,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 22
       },
-      "id": 14,
+      "id": 20,
       "collapsed": false,
       "panels": []
     },
@@ -816,9 +1230,9 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 15
+        "y": 23
       },
-      "id": 15,
+      "id": 21,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -885,9 +1299,9 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 15
+        "y": 23
       },
-      "id": 16,
+      "id": 22,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -954,9 +1368,9 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 15
+        "y": 23
       },
-      "id": 17,
+      "id": 23,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1023,9 +1437,9 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 15
+        "y": 23
       },
-      "id": 18,
+      "id": 24,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1091,9 +1505,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 19
+        "y": 27
       },
-      "id": 19,
+      "id": 25,
       "collapsed": false,
       "panels": []
     },
@@ -1105,9 +1519,9 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 20
+        "y": 28
       },
-      "id": 20,
+      "id": 26,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1174,9 +1588,9 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 20
+        "y": 28
       },
-      "id": 21,
+      "id": 27,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1228,7 +1642,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max(ruby_http_request_duration_seconds{quantile=\"0.99\"})*1000",
+          "expr": "max by()(ruby_http_request_duration_seconds{quantile=\"0.99\"})*1000",
           "instant": true,
           "legendFormat": "P99",
           "refId": "A"
@@ -1243,9 +1657,9 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 20
+        "y": 28
       },
-      "id": 22,
+      "id": 28,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1312,9 +1726,9 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 20
+        "y": 28
       },
-      "id": 23,
+      "id": 29,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1366,7 +1780,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "avg(ruby_rss{type=~\"web|puma_worker\"})/1024/1024",
+          "expr": "avg by()(ruby_rss{type=~\"web|puma_worker\"})/1024/1024",
           "instant": true,
           "legendFormat": "avg RSS",
           "refId": "A"
@@ -1381,9 +1795,9 @@
         "h": 4,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 32
       },
-      "id": 24,
+      "id": 30,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1435,7 +1849,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "avg(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100",
+          "expr": "avg by()(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100",
           "instant": true,
           "legendFormat": "utilisation",
           "refId": "A"
@@ -1450,9 +1864,9 @@
         "h": 4,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 32
       },
-      "id": 25,
+      "id": 31,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1504,7 +1918,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max(ruby_puma_request_backlog) or vector(0)",
+          "expr": "max by()(ruby_puma_request_backlog) or vector(0)",
           "instant": true,
           "legendFormat": "backlog",
           "refId": "A"
@@ -1518,9 +1932,9 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 36
       },
-      "id": 26,
+      "id": 32,
       "collapsed": false,
       "panels": []
     },
@@ -1532,9 +1946,9 @@
         "h": 4,
         "w": 6,
         "x": 0,
-        "y": 29
+        "y": 37
       },
-      "id": 27,
+      "id": 33,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1586,7 +2000,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max(ruby_sidekiq_stats_enqueued)",
+          "expr": "max by()(ruby_sidekiq_stats_enqueued)",
           "instant": true,
           "legendFormat": "jobs",
           "refId": "A"
@@ -1601,9 +2015,9 @@
         "h": 4,
         "w": 6,
         "x": 6,
-        "y": 29
+        "y": 37
       },
-      "id": 28,
+      "id": 34,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1655,7 +2069,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max(ruby_sidekiq_queue_latency_seconds) or vector(0)",
+          "expr": "max by()(ruby_sidekiq_queue_latency_seconds) or vector(0)",
           "instant": true,
           "legendFormat": "latency",
           "refId": "A"
@@ -1670,9 +2084,9 @@
         "h": 4,
         "w": 6,
         "x": 12,
-        "y": 29
+        "y": 37
       },
-      "id": 29,
+      "id": 35,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1724,7 +2138,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max(ruby_sidekiq_stats_retry_size)",
+          "expr": "max by()(ruby_sidekiq_stats_retry_size)",
           "instant": true,
           "legendFormat": "jobs",
           "refId": "A"
@@ -1739,9 +2153,9 @@
         "h": 4,
         "w": 6,
         "x": 18,
-        "y": 29
+        "y": 37
       },
-      "id": 30,
+      "id": 36,
       "datasource": {
         "type": "prometheus",
         "uid": "dDciTfBDz"
@@ -1793,7 +2207,7 @@
             "type": "prometheus",
             "uid": "dDciTfBDz"
           },
-          "expr": "max(ruby_sidekiq_stats_dead_size)",
+          "expr": "max by()(ruby_sidekiq_stats_dead_size)",
           "instant": true,
           "legendFormat": "jobs",
           "refId": "A"

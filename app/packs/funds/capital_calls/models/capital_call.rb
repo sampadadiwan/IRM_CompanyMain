@@ -95,6 +95,12 @@ class CapitalCall < ApplicationRecord
     "#{fund.folder_path}/Capital Calls/#{name.delete('/')}"
   end
 
+  # Falls back to the fund's default CapitalCall notification (for_type: "CapitalCall") when this
+  # specific call has no override of its own for the given email_method.
+  def custom_notification(email_method, for_type: nil, custom_notification_id: nil)
+    super || fund.custom_notification(email_method, for_type: "CapitalCall", custom_notification_id:)
+  end
+
   delegate :to_s, to: :name
 
   def due_amount

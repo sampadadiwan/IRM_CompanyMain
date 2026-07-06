@@ -311,7 +311,34 @@ A distribution email is sent to an investor when **all** of these are true:
 - **In bulk** — click **Send Notifications** on the distribution to email everyone who hasn't yet been notified; the system reports the totals and emails you any errors.
 - **Force-send one** — on a single payment, click **Send Notification** to send regardless of prior sends.
 
-**The email** uses the subject "Capital Distribution: [Fund Name]", attaches the approved distribution notice and any manually added documents, honours a custom template if configured, and copies the commitment's CC addresses. Investors set to **skip notices** receive nothing (this setting is shared with capital-call notices).
+**The email** uses the subject "Capital Distribution: [Fund Name]", attaches the approved distribution notice and any manually added documents, honours a custom template if one applies (see [Custom Notification Templates](#custom-notification-templates) below), and copies the commitment's CC addresses. Investors set to **skip notices** receive nothing (this setting is shared with capital-call notices).
+
+### Custom Notification Templates
+
+By default, the payment notification email uses the system's standard wording. You can replace it with your own, at two levels:
+
+- **A fund-wide default** — open the fund, go to its **Notifications** tab, and choose **New Distribution Notification** from the **New Notification** menu. This becomes the default template used by **every distribution in that fund** that doesn't already have its own override.
+- **A distribution-specific override** — open a specific distribution, go to its own **Notification** tab, and create a notification the same way. This applies only to that one distribution.
+
+A distribution's own template, when one exists, always takes priority over the fund's default. If you set up a distribution-specific template when a fund-wide default already exists, the form warns you that saving it will override the fund's default for that distribution.
+
+```mermaid
+sequenceDiagram
+    participant Dist as Capital Distribution
+    participant Fund
+
+    Note over Dist,Fund: A payment notification email is about to be sent
+    alt This distribution has its own template
+        Dist-->>Dist: Use the distribution's own template
+    else No template on the distribution
+        Fund-->>Fund: Does the fund have a default template?
+        alt Yes
+            Fund-->>Dist: Use the fund's default template
+        else No
+            Dist-->>Dist: Use the standard system wording
+        end
+    end
+```
 
 ---
 

@@ -186,6 +186,37 @@ locals {
     "sudo chown ubuntu:ubuntu /home/ubuntu/.zshrc",
     "sudo chsh -s $(which zsh) ubuntu",
 
+    // node_exporter — installed natively (systemd), NOT via Docker, for the same reason as the
+    // app server AMI: a Dockerized node-exporter only sees its own container's mount namespace
+    // (just /etc/hostname, /etc/hosts, /etc/resolv.conf), so disk/inode metrics silently report
+    // nothing for the host. Native install means real host filesystem visibility from boot.
+    "echo INSTALLING- node_exporter",
+    "sudo useradd --no-create-home --shell /usr/sbin/nologin node_exporter || true",
+    "curl -sL https://github.com/prometheus/node_exporter/releases/download/v1.8.2/node_exporter-1.8.2.linux-amd64.tar.gz -o /tmp/node_exporter.tar.gz",
+    "tar xzf /tmp/node_exporter.tar.gz -C /tmp",
+    "sudo cp /tmp/node_exporter-1.8.2.linux-amd64/node_exporter /usr/local/bin/node_exporter",
+    "sudo chown node_exporter:node_exporter /usr/local/bin/node_exporter",
+    "rm -rf /tmp/node_exporter.tar.gz /tmp/node_exporter-1.8.2.linux-amd64",
+    "sudo tee /etc/systemd/system/node_exporter.service > /dev/null <<EOL",
+    "[Unit]",
+    "Description=Prometheus Node Exporter",
+    "Wants=network-online.target",
+    "After=network-online.target",
+    "",
+    "[Service]",
+    "User=node_exporter",
+    "Group=node_exporter",
+    "Type=simple",
+    "ExecStart=/usr/local/bin/node_exporter",
+    "Restart=on-failure",
+    "",
+    "[Install]",
+    "WantedBy=multi-user.target",
+    "EOL",
+    "sudo systemctl daemon-reload",
+    "sudo systemctl enable node_exporter",
+    "sudo systemctl start node_exporter",
+
   ]
 
   mysql_password_setup = [

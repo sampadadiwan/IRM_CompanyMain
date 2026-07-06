@@ -1,6 +1,6 @@
-<%= render FormCard.new(title: "Custom Notification : #{custom_notification.owner}") do %>
+<%= render FormCard.new(title: custom_notification.form_title) do %>
 
-  <%= form_with(model: custom_notification, validate: true, data: { controller: "notification-placeholders", "notification-placeholders-placeholders-value": custom_notification.placeholders_by_email_method.to_json }) do |form| %>
+  <%= form_with(model: custom_notification, validate: true, data: { controller: "notification-placeholders", "notification-placeholders-placeholders-value": custom_notification.placeholders_by_email_method.to_json, "notification-placeholders-fund-defaults-value": custom_notification.fund_default_notifications.to_json }) do |form| %>
     <% if custom_notification.errors.any? %>
       <div class="alert alert-danger">
         <h2><%= pluralize(custom_notification.errors.count, "error") %> prohibited this custom_notification from being saved:</h2>
@@ -23,6 +23,7 @@
         <%= form.label :email_method, "For Notification" %>
         <%= form.select :email_method, custom_notification.email_methods.map{|x| [x.humanize, x]}.sort, {}, class: "form-control", "data-action": "change->adhoc-notification#change change->notification-placeholders#emailMethodChanged", "data-notification-placeholders-target": "emailMethodSelect"  %>
         <small class="form-text text-muted">Which automatic email this template replaces. Only this one notification is customized - all others keep sending the default email.</small>
+        <div class="alert alert-warning d-none mt-2" data-notification-placeholders-target="overrideWarning" role="alert"></div>
       </div>
 
       <% if custom_notification.owner.respond_to?(:adhoc_notifications_to) %>
@@ -63,11 +64,11 @@
       <small class="form-text text-muted">A short, plain-text version of this message sent over WhatsApp where it's enabled. Avoid the characters &amp; ^ # ` ~ - WhatsApp won't display them correctly.</small>
     </div>
 
-    <% if custom_notification.owner_type == "CapitalCall" %>
+    <% if %w[CapitalCall CapitalDistribution].include?(custom_notification.owner_type) || %w[CapitalCall CapitalDistribution].include?(custom_notification.for_type) %>
         <div class="form-group">
           <%= form.label :show_details %>
           <%= form.check_box :show_details, class: "form-check-input"  %>
-          <small class="form-text text-muted">Adds a table at the end of the email listing the full breakdown of this capital call/remittance (amount, fees, due date, etc).</small>
+          <small class="form-text text-muted">Adds a table at the end of the email listing the full breakdown of this capital call/remittance or distribution (amount, fees, due date, etc).</small>
         </div>
     <% end %>
 

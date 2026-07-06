@@ -64,6 +64,12 @@ class CapitalDistribution < ApplicationRecord
     "#{fund.folder_path}/Capital Distributions/#{title.delete('/')}"
   end
 
+  # Falls back to the fund's default CapitalDistribution notification (for_type: "CapitalDistribution")
+  # when this specific distribution has no override of its own for the given email_method.
+  def custom_notification(email_method, for_type: nil, custom_notification_id: nil)
+    super || fund.custom_notification(email_method, for_type: "CapitalDistribution", custom_notification_id:)
+  end
+
   def distribution_percentage(capital_commitment)
     case distribution_on
     when "Commitment Percentage"

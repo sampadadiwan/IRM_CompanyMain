@@ -9,7 +9,11 @@ every :reboot, roles: [:app] do
   bundle "prometheus_exporter -b 0.0.0.0"
   bundle "puma -C /home/ubuntu/IRM/shared/puma.rb"
   command 'sudo docker run -d --rm --name xirr_py -p 8000:80 -v /tmp:/tmp thimmaiah/xirr_py:v2.6'
-  command 'sudo docker run -d --rm --name=node-exporter -p 9100:9100  prom/node-exporter'
+  # node_exporter runs natively via systemd (node_exporter.service) on app servers, not Docker —
+  # a Dockerized node-exporter only ever sees its own container's mount namespace (Docker always
+  # populates just /etc/hostname, /etc/hosts, /etc/resolv.conf), so disk/inode metrics silently
+  # reported nothing for the host. The native systemd service is enabled and survives reboot on
+  # its own; nothing needs to be (re)started here.
 end
 
 # Reboot servers, but first run logrotate

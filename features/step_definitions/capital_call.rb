@@ -706,6 +706,22 @@ Given('there is a custom notification {string} in place for the Call') do |args|
   @custom_notification.save!
 end
 
+Given('there is a custom notification {string} in place for the Fund for Calls') do |args|
+  @capital_call = CapitalCall.last
+  @custom_notification = CustomNotification.build(entity: @entity, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @fund, for_type: "CapitalCall")
+  key_values(@custom_notification, args)
+  @custom_notification.save!
+end
+
+Then('the remittance investors should receive an email with subject including {string}') do |expected_subject|
+  @capital_call.capital_remittances.each do |cr|
+    user = cr.investor.investor_accesses.approved.first.user
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+    expect(current_email.subject).to include expected_subject
+  end
+end
+
 Given('there is a custom notification with placeholders in place for the Call with email_method {string}') do |email_method|
   @capital_call = CapitalCall.last
   @custom_notification = CustomNotification.create!(

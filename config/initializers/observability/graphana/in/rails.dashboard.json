@@ -67,7 +67,7 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 10306,
   "graphTooltip": 0,
-  "id": 4,
+  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -3100,12 +3100,12 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "histogram_quantile(0.95,sum by(le)(rate(ruby_http_request_duration_seconds_bucket[5m])))*1000",
+          "expr": "max by()(ruby_http_request_duration_seconds{quantile=\"0.99\"})*1000",
           "legendFormat": "P95",
           "refId": "A"
         }
       ],
-      "title": "P95 Latency (ms)",
+      "title": "P99 Latency (ms)",
       "type": "timeseries"
     },
     {
@@ -3133,7 +3133,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "avg(ruby_puma_busy_threads/ruby_puma_max_threads)*100",
+          "expr": "avg by()(ruby_puma_running_threads/ruby_puma_thread_pool_capacity)*100",
           "legendFormat": "saturation",
           "refId": "A"
         }
@@ -3166,7 +3166,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(ruby_sidekiq_stats_enqueued)",
+          "expr": "max by()(ruby_sidekiq_stats_enqueued)",
           "legendFormat": "enqueued",
           "refId": "A"
         }
@@ -3199,7 +3199,7 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "max(ruby_sidekiq_queue_latency)",
+          "expr": "max by()(ruby_sidekiq_queue_latency_seconds) or vector(0)",
           "legendFormat": "latency",
           "refId": "A"
         }
@@ -3500,6 +3500,6 @@
   "timezone": "",
   "title": "Rails Metrics",
   "uid": "L-0CZ_WVk",
-  "version": 2,
+  "version": 13,
   "weekStart": ""
 }

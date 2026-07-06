@@ -3,16 +3,60 @@
   entity_id = owner&.entity_id || current_user.entity_id
   for_type ||= params[:for_type]
   custom_notification ||= CustomNotification.new(entity_id: entity_id, owner: owner, for_type: for_type)
+
+  generic_label, generic_tooltip =
+    case owner
+    when Fund
+      ["New Fund Notification", "Ad-hoc emails you trigger manually and broadcast to every commitment or investor KYC contact in this fund."]
+    when CapitalCall
+      ["New Call Notification", "Override the default call notice, reminder, and payment emails for this specific call."]
+    when CapitalDistribution
+      ["New Distribution Notification", "Override the default payment email for this specific distribution."]
+    else
+      ["New Custom Notification", nil]
+    end
 %>
 
-<div class="d-sm-flex align-items-center justify-content-between mb-4">
+<div class="d-sm-flex align-items-center justify-content-between mb-4" data-controller="tooltip">
   <h1 class="h3 mb-0 text-gray-800">Custom Notifications</h1>
-  <%= link_to "New Custom Notification", new_custom_notification_path("custom_notification[entity_id]": custom_notification.entity_id, "custom_notification[owner_id]": custom_notification.owner_id, "custom_notification[owner_type]": custom_notification.owner_type, "custom_notification[for_type]": custom_notification.for_type), {id: "create_custom_notification", class: "btn btn-outline-primary"} if owner %>
 
-  <%= link_to "Document Notification", new_custom_notification_path(
-                            "custom_notification[for_type]": "Send Document",
-                            "custom_notification[entity_id]": current_user.entity_id),
-                          class: "btn btn-outline-primary ti ti-mail-plus" unless owner %>
+  <div class="dropdown">
+    <button class="btn btn-outline-primary dropdown-toggle" type="button" id="new_custom_notification_dropdown"
+            data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+      New Notification
+    </button>
+    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="new_custom_notification_dropdown">
+      <%= link_to generic_label, new_custom_notification_path("custom_notification[entity_id]": custom_notification.entity_id, "custom_notification[owner_id]": custom_notification.owner_id, "custom_notification[owner_type]": custom_notification.owner_type, "custom_notification[for_type]": custom_notification.for_type),
+                  id: "create_custom_notification", class: "dropdown-item",
+                  title: generic_tooltip,
+                  data: (generic_tooltip ? { "bs-toggle": "tooltip", "bs-placement": "left" } : {}) if owner %>
+
+      <%= link_to "New Call Notification", new_custom_notification_path(
+                                "custom_notification[entity_id]": owner.entity_id,
+                                "custom_notification[owner_id]": owner.id,
+                                "custom_notification[owner_type]": "Fund",
+                                "custom_notification[for_type]": "CapitalCall"),
+                  id: "create_call_custom_notification", class: "dropdown-item",
+                  title: "Default template for capital call emails (call notice, reminder, payment received) used by any call in this fund that doesn't have its own override.",
+                  data: { "bs-toggle": "tooltip", "bs-placement": "left" } if owner.is_a?(Fund) %>
+
+      <%= link_to "New Distribution Notification", new_custom_notification_path(
+                                "custom_notification[entity_id]": owner.entity_id,
+                                "custom_notification[owner_id]": owner.id,
+                                "custom_notification[owner_type]": "Fund",
+                                "custom_notification[for_type]": "CapitalDistribution"),
+                  id: "create_distribution_custom_notification", class: "dropdown-item",
+                  title: "Default template for capital distribution payment emails used by any distribution in this fund that doesn't have its own override.",
+                  data: { "bs-toggle": "tooltip", "bs-placement": "left" } if owner.is_a?(Fund) %>
+
+      <%= link_to "Document Notification", new_custom_notification_path(
+                                "custom_notification[for_type]": "Send Document",
+                                "custom_notification[entity_id]": current_user.entity_id),
+                  class: "dropdown-item ti ti-mail-plus",
+                  title: "Template for the email sent when a document is shared with an investor.",
+                  data: { "bs-toggle": "tooltip", "bs-placement": "left" } unless owner %>
+    </div>
+  </div>
 </div>
 <div class="table-responsive" data-controller="datatable">
 

@@ -542,6 +542,12 @@ Given('there is a custom notification for the capital distribution with subject 
   @custom_notification = CustomNotification.create!(entity: @capital_distribution.entity, subject: subject, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @capital_distribution, email_method: email_method)
 end
 
+Given('there is a custom notification {string} in place for the Fund for Distributions') do |args|
+  @custom_notification = CustomNotification.build(entity: @entity, body: Faker::Lorem.paragraphs.join(". "), whatsapp: Faker::Lorem.sentences.join(". "), owner: @fund, for_type: "CapitalDistribution")
+  key_values(@custom_notification, args)
+  @custom_notification.save!
+end
+
 Given('there is a custom notification with placeholders for the capital distribution with subject {string} with email_method {string}') do |subject, email_method|
   @custom_notification = CustomNotification.create!(
     entity: @capital_distribution.entity,

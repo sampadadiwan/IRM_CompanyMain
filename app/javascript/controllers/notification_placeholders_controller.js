@@ -4,15 +4,33 @@ import { Controller } from "@hotwired/stimulus"
 // knowing the available names - the list is keyed by email_method since different notification
 // types are rendered by different mailers, each exposing a different set of placeholders.
 export default class extends Controller {
-    static values = { placeholders: Object }
-    static targets = ["emailMethodSelect", "placeholderSelect", "editor"]
+    static values = { placeholders: Object, fundDefaults: Object }
+    static targets = ["emailMethodSelect", "placeholderSelect", "editor", "overrideWarning"]
 
     connect() {
         this.renderOptions()
+        this.renderOverrideWarning()
     }
 
     emailMethodChanged() {
         this.renderOptions()
+        this.renderOverrideWarning()
+    }
+
+    // Warns that saving this call/distribution-specific notification will override the fund's
+    // default for the currently selected email, since the fund-level one is only a fallback.
+    renderOverrideWarning() {
+        if (!this.hasOverrideWarningTarget) return
+
+        const emailMethod = this.emailMethodSelectTarget.value
+        const subject = this.fundDefaultsValue[emailMethod]
+
+        if (subject) {
+            this.overrideWarningTarget.textContent = `Heads up: this fund already has a default notification for this email ("${subject}"). Saving this will override that default for this specific record.`
+            this.overrideWarningTarget.classList.remove("d-none")
+        } else {
+            this.overrideWarningTarget.classList.add("d-none")
+        }
     }
 
     renderOptions() {

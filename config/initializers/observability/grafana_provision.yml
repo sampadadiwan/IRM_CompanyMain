@@ -168,9 +168,12 @@ alert_rules:
       category: database
 
   # Replication lag: replica falling behind primary — data may be stale and diverge
+  # IN's mysqld_exporter reports the older "_behind_master" metric name; US (newer MySQL/
+  # exporter, post-8.0.23 terminology) reports "_behind_source" instead — `or` covers both
+  # regions with one rule regardless of which MySQL version is deployed.
   - title: "MySQL Replication Lag Critical (>30s)"
     group: database
-    expr: 'max(mysql_slave_status_seconds_behind_master{job="mysqld"})'
+    expr: 'max(mysql_slave_status_seconds_behind_source{job="mysqld"} or mysql_slave_status_seconds_behind_master{job="mysqld"})'
     threshold_gt: 30
     for: 5m
     summary: "MySQL replica is {{ printf \"%.0f\" $values.A.Value }}s behind primary"

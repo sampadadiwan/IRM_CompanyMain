@@ -45,6 +45,34 @@ class CustomNotification < ApplicationRecord
     subject
   end
 
+  FOR_TYPE_LABELS = {
+    "CapitalCall" => "Call Notification",
+    "CapitalDistribution" => "Distribution Notification",
+    "Send Document" => "Document Notification",
+    "InvestorKyc" => "KYC Notification",
+    "InvestmentOpportunity" => "Investment Opportunity Notification"
+  }.freeze
+
+  # Drives the form's title - prefers for_type (what this notification is for) over owner_type
+  # (who owns it), since a Fund can own a notification meant for its Calls or Distributions.
+  def form_title
+    label = FOR_TYPE_LABELS[for_type] || FOR_TYPE_LABELS[owner_type] || "Custom Notification"
+    "#{label} : #{owner}"
+  end
+
+  FUND_FALLBACK_OWNER_TYPES = %w[CapitalCall CapitalDistribution].freeze
+
+  # { email_method => subject } of the fund-level default(s) this owner would otherwise fall back
+  # to, so the form can warn that saving here overrides the fund's default for that email.
+  def fund_default_notifications
+    return {} unless FUND_FALLBACK_OWNER_TYPES.include?(owner_type) && owner.respond_to?(:fund)
+
+    email_methods.each_with_object({}) do |method, hash|
+      default = owner.fund.custom_notification(method, for_type: owner_type)
+      hash[method] = default.subject if default
+    end
+  end
+
   def show_link
     show_details_link
   end
@@ -58,9 +86,9 @@ class CustomNotification < ApplicationRecord
       [DocumentMailer]
     elsif for_type == "InvestmentOpportunity"
       [InvestmentOpportunityMailer]
-    elsif owner_type == "CapitalCall"
+    elsif owner_type == "CapitalCall" || for_type == "CapitalCall"
       [CapitalRemittanceMailer, CapitalRemittancePaymentMailer]
-    elsif owner_type == "CapitalDistribution"
+    elsif owner_type == "CapitalDistribution" || for_type == "CapitalDistribution"
       [CapitalDistributionPaymentsMailer]
     elsif owner_type == "Fund"
       # FundInvestorKycMailer backs the "adhoc_kyc_notification" email_method (one email
@@ -86,9 +114,9 @@ class CustomNotification < ApplicationRecord
                        %w[send_document]
                      elsif for_type == "InvestmentOpportunity"
                        InvestmentOpportunity::NOTIFICATION_METHODS
-                     elsif owner_type == "CapitalCall"
+                     elsif owner_type == "CapitalCall" || for_type == "CapitalCall"
                        mailer_classes.flat_map { |klass| klass.instance_methods(false).map(&:to_s) }
-                     elsif owner_type == "CapitalDistribution"
+                     elsif owner_type == "CapitalDistribution" || for_type == "CapitalDistribution"
                        mailer_classes.first.instance_methods(false).map(&:to_s)
                      elsif owner_type == "Fund"
                        # flat_map across both Fund mailers so FundInvestorKycMailer's own
