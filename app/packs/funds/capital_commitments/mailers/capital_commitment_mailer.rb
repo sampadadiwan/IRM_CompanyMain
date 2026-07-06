@@ -25,6 +25,10 @@ class CapitalCommitmentMailer < ApplicationMailer
   # We can add more specific notification methods here if needed
   # For now, adhoc_notification from ApplicationMailer is used by FundCommitmentNotifier
 
+  def adhoc_notification_link
+    { label: 'View Commitment', url: capital_commitment_url(@capital_commitment, subdomain: @capital_commitment.entity.sub_domain) }
+  end
+
   private
 
   # private: this is an internal resolver for attach_custom_notification_documents, not a

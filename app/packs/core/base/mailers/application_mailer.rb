@@ -2,6 +2,11 @@ class ApplicationMailer < ActionMailer::Base
   default from: ENV.fetch("SUPPORT_EMAIL_FROM", nil)
   layout "mailer"
 
+  # Templates render through an ActionView context, not the mailer instance itself,
+  # so a plain instance method (adhoc_notification_link, defined below) isn't visible
+  # to the view unless explicitly exposed like this.
+  helper_method :adhoc_notification_link
+
   # Safe, non-ERB placeholders clients can type into a CustomNotification body, e.g. {{user_full_name}}.
   # Resolved against the mailer instance's own ivars in CustomNotification#render_safe_body - never eval'd.
   # Subclasses add their own via PLACEHOLDERS = superclass::PLACEHOLDERS.merge(...).freeze
@@ -154,7 +159,7 @@ class ApplicationMailer < ActionMailer::Base
   def attach_custom_notification_documents
     if @custom_notification && @custom_notification.documents.present?
       @custom_notification.documents.each do |document|
-        attach_doc(document)
+        pw_protect_attach_file(document, @custom_notification)
       end
     end
 
@@ -176,7 +181,7 @@ class ApplicationMailer < ActionMailer::Base
                       custom_notification_documents_owner.documents.where(name: name)
                     end.order(created_at: :desc)
         documents = documents.limit(1) if latest_doc_only
-        documents.each { |document| attach_doc(document) }
+        documents.each { |document| pw_protect_attach_file(document, @custom_notification) }
       end
     end
   end
@@ -239,10 +244,12 @@ class ApplicationMailer < ActionMailer::Base
       # Get the password from the model based on the method specfied
       methods = custom_notification.attachment_password.split('.')
       password = methods.inject(model, &:send)
-      # Execute the command
-      cmd = "pdftk #{source_file.path} output #{dest_file} user_pw #{password}"
-      Rails.logger.info "Executing command: #{cmd}"
-      system(cmd)
+      # Execute the command - argv form avoids shell word-splitting on
+      # passwords/paths containing spaces or shell metacharacters
+      Rails.logger.info "Executing pdftk for document #{doc.id} with dest_file #{dest_file}"
+      success = system("pdftk", source_file.path, "output", dest_file, "user_pw", password.to_s)
+      raise "pdftk failed to password-protect document #{doc.id}" unless success && File.exist?(dest_file)
+
       # Return the file - Delete file post use in the caller
       File.new(dest_file)
     end
@@ -265,5 +272,14 @@ class ApplicationMailer < ActionMailer::Base
   # This is a generic method to send an email with a custom notification
   def adhoc_notification
     send_mail(subject: @custom_notification.subject, template_path: 'application_mailer', template_name: 'adhoc_notification')
+  end
+
+  # Hook for the shared adhoc_notification template to render a "View X" link,
+  # gated by CustomNotification#show_link. Subclasses (CapitalCommitmentMailer,
+  # FundInvestorKycMailer, ...) override this with their own record + URL; the
+  # default is no link, so mailers that don't override it (e.g. DealMailer) keep
+  # today's behavior unchanged.
+  def adhoc_notification_link
+    nil
   end
 end

@@ -576,6 +576,21 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
   )
 end
 
+# Same but with an explicit show_details_link, so a scenario can verify the "View Commitment"
+# link on the shared adhoc_notification template is gated by this flag
+Given('there is an adhoc custom notification for the fund with subject {string} and show_details_link {string}') do |subject, show_details_link|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    show_details_link: show_details_link == "true",
+    enabled: true
+  )
+end
+
 # "notify_via" here is the Gherkin-readable name for what's actually just a different
 # email_method value: "investor_kyc" -> "adhoc_kyc_notification" (FundInvestorKycMailer),
 # anything else -> the regular "adhoc_notification" (CapitalCommitmentMailer). There is no
@@ -589,6 +604,56 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
     whatsapp: Faker::Lorem.sentence,
     email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_notification",
     attachment_names: attachment_names.presence,
+    enabled: true
+  )
+end
+
+# Same but with an explicit show_details_link instead of attachment_names, so a scenario can
+# verify the "View KYC" link on the shared adhoc_notification template in investor_kyc mode
+Given('there is an adhoc custom notification for the fund with subject {string} and notify_via {string} and show_details_link {string}') do |subject, notify_via, show_details_link|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: notify_via == "investor_kyc" ? "adhoc_kyc_notification" : "adhoc_notification",
+    show_details_link: show_details_link == "true",
+    enabled: true
+  )
+end
+
+# Same but with password_protect_attachment/attachment_password and no attachment_names — used
+# together with "the custom notification has document ... " above, so a scenario can verify
+# ApplicationMailer#pw_protect_attach_file also runs on @custom_notification.documents (the
+# directly-linked branch, distinct from the attachment_names-resolved one)
+Given('there is an adhoc custom notification for the fund with subject {string} and password_protect_attachment {string} and attachment_password {string}') do |subject, password_protect_attachment, attachment_password|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    password_protect_attachment: password_protect_attachment == "true",
+    attachment_password: attachment_password.presence,
+    enabled: true
+  )
+end
+
+# Same but with password_protect_attachment/attachment_password, so a scenario can verify
+# ApplicationMailer#pw_protect_attach_file actually runs pdftk on attachment_names-resolved docs
+Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string} and password_protect_attachment {string} and attachment_password {string}') do |subject, attachment_names, password_protect_attachment, attachment_password|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    attachment_names: attachment_names.presence,
+    password_protect_attachment: password_protect_attachment == "true",
+    attachment_password: attachment_password.presence,
     enabled: true
   )
 end
@@ -622,6 +687,37 @@ And('the shared investor kyc has document {string} with file {string}') do |doc_
     name: doc_name,
     owner: @shared_investor_kyc,
     folder: @shared_investor_kyc.document_folder,
+    user: @user,
+    file: File.new("public/sample_uploads/#{file_name}", "r")
+  )
+end
+
+# Links the first commitment to a freshly-created InvestorKyc with a known PAN, so a
+# CustomNotification's attachment_password (e.g. "investor_kyc.PAN") resolves to a real,
+# assertable value via document.owner (the commitment) -> investor_kyc -> PAN.
+And('the first commitment has an investor kyc with PAN {string}') do |pan|
+  cc = @fund.capital_commitments.order(:id).first
+  investor = cc.investor
+  kyc = InvestorKyc.new(
+    investor: investor, entity: @fund.entity, verified: true,
+    completed_by_investor: true, submission_status: "verified", full_name: investor.investor_name,
+    PAN: pan
+  )
+  # save(validate: false) mirrors "the first two commitments share the same investor kyc" above —
+  # InvestorKyc has many required fields unrelated to what this scenario is testing.
+  kyc.save(validate: false)
+  cc.update!(investor_kyc_id: kyc.id)
+end
+
+# Uploads a real file directly on the CustomNotification itself (its own WithFolder :documents
+# association, distinct from attachment_names-resolved docs) — exercises the
+# @custom_notification.documents.each branch of ApplicationMailer#attach_custom_notification_documents
+And('the custom notification has document {string} with file {string}') do |doc_name, file_name|
+  Document.create!(
+    entity: @custom_notification.entity,
+    name: doc_name,
+    owner: @custom_notification,
+    folder: @custom_notification.document_folder,
     user: @user,
     file: File.new("public/sample_uploads/#{file_name}", "r")
   )
@@ -753,6 +849,81 @@ And('the notification email has the document {string} attached') do |doc_name|
       expect(filenames.any? { |f| f.include?(doc_name) }).to be(true),
                                                              "Expected attachment containing '#{doc_name}' but got #{filenames.inspect}"
     end
+  end
+end
+
+# Decodes the named attachment's actual bytes and opens it with the expected password via
+# HexaPDF (already a Gemfile dependency) — proves pdftk actually encrypted it with THIS
+# password, not just that some encryption dictionary is present.
+And('the notification email attachment {string} is password protected with password {string}') do |doc_name, password|
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      attachment = current_email.attachments.find { |a| a.filename.include?(doc_name) }
+      expect(attachment).not_to be_nil, "No attachment containing '#{doc_name}' found"
+      Tempfile.create(["attachment", ".pdf"]) do |tmp|
+        tmp.binmode
+        tmp.write(attachment.decoded)
+        tmp.flush
+        doc = HexaPDF::Document.open(tmp.path, decryption_opts: { password: password })
+        expect(doc.encrypted?).to be(true), "Expected '#{doc_name}' to be password protected but it wasn't"
+      end
+    end
+  end
+end
+
+# Negative counterpart — proves the flag being off (or unset) leaves the original,
+# unencrypted PDF bytes untouched.
+And('the notification email attachment {string} is not password protected') do |doc_name|
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      attachment = current_email.attachments.find { |a| a.filename.include?(doc_name) }
+      expect(attachment).not_to be_nil, "No attachment containing '#{doc_name}' found"
+      Tempfile.create(["attachment", ".pdf"]) do |tmp|
+        tmp.binmode
+        tmp.write(attachment.decoded)
+        tmp.flush
+        expect(HexaPDF::Document.open(tmp.path).encrypted?).to be(false),
+                                                                 "Expected '#{doc_name}' to NOT be password protected but it was"
+      end
+    end
+  end
+end
+
+# Proves ApplicationMailer#adhoc_notification_link (overridden in CapitalCommitmentMailer)
+# renders a "View Commitment" link, gated by CustomNotification#show_details_link
+And('the notification email contains a link to view the commitment') do
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      expect(current_email).not_to be_nil
+      body = current_email.body.to_s
+      expect(body).to include("View Commitment")
+      expect(body).to include(capital_commitment_path(cc))
+    end
+  end
+end
+
+And('the notification email does not contain a link to view the commitment') do
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      expect(current_email).not_to be_nil
+      expect(current_email.body.to_s).not_to include("View Commitment")
+    end
+  end
+end
+
+# KYC-mode counterpart — proves FundInvestorKycMailer's own adhoc_notification_link override
+And('the investor kyc notification email contains a link to view the kyc') do
+  investor = @shared_investor_kyc.investor
+  investor.notification_users(@shared_investor_kyc).each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+    body = current_email.body.to_s
+    expect(body).to include("View KYC")
+    expect(body).to include(investor_kyc_path(@shared_investor_kyc))
   end
 end
 

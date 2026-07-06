@@ -41,6 +41,49 @@ Feature: Fund Commitment Adhoc Notification
     Then all commitment investors receive the notification email
     And the notification email has the document "Statement of Account" attached
 
+  Scenario: Notification attachment is password protected when password_protect_attachment is enabled
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has an investor kyc with PAN "ABCDE1234F"
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and password_protect_attachment "true" and attachment_password "investor_kyc.PAN"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has the document "Statement of Account" attached
+    And the notification email attachment "Statement of Account" is password protected with password "ABCDE1234F"
+
+  Scenario: Notification attachment is not password protected when password_protect_attachment is disabled
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has the document "Statement of Account" attached
+    And the notification email attachment "Statement of Account" is not password protected
+
+  Scenario: A document linked directly to the custom notification is also password protected
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and password_protect_attachment "true" and attachment_password "email_method"
+    And the custom notification has document "Company Letter" with file "sample_kyc1.pdf"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has the document "Company Letter" attached
+    And the notification email attachment "Company Letter" is password protected with password "adhoc_notification"
+
   Scenario: Notification attaches documents matching a wildcard attachment_names pattern
     Given there is a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
@@ -243,3 +286,38 @@ Feature: Fund Commitment Adhoc Notification
     Given there is an adhoc custom notification for the fund with placeholders and subject "Placeholder Test"
     When the adhoc notification is triggered for all commitments
     Then the adhoc notification placeholders are resolved correctly
+
+  Scenario: Notification shows a View Commitment link when show_details_link is enabled
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with subject "Q4 Update" and show_details_link "true"
+    When the adhoc notification is triggered for all commitments
+    Then the notification email contains a link to view the commitment
+
+  Scenario: Notification hides the View Commitment link when show_details_link is disabled
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with subject "Q4 Update" and show_details_link "false"
+    When the adhoc notification is triggered for all commitments
+    Then the notification email does not contain a link to view the commitment
+
+  Scenario: Investor KYC mode notification shows a View KYC link when show_details_link is enabled
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given the first two commitments share the same investor kyc
+    Given there is an adhoc custom notification for the fund with subject "KYC Update" and notify_via "investor_kyc" and show_details_link "true"
+    When the adhoc notification is triggered for all investor kycs
+    Then the investor kyc notification email contains a link to view the kyc

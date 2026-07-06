@@ -58,6 +58,10 @@ class FundInvestorKycMailer < ApplicationMailer
     send_mail(subject: @custom_notification.subject, template_path: 'application_mailer', template_name: 'adhoc_notification')
   end
 
+  def adhoc_notification_link
+    { label: 'View KYC', url: investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) }
+  end
+
   private
 
   # Override needed for the SAME reason CapitalCommitmentMailer overrides this: the base

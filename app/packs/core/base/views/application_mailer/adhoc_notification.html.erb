@@ -1,5 +1,7 @@
 <%= render "/custom_notifications/mail"  %>
 
-
-
+<% link = adhoc_notification_link %>
+<% if link.present? && (@custom_notification.nil? || @custom_notification&.show_link) %>
+    <p class="btn btn-outline-primary"><%= link_to link[:label], link[:url] %></p>
+<% end %>
 
