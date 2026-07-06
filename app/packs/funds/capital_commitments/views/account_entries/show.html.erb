@@ -56,6 +56,17 @@
                 <span class="badge bg-success ms-2"><%= @account_entry.rule_for %></span>
               </div>
             </div>
+            <%# show import upload on debug %>
+            <% if params[:debug].present? %>
+              <div class="col-md-6">
+                <label class="text-muted text-uppercase fw-semibold fs-1 mb-1">Import Upload ID</label>
+                <div class="fs-4 fw-medium">
+                  <% if @account_entry.import_upload_id.present? %>
+                    <%= link_to @account_entry.import_upload_id, import_upload_path(id: @account_entry.import_upload_id), class: "text-decoration-none text-primary" %>
+                  <% end %>
+                </div>
+              </div>
+            <% end %>
 
             <% if @account_entry.parent %>
               <div class="col-md-6">

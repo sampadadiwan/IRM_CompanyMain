@@ -6,7 +6,8 @@ export default class extends ServerDatatableController {
   connect() {
     console.log("add_pis_to_capital_distribution connected");
 
-    $(".select2").on('select2:select', function () {
+    // Update the income and fvr on select as well as unselect of the select2 dropdown option
+    $(".select2").on('select2:select select2:unselect', function () {
       let event = new Event('change', { bubbles: true }) // fire a native event
       this.dispatchEvent(event);
     });

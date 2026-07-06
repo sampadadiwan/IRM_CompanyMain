@@ -2,7 +2,10 @@ class DistributionFee < ApplicationRecord
   belongs_to :entity
   belongs_to :fund
   belongs_to :capital_distribution
-  validates :name, :start_date, :end_date, presence: true
+  validates :start_date, :end_date, presence: true
+  # if name is blank we need entry type to filter
+  # we need either name or audit name to create audit
+  validates :audit_name, :entry_type, presence: true, if: ->(fee) { fee.name.blank? }
   validates :name, :audit_name, length: { maximum: 65 }, allow_blank: true
   validates :fee_type, length: { maximum: 20 }, allow_blank: true
 

@@ -46,7 +46,8 @@ class PortfolioInvestmentsController < ApplicationController
 
     authorize @portfolio_investment
 
-    if @portfolio_investment.portfolio_company
+    # we want to select the last used instrument for the same portfolio company if the instrument is not already set
+    if @portfolio_investment.investment_instrument_id.blank? && @portfolio_investment.portfolio_company
       last_pi = PortfolioInvestment.where(entity_id: @portfolio_investment.entity_id, portfolio_company_id: @portfolio_investment.portfolio_company_id).last
       @portfolio_investment.investment_instrument = last_pi&.investment_instrument
     end

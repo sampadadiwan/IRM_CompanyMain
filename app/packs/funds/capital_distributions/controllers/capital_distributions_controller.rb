@@ -37,6 +37,7 @@ class CapitalDistributionsController < ApplicationController
     @capital_distribution.distribution_date = Time.zone.today
     @bread_crumbs = { Funds: funds_path, "#{@capital_distribution.fund.name}": fund_path(@capital_distribution.fund), New: nil }
     authorize @capital_distribution
+    setup_custom_fields(@capital_distribution)
   end
 
   # GET /capital_distributions/1/edit

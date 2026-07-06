@@ -26,13 +26,15 @@ module CapitalDistributionFees
     self.display_only_with_fees_cents = 0
 
     capital_distribution.distribution_fees.order(fee_type: :asc).each do |distribution_fee|
-      Rails.logger.debug { "Processing distribution_fee: #{distribution_fee.name} for capital_distribution_payment: #{id}" }
+      Rails.logger.debug { "Processing distribution_fee: #{distribution_fee.name} - entry type: #{distribution_fee.entry_type} for capital_distribution_payment: #{id}" }
 
       cd_account_entries = capital_commitment.account_entries.where(
-        "account_entries.reporting_date >=? AND account_entries.reporting_date <=? AND account_entries.name = ?",
-        distribution_fee.start_date, distribution_fee.end_date, distribution_fee.name
+        "account_entries.reporting_date >=? AND account_entries.reporting_date <=?",
+        distribution_fee.start_date, distribution_fee.end_date
       )
 
+      # name is now optional, so we only filter by name if it is present
+      cd_account_entries = cd_account_entries.where(name: distribution_fee.name) if distribution_fee.name.present?
       # cumulative is false by default for backwards compatibility as it was always false before
       cumulative = distribution_fee.cumulative.presence || false
       cd_account_entries = cd_account_entries.where(cumulative: cumulative)
@@ -47,7 +49,7 @@ module CapitalDistributionFees
       final_name = distribution_fee.audit_name.presence || distribution_fee.name
       ae_audit = cd_account_entries.map { |a| [final_name, a.reporting_date, a.amount_cents, distribution_fee.fee_type] }
 
-      Rails.logger.debug { "Fees for name - #{distribution_fee.name}; audit_name - #{distribution_fee.audit_name} is #{ae_cents} #{ae_audit} for capital_distribution_payment: #{id}" }
+      Rails.logger.debug { "Fees for name - #{distribution_fee.name} - entry type: #{distribution_fee.entry_type}; audit_name - #{distribution_fee.audit_name} is #{ae_cents} #{ae_audit} for capital_distribution_payment: #{id}" }
 
       next if ae_audit.blank?
 

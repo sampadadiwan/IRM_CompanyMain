@@ -96,8 +96,12 @@ export default class extends Controller {
 
     // Use scoped selectors for other fields
     const fieldMappings = {
-      "input[type='date'][name*='[start_date]']": "start_date",
-      "input[type='date'][name*='[end_date]']": "end_date",
+      // LocaleDateFormBuilder renders the visible date input as unnamed and
+      // stores the ISO value in a separate hidden input with the real name,
+      // so start_date/end_date must be matched by name (not type="date") for
+      // copy-to-all to pick up the value.
+      "input[name*='[start_date]']": "start_date",
+      "input[name*='[end_date]']": "end_date",
       "select[name*='[fee_type]']": "fee_type",
       "input[name*='[entry_type]']": "entry_type",
       "input[name*='[parent_type]']": "parent_type",
@@ -148,8 +152,12 @@ export default class extends Controller {
 
     // Handle other fields
     const fieldMappings = {
-      "input[type='date'][name*='[start_date]']": "start_date",
-      "input[type='date'][name*='[end_date]']": "end_date",
+      // LocaleDateFormBuilder renders the visible date input as unnamed and
+      // stores the ISO value in a separate hidden input with the real name,
+      // so start_date/end_date must be matched by name (not type="date") for
+      // copy-to-all to pick up the value.
+      "input[name*='[start_date]']": "start_date",
+      "input[name*='[end_date]']": "end_date",
       "select[name*='[fee_type]']": "fee_type",
       "input[name*='[entry_type]']": "entry_type",
       "input[name*='[parent_type]']": "parent_type",
@@ -165,12 +173,22 @@ export default class extends Controller {
       if (element && data[key] !== undefined) {
         if (element.type === "checkbox") {
           element.checked = data[key];
+          element.dispatchEvent(new Event("change", { bubbles: true }));
+        } else if (element.type === "hidden" && element.closest("[data-controller~='locale-date']")) {
+          // Setting element.value directly would update the hidden ISO field
+          // but leave the visible picker and its Stimulus state stale, so
+          // drive the display input instead and let the locale-date
+          // controller re-parse it and resync both the hidden field and picker.
+          const widget = element.closest("[data-controller~='locale-date']");
+          const display = widget.querySelector("[data-locale-date-target='display']");
+          if (display) {
+            display.value = data[key];
+            display.dispatchEvent(new Event("input", { bubbles: true }));
+          }
         } else {
           element.value = data[key];
+          element.dispatchEvent(new Event("change", { bubbles: true }));
         }
-
-        // Trigger change event for any dependent logic
-        element.dispatchEvent(new Event("change", { bubbles: true }));
       }
     });
   }
