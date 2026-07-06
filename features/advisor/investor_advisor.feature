@@ -169,8 +169,8 @@ Scenario: SEC-2 Allowed roles whitelist — import raises error for platform-lev
 
 @security
 Scenario: SEC-3 Allowed roles whitelist — all entity-level roles are accepted
-  # Finding 2 (positive case): employee, investor, company_admin, and rm must
-  # all pass validation because entity admins legitimately grant these.
+  # Finding 2 (positive case): employee, investor, company_admin, rm, and
+  # approver must all pass validation because entity admins legitimately grant these.
   Given Im logged in as a user "first_name=Fund Manager" for an entity "name=AlphaVC2;entity_type=Investment Fund"
   Given the user has role "company_admin"
   And the entity has the investor advisors feature enabled
@@ -180,6 +180,8 @@ Scenario: SEC-3 Allowed roles whitelist — all entity-level roles are accepted
   When I try to build an investor advisor with allowed_roles including "investor"
   Then the investor advisor should pass allowed_roles validation
   When I try to build an investor advisor with allowed_roles including "company_admin"
+  Then the investor advisor should pass allowed_roles validation
+  When I try to build an investor advisor with allowed_roles including "approver"
   Then the investor advisor should pass allowed_roles validation
   When I try to build an investor advisor with allowed_roles including "rm"
   Then the investor advisor should pass allowed_roles validation

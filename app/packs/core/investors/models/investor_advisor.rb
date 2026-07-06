@@ -15,7 +15,7 @@ class InvestorAdvisor < ApplicationRecord
   # Roles an entity admin may grant to an advisor on switch.
   # :super is intentionally excluded — it is a platform-level role that no
   # entity admin has authority to bestow.
-  ALLOWED_ADVISOR_ROLES = %w[company_admin employee investor investor_advisor rm].freeze
+  ALLOWED_ADVISOR_ROLES = %w[approver company_admin employee investor investor_advisor rm].freeze
 
   belongs_to :entity
   belongs_to :user
