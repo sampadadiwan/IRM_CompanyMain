@@ -563,6 +563,21 @@ Given('there is an adhoc custom notification for the fund with placeholders and 
   )
 end
 
+# KYC-mode counterpart to the placeholder step above — body uses {{investor_name}}, {{fund_name}},
+# {{kyc_full_name}} tokens, resolved by FundInvestorKycMailer::PLACEHOLDERS instead of
+# CapitalCommitmentMailer::PLACEHOLDERS.
+Given('there is an adhoc kyc custom notification for the fund with placeholders and subject {string}') do |subject|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: "Dear {{investor_name}}, thank you for completing KYC with {{fund_name}}. Recorded name: {{kyc_full_name}}. Unsupported: {{not_a_real_placeholder}}.",
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_kyc_notification",
+    enabled: true
+  )
+end
+
 # Same but with attachment_names so the mailer picks up docs from each commitment
 Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string}') do |subject, attachment_names|
   @custom_notification = CustomNotification.create!(
@@ -709,6 +724,13 @@ Given('the first two commitments share the same investor kyc') do
   kyc.save(validate: false)
   @shared_investor_kyc = kyc
   first_two.each { |cc| cc.update!(investor_kyc_id: kyc.id) }
+end
+
+# Overrides the shared investor kyc's full_name, which the step above sets equal to
+# investor_name by default — placeholder scenarios need the two distinct so a passing
+# assertion can't be coincidence of {{kyc_full_name}} and {{investor_name}} matching.
+And('the shared investor kyc has full name {string}') do |full_name|
+  @shared_investor_kyc.update_column(:full_name, full_name)
 end
 
 # Uploads a real file as a document directly on the shared InvestorKyc (via WithFolder's
@@ -1150,6 +1172,32 @@ Then('the adhoc notification placeholders are resolved correctly') do
       # Unknown placeholder is preserved as-is (catches typos)
       expect(body).to include("{{not_a_real_placeholder}}")
     end
+  end
+  clear_emails
+end
+
+# KYC-mode counterpart to "the adhoc notification placeholders are resolved correctly" —
+# verifies FundInvestorKycMailer::PLACEHOLDERS: investor_name, fund_name, kyc_full_name
+# + base placeholders, against the shared investor kyc's single recipient(s).
+Then('the investor kyc notification placeholders are resolved correctly') do
+  investor = @shared_investor_kyc.investor
+  investor.notification_users(@shared_investor_kyc).each do |user|
+    open_email(user.email)
+    expect(current_email).not_to be_nil
+
+    body = current_email.body.to_s
+
+    expect(body).to include(@shared_investor_kyc.investor_name)
+    expect(body).not_to include("{{investor_name}}")
+
+    expect(body).to include(@fund.name)
+    expect(body).not_to include("{{fund_name}}")
+
+    expect(body).to include(@shared_investor_kyc.full_name)
+    expect(body).not_to include("{{kyc_full_name}}")
+
+    # Unknown placeholder is preserved as-is (catches typos)
+    expect(body).to include("{{not_a_real_placeholder}}")
   end
   clear_emails
 end

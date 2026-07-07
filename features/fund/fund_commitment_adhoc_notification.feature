@@ -239,6 +239,20 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for the shared investor kyc only
     Then exactly one notification email is sent for the shared investor kyc
 
+  Scenario: KYC notification placeholders are resolved correctly
+    Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given the first two commitments share the same investor kyc
+    And the shared investor kyc has full name "Recorded Legal Name"
+    Given there is an adhoc kyc custom notification for the fund with placeholders and subject "KYC Placeholder Test"
+    When the adhoc notification is triggered for all investor kycs
+    Then the investor kyc notification placeholders are resolved correctly
+
   Scenario: GP admin can preview the fund's adhoc notification from a capital commitment
     Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
     Given the user has role "company_admin"
