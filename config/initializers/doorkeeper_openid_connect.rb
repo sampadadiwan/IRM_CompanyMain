@@ -5,6 +5,13 @@ Doorkeeper::OpenidConnect.configure do
 
   subject_types_supported [:public]
 
+  # RFC 7591 Dynamic Client Registration — allows AI clients (Claude, ChatGPT, Gemini)
+  # to self-register as OAuth applications at POST /oauth/registration.
+  # Users only need to paste the MCP URL; no manual Client ID / Secret entry required.
+  # The gem auto-mounts the registration endpoint and advertises it via
+  # registration_endpoint in /.well-known/oauth-authorization-server metadata.
+  dynamic_client_registration true
+
   subject do |resource_owner, _application|
     # The unique identifier for the user
     resource_owner.id.to_s
@@ -24,7 +31,8 @@ Doorkeeper::OpenidConnect.configure do
       revocation: { protocol: }, # Or :http
       introspection: { protocol: }, # Or :http
       userinfo: { protocol: }, # Or :http
-      jwks: { protocol: } # Or :http
+      jwks: { protocol: }, # Or :http
+      dynamic_client_registration: { protocol: }
     }
   end
 
