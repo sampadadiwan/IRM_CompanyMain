@@ -1,12 +1,12 @@
-# CapHive MCP Server — Team Testing Guide
+# CapHive MCP Server — Claude.ai Connection Guide
 
-A step-by-step guide for team members to test the CapHive MCP Server on staging with Claude.ai, ChatGPT, and Gemini.
+A step-by-step guide for connecting the CapHive MCP Server on staging with Claude.ai.
 
 ---
 
 ## What is This?
 
-The CapHive MCP Server allows external AI clients (Claude.ai, ChatGPT, Gemini) to query fund management data directly from CapHive. Users authenticate via OAuth, and the AI can then call 23 read-only tools covering funds, capital activity, portfolios, cap tables, documents, and commitments.
+The CapHive MCP Server allows AI clients to query fund management data directly from CapHive. Currently supported: **Claude.ai**. Users authenticate via OAuth, and the AI can then call 23 read-only tools covering funds, capital activity, portfolios, cap tables, documents, and commitments.
 
 **Staging URL:** `https://dev.altconnects.com/mcp`
 
@@ -57,7 +57,7 @@ Once the CapHive admin has enabled the `enable_mcp` permission, the entity's own
 
 ### A2. OAuth Application Registration — Automatic (No Manual Setup Needed)
 
-AI clients (Claude.ai, ChatGPT, Gemini) **register themselves automatically** via Dynamic Client Registration (RFC 7591). When an AI client connects, it calls `POST /oauth/registration` to self-register as a Doorkeeper OAuth application — no manual Client ID or Secret setup required.
+AI clients **register themselves automatically** via Dynamic Client Registration (RFC 7591). When an AI client connects, it calls `POST /oauth/registration` to self-register as a Doorkeeper OAuth application — no manual Client ID or Secret setup required.
 
 > **For manual registration (optional/advanced):** CapHive admins can still manually create OAuth applications at `https://dev.altconnects.com/oauth/applications` if needed. This page is restricted to `super`/`support` roles only.
 
@@ -92,9 +92,9 @@ Both should return JSON with the OAuth endpoints and MCP resource info.
 
 ---
 
-## Section B: Connecting Your AI Client
+## Section B: Connecting Claude.ai
 
-### B1. Claude.ai
+### Claude.ai
 
 #### Step 1: Add the CapHive Connector
 
@@ -137,41 +137,6 @@ Show me the cap table for [company name]
 ```
 
 > See the PDF version of this guide for screenshots of each step and a working example of Claude.ai returning fund data.
-
----
-
-### B2. ChatGPT
-
-#### Step 1: Add the CapHive Connector
-
-1. Go to [chatgpt.com](https://chatgpt.com)
-2. Click your profile → **Settings** → **Connected Apps** (or **Connectors**)
-3. Click **"Add Connector"** → **"Custom"**
-4. Enter the MCP server URL: `https://dev.altconnects.com/mcp`
-5. ChatGPT will auto-discover the OAuth configuration from the `.well-known` endpoints
-
-#### Step 2: Authorize
-
-1. ChatGPT will redirect you to CapHive's login page
-2. Log in with your staging credentials
-3. Click **"Authorize"** on the consent screen
-4. You'll be redirected back to ChatGPT
-
-#### Step 3: Test It
-
-Start a new conversation and try:
-
-```
-Using CapHive, list all my funds with their committed amounts
-```
-
-> Note: ChatGPT may require you to explicitly mention "CapHive" or select the connector when asking questions.
-
----
-
-### B3. Gemini
-
-_(Testing instructions will be added once Gemini MCP connector setup is confirmed.)_
 
 ---
 
@@ -300,7 +265,6 @@ Here are some practical queries to test the full range of tools:
 
 **Fix:** Check the staging Rails logs for the specific error. Common causes:
 - Entity governance not enabled (see above)
-- OAuth application not created for this AI client
 - Redirect URI mismatch
 
 ### "Missing token" error
