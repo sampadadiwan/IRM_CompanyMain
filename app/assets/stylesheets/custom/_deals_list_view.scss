@@ -277,8 +277,8 @@
   /* Responsive Grid Adjustments */
   @media (max-width: 767px) {
     #deals_list_grid {
-      height: 500px !important;
-      min-height: 500px !important;
+      height: 800px !important; //Force the grid to have a minimum height
+      min-height: 800px !important;
       min-width: 1000px !important; // Force minimum width to trigger scroll
     }
 

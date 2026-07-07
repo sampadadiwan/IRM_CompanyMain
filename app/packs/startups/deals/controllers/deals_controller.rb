@@ -279,9 +279,11 @@ class DealsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def deal_params
+    # Add enable_notifications and deal_investor_status to the permitted parameters
     params.require(:deal).permit(:name, :amount, :status, :form_type_id, :clone_from_id, :tags,
                                  :start_date, :currency, :units, :activity_list, :archived, :skip_templates,
-                                 :grid_columns, card_view_attrs: [], properties: {})
+                                 :grid_columns, :deal_investor_status, :enable_notifications,
+                                 card_view_attrs: [], properties: {})
   end
 
   def find_or_initialize_deals_agent

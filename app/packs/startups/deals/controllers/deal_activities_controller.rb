@@ -138,8 +138,10 @@ class DealActivitiesController < ApplicationController
   end
 
   def perform_activity_action
+    # Passed a user id here for tracking who performed the action
     result = PerformActivityAction.call(params:,
-                                        deal_activity: @deal_activity)
+                                        deal_activity: @deal_activity,
+                                        user_id: current_user.id)
     if result.success?
       render json: {
         message: "Activity was successfully updated.",

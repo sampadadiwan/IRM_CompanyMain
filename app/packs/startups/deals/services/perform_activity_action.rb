@@ -53,9 +53,8 @@ class PerformActivityAction < Trailblazer::Operation
   def notify_activity_move(_ctx, deal_investor:, target_activity:, **)
     return true unless target_activity
 
-    # Check deal-level custom field `enable_notifications` in json_fields.
-    # If absent/blank -> defaults to enabled (backward-compatible).
-    # If explicitly "false" -> skip all notifications for this deal.
+    # Check deal-level `enable_notifications` flag.
+    # If disabled, skip all notifications for this deal.
     return true unless deal_activity_notifications_enabled?(deal_investor.deal)
 
     # Use the activity instance's flags to determine recipients
@@ -99,13 +98,8 @@ class PerformActivityAction < Trailblazer::Operation
     true
   end
 
-  # Returns true if deal-level activity notifications are enabled.
-  # - If `enable_notifications` is absent/blank -> defaults to true (backward-compatible).
-  # - If explicitly "false" -> returns false, suppressing all activity notifications for the deal.
+  # Returns true if deal-level activity notifications are enabled. No need for complex check now.
   def deal_activity_notifications_enabled?(deal)
-    value = deal.json_fields["enable_notifications"]
-    return true if value.nil? || value.to_s.blank?
-
-    value.to_s == "1"
+    deal.enable_notifications
   end
 end

@@ -13,9 +13,11 @@ end
 When('I create a new deal {string}') do |arg1|
   @deal = FactoryBot.build(:deal)
   key_values(@deal, arg1)
+  @deal.deal_investor_status = DealInvestor::STATUS if @deal.deal_investor_status.blank?
   click_on("New Deal")
   fill_in('deal_name', with: @deal.name)
   fill_in('deal_amount', with: @deal.amount)
+  find('#deal_deal_investor_status').set(Array(@deal.deal_investor_status).join(', '))
   fill_in('deal_status', with: @deal.status)
   click_on("Save")
   sleep(3)
@@ -26,11 +28,13 @@ end
 
 When('I edit the deal {string}') do |arg1|
   key_values(@deal, arg1)
+  @deal.deal_investor_status = DealInvestor::STATUS if @deal.deal_investor_status.blank?
 
   click_on("Edit")
 
   fill_in('deal_name', with: @deal.name)
   fill_in('deal_amount', with: @deal.amount)
+  fill_in('deal_deal_investor_status', with: Array(@deal.deal_investor_status).join(', '))
   fill_in('deal_status', with: @deal.status)
 
   click_on("Save")
@@ -135,6 +139,32 @@ Then('I should be able to change currency units') do
     ##sleep(0.5)
     expect(page).to have_content(money_to_currency(@deal.amount, {units: curr}))
   end
+end
+
+Then('the deal should have notifications enabled') do
+  expect(@deal.reload.enable_notifications).to eq(true)
+end
+
+Then('the deal should have notifications disabled') do
+  expect(@deal.reload.enable_notifications).to eq(false)
+end
+
+When('I disable deal notifications') do
+  visit(edit_deal_path(@deal))
+  _ensure_deal_statuses_present_in_form
+  uncheck('deal_enable_notifications')
+  click_button('Save')
+end
+
+Then('the deal should have investor statuses {string}') do |statuses|
+  expected_statuses = statuses.split(',').map(&:strip)
+  expect(@deal.reload.deal_investor_status).to eq(expected_statuses)
+end
+
+When('I edit the deal investor statuses to {string}') do |statuses|
+  visit(edit_deal_path(@deal))
+  find('#deal_deal_investor_status').set(statuses)
+  click_button('Save')
 end
 
 Given('there exists a deal {string} for my company') do |arg1|
@@ -798,6 +828,7 @@ end
 # row with the given field/label/position, then saves.
 When('I edit the deal grid columns with field {string} label {string} and position {string}') do |field, label, position|
   visit(edit_deal_path(@deal))
+  _ensure_deal_statuses_present_in_form
 
   # Remove all existing grid column rows first
   all("[data-deal-grid-columns-target='row']").each do |row|
@@ -817,6 +848,7 @@ When('I add grid column with field {string} label {string} and position {string}
 end
 
 When('I save the deal form') do
+  _ensure_deal_statuses_present_in_form
   click_button('Save')
   sleep(1)
 end
@@ -851,6 +883,10 @@ Then('the investor grid should show the base column {string}') do |header_text|
   end
 end
 
+Then('the deal should store {int} grid columns') do |count|
+  expect(Array(@deal.reload.grid_columns).size).to eq(count)
+end
+
 # ---------------------------------------------------------------------------
 # Helper — appends one grid column row in the deal form
 # ---------------------------------------------------------------------------
@@ -871,4 +907,12 @@ def _add_grid_column_row(field, label, position)
   end
 
   sleep(0.2)
+end
+
+def _ensure_deal_statuses_present_in_form
+  status_field = find('#deal_deal_investor_status')
+  return if status_field.value.to_s.strip.present?
+
+  fallback_statuses = Array(@deal&.reload&.deal_investor_status).presence || DealInvestor::STATUS
+  status_field.set(fallback_statuses.join(', '))
 end

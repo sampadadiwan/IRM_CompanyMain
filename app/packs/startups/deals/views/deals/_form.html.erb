@@ -42,8 +42,24 @@
     </div>
 
     <div class="form-group">
+      <%= form.label :deal_investor_status, "Deal Investor Statuses" %>
+      <%= form.text_field :deal_investor_status,
+                          value: Array(deal.deal_investor_status).join(", "),
+                          class: "form-control",
+                          required: true,
+                          placeholder: "New, Interested, In Progress, Committed, Complete, Declined" %>
+      <small class="text-muted d-block">Comma-separated list used by the deal investor status dropdown.</small>
+    </div>
+
+    <div class="form-group">
       <%= form.label :status %>
       <%= form.text_field :status, class: "form-control", placeholder: "Open / Closing soon / First close done"  %>
+    </div>
+
+    <div class="form-group">
+      <%= form.label :enable_notifications, "Enable Notifications" %>
+      <%= form.check_box :enable_notifications, class: "form-check-input" %>
+      <small class="text-muted d-block">When disabled, stage-move notifications are skipped for this deal.</small>
     </div>
 
     <div class="form-group">

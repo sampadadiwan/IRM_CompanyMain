@@ -1311,6 +1311,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_07_100000) do
     t.bigint "data_room_folder_id"
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
+    t.json "deal_investor_status"
+    t.boolean "enable_notifications", default: true, null: false
     t.date "end_date"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"

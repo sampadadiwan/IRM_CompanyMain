@@ -24,6 +24,9 @@ class DealInvestor < ApplicationRecord
   has_many :deal_activities, -> { order(sequence: :asc) }, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
 
+  # Non-persisted actor used to attribute initial step task generation.
+  attr_accessor :created_by_user_id
+
   delegate :name, to: :entity, prefix: :entity
   delegate :name, to: :deal, prefix: :deal
 
@@ -91,7 +94,7 @@ class DealInvestor < ApplicationRecord
   after_create_commit :create_activities_later
 
   def create_activities_later
-    GenerateDealActivitiesJob.perform_later(id, "DealInvestor")
+    GenerateDealActivitiesJob.perform_later(id, "DealInvestor", created_by_user_id)
   end
 
   def name
@@ -161,7 +164,7 @@ class DealInvestor < ApplicationRecord
     end
   end
 
-  def set_deal_investor_activity
+  def set_deal_investor_activity(user_id = nil)
     # After activities are created, set the deal_investor to the first incomplete activity (lowest sequence).
     # Only set it if not already pointing to a valid activity.
     return if deal_activity_id.present? && deal_activities.exists?(template_id: deal_activity_id)
@@ -171,6 +174,9 @@ class DealInvestor < ApplicationRecord
 
     # deal_activity_id stores the template id, not the investor-specific instance id
     update_column(:deal_activity_id, first_activity.template_id)
+
+    # Ensure tasks for the initial step are generated immediately after assigning current step.
+    GenerateDealStepTasksJob.perform_later(id, user_id, first_activity.id)
   end
 
   def messages_viewed(current_user)

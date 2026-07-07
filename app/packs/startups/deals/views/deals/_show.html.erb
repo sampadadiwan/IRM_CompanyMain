@@ -70,7 +70,14 @@
          <%= deal.card_view_attrs&.map(&:titleize)&.join(", ") %>
       </td>
    </tr>
-
+   <tr>
+      <td>
+         Deal Investor Status
+      </td>
+      <td>
+         <%= Array(deal.deal_investor_status).join(", ") %>
+      </td>
+   </tr>
    <!-- <tr>
       <td>
          Currency Units

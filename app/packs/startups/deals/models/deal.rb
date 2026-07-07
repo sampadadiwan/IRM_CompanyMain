@@ -30,7 +30,10 @@ class Deal < ApplicationRecord
   has_many :ci_track_records, as: :owner, dependent: :destroy
   has_many :ci_widgets, as: :owner, dependent: :destroy
 
-  validates :name, :amount_cents, :status, :currency, presence: true
+  # added a new field for deal_investor_status to store allowed statuses for deal investors, defaulting to DealInvestor::STATUS if not set
+  attribute :deal_investor_status, :json, default: []
+
+  validates :name, :amount_cents, :status, :currency, :deal_investor_status, presence: true
   validates :status, length: { maximum: 20 }
   validates :tags, length: { maximum: 100 }
   validates :currency, length: { maximum: 10 }
@@ -60,6 +63,18 @@ class Deal < ApplicationRecord
 
   def to_s
     name
+  end
+
+  def deal_investor_status
+    current_value = self[:deal_investor_status]
+    normalized = normalize_deal_investor_status(current_value)
+    return normalized if normalized.present?
+
+    normalize_deal_investor_status(json_fields&.[]("deal_investor_status"))
+  end
+
+  def deal_investor_status=(value)
+    self[:deal_investor_status] = normalize_deal_investor_status(value)
   end
 
   def self.ransackable_attributes(_auth_object = nil)
@@ -125,5 +140,22 @@ class Deal < ApplicationRecord
       position = col["position"].presence || "end"
       { field: field, label: label, position: position }
     end
+  end
+
+  private
+
+  # Added a private method to normalize the deal_investor_status value to ensure it is always an array of strings, regardless of how it is provided (string, array, or JSON). This helps maintain consistency in how the status is stored and accessed throughout the application.
+  def normalize_deal_investor_status(value)
+    statuses = case value
+               when String
+                 parsed_value = JSON.parse(value) rescue nil
+                 parsed_value.is_a?(Array) ? parsed_value : value.split(',')
+               when Array
+                 value
+               else
+                 Array.wrap(value)
+               end
+
+    statuses.map { |status| status.to_s.strip }.reject(&:blank?)
   end
 end

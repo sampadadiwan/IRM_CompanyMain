@@ -149,6 +149,8 @@ class DealInvestorsController < ApplicationController
   # POST /deal_investors or /deal_investors.json
   def create
     @deal_investor = DealInvestor.new(deal_investor_params)
+    # Capture the current user for tracking who created the investor
+    @deal_investor.created_by_user_id = current_user.id
     @deal_investor.entity_id = @deal_investor.deal.entity_id
     # This is required after the money gem was installed
     @deal_investor.primary_amount = deal_investor_params[:primary_amount].to_d

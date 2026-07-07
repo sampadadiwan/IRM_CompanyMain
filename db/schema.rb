@@ -1318,6 +1318,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_07_100000) do
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.json "grid_columns"
+    t.json "deal_investor_status"
+    t.boolean "enable_notifications", default: true, null: false
     t.integer "impressions_count", default: 0
     t.json "json_fields"
     t.string "name"

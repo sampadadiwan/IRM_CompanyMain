@@ -749,6 +749,7 @@ FactoryBot.define do
     name { ["Series A", "Series B", "Series C", "Series D"][rand(4)] }
     amount { rand(2..10) * 10_000_000_000 }
     status { "Open" }
+    deal_investor_status { DealInvestor::STATUS }
     currency { entity.currency }
     units { entity.units }
     start_date { Date.today + rand(5).days }

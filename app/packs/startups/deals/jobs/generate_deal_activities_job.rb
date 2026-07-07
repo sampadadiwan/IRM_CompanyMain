@@ -1,7 +1,7 @@
 class GenerateDealActivitiesJob < ApplicationJob
   queue_as :serial
 
-  def perform(id, class_name)
+  def perform(id, class_name, user_id = nil)
     Chewy.strategy(:sidekiq) do
       case class_name
       when "Deal"
@@ -12,7 +12,7 @@ class GenerateDealActivitiesJob < ApplicationJob
         Rails.logger.info "Generating deal activities for DealInvestor with id: #{id}"
         @deal_investor = DealInvestor.find(id)
         @deal_investor.create_activities
-        @deal_investor.set_deal_investor_activity
+        @deal_investor.set_deal_investor_activity(user_id)
         @deal_investor.deal.broadcast_message("Deal steps were created, please refresh your page.")
         @deal_investor.deal.kanban_board.presence&.broadcast_board_event
       end

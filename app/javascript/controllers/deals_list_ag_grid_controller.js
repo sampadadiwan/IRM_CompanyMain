@@ -10,7 +10,44 @@ export default class extends BaseAgGrid {
     activityTemplates: Array,
     customFields: String,
     gridColumns: String,
-    dealGridColumns: Array  // [{field, label}] from deal.grid_columns_for_js
+    dealGridColumns: Array,  // [{field, label}] from deal.grid_columns_for_js
+    dealInvestorStatuses: String
+  }
+
+  statusOptions() {
+    const fallbackStatuses = ['New', 'Interested', 'In Progress', 'Committed', 'Complete', 'Declined'];
+
+    if (!this.hasDealInvestorStatusesValue) return fallbackStatuses;
+
+    const raw = this.dealInvestorStatusesValue;
+    let statuses = [];
+
+    if (Array.isArray(raw)) {
+      statuses = raw;
+    } else if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (!trimmed) return fallbackStatuses;
+
+      const normalized = trimmed.replace(/^['\"]+|['\"]+$/g, '');
+
+      // Support either JSON arrays or comma-separated strings from deal.json_fields.
+      if (normalized.startsWith('[')) {
+        try {
+          const parsed = JSON.parse(normalized);
+          if (Array.isArray(parsed)) statuses = parsed;
+        } catch (_e) {
+          statuses = normalized.split(',');
+        }
+      } else {
+        statuses = normalized.split(',');
+      }
+    }
+
+    const cleanedStatuses = statuses
+      .map((status) => String(status).trim().replace(/^['\"]+|['\"]+$/g, ''))
+      .filter((status) => status.length > 0);
+
+    return cleanedStatuses.length ? cleanedStatuses : fallbackStatuses;
   }
 
   columnDefs() {
@@ -162,7 +199,7 @@ export default class extends BaseAgGrid {
         editable: true,
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: {
-          values: ['New', 'Interested', 'In Progress', 'Committed', 'Complete', 'Declined']
+          values: this.statusOptions()
         },
         cellRenderer: (params) => {
           if (!params.value) return '';

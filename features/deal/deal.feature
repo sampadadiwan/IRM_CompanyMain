@@ -46,3 +46,26 @@ Scenario Outline: Currency Units
   Examples:
     |user	      |entity               |deal                             |msg	|
     |  	        |entity_type=Company  |name=Series R;amount_cents=100000000 |Deal was successfully created|
+
+Scenario: Deal notifications can be toggled from the form
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I create a new deal "name=Notification Deal;amount_cents=25000"
+  Then I should see the "Deal was successfully created"
+  And an deal should be created
+  And the deal should have notifications enabled
+  When I disable deal notifications
+  Then I should see the "Deal was successfully updated"
+  And the deal should have notifications disabled
+
+Scenario: Deal investor statuses are saved and can be updated
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I create a new deal "name=Status Deal;amount_cents=36000;deal_investor_status=New, Interested"
+  Then I should see the "Deal was successfully created"
+  And an deal should be created
+  When I edit the deal investor statuses to "Interested, Committed, Closed"
+  Then I should see the "Deal was successfully updated"
+  And the deal should have investor statuses "Interested, Committed, Closed"

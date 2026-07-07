@@ -92,10 +92,15 @@ class ImportDealInvestor < ImportUtil
     primary_cents   = parse_money(user_data["Primary Amount"])
     secondary_cents = parse_money(user_data["Secondary Amount"])
     pre_money_cents = parse_money(user_data["Pre Money Valuation"]) # 0 when blank
+    allowed_statuses = allowed_statuses_for(deal)
+    status_value = user_data["Status"].presence&.strip
+
+    # Validate that the provided status is allowed for this deal. If not, raise an error.
+    raise "Status '#{status_value}' is not allowed. Use one of: #{allowed_statuses.join(', ')}" if status_value.present? && allowed_statuses.exclude?(status_value)
 
     deal_investor.assign_attributes(
       entity_id:,
-      status: user_data["Status"].presence&.strip || DealInvestor::STATUS.first,
+      status: status_value || allowed_statuses.first,
       tier: user_data["Tier"].presence&.strip,
       deal_lead: user_data["Deal Lead"].presence&.strip,
       source: user_data["Source"].presence&.strip,
@@ -118,7 +123,7 @@ class ImportDealInvestor < ImportUtil
     deal_investor.save!
 
     # Create DealActivity records from templates only for brand-new investors
-    create_deal_activities(deal, deal_investor, entity_id) if deal_investor.previously_new_record?
+    create_deal_activities(deal, deal_investor, entity_id, import_upload.user_id) if deal_investor.previously_new_record?
 
     import_upload.processed_row_count += 1
     result_row << "Success"
@@ -128,7 +133,12 @@ class ImportDealInvestor < ImportUtil
     result_row << "Error: #{e.message}"
   end
 
-  def create_deal_activities(deal, deal_investor, entity_id)
+  # helper method to get allowed statuses for a deal, defaulting to DealInvestor::STATUS if not set
+  def allowed_statuses_for(deal)
+    deal.deal_investor_status.presence || DealInvestor::STATUS
+  end
+
+  def create_deal_activities(deal, deal_investor, entity_id, user_id = nil)
     DealActivity.templates(deal).each do |template|
       activity = DealActivity.where(
         deal_id: deal.id,
@@ -150,7 +160,12 @@ class ImportDealInvestor < ImportUtil
     end
 
     first_step = deal_investor.deal_activities.order(:sequence).first
-    deal_investor.update_column(:deal_activity_id, first_step.template_id) if first_step&.template_id
+    return unless first_step&.template_id
+
+    deal_investor.update_column(:deal_activity_id, first_step.template_id)
+
+    # Genrate tasks for the first step asynchronously, passing the user_id for tracking who performed the action
+    GenerateDealStepTasksJob.perform_later(deal_investor.id, user_id, first_step.id)
   end
 
   # -----------------------------------------------------------------------
@@ -176,6 +191,7 @@ class ImportDealInvestor < ImportUtil
       step_titles.each_with_index do |title, idx|
         next if title.blank?
 
+        # The status value is expected to be in the next column (idx + 1) corresponding to this title
         status_value = row[idx + 1].to_s.strip
         next if status_value.blank?
 

@@ -48,6 +48,19 @@ Scenario: Editing grid columns updates the investor grid
   Then the investor grid should show the column "New Label"
   And the investor grid should not show the column "Old Label"
 
+Scenario: Grid column configuration stores expected table size
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I create a new deal "name=Grid Size Deal;amount_cents=82000"
+  Then I should see the "Deal was successfully created"
+  And an deal should be created
+  When I add grid column with field "primary_amount" label "Raised" and position "Start"
+  And I add grid column with field "secondary_investment" label "Secondary" and position "End"
+  And I save the deal form
+  Then I should see the "Deal was successfully updated"
+  And the deal should store 2 grid columns
+
 Scenario: Deal with no grid columns configured shows all standard columns
   Given Im logged in as a user "" for an entity "entity_type=Company"
   Given the user has role "company_admin"
