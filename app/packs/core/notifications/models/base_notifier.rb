@@ -3,10 +3,16 @@ class BaseNotifier < Noticed::Event
 
   if Rails.env.test?
     deliver_by :whats_app, class: "DeliveryMethods::WhatsApp" do |config|
+      # Hard safety kill-switch, unrelated to the content check below - unlike email (captured
+      # safely by Rails' :test delivery adapter), a WhatsApp send is a raw Net::HTTP call to the
+      # real WATI API, so this must stay forced off regardless of whether a message is present.
       config.if = -> { false }
     end
     # deliver_by :email, mailer: :mailer_name, method: :email_method, format: :email_data
     deliver_by :email do |config|
+      config.if = lambda {
+        custom_notification_body_present? # Still gate on this in test, so blank-body scenarios can be exercised
+      }
       config.mailer = :mailer_name
       config.method = :email_method
       config.params = :email_data
@@ -16,14 +22,18 @@ class BaseNotifier < Noticed::Event
     # email_delay is a method defined in NotificationExtensions
     deliver_by :whats_app, class: "DeliveryMethods::WhatsApp" do |config|
       config.if = lambda {
-        whatsapp_enabled
+        # Is WA enabled for this recipient/entity, and is there actually a message to send
+        # (see NotificationExtensions#custom_notification_whatsapp_present?)
+        whatsapp_enabled && custom_notification_whatsapp_present?
       }
       config.wait = :email_delay
     end
 
     deliver_by :email do |config|
       config.if = lambda {
-        email_enabled # Is email enabled for the investor access specified by the entity
+        # Is email enabled for the investor access specified by the entity, and does this
+        # notification actually have content to send (see NotificationExtensions)
+        email_enabled && custom_notification_body_present?
       }
       config.mailer = :mailer_name # Setup by each notifier
       config.method = :email_method # Typically the method name sent via the params :email_method

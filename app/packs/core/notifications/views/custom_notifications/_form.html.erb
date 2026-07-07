@@ -49,7 +49,7 @@
 
     <div class="form-group">
       <%= form.label :body %>
-      <small class="form-text text-muted d-block mb-2">Write the email body, then use the dropdown below to personalize it. Selecting a placeholder inserts a token like <code>{{investor_name}}</code> into the text, which is automatically replaced with the real value for each recipient when the email is sent. The placeholders on offer depend on the notification chosen above. Any token you type by hand that isn't recognized (e.g. a typo) is sent as plain text rather than being replaced, so double-check spelling if typing one manually.</small>
+      <small class="form-text text-muted d-block mb-2">Write the email body, then use the dropdown below to personalize it. Selecting a placeholder inserts a token like <code>{{investor_name}}</code> into the text, which is automatically replaced with the real value for each recipient when the email is sent. The placeholders on offer depend on the notification chosen above. Any token you type by hand that isn't recognized (e.g. a typo) is sent as plain text rather than being replaced, so double-check spelling if typing one manually. <strong>If you leave this empty, no email will be sent at all</strong> - it will not fall back to a default message.</small>
       <div class="mb-2" style="max-width: 320px;">
         <select id="custom_notification_placeholder_picker" class="form-control" data-notification-placeholders-target="placeholderSelect" data-action="change->notification-placeholders#insert">
           <option value="">+ Insert placeholder...</option>
@@ -61,7 +61,7 @@
     <div class="form-group">
       <%= form.label :whatsapp %>
       <%= form.text_area :whatsapp, class: "form-control"  %>
-      <small class="form-text text-muted">A short, plain-text version of this message sent over WhatsApp where it's enabled. Avoid the characters &amp; ^ # ` ~ - WhatsApp won't display them correctly.</small>
+      <small class="form-text text-muted">A short, plain-text version of this message sent over WhatsApp where it's enabled. Avoid the characters &amp; ^ # ` ~ - WhatsApp won't display them correctly. <strong>Leave this blank if you don't want a WhatsApp message sent at all</strong> - it will not fall back to the email body above.</small>
     </div>
 
     <% if %w[CapitalCall CapitalDistribution].include?(custom_notification.owner_type) || %w[CapitalCall CapitalDistribution].include?(custom_notification.for_type) %>

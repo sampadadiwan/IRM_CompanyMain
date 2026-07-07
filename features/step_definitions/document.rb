@@ -359,6 +359,46 @@ Then('the document notification placeholders are resolved correctly') do
   expect(body).to include("{{not_a_real_placeholder}}")
 end
 
+Given('there is a Custom Notification with commitment placeholders for the entity') do
+  @custom_notification = CustomNotification.create!(
+    entity: @entity,
+    owner: @entity,
+    for_type: "Send Document",
+    email_method: "send_document",
+    subject: "Commitment Document with Placeholders",
+    body: "Dear {{kyc_full_name}}, folio {{folio_id}}, amount {{committed_amount}} for {{document_name}}. Unknown: {{not_a_real_placeholder}}.",
+    enabled: true
+  )
+end
+
+When('the commitment document is sent using that Custom Notification') do
+  DocumentSender.send(@document, @user.id, @custom_notification.id)
+end
+
+Then('the document notification commitment placeholders are resolved correctly') do
+  recipient = @capital_commitment.investor.notification_users.first
+  open_email(recipient.email)
+  expect(current_email).not_to be_nil
+  body = current_email.body.to_s
+
+  # kyc_full_name/folio_id/committed_amount fall back to document.capital_commitment since
+  # this document's owner is the CapitalCommitment, not an InvestorKyc directly.
+  expect(body).to include(@capital_commitment.investor_kyc.full_name)
+  expect(body).not_to include("{{kyc_full_name}}")
+
+  expect(body).to include(@capital_commitment.folio_id)
+  expect(body).not_to include("{{folio_id}}")
+
+  expect(body).to include(@capital_commitment.committed_amount.format)
+  expect(body).not_to include("{{committed_amount}}")
+
+  expect(body).to include(@document.name)
+  expect(body).not_to include("{{document_name}}")
+
+  # Unknown placeholder preserved
+  expect(body).to include("{{not_a_real_placeholder}}")
+end
+
 Then('user sends a single document using that Custom Notification') do
   visit document_path(@document)
   click_on "Send Document"
@@ -485,6 +525,11 @@ end
 
 Given('the commitment has document {string} with file {string}') do |document_name, file_name|
   Document.create!(entity: @capital_commitment.entity, name: document_name, owner: @capital_commitment, folder: @capital_commitment.document_folder,
+  user: @user, file: File.new("public/sample_uploads/merge_test/#{file_name}", "r"))
+end
+
+Given('there is a document {string} owned by the commitment with file {string}') do |document_name, file_name|
+  @document = Document.create!(entity: @capital_commitment.entity, name: document_name, owner: @capital_commitment, folder: @capital_commitment.document_folder,
   user: @user, file: File.new("public/sample_uploads/merge_test/#{file_name}", "r"))
 end
 

@@ -42,6 +42,37 @@ module NotificationExtensions
       )
   end
 
+  # Gates the :email deliver_by itself (see BaseNotifier) so a blank-body custom notification
+  # never even enqueues the mailer job - there's nothing worth sending, and no default body to
+  # fall back to. True for every notifier that has no CustomNotification concept at all (most
+  # don't define `custom_notification` via `notification_methods`), or when no CustomNotification
+  # is configured (nil) - only an actually-resolved-but-blank body is skipped. A Trix rich-text
+  # body can save as "<div><br></div>" and still be a non-empty string, so a plain #blank? check
+  # on the raw HTML isn't enough.
+  def custom_notification_body_present?
+    return true unless respond_to?(:custom_notification)
+
+    cn = custom_notification
+    return true if cn.nil?
+
+    ActionView::Base.full_sanitizer.sanitize(cn.body.to_s).present?
+  end
+
+  # Gates the :whats_app deliver_by itself (see BaseNotifier) so it never even enqueues the
+  # delivery job unless there's an actual message to send. Unlike custom_notification_body_present?,
+  # this defaults to false (skip) when there's no CustomNotification concept at all or none is
+  # configured - WhatsApp has no hardcoded default message anywhere (every mailer has one; nothing
+  # sends WhatsApp content except CustomNotification#whatsapp), so "no CustomNotification" and "blank
+  # whatsapp field" both mean "nothing to send" here, not just the blank-field case.
+  def custom_notification_whatsapp_present?
+    return false unless respond_to?(:custom_notification)
+
+    cn = custom_notification
+    return false if cn.nil?
+
+    ActionView::Base.full_sanitizer.sanitize(cn.whatsapp.to_s).present?
+  end
+
   def model
     # The new way is to store the record in the event
     # The old way was to store the record in params

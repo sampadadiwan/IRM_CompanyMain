@@ -89,6 +89,8 @@ One notification template drives an individual personalised email to every recip
 
 The body supports standard HTML. For plain text use the rich-text editor; for advanced formatting paste HTML directly.
 
+> **An empty-looking body means no email is sent.** The Body field must have some content to save, but it's still possible to end up with a body that looks blank — for example, if you select all the text in the editor and delete it, an empty line can remain even though the field technically isn't empty. If that happens, **no email goes out for that notification at all** — it does not fall back to any generic message. Always check the **Preview** (see [Step 4](#step-4--send-the-notification)) before sending to real investors; if the previewed email looks empty, fix the body before sending.
+
 ### Available Variables (ERB mode only)
 
 When **Dynamic Template** is enabled, the body is evaluated as ERB in the mailer context. The following variables are available:
@@ -390,9 +392,9 @@ To avoid hitting email provider rate limits when sending to large numbers of inv
 
 ### WhatsApp
 
-If your entity has WhatsApp enabled and the investor's InvestorAccess has `whatsapp_enabled: true`, a WhatsApp message is also sent. Set the **WhatsApp** field on the notification to provide the message text (max 255 characters, no `&^#\`~` characters).
+If your entity has WhatsApp messaging enabled, and the investor has WhatsApp enabled on their access record, a WhatsApp message is also sent alongside the email. Set the **WhatsApp** field on the notification to provide the message text (max 255 characters; avoid the characters `&^#~` — WhatsApp won't display them correctly).
 
-If the WhatsApp field is blank, the **Subject** is used as the WhatsApp message fallback.
+**Leave the WhatsApp field blank if you don't want a WhatsApp message sent for this notification at all.** No WhatsApp message will go out for it — it will never fall back to the Subject or Body. Email and WhatsApp are configured, and sent, completely independently of each other.
 
 ---
 
@@ -468,3 +470,11 @@ With the default **Adhoc Notification** mode, yes — one email per commitment. 
 **Q: Does WhatsApp send even if email fails?**
 
 Yes, the two channels are independent. WhatsApp delivery does not depend on email delivery and vice versa.
+
+**Q: What happens if I leave the WhatsApp field blank?**
+
+No WhatsApp message is sent for that notification, for anyone. It will not fall back to using the Subject or Body as the WhatsApp text — leave it blank on purpose if you only want this notification to go out by email.
+
+**Q: I saved the notification but the email body looks empty — what happens?**
+
+No email is sent, for anyone, until the body actually has content. This can happen if the rich-text editor is left with just an empty line (it still technically counts as "not blank" and lets you save). Always check the **Preview** before sending — an empty-looking preview means the real send will be skipped entirely, with no error shown.

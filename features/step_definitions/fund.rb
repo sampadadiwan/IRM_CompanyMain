@@ -534,6 +534,22 @@ Given('there is an adhoc custom notification for the fund with subject {string}'
   )
 end
 
+# "<div><br></div>" is what the Trix editor saves when left empty - a non-empty string, so it
+# passes CustomNotification's body presence validation, but sanitizes down to nothing. This is
+# the email-side equivalent of the blank whatsapp field: NotificationExtensions#custom_notification_body_present?
+# should stop the :email deliver_by from ever enqueuing, rather than falling back to some default body.
+Given('there is an adhoc custom notification for the fund with a blank body and subject {string}') do |subject|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: "<div><br></div>",
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    enabled: true
+  )
+end
+
 # Body uses {{placeholder}} tokens resolved per-commitment by CapitalCommitmentMailer::PLACEHOLDERS
 Given('there is an adhoc custom notification for the fund with placeholders and subject {string}') do |subject|
   @custom_notification = CustomNotification.create!(
@@ -726,6 +742,20 @@ And('the first commitment has an investor kyc with PAN {string}') do |pan|
   cc.update!(investor_kyc_id: kyc.id)
 end
 
+# Links the first commitment to a freshly-created InvestorKyc with a distinct full_name/folio_id,
+# so DocumentMailer's kyc_full_name/folio_id/committed_amount placeholders (which fall back to
+# document.capital_commitment.investor_kyc when a document is owned by the commitment rather
+# than the KYC directly) resolve to real, assertable values.
+And('the first commitment has an investor kyc with full_name {string} and folio_id {string}') do |full_name, folio_id|
+  @capital_commitment = @fund.capital_commitments.order(:id).first
+  kyc = InvestorKyc.new(
+    investor: @capital_commitment.investor, entity: @fund.entity, verified: true,
+    completed_by_investor: true, submission_status: "verified", full_name: full_name
+  )
+  kyc.save(validate: false)
+  @capital_commitment.update!(investor_kyc_id: kyc.id, folio_id: folio_id)
+end
+
 # Uploads a real file directly on the CustomNotification itself (its own WithFolder :documents
 # association, distinct from attachment_names-resolved docs) — exercises the
 # @custom_notification.documents.each branch of ApplicationMailer#attach_custom_notification_documents
@@ -913,6 +943,17 @@ And('the second commitment investor\'s notification is recorded as skipped with 
     notification = Noticed::Notification.where(recipient: user).where.not(skip_reason: nil).order(created_at: :desc).first
     expect(notification).not_to be_nil, "No skipped Notification found for #{user.email}"
     expect(notification.skip_reason).to include(doc_name)
+  end
+end
+
+# Unlike the missing-attachment scenarios above (where only one commitment is affected), a
+# blank body applies to every recipient of the custom notification - so this checks all of them.
+Then('no commitment investor receives a notification email') do
+  @fund.capital_commitments.each do |cc|
+    cc.investor.notification_users(cc).each do |user|
+      open_email(user.email)
+      expect(current_email).to be_nil, "Unexpected email '#{current_email&.subject}' delivered to #{user.email}"
+    end
   end
 end
 

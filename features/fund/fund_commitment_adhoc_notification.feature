@@ -414,3 +414,14 @@ Feature: Fund Commitment Adhoc Notification
     When the adhoc notification is triggered for all commitments
     And the skipped notification report runs
     Then the entity's company admins receive a skipped notification report mentioning "Statement of Account"
+
+  Scenario: Adhoc notification with a blank body is never sent, with no fallback message
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with a blank body and subject "Statement Ready"
+    When the adhoc notification is triggered for all commitments
+    Then no commitment investor receives a notification email

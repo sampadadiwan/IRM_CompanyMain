@@ -12,9 +12,12 @@ module DeliveryMethods
 
       if whatsapp_enabled
 
+        # No fallback to notification.message here, by design - and no blank check needed either:
+        # the :whats_app deliver_by's config.if (NotificationExtensions#custom_notification_whatsapp_present?)
+        # already guarantees this only runs with a populated whatsapp field, since WhatsApp has no
+        # default message to fall back to in the first place.
         # Ensure that the message is sanitized to prevent XSS attacks
-        message = notification.custom_notification&.whatsapp || notification.message
-        message = ActionView::Base.full_sanitizer.sanitize(message)
+        message = ActionView::Base.full_sanitizer.sanitize(notification.custom_notification.whatsapp)
 
         Rails.logger.info "Sending WhatsApp to #{notification.recipient.phone} with message #{message} from #{entity.name}"
 
