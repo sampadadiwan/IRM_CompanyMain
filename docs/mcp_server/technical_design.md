@@ -91,6 +91,7 @@ Single endpoint, no persistent connection. Stateless. Simpler to deploy behind l
 config/
   initializers/
     doorkeeper.rb                        # OAuth 2.1 provider config (Doorkeeper) — PKCE enforced
+    doorkeeper_openid_connect.rb         # OpenID Connect config — Dynamic Client Registration (RFC 7591) enabled here
   routes/
     ai.rb                               # post '/mcp' route
   routes.rb                             # use_doorkeeper, well-known metadata routes
@@ -448,26 +449,35 @@ POST /oauth/revoke       → revoke a token
 
 **MCP OAuth discovery endpoints (RFC 8414 + RFC 9728):**
 ```
-GET /.well-known/oauth-authorization-server  → OAuth server metadata (issuer, endpoints, PKCE support)
+GET /.well-known/oauth-authorization-server  → OAuth server metadata (issuer, endpoints, PKCE, registration)
 GET /.well-known/oauth-protected-resource    → Protected resource metadata (MCP endpoint URL)
 ```
 These are required by MCP clients (Claude.ai, ChatGPT) to auto-discover OAuth endpoints.
 
-**Complete auth flow (verified working with Claude.ai):**
+**Dynamic Client Registration (RFC 7591):**
+
+AI clients auto-register as OAuth applications via the `registration_endpoint` advertised in `/.well-known/oauth-authorization-server`. This eliminates the need for users to manually enter Client ID / Secret — they only need the MCP URL. Enabled via `dynamic_client_registration true` in the `doorkeeper-openid_connect` gem configuration. The gem auto-mounts `POST /oauth/registration` and includes `registration_endpoint` in the metadata response.
+
+```
+POST /oauth/registration  → AI client self-registers, receives client_id automatically
+```
+
+**Complete auth flow (verified working with Claude.ai on 2026-07-06):**
 ```
 1. AI Client → POST /mcp (no token) → 401 + WWW-Authenticate: Bearer header
 2. AI Client → GET /.well-known/oauth-protected-resource → discovers MCP resource + auth server URL
-3. AI Client → GET /.well-known/oauth-authorization-server → discovers authorize/token endpoints + PKCE support
-4. AI Client → GET /oauth/authorize?client_id=...&redirect_uri=...&response_type=code&code_challenge=...&code_challenge_method=S256
+3. AI Client → GET /.well-known/oauth-authorization-server → discovers authorize/token/registration endpoints + PKCE support
+4. AI Client → POST /oauth/registration → auto-registers as OAuth application, receives client_id
+5. AI Client → GET /oauth/authorize?client_id=...&redirect_uri=...&response_type=code&code_challenge=...&code_challenge_method=S256
    → Doorkeeper's resource_owner_authenticator runs
    → User not logged in → save return URL in cookie → redirect to Devise login
-5. User logs in via Devise → after_sign_in_path_for reads cookie → redirects back to /oauth/authorize
-6. Doorkeeper shows consent screen → user clicks "Authorize"
-7. Redirect to AI client callback with auth code
-8. AI Client → POST /oauth/token (exchanges code + code_verifier for access_token)
-9. AI Client → POST /mcp with Authorization: Bearer <token>
-   → McpAuthService validates token via Doorkeeper → returns { user:, entity: }
-   → Tool executes with user-scoped data
+6. User logs in via Devise → after_sign_in_path_for reads cookie → redirects back to /oauth/authorize
+7. Doorkeeper shows consent screen → user clicks "Authorize"
+8. Redirect to AI client callback with auth code
+9. AI Client → POST /oauth/token (exchanges code + code_verifier for access_token)
+10. AI Client → POST /mcp with Authorization: Bearer <token>
+    → McpAuthService validates token via Doorkeeper → returns { user:, entity: }
+    → Tool executes with user-scoped data
 ```
 
 **Critical implementation detail — cookie-based OAuth return URL:**
@@ -514,15 +524,12 @@ end
 
 1. Go to Claude.ai → Settings → Customize → Connectors → Add custom connector
 2. Enter the MCP server URL: `https://<your-domain>/mcp`
-3. Claude.ai auto-discovers OAuth endpoints via `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`
-4. On first use, Claude opens a browser popup for CapHive login → user authorizes → token stored automatically
-5. Subsequent conversations reuse the stored token
+3. Claude.ai auto-discovers OAuth endpoints via `/.well-known` metadata
+4. Claude.ai auto-registers as an OAuth application via Dynamic Client Registration (RFC 7591) — no Client ID or Secret needed
+5. On first use, Claude opens a browser popup for CapHive login → user authorizes → token stored automatically
+6. Subsequent conversations reuse the stored token
 
-**Doorkeeper OAuth Application setup:**
-- Name: Claude.ai
-- Redirect URI: `https://claude.ai/api/mcp/auth_callback`
-- Scopes: read
-- Confidential: false (public client — Claude.ai uses PKCE, no client secret)
+**No manual OAuth Application setup required** — Claude.ai registers itself automatically via `POST /oauth/registration`. The Doorkeeper application is created with `client_name: "Claude"`, `redirect_uri: "https://claude.ai/api/mcp/auth_callback"`, `confidential: false`.
 
 ### Claude Desktop / Claude Code
 

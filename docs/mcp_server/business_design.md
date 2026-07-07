@@ -66,7 +66,7 @@ MCP is a **universal standard for connecting AI models to data sources**. Think 
 ### Fund Manager using ChatGPT
 > "As a fund manager, I want to connect my ChatGPT account to CapHive so I can ask questions about my funds in natural language without switching to the CapHive dashboard."
 
-**Flow:** ChatGPT Settings → Connectors → Add CapHive MCP → Log in to CapHive (OAuth) → Authorize access → Start asking questions.
+**Flow:** ChatGPT Settings → Connectors → Paste CapHive MCP URL → Log in to CapHive → Authorize → Start asking questions. No Client ID or Secret needed — the AI client registers itself automatically via Dynamic Client Registration (RFC 7591).
 
 ### LP using Claude
 > "As an LP, I want to use Claude Desktop to analyze my portfolio commitments across multiple funds, cross-referencing with my own spreadsheets."
@@ -173,7 +173,7 @@ Both serve different user needs. The FM Assistant is our product differentiator.
 - **Two-level entity governance:**
   - **Level 1 — CapHive Admin (billing gate):** MCP must be enabled per-entity by a CapHive admin (`super`/`support` role) via the admin panel (`/admin/entities`). This is a chargeable feature — entities without it cannot see or use MCP at all.
   - **Level 2 — Entity Admin (self-serve config):** Once CapHive enables MCP, the entity's own admin (`company_admin` role) can toggle it on/off, choose which roles (Fund Managers, LPs) have access, and restrict which AI clients are allowed.
-- **Authentication:** OAuth 2.1 Authorization Code flow with PKCE — users log in via CapHive's existing Devise authentication and authorize the AI client to access their data. AI clients auto-discover OAuth endpoints via standard `/.well-known/` metadata URLs (RFC 8414 + RFC 9728). See `docs/mcp_server/how_it_works.md` for a detailed walkthrough of the complete auth flow.
+- **Authentication:** OAuth 2.1 Authorization Code flow with PKCE — users log in via CapHive's existing Devise authentication and authorize the AI client to access their data. AI clients auto-discover OAuth endpoints via standard `/.well-known/` metadata URLs (RFC 8414 + RFC 9728) and self-register via Dynamic Client Registration (RFC 7591) — users only need to paste the MCP URL, no Client ID or Secret required.
 - **Authorization:** Same Pundit policies as the web UI — users only see data their role permits
 - **Entity scoping:** Every query is scoped to the user's entity — no cross-tenant data leakage
 - **Read-only:** Initial release is read-only (no creates, updates, or deletes via MCP)
@@ -211,6 +211,12 @@ Both serve different user needs. The FM Assistant is our product differentiator.
 - Align with richer RubyLLM tool descriptions used by embedded assistants
 - Consider compound tools for common multi-step queries
 
+### Phase 3.6: Dynamic Client Registration — DONE
+- Enabled RFC 7591 Dynamic Client Registration via `doorkeeper-openid_connect` gem
+- AI clients (Claude.ai, ChatGPT, Gemini) auto-register as OAuth applications — no manual Client ID/Secret entry
+- End-user experience simplified to: paste MCP URL → log in → connected
+- Verified working with Claude.ai on 2026-07-06
+
 ### Phase 4: Production Readiness (1 week)
 - Disable `reuse_access_token` and reduce token lifetime to 7 days
 - OAuth token management UI (view/revoke active tokens)
@@ -234,6 +240,7 @@ Both serve different user needs. The FM Assistant is our product differentiator.
 3. **OAuth scopes** — Single "read" scope. Simpler, sufficient for read-only access.
 4. **Hosting** — Same Rails app, mounted at `POST /mcp`. No separate service.
 5. **OAuth Client ID model** — One Client ID per AI client (Claude.ai, ChatGPT, Gemini), shared across all tenants. Tenant isolation via token + entity governance. See `docs/mcp_server/oauth_multi_tenancy_design.md` for detailed rationale.
+6. **Dynamic Client Registration** — AI clients self-register via RFC 7591, eliminating manual OAuth app creation per client. Users only need the MCP URL to connect.
 
 ---
 
