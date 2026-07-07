@@ -1312,14 +1312,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_07_100000) do
     t.datetime "created_at", null: false
     t.string "currency", limit: 10
     t.bigint "data_room_folder_id"
+    t.json "deal_investor_status"
     t.datetime "deleted_at"
     t.bigint "document_folder_id"
+    t.boolean "enable_notifications", default: true, null: false
     t.date "end_date"
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
     t.json "grid_columns"
-    t.json "deal_investor_status"
-    t.boolean "enable_notifications", default: true, null: false
     t.integer "impressions_count", default: 0
     t.json "json_fields"
     t.string "name"
@@ -2905,7 +2905,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_07_100000) do
     t.index ["entity_id"], name: "index_noticed_notifications_on_entity_id"
     t.index ["event_id"], name: "index_noticed_notifications_on_event_id"
     t.index ["recipient_type", "recipient_id"], name: "index_noticed_notifications_on_recipient"
-    t.index ["skip_reason", "skip_reported_at"], name: "index_noticed_notifications_on_skip_reason_and_skip_reported_at"
+    t.index ["skip_reason", "skip_reported_at"], name: "idx_on_skip_reason_skip_reported_at_d6fdbc6bb6"
     t.index ["tracking_id"], name: "index_noticed_notifications_on_tracking_id", unique: true
   end
 
