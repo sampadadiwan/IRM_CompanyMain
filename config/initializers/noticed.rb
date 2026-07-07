@@ -78,7 +78,7 @@ Rails.application.config.to_prepare do
 
   Noticed::Notification.class_eval do
     def self.ransackable_attributes(_auth_object = nil)
-      %w[created_at user_email email_sent read_at whatsapp whatsapp_sent subject].sort
+      %w[created_at user_email email_sent read_at whatsapp whatsapp_sent subject skip_reason skip_reported_at].sort
     end
 
     def self.ransackable_associations(_auth_object = nil)

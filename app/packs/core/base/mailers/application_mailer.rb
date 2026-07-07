@@ -20,6 +20,17 @@ class ApplicationMailer < ActionMailer::Base
 
   after_deliver :mark_delivered
   def mark_delivered
+    # after_deliver callbacks run unconditionally — ActionMailer::MessageDelivery#deliver_now/
+    # deliver_now! always wrap delivery in run_callbacks(:deliver), even when the mailer action
+    # never called mail(...) (e.g. record_notification_skip returns early without sending). In
+    # that case @_message is a NullMail and @_mail_was_called is false; the bare `mail` call below
+    # would then re-invoke the `mail(headers = {})` DSL method for the first time with no headers,
+    # which tries to render a template using the default mailer/action path (e.g.
+    # "capital_commitment_mailer/adhoc_notification" instead of the actual
+    # "application_mailer/adhoc_notification" template) and raises ActionView::MissingTemplate.
+    # There's nothing to record for a message that was never built, so bail out first.
+    return unless @_mail_was_called
+
     begin
       # Lets update the notification to say we have sent the email with details
       # This is because if we have attachments, then we only want to body which is in mail.parts[0]
@@ -165,25 +176,93 @@ class ApplicationMailer < ActionMailer::Base
 
     if @custom_notification && @custom_notification.attachment_names.present? && custom_notification_documents_owner.respond_to?(:documents)
       latest_doc_only = @custom_notification.latest_doc_only
-      # CSV.parse_line so a name containing a literal comma (e.g. a date range like
-      # "01 July,2025 to 31 December,2025") can be protected by wrapping it in quotes;
-      # unquoted entries still split on comma exactly like before. Falls back to a plain
-      # comma split if the value has unbalanced quotes, so a typo can't silently drop all attachments.
-      names = begin
-        CSV.parse_line(@custom_notification.attachment_names).to_a
-      rescue CSV::MalformedCSVError
-        @custom_notification.attachment_names.split(',')
-      end
-      names.compact.map(&:strip).compact_blank.each do |name|
-        documents = if name.include?('*')
-                      custom_notification_documents_owner.documents.where("name like ? ESCAPE ?", wildcard_to_like(name), '\\')
-                    else
-                      custom_notification_documents_owner.documents.where(name: name)
-                    end.order(created_at: :desc)
+      attachment_name_list.each do |name|
+        documents = documents_matching_attachment_name(name)
         documents = documents.limit(1) if latest_doc_only
         documents.each { |document| pw_protect_attach_file(document, @custom_notification) }
       end
     end
+  end
+
+  # @custom_notification.attachment_names, parsed into individual names. CSV.parse_line so a
+  # name containing a literal comma (e.g. a date range like "01 July,2025 to 31 December,2025")
+  # can be protected by wrapping it in quotes; unquoted entries still split on comma exactly
+  # like before. Falls back to a plain comma split if the value has unbalanced quotes, so a
+  # typo can't silently drop all attachments.
+  def attachment_name_list
+    return [] if @custom_notification&.attachment_names.blank?
+
+    names = begin
+      CSV.parse_line(@custom_notification.attachment_names).to_a
+    rescue CSV::MalformedCSVError
+      @custom_notification.attachment_names.split(',')
+    end
+    names.compact.map(&:strip).compact_blank
+  end
+
+  # The documents matching one attachment_names entry on custom_notification_documents_owner —
+  # shared by attach_custom_notification_documents and missing_mandatory_attachment_names so
+  # both use the exact same wildcard-vs-exact resolution rule.
+  #
+  # exclude_generated_unapproved drops a generated-but-unapproved document from the match
+  # entirely (regardless of attachment_mandatory) - we never send those. That also means an
+  # attachment_names entry whose only match is generated-but-unapproved is treated as absent,
+  # so it can trigger missing_mandatory_attachment_names just like a genuinely missing document.
+  def documents_matching_attachment_name(name)
+    documents = if name.include?('*')
+                  custom_notification_documents_owner.documents.where("name like ? ESCAPE ?", wildcard_to_like(name), '\\')
+                else
+                  custom_notification_documents_owner.documents.where(name: name)
+                end
+    documents.exclude_generated_unapproved.order(created_at: :desc)
+  end
+
+  # attachment_names entries that resolve to zero documents for the current recipient's owner —
+  # always empty unless @custom_notification.attachment_mandatory? is on, since a missing name
+  # is otherwise just silently skipped (see attach_custom_notification_documents above).
+  def missing_mandatory_attachment_names
+    return [] unless @custom_notification&.attachment_mandatory?
+    return [] if attachment_name_list.blank? || !custom_notification_documents_owner.respond_to?(:documents)
+
+    attachment_name_list.reject { |name| documents_matching_attachment_name(name).exists? }
+  end
+
+  # Marks this recipient's Noticed::Notification as skipped instead of sending it, when
+  # attachment_mandatory is on and a required document is missing. Guarded on @notification
+  # being present — that's only ever true for real notifier-driven sends (see
+  # custom_notification_documents_owner above); previews build no Notification and should keep
+  # rendering normally rather than silently going blank. entity_id is set explicitly here
+  # because mark_delivered's after_deliver callback (which normally sets it) never fires for a
+  # send we're not making.
+  #
+  # Schedules SkippedNotificationReportJob itself (not cron-scheduled) so the report only ever
+  # runs in response to an actual skip, never on a blind timer. The delay gives sibling
+  # recipient jobs from the same trigger a chance to finish first, so they're more likely to be
+  # swept into one report instead of several.
+  def record_notification_skip(missing_names)
+    return unless @notification
+
+    @notification.update_columns(
+      skip_reason: "Missing required attachment(s): #{missing_names.join(', ')}",
+      entity_id: @entity&.id
+    )
+    schedule_skipped_notification_report(@custom_notification.id)
+  rescue StandardError => e
+    Rails.logger.error("record_notification_skip failed for notification #{@notification&.id}: #{e.message}")
+  end
+
+  # A burst of skips from the same trigger (e.g. 12 commitments missing the same document) would
+  # otherwise enqueue SkippedNotificationReportJob 12 times. Rails.cache.write(unless_exist: true)
+  # only succeeds for whichever caller gets there first within the window — that caller schedules
+  # the one job; every other skip inside the window is a no-op here. Scoped per custom_notification_id
+  # (not a single global key) so a burst on one notification template doesn't debounce-block the
+  # report for an unrelated one skipped in the same window. (In test, cache_store is :null_store,
+  # which never remembers a key, so every call there "claims" — no debounce in tests, which is
+  # fine since each scenario only produces one skip.)
+  def schedule_skipped_notification_report(custom_notification_id)
+    cache_key = "skipped_notification_report:scheduled:#{custom_notification_id}"
+    claimed = Rails.cache.write(cache_key, true, unless_exist: true, expires_in: 5.minutes)
+    SkippedNotificationReportJob.set(wait: 5.minutes).perform_later(custom_notification_id) if claimed
   end
 
   # The resource whose `documents` association should be searched when resolving
@@ -222,6 +301,16 @@ class ApplicationMailer < ActionMailer::Base
     # Change the subject if we have a custom notification
     if @custom_notification
       subject = @custom_notification.subject
+
+      missing = missing_mandatory_attachment_names
+      # Only bail out for a real notifier-driven send that we can actually record as skipped
+      # (@notification present). Previews build no Notification — record_notification_skip
+      # would be a no-op there anyway, so let previews render normally instead of going blank.
+      if missing.present? && @notification
+        record_notification_skip(missing)
+        return
+      end
+
       attach_custom_notification_documents
     end
     # send the email

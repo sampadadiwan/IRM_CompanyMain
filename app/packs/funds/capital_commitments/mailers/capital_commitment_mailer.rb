@@ -25,11 +25,14 @@ class CapitalCommitmentMailer < ApplicationMailer
   # We can add more specific notification methods here if needed
   # For now, adhoc_notification from ApplicationMailer is used by FundCommitmentNotifier
 
+  private
+
+  # private, like custom_notification_documents_owner below: helper_method exposes it to the
+  # view via #send regardless of visibility, and public would leak it into
+  # CustomNotification#email_methods's instance_methods(false) scan as a bogus dropdown entry.
   def adhoc_notification_link
     { label: 'View Commitment', url: capital_commitment_url(@capital_commitment, subdomain: @capital_commitment.entity.sub_domain) }
   end
-
-  private
 
   # private: this is an internal resolver for attach_custom_notification_documents, not a
   # mailer action — public would leak it into CustomNotification#email_methods (which reads

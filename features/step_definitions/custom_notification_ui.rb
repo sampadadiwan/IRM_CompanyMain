@@ -57,3 +57,15 @@ end
 Then('I should not see a warning about overriding the fund default') do
   expect(page).not_to have_content("this fund already has a default notification for this email")
 end
+
+# Latest Match Only / Attachment Mandatory only make sense once attachment_names has a value —
+# see the conditional-visibility controller wired up in custom_notifications/_form.html.erb
+Then('the attachment checkboxes should be hidden') do
+  expect(page).not_to have_field("custom_notification_latest_doc_only")
+  expect(page).not_to have_field("custom_notification_attachment_mandatory")
+end
+
+Then('the attachment checkboxes should be visible') do
+  expect(page).to have_field("custom_notification_latest_doc_only", wait: 5)
+  expect(page).to have_field("custom_notification_attachment_mandatory")
+end

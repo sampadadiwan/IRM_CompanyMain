@@ -125,6 +125,14 @@ class InvestorPolicy < ApplicationPolicy
     user.enable_investors && company_admin_or_emp_crud?(user, Investor.new, :create)
   end
 
+  # Only company_admin can assign / remove a workflow template on an investor,
+  # and only when the entity has workflow_templates enabled.
+  # Mirrors FolderPolicy#assign_workflow? / InvestorKycPolicy#assign_workflow? verbatim —
+  # workflow assignment permission is intentionally the same across every workflowable type.
+  def assign_workflow?
+    user.entity&.permissions&.enable_workflow_templates? && user.company_admin? && belongs_to_entity?(user, record)
+  end
+
   # Helper to check for specific employee permissions or support role.
   # Checks both extended permissions (e.g., :investor_read) and standard permissions (e.g., :read).
   def specific_permissions?(perm = nil)

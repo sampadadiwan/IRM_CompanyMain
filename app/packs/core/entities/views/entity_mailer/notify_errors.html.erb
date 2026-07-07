@@ -2,7 +2,10 @@
     The following errors were detected:
     <ol>
         <% @error_msg.each do |k, v| %>
-            <li><%= k.to_s.humanize %>: <%= v %></li>            
+            <li><%= k.to_s.humanize %>: <%= v %></li>
         <% end %>
     </ol>
+    <% if @filter_url.present? %>
+        <p><%= link_to (@filter_label.presence || "View these in the app"), @filter_url %></p>
+    <% end %>
 </div>

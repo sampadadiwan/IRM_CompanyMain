@@ -44,6 +44,13 @@ class ImportKpiWorkbookJob < ApplicationJob
 
       # Kick of percentage change job
       KpiPercentageChangeJob.perform_later(portfolio_company.id, user.id)
+
+      # Must run after extract_kpis: launch_portfolio_company_workflow checks kpis.none?
+      # to decide whether anything was actually imported, so the Kpi rows need to exist first.
+      # Guarded on error_msg.blank? — kpis.none? alone isn't enough to detect a failed import,
+      # since a KpiReport that already has KPIs from a prior successful upload would still
+      # pass kpis.none? even if THIS extraction attempt failed and wrote nothing new.
+      kpi_report.launch_portfolio_company_workflow(user) if @kpi_reader.error_msg.blank?
     end
   end
 end

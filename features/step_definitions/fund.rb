@@ -658,6 +658,23 @@ Given('there is an adhoc custom notification for the fund with subject {string} 
   )
 end
 
+# Same but with an explicit attachment_mandatory, so a scenario can verify a recipient
+# missing a required document is skipped instead of receiving the email without it —
+# see ApplicationMailer#missing_mandatory_attachment_names / #record_notification_skip.
+Given('there is an adhoc custom notification for the fund with subject {string} and attachment_names {string} and attachment_mandatory {string}') do |subject, attachment_names, attachment_mandatory|
+  @custom_notification = CustomNotification.create!(
+    entity: @fund.entity,
+    owner: @fund,
+    subject: subject,
+    body: Faker::Lorem.paragraph,
+    whatsapp: Faker::Lorem.sentence,
+    email_method: "adhoc_notification",
+    attachment_names: attachment_names.presence,
+    attachment_mandatory: attachment_mandatory == "true",
+    enabled: true
+  )
+end
+
 # Links the fund's first two capital commitments (regardless of investor) to a single,
 # freshly-created InvestorKyc — mirrors the existing "The multiple commitments have the
 # same investor kycs linked" step (features/step_definitions/capital_commitment.rb:323),
@@ -736,6 +753,40 @@ And('the first commitment has document {string} with file {string}') do |doc_nam
   )
 end
 
+# Same as "the first commitment has document ..." but marks the document as generated
+# (owner_tag: "Generated") and approved — proves an approved generated document still attaches
+# normally, unlike its unapproved counterpart below. See Document#exclude_generated_unapproved.
+And('the first commitment has a generated document {string} with file {string} that is approved') do |doc_name, file_name|
+  cc = @fund.capital_commitments.order(:id).first
+  Document.create!(
+    entity: cc.entity,
+    name: doc_name,
+    owner: cc,
+    folder: cc.document_folder,
+    user: @user,
+    owner_tag: "Generated",
+    approved: true,
+    file: File.new("public/sample_uploads/#{file_name}", "r")
+  )
+end
+
+# Same as above but on the second commitment and left unapproved — proves
+# documents_matching_attachment_name treats a generated-but-unapproved document as absent, so
+# it can trigger missing_mandatory_attachment_names exactly like a genuinely missing document.
+And('the second commitment has a generated document {string} with file {string} that is not approved') do |doc_name, file_name|
+  cc = @fund.capital_commitments.order(:id).second
+  Document.create!(
+    entity: cc.entity,
+    name: doc_name,
+    owner: cc,
+    folder: cc.document_folder,
+    user: @user,
+    owner_tag: "Generated",
+    approved: false,
+    file: File.new("public/sample_uploads/#{file_name}", "r")
+  )
+end
+
 # Same as above but backdates created_at, so a scenario can deterministically control which of
 # several matching documents is "the newest" (latest_doc_only picks by created_at desc)
 And('the first commitment has document {string} with file {string} created {int} days ago') do |doc_name, file_name, days|
@@ -789,6 +840,21 @@ When('the adhoc notification is triggered for the first commitment only') do
   @fund.adhoc_notification(@custom_notification.id, commitment_ids: [first_cc.id])
 end
 
+# Same as "for all commitments" but threads @user (the company_admin created via "there is a
+# user ...") through as triggered_by_user_id — proves SkippedNotificationReportJob emails this
+# specific admin instead of falling back to the entity's company admins.
+When('the adhoc notification is triggered by the admin for all commitments') do
+  @fund.adhoc_notification(@custom_notification.id, triggered_by_user_id: @user.id)
+end
+
+# Runs the report inline, scoped to the scenario's @custom_notification — mirrors how
+# ApplicationMailer#record_notification_skip schedules it for real (Cucumber's :inline ActiveJob
+# adapter already runs every enqueued job synchronously, so this just invokes the job directly
+# like any other step) — see SkippedNotificationReportJob.
+When('the skipped notification report runs') do
+  SkippedNotificationReportJob.new.perform(@custom_notification.id)
+end
+
 # Trigger with no investor_kyc_ids → nil → FundNotificationJob (for an "adhoc_kyc_notification"
 # email_method) sends to every unique investor_kyc linked to the fund
 When('the adhoc notification is triggered for all investor kycs') do
@@ -837,6 +903,38 @@ And('the second commitment investor does not receive a notification email') do
     puts "## Checking no email for #{user.email}: #{current_email&.subject.inspect}"
     expect(current_email).to be_nil, "Unexpected email '#{current_email&.subject}' delivered to #{user.email}"
   end
+end
+
+# Proves ApplicationMailer#record_notification_skip actually marked the Noticed::Notification
+# for the second commitment's recipient(s), rather than just silently dropping the send.
+And('the second commitment investor\'s notification is recorded as skipped with a reason mentioning {string}') do |doc_name|
+  second_cc = @fund.capital_commitments.order(:id).second
+  second_cc.investor.notification_users(second_cc).each do |user|
+    notification = Noticed::Notification.where(recipient: user).where.not(skip_reason: nil).order(created_at: :desc).first
+    expect(notification).not_to be_nil, "No skipped Notification found for #{user.email}"
+    expect(notification.skip_reason).to include(doc_name)
+  end
+end
+
+# Proves SkippedNotificationReportJob emailed the triggering admin (@user, set via
+# "the adhoc notification is triggered by the admin for all commitments") a summary
+# naming the skipped investor and the missing document, with a working link back into the
+# app pre-filtered to the skipped notifications (SkippedNotificationReportJob#skipped_notifications_url,
+# which relies on Noticed::Notification's skip_reason ransackable_attribute — config/initializers/noticed.rb).
+Then('the triggering admin receives a skipped notification report mentioning {string}') do |doc_name|
+  open_email(@user.email)
+  expect(current_email).not_to be_nil, "No skipped-notification report delivered to #{@user.email}"
+  expect(current_email.body.to_s).to include(doc_name)
+  expect(current_email.body.to_s).to include("skip_reason_not_null")
+end
+
+# Fallback counterpart — no triggered_by_user_id was set, so the report should go to every
+# company_admin of the fund's entity instead (here, just @user, who has that role).
+Then('the entity\'s company admins receive a skipped notification report mentioning {string}') do |doc_name|
+  open_email(@user.email)
+  expect(current_email).not_to be_nil, "No skipped-notification report delivered to company admin #{@user.email}"
+  expect(current_email.body.to_s).to include(doc_name)
+  expect(current_email.body.to_s).to include("skip_reason_not_null")
 end
 
 # The email to each commitment investor should have the named document attached

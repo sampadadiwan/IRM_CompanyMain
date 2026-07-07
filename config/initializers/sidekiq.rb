@@ -34,6 +34,9 @@ Sidekiq.configure_server do |config|
     Sidekiq::Cron::Job.create(name: 'S3CheckJob', cron: 'every 1 hour', class: 'S3CheckJob') if Rails.env.production?
     # Cleanup the old logs for ESign
     Sidekiq::Cron::Job.create(name: 'EsignLogCleanupJob', cron: '59 23 * * 0', class: 'EsignLogCleanupJob')
+    # SkippedNotificationReportJob is NOT cron-scheduled — ApplicationMailer#record_notification_skip
+    # enqueues it directly (with a delay) the moment a recipient is actually skipped, so it never
+    # runs on a timer when nothing happened. See that method for details.
 
     if Rails.env.production?
       # Snapshot the funds at the end of every quarter March, June, September and December

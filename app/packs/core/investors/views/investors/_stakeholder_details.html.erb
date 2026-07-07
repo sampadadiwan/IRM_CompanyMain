@@ -42,6 +42,8 @@
       </a>
     <% end %>
 
+    <%= render "investors/workflow_nav_link", investor: investor %>
+
   </nav>
 
   <div class="tab-content" data-controller="datatable">
@@ -161,6 +163,8 @@
           </div>
         </div>
       <% end %>
+
+      <%= render "investors/workflow_tab_pane", investor: investor %>
 
   </div>
 </div>

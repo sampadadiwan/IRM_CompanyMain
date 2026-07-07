@@ -104,6 +104,12 @@ class Document < ApplicationRecord
   scope :generated, -> { where(owner_tag: "Generated") }
   scope :not_generated, -> { where(from_template_id: nil) }
 
+  # A generated (owner_tag == "Generated") document must be approved before it's usable
+  # elsewhere (e.g. attached to an email) - anything not generated is unrestricted.
+  # Written as an explicit OR (not `.generated.approved` + `.not_generated`) so it can be
+  # applied as a single filter on top of an already-scoped/ordered relation.
+  scope :exclude_generated_unapproved, -> { where("owner_tag != ? OR owner_tag IS NULL OR approved = ?", "Generated", true) }
+
   # Find the documents for capital_remittances for a given capital_call_id
   ransacker :capital_call_id do
     Arel.sql <<~SQL.squish

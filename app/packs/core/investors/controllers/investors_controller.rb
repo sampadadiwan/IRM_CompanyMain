@@ -1,6 +1,11 @@
 class InvestorsController < ApplicationController
+  # Populates @workflowable (+ gating/pending-step ivars) for the workflow tab on #show.
+  # Must be declared after set_investor so @investor already exists when it runs.
+  include HasWorkflowable
+
   helper InvestorAnalyticsHelper
   before_action :set_investor, only: %w[show update destroy edit dashboard generate_reports kpi_data_preview portfolio_investments_report generate_agent_charts portfolio_analytics]
+  before_action :set_workflowable, only: [:show]
   after_action :verify_authorized, except: %i[merge portfolio_investments_report_all]
 
   # GET /investors or /investors.json

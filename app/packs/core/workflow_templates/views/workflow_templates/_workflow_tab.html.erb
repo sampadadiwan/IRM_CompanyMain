@@ -1,9 +1,15 @@
 <%# Workflow tab panel — usable inside any Workflowable object's details view.
     Requires a `workflowable:` local (the object itself, e.g. a Folder, InvestorKyc,
-    CapitalCommitment, CapitalCall, or Approval). %>
+    CapitalCommitment, CapitalCall, Approval, or Investor). %>
 <% active_instance = workflowable.workflow_instances.instance_active.first %>
-<%# Only offer templates scoped to this object's type (or unscoped) so the wrong type cannot be launched here %>
-<% available_templates = WorkflowTemplate.for_workflowable_type(workflowable.class.name).where(entity_id: workflowable.entity_id).order(:name) %>
+<%# Only offer templates scoped to this object's type (or unscoped), and further only those
+    eligible_for? this exact record — matters when one workflowable_type covers more than one
+    sub-audience (e.g. Investor: regular investors vs. portfolio companies), so the wrong
+    sub-audience's template cannot be launched here even though the type matches. %>
+<% available_templates = WorkflowTemplate.for_workflowable_type(workflowable.class.name)
+                                          .where(entity_id: workflowable.entity_id)
+                                          .order(:name)
+                                          .select { |t| t.eligible_for?(workflowable) } %>
 <% past_instances = workflowable.workflow_instances.where.not(status: :active).order(created_at: :desc).limit(5) %>
 <div class="p-3">
 

@@ -1,8 +1,11 @@
 require 'csv'
 
 class WorkflowInstancesController < ApplicationController
-  # Whitelist prevents arbitrary constant injection via workflowable_type param
-  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall Approval].freeze
+  # Whitelist prevents arbitrary constant injection via workflowable_type param.
+  # Kept in sync with WorkflowTemplate::WORKFLOWABLE_TYPE_OPTIONS by convention —
+  # this list is deliberately separate (not a reference to the constant) so a
+  # security review of this controller doesn't need to trust another file's contents.
+  ALLOWED_WORKFLOWABLE_TYPES = %w[Folder InvestorKyc CapitalCommitment CapitalCall Approval Investor].freeze
 
   before_action :set_instance, only: %i[show advance reset archive send_reminder export_audit_trail]
 
@@ -29,6 +32,11 @@ class WorkflowInstancesController < ApplicationController
       if template.workflowable_type.present? && template.workflowable_type != workflowable.class.name
         redirect_to back_url(workflowable),
                     alert: "Template '#{template.name}' can only be used with #{template.workflowable_type} objects."
+        return
+      end
+      unless template.eligible_for?(workflowable)
+        redirect_to back_url(workflowable),
+                    alert: "Template '#{template.name}' is not applicable to this record."
         return
       end
       workflowable.workflow_assignment&.destroy

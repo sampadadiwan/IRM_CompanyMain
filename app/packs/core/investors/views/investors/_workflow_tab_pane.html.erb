@@ -1,0 +1,8 @@
+<%# Workflow tab pane — company_admin only, same gating as InvestorKyc's workflow tab.
+    Shared by _portfolio_company_details.html.erb and _stakeholder_details.html.erb so the
+    gating/markup can't drift between the two. Requires an `investor:` local. %>
+<% if policy(investor).assign_workflow? %>
+  <div id="workflow-tab" class="tab-pane fade">
+    <%= render "workflow_templates/workflow_tab", workflowable: investor %>
+  </div>
+<% end %>

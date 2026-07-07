@@ -1,3 +1,5 @@
+require_relative "support/workflow_seed_helpers"
+
 namespace :workflow_seeds do
   desc <<~DESC
     Seed meaningful workflow templates for Folder, InvestorKyc, CapitalCall,
@@ -14,17 +16,8 @@ namespace :workflow_seeds do
     entity_id = args[:entity_id].to_i
     abort "Usage: rake 'workflow_seeds:seed[ENTITY_ID]'" if entity_id.zero?
 
-    entity = Entity.find_by(id: entity_id) || abort("Entity #{entity_id} not found")
-    log    = ->(msg) { puts "[workflow_seeds] #{msg}" }
-
-    entity.permissions.set(:enable_workflow_templates)
-    entity.save
-
-    # Use the first two employees as default actors across all templates.
-    employees = entity.employees.to_a
-    abort "No employees found for entity #{entity_id}" if employees.empty?
-    actor1 = employees[0]
-    actor2 = employees[1] || employees[0]
+    entity, actor1, actor2 = WorkflowSeedHelpers.load_entity_and_actors(entity_id)
+    log = WorkflowSeedHelpers.logger_for("workflow_seeds")
 
     log.call("Entity : #{entity.name} (id=#{entity_id})")
     log.call("Actor1 : #{actor1.email}")
@@ -36,26 +29,13 @@ namespace :workflow_seeds do
 
     # Helper: find-or-skip a template by name, yield to build steps only when new.
     create_template = lambda do |name, attrs, &block|
-      existing = WorkflowTemplate.find_by(entity: entity, name: name)
-      if existing
-        log.call("SKIP  #{name} (id=#{existing.id}) — already exists")
-        skipped += 1
-        next
-      end
-
-      template = WorkflowTemplate.create!(attrs.merge(entity: entity, name: name))
-      log.call("CREATE #{name} (id=#{template.id})")
-      block.call(template)
-      created += 1
+      _template, was_created = WorkflowSeedHelpers.create_template(entity, name, attrs, log: log, &block)
+      was_created ? created += 1 : skipped += 1
     end
 
     # Helper: add a step with named actors.
     add_step = lambda do |template, pos, step_name, actors, step_attrs = {}|
-      step = template.workflow_steps.create!(
-        { position: pos, name: step_name }.merge(step_attrs)
-      )
-      actors.each { |u| step.workflow_step_actors.create!(user: u) }
-      log.call("         Step #{pos}: #{step_name} — actors: #{actors.map(&:email).join(', ')}")
+      WorkflowSeedHelpers.add_step(template, pos, step_name, actors, step_attrs, log: log)
     end
 
     # ── Folder templates ──────────────────────────────────────────────────────
@@ -373,7 +353,7 @@ namespace :workflow_seeds do
     abort "Usage: rake 'workflow_seeds:teardown[ENTITY_ID]'" if entity_id.zero?
 
     entity = Entity.find_by(id: entity_id) || abort("Entity #{entity_id} not found")
-    log    = ->(msg) { puts "[workflow_seeds] #{msg}" }
+    log    = WorkflowSeedHelpers.logger_for("workflow_seeds")
 
     names = SEEDED_TEMPLATE_NAMES
 

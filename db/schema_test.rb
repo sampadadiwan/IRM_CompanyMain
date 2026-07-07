@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_07_100000) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -1127,6 +1127,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
   end
 
   create_table "custom_notifications", force: :cascade do |t|
+    t.boolean "attachment_mandatory", default: false, null: false
     t.string "attachment_names"
     t.string "attachment_password"
     t.text "body"
@@ -2888,6 +2889,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
     t.bigint "recipient_id", null: false
     t.string "recipient_type", null: false
     t.datetime "seen_at", precision: nil
+    t.string "skip_reason"
+    t.datetime "skip_reported_at"
     t.string "subject"
     t.string "tracking_id"
     t.string "type"
@@ -2897,6 +2900,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_05_120000) do
     t.index ["entity_id"], name: "index_noticed_notifications_on_entity_id"
     t.index ["event_id"], name: "index_noticed_notifications_on_event_id"
     t.index ["recipient_type", "recipient_id"], name: "index_noticed_notifications_on_recipient"
+    t.index ["skip_reason", "skip_reported_at"], name: "index_noticed_notifications_on_skip_reason_and_skip_reported_at"
     t.index ["tracking_id"], name: "index_noticed_notifications_on_tracking_id", unique: true
   end
 

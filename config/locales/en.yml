@@ -168,6 +168,7 @@ en:
     units: Units
     users: Users
     valuations: Valuations
+    workflow: Workflow
   note:
     create: Note was created
     destroy: Note was deleted

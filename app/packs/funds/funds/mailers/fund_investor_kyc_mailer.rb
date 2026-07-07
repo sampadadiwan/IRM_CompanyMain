@@ -58,11 +58,14 @@ class FundInvestorKycMailer < ApplicationMailer
     send_mail(subject: @custom_notification.subject, template_path: 'application_mailer', template_name: 'adhoc_notification')
   end
 
+  private
+
+  # private, like custom_notification_documents_owner below: helper_method exposes it to the
+  # view via #send regardless of visibility, and public would leak it into
+  # CustomNotification#email_methods's instance_methods(false) scan as a bogus dropdown entry.
   def adhoc_notification_link
     { label: 'View KYC', url: investor_kyc_url(@investor_kyc, subdomain: @investor_kyc.entity.sub_domain) }
   end
-
-  private
 
   # Override needed for the SAME reason CapitalCommitmentMailer overrides this: the base
   # ApplicationMailer default (@notification&.model) is correct for real sends (where

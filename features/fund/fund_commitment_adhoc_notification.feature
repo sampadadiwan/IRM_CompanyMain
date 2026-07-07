@@ -321,3 +321,96 @@ Feature: Fund Commitment Adhoc Notification
     Given there is an adhoc custom notification for the fund with subject "KYC Update" and notify_via "investor_kyc" and show_details_link "true"
     When the adhoc notification is triggered for all investor kycs
     Then the investor kyc notification email contains a link to view the kyc
+
+  Scenario: Attachment Mandatory sends normally when the required document exists for every recipient
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and attachment_mandatory "true"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has the document "Statement of Account" attached
+
+  Scenario: Attachment Mandatory skips only the recipient missing the required document
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and attachment_mandatory "true"
+    When the adhoc notification is triggered for all commitments
+    Then only the first commitment investor receives the notification email
+    And the second commitment investor does not receive a notification email
+    And the second commitment investor's notification is recorded as skipped with a reason mentioning "Statement of Account"
+
+  Scenario: Attachment Mandatory flag off keeps today's behavior of sending with zero attachments
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and attachment_mandatory "false"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has 0 documents attached
+
+  Scenario: Attachment Mandatory sends normally when the matching document is generated and approved
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has a generated document "Statement of Account" with file "sample_kyc1.pdf" that is approved
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and attachment_mandatory "true"
+    When the adhoc notification is triggered for all commitments
+    Then all commitment investors receive the notification email
+    And the notification email has the document "Statement of Account" attached
+
+  Scenario: Attachment Mandatory treats an unapproved generated document as missing
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    And the first commitment has document "Statement of Account" with file "sample_kyc1.pdf"
+    And the second commitment has a generated document "Statement of Account" with file "sample_kyc1.pdf" that is not approved
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and attachment_mandatory "true"
+    When the adhoc notification is triggered for all commitments
+    Then only the first commitment investor receives the notification email
+    And the second commitment investor does not receive a notification email
+    And the second commitment investor's notification is recorded as skipped with a reason mentioning "Statement of Account"
+
+  Scenario: Skipped notification report emails the admin who triggered the send
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and attachment_mandatory "true"
+    When the adhoc notification is triggered by the admin for all commitments
+    And the skipped notification report runs
+    Then the triggering admin receives a skipped notification report mentioning "Statement of Account"
+
+  Scenario: Skipped notification report falls back to the entity's company admins when no admin triggered the send
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    Given there is an existing investor "" with "1" users
+    Given there is a fund "name=SAAS Fund" for the entity
+    Given the investors are added to the fund
+    Given there are capital commitments of "orig_folio_committed_amount_cents=100000000" from each investor
+    Given there is an adhoc custom notification for the fund with subject "Statement Ready" and attachment_names "Statement of Account" and attachment_mandatory "true"
+    When the adhoc notification is triggered for all commitments
+    And the skipped notification report runs
+    Then the entity's company admins receive a skipped notification report mentioning "Statement of Account"

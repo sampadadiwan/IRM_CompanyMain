@@ -10,6 +10,9 @@ class Investor < ApplicationRecord
   include ForInvestor
   include WithSupportAgent
   include InvestorShared
+  # Lets an Investor have a WorkflowTemplate assigned/launched against it —
+  # used for both LP onboarding and portfolio-company KPI report review.
+  include Workflowable
 
   update_index('investor') { self if index_record? }
 
@@ -264,6 +267,13 @@ class Investor < ApplicationRecord
 
   def folder_path
     "/Investors/#{investor_name.delete('/')}"
+  end
+
+  # Workflowable#workflow_display_name defaults to #to_s, but InvestorShared#to_s returns
+  # "investor_name : category" — fine for admin lists, too noisy for workflow emails/instance
+  # pages, so this overrides it to just investor_name.
+  def workflow_display_name
+    investor_name
   end
 
   # callback but only for category = Portfolio Company

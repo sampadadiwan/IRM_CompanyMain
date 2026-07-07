@@ -188,6 +188,18 @@ Scenario: Fund notifications tab offers a Call and a Distribution notification o
   Then the custom notification form should target owner_type "Fund" and for_type "CapitalCall"
   And the custom notification form title should include "Call Notification"
 
+Scenario: Attachment checkboxes are hidden until attachment_names has a value
+  Given Im logged in as a user "" for an entity "entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund" for the entity
+  Given I open the fund notifications tab
+  When I click "New Call Notification" in the new notification dropdown
+  Then the attachment checkboxes should be hidden
+  When I fill in "custom_notification_attachment_names" with "Statement of Account"
+  Then the attachment checkboxes should be visible
+  When I fill in "custom_notification_attachment_names" with ""
+  Then the attachment checkboxes should be hidden
+
 
 Scenario: Capital call notifications tab offers only a call-specific notification option
   Given Im logged in as a user "" for an entity "entity_type=Investment Fund"

@@ -96,6 +96,42 @@ class KpiReport < ApplicationRecord
     end
   end
 
+  # Launches a new workflow instance on the portfolio company (an Investor) each time a
+  # KPI workbook finishes importing for it. This is deliberately an *explicit* call rather
+  # than a WorkflowAutoAssignmentRule condition: the auto-assignment engine
+  # (see Workflowable#apply_workflow_auto_assignment_on_update) only ever assigns/launches a
+  # template ONCE per record — it bails out as soon as workflow_assignment is present. That
+  # is correct for the one-time "which template applies to this portfolio company" decision
+  # (handled separately, at Investor-creation time, by a category-based auto-assignment rule),
+  # but wrong for "launch a fresh review every time new KPIs arrive", since KPI reports are
+  # periodic. WorkflowInstanceLaunch itself already refuses to start a second instance while
+  # one is still active, so this call is safe to make on every import without extra guarding.
+  def launch_portfolio_company_workflow(user)
+    # portfolio_company_id has no category constraint at the DB/association level — it can
+    # point at any Investor (kpi_reports_controller permits it directly). Without this check,
+    # a KpiReport misdirected at a regular (non-portfolio-company) Investor would re-launch
+    # a workflow against a record whose one-time "Investor Onboarding" may already be complete.
+    return if portfolio_company.blank? || portfolio_company.category != "Portfolio Company" || kpis.none?
+
+    result = WorkflowInstanceLaunch.call(workflowable: portfolio_company, launched_by: user)
+    return if result.success?
+
+    # Best-effort: a missing template assignment or an already-active review are both
+    # expected, non-error outcomes (e.g. entity hasn't set up the workflow yet, or the
+    # previous period's review is still in progress) — log and move on, never raise.
+    Rails.logger.warn("[KpiReport#launch_portfolio_company_workflow] KpiReport##{id}: #{result[:errors]}")
+  rescue StandardError => e
+    # WorkflowInstanceLaunch's step-actor notification (an email) can raise for reasons
+    # unrelated to the KPI import itself (e.g. a mail delivery error) — the WorkflowInstance
+    # row is already committed by that point (see WorkflowInstanceLaunch's own comment on
+    # why notification runs after the transaction), so the review still launched even if the
+    # notification failed. Every other call site into this engine (Workflowable#apply_workflow_
+    # auto_assignment/_on_update) treats notification failures the same way: log, never let it
+    # crash the caller. Here the caller is ImportKpiWorkbookJob — a notification hiccup must
+    # not fail the whole KPI import.
+    Rails.logger.warn("[KpiReport#launch_portfolio_company_workflow] KpiReport##{id}: #{e.message}")
+  end
+
   def custom_kpis
     if form_type
       my_kpis = kpis.to_a

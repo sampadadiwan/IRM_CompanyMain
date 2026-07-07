@@ -165,6 +165,7 @@ ja:
     units: ユニット
     users: ユーザー
     valuations: 評価
+    workflow: ワークフロー
   note:
     create: ノートが作成されました
     destroy: ノートが削除されました

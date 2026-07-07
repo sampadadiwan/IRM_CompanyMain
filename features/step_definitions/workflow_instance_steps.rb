@@ -361,6 +361,7 @@ When("I visit the {word} show page for {string}") do |type, obj_name|
          when "capital_commitment"  then capital_commitment_path(workflowable)
          when "capital_call"        then capital_call_path(workflowable)
          when "approval"            then approval_path(workflowable)
+         when "investor"            then investor_path(workflowable)
          else raise "No path helper for workflowable type: #{type}"
          end
   visit(path)
@@ -633,6 +634,11 @@ def find_workflowable!(type, name)
   when "approval"
     (@workflowable_store || {})[["approval", name]] ||
       Approval.find_by!(title: name, entity: @entity)
+  when "investor"
+    # investor_name is what "there is an existing investor"/"there is an existing
+    # portfolio company" (features/step_definitions/investor.rb) set from name=... .
+    (@workflowable_store || {})[["investor", name]] ||
+      Investor.find_by!(investor_name: name, entity: @entity)
   else
     raise "Unknown workflowable type: #{type}"
   end

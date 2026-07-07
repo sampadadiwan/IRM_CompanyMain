@@ -300,7 +300,7 @@ class FundsController < ApplicationController
     # renders when @custom_notification.email_method == "adhoc_kyc_notification" — harmless
     # to always pass through since FundNotificationJob ignores whichever of the two doesn't apply.
     investor_kyc_ids = params[:investor_kyc_ids].presence
-    @fund.adhoc_notification(@custom_notification.id, commitment_ids:, investor_kyc_ids:)
+    @fund.adhoc_notification(@custom_notification.id, commitment_ids:, investor_kyc_ids:, triggered_by_user_id: current_user.id)
     redirect_back_or_to(fund_path(@fund), notice: "Notification trigger started for #{@fund.name}.")
   end
 

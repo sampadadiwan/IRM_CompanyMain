@@ -88,32 +88,47 @@
 
     <% end %>
 
-    <div class="form-group">
-      <%= form.label :attachment_names %>
-      <%= form.text_field :attachment_names, class: "form-control"  %>
-      <small class="form-text text-muted">
-        Comma-separated names of documents already uploaded against this record
-        (e.g. "Statement of Account, KYC Certificate"). Use * as a wildcard to
-        match a family of documents, e.g. "SOA_*_03_2026" matches
-        "SOA_FundA_03_2026". If a document name itself contains a comma (e.g. a
-        date range like "01 July,2025 to 31 December,2025"), wrap that name in
-        double quotes so it isn't split into separate entries, e.g.
-        "SOA Unit 01 July,2025 to 31 December,2025 - *". Leave blank to send no
-        attachments.
-      </small>
-    </div>
+    <div data-controller="conditional-visibility">
+      <div class="form-group">
+        <%= form.label :attachment_names %>
+        <%= form.text_field :attachment_names, class: "form-control", "data-action": "input->conditional-visibility#toggle", "data-conditional-visibility-target": "source" %>
+        <small class="form-text text-muted">
+          Comma-separated names of documents already uploaded against this record
+          (e.g. "Statement of Account, KYC Certificate"). Use * as a wildcard to
+          match a family of documents, e.g. "SOA_*_03_2026" matches
+          "SOA_FundA_03_2026". If a document name itself contains a comma (e.g. a
+          date range like "01 July,2025 to 31 December,2025"), wrap that name in
+          double quotes so it isn't split into separate entries, e.g.
+          "SOA Unit 01 July,2025 to 31 December,2025 - *". Leave blank to send no
+          attachments.
+        </small>
+      </div>
 
-    <div class="form-group">
-      <%= form.label :latest_doc_only, "Only attach the latest match" %>
-      <%= form.check_box :latest_doc_only, class: "form-check-input"  %>
-      <small class="form-text text-muted">
-        Checked: attach only the most recently uploaded document matching each
-        name/pattern above. Unchecked: attach every matching document. Examples:
-        "Statement of Account" + checked &rarr; newest exact match only.
-        "*Statement of Account*" + checked &rarr; newest document whose name contains
-        that text (old "close match" behavior). "SOA_*_03_2026" + unchecked &rarr;
-        every document matching that pattern is attached.
-      </small>
+      <div data-conditional-visibility-target="conditional">
+        <div class="form-group">
+          <%= form.label :latest_doc_only, "Only attach the latest match" %>
+          <%= form.check_box :latest_doc_only, class: "form-check-input"  %>
+          <small class="form-text text-muted">
+            Checked: attach only the most recently uploaded document matching each
+            name/pattern above. Unchecked: attach every matching document. Examples:
+            "Statement of Account" + checked &rarr; newest exact match only.
+            "*Statement of Account*" + checked &rarr; newest document whose name contains
+            that text (old "close match" behavior). "SOA_*_03_2026" + unchecked &rarr;
+            every document matching that pattern is attached.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <%= form.label :attachment_mandatory, "Attachment Mandatory" %>
+          <%= form.check_box :attachment_mandatory, class: "form-check-input"  %>
+          <small class="form-text text-muted">
+            Checked: a recipient missing any document named above does not receive this
+            email at all, instead of receiving it without the attachment. The admin who
+            triggered the send (or the entity's admins, if triggered automatically) gets
+            a periodic summary of anyone skipped this way and why.
+          </small>
+        </div>
+      </div>
     </div>
 
     <% if current_user.support? %>

@@ -54,6 +54,24 @@
     </td>
   </tr>
 
+  <% if @notification.skip_reason.present? %>
+  <tr>
+    <td>
+      Skipped
+    </td>
+    <td>
+      <span class="badge bg-warning text-dark"><%= @notification.skip_reason %></span>
+      <div class="text-muted mt-1">
+        <% if @notification.skip_reported_at.present? %>
+          Included in the skipped-notifications summary report at <%= l @notification.skip_reported_at %>
+        <% else %>
+          Not yet included in a summary report
+        <% end %>
+      </div>
+    </td>
+  </tr>
+  <% end %>
+
   <tr>
     <td>
       Bounced

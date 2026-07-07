@@ -36,6 +36,10 @@ class EntityMailer < ApplicationMailer
 
   def notify_errors
     @error_msg = params[:error_msg]
+    # Optional — a link back into the app pre-filtered to whatever this error report is about
+    # (e.g. SkippedNotificationReportJob links to the skipped notifications it just reported).
+    @filter_url = params[:filter_url]
+    @filter_label = params[:filter_label]
     subject = "#{ENV.fetch('BASE_DOMAIN', nil)} #{params[:subject].presence || 'Errors'}"
     to = params[:to].presence || support_emails
     mail(to:, subject:)
