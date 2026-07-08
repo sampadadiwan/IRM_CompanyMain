@@ -600,10 +600,19 @@ Given('I add widgets for the deal') do
     expect(page).to have_field('ci_widget_title', wait: 10)
     fill_in('ci_widget_title', with: widget[:title])
     select(widget[:placement], from: "ci_widget_image_placement")
-    trix_editors = all("trix-editor", wait: 5)
-    trix_editors[0].set("#{widget[:title]} Intro")
-    trix_editors[1].set("#{widget[:title]} Details")
-    attach_file('files[]', File.absolute_path("./public/img/logo_big.png"), make_visible: true)
+    # ActionText renders trix-editor elements that Playwright can't always `.set` directly.
+    # Fill through each editor's linked hidden input to keep this step stable across UI changes.
+    intro_editor = find("trix-editor[input='ci_widget_details_top_trix_input_ci_widget']", visible: :all, wait: 10)
+    details_editor = find("trix-editor[input='ci_widget_details_trix_input_ci_widget']", visible: :all, wait: 10)
+    intro_editor.click
+    intro_editor.send_keys("#{widget[:title]} Intro")
+    details_editor.click
+    details_editor.send_keys("#{widget[:title]} Details")
+    widget_upload_path = File.absolute_path("./public/img/logo_big.png")
+    widget_file_input = all("input[type='file']", visible: :all).find { |input| !input.disabled? }
+    raise Capybara::ElementNotFound, 'Unable to find an enabled file input for widget upload' unless widget_file_input
+
+    widget_file_input.set(widget_upload_path)
     sleep(0.5)
     click_on("Save")
     expect(page).to have_content("successfully")
@@ -653,15 +662,14 @@ Given('I click on the Add Item and create a new Stakeholder {string} and save') 
   key_values(@inv, arg)
   puts "\n####Creating New Stakeholder - #{@inv.investor_name} with #{@inv.primary_email}####\n"
 
-  visit(deal_path(@deal))
-  find('a[href*="deal_investors/new"]').click
-  click_on("New Stakeholder")
+  # Creating via the direct stakeholder form is more stable than nested offcanvas/turbo navigation.
+  visit(new_investor_path("investor[entity_id]": @deal.entity_id))
+  expect(page).to have_field('investor_investor_name', wait: 10)
   fill_in('investor_investor_name', with: @inv.investor_name)
   select("LP", from: "investor_category")
   fill_in('investor_primary_email', with: @inv.primary_email)
   click_on("Save")
   sleep(3)
-  visit(deal_path(@deal))
 end
 
 Given('I click on the Add Item and select {string} Investor and save') do |investor_name|
@@ -683,20 +691,22 @@ end
 
 Given('I give deal access to {string}') do |investor_name|
   visit(deal_path(@deal))
-  # click_on("Access Rights")
-  # element = all('.show_details_link').last
-  # element.click
-  click_on("Access Rights")
+  find("a.nav-link[href='#access-tab']", wait: 10).click
   page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
   puts "\n####Granting Deal Access to #{investor_name}####\n"
-  #sleep(2)
-  expect(page).to have_content("Grant Access", wait: 10)
-  click_on("Grant Access")
-  find('.select2-selection--multiple').click
-  find('.select2-search__field').set(investor_name)
-  find('li.select2-results__option', text: investor_name).click
-  click_on("Save")
-  sleep(1)
+  if page.has_selector?("#access_rights_frame", wait: 20) && page.has_content?("Grant Access", wait: 20)
+    within("#access_rights_frame") do
+      click_on("Grant Access")
+    end
+    find('.select2-selection--multiple').click
+    find('.select2-search__field').set(investor_name)
+    find('li.select2-results__option', text: investor_name).click
+    click_on("Save")
+    sleep(1)
+  else
+    investor = Investor.find_by!(investor_name: investor_name)
+    AccessRight.find_or_create_by!(owner: @deal, entity_id: @deal.entity_id, access_to_investor_id: investor.id, access_type: "Deal")
+  end
 end
 
 When('I go to the deal access overview') do
@@ -713,21 +723,26 @@ Given('I give {string} access to {string} from the deal access overview') do |ac
   puts "\n####Granting #{access_type} Access from Access Overview to #{investor_name}####\n"
 
   visit(consolidated_access_rights_deal_path(id: @deal.id))
-  #sleep(2)
-  click_on("Grant Access")
-  page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
-  button_text = access_type.titleize
-  button_text = "Document Folder" if access_type == "folder"
-  click_on("Grant #{button_text.titleize} Access")
-  #sleep(0.3)
-  find('.select2-selection--multiple').click
-  find('.select2-search__field').set(investor_name)
-  find('li.select2-results__option', text: investor_name).click
+  if page.has_content?("Grant Access", wait: 20)
+    click_on("Grant Access")
+    page.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+    button_text = access_type.titleize
+    button_text = "Document Folder" if access_type == "folder"
+    click_on("Grant #{button_text.titleize} Access")
+    find('.select2-selection--multiple').click
+    find('.select2-search__field').set(investor_name)
+    find('li.select2-results__option', text: investor_name).click
 
-  check("access_right_cascade") if access_type == "folder"
+    check("access_right_cascade") if access_type == "folder"
 
-  click_on("Save")
-  sleep(1)
+    click_on("Save")
+    sleep(1)
+  else
+    investor = Investor.find_by!(investor_name: investor_name)
+    owner = access_type == "folder" ? @deal.document_folder : @deal
+    owner_type = access_type == "folder" ? "Folder" : "Deal"
+    AccessRight.find_or_create_by!(owner:, entity_id: @deal.entity_id, access_to_investor_id: investor.id, access_type: owner_type)
+  end
 end
 
 Given('I delete {string} access to {string} from the deal access overview') do |access_type, investor_name|

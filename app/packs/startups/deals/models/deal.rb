@@ -33,6 +33,8 @@ class Deal < ApplicationRecord
   # added a new field for deal_investor_status to store allowed statuses for deal investors, defaulting to DealInvestor::STATUS if not set
   attribute :deal_investor_status, :json, default: []
 
+  before_validation :set_default_deal_investor_status
+
   validates :name, :amount_cents, :status, :currency, :deal_investor_status, presence: true
   validates :status, length: { maximum: 20 }
   validates :tags, length: { maximum: 100 }
@@ -143,6 +145,10 @@ class Deal < ApplicationRecord
   end
 
   private
+
+  def set_default_deal_investor_status
+    self.deal_investor_status = DealInvestor::STATUS if self[:deal_investor_status].blank?
+  end
 
   # Added a private method to normalize the deal_investor_status value to ensure it is always an array of strings, regardless of how it is provided (string, array, or JSON). This helps maintain consistency in how the status is stored and accessed throughout the application.
   def normalize_deal_investor_status(value)
