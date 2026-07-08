@@ -79,3 +79,22 @@ Feature: Multi-site user sync fanout
   Scenario: redirect_to_subdomain returns 401 for an invalid token
     When I request redirect_to_subdomain with invalid token on host "app.example.com"
     Then the response status should be 401
+
+  # This exercises all 3 hops (cross_site_link -> redirect_to_subdomain -> cross_site_login)
+  # in a single test process/database, so it proves the routing/token/subdomain logic is
+  # correct end-to-end, but it does NOT prove two real separately-deployed instances with
+  # separate databases agree on the user's identity - that part is emulated by reusing the
+  # same @user/@entity row and just swapping ENV["CURRENT_SITE"] between hops.
+  @cross-site-login-flow
+  Scenario: A US-side user crosses to the IN site and lands signed in on the correct subdomain
+    Given a user "neha@siliconroad.com" exists in region "US" with regions "IN,US"
+    And the user's entity has sub_domain "srv"
+    And site "US" is served at "http://app.caphive.us"
+    And site "IN" is served at "http://app.caphive.com"
+    And I am signed in as "neha@siliconroad.com" on host "siliconroad.caphive.us"
+    When I click the cross-site link targeting site "IN"
+    Then I should be redirected to "app.caphive.com" to resolve the subdomain
+    When I follow that redirect
+    Then I should be redirected to "srv.caphive.com" for cross-site login
+    When I follow that redirect as site "IN"
+    Then I should be signed in and redirected to the site root
