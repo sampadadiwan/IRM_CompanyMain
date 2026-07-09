@@ -175,8 +175,12 @@ namespace :recovery do
   task :load_db_from_backups do
     on roles(:primary), in: :sequence, wait: 5 do
       within release_path do
-        execute :rake, "db:restore_primary_db RAILS_ENV=#{fetch(:stage)}"
-        execute :rake, "db:restore_replica_db RAILS_ENV=#{fetch(:stage)}"
+        # DR path: run the BAKED script on the DB boxes over SSH (app server →
+        # private DB IP). The old db:restore_primary_db/replica_db route went
+        # through DbRestoreService, which is a backup VERIFIER (DbCheckInstance)
+        # and drags script generation + IAM + service-cleanup into DR.
+        execute :rake, "db:restore_primary_remote RAILS_ENV=#{fetch(:stage)}"
+        execute :rake, "db:restore_replica_remote RAILS_ENV=#{fetch(:stage)}"
       end
     end
   end
@@ -185,6 +189,19 @@ namespace :recovery do
     on roles(:primary), in: :sequence, wait: 5 do
       within release_path do
         execute :rake, "db:restore_replica_db RAILS_ENV=#{fetch(:stage)}"
+      end
+    end
+  end
+
+  # Replays any migrations newer than the restored backup. Run after
+  # load_db_from_backups and BEFORE nginx:switch_app — a backup taken before
+  # the last deploy is missing those migrations, and serving traffic on a
+  # stale schema is the failure mode this closes.
+  desc 'Run pending migrations against the restored DB (after load_db_from_backups)'
+  task :migrate do
+    on roles(:primary), in: :sequence do
+      within release_path do
+        execute :rake, "db:migrate RAILS_ENV=#{fetch(:stage)}"
       end
     end
   end
@@ -344,8 +361,12 @@ namespace :IRM do
       execute :mkdir, "-p", "/home/ubuntu/IRM/shared/tmp/sockets"
       execute :touch, "/home/ubuntu/IRM/shared/tmp/sockets/IRM-puma.sock"
 
-      # Install Pandoc for DOCX export with charts
-      execute :sudo, "apt-get install -y pandoc"
+      # Install Pandoc for DOCX export with charts.
+      # DPkg::Lock::Timeout makes apt WAIT (up to 10 min) for the dpkg lock
+      # instead of dying with exit 100 — on a freshly booted instance,
+      # unattended-upgrades holds the lock for the first few minutes, which
+      # broke IRM:setup during DR rebuilds (found by the DR drill).
+      execute :sudo, "apt-get -o DPkg::Lock::Timeout=600 install -y pandoc"
 
       # restart nginx - Does not work as the nginx config is pointing to the app, which is not yet deployed
       # execute :sudo, "service nginx restart"
@@ -360,8 +381,9 @@ namespace :IRM do
 
   task :apt_update do
     on roles(:app) do
-      execute :sudo, "apt-get update"
-      execute :sudo, "apt-get upgrade -y"
+      # Same dpkg-lock wait as IRM:setup — never race unattended-upgrades
+      execute :sudo, "apt-get -o DPkg::Lock::Timeout=600 update"
+      execute :sudo, "apt-get -o DPkg::Lock::Timeout=600 upgrade -y"
       execute :sudo, "journalctl --vacuum-time=2d"
       execute :sudo, "reboot"
     end

@@ -24,6 +24,13 @@ variable "mysql_root_password" {
   type = string
 }
 
+# SSM Parameter Store path baked into /etc/db_backup.env — the backup script
+# resolves its secrets (mysql creds, bucket) from here at runtime via the EC2
+# instance role. Set per env by packer.rake (e.g. /irm/production/db_backup).
+variable "ssm_prefix" {
+  type = string
+}
+
 variable "source_ami" {
   type = string
 }
@@ -144,6 +151,11 @@ locals {
     "sudo apt install --yes docker-ce",
     "sudo systemctl start docker",
     "sudo systemctl enable docker",
+    # ubuntu must be in the docker group: the @reboot crontab lines below run
+    # `docker run` WITHOUT sudo as the ubuntu user — without this membership
+    # they fail on the docker socket at boot, and a DR-launched primary comes
+    # up with NO Elasticsearch and NO Redis (app half-broken, cause invisible)
+    "sudo usermod -aG docker ubuntu",
 
     # Install logrotate
     "sudo apt install --yes logrotate",
@@ -243,5 +255,34 @@ build {
 
   provisioner "shell" {
     inline = local.mysql_password_setup
+  }
+
+  # Bake the DB backup tooling. The script contains NO secrets (resolved at
+  # runtime from SSM via the instance role) and the cron schedule is live from
+  # first boot but dormant: full/incr exit immediately unless
+  # /etc/db_backup_enabled exists, which restore_primary creates on success.
+  # This keeps replicas and DbCheckInstance boots from writing to the chain.
+  provisioner "file" {
+    source      = "lib/tasks/db_backup_xtra.sh"
+    destination = "/tmp/db_backup_xtra.sh"
+  }
+
+  provisioner "shell" {
+    inline = [
+      # Root-only: the script can read DB credentials from SSM at runtime
+      "sudo install -m 0700 -o root -g root /tmp/db_backup_xtra.sh /usr/local/bin/db_backup_xtra.sh",
+      "rm /tmp/db_backup_xtra.sh",
+      # Non-secret runtime config: where the script finds its SSM parameters
+      "echo 'SSM_PREFIX=\"${var.ssm_prefix}\"' | sudo tee /etc/db_backup.env",
+      "sudo chmod 0600 /etc/db_backup.env",
+      # Schedule: nightly full at 23:00, incrementals every 30 min (RPO ~30 min).
+      # PATH is explicit: cron defaults to /usr/bin:/bin, but the aws CLI the
+      # script needs for SSM lookups lives in /usr/local/bin — without this,
+      # every armed cron tick would fail at config resolution.
+      "printf '%s\\n' 'SHELL=/bin/bash' 'PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' '0 23 * * *      root /usr/local/bin/db_backup_xtra.sh full >> /var/log/db_backup.log 2>&1' '0,30 0-22 * * * root /usr/local/bin/db_backup_xtra.sh incr >> /var/log/db_backup.log 2>&1' | sudo tee /etc/cron.d/irm-db-backup",
+      "sudo chmod 0644 /etc/cron.d/irm-db-backup",
+      # Keep the backup log bounded
+      "printf '%s\\n' '/var/log/db_backup.log {' '  weekly' '  rotate 8' '  compress' '  missingok' '  notifempty' '}' | sudo tee /etc/logrotate.d/irm-db-backup"
+    ]
   }
 }

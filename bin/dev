@@ -1,2 +1,33 @@
 #!/usr/bin/env ruby
-exec "./bin/rails", "server", *ARGV
+def container_running?(name)
+  `docker inspect -f "{{.State.Running}}" #{name} 2>/dev/null`.strip == "true"
+end
+
+def start_container_unless_running(name, *docker_args)
+  unless container_running?(name)
+    puts "Starting container #{name}..."
+    system("docker", "run", "-d", "--rm", "--name", name, *docker_args)
+  end
+end
+
+def resume_container_unless_running(name)
+  unless container_running?(name)
+    puts "Resuming container #{name}..."
+    system("docker", "start", name)
+  end
+end
+
+start_container_unless_running("xirr_py", "-p", "8000:80", "-v", "/tmp:/tmp", "thimmaiah/xirr_py:v2.6")
+resume_container_unless_running("mysql8")
+start_container_unless_running("elasticsearch", "-p", "9200:9200", "-p", "9300:9300",
+                                "-e", "ES_JAVA_OPTS=-Xms512m -Xmx512m",
+                                "-e", "discovery.type=single-node",
+                                "-e", "xpack.security.enabled=false",
+                                "elasticsearch:8.15.0")
+
+puts "Starting Prometheus exporter..."
+Process.detach(spawn("bundle exec prometheus_exporter -b 0.0.0.0"))
+
+puts "Starting Rails server on port 3001..."
+exec "./bin/rails", "server", "-p", "3001", *ARGV
+

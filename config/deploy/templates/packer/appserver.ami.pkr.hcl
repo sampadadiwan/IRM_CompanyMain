@@ -125,6 +125,12 @@ build {
       "echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | sudo debconf-set-selections",
       "sudo apt-get install --yes ttf-mscorefonts-installer",
 
+      // Pandoc for DOCX export with charts — baked here so IRM:setup's
+      // apt install is a fast no-op during DR rebuilds (a fresh instance's
+      // unattended-upgrades holds the dpkg lock for minutes; found by drill)
+      "echo INSTALLING- Pandoc",
+      "sudo apt-get install --yes pandoc",
+
       // RVM
       "echo INSTALLING- RVM and Ruby 3.3.3",
       "sudo apt-get install -y curl gnupg build-essential",

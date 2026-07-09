@@ -122,4 +122,64 @@ namespace :xtrabackup do
     ENV["AWS_SECRET_ACCESS_KEY"] = Helpers.aws_secret_access_key
     ENV["AWS_REGION"]            = Helpers.aws_region
   end
+
+  # Seeds the SSM parameters the baked backup script reads at runtime (see
+  # db_backup_xtra.sh + db_redis_es.ami.pkr.hcl). SSM parameters are REGIONAL:
+  # run once per region that hosts DB instances — including the DR region, so
+  # a recovered DB server finds its config without any manual seeding mid-DR.
+  # Idempotent: --overwrite updates values in place (rotation = re-run).
+  # ex: rake "xtrabackup:seed_ssm_params[production.in, ap-south-1]"
+  #     rake "xtrabackup:seed_ssm_params[production.in, ap-south-2]"   # DR region
+  desc "Seed SSM Parameter Store with DB backup config for baked AMIs (run per region)"
+  task :seed_ssm_params, [:env_name, :region] => :environment do |t, args|
+    require 'open3'
+
+    env_name = args[:env_name] or raise "env_name required, e.g. production.in"
+    region   = args[:region] || ENV["AWS_REGION"] or raise "region required, e.g. ap-south-1"
+
+    # Load the env-specific .env + AWS SDK credentials (same mechanism as the
+    # other aws:* tasks use)
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(env_name)
+
+    # Decrypt the env-specific credentials pair (e.g. production.in.yml.enc) —
+    # Rails.application.credentials would be the *current* RAILS_ENV's, which is
+    # not necessarily the environment we are seeding for.
+    creds = Rails.application.encrypted(
+      Rails.root.join("config", "credentials", "#{env_name}.yml.enc"),
+      key_path: Rails.root.join("config", "credentials", "#{env_name}.key")
+    )
+
+    rails_env = env_name.split(".").first # production.in -> production
+    prefix = "/irm/#{rails_env}/db_backup"
+
+    params = {
+      "mysql_user"    => creds[:DB_USER] || ENV.fetch("DB_USER"),
+      "mysql_password" => creds[:DB_PASS] || ENV.fetch("DB_PASS"),
+      # Same bucket naming as generate_backup_script (line ~97): <bucket>-backup-xtra
+      "bucket"        => "#{ENV.fetch('AWS_S3_BUCKET')}-backup-xtra",
+      # Region of the BUCKET (stays fixed in DR) — not the instance's region
+      "bucket_region" => ENV.fetch("AWS_S3_REGION"),
+      "database_name" => "IRM_#{rails_env}"
+    }
+
+    params.each do |key, value|
+      raise "Empty value for #{prefix}/#{key} — check credentials/.env for #{env_name}" if value.to_s.empty?
+
+      # Argument-array form: the secret never passes through a shell
+      _out, err, status = Open3.capture3(
+        "aws", "ssm", "put-parameter",
+        "--name", "#{prefix}/#{key}",
+        "--value", value.to_s,
+        "--type", "SecureString",
+        "--overwrite",
+        "--region", region
+      )
+      raise "Failed to seed #{prefix}/#{key} in #{region}: #{err}" unless status.success?
+
+      puts "✅ Seeded #{prefix}/#{key} (#{region})" # value deliberately not printed
+    end
+
+    puts "🎉 SSM backup config seeded for #{env_name} in #{region}."
+  end
 end

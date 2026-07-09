@@ -23,11 +23,182 @@ namespace :aws do
   end
 
   # This is the task that will be called whenever we need to do a complete DR into another region
-  task :setup_infra, [:stack, :web_server_name, :db_server_name, :region, :env_variant, :env_name] do |t, args|
+  # Full flow: pulumi config + pulumi up + rewrite credentials/env/deploy IPs + cap deploy + DB restore.
+  #
+  # NON-INTERACTIVE (recommended for DR): pass a branch name as the 7th arg —
+  # the task auto-commits the rewritten config files to that branch, pushes, and
+  # runs the entire recovery (primary+replica restore, migrations, cutover)
+  # without any prompts:
+  #   RAILS_ENV=production rake "aws:setup_infra[production, AppServer, DB-Redis-ES, ap-south-2, in, production.in, dr_prod_in_2026_07_08]"
+  #
+  # LEGACY INTERACTIVE: omit the branch — pauses for a manual DB restore and a
+  # manual commit, then prompts for the branch name (previous behaviour).
+  task :setup_infra, [:stack, :web_server_name, :db_server_name, :region, :env_variant, :env_name, :branch] do |t, args|
     Rake::Task['aws:environment'].reenable
     Rake::Task['aws:environment'].invoke(args[:env_name])
     args.with_defaults(region: ENV["AWS_REGION"])
-    setup_infra(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant])
+    setup_infra(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant], args[:branch])
+  end
+
+  # Config-only subset of setup_infra: refreshes a stack's Pulumi config (latest
+  # AMI ids, region, domain_name, key_name) WITHOUT running pulumi up or touching
+  # servers. Referenced by the header comments in IRM-Infra/Pulumi.*.yaml.
+  # For a brand-new region, set DOMAIN_NAME and AWS_KEY_NAME env vars (see
+  # ensure_pulumi_stack_config in aws_utils.rb) and the stack is created fully
+  # configured in one command.
+  # ex: rake "aws:setup_pulumi_config[production, AppServer, DB-Redis-ES, ap-south-2, in, production.in]"
+  desc "Refresh Pulumi stack config (AMIs, region, domain, key name) without deploying"
+  task :setup_pulumi_config, [:stack, :web_server_name, :db_server_name, :region, :env_variant, :env_name] do |t, args|
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(args[:env_name])
+    args.with_defaults(region: ENV["AWS_REGION"], web_server_name: "AppServer", db_server_name: "DB-Redis-ES")
+    setup_pulumi_config(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant])
+  end
+
+  # Quarterly DR drill: proves the WHOLE recovery chain (AMIs present, Pulumi
+  # stack deployable, S3 backups restorable, deploy + migrations + cutover)
+  # by rebuilding STAGING in the DR region, unattended, and measuring the time.
+  # An untested DR plan is a hypothesis — this turns it into a measurement.
+  #
+  #   rake "aws:dr_drill[in]"                      # staging IN → AWS_BACKUP_REGION
+  #   rake "aws:dr_drill[in, ap-south-2]"          # explicit region
+  #   TEARDOWN=true rake "aws:dr_drill[in]"        # pulumi destroy after the drill
+  #
+  # Notes:
+  # - Commits only to a dr_drill_* branch; main is never touched. The task
+  #   returns your working tree to the original branch afterwards.
+  # - Without TEARDOWN=true the drill infra keeps running (and costing) —
+  #   the teardown command is printed at the end.
+  desc "Run an unattended DR drill against staging in the DR region and report RTO"
+  task :dr_drill, [:env_variant, :region, :env_name] do |t, args|
+    args.with_defaults(env_variant: 'in')
+    env_variant = args[:env_variant]
+    env_name = args[:env_name] || "staging.#{env_variant}"
+
+    # Load .env.<env_name> + credentials BEFORE resolving the region, so an
+    # AWS_BACKUP_REGION defined in the env file (not just the shell) is seen
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(env_name)
+
+    region = args[:region] || ENV["AWS_BACKUP_REGION"] || raise("Pass a region or set AWS_BACKUP_REGION (shell or .env.#{env_name})")
+
+    original_branch = `git rev-parse --abbrev-ref HEAD`.strip
+    drill_branch = "dr_drill_#{env_variant}_#{Time.now.strftime('%Y_%m_%d_%H%M')}"
+    started_at = Time.now
+    result = "FAILED"
+
+    puts "🚨 DR DRILL: rebuilding staging (#{env_variant}) in #{region} on branch #{drill_branch}"
+    begin
+      # The full non-interactive DR sequence — the same code path a real
+      # production DR uses, which is the point of the drill
+      setup_infra("staging", "AppServer", "DB-Redis-ES", region, env_variant, drill_branch)
+      result = "PASSED"
+    ensure
+      duration_min = ((Time.now - started_at) / 60).round(1)
+
+      # Return the operator's working tree to where it was
+      run_cmd("git checkout #{original_branch}") unless original_branch.empty?
+
+      # Append to the drill log — the audit trail that DR is tested, not assumed
+      log_file = Rails.root.join("docs", "dr_drills.md")
+      File.write(log_file, "# DR Drill Log\n\n| Date | Variant | Region | Result | RTO (min) | Branch |\n|---|---|---|---|---|---|\n") unless File.exist?(log_file)
+      File.open(log_file, "a") do |f|
+        f.puts "| #{started_at.strftime('%Y-%m-%d %H:%M')} | #{env_variant} | #{region} | #{result} | #{duration_min} | #{drill_branch} |"
+      end
+
+      puts "\n#{result == 'PASSED' ? '✅' : '❌'} DR DRILL #{result} — measured RTO: #{duration_min} minutes (logged to docs/dr_drills.md)"
+
+      if result == "PASSED"
+        if ENV["TEARDOWN"] == "true"
+          puts "🧹 TEARDOWN=true — destroying drill infra..."
+          run_cmd("pulumi destroy --stack staging-#{region} --yes --color=always", "../IRM-Infra")
+        else
+          puts "⚠️  Drill infra is still RUNNING (and costing money) in #{region}."
+          puts "   Tear down with: cd ../IRM-Infra && pulumi destroy --stack staging-#{region} --yes"
+        end
+      end
+    end
+  end
+
+  # MANUAL-ONLY by design: DNS cutover is the moment a rebuilt region becomes
+  # live — it must be an explicit human decision, so this task is never called
+  # by aws:setup_infra or aws:dr_drill (drills have no DNS name to flip).
+  # It shows the current record and asks for confirmation before the UPSERT.
+  # Prerequisite: a `pulumi up` on the target stack (output.json must carry
+  # the ALB endpoint).
+  # ex: rake "aws:dns_cutover[production, ap-south-2, in]"           # -> app.caphive.com
+  #     rake "aws:dns_cutover[production, ap-south-2, in, custom.caphive.com]"
+  desc "MANUAL: point the app DNS record at a stack's ALB (Route53 alias, asks confirmation)"
+  task :dns_cutover, [:stack, :region, :env_variant, :record_name] do |t, args|
+    require 'yaml'
+    require 'json'
+    require 'open3'
+
+    stack = args[:stack] or raise "stack required (production|staging)"
+    region = args[:region] or raise "region required, e.g. ap-south-2"
+    args[:env_variant] or raise "env_variant required (in|us)"
+
+    # Domain from the target stack's Pulumi config — single source of truth
+    stack_file = "../IRM-Infra/Pulumi.#{stack}-#{region}.yaml"
+    raise "#{stack_file} not found" unless File.exist?(stack_file)
+
+    domain = YAML.load_file(stack_file).dig("config", "IRM-infra:domain_name") or
+      raise "domain_name missing in #{stack_file}"
+    base_domain = domain.sub(/\A\*\./, "")
+    # Same host convention as ses_bounce_tracking.derive_webhook_host:
+    # production -> app.<domain>, staging -> dev.<domain>
+    record_name = args[:record_name] || "#{stack == 'production' ? 'app' : 'dev'}.#{base_domain}"
+
+    # ALB endpoint straight from the stack's own outputs (never a stale file)
+    pulumi_output = pulumi_stack_output("#{stack}-#{region}")
+    alb = pulumi_output["alb"] or
+      raise "Stack #{stack}-#{region} has no 'alb' output — run pulumi up on it first (needs the updated outputs.py)"
+
+    # Hosted zone for the base domain
+    zone_id, err, status = Open3.capture3(
+      "aws", "route53", "list-hosted-zones-by-name",
+      "--dns-name", base_domain, "--max-items", "1",
+      "--query", "HostedZones[0].Id", "--output", "text"
+    )
+    zone_id = zone_id.strip.sub("/hostedzone/", "")
+    raise "Could not find hosted zone for #{base_domain}: #{err}" if !status.success? || zone_id.empty? || zone_id == "None"
+
+    # Show where the record points today, so the operator sees the change
+    current, _err, _status = Open3.capture3(
+      "aws", "route53", "list-resource-record-sets",
+      "--hosted-zone-id", zone_id,
+      "--query", "ResourceRecordSets[?Name=='#{record_name}.']",
+      "--output", "json"
+    )
+    puts "🔎 Current record for #{record_name}:"
+    puts current.strip.empty? ? "  (none)" : current
+    puts "\n➡️  Will UPSERT alias: #{record_name} -> #{alb['dns_name']} (ALB zone #{alb['zone_id']})"
+    puts "Type 'yes' to proceed with the DNS cutover, anything else aborts:"
+    raise "Aborted by operator." unless STDIN.gets.to_s.strip.downcase == "yes"
+
+    change_batch = {
+      "Comment" => "DR/landing-zone cutover to #{stack}-#{region} via rake aws:dns_cutover",
+      "Changes" => [{
+        "Action" => "UPSERT",
+        "ResourceRecordSet" => {
+          "Name" => record_name,
+          "Type" => "A",
+          "AliasTarget" => {
+            "DNSName" => alb["dns_name"],
+            "HostedZoneId" => alb["zone_id"],
+            "EvaluateTargetHealth" => false
+          }
+        }
+      }]
+    }
+    _out, err, status = Open3.capture3(
+      "aws", "route53", "change-resource-record-sets",
+      "--hosted-zone-id", zone_id,
+      "--change-batch", change_batch.to_json
+    )
+    raise "DNS cutover failed: #{err}" unless status.success?
+
+    puts "✅ #{record_name} now aliases the #{stack}-#{region} ALB. Propagation is TTL-bound; verify with: dig #{record_name}"
   end
 
   task :get_latest_ami, [:name_tag, :region, :env_name] do |t, args|
@@ -179,11 +350,226 @@ namespace :aws do
     ensure_bucket!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, region: source_region)
     ensure_bucket!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, region: replica_region)
 
-    puts "✅ Both buckets are provisioned and versioning enabled."
-    puts "ℹ️  Note: CORS policies and other settings must be configured manually as needed."
-    puts "⚠️  Warning: without proper CORS settings, web apps will face issues accessing the buckets."
-    puts "ℹ️  Note: Replication must be setup manually"
-    puts "⚠️  Warning: without replication setup, objects will not be auto-replicated between buckets."
+    # --- Replication IAM role (idempotent) -----------------------------------
+    # One role per env, allowed to read both source buckets and write both
+    # replica buckets. create_role is guarded; put_role_policy is an upsert.
+    def ensure_replication_role!(iam:, role_name:, source_buckets:, dest_buckets:)
+      trust_policy = {
+        Version: "2012-10-17",
+        Statement: [{ Effect: "Allow", Principal: { Service: "s3.amazonaws.com" }, Action: "sts:AssumeRole" }]
+      }
+      begin
+        iam.create_role(role_name: role_name, assume_role_policy_document: trust_policy.to_json)
+        puts "🔐 Created S3 replication role '#{role_name}'."
+      rescue Aws::IAM::Errors::EntityAlreadyExists
+        puts "✅ Replication role '#{role_name}' already exists."
+      end
+
+      # Standard minimal permission set for S3 replication (source read side +
+      # destination replicate side)
+      permission_policy = {
+        Version: "2012-10-17",
+        Statement: [
+          { Effect: "Allow",
+            Action: ["s3:GetReplicationConfiguration", "s3:ListBucket"],
+            Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}" } },
+          { Effect: "Allow",
+            Action: ["s3:GetObjectVersionForReplication", "s3:GetObjectVersionAcl", "s3:GetObjectVersionTagging"],
+            Resource: source_buckets.map { |b| "arn:aws:s3:::#{b}/*" } },
+          { Effect: "Allow",
+            Action: ["s3:ReplicateObject", "s3:ReplicateDelete", "s3:ReplicateTags"],
+            Resource: dest_buckets.map { |b| "arn:aws:s3:::#{b}/*" } }
+        ]
+      }
+      iam.put_role_policy(role_name: role_name, policy_name: "s3-replication", policy_document: permission_policy.to_json)
+      iam.get_role(role_name: role_name).role.arn
+    end
+
+    # --- Replication config (idempotent, never clobbers) ---------------------
+    # If the source bucket already replicates to the expected destination we
+    # leave the existing (possibly hand-tuned) config untouched. If it
+    # replicates somewhere ELSE we warn and skip rather than overwrite —
+    # already-configured regions are never silently changed.
+    def ensure_replication!(client:, source_bucket:, dest_bucket:, role_arn:)
+      # Some envs (e.g. staging) set AWS_S3_BUCKET_REPLICA equal to the source
+      # bucket — S3 rejects self-replication. Skip loudly instead of aborting:
+      # the env needs a real replica bucket configured for DR to mean anything.
+      if source_bucket == dest_bucket
+        puts "⚠️  Skipping replication for '#{source_bucket}': AWS_S3_BUCKET_REPLICA equals AWS_S3_BUCKET."
+        puts "   Set a distinct replica bucket (+ AWS_S3_REPLICA_REGION) in the env to enable cross-region DR copies."
+        return
+      end
+
+      dest_arn = "arn:aws:s3:::#{dest_bucket}"
+      begin
+        existing = client.get_bucket_replication(bucket: source_bucket).replication_configuration
+        existing_dests = existing.rules.map { |r| r.destination.bucket }
+        if existing_dests.include?(dest_arn)
+          puts "✅ Replication #{source_bucket} → #{dest_bucket} already configured — leaving as-is."
+        else
+          puts "⚠️  #{source_bucket} already replicates to #{existing_dests.join(', ')} but not to #{dest_bucket}."
+          puts "   Not overwriting an existing replication config — reconcile manually if this is unexpected."
+        end
+        return
+      rescue Aws::S3::Errors::ReplicationConfigurationNotFoundError
+        # No config yet — fall through and create it
+      end
+
+      client.put_bucket_replication(
+        bucket: source_bucket,
+        replication_configuration: {
+          role: role_arn,
+          rules: [{
+            id: "irm-replicate-all",
+            status: "Enabled",
+            priority: 1,
+            # Deletes are deliberately NOT replicated: a bad delete (or ransomware)
+            # on the source must not propagate to the DR copy
+            delete_marker_replication: { status: "Disabled" },
+            filter: {}, # whole bucket
+            destination: { bucket: dest_arn }
+          }]
+        }
+      )
+      puts "🔁 Replication configured: #{source_bucket} → #{dest_bucket}."
+      puts "   ℹ️  Replication covers NEW objects only — backfill existing ones with"
+      puts "   aws s3 sync s3://#{source_bucket} s3://#{dest_bucket} (or S3 Batch Replication)."
+    end
+
+    # --- CORS (idempotent, never clobbers) ------------------------------------
+    # Existing CORS (possibly hand-tuned in already-live regions) is left alone;
+    # only buckets with no CORS at all get the default rules.
+    def ensure_cors!(client:, bucket:, origins:)
+      begin
+        client.get_bucket_cors(bucket: bucket)
+        puts "✅ CORS already configured on '#{bucket}' — leaving as-is."
+        return
+      rescue Aws::S3::Errors::NoSuchCORSConfiguration
+        # No CORS yet — apply the default below
+      end
+
+      client.put_bucket_cors(
+        bucket: bucket,
+        cors_configuration: {
+          cors_rules: [{
+            allowed_methods: %w[GET PUT POST HEAD],
+            allowed_origins: origins,
+            allowed_headers: ["*"],
+            expose_headers: ["ETag"],
+            max_age_seconds: 3000
+          }]
+        }
+      )
+      puts "🌐 CORS applied to '#{bucket}' (origins: #{origins.join(', ')})."
+    end
+
+    # Role + both replication pairs (app assets and xtrabackup DB backups —
+    # the latter is what makes DB backups survive a region loss)
+    require "aws-sdk-iam"
+    iam = Aws::IAM::Client.new
+    # IAM role names are capped at 64 chars — truncate defensively
+    role_arn = ensure_replication_role!(
+      iam: iam,
+      role_name: "irm-s3-replication-#{source_bucket}"[0, 64],
+      source_buckets: [source_bucket, db_backup_xtra_bucket],
+      dest_buckets: [replica_bucket, replica_db_backup_xtra_bucket]
+    )
+    ensure_replication!(client: s3[:source], source_bucket: source_bucket, dest_bucket: replica_bucket, role_arn: role_arn)
+    ensure_replication!(client: s3[:db_backup_xtra], source_bucket: db_backup_xtra_bucket, dest_bucket: replica_db_backup_xtra_bucket, role_arn: role_arn)
+
+    # CORS on the app-assets buckets only (browser uploads/downloads); backup
+    # buckets are never touched by browsers. Origins: S3_CORS_ORIGINS (comma-
+    # separated) wins, else derived from BASE_DOMAIN, else "*" with a warning.
+    cors_origins =
+      if ENV["S3_CORS_ORIGINS"].to_s.strip != ""
+        ENV["S3_CORS_ORIGINS"].split(",").map(&:strip)
+      elsif ENV["BASE_DOMAIN"].to_s.strip != ""
+        ["https://*.#{ENV['BASE_DOMAIN']}", "https://#{ENV['BASE_DOMAIN']}"]
+      else
+        puts "⚠️  Neither S3_CORS_ORIGINS nor BASE_DOMAIN set — defaulting CORS origins to '*'."
+        ["*"]
+      end
+    ensure_cors!(client: s3[:source],  bucket: source_bucket,  origins: cors_origins)
+    ensure_cors!(client: s3[:replica], bucket: replica_bucket, origins: cors_origins)
+
+    # --- Retention lifecycle on the BACKUP buckets (idempotent, never clobbers)
+    # Replaces the unimplemented ">30 days cleanup" TODO in db_backup_xtra.sh:
+    # lifecycle rules run inside S3, so retention cannot silently stop when a
+    # server is rebuilt or a cron dies. Applied to both backup buckets — S3 does
+    # NOT replicate lifecycle actions, so the replica needs its own copy.
+    # App-asset buckets are deliberately excluded (assets are kept forever).
+    def ensure_lifecycle!(client:, bucket:, days:)
+      begin
+        client.get_bucket_lifecycle_configuration(bucket: bucket)
+        puts "✅ Lifecycle already configured on '#{bucket}' — leaving as-is."
+        return
+      rescue Aws::S3::Errors::NoSuchLifecycleConfiguration
+        # No lifecycle yet — apply the retention rule below
+      end
+
+      client.put_bucket_lifecycle_configuration(
+        bucket: bucket,
+        lifecycle_configuration: {
+          rules: [{
+            id: "irm-backup-retention-#{days}d",
+            status: "Enabled",
+            filter: {}, # whole bucket
+            # Current backups expire after the retention window. A nightly full
+            # means ~#{days} restore points are always available.
+            expiration: { days: days },
+            # The buckets are versioned (required for replication), so expired/
+            # deleted objects linger as noncurrent versions and keep costing
+            # money — purge those 30 days after they become noncurrent.
+            noncurrent_version_expiration: { noncurrent_days: 30 },
+            # xbcloud uploads via multipart; failed uploads leave invisible,
+            # billed parts behind — abort them after a week.
+            abort_incomplete_multipart_upload: { days_after_initiation: 7 }
+          }]
+        }
+      )
+      puts "🗓️  Lifecycle applied to '#{bucket}': expire after #{days}d, purge noncurrent versions after 30d."
+    end
+
+    retention_days = ENV.fetch("DB_BACKUP_RETENTION_DAYS", "90").to_i
+    ensure_lifecycle!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket, days: retention_days)
+    ensure_lifecycle!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket, days: retention_days)
+
+    # --- Default encryption at rest (idempotent, never clobbers) --------------
+    # Buckets created after Jan 2023 get SSE-S3 automatically, but older ones
+    # may have nothing — and the DB backups (full plaintext dumps of the
+    # database) must never sit unencrypted. Any existing encryption config
+    # (SSE-S3 or a hand-configured SSE-KMS) is left untouched; only buckets
+    # with NO encryption get AES256. SSE-S3 over SSE-KMS deliberately: zero
+    # key management, no extra KMS grants needed for replication, and the
+    # instance-role IAM stays as scoped as Point 5 left it.
+    # NOTE: applies to newly written objects only — pre-existing objects stay
+    # as they were (they age out via the 90d lifecycle anyway).
+    def ensure_encryption!(client:, bucket:)
+      begin
+        client.get_bucket_encryption(bucket: bucket)
+        puts "✅ Encryption already configured on '#{bucket}' — leaving as-is."
+        return
+      rescue Aws::S3::Errors::ServerSideEncryptionConfigurationNotFoundError
+        # No encryption at all (pre-2023 bucket) — apply SSE-S3 below
+      end
+
+      client.put_bucket_encryption(
+        bucket: bucket,
+        server_side_encryption_configuration: {
+          rules: [{ apply_server_side_encryption_by_default: { sse_algorithm: "AES256" } }]
+        }
+      )
+      puts "🔒 Default SSE-S3 encryption applied to '#{bucket}'."
+    end
+
+    # All four buckets: assets + DB backups, source + replica
+    ensure_encryption!(client: s3[:source],  bucket: source_bucket)
+    ensure_encryption!(client: s3[:replica], bucket: replica_bucket)
+    ensure_encryption!(client: s3[:db_backup_xtra], bucket: db_backup_xtra_bucket)
+    ensure_encryption!(client: s3[:replica_db_backup_xtra], bucket: replica_db_backup_xtra_bucket)
+
+    puts "✅ Buckets provisioned: versioning, cross-region replication, CORS and backup retention are all codified."
+    puts "   Safe to re-run anytime — existing configs in live regions are never overwritten."
   end
   desc "Generate Prometheus configuration (prometheus.yml) with EC2 instance IPs"
   task :generate_prometheus_yml, [:env_name] do |t, args|

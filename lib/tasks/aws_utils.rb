@@ -77,23 +77,32 @@ module AwsUtils
     def replace_ip_addresses(file_path, new_ips)
 
         puts "🔄 Replacing IP addresses #{new_ips} in file: #{file_path}"
-        # Read the file content
-        content = File.read(file_path)
 
-        # Find and replace IP addresses
+        # Replace line by line, SKIPPING comments: the deploy files carry
+        # commented-out example `server "IP"` lines, and the old whole-file
+        # gsub consumed the replacement IPs on those — leaving the real
+        # server line with nil (`server ""`), which cap then tried to SSH
+        # as 0.0.0.0:22. Found by the first DR drill.
         ip_index = 0
-        updated_content = content.gsub(/server "(\d+\.\d+\.\d+\.\d+)"/) do
-            "server \"#{new_ips[ip_index]}\"".tap { ip_index += 1 if ip_index < new_ips.size }
-        end
+        updated_lines = File.readlines(file_path).map do |line|
+            next line if line.strip.start_with?("#") # commented lines untouched
 
-        # Check if all IPs have been used; if not, raise an error
+            line.gsub(/server "(\d+\.\d+\.\d+\.\d+)"/) do
+                replacement = new_ips[ip_index]
+                # Never write an empty host — fail loudly instead
+                raise "Ran out of replacement IPs for #{file_path}: #{new_ips.size} provided, but more active `server` lines exist" if replacement.to_s.empty?
+
+                ip_index += 1
+                "server \"#{replacement}\""
+            end
+        end
 
         if ip_index < new_ips.size
-            puts "⚠️ Not all new IPs were used. Please check the number of server entries and the number of provided IPs."
+            # Informational: e.g. staging runs one box but two web IPs exist
+            puts "ℹ️ Used #{ip_index}/#{new_ips.size} new IPs (fewer active `server` lines than IPs)."
         end
 
-        # Write the updated content back to the file
-        File.write(file_path, updated_content)
+        File.write(file_path, updated_lines.join)
 
         puts "✅ IP addresses replaced successfully in file: #{file_path}"
     end
@@ -308,30 +317,105 @@ module AwsUtils
     latest_ami
   end
 
+  # Reads a single Pulumi config value for a stack. Returns nil when the key is
+  # not set (pulumi exits non-zero for missing keys), so callers can distinguish
+  # "needs to be set" from "already configured".
+  def pulumi_config_get(stack_name, key)
+    output, _stderr, status = Open3.capture3("pulumi config get #{key} --stack #{stack_name}", chdir: "../IRM-Infra")
+    status.success? ? output.strip : nil
+  end
+
+  # Authoritative stack outputs straight from the Pulumi backend. Replaces the
+  # old ../IRM-Infra/output.json file handoff: that file is a side-effect write
+  # from whichever stack ran `pulumi up` LAST on this machine — reading it for
+  # stack A after touching stack B silently hands you the wrong region's IPs.
+  # `pulumi stack output --stack <name>` cannot be stale or cross-wired.
+  def pulumi_stack_output(stack_name)
+    out, err, status = Open3.capture3("pulumi stack output --json --stack #{stack_name}", chdir: "../IRM-Infra")
+    raise "pulumi stack output failed for #{stack_name}: #{err}" unless status.success?
+
+    parsed = JSON.parse(out)
+    parsed["IPs"] or raise "Stack #{stack_name} has no 'IPs' output — has `pulumi up` been run on it?"
+  end
+
+  # Pulumi stack naming convention: <stack>-<region> (e.g. production-ap-south-2).
+  # env_variant (in/us) deliberately does NOT appear in the stack name — the region
+  # already implies the variant. The variant only selects app-repo file names
+  # (.env.<stack>.<variant>, credentials <stack>.<variant>.yml.enc, cap stage
+  # <stack>_<variant>). Keep all four conventions in sync when changing this.
   def setup_pulumi_config(stack, web_server_name, db_server_name, region, env_variant)
 
     puts "🐞 DEBUG: setup_pulumi_config called with stack: '#{stack}', web_server_name: '#{web_server_name}', db_server_name: '#{db_server_name}', region: '#{region}'"
+    stack_name = "#{stack}-#{region}"
+
+    # Plain key names — the stack file is already per-region, so no region
+    # prefix (the prefixed form caused wrong-region copy-paste bugs; __main__.py
+    # keeps a legacy fallback for old files but plain is canonical).
     pulumi_config = {
-      "IRM-infra:#{region}_web_server_ami" => latest_ami(web_server_name, region).image_id,
-      "IRM-infra:#{region}_db_server_ami" => latest_ami(db_server_name, region).image_id,
-      "IRM-infra:#{region}_observability_ami" => latest_ami("Observability", region).image_id
+      "IRM-infra:web_server_ami" => latest_ami(web_server_name, region).image_id,
+      "IRM-infra:db_server_ami" => latest_ami(db_server_name, region).image_id,
+      "IRM-infra:observability_ami" => latest_ami("Observability", region).image_id
     }
 
-    # Select or create the Pulumi stack
-    run_cmd("pulumi stack select #{stack}-#{region} --create", "../IRM-Infra")
-
+    # Select or create the Pulumi stack. --create makes a brand-new region a
+    # one-command setup; ensure_pulumi_stack_config below guarantees a freshly
+    # created stack cannot end up half-configured.
+    run_cmd("pulumi stack select #{stack_name} --create", "../IRM-Infra")
 
     pulumi_config.each do |key, value|
       puts "⚙️ Setting pulumi config: #{key} => #{value}"
-      run_cmd("pulumi config set --stack #{stack}-#{region} #{key} #{value}", "../IRM-Infra")
+      run_cmd("pulumi config set --stack #{stack_name} #{key} #{value}", "../IRM-Infra")
     end
 
+    run_cmd("pulumi config set --stack #{stack_name} region #{region}", "../IRM-Infra")
 
-
-    run_cmd("pulumi config set --stack #{stack}-#{region} region #{region}", "../IRM-Infra")
+    ensure_pulumi_stack_config(stack_name, region)
   end
 
-  def setup_infra(stack, web_server_name, db_server_name, region, env_variant)
+  # Guarantees the stack satisfies every config.require() in IRM-Infra/__main__.py
+  # (region + 3 AMI keys are set above; domain_name and <region>_key_name are
+  # curated values that survive from run to run). For an existing stack these are
+  # already in the Pulumi.<stack>.yaml and nothing happens. For a NEW region they
+  # must come from ENV — we fail fast here with instructions rather than letting
+  # `pulumi up` die later with a bare "Missing required configuration variable".
+  def ensure_pulumi_stack_config(stack_name, region)
+    if pulumi_config_get(stack_name, "domain_name").to_s.empty?
+      domain = ENV["DOMAIN_NAME"]
+      raise <<~MSG if domain.to_s.empty?
+        Stack #{stack_name} has no domain_name configured and DOMAIN_NAME is not set.
+        For a new region/stack, pass the wildcard cert domain for this variant, e.g.:
+          DOMAIN_NAME='*.caphive.com' (IN)  or  DOMAIN_NAME='*.caphive.us' (US)
+        The value must keep the leading '*.': ACM rejects '*caphive.com', and
+        certificate.py/alb.py derive the hosted zone and grafana host from it.
+      MSG
+      # Single-quote the value: the wildcard '*' must reach pulumi unexpanded
+      run_cmd("pulumi config set --stack #{stack_name} domain_name '#{domain}'", "../IRM-Infra")
+    end
+
+    # Plain key preferred; accept a legacy region-prefixed value as "configured"
+    # so pre-migration stacks don't get prompted needlessly
+    if pulumi_config_get(stack_name, "key_name").to_s.empty? &&
+       pulumi_config_get(stack_name, "#{region}_key_name").to_s.empty?
+      key_name = ENV["AWS_KEY_NAME"]
+      raise <<~MSG if key_name.to_s.empty?
+        Stack #{stack_name} has no key_name configured and AWS_KEY_NAME is not set.
+        EC2 key pairs are per-region and are NOT created by Pulumi: create/import the
+        key pair in #{region} first (EC2 -> Key Pairs), then re-run with e.g.:
+          AWS_KEY_NAME=caphive
+      MSG
+      run_cmd("pulumi config set --stack #{stack_name} key_name #{key_name}", "../IRM-Infra")
+    end
+  end
+
+  # Master DR/new-region orchestration.
+  #
+  # Two modes, selected by branch_name:
+  #   nil/blank  → LEGACY INTERACTIVE: pauses so the operator restores the DB
+  #                by hand, commits manually and types a branch name (STDIN).
+  #   given      → NON-INTERACTIVE: auto-commits the rewritten config files to
+  #                that branch, pushes, and runs the whole recovery unattended —
+  #                including primary+replica restore and migration replay.
+  def setup_infra(stack, web_server_name, db_server_name, region, env_variant, branch_name = nil)
     setup_pulumi_config(stack, web_server_name, db_server_name, region, env_variant)
 
     puts "⬆️ Running pulumi up for stack: #{stack}. (This could take a long time, please be patient)"
@@ -339,50 +423,103 @@ module AwsUtils
     run_cmd("pulumi up --stack #{stack}-#{region} --yes --color=always", "../IRM-Infra")
     # Get the pulumi output
 
-    puts "📥 Getting pulumi output"
-    pulumi_output = JSON.parse(File.read "../IRM-Infra/output.json")
+    puts "📥 Getting pulumi output (authoritative, from the stack backend)"
+    pulumi_output = pulumi_stack_output("#{stack}-#{region}")
 
     pulumi_output.each do |key, value|
       puts "✅ Got pulumi output: #{key} => #{value}"
     end
 
-    # Update the Rails credentials
+    # NOTE: output.json has NO "IPs" wrapper — its top-level keys are
+    # private_ips/public_ips/... (see outputs.py). The old dig("IPs", ...)
+    # calls silently returned nil, which would have written nil into the
+    # credentials and deploy files mid-DR. Guard against nil explicitly.
     ["DB_HOST", "DB_HOST_REPLICA"].each do |key|
       rails_env = stack
-      value = pulumi_output.dig("IPs", "private_ips", key)
+      value = pulumi_output.dig("private_ips", key)
+      raise "Pulumi output missing private_ips.#{key} — check ../IRM-Infra/output.json" if value.to_s.empty?
+
       update_rails_credentials(rails_env, env_variant, key, value) # Pass env_variant here
     end
 
-    elastic_url = pulumi_output.dig("IPs", "private_ips", "DB_HOST") #pulumi_output["private_ips"]["ELASTIC_SEARCH_URL"]
+    elastic_url = pulumi_output.dig("private_ips", "DB_HOST")
     update_env_file(".env.#{stack}.#{env_variant}", "ELASTIC_SEARCH_URL", "#{elastic_url}:9200") # Use env_variant in file path
-    redis_url = pulumi_output.dig("IPs", "private_ips", "DB_HOST") #pulumi_output["private_ips"]["REDIS_URL"]
+    redis_url = pulumi_output.dig("private_ips", "DB_HOST")
     update_env_file(".env.#{stack}.#{env_variant}", "REDIS_URL", "redis://#{redis_url}:6379") # Use env_variant in file path
 
-    # Update the deploy files with the new IP addresses
-    replace_ip_addresses(Rails.root.join('config', 'deploy', "#{stack}_#{env_variant}.rb"), pulumi_output.dig("IPs", "public_ips", "AppServers", 0))
-    puts "\n#######################"
-    puts "Manually load the backup DB into the primary DB. Use the script generated by xtrabackup.generate_backup_script"
-    puts "Push this script to the DB primary and run it with recover_primary param."
-    puts "#########################"
+    # Update the deploy files with the new IP addresses.
+    # AppServers is exported via Output.all([...]) and lands double-nested in
+    # output.json ([["ip1","ip2"]]); dig(...,0) unwraps to the inner ARRAY,
+    # which is what replace_ip_addresses expects (one IP per `server` line).
+    app_server_ips = pulumi_output.dig("public_ips", "AppServers", 0)
+    raise "Pulumi output missing public_ips.AppServers — check ../IRM-Infra/output.json" unless app_server_ips.is_a?(Array) && app_server_ips.any?
 
+    replace_ip_addresses(Rails.root.join('config', 'deploy', "#{stack}_#{env_variant}.rb"), app_server_ips)
 
-    puts "\n#######################"
-    puts "⚠️ You need to commit your code, with the updated credentials, .env and deploy files, before deploying the app."
-    puts "👉 Please enter branch name to deploy to continue once you have committed the code."
-    puts "#########################"
-    branch_name = get_branch
+    if branch_name.to_s.strip.empty?
+      # ------------------- LEGACY INTERACTIVE MODE -------------------
+      puts "\n#######################"
+      puts "Manually load the backup DB into the primary DB. On the DB box run:"
+      puts "  sudo /usr/local/bin/db_backup_xtra.sh restore_primary   (baked AMI)"
+      puts "or push the generated tmp/db_backup_xtra_#{stack}.sh and run 'restore_primary'."
+      puts "#########################"
+
+      puts "\n#######################"
+      puts "⚠️ You need to commit your code, with the updated credentials, .env and deploy files, before deploying the app."
+      puts "👉 Please enter branch name to deploy to continue once you have committed the code."
+      puts "#########################"
+      branch_name = get_branch
+      restore_tasks = ["recovery:restore_replica_db"] # primary was restored by hand above
+    else
+      # ------------------- NON-INTERACTIVE MODE -------------------
+      commit_dr_changes(stack, env_variant, region, branch_name)
+      # Primary + replica restore both run remotely from the app server
+      # (recovery:load_db_from_backups), then migrations newer than the backup
+      # are replayed BEFORE traffic is switched back.
+      restore_tasks = ["recovery:load_db_from_backups", "recovery:migrate"]
+    end
 
     # Deploy the app
-
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:delete_old_assets")
     run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true bundle exec cap #{stack}_#{env_variant} IRM:setup")
     run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true bundle exec cap #{stack}_#{env_variant} deploy")
     # Now stop sidekiq, puma and monitoring and switch to maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_maintenance")
-    # Load the DB from backups and create the replica
-    run_cmd("branch=#{branch_name} bundle exec cap #{stack}_#{env_variant} recovery:restore_replica_db")
+    # Load the DB from backups (and replay migrations in non-interactive mode)
+    restore_tasks.each do |task|
+      run_cmd("branch=#{branch_name} bundle exec cap #{stack}_#{env_variant} #{task}")
+    end
     # Switch back to the app and remove maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_app")
+
+    puts "\n✅ DR sequence complete. Verify with: rake s3:check_backup_freshness"
+  end
+
+  # Commits ONLY the files setup_infra just rewrote to a dedicated DR branch and
+  # pushes it (Capistrano deploys by cloning the remote, so the branch must
+  # exist on origin). Never `git add -A` — stray local changes on the operator
+  # machine must not ride along in a DR commit.
+  def commit_dr_changes(stack, env_variant, region, branch_name)
+    files = [
+      "config/credentials/#{stack}.#{env_variant}.yml.enc",
+      ".env.#{stack}.#{env_variant}",
+      "config/deploy/#{stack}_#{env_variant}.rb"
+    ]
+
+    puts "📝 Committing DR config changes to branch '#{branch_name}'"
+    # -B: create the branch, or reset an existing one to the current HEAD —
+    # makes re-runs of the same DR command converge instead of failing
+    run_cmd("git checkout -B #{branch_name}")
+
+    changes = `git status --porcelain -- #{files.join(' ')}`.strip
+    if changes.empty?
+      puts "ℹ️ No changes in #{files.join(', ')} — nothing to commit (re-run?)."
+    else
+      run_cmd("git add #{files.join(' ')}")
+      run_cmd(%(git commit -m "DR infra update: #{stack}-#{region} (#{env_variant}) #{Time.now.strftime('%Y-%m-%d %H:%M')}"))
+    end
+    # Push either way so the branch exists on origin for the cap deploy
+    run_cmd("git push -u origin #{branch_name}")
   end
 
 

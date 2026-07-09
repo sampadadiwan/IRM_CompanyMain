@@ -33,124 +33,139 @@ namespace :packer do
     puts "Using AWS Region: #{aws_region}"
     common_vars['aws_region'] = aws_region # Add aws_region to common_vars
 
-    # Helper to create a VPC if it doesn't exist
-    def create_vpc_if_not_exists(aws_region, vpc_tag_value)
-      puts "Attempting to find VPC with tag Name=#{vpc_tag_value} in region #{aws_region}"
-      vpc_id = `aws ec2 describe-vpcs --filters "Name=tag:Name,Values=#{vpc_tag_value}" --query "Vpcs[0].VpcId" --output text --region #{aws_region}`.strip
-      puts "Initial VPC ID check result: '#{vpc_id}'"
+    # ------------------------------------------------------------------------
+    # Packer build network ("packer-build-<region>").
+    #
+    # Deliberately SEPARATE from the Pulumi-managed app VPC: AMIs must exist
+    # BEFORE the Pulumi stack can be created (the stack config requires AMI
+    # ids), so in a brand-new region Packer runs first — there is nothing to
+    # reuse. Everything created here is tagged Purpose=packer-build so it can
+    # never be mistaken for app infrastructure, and can be removed with
+    # rake "packer:teardown_build_network[<region>]".
+    # CIDR 10.99.0.0/16 (vs the app VPC's 10.0.0.0/16) makes it obviously
+    # not-production in any console listing.
+    # ------------------------------------------------------------------------
 
-      if vpc_id.nil? || vpc_id.empty? || vpc_id.strip == "None"
-        puts "VPC with tag Name=#{vpc_tag_value} not found. Creating a new VPC..."
-        create_vpc_command = "aws ec2 create-vpc --cidr-block 10.0.0.0/16 --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=#{vpc_tag_value}}]' --query 'Vpc.VpcId' --output text --region #{aws_region}"
-        puts "Executing VPC creation command: #{create_vpc_command}"
-        vpc_id = `#{create_vpc_command}`.strip
-        puts "VPC creation command raw output: '#{vpc_id}'"
-        if vpc_id.nil? || vpc_id.empty? || vpc_id.strip == "None"
-          fail "Error: Failed to create VPC with tag Name=#{vpc_tag_value} in region #{aws_region}. Output: '#{vpc_id}'"
-        end
-        puts "Created VPC with ID: #{vpc_id}"
-
-        # Enable DNS hostnames and resolution
-        `aws ec2 modify-vpc-attribute --vpc-id #{vpc_id} --enable-dns-hostnames '{"Value":true}' --region #{aws_region}`
-        `aws ec2 modify-vpc-attribute --vpc-id #{vpc_id} --enable-dns-support '{"Value":true}' --region #{aws_region}`
-        puts "Enabled DNS support and hostnames for VPC #{vpc_id}"
-      else
-        puts "VPC with ID: #{vpc_id} already exists."
-      end
-      vpc_id
+    def packer_build_tags(name)
+      [{ key: "Name", value: name }, { key: "Purpose", value: "packer-build" }]
     end
 
-    # Helper to fetch common AWS resource IDs
+    # SSH ingress for the build instance: the caller's public IP only — a bake
+    # runs a root-credentialed instance and must not be world-reachable.
+    # Override with PACKER_SSH_CIDR (e.g. a CI egress range).
+    def packer_ssh_cidr
+      return ENV["PACKER_SSH_CIDR"] unless ENV["PACKER_SSH_CIDR"].to_s.empty?
+
+      require 'net/http'
+      ip = Net::HTTP.get(URI("https://checkip.amazonaws.com")).strip
+      fail "Could not determine caller public IP (got '#{ip}') — set PACKER_SSH_CIDR" unless ip.match?(/\A\d{1,3}(\.\d{1,3}){3}\z/)
+
+      "#{ip}/32"
+    end
+
+    # Find-or-create the dedicated build network. Idempotent; raises loudly on
+    # any AWS failure instead of limping on with empty IDs (the old backtick
+    # implementation only ever compared output against the string "None").
+    def ensure_build_network(aws_region, env_variant)
+      require 'aws-sdk-ec2'
+      ec2 = Aws::EC2::Client.new(region: aws_region)
+      vpc_name = "packer-build-#{aws_region}"
+
+      # VPC
+      vpc = ec2.describe_vpcs(filters: [{ name: "tag:Name", values: [vpc_name] }]).vpcs.first
+      if vpc
+        vpc_id = vpc.vpc_id
+        puts "✅ Build VPC #{vpc_name} exists: #{vpc_id}"
+      else
+        vpc_id = ec2.create_vpc(
+          cidr_block: "10.99.0.0/16",
+          tag_specifications: [{ resource_type: "vpc", tags: packer_build_tags(vpc_name) }]
+        ).vpc.vpc_id
+        ec2.modify_vpc_attribute(vpc_id: vpc_id, enable_dns_hostnames: { value: true })
+        ec2.modify_vpc_attribute(vpc_id: vpc_id, enable_dns_support: { value: true })
+        puts "🪣 Created build VPC #{vpc_name}: #{vpc_id}"
+      end
+
+      # Internet gateway (build instances need outbound for apt/gems/etc.)
+      igw = ec2.describe_internet_gateways(filters: [{ name: "attachment.vpc-id", values: [vpc_id] }]).internet_gateways.first
+      if igw
+        igw_id = igw.internet_gateway_id
+      else
+        igw_id = ec2.create_internet_gateway(
+          tag_specifications: [{ resource_type: "internet-gateway", tags: packer_build_tags("#{vpc_name}-igw") }]
+        ).internet_gateway.internet_gateway_id
+        ec2.attach_internet_gateway(internet_gateway_id: igw_id, vpc_id: vpc_id)
+        puts "🌐 Created + attached build IGW: #{igw_id}"
+      end
+
+      # Public subnet in the first available AZ
+      subnet_name = "#{vpc_name}-subnet"
+      subnet = ec2.describe_subnets(filters: [{ name: "vpc-id", values: [vpc_id] }, { name: "tag:Name", values: [subnet_name] }]).subnets.first
+      if subnet
+        subnet_id = subnet.subnet_id
+      else
+        az = ec2.describe_availability_zones(filters: [{ name: "state", values: ["available"] }]).availability_zones.first
+        fail "No available AZs in #{aws_region}" unless az
+
+        subnet_id = ec2.create_subnet(
+          vpc_id: vpc_id, cidr_block: "10.99.1.0/24", availability_zone: az.zone_name,
+          tag_specifications: [{ resource_type: "subnet", tags: packer_build_tags(subnet_name) }]
+        ).subnet.subnet_id
+        ec2.modify_subnet_attribute(subnet_id: subnet_id, map_public_ip_on_launch: { value: true })
+
+        route_table_id = ec2.create_route_table(
+          vpc_id: vpc_id,
+          tag_specifications: [{ resource_type: "route-table", tags: packer_build_tags("#{vpc_name}-rtb") }]
+        ).route_table.route_table_id
+        ec2.create_route(route_table_id: route_table_id, destination_cidr_block: "0.0.0.0/0", gateway_id: igw_id)
+        ec2.associate_route_table(subnet_id: subnet_id, route_table_id: route_table_id)
+        puts "🛣️ Created build subnet #{subnet_id} (AZ #{az.zone_name}) + route table"
+      end
+
+      # Security group: SSH from the caller only — no 80/443 (Packer needs SSH,
+      # a build instance serves no web traffic)
+      sg_name = "packer-build-sg-#{aws_region}-#{env_variant}"
+      sg = ec2.describe_security_groups(filters: [{ name: "vpc-id", values: [vpc_id] }, { name: "group-name", values: [sg_name] }]).security_groups.first
+      if sg
+        sg_id = sg.group_id
+      else
+        sg_id = ec2.create_security_group(
+          group_name: sg_name, description: "Packer build SSH access (#{env_variant})", vpc_id: vpc_id,
+          tag_specifications: [{ resource_type: "security-group", tags: packer_build_tags(sg_name) }]
+        ).group_id
+        puts "🔐 Created build SG #{sg_name}: #{sg_id}"
+      end
+      # Ensure the CURRENT caller's IP is authorized (idempotent: duplicate
+      # rules raise and are ignored — operator IPs change between bakes)
+      begin
+        ec2.authorize_security_group_ingress(
+          group_id: sg_id,
+          ip_permissions: [{ ip_protocol: "tcp", from_port: 22, to_port: 22,
+                             ip_ranges: [{ cidr_ip: packer_ssh_cidr, description: "packer operator" }] }]
+        )
+        puts "🔑 SSH authorized from #{packer_ssh_cidr}"
+      rescue Aws::EC2::Errors::InvalidPermissionDuplicate
+        puts "✅ SSH already authorized from #{packer_ssh_cidr}"
+      end
+
+      { vpc_id: vpc_id, subnet_id: subnet_id, security_group_id: sg_id }
+    end
+
+    # Helper to fetch common AWS resource IDs for a bake
     def fetch_aws_resource_ids(aws_region, env_variant)
       resources = {}
 
-      # Dynamically fetch the latest Ubuntu AMI
-      resources['source_ami'] = `aws ssm get-parameters --names /aws/service/canonical/ubuntu/server/20.04/stable/current/amd64/hvm/ebs-gp3/ami-id --query "Parameters[0].Value" --output text --region #{aws_region}`.strip
+      # Latest canonical Ubuntu AMI via the public SSM parameter; fail loudly
+      # if unresolvable (network/creds/CLI trouble) instead of passing "" on
+      source_ami = `aws ssm get-parameters --names /aws/service/canonical/ubuntu/server/20.04/stable/current/amd64/hvm/ebs-gp3/ami-id --query "Parameters[0].Value" --output text --region #{aws_region}`.strip
+      fail "Could not resolve Ubuntu source AMI in #{aws_region} (got '#{source_ami}')" if source_ami.empty? || source_ami == "None"
 
-      # Dynamically fetch VPC, Subnet, and Security Group IDs
-      vpc_tag_value = "IRM-#{aws_region}"
-      vpc_id = create_vpc_if_not_exists(aws_region, vpc_tag_value)
-      puts "Fetched VPC ID: #{vpc_id}"
+      resources['source_ami'] = source_ami
 
-      # Create or get Internet Gateway
-      igw_id = `aws ec2 describe-internet-gateways --filters "Name=attachment.vpc-id,Values=#{vpc_id}" --query "InternetGateways[0].InternetGatewayId" --output text --region #{aws_region}`.strip
-      puts "Internet Gateway ID check result: '#{igw_id}'"
-      if igw_id.nil? || igw_id.empty? || igw_id.strip == "None"
-        puts "Internet Gateway not found for VPC #{vpc_id}. Creating a new Internet Gateway..."
-        igw_id = `aws ec2 create-internet-gateway --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=#{vpc_tag_value}-igw}]' --query 'InternetGateway.InternetGatewayId' --output text --region #{aws_region}`.strip
-        if igw_id.nil? || igw_id.empty? || igw_id.strip == "None"
-          fail "Error: Failed to create Internet Gateway for VPC #{vpc_id}. Output: '#{igw_id}'"
-        end
-        `aws ec2 attach-internet-gateway --internet-gateway-id #{igw_id} --vpc-id #{vpc_id} --region #{aws_region}`
-        puts "Created and attached Internet Gateway: #{igw_id} to VPC #{vpc_id}"
-      else
-        puts "Internet Gateway: #{igw_id} already exists for VPC #{vpc_id}."
-      end
-
-      # Create or get Public Subnet
-      subnet_tag_value = "public-subnet-1-#{aws_region}"
-      subnet_id = `aws ec2 describe-subnets --filters "Name=vpc-id,Values=#{vpc_id}" "Name=tag:Name,Values=#{subnet_tag_value}" --query "Subnets[0].SubnetId" --output text --region #{aws_region}`.strip
-      puts "Subnet ID check result: '#{subnet_id}'"
-      if subnet_id.nil? || subnet_id.empty? || subnet_id.strip == "None"
-        puts "Subnet with tag Name=#{subnet_tag_value} not found. Creating a new subnet..."
-        # Fetch an available availability zone
-        availability_zone = `aws ec2 describe-availability-zones --filters "Name=state,Values=available" --query "AvailabilityZones[0].ZoneName" --output text --region #{aws_region}`.strip
-        if availability_zone.nil? || availability_zone.empty? || availability_zone.strip == "None"
-          fail "Error: No available availability zones found in region #{aws_region}."
-        end
-        puts "Using Availability Zone: #{availability_zone}"
-
-        subnet_id = `aws ec2 create-subnet --vpc-id #{vpc_id} --cidr-block 10.0.1.0/24 --availability-zone #{availability_zone} --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=#{subnet_tag_value}}]' --query 'Subnet.SubnetId' --output text --region #{aws_region}`.strip
-        if subnet_id.nil? || subnet_id.empty? || subnet_id.strip == "None"
-          fail "Error: Failed to create Subnet with tag Name=#{subnet_tag_value} in VPC #{vpc_id}. Output: '#{subnet_id}'"
-        end
-        `aws ec2 modify-subnet-attribute --subnet-id #{subnet_id} --map-public-ip-on-launch --region #{aws_region}`
-        puts "Created Subnet with ID: #{subnet_id}"
-
-        # Create or get Route Table and associate with subnet
-        route_table_id = `aws ec2 describe-route-tables --filters "Name=vpc-id,Values=#{vpc_id}" "Name=tag:Name,Values=#{vpc_tag_value}-rtb" --query "RouteTables[0].RouteTableId" --output text --region #{aws_region}`.strip
-        puts "Route Table ID check result: '#{route_table_id}'"
-        if route_table_id.nil? || route_table_id.empty? || route_table_id.strip == "None"
-          puts "Route Table not found for VPC #{vpc_id}. Creating a new Route Table..."
-          route_table_id = `aws ec2 create-route-table --vpc-id #{vpc_id} --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=#{vpc_tag_value}-rtb}]' --query 'RouteTable.RouteTableId' --output text --region #{aws_region}`.strip
-          if route_table_id.nil? || route_table_id.empty? || route_table_id.strip == "None"
-            fail "Error: Failed to create Route Table for VPC #{vpc_id}. Output: '#{route_table_id}'"
-          end
-          `aws ec2 create-route --route-table-id #{route_table_id} --destination-cidr-block 0.0.0.0/0 --gateway-id #{igw_id} --region #{aws_region}`
-          puts "Created Route Table: #{route_table_id} and added default route to Internet Gateway."
-        else
-          puts "Route Table: #{route_table_id} already exists for VPC #{vpc_id}."
-        end
-        `aws ec2 associate-route-table --subnet-id #{subnet_id} --route-table-id #{route_table_id} --region #{aws_region}`
-        puts "Associated Subnet #{subnet_id} with Route Table #{route_table_id}"
-      else
-        puts "Subnet with ID: #{subnet_id} already exists."
-      end
-
-      # Create or get Security Group
-      security_group_name = "web-sg-#{aws_region}-#{env_variant}"
-      security_group_id = `aws ec2 describe-security-groups --filters "Name=vpc-id,Values=#{vpc_id}" "Name=group-name,Values=#{security_group_name}" --query "SecurityGroups[0].GroupId" --output text --region #{aws_region}`.strip
-      puts "Security Group ID check result: '#{security_group_id}'"
-      if security_group_id.nil? || security_group_id.empty? || security_group_id.strip == "None"
-        puts "Security Group '#{security_group_name}' not found. Creating a new Security Group..."
-        security_group_id = `aws ec2 create-security-group --group-name #{security_group_name} --description "Web server security group for #{env_variant} environment" --vpc-id #{vpc_id} --query 'GroupId' --output text --region #{aws_region}`.strip
-        if security_group_id.nil? || security_group_id.empty? || security_group_id.strip == "None"
-          fail "Error: Failed to create Security Group '#{security_group_name}' in VPC #{vpc_id}. Output: '#{security_group_id}'"
-        end
-        puts "Created Security Group with ID: #{security_group_id}"
-
-        # Add ingress rules (e.g., SSH from anywhere, HTTP/HTTPS from anywhere)
-        `aws ec2 authorize-security-group-ingress --group-id #{security_group_id} --protocol tcp --port 22 --cidr 0.0.0.0/0 --region #{aws_region}`
-        `aws ec2 authorize-security-group-ingress --group-id #{security_group_id} --protocol tcp --port 80 --cidr 0.0.0.0/0 --region #{aws_region}`
-        `aws ec2 authorize-security-group-ingress --group-id #{security_group_id} --protocol tcp --port 443 --cidr 0.0.0.0/0 --region #{aws_region}`
-        puts "Added ingress rules to Security Group #{security_group_id}"
-      else
-        puts "Security Group with ID: #{security_group_id} already exists."
-      end
-
-      resources['vpc_id'] = vpc_id
-      resources['subnet_id'] = subnet_id
-      resources['security_group_id'] = security_group_id
+      network = ensure_build_network(aws_region, env_variant)
+      resources['vpc_id'] = network[:vpc_id]
+      resources['subnet_id'] = network[:subnet_id]
+      resources['security_group_id'] = network[:security_group_id]
 
       resources
     end
@@ -159,7 +174,14 @@ namespace :packer do
     when 'dev'
       resources = fetch_aws_resource_ids(aws_region, env_variant)
       common_vars.merge!(resources)
-      common_vars['mysql_root_password'] = "Root1234$" # Placeholder, update with actual dev password
+      # Root password for the baked DB AMI. Never hardcode: it is baked into every
+      # AMI, including a network-reachable root@'%' account (see
+      # db_redis_es.ami.pkr.hcl mysql_password_setup). Fail loudly if unset —
+      # a bake must never fall back to a known placeholder password.
+      common_vars['mysql_root_password'] =
+        Rails.application.credentials.dig(:MYSQL_ROOT_PASSWORD) ||
+        ENV["MYSQL_ROOT_PASSWORD"] ||
+        raise("MYSQL_ROOT_PASSWORD not set: add it to Rails credentials or export it before baking AMIs")
       if env_variant == 'us'
         common_vars['ssh_keys_to_copy'] = '["altx.us.pem"]' # Pass as JSON array string
       else
@@ -173,7 +195,13 @@ namespace :packer do
     when 'prod'
       resources = fetch_aws_resource_ids(aws_region, env_variant)
       common_vars.merge!(resources)
-      common_vars['mysql_root_password'] = "Root1234$" # Placeholder, update with actual prod password
+      # Same rule as dev above: password comes from credentials/ENV only.
+      # Prod AMIs also bake root@'%', so a leaked/hardcoded value here would be
+      # a remote-root exposure on every DB instance launched from the AMI.
+      common_vars['mysql_root_password'] =
+        Rails.application.credentials.dig(:MYSQL_ROOT_PASSWORD) ||
+        ENV["MYSQL_ROOT_PASSWORD"] ||
+        raise("MYSQL_ROOT_PASSWORD not set: add it to Rails credentials or export it before baking AMIs")
       if env_variant == 'us'
         common_vars['ssh_keys_to_copy'] = '["caphive2.us.pem"]' # Pass as JSON array string
       else
@@ -189,6 +217,11 @@ namespace :packer do
 
     common_vars['ami_date'] = Time.now.strftime("%Y%m%d%H%M%S") # Set unique AMI date
     common_vars['user_home_dir'] = ENV['HOME'] # Pass the current user's home directory
+    # SSM path baked into the DB AMI (/etc/db_backup.env) — the backup script
+    # reads its secrets (mysql creds, bucket) from here at runtime via the
+    # instance role, so no credentials are ever baked into the AMI itself.
+    # Seed the parameters with: rake "xtrabackup:seed_ssm_params[<env_name>,<region>]"
+    common_vars['ssm_prefix'] = "/irm/#{env == 'prod' ? 'production' : 'staging'}/db_backup"
     common_vars.each do |key, value|
       ENV["PKR_VAR_#{key}"] = value
     end
@@ -260,5 +293,53 @@ namespace :packer do
   desc "Build all Packer templates (defaults to dev environment, 'us' variant and all templates)"
   task :build do
     Rake::Task["packer:build_env"].invoke('dev', 'us', 'all')
+  end
+
+  # Removes the dedicated packer-build network in a region (e.g. when a region
+  # is decommissioned). Only touches resources tagged Purpose=packer-build —
+  # the Pulumi app VPC can never match. Legacy build VPCs from the old
+  # implementation (tagged "IRM-<region>", no Purpose tag) are NOT touched;
+  # remove those manually once confirmed unused.
+  desc "Delete the packer-build network in a region (ex: rake packer:teardown_build_network[ap-south-1])"
+  task :teardown_build_network, [:region] do |t, args|
+    region = args[:region] or fail "region required, e.g. rake 'packer:teardown_build_network[ap-south-1]'"
+    require 'aws-sdk-ec2'
+    ec2 = Aws::EC2::Client.new(region: region)
+
+    vpc = ec2.describe_vpcs(filters: [
+      { name: "tag:Name", values: ["packer-build-#{region}"] },
+      { name: "tag:Purpose", values: ["packer-build"] }
+    ]).vpcs.first
+    unless vpc
+      puts "ℹ️ No packer-build VPC found in #{region} — nothing to do."
+      next
+    end
+    vpc_id = vpc.vpc_id
+    puts "🧹 Tearing down packer-build network #{vpc_id} in #{region}"
+
+    # Order matters: SGs and subnets before IGW, IGW before VPC
+    ec2.describe_security_groups(filters: [{ name: "vpc-id", values: [vpc_id] }]).security_groups.each do |sg|
+      next if sg.group_name == "default" # cannot be deleted; dies with the VPC
+
+      ec2.delete_security_group(group_id: sg.group_id)
+      puts "  ✂️ SG #{sg.group_name} (#{sg.group_id})"
+    end
+    ec2.describe_subnets(filters: [{ name: "vpc-id", values: [vpc_id] }]).subnets.each do |subnet|
+      ec2.delete_subnet(subnet_id: subnet.subnet_id)
+      puts "  ✂️ Subnet #{subnet.subnet_id}"
+    end
+    ec2.describe_route_tables(filters: [{ name: "vpc-id", values: [vpc_id] }]).route_tables.each do |rtb|
+      next if rtb.associations.any?(&:main) # main route table dies with the VPC
+
+      ec2.delete_route_table(route_table_id: rtb.route_table_id)
+      puts "  ✂️ Route table #{rtb.route_table_id}"
+    end
+    ec2.describe_internet_gateways(filters: [{ name: "attachment.vpc-id", values: [vpc_id] }]).internet_gateways.each do |igw|
+      ec2.detach_internet_gateway(internet_gateway_id: igw.internet_gateway_id, vpc_id: vpc_id)
+      ec2.delete_internet_gateway(internet_gateway_id: igw.internet_gateway_id)
+      puts "  ✂️ IGW #{igw.internet_gateway_id}"
+    end
+    ec2.delete_vpc(vpc_id: vpc_id)
+    puts "✅ packer-build network removed from #{region}."
   end
 end

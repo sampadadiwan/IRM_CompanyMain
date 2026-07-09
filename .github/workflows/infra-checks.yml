@@ -1,0 +1,44 @@
+# Infra-file checks only (paths-filtered) — validates the rake tasks, backup
+# script and Packer templates that DR depends on, without touching the app's
+# own test pipeline. No AWS credentials needed.
+name: infra-checks
+on:
+  push:
+    paths:
+      - "lib/tasks/**"
+      - "config/deploy/templates/packer/**"
+      - "config/deploy.rb"
+      - ".github/workflows/infra-checks.yml"
+  pull_request:
+    paths:
+      - "lib/tasks/**"
+      - "config/deploy/templates/packer/**"
+      - "config/deploy.rb"
+      - ".github/workflows/infra-checks.yml"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ruby syntax (rake tasks + deploy config)
+        run: |
+          for f in lib/tasks/*.rake lib/tasks/*.rb config/deploy.rb; do
+            ruby -c "$f" > /dev/null || exit 1
+            echo "OK $f"
+          done
+
+      - name: Shell scripts (backup/restore path — DR-critical)
+        run: |
+          bash -n lib/tasks/db_backup_xtra.sh
+          shellcheck -S error lib/tasks/db_backup_xtra.sh || true  # advisory
+          for f in lib/tasks/*.sh; do bash -n "$f" && echo "OK $f"; done
+
+      - uses: hashicorp/setup-packer@v3
+
+      - name: Packer templates (syntax)
+        run: |
+          for t in config/deploy/templates/packer/*.pkr.hcl; do
+            packer validate -syntax-only "$t" && echo "OK $t"
+          done

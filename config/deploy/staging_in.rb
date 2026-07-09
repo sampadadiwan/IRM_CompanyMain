@@ -3,9 +3,14 @@
 # Defines a single server with a list of roles and multiple properties.
 # You can define all roles on a single server, or split them:
 
-# server "40.192.36.112", user: "ubuntu", roles: %w[app web] if ENV["LB"]
-# server "98.130.51.54", user: "ubuntu", roles: %w[primary app web db]
-
+# Two app servers, matching production topology (Pulumi launches one web
+# server per public subnet behind the ALB):
+#   - LB unset -> only the primary line active -> normal single-host deploy
+#   - LB=true  -> both lines active (aws:setup_infra/dr_drill pass LB=true)
+# Both lines deliberately carry the SAME IP while live staging is a single
+# box: Capistrano merges duplicate hosts, so LB=true degrades gracefully.
+# A DR rewrite (replace_ip_addresses) fills the two fresh IPs in file order.
+server "13.233.55.8", user: "ubuntu", roles: %w[app web] if ENV["LB"]
 server "13.233.55.8", user: "ubuntu", roles: %w[primary app web db]
 
 set :rails_env, "staging"

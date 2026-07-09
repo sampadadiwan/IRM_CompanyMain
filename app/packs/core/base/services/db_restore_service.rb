@@ -10,6 +10,9 @@ require 'shellwords'
 class DbRestoreService
   REGION = ENV.fetch("AWS_REGION")
   INSTANCE_NAME = 'DbCheckInstance'.freeze
+  # The real production primary (by Name tag). The ONLY instance that must stay
+  # armed for backups after a restore — see cleanup() and db_backup_xtra.sh.
+  PRIMARY_INSTANCE_NAME = 'DB-Redis-ES'.freeze
   LOCAL_SCRIPT_PATH = Rails.root.join("tmp", "db_backup_xtra_#{Rails.env}.sh")
   S3_BUCKET_NAME = "arn:aws:s3:::#{ENV.fetch('AWS_S3_BUCKET')}-backup-xtra/*".freeze
 
@@ -38,6 +41,9 @@ class DbRestoreService
   # 8. Cleans up temporary files and stops the instance.
   def run!(instance_name: INSTANCE_NAME, stop_instance_flag: true)
     total_start_time = Time.zone.now
+    # Remembered for cleanup(): whether the baked backup cron stays armed after
+    # the restore depends on WHICH instance we just restored (primary vs not).
+    @instance_name = instance_name
 
     # Ensure the backup script is present locally.
     Rails.logger.info { "[DbRestoreService] Starting step: Ensure script present" }
@@ -432,6 +438,12 @@ class DbRestoreService
       stop_and_disable_service(ssh, "docker.socket")
       stop_and_disable_service(ssh, "docker")
       clear_cron_jobs(ssh)
+      # Disarm the baked backup cron: restore_primary creates /etc/db_backup_enabled,
+      # but this DbCheckInstance is a throwaway verifier — if left armed it would
+      # push backups into the same S3 chain as the real primary and corrupt the
+      # restore lineage (see db_backup_xtra.sh ARMED_MARKER).
+      Rails.logger.debug { "  → Disarming baked DB backup cron on #{ip}" }
+      ssh.exec!("sudo rm -f /etc/db_backup_enabled")
       Rails.logger.debug { "  → Dropping MySQL database on #{ip}" }
       drop_mysql_database(ssh)
     end
@@ -513,6 +525,18 @@ class DbRestoreService
     Rails.logger.debug { "→ Cleaning up /tmp/xb* on #{ip}" }
     Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
       ssh.exec!("sudo rm -rf /tmp/xb*")
+      # The restore script ARMS the baked backup cron (/etc/db_backup_enabled)
+      # on whatever host it restores. That is only correct for the REAL primary
+      # (db:restore_primary_db during DR) — it must stay armed so backups resume.
+      # Every other target must be disarmed here: the DbCheckInstance verifier
+      # and the replica would otherwise write into the same S3 chain as the
+      # primary and corrupt the restore lineage (see db_backup_xtra.sh).
+      if @instance_name == PRIMARY_INSTANCE_NAME
+        Rails.logger.debug "  → Primary restore: leaving backup cron ARMED"
+      else
+        ssh.exec!("sudo rm -f /etc/db_backup_enabled")
+        Rails.logger.debug "  → Non-primary (#{@instance_name}): backup cron disarmed"
+      end
       Rails.logger.debug "✓ Cleanup successful"
     end
   rescue StandardError => e

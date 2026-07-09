@@ -32,6 +32,12 @@ Sidekiq.configure_server do |config|
     Sidekiq::Cron::Job.create(name: 'CapitalRemittanceStatusJob', cron: 'every day at 01:30', class: 'CapitalRemittanceStatusJob')
     # Check the S3 bucket for the backup
     Sidekiq::Cron::Job.create(name: 'S3CheckJob', cron: 'every 1 hour', class: 'S3CheckJob') if Rails.env.production?
+    # Alert when DB backups (xtrabackup buckets, primary + cross-region replica)
+    # go stale — catches dead cron, unarmed marker, broken replication, IAM drift.
+    # Deliberately NOT production-gated: staging backups silently died on
+    # 2026-06-08 and the gap went unnoticed for a month until a DR drill
+    # restored a 30-day-old database. Staging monitors its own buckets.
+    Sidekiq::Cron::Job.create(name: 'DbBackupFreshnessJob', cron: 'every 1 hour', class: 'DbBackupFreshnessJob')
     # Cleanup the old logs for ESign
     Sidekiq::Cron::Job.create(name: 'EsignLogCleanupJob', cron: '59 23 * * 0', class: 'EsignLogCleanupJob')
     # SkippedNotificationReportJob is NOT cron-scheduled — ApplicationMailer#record_notification_skip
