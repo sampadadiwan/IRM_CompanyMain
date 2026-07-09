@@ -55,6 +55,177 @@ namespace :aws do
     setup_pulumi_config(args[:stack], args[:web_server_name], args[:db_server_name], args[:region], args[:env_variant])
   end
 
+  # Automates the "always-true readiness" checklist from docs/DR_GUIDE.md §1:
+  # everything that must be true BEFORE a disaster for DR to work. Prints a
+  # ✅/⚠️/❌ scorecard; exits non-zero if any hard failure — so it can run in
+  # cron/CI later. Read-only: checks, never fixes.
+  # ex: rake "aws:dr_readiness[production, in, ap-south-2, production.in]"
+  #     rake "aws:dr_readiness"          # staging, in, $AWS_BACKUP_REGION
+  desc "DR readiness scorecard: backups, AMIs, SSM, stack config, key pair, zone, drill recency"
+  task :dr_readiness, [:stack, :env_variant, :region, :env_name] => :environment do |t, args|
+    require 'yaml'
+    require 'json'
+    require 'time'
+    require 'open3'
+
+    args.with_defaults(stack: 'staging', env_variant: 'in')
+    stack = args[:stack]
+    env_variant = args[:env_variant]
+    env_name = args[:env_name] || "#{stack}.#{env_variant}"
+
+    Rake::Task['aws:environment'].reenable
+    Rake::Task['aws:environment'].invoke(env_name)
+    region = args[:region] || ENV["AWS_BACKUP_REGION"] ||
+             raise("Pass a DR region or set AWS_BACKUP_REGION (shell or .env.#{env_name})")
+
+    puts "🩺 DR readiness for #{stack} (#{env_variant}) → DR region #{region}\n\n"
+
+    results = [] # [status, label, detail]
+    check = ->(label, status, detail = "") { results << [status, label, detail] }
+
+    # --- 1. Backup freshness (primary + replica buckets) --------------------
+    # Exact same checks the hourly alert runs — covers cadence, full-age,
+    # replica presence, and bucket reachability in one shot
+    begin
+      failures = DbBackupFreshnessJob.new.collect_failures
+      if failures.empty?
+        check.("Backup freshness (primary + replica)", :ok, "within thresholds")
+      else
+        failures.each { |f| check.("Backup freshness", :fail, f) }
+      end
+    rescue NameError => e
+      # Job class not loadable — almost always means the wrong git branch is
+      # checked out (the class ships with the DR-hardening branch)
+      check.("Backup freshness", :fail, "#{e.message} — are you on the right branch? (git branch --show-current)")
+    rescue StandardError => e
+      check.("Backup freshness", :fail, "check errored: #{e.message}")
+    end
+
+    # --- 2. AMIs present + recent in the DR region ---------------------------
+    %w[AppServer DB-Redis-ES Observability].each do |name|
+      ami = latest_ami(name, region)
+      age_days = ((Time.now - Time.parse(ami.creation_date)) / 86_400).round
+      status = age_days > 8 ? :warn : :ok # weekly bake → >8d means the cron missed
+      check.("AMI #{name} in #{region}", status,
+             "#{ami.image_id}, #{age_days}d old#{' — weekly bake overdue?' if status == :warn}")
+    rescue StandardError => e
+      check.("AMI #{name} in #{region}", :fail, e.message.lines.first.to_s.strip)
+    end
+
+    # --- 3. SSM backup params seeded in the DR region ------------------------
+    rails_env = env_name.split(".").first
+    prefix = "/irm/#{rails_env}/db_backup"
+    # Per-name get-parameter (singular), deliberately: the operator IAM policy
+    # grants ssm:GetParameter — get-parameters (plural) is a DIFFERENT IAM
+    # action and gets AccessDenied even when every parameter exists
+    missing = []
+    errors = []
+    %w[mysql_user mysql_password bucket bucket_region database_name].each do |key|
+      _out, err, st = Open3.capture3("aws", "ssm", "get-parameter", "--name", "#{prefix}/#{key}",
+                                     "--region", region, "--query", "Parameter.Name", "--output", "text")
+      next if st.success?
+
+      # AWS CLI error text starts with a blank line — strip the whole thing first
+      if err.include?("ParameterNotFound")
+        missing << key
+      else
+        errors << "#{key}: #{err.strip.lines.first.to_s.strip}"
+      end
+    end
+    if missing.empty? && errors.empty?
+      check.("SSM backup params in #{region}", :ok, "#{prefix}/* (5/5)")
+    elsif errors.any?
+      check.("SSM backup params in #{region}", :fail, errors.first)
+    else
+      check.("SSM backup params in #{region}", :fail,
+             "missing #{missing.size}: #{missing.join(', ')} — run xtrabackup:seed_ssm_params[#{env_name}, #{region}]")
+    end
+
+    # --- 4. Pulumi stack config complete for the DR region -------------------
+    stack_file = "../IRM-Infra/Pulumi.#{stack}-#{region}.yaml"
+    stack_cfg = {}
+    if File.exist?(stack_file)
+      stack_cfg = YAML.load_file(stack_file)["config"] || {}
+      keys = stack_cfg.keys.map { |k| k.split(":").last }
+      missing = %w[web_server_ami db_server_ami observability_ami key_name region domain_name] - keys
+      domain = stack_cfg["IRM-infra:domain_name"].to_s
+      if missing.any?
+        check.("Pulumi stack #{stack}-#{region}", :fail, "missing config keys: #{missing.join(', ')}")
+      elsif !domain.start_with?("*.")
+        check.("Pulumi stack #{stack}-#{region}", :fail, "domain_name '#{domain}' must start with '*.'")
+      else
+        check.("Pulumi stack #{stack}-#{region}", :ok, "config complete (#{domain})")
+      end
+    else
+      check.("Pulumi stack #{stack}-#{region}", :fail, "#{stack_file} not found")
+    end
+
+    # --- 5. EC2 key pair exists in the DR region -----------------------------
+    key_name = stack_cfg["IRM-infra:key_name"]
+    if key_name
+      begin
+        Aws::EC2::Client.new(region: region).describe_key_pairs(key_names: [key_name])
+        check.("Key pair '#{key_name}' in #{region}", :ok)
+      rescue Aws::EC2::Errors::InvalidKeyPairNotFound
+        check.("Key pair '#{key_name}' in #{region}", :fail, "create/import it (EC2 → Key Pairs) — Pulumi does not create key pairs")
+      rescue StandardError => e
+        check.("Key pair '#{key_name}' in #{region}", :fail, e.message.lines.first.to_s.strip)
+      end
+    end
+
+    # --- 6. Route53 hosted zone for the domain --------------------------------
+    if (domain ||= stack_cfg["IRM-infra:domain_name"].to_s) && domain.start_with?("*.")
+      base_domain = domain.sub(/\A\*\./, "")
+      out, err, st = Open3.capture3("aws", "route53", "list-hosted-zones-by-name",
+                                    "--dns-name", base_domain, "--max-items", "1",
+                                    "--query", "HostedZones[0].Name", "--output", "text")
+      if st.success? && out.strip == "#{base_domain}."
+        check.("Hosted zone #{base_domain}", :ok)
+      else
+        check.("Hosted zone #{base_domain}", :fail, st.success? ? "zone not found (got '#{out.strip}')" : err.lines.first.to_s.strip)
+      end
+    end
+
+    # --- 7. Local prerequisites ------------------------------------------------
+    {
+      ".env.#{stack}.#{env_variant}" => Rails.root.join(".env.#{stack}.#{env_variant}"),
+      "credentials #{env_name}.yml.enc" => Rails.root.join("config/credentials/#{env_name}.yml.enc"),
+      "credentials #{env_name}.key" => Rails.root.join("config/credentials/#{env_name}.key"),
+      "sibling ../IRM-Infra checkout" => Rails.root.join("../IRM-Infra")
+    }.each do |label, path|
+      check.("Local: #{label}", File.exist?(path) ? :ok : :fail, File.exist?(path) ? "" : "missing: #{path}")
+    end
+
+    # --- 8. Drill recency -------------------------------------------------------
+    drill_log = Rails.root.join("docs/dr_drills.md")
+    last_pass = nil
+    if File.exist?(drill_log)
+      File.readlines(drill_log).each do |line|
+        cols = line.split("|").map(&:strip)
+        # | Date | Variant | Region | Result | RTO | Branch |
+        next unless cols[4] == "PASSED" && cols[2] == env_variant
+
+        last_pass = [last_pass, Time.parse(cols[1])].compact.max rescue last_pass
+      end
+    end
+    if last_pass.nil?
+      check.("DR drill recency (#{env_variant})", :warn, "no PASSED drill on record — run TEARDOWN=true rake \"aws:dr_drill[#{env_variant}]\"")
+    else
+      days = ((Time.now - last_pass) / 86_400).round
+      check.("DR drill recency (#{env_variant})", days > 100 ? :warn : :ok,
+             "last passed #{days}d ago#{' — quarterly cadence overdue' if days > 100}")
+    end
+
+    # --- Scorecard ---------------------------------------------------------------
+    icons = { ok: "✅", warn: "⚠️ ", fail: "❌" }
+    puts ""
+    results.each { |s, l, d| puts "#{icons[s]} #{l}#{d.to_s.empty? ? '' : " — #{d}"}" }
+    fails = results.count { |s, _, _| s == :fail }
+    warns = results.count { |s, _, _| s == :warn }
+    puts "\n#{fails.zero? ? '🟢' : '🔴'} #{results.size} checks: #{results.size - fails - warns} ok, #{warns} warnings, #{fails} failures"
+    abort "❌ NOT DR-ready — fix the failures above (see docs/DR_GUIDE.md §1)" if fails.positive?
+  end
+
   # Quarterly DR drill: proves the WHOLE recovery chain (AMIs present, Pulumi
   # stack deployable, S3 backups restorable, deploy + migrations + cutover)
   # by rebuilding STAGING in the DR region, unattended, and measuring the time.

@@ -32,6 +32,23 @@ class DbBackupFreshnessJob < ApplicationJob
   PREFIX_RE = /\A(\d{4}-\d{2}-\d{2}_\d{6})-(full|incr)\/\z/
 
   def perform
+    failures = collect_failures
+
+    if failures.any?
+      msg = "DB backup freshness check FAILED: #{failures.join(' | ')}"
+      Rails.logger.error msg
+      # Same alert channel S3CheckJob uses — lands wherever exception
+      # notifications are delivered (email/Slack per environment config).
+      ExceptionNotifier.notify_exception(StandardError.new(msg), data: { failures: failures })
+    else
+      Rails.logger.info "✓ DB backup freshness check passed (primary + replica buckets)."
+    end
+  end
+
+  # Runs all freshness checks and returns the failure strings (empty = healthy).
+  # Public so `rake aws:dr_readiness` can reuse the EXACT same checks as the
+  # hourly alert and report them in its scorecard instead of alerting.
+  def collect_failures
     failures = []
     failures += check_bucket(
       bucket: "#{ENV.fetch('AWS_S3_BUCKET')}-backup-xtra",
@@ -45,16 +62,7 @@ class DbBackupFreshnessJob < ApplicationJob
       label: "replica (cross-region copy)",
       grace: REPLICA_LAG
     )
-
-    if failures.any?
-      msg = "DB backup freshness check FAILED: #{failures.join(' | ')}"
-      Rails.logger.error msg
-      # Same alert channel S3CheckJob uses — lands wherever exception
-      # notifications are delivered (email/Slack per environment config).
-      ExceptionNotifier.notify_exception(StandardError.new(msg), data: { failures: failures })
-    else
-      Rails.logger.info "✓ DB backup freshness check passed (primary + replica buckets)."
-    end
+    failures
   end
 
   private

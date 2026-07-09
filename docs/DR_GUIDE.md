@@ -11,6 +11,25 @@ point), `docs/dr_drills.md` (drill evidence + measured RTO).
 **8 minutes** unattended. Design RPO: **30 minutes** (incremental backup
 cadence) — *provided the backup freshness alert is green* (see §1).
 
+## Quick card (mid-incident, start here)
+
+```bash
+# Am I ready? (30 seconds, read-only)
+rake "aws:dr_readiness[production, in, ap-south-2, production.in]"
+
+# The recovery (one command, unattended):
+RAILS_ENV=production rake "aws:setup_infra[production, AppServer, DB-Redis-ES, ap-south-2, in, production.in, dr_prod_in_<date>]"
+
+# Go live (only after §6 checks pass; asks confirmation):
+rake "aws:dns_cutover[production, ap-south-2, in]"
+```
+
+**Drill vs the real thing:** `aws:dr_drill` is a thin *rehearsal wrapper*
+around `aws:setup_infra` — same engine, but it uses a throwaway branch, logs
+PASS/FAIL + RTO to `docs/dr_drills.md`, and can tear down after. For a real
+DR **or a permanent region migration**, call `aws:setup_infra` directly with
+a branch name you intend to merge.
+
 ---
 
 ## 0. Scenario → response
@@ -26,26 +45,32 @@ cadence) — *provided the backup freshness alert is green* (see §1).
 Region pairs: **IN** production ap-south-1 → ap-south-2 · **US** us-east-1
 (rebuild in place or extend). Staging mirrors IN.
 
-## 1. Always-true readiness (check BEFORE you need it)
+## 1. Always-true readiness — one command
 
-These are monitored/automated, but verify quarterly with the drill:
+```bash
+rake "aws:dr_readiness[<stack>, <variant>, <dr-region>, <env>]"
+# e.g. rake "aws:dr_readiness[production, in, ap-south-2, production.in]"
+#      rake "aws:dr_readiness"    # defaults: staging, in, $AWS_BACKUP_REGION
+```
 
-- [ ] **Backups fresh** — the hourly `DbBackupFreshnessJob` alerts if the newest
-  full is >26h or newest backup >2h old, on primary AND replica buckets.
-  No alert emails = healthy. Manual check: `rake s3:check_backup_freshness`.
-  *(Lesson: staging backups died silently 2026-06-08 and sat unnoticed for a
-  month until a drill restored 30-day-old data. The alert now covers staging too.)*
-- [ ] **AMIs in the backup region** — weekly bake+copy cron; verify:
-  `rake "aws:get_latest_ami[AppServer, <dr-region>, <env>]"` (also DB-Redis-ES, Observability)
-- [ ] **Replica backup bucket backfilled** — replication copies only NEW objects;
-  after enabling (or after any backup gap) run once:
-  `aws s3 sync s3://<bucket>-backup-xtra s3://<bucket_replica>-backup-xtra`
-- [ ] **SSM seeded per DB region** — `rake "xtrabackup:seed_ssm_params[<env>, <region>]"`
-  (baked-AMI script reads creds/bucket from SSM at runtime)
-- [ ] **Key pair + hosted zone exist in the DR region**; env files/credentials
-  (`.env.<stack>.<variant>`, `<stack>.<variant>.yml.enc` + `.key`) present locally
-- [ ] **Quarterly drill green** — `TEARDOWN=true rake "aws:dr_drill[in]"` (and `[us]`);
-  RTO logged in `docs/dr_drills.md`
+Read-only, ~30s, prints a ✅/⚠️/❌ scorecard and exits non-zero on any hard
+failure (suitable for cron/CI). What each check means and how to fix a ❌:
+
+| Check | Why it must be true | Fix when ❌ |
+|---|---|---|
+| Backup freshness (primary + replica) | RPO = age of the newest backup — a restore recovers *only* what's in the bucket. Also proves the replica copy exists (region-loss case). *(Lesson: staging backups died silently 2026-06-08; a drill later restored 30-day-old data.)* | Re-arm the cron on the DB primary; backfill the replica once: `aws s3 sync s3://<bucket>-backup-xtra s3://<bucket_replica>-backup-xtra` |
+| AMI ×3 in the DR region (⚠️ if >8d old) | DR launches from these; stale AMIs mean slow post-restore catch-up | Weekly bake cron (`aws:create_and_copy_ami`) — check it ran; bake manually if needed |
+| SSM backup params in the DR region | The baked backup script reads creds/bucket from the *instance's own region's* SSM | `rake "xtrabackup:seed_ssm_params[<env>, <region>]"` |
+| Pulumi stack config complete | `pulumi up` aborts on any missing key — discovered at DR time otherwise | `rake "aws:setup_pulumi_config[...]"` (+ `DOMAIN_NAME`/`AWS_KEY_NAME` for a brand-new region) |
+| Key pair in the DR region | Pulumi does **not** create key pairs; instances can't launch without one | EC2 → Key Pairs → create/import, matching the stack file's `key_name` |
+| Hosted zone for the domain | ACM cert validation + DNS cutover both need it | Create the zone (one-time, global) |
+| Local files (`.env`, credentials pair, sibling `IRM-Infra`) | The orchestration runs from this machine | Restore from your secrets store / clone the repo |
+| Drill recency (⚠️ >100d) | An untested DR plan is a hypothesis | `TEARDOWN=true rake "aws:dr_drill[<variant>]"` |
+
+The hourly `DbBackupFreshnessJob` (staging + production) alerts on backup
+staleness continuously — the scorecard is the on-demand superset for
+everything else. Run it quarterly at minimum, and always before a planned
+migration.
 
 ## 2. Decide
 
