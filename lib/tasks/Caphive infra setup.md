@@ -175,8 +175,10 @@ A region that has never been used needs, in order:
 
 1. **Key pair**: create/import in the region (EC2 → Key Pairs).
 2. **AMIs**: copy the three AMIs into the region —
-   `rake "aws:copy_ami[<ami_id>, <region>, <env_name>]"` for each, or bake fresh with
-   `rake "packer:build_env[prod, in, all]"`.
+   `rake "aws:copy_ami[<ami_id>, <region>, <env_name>]"` for each — or bake
+   FRESH ones directly in the target region (preferred before a migration):
+   `PACKER_AWS_REGION=<region> rake "packer:build_env[prod, in, all]"`
+   (the packer-build network auto-creates in that region on first use).
 3. **Hosted zone**: must exist for the variant's base domain (usually already global).
 4. **Configure + create the stack in one command** — `DOMAIN_NAME` and `AWS_KEY_NAME`
    seed the two curated values every new stack needs; existing stacks never need them:

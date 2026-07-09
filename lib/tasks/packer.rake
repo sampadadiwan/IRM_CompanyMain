@@ -24,8 +24,11 @@ namespace :packer do
     end
 
     common_vars = {}
-    # Set AWS_REGION based on env_variant
-    aws_region = (env_variant == 'us' ? 'us-east-1' : 'ap-south-1')
+    # Region: PACKER_AWS_REGION overrides for direct bakes into a non-default
+    # region (e.g. baking fresh AMIs in the DR region before a migration,
+    # instead of copying old ones across). Default keeps the variant mapping.
+    #   PACKER_AWS_REGION=ap-south-2 rake "packer:build_env[dev, in, all]"
+    aws_region = ENV['PACKER_AWS_REGION'] || (env_variant == 'us' ? 'us-east-1' : 'ap-south-1')
     ENV['AWS_REGION'] = aws_region
     if aws_region.nil? || aws_region.empty?
       fail "Error: AWS_REGION environment variable is not set."
@@ -155,12 +158,22 @@ namespace :packer do
     def fetch_aws_resource_ids(aws_region, env_variant)
       resources = {}
 
-      # Latest canonical Ubuntu AMI via the public SSM parameter; fail loudly
-      # if unresolvable (network/creds/CLI trouble) instead of passing "" on
-      source_ami = `aws ssm get-parameters --names /aws/service/canonical/ubuntu/server/20.04/stable/current/amd64/hvm/ebs-gp3/ami-id --query "Parameters[0].Value" --output text --region #{aws_region}`.strip
-      fail "Could not resolve Ubuntu source AMI in #{aws_region} (got '#{source_ami}')" if source_ami.empty? || source_ami == "None"
+      # Latest canonical Ubuntu 20.04 AMI via EC2 DescribeImages (Canonical's
+      # owner id). Deliberately NOT the public SSM parameter: reading even
+      # public SSM params requires ssm:GetParameter* on the CALLER, which the
+      # scoped operator policy doesn't (and shouldn't) grant — EC2 describe
+      # permissions are already required by everything else here.
+      require 'aws-sdk-ec2'
+      images = Aws::EC2::Client.new(region: aws_region).describe_images(
+        owners: ["099720109477"], # Canonical's AWS account
+        filters: [
+          { name: "name", values: ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"] },
+          { name: "state", values: ["available"] }
+        ]
+      ).images
+      fail "Could not resolve Ubuntu 20.04 source AMI in #{aws_region}" if images.empty?
 
-      resources['source_ami'] = source_ami
+      resources['source_ami'] = images.max_by(&:creation_date).image_id
 
       network = ensure_build_network(aws_region, env_variant)
       resources['vpc_id'] = network[:vpc_id]

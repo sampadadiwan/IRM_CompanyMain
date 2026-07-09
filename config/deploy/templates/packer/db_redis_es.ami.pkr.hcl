@@ -49,7 +49,7 @@ variable "security_group_id" {
 
 source "amazon-ebs" "ubuntu" { # Renamed to 'ubuntu' for consistency with appserver.ami.pkr.hcl
   ami_name                    = "DB_Redis_ES-${var.ami_date}"
-  instance_type               = "t2.micro"
+  instance_type               = "t3.small" # t3: available in ALL regions incl. newer ones (ap-south-2 has no t2 family)
   region                      = var.aws_region # Use the variable for region
   # source_ami                  = var.source_ami # Commented out to use source_ami_filter
 
@@ -103,7 +103,11 @@ locals {
       "  jammy|mantic|noble|oracular|plucky)",
       "    sudo apt-get update",
       "    sudo apt-get install -y gnupg lsb-release wget curl",
-      "    curl -fsSL https://repo.mysql.com/RPM-GPG-KEY-mysql-2023 | gpg --dearmor | sudo tee /usr/share/keyrings/mysql.gpg >/dev/null",
+      # Oracle rotates this signing key every ~2 years and the old one EXPIRES
+      # (EXPKEYSIG breaks every bake at once — happened 2026-07 with the 2023
+      # key). If a bake fails with 'EXPKEYSIG ... MySQL Release Engineering',
+      # check https://repo.mysql.com/ for the next RPM-GPG-KEY-mysql-<year>.
+      "    curl -fsSL https://repo.mysql.com/RPM-GPG-KEY-mysql-2025 | gpg --dearmor | sudo tee /usr/share/keyrings/mysql.gpg >/dev/null",
       "    echo \"deb [signed-by=/usr/share/keyrings/mysql.gpg] http://repo.mysql.com/apt/ubuntu/ $CODENAME mysql-8.4-lts\" | sudo tee /etc/apt/sources.list.d/mysql.list >/dev/null",
       "    sudo apt-get update",
       "    printf 'Package: mysql-server\\nPin: version 8.4.6*\\nPin-Priority: 1001\\n\\nPackage: mysql-community-server\\nPin: version 8.4.6*\\nPin-Priority: 1001\\n\\nPackage: mysql-client\\nPin: version 8.4.6*\\nPin-Priority: 1001\\n\\nPackage: mysql-community-client\\nPin: version 8.4.6*\\nPin-Priority: 1001\\n' | sudo tee /etc/apt/preferences.d/mysql-8-4-6 >/dev/null",

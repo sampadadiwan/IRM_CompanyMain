@@ -62,11 +62,18 @@ namespace :aws do
   # ex: rake "aws:dr_readiness[production, in, ap-south-2, production.in]"
   #     rake "aws:dr_readiness"          # staging, in, $AWS_BACKUP_REGION
   desc "DR readiness scorecard: backups, AMIs, SSM, stack config, key pair, zone, drill recency"
-  task :dr_readiness, [:stack, :env_variant, :region, :env_name] => :environment do |t, args|
+  task :dr_readiness, [:stack, :env_variant, :region, :env_name] do |t, args|
     require 'yaml'
     require 'json'
     require 'time'
     require 'open3'
+
+    # Load the full Rails app EXPLICITLY. A `=> :environment` prerequisite
+    # inside `namespace :aws` resolves to our custom aws:environment task
+    # (Rake scoping searches the current namespace first), NOT Rails'
+    # top-level :environment — so app classes like DbBackupFreshnessJob were
+    # never loaded. Rake::Task[...] lookup is absolute and unambiguous.
+    Rake::Task["environment"].invoke
 
     args.with_defaults(stack: 'staging', env_variant: 'in')
     stack = args[:stack]

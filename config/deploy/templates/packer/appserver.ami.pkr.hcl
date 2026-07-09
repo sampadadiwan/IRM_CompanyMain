@@ -46,7 +46,7 @@ variable "user_home_dir" {
 
 source "amazon-ebs" "ubuntu" {
   ami_name      = "AppServer-${var.ami_date}"
-  instance_type = "t2.micro"
+  instance_type = "t3.small" # t3: available in ALL regions incl. newer ones (ap-south-2 has no t2 family — bakes there failed with "Unsupported configuration")
   region        = var.aws_region
 
   # Packer now requires either source_ami or source_ami_filter.
