@@ -75,6 +75,7 @@ en:
     step: Step
     upload: Upload
     refetch: Re-fetch
+    view: View
   deal:
     create: Deal was created
     destroy: Deal was deleted

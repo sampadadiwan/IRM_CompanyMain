@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { setupAccessiblePagination } from "controllers/datatable_accessibility"
 
 export default class extends Controller {
   connect() {
@@ -45,17 +46,20 @@ export default class extends Controller {
           } );
         }
       });
-     
+      // Call for setting up accessible pagination that says aria label as pagination
+      setupAccessiblePagination($('#notes-datatable').DataTable());
+      $('#notes-datatable').on('draw.dt', () => setupAccessiblePagination($('#notes-datatable').DataTable()));
+
       // Ensure DataTable is destroyed, else it gets duplicated
-      $(document).on('turbo:before-cache', function() {     
+      $(document).on('turbo:before-cache', function() {
         table.destroy();
       });
 
 
 
 
-      
-      
+
+
   }
 
 }

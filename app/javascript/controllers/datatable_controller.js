@@ -1,4 +1,5 @@
 import { Controller } from "@hotwired/stimulus"
+import { setupAccessiblePagination } from "controllers/datatable_accessibility"
 
 export default class extends Controller {
   static values = {
@@ -17,6 +18,7 @@ export default class extends Controller {
 
       let columnDefs = this.columnDefs();
       let responsive = this.responsive();
+      const controller = this;
       $.each( $('.jqDataTable'), function( key, value ) {
         // console.log( key + ": " + value );
         if ( $.fn.dataTable.isDataTable( value ) ) {
@@ -39,7 +41,10 @@ export default class extends Controller {
               }
             }
           });
-
+          // Here we are setting up accessible search and pagination for the DataTable. This is important for users who rely on screen readers or other assistive technologies to navigate the table. The setupAccessibleSearch method adds ARIA labels and a clear button to the search input, while the setupAccessiblePagination method adds ARIA labels to the pagination controls.
+          controller.setupAccessibleSearch(table[key]);
+          setupAccessiblePagination(table[key]);
+          table[key].on('draw.dt', () => setupAccessiblePagination(table[key]));
         }
 
       });
@@ -84,6 +89,63 @@ export default class extends Controller {
     return responsive;
   }
 
+  setupAccessibleSearch(table) {
+
+    const wrapper = $(table.table().container());
+
+    const filter = wrapper.find('.dt-search, .dataTables_filter');
+
+    if (!filter.length) return;
+
+    const input = filter.find('input');
+
+    // Keep the native type="search" (preserves the implicit ARIA searchbox role and
+    // Escape-to-clear behavior); the native clear button is hidden via CSS instead.
+    input.attr(
+      'aria-label',
+      'Search table contents'
+    );
+    if (!filter.find('label.datatable-search-label').length) {
+      input.before(`
+        <label
+          class="datatable-search-label me-2"
+          for="${input.attr('id')}">
+          Search:
+        </label>
+      `);
+    }
+    if (filter.find('.datatable-clear-btn').length) return;
+
+    const clearButton = $(`
+      <button
+        type="button"
+        class="datatable-clear-btn btn btn-link p-0"
+        aria-label="Clear search"
+        hidden>
+
+        <i class="ti ti-x"></i>
+
+      </button>
+    `);
+
+    filter.append(clearButton);
+
+    clearButton.prop('hidden', input.val().length === 0);
+
+    input.on('input', function () {
+      clearButton.prop('hidden', this.value.length === 0);
+    });
+
+    clearButton.on('click', () => {
+      input.val('');
+
+      table.search('').draw();
+
+      clearButton.prop('hidden', true);
+
+      input.focus();
+    });
+}
 
   columnDefs() {
     if (this.moneyColumnsValue == "") {

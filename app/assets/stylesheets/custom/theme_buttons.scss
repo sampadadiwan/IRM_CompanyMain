@@ -195,20 +195,21 @@
   --bs-btn-disabled-border-color: #0074ba;
   --bs-gradient: none;
 }
+// The outline success button has a lesser contrast ratio that 4.5:1 so to match accessibility requirements we are changing the color to a darker shade of green for blue theme.
 [data-bs-theme=light][data-color-theme=Blue_Theme]:root .btn-outline-success,
 [data-bs-theme=dark][data-color-theme=Blue_Theme]:root .btn-outline-success {
-  --bs-btn-color: #13deb9;
-  --bs-btn-border-color: #13deb9;
+  --bs-btn-color: #028034;
+  --bs-btn-border-color: #028034;
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #13deb9;
-  --bs-btn-hover-border-color: #13deb9;
+  --bs-btn-hover-bg: #028034;
+  --bs-btn-hover-border-color: #028034;
   --bs-btn-focus-shadow-rgb: 19, 222, 185;
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #13deb9;
-  --bs-btn-active-border-color: #13deb9;
-  --bs-btn-disabled-color: #13deb9;
+  --bs-btn-active-bg: #028034;
+  --bs-btn-active-border-color: #028034;
+  --bs-btn-disabled-color: #028034;
   --bs-btn-disabled-bg: transparent;
-  --bs-btn-disabled-border-color: #13deb9;
+  --bs-btn-disabled-border-color: #028034;
   --bs-gradient: none;
 }
 [data-bs-theme=light][data-color-theme=Blue_Theme]:root .btn-outline-info,

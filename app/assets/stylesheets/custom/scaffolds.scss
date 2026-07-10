@@ -205,6 +205,12 @@ div.dataTables_wrapper div.dataTables_filter input {
   border-radius: 0.4rem;
 }
 
+// hide the native search-cancel button so our custom accessible clear button (added in
+// datatable_controller.js#setupAccessibleSearch) is the only clear affordance shown
+div.dataTables_wrapper div.dataTables_filter input[type="search"]::-webkit-search-cancel-button {
+  display: none;
+}
+
 
 .turbo-progress-bar {
   height: 20px;
@@ -824,6 +830,26 @@ ul.vesting_schedule {
     width: 80%;
     display: inline-flex;
   }
+// Here we are making the card title's h1 size to match the h6 used previously
+// Accessibility Requirements say the structure should be like h1 > h2 > h3 > h4 > h5 > h6
+// This would say h1 to screen readers but would visually appear as h6
+  h1.toggle-card-title {
+    width: 80%;
+    display: inline-flex;
+    font-size: 1rem !important;
+    line-height: 1.2;
+  }
+
+  h1.user-show-heading {
+    width: 80%;
+    display: inline-flex;
+    font-size: 1rem !important;
+    line-height: 1.2;
+
+    a {
+      color: var(--bs-primary);
+    }
+  }
 
   .show_details_link {
     float: right;
@@ -1037,6 +1063,11 @@ h6 {
 // To open dropdown buttons on hover
 .dropdown-submenu:hover>.dropdown-menu {
   display: block;
+}
+
+// The color does not change the look drasticallyz but has a contrast of 4.5 : 1 as required by accessibility requirements
+.data-rooms-table .data-room-name-link {
+  color: #2059f6 !important;
 }
 
 .navbar-nav li:hover > ul.dropdown-menu {
@@ -1367,6 +1398,21 @@ iframe {
   margin-right: 0.0rem !important;
 }
 
+// Remove the default breadcrumb divider ("/") and spacing between breadcrumb items to not be read by screen readers as "slash" or "forward slash" which can be confusing for accessibility purposes
+.breadcrumbs .breadcrumb {
+  --bs-breadcrumb-divider: "";
+}
+
+// Remove the . to be read by screen readers as "dot" which can be confusing for accessibility purposes
+.breadcrumbs .breadcrumb-item + .breadcrumb-item::before {
+  display: none;
+}
+
+.breadcrumbs .breadcrumb-dot {
+  color: var(--bs-secondary-color);
+  margin: 0 0.4rem 0 0.1rem;
+}
+
 .sort-icons {
   margin-left: 2px;
   font-size: 0.9em;
@@ -1536,6 +1582,23 @@ button:disabled {
   inset: 0;
   width: 100% !important;
   height: 100% !important;
+}
+// In users profile view we have permission list and role list which are displayed as inline list and stacked list for accessibility purposes. The following CSS is to remove the default list styling and add some spacing between the list items.
+.users-show-table .a11y-inline-list,
+.users-show-table .a11y-stacked-list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.users-show-table .a11y-inline-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.users-show-table .a11y-stacked-list li + li {
+  margin-top: 0.2rem;
 }
 
 

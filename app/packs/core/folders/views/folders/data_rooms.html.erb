@@ -1,19 +1,19 @@
 <div class="d-sm-flex align-items-center justify-content-between mb-4">
     <h1 class="h3 mb-0 text-gray-800">Data Rooms</h1>
     <span>
-      
+
     </span>
 </div>
-  
-<div data-controller="datatable">
-  
+
+<div class="data-rooms-table" data-controller="datatable">
+
   <table id="folders" class="table table-bordered dataTable jqDataTable">
     <thead>
       <tr>
         <th>
           <strong>Name</strong>
         </th>
-        
+
       </tr>
     </thead>
     <tbody>
@@ -23,7 +23,7 @@
         <% if entity.data_room_folder %>
         <tr>
             <td>
-                <%= link_to entity.name, folder_documents_path(folder_id: entity.data_room_folder.id, entity_id: entity.id) %>
+                <%= link_to entity.name, folder_documents_path(folder_id: entity.data_room_folder.id, entity_id: entity.id), class: "data-room-name-link" %>
             </td>
         </tr>
         <% end %>
