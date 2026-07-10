@@ -3,14 +3,14 @@
   <div class="card shadow mb-4">
 
     <div class="card-header py-3">
-      <h1 class="user-show-heading m-0 font-weight-bold text-primary">
+      <h6 class="m-0 font-weight-bold text-primary">
         <%= link_to @user.name, @user %>
-      </h1>
+      </h6>
     </div>
 
     <div class="card-body">
 
-      <table id="users" class="table table-bordered dataTable users-show-table">
+      <table id="users" class="table table-bordered dataTable ">
 
         <tr>
           <td>
@@ -69,11 +69,9 @@
             Permissions
           </td>
           <td>
-            <ul class="a11y-inline-list" aria-label="Permissions">
-              <% @user.permissions.map { |p| p.to_s.titleize }.each do |permission| %>
-                <li><span class="badge bg-success"><%= permission %></span></li>
-              <% end %>
-            </ul>
+            <% @user.permissions.map{|p| p.to_s.titleize}.each do |permission| %>
+              <span class="badge bg-success"><%= permission %></span>
+            <% end %>
           </td>
         </tr>
 
@@ -83,11 +81,9 @@
             Extended Permissions
           </td>
           <td>
-            <ul class="a11y-inline-list" aria-label="Extended Permissions">
-              <% @user.extended_permissions.map { |p| p.to_s.titleize }.each do |permission| %>
-                <li><span class="badge bg-success"><%= permission %></span></li>
-              <% end %>
-            </ul>
+            <% @user.extended_permissions.map{|p| p.to_s.titleize}.each do |permission| %>
+              <span class="badge bg-success"><%= permission %></span>
+            <% end %>
           </td>
         </tr>
         <% end %>
@@ -139,10 +135,8 @@
             Roles
           </td>
           <td>
-            <ul class="a11y-stacked-list" aria-label="Roles">
-              <li>Role Enabled: <%= @user.roles.collect(&:name) %></li>
-              <li>Current Role: <%= @user.curr_role %></li>
-            </ul>
+            Role Enabled: <%=@user.roles.collect(&:name) %><br>
+            Current Role: <%= @user.curr_role %>
           </td>
         </tr>
 

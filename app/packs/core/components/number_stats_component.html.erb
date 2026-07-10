@@ -14,9 +14,9 @@
                 <h3 class="fs-<%=@fs_size%>" data-counters-target="output">0</h3>
               </div>
             <% else %>
-              <h2 class="fs-<%=@fs_size%>"><%= @amount %></h2>
+              <h3 class="fs-<%=@fs_size%>"><%= @amount %></h3>
             <% end %>
-            <span class="card-subtitle mb-1 text-muted"><%= @subtitle %></span>
+            <h6 class="card-subtitle mb-1 text-muted"><%= @subtitle %></h6>
           </div>
           <% if @text_info.present? %>
             <div class="ms-auto">

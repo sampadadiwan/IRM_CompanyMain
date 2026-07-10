@@ -1,6 +1,6 @@
 <% cache_if(current_user != nil, cache_key("sidebar"), expires_in: 5.day) do %>
   <!-- Sidebar -->
-  <nav class="sidebar-nav scroll-sidebar" data-simplebar aria-label="Primary sidebar navigation">
+  <nav class="sidebar-nav scroll-sidebar" data-simplebar>
     <ul id="sidebarnav">
       <!-- Nav Item - Dashboard -->
       <li class="sidebar-item">
@@ -27,23 +27,23 @@
       <% end %>
       <% if current_user && ["investor", "advisor", "company_admin"].include?(current_user.curr_role)  %>
         <!-- Divider -->
-        <hr class="sidebar-divider" role="presentation">
+        <hr class="sidebar-divider">
         <%= render "layouts/sidebars/sidebar_investor" %>
       <% end %>
       <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && (current_user.entity.is_fund?) %>
         <!-- Divider -->
-        <hr class="sidebar-divider" role="presentation">
+        <hr class="sidebar-divider">
         <%= render "layouts/sidebars/sidebar_fund" %>
       <% end %>
       <% if current_user && ["employee", "company_admin"].include?(current_user.curr_role) && current_user.entity_type == "Company" %>
         <!-- Divider -->
-        <hr class="sidebar-divider" role="presentation">
+        <hr class="sidebar-divider">
         <%= render "layouts/sidebars/sidebar_startup" %>
       <% end %>
-      <hr class="sidebar-divider" role="presentation">
+      <hr class="sidebar-divider">
       <% if current_user && current_user.enable_funds %>
         <li class="sidebar-item">
-          <a class="sidebar-link has-arrow" aria-expanded="false" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
+          <a class="sidebar-link has-arrow" href="/funds" data-bs-toggle="collapse" data-bs-target="#fundMenus">
             <span><i class="ti ti-currency-dollar"></i></span>
             <span class="hide-menu"><%= t('sidebar.funds') %></span>
           </a>
@@ -127,7 +127,7 @@
       <% if current_user &&
                 (current_user.entity.is_fund? || current_user.entity.is_company?) %>
       <!-- Divider -->
-      <hr class="sidebar-divider" role="presentation">
+      <hr class="sidebar-divider">
       <li class="sidebar-item">
         <a class="sidebar-link has-arrow" href="/tasks" data-bs-toggle="collapse" data-bs-target="#taskMenus">
           <span><i class="ti ti-checklist"></i></span>

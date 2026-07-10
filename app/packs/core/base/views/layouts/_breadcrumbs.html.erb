@@ -12,10 +12,7 @@
             <ol class="breadcrumb">
               <li class="breadcrumb-item"><a href="/">Home</a></li>
               <% @bread_crumbs.each do |tag, link| %>
-                <li class="breadcrumb-item">
-                  <span class="breadcrumb-dot" aria-hidden="true" role="presentation">&bull;</span>
-                  <a href="<%= link %>"><%= tag %></a>
-                </li>
+                <li class="breadcrumb-item"><a href="<%= link %>"><%= tag %></a></li>
               <% end %>
             </ol>
           </nav>

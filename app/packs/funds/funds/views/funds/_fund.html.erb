@@ -5,9 +5,7 @@
     </td>
   <% end %>
   <td class="text-col">
-    <%= link_to fund.name, fund, aria: {
-                label: "View details for #{fund.name}"
-              } %>
+    <%= link_to fund.name, fund %>
   </td>
   <td class="text-col">
     <%= fund.category %>
@@ -25,9 +23,7 @@
     </td>
   <% end %>
   <td class="action-col">
-    <%= link_to  t_common(:show) , fund , {class: "btn btn-outline-primary ti ti-eye" , aria: {
-              label: "Show details for #{fund.name}"
-            }} %>
+    <%= link_to  t_common(:show) , fund , {class: "btn btn-outline-primary ti ti-eye" } %>
     <%= link_to "New Commitment", new_capital_commitment_path("capital_commitment[fund_id]": fund.id, "capital_commitment[investor_id]": params[:investor_id]), class: "btn btn-outline-success ti ti-plus" if params[:new_commitment].present? %>
     <% if params[:debug].present? %>
       <%= link_to "Analytics" , fund_path(id: fund.id, charts: true) , {class: "btn btn-outline-success" }%>

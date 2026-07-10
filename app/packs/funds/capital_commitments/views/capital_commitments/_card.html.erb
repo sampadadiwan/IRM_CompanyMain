@@ -12,18 +12,12 @@
         <div class="d-sm-flex d-block align-items-center justify-content-between mb-9">
             <div class="mb-3 mb-sm-0">
                 <div class="row">
-                    <% if capital_commitment.entity.logo %>
-                    <%= image_tag(
-                            capital_commitment.entity.logo.url(expires_in: 60 * 60 * 24 * 7),
-                            alt: "#{capital_commitment.entity.name} logo",
-                            class: "col cc-card-logo"
-                        ) %>
-                    <% end %>
+                    <%= image_tag capital_commitment.entity.logo.url(expires_in: 60*60*24*7), class: "col cc-card-logo" if capital_commitment.entity.logo %>
 
                     <span class="col">
-                    <h3 class="card-title fw-semibold">
+                    <h4 class="card-title fw-semibold">
                         <%= link_to "#{capital_commitment.fund.name}: #{capital_commitment.entity.name}", capital_commitment.fund %>
-                    </h3>
+                    </h4>
 
                     <span class="fs3 mb-1">
                         <%= capital_commitment.investor_kyc&.full_name if capital_commitment.investor_kyc %>
@@ -57,7 +51,7 @@
                         <i class="ti ti-grid-dots text-primary fs-6"></i>
                         </div>
                         <div>
-                        <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.committed_amount, params) %></span>
+                        <h4 class="mb-0 fs-7"><%= money_to_currency(capital_commitment.committed_amount, params) %></h4>
                         <p class="fs-3 mb-0">Committed</p>
                     </div>
                 </div>
@@ -67,7 +61,7 @@
                         <i class="ti ti-grid-dots text-primary fs-6"></i>
                         </div>
                         <div>
-                        <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.call_amount, params) %></span>
+                        <h4 class="mb-0 fs-7"><%= money_to_currency(capital_commitment.call_amount, params) %></h4>
                         <p class="fs-3 mb-0">Called</p>
                     </div>
                 </div>
@@ -77,7 +71,7 @@
                         <i class="ti ti-grid-dots text-primary fs-6"></i>
                         </div>
                         <div>
-                        <span class="mb-0 fs-7"><%= money_to_currency(capital_commitment.distribution_amount, params) %></span>
+                        <h4 class="mb-0 fs-7"><%= money_to_currency(capital_commitment.distribution_amount, params) %></h4>
                         <p class="fs-3 mb-0">Distributed</p>
                     </div>
                 </div>
@@ -167,9 +161,9 @@
                     <h5 class="card-title mb-9 fw-semibold">
                         Uncalled Capital
                     </h5>
-                    <span class="fs-5 fw-semibold mb-0">
+                    <h6 class="fs-5 fw-semibold mb-0">
                         <%= money_to_currency(capital_commitment.commitment_pending, params) %>
-                    </span>
+                    </h6>
                 </div>
             </div>
             </div>
@@ -184,9 +178,9 @@
                     <h5 class="card-title mb-9 fw-semibold">
                         Due Amount
                     </h5>
-                    <span class="fs-5 mb-0">
+                    <h6 class="fs-5 mb-0">
                         <%= money_to_currency(capital_commitment.due_amount, {}) %>
-                    </span>
+                    </h6>
                 </div>
             </div>
             </div>

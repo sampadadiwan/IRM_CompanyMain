@@ -1,13 +1,9 @@
-
-// Here we are styling the accordion button to have a more modern and visually appealing look.
-// We are also customizing the behavior of the button when it is collapsed or expanded,
-// as well as the appearance of the accordion body and collapse action buttons.
-//  '+' for collapsed and '-' for expanded states are used to indicate the state of the accordion.
 .ultra-cool-accordion .accordion-item {
   border: none !important;
   background: transparent !important;
   margin-bottom: 1.25rem;
 }
+
 .ultra-cool-accordion .accordion-button {
   border-radius: 16px !important;
   background: var(--bs-body-bg);
@@ -25,34 +21,19 @@
 }
 
 .ultra-cool-accordion .accordion-button::after {
-  content: "+";
-  background-image: none !important;
-  display: inline-block;
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--bs-primary);
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  width: auto;
-  height: auto;
-  opacity: 1;
-  transform: none !important;
-  transition: color 0.2s ease-in-out;
+  filter: grayscale(100%);
+  opacity: 0.5;
+  transition: all 0.2s;
 }
 
 .ultra-cool-accordion .accordion-button:not(.collapsed)::after {
-  content: "-";
-  color: var(--bs-primary);
+  filter: none;
+  opacity: 1;
+  // transform: rotate(180deg);
 }
 
 .ultra-cool-accordion .accordion-button:focus {
   box-shadow: none !important;
-}
-
-.ultra-cool-accordion .accordion-button:focus-visible {
-  outline: 2px solid var(--bs-primary);
-  outline-offset: 2px;
 }
 
 .ultra-cool-accordion .accordion-collapse {
@@ -69,4 +50,3 @@
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
 }
-

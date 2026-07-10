@@ -1,5 +1,4 @@
 import { Controller } from "@hotwired/stimulus"
-import { setupAccessiblePagination } from "controllers/datatable_accessibility"
 
 export default class ServerDatatableController extends Controller {
 
@@ -13,10 +12,10 @@ export default class ServerDatatableController extends Controller {
     console.log(`Datatable setup for ${this.tableNameValue}`);
     console.log(`lazyLoadDataValue = ${this.lazyLoadDataValue}`);
     console.log(`fieldListValue = ${this.fieldListValue}`);
-
+        
     if(this.lazyLoadDataValue == "false") {
       this.loadData();
-    }
+    }    
 
     this.finalizeTable();
   }
@@ -35,14 +34,14 @@ export default class ServerDatatableController extends Controller {
         "serverSide": true,
         responsive: {
           details: this.showDetailsResponsive(),
-        },
+        },        
         stateSave: true,
         search: {
           // return: true,
         },
 
         searching: this.searchEnabled(),
-
+        
         "ajax": {
           "url": $(table_id).data('source')
         },
@@ -51,10 +50,10 @@ export default class ServerDatatableController extends Controller {
           search: '',
           searchPlaceholder: "Search...",
           paginate: {
-          }
+          }          
         },
         "columns": this.columns(),
-        "initComplete": function()
+        "initComplete": function() 
         {
           console.log(`initComplete ${table_id}`);
          $(`${table_id}_filter input`)
@@ -71,20 +70,17 @@ export default class ServerDatatableController extends Controller {
               }
               return;
           });
-
+          
         }
       });
-
-      setupAccessiblePagination(table);
-      table.on('draw.dt', () => setupAccessiblePagination(table));
     }
-
+    
 
     // Ensure DataTable is destroyed, else it gets duplicated
-    $(document).on('turbo:before-cache', function() {
-      if ( $.fn.dataTable.isDataTable( table ) ) {
+    $(document).on('turbo:before-cache', function() {    
+      if ( $.fn.dataTable.isDataTable( table ) ) { 
         table.destroy();
-      }
+      }      
     });
 
     return table;
@@ -98,10 +94,10 @@ export default class ServerDatatableController extends Controller {
     return true;
   }
 
-  columns() {
+  columns() {    
     console.log("server_datatable_controller columns called");
     let cols = this.customColumns();
-    console.log("cols", cols);
+    console.log("cols", cols);  
     return cols;
   }
 
@@ -114,10 +110,10 @@ export default class ServerDatatableController extends Controller {
       return fields.map(function(item) {
         return {"data": item};
       });
-    }
+    }    
   }
 
-  loadData() {
+  loadData() {        
     let table = this.buildTable(this.tableNameValue);
     let dataSource = $(this.tableNameValue).data('source')
     console.log(`loadData called table = ${this.tableNameValue} dataSource= ${dataSource}`);

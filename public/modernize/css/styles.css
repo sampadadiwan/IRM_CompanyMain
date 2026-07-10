@@ -103,8 +103,8 @@
 
 [data-bs-theme=light][data-color-theme=Blue_Theme]:root,
 [data-bs-theme=dark][data-color-theme=Blue_Theme]:root {
-  --bs-primary: #356afd;
-  --bs-primary-rgb: 57, 105, 242;
+  --bs-primary: #5d87ff;
+  --bs-primary-rgb: 93, 135, 255;
   --bs-light-primary: rgba(93, 135, 255, 0.1);
   --bs-primary-bg-subtle: rgba(93, 135, 255, 0.1);
   --bs-secondary: #49beff;
@@ -114,7 +114,7 @@
 }
 [data-bs-theme=light][data-color-theme=Blue_Theme]:root .btn-primary,
 [data-bs-theme=dark][data-color-theme=Blue_Theme]:root .btn-primary {
-  --bs-btn-bg: #356afd;
+  --bs-btn-bg: #5d87ff;
   --bs-btn-border-color: #5d87ff;
   --bs-btn-hover-bg: #4f73d9;
   --bs-btn-hover-border-color: #4f73d9;
@@ -374,7 +374,7 @@
   --bs-body-bg-rgb: 255, 255, 255;
   --bs-emphasis-color: #000;
   --bs-emphasis-color-rgb: 0, 0, 0;
-  --bs-secondary-color: rgba(61, 69, 83, 0.75);
+  --bs-secondary-color: rgba(90, 106, 133, 0.75);
   --bs-secondary-color-rgb: 90, 106, 133;
   --bs-secondary-bg: #eaeff4;
   --bs-secondary-bg-rgb: 234, 239, 244;
@@ -2562,13 +2562,6 @@ progress {
   -webkit-overflow-scrolling: touch;
 }
 
-table.dataTable thead>tr>th.dt-orderable-asc span.dt-column-order:before,table.dataTable thead>tr>th.dt-orderable-asc span.dt-column-order:after,table.dataTable thead>tr>th.dt-orderable-desc span.dt-column-order:before,table.dataTable thead>tr>th.dt-orderable-desc span.dt-column-order:after,table.dataTable thead>tr>th.dt-ordering-asc span.dt-column-order:before,table.dataTable thead>tr>th.dt-ordering-asc span.dt-column-order:after,table.dataTable thead>tr>th.dt-ordering-desc span.dt-column-order:before,table.dataTable thead>tr>th.dt-ordering-desc span.dt-column-order:after,table.dataTable thead>tr>td.dt-orderable-asc span.dt-column-order:before,table.dataTable thead>tr>td.dt-orderable-asc span.dt-column-order:after,table.dataTable thead>tr>td.dt-orderable-desc span.dt-column-order:before,table.dataTable thead>tr>td.dt-orderable-desc span.dt-column-order:after,table.dataTable thead>tr>td.dt-ordering-asc span.dt-column-order:before,table.dataTable thead>tr>td.dt-ordering-asc span.dt-column-order:after,table.dataTable thead>tr>td.dt-ordering-desc span.dt-column-order:before,table.dataTable thead>tr>td.dt-ordering-desc span.dt-column-order:after {
-    left: 0;
-    color: white;
-    line-height: 9px;
-    opacity: 1 !important;
-    font-size: .8em;
-}
 @media (max-width: 575.98px) {
   .table-responsive-sm {
     overflow-x: auto;
@@ -2816,11 +2809,10 @@ textarea.form-control-lg {
     transition: none;
   }
 }
-/* here we set up the color for tab based navigation as per accessibility requirements the focus should have a contrast ratio of at least 4.5:1 with background */
 .form-select:focus {
-  border-color: #080808;
+  border-color: #aec3ff;
   outline: 0;
-  box-shadow: unset, 0 0 0 0.25rem rgba(36, 36, 36, 0.25);
+  box-shadow: unset, 0 0 0 0.25rem rgba(93, 135, 255, 0.25);
 }
 .form-select[multiple], .form-select[size]:not([size="1"]) {
   padding-right: 16px;
@@ -3725,10 +3717,10 @@ textarea.form-control-lg {
   --bs-btn-disabled-bg: #ebf3fe;
   --bs-btn-disabled-border-color: #ebf3fe;
 }
-/* change the outline color on focus state and default to match contrast ratio of 4.5:1 with the background color */
+
 .btn-outline-primary {
-  --bs-btn-color: #3868ee;
-  --bs-btn-border-color: #3868ee;
+  --bs-btn-color: #5d87ff;
+  --bs-btn-border-color: #5d87ff;
   --bs-btn-hover-color: #fff;
   --bs-btn-hover-bg: #5d87ff;
   --bs-btn-hover-border-color: #5d87ff;
@@ -3759,17 +3751,10 @@ textarea.form-control-lg {
   --bs-btn-disabled-border-color: #49beff;
   --bs-gradient: none;
 }
-a{
-  font-weight: 600;
-}
-/* Sort icons color for contrast ratio of 4.5:1*/
-.sort-icons .arrow{
-  color: white;
-}
-/* Success btn outline color for contrast ratio of 4.5:1 */
+
 .btn-outline-success {
-  --bs-btn-color: #067b66;
-  --bs-btn-border-color: #067b66;
+  --bs-btn-color: #13deb9;
+  --bs-btn-border-color: #13deb9;
   --bs-btn-hover-color: #fff;
   --bs-btn-hover-bg: #13deb9;
   --bs-btn-hover-border-color: #13deb9;
@@ -3800,21 +3785,21 @@ a{
   --bs-btn-disabled-border-color: #539bff;
   --bs-gradient: none;
 }
-/* Warning btn outline color for contrast ratio of 4.5:1 */
+
 .btn-outline-warning {
-  --bs-btn-color: #976207;
-  --bs-btn-border-color: #976207;
+  --bs-btn-color: #ffae1f;
+  --bs-btn-border-color: #ffae1f;
   --bs-btn-hover-color: #fff;
-  --bs-btn-hover-bg: #c88209;
-  --bs-btn-hover-border-color: #c88209;
-  --bs-btn-focus-shadow-rgb: 200, 130, 9;
+  --bs-btn-hover-bg: #ffae1f;
+  --bs-btn-hover-border-color: #ffae1f;
+  --bs-btn-focus-shadow-rgb: 255, 174, 31;
   --bs-btn-active-color: #fff;
-  --bs-btn-active-bg: #c88209;
-  --bs-btn-active-border-color: #c88209;
+  --bs-btn-active-bg: #ffae1f;
+  --bs-btn-active-border-color: #ffae1f;
   --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
-  --bs-btn-disabled-color: #c88209;
+  --bs-btn-disabled-color: #ffae1f;
   --bs-btn-disabled-bg: transparent;
-  --bs-btn-disabled-border-color: #c88209;
+  --bs-btn-disabled-border-color: #ffae1f;
   --bs-gradient: none;
 }
 
@@ -4452,11 +4437,9 @@ a{
 .nav-link:hover, .nav-link:focus {
   color: var(--bs-nav-link-hover-color);
 }
-/* replaced the blue box-shadow with a neutral outline so keyboard focus stays visible */
 .nav-link:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
-  box-shadow: none;
+  outline: 0;
+  box-shadow: 0 0 0 0.25rem rgba(93, 135, 255, 0.25);
 }
 .nav-link.disabled, .nav-link:disabled {
   color: var(--bs-nav-link-disabled-color);
@@ -24486,7 +24469,6 @@ button.toast-close-button {
   max-width: 100%;
 }
 
-
 body .select2-container--classic .select2-selection--single,
 body .select2-container--default .select2-selection--single,
 body .select2-container--default .select2-selection--single .select2-selection__rendered,
@@ -24513,12 +24495,7 @@ body .select2-container--default .select2-selection--multiple .select2-selection
 body .select2-container {
   display: inline;
 }
-/* Change the focus color of select2 input field  to match 4.5:1 contrast ratio accessibility requirements */
-.form-control:focus-visible{
-  border-color: #000;
-  outline: 0;
-  box-shadow: unset, 0 0 0 0.25rem rgba(63, 64, 65, 0.25);
-}
+
 .datepaginator-sm .pagination li a,
 .datepaginator-lg .pagination li a,
 .datepaginator .pagination li a {

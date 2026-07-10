@@ -1,28 +1,26 @@
 <% model ||= current_user %>
 <%= form_with(model: , method: :get, url: set_persona_users_path, id: "persona_form") do |form| %>
-  <%
-
+  <% 
+  
     personas = []
 
-    if current_user.has_cached_role?(:employee)
-      personas << ["My Company", :employee]
+    if current_user.has_cached_role?(:employee) 
+      personas << ["My Company", :employee] 
     end
 
-    if current_user.has_cached_role?(:investor)
-      personas << ["My Investments",:investor]
+    if current_user.has_cached_role?(:investor) 
+      personas << ["My Investments",:investor] 
     end
-
+    
   %>
   <div class="form-group" data-controller="persona">
     <% selected = params[:persona].present? ? params[:persona] : current_user.curr_role&.to_sym %>
-    <%= form.select :persona, personas, {selected: selected},
-        { id: "persona", class: "form-control", aria: {
-          label: "Choose persona"
-        },
+    <%= form.select :persona, personas, {selected: selected}, 
+        { id: "persona", class: "form-control", 
         data: { action: "change->persona#setPersona", toggle: "tooltip", title: "Choose Persona" } } %>
   </div>
 
-
+  
   <%= form.submit "Submit", {hidden: true, id: "submit"}%>
 
 

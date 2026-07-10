@@ -3,14 +3,14 @@
 <!-- ------------------------------- -->
 <li class="nav-item dropdown">
     <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="profile_menu" data-bs-toggle="dropdown"
-        aria-expanded="false" aria-haspopup="true" aria-label="Open profile menu" title="Profile menu">
+        aria-expanded="false">
         <i class="ti ti-user"></i>
         <div class="bg-primary rounded-circle"></div>
     </a>
 
     <% if current_user %>
     <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up"
-            aria-labelledby="profile_menu" aria-label="Profile menu">
+            aria-labelledby="profile_menu">
     <div class="profile-dropdown position-relative data-simplebar" data-simplebar>
         <div class="py-3 px-7 pb-0">
         <h5 class="mb-0 fs-5 fw-semibold"><%= t('top_menus.user_profile') %></h5>

@@ -52,7 +52,6 @@ ja:
     step: ステップ
     upload: アップロード
     refetch: データを再取得
-    view: 表示
   date:
     formats:
       default: "%Y/%m/%d"
