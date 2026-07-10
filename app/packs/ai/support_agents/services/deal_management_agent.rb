@@ -13,10 +13,10 @@
 # Migrations required before use:
 #   • deal_investors: ai_score (integer nullable), ai_grade (varchar 10 nullable)
 class DealManagementAgent < SupportAgentService
-  DESCRIPTION = "Monitors deal health, sends reminders, checks documents, extracts terms, and scores investors — scoped to one deal."
+  DESCRIPTION = "Monitors deal health, sends reminders, checks documents, extracts terms, scores investors, and generates weekly summaries — scoped to one deal."
 
   LONG_DESCRIPTION = <<~DESC
-    Runs six independently-toggleable capabilities against a single open deal:
+    Runs eleven independently-toggleable capabilities against a single open deal:
 
     • Check Deal Progress  — flags stagnant investors (no update/activity within stagnant_days)
                              and surfaces overdue DealActivity steps.
@@ -31,11 +31,23 @@ class DealManagementAgent < SupportAgentService
                                • Optionally scores with LLM via uploaded skill file (score_investors)
                                • Writes ai_score / ai_grade back to DealInvestor
                                • Saves a per-investor SupportAgentReport (overwritten on re-run)
-    • Send Email Digest   — sends a single pipeline summary to notify_email after every run,
+    • Period Deltas       — computes new investors, step transitions, and status changes
+                             within the configured report_period window (default 7 days).
+    • Stagnation Breakdown — three-way stagnation analysis: newly stagnant, still stagnant,
+                             and recovered investors compared against the previous report.
+    • Tasks Summary       — aggregates overdue, upcoming, and completed tasks for the deal
+                             and its investors.
+    • Charts Data         — pre-computes funnel, source mix, and lead mix chart data
+                             from the deal's current pipeline state.
+    • AI Insight          — optional single LLM call generating an actionable one-liner
+                             based on the week's data (toggled by enable_ai_insight).
+    • Send Email Digest   — sends a pipeline summary to notify_email after every run,
                              covering all overdue activities, document gaps, and investor scores.
+                             Optionally sends a lightweight weekly summary email.
                              A blocker alert is appended when any :blocking issue exists.
 
     Closed deals are not processed. All notifications go to notify_email.
+    Weekly summary features are toggled by the weekly_summary config key.
   DESC
 
   REQUIRED_SCORE_KEYS  = %w[overall_score grade summary dimensions].freeze
@@ -45,7 +57,7 @@ class DealManagementAgent < SupportAgentService
 
   # Built-in scoring rubric used when no scoring_skill_file is uploaded.
   # Upload a custom scoring_skill_file document to override this with a deal-specific rubric.
-  DEFAULT_SCORING_RUBRIC = <<~RUBRIC.freeze
+  DEFAULT_SCORING_RUBRIC = <<~RUBRIC
     You are an expert deal analyst evaluating an investor's likelihood to commit to this deal.
     Score the investor across these four dimensions (weights must sum to 1.0):
 
@@ -81,6 +93,11 @@ class DealManagementAgent < SupportAgentService
     check_document_checklist: "Doc Checklist",
     extract_deal_terms: "Extract Terms",
     run_investor_pipeline: "Investor Pipeline",
+    calculate_period_deltas: "Period Deltas",
+    calculate_stagnation_breakdown: "Stagnation Breakdown",
+    aggregate_deal_tasks: "Tasks Summary",
+    compute_charts_data: "Charts Data",
+    generate_weekly_insight: "AI Insight",
     send_email_digest: "Email Digest",
     generate_progress_reports: "Save Report"
   }.freeze
@@ -90,15 +107,36 @@ class DealManagementAgent < SupportAgentService
   step :check_document_checklist
   step :extract_deal_terms
   step :run_investor_pipeline
+  step :calculate_period_deltas
+  step :calculate_stagnation_breakdown
+  step :aggregate_deal_tasks
+  step :compute_charts_data
+  step :generate_weekly_insight
   step :send_email_digest
   step :generate_progress_reports
 
-  # Accepts a Deal instance (on-demand) or a Deal id (scheduled run).
-  def targets(deal_or_id)
-    deal = deal_or_id.is_a?(Deal) ? deal_or_id : Deal.find(deal_or_id)
-    [deal]
+  # Returns the target deal(s) for this agent run.
+  # When called with a Deal instance, returns it directly.
+  # When called with an entity ID, returns deals scoped by the deal_ids
+  # config if set, otherwise all non-closed deals for that entity.
+  # When called with a deal ID, returns that single deal.
+  #
+  # @param entity_or_deal_id [Integer, Deal] an entity ID, deal ID, or Deal instance
+  # @return [Array<Deal>, ActiveRecord::Relation]
+  def targets(entity_or_deal_id)
+    if entity_or_deal_id.is_a?(Deal)
+      [entity_or_deal_id]
+    elsif Entity.exists?(entity_or_deal_id)
+      scope = Deal.where(entity_id: entity_or_deal_id).where.not(status: "Closed")
+      configured_ids = SupportAgent.find_by(entity_id: entity_or_deal_id, agent_type: "DealManagementAgent")
+                                   &.json_fields&.dig("deal_ids").to_s.split(",").map(&:strip).compact_blank.map(&:to_i)
+      configured_ids.present? ? scope.where(id: configured_ids) : scope
+    else
+      deal = Deal.find(entity_or_deal_id)
+      [deal]
+    end
   rescue ActiveRecord::RecordNotFound => e
-    Rails.logger.error { "[DealManagementAgent] Deal not found: #{e.message}" }
+    Rails.logger.error { "[DealManagementAgent] Target not found: #{e.message}" }
     []
   end
 
@@ -395,7 +433,310 @@ class DealManagementAgent < SupportAgentService
     true
   end
 
-  # ── Step 6 ── Pipeline digest + optional blocker alert to notify_email.
+  # ── Step 6 ── Computes what changed during the reporting period: new investors,
+  # step transitions (via audit trail), and status changes.
+  # Toggled by weekly_summary (Yes/No). Always returns true.
+  #
+  # @param ctx [Hash] pipeline context
+  # @param deal [Deal] the target deal
+  # @return [Boolean] always true
+  def calculate_period_deltas(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :calculate_period_deltas) if report
+
+    unless enabled?("weekly_summary")
+      mark_step_skipped(report, :calculate_period_deltas, message: "Weekly summary disabled") if report
+      return true
+    end
+
+    @report_period = [@support_agent.json_fields["report_period"].to_i, 1].max
+    @period_start  = @report_period.days.ago.beginning_of_day
+    @period_end    = Time.current
+    ctx[:period_start] = @period_start
+    ctx[:period_end]   = @period_end
+
+    di_ids = deal.deal_investor_ids
+    ctx[:deal_investor_ids] = di_ids
+
+    period_audits = if di_ids.present?
+                      Audited::Audit
+                        .where(auditable_type: "DealInvestor", auditable_id: di_ids, action: "update")
+                        .where(created_at: @period_start..@period_end)
+                        .where("audited_changes LIKE ? OR audited_changes LIKE ?",
+                               "%deal_activity_id%", "%status%")
+                        .to_a
+                    else
+                      []
+                    end
+
+    ctx[:period_deltas] = {
+      period_start: @period_start.iso8601,
+      period_end: @period_end.iso8601,
+      report_period: @report_period,
+      new_investors: count_new_investors(deal),
+      step_transitions: compute_step_transitions(deal, di_ids, period_audits),
+      status_changes: compute_status_changes(deal, di_ids, period_audits)
+    }
+
+    total_new = ctx[:period_deltas][:new_investors][:count]
+    total_transitions = ctx[:period_deltas][:step_transitions][:total]
+    total_status = ctx[:period_deltas][:status_changes][:total]
+
+    if report
+      mark_step_success(report, :calculate_period_deltas,
+                        message: "#{total_new} new, #{total_transitions} transitions, #{total_status} status changes")
+    end
+    alert_user(ctx, "Period Deltas: #{total_new} new investors, #{total_transitions} transitions, #{total_status} status changes", :info)
+    true
+  end
+
+  # ── Step 7 ── Three-way stagnation breakdown comparing current state vs previous report.
+  # Categorises investors as newly stagnant, still stagnant, or now active (recovered).
+  # Toggled by weekly_summary (Yes/No). Always returns true.
+  #
+  # @param ctx [Hash] pipeline context
+  # @param deal [Deal] the target deal
+  # @return [Boolean] always true
+  def calculate_stagnation_breakdown(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :calculate_stagnation_breakdown) if report
+
+    unless enabled?("weekly_summary")
+      mark_step_skipped(report, :calculate_stagnation_breakdown, message: "Disabled") if report
+      return true
+    end
+
+    investors = active_deal_investors(deal).includes(:deal_activities)
+    stagnant_days = [@support_agent.json_fields["stagnant_days"].to_i, 1].max
+
+    current_stagnant_ids = investors.select do |di|
+      investor_stale = di.updated_at < stagnant_days.days.ago
+      activities_stale = di.deal_activities.none? { |a| a.updated_at >= stagnant_days.days.ago }
+      investor_stale && activities_stale
+    end.map(&:id).to_set
+
+    previous_report = SupportAgentReport
+                      .where(owner: deal, support_agent: @support_agent)
+                      .where(status: :completed)
+                      .where.not(id: report&.id)
+                      .order(created_at: :desc)
+                      .first
+
+    previous_stagnant_ids = (
+      previous_report&.json_fields&.dig("stagnation_breakdown", "current_stagnant_ids") || []
+    ).map(&:to_i).to_set
+
+    still_stagnant = current_stagnant_ids & previous_stagnant_ids
+    newly_stagnant = current_stagnant_ids - previous_stagnant_ids
+    now_active     = previous_stagnant_ids - current_stagnant_ids
+
+    all_relevant_ids = (still_stagnant + newly_stagnant + now_active).to_a
+    name_map = DealInvestor.where(id: all_relevant_ids).pluck(:id, :investor_name).to_h
+
+    last_activity_map = investors.each_with_object({}) do |di, map|
+      latest_activity = di.deal_activities.map(&:updated_at).max
+      map[di.id] = [di.updated_at, latest_activity].compact.max.iso8601
+    end
+
+    ctx[:stagnation_breakdown] = {
+      total: current_stagnant_ids.size,
+      still_stagnant: still_stagnant.map { |id| { id: id, name: name_map[id], last_activity: last_activity_map[id] } },
+      newly_stagnant: newly_stagnant.map { |id| { id: id, name: name_map[id], last_activity: last_activity_map[id] } },
+      now_active: now_active.map { |id| { id: id, name: name_map[id] } },
+      still_stagnant_count: still_stagnant.size,
+      newly_stagnant_count: newly_stagnant.size,
+      now_active_count: now_active.size,
+      current_stagnant_ids: current_stagnant_ids.to_a,
+      stagnant_days: stagnant_days
+    }
+
+    if report
+      mark_step_success(report, :calculate_stagnation_breakdown,
+                        message: "#{newly_stagnant.size} new, #{still_stagnant.size} still, #{now_active.size} recovered")
+    end
+    alert_user(ctx, "Stagnation: #{newly_stagnant.size} new, #{still_stagnant.size} still, #{now_active.size} recovered", :info)
+    true
+  end
+
+  # ── Step 8 ── Aggregates tasks for the deal and its investors into overdue,
+  # upcoming, and completed buckets. Highlights the most overdue task and
+  # lists tasks due soon (capped by max_tasks_in_email config).
+  # Toggled by weekly_summary (Yes/No). Always returns true.
+  #
+  # @param ctx [Hash] pipeline context
+  # @param deal [Deal] the target deal
+  # @return [Boolean] always true
+  def aggregate_deal_tasks(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :aggregate_deal_tasks) if report
+
+    unless enabled?("weekly_summary")
+      mark_step_skipped(report, :aggregate_deal_tasks, message: "Disabled") if report
+      return true
+    end
+
+    di_ids = ctx[:deal_investor_ids] || deal.deal_investor_ids
+
+    all_tasks = Task.where(
+      "(owner_type = 'Deal' AND owner_id = ?) OR
+     (owner_type = 'DealInvestor' AND owner_id IN (?))",
+      deal.id, di_ids
+    ).includes(:assigned_to, :rich_text_details).to_a
+
+    period_start = ctx[:period_start] || @period_start
+    period_end   = ctx[:period_end] || @period_end
+
+    overdue   = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date < Time.zone.today }
+    upcoming  = all_tasks.select { |t| !t.completed && t.due_date.present? && t.due_date >= Time.zone.today && t.due_date <= period_end.to_date }
+    completed = all_tasks.select { |t| t.completed && t.updated_at >= period_start }
+
+    max_tasks = [@support_agent.json_fields["max_tasks_in_email"].to_i, 5].max
+    highlighted_overdue = overdue.min_by(&:due_date)
+    pending_due_soon = upcoming.sort_by(&:due_date).first(max_tasks)
+
+    ctx[:tasks_summary] = {
+      overdue_count: overdue.size,
+      upcoming_count: upcoming.size,
+      completed_count: completed.size,
+      highlighted_overdue: format_deal_task(highlighted_overdue),
+      overdue_tasks: overdue.sort_by(&:due_date).first(max_tasks).map { |t| format_deal_task(t) },
+      pending_due_soon: pending_due_soon.map { |t| format_deal_task(t) },
+      completed_tasks: completed.sort_by(&:updated_at).reverse.first(max_tasks).map { |t| format_deal_task(t) },
+      all_overdue_ids: overdue.map(&:id),
+      all_upcoming_ids: upcoming.map(&:id),
+      all_completed_ids: completed.map(&:id)
+    }
+
+    if report
+      mark_step_success(report, :aggregate_deal_tasks,
+                        message: "#{overdue.size} overdue, #{upcoming.size} upcoming, #{completed.size} completed")
+    end
+    alert_user(ctx, "Tasks: #{overdue.size} overdue, #{upcoming.size} upcoming, #{completed.size} completed", :info)
+    true
+  end
+
+  # ── Step 9 ── Pre-computes chart data from the deal's current pipeline state.
+  # Supports three chart types: funnel (investors per step), source mix, and lead mix.
+  # Filtered by preset_charts config. Toggled by weekly_summary (Yes/No).
+  #
+  # @param ctx [Hash] pipeline context
+  # @param deal [Deal] the target deal
+  # @return [Boolean] always true
+  def compute_charts_data(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :compute_charts_data) if report
+
+    unless enabled?("weekly_summary")
+      mark_step_skipped(report, :compute_charts_data, message: "Disabled") if report
+      return true
+    end
+
+    preset_charts = @support_agent.json_fields["preset_charts"].to_s
+                                  .split(",").map(&:strip).compact_blank
+    preset_charts = %w[funnel source lead] if preset_charts.empty?
+
+    investors = deal.deal_investors.includes(:deal_activity, :deal_activities)
+
+    charts = {}
+
+    if preset_charts.include?("funnel")
+      templates = DealActivity.where(deal_id: deal.id, deal_investor_id: nil).order(:sequence)
+      charts[:funnel] = templates.map do |tmpl|
+        count = investors.count { |di| di.deal_activity_id == tmpl.id }
+        { step_title: tmpl.title, investor_count: count, sequence: tmpl.sequence }
+      end
+    end
+
+    if preset_charts.include?("source")
+      source_groups = investors.group_by(&:source)
+      charts[:source_mix] = source_groups.map do |source, dis|
+        { label: source.presence || "Unknown", value: dis.sum(&:total_amount_cents).to_i }
+      end.sort_by { |d| -d[:value] }
+    end
+
+    if preset_charts.include?("lead")
+      lead_groups = investors.group_by(&:deal_lead)
+      charts[:lead_mix] = lead_groups.map do |lead, dis|
+        { label: lead.presence || "Unknown", value: dis.sum(&:total_amount_cents).to_i }
+      end.sort_by { |d| -d[:value] }
+    end
+
+    ctx[:charts_data] = charts
+
+    if report
+      mark_step_success(report, :compute_charts_data,
+                        message: "#{charts.keys.join(', ')} computed")
+    end
+    alert_user(ctx, "Charts: #{charts.keys.join(', ')} computed", :info)
+    true
+  rescue StandardError => e
+    Rails.logger.error { "[DealManagementAgent] Charts computation failed: #{e.message}" }
+    ctx[:charts_data] = {}
+    mark_step_failed(report, :compute_charts_data, message: e.message) if report
+    alert_user(ctx, "Charts: failed — #{e.message}", :warning)
+    true
+  end
+
+  # ── Step 10 ── Optional LLM call to generate an actionable one-liner insight.
+  # Requires both weekly_summary AND enable_ai_insight to be enabled.
+  # Soft-fails on any error — the weekly summary still works without an insight.
+  #
+  # @param ctx [Hash] pipeline context
+  # @param deal [Deal] the target deal
+  # @return [Boolean] always true
+  def generate_weekly_insight(ctx, deal: nil, **)
+    report = ctx[:support_agent_report]
+    mark_step_running(report, :generate_weekly_insight) if report
+
+    unless enabled?("weekly_summary") && enabled?("enable_ai_insight")
+      mark_step_skipped(report, :generate_weekly_insight, message: "Disabled") if report
+      return true
+    end
+
+    deltas = ctx[:period_deltas] || {}
+    stagnation = ctx[:stagnation_breakdown] || {}
+    tasks = ctx[:tasks_summary] || {}
+    charts = ctx[:charts_data] || {}
+
+    summary_data = {
+      deal_name: deal.name,
+      new_investors: deltas.dig(:new_investors, :count) || 0,
+      total_transitions: deltas.dig(:step_transitions, :total) || 0,
+      top_transitions: deltas.dig(:step_transitions, :transitions)&.first(3),
+      total_stagnant: stagnation[:total] || 0,
+      newly_stagnant: stagnation[:newly_stagnant_count] || 0,
+      overdue_tasks: tasks[:overdue_count] || 0,
+      funnel: charts[:funnel]
+    }
+
+    prompt = <<~PROMPT
+      You are a deal pipeline analyst for a fund management firm.
+      Based on this week's data for the deal "#{deal.name}", write ONE actionable
+      sentence (max 30 words) recommending what the team should focus on next week.
+      Be specific — mention step names, investor counts, or stagnation trends.
+      No generic advice.
+
+      Data: #{summary_data.to_json}
+    PROMPT
+
+    response = ctx[:llm].ask(prompt)
+    ctx[:weekly_insight] = extract_text_content(response).strip
+
+    if report
+      mark_step_success(report, :generate_weekly_insight,
+                        message: ctx[:weekly_insight].truncate(80))
+    end
+    alert_user(ctx, "AI Insight: #{ctx[:weekly_insight].truncate(100)}", :info)
+    true
+  rescue StandardError => e
+    Rails.logger.error { "[DealManagementAgent] Weekly insight failed: #{e.message}" }
+    ctx[:weekly_insight] = nil
+    mark_step_failed(report, :generate_weekly_insight, message: e.message) if report
+    alert_user(ctx, "AI Insight: failed — #{e.message}", :warning)
+    true
+  end
+
+  # ── Step 11 ── Pipeline digest + optional blocker alert to notify_email.
   # Runs only when notify_email is present. Always returns true.
   def send_email_digest(ctx, deal: nil, **)
     report = ctx[:support_agent_report]
@@ -436,6 +777,26 @@ class DealManagementAgent < SupportAgentService
     Rails.logger.info { "[DealManagementAgent] Digest queued to #{notify_email}" }
     mark_step_success(report, :send_email_digest, message: "Sent to #{notify_email}") if report
     alert_user(ctx, "Email Digest: sent to #{notify_email}#{has_blocking ? ' ⚠ blockers included' : ' ✓'}", has_blocking ? :warning : :success)
+    if enabled?("weekly_summary") && notify_email.present?
+      weekly_params = JSON.parse({
+        support_agent_id: @support_agent.id,
+        deal_id: deal.id,
+        notify_email: notify_email,
+        period_deltas: ctx[:period_deltas],
+        stagnation_breakdown: ctx[:stagnation_breakdown],
+        tasks_summary: ctx[:tasks_summary],
+        weekly_insight: ctx[:weekly_insight]
+      }.to_json)
+      DealManagementDigestMailer.with(weekly_params).weekly_summary.deliver_later
+
+      ctx[:issues][:digest_issues] << {
+        type: :info,
+        severity: :success,
+        message: "Weekly summary queued to #{notify_email}"
+      }
+      Rails.logger.info { "[DealManagementAgent] Weekly summary queued to #{notify_email}" }
+    end
+
     true
   rescue StandardError => e
     Rails.logger.error { "[DealManagementAgent] Digest email failed: #{e.message}" }
@@ -445,7 +806,7 @@ class DealManagementAgent < SupportAgentService
     true # email failure must not block report save
   end
 
-  # ── Step 7 ── Save deal-level SupportAgentReport. Always runs.
+  # ── Step 12 ── Save deal-level SupportAgentReport. Always runs.
   # Extends base class report with extracted_terms, leaderboard, and cache fields.
   # Creates a new report each run (not upsert) so history accumulates.
   # mark_as_latest! flips the latest flag on the new record and clears it on all prior ones.
@@ -474,6 +835,18 @@ class DealManagementAgent < SupportAgentService
       "score_leaderboard" => ctx[:score_leaderboard] || [],
       "health_scores" => ctx[:health_scores] || {}
     )
+
+    # Merge weekly summary data into report
+    if enabled?("weekly_summary")
+      report.json_fields = report.json_fields.merge(
+        "period_deltas" => ctx[:period_deltas],
+        "stagnation_breakdown" => ctx[:stagnation_breakdown],
+        "tasks_summary" => ctx[:tasks_summary],
+        "charts_data" => ctx[:charts_data],
+        "weekly_insight" => ctx[:weekly_insight]
+      )
+    end
+
     report.status = has_blocking ? :failed : :completed
     report.save!
     report.mark_as_latest!
@@ -514,6 +887,139 @@ class DealManagementAgent < SupportAgentService
         .includes(:deal_activities)
   end
 
+  # Counts investors added to the deal within the report period.
+  #
+  # @param deal [Deal]
+  # @return [Hash] count and list of new investors
+  def count_new_investors(deal)
+    investors = deal.deal_investors.where(created_at: @period_start..@period_end)
+    {
+      count: investors.count,
+      investors: investors.map { |di| { id: di.id, name: di.investor_name, created_at: di.created_at.iso8601 } }
+    }
+  end
+
+  # Queries the audits table for deal_activity_id changes on this deal's investors.
+  # Optionally filters by preset_steps config.
+  #
+  # @param deal [Deal]
+  # @return [Hash] transitions array, details, and total count
+  def compute_step_transitions(deal, di_ids, period_audits)
+    return { transitions: [], details: [], total: 0 } if di_ids.empty?
+
+    relevant_audits = period_audits.select { |a| a.audited_changes.key?("deal_activity_id") }
+
+    templates = DealActivity.where(deal_id: deal.id, deal_investor_id: nil)
+                            .order(:sequence)
+                            .pluck(:id, :title, :sequence)
+    template_map = templates.to_h { |id, title, _seq| [id, title] }
+    sequence_map = templates.to_h { |id, _title, seq| [id, seq] }
+
+    preset_steps = parse_preset_steps
+    transitions = Hash.new(0)
+    details = []
+
+    relevant_audits.each do |audit|
+      old_id, new_id = audit.audited_changes["deal_activity_id"]
+      from_title = template_map[old_id] || "—"
+      to_title   = template_map[new_id] || "—"
+      from_seq   = sequence_map[old_id]
+      to_seq     = sequence_map[new_id]
+
+      next if preset_steps.any? && !preset_steps.any? { |ps| ps[:from] == from_seq && ps[:to] == to_seq }
+
+      key = "#{from_title} → #{to_title}"
+      transitions[key] += 1
+      details << {
+        investor_id: audit.auditable_id,
+        from_step: from_title,
+        to_step: to_title,
+        from_sequence: from_seq,
+        to_sequence: to_seq,
+        changed_at: audit.created_at.iso8601
+      }
+    end
+
+    {
+      transitions: transitions.sort_by { |_, count| -count },
+      details: details,
+      total: details.size
+    }
+  end
+
+  # Queries audits for investor status changes within the report period.
+  # Optionally filters by preset_statuses config.
+  #
+  # @param deal [Deal]
+  # @return [Hash] changes grouped by status, with details and total
+  def compute_status_changes(_deal, di_ids, period_audits)
+    return { by_status: {}, details: {}, total: 0 } if di_ids.empty?
+
+    relevant_audits = period_audits.select { |a| a.audited_changes.key?("status") }
+
+    preset_statuses = @support_agent.json_fields["preset_statuses"].to_s
+                                    .split(",").map(&:strip).compact_blank
+
+    name_map = DealInvestor.where(id: di_ids).pluck(:id, :investor_name).to_h
+    changes = Hash.new { |h, k| h[k] = [] }
+
+    relevant_audits.each do |audit|
+      _old_status, new_status = audit.audited_changes["status"]
+      next if preset_statuses.any? && !preset_statuses.include?(new_status)
+
+      changes[new_status] << {
+        investor_id: audit.auditable_id,
+        investor_name: name_map[audit.auditable_id],
+        changed_at: audit.created_at.iso8601
+      }
+    end
+
+    {
+      by_status: changes.transform_values(&:count),
+      details: changes,
+      total: changes.values.sum(&:count)
+    }
+  end
+
+  # Parses preset_steps config: "1-2,3-4" → [{ from: 1, to: 2 }, { from: 3, to: 4 }]
+  #
+  # @return [Array<Hash>] parsed step transition pairs
+  def parse_preset_steps
+    raw = @support_agent.json_fields["preset_steps"].to_s.strip
+    return [] if raw.blank?
+
+    raw.split(",").filter_map do |pair|
+      parts = pair.strip.split("-").map(&:to_i)
+      next unless parts.size == 2
+
+      { from: parts[0], to: parts[1] }
+    end
+  end
+
+  # Formats a Task record into a serialisable hash for the weekly summary report.
+  #
+  # @param task [Task, nil]
+  # @return [Hash, nil]
+  def format_deal_task(task)
+    return nil unless task
+
+    company_name = (task.owner&.investor_name if task.owner_type == "DealInvestor")
+
+    {
+      id: task.id,
+      title: String(ActionController::Base.helpers.strip_tags(task.read_attribute(:details))).truncate(80),
+      company_name: company_name,
+      responsible: task.assigned_to&.name,
+      due_date: task.due_date&.iso8601,
+      completed: task.completed,
+      status: if task.completed
+                "Completed"
+              else
+                (task.due_date && task.due_date < Date.today ? "Overdue" : "Pending")
+              end
+    }
+  end
+
   # Resolves note_period config to an absolute date range.
   def resolve_period
     period = @support_agent.json_fields["note_period"].presence || "Quarter"
@@ -543,9 +1049,7 @@ class DealManagementAgent < SupportAgentService
     score_data   = nil
 
     # summarize_notes requires documents (nothing to summarise without them)
-    if docs.any? && enabled?("summarize_notes")
-      summary_text = generate_investor_summary(ctx, di, doc_text, period_label)
-    end
+    summary_text = generate_investor_summary(ctx, di, doc_text, period_label) if docs.any? && enabled?("summarize_notes")
 
     # score_investors can run even without documents — activity history and notes provide signal
     if enabled?("score_investors")

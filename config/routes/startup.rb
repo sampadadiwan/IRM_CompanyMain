@@ -61,4 +61,5 @@ resources :deals do
   get :agent_settings, on: :member
   patch :agent_settings, action: :update_agent_settings, on: :member
   post :run_now, on: :member
+  get :weekly_summary, on: :member
 end

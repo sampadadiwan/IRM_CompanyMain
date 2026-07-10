@@ -1,3 +1,6 @@
+# frozen_string_literal: true
+
+# Pundit policy for Deal access — scopes by role (RM, investor, employee, admin).
 class DealPolicy < ApplicationPolicy
   class Scope < Scope
     def resolve
@@ -56,6 +59,10 @@ class DealPolicy < ApplicationPolicy
 
   def agent_settings?
     update?
+  end
+
+  def weekly_summary?
+    show?
   end
 
   def update_agent_settings?

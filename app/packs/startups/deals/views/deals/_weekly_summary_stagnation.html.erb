@@ -1,0 +1,126 @@
+<%#
+  Stagnation breakdown panel — three-way: newly stagnant, still stagnant, now active.
+  @param stagnation [Hash] stagnation breakdown data from report json_fields
+%>
+
+<%
+  total = stagnation["total"] || 0
+  newly_stagnant = stagnation["newly_stagnant"] || []
+  still_stagnant = stagnation["still_stagnant"] || []
+  now_active = stagnation["now_active"] || []
+  stagnant_days = stagnation["stagnant_days"] || 14
+%>
+
+<div class="card h-100 shadow-sm border-0">
+  <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+    <h6 class="mb-0 fw-bold">Stagnant / Stuck Deals</h6>
+    <span class="badge bg-warning text-dark rounded-pill"><%= total %></span>
+  </div>
+  <div class="card-body">
+    <p class="text-muted small mb-3">No activity for <%= stagnant_days %>+ days</p>
+
+    <%# Now Active (recovered) %>
+    <div class="d-flex justify-content-between align-items-center py-2"
+         data-bs-toggle="collapse" data-bs-target="#now-active-list"
+         role="button" aria-expanded="false" style="cursor: pointer;">
+      <div class="d-flex align-items-center">
+        <span class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+          <i class="ti ti-refresh text-success" style="font-size: 14px;"></i>
+        </span>
+        <span class="text-success fw-semibold">Now active</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="badge bg-success rounded-pill me-2"><%= now_active.size %></span>
+        <i class="ti ti-chevron-right text-muted" style="font-size: 14px;"></i>
+      </div>
+    </div>
+    <% if now_active.any? %>
+      <div class="collapse" id="now-active-list">
+        <div class="ms-4 mt-2">
+          <% now_active.each do |inv| %>
+            <div class="d-flex align-items-center py-1">
+              <span class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 22px; height: 22px;">
+                <i class="ti ti-user text-success" style="font-size: 11px;"></i>
+              </span>
+              <span class="small fw-medium"><%= inv["name"] %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <hr class="my-2">
+
+    <%# Still stagnant %>
+    <div class="d-flex justify-content-between align-items-center py-2"
+         data-bs-toggle="collapse" data-bs-target="#still-stagnant-list"
+         role="button" aria-expanded="false" style="cursor: pointer;">
+      <div class="d-flex align-items-center">
+        <span class="rounded-circle bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+          <i class="ti ti-player-pause text-warning" style="font-size: 14px;"></i>
+        </span>
+        <span class="text-warning fw-semibold">Still stagnant</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="badge bg-warning text-dark rounded-pill me-2"><%= still_stagnant.size %></span>
+        <i class="ti ti-chevron-right text-muted" style="font-size: 14px;"></i>
+      </div>
+    </div>
+    <% if still_stagnant.any? %>
+      <div class="collapse" id="still-stagnant-list">
+        <div class="ms-4 mt-2">
+          <% still_stagnant.each do |inv| %>
+            <div class="d-flex align-items-center justify-content-between py-1">
+              <div class="d-flex align-items-center">
+                <span class="rounded-circle bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 22px; height: 22px;">
+                  <i class="ti ti-user text-warning" style="font-size: 11px;"></i>
+                </span>
+                <span class="small fw-medium"><%= inv["name"] %></span>
+              </div>
+              <% if inv["last_activity"].present? %>
+                <span class="text-muted small">since <%= Time.parse(inv["last_activity"]).strftime("%d %b %Y") %></span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+    <hr class="my-2">
+
+    <%# Newly stagnant %>
+    <div class="d-flex justify-content-between align-items-center py-2"
+         data-bs-toggle="collapse" data-bs-target="#newly-stagnant-list"
+         role="button" aria-expanded="false" style="cursor: pointer;">
+      <div class="d-flex align-items-center">
+        <span class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+          <i class="ti ti-alert-circle text-danger" style="font-size: 14px;"></i>
+        </span>
+        <span class="text-danger fw-semibold">Newly stagnant</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="badge bg-danger rounded-pill me-2"><%= newly_stagnant.size %></span>
+        <i class="ti ti-chevron-right text-muted" style="font-size: 14px;"></i>
+      </div>
+    </div>
+    <% if newly_stagnant.any? %>
+      <div class="collapse" id="newly-stagnant-list">
+        <div class="ms-4 mt-2">
+          <% newly_stagnant.each do |inv| %>
+            <div class="d-flex align-items-center justify-content-between py-1">
+              <div class="d-flex align-items-center">
+                <span class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 22px; height: 22px;">
+                  <i class="ti ti-user text-danger" style="font-size: 11px;"></i>
+                </span>
+                <span class="small fw-medium"><%= inv["name"] %></span>
+              </div>
+              <% if inv["last_activity"].present? %>
+                <span class="text-muted small">since <%= Time.parse(inv["last_activity"]).strftime("%d %b %Y") %></span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

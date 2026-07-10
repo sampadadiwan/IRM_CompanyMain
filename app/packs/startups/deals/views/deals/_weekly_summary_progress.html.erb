@@ -1,0 +1,104 @@
+<%#
+  Overall Progress panel — new investors added & step transitions during the period.
+  @param period_deltas [Hash] period delta data from report json_fields
+%>
+
+<%
+  new_investors = period_deltas.dig("new_investors") || {}
+  new_count = new_investors["count"] || 0
+  investor_list = new_investors["investors"] || []
+
+  transitions = period_deltas.dig("step_transitions") || {}
+  transition_pairs = transitions["transitions"] || []
+  total_transitions = transitions["total"] || 0
+%>
+
+<div class="card h-100 shadow-sm border-0">
+  <div class="card-header bg-white border-bottom">
+    <h6 class="mb-0 fw-bold">Overall Progress</h6>
+  </div>
+  <div class="card-body">
+    <%# New investors %>
+    <div class="d-flex justify-content-between align-items-center py-2"
+         data-bs-toggle="collapse" data-bs-target="#new-investors-list"
+         role="button" aria-expanded="false" style="cursor: pointer;">
+      <div class="d-flex align-items-center">
+        <span class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+          <i class="ti ti-plus text-success" style="font-size: 14px;"></i>
+        </span>
+        <span>New investors added</span>
+      </div>
+      <div class="d-flex align-items-center">
+        <span class="badge bg-success rounded-pill me-2"><%= new_count %></span>
+        <i class="ti ti-chevron-right text-muted" style="font-size: 14px;"></i>
+      </div>
+    </div>
+    <% if investor_list.any? %>
+      <div class="collapse" id="new-investors-list">
+        <ul class="list-group list-group-flush small ms-4">
+          <% investor_list.each do |inv| %>
+            <li class="list-group-item px-0 py-1 border-0">
+              <%= inv["name"] %>
+              <span class="text-muted ms-1">
+                (<%= Time.parse(inv["created_at"]).strftime("%d %b") %>)
+              </span>
+            </li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <hr class="my-2">
+
+    <%# Step transitions %>
+    <% transition_pairs.each_with_index do |pair, idx| %>
+      <%
+        label = pair.is_a?(Array) ? pair[0] : pair.to_s
+        count = pair.is_a?(Array) ? pair[1] : 0
+        collapse_id = "transition-#{idx}"
+        details = (transitions["details"] || []).select { |d|
+          "#{d['from_step']} → #{d['to_step']}" == label ||
+          "#{d['from_step']} → #{d['to_step']}" == label
+        }
+      %>
+      <div class="d-flex justify-content-between align-items-center py-2"
+           <% if details.any? %>data-bs-toggle="collapse" data-bs-target="#<%= collapse_id %>"<% end %>
+           role="button" aria-expanded="false" style="cursor: pointer;">
+        <div class="d-flex align-items-center">
+          <span class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+            <i class="ti ti-arrow-right text-primary" style="font-size: 14px;"></i>
+          </span>
+          <span><%= label %></span>
+        </div>
+        <div class="d-flex align-items-center">
+          <span class="badge bg-primary rounded-pill me-2"><%= count %></span>
+          <i class="ti ti-chevron-right text-muted" style="font-size: 14px;"></i>
+        </div>
+      </div>
+      <% if details.any? %>
+        <div class="collapse" id="<%= collapse_id %>">
+          <ul class="list-group list-group-flush small ms-4">
+            <% details.each do |d| %>
+              <li class="list-group-item px-0 py-1 border-0">
+                Investor #<%= d["investor_id"] %>
+                <span class="text-muted ms-1">(<%= Time.parse(d["changed_at"]).strftime("%d %b") %>)</span>
+              </li>
+            <% end %>
+          </ul>
+        </div>
+      <% end %>
+      <% unless idx == transition_pairs.size - 1 %><hr class="my-1"><% end %>
+    <% end %>
+
+    <% if transition_pairs.empty? %>
+      <div class="py-2">
+        <div class="d-flex align-items-center">
+          <span class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
+            <i class="ti ti-arrow-right text-muted" style="font-size: 14px;"></i>
+          </span>
+          <span class="text-muted small">No step transitions this period.</span>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

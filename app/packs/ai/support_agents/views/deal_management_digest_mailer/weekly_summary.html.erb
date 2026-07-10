@@ -1,0 +1,142 @@
+<%
+  dashboard_url = weekly_summary_deal_url(@deal)
+
+  # ── Extract counts from structured data ──
+  new_investors_count = @period_deltas.dig(:new_investors, :count) ||
+                        @period_deltas.dig("new_investors", "count") || 0
+  transitions_total   = @period_deltas.dig(:step_transitions, :total) ||
+                        @period_deltas.dig("step_transitions", "total") || 0
+  status_total        = @period_deltas.dig(:status_changes, :total) ||
+                        @period_deltas.dig("status_changes", "total") || 0
+  stagnant_total      = @stagnation[:total] || @stagnation["total"] || 0
+  newly_stagnant      = @stagnation[:newly_stagnant_count] || @stagnation["newly_stagnant_count"] || 0
+  now_active          = @stagnation[:now_active_count] || @stagnation["now_active_count"] || 0
+  overdue_count       = @tasks_summary[:overdue_count] || @tasks_summary["overdue_count"] || 0
+  upcoming_count      = @tasks_summary[:upcoming_count] || @tasks_summary["upcoming_count"] || 0
+  completed_count     = @tasks_summary[:completed_count] || @tasks_summary["completed_count"] || 0
+  highlighted_overdue = @tasks_summary[:highlighted_overdue] || @tasks_summary["highlighted_overdue"]
+
+  # ── Determine overall tone ──
+  has_concerns = overdue_count > 0 || newly_stagnant > 0
+  overall_tone  = has_concerns ? :warning : :success
+  overall_label = has_concerns ? "Needs Attention" : "On Track"
+%>
+
+<%= sa_banner(
+  title:    "Weekly Summary",
+  label:    overall_label,
+  subtitle: "#{h @deal.name} · #{h @entity.name} · #{@week_range}",
+  tone:     overall_tone
+) %>
+
+<p style="margin:0 0 20px;font-size:13px;color:#555">
+  <a href="<%= dashboard_url %>" style="color:#1565c0;text-decoration:none;font-weight:600">View Full Dashboard &rarr;</a>
+</p>
+
+<%# ── Executive Summary ── %>
+<% summary_parts = [] %>
+<% summary_parts << "#{new_investors_count} new investor#{'s' unless new_investors_count == 1} added" if new_investors_count > 0 %>
+<% summary_parts << "#{transitions_total} step transition#{'s' unless transitions_total == 1}" if transitions_total > 0 %>
+<% summary_parts << "#{status_total} status change#{'s' unless status_total == 1}" if status_total > 0 %>
+<% if summary_parts.any? %>
+  <%= sa_intro("This week: #{summary_parts.join(', ')}.") %>
+<% else %>
+  <%= sa_intro("No pipeline movement this week.") %>
+<% end %>
+
+<%# ── Key Counts ── %>
+<%= sa_section(title: "Pipeline Activity", top_margin: false) %>
+
+<table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse:collapse;margin-bottom:20px">
+  <tr>
+    <td width="25%" style="padding:8px;text-align:center">
+      <div style="background:#e8f5e9;border-radius:6px;padding:12px 8px">
+        <div style="font-size:22px;font-weight:700;color:#2e7d32"><%= new_investors_count %></div>
+        <div style="font-size:11px;color:#2e7d32;text-transform:uppercase;margin-top:2px">New Investors</div>
+      </div>
+    </td>
+    <td width="25%" style="padding:8px;text-align:center">
+      <div style="background:#e3f2fd;border-radius:6px;padding:12px 8px">
+        <div style="font-size:22px;font-weight:700;color:#1565c0"><%= transitions_total %></div>
+        <div style="font-size:11px;color:#1565c0;text-transform:uppercase;margin-top:2px">Step Advances</div>
+      </div>
+    </td>
+    <td width="25%" style="padding:8px;text-align:center">
+      <div style="background:<%= stagnant_total > 0 ? '#fff3e0' : '#f5f5f5' %>;border-radius:6px;padding:12px 8px">
+        <div style="font-size:22px;font-weight:700;color:<%= stagnant_total > 0 ? '#e65100' : '#757575' %>"><%= stagnant_total %></div>
+        <div style="font-size:11px;color:<%= stagnant_total > 0 ? '#e65100' : '#757575' %>;text-transform:uppercase;margin-top:2px">Stagnant</div>
+      </div>
+    </td>
+    <td width="25%" style="padding:8px;text-align:center">
+      <div style="background:<%= status_total > 0 ? '#e3f2fd' : '#f5f5f5' %>;border-radius:6px;padding:12px 8px">
+        <div style="font-size:22px;font-weight:700;color:<%= status_total > 0 ? '#1565c0' : '#757575' %>"><%= status_total %></div>
+        <div style="font-size:11px;color:<%= status_total > 0 ? '#1565c0' : '#757575' %>;text-transform:uppercase;margin-top:2px">Status Changes</div>
+      </div>
+    </td>
+  </tr>
+</table>
+
+<%# ── Stagnation Breakdown (only if there are stagnant investors) ── %>
+<% if stagnant_total > 0 %>
+  <%= sa_section(title: "Stagnation Breakdown") %>
+  <% stagnant_days = @stagnation[:stagnant_days] || @stagnation["stagnant_days"] || 7 %>
+  <% if newly_stagnant > 0 %>
+    <%= sa_callout(
+      tone:    :danger,
+      heading: "#{newly_stagnant} Newly Stagnant",
+      body:    "#{newly_stagnant} investor#{'s' unless newly_stagnant == 1} went idle in the last #{stagnant_days} days.".html_safe
+    ) %>
+  <% end %>
+  <% still_stagnant_count = @stagnation[:still_stagnant_count] || @stagnation["still_stagnant_count"] || 0 %>
+  <% if still_stagnant_count > 0 %>
+    <%= sa_callout(
+      tone:    :warning,
+      heading: "#{still_stagnant_count} Still Stagnant",
+      body:    "These investors were stagnant last week and remain inactive.".html_safe
+    ) %>
+  <% end %>
+  <% if now_active > 0 %>
+    <%= sa_callout(
+      tone:    :success,
+      heading: "#{now_active} Recovered",
+      body:    "Previously stagnant investors that became active this week.".html_safe
+    ) %>
+  <% end %>
+<% end %>
+
+<%# ── Tasks Quick View ── %>
+<%= sa_section(title: "Tasks") %>
+
+<%= sa_kv_table(rows: [
+  ["Overdue",   overdue_count,   { tone: overdue_count > 0 ? :danger : :success }],
+  ["Upcoming",  upcoming_count,  { tone: :info }],
+  ["Completed", completed_count, { tone: :success }]
+]) %>
+
+<% if highlighted_overdue.present? %>
+  <% task_title = highlighted_overdue[:title] || highlighted_overdue["title"] %>
+  <% task_responsible = highlighted_overdue[:responsible] || highlighted_overdue["responsible"] %>
+  <% task_due = highlighted_overdue[:due_date] || highlighted_overdue["due_date"] %>
+  <% task_company = highlighted_overdue[:company_name] || highlighted_overdue["company_name"] %>
+  <%= sa_callout(
+    tone:    :danger,
+    heading: "Most Overdue Task",
+    body:    [
+      "<strong>#{h task_title}</strong>",
+      task_company.present? ? "Investor: #{h task_company}" : nil,
+      task_responsible.present? ? "Assigned to: #{h task_responsible}" : nil,
+      task_due.present? ? "Due: #{task_due}" : nil
+    ].compact.join("<br>").html_safe
+  ) %>
+<% end %>
+
+<%# ── AI Insight ── %>
+<% if @weekly_insight.present? %>
+  <%= sa_section(title: "AI Insight") %>
+  <%= sa_callout(tone: :info, body: h(@weekly_insight)) %>
+<% end %>
+
+<%# ── CTA Button ── %>
+<%= sa_cta(label: "View Full Dashboard", url: dashboard_url) %>
+
+<%= sa_footer("Weekly Summary · #{h @deal.name} · #{h @entity.name} · <a href=\"#{dashboard_url}\" style=\"color:#aaa\">Open Dashboard</a>".html_safe) %>

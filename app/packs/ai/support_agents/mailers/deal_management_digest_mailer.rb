@@ -33,4 +33,32 @@ class DealManagementDigestMailer < SupportAgentBaseMailer
 
     mail(to: @notify_email, subject: subject)
   end
+
+  # Sends a lightweight weekly summary email with key counts and
+  # stagnation callouts. Links to the full weekly summary dashboard.
+  #
+  # @see DealManagementAgent#send_email_digest
+  def weekly_summary
+    @support_agent  = SupportAgent.find(params[:support_agent_id] || params["support_agent_id"])
+    @deal           = Deal.find(params[:deal_id] || params["deal_id"])
+    @notify_email   = params[:notify_email] || params["notify_email"]
+    @period_deltas  = params[:period_deltas] || params["period_deltas"] || {}
+    @stagnation     = params[:stagnation_breakdown] || params["stagnation_breakdown"] || {}
+    @tasks_summary  = params[:tasks_summary] || params["tasks_summary"] || {}
+    @weekly_insight = params[:weekly_insight] || params["weekly_insight"]
+    @entity         = @support_agent.entity
+    @run_at         = Time.current
+
+    period_start = @period_deltas[:period_start] || @period_deltas["period_start"]
+    @week_range = if period_start.present?
+                    start_date = Time.parse(period_start.to_s)
+                    "#{I18n.l(start_date.to_date, format: :short)} – #{I18n.l(@run_at.to_date, format: :short)}"
+                  else
+                    "Week of #{I18n.l(@run_at.to_date, format: :short)}"
+                  end
+
+    subject = "#{@deal.name} — Weekly Summary (#{@week_range})"
+
+    mail(to: @notify_email, subject: subject)
+  end
 end

@@ -17,6 +17,12 @@
     <a  class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#tasks-tab">Tasks</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#reminders-tab">Reminders</a>
     <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#notifications-tab">Custom Notifications</a>
+    <%# Only show Weekly Summary tab when a DealManagementAgent is configured for this entity %>
+    <% if deal.entity.support_agents.set?(:deal_management_agent) %>
+      <%= link_to weekly_summary_deal_path(deal), class: "nav-link" do %>
+        <i class="ti ti-report-analytics me-1"></i> Weekly Summary
+      <% end %>
+    <% end %>
     <% if deal.entity.support_agents.set?(:deals_report_agent) %>
       <a class="nav-link" data-bs-toggle="pill" data-bs-toggle="tab" href="#agent-settings-tab">Agent Settings</a>
     <% end %>

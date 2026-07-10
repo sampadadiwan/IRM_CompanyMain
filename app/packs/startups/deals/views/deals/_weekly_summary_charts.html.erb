@@ -1,0 +1,64 @@
+<%#
+  Pipeline Charts section — funnel on top (full width), source + lead donuts below.
+  Uses existing DealsHelper Highcharts methods for consistent rendering.
+  Charts intentionally show live/current data, not the historical report snapshot.
+  @param deal [Deal] the current deal
+%>
+
+<div class="card mb-4 shadow-sm border-0">
+  <div class="card-body">
+    <%# Row 1: Deal Funnel (full width) %>
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card shadow-sm border-0">
+          <div class="card-header py-2 bg-white">
+            <h6 class="m-0 fw-semibold">Deal Funnel (By Current Stage)</h6>
+          </div>
+          <div class="card-body">
+            <% funnel_data = deal_activities_funnel_data(deal) %>
+            <% if funnel_data.any? %>
+              <div style="width:100%; height:350px;"
+                   data-controller="highcharts-funnel"
+                   data-highcharts-funnel-data-value="<%= funnel_data.to_json %>"
+                   data-highcharts-funnel-theme-value="<%= chart_theme_color.to_json %>">
+              </div>
+            <% else %>
+              <div class="d-flex align-items-center justify-content-center text-muted" style="height:200px;">
+                No activities completed yet
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Row 2: Source + Lead (side by side) %>
+    <div class="row">
+      <div class="col-lg-6 mb-3 mb-lg-0">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-header py-2 bg-white">
+            <h6 class="m-0 fw-semibold">Mix by Source</h6>
+          </div>
+          <div class="card-body">
+            <div class="chart-area" style="height: 300px;">
+              <%= deal_investor_concentration(deal) %>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card shadow-sm border-0 h-100">
+          <div class="card-header py-2 bg-white">
+            <h6 class="m-0 fw-semibold">Mix by Lead</h6>
+          </div>
+          <div class="card-body">
+            <div class="chart-area" style="height: 300px;">
+              <%= deal_investor_concentration_by_lead(deal) %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

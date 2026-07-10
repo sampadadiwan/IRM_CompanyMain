@@ -608,3 +608,227 @@ Then('the deal report score_leaderboard first entry has ai_score {int}') do |sco
   first_score = leaderboard.first["ai_score"] || leaderboard.first[:ai_score]
   expect(first_score).to eq(score)
 end
+
+# ── Weekly summary config ─────────────────────────────────────────────────────
+
+Given('the agent has weekly_summary enabled') do
+  @agent.update!(json_fields: @agent.json_fields.merge(
+    "weekly_summary" => "Yes",
+    "report_period"  => "7"
+  ))
+end
+
+Given('the agent has preset_steps {string}') do |steps|
+  @agent.update!(json_fields: @agent.json_fields.merge("preset_steps" => steps))
+end
+
+Given('the agent has preset_statuses {string}') do |statuses|
+  @agent.update!(json_fields: @agent.json_fields.merge("preset_statuses" => statuses))
+end
+
+# ── Period delta setup ────────────────────────────────────────────────────────
+
+Given('a new investor is added to the deal within the last {int} days') do |days|
+  inv_entity = FactoryBot.create(:entity, entity_type: "Investor")
+  investor   = FactoryBot.create(:investor, entity: @entity, investor_entity: inv_entity,
+                                            investor_name: "New Investor #{SecureRandom.hex(3)}")
+  @new_deal_investor = FactoryBot.create(:deal_investor,
+    deal: @deal, investor: investor, entity: @entity, status: "Active",
+    primary_amount_cents: 1_000_000_00, pre_money_valuation_cents: 50_000_000_00)
+  # Ensure created_at is within the period
+  DealInvestor.where(id: @new_deal_investor.id).update_all(created_at: (days - 1).days.ago)
+end
+
+Given('there is an open deal with {int} active investor(s) and {int} deal step(s)') do |investor_count, step_count|
+  step "there is an open deal with #{investor_count} active investor"
+  step_count.times do |i|
+    DealActivity.create!(
+      deal: @deal, deal_investor: nil, entity: @entity,
+      title: "Step #{i + 1}", status: "Template", sequence: i + 1, days: 7
+    )
+  end
+end
+
+Given('the investor moved from step {int} to step {int} within the last {int} days') do |from_seq, to_seq, days|
+  templates = DealActivity.where(deal_id: @deal.id, deal_investor_id: nil).order(:sequence)
+  from_template = templates.find { |t| t.sequence == from_seq }
+  to_template   = templates.find { |t| t.sequence == to_seq }
+
+  # Clear any pre-existing deal_activity_id audits
+  Audited::Audit.where(
+    auditable_type: "DealInvestor", auditable_id: @deal_investor.id
+  ).where("audited_changes LIKE ?", "%deal_activity_id%").delete_all
+
+  # Set the investor's starting step without creating an audit record
+  DealInvestor.where(id: @deal_investor.id).update_all(deal_activity_id: from_template.id)
+  @deal_investor.reload
+
+  # Move investor to the target step (creates exactly one audit record)
+  @deal_investor.update!(deal_activity_id: to_template.id)
+
+  # Ensure the transition audit is within the period
+  audit = Audited::Audit.where(
+    auditable_type: "DealInvestor", auditable_id: @deal_investor.id
+  ).where("audited_changes LIKE ?", "%deal_activity_id%")
+   .order(created_at: :desc).first
+  audit.update_column(:created_at, (days - 1).days.ago) if audit
+end
+
+Given('the investor status changed to {string} within the last {int} days') do |new_status, days|
+  # Clear any pre-existing status audits so only our change is counted
+  Audited::Audit.where(
+    auditable_type: "DealInvestor", auditable_id: @deal_investor.id
+  ).where("audited_changes LIKE ?", "%status%").delete_all
+
+  @deal_investor.update!(status: new_status)
+
+  audit = Audited::Audit.where(
+    auditable_type: "DealInvestor", auditable_id: @deal_investor.id
+  ).where("audited_changes LIKE ?", "%status%")
+   .order(created_at: :desc).first
+  audit.update_column(:created_at, (days - 1).days.ago) if audit
+end
+
+# ── Stagnation breakdown setup ────────────────────────────────────────────────
+
+Given('a prior report exists with the investor marked stagnant') do
+  prior_report = SupportAgentReport.find_or_initialize_by(owner: @deal, support_agent: @agent)
+  prior_report.status = :completed
+  prior_report.json_fields = (prior_report.json_fields || {}).merge(
+    "stagnation_breakdown" => {
+      "current_stagnant_ids" => [@deal_investor.id],
+      "total" => 1
+    },
+    "final_status" => "ready"
+  )
+  prior_report.json_fields_will_change!
+  prior_report.save!
+  prior_report.mark_as_latest!
+end
+
+# ── Tasks setup ───────────────────────────────────────────────────────────────
+
+Given('the deal has an overdue task {string} due {int} days ago') do |title, days|
+  task = Task.new(owner: @deal, entity: @entity, due_date: days.days.ago.to_date, completed: false)
+  task.details = title
+  task.save!
+  Task.where(id: task.id).update_all(details: title)
+end
+
+Given('the deal has a task {string} completed {int} days ago') do |title, days|
+  task = Task.new(owner: @deal, entity: @entity, due_date: 10.days.ago.to_date, completed: true)
+  task.details = title
+  task.save!
+  Task.where(id: task.id).update_all(details: title, updated_at: days.days.ago)
+end
+
+Given('the deal has an overdue task with HTML details {string} due {int} days ago') do |html, days|
+  task = Task.new(owner: @deal, entity: @entity, due_date: days.days.ago.to_date, completed: false)
+  task.details = html
+  task.save!
+  Task.where(id: task.id).update_all(details: html)
+end
+
+Given('all existing deal investors were created {int} days ago') do |days|
+  DealInvestor.where(deal_id: @deal.id).update_all(created_at: days.days.ago)
+end
+
+# ── Assertions — period deltas ────────────────────────────────────────────────
+
+Then('the deal report period_deltas new_investors count is {int}') do |count|
+  deltas = deal_report&.json_fields&.dig("period_deltas") || {}
+  new_investors = deltas["new_investors"] || {}
+  expect(new_investors["count"]).to eq(count)
+end
+
+Then('the deal report period_deltas step_transitions total is {int}') do |total|
+  deltas = deal_report&.json_fields&.dig("period_deltas") || {}
+  transitions = deltas["step_transitions"] || {}
+  expect(transitions["total"]).to eq(total)
+end
+
+Then('the deal report period_deltas status_changes total is {int}') do |total|
+  deltas = deal_report&.json_fields&.dig("period_deltas") || {}
+  status_changes = deltas["status_changes"] || {}
+  expect(status_changes["total"]).to eq(total)
+end
+
+Then('the deal report period_deltas status_changes includes {string}') do |status|
+  deltas = deal_report&.json_fields&.dig("period_deltas") || {}
+  by_status = (deltas.dig("status_changes", "by_status") || {})
+  expect(by_status.keys).to include(status)
+end
+
+# ── Assertions — stagnation breakdown ─────────────────────────────────────────
+
+Then('the deal report stagnation_breakdown newly_stagnant count is {int}') do |count|
+  breakdown = deal_report&.json_fields&.dig("stagnation_breakdown") || {}
+  expect(breakdown["newly_stagnant_count"]).to eq(count)
+end
+
+Then('the deal report stagnation_breakdown now_active count is {int}') do |count|
+  breakdown = deal_report&.json_fields&.dig("stagnation_breakdown") || {}
+  expect(breakdown["now_active_count"]).to eq(count)
+end
+
+Then('the deal report stagnation_breakdown still_stagnant count is {int}') do |count|
+  breakdown = deal_report&.json_fields&.dig("stagnation_breakdown") || {}
+  expect(breakdown["still_stagnant_count"]).to eq(count)
+end
+
+Then('the newly stagnant investor has a last_activity date') do
+  breakdown = deal_report&.json_fields&.dig("stagnation_breakdown") || {}
+  newly = breakdown["newly_stagnant"] || []
+  expect(newly).not_to be_empty
+  expect(newly.first["last_activity"]).to be_present
+end
+
+# ── Assertions — tasks summary ────────────────────────────────────────────────
+
+Then('the deal report tasks_summary overdue_count is {int}') do |count|
+  tasks = deal_report&.json_fields&.dig("tasks_summary") || {}
+  expect(tasks["overdue_count"]).to eq(count)
+end
+
+Then('the deal report tasks_summary completed_count is {int}') do |count|
+  tasks = deal_report&.json_fields&.dig("tasks_summary") || {}
+  expect(tasks["completed_count"]).to eq(count)
+end
+
+Then('the deal report tasks_summary overdue_tasks contains {string}') do |title|
+  tasks = deal_report&.json_fields&.dig("tasks_summary") || {}
+  overdue = tasks["overdue_tasks"] || []
+  titles = overdue.map { |t| t["title"] }
+  expect(titles.join(" ")).to include(title)
+end
+
+Then('the deal report tasks_summary overdue_tasks first title is {string}') do |expected_title|
+  tasks = deal_report&.json_fields&.dig("tasks_summary") || {}
+  overdue = tasks["overdue_tasks"] || []
+  expect(overdue).not_to be_empty
+  expect(overdue.first["title"]).to eq(expected_title)
+end
+
+# ── Assertions — weekly summary email ─────────────────────────────────────────
+
+Then('a weekly summary email is queued to {string}') do |email|
+  weekly_mails = ActionMailer::Base.deliveries.select do |mail|
+    mail.to.include?(email) && mail.subject.to_s.match?(/Weekly Summary/i)
+  end
+  expect(weekly_mails).not_to be_empty,
+    "Expected a weekly summary email to #{email}. " \
+    "Deliveries: #{ActionMailer::Base.deliveries.map { |m| "to=#{m.to} subject=#{m.subject.inspect}" }.inspect}"
+end
+
+Then('the weekly summary email subject contains the deal name') do
+  weekly_mail = ActionMailer::Base.deliveries.find { |m| m.subject.to_s.match?(/Weekly Summary/i) }
+  expect(weekly_mail).to be_present
+  expect(weekly_mail.subject).to include(@deal.name)
+end
+
+Then('no weekly summary email is queued') do
+  weekly_mails = ActionMailer::Base.deliveries.select { |m| m.subject.to_s.match?(/Weekly Summary/i) }
+  expect(weekly_mails).to be_empty,
+    "Expected no weekly summary emails but found: #{weekly_mails.map { |m| "to=#{m.to} subject=#{m.subject.inspect}" }.inspect}"
+end
+

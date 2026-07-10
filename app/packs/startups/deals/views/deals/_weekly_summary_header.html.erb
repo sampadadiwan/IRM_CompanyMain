@@ -1,0 +1,49 @@
+<%#
+  @param deal [Deal] the current deal
+  @param report [SupportAgentReport, nil] the current report being displayed
+  @param past_reports [ActiveRecord::Relation, nil] last 12 completed reports
+  @param period_start [String, nil] ISO8601 period start
+  @param period_end [String, nil] ISO8601 period end
+%>
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+  <div>
+    <h3 class="h3 mb-1 text-gray-600"><%= deal.name %> — Weekly Summary</h3>
+    <% if period_start.present? && period_end.present? %>
+      <p class="text-muted mb-0">
+        Week of <%= Time.parse(period_start).strftime("%d %b %Y") %> – <%= Time.parse(period_end).strftime("%d %b %Y") %>
+        <% if report.present? %>
+          <span class="ms-2 text-muted">
+            <% last_run = report.json_fields["completed_at"] ? Time.parse(report.json_fields["completed_at"]) : report.updated_at %>
+              Generated <%= time_ago_in_words(last_run) %> ago
+
+          </span>
+        <% end %>
+      </p>
+    <% end %>
+  </div>
+
+  <div class="d-flex align-items-center gap-2">
+    <% if past_reports.present? && past_reports.size > 1 %>
+      <select class="form-select form-select-sm" style="width: auto;"
+              onchange="if(this.value) window.location.href = this.value;">
+        <% past_reports.each_with_index do |pr, i| %>
+          <% deltas = pr.json_fields&.dig("period_deltas") %>
+          <% label = if deltas && deltas["period_start"].present?
+                       "Week of #{Time.parse(deltas['period_start']).strftime('%d %b %Y')}"
+                     else
+                       "Report #{pr.created_at.strftime('%d %b %Y')}"
+                     end %>
+          <option value="<%= weekly_summary_deal_path(deal, report_id: pr.id) %>"
+                  <%= "selected" if pr.id == report&.id %>>
+            <%= label %>
+          </option>
+        <% end %>
+      </select>
+    <% end %>
+
+    <%= link_to deal_path(deal), class: "btn btn-outline-secondary btn-sm" do %>
+      <i class="ti ti-arrow-left"></i> Back to Deal
+    <% end %>
+  </div>
+</div>

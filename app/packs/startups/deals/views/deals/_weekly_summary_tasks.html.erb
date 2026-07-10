@@ -1,0 +1,206 @@
+<%#
+  Tasks Summary section — overdue/upcoming/completed counts + highlighted task + detail tables.
+  @param tasks_summary [Hash] tasks summary data from report json_fields
+  @param deal [Deal] the current deal
+%>
+
+<%
+  overdue_count = tasks_summary["overdue_count"] || 0
+  upcoming_count = tasks_summary["upcoming_count"] || 0
+  completed_count = tasks_summary["completed_count"] || 0
+  highlighted = tasks_summary["highlighted_overdue"]
+  overdue_tasks = tasks_summary["overdue_tasks"] || []
+  pending_due_soon = tasks_summary["pending_due_soon"] || []
+  completed_tasks = tasks_summary["completed_tasks"] || []
+%>
+
+<div class="card mb-4 shadow-sm border-0">
+  <div class="card-body">
+    <%# Count cards — 4 columns %>
+    <div class="row mb-3 g-3">
+      <div class="col-md-3">
+        <div class="border rounded-3 p-3 text-center h-100">
+          <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2" style="width: 40px; height: 40px;">
+            <i class="ti ti-clock-exclamation text-danger fs-5"></i>
+          </div>
+          <div class="small text-muted mb-1">Overdue Tasks</div>
+          <div class="fs-3 fw-bold text-danger"><%= overdue_count %></div>
+          <% if overdue_count > 0 && overdue_tasks.any? %>
+            <a href="#overdue-tasks-table" data-bs-toggle="collapse" class="small text-decoration-none">View details &rarr;</a>
+          <% end %>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="border rounded-3 p-3 text-center h-100">
+          <div class="rounded-circle bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2" style="width: 40px; height: 40px;">
+            <i class="ti ti-calendar-event text-warning fs-5"></i>
+          </div>
+          <div class="small text-muted mb-1">To be due, Pending Tasks</div>
+          <div class="fs-3 fw-bold text-warning"><%= upcoming_count %></div>
+          <% if upcoming_count > 0 && pending_due_soon.any? %>
+            <a href="#pending-due-soon-table" data-bs-toggle="collapse" class="small text-decoration-none">View details &rarr;</a>
+          <% end %>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="border rounded-3 p-3 text-center h-100">
+          <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2" style="width: 40px; height: 40px;">
+            <i class="ti ti-circle-check text-success fs-5"></i>
+          </div>
+          <div class="small text-muted mb-1">Tasks Completed in the Week</div>
+          <div class="fs-3 fw-bold text-success"><%= completed_count %></div>
+          <% if completed_count > 0 && completed_tasks.any? %>
+            <a href="#completed-tasks-table" data-bs-toggle="collapse" class="small text-decoration-none">View details &rarr;</a>
+          <% end %>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <% if highlighted.present? %>
+          <div class="border border-danger rounded-3 p-3 h-100" style="background-color: #fff5f5;">
+            <div class="d-flex align-items-center mb-2">
+              <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                <i class="ti ti-file-alert text-danger fs-5"></i>
+              </div>
+              <span class="small fw-bold text-danger">Recent Overdue Task</span>
+            </div>
+            <p class="fw-semibold mb-1 small"><%= highlighted["title"] %></p>
+            <% if highlighted["responsible"].present? %>
+              <p class="text-muted mb-0 small">Responsible: <%= highlighted["responsible"] %></p>
+            <% end %>
+            <% if highlighted["due_date"].present? %>
+              <p class="text-muted mb-0 small">Due Date: <%= Time.parse(highlighted["due_date"]).strftime("%d %b %Y") %></p>
+            <% end %>
+            <% if defined?(deal) && deal.present? %>
+              <%= link_to "View all overdue &rarr;".html_safe, deal_path(deal, tab: "tasks"), class: "small text-decoration-none d-block mt-2" %>
+            <% end %>
+          </div>
+        <% else %>
+          <div class="border rounded-3 p-3 text-center h-100 d-flex align-items-center justify-content-center">
+            <div>
+              <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-2" style="width: 40px; height: 40px;">
+                <i class="ti ti-check text-success fs-5"></i>
+              </div>
+              <p class="text-muted small mb-0">No overdue tasks</p>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </div>
+
+    <%# Overdue tasks table (collapsible) %>
+    <% if overdue_tasks.any? %>
+      <div class="collapse" id="overdue-tasks-table">
+        <h6 class="fw-semibold mb-2 text-danger"><i class="ti ti-clock-exclamation me-1"></i>Overdue Tasks</h6>
+        <div class="table-responsive border rounded-3 mb-3">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead style="background-color: #f8f9fb;">
+              <tr>
+                <th class="ps-3 py-2">Task</th>
+                <th class="py-2">Deal / Company</th>
+                <th class="py-2">Responsible</th>
+                <th class="text-center py-2">Due Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% overdue_tasks.each do |task| %>
+                <tr>
+                  <td class="ps-3 py-2"><%= task["title"] %></td>
+                  <td class="py-2"><%= task["company_name"] || "—" %></td>
+                  <td class="py-2"><%= task["responsible"] || "—" %></td>
+                  <td class="text-center py-2">
+                    <span class="text-danger small fw-medium"><%= task["due_date"].present? ? Time.parse(task["due_date"]).strftime("%d %b %Y") : "—" %></span>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if defined?(deal) && deal.present? && overdue_count > overdue_tasks.size %>
+          <div class="text-center mb-3">
+            <%= link_to "View all overdue tasks &rarr;".html_safe, deal_path(deal, tab: "tasks"), class: "small text-decoration-none" %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Pending due soon table (collapsible) %>
+    <% if pending_due_soon.any? %>
+      <div class="collapse" id="pending-due-soon-table">
+        <h6 class="fw-semibold mb-2"><i class="ti ti-calendar-event text-warning me-1"></i>Pending Tasks Due Soon</h6>
+        <div class="table-responsive border rounded-3 mb-3">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead style="background-color: #f8f9fb;">
+              <tr>
+                <th class="ps-3 py-2">Task</th>
+                <th class="py-2">Deal / Company</th>
+                <th class="py-2">Responsible</th>
+                <th class="text-center py-2">Due Date</th>
+                <th class="text-center py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% pending_due_soon.each do |task| %>
+                <tr>
+                  <td class="ps-3 py-2"><%= task["title"] %></td>
+                  <td class="py-2"><%= task["company_name"] || "—" %></td>
+                  <td class="py-2"><%= task["responsible"] || "—" %></td>
+                  <td class="text-center py-2"><%= task["due_date"].present? ? Time.parse(task["due_date"]).strftime("%d %b %Y") : "—" %></td>
+                  <td class="text-center py-2">
+                    <span class="badge bg-warning text-dark rounded-pill"><%= task["status"] || "Pending" %></span>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if defined?(deal) && deal.present? %>
+          <div class="text-center mb-3">
+            <%= link_to "View all tasks &rarr;".html_safe, deal_path(deal, tab: "tasks"), class: "small text-decoration-none" %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <%# Completed tasks table (collapsible) %>
+    <% if completed_tasks.any? %>
+      <div class="collapse" id="completed-tasks-table">
+        <h6 class="fw-semibold mb-2 text-success"><i class="ti ti-circle-check me-1"></i>Completed Tasks</h6>
+        <div class="table-responsive border rounded-3 mb-3">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead style="background-color: #f8f9fb;">
+              <tr>
+                <th class="ps-3 py-2">Task</th>
+                <th class="py-2">Deal / Company</th>
+                <th class="py-2">Responsible</th>
+                <th class="text-center py-2">Due Date</th>
+                <th class="text-center py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% completed_tasks.each do |task| %>
+                <tr>
+                  <td class="ps-3 py-2"><%= task["title"] %></td>
+                  <td class="py-2"><%= task["company_name"] || "—" %></td>
+                  <td class="py-2"><%= task["responsible"] || "—" %></td>
+                  <td class="text-center py-2"><%= task["due_date"].present? ? Time.parse(task["due_date"]).strftime("%d %b %Y") : "—" %></td>
+                  <td class="text-center py-2">
+                    <span class="badge bg-success rounded-pill">Completed</span>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+        <% if defined?(deal) && deal.present? && completed_count > completed_tasks.size %>
+          <div class="text-center mb-3">
+            <%= link_to "View all completed tasks &rarr;".html_safe, deal_path(deal, tab: "tasks"), class: "small text-decoration-none" %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+
+    <% if overdue_count == 0 && upcoming_count == 0 && completed_count == 0 %>
+      <p class="text-muted small mb-0">No tasks this period.</p>
+    <% end %>
+  </div>
+</div>

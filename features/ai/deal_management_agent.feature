@@ -1,8 +1,11 @@
 Feature: Deal Management Agent
   As a fund operator I want a DealManagementAgent that monitors an open deal,
   flags stagnant investors and overdue activities, checks document completeness,
-  extracts deal terms, summarises investor notes, scores investors, and sends
-  a single digest email covering all issues — all from a single configurable support agent.
+  extracts deal terms, summarises investor notes, scores investors, computes
+  weekly period deltas and stagnation breakdowns, aggregates tasks, generates
+  an optional AI insight, and sends digest and weekly summary emails — all from
+  a single configurable support agent.
+
 
   Background:
     Given there is a user "first_name=DealAdmin" for an entity "name=DealTestFund;entity_type=Investment Fund"
@@ -193,3 +196,117 @@ Feature: Deal Management Agent
     And the LLM returns scores 82 and 55 for the two investors
     When the DealManagementAgent runs for the deal with score_investors enabled
     Then the deal report score_leaderboard first entry has ai_score 82
+
+
+
+  # ── 10. Period deltas (step 6) ──────────────────────────────────────────────
+
+  @deal_management @period_deltas
+  Scenario: New investor added during period appears in period_deltas
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And all existing deal investors were created 14 days ago
+    And a new investor is added to the deal within the last 7 days
+    When the DealManagementAgent runs for the deal
+    Then the deal report period_deltas new_investors count is 1
+
+  @deal_management @period_deltas
+  Scenario: Step transition during period is captured via audit trail
+    Given there is an open deal with 1 active investor and 2 deal steps
+    And the agent has weekly_summary enabled
+    And the investor moved from step 1 to step 2 within the last 7 days
+    When the DealManagementAgent runs for the deal
+    Then the deal report period_deltas step_transitions total is 1
+
+  @deal_management @period_deltas
+  Scenario: Status change during period is captured
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And the investor status changed to "Declined" within the last 7 days
+    When the DealManagementAgent runs for the deal
+    Then the deal report period_deltas status_changes total is 1
+    And the deal report period_deltas status_changes includes "Declined"
+
+  @deal_management @period_deltas
+  Scenario: Preset steps filter limits which transitions appear
+    Given there is an open deal with 1 active investor and 3 deal steps
+    And the agent has weekly_summary enabled
+    And the agent has preset_steps "1-2"
+    And the investor moved from step 2 to step 3 within the last 7 days
+    When the DealManagementAgent runs for the deal
+    Then the deal report period_deltas step_transitions total is 0
+
+  @deal_management @period_deltas
+  Scenario: Preset statuses filter limits which status changes appear
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And the agent has preset_statuses "Declined"
+    And the investor status changed to "Pending" within the last 7 days
+    When the DealManagementAgent runs for the deal
+    Then the deal report period_deltas status_changes total is 0
+
+  # ── 11. Stagnation breakdown (step 7) ───────────────────────────────────────
+
+  @deal_management @stagnation_breakdown
+  Scenario: Newly stagnant investor appears with last_activity date
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And the investor has had no activity for 20 days
+    When the DealManagementAgent runs for the deal
+    Then the deal report stagnation_breakdown newly_stagnant count is 1
+    And the newly stagnant investor has a last_activity date
+
+  @deal_management @stagnation_breakdown
+  Scenario: Previously stagnant investor that becomes active appears in now_active
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And a prior report exists with the investor marked stagnant
+    And the investor was updated 1 days ago
+    When the DealManagementAgent runs for the deal
+    Then the deal report stagnation_breakdown now_active count is 1
+
+  @deal_management @stagnation_breakdown
+  Scenario: Still stagnant investor carries forward from prior report
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And a prior report exists with the investor marked stagnant
+    And the investor has had no activity for 20 days
+    When the DealManagementAgent runs for the deal
+    Then the deal report stagnation_breakdown still_stagnant count is 1
+
+  # ── 12. Tasks summary (step 8) ─────────────────────────────────────────────
+
+  @deal_management @tasks_summary
+  Scenario: Overdue task appears in tasks_summary
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And the deal has an overdue task "Review NDA" due 5 days ago
+    When the DealManagementAgent runs for the deal
+    Then the deal report tasks_summary overdue_count is 1
+    And the deal report tasks_summary overdue_tasks contains "Review NDA"
+
+  @deal_management @tasks_summary
+  Scenario: Completed task within period appears in completed_tasks
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And the deal has a task "Send Docs" completed 2 days ago
+    When the DealManagementAgent runs for the deal
+    Then the deal report tasks_summary completed_count is 1
+
+  # ── 13. Weekly summary email ───────────────────────────────────────────────
+
+  @deal_management @weekly_email
+  Scenario: Weekly summary email is queued when enabled
+    Given there is an open deal with 1 active investor
+    And the agent has weekly_summary enabled
+    And the agent has notify_email "ops@example.com"
+    When the DealManagementAgent runs for the deal
+    Then a weekly summary email is queued to "ops@example.com"
+    And the weekly summary email subject contains the deal name
+
+  @deal_management @weekly_email
+  Scenario: No weekly summary email when weekly_summary is disabled
+    Given there is an open deal with 1 active investor
+    And the agent has notify_email "ops@example.com"
+    When the DealManagementAgent runs for the deal
+    Then no weekly summary email is queued

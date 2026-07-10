@@ -1,10 +1,13 @@
+# frozen_string_literal: true
+
+# Manages deal CRUD, agent settings, and the weekly summary dashboard.
 class DealsController < ApplicationController
   include DealsHelper
   include AgGridHelper
 
   require 'pagy/extras/array'
 
-  before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights agent_settings update_agent_settings run_now]
+  before_action :set_deal, only: %w[show update destroy edit overview consolidated_access_rights agent_settings update_agent_settings run_now weekly_summary]
   after_action :verify_authorized, except: %i[index search investor_deals]
 
   # GET /deals/analytics
@@ -178,11 +181,44 @@ class DealsController < ApplicationController
     authorize(@deal, :update?)
     agent = find_or_initialize_deals_agent
     if agent.persisted?
-      SupportAgentJob.perform_later(support_agent_id: agent.id, user_id: current_user.id, execution_mode: :adhoc_batch)
+      SupportAgentJob.perform_later(support_agent_id: agent.id, user_id: current_user.id, execution_mode: :adhoc_batch, target_id: @deal.id, target_type: "Deal")
       redirect_to deal_path(@deal), notice: "Report queued — you'll receive an email shortly."
     else
       redirect_to deal_path(@deal), alert: "Please save agent settings first."
     end
+  end
+
+  # GET /deals/1/weekly_summary
+  #
+  # @note Reads from the latest completed SupportAgentReport for this deal.
+  #   Returns empty data hash when no agent has run yet.
+  def weekly_summary
+    @bread_crumbs["Weekly Summary"] = nil
+
+    @support_agent = SupportAgent.find_by(
+      entity_id: @deal.entity_id,
+      agent_type: "DealManagementAgent"
+    )
+
+    @report = if params[:report_id].present?
+                SupportAgentReport
+                  .where(owner: @deal, support_agent: @support_agent)
+                  .find_by(id: params[:report_id])
+              end
+
+    @report ||= SupportAgentReport
+                .where(owner: @deal, support_agent: @support_agent)
+                .where(status: %i[completed failed])
+                .order(created_at: :desc)
+                .first
+
+    @data = @report&.json_fields || {}
+
+    @past_reports = SupportAgentReport
+                    .where(owner: @deal, support_agent: @support_agent)
+                    .where(status: :completed)
+                    .order(created_at: :desc)
+                    .limit(12)
   end
 
   # GET /deals/new
