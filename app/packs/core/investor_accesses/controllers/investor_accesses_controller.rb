@@ -138,7 +138,11 @@ class InvestorAccessesController < ApplicationController
     authorize @investor_access
 
     respond_to do |format|
-      if @investor_access.update(investor_access_params)
+      # SECURITY (finding M6): the record is authorized BEFORE assignment, so strip the identity/
+      # scoping fields to stop a grant being retargeted to another tenant, investor, or user after
+      # the check. entity_id/investor_id/user_id are fixed at creation; the user is re-derived from
+      # email by InvestorAccess#update_user, and approved/email/tags remain editable.
+      if @investor_access.update(investor_access_params.except(:entity_id, :investor_id, :user_id))
         format.turbo_stream do
           UserAlert.new(user_id: current_user.id, message: "Updated #{@investor_access.email}", level: "success").broadcast
           render :update

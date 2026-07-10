@@ -65,6 +65,10 @@ Rails.application.routes.draw do
   resources :users do
     get 'search', on: :collection
     get 'no_password_login', on: :collection
+    # Authenticated admin/support impersonation. Distinct from no_password_login (the email
+    # self-login link): login_as requires the acting admin to be logged in and authorized, so
+    # there is no bearer token in a URL that could be leaked and replayed anonymously.
+    post 'login_as', on: :member
     post 'magic_link', on: :collection
     post 'whatsapp_webhook', on: :collection
     get 'welcome', on: :collection

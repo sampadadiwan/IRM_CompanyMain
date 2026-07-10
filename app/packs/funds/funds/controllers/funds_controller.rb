@@ -18,7 +18,9 @@ class FundsController < ApplicationController
     when "CapitalDistribution"
       render "/capital_distributions/analytics_content", layout: false
     when "CapitalRemittance"
-      @owner = params[:capital_call_id].present? ? CapitalCall.find(params[:capital_call_id]) : @fund
+      # SECURITY (finding M7): scope through the authorized @fund so a capital_call_id from another
+      # fund/tenant cannot be loaded (raises RecordNotFound → handled).
+      @owner = params[:capital_call_id].present? ? @fund.capital_calls.find(params[:capital_call_id]) : @fund
       render "/capital_remittances/analytics_content", layout: false
     when "AggregatePortfolioInvestment"
       render "/aggregate_portfolio_investments/analytics_content", layout: false
@@ -48,11 +50,18 @@ class FundsController < ApplicationController
     # File.delete(export_file)
   end
 
+  # Simple path segments only (letters/digits joined by "_" or "/"); no ".." or absolute paths.
+  SAFE_REPORT_TEMPLATE = %r{\A[a-z0-9]+(?:[_/][a-z0-9]+)*\z}i
+
   def report
     if params[:report].present? && params[:report] == "generate_reports"
       XlReportJob.perform_later(@fund.id, current_user.id)
       redirect_to fund_path(@fund), notice: "Report generation started, please check back in a few mins. Your report will be generated in the 'Fund Reports' folder."
     else
+      # SECURITY (finding M8): confine params[:report] to a safe template name so a crafted value
+      # cannot traverse out of funds/ or render an unintended template.
+      return head(:not_found) unless params[:report].to_s.match?(SAFE_REPORT_TEMPLATE)
+
       render "/funds/#{params[:report]}"
     end
   end
@@ -114,6 +123,10 @@ class FundsController < ApplicationController
   # POST /funds or /funds.json
   def create
     @fund = Fund.new(fund_params)
+    # SECURITY (finding H6): pin the tenant key to the acting user's entity — never trust a
+    # client-supplied entity_id (it is not permitted in fund_params). Support users create for a
+    # client entity by first switching into it (SupportClientMapping#switch sets their entity_id).
+    @fund.entity_id = current_user.entity_id
     authorize(@fund)
     respond_to do |format|
       if @fund.save
@@ -270,6 +283,13 @@ class FundsController < ApplicationController
 
   def copy_formulas
     from_fund = Fund.find(params[:from_fund_id])
+    # SECURITY (finding H5): the SOURCE fund was previously loaded without authorization, letting
+    # its formulas be copied out. Authorizing show? enforces exactly the intended boundary:
+    #   - regular users may only copy from a fund in their own entity (permissioned_employee?
+    #     requires belongs_to_entity? for non-support users), and
+    #   - support users may copy cross-entity (the accepted support fallthrough — see H1).
+    # The destination (@fund) is already authorized in set_fund via copy_formulas? (update?).
+    authorize from_fund, :show?
 
     from_fund.fund_formulas.order(sequence: :asc).each do |ff|
       new_ff = ff.dup
@@ -288,13 +308,17 @@ class FundsController < ApplicationController
   end
 
   def show_email_list
-    @capital_call = CapitalCall.find(params[:capital_call_id]) if params[:capital_call_id].present?
-    @capital_distribution = CapitalDistribution.find(params[:capital_distribution_id]) if params[:capital_distribution_id].present?
-    @capital_distribution_payment = CapitalDistributionPayment.find(params[:capital_distribution_payment_id]) if params[:capital_distribution_payment_id].present?
+    # SECURITY (finding M7): load these through the authorized @fund's associations so a record id
+    # belonging to another fund/tenant cannot be surfaced (raises RecordNotFound → handled).
+    @capital_call = @fund.capital_calls.find(params[:capital_call_id]) if params[:capital_call_id].present?
+    @capital_distribution = @fund.capital_distributions.find(params[:capital_distribution_id]) if params[:capital_distribution_id].present?
+    @capital_distribution_payment = @fund.capital_distribution_payments.find(params[:capital_distribution_payment_id]) if params[:capital_distribution_payment_id].present?
   end
 
   def trigger_adhoc_notification
-    @custom_notification = CustomNotification.find(params[:custom_notification_id])
+    # SECURITY (finding M7): a CustomNotification belongs to an entity; scope the lookup to the
+    # authorized @fund's entity so a template from another tenant cannot be triggered.
+    @custom_notification = CustomNotification.where(entity_id: @fund.entity_id).find(params[:custom_notification_id])
     commitment_ids = params[:commitment_ids].presence # nil when blank → all commitments
     # Only populated by the "Select Investor KYCs to Notify" picker, which the view only
     # renders when @custom_notification.email_method == "adhoc_kyc_notification" — harmless
@@ -315,9 +339,12 @@ class FundsController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_params
+    # SECURITY (finding H6): :entity_id is intentionally NOT permitted. The tenant key is set
+    # server-side from current_user in #create and can never be changed on #update, so a fund
+    # cannot be created in — or relocated to — another entity via mass assignment.
     params.require(:fund).permit(:name, :category, :committed_amount, :details, :lp_commentary,
                                  :collected_amount, :commitment_doc_list, :master_fund_id,
-                                 :entity_id, :tag_list, :show_valuations, :show_fund_ratios,
+                                 :tag_list, :show_valuations, :show_fund_ratios,
                                  :currency, :unit_types, :units_allocation_engine, :form_type_id, :first_close_date, :show_portfolios, :show_fund_units, :last_close_date, :tracking_currency,
                                  :esign_emails, :enable_ai_commentary, documents_attributes: Document::NESTED_ATTRIBUTES, properties: {})
   end

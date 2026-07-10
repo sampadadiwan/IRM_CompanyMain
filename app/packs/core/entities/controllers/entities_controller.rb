@@ -14,7 +14,15 @@ class EntitiesController < ApplicationController
     redirect_to @dashboard if @dashboard.present?
   end
 
+  # Template names allowed to be rendered by #report: simple path segments (letters/digits joined by
+  # "_" or "/"), never containing ".." or absolute paths. Blocks path traversal / template injection.
+  SAFE_REPORT_TEMPLATE = %r{\A[a-z0-9]+(?:[_/][a-z0-9]+)*\z}i
+
   def report
+    # SECURITY (finding M8): params[:report] flows into the rendered template path; confine it so a
+    # crafted value cannot traverse out of entities/ or render an unintended template.
+    return head(:not_found) unless params[:report].to_s.match?(SAFE_REPORT_TEMPLATE)
+
     render "entities/#{params[:report]}"
   end
 

@@ -99,11 +99,16 @@
             <small class="text-muted">Enable users to print this document</small>
           </div>
 
-          <div class="form-group">
-            <%= form.label :public_visibility, "Allow Public Visibility" %>
-            <%= form.check_box :public_visibility, class: "form-check-input" %>
-            <small class="text-muted">Enable any user to view this document</small>
-          </div>
+          <%# SECURITY (finding H7): publishing a document is a company-admin-only action (see
+              DocumentPolicy#set_public_visibility?). Hide the toggle from other editors; the server
+              enforces it regardless. %>
+          <% if current_user&.has_cached_role?(:company_admin) %>
+            <div class="form-group">
+              <%= form.label :public_visibility, "Allow Public Visibility" %>
+              <%= form.check_box :public_visibility, class: "form-check-input" %>
+              <small class="text-muted">Enable any user to view this document</small>
+            </div>
+          <% end %>
 
           <div class="form-group">
             <%= form.label :send_email %>

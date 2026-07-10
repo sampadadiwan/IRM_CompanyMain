@@ -8,7 +8,16 @@ class LlmChat
   end
 
   def get_login_link(*)
-    signed_id = @user.signed_id(expires_in: 5.minutes)
+    # Self-login link delivered over WhatsApp. This is a legitimate self-service channel: the
+    # WhatsApp agent resolves @user from the SENDER's own registered phone number
+    # (WhatsappAgentJob: User.find_by(phone:, call_code:)), so the link can only ever reach the
+    # account owner — the same trust model as an email magic link.
+    #
+    # Short 2-minute TTL (finding H3): the URL is produced as an LLM tool result and therefore
+    # transits the LLM provider and the WhatsApp channel, so we keep the replay window minimal.
+    # SECURITY (finding M1): dedicated purpose (matched in no_password_login) so this token can
+    # never be interchanged with any other User signed_id.
+    signed_id = @user.signed_id(expires_in: 2.minute, purpose: User::MAGIC_LINK_PURPOSE)
     no_password_login_users_url(signed_id:)
   end
 

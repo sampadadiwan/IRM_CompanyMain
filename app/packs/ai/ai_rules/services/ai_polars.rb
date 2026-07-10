@@ -50,7 +50,9 @@ class AiPolars
   def self.run_query(query, model_classes, _df)
     polars_query = generate_query(query, model_classes)
     Rails.logger.debug { "Polars Query: #{polars_query}" }
-    result = eval(polars_query)
+    # polars_query is LLM-generated and therefore attacker-influenceable via prompt injection;
+    # reject code-execution constructs before evaluating.
+    result = eval(ApplicationRecord.safe_eval!(polars_query, context: "AiPolars query"))
     Rails.logger.debug { "Result: #{result}" }
     result
   end

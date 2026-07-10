@@ -3,7 +3,10 @@ class DocSharePolicy < ApplicationPolicy
     # NOTE: Be explicit about which records you allow access to!
     def resolve
       if user.has_cached_role?(:company_admin)
-        scope.all
+        # SECURITY (finding M3): scope to the admin's OWN entity's documents. Previously returned
+        # scope.all, exposing every other entity's doc-share metadata (recipient emails, view
+        # counts, document ids) in the index to any company admin.
+        scope.joins(:document).where(documents: { entity_id: user.entity_id })
       else
         scope.where(document_id: user.documents.pluck(:id))
       end

@@ -159,7 +159,10 @@ module WithCustomField
 
   def perform_custom_calculation(fcf)
     if fcf.meta_data.present?
-      val = eval(fcf.meta_data)
+      # meta_data is a Ruby calculation eval-ed here. FormCustomField#meta_data_kosher? guards
+      # it at write time (only for Calculation fields); guard again at the eval boundary so paths
+      # that skip validation (update_column, imports) cannot execute arbitrary code.
+      val = eval(ApplicationRecord.safe_eval!(fcf.meta_data, context: "FormCustomField##{fcf.id} meta_data"))
       json_fields[fcf.name] = val
       val
     end

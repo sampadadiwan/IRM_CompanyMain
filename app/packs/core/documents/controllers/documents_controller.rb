@@ -216,6 +216,14 @@ class DocumentsController < ApplicationController
     @document.entity_id = @document.owner&.entity_id || current_user.entity_id
     @document.user_id = current_user.id
 
+    # SECURITY (finding H7): a document cannot be self-approved at creation — approval is granted
+    # later via the approver-gated flow. And only company admins may publish a document
+    # (public_visibility); reset it for anyone else. entity_id is set above, so the policy check
+    # evaluates against the correct entity.
+    @document.approved = false
+    @document.approved_by_id = nil
+    @document.public_visibility = false unless policy(@document).set_public_visibility?
+
     authorize @document
 
     respond_to do |format|
@@ -256,8 +264,19 @@ class DocumentsController < ApplicationController
 
   # PATCH/PUT /documents/1 or /documents/1.json
   def update
+    # SECURITY (finding H7): approval and public visibility are privileged and were previously
+    # settable by plain mass assignment, letting any user with update? self-approve (bypassing the
+    # approver workflow) or publish a document. Apply them here with their own authorization.
+    apply_privileged_document_attrs!
+
     respond_to do |format|
-      if @document.update(document_params)
+      # SECURITY (finding H6): strip entity_id so an existing document cannot be relocated to
+      # another tenant via mass assignment. entity_id is set once at #create (owner-derived) and
+      # is immutable thereafter. NOTE: this only affects documents_controller — the portfolio
+      # company's KPI magic-link upload uses nested documents_attributes (Document::NESTED_ATTRIBUTES)
+      # on kpi_reports#update, a separate path that is intentionally left unchanged.
+      # H7: approved/approved_by_id/public_visibility are applied above (gated), never mass-assigned.
+      if @document.update(document_params.except(:entity_id, :approved, :approved_by_id, :public_visibility))
         format.html { save_and_upload }
         format.json { render :show, status: :ok, location: @document }
       else
@@ -389,6 +408,32 @@ class DocumentsController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # SECURITY (finding H7): applies the privileged document attributes (approval + public
+  # visibility) that must never be mass-assigned. Each change is authorized on its own and only
+  # when the value actually changes, so an ordinary edit that merely re-submits an unchanged
+  # public_visibility checkbox is not blocked for non-privileged editors. approved_by_id is always
+  # set server-side, never trusted from the client. Raises Pundit::NotAuthorizedError otherwise.
+  def apply_privileged_document_attrs!
+    bool = ActiveModel::Type::Boolean.new
+
+    if document_params.key?(:approved)
+      approving = bool.cast(document_params[:approved])
+      if approving != @document.approved
+        authorize @document, approving ? :approve? : :unapprove?
+        @document.approved = approving
+        @document.approved_by_id = approving ? current_user.id : nil
+      end
+    end
+
+    if document_params.key?(:public_visibility)
+      make_public = bool.cast(document_params[:public_visibility])
+      if make_public != @document.public_visibility
+        authorize @document, :set_public_visibility?
+        @document.public_visibility = make_public
+      end
+    end
+  end
+
   def document_params
     params.require(:document).permit(:name, :text, :entity_id, :video, :form_type_id, :tag_list, :template, :template_docs_to_append,
                                      :signature_enabled, :public_visibility, :send_email, :display_on_page, :embed,

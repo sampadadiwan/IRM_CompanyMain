@@ -260,7 +260,8 @@ class DashboardWidget < ApplicationRecord
 
   # rubocop:disable Security/Eval
   def metadata_args
-    ret_val = metadata ? eval(metadata) : {}
+    # metadata is a Ruby hash literal eval-ed here; block code-execution constructs first.
+    ret_val = metadata ? eval(ApplicationRecord.safe_eval!(metadata, context: "DashboardWidget##{id} metadata")) : {}
     ret_val = {} unless ret_val.is_a?(Hash)
     ret_val.deep_symbolize_keys
   end
@@ -286,7 +287,9 @@ class DashboardWidget < ApplicationRecord
                      .gsub(/,\s*\]/, "]")
                      .gsub(/,\s*\}/, "}")
 
-    ret_val = eval(sanitized_help)
+    # sanitized_help is only cosmetically normalized above (not a security check); block
+    # code-execution constructs before eval-ing this Ruby hash literal.
+    ret_val = eval(ApplicationRecord.safe_eval!(sanitized_help, context: "DashboardWidget##{id} metadata_help"))
     ret_val = {} unless ret_val.is_a?(Hash)
     # Clean up values in the hash
     ret_val.each do |k, v|

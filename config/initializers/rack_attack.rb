@@ -17,9 +17,12 @@ module Rack
 
     Rack::Attack.enabled = false if Rails.env.test?
 
-    # If a request has the Rails session cookie, we assume it’s a normal user.
-    safelist('logged_in_users') do |req|
-      # The cookie key is usually something like "_your_app_session"
+    # SECURITY (finding M4): the previous global safelist exempted ANY request carrying a session
+    # cookie from ALL throttles — including the login brute-force and 404-scanner throttles below —
+    # so a single low-privilege authenticated session bypassed every rate limit. Removed. Logged-in
+    # users are instead exempted only from the GENERAL per-IP throttle (see the `req/ip` rule), while
+    # the login and 404 throttles now apply to everyone, authenticated or not.
+    def self.logged_in?(req)
       req.cookies[Rails.application.config.session_options[:key]].present?
     end
 
@@ -53,7 +56,12 @@ module Rack
     # Throttle all requests by IP (60rpm)
     #
     # Key: "rack::attack:#{Time.now.to_i/:period}:req/ip:#{req.ip}"
-    throttle('req/ip', limit: 300, period: 5.minutes, &:ip)
+    # SECURITY (finding M4): logged-in users are exempted from THIS general throttle only (so normal
+    # authenticated browsing isn't rate-limited), but they remain subject to the login and 404
+    # throttles below.
+    throttle('req/ip', limit: 300, period: 5.minutes) do |req|
+      req.ip unless logged_in?(req)
+    end
 
     ### Prevent Brute-Force Login Attacks ###
 
@@ -87,9 +95,11 @@ module Rack
     # on wood!)
     throttle('block_bad_sign_ins', limit: 10, period: 30.seconds) do |req|
       if ['/users/sign_in', '/users/reset_password', '/users/confirmation', '/users/password', '/users/magic_link'].include?(req.path) && req.post?
-        # Normalize the email, using the same logic as your authentication process, to
-        # protect against rate limit bypasses. Return the normalized email if present, nil otherwise.
-        req.params['email'].to_s.downcase.gsub(/\s+/, "").presence
+        # SECURITY (finding M4): Devise and the magic-link form submit the address as user[email],
+        # so the previous req.params['email'] was always nil and this per-email throttle never fired.
+        # Read the nested param (with a flat fallback) so per-account credential stuffing is limited.
+        # Normalize identically to the authentication path to prevent rate-limit bypass via casing.
+        (req.params.dig('user', 'email') || req.params['email']).to_s.downcase.gsub(/\s+/, "").presence
       end
     end
 

@@ -54,4 +54,19 @@ class UserPolicy < ApplicationPolicy
   def cross_site_link?
     user.regions.present?
   end
+
+  # Authorizes admin/support impersonation ("login as"). The acting user (`user`) may impersonate
+  # the target (`record`) only if:
+  #   1. they hold the :support or :super role, AND
+  #   2. they hold an enabled SupportClientMapping for the target's entity whose login-as
+  #      whitelist includes their OWN email (allow_login_as checks the support user's email).
+  # This is enforced server-side against the authenticated acting user, which is why the new
+  # login_as flow cannot be redeemed by an anonymous party holding a leaked URL (unlike the old
+  # signed-link flow — see UsersController#login_as and docs/technical/security_review_2026_07.md H2).
+  def login_as?
+    return false unless user.has_cached_role?(:support) || user.has_cached_role?(:super)
+
+    mapping = SupportClientMapping.find_by(user_id: user.id, entity_id: record.entity_id, enabled: true)
+    mapping&.allow_login_as(user.email) || false
+  end
 end

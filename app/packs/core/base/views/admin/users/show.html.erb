@@ -43,7 +43,14 @@ as well as a link to its edit page.
       support_client_mapping = SupportClientMapping.where(user_id: current_user.id, entity_id: user.entity_id, enabled: true).last
     %>
 
-    <%= link_to 'Click To Login', no_password_login_users_url(signed_id: user.signed_id(expires_in: 5.minutes)), class: "btn btn-outline-primary" if page.resource.enable_support && support_client_mapping.allow_login_as(user.email) %>
+    <%#
+      SECURITY (finding H2): impersonation now posts to the authenticated UsersController#login_as
+      instead of minting a signed_id magic link (a leakable bearer token). The render gate mirrors
+      the server-side UserPolicy#login_as? check: allow_login_as whitelists the SUPPORT user's email,
+      so we pass current_user.email (the acting admin), not user.email (the target). Safe-navigation
+      guards the nil-mapping case.
+    %>
+    <%= button_to 'Click To Login', login_as_user_path(user), method: :post, class: "btn btn-outline-primary" if page.resource.enable_support && support_client_mapping&.allow_login_as(current_user.email) %>
 
   </div>
 </header>

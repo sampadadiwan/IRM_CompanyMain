@@ -141,7 +141,10 @@ class UsersController < ApplicationController
     end
 
     # Find user by signed id — see https://kukicola.io/posts/signed-urls-with-ruby/
-    @user = User.find_signed(params[:signed_id])
+    # SECURITY (finding M1): verify with the dedicated login purpose so ONLY tokens minted for
+    # login (magic-link email / WhatsApp) are accepted — a User#signed_id created for any other
+    # purpose can no longer be replayed here. Must match User::MAGIC_LINK_PURPOSE at the mints.
+    @user = User.find_signed(params[:signed_id], purpose: User::MAGIC_LINK_PURPOSE)
 
     if @user.blank?
       redirect_to new_session_path(User), notice: "Invalid login link"
@@ -195,6 +198,39 @@ class UsersController < ApplicationController
 
     redirect_to(params[:redirect_to].presence || session[:user_return_to].presence || root_path,
                 notice: "Signed in successfully")
+  end
+
+  # POST /users/:id/login_as
+  # Authenticated admin/support impersonation.
+  #
+  # SECURITY (finding H2): this replaces the old flow where the admin UI minted a signed_id
+  # magic link (user.signed_id) pointing at no_password_login. That link was a bearer token —
+  # anyone who obtained the URL while logged out could redeem it because no_password_login only
+  # applied the allow_login_as whitelist when a support user was already in session. Here the
+  # acting admin must be authenticated and pass UserPolicy#login_as?, so a leaked URL cannot be
+  # replayed by an anonymous party. no_password_login is intentionally left unchanged and still
+  # serves the email self-login magic link (which is legitimately redeemed while logged out).
+  def login_as
+    @user = User.find(params[:id])
+    authorize @user, :login_as?
+
+    # Capture the acting (support) user's id BEFORE sign_in swaps current_user, so the audit
+    # trail attributes the impersonated actions to the real actor.
+    support_user_id = current_user.id
+
+    ActiveRecord::Base.connected_to(role: :writing) do
+      # NOTE: we intentionally do NOT trigger the target's 2FA here. A support agent does not
+      # have the client's OTP device, so requiring it would make impersonation impossible for
+      # any 2FA-enabled client. The security gate for this flow is the acting agent's OWN
+      # authenticated session plus UserPolicy#login_as? (role + allow_login_as whitelist), not
+      # the target's second factor. (The email self-login flow in no_password_login still
+      # enforces 2FA — it is the account owner logging into their own account.)
+      sign_in @user
+      # Record the real actor for the audit trail (see ApplicationController#current_user_or_support_user).
+      session[:support_user_id] = support_user_id
+    end
+
+    redirect_to root_path, notice: "Signed in as #{@user.full_name}"
   end
 
   # GET /users/1 or /users/1.json

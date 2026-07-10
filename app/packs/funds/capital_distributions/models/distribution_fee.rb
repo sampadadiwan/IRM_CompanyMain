@@ -9,6 +9,13 @@ class DistributionFee < ApplicationRecord
   validates :name, :audit_name, length: { maximum: 65 }, allow_blank: true
   validates :fee_type, length: { maximum: 20 }, allow_blank: true
 
+  # `notes` holds a Ruby fee formula that is eval-ed in #calculate_formula. Reject any
+  # code-execution constructs at write time (execution-time is guarded again via safe_eval!).
+  validate :notes_kosher?
+  def notes_kosher?
+    errors.add(:notes, "You cannot do CRUD or system operations in a fee formula") if notes.present? && notes.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
   TYPES = ["FV For Redemption", "Income", "Expense", "Tax", "Reinvestment", "Display Only"].freeze
 
   # Maps each fee type label to the context key suffix used when storing breakdowns.
@@ -45,6 +52,8 @@ class DistributionFee < ApplicationRecord
   def calculate_formula(capital_remittance)
     capital_distribution = self.capital_distribution
     capital_commitment = capital_distribution.capital_commitment
-    eval(notes, binding)
+    # Guard at the eval boundary so bypasses of the notes_kosher? validation (update_column,
+    # imports, seeds) still cannot execute arbitrary code.
+    eval(ApplicationRecord.safe_eval!(notes, context: "DistributionFee##{id} notes"), binding)
   end
 end

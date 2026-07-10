@@ -91,6 +91,14 @@ class DocumentPolicy < ApplicationPolicy
     update? && record.approved && user.has_cached_role?(:approver)
   end
 
+  # SECURITY (finding H7): publishing a document (public_visibility makes show? return true for
+  # any user, beyond the owning entity) is a privileged action limited to company admins — not
+  # every user who can edit the document. Enforced server-side in DocumentsController on both
+  # create and update, so it cannot be flipped via mass assignment.
+  def set_public_visibility?
+    update? && user.has_cached_role?(:company_admin)
+  end
+
   def destroy?
     (permissioned_employee?(:destroy) &&
     !record.signed? && # cannot delete signed documents

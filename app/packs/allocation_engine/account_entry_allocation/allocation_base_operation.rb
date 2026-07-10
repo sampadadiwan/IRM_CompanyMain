@@ -32,7 +32,10 @@ module AccountEntryAllocation
     # rubocop:disable Lint/RescueException
     def safe_eval(eval_string, bdg)
       Rails.logger.debug { "AllocationBaseOperation: eval_string = #{eval_string}" }
-      result = eval(eval_string, bdg, __FILE__, __LINE__)
+      # Reject code-execution constructs before evaluating. eval_string is an interpolated fund
+      # formula; guarding here protects the choke point even if the source formula bypassed
+      # FundFormula#formula_kosher? at write time.
+      result = eval(ApplicationRecord.safe_eval!(eval_string, context: "AllocationBaseOperation"), bdg, __FILE__, __LINE__)
 
       # SQLite silently stores Float::INFINITY and NaN but MySQL DECIMAL columns reject them,
       # causing the migration to primary DB to fail. Raise here with formula context instead.
@@ -55,7 +58,8 @@ module AccountEntryAllocation
       variables_used = ""
       begin
         FundFormula.new.interpolate_formula(eval_string:).each do |var|
-          variables_used += " #{var} = #{bdg.eval(var)}, "
+          # var is a formula variable name; guard before eval-ing it in this debug/error path.
+          variables_used += " #{var} = #{bdg.eval(ApplicationRecord.safe_eval!(var, context: 'AllocationBaseOperation var'))}, "
         end
       rescue Exception => e
         variables_used = "Error in getting variables used: #{e.message}"

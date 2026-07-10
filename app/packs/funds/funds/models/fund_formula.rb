@@ -167,7 +167,7 @@ class FundFormula < ApplicationRecord
       ivar_exprs = []
       collect_ivar_expressions(ast, ivar_exprs)
       ivar_exprs.uniq.each do |exp|
-        val = eval(exp, binding)
+        val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
         val = summarise_array(val, exp)  if val.is_a?(Array)
         val = summarise_record(val)      if val.is_a?(ApplicationRecord)
         expression_map[exp] = val unless skip_statement(exp, val)
@@ -209,7 +209,7 @@ class FundFormula < ApplicationRecord
               next if addend_exp.blank? || addend_exp.include?("SkipRule")
 
               val = begin
-                eval(addend_exp, binding)
+                eval(ApplicationRecord.safe_eval!(addend_exp, context: "FundFormula##{id}"), binding)
               rescue # rubocop:disable Style/RescueStandardError, Metrics/BlockNesting
                 next
               end
@@ -219,7 +219,7 @@ class FundFormula < ApplicationRecord
             end
           end
           begin
-            val = eval(exp, binding)
+            val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
             val = summarise_array(val, exp)  if val.is_a?(Array)
             val = summarise_record(val)      if val.is_a?(ApplicationRecord)
             expression_map[exp] = val unless skip_statement(exp, val)
@@ -233,7 +233,7 @@ class FundFormula < ApplicationRecord
             next if exp.include?("SkipRule")
 
             begin
-              val = eval(exp, binding)
+              val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
               val = summarise_array(val, exp)  if val.is_a?(Array)
               val = summarise_record(val)      if val.is_a?(ApplicationRecord)
               expression_map[exp] = val unless skip_statement(exp, val)
@@ -252,7 +252,7 @@ class FundFormula < ApplicationRecord
         next if exp.include?("SkipRule")
 
         begin
-          val = eval(exp, binding)
+          val = eval(ApplicationRecord.safe_eval!(exp, context: "FundFormula##{id}"), binding)
           val = summarise_array(val, exp)  if val.is_a?(Array)
           val = summarise_record(val)      if val.is_a?(ApplicationRecord)
           expression_map[exp] = val unless skip_statement(exp, val)
@@ -342,7 +342,7 @@ class FundFormula < ApplicationRecord
     return false if formula.blank?
 
     bdg = binding
-    eval(formula, bdg) # Step 1: populate formula-defined local variables in the binding
+    eval(ApplicationRecord.safe_eval!(formula, context: "FundFormula##{id}"), bdg) # Step 1: populate formula-defined local variables in the binding
     breakdown = parse_statement(bdg, external_formula: formula) # Step 2: extract values
     # The final result is the LAST entry — post-order traversal inserts the most
     # complex (outermost) expression last. max_by length was unreliable once addend

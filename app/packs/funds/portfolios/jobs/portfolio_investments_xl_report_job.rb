@@ -33,6 +33,15 @@ class PortfolioInvestmentsXlReportJob < ApplicationJob
 
     if fund_id.present?
       fund = Fund.find(fund_id)
+      # SECURITY (finding H4) — defense in depth: the controller already validates fund_id via
+      # policy_scope(Fund), but the job is the actual data-access point, so re-check that the fund
+      # belongs to the requesting user's entity (or a child, for group companies) before exposing
+      # its data. Mirrors ApplicationPolicy#belongs_to_entity?.
+      unless fund.entity_id == entity.id ||
+             (entity.entity_type == "Group Company" && entity.child_ids.include?(fund.entity_id))
+        Rails.logger.error("[PortfolioInvestmentsXlReport] user ##{user_id} (entity ##{entity.id}) attempted report for out-of-scope fund ##{fund_id} (entity ##{fund.entity_id}); aborting")
+        return
+      end
       currency = fund.currency
       aggregate_portfolio_investments = fund.aggregate_portfolio_investments
     end

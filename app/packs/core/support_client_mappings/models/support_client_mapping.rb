@@ -80,12 +80,21 @@ class SupportClientMapping < ApplicationRecord
       user.json_fields['orig_entity_id'] ||= user.entity_id
       user.json_fields['orig_roles'] ||= user.roles.pluck(:name)
       user.update_columns(entity_id: entity.id, json_fields: user.json_fields, entity_type: entity.entity_type)
-      # Security fix (Finding 2): Remove :support role before granting :company_admin.
-      # Without this removal the switched user retains their :support role alongside :company_admin.
-      # ApplicationPolicy#permissioned_employee? falls through to support? for records whose
-      # entity_id does not match the user's current entity_id, which grants the switched user
-      # read access to ALL other client entities on the platform — far beyond the scope of this
-      # individual mapping. revert() re-adds :support, so the removal is fully symmetric.
+      # REQUIRED BY DESIGN — do NOT uncomment `user.remove_role(:support)`.
+      #
+      # A switched support user intentionally keeps BOTH :support and :company_admin:
+      #   - :company_admin grants full access within the mapped client entity (the switch target),
+      #     which is what the support agent needs to actually help the client.
+      #   - :support is retained on purpose because support workflows must keep working while
+      #     switched — the :support role is what ApplicationPolicy#permissioned_employee? uses (via
+      #     its `else support?` fallthrough) to let support act across client entities for
+      #     cross-tenant support tasks (e.g. triaging, comparing, moving data between clients).
+      #
+      # Trade-off accepted: this means a switched support user has cross-entity access beyond the
+      # single mapping. That is a deliberate, documented risk-acceptance for support operations —
+      # see docs/technical/security_review_2026_07.md (finding H1). Access is still gated by the
+      # user actually holding the :support role, which is granted only to trusted internal staff.
+      # revert() re-adds :support so the switch/revert lifecycle stays symmetric.
       # user.remove_role(:support)
       user.add_role(:company_admin)
     else

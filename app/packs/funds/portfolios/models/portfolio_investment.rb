@@ -288,7 +288,7 @@ class PortfolioInvestment < ApplicationRecord
     end.sum * 100
 
     # Now add up all the account entries tagged as 'Expense' for this investment
-    total += eval(entity.entity_setting.portflio_expense_account_entry_filter).sum(:amount_cents) if entity.entity_setting.portflio_expense_account_entry_filter.present?
+    total += eval(ApplicationRecord.safe_eval!(entity.entity_setting.portflio_expense_account_entry_filter, context: "EntitySetting portflio_expense_account_entry_filter")).sum(:amount_cents) if entity.entity_setting.portflio_expense_account_entry_filter.present?
 
     # Negative if sell, positive if buy
     buy? ? total : -total

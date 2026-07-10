@@ -25,8 +25,14 @@ class FundPolicy < FundBasePolicy
     update?
   end
 
+  # Destination-fund gate for copying formulas INTO this fund. Requires update rights on the
+  # destination (any user who may edit this fund). Cross-entity behaviour is enforced separately
+  # on the SOURCE fund in FundsController#copy_formulas via `authorize from_fund, :show?`:
+  #   - regular users can only copy from a fund in their own entity (same-entity), and
+  #   - support users may copy cross-entity (the accepted support fallthrough — see H1/H5).
+  # (Previously this was `update? && support?`, which blocked regular users from copying at all.)
   def copy_formulas?
-    update? && support?
+    update?
   end
 
   def allocate_form?

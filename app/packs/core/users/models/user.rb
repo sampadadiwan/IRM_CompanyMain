@@ -9,6 +9,12 @@ class User < ApplicationRecord
 
   include Trackable.new(on: %i[create update], audit_fields: %i[first_name last_name email phone permissions extended_permissions])
 
+  # SECURITY (finding M1): purpose scope shared by every passwordless-login signed_id — the email
+  # magic link, the WhatsApp login link, and the no_password_login verification. Minting and
+  # verifying with the SAME purpose ensures a User#signed_id created for any other reason cannot be
+  # redeemed as a login. Keep this constant as the single source of truth for all three call sites.
+  MAGIC_LINK_PURPOSE = :magic_login
+
   attr_accessor :role_name
   # This is set from session[:support_user_id] in the ApplicationController.
   # The session is setup in users_controller#no_password_login when support user logs in as another user

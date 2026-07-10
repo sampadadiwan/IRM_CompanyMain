@@ -22,7 +22,9 @@
     # said "Expires in 5 minutes" but signed_id used 15.minutes, leaving an undisclosed
     # extra window during which an intercepted link could be replayed.
     # https://kukicola.io/posts/signed-urls-with-ruby/
-    signed_id = @user.signed_id(expires_in: UserMailer::MAGIC_LINK_TTL)
+    # SECURITY (finding M1): scope the login token with a dedicated purpose so only tokens minted
+    # for login (matching User::MAGIC_LINK_PURPOSE in no_password_login) can be redeemed.
+    signed_id = @user.signed_id(expires_in: UserMailer::MAGIC_LINK_TTL, purpose: User::MAGIC_LINK_PURPOSE)
 %>
 
 <p class="btn btn-outline-primary">

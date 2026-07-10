@@ -28,7 +28,9 @@ module AccountEntryAllocation
       # We create account_entries for each of the following fields
       # rubocop :disable Security/Eval
       fields = begin
-        eval(fund_formula.formula)
+        # safe_eval! raises UnsafeEvalError (a StandardError) on a dangerous formula, which the
+        # rescue below turns into the safe DEFAULT_FEILDS fallback.
+        eval(ApplicationRecord.safe_eval!(fund_formula.formula, context: "FundFormula##{fund_formula.id}"))
       rescue StandardError => e
         DEFAULT_FEILDS
       end

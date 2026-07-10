@@ -1,5 +1,52 @@
 class ApplicationRecord < ActiveRecord::Base
-  SAFE_EVAL_REGEX = /alter|truncate|drop|insert|select|destroy|delete|update|create|save|rollback|system|fork/
+  # Raised when a string bound for `eval` contains a code-execution construct.
+  class UnsafeEvalError < StandardError; end
+
+  # Denylist of tokens that must never appear inside an eval-ed expression (formulas, fee
+  # notes, calculation meta_data, etc).
+  #
+  # IMPORTANT: this is a GUARD-RAIL, not a complete RCE defence. A denylist can always be
+  # evaded by a determined attacker (string building, encoding). It exists to stop the obvious
+  # shell / filesystem / CRUD payloads. The real fix is a sandboxed evaluator — see
+  # docs/technical/security_review_2026_07.md (finding C1).
+  #
+  # Matching is performed against the DOWNCASED source, so every token below is lowercase.
+  # Word boundaries (\b) guard short/common tokens so legitimate finance terms don't false-trip
+  # (e.g. "ratio" must not match \bio\b, "revenue"/"environment" must not match \benv\b,
+  # "download" must not match \bload\b, "profile" must not match \bfile\b).
+  SAFE_EVAL_REGEX = %r{
+    # --- SQL / ActiveRecord bulk mutation (original tokens, kept verbatim for back-compat;
+    #     intentionally unbounded so delete_all/destroy_all/update_all/insert_all are caught) ---
+    alter | truncate | drop | insert | select | destroy | delete | update | create | save | rollback |
+    # --- shell / process execution (backticks and %x were the biggest gap) ---
+    ` | %x | \bsystem\b | \bexec\b | \bspawn\b | \bfork\b | \bsyscall\b | popen | open3 | \bpty\b |
+    # --- nested eval / binding escape ---
+    \beval\b | instance_eval | class_eval | module_eval | \bbinding\b |
+    # --- reflective dispatch (defeats send("sys" + "tem") style bypasses) ---
+    \bsend\b | __send__ | public_send |
+    # --- loading arbitrary code ---
+    \brequire\b | require_relative | \bload\b | autoload |
+    # --- metaprogramming ---
+    constantize | const_get | define_method | method_missing |
+    # --- filesystem / process / env access ---
+    \bfile\b | \bio\b | \bdir\b | \bkernel\b | \bprocess\b | \bthread\b | \benv\b | fileutils | \bmarshal\b | \bopen\b
+  }x
+
+  # Guard an expression at the eval CALL SITE and return it unchanged when safe, so callers can
+  # write `eval(ApplicationRecord.safe_eval!(expr), binding)`.
+  #
+  # Enforced here — not only in model validations — because validations are skipped by
+  # update_column/update_columns, insert_all, importers, db:seed, and save(validate: false).
+  # The `*_kosher?` validations remain as an early, user-friendly rejection at write time; this
+  # is the last line of defence at execution time.
+  def self.safe_eval!(source, context: nil)
+    str = source.to_s
+    return str unless str.downcase.match?(SAFE_EVAL_REGEX)
+
+    label = context ? " (#{context})" : ""
+    Rails.logger.error("[safe_eval] blocked unsafe expression#{label}: #{str.truncate(200)}")
+    raise UnsafeEvalError, "Refusing to evaluate an unsafe expression#{label}"
+  end
 
   primary_abstract_class
   include DatabaseRoleHelper

@@ -3,8 +3,24 @@ class TemplateDecorator < ApplicationDecorator
 
   METHODS_START_WITH = %w[compare_ where_ money_ date_format_ format_nd_ format_ rupees_ dollars_ list_ indian_words_ words_ sanitized_ boolean_custom_field_ sum_amt_ sum_ amt_ doc_exists_ skip_ to_s_].freeze
 
+  # SECURITY (finding M10): the field segment of a where_/filter template call is interpolated into
+  # SQL. Only allow it when it is a real column of the target relation, so a document-template author
+  # cannot inject SQL via the method name (e.g. where_1=1)OR(1=1--_eq_x). Returns the column, or nil.
+  def self.safe_filter_column(relation, field)
+    klass = relation.respond_to?(:klass) ? relation.klass : relation
+    cols  = klass.respond_to?(:column_names) ? klass.column_names : []
+    return field.to_s if cols.include?(field.to_s)
+
+    Rails.logger.error { "TemplateDecorator: rejected non-column filter field #{field.inspect} for #{klass}" }
+    nil
+  end
+
   def add_filter_clause(association, filter_field, filter_value)
-    object.send(association).where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
+    relation = object.send(association)
+    column = TemplateDecorator.safe_filter_column(relation, filter_field)
+    return relation.none unless column
+
+    relation.where("#{column}=?", filter_value.to_s.tr("_", " ").humanize.titleize)
   end
 
   def custom_fields
@@ -61,7 +77,9 @@ class TemplateDecorator < ApplicationDecorator
       # This will return a collection of objects where the investor_name is equal to John
       params = method_name.to_s.gsub("where_", "")
       filter_field, filter_value = params.split("_eq_")
-      collection = object.where("#{filter_field}=?", filter_value.to_s.tr("_", " ").humanize)
+      # SECURITY (finding M10): only interpolate a validated column name (see safe_filter_column).
+      column = TemplateDecorator.safe_filter_column(object, filter_field)
+      collection = column ? object.where("#{column}=?", filter_value.to_s.tr("_", " ").humanize) : object.none
       return TemplateDecorator.decorate_collection(collection)
 
     elsif method_name.to_s.starts_with?("money_")

@@ -87,9 +87,23 @@ class InvestorsController < ApplicationController
 
   def portfolio_investments_report_all
     if request.post? && params[:as_of].present?
-      PortfolioInvestmentsXlReportJob.perform_later(params[:as_of], current_user.id, fund_id: params[:fund_id])
+      # SECURITY (finding H4): the fund_id is attacker-controlled and was passed straight to the
+      # job, which does an unscoped Fund.find — letting a user generate another tenant's portfolio
+      # report. Resolve it through policy_scope(Fund) so only funds this user may access are
+      # allowed; a cross-tenant / unknown id resolves to nil and is rejected without enqueuing.
+      # The "report all" case (no fund_id) is already safe: the job scopes it to user.entity.
+      fund = nil
       if params[:fund_id].present?
-        redirect_to fund_path(params[:fund_id], tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
+        fund = policy_scope(Fund).find_by(id: params[:fund_id])
+        if fund.nil?
+          redirect_to(investors_path, alert: "Fund not found or not accessible.") and return
+        end
+        authorize fund, :show?
+      end
+
+      PortfolioInvestmentsXlReportJob.perform_later(params[:as_of], current_user.id, fund_id: fund&.id)
+      if fund
+        redirect_to fund_path(fund, tab: 'docs-tab'), notice: "Report generation started, please check back in a few mins"
       else
         redirect_to investors_path, notice: "Report generation started, please check back in a few mins"
       end
@@ -392,7 +406,10 @@ class InvestorsController < ApplicationController
   # PATCH/PUT /investors/1 or /investors/1.json
   def update
     respond_to do |format|
-      if @investor.update(investor_params)
+      # SECURITY (finding H6): strip entity_id so an investor cannot be relocated to another
+      # tenant via mass assignment (entity_id is pinned to current_user at #create). investor_entity_id
+      # is deliberately NOT stripped — it is a legitimate, updateable link to the investor's own entity.
+      if @investor.update(investor_params.except(:entity_id))
         format.html { redirect_to investor_url(@investor), notice: "Stakeholder was successfully updated." }
         format.json { render :show, status: :ok, location: @investor }
       else
