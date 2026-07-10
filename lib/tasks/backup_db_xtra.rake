@@ -100,7 +100,12 @@ namespace :xtrabackup do
     script_content.gsub!('__AWS_SECRET_ACCESS_KEY__', Rails.application.credentials.dig("AWS_SECRET_ACCESS_KEY").to_s)
     script_content.gsub!('__MYSQL_PASSWORD__', Rails.application.credentials.dig("DB_PASS").to_s)
     script_content.gsub!('__MYSQL_USER__', Rails.application.credentials.dig("DB_USER").to_s)
-    script_content.gsub!('__DATABASE_NAME__', ActiveRecord::Base.connection.current_database)
+    # Database name from CONFIG, not from a live connection: during DR this
+    # runs BEFORE the restore, against a virgin MySQL with no database yet —
+    # `connection.current_database` raised NoDatabaseError there (found on the
+    # first truly-fresh-AMI drill, 2026-07-10; earlier runs were masked by an
+    # empty IRM_<env> that pre-SKIP_MIGRATE deploys had accidentally created).
+    script_content.gsub!('__DATABASE_NAME__', ActiveRecord::Base.connection_db_config.database)
 
     # Write the modified content to a temporary script
     File.write(temp_script_path, script_content)

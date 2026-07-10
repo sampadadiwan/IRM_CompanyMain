@@ -167,6 +167,31 @@ namespace :aws do
       check.("Pulumi stack #{stack}-#{region}", :fail, "#{stack_file} not found")
     end
 
+    # --- 4b. Pulumi state backend reachable ----------------------------------
+    # State access is a hard DR dependency: if the backend (or its login) is
+    # broken, `pulumi up` is impossible for EVERY stack. Surface that on the
+    # quarterly scorecard, not mid-incident. See IRM-Infra/PULUMI_STATE.md.
+    begin
+      out, err, st = Open3.capture3("pulumi stack ls --json", chdir: "../IRM-Infra")
+      if st.success?
+        names = JSON.parse(out).map { |s| s["name"] }
+        # Which backend are we actually talking to? (personal cloud vs S3)
+        who, = Open3.capture3("pulumi whoami --verbose", chdir: "../IRM-Infra")
+        backend = who.lines.grep(/Backend URL/i).first.to_s.split(/URL:?\s*/i).last.to_s.strip
+        if names.include?("#{stack}-#{region}")
+          check.("Pulumi state backend", :ok, "stack #{stack}-#{region} present#{" on #{backend}" unless backend.empty?}")
+        else
+          # Not fatal: a brand-new DR region legitimately has no stack yet —
+          # setup_infra creates it. The backend being reachable is the check.
+          check.("Pulumi state backend", :warn, "reachable#{" (#{backend})" unless backend.empty?} but stack #{stack}-#{region} not found — setup_infra will create it")
+        end
+      else
+        check.("Pulumi state backend", :fail, "pulumi stack ls failed: #{err.to_s.strip.lines.first} — check `pulumi login` (see IRM-Infra/PULUMI_STATE.md)")
+      end
+    rescue StandardError => e
+      check.("Pulumi state backend", :fail, e.message.to_s.lines.first.to_s.strip)
+    end
+
     # --- 5. EC2 key pair exists in the DR region -----------------------------
     key_name = stack_cfg["IRM-infra:key_name"]
     if key_name
@@ -377,6 +402,47 @@ namespace :aws do
     raise "DNS cutover failed: #{err}" unless status.success?
 
     puts "✅ #{record_name} now aliases the #{stack}-#{region} ALB. Propagation is TTL-bound; verify with: dig #{record_name}"
+  end
+
+  # Pre-cutover EDGE check: hits the recovered stack's ALB directly (no DNS
+  # involved) with the real Host header — proving ALB → target group → nginx →
+  # puma → MySQL end-to-end BEFORE aws:dns_cutover points customers at it.
+  # Complements `cap <stage> recovery:verify`, which checks from INSIDE the
+  # servers; this is the only check that exercises the load balancer itself.
+  #   rake "aws:dr_verify_edge[staging, ap-south-2]"
+  desc "Curl the recovered stack's ALB directly (run before aws:dns_cutover)"
+  task :dr_verify_edge, [:stack, :region] do |t, args|
+    require 'yaml'
+    require 'json'
+    require 'open3'
+
+    stack = args[:stack] or raise "stack required (production|staging)"
+    region = args[:region] or raise "region required, e.g. ap-south-2"
+
+    # Same conventions as dns_cutover: domain from the target stack's Pulumi
+    # config, host record app.<domain> (production) / dev.<domain> (staging)
+    stack_file = "../IRM-Infra/Pulumi.#{stack}-#{region}.yaml"
+    raise "#{stack_file} not found" unless File.exist?(stack_file)
+
+    domain = YAML.load_file(stack_file).dig("config", "IRM-infra:domain_name") or
+      raise "domain_name missing in #{stack_file}"
+    host = "#{stack == 'production' ? 'app' : 'dev'}.#{domain.sub(/\A\*\./, '')}"
+
+    # ALB endpoint straight from the stack's own outputs (never a stale file)
+    alb = pulumi_stack_output("#{stack}-#{region}")["alb"] or
+      raise "Stack #{stack}-#{region} has no 'alb' output — run pulumi up on it first"
+
+    # -k: the ALB cert is issued for <host>, but we're dialing the raw ALB DNS
+    # name — SNI mismatch is expected pre-DNS and not a failure
+    url = "https://#{alb['dns_name']}/health_check/db_check.json"
+    puts "→ GET #{url} (Host: #{host})"
+    code = `curl -sk -o /dev/null -w "%{http_code}" --max-time 60 -H "Host: #{host}" #{url}`.strip
+    if code == "200"
+      puts "✅ Edge OK — ALB → app → DB round-trip returned 200. Safe to run aws:dns_cutover."
+    else
+      abort "❌ Edge check FAILED — HTTP #{code} from #{url}. " \
+            "Check ALB target-group health and run `cap <stage> recovery:verify` before any cutover."
+    end
   end
 
   task :get_latest_ami, [:name_tag, :region, :env_name] do |t, args|

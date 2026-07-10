@@ -1,6 +1,15 @@
 # config/deploy.rb
 set :rails_env, fetch(:stage)
 
+# DR/drill deploys happen BEFORE the database restore, so capistrano-rails'
+# deploy-time migrate is meaningless there — and destructive on fresh Packer
+# AMIs, which ship a VIRGIN MySQL: migrate auto-creates an empty IRM_<env> and
+# dies replaying 4 years of migrations against no schema. (Old snapshot-based
+# AMIs only "worked" because they carried a stale populated datadir.)
+# aws:setup_infra passes SKIP_MIGRATE=true and replays real migrations AFTER
+# the restore via recovery:migrate. Normal deploys are unaffected.
+Rake::Task["deploy:migrate"].clear_actions if ENV["SKIP_MIGRATE"] == "true"
+
 set :application, "IRM"
 set :repo_url, "git@github.com:ausangshukla/IRM.git"
 set :branch, ENV["branch"] || 'main'
@@ -179,8 +188,11 @@ namespace :recovery do
         # private DB IP). The old db:restore_primary_db/replica_db route went
         # through DbRestoreService, which is a backup VERIFIER (DbCheckInstance)
         # and drags script generation + IAM + service-cleanup into DR.
-        execute :rake, "db:restore_primary_remote RAILS_ENV=#{fetch(:stage)}"
-        execute :rake, "db:restore_replica_remote RAILS_ENV=#{fetch(:stage)}"
+        # restore_all_remote runs primary + replica IN PARALLEL (halving the
+        # longest DR phase), then resets replication once both are up —
+        # output is [primary]/[replica]-prefixed. Single-box manual forms
+        # remain: db:restore_primary_remote / db:restore_replica_remote.
+        execute :rake, "db:restore_all_remote RAILS_ENV=#{fetch(:stage)}"
       end
     end
   end
@@ -210,6 +222,23 @@ namespace :recovery do
     on roles(:app) do |_host|
       execute :rm, '-rf', '/home/ubuntu/IRM/shared/releases/* || true'
       execute :rm, '-rf', '/home/ubuntu/IRM/shared/tmp/cache/assets/* || true'
+    end
+  end
+
+  # Post-recovery smoke test (lib/tasks/dr_verify.rake): proves each app server
+  # is SERVING (nginx/puma/sidekiq) and can reach MySQL/Redis/ES/S3, and that
+  # the DB-box daemons are up, backups are armed on the primary and replication
+  # flows. aws:setup_infra runs this as its FINAL step, so a DR run or drill
+  # only succeeds if the stack verifies — "deployed but dead" fails loudly.
+  # Also safe standalone after any deploy:
+  #   LB=true bundle exec cap staging_in recovery:verify
+  desc 'Smoke-test every app server + DB boxes; fails the run if anything is down'
+  task :verify do
+    on roles(:app), in: :sequence do
+      within release_path do
+        # dr:verify exits non-zero on any ❌, which makes execute raise here
+        execute :rake, "dr:verify RAILS_ENV=#{fetch(:stage)}"
+      end
     end
   end
 
@@ -253,6 +282,29 @@ namespace :IRM do
         # This will find all files under log/ and truncate them with sudo
         execute :sudo, "find #{release_path}/log/*.log -type f -exec truncate -s 0 {} \\;"
       end
+    end
+  end
+
+  # Closes the first-boot gap: whenever installs the @reboot crontab
+  # (config/schedule.rb) during cap deploy — AFTER a fresh box already booted,
+  # so those entries do nothing until the NEXT reboot. Puma and sidekiq are
+  # started by the deploy's own restart hooks anyway; xirr_py and
+  # prometheus_exporter are not — this starts them, with a "already running?
+  # do nothing" guard so it is a no-op on established boxes.
+  # aws:setup_infra calls this right after deploy on every DR/drill/new-LZ
+  # build; safe to run manually anytime:
+  #   LB=true bundle exec cap staging_in IRM:start_boot_services
+  desc 'Start services @reboot cron would start (for boxes deployed after their first boot)'
+  task :start_boot_services do
+    on roles(:app) do
+      # xirr_py: keep image tag in sync with config/schedule.rb's @reboot line
+      execute "sudo docker ps --format '{{.Names}}' | grep -qx xirr_py || " \
+              "sudo docker run -d --rm --name xirr_py -p 8000:80 -v /tmp:/tmp thimmaiah/xirr_py:v2.6"
+      # prometheus_exporter: same command as schedule.rb's @reboot bundle line;
+      # nohup + log redirect so it survives this SSH session ending
+      execute "pgrep -f prometheus_exporter >/dev/null || " \
+              "(cd /home/ubuntu/IRM/current && RAILS_ENV=#{fetch(:stage)} nohup bundle exec prometheus_exporter -b 0.0.0.0 " \
+              ">> /home/ubuntu/IRM/shared/log/prometheus_exporter.log 2>&1 &)"
     end
   end
 

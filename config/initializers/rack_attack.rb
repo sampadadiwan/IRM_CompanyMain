@@ -23,6 +23,18 @@ module Rack
       req.cookies[Rails.application.config.session_options[:key]].present?
     end
 
+    # Loopback must never be throttled or blocked: puma sits behind nginx on a
+    # unix socket, so requests WITHOUT X-Forwarded-For (ALB health checks,
+    # monit, dr:verify's localhost curls) all resolve to req.ip == 127.0.0.1.
+    # Without this, a scanner-driven 404 flood attributed to the shared
+    # loopback identity (see Log404s) trips the blocklist below and the ALB
+    # sees 403 on its health checks — marking every target unhealthy and
+    # taking the site down. External clients keep their real XFF-derived IPs
+    # and are policed normally.
+    safelist('localhost') do |req|
+      ['127.0.0.1', '::1'].include?(req.ip)
+    end
+
     Rack::Attack.throttled_responder = lambda do |req|
       Rails.logger.warn "⚠️ Throttled request from #{req.ip} on rule #{req.env['rack.attack.matched']}"
       [429, { 'Content-Type' => 'text/plain' }, ["Rate limit exceeded. Try again later.\n"]]

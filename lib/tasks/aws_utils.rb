@@ -481,8 +481,15 @@ module AwsUtils
 
     # Deploy the app
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:delete_old_assets")
-    run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true bundle exec cap #{stack}_#{env_variant} IRM:setup")
-    run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true bundle exec cap #{stack}_#{env_variant} deploy")
+    # SKIP_MIGRATE: deploy-time migrations are meaningless before the restore
+    # (and fatal on fresh Packer AMIs, whose virgin MySQL has no IRM_<env> yet).
+    # recovery:migrate replays real migrations AFTER the restore instead.
+    run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true SKIP_MIGRATE=true bundle exec cap #{stack}_#{env_variant} IRM:setup")
+    run_cmd("branch=#{branch_name} LB=true SKIP_NOTIFICATION=true SKIP_MIGRATE=true bundle exec cap #{stack}_#{env_variant} deploy")
+    # Fresh boxes booted BEFORE whenever installed the @reboot crontab, so
+    # start the services those entries would have started (xirr_py,
+    # prometheus_exporter) — idempotent no-op on already-running boxes
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} IRM:start_boot_services")
     # Now stop sidekiq, puma and monitoring and switch to maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_maintenance")
     # Load the DB from backups (and replay migrations in non-interactive mode)
@@ -492,7 +499,15 @@ module AwsUtils
     # Switch back to the app and remove maintenance mode
     run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} nginx:switch_app")
 
-    puts "\n✅ DR sequence complete. Verify with: rake s3:check_backup_freshness"
+    # FINAL GATE: prove the recovered stack actually SERVES — nginx/puma/
+    # sidekiq on every app server, MySQL/Redis/ES/S3 reachable with the app's
+    # real credentials, DB-box daemons up, backup cron armed on the primary,
+    # replication flowing. run_cmd raises on failure, so a DR run (and
+    # therefore a drill) can no longer report success while the site is dead.
+    run_cmd("branch=#{branch_name} LB=true bundle exec cap #{stack}_#{env_variant} recovery:verify")
+
+    puts "\n✅ DR sequence complete and VERIFIED serving."
+    puts "👉 Edge check before going live: rake \"aws:dr_verify_edge[#{stack}, #{region}]\" then aws:dns_cutover"
   end
 
   # Commits ONLY the files setup_infra just rewrote to a dedicated DR branch and

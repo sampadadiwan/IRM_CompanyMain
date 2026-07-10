@@ -71,7 +71,11 @@ source "amazon-ebs" "ubuntu" { # Renamed to 'ubuntu' for consistency with appser
   ssh_username                = "ubuntu"
 
   tags = {
-    "Name"      = "DB_Redis_ES"
+    # MUST be "DB-Redis-ES" (hyphens): aws_utils' latest_ami finds AMIs by
+    # tag:Name matching the instance name — the old underscore form made
+    # every direct bake INVISIBLE to DR/setup_infra, which then silently
+    # fell back to older weekly-copy AMIs.
+    "Name"      = "DB-Redis-ES"
     "CreatedBy" = "Packer"
   }
 }
@@ -155,18 +159,27 @@ locals {
     "sudo apt install --yes docker-ce",
     "sudo systemctl start docker",
     "sudo systemctl enable docker",
-    # ubuntu must be in the docker group: the @reboot crontab lines below run
-    # `docker run` WITHOUT sudo as the ubuntu user — without this membership
-    # they fail on the docker socket at boot, and a DR-launched primary comes
-    # up with NO Elasticsearch and NO Redis (app half-broken, cause invisible)
+    # ubuntu must be in the docker group: start_data_containers.sh (called from
+    # the @reboot crontab below) runs `docker run` WITHOUT sudo as the ubuntu
+    # user — without this membership it fails on the docker socket at boot,
+    # and a DR-launched primary comes up with NO Elasticsearch and NO Redis
     "sudo usermod -aG docker ubuntu",
+
+    # Pre-pull the data-tier images INTO the AMI: a freshly launched box must
+    # not depend on a ~1GB pull through the NAT gateway during first boot.
+    # Keep tags in sync with start_data_containers.sh.
+    "sudo docker pull elasticsearch:8.19.0",
+    "sudo docker pull redis/redis-stack-server:latest",
 
     # Install logrotate
     "sudo apt install --yes logrotate",
 
-    # Run Docker containers on reboot in ubuntu user's crontab (persistent)
+    # Start the data containers on every boot via start_data_containers.sh
+    # (installed by a later provisioner). NOT raw `@reboot docker run` lines:
+    # cron fires @reboot BEFORE docker.service is up, so raw lines die
+    # instantly and --rm hides the corpse — the script waits for the daemon.
     "logger 'Setting up crontab entries for ubuntu user (persistent).'",
-    "sudo -u ubuntu bash -c 'tmpfile=$(mktemp); (crontab -l 2>/dev/null || true) > $tmpfile; echo \"@reboot docker run -d --rm --name elasticsearch -p 9200:9200 -p 9300:9300 -e ES_JAVA_OPTS=\\\"-Xms512m -Xmx512m\\\" -e \\\"discovery.type=single-node\\\" -e \\\"xpack.security.enabled=false\\\" elasticsearch:8.19.0\" >> $tmpfile; echo \"@reboot docker run -d --rm --name redis-stack-server -p 6379:6379 redis/redis-stack-server:latest\" >> $tmpfile; crontab $tmpfile; rm $tmpfile'",
+    "sudo -u ubuntu bash -c 'tmpfile=$(mktemp); (crontab -l 2>/dev/null || true) > $tmpfile; echo \"@reboot /usr/local/bin/start_data_containers.sh >> /home/ubuntu/start_data_containers.log 2>&1\" >> $tmpfile; crontab $tmpfile; rm $tmpfile'",
     "logger 'Crontab successfully updated for ubuntu user. Verifying...'",
     "sudo -u ubuntu crontab -l || true",
     "logger 'Ubuntu user crontab setup complete.'",
@@ -271,11 +284,21 @@ build {
     destination = "/tmp/db_backup_xtra.sh"
   }
 
+  # Daemon-safe container starter, referenced by the ubuntu @reboot crontab
+  # set up in the main shell provisioner above
+  provisioner "file" {
+    source      = "config/deploy/templates/packer/start_data_containers.sh"
+    destination = "/tmp/start_data_containers.sh"
+  }
+
   provisioner "shell" {
     inline = [
       # Root-only: the script can read DB credentials from SSM at runtime
       "sudo install -m 0700 -o root -g root /tmp/db_backup_xtra.sh /usr/local/bin/db_backup_xtra.sh",
       "rm /tmp/db_backup_xtra.sh",
+      # World-executable: ubuntu's @reboot crontab runs it (no secrets inside)
+      "sudo install -m 0755 -o root -g root /tmp/start_data_containers.sh /usr/local/bin/start_data_containers.sh",
+      "rm /tmp/start_data_containers.sh",
       # Non-secret runtime config: where the script finds its SSM parameters
       "echo 'SSM_PREFIX=\"${var.ssm_prefix}\"' | sudo tee /etc/db_backup.env",
       "sudo chmod 0600 /etc/db_backup.env",

@@ -30,7 +30,12 @@ class Log404s
 
     # This block will now execute if status is 404 (either from app.call or from InvalidType rescue)
     if status == 404
-      ip = env['REMOTE_ADDR']
+      # remote_ip resolves the real client through X-Forwarded-For. REMOTE_ADDR
+      # is useless here: puma is behind nginx on a unix socket, so it is
+      # 127.0.0.1 for EVERY proxied request — which pooled all scanners' 404s
+      # onto one shared counter and got loopback (ALB health checks, local
+      # monitoring) blocklisted instead of the actual abuser.
+      ip = ActionDispatch::Request.new(env).remote_ip
       key = "rack::attack:404:#{ip}"
     
       if Rails.cache.exist?(key)
