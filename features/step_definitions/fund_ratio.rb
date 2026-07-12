@@ -63,6 +63,11 @@ Given('given the fund_ratios are computed for the date {string}') do |end_date|
 end
 
 Then('the fund ratios computed must match the ratios in {string}') do |file_name|
+  puts "RATIOS"
+  FundRatio.all.each do |fr|
+    # puts [fr.id, fr.name, fr.value, fr.owner_type, fr.owner_id, fr.end_date]
+    puts "ratio #{fr.id} #{fr.name} : owner - #{fr.owner_type} #{fr.owner_id} - #{fr.value} #{fr.end_date}"
+  end
   file = File.open("./public/sample_uploads/#{file_name}", "r")
   data = Roo::Spreadsheet.open(file.path) # open spreadsheet
   headers = ImportServiceBase.new.get_headers(data.row(1)) # get header row
@@ -81,6 +86,7 @@ Then('the fund ratios computed must match the ratios in {string}') do |file_name
 
     cc = folio_id.present? ? @entity.capital_commitments.where(folio_id:).first : nil
     owner = user_data["Owner Id"].present? ? user_data["Owner Type"].constantize.find(user_data["Owner Id"]) : nil
+    puts "Finding RATIO - #{name} commitment - #{cc&.id} owner - #{user_data["Owner Type"]} #{user_data["Owner Id"]} end_date - #{end_date}"
     fund_ratio = FundRatio.where(name:, capital_commitment: cc, owner:, end_date:).first
 
     if fund_ratio
@@ -471,5 +477,51 @@ Given('the fund has {string} Fund Ratios') do |count|
     fr = FactoryBot.create(:fund_ratio, fund: @fund, entity_id: @fund.entity_id)
     puts "\n####FundRatio####\n"
     puts fr.to_json
+  end
+end
+
+Given('The fund has kyc level data generation enabled') do
+  @fund ||= Fund.last
+  @fund.json_fields["call_notice_on"] = "kyc"
+  @fund.save!
+end
+
+  # Given the second commitment of the kyc has custom_fields "skip_doc_gen:true"
+Given('the second commitment of the kyc has custom_fields {string}') do |custom_fields|
+  InvestorKyc.all.each do |kyc|
+    kyc.capital_commitments.where(fund: @fund).each_with_index do |cc, index|
+      next unless index == 1 # only update the second commitment
+
+      custom_fields.split(",").each do |pair|
+        key, value = pair.split(":").map(&:strip)
+        cc.json_fields[key] = value
+      end
+      cc.save!
+    end
+  end
+end
+
+Given('the KYC has commitments in different funds also') do
+  @fund2 ||= Fund.create!(entity: @entity, name: "Second Fund", currency: @fund.currency, unit_types: @fund.unit_types)
+  @fund.capital_commitments.each do |cc|
+    CapitalCommitment.create!(entity: cc.entity, fund: @fund2, investor: cc.investor, investor_kyc: cc.investor_kyc, committed_amount_cents: cc.committed_amount_cents, commitment_date: cc.commitment_date, folio_id: "#{cc.folio_id}-2", fund_close: cc.fund_close)
+  end
+end
+
+Then('KYC ratios must be computed for the commitments except for commitment with skip_doc_gen') do
+  @fund.capital_commitments.each do |cc|
+    puts "Commitment #{cc.id}  - ratios - #{FundRatio.where(capital_commitment_id: cc.id).pluck(:name)}"
+    puts "Commitment json fields: #{cc.json_fields}"
+    puts "-----------------------------------------------------------------------------"
+    if cc.json_fields["skip_doc_gen"] == "yes"
+      expect(FundRatio.where(capital_commitment_id: cc.id).count).to be_zero
+    else
+      comm_ratios = FundRatio.where(capital_commitment_id: cc.id)
+      expect(comm_ratios.count).to_not be_zero
+      comm_ratios.each do |fr|
+        puts "ratio #{fr.id} #{fr.name} : owner - #{fr.owner_type} #{fr.owner_id} - #{fr  .owner.to_s}"
+        expect(fr.owner == cc.investor_kyc).to eq(true)
+      end
+    end
   end
 end

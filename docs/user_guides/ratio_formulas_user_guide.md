@@ -13,10 +13,11 @@ This guide is for fund managers and finance teams who need a ratio to account fo
 3. [Finding Ratio Formulas](#finding-ratio-formulas)
 4. [Building a Rule](#building-a-rule)
 5. [Choosing the Right Action](#choosing-the-right-action)
-6. [How the Rules Are Applied](#how-the-rules-are-applied)
-7. [Worked Examples](#worked-examples)
-8. [Using Formulas Across Multiple Funds](#using-formulas-across-multiple-funds)
-9. [Frequently Asked Questions](#frequently-asked-questions)
+6. [Grouping Rules with Labels](#grouping-rules-with-labels)
+7. [How the Rules Are Applied](#how-the-rules-are-applied)
+8. [Worked Examples](#worked-examples)
+9. [Using Formulas Across Multiple Funds](#using-formulas-across-multiple-funds)
+10. [Frequently Asked Questions](#frequently-asked-questions)
 
 ---
 
@@ -66,7 +67,17 @@ Click **New Ratio Formula** and fill in:
 | **Ratios** | One or more ratios this rule applies to (e.g. XIRR, DPI, MOIC, TVPI). |
 | **Action** | How the amount is used — see [Choosing the Right Action](#choosing-the-right-action). |
 | **Account Entry Names** | The named line items to pull amounts from. You can choose several. |
-| **Period** | **All** — total every matching entry up to the end date. **As-on** — use only the single latest entry on or before the end date (best for valuations, where you want the most recent figure, not a sum). |
+| **Period** | **All** — total every matching entry up to the end date. **As-on** — use only the latest entry on or before the end date for *each* selected account entry name (best for valuations, where you want the most recent figure per line item, not a sum). |
+| **Label** *(optional)* | Groups this rule with any other rule sharing the same label into its own, separately-named ratio. See [Grouping Rules with Labels](#grouping-rules-with-labels). |
+
+The following advanced fields are tucked under the collapsible section next to Account Entry Names — most rules don't need them:
+
+| Field | What it controls |
+|-------|------------------|
+| **Entry Type** *(optional)* | Restrict matching entries to one or more entry types (comma-separated), in addition to matching on name. Leave blank to match any entry type. |
+| **Parent Type** *(optional)* | Restrict matching entries by the type of record they're attached to (comma-separated, e.g. `Investor`, `PortfolioInvestment`). Leave blank to use the default parent-type behavior for the rule's Level. |
+| **Cumulative** | Whether to pull from **cumulative** account entries (running totals) instead of the default non-cumulative ones. Leave unchecked unless you specifically need cumulative entries — see [No double-counting](#how-the-rules-are-applied). |
+| **Skip Portfolio FMV** *(optional, FMV-based ratios only)* | When checked, the fund's code-computed portfolio FMV is left out of this rule's ratio. For the FMV-based **multiples** — MOIC, TVPI, RVPI, Portfolio Value to Cost, and Value to Cost — it is subtracted from the numerator; for the **rate-of-return** ratios — XIRR and Gross Portfolio IRR — it is simply not added to the cash flow. Use this when the rule's own account entries already represent the FMV (e.g. feeder funds pulling FMV from the master fund via account entries instead of the API-computed value). Has **no effect** on ratios that don't include FMV, such as **DPI** and **PIC**. |
 
 ---
 
@@ -101,6 +112,30 @@ flowchart TD
     C --> D[Value side → numerator]
     C --> E[Capital side → denominator]
 ```
+
+---
+
+## Grouping Rules with Labels
+
+Normally, all the rules you define for a given ratio and level are combined into a single result — e.g. every Fund-level XIRR rule feeds the one "XIRR" figure.
+
+A **Label** lets you carve out an *alternate* version of the ratio instead. Give one or more rules the same label, and when ratios are generated the system computes a **separate, additional** ratio using only the rules that share that label — stored under the label's own name rather than "XIRR" or "DPI".
+
+```mermaid
+flowchart LR
+    A[Unlabeled rules] --> R1[Standard ratio<br/>e.g. XIRR]
+    B[Rules labeled 'xirr outflow'] --> R2[Separate ratio<br/>named 'xirr outflow']
+```
+
+Key points:
+
+- **Labeled rules don't feed the standard ratio.** A rule with a label only counts toward the ratio named after that label — it's excluded from the plain "XIRR"/"DPI"/etc. figure. Rules with no label continue to produce the standard ratio exactly as before.
+- **Several rules can share a label.** All rules with the same label (for the same ratio and level) are combined together into that one labeled result, the same way unlabeled rules combine into the standard one.
+- **Every label becomes its own ratio record.** If a fund has an unlabeled XIRR rule and a rule labeled "xirr outflow", generating ratios produces two results: "XIRR" and "xirr outflow" — both viewable, exportable, and searchable like any other ratio.
+- **Tracking currency still applies.** A labeled ratio gets its own tracking-currency variant too, e.g. "xirr outflow (USD)", following the same naming pattern as the standard ratio.
+- **Use it to model variants side by side** — for example an "as reported" XIRR alongside an "ex-expenses" XIRR, without losing either figure.
+
+> Labels are limited to 30 characters and are matched by exact, case-sensitive text — use the same label spelling on every rule you want grouped together.
 
 ---
 

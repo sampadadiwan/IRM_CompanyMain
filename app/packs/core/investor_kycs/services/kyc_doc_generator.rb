@@ -81,7 +81,7 @@ class KycDocGenerator
     investor_kyc.entity.currency == "INR" ? investor_kyc.committed_amount.to_i.rupees.humanize : investor_kyc.committed_amount.to_i.to_words.humanize
 
     # Get all capital commitments for the investor, including associated fund and investor
-    capital_commitments = investor_kyc.capital_commitments.includes(:fund, :investor)
+    capital_commitments = investor_kyc.capital_commitments.includes(:fund, :investor).order(:commitment_date)
     # Filter capital commitments by fund_id if provided
     capital_commitments = capital_commitments.where(fund_id: fund_id) if fund_id
 
@@ -91,21 +91,20 @@ class KycDocGenerator
     capital_commitments_before_end_date = capital_commitments.where(commitment_date: ..end_date)
 
     # Get all capital remittances for the investor, including associated capital commitment, capital call, and fund, ordered by remittance date
-    remittances = investor_kyc.capital_remittances.includes(:capital_commitment, :capital_call, :fund)
+    remittances = investor_kyc.capital_remittances.includes(:capital_commitment, :capital_call, :fund).order(:remittance_date)
     # Filter remittances by fund_id if provided
     remittances = remittances.where(fund_id: fund_id) if fund_id
     remittances_payment_date_ordering = remittances.order(:payment_date)
     remittances = remittances.order(:remittance_date)
-
     # Get all capital distribution payments for the investor, including associated capital commitment, fund, and capital distribution
-    distribution_payments = investor_kyc.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution)
+    distribution_payments = investor_kyc.capital_distribution_payments.includes(:capital_commitment, :fund, :capital_distribution).order(:payment_date)
     # Filter distribution payments by fund_id if provided
     distribution_payments = distribution_payments.where(fund_id: fund_id) if fund_id
 
     account_entries = investor_kyc.account_entries
     account_entries = account_entries.where(fund_id: fund_id) if fund_id
 
-    capital_remittance_payments = investor_kyc.capital_remittance_payments
+    capital_remittance_payments = investor_kyc.capital_remittance_payments.order(:payment_date)
     capital_remittance_payments = capital_remittance_payments.where(fund_id: fund_id) if fund_id
 
     context = {
@@ -151,6 +150,7 @@ class KycDocGenerator
     }
 
     add_fund_units_context(investor_kyc, start_date, end_date, fund_id, context)
+    add_fund_ratios_context(investor_kyc, start_date, end_date, fund_id, context)
 
     if fund_id.present?
       context[:fund] = TemplateDecorator.decorate(Fund.find(fund_id))
@@ -259,6 +259,53 @@ class KycDocGenerator
     context[:aggregated_fund_units] = TemplateDecorator.decorate_collection(fund_units_map.values)
   end
 
+  # Exposes the latest fund-level and KYC-level FundRatio values (XIRR, DPI, TVPI, etc.) to the
+  # template as `fund_lvl_ratios`/`kyc_ratios`, keyed by the ratio's parameterized name (e.g. an
+  # "XIRR (USD)" ratio becomes `fund_lvl_ratios.xirr_usd`). Ratios are recomputed per end_date by
+  # FundRatiosJob and stored as one row per (owner, name, end_date), so for each distinct ratio
+  # name we need the most recent row at or before the requested end_date — hence the "(name,
+  # end_date) IN (... GROUP BY name)" subquery rather than a plain where(end_date:).
+  #
+  # Requires fund_id because ratios (and the KYC's own folio-level ratios) only make sense scoped
+  # to a single fund; a KYC spanning multiple funds has no single fund to look ratios up against.
+  def add_fund_ratios_context(investor_kyc, _start_date, end_date, fund_id, context)
+    return if fund_id.blank?
+
+    fund_ratios = FundRatio.where(owner_type: "Fund", owner_id: fund_id, end_date: ..end_date)
+                           .where("(name, end_date) IN (
+                              SELECT name, MAX(end_date)
+                              FROM fund_ratios
+                              WHERE fund_id = ? AND owner_type = ? AND owner_id = ? AND end_date <= ?
+                              GROUP BY name
+                            )", fund_id, "Fund", fund_id, end_date).to_a
+
+    fund_ratios_by_name = fund_ratios.index_by(&:name)
+    fund_ratios_struct = OpenStruct.new
+
+    fund_ratios_by_name.each do |name, ratio|
+      fund_ratios_struct[name.parameterize.underscore] = ratio.value.to_d
+    end
+
+    # Single query with subquery to get latest ratio for each name
+    kyc_ratios = FundRatio.where(fund_id: fund_id, owner: investor_kyc, end_date: ..end_date)
+                          .where("(name, end_date) IN (
+                        SELECT name, MAX(end_date)
+                        FROM fund_ratios
+                        WHERE fund_id = ? AND owner_type = ? AND owner_id = ? AND end_date <= ?
+                        GROUP BY name
+                      )", fund_id, "InvestorKyc", investor_kyc.id, end_date).to_a
+
+    kyc_ratios_by_name = kyc_ratios.index_by(&:name)
+    kyc_ratios_struct = OpenStruct.new
+
+    kyc_ratios_by_name.each do |name, ratio|
+      kyc_ratios_struct[name.parameterize.underscore] = ratio.value.to_d
+    end
+
+    context[:fund_lvl_ratios] = TemplateDecorator.decorate(fund_ratios_struct)
+    context[:kyc_ratios] = TemplateDecorator.decorate(kyc_ratios_struct)
+  end
+
   # Add the reporting entries for the investor kyc, note that since a KYC can be linked to multiple commitments, there could be multiple account entries with the same name (ex Setup Fees, one for each commitment), so sum them (Ex Sum of Setup Fees) before adding to the context
   def add_reporting_entries(context, investor_kyc, _start_date, end_date, fund_id)
     raes = investor_kyc.account_entries.where(reporting_date: end_date, rule_for: "Reporting")
@@ -323,7 +370,44 @@ class KycDocGenerator
       portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
     end
 
+    fund = first_commitment&.fund || Fund.find_by(id: fund_id)
+    add_company_fund_ratios(portfolio_company_entries_map, fund, end_date) if fund.present?
+
     portfolio_company_entries_map.keys.sort.map { |k| portfolio_company_entries_map[k] }
+  end
+
+  # Adds each portfolio company's latest ratios (IRR, MOIC, etc. computed with owner_type
+  # "Investor" - portfolio companies are modeled as Investor records) into the
+  # portfolio_company_entries_map built by the caller, so templates can reference e.g.
+  # `pcratio_irr` alongside the company's other account-entry fields. Mutates entries already
+  # present in the map; companies with no existing entry are skipped since there's nothing to
+  # attach the ratio to.
+  def add_company_fund_ratios(portfolio_company_entries_map, fund, end_date)
+    # Get the latest fund ratios for each unique ratio name from Investor owners
+    fund_ratios = fund.fund_ratios
+                      .where(owner_type: "Investor", end_date: ..end_date)
+                      .where("(owner_id, name, end_date) IN (
+                        SELECT owner_id, name, MAX(end_date)
+                        FROM fund_ratios
+                        WHERE fund_id = ? AND owner_type = ? AND end_date <= ?
+                        GROUP BY owner_id, name
+                      )", fund.id, "Investor", end_date)
+                      .includes(:owner)
+                      .to_a
+
+    # Add ratios to matching portfolio company entries
+    fund_ratios.each do |ratio|
+      investor = ratio.owner
+      next unless investor.is_a?(Investor)
+
+      portfolio_company_name = investor.investor_name
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      next unless portfolio_company_entry
+
+      ratio_key = "pcratio_#{ratio.name.parameterize.underscore}"
+      portfolio_company_entry[ratio_key] = ratio.value
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
   end
 
   def generate_custom_fields(context, investor_kyc)

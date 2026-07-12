@@ -7,7 +7,7 @@ class ImportRatioFormula < ImportUtil
   step nil, delete: :create_custom_fields
 
   # Columns expected in the import file (must match headers exactly, case-insensitive after titleize).
-  STANDARD_HEADERS = ["Level", "Action", "Period", "Ratio", "Account Entry Names"].freeze
+  STANDARD_HEADERS = ["Level", "Action", "Period", "Ratio", "Label", "Account Entry Names", "Entry Type", "Parent Type", "Cumulative", "Skip Portfolio Fmv"].freeze
 
   # Returns the standard headers so ImportUtil can validate the uploaded file.
   def standard_headers
@@ -26,9 +26,14 @@ class ImportRatioFormula < ImportUtil
     level               = lookup_enum(RatioFormula.level,  row_data["Level"])
     action              = lookup_enum(RatioFormula.action, row_data["Action"])
     period              = lookup_enum(RatioFormula.period, row_data["Period"])
+    label               = row_data["Label"].to_s.strip
     ratio               = row_data["Ratio"].to_s.strip
     account_entry_names = split_csv(row_data["Account Entry Names"])
-    update_only         = row_data["Update Only"]&.downcase == "yes"
+    entry_type          = row_data["Entry Type"].to_s.strip
+    parent_type         = row_data["Parent Type"].to_s.strip
+    cumulative          = row_data["Cumulative"].to_s.strip.downcase == "yes"
+    skip_portfolio_fmv  = row_data["Skip Portfolio Fmv"].to_s.strip.downcase == "yes"
+    update_only         = row_data["Update Only"].to_s.strip.downcase == "yes"
 
     if update_only
       id = row_data["Id"]
@@ -38,14 +43,19 @@ class ImportRatioFormula < ImportUtil
       raise "RatioFormula with id #{id} not found for Fund #{fund.id}" unless ratio_formula
 
       ratio_formula.update!(
-        level:, action:, period:, ratio:, account_entry_names:,
+        level:, action:, period:, ratio:, label:, account_entry_names:,
+        entry_type:, parent_type:, cumulative:, skip_portfolio_fmv:,
         import_upload_id: import_upload.id
       )
     else
+      label = nil if label.blank? # Normalize blank labels to nil for consistent deduplication
       # Deduplicate on the full composite key; raise if it already exists.
       ratio_formula = fund.ratio_formulas.find_or_initialize_by(
         entity_id: fund.entity_id,
-        level:, action:, period:
+        ratio:,
+        entry_type:, parent_type:, cumulative:,
+        level:, action:, period:,
+        label:
       )
 
       raise "RatioFormula #{ratio_formula.id} already exists" if ratio_formula.id.present?
@@ -53,7 +63,8 @@ class ImportRatioFormula < ImportUtil
       fund.ratio_formulas.create!(
         entity_id: fund.entity_id,
         fund_id: fund.id,
-        level:, action:, period:, ratio:, account_entry_names:,
+        level:, action:, period:, ratio:, label:, account_entry_names:,
+        entry_type:, parent_type:, cumulative:, skip_portfolio_fmv:,
         import_upload_id: import_upload.id
       )
     end

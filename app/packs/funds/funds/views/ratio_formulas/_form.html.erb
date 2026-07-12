@@ -25,17 +25,55 @@
 
     <div class="form-group mt-3">
       <%= f.label :ratio %>
-      <%= f.select :ratio, %w[XIRR DPI TVPI MOIC RVPI PIC], { include_blank: "Select Ratio" }, class: "form-control" %>
+      <%= f.select :ratio, ["XIRR", "DPI", "TVPI", "MOIC", "RVPI", "PIC", "Gross Portfolio IRR"], { include_blank: "Select Ratio" }, class: "form-control" %>
     </div>
 
-    <div class="form-group mt-3">
-      <%= f.label :account_entry_names %>
-      <%= f.select :account_entry_names, @fund.account_entries.distinct.pluck(:name).sort, { selected: @ratio_formula.account_entry_names }, { multiple: true, class: "form-control select2", data: { placeholder: "Select Account Entry Names" } } %>
+    <div class='row'>
+      <div class="form-group col mt-3">
+        <%= f.label :account_entry_names %>
+        <%= f.select :account_entry_names, @fund.account_entries.distinct.pluck(:name).sort, { selected: @ratio_formula.account_entry_names }, { multiple: true, class: "form-control select2", data: { placeholder: "Select Account Entry Names" } } %>
+      </div>
+      <div class="form-group col-auto d-flex align-items-end">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-controller="ratio-formulas" data-action="click->ratio-formulas#toggleAllDetails">
+          <i class="ti ti-caret-down"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="collapse">
+      <div class="form-group mt-3">
+        <%= f.label :entry_type %>
+        <%= f.text_field :entry_type, class: "form-control" %>
+          <small class="text-muted">Type of account entry to include in the ratio calculation</small>
+      </div>
+
+      <div class="form-group mt-3">
+        <%= f.label :parent_type %>
+        <%= f.text_field :parent_type, class: "form-control" %>
+        <small class="text-muted">Parent Type of account entry</small>
+      </div>
+
+      <div class="form-group mt-3">
+        <%= f.label :cumulative %>
+        <%= f.check_box :cumulative, class: "form-check-input" %>
+        <small class="text-muted">Use Cumulative / Non Cumulative Account Entries</small>
+      </div>
+
+      <div class="form-group mt-3">
+        <%= f.label :skip_portfolio_fmv %>
+        <%= f.check_box :skip_portfolio_fmv, class: "form-check-input" %>
+      </div>
     </div>
 
     <div class="form-group mt-3">
       <%= f.label :period %>
       <%= f.select :period, RatioFormula.period.options, {}, class: "form-control" %>
+    </div>
+
+    <div class="form-group mt-3">
+      <%= f.label :label %>
+      <%= f.text_field :label, class: "form-control"%>
+      <small class="text-muted">Label for the generated ratio. If multiple ratio formulas have the same label, they will be grouped together.</small>
     </div>
 
     <div class="form-group mt-3">

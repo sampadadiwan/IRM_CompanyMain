@@ -36,6 +36,10 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
     super()
   end
 
+  def ratio_formula_level
+    "Fund"
+  end
+
   def convert_to_base_currency(amount)
     @bank.exchange_with(amount, @currency)
   end
@@ -144,7 +148,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
       fund_cc = fpc.collected_cents
       fund_dc = fpc.distribution_cents
       # Apply this fund's DPI rules to its own components before aggregation
-      fund_dc, = fpc.apply_static_formulas('DPI', fund_dc, fund_cc, false)
+      fund_dc, = fpc.apply_static_formulas('DPI', fund_dc, fund_cc, false, ratio_formula_level)
       dc += convert_to_base_currency(Money.new(fund_dc, fund.currency)).cents
     end
     # The aggregated CC used as denominator is already converted, but we use the total adjusted CC for consistency?
@@ -155,7 +159,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
       fpc = FundPortfolioCalcs.new(fund, @end_date)
       fund_cc = fpc.collected_cents
       fund_dc = fpc.distribution_cents
-      _, fund_cc = fpc.apply_static_formulas('DPI', fund_dc, fund_cc, false)
+      _, fund_cc = fpc.apply_static_formulas('DPI', fund_dc, fund_cc, false, ratio_formula_level)
       adj_cc += convert_to_base_currency(Money.new(fund_cc, fund.currency)).cents
     end
 
@@ -170,7 +174,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
       fund_cc = fpc.collected_cents
       fund_rv = fpc.fmv_cents + fpc.net_current_assets_cents + fpc.cash_in_hand_cents
 
-      fund_rv, fund_cc = fpc.apply_static_formulas('RVPI', fund_rv, fund_cc, false)
+      fund_rv, fund_cc = fpc.apply_static_formulas('RVPI', fund_rv, fund_cc, false, ratio_formula_level)
 
       numerator += convert_to_base_currency(Money.new(fund_rv, fund.currency)).cents
       denominator += convert_to_base_currency(Money.new(fund_cc, fund.currency)).cents
@@ -188,7 +192,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
       fund_rv = fpc.fmv_cents + fpc.net_current_assets_cents + fpc.cash_in_hand_cents
 
       fund_tv = fund_dc + fund_rv
-      fund_tv, fund_cc = fpc.apply_static_formulas('TVPI', fund_tv, fund_cc, false)
+      fund_tv, fund_cc = fpc.apply_static_formulas('TVPI', fund_tv, fund_cc, false, ratio_formula_level)
 
       numerator += convert_to_base_currency(Money.new(fund_tv, fund.currency)).cents
       denominator += convert_to_base_currency(Money.new(fund_cc, fund.currency)).cents
@@ -207,7 +211,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
       fund_fmv  = fpc.fmv_cents
       fund_ticc = fpc.total_investment_costs_cents
 
-      fund_fmv, fund_ticc = fpc.apply_static_formulas('Portfolio Value to Cost', fund_fmv, fund_ticc, false)
+      fund_fmv, fund_ticc = fpc.apply_static_formulas('Portfolio Value to Cost', fund_fmv, fund_ticc, false, ratio_formula_level)
 
       numerator   += convert_to_base_currency(Money.new(fund_fmv,  fund.currency)).cents
       denominator += convert_to_base_currency(Money.new(fund_ticc, fund.currency)).cents
@@ -223,7 +227,7 @@ class FundRatioMultiFundCalcs < FundRatioCalcs
       fund_clc = fpc.collected_cents
       fund_ccm = fpc.committed_cents
 
-      fund_clc, fund_ccm = fpc.apply_static_formulas('PIC', fund_clc, fund_ccm, false)
+      fund_clc, fund_ccm = fpc.apply_static_formulas('PIC', fund_clc, fund_ccm, false, ratio_formula_level)
 
       numerator += convert_to_base_currency(Money.new(fund_clc, fund.currency)).cents
       denominator += convert_to_base_currency(Money.new(fund_ccm, fund.currency)).cents

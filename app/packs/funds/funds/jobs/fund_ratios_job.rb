@@ -94,13 +94,21 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_xirr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows, user_id)
-    xirr, cash_flows = calc.xirr(return_cash_flows:)
-    fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR", value: xirr, display_value: "#{xirr} %")
-    fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
+    # fetch relevant labels
+    labels = fund.ratio_formulas.where(ratio: "XIRR", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    # create FundRatio records for each label
+    labels.each do |label|
+      xirr, cash_flows = calc.xirr(return_cash_flows:, label: label)
+      name = label.presence || "XIRR"
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value: xirr, display_value: "#{xirr} %")
+      fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
 
-    if fund.has_tracking_currency?
-      tracking_xirr, cash_flows = calc.xirr(return_cash_flows:, use_tracking_currency: true)
-      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "XIRR (#{fund.tracking_currency})", value: tracking_xirr, display_value: "#{tracking_xirr} %")
+      next unless fund.has_tracking_currency?
+
+      tracking_xirr, cash_flows = calc.xirr(return_cash_flows:, use_tracking_currency: true, label: label)
+      name = label.presence || "XIRR"
+      name += " (#{fund.tracking_currency})"
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value: tracking_xirr, display_value: "#{tracking_xirr} %")
       fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
     end
   end
@@ -109,36 +117,60 @@ class FundRatiosJob < ApplicationJob
     # we only compute MOIC for FundPortfolioCalcs, not for others - confirm why
     return unless calc.is_a?(FundPortfolioCalcs)
 
-    moic, cash_flows = calc.moic(return_cash_flows:)
-    fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: moic, display_value: "#{moic} x")
-    fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
+    # fetch relevant labels
+    labels = fund.ratio_formulas.where(ratio: "MOIC", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
 
-    if fund.has_tracking_currency?
-      tracking_moic, cash_flows = calc.moic(return_cash_flows:, use_tracking_currency: true)
-      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC (#{fund.tracking_currency})", value: tracking_moic, display_value: "#{tracking_moic} x")
+    # create FundRatio records for each label
+    labels.each do |label|
+      moic, cash_flows = calc.moic(return_cash_flows:, label: label)
+      name = label.presence || "MOIC"
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value: moic, display_value: "#{moic} x")
+      fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
+
+      next unless fund.has_tracking_currency?
+
+      tracking_moic, cash_flows = calc.moic(return_cash_flows:, use_tracking_currency: true, label: label)
+      name = label.presence || "MOIC"
+      name += " (#{fund.tracking_currency})"
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value: tracking_moic, display_value: "#{tracking_moic} x")
       fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
     end
   end
 
   def _create_rvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
-    value = calc.rvpi(use_tracking_currency:)
-    display_value = value ? "#{value.round(2)}x" : nil
-    name = use_tracking_currency ? "RVPI (#{fund.tracking_currency})" : "RVPI"
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
+    labels = fund.ratio_formulas.where(ratio: "RVPI", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    # create FundRatio records for each label
+    labels.each do |label|
+      value = calc.rvpi(use_tracking_currency:, label: label)
+      display_value = value ? "#{value.round(2)}x" : nil
+      name = label.presence || "RVPI"
+      name += " (#{fund.tracking_currency})" if use_tracking_currency
+      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
+    end
   end
 
   def _create_dpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
-    value = calc.dpi(use_tracking_currency:)
-    display_value = value ? "#{value.round(2)}x" : nil
-    name = use_tracking_currency ? "DPI (#{fund.tracking_currency})" : "DPI"
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
+    labels = fund.ratio_formulas.where(ratio: "DPI", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    # create FundRatio records for each label
+    labels.each do |label|
+      value = calc.dpi(use_tracking_currency:, label: label)
+      display_value = value ? "#{value.round(2)}x" : nil
+      name = label.presence || "DPI"
+      name += " (#{fund.tracking_currency})" if use_tracking_currency
+      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
+    end
   end
 
   def _create_tvpi_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
-    value = calc.tvpi(use_tracking_currency:)
-    display_value = value ? "#{value.round(2)}x" : nil
-    name = use_tracking_currency ? "TVPI (#{fund.tracking_currency})" : "TVPI"
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
+    labels = fund.ratio_formulas.where(ratio: "TVPI", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    # create FundRatio records for each label
+    labels.each do |label|
+      value = calc.tvpi(use_tracking_currency:, label: label)
+      display_value = value ? "#{value.round(2)}x" : nil
+      name = label.presence || "TVPI"
+      name += " (#{fund.tracking_currency})" if use_tracking_currency
+      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
+    end
   end
 
   def calc_only_fund(calc, fund, capital_commitment, end_date, owner, return_cash_flows:, user_id:)
@@ -152,7 +184,7 @@ class FundRatiosJob < ApplicationJob
     _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
     _create_api_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
     _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
-    _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows, user_id)
+    _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
     _create_gross_portfolio_irr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
   end
 
@@ -164,22 +196,32 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_paid_in_to_committed_capital_ratio(calc, owner, fund, capital_commitment, end_date, use_tracking_currency: false)
-    value = calc.paid_in_to_committed_capital(use_tracking_currency:)
-    display_value = value ? "#{value.round(2)}x" : nil
-    name = use_tracking_currency ? "Paid In to Committed Capital (#{fund.tracking_currency})" : "Paid In to Committed Capital"
-    FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
+    labels = fund.ratio_formulas.where(ratio: "PIC", level: calc.ratio_formula_level).pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels.each do |label|
+      value = calc.paid_in_to_committed_capital(use_tracking_currency:, label: label)
+      display_value = value ? "#{value.round(2)}x" : nil
+      name = label.presence || "Paid In to Committed Capital"
+      name += " (#{fund.tracking_currency})" if use_tracking_currency
+      FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name:, value:, display_value:)
+    end
   end
 
   def _create_portfolio_company_irr_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
-    calc.portfolio_company_irr(return_cash_flows:).each do |portfolio_company_id, values|
-      fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR", value: values[:xirr], display_value: "#{values[:xirr]} %")
-      fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
-    end
+    labels = fund.ratio_formulas.where(ratio: "XIRR", level: "PortfolioCompany").pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels.each do |label|
+      calc.portfolio_company_irr(return_cash_flows:, label: label).each do |portfolio_company_id, values|
+        name = label.presence || "IRR"
+        fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: name, value: values[:xirr], display_value: "#{values[:xirr]} %")
+        fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
+      end
 
-    if fund.has_tracking_currency?
+      next unless fund.has_tracking_currency?
+
       calc.portfolio_company_irr_map = {}
-      calc.portfolio_company_irr(return_cash_flows:, use_tracking_currency: true).each do |portfolio_company_id, values|
-        fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "IRR (#{fund.tracking_currency})", value: values[:xirr], display_value: "#{values[:xirr]} %")
+      calc.portfolio_company_irr(return_cash_flows:, use_tracking_currency: true, label: label).each do |portfolio_company_id, values|
+        name = label.presence || "IRR"
+        name += " (#{fund.tracking_currency})"
+        fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: name, value: values[:xirr], display_value: "#{values[:xirr]} %")
         fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
       end
     end
@@ -203,22 +245,28 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_portfolio_company_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
-    calc.portfolio_company_metrics(return_cash_flows:).each do |portfolio_company_id, values|
-      fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
-      fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
-    end
+    labels = fund.ratio_formulas.where(ratio: "MOIC", level: "PortfolioCompany").pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels.each do |label|
+      calc.portfolio_company_metrics(return_cash_flows:, label: label).each do |portfolio_company_id, values|
+        name = label.presence || "MOIC"
+        fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: name, value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
+        fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
+      end
 
-    if fund.has_tracking_currency?
+      next unless fund.has_tracking_currency?
+
       calc.portfolio_company_metrics_map = {}
-      calc.portfolio_company_metrics(return_cash_flows:, use_tracking_currency: true).each do |portfolio_company_id, values|
-        fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC (#{fund.tracking_currency})", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
+      calc.portfolio_company_metrics(return_cash_flows:, use_tracking_currency: true, label: label).each do |portfolio_company_id, values|
+        name = label.presence || "MOIC"
+        name += " (#{fund.tracking_currency})"
+        fr = FundRatio.create!(owner_id: portfolio_company_id, owner_type: "Investor", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: name, value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
         fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
       end
     end
     # TODO: do we need moic for tracking currency?
   end
 
-  def _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows, user_id)
+  def _create_api_moic_ratios(calc, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
     calc.api_cost_to_value(return_cash_flows:).each do |api_id, values|
       fr = FundRatio.create!(owner_id: api_id, owner_type: "AggregatePortfolioInvestment", entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "MOIC", value: values[:moic], display_value: "#{values[:moic]&.round(2)} x")
       fr.create_cashflow_document(values[:cash_flows], user_id) if return_cash_flows && values[:cash_flows].present?
@@ -226,19 +274,25 @@ class FundRatiosJob < ApplicationJob
   end
 
   def _create_gross_portfolio_irr_ratios(calc, owner, fund, capital_commitment, end_date, return_cash_flows:, user_id:)
-    result = calc.gross_portfolio_irr(return_cash_flows:)
-    xirr_value = result[:xirr]
-    cash_flows = result[:cash_flows]
-    display_value = "#{xirr_value} %"
-    fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR", value: xirr_value, display_value:)
-    fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
-
-    if fund.has_tracking_currency?
-      result = calc.gross_portfolio_irr(return_cash_flows:, use_tracking_currency: true)
+    labels = fund.ratio_formulas.where(ratio: "Gross Portfolio IRR", level: "Fund").pluck(:label).uniq.compact_blank + [nil] # include unlabeled formulas as well
+    labels.each do |label|
+      result = calc.gross_portfolio_irr(return_cash_flows:, label: label)
       xirr_value = result[:xirr]
       cash_flows = result[:cash_flows]
       display_value = "#{xirr_value} %"
-      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: "Gross Portfolio IRR (#{fund.tracking_currency})", value: xirr_value, display_value:)
+      name = label.presence || "Gross Portfolio IRR"
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: name, value: xirr_value, display_value:)
+      fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
+
+      next unless fund.has_tracking_currency?
+
+      result = calc.gross_portfolio_irr(return_cash_flows:, use_tracking_currency: true, label: label)
+      xirr_value = result[:xirr]
+      cash_flows = result[:cash_flows]
+      display_value = "#{xirr_value} %"
+      name = label.presence || "Gross Portfolio IRR"
+      name += " (#{fund.tracking_currency})"
+      fr = FundRatio.create!(owner:, entity_id: fund.entity_id, fund:, capital_commitment:, end_date:, name: name, value: xirr_value, display_value:)
       fr.create_cashflow_document(cash_flows, user_id) if return_cash_flows && cash_flows.present?
     end
   end

@@ -22,6 +22,10 @@ class InvestorKycCalcs < FundRatioCalcs
     super()
   end
 
+  def ratio_formula_level
+    "Folio"
+  end
+
   # Override delegated methods to return KYC-specific filtered collections
   def capital_remittance_payments
     @capital_remittance_payments ||= @fund.capital_remittance_payments.joins(:capital_remittance).where(capital_remittances: { capital_commitment_id: @kyc_commitment_ids })
@@ -106,11 +110,12 @@ class InvestorKycCalcs < FundRatioCalcs
   # Returns 0 if collected capital is zero.
   #
   # @param use_tracking_currency [Boolean] Whether to apply static formula adjustments
+  # @param label [String, nil] Optional label for the formula
   # @return [Float] DPI ratio
-  def dpi(use_tracking_currency: false)
+  def dpi(use_tracking_currency: false, label: nil)
     cc = collected_cents
     dc = distribution_cents
-    dc, cc = apply_static_formulas('DPI', dc, cc, use_tracking_currency)
+    dc, cc = apply_static_formulas('DPI', dc, cc, use_tracking_currency, ratio_formula_level, label: label)
     cc.positive? ? (dc / cc.to_f) : 0
   end
 
@@ -120,11 +125,12 @@ class InvestorKycCalcs < FundRatioCalcs
   # Returns 0 if collected capital is zero.
   #
   # @param use_tracking_currency [Boolean] Whether to apply static formula adjustments
+  # @param label [String, nil] Optional label for the formula
   # @return [Float] RVPI ratio
-  def rvpi(use_tracking_currency: false)
+  def rvpi(use_tracking_currency: false, label: nil)
     cc = collected_cents
     total_val = fmv_cents + cash_in_hand_cents + net_current_assets_cents
-    total_val, cc = apply_static_formulas('RVPI', total_val, cc, use_tracking_currency)
+    total_val, cc = apply_static_formulas('RVPI', total_val, cc, use_tracking_currency, ratio_formula_level, label: label, fmv: fmv_cents)
     cc.positive? ? (total_val / cc.to_f) : 0
   end
 
@@ -134,14 +140,15 @@ class InvestorKycCalcs < FundRatioCalcs
   # Returns 0 if collected capital is zero. TVPI = DPI + RVPI.
   #
   # @param use_tracking_currency [Boolean] Whether to apply static formula adjustments
+  # @param label [String, nil] Optional label for the formula
   # @return [Float] TVPI ratio
-  def tvpi(use_tracking_currency: false)
+  def tvpi(use_tracking_currency: false, label: nil)
     cc = collected_cents
     dc = distribution_cents
     rv = fmv_cents + cash_in_hand_cents + net_current_assets_cents
 
     numerator = dc + rv
-    numerator, cc = apply_static_formulas('TVPI', numerator, cc, use_tracking_currency)
+    numerator, cc = apply_static_formulas('TVPI', numerator, cc, use_tracking_currency, ratio_formula_level, label: label, fmv: fmv_cents)
     cc.positive? ? (numerator / cc.to_f) : 0
   end
 
@@ -165,8 +172,9 @@ class InvestorKycCalcs < FundRatioCalcs
   # @param adjustment_cash [Integer] Optional cash adjustment in cents. Default: 0
   # @param scenarios [Hash] Optional scenario parameters for sensitivity analysis
   # @param use_tracking_currency [Boolean] Apply static formula adjustments using tracking currency
+  # @param label [String, nil] Optional label for the formula
   # @return [Float] XIRR percentage as a decimal (e.g., 0.15 for 15%)
-  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
-    super(model: @capital_commitment, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
+  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false, label: nil)
+    super(model: @capital_commitment, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:, label: label, level: ratio_formula_level)
   end
 end

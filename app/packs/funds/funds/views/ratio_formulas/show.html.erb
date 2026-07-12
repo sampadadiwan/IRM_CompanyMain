@@ -46,10 +46,50 @@
   </tr>
   <tr>
     <td>
+      Entry Type
+    </td>
+    <td>
+      <%= @ratio_formula.entry_type %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Parent Type
+    </td>
+    <td>
+      <%= @ratio_formula.parent_type %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Cumulative
+    </td>
+    <td>
+      <%= display_boolean(@ratio_formula.cumulative) %>
+    </td>
+  </tr>
+  <tr>
+    <td>
       Period
     </td>
     <td>
       <%= @ratio_formula.period_text %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Label
+    </td>
+    <td>
+      <%= @ratio_formula.label %>
+    </td>
+  </tr>
+  <tr>
+    <td>
+      Skip Portfolio FMV
+    </td>
+    <td>
+      <%= display_boolean(@ratio_formula.skip_portfolio_fmv) %>
     </td>
   </tr>
 </table>

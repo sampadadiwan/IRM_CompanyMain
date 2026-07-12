@@ -126,6 +126,23 @@
           </td>
         </tr>
       <% end %>
+
+      <tr>
+        <td>
+          Created At
+        </td>
+        <td>
+          <%= l @fund_ratio.created_at if @fund_ratio.created_at %>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Updated At
+        </td>
+        <td>
+          <%= l @fund_ratio.updated_at if @fund_ratio.updated_at %>
+        </td>
+      </tr>
     </table>
     <div class="associated_entity">
       <%= link_to  t_common(:edit), edit_fund_ratio_path(@fund_ratio), {class: "btn btn-outline-primary"} if policy(@fund_ratio).update? %>

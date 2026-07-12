@@ -66,6 +66,6 @@ class RatioFormulasController < ApplicationController
   end
 
   def ratio_formula_params
-    params.require(:ratio_formula).permit(:level, :action, :period, :ratio, account_entry_names: [])
+    params.require(:ratio_formula).permit(:level, :action, :period, :ratio, :label, :entry_type, :cumulative, :parent_type, :skip_portfolio_fmv, account_entry_names: [])
   end
 end

@@ -38,6 +38,28 @@ Scenario Outline: Compute Fund Ratios in tracking currency
   Given I log in as user "Test"
   And The Portfolio company MOIC ratio can be viewed properly
 
+Scenario Outline: Compute KYC Fund Ratios
+  Given there is a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund;currency=INR"
+  Given the user has role "company_admin"
+  Given there is a fund "name=Demo Fund 2;currency=INR;unit_types=A1,A2" for the entity
+  Given The fund has kyc level data generation enabled
+  And Given import file "kyc_fund_ratios/exchange_rates.xlsx" for "ExchangeRate"
+  And Given import file "kyc_fund_ratios/investors.xlsx" for "Investor"
+  And Given import file "kyc_fund_ratios/valuations.xlsx" for "Valuation"
+  And Given import file "kyc_fund_ratios/investor_kycs.xlsx" for "InvestorKyc"
+  And Given import file "kyc_fund_ratios/capital_commitments.xlsx" for "CapitalCommitment"
+  And Given import file "kyc_fund_ratios/capital_distributions.xlsx" for "CapitalDistribution"
+  And Given import file "kyc_fund_ratios/portfolio_investments.xlsx" for "PortfolioInvestment"
+  And Given import file "kyc_fund_ratios/account_entries.xlsx" for "AccountEntry"
+  And Given import file "kyc_fund_ratios/capital_calls.xlsx" for "CapitalCall"
+  And Given import file "kyc_fund_ratios/capital_remittance_payments.xlsx" for "CapitalRemittancePayment"
+  Given the second commitment of the kyc has custom_fields "skip_doc_gen:yes"
+  Given the KYC has commitments in different funds also
+  And given the fund_ratios are computed for the date "31-03-2024"
+  Then KYC ratios must be computed for the commitments except for commitment with skip_doc_gen
+  Then the fund ratios computed must match the ratios in "kyc_fund_ratios/fund_ratios.xlsx"
+  And the cashflow CSV documents should be created for the fund ratios
+
 @import
 Scenario Outline: Import Fund Ratio
   Given Im logged in as a user "<user>" for an entity "<entity>"

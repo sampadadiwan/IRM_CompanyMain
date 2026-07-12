@@ -2,9 +2,11 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "RatioFormulas") do |sheet|
   # Header row matches ImportRatioFormula::STANDARD_HEADERS plus Id and Fund for reference
-  sheet.add_row(["Id", "Fund", "Level", "Action", "Period", "Ratio", "Account Entry Names"])
+  sheet.add_row(["Id", "Fund", "Level", "Action", "Period", "Ratio", "label", "Account Entry Names", "Entry Type", "Parent Type", "Cumulative", "Skip Portfolio FMV"])
 
   @ratio_formulas.each do |rf|
+    cumulative = rf.cumulative ? "Yes" : "No"
+    skip_portfolio_fmv = rf.skip_portfolio_fmv ? "Yes" : "No"
     sheet.add_row [
       rf.id,
       rf.fund.name,
@@ -12,7 +14,12 @@ wb.add_worksheet(name: "RatioFormulas") do |sheet|
       rf.action_text,
       rf.period_text,
       rf.ratio,
-      Array(rf.account_entry_names).join(", ")
+      rf.label,
+      Array(rf.account_entry_names).join(", "),
+      rf.entry_type,
+      rf.parent_type,
+      cumulative,
+      skip_portfolio_fmv
     ]
   end
 end

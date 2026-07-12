@@ -1,4 +1,4 @@
-<div class="container-fluid p-3">
+<div class="p-3">
   <div class="d-flex justify-content-between align-items-center mb-3">
     <h1>Ratio Formulas for <%= @fund.name %></h1>
     <div class="d-flex flex-wrap align-items-center gap-2">
@@ -26,15 +26,20 @@
   </div>
   <div class="card">
     <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
+      <table class="table table-hover table-sm align-middle mb-0">
         <thead class="table-light">
           <tr>
-            <th>Level</th>
-            <th>Ratio</th>
-            <th>Action</th>
+            <th class="text-nowrap">Level</th>
+            <th class="text-nowrap">Ratio</th>
+            <th class="text-nowrap">Action</th>
             <th>Account Entry Names</th>
-            <th>Period</th>
-            <th>Actions</th>
+            <th class="text-nowrap">Entry Type</th>
+            <th class="text-nowrap">Parent Type</th>
+            <th class="text-nowrap">Cumulative</th>
+            <th class="text-nowrap">Period</th>
+            <th class="text-nowrap">Label</th>
+            <th class="text-nowrap">Skip Portfolio FMV</th>
+            <th class="text-nowrap">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -51,7 +56,18 @@
                     <span class="badge bg-secondary-subtle text-secondary"><%= name %></span>
                   <% end %>
                 </td>
+                <td>
+                  <% if formula.entry_type.present? %>
+                    <% formula.entry_type.split(",").each do |type| %>
+                      <span class="badge bg-secondary-subtle text-secondary"><%= type %></span>
+                    <% end %>
+                  <% end %>
+                </td>
+                <td><%= formula.parent_type %></td>
+                <td><%= display_boolean formula.cumulative %></td>
                 <td><%= formula.period_text %></td>
+                <td><%= formula.label %></td>
+                <td><%= display_boolean formula.skip_portfolio_fmv %></td>
                 <td>
                   <div class="d-flex gap-2">
                     <%= link_to fund_ratio_formula_path(@fund, formula), class: "btn btn-outline-info btn-sm", title: "View" do %>

@@ -49,7 +49,15 @@ Given('there is a RatioFormula for the fund {string} with {string}') do |fund_na
   fund = Fund.find_by(name: fund_name)
   @ratio_formula = FactoryBot.build(:ratio_formula, fund: fund, entity: fund.entity)
   key_values(@ratio_formula, args)
+  @ratio_formula.account_entry_names = @ratio_formula.account_entry_names.split(",").map(&:strip) if @ratio_formula.account_entry_names.is_a?(String)
   @ratio_formula.save!
+end
+
+Given('I inspect the ratio formulas') do
+  puts "RatioFormulas"
+  RatioFormula.all.each do |rf|
+    puts "#{rf.id}: #{rf.level} #{rf.ratio} #{rf.action} #{rf.period} #{rf.account_entry_names}"
+  end
 end
 
 Given('there is an AccountEntry {string} for the fund') do |args|
@@ -145,4 +153,12 @@ rescue Capybara::ElementNotFound
 
   # Wait for dropdown and select option
   find('.select2-results__option', text: value).click
+end
+
+And('the same owner should not have multiple ratios with same label') do
+  FundRatio.group(:owner_type,:owner_id, :fund_id, :end_date, :name).having('COUNT(*) > 0').count.each do |key, count|
+    owner_type, owner_id, fund_id, end_date, name = key
+    puts "Owner #{owner_type} #{owner_id} Fund #{fund_id} End Date #{end_date} Name '#{name}'has #{count} ratios"
+    expect(count).to eq(1), "Expected only 1 ratio for owner #{owner_type} #{owner_id} fund #{fund_id} end_date #{end_date} name '#{name}', but found #{count}"
+  end
 end

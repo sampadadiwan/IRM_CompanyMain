@@ -161,6 +161,9 @@ class SoaGenerator
       portfolio_company_allocations: TemplateDecorator.decorate_collection(portfolio_company_allocations(capital_commitment, start_date, end_date)),
       portfolio_company_cumulative_folio_entries: TemplateDecorator.decorate_collection(portfolio_company_cumulative_folio_entries(capital_commitment, start_date, end_date))
     }
+
+    add_fund_ratios_context(@context, capital_commitment, start_date, end_date)
+
     # This is only for dumping keys for debugging inside the template
     @context.store :context, DocGenContext.new(@context)
     @context
@@ -251,7 +254,43 @@ class SoaGenerator
       portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
     end
 
+    add_company_fund_ratios(portfolio_company_entries_map, capital_commitment.fund, end_date)
+
     portfolio_company_entries_map.values
+  end
+
+  # Adds each portfolio company's latest ratios (IRR, MOIC, etc. computed with owner_type
+  # "Investor" - portfolio companies are modeled as Investor records) into the
+  # portfolio_company_entries_map built by the caller, so templates can reference e.g.
+  # `pcratio_irr` alongside the company's other account-entry fields. Mutates entries already
+  # present in the map; companies with no existing entry are skipped since there's nothing to
+  # attach the ratio to.
+  def add_company_fund_ratios(portfolio_company_entries_map, fund, end_date)
+    # Get the latest fund ratios for each unique ratio name from Investor owners
+    fund_ratios = fund.fund_ratios
+                      .where(owner_type: "Investor", end_date: ..end_date)
+                      .where("(owner_id, name, end_date) IN (
+                        SELECT owner_id, name, MAX(end_date)
+                        FROM fund_ratios
+                        WHERE fund_id = ? AND owner_type = ? AND end_date <= ?
+                        GROUP BY owner_id, name
+                      )", fund.id, "Investor", end_date)
+                      .includes(:owner)
+                      .to_a
+
+    # Add ratios to matching portfolio company entries
+    fund_ratios.each do |ratio|
+      investor = ratio.owner
+      next unless investor.is_a?(Investor)
+
+      portfolio_company_name = investor.investor_name
+      portfolio_company_entry = portfolio_company_entries_map[portfolio_company_name]
+      next unless portfolio_company_entry
+
+      ratio_key = "pcratio_#{ratio.name.parameterize.underscore}"
+      portfolio_company_entry[ratio_key] = ratio.value
+      portfolio_company_entries_map[portfolio_company_name] = portfolio_company_entry
+    end
   end
 
   def remittance_amounts(remittances, currency)
@@ -340,6 +379,52 @@ class SoaGenerator
     capital_commitment.account_entries.pluck(:name).uniq.each do |name|
       context["cumulative_account_entry"][name.delete(' ').underscore] = capital_commitment.cumulative_account_entry(name, nil, start_date, end_date).decorate
     end
+  end
+
+  # Exposes the latest fund-level and folio-level (this capital_commitment's) FundRatio values
+  # (XIRR, DPI, TVPI, etc.) to the template as `fund_lvl_ratios`/`folio_ratios`, keyed by the
+  # ratio's parameterized name (e.g. an "XIRR (USD)" ratio becomes `fund_lvl_ratios.xirr_usd`).
+  # Ratios are recomputed per end_date by FundRatiosJob and stored as one row per (owner, name,
+  # end_date), so for each distinct ratio name we need the most recent row at or before the
+  # requested end_date - hence the "(name, end_date) IN (... GROUP BY name)" subquery rather than
+  # a plain where(end_date:).
+  def add_fund_ratios_context(context, capital_commitment, _start_date, end_date)
+    fund_id = capital_commitment.fund_id
+
+    fund_ratios = FundRatio.where(fund_id: fund_id, owner_type: "Fund", end_date: ..end_date)
+                           .where("(name, end_date) IN (
+                              SELECT name, MAX(end_date)
+                              FROM fund_ratios
+                              WHERE fund_id = ? AND owner_type = ? AND owner_id = ? AND end_date <= ?
+                              GROUP BY name
+                            )", fund_id, "Fund", fund_id, end_date).to_a
+
+    fund_ratios_by_name = fund_ratios.index_by(&:name)
+    fund_ratios_struct = OpenStruct.new
+
+    fund_ratios_by_name.each do |name, ratio|
+      fund_ratios_struct[name.parameterize.underscore] = ratio.value.to_d
+    end
+
+    folio_ratios = capital_commitment.fund_ratios
+                                     .where(owner: capital_commitment, end_date: ..end_date)
+                                     .where("(name, end_date) IN (
+                                        SELECT name, MAX(end_date)
+                                        FROM fund_ratios
+                                        WHERE fund_id = ? AND owner_type = ? AND owner_id = ? AND end_date <= ?
+                                        GROUP BY name
+                                      )", fund_id, "CapitalCommitment", capital_commitment.id, end_date)
+                                     .to_a
+
+    folio_ratios_by_name = folio_ratios.index_by(&:name)
+    folio_ratios_struct = OpenStruct.new
+
+    folio_ratios_by_name.each do |name, ratio|
+      folio_ratios_struct[name.parameterize.underscore] = ratio.value.to_d
+    end
+
+    context[:fund_lvl_ratios] = TemplateDecorator.decorate(fund_ratios_struct)
+    context[:folio_ratios] = TemplateDecorator.decorate(folio_ratios_struct)
   end
 
   def generate_custom_fields(context, capital_commitment)

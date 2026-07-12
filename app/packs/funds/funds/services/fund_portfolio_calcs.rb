@@ -11,6 +11,10 @@ class FundPortfolioCalcs < FundRatioCalcs
     super()
   end
 
+  def ratio_formula_level
+    "Fund"
+  end
+
   def total_investment_costs_cents
     ticc = 0
     @fund.aggregate_portfolio_investments.each do |api|
@@ -62,47 +66,48 @@ class FundPortfolioCalcs < FundRatioCalcs
     @committed_cents ||= @fund.capital_commitments.sum(:committed_amount_cents)
   end
 
-  def dpi(use_tracking_currency: false)
+  def dpi(use_tracking_currency: false, label: nil)
     cc = collected_cents
     dc = distribution_cents
-    dc, cc = apply_static_formulas('DPI', dc, cc, use_tracking_currency)
+    dc, cc = apply_static_formulas('DPI', dc, cc, use_tracking_currency, ratio_formula_level, label: label)
     cc.positive? ? (dc / cc.to_f) : 0
   end
 
-  def rvpi(use_tracking_currency: false)
+  def rvpi(use_tracking_currency: false, label: nil)
     cc = collected_cents
     total_val = fmv_cents + net_current_assets_cents + cash_in_hand_cents
-    total_val, cc = apply_static_formulas('RVPI', total_val, cc, use_tracking_currency)
+    total_val, cc = apply_static_formulas('RVPI', total_val, cc, use_tracking_currency, ratio_formula_level, label: label, fmv: fmv_cents)
 
     cc.positive? ? (total_val / cc.to_f) : 0
   end
 
-  def tvpi(use_tracking_currency: false)
+  def tvpi(use_tracking_currency: false, label: nil)
     cc = collected_cents
     dc = distribution_cents
     rv = fmv_cents + net_current_assets_cents + cash_in_hand_cents
 
     numerator = dc + rv
-    numerator, cc = apply_static_formulas('TVPI', numerator, cc, use_tracking_currency)
+    numerator, cc = apply_static_formulas('TVPI', numerator, cc, use_tracking_currency, ratio_formula_level, label: label, fmv: fmv_cents)
 
     cc.positive? ? (numerator / cc.to_f) : 0
   end
 
+  # CHECK WHY NO LABEL
   def portfolio_value_to_cost(use_tracking_currency: false)
     ticc = total_investment_costs_cents
     fmv = fmv_cents
-    fmv, ticc = apply_static_formulas('Portfolio Value to Cost', fmv, ticc, use_tracking_currency)
+    fmv, ticc = apply_static_formulas('Portfolio Value to Cost', fmv, ticc, use_tracking_currency, ratio_formula_level, fmv: fmv_cents)
     ticc.positive? ? fmv / ticc.to_f : 0
   end
 
-  def paid_in_to_committed_capital(use_tracking_currency: false)
+  def paid_in_to_committed_capital(use_tracking_currency: false, label: nil)
     ccm = committed_cents
     clc = collected_cents
-    clc, ccm = apply_static_formulas('PIC', clc, ccm, use_tracking_currency)
+    clc, ccm = apply_static_formulas('PIC', clc, ccm, use_tracking_currency, ratio_formula_level, label: label)
     ccm.positive? ? clc / ccm.to_f : 0
   end
 
-  def gross_portfolio_irr(return_cash_flows: false, use_tracking_currency: false)
+  def gross_portfolio_irr(return_cash_flows: false, use_tracking_currency: false, label: nil)
     cf = XirrCashflow.new
 
     # Get the buy cash flows
@@ -127,11 +132,6 @@ class FundPortfolioCalcs < FundRatioCalcs
       cf << XirrTransaction.new(amount, date: sell.investment_date, notes: "Sold Amount") if amount.positive?
     end
 
-    # Get the FMV
-    fmv_val = convert_amount(@fund, fmv_on_date, @end_date, use_tracking_currency)
-
-    cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV on Date") if fmv_val.positive?
-
     # loop over all apis
     @fund.aggregate_portfolio_investments.each do |api|
       portfolio_cashflows = api.portfolio_cashflows.actual.where(payment_date: ..@end_date)
@@ -141,7 +141,14 @@ class FundPortfolioCalcs < FundRatioCalcs
       end
     end
 
-    apply_formula_cashflows(cf, "Gross Portfolio IRR", use_tracking_currency)
+    skip_portfolio_fmv = apply_formula_cashflows(cf, "Gross Portfolio IRR", use_tracking_currency, "Fund", label: label)
+
+    unless skip_portfolio_fmv
+      # Get the FMV only if no matching ratio formula has skip_portfolio_fmv set to true
+      fmv_val = convert_amount(@fund, fmv_on_date, @end_date, use_tracking_currency)
+
+      cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV on Date") if fmv_val.positive?
+    end
 
     cf.each { |cash_flow| Rails.logger.debug "#{cash_flow.date}, #{cash_flow.amount}, #{cash_flow.notes}" }
 
@@ -167,9 +174,8 @@ class FundPortfolioCalcs < FundRatioCalcs
     end
   end
 
-  def portfolio_company_irr(return_cash_flows: false, scenarios: nil, use_tracking_currency: false, synthetic_investments: [])
-    @portfolio_company_irr_map ||= {}
-    return @portfolio_company_irr_map unless @portfolio_company_irr_map.empty?
+  def portfolio_company_irr(return_cash_flows: false, scenarios: nil, use_tracking_currency: false, synthetic_investments: [], label: nil)
+    @portfolio_company_irr_map = {}
 
     portfolio_company_ids = @fund.portfolio_investments.pluck(:portfolio_company_id).uniq
     portfolio_company_ids.each do |portfolio_company_id|
@@ -177,7 +183,7 @@ class FundPortfolioCalcs < FundRatioCalcs
       portfolio_company = Investor.find(portfolio_company_id)
       portfolio_investments = @fund.portfolio_investments.where(portfolio_company_id: portfolio_company_id).before(@end_date)
 
-      cf, moic_data = get_company_cashflows_and_moic_data(portfolio_investments, portfolio_company_id, use_tracking_currency: use_tracking_currency, scenarios: scenarios)
+      cf, moic_data = get_company_cashflows_and_moic_data(portfolio_investments, portfolio_company_id, use_tracking_currency: use_tracking_currency, scenarios: scenarios, label: label)
       add_synthetic_investment_cashflows(cf, moic_data, synthetic_investments, portfolio_company_id, use_tracking_currency)
       cf = cf.reject { |cashflow| cashflow.notes.start_with?("FMV") } if synthetic_investments.present?
 
@@ -194,7 +200,7 @@ class FundPortfolioCalcs < FundRatioCalcs
     @portfolio_company_irr_map
   end
 
-  def get_company_cashflows_and_moic_data(portfolio_investments, portfolio_company_id, use_tracking_currency: false, scenarios: nil)
+  def get_company_cashflows_and_moic_data(portfolio_investments, portfolio_company_id, use_tracking_currency: false, scenarios: nil, label: nil)
     @portfolio_company_id = portfolio_company_id
     cf = XirrCashflow.new
     total_bought = 0.to_d
@@ -221,6 +227,8 @@ class FundPortfolioCalcs < FundRatioCalcs
       total_sold += amount
     end
 
+    skip_portfolio_fmv = apply_formula_cashflows(cf, "XIRR", use_tracking_currency, "PortfolioCompany", label: label)
+
     @fund.aggregate_portfolio_investments.where(portfolio_company_id: portfolio_company_id).find_each do |api|
       api.portfolio_cashflows.actual.where(portfolio_company_id: portfolio_company_id, payment_date: ..@end_date).find_each do |pcf|
         amount = convert_amount(@fund, pcf.amount_cents, pcf.payment_date, use_tracking_currency)
@@ -228,21 +236,20 @@ class FundPortfolioCalcs < FundRatioCalcs
       end
       fmv_val = fmv_on_date(api, scenarios: scenarios).round(4)
       fmv_val = convert_amount(@fund, fmv_val, @end_date, use_tracking_currency)
-      cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
+      cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0 && !skip_portfolio_fmv
       total_fmv += fmv_val
       Rails.logger.debug { "#{api.id} fmv = #{fmv_val}" }
     end
 
     total_amount = total_fmv + total_sold
-    total_amount, total_bought = apply_static_formulas('MOIC', total_amount, total_bought, use_tracking_currency)
-    apply_formula_cashflows(cf, "IRR", use_tracking_currency)
+    total_amount, total_bought = apply_static_formulas('MOIC', total_amount, total_bought, use_tracking_currency, "PortfolioCompany", label: label, fmv: total_fmv)
 
     moic_data = { total_bought: total_bought, total_sold: total_sold, total_fmv: total_fmv, total_amount: total_amount }
     [cf, moic_data]
   end
 
-  def portfolio_company_metrics(return_cash_flows: false, use_tracking_currency: false)
-    @portfolio_company_metrics_map ||= {}
+  def portfolio_company_metrics(return_cash_flows: false, use_tracking_currency: false, label: nil)
+    @portfolio_company_metrics_map = {}
 
     @fund.aggregate_portfolio_investments.pluck(:portfolio_company_id).uniq.each do |portfolio_company_id|
       @portfolio_company_id = portfolio_company_id
@@ -270,8 +277,8 @@ class FundPortfolioCalcs < FundRatioCalcs
       Rails.logger.debug { "Portfolio Company: #{portfolio_company_id}, Total FMV: #{total_fmv}, Total Sold: #{total_sold}, Bought Amount: #{bought_amount}, Cost of Remaining: #{cost_of_remaining}" }
 
       total_val = total_fmv + total_sold
-      total_val, bought_amount = apply_static_formulas('MOIC', total_val, bought_amount, use_tracking_currency)
-      adj_fmv, adj_cost_of_remaining = apply_static_formulas('Value to Cost', total_fmv, cost_of_remaining, use_tracking_currency)
+      total_val, bought_amount = apply_static_formulas('MOIC', total_val, bought_amount, use_tracking_currency, "PortfolioCompany", label: label, fmv: total_fmv)
+      adj_fmv, adj_cost_of_remaining = apply_static_formulas('Value to Cost', total_fmv, cost_of_remaining, use_tracking_currency, "PortfolioCompany", label: label, fmv: total_fmv)
 
       next unless adj_cost_of_remaining.positive?
 
@@ -290,8 +297,7 @@ class FundPortfolioCalcs < FundRatioCalcs
   end
 
   def api_irr(return_cash_flows: false, scenarios: nil, use_tracking_currency: false)
-    @api_irr_map ||= {}
-    return @api_irr_map unless @api_irr_map.empty?
+    @api_irr_map = {}
 
     @fund.aggregate_portfolio_investments.each do |api|
       portfolio_company_id = api.portfolio_company_id
@@ -326,7 +332,8 @@ class FundPortfolioCalcs < FundRatioCalcs
       fmv_val = convert_amount(@fund, fmv_on_date(api, scenarios:), @end_date, use_tracking_currency).round(4)
       cf << XirrTransaction.new(fmv_val, date: @end_date, notes: "FMV api: #{api}") if fmv_val != 0
 
-      apply_formula_cashflows(cf, "IRR", use_tracking_currency)
+      # There are no API level ratio formulas
+      apply_formula_cashflows(cf, "IRR", use_tracking_currency, nil)
 
       lxirr = XirrApi.new.xirr(cf, "api_irr:#{api.id}")
       xirr_val = lxirr ? (lxirr * 100).round(2) : 0
@@ -337,7 +344,7 @@ class FundPortfolioCalcs < FundRatioCalcs
   end
 
   def api_cost_to_value(return_cash_flows: false)
-    @api_cost_map ||= {}
+    @api_cost_map = {}
 
     @fund.aggregate_portfolio_investments.each do |api|
       api_as_of = api.as_of(@end_date)
@@ -347,8 +354,8 @@ class FundPortfolioCalcs < FundRatioCalcs
       bought_amount = api_as_of.bought_amount.to_f
 
       total_val = fmv + sold_amount
-      adj_total_val, bought_amount = apply_static_formulas('MOIC', total_val, bought_amount, false)
-      adj_fmv, adj_cost_of_remaining = apply_static_formulas('Value to Cost', fmv, cost_of_remaining, false)
+      adj_total_val, bought_amount = apply_static_formulas('MOIC', total_val, bought_amount, false, nil, fmv: fmv)
+      adj_fmv, adj_cost_of_remaining = apply_static_formulas('Value to Cost', fmv, cost_of_remaining, false, nil, fmv: fmv)
 
       next unless adj_cost_of_remaining.positive?
 
@@ -375,11 +382,11 @@ class FundPortfolioCalcs < FundRatioCalcs
     total_fmv_on_end_date_cents
   end
 
-  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false)
-    super(model: @fund, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:)
+  def xirr(net_irr: false, return_cash_flows: false, adjustment_cash: 0, scenarios: nil, use_tracking_currency: false, label: nil)
+    super(model: @fund, net_irr:, return_cash_flows:, adjustment_cash:, scenarios:, use_tracking_currency:, label:, level: ratio_formula_level)
   end
 
-  def moic(synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false)
-    super(model: @fund, synthetic_investments:, use_tracking_currency:, return_cash_flows:)
+  def moic(synthetic_investments: [], use_tracking_currency: false, return_cash_flows: false, label: nil)
+    super(model: @fund, synthetic_investments:, use_tracking_currency:, return_cash_flows:, label:, level: ratio_formula_level)
   end
 end

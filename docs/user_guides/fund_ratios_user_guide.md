@@ -258,7 +258,9 @@ In short, a formula says *"for this ratio, take these named amounts and add or s
 
 **Example — boosting DPI with a fee rebate:** create a formula on *DPI* that **adds** the "Fee Rebate" amount to the value (numerator) side. From then on, generated DPI includes the rebate in distributions before dividing by capital paid in.
 
-> Ratio formulas have their own detailed guide covering every adjustment type, scope, and period option. See the **[Ratio Formulas User Guide](ratio_formulas_user_guide)**.
+You can also give a set of formulas a shared **label** so they produce a separate, additional ratio (e.g. "xirr outflow" alongside the standard "XIRR") instead of adjusting the standard figure — handy for showing variants side by side.
+
+> Ratio formulas have their own detailed guide covering every adjustment type, scope, period option, and label grouping. See the **[Ratio Formulas User Guide](ratio_formulas_user_guide)**.
 
 ---
 

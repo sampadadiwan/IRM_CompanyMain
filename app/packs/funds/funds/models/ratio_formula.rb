@@ -18,10 +18,13 @@ class RatioFormula < ApplicationRecord
   enumerize :period, in: %w[as_on all], default: 'as_on'
 
   validates :level, :action, :period, presence: true
+  validates :label, length: { maximum: 30 }
+  validates :entry_type, length: { maximum: 60 }
   validates :ratio, presence: true
-  validates :account_entry_names, presence: true
 
   before_validation :normalize_account_entry_names
+  before_validation :clean_ratio_attr
+  before_validation :clean_label_attr
 
   def to_s
     "#{level} #{action} for #{account_entry_names.join(', ')}"
@@ -36,6 +39,21 @@ class RatioFormula < ApplicationRecord
   end
 
   private
+
+  def clean_ratio_attr
+    self.ratio = nil if ratio.blank?
+
+    return unless ratio.is_a?(String)
+
+    self.ratio = ratio.strip
+  end
+
+  def clean_label_attr
+    self.label = nil if label.blank?
+    return unless label.is_a?(String)
+
+    self.label = label.strip
+  end
 
   def normalize_account_entry_names
     self.account_entry_names = if account_entry_names.is_a?(String)
