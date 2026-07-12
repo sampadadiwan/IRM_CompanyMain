@@ -22,7 +22,7 @@
 
   <script src="/modernize/libs/jquery/dist/jquery.min.js"></script>
   <script src="/modernize/libs/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-  
+
     <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
     <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
     <!-- For sorting deal activities -->
@@ -39,7 +39,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
-    
+
     <!-- Tracking -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-4CPQNX69HM"></script>
     <script src="/js/clarity.js"></script>
@@ -48,7 +48,7 @@
     <script src='/lib/webviewer.min.js'></script>
     <script src='/lib/core/webviewer-core.min.js'></script>
     <script src='/lib/core/pdf/PDFNet.js'></script>
-    
+
     <script src="https://releases.transloadit.com/uppy/v2.12.1/uppy.min.js"></script>
 
     <link href="https://releases.transloadit.com/uppy/v2.12.1/uppy.min.css" rel="stylesheet">
@@ -56,10 +56,10 @@
 
     <script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
 
-    
+
      <!-- Include the JS for AG Grid -->
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@30.2.1/dist/ag-grid-enterprise.min.js"></script>
-    
+
     <!-- Include the core CSS, this is needed by the grid -->
     <link rel="stylesheet"
       href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
@@ -73,7 +73,7 @@
 
     <script>
         $( document ).on('turbo:load', function() {
-            setTimeout(function() {$('select').select2()}, 500);                                
+            setTimeout(function() {$('select').select2()}, 500);
         });
     </script>
 
@@ -91,12 +91,12 @@
     <%= render "navigation" %>
 
     <div class="page-wrapper">
-      
+
       <%= render "/layouts/modernize/topbar" %>
       <%#= render "/layouts/modernize/sidebar_horizontal" %>
-      
+
       <div class="body-wrapper">
-        <div class="container-fluid mw-100">
+        <main class="container-fluid mw-100">
 
           <%= turbo_stream_from current_user, "user_alert" if current_user %>
           <div id="user_alert"></div>
@@ -113,14 +113,14 @@
           <span id="alert"></span>
 
           <%= render "/layouts/breadcrumbs" %>
-          
+
           <%= yield %>
-        </div>
+        </main>
       </div>
-      
+
     </div>
 
-    <%= render "/layouts/logout_modal" %>    
+    <%= render "/layouts/logout_modal" %>
     <%= render "/layouts/confirm" %>
     <%= render "/layouts/terms" if (current_user && !current_user.accept_terms) %>
 
@@ -133,7 +133,7 @@
   <script src="/modernize/libs/simplebar/dist/simplebar.min.js"></script>
   <script src="/modernize/js/sidebarmenu.js"></script>
 
-  
+
 </body>
 
 </html>

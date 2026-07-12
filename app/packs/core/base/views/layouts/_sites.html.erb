@@ -4,7 +4,12 @@
   <div class="form-group" data-controller="persona">
     <% selected = params[:site].present? ? params[:site] : ENV["CURRENT_SITE"] %>
     <%= form.select :site, current_user.regions.split(",").map(&:strip ), {selected: selected},
-        { id: "site", class: "form-control", name: "site",
+        { id: "site",
+         class: "form-control",
+          name: "site",
+          aria: {
+          label: "Choose Region"
+        },
         data: { action: "change->persona#setRegion", toggle: "tooltip", title: "Choose Region" } } %>
   </div>
 

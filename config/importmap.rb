@@ -39,6 +39,7 @@ pin "highcharts/modules/offline-exporting", to: "highcharts-offline-exporting.js
 pin "highcharts/modules/sankey", to: "highcharts-sankey.js"
 pin "highcharts/modules/heatmap", to: "highcharts-heatmap.js"
 pin "highcharts/modules/funnel", to: "highcharts-funnel.js"
+pin "highcharts/modules/accessibility", to: "highcharts-accessibility.js"
 
 # config/importmap.rb
 # Remove ANY pins for "chart.js/auto"

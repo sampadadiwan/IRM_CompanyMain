@@ -4,7 +4,7 @@
 
     <% if current_user && current_user.entity %>
         <a class="nav-link nav-icon-hover" href="javascript:void(0)" id="drop3" data-bs-toggle="dropdown"
-            aria-expanded="false">
+            aria-expanded="false" aria-haspopup="true" aria-label="Open company menu" title="Company menu">
             <i class="ti ti-home"></i>
             <div class="bg-primary rounded-circle"></div>
         </a>
@@ -16,7 +16,7 @@
 
     <% if current_user %>
     <div class="dropdown-menu content-dd dropdown-menu-end dropdown-menu-animate-up"
-            aria-labelledby="drop3" id="company_menus">
+            aria-labelledby="drop3" aria-label="Company menu" id="company_menus">
     <div class="profile-dropdown position-relative data-simplebar" data-simplebar>
 
 

@@ -7,8 +7,9 @@
       </button>
       <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
 
-        <%= link_to capital_remittance_path(capital_remittance), class: "dropdown-item" do %>
-          <i class="ti ti-eye"></i>Show
+        <% details_label = "Show details for Capital Commitment #{capital_remittance.capital_commitment_id}" %>
+        <%= link_to capital_remittance_path(capital_remittance), class: "dropdown-item", title: details_label, aria: { label: details_label }, data: { bs_toggle: "tooltip", bs_container: "body", bs_title: details_label } do %>
+          <i class="ti ti-eye"></i> <%= t_common(:view) %>
         <% end %>
 
         <%= link_to new_capital_remittance_payment_path("capital_remittance_payment[capital_remittance_id]": capital_remittance.id),
@@ -64,7 +65,8 @@
 
   </div>
 <% else %>
-  <%= link_to capital_remittance_path(capital_remittance), class: "btn btn-outline-primary d-inline-flex align-items-center" do %>
+  <% details_label = "Show details for Capital Commitment #{capital_remittance.capital_commitment_id}" %>
+  <%= link_to capital_remittance_path(capital_remittance), class: "btn btn-outline-primary d-inline-flex align-items-center", title: details_label, aria: { label: details_label }, data: { bs_toggle: "tooltip", bs_container: "body", bs_title: details_label } do %>
     <i class="ti ti-eye"></i> <%= t_common(:view) %>
   <% end %>
 <% end %>

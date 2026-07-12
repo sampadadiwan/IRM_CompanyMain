@@ -356,6 +356,20 @@ table.dataTable > thead .sorting_desc_disabled:after {
   opacity: 0;
 }
 
+/* Improve contrast for sorting arrows on Capital Calls grid headers */
+#capital_calls.dataTable > thead .sorting:before,
+#capital_calls.dataTable > thead .sorting:after,
+#capital_calls.dataTable > thead .sorting_asc:before,
+#capital_calls.dataTable > thead .sorting_asc:after,
+#capital_calls.dataTable > thead .sorting_desc:before,
+#capital_calls.dataTable > thead .sorting_desc:after,
+#capital_calls.dataTable > thead .sorting_asc_disabled:before,
+#capital_calls.dataTable > thead .sorting_asc_disabled:after,
+#capital_calls.dataTable > thead .sorting_desc_disabled:before,
+#capital_calls.dataTable > thead .sorting_desc_disabled:after {
+  color: #ffffff;
+}
+
 div.dataTables_scrollHead table.dataTable {
   margin-bottom: 0 !important;
 }

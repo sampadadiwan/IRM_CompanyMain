@@ -1,5 +1,5 @@
 <% if current_user.enable_funds %>
-<div class="row">
+<div class="row vc-dashboard-menus">
 
     <% if @current_entity&.permissions&.enable_data_rooms? && @current_entity&.data_room_folder %>
     <div class="col">
@@ -14,7 +14,7 @@
                     <h3 class="mb-0 fs-6">
                         Data Rooms
                     </h3>
-                    <span class="text-muted">Shared Docs</span>
+                    <span class="vc-menu-subtitle">Shared Docs</span>
                 </div>
                 </div>
             </a>
@@ -32,10 +32,10 @@
                     <i class="ti ti-grid-dots fs-6"></i>
                 </div>
                 <div class="ms-3 align-self-center">
-                    <h3 class="mb-0 fs-6">
+                    <h2 class="mb-0 fs-6">
                         Commitments
-                    </h3>
-                    <span class="text-muted">All Your Commitments</span>
+                    </h2>
+                    <span class="vc-menu-subtitle">All Your Commitments</span>
                 </div>
                 </div>
             </a>
@@ -53,10 +53,10 @@
                     <i class="ti ti-file-check fs-6"></i>
                 </div>
                 <div class="ms-3 align-self-center">
-                    <h3 class="mb-0 fs-6">
+                    <h2 class="mb-0 fs-6">
                         KYC's
-                    </h3>
-                    <span class="text-muted">Your KYC Info</span>
+                    </h2>
+                    <span class="vc-menu-subtitle">Your KYC Info</span>
                 </div>
                 </div>
             </a>
@@ -73,10 +73,10 @@
                     <i class="ti ti-credit-card fs-6"></i>
                 </div>
                 <div class="ms-3 align-self-center">
-                    <h3 class="mb-0 fs-6">
+                    <h2 class="mb-0 fs-6">
                         Statements
-                    </h3>
-                    <span class="text-muted">Documents & Agreements</span>
+                    </h2>
+                    <span class="vc-menu-subtitle">Documents & Agreements</span>
                 </div>
                 </div>
             </a>

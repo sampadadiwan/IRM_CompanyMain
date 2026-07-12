@@ -5,6 +5,7 @@ import "highcharts/modules/offline-exporting"
 import "highcharts/modules/sankey"
 import "highcharts/modules/heatmap"
 import "highcharts/modules/funnel"
+import "highcharts/modules/accessibility"
 
 // Make Highcharts globally available for Chartkick and other scripts
 window.Highcharts = Highcharts

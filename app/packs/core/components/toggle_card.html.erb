@@ -1,14 +1,14 @@
 <div class="card shadow mb-4" data-controller="<%= @controller %>">
   <div class="card-header py-3 d-flex align-items-center justify-content-between">
-    <h6 class="m-0 font-weight-bold text-primary cursor-pointer" data-bs-toggle="collapse" href=".<%= @css_class %>"><%= @title %></h6>
+    <h1 class="toggle-card-title m-0 font-weight-bold text-primary cursor-pointer" data-bs-toggle="collapse" href=".<%= @css_class %>"><%= @title %></h1>
 
     <span class="d-flex align-items-center">
         <!-- Render the header slot if provided -->
         <%= header if header.present? %>
 
       <% if @allow_toggle %>
-        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".<%= @css_class %>">
-          <i class="fa-solid fa-caret-down"></i>
+        <a class="btn btn-outline-primary show_details_link" data-bs-toggle="collapse" href=".<%= @css_class %>" aria-label="Toggle section details" title="Toggle section details" aria-expanded="false">
+          <i class="fa-solid fa-caret-down" aria-hidden="true"></i>
         </a>
       <% end %>
 
