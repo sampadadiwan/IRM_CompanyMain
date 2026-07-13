@@ -110,6 +110,13 @@ module Rack
     # Attacker waits 10 seconds	Still blocked (not reset)
     # Attacker tries again after 5 minutes	Allowed again
     throttle('limit_404_errors', limit: 5, period: 10.seconds) do |req|
+      # SECURITY (finding M4 follow-up): the 404 scanner defenses target unauthenticated probes.
+      # Authenticated humans routinely generate benign 404s (missing assets, stale Turbo/AJAX
+      # endpoints, deleted records) and often share a NATed office/VPN IP, so applying this
+      # IP-keyed block to them mass-blocked real users. Exempt logged-in users here; they remain
+      # subject to the login brute-force throttle above, which is what finding M4 required.
+      next nil if logged_in?(req)
+
       bad_request_count = Rails.cache.fetch("rack::attack:404:#{req.ip}", raw: true) { 0 }.to_i
       throttle_request = bad_request_count > 5
 
@@ -130,6 +137,11 @@ module Rack
     # Attacker sends the 11th request	Blocked for 10 minutes
     # After 10 minutes, they can try again	Can request again
     blocklist('block_ip_after_repeated_404s') do |req|
+      # SECURITY (finding M4 follow-up): see limit_404_errors above — exempt authenticated users
+      # from the IP-keyed 404 blocklist so shared-IP logged-in users are not mass-blocked. The
+      # login brute-force throttle still applies to them.
+      next false if logged_in?(req)
+
       bad_request_count = Rails.cache.fetch("rack::attack:404:#{req.ip}", raw: true) { 0 }.to_i
       block_request = bad_request_count > 10
 
