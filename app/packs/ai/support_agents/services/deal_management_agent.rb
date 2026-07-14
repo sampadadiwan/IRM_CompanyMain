@@ -916,6 +916,8 @@ class DealManagementAgent < SupportAgentService
     sequence_map = templates.to_h { |id, _title, seq| [id, seq] }
 
     preset_steps = parse_preset_steps
+    # Pre-load investor names to avoid N+1 inside the audit loop
+    name_map = DealInvestor.where(id: di_ids).pluck(:id, :investor_name).to_h
     transitions = Hash.new(0)
     details = []
 
@@ -932,6 +934,7 @@ class DealManagementAgent < SupportAgentService
       transitions[key] += 1
       details << {
         investor_id: audit.auditable_id,
+        investor_name: name_map[audit.auditable_id],
         from_step: from_title,
         to_step: to_title,
         from_sequence: from_seq,
@@ -1007,7 +1010,8 @@ class DealManagementAgent < SupportAgentService
 
     {
       id: task.id,
-      title: String(ActionController::Base.helpers.strip_tags(task.read_attribute(:details))).truncate(80),
+      # Raw column first; fall back to ActionText for UI-created tasks where raw is empty
+      title: (task.read_attribute(:details).presence || task.details.try(:to_plain_text)).to_s.truncate(80),
       company_name: company_name,
       responsible: task.assigned_to&.name,
       due_date: task.due_date&.iso8601,
