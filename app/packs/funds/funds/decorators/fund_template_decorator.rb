@@ -5,6 +5,7 @@ class FundTemplateDecorator < TemplateDecorator
 
   DIST_CASH_SQL = "gross_payable_cents - reinvestment_with_fees_cents".freeze
   DUE_AMOUNT_SQL = "capital_remittances.call_amount_cents + capital_remittances.other_fee_cents".freeze
+  TOTAL_INCOME_SQL = "income_with_fees_cents + tax_with_fees_cents + expense_with_fees_cents".freeze
 
   METHODS_START_WITH = %w[money_].freeze
   attr_reader :as_of_date, :currency, :capital_commitment, :capital_remittance
@@ -1848,6 +1849,68 @@ class FundTemplateDecorator < TemplateDecorator
   memoize :dist_expense_incl_kyc
 
   def dist_expense_incl_kyc_percent = percentage(dist_expense_incl_kyc, dist_expense_incl_total)
+
+  # ================== DIST Expense ==================
+
+  # PRIOR
+  def dist_total_inc_comp_prior_lp = money_sum(fund_dist_payments_lp_prior, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_prior_lp
+
+  def dist_total_inc_comp_prior_gp = money_sum(fund_dist_payments_gp_prior, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_prior_gp
+
+  def dist_total_inc_comp_prior_total = dist_total_inc_comp_prior_lp + dist_total_inc_comp_prior_gp
+  memoize :dist_total_inc_comp_prior_total
+
+  def dist_total_inc_comp_prior_investor = money_sum(comm_dist_payments_prior, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_prior_investor
+
+  def dist_total_inc_comp_prior_investor_percent = percentage(dist_total_inc_comp_prior_investor, dist_total_inc_comp_prior_total)
+
+  def dist_total_inc_comp_prior_kyc = money_sum(kyc_dist_payments_prior, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_prior_kyc
+
+  def dist_total_inc_comp_prior_kyc_percent = percentage(dist_total_inc_comp_prior_kyc, dist_total_inc_comp_prior_total)
+
+  # CURRENT
+  def dist_total_inc_comp_curr_lp = money_sum(fund_dist_payments_lp_curr, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_curr_lp
+
+  def dist_total_inc_comp_curr_gp = money_sum(fund_dist_payments_gp_curr, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_curr_gp
+
+  def dist_total_inc_comp_curr_total = dist_total_inc_comp_curr_lp + dist_total_inc_comp_curr_gp
+  memoize :dist_total_inc_comp_curr_total
+
+  def dist_total_inc_comp_curr_investor = money_sum(comm_dist_payments_curr, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_curr_investor
+
+  def dist_total_inc_comp_curr_investor_percent = percentage(dist_total_inc_comp_curr_investor, dist_total_inc_comp_curr_total)
+
+  def dist_total_inc_comp_curr_kyc = money_sum(kyc_dist_payments_curr, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_curr_kyc
+
+  def dist_total_inc_comp_curr_kyc_percent = percentage(dist_total_inc_comp_curr_kyc, dist_total_inc_comp_curr_total)
+
+  # INCLUDING Current Notice Date
+  def dist_total_inc_comp_incl_lp = money_sum(fund_dist_payments_lp, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_incl_lp
+
+  def dist_total_inc_comp_incl_gp = money_sum(fund_dist_payments_gp, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_incl_gp
+
+  def dist_total_inc_comp_incl_total = dist_total_inc_comp_incl_lp + dist_total_inc_comp_incl_gp
+  memoize :dist_total_inc_comp_incl_total
+
+  def dist_total_inc_comp_incl_investor = money_sum(comm_dist_payments, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_incl_investor
+
+  def dist_total_inc_comp_incl_investor_percent = percentage(dist_total_inc_comp_incl_investor, dist_total_inc_comp_incl_total)
+
+  def dist_total_inc_comp_incl_kyc = money_sum(kyc_dist_payments, TOTAL_INCOME_SQL)
+  memoize :dist_total_inc_comp_incl_kyc
+
+  def dist_total_inc_comp_incl_kyc_percent = percentage(dist_total_inc_comp_incl_kyc, dist_total_inc_comp_incl_total)
 
   # ================== DIST Display Only ==================
 

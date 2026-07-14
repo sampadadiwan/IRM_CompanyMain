@@ -52,7 +52,7 @@
 
       <div class="form-group" data-controller="currencyformat">
         <%= form.label :amount %> <span class="formatted_currency"></span>
-        <%= form.text_field :amount, class: "form-control", step: :any, data: {action: "input->currencyformat#format"}   %>
+        <%= form.text_field :amount, value: account_entry.amount_cents / 100.0, class: "form-control", step: :any, data: {action: "input->currencyformat#format"}   %>
       </div>
 
       <% if params[:debug].present? %>
