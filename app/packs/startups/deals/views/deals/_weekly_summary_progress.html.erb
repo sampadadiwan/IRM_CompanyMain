@@ -80,7 +80,7 @@
           <ul class="list-group list-group-flush small ms-4">
             <% details.each do |d| %>
               <li class="list-group-item px-0 py-1 border-0">
-                Investor #<%= d["investor_id"] %>
+                <%= d["investor_name"] || "Investor ##{d["investor_id"]}" %>
                 <span class="text-muted ms-1">(<%= Time.parse(d["changed_at"]).strftime("%d %b") %>)</span>
               </li>
             <% end %>

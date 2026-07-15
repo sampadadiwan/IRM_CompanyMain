@@ -65,13 +65,13 @@
             </div>
             <p class="fw-semibold mb-1 small"><%= highlighted["title"] %></p>
             <% if highlighted["responsible"].present? %>
-              <p class="text-muted mb-0 small">Responsible: <%= highlighted["responsible"] %></p>
+              <p class="text-muted mb-0 small">Assigned to: <%= highlighted["responsible"] %></p>
             <% end %>
             <% if highlighted["due_date"].present? %>
               <p class="text-muted mb-0 small">Due Date: <%= Time.parse(highlighted["due_date"]).strftime("%d %b %Y") %></p>
             <% end %>
             <% if defined?(deal) && deal.present? %>
-              <%= link_to "View all overdue &rarr;".html_safe, deal_path(deal, tab: "tasks"), class: "small text-decoration-none d-block mt-2" %>
+              <%= link_to "View all overdue &rarr;".html_safe, tasks_path(deal_id: deal.id), class: "small text-decoration-none d-block mt-2" %>
             <% end %>
           </div>
         <% else %>
@@ -95,10 +95,12 @@
           <table class="table table-sm table-hover align-middle mb-0">
             <thead style="background-color: #f8f9fb;">
               <tr>
-                <th class="ps-3 py-2">Task</th>
-                <th class="py-2">Deal / Company</th>
-                <th class="py-2">Responsible</th>
-                <th class="text-center py-2">Due Date</th>
+                <th class="ps-3 py-2">Details</th>
+                <th class="py-2">For</th>
+                <th class="py-2">Assigned to</th>
+                <th class="text-center py-2">Due</th>
+                <th class="text-center py-2">Completed</th>
+                <th class="py-2">Category</th>
               </tr>
             </thead>
             <tbody>
@@ -110,6 +112,8 @@
                   <td class="text-center py-2">
                     <span class="text-danger small fw-medium"><%= task["due_date"].present? ? Time.parse(task["due_date"]).strftime("%d %b %Y") : "—" %></span>
                   </td>
+                  <td class="text-center py-2"><%= task["completed"] ? "Yes" : "No" %></td>
+                  <td class="py-2"><%= task["category"] || "—" %></td>
                 </tr>
               <% end %>
             </tbody>
@@ -117,7 +121,7 @@
         </div>
         <% if defined?(deal) && deal.present? && overdue_count > overdue_tasks.size %>
           <div class="text-center mb-3">
-            <%= link_to "View all overdue tasks &rarr;".html_safe, deal_path(deal, tab: "tasks"), class: "small text-decoration-none" %>
+            <%= link_to "View all overdue tasks &rarr;".html_safe, tasks_path(deal_id: deal.id), class: "small text-decoration-none" %>
           </div>
         <% end %>
       </div>
@@ -131,11 +135,12 @@
           <table class="table table-sm table-hover align-middle mb-0">
             <thead style="background-color: #f8f9fb;">
               <tr>
-                <th class="ps-3 py-2">Task</th>
-                <th class="py-2">Deal / Company</th>
-                <th class="py-2">Responsible</th>
-                <th class="text-center py-2">Due Date</th>
-                <th class="text-center py-2">Status</th>
+                <th class="ps-3 py-2">Details</th>
+                <th class="py-2">For</th>
+                <th class="py-2">Assigned to</th>
+                <th class="text-center py-2">Due</th>
+                <th class="text-center py-2">Completed</th>
+                <th class="py-2">Category</th>
               </tr>
             </thead>
             <tbody>
@@ -145,9 +150,8 @@
                   <td class="py-2"><%= task["company_name"] || "—" %></td>
                   <td class="py-2"><%= task["responsible"] || "—" %></td>
                   <td class="text-center py-2"><%= task["due_date"].present? ? Time.parse(task["due_date"]).strftime("%d %b %Y") : "—" %></td>
-                  <td class="text-center py-2">
-                    <span class="badge bg-warning text-dark rounded-pill"><%= task["status"] || "Pending" %></span>
-                  </td>
+                  <td class="text-center py-2"><%= task["completed"] ? "Yes" : "No" %></td>
+                  <td class="py-2"><%= task["category"] || "—" %></td>
                 </tr>
               <% end %>
             </tbody>
@@ -155,7 +159,7 @@
         </div>
         <% if defined?(deal) && deal.present? %>
           <div class="text-center mb-3">
-            <%= link_to "View all tasks &rarr;".html_safe, deal_path(deal, tab: "tasks"), class: "small text-decoration-none" %>
+            <%= link_to "View all tasks &rarr;".html_safe, tasks_path(deal_id: deal.id), class: "small text-decoration-none" %>
           </div>
         <% end %>
       </div>
@@ -169,11 +173,12 @@
           <table class="table table-sm table-hover align-middle mb-0">
             <thead style="background-color: #f8f9fb;">
               <tr>
-                <th class="ps-3 py-2">Task</th>
-                <th class="py-2">Deal / Company</th>
-                <th class="py-2">Responsible</th>
-                <th class="text-center py-2">Due Date</th>
-                <th class="text-center py-2">Status</th>
+                <th class="ps-3 py-2">Details</th>
+                <th class="py-2">For</th>
+                <th class="py-2">Assigned to</th>
+                <th class="text-center py-2">Due</th>
+                <th class="text-center py-2">Completed</th>
+                <th class="py-2">Category</th>
               </tr>
             </thead>
             <tbody>
@@ -183,9 +188,8 @@
                   <td class="py-2"><%= task["company_name"] || "—" %></td>
                   <td class="py-2"><%= task["responsible"] || "—" %></td>
                   <td class="text-center py-2"><%= task["due_date"].present? ? Time.parse(task["due_date"]).strftime("%d %b %Y") : "—" %></td>
-                  <td class="text-center py-2">
-                    <span class="badge bg-success rounded-pill">Completed</span>
-                  </td>
+                  <td class="text-center py-2"><%= task["completed"] ? "Yes" : "No" %></td>
+                  <td class="py-2"><%= task["category"] || "—" %></td>
                 </tr>
               <% end %>
             </tbody>
@@ -193,7 +197,7 @@
         </div>
         <% if defined?(deal) && deal.present? && completed_count > completed_tasks.size %>
           <div class="text-center mb-3">
-            <%= link_to "View all completed tasks &rarr;".html_safe, deal_path(deal, tab: "tasks"), class: "small text-decoration-none" %>
+            <%= link_to "View all completed tasks &rarr;".html_safe, tasks_path(deal_id: deal.id), class: "small text-decoration-none" %>
           </div>
         <% end %>
       </div>

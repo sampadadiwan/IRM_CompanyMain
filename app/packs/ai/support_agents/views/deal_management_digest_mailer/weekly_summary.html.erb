@@ -1,3 +1,12 @@
+<%#
+  Weekly summary email template for DealManagementDigestMailer#weekly_summary.
+  Renders period deltas, stagnation breakdown, task summaries, and AI insight.
+  @param @deal [Deal] the target deal
+  @param @period_deltas [Hash] period delta counts and details
+  @param @stagnation [Hash] stagnation breakdown data
+  @param @tasks_summary [Hash] overdue/pending/completed task data
+  @param @ai_insight [String, nil] LLM-generated one-liner insight
+%>
 <%
   dashboard_url = weekly_summary_deal_url(@deal)
 
@@ -79,7 +88,7 @@
 <%# ── Stagnation Breakdown (only if there are stagnant investors) ── %>
 <% if stagnant_total > 0 %>
   <%= sa_section(title: "Stagnation Breakdown") %>
-  <% stagnant_days = @stagnation[:stagnant_days] || @stagnation["stagnant_days"] || 7 %>
+  <% stagnant_days = @stagnation[:stagnant_days] || @stagnation["stagnant_days"] || 14 %>
   <% if newly_stagnant > 0 %>
     <%= sa_callout(
       tone:    :danger,

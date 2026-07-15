@@ -1,0 +1,47 @@
+<%#
+  Turbo Frame partial for step transition checkboxes.
+  Loaded inside _deal_management_config and reloaded via deal_steps action when deal changes.
+  @param deal [Deal, nil] the selected deal (nil when no deal chosen yet)
+  @param transition_pairs [Array<Hash>] step transition options with :value and :label keys
+  @param selected [Set<String>] currently selected transition values (e.g. "1-2")
+%>
+<turbo-frame id="deal-steps-frame">
+  <% if deal.present? && transition_pairs.any? %>
+    <div class="card mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Step Transitions for "<%= deal.name %>"</strong>
+        <span class="badge bg-primary rounded-pill" data-deal-management-config-target="count">All</span>
+      </div>
+      <div class="card-body">
+        <p class="text-muted small mb-3">
+          Select which step transitions to show in the weekly summary progress section.
+          Leave all unchecked to include all transitions.
+        </p>
+        <% transition_pairs.each do |pair| %>
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox"
+                   id="preset_step_<%= pair[:value] %>"
+                   value="<%= pair[:value] %>"
+                   <%= "checked" if defined?(selected) && selected.include?(pair[:value]) %>
+                   data-action="change->deal-management-config#updateSteps"
+                   data-deal-management-config-target="checkbox">
+            <label class="form-check-label" for="preset_step_<%= pair[:value] %>">
+              <i class="ti ti-arrow-right text-primary me-1"></i>
+              <%= pair[:label] %>
+            </label>
+          </div>
+        <% end %>
+      </div>
+    </div>
+  <% elsif deal.blank? %>
+    <div class="alert alert-info small">
+      <i class="ti ti-info-circle me-1"></i>
+      Select a deal above to configure step transitions.
+    </div>
+  <% else %>
+    <div class="alert alert-info small">
+      <i class="ti ti-info-circle me-1"></i>
+      This deal has fewer than 2 steps — no transitions to configure.
+    </div>
+  <% end %>
+</turbo-frame>

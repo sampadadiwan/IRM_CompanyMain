@@ -17,8 +17,6 @@
     <span class="badge bg-warning text-dark rounded-pill"><%= total %></span>
   </div>
   <div class="card-body">
-    <p class="text-muted small mb-3">No activity for <%= stagnant_days %>+ days</p>
-
     <%# Now Active (recovered) %>
     <div class="d-flex justify-content-between align-items-center py-2"
          data-bs-toggle="collapse" data-bs-target="#now-active-list"
@@ -68,20 +66,30 @@
     </div>
     <% if still_stagnant.any? %>
       <div class="collapse" id="still-stagnant-list">
-        <div class="ms-4 mt-2">
-          <% still_stagnant.each do |inv| %>
-            <div class="d-flex align-items-center justify-content-between py-1">
-              <div class="d-flex align-items-center">
-                <span class="rounded-circle bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 22px; height: 22px;">
-                  <i class="ti ti-user text-warning" style="font-size: 11px;"></i>
-                </span>
-                <span class="small fw-medium"><%= inv["name"] %></span>
-              </div>
-              <% if inv["last_activity"].present? %>
-                <span class="text-muted small">since <%= Time.parse(inv["last_activity"]).strftime("%d %b %Y") %></span>
+        <div class="table-responsive border rounded-3 mt-2">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead style="background-color: #f8f9fb;">
+              <tr>
+                <th class="ps-3 py-2">Investor</th>
+                <th class="py-2">Current Step</th>
+                <th class="text-end pe-3 py-2">Inactive Since</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% still_stagnant.each do |inv| %>
+                <tr>
+                  <td class="ps-3 py-2"><%= inv["name"] %></td>
+                  <td class="py-2">
+                    <%= inv["step_name"] || "—" %>
+                    <% if inv["step_days"].present? %>
+                      <br><span class="text-muted small">limit: <%= inv["step_days"] %>d</span>
+                    <% end %>
+                  </td>
+                  <td class="text-end pe-3 py-2"><%= inv["last_activity"].present? ? Time.parse(inv["last_activity"]).strftime("%d %b %Y") : "—" %></td>
+                </tr>
               <% end %>
-            </div>
-          <% end %>
+            </tbody>
+          </table>
         </div>
       </div>
     <% end %>
@@ -105,20 +113,30 @@
     </div>
     <% if newly_stagnant.any? %>
       <div class="collapse" id="newly-stagnant-list">
-        <div class="ms-4 mt-2">
-          <% newly_stagnant.each do |inv| %>
-            <div class="d-flex align-items-center justify-content-between py-1">
-              <div class="d-flex align-items-center">
-                <span class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center me-2" style="width: 22px; height: 22px;">
-                  <i class="ti ti-user text-danger" style="font-size: 11px;"></i>
-                </span>
-                <span class="small fw-medium"><%= inv["name"] %></span>
-              </div>
-              <% if inv["last_activity"].present? %>
-                <span class="text-muted small">since <%= Time.parse(inv["last_activity"]).strftime("%d %b %Y") %></span>
+        <div class="table-responsive border rounded-3 mt-2">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead style="background-color: #f8f9fb;">
+              <tr>
+                <th class="ps-3 py-2">Investor</th>
+                <th class="py-2">Current Step</th>
+                <th class="text-end pe-3 py-2">Inactive Since</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% newly_stagnant.each do |inv| %>
+                <tr>
+                  <td class="ps-3 py-2"><%= inv["name"] %></td>
+                  <td class="py-2">
+                    <%= inv["step_name"] || "—" %>
+                    <% if inv["step_days"].present? %>
+                      <br><span class="text-muted small">limit: <%= inv["step_days"] %>d</span>
+                    <% end %>
+                  </td>
+                  <td class="text-end pe-3 py-2"><%= inv["last_activity"].present? ? Time.parse(inv["last_activity"]).strftime("%d %b %Y") : "—" %></td>
+                </tr>
               <% end %>
-            </div>
-          <% end %>
+            </tbody>
+          </table>
         </div>
       </div>
     <% end %>

@@ -3,7 +3,7 @@
 **Status:** Draft  
 **Author:** Fund Operations  
 **Date:** 2026-05-28  
-**Last Updated:** 2026-05-31
+**Last Updated:** 2026-07-14
 
 ---
 
@@ -153,7 +153,15 @@ Full field reference:
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `check_progress` | Select (Yes/No) | Yes | Enable stagnation monitoring and overdue activity detection. |
-| `stagnant_days` | NumberField | `7` | Days without any update on `DealInvestor` **or** linked `DealActivity` before flagging stagnant. |
+| `stagnant_days` | NumberField | `14` | Global fallback: days without any update on `DealInvestor` **or** linked `DealActivity` before flagging stagnant. Stagnation detection uses per-step thresholds from `DealActivity#days` when available, falling back to this global value when the investor has no current step or the step has no `days` set. |
+| `deal_ids` | Select | _(blank)_ | Single deal ID -- one agent per deal. Configured via deal selector dropdown in agent setup UI. |
+| `preset_steps` | Checkboxes | _(blank)_ | Selected via checkbox UI in agent config. |
+| `weekly_summary` | Select (Yes/No) | Yes | Enable weekly summary email report. |
+| `report_period` | Select | Week | Period covered by the summary report (e.g. Week, Month). |
+| `preset_statuses` | Checkboxes | _(blank)_ | Status filters for the weekly summary report. |
+| `preset_charts` | Checkboxes | _(blank)_ | Charts to include in the weekly summary report. |
+| `enable_ai_insight` | Select (Yes/No) | Yes | Include AI-generated narrative insight in the weekly summary. |
+| `max_tasks_in_email` | NumberField | `10` | Maximum number of tasks/activities to include in the summary email. |
 | `send_reminders` | Select (Yes/No) | Yes | Send reminder emails to `notify_email` when activities are overdue or within the reminder window. |
 | `reminder_days` | TextField | `7,3,1` | Comma-separated day offsets before `by_date`. `0` = on due date. Overdue activities (past due date) always trigger regardless of this list. |
 | `check_documents` | Select (Yes/No) | Yes | Verify required documents exist in the deal data room. |
@@ -288,15 +296,19 @@ flowchart TD
 
 ### 6.4 Stagnation Check Logic
 
-> **Summary:** Uses a stricter "both signals absent" criterion compared to the existing `DealInvestor#stagnant?` method. Only active investors are evaluated — Declined and Complete are excluded.
+> **Summary:** Uses per-step stagnation thresholds. Each investor's current step (`DealActivity` template) has a `days` field — that value is the stagnation threshold for investors on that step. Falls back to the global `stagnant_days` config (default 14) when the step has no `days` value or the investor has no current step. Only active investors are evaluated — Declined and Complete are excluded.
 
 ```mermaid
 flowchart LR
-    A[Active DealInvestor\nnon-Declined AND non-Complete] --> B{updated_at\n< stagnant_days ago?}
+    A[Active DealInvestor\nnon-Declined AND non-Complete] --> T{Current step\nhas days field?}
+    T -->|Yes| T2[threshold = step.days]
+    T -->|No| T3[threshold = global stagnant_days]
+    T2 --> B{updated_at\n< threshold ago?}
+    T3 --> B
     B -->|No| OK[Not stagnant]
-    B -->|Yes| C{Any DealActivity\nupdated within\nstagnant_days?}
+    B -->|Yes| C{Any DealActivity\nupdated within\nthreshold?}
     C -->|Yes| OK
-    C -->|No| Flag[Flag as STAGNANT\n→ :blocking issue]
+    C -->|No| Flag[Flag as STAGNANT\nwith step_name + step_days]
 ```
 
 A `DealInvestor` is flagged stagnant only when **all** conditions are true:
@@ -711,7 +723,7 @@ The `DealManagementAgent` entry is added to `SUPPORT_AGENT_FORM_CONFIGS` in `lib
   agent_type:   "DealManagementAgent",
   enabled:      true,
   json_fields: {
-    "check_progress"          => "Yes",  "stagnant_days"           => "7",
+    "check_progress"          => "Yes",  "stagnant_days"           => "14",
     "send_reminders"          => "Yes",  "reminder_days"           => "7,3,1",
     "check_documents"         => "Yes",  "required_docs"           => "",
     "extract_terms"           => "Yes",  "term_extraction_prompt"  => "",

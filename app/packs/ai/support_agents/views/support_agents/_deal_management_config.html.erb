@@ -1,0 +1,55 @@
+<%#
+  Custom config partial for DealManagementAgent — deal selector + step transition checkboxes.
+  Rendered inside the agent edit form when agent_type == "DealManagementAgent".
+  @param support_agent [SupportAgent] the agent being configured
+  @param form [ActionView::Helpers::FormBuilder] the parent form builder
+%>
+<%
+  config = support_agent.json_fields || {}
+  entity_id = support_agent.entity_id
+  open_deals = Deal.where(entity_id: entity_id).where.not(status: "Closed").order(:name)
+
+  deal_id = config["deal_ids"].to_s.split(",").first&.strip&.to_i
+  deal = open_deals.find { |d| d.id == deal_id }
+  templates = deal ? DealActivity.where(deal_id: deal.id, deal_investor_id: nil).order(:sequence).to_a : []
+
+  transition_pairs = templates.each_cons(2).map do |from_step, to_step|
+    {
+      value: "#{from_step.sequence}-#{to_step.sequence}",
+      label: "#{from_step.title} → #{to_step.title}"
+    }
+  end
+
+  selected = config["preset_steps"].to_s.split(",").map(&:strip).compact_blank.to_set
+%>
+
+<hr class="my-4">
+<h5>Deal Management Configuration</h5>
+
+<div data-controller="deal-management-config"
+     data-deal-management-config-steps-url-value="<%= deal_steps_support_agent_path(support_agent) %>">
+  <%= form.hidden_field :json_fields,
+      value: { "deal_ids" => deal_id.to_s, "preset_steps" => config["preset_steps"].to_s }.to_json,
+      data: { "deal-management-config-target": "jsonField" } %>
+
+  <%# ── Deal Selector ── %>
+  <div class="card mb-3">
+    <div class="card-header"><strong>Target Deal</strong></div>
+    <div class="card-body">
+      <label class="form-label">Select the deal this agent monitors</label>
+      <select class="form-control"
+              data-deal-management-config-target="dealSelect"
+              data-action="change->deal-management-config#dealChanged">
+        <option value="">— Select a Deal —</option>
+        <% open_deals.each do |d| %>
+          <option value="<%= d.id %>" <%= "selected" if d.id == deal_id %>><%= d.name %></option>
+        <% end %>
+      </select>
+      <small class="text-muted">Only open deals are shown. The agent will run against this deal only.</small>
+    </div>
+  </div>
+
+  <%# ── Step Transitions (Turbo Frame) ── %>
+  <%= render "support_agents/deal_steps_frame",
+             deal: deal, transition_pairs: transition_pairs, selected: selected %>
+</div>

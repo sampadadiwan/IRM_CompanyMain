@@ -40,6 +40,10 @@
     <% if support_agent.agent_type == "KycDocExtractorAgent" %>
       <%= render "support_agents/kyc_doc_extractor_config", support_agent: support_agent, form: form %>
     <% end %>
+    <% if support_agent.agent_type == "DealManagementAgent" %>
+      <%= render "support_agents/deal_management_config", support_agent: support_agent, form: form %>
+    <% end %>
+
     
 
 
