@@ -18,6 +18,7 @@ resources :support_agents do
     post 'cancel'
     get 'status'
     get 'step_details'
+    get 'deal_steps'
   end
 
   # Agent Schedule routes

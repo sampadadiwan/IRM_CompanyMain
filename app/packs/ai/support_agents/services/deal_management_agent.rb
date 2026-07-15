@@ -193,9 +193,10 @@ class DealManagementAgent < SupportAgentService
       return true
     end
 
-    stagnant_days = [@support_agent.json_fields["stagnant_days"].to_i, 1].max
+    stagnant_days = @support_agent.json_fields["stagnant_days"].to_i.nonzero? || 14
 
     investors     = active_deal_investors(deal)
+
     health_scores = {}
 
     investors.each do |di|
@@ -506,12 +507,14 @@ class DealManagementAgent < SupportAgentService
       return true
     end
 
-    investors = active_deal_investors(deal).includes(:deal_activities)
-    stagnant_days = [@support_agent.json_fields["stagnant_days"].to_i, 1].max
+    investors = active_deal_investors(deal).includes(:deal_activity, :deal_activities)
+
+    global_stagnant_days = @support_agent.json_fields["stagnant_days"].to_i.nonzero? || 14
 
     current_stagnant_ids = investors.select do |di|
-      investor_stale = di.updated_at < stagnant_days.days.ago
-      activities_stale = di.deal_activities.none? { |a| a.updated_at >= stagnant_days.days.ago }
+      threshold = di.deal_activity&.days.presence || global_stagnant_days
+      investor_stale = di.updated_at < threshold.days.ago
+      activities_stale = di.deal_activities.none? { |a| a.updated_at >= threshold.days.ago }
       investor_stale && activities_stale
     end.map(&:id).to_set
 
@@ -530,6 +533,10 @@ class DealManagementAgent < SupportAgentService
     newly_stagnant = current_stagnant_ids - previous_stagnant_ids
     now_active     = previous_stagnant_ids - current_stagnant_ids
 
+    step_map = investors.to_h { |di| [di.id, di.deal_activity&.title] }
+
+    step_days_map = investors.to_h { |di| [di.id, di.deal_activity&.days] }
+
     all_relevant_ids = (still_stagnant + newly_stagnant + now_active).to_a
     name_map = DealInvestor.where(id: all_relevant_ids).pluck(:id, :investor_name).to_h
 
@@ -540,14 +547,14 @@ class DealManagementAgent < SupportAgentService
 
     ctx[:stagnation_breakdown] = {
       total: current_stagnant_ids.size,
-      still_stagnant: still_stagnant.map { |id| { id: id, name: name_map[id], last_activity: last_activity_map[id] } },
-      newly_stagnant: newly_stagnant.map { |id| { id: id, name: name_map[id], last_activity: last_activity_map[id] } },
-      now_active: now_active.map { |id| { id: id, name: name_map[id] } },
+      still_stagnant: still_stagnant.map { |id| { id: id, name: name_map[id], last_activity: last_activity_map[id], step_name: step_map[id], step_days: step_days_map[id] } },
+      newly_stagnant: newly_stagnant.map { |id| { id: id, name: name_map[id], last_activity: last_activity_map[id], step_name: step_map[id], step_days: step_days_map[id] } },
+      now_active: now_active.map { |id| { id: id, name: name_map[id], step_name: step_map[id] } },
       still_stagnant_count: still_stagnant.size,
       newly_stagnant_count: newly_stagnant.size,
       now_active_count: now_active.size,
       current_stagnant_ids: current_stagnant_ids.to_a,
-      stagnant_days: stagnant_days
+      stagnant_days: global_stagnant_days
     }
 
     if report
@@ -1010,12 +1017,14 @@ class DealManagementAgent < SupportAgentService
 
     {
       id: task.id,
-      # Raw column first; fall back to ActionText for UI-created tasks where raw is empty
-      title: (task.read_attribute(:details).presence || task.details.try(:to_plain_text)).to_s.truncate(80),
+      # Strip HTML tags from raw details column (some tasks store Trix HTML)
+      title: ActionController::Base.helpers.strip_tags(task.read_attribute(:details).to_s).squish.truncate(80),
+
       company_name: company_name,
       responsible: task.assigned_to&.name,
       due_date: task.due_date&.iso8601,
       completed: task.completed,
+      category: task.category,
       status: if task.completed
                 "Completed"
               else

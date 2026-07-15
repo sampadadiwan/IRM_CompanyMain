@@ -305,7 +305,7 @@ class SupportAgentsController < ApplicationController
       batch_targets = @support_agent.agent.new.targets(params[:target_id].to_i)
       target_count = batch_targets.respond_to?(:count) ? batch_targets.count : batch_targets.size
 
-      if target_count != 1 || !batch_targets.first.is_a?(Entity)
+      if target_count > 1
         SupportAgentJob.perform_later(
           support_agent_id: @support_agent.id,
           target_id: params[:target_id],
@@ -347,6 +347,17 @@ class SupportAgentsController < ApplicationController
       execution_mode: :single_company_with_steps
     )
 
+    # Resolve the actual target the same way the job will — when the agent
+    # expands an Entity into a single sub-target (e.g. Deal), the report
+    # owner must match so the Turbo Stream subscription channel aligns.
+    resolved_target = if params[:target_type] == "Entity"
+                        expanded = @support_agent.agent.new.targets(params[:target_id].to_i)
+                        count = expanded.respond_to?(:count) ? expanded.count : expanded.size
+                        count == 1 && !expanded.first.is_a?(Entity) ? expanded.first : target
+                      else
+                        target
+                      end
+
     # Return the report info for Turbo Stream subscription
     # Initialize steps from the agent's step definitions
     steps = @support_agent.agent.step_definitions.map do |step_def|
@@ -359,7 +370,8 @@ class SupportAgentsController < ApplicationController
       }
     end
 
-    report = SupportAgentReport.find_or_initialize_by(owner: target, support_agent: @support_agent)
+    report = SupportAgentReport.find_or_initialize_by(owner: resolved_target, support_agent: @support_agent)
+
     report.status = :pending
     report.json_fields = {
       "steps" => steps,
@@ -543,6 +555,29 @@ class SupportAgentsController < ApplicationController
     else
       render plain: "Step not found", status: :not_found
     end
+  end
+
+  # Returns a Turbo Frame with step transition checkboxes for the selected deal.
+  # Called via AJAX when the deal selector changes in the DealManagementAgent config partial.
+  #
+  # @param deal_id [Integer] query param — the selected deal's ID
+  # @return [void] renders the _deal_steps_frame partial inside a Turbo Frame
+  def deal_steps
+    @support_agent = SupportAgent.find(params[:id])
+    authorize @support_agent, :edit?
+
+    deal = Deal.find_by(id: params[:deal_id])
+    templates = deal ? DealActivity.where(deal_id: deal.id, deal_investor_id: nil).order(:sequence).to_a : []
+
+    transition_pairs = templates.each_cons(2).map do |from_step, to_step|
+      {
+        value: "#{from_step.sequence}-#{to_step.sequence}",
+        label: "#{from_step.title} → #{to_step.title}"
+      }
+    end
+
+    render partial: "support_agents/deal_steps_frame",
+           locals: { deal: deal, transition_pairs: transition_pairs, selected: Set.new }
   end
 
   private

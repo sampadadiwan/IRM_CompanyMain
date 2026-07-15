@@ -108,9 +108,8 @@ class SupportAgentJob < ApplicationJob
           end
         elsif target_id.present? && target_type.present?
           targets = if target_type == "Entity" && execution_mode == :single_company_with_steps
-                      # Step UI runs keep the entity as a single target so the step panel
-                      # report (owner: Entity) stays in sync with the job's broadcasts.
-                      [Entity.find(target_id)]
+                      resolve_step_ui_target(support_agent, target_id)
+
                     elsif target_type == "Entity"
                       # Scheduled/batch runs expand to individual sub-targets (e.g. Funds)
                       support_agent.agent.new.targets(target_id)
@@ -303,5 +302,20 @@ class SupportAgentJob < ApplicationJob
     end
 
     targets
+  end
+
+  # Resolves the target for step UI runs. When the agent expands an Entity
+  # into a single non-Entity sub-target (e.g. Deal), uses that directly
+  # so the step report owner matches the actual target model.
+  #
+  # @param support_agent [SupportAgent]
+  # @param target_id [Integer, String] the entity ID
+  # @return [Array]
+  def resolve_step_ui_target(support_agent, target_id)
+    expanded = support_agent.agent.new.targets(target_id)
+    count = expanded.respond_to?(:count) ? expanded.count : expanded.size
+    return expanded.to_a if count == 1 && !expanded.first.is_a?(Entity)
+
+    [Entity.find(target_id)]
   end
 end
