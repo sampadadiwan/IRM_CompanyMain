@@ -71,9 +71,9 @@ module CommitmentAccountEntry
     account_entries_source = sqlite ? account_entries_sqlite : account_entries
 
     ae = if parent
-           account_entries_source.where(name:, reporting_date: ..date, parent_id: parent.id, parent_type: parent.class.name).order(reporting_date: :desc).first
+           account_entries_source.where(name:, reporting_date: ..date, parent_id: parent.id, parent_type: parent.class.name).order(reporting_date: :desc, id: :desc).first
          else
-           account_entries_source.where(name:, reporting_date: ..date).order(reporting_date: :desc).first
+           account_entries_source.where(name:, reporting_date: ..date).order(reporting_date: :desc, id: :desc).first
          end
 
     raise "No Account Entry found for name: #{name}, id: #{id}, parent: #{parent&.id} on date: #{date}" if ae.nil? && raise_error
