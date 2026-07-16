@@ -31,7 +31,7 @@ class PortfolioCompanyDashboardController < ApplicationController
   def send_reminders
     overdue = @presenter_for_reminders.overdue_companies
 
-    owner_ids = overdue.map { |c| c[:owner_id] }
+    owner_ids = overdue.map { |c| c[:owner_id] } # rubocop:disable Rails/Pluck -- overdue is an array of hashes, not AR
     latest_reports = SupportAgentReport.where(support_agent: @support_agent, owner_id: owner_ids, owner_type: "Investor")
                                        .order(created_at: :desc).index_by(&:owner_id)
     investors = Investor.where(id: owner_ids).index_by(&:id)
