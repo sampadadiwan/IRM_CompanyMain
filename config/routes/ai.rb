@@ -50,6 +50,10 @@ resources :customer_support_escalations, only: %i[show update]
 resources :agent_charts do
   post 'regenerate', on: :member
 end
+resource :portfolio_company_dashboard, only: [:show], controller: "portfolio_company_dashboard" do
+  post :send_reminders
+end
+
 resources :ai_checks do
   post 'run_checks', on: :collection
   get 'run_checks', on: :collection

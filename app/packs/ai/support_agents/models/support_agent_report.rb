@@ -1,6 +1,15 @@
+# frozen_string_literal: true
+
+# Stores per-target results for a SupportAgent run (one report per owner per agent).
+#
+# @see SupportAgent
+# @see PortfolioCompanyAgent
 class SupportAgentReport < ApplicationRecord
   belongs_to :owner, polymorphic: true
   belongs_to :support_agent
+  # @!attribute investor
+  #   Convenience join for Ransack search — assumes owner_type is "Investor".
+  belongs_to :investor, foreign_key: :owner_id, optional: true
 
   enum :status, { pending: "Pending", completed: "Completed", failed: "Failed" }
 
@@ -81,5 +90,13 @@ class SupportAgentReport < ApplicationRecord
 
   def self.ransackable_attributes(_auth_object = nil)
     %w[owner_id owner_name owner_type status support_agent_name updated_at]
+  end
+
+  # Associations allowed for Ransack join-based search (e.g. investor name filtering).
+  #
+  # @param _auth_object [Object, nil] optional authorization context
+  # @return [Array<String>] allowlisted association names
+  def self.ransackable_associations(_auth_object = nil)
+    %w[investor]
   end
 end

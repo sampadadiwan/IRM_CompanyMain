@@ -1,0 +1,89 @@
+<%# Stat cards row — clickable cards that server-side filter the company table. %>
+<div class="row g-3 mb-4">
+  <%# Card: Total Companies %>
+  <div class="col">
+    <%= link_to portfolio_company_dashboard_path,
+          class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <small class="text-muted">Total Companies</small>
+          <span class="text-primary"><i class="ti ti-building fs-4"></i></span>
+        </div>
+        <h2 class="mb-0 fw-bold text-body"><%= presenter.total_companies %></h2>
+        <small class="text-muted">In portfolio</small>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Card: Submissions Received %>
+  <div class="col">
+    <%= link_to portfolio_company_dashboard_path(status: "submitted"),
+          class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <small class="text-muted">Submissions Received</small>
+          <span class="text-info"><i class="ti ti-file-check fs-4"></i></span>
+        </div>
+        <h2 class="mb-0 fw-bold text-body"><%= presenter.submissions_received %></h2>
+        <% pct = presenter.total_companies > 0 ? (presenter.submissions_received * 100.0 / presenter.total_companies).round(1) : 0 %>
+        <small class="text-muted"><%= pct %>% of total</small>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-info" style="width: <%= pct %>%"></div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Card: Fully Complete %>
+  <div class="col">
+    <%= link_to portfolio_company_dashboard_path(status: "Complete"),
+          class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <small class="text-muted">Fully Complete</small>
+          <span class="text-success"><i class="ti ti-circle-check fs-4"></i></span>
+        </div>
+        <h2 class="mb-0 fw-bold text-body"><%= presenter.fully_complete %></h2>
+        <% pct = presenter.total_companies > 0 ? (presenter.fully_complete * 100.0 / presenter.total_companies).round(1) : 0 %>
+        <small class="text-muted"><%= pct %>% of total</small>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-success" style="width: <%= pct %>%"></div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Card: Pending Submissions %>
+  <div class="col">
+    <%= link_to portfolio_company_dashboard_path(status: "Pending"),
+          class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <small class="text-muted">Pending Submissions</small>
+          <span class="text-danger"><i class="ti ti-clock-exclamation fs-4"></i></span>
+        </div>
+        <h2 class="mb-0 fw-bold text-body"><%= presenter.pending_submissions %></h2>
+        <% pct = presenter.total_companies > 0 ? (presenter.pending_submissions * 100.0 / presenter.total_companies).round(1) : 0 %>
+        <small class="text-muted"><%= pct %>% of total</small>
+        <div class="progress mt-2" style="height: 4px;">
+          <div class="progress-bar bg-danger" style="width: <%= pct %>%"></div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Card: Total Issues %>
+  <div class="col">
+    <%= link_to portfolio_company_dashboard_path(status: "issues"),
+          class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <small class="text-muted">Total Issues</small>
+          <span class="text-warning"><i class="ti ti-alert-triangle fs-4"></i></span>
+        </div>
+        <h2 class="mb-0 fw-bold text-body"><%= presenter.total_issues %></h2>
+        <small class="text-muted">Across all companies</small>
+      </div>
+    <% end %>
+  </div>
+</div>

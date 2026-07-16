@@ -69,12 +69,7 @@ class PortfolioCompanyAgent < SupportAgentService
       user_id: user_id,
       entity_id: entity_id,
       execution_mode: execution_mode
-    ) do |successes|
-      if successes.any?
-        processed_ids = successes.pluck(:id)
-        AgentChartJob.perform_later(user_id, portfolio_company_ids: processed_ids.uniq, execution_mode: execution_mode)
-      end
-    end
+    )
   end
 
   private
@@ -316,11 +311,6 @@ class PortfolioCompanyAgent < SupportAgentService
     finalize_report(report, status: has_blocking ? "blocked" : "ready") if report
 
     broadcast_portco_row(target: portfolio_company)
-    # Only enqueue an individual chart job when NOT running inside process_batch.
-    # process_batch enqueues a single bulk AgentChartJob for all companies at the end.
-    # ctx[:batch_mode] is set to true by process_batch to suppress per-company jobs.
-    AgentChartJob.perform_later(ctx[:user_id], portfolio_company_id: portfolio_company.id) unless ctx[:batch_mode]
-
     true
   end
 
