@@ -57,7 +57,12 @@ class DbBackupFreshnessJob < ApplicationJob
       grace: 0.seconds
     )
     failures += check_bucket(
-      bucket: "#{ENV.fetch('AWS_S3_BUCKET_REPLICA')}-backup-xtra",
+      # By convention the replica backup bucket is "#{AWS_S3_BUCKET_REPLICA}-backup-xtra"
+      # (what rake aws:provision_s3_buckets creates). Some environments deviate —
+      # e.g. IN production's replica was created manually as
+      # "docs.caphive.com.production-backup-xtra-ap-south2" — so the FULL bucket
+      # name can be overridden via AWS_S3_BUCKET_REPLICA_XTRA in the env.
+      bucket: ENV.fetch('AWS_S3_BUCKET_REPLICA_XTRA', "#{ENV.fetch('AWS_S3_BUCKET_REPLICA')}-backup-xtra"),
       region: ENV.fetch('AWS_S3_REPLICA_REGION', ENV.fetch('AWS_S3_REGION')),
       label: "replica (cross-region copy)",
       grace: REPLICA_LAG
