@@ -544,7 +544,11 @@ namespace :aws do
     source_bucket  = ENV.fetch("AWS_S3_BUCKET")
     db_backup_xtra_bucket = "#{source_bucket}-backup-xtra"
     replica_bucket = ENV.fetch("AWS_S3_BUCKET_REPLICA")
-    replica_db_backup_xtra_bucket = "#{replica_bucket}-backup-xtra"
+    # AWS_S3_BUCKET_REPLICA_XTRA overrides the conventional name for envs whose
+    # replica backup bucket was created off-convention (e.g. IN production's
+    # "docs.caphive.com.production-backup-xtra-ap-south2"). Must stay in sync
+    # with DbBackupFreshnessJob, which monitors the same bucket.
+    replica_db_backup_xtra_bucket = ENV.fetch("AWS_S3_BUCKET_REPLICA_XTRA", "#{replica_bucket}-backup-xtra")
 
     # Allow source & replica to live in different regions
     source_region  = ENV.fetch("AWS_S3_REGION")                            # e.g., "us-east-1"

@@ -8,10 +8,29 @@
 
 ### Clearing Rack Attack Cache
 
+Clear all three flag types — clearing only `blocked` leaves the user `throttled`. Pass the
+**bare** key; Solid Cache adds the `production:` namespace itself.
+
 ```ruby
-Rails.cache.delete("rack::attack:blocked:127.0.0.1")
-Rails.cache.delete("rack::attack:404:127.0.0.1")
+ip = "115.111.75.43"
+%w[blocked throttled 404].each { |t| Rails.cache.delete("rack::attack:#{t}:#{ip}") }
 ```
+
+Bulk clear (namespace-proof, **no time filter**):
+
+```ruby
+SolidCache::Entry
+  .where("`key` LIKE '%rack::attack:blocked:%' OR `key` LIKE '%rack::attack:throttled:%' OR `key` LIKE '%rack::attack:404:%'")
+  .delete_all
+```
+
+> ⚠️ **Never add a `created_at` filter to these deletes.** Solid Cache does not refresh
+> `created_at` when a key is re-written (`update_only: [:key, :value, :byte_size]`), so a
+> live, continuously-refreshed block flag keeps its original hours-old timestamp. A
+> `created_at > 2.hours.ago` scope silently skips it — `delete_all` returns a nonzero count
+> from other rows while the user stays `403`.
+
+See [`rack_attack_mass_blocking_fix.md`](rack_attack_mass_blocking_fix.md) for the full writeup.
 
 ---
 

@@ -5,7 +5,10 @@ class FundTemplateDecorator < TemplateDecorator
 
   DIST_CASH_SQL = "gross_payable_cents - reinvestment_with_fees_cents".freeze
   DUE_AMOUNT_SQL = "capital_remittances.call_amount_cents + capital_remittances.other_fee_cents".freeze
+  # income_with_fees_cents or net income is income - tax - expense, so for total income we just nullify the tax and expense component by adding them back
   TOTAL_INCOME_SQL = "income_with_fees_cents + tax_with_fees_cents + expense_with_fees_cents".freeze
+  # income_with_fees_cents or net income is income - tax - expense, so for post expense we just nullify the tax component by adding it back
+  INCOME_POST_EXPENSE = "income_with_fees_cents + tax_with_fees_cents".freeze
 
   METHODS_START_WITH = %w[money_].freeze
   attr_reader :as_of_date, :currency, :capital_commitment, :capital_remittance
@@ -1850,7 +1853,7 @@ class FundTemplateDecorator < TemplateDecorator
 
   def dist_expense_incl_kyc_percent = percentage(dist_expense_incl_kyc, dist_expense_incl_total)
 
-  # ================== DIST Expense ==================
+  # ================== DIST Total Income ==================
 
   # PRIOR
   def dist_total_inc_comp_prior_lp = money_sum(fund_dist_payments_lp_prior, TOTAL_INCOME_SQL)
@@ -1911,6 +1914,68 @@ class FundTemplateDecorator < TemplateDecorator
   memoize :dist_total_inc_comp_incl_kyc
 
   def dist_total_inc_comp_incl_kyc_percent = percentage(dist_total_inc_comp_incl_kyc, dist_total_inc_comp_incl_total)
+
+  # ================== DIST Income Post  expense ==================
+
+  # PRIOR
+  def dist_comp_inc_post_expense_prior_lp = money_sum(fund_dist_payments_lp_prior, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_prior_lp
+
+  def dist_comp_inc_post_expense_prior_gp = money_sum(fund_dist_payments_gp_prior, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_prior_gp
+
+  def dist_comp_inc_post_expense_prior_total = dist_comp_inc_post_expense_prior_lp + dist_comp_inc_post_expense_prior_gp
+  memoize :dist_comp_inc_post_expense_prior_total
+
+  def dist_comp_inc_post_expense_prior_investor = money_sum(comm_dist_payments_prior, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_prior_investor
+
+  def dist_comp_inc_post_expense_prior_investor_percent = percentage(dist_comp_inc_post_expense_prior_investor, dist_comp_inc_post_expense_prior_total)
+
+  def dist_comp_inc_post_expense_prior_kyc = money_sum(kyc_dist_payments_prior, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_prior_kyc
+
+  def dist_comp_inc_post_expense_prior_kyc_percent = percentage(dist_comp_inc_post_expense_prior_kyc, dist_comp_inc_post_expense_prior_total)
+
+  # CURRENT
+  def dist_comp_inc_post_expense_curr_lp = money_sum(fund_dist_payments_lp_curr, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_curr_lp
+
+  def dist_comp_inc_post_expense_curr_gp = money_sum(fund_dist_payments_gp_curr, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_curr_gp
+
+  def dist_comp_inc_post_expense_curr_total = dist_comp_inc_post_expense_curr_lp + dist_comp_inc_post_expense_curr_gp
+  memoize :dist_comp_inc_post_expense_curr_total
+
+  def dist_comp_inc_post_expense_curr_investor = money_sum(comm_dist_payments_curr, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_curr_investor
+
+  def dist_comp_inc_post_expense_curr_investor_percent = percentage(dist_comp_inc_post_expense_curr_investor, dist_comp_inc_post_expense_curr_total)
+
+  def dist_comp_inc_post_expense_curr_kyc = money_sum(kyc_dist_payments_curr, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_curr_kyc
+
+  def dist_comp_inc_post_expense_curr_kyc_percent = percentage(dist_comp_inc_post_expense_curr_kyc, dist_comp_inc_post_expense_curr_total)
+
+  # INCLUDING Current Notice Date
+  def dist_comp_inc_post_expense_incl_lp = money_sum(fund_dist_payments_lp, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_incl_lp
+
+  def dist_comp_inc_post_expense_incl_gp = money_sum(fund_dist_payments_gp, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_incl_gp
+
+  def dist_comp_inc_post_expense_incl_total = dist_comp_inc_post_expense_incl_lp + dist_comp_inc_post_expense_incl_gp
+  memoize :dist_comp_inc_post_expense_incl_total
+
+  def dist_comp_inc_post_expense_incl_investor = money_sum(comm_dist_payments, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_incl_investor
+
+  def dist_comp_inc_post_expense_incl_investor_percent = percentage(dist_comp_inc_post_expense_incl_investor, dist_comp_inc_post_expense_incl_total)
+
+  def dist_comp_inc_post_expense_incl_kyc = money_sum(kyc_dist_payments, INCOME_POST_EXPENSE)
+  memoize :dist_comp_inc_post_expense_incl_kyc
+
+  def dist_comp_inc_post_expense_incl_kyc_percent = percentage(dist_comp_inc_post_expense_incl_kyc, dist_comp_inc_post_expense_incl_total)
 
   # ================== DIST Display Only ==================
 
