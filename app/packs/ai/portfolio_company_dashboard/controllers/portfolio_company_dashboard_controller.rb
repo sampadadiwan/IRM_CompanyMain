@@ -126,8 +126,9 @@ class PortfolioCompanyDashboardController < ApplicationController
     matching_ids = presenter.reports.select do |r|
       case status
       # Row 1 overview card filters
-      when "Complete"   then presenter.report_status(r) == "Up to Date"
-      when "submitted"  then presenter.report_status(r).in?(%w[Up to Date Has Issues])
+      when "Complete" then presenter.report_status(r) == "Up to Date"
+      when "Pending" then presenter.report_status(r) == "Not Validated"
+      when "submitted" then presenter.report_status(r).in?(["Up to Date", "Has Issues"])
 
       # "View Pending Issues" action button filter
       when "issues" then presenter.blocking_count(r).positive?

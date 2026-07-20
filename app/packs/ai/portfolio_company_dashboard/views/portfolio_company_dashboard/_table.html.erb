@@ -28,7 +28,6 @@
           <option value="<%= portfolio_company_dashboard_path(status: "kpi_overdue", **search_q) %>" <%= "selected" if active_filter == "kpi_overdue" %>>KPI Not Submitted</option>
           <option value="<%= portfolio_company_dashboard_path(status: "valuation_overdue", **search_q) %>" <%= "selected" if active_filter == "valuation_overdue" %>>Valuation Missing</option>
           <option value="<%= portfolio_company_dashboard_path(status: "documents_overdue", **search_q) %>" <%= "selected" if active_filter == "documents_overdue" %>>Documents Not Uploaded</option>
-
         </select>
         <%= form_tag portfolio_company_dashboard_path(status: active_filter),
               method: :get, data: { controller: "search", turbo_frame: "portfolio_table_frame" },
