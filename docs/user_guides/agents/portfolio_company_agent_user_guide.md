@@ -12,7 +12,8 @@ The Portfolio Company Agent keeps an eye on the data health of every portfolio c
 6. [Where to Find the Output](#6-where-to-find-the-output)
 7. [Understanding the Report](#7-understanding-the-report)
 8. [Where It Can Fail](#8-where-it-can-fail)
-9. [FAQ](#faq)
+9. [Portfolio Company Dashboard](#9-portfolio-company-dashboard)
+10. [FAQ](#10-faq)
 
 ---
 
@@ -82,7 +83,7 @@ This agent's page does have the standard **Schedule** tab (frequency, run time, 
 - **General tab → "View Report" link** — the most recent run's report.
 - **Execution History tab** — every past run, manual or scheduled, with its status and how long it took; click any row to see the full report.
 - **Portfolio Agent Reports tab** (only on this agent's own page) — reports organized by which portfolio company they belong to.
-- **Portfolio dashboard widget** — a per-company summary card showing how many KPIs, valuations, and documents are missing, pulled straight from the latest report.
+- **Portfolio Company Dashboard** — a standalone dashboard (Investors → Portfolio Company Agent Dashboard) showing stat cards, compliance chart, company table with search/filter/pagination, and Send Reminders. See [Section 9](#9-portfolio-company-dashboard) for details.
 - Each report is attached to the portfolio company it covers, and the most recent run per company is always the one marked as current.
 
 ## 7. Understanding the Report
@@ -101,13 +102,61 @@ The summary widget on the Portfolio Company page pulls three counters straight f
 
 - **The document check quietly does nothing for almost everyone.** This check only actually runs if a particular setting has been turned on behind the scenes — and there's currently no field anywhere in the product UI to turn it on. It isn't on the Edit page, it isn't part of initial setup, and it isn't filled in automatically. Unless your technical team has switched it on manually, the document check will report "all good" every single time, even when documents are genuinely missing. If you're relying on this check to catch missing paperwork, verify with your team whether it's actually been turned on.
 - **No KPI report on file means the document check is skipped, not failed.** If the agent can't find a KPI submission for the period, it deliberately skips the document check rather than reporting a confusing "document missing" message against a submission that doesn't exist. In that case, the missing-KPI flag is the only signal you'll see — the document check simply won't appear as an issue.
-- **The wrong category on a company causes a silent skip.** If a company's category isn't set exactly to "Portfolio Company," the agent stops before doing anything and records no findings at all — just a quiet log entry your technical team could look up. This can happen if someone changed a company's category partway through, or the run was pointed at the wrong record.
+- **The wrong category on a company causes a silent skip.** If a company's category isn't set to "Portfolio Company" (case-insensitive — "portfolio company" also works), the agent stops before doing anything and records no findings at all — just a quiet log entry your technical team could look up. This can happen if someone changed a company's category partway through, or the run was pointed at the wrong record.
 - **Reminder timing is based on the period, not the calendar date you might expect.** "Reminder days" counts days elapsed since the *start of the current period* (month, quarter, or year), measured against the application's configured time zone — not necessarily the time zone you or your server happen to be in. If your fund's configured time zone differs from what you'd expect, the day count — and therefore whether a reminder fires today — could be off by a day right around period boundaries.
 - **Reminder "already sent today" tracking depends on having a prior report.** The agent checks the most recent report to see whether a reminder already went out today. If reports have been deleted, or you're working with a brand-new entity with no report history yet, that check has nothing to compare against — so a reminder could go out again on a day it normally wouldn't have.
 - **Changing the due period or valuation period away from quarterly has no on-screen control.** If you need a different cadence, your technical team has to set it directly in the agent's underlying configuration — there's no field for this in the standard Edit form today.
 - **One company's failure during a batch run is easy to overlook.** If a batch run hits a problem on a specific company, the rest of the batch keeps going — but that failure only shows up in the batch summary notification, not as its own separate failed report, unless that company's individual run also produced one.
 
-## FAQ
+## 9. Portfolio Company Dashboard
+
+A standalone dashboard (separate from the agent's General tab) gives you a bird's-eye view of your entire portfolio's compliance health. Navigate to it via the **Investors** dropdown → **Portfolio Company Agent Dashboard**.
+
+### Stat Cards (Row 1 — Overview)
+
+| Card | What It Shows |
+|------|---------------|
+| **Total Companies** | All investors categorised as "Portfolio Company" in your entity — regardless of whether the agent has run against them. |
+| **Validated** | Companies the agent has checked. Percentage bar shows how much of the portfolio has been processed. |
+| **Up to Date** | Companies with zero blocking issues across KPIs, valuations, and documents. |
+| **Not Yet Validated** | Companies the agent hasn't processed yet — run the agent to check them. |
+
+### Stat Cards (Row 2 — Issue Breakdown)
+
+| Card | What It Shows |
+|------|---------------|
+| **KPI Not Submitted** | Companies whose KPI reports for the current period are missing or overdue. |
+| **Valuation Missing** | Companies without a recent valuation for the reporting period. |
+| **Documents Not Uploaded** | Companies missing required compliance documents. If this shows 0 but KPIs are overdue, the subtitle explains that the document check requires KPI submission first. |
+
+Every card is clickable — it filters the company table below to show only the matching companies.
+
+### Company Table
+
+- **Status filter dropdown:** Filter by All Statuses, Up to Date, Has Issues, KPI Not Submitted, Valuation Missing, or Documents Not Uploaded.
+- **Search:** Type a company name to filter in real time.
+- **Expandable rows:** Click the eye icon to see the full KPI, document, and valuation breakdown for a single company.
+- **Pagination:** 10 companies per page.
+
+### Actions
+
+- **Run Validation:** Triggers the agent across all portfolio companies as a batch. The dashboard auto-refreshes when the batch completes.
+- **Send Reminders:** Emails only companies with missing KPIs (not all companies with issues). Deduplicates — a company already reminded today is skipped. The button label shows the exact count of companies that will receive reminders.
+- **View Pending Issues:** Filters the table to show only companies with at least one blocking issue.
+
+### Report Statuses
+
+The dashboard uses three simplified statuses:
+
+| Status | Meaning |
+|--------|---------|
+| **Up to Date** | Agent ran and found zero blocking issues. |
+| **Has Issues** | Agent ran and found at least one blocking issue (KPI, valuation, or document). |
+| **Not Validated** | Agent has not yet processed this company. |
+
+---
+
+## 10. FAQ
 
 **Q: I turned on "Send KPI submission reminder" but no email went out. Why?**
 A: Check whether today's day-count since the period started matches one of the values in "Reminder days." The agent only sends on those specific days, and only once per calendar day — if a reminder already went out today (the agent checks the most recent report to know this), it won't send again.
@@ -116,7 +165,7 @@ A: Check whether today's day-count since the period started matches one of the v
 A: This check is controlled by a setting that has no field on the Edit page in the current product. Unless someone has explicitly turned it on behind the scenes, the check runs as a no-op and will always report no missing documents — regardless of what's actually on file.
 
 **Q: I ran the agent on a Portfolio Company and got back an empty report with no issues. What happened?**
-A: The company's category is probably not set exactly to "Portfolio Company." The agent silently stops for any other category — check the company's category field.
+A: The company's category is probably not set to "Portfolio Company" (case-insensitive). The agent silently stops for any other category — check the company's category field.
 
 **Q: Can I change the KPI/valuation period from quarterly to monthly?**
 A: Not from the screen in this version of the product — both default to Quarter and can only be changed by having your technical team update the underlying configuration directly.
