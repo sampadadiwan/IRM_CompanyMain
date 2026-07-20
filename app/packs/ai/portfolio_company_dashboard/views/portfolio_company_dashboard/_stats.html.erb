@@ -1,7 +1,13 @@
-<%# Stat cards row — clickable cards that server-side filter the company table. %>
-<div class="row g-3 mb-4">
+<%# Stat cards — two rows of clickable cards that server-side filter the company table.
+     Row 1 (4 cards): Overview — Total Companies, Validated, Up to Date, Not Yet Validated.
+     Row 2 (3 cards): Issue Breakdown — KPI Not Submitted, Valuation Missing, Documents Not Uploaded.
+     Each card links to portfolio_company_dashboard_path with a status param that triggers
+     filter_reports in the controller, narrowing the table via Turbo Frame. %>
+
+<%# Row 1: Overview — how far are we with validation? %>
+<div class="row g-3 mb-3">
   <%# Card: Total Companies %>
-  <div class="col">
+  <div class="col-md-3">
     <%= link_to portfolio_company_dashboard_path,
           class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
       <div class="card-body">
@@ -15,18 +21,18 @@
     <% end %>
   </div>
 
-  <%# Card: Submissions Received %>
-  <div class="col">
+  <%# Card: Validated %>
+  <div class="col-md-3">
     <%= link_to portfolio_company_dashboard_path(status: "submitted"),
           class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-2">
-          <small class="text-muted">Submissions Received</small>
+          <small class="text-muted">Validated</small>
           <span class="text-info"><i class="ti ti-file-check fs-4"></i></span>
         </div>
         <h2 class="mb-0 fw-bold text-body"><%= presenter.submissions_received %></h2>
         <% pct = presenter.total_companies > 0 ? (presenter.submissions_received * 100.0 / presenter.total_companies).round(1) : 0 %>
-        <small class="text-muted"><%= pct %>% of total</small>
+        <small class="text-muted"><%= pct %>% checked by agent</small>
         <div class="progress mt-2" style="height: 4px;">
           <div class="progress-bar bg-info" style="width: <%= pct %>%"></div>
         </div>
@@ -34,18 +40,18 @@
     <% end %>
   </div>
 
-  <%# Card: Fully Complete %>
-  <div class="col">
+  <%# Card: Up to Date %>
+  <div class="col-md-3">
     <%= link_to portfolio_company_dashboard_path(status: "Complete"),
           class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-2">
-          <small class="text-muted">Fully Complete</small>
+          <small class="text-muted">Up to Date</small>
           <span class="text-success"><i class="ti ti-circle-check fs-4"></i></span>
         </div>
         <h2 class="mb-0 fw-bold text-body"><%= presenter.fully_complete %></h2>
         <% pct = presenter.total_companies > 0 ? (presenter.fully_complete * 100.0 / presenter.total_companies).round(1) : 0 %>
-        <small class="text-muted"><%= pct %>% of total</small>
+        <small class="text-muted"><%= pct %>% no issues found</small>
         <div class="progress mt-2" style="height: 4px;">
           <div class="progress-bar bg-success" style="width: <%= pct %>%"></div>
         </div>
@@ -53,36 +59,80 @@
     <% end %>
   </div>
 
-  <%# Card: Pending Submissions %>
-  <div class="col">
+  <%# Card: Not Yet Validated %>
+  <div class="col-md-3">
     <%= link_to portfolio_company_dashboard_path(status: "Pending"),
           class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-2">
-          <small class="text-muted">Pending Submissions</small>
-          <span class="text-danger"><i class="ti ti-clock-exclamation fs-4"></i></span>
+          <small class="text-muted">Not Yet Validated</small>
+          <span class="text-secondary"><i class="ti ti-clock-pause fs-4"></i></span>
         </div>
         <h2 class="mb-0 fw-bold text-body"><%= presenter.pending_submissions %></h2>
         <% pct = presenter.total_companies > 0 ? (presenter.pending_submissions * 100.0 / presenter.total_companies).round(1) : 0 %>
-        <small class="text-muted"><%= pct %>% of total</small>
+        <small class="text-muted"><%= pct %>% run agent to check</small>
         <div class="progress mt-2" style="height: 4px;">
-          <div class="progress-bar bg-danger" style="width: <%= pct %>%"></div>
+          <div class="progress-bar bg-secondary" style="width: <%= pct %>%"></div>
         </div>
       </div>
     <% end %>
   </div>
+</div>
 
-  <%# Card: Total Issues %>
-  <div class="col">
-    <%= link_to portfolio_company_dashboard_path(status: "issues"),
+<%# Row 2: Issue Breakdown — what's actually wrong, broken down by category?
+     These replace the old single "Total Issues" card per Khushali's feedback:
+     users need to see which specific area (KPI/Valuation/Documents) is overdue,
+     not just a single aggregate number. %>
+<div class="row g-3 mb-4">
+  <%# Card: KPI Not Submitted %>
+  <div class="col-md-4">
+    <%= link_to portfolio_company_dashboard_path(status: "kpi_overdue"),
           class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
       <div class="card-body">
         <div class="d-flex align-items-center justify-content-between mb-2">
-          <small class="text-muted">Total Issues</small>
-          <span class="text-warning"><i class="ti ti-alert-triangle fs-4"></i></span>
+          <small class="text-muted">KPI Not Submitted</small>
+          <span class="text-danger"><i class="ti ti-chart-bar fs-4"></i></span>
         </div>
-        <h2 class="mb-0 fw-bold text-body"><%= presenter.total_issues %></h2>
-        <small class="text-muted">Across all companies</small>
+        <h2 class="mb-0 fw-bold text-body"><%= presenter.kpi_overdue_count %></h2>
+        <small class="text-muted">Companies without KPI reports</small>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Card: Valuation Missing %>
+  <div class="col-md-4">
+    <%= link_to portfolio_company_dashboard_path(status: "valuation_overdue"),
+          class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <small class="text-muted">Valuation Missing</small>
+          <span class="text-warning"><i class="ti ti-currency-dollar fs-4"></i></span>
+        </div>
+        <h2 class="mb-0 fw-bold text-body"><%= presenter.valuation_overdue_count %></h2>
+        <small class="text-muted">Companies without valuations</small>
+      </div>
+    <% end %>
+  </div>
+
+  <%# Card: Documents Not Uploaded %>
+  <div class="col-md-4">
+    <%= link_to portfolio_company_dashboard_path(status: "documents_overdue"),
+          class: "card border-0 shadow-sm h-100 text-decoration-none", data: { turbo_frame: "portfolio_table_frame" } do %>
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between mb-2">
+          <small class="text-muted">Documents Not Uploaded</small>
+          <span class="text-orange"><i class="ti ti-file-alert fs-4"></i></span>
+        </div>
+        <h2 class="mb-0 fw-bold text-body"><%= presenter.documents_overdue_count %></h2>
+        <small class="text-muted">
+          <% if presenter.documents_overdue_count > 0 %>
+            Companies without documents
+          <% elsif presenter.kpi_overdue_count > 0 %>
+            Requires KPI submission first
+          <% else %>
+            All documents uploaded
+          <% end %>
+        </small>
       </div>
     <% end %>
   </div>

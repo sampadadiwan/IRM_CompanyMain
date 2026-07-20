@@ -18,27 +18,34 @@ class PortfolioDashboardPresenter
     @support_agent = support_agent
   end
 
-  # --- Stat Cards ---
+  # --- Stat Cards (Row 1: Overview) ---
 
-  # @return [Integer] total portfolio companies in the entity
+  # @return [Integer] total portfolio companies in the entity (regardless of agent run status)
   def total_companies
-    @total_companies ||= Investor.where(
-      entity_id: support_agent.entity_id,
-      category: "Portfolio Company"
-    ).count
+    @total_companies ||= Investor.where(entity_id: support_agent.entity_id).where("LOWER(category) = ?", "portfolio company").count
   end
 
-  # @return [Integer] companies that have at least one report
+  # Companies the agent has validated (final_status is "ready" or "blocked").
+  # Displayed as "Validated" on the dashboard stat card.
+  #
+  # @return [Integer] companies that have been checked by the agent
   def submissions_received
     @submissions_received ||= reports.count { |r| final_status(r).in?(%w[ready blocked]) }
   end
 
+  # Companies with zero blocking issues across KPIs, valuations, and documents.
+  # Displayed as "Up to Date" on the dashboard stat card.
+  #
   # @return [Integer] companies with no blocking issues
   def fully_complete
     @fully_complete ||= reports.count { |r| final_status(r) == "ready" }
   end
 
-  # @return [Integer] companies with no report or blocked status
+  # Companies the agent has NOT yet validated — no report exists.
+  # Displayed as "Not Yet Validated" on the dashboard stat card.
+  # Run the agent again to process these companies.
+  #
+  # @return [Integer] companies with no report (total - validated)
   def pending_submissions
     @pending_submissions ||= total_companies - submissions_received
   end
@@ -46,6 +53,43 @@ class PortfolioDashboardPresenter
   # @return [Integer] total blocking issues across all reports
   def total_issues
     @total_issues ||= reports.sum { |r| blocking_count(r) }
+  end
+
+  # --- Stat Cards (Row 2: Issue Breakdown by Category) ---
+
+  # Companies that have not submitted KPI reports for the expected period.
+  # Displayed as "KPI Overdue" on the dashboard stat card.
+  # These are the companies that would receive reminders via Send Reminders.
+  #
+  # @return [Integer] companies with blocking KPI issues
+  def kpi_overdue_count
+    @kpi_overdue_count ||= reports.count do |r|
+      Array(r.json_fields.with_indifferent_access[:kpi_issues])
+        .any? { |i| i[:severity].to_s == "blocking" }
+    end
+  end
+
+  # Companies missing a recent valuation for the reporting period.
+  # Displayed as "Valuation Overdue" on the dashboard stat card.
+  #
+  # @return [Integer] companies with blocking valuation issues
+  def valuation_overdue_count
+    @valuation_overdue_count ||= reports.count do |r|
+      Array(r.json_fields.with_indifferent_access[:valuation_issues])
+        .any? { |i| i[:severity].to_s == "blocking" }
+    end
+  end
+
+  # Companies missing required compliance documents (Financial Statement, Board Minutes, etc.).
+  # Displayed as "Documents Overdue" on the dashboard stat card.
+  # Checks for both severity: "blocking" and type: "missing" since document issues use both.
+  #
+  # @return [Integer] companies with blocking or missing document issues
+  def documents_overdue_count
+    @documents_overdue_count ||= reports.count do |r|
+      Array(r.json_fields.with_indifferent_access[:document_issues])
+        .any? { |i| i[:severity].to_s == "blocking" || i[:type].to_s == "missing" }
+    end
   end
 
   # --- Dynamic Document Types ---
@@ -111,12 +155,17 @@ class PortfolioDashboardPresenter
     end
   end
 
-  # --- Overdue / Pending Companies ---
+  # --- KPI Overdue Companies (for Send Reminders + sidebar list) ---
 
-  # @return [Array<Hash>] overdue companies sorted by issues_count descending
+  # Companies with missing KPI reports only — NOT all blocked companies.
+  # This matches the PortfolioCompanyAgent's send_kpi_reminder step logic
+  # which only sends reminders for KPI issues, not document/valuation issues.
+  # Used by: Send Reminders button count, confirm dialog, and "KPI Reminders Due" sidebar list.
+  #
+  # @return [Array<Hash>] KPI-overdue companies sorted by issues_count descending
   def overdue_companies
     @overdue_companies ||= reports
-                           .select { |r| final_status(r) == "blocked" }
+                           .select { |r| Array(r.json_fields.with_indifferent_access[:kpi_issues]).any? { |i| i[:severity].to_s == "blocking" } }
                            .map do |r|
                              data = r.json_fields.with_indifferent_access
                              run_at = begin
@@ -141,9 +190,9 @@ class PortfolioDashboardPresenter
   def report_status(report)
     status = final_status(report)
     case status
-    when "ready" then "Complete"
-    when "blocked" then blocking_count(report) == total_possible_issues ? "Pending" : "Incomplete"
-    else "Pending"
+    when "ready" then "Up to Date"
+    when "blocked" then "Has Issues"
+    else "Not Validated"
     end
   end
 
@@ -151,9 +200,8 @@ class PortfolioDashboardPresenter
   # @return [String] Bootstrap color class
   def report_status_color(report)
     case report_status(report)
-    when "Complete" then "success"
-    when "Incomplete" then "warning"
-    when "Pending" then "danger"
+    when "Up to Date" then "success"
+    when "Has Issues" then "warning"
     else "secondary"
     end
   end

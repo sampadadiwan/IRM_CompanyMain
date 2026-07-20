@@ -47,7 +47,7 @@ class PortfolioCompanyAgent < SupportAgentService
     if entity_id.is_a?(Investor) || entity_id.is_a?(ActiveRecord::Base)
       [entity_id]
     else
-      Investor.where(entity_id: entity_id, category: "Portfolio Company").includes(:kpi_reports, :valuations)
+      Investor.where(entity_id: entity_id).where("LOWER(category) = ?", "portfolio company").includes(:kpi_reports, :valuations)
     end
   end
 
@@ -92,7 +92,7 @@ class PortfolioCompanyAgent < SupportAgentService
 
     # Returning false here tells Trailblazer to route to the failure track, skipping all
     # subsequent steps. Log explicitly so the silent halt is visible in the run log.
-    unless portfolio_company.category == "Portfolio Company"
+    unless portfolio_company.category&.downcase == "portfolio company"
       Rails.logger.info { "[#{self.class.name}] Skipping Investor ID=#{portfolio_company.id} — category is '#{portfolio_company.category}', expected 'Portfolio Company'" }
       mark_step_failed(report, :initialize_agent, message: "Not a Portfolio Company") if report
       return false

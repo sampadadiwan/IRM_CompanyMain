@@ -1,4 +1,9 @@
-<%# Agent action buttons — Run Validation, Send Reminders, and pending companies list. %>
+<%# Agent action buttons — Run Validation, Send Reminders, and pending companies list.
+     - Run Validation: triggers PortfolioCompanyAgent batch run across all portfolio companies.
+     - Send Reminders: emails only companies with missing KPI reports (not all blocked companies).
+       Deduplicates via last_kpi_reminder_sent_at stored in report json_fields.
+     - KPI Reminders Due: lists top 5 companies with missing KPIs sorted by issue count.
+     - Generate Report: disabled placeholder for Phase 2 quarterly summary feature. %>
 <div class="card border-0 shadow-sm h-100">
   <div class="card-body">
     <h6 class="fw-bold mb-3">Agent Actions</h6>
@@ -26,23 +31,14 @@
             method: :post,
             class: "btn btn-outline-info text-start d-flex align-items-center gap-2",
             disabled: presenter.overdue_companies.empty?,
-            data: { confirm: "Send KPI reminders to #{presenter.overdue_companies.size} overdue companies?" } do %>
+            data: { confirm: "Send KPI reminders to #{presenter.overdue_companies.size} companies with missing KPIs?" } do %>
         <i class="ti ti-mail-forward"></i>
         <div>
           <strong>Send Reminders</strong><br>
-          <small class="text-muted">Email <%= presenter.overdue_companies.size %> overdue companies</small>
+          <small class="text-muted">Email <%= presenter.overdue_companies.size %> companies with missing KPIs</small>
         </div>
       <% end %>
 
-      <%# Generate Report — Phase 2 %>
-      <button class="btn btn-outline-success text-start d-flex align-items-center gap-2" disabled
-              title="Coming soon — generate quarterly compliance summary">
-        <i class="ti ti-file-report"></i>
-        <div>
-          <strong>Generate Report</strong><br>
-          <small class="text-muted">Quarterly summary email</small>
-        </div>
-      </button>
 
       <%# View Pending Issues — server-side filter %>
       <%= link_to portfolio_company_dashboard_path(status: "issues", anchor: "portfolio_table_frame"),
@@ -58,7 +54,7 @@
 
     <%# Pending Companies List %>
     <% if presenter.overdue_companies.any? %>
-      <h6 class="fw-bold mb-2">Pending Companies</h6>
+      <h6 class="fw-bold mb-2">KPI Reminders Due</h6>
       <div class="list-group list-group-flush">
         <% presenter.overdue_companies.first(5).each do |company| %>
           <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-0">
