@@ -9,6 +9,7 @@ class FundTemplateDecorator < TemplateDecorator
   TOTAL_INCOME_SQL = "income_with_fees_cents + tax_with_fees_cents + expense_with_fees_cents".freeze
   # income_with_fees_cents or net income is income - tax - expense, so for post expense we just nullify the tax component by adding it back
   INCOME_POST_EXPENSE = "income_with_fees_cents + tax_with_fees_cents".freeze
+  NET_PAYABLE_PRE_TAX_SQL = "net_payable_cents + tax_with_fees_cents".freeze
 
   METHODS_START_WITH = %w[money_].freeze
   attr_reader :as_of_date, :currency, :capital_commitment, :capital_remittance
@@ -1914,6 +1915,68 @@ class FundTemplateDecorator < TemplateDecorator
   memoize :dist_total_inc_comp_incl_kyc
 
   def dist_total_inc_comp_incl_kyc_percent = percentage(dist_total_inc_comp_incl_kyc, dist_total_inc_comp_incl_total)
+
+  # ================== DIST Net Payable Pre Tax (Plus Tax)==================
+
+  # PRIOR
+  def dist_net_payable_pre_tax_prior_lp = money_sum(fund_dist_payments_lp_prior, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_prior_lp
+
+  def dist_net_payable_pre_tax_prior_gp = money_sum(fund_dist_payments_gp_prior, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_prior_gp
+
+  def dist_net_payable_pre_tax_prior_total = dist_net_payable_pre_tax_prior_lp + dist_net_payable_pre_tax_prior_gp
+  memoize :dist_net_payable_pre_tax_prior_total
+
+  def dist_net_payable_pre_tax_prior_investor = money_sum(comm_dist_payments_prior, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_prior_investor
+
+  def dist_net_payable_pre_tax_prior_investor_percent = percentage(dist_net_payable_pre_tax_prior_investor, dist_net_payable_pre_tax_prior_total)
+
+  def dist_net_payable_pre_tax_prior_kyc = money_sum(kyc_dist_payments_prior, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_prior_kyc
+
+  def dist_net_payable_pre_tax_prior_kyc_percent = percentage(dist_net_payable_pre_tax_prior_kyc, dist_net_payable_pre_tax_prior_total)
+
+  # CURRENT
+  def dist_net_payable_pre_tax_curr_lp = money_sum(fund_dist_payments_lp_curr, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_curr_lp
+
+  def dist_net_payable_pre_tax_curr_gp = money_sum(fund_dist_payments_gp_curr, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_curr_gp
+
+  def dist_net_payable_pre_tax_curr_total = dist_net_payable_pre_tax_curr_lp + dist_net_payable_pre_tax_curr_gp
+  memoize :dist_net_payable_pre_tax_curr_total
+
+  def dist_net_payable_pre_tax_curr_investor = money_sum(comm_dist_payments_curr, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_curr_investor
+
+  def dist_net_payable_pre_tax_curr_investor_percent = percentage(dist_net_payable_pre_tax_curr_investor, dist_net_payable_pre_tax_curr_total)
+
+  def dist_net_payable_pre_tax_curr_kyc = money_sum(kyc_dist_payments_curr, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_curr_kyc
+
+  def dist_net_payable_pre_tax_curr_kyc_percent = percentage(dist_net_payable_pre_tax_curr_kyc, dist_net_payable_pre_tax_curr_total)
+
+  # INCLUDING Current Notice Date
+  def dist_net_payable_pre_tax_incl_lp = money_sum(fund_dist_payments_lp, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_incl_lp
+
+  def dist_net_payable_pre_tax_incl_gp = money_sum(fund_dist_payments_gp, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_incl_gp
+
+  def dist_net_payable_pre_tax_incl_total = dist_net_payable_pre_tax_incl_lp + dist_net_payable_pre_tax_incl_gp
+  memoize :dist_net_payable_pre_tax_incl_total
+
+  def dist_net_payable_pre_tax_incl_investor = money_sum(comm_dist_payments, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_incl_investor
+
+  def dist_net_payable_pre_tax_incl_investor_percent = percentage(dist_net_payable_pre_tax_incl_investor, dist_net_payable_pre_tax_incl_total)
+
+  def dist_net_payable_pre_tax_incl_kyc = money_sum(kyc_dist_payments, NET_PAYABLE_PRE_TAX_SQL)
+  memoize :dist_net_payable_pre_tax_incl_kyc
+
+  def dist_net_payable_pre_tax_incl_kyc_percent = percentage(dist_net_payable_pre_tax_incl_kyc, dist_net_payable_pre_tax_incl_total)
 
   # ================== DIST Income Post  expense ==================
 
