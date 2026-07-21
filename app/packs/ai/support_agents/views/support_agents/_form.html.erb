@@ -52,11 +52,7 @@
       <%= form.check_box :enabled, class: "form-check-input" %>
     </div>
 
-    <div class="form-group">
-      <%= form.label :with_steps, "Enable on Demand Run" %>
-      <%= form.check_box :with_steps, class: "form-check-input" %>
-    </div>
-
+    <%# "Enable on Demand Run" (with_steps) checkbox removed — replaced by NON_RUNNABLE_TYPES check in _general_tab %>
     <div class="form-group">
       <%= label_tag "chat_enabled", "Enable Chat Assistant" %>
       <%= check_box_tag "chat_config[enabled]", "true", support_agent.chat_enabled?, class: "form-check-input", id: "chat_enabled" %>

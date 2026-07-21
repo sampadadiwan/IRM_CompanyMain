@@ -547,7 +547,7 @@ class DealManagementAgent < SupportAgentService
       investor_stale = di.updated_at < threshold.days.ago
       activities_stale = di.deal_activities.none? { |a| a.updated_at >= threshold.days.ago }
       investor_stale && activities_stale
-    end.map(&:id).to_set
+    end.to_set(&:id)
 
     previous_report = SupportAgentReport
                       .where(owner: deal, support_agent: @support_agent)
@@ -558,7 +558,7 @@ class DealManagementAgent < SupportAgentService
 
     previous_stagnant_ids = (
       previous_report&.json_fields&.dig("stagnation_breakdown", "current_stagnant_ids") || []
-    ).map(&:to_i).to_set
+    ).to_set(&:to_i)
 
     still_stagnant = current_stagnant_ids & previous_stagnant_ids
     newly_stagnant = current_stagnant_ids - previous_stagnant_ids
@@ -962,11 +962,11 @@ class DealManagementAgent < SupportAgentService
     relevant_audits.each do |audit|
       old_id, new_id = audit.audited_changes["deal_activity_id"]
       from_title = template_map[old_id] || "—"
-      to_title   = template_map[new_id] || "—"
-      from_seq   = sequence_map[old_id]
-      to_seq     = sequence_map[new_id]
+      to_title = template_map[new_id] || "Completed"
+      from_seq = sequence_map[old_id]
+      to_seq = sequence_map[new_id] || 0
 
-      next if preset_steps.any? && !preset_steps.any? { |ps| ps[:from] == from_seq && ps[:to] == to_seq }
+      next if preset_steps.any? && preset_steps.none? { |ps| ps[:from] == from_seq && ps[:to] == to_seq }
 
       key = "#{from_title} → #{to_title}"
       transitions[key] += 1
@@ -1006,7 +1006,7 @@ class DealManagementAgent < SupportAgentService
 
     relevant_audits.each do |audit|
       _old_status, new_status = audit.audited_changes["status"]
-      next if preset_statuses.any? && !preset_statuses.include?(new_status)
+      next if preset_statuses.any? && preset_statuses.exclude?(new_status)
 
       changes[new_status] << {
         investor_id: audit.auditable_id,
@@ -1059,7 +1059,7 @@ class DealManagementAgent < SupportAgentService
       status: if task.completed
                 "Completed"
               else
-                (task.due_date && task.due_date < Date.today ? "Overdue" : "Pending")
+                (task.due_date && task.due_date < Time.zone.today ? "Overdue" : "Pending")
               end
     }
   end

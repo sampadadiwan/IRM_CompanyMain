@@ -84,7 +84,8 @@
       <% if policy(support_agent).update? %>
         <div class="card-footer bg-white border-top d-flex align-items-center gap-2 py-3">
           <%= link_to "Edit", edit_support_agent_path(support_agent), class: "btn btn-outline-primary" %>
-          <% if support_agent.entity_flag_enabled? %>
+          <%# Hide "Run Now" for chat-only agents (NON_RUNNABLE_TYPES) and disabled entities %>
+          <% if support_agent.runnable? && support_agent.entity_flag_enabled? %>
             <%= button_to "Run Now", run_with_steps_support_agent_path(support_agent),
                 method: :post,
                 params: { target_type: "Entity", target_id: support_agent.entity_id },

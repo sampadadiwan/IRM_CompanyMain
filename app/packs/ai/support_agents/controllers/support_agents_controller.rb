@@ -575,6 +575,13 @@ class SupportAgentsController < ApplicationController
         label: "#{from_step.title} → #{to_step.title}"
       }
     end
+    if templates.any?
+      last_step = templates.last
+      transition_pairs << {
+        value: "#{last_step.sequence}-0",
+        label: "#{last_step.title} → Completed"
+      }
+    end
 
     render partial: "support_agents/deal_steps_frame",
            locals: { deal: deal, transition_pairs: transition_pairs, selected: Set.new }

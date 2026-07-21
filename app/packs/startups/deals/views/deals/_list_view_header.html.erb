@@ -10,6 +10,12 @@
         <i class="ti ti-filter"></i> Not Declined
       <% end %>
     <% end %>
+    <%# Weekly Summary button — moved here from deal_details tabs for quick access %>
+    <% if deal.entity.support_agents.set?(:deal_management_agent) %>
+      <%= link_to weekly_summary_deal_path(deal), class: "btn btn-outline-primary" do %>
+        <i class="ti ti-report-analytics"></i> Weekly Summary
+      <% end %>
+    <% end %>
     <%= link_to deal_path(deal, list_view: true, format: :xlsx), class: "btn btn-outline-primary" do %>
       <i class="ti ti-file-spreadsheet"></i> Download Excel
     <% end %>
