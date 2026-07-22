@@ -496,7 +496,11 @@ export default class extends BaseAgGrid {
         },
         onVirtualColumnsChanged: () => { this.initTooltips(); this.setRowIds(); },
         onBodyScroll: () => { this.initTooltips(); this.setRowIds(); },
-        onFirstDataRendered: () => { this.initTooltips(); this.setRowIds(); },
+        onFirstDataRendered: (event) => {
+          this.ensureFirstRowVisible(event);
+          this.initTooltips();
+          this.setRowIds();
+        },
         getRowClass: (params) => {
             return params.data && params.data.id ? `deal_investor_${params.data.id}` : '';
         }
@@ -534,8 +538,10 @@ export default class extends BaseAgGrid {
     const baseOnGridReady = (event) => {
         this.gridOptions.api = event.api;
         this.gridOptions.columnApi = event.columnApi;
+      this.configureFixedLayoutFixes();
         this.restoreColumnVisibilityState(this.gridOptions, this.tableNameValue);
         this.gridReady();
+      this.refreshGridLayout(event);
     };
 
     this.gridOptions.onGridReady = (event) => {
@@ -617,6 +623,7 @@ export default class extends BaseAgGrid {
     console.log("Initializing grid with manually merged options:", this.gridOptions);
 
     let gridDiv = document.querySelector(tableName);
+    this.gridElement = gridDiv;
     this.grid = new agGrid.Grid(gridDiv, this.gridOptions);
 
     this.loadData();

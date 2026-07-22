@@ -1,4 +1,27 @@
 .deals-list-view {
+  .deals-clear-grid-filters {
+    display: none;
+  }
+
+  .deals-grid-scroll-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  // Ensure deals grid maintains fixed height and proper row visibility
+  #deals_list_grid.deals-list-grid {
+    height: 800px !important;
+    min-height: 800px !important;
+    width: 100%;
+    min-width: 1500px;
+    display: block !important;
+    overflow: hidden !important;
+
+    // Clear any conflicting flex properties
+    flex: none !important;
+    flex-direction: unset !important;
+  }
+
   .analytics-card {
     border-radius: 7px !important;
     transition: transform 0.2s ease-in-out;
@@ -48,13 +71,6 @@
   .ag-header-cell-label {
     height: 100%;
     padding: 0 12px;
-  }
-
-  /* Position body viewport below header to avoid overlap */
-  /* Position body viewport below header to avoid overlap */
-  #deals_list_grid .ag-body-viewport {
-    top: 60px !important;
-    height: calc(100% - 106px) !important;
   }
 
   #deals_list_grid .ag-body-horizontal-scroll-viewport {

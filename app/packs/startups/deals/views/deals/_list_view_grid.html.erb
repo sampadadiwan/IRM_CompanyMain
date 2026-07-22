@@ -3,17 +3,16 @@
   <div class="card-header py-3 d-flex align-items-center justify-content-between">
     <h6 class="m-0 font-weight-bold text-primary">Investors</h6>
     <button id="clear-grid-filters"
-            class="btn btn-sm btn-outline-danger align-items-center gap-1"
-            style="display: none;"
+            class="btn btn-sm btn-outline-danger align-items-center gap-1 deals-clear-grid-filters"
             data-action="click->deals-list-ag-grid#clearFilters">
       <i class="ti ti-filter-off"></i> Clear Filters
     </button>
   </div>
-  <div class="card-body p-0" style="overflow-x: auto; -webkit-overflow-scrolling: touch;">
+  <div class="card-body p-0 deals-grid-scroll-container">
     <div
       id="deals_list_grid"
-      class="<%= get_ag_theme %>"
-      style="height: 800px; min-height: 800px; width: 100%; min-width: 1500px;"
+      class="<%= get_ag_theme %> deals-list-grid"
+      data-ag-fixed-layout="true"
       data-source="<%= deal_investors_path(params.to_unsafe_h.merge(format: :json, deal_id: deal.id, all: params[:all])) %>"
     >
     </div>

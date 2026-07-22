@@ -72,3 +72,14 @@ Scenario: Deal with no grid columns configured shows all standard columns
   Then the investor grid should show the base column "Status"
   And the investor grid should show the base column "Tier"
   And the investor grid should show the base column "Health"
+
+Scenario: Deal list grid keeps the first row visible and pagination on one line
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  And I am at the deals page
+  When I create a new deal "name=Grid Fix Deal;amount_cents=20000"
+  Then I should see the "Deal was successfully created"
+  And an deal should be created
+  And the deal has 35 paginated investors
+  When I visit the deal list view
+  Then the deal list grid should apply the first-row and pagination fixes

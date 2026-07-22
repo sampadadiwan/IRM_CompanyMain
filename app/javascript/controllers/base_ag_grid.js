@@ -63,8 +63,13 @@ export default class BaseAgGrid extends Controller {
             onGridReady: (event) => {
                 this.gridOptions.api = event.api;
                 this.gridOptions.columnApi = event.columnApi;
+                this.configureFixedLayoutFixes();
                 this.restoreColumnVisibilityState(this.gridOptions, this.tableNameValue);
                 this.gridReady();
+                this.refreshGridLayout(event);
+            },
+            onFirstDataRendered: (event) => {
+                this.ensureFirstRowVisible(event);
             },
 
             onColumnVisible: (event) => {
@@ -139,6 +144,7 @@ export default class BaseAgGrid extends Controller {
 
         // setup the grid after the page has finished loading
         let gridDiv = document.querySelector(tableName);
+        this.gridElement = gridDiv;
         this.grid = new agGrid.Grid(gridDiv, this.gridOptions);
 
         this.loadData();
@@ -247,11 +253,133 @@ export default class BaseAgGrid extends Controller {
                         });
                     });
                 }
-+               /* ② ------------------------------------ */
                 console.log(data);
                 this.gridOptions.api.setRowData(data);
                 // this.restoreColumnState(this.gridOptions);
             });
+    }
+
+    ensureFirstRowVisible(event) {
+        const api = event?.api || this.gridOptions?.api;
+        if (!api) return;
+
+        if (api.getDisplayedRowCount() <= 0) return;
+
+        // Guard against stale scroll position from cached views.
+        requestAnimationFrame(() => {
+            try {
+                const gridElement = this.getGridElement();
+                const bodyViewport = gridElement?.querySelector('.ag-body-viewport');
+                this.applyFixedHeaderOffset(gridElement);
+                if (bodyViewport) bodyViewport.scrollTop = 0;
+                api.ensureIndexVisible(0, 'top');
+            } catch (e) {
+                console.warn('Unable to reset AG Grid initial scroll position', e);
+            }
+        });
+    }
+
+    refreshGridLayout(event) {
+        const api = event?.api || this.gridOptions?.api;
+        if (!api) return;
+
+        // Turbo/lazy containers can report transient sizes during initial paint.
+        // Run layout once on next frame and once shortly after to stabilize scroll.
+        requestAnimationFrame(() => {
+            try {
+                if (api.doLayout) api.doLayout();
+                this.applyFixedHeaderOffset(this.getGridElement());
+                this.ensureFirstRowVisible({ api });
+            } catch (e) {
+                console.warn('Unable to refresh AG Grid layout on initial render', e);
+            }
+        });
+
+        setTimeout(() => {
+            try {
+                if (api.doLayout) api.doLayout();
+                this.applyFixedHeaderOffset(this.getGridElement());
+            } catch (_e) {
+                // No-op; this is a best-effort follow-up pass.
+            }
+        }, 80);
+    }
+
+    getGridElement() {
+        if (this.gridElement) return this.gridElement;
+        this.gridElement = document.querySelector(this.tableNameValue);
+        return this.gridElement;
+    }
+
+    hasInlineFixedHeight(gridElement) {
+        if (!gridElement) return false;
+        const height = (gridElement.style.height || '').trim();
+        const minHeight = (gridElement.style.minHeight || '').trim();
+
+        const isFixedValue = (value) => {
+            if (!value) return false;
+            const normalized = value.toLowerCase();
+            if (normalized === 'auto' || normalized === '0' || normalized === '0px') return false;
+            return /\d/.test(normalized);
+        };
+
+        return isFixedValue(height) || isFixedValue(minHeight);
+    }
+
+    shouldEnableFixedLayoutFixes(gridElement) {
+        if (!gridElement) return false;
+
+        const fixedLayoutFlag = (gridElement.dataset.agFixedLayout || '').toLowerCase();
+        const legacyFlag = (gridElement.dataset.fixedHeaderOffset || '').toLowerCase();
+        if (fixedLayoutFlag === 'true' || fixedLayoutFlag === '1') return true;
+        if (legacyFlag === 'true' || legacyFlag === '1') return true;
+
+        // Auto-enable for grids explicitly rendered with fixed inline heights.
+        return this.hasInlineFixedHeight(gridElement);
+    }
+
+    configureFixedLayoutFixes() {
+        const gridElement = this.getGridElement();
+        if (!gridElement) return;
+
+        if (this.shouldEnableFixedLayoutFixes(gridElement)) {
+            gridElement.classList.add('ag-fixed-layout-managed');
+        } else {
+            gridElement.classList.remove('ag-fixed-layout-managed');
+            const bodyViewport = gridElement.querySelector('.ag-body-viewport');
+            if (bodyViewport) {
+                bodyViewport.style.position = '';
+                bodyViewport.style.top = '';
+                bodyViewport.style.height = '';
+            }
+        }
+    }
+
+    applyFixedHeaderOffset(gridElement) {
+        if (!gridElement) return;
+
+        // Apply offset fix only to deals_list_grid and capital_commitments_table
+        if (!gridElement.classList.contains('ag-fixed-layout-managed')) return;
+
+        const bodyViewport = gridElement.querySelector('.ag-body-viewport');
+        if (!bodyViewport) return;
+
+        // Only apply offset fix to deals grid and capital commitments grid
+        const gridId = gridElement.id;
+        if (gridId !== 'deals_list_grid' && gridId !== 'capital_commitments_table') {
+            return;
+        }
+
+        const header = gridElement.querySelector('.ag-header');
+        if (!header) return;
+
+        const headerHeight = header.offsetHeight || 0;
+        if (headerHeight <= 0) return;
+
+        // Apply offset to viewport to move it past the header
+        bodyViewport.style.position = 'relative';
+        bodyViewport.style.top = `${headerHeight}px`;
+        bodyViewport.style.height = `calc(100% - ${headerHeight}px)`;
     }
 
     setWidthAndHeight(size) {

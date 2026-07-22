@@ -78,6 +78,7 @@
 </div>
 
 <% if params[:ag].present? %>
+  <% fixed_ag_grid = params[:fixed_ag_grid].to_s == "true" || params[:template].to_s == "index_group" || params[:report_id].present? %>
   <div class="table-responsive">
     <%
 
@@ -102,7 +103,7 @@
       data-group-by-column='<%= params[:group_by_column] %>'
       data-ag-table-name-value="#portfolio_investments_table<%=table_suffix%>" data-ag-custom-fields-value="" >
 
-      <div id="portfolio_investments_table<%=table_suffix%>" class="<%= get_ag_theme %>" data-source="<%= portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:, format: :json) %>">
+      <div id="portfolio_investments_table<%=table_suffix%>" class="<%= get_ag_theme %>" data-ag-fixed-layout="<%= fixed_ag_grid %>" data-source="<%= portfolio_investments_path(params: params.to_unsafe_h, import_upload_id:, format: :json) %>">
       </div>
 
       </div>
