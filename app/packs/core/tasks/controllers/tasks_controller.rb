@@ -50,7 +50,13 @@ class TasksController < ApplicationController
 
   # GET /tasks/new
   def new
-    @task = params[:task] ? Task.new(task_params) : Task.new
+    # Here we add owner_type and owner_id for task creation
+    # embedded context is for special requirements for tasks in deal context
+    @task = params[:task] ? Task.new(normalized_task_params) : Task.new
+    @task.owner_id ||= params[:owner_id]
+    @task.owner_type ||= params[:owner_type]
+    @task.owner_type ||= "User" if params[:embedded_task_context].blank?
+    @task.owner_type = "Investor" if @task.owner_id.present? && @task.owner_type.blank?
     @task.for_entity_id ||= current_user.entity_id
     @task.entity_id ||= current_user.entity_id
     @task.due_date = Time.zone.today + 1.week
@@ -61,6 +67,7 @@ class TasksController < ApplicationController
     @bread_crumbs[:New] = nil
 
     authorize @task
+    authorize_embedded_task_owner!(@task)
     setup_custom_fields(@task)
   end
 
@@ -76,19 +83,22 @@ class TasksController < ApplicationController
 
   # POST /tasks or /tasks.json
   def create
-    @task = Task.new(task_params)
+    normalized_params = normalized_task_params
+    @task = Task.new(normalized_params)
+    @task.owner_type = "Investor" if @task.owner_id.present? && @task.owner_type.blank?
     @task.entity_id ||= current_user.entity_id
     @task.for_entity_id ||= current_user.entity_id
     @task.user = current_user
 
     authorize @task
+    authorize_embedded_task_owner!(@task)
 
     setup_doc_user(@task)
 
     if params[:make_recurring] == "1"
       # Create the recurrence rule
       # We extract common fields to the payload
-      payload = task_params.to_h.except("due_date")
+      payload = normalized_params.except("due_date")
       rule = TaskRecurrenceRule.create!(
         entity_id: @task.entity_id,
         task_template_payload: payload,
@@ -114,8 +124,10 @@ class TasksController < ApplicationController
 
   # PATCH/PUT /tasks/1 or /tasks/1.json
   def update
+    normalized_params = normalized_task_params
+
     if params[:make_recurring] == "1"
-      payload = task_params.to_h.except("due_date")
+      payload = normalized_params.except("due_date")
       rrule = "FREQ=#{params[:recurrence_pattern].upcase};INTERVAL=#{params[:recurrence_interval]}"
       if @task.task_recurrence_rule.present?
         @task.task_recurrence_rule.update!(
@@ -142,7 +154,7 @@ class TasksController < ApplicationController
     setup_doc_user(@task)
 
     respond_to do |format|
-      if @task.update(task_params)
+      if @task.update(normalized_params)
         format.turbo_stream { render :update }
         format.html { redirect_to task_url(@task), notice: "Task was successfully updated." }
         format.json { render :show, status: :ok, location: @task }
@@ -218,5 +230,34 @@ class TasksController < ApplicationController
                                  :assigned_to_id, :category, properties: {},
                                                              reminders_attributes: Reminder::NESTED_ATTRIBUTES,
                                                              documents_attributes: Document::NESTED_ATTRIBUTES)
+  end
+
+  def normalized_task_params
+    attrs = task_params.to_h
+    # Here we set up params based on the context in which the new Task form is loaded and set the fields accordingly
+    case params[:embedded_task_context].presence
+    when "deal_tab"
+      attrs["owner_type"] = "DealInvestor"
+    when "deal_investor_tab"
+      attrs["owner_type"] = "DealInvestor"
+      locked_owner_id = params[:embedded_owner_id].presence || params[:owner_id].presence || attrs["owner_id"]
+      attrs["owner_id"] = locked_owner_id if locked_owner_id.present?
+    end
+
+    attrs["owner_id"] = current_user.id if attrs["owner_type"] == "User"
+
+    attrs
+  end
+
+  def authorize_embedded_task_owner!(task)
+    return unless embedded_task_context?
+    # Only require owner to be set and authorized when actually saving, not on form load
+    return if task.new_record? && task.owner_id.blank?
+    raise Pundit::NotAuthorizedError if task.owner.blank?
+    raise Pundit::NotAuthorizedError unless Pundit.policy!(current_user, task.owner).update?
+  end
+
+  def embedded_task_context?
+    %w[deal_tab deal_investor_tab].include?(params[:embedded_task_context].presence)
   end
 end

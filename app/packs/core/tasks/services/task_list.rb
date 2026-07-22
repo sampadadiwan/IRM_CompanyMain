@@ -3,6 +3,8 @@ class TaskList < BaseList
   Result = Struct.new(:q, :tasks, keyword_init: true)
 
   def call(&)
+    normalize_owner_filters!
+
     @q = Task.ransack(@params[:q])
     @tasks = apply_policy_scope(@q.result, &)
     @tasks = @tasks.includes(:for_entity, :user, :task_template, :assigned_to, :rich_text_details, :rich_text_response, :owner)
@@ -30,5 +32,15 @@ class TaskList < BaseList
     @tasks = @tasks.for_support if @params[:for_support].present? && @params[:for_support] != 'false'
 
     Result.new(q: @q, tasks: @tasks)
+  end
+
+  private
+
+  # Backward compatibility: some callers still pass investor_id instead of owner_id/owner_type.
+  def normalize_owner_filters!
+    return unless @params[:owner_id].blank? && @params[:investor_id].present?
+
+    @params[:owner_id] = @params[:investor_id]
+    @params[:owner_type] ||= "Investor"
   end
 end

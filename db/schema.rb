@@ -2856,6 +2856,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_140200) do
     t.text "details"
     t.integer "entity_id"
     t.integer "investor_id"
+    t.bigint "owner_id"
+    t.string "owner_type", default: "User"
     t.date "on"
     t.string "tags", limit: 100
     t.datetime "updated_at", null: false
@@ -2863,6 +2865,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_140200) do
     t.index ["deleted_at"], name: "index_notes_on_deleted_at"
     t.index ["entity_id"], name: "index_notes_on_entity_id"
     t.index ["investor_id"], name: "index_notes_on_investor_id"
+    t.index ["owner_type", "owner_id"], name: "index_notes_on_owner"
     t.index ["user_id"], name: "index_notes_on_user_id"
   end
 

@@ -128,6 +128,7 @@ class DealActivitiesController < ApplicationController
   def toggle_completed
     result = CompleteDealActivity.call(deal_activity: @deal_activity, params: deal_activity_params, user_id: current_user.id)
 
+
     respond_to do |format|
       if result.success?
         format.html { redirect_to deal_activity_url(@deal_activity), notice: "Activity was successfully updated." }
@@ -140,8 +141,9 @@ class DealActivitiesController < ApplicationController
   def perform_activity_action
     # Passed a user id here for tracking who performed the action
     result = PerformActivityAction.call(params:,
-                                        deal_activity: @deal_activity,
-                                        user_id: current_user.id)
+                                          deal_activity: @deal_activity,
+                                          user_id: current_user.id)
+
     if result.success?
       render json: {
         message: "Activity was successfully updated.",

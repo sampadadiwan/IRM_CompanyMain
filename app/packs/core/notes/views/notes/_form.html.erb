@@ -3,6 +3,8 @@
 
 <%= form_with(model: note, validate: true) do |form| %>
   <%= hidden_field_tag :return_to, return_to if return_to.present? %>
+  <%= hidden_field_tag :embedded_note_context, params[:embedded_note_context] %>
+  <%= hidden_field_tag :embedded_owner_id, params[:owner_id].presence || params.dig(:note, :owner_id) %>
   <% if note.errors.any? %>
     <div class="alert alert-danger">
       <h2><%= pluralize(note.errors.count, "error") %> prohibited this note from being saved:</h2>
@@ -16,22 +18,78 @@
   <% end %>
 
 
-  <% if note.investor_id.present? %>
-  <div class="form-group">
-    <%= form.label :investor %>
-    <%= form.text_field :investor_name, class: "form-control", disabled: "disabled", value: @note.investor.investor_name  %>
-    <%= form.text_field :investor_id, class: "form-control", hidden: true  %>
-    <%= form.text_field :entity_id, class: "form-control", hidden: true  %>
-  </div>
-  
-  <% else %>
+  <%
+    note_context = params[:embedded_note_context].presence
+    note_context ||= "deal_investor_tab" if params[:from] == "deal_details"
+    restricted_embedded_context = note_context.in?(%w[deal_tab deal_investor_tab])
+
+    effective_owner_type = note.owner_type.presence
+    effective_owner_type ||= "User" if note_context.blank?
+    note.owner_type = effective_owner_type
+
+    investor_owner_options = current_user.entity.investors.includes(:investor_entity).sort_by { |investor| investor.investor_name }.map { |investor| [investor.investor_name, investor.id] }
+    owner_options = nil
+    if effective_owner_type == "DealInvestor"
+      owner_options = current_user.entity.deal_investors.includes(:investor).sort_by { |d| d.investor_name }.map { |d| [d.investor_name, d.id] }
+    elsif note_context.blank?
+      owner_options = investor_owner_options
+    elsif effective_owner_type == "Investor"
+      owner_options = investor_owner_options
+    end
+
+    owner_type_disabled = restricted_embedded_context
+    owner_type_options = if note_context.blank?
+      [["User", "User"], ["Investor", "Investor"]]
+    elsif effective_owner_type == "Investor"
+      [["Investor", "Investor"]]
+    else
+      [["Deal Investor", "DealInvestor"]]
+    end
+
+    owner_locked = effective_owner_type == "DealInvestor" && note.owner_id.present? && note_context == "deal_investor_tab"
+    show_for_field = effective_owner_type != "User"
+    show_name_field = note_context.blank? && effective_owner_type == "User"
+  %>
+
+  <div data-controller="note-owner">
     <div class="form-group">
-      <%= form.label :investor %>
-      <%= form.select :investor_id, 
-        current_user.entity.investors.includes(:investor_entity).order("entities.name").map{|c| [c.investor_name, c.id]}, 
-        {include_blank: true}, class: "form-control select2"  %>
+      <%= form.label :owner_type, "Owner Type" %>
+      <%= form.select :owner_type,
+        owner_type_options,
+        { selected: effective_owner_type, include_blank: false },
+        class: "form-control",
+        disabled: owner_type_disabled,
+        data: {
+          "note-owner-target": "ownerType",
+          action: "change->note-owner#ownerTypeChanged"
+        } %>
+      <%= form.hidden_field :owner_type if owner_type_disabled %>
+      <%= form.hidden_field :entity_id if owner_type_disabled %>
     </div>
-  <% end %>
+
+    <% if owner_options.present? %>
+      <div class="form-group <%= show_for_field ? '' : 'd-none' %>" data-note-owner-target="ownerForGroup">
+        <%= form.label :owner_id, "For" %>
+        <%= form.select :owner_id,
+          owner_options,
+          { selected: note.owner_id, include_blank: !owner_locked },
+          class: "form-control",
+          disabled: owner_locked,
+          data: {
+            "note-owner-target": "ownerForSelect",
+            locked: owner_locked
+          } %>
+        <%= form.hidden_field :owner_id if owner_locked %>
+      </div>
+    <% else %>
+      <%= form.hidden_field :owner_id %>
+    <% end %>
+
+    <div class="form-group <%= show_name_field ? '' : 'd-none' %>" data-note-owner-target="ownerNameGroup">
+      <%= form.label :owner_name, "Name" %>
+      <%= text_field_tag :owner_name, current_user.full_name, class: "form-control", disabled: true %>
+    </div>
+  </div>
 
   <div class="form-group">
     <%= form.label :on %>

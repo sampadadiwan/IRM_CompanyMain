@@ -70,6 +70,10 @@ module WithAuthentication
   def deny_access
     if request.headers['Authorization'].present?
       render json: { error: "Access Denied" }, status: :forbidden
+    elsif request.headers['Turbo-Frame'].present?
+      frame_id = ERB::Util.html_escape(request.headers['Turbo-Frame'])
+      render html: "<turbo-frame id='#{frame_id}'><div class='alert alert-danger mb-0'>Access Denied</div></turbo-frame>".html_safe,
+             status: :forbidden
     else
       redirect_to root_path, alert: "Access Denied"
     end

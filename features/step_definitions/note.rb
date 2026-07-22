@@ -1,8 +1,21 @@
 When('I create a new note {string}') do |arg1|
+  @note_details = arg1
   click_on("Show", match: :first)
   click_on("Add Note", match: :first)
   find('#note_details').set(arg1)
   click_on("Save")
+end
+
+Given('there is a note without owner {string}') do |details|
+  @note_details = details
+  @note = Note.create!(
+    details: details,
+    entity: @entity,
+    user: @user,
+    owner: nil,
+    owner_type: "Investor",
+    on: Date.current
+  )
 end
 
 Then('an note should be created') do
@@ -10,10 +23,11 @@ Then('an note should be created') do
 end
 
 Then('I should see the note details on the details page') do
-  expect(page).to have_content("Hi, How are you?")
+  expect(page).to have_content(@note_details)
 end
 
 Then('I should see the note in all notes page') do
   visit("/notes")
-  expect(page).to have_content("Hi, How are you?")
+  expect(page).to have_content(@note_details)
+  expect(page).to have_selector("tr#note_#{@note.id}") if defined?(@note) && @note.present?
 end

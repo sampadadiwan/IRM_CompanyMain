@@ -23,6 +23,7 @@ class DealInvestor < ApplicationRecord
 
   has_many :deal_activities, -> { order(sequence: :asc) }, dependent: :destroy
   has_many :tasks, as: :owner, dependent: :destroy
+  has_many :inv_notes, as: :owner, dependent: :destroy, class_name: "Note"
 
   # Non-persisted actor used to attribute initial step task generation.
   attr_accessor :created_by_user_id

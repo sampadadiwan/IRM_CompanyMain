@@ -16,3 +16,9 @@ Scenario Outline: Create new note
   	|user	    |entity                  |msg	|
   	|  	        |entity_type=Company   |Note was successfully created|
     |  	        |entity_type=Company   |Note was successfully created|
+
+Scenario: List note with nil owner
+  Given Im logged in as a user "" for an entity "entity_type=Company"
+  Given the user has role "company_admin"
+  And there is a note without owner "Ownerless note still renders"
+  Then I should see the note in all notes page

@@ -55,7 +55,7 @@
     <div id="tasks-tab" class="tab-pane fade">
       <div id="deal_tasks" class="associated_entity">
         <%# Load tasks for both the Deal and its DealInvestors by passing deal_id %>
-        <%= turbo_frame_tag "tasks_frame", target: "_top", src: tasks_path(deal_id: deal.id), loading: :lazy do %>
+        <%= turbo_frame_tag "tasks_frame", target: "_top", src: tasks_path(deal_id: deal.id, embedded_task_context: "deal_tab"), loading: :lazy do %>
           <%= render "/layouts/loading" %>
         <% end %>
       </div>

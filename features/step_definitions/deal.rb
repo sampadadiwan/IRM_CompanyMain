@@ -203,6 +203,13 @@ Given('I am {string} employee access to the deal') do |given|
   @user.reload
 end
 
+Given('I grant {string} access to the deal for user {string}') do |perms, email|
+  user = User.find_by!(email: email)
+  @access_right = AccessRight.new(entity_id: @deal.entity_id, owner: @deal, user_id: user.id)
+  perms.split(',').each { |p| @access_right.permissions.set(p.strip.to_sym) }
+  @access_right.save!
+end
+
 Given('I have {string} access to the deal') do |should|
   Pundit.policy(@user, @deal).show?.should == (should == "true")
 end

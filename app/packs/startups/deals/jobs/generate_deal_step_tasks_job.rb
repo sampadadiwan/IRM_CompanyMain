@@ -38,16 +38,16 @@ class GenerateDealStepTasksJob < ApplicationJob
         # Find a fallback user if user_id is nil
         effective_user_id = user_id || deal_investor.entity.employees.first&.id
 
-          # Create the Task
-          Task.create!(
-            entity_id: deal_investor.entity_id,
-            user_id: effective_user_id,          # Link to an effective user
-            assigned_to_id: effective_user_id,   # Assign to the person who moved the step
-            owner: deal_investor,
-            details: title,
-            due_date: Time.zone.today + 7.days,  # Default due date of 1 week
-            category: "Other"                    # Default category for deal tasks
-          )
+        # Create the Task
+        Task.create!(
+           entity_id: deal_investor.entity_id,
+           user_id: effective_user_id,          # Link to an effective user
+           assigned_to_id: effective_user_id,   # Assign to the person who moved the step
+           owner: deal_investor,
+           details: title,
+           due_date: Time.zone.today + 7.days,  # Default due date of 1 week
+           category: "Other"                    # Default category for deal tasks
+         )
       end
     end
   end

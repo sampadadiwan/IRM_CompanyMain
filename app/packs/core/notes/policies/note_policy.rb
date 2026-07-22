@@ -15,11 +15,16 @@ class NotePolicy < ApplicationPolicy
 
   def show?
     user.enable_investors &&
-      belongs_to_entity?(user, record) && (user.has_cached_role?(:company_admin) || user.id == record.user_id)
+      belongs_to_entity?(user, record) && (user.has_cached_role?(:company_admin) || (user.id == record.user_id) || (record.owner && owner_policy.show?) || support?)
   end
 
   def create?
-    belongs_to_entity?(user, record) && (user.has_cached_role?(:company_admin) || user.id == record.user_id)
+    belongs_to_entity?(user, record) && (user.has_cached_role?(:company_admin) || (record.owner && owner_policy.create?) || (user.id == record.user_id) || support?)
+  end
+
+  # Adding a new policy to check only for notes that are added via Deal Notes Tab
+  def deal_note_create?
+    belongs_to_entity?(user, record) && (user.has_cached_role?(:company_admin) || (record.owner && owner_policy.create?) || support?)
   end
 
   def new?
@@ -35,6 +40,6 @@ class NotePolicy < ApplicationPolicy
   end
 
   def destroy?
-    update?
+    update? || (user.id == record.user_id && record.owner && owner_policy.show?)
   end
 end

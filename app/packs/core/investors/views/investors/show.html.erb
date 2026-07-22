@@ -11,14 +11,14 @@
       <% end %>
     <% end %>
 
-    <%= link_to notes_path(investor_id: @investor.id),
+    <%= link_to notes_path(owner_id: @investor.id, owner_type: "Investor"),
                 class: "btn btn-outline-success d-inline-flex align-items-center",
                 data: { turbo: false } do %>
       <i class="ti ti-notes"></i> View Notes
     <% end %>
 
     <% if policy(@investor).update? %>
-      <%= link_to new_note_path("note[investor_id]": @investor.id),
+      <%= link_to new_note_path("note[owner_id]": @investor.id, "note[owner_type]": "Investor"),
                   class: "btn btn-outline-success d-inline-flex align-items-center",
                   data: { turbo: false } do %>
         <i class="ti ti-message-plus"></i> Add Note

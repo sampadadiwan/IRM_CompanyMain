@@ -27,7 +27,14 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def update?
-    permissioned_employee?(:update)
+    return true if support?
+    return permissioned_rm?(:update) if rm?
+
+    if record.deal_investor.present?
+      DealInvestorPolicy.new(user, record.deal_investor).update?
+    else
+      deal_update_permission?
+    end
   end
 
   def edit?
@@ -51,6 +58,21 @@ class DealActivityPolicy < DealBasePolicy
   end
 
   def destroy?
-    permissioned_employee?(:destroy)
+    return true if support?
+    return permissioned_rm?(:destroy) if rm?
+
+    if record.deal_investor.present?
+      DealInvestorPolicy.new(user, record.deal_investor).destroy?
+    else
+      deal_update_permission?
+    end
+  end
+
+  private
+
+  def deal_update_permission?
+    return false if record.deal.blank?
+
+    DealPolicy.new(user, record.deal).update?
   end
 end

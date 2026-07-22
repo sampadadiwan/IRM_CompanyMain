@@ -33,7 +33,7 @@
     <div id="tasks-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
       <div id="tasks" class="associated_entity">
         <%= turbo_frame_tag "tasks_frame",
-                            src: tasks_path(owner_type: deal_investor.class, owner_id: deal_investor.id),
+                            src: tasks_path(owner_type: deal_investor.class, owner_id: deal_investor.id, embedded_task_context: "deal_investor_tab"),
                             target: "_top", loading: :lazy do %>
         <% end %>
       </div>
@@ -41,7 +41,7 @@
     <div id="notes-tab" class="tab-pane fade" data-offcanvastabs-target="tabPane">
       <div id="notes" class="associated_entity">
         <%= turbo_frame_tag "notes_frame",
-                            src: notes_path(investor_id: deal_investor.investor_id, entity_id: deal_investor.entity_id, return_to: deal_path(deal_investor.deal)),
+                            src: notes_path(owner_id: deal_investor.id, owner_type: "DealInvestor", entity_id: deal_investor.entity_id, return_to: deal_path(deal_investor.deal), from: "deal_details", embedded_note_context: "deal_investor_tab"),
                             target: "_top", loading: :lazy do %>
         <% end %>
       </div>

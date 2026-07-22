@@ -50,6 +50,45 @@ export default class extends BaseAgGrid {
     return cleanedStatuses.length ? cleanedStatuses : fallbackStatuses;
   }
 
+  // Common method to check user has permission to update the row
+  canUpdateRow(data) {
+    return !!(data && data.can_update);
+  }
+
+  // Common method to show Access Denied message for user_alert configured on the page
+  showAccessDenied(message = 'Access denied: you do not have permission to update this deal investor.') {
+    const now = Date.now();
+    if (this._lastAccessDeniedAt && (now - this._lastAccessDeniedAt) < 1500) return;
+    this._lastAccessDeniedAt = now;
+
+    const host = document.getElementById('user_alert');
+    if (!host) {
+      alert(message);
+      return;
+    }
+
+    host.innerHTML = `
+      <div id="page_alerts" class="page_alerts">
+        <div class="alert alert-danger alert-dismissible border-0 fade show" role="alert">
+          ${message}
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      </div>
+    `;
+
+    // Timeout to let the turbo frame load completely for multiple turbo messages
+    setTimeout(() => {
+      const alertEl = host.querySelector('.alert');
+      if (!alertEl) return;
+      const dismiss = alertEl.querySelector('[data-bs-dismiss="alert"]');
+      if (dismiss) {
+        dismiss.click();
+      } else {
+        alertEl.remove();
+      }
+    }, 4000);
+  }
+
   columnDefs() {
     const hardcodedFields = [
       'investor_name', 'health_score', 'status', 'stagnant',
@@ -281,14 +320,18 @@ export default class extends BaseAgGrid {
             const entityId = params.data.entity_id || '';
             const dealInvestorId = params.data.id || '';
             const activityName = encodeURIComponent(activity.title || '');
+            const canUpdate = this.canUpdateRow(params.data);
+            const chevron = canUpdate ? '<i class="ti ti-chevron-down" style="font-size:0.7rem; vertical-align:middle;"></i>' : '';
+
             return `<span class="badge ${badgeClass} activity-badge"
                           style="cursor:pointer; font-size:0.85rem;"
                           data-activity-id="${id}"
                           data-activity-status="${status}"
                           data-entity-id="${entityId}"
                           data-deal-investor-id="${dealInvestorId}"
-                          data-activity-name="${activityName}">
-                      ${status} <i class="ti ti-chevron-down" style="font-size:0.7rem; vertical-align:middle;"></i>
+                          data-activity-name="${activityName}"
+                          data-can-update="${canUpdate}">
+                      ${status} ${chevron}
                     </span>`;
           },
           valueGetter: (params) => {
@@ -601,9 +644,22 @@ export default class extends BaseAgGrid {
   }
 
   onCellValueChanged(params) {
+    if (this._suppressCellValueChanged) return;
+
     const id = params.data.id;
     const field = params.colDef.field;
     const value = params.newValue;
+
+    if (!this.canUpdateRow(params.data)) {
+      this.showAccessDenied();
+      // Revert immediately for read-only rows without triggering another update loop.
+      if (typeof params.oldValue !== 'undefined' && params.oldValue !== value) {
+        this._suppressCellValueChanged = true;
+        params.node.setDataValue(field, params.oldValue);
+        setTimeout(() => { this._suppressCellValueChanged = false; }, 0);
+      }
+      return;
+    }
 
     if (field.startsWith('activity_')) {
       const templateId = field.split('_')[1];
@@ -616,7 +672,13 @@ export default class extends BaseAgGrid {
     }
   }
 
+  // Hook for sending Deal Investor Updates to the server
   updateDealInvestor(id, field, value, params) {
+    if (!this.canUpdateRow(params.data)) {
+      this.showAccessDenied();
+      return;
+    }
+
     const formData = new FormData();
     formData.append(`deal_investor[${field}]`, value);
 
@@ -631,18 +693,29 @@ export default class extends BaseAgGrid {
       headers: headers,
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok || response.redirected) throw new Error(`DealInvestor update failed: HTTP ${response.status}`);
+      return response.json();
+    })
     .then(data => {
       console.log('DealInvestor update success:', data);
       if (field === 'status') this.refreshRowData(params.node);
     })
     .catch(error => {
       console.error('DealInvestor update failed:', error);
+      // Prevent setDataValue from re-triggering a recursive update loop.
+      this._suppressCellValueChanged = true;
       params.node.setDataValue(field, params.oldValue);
+      setTimeout(() => { this._suppressCellValueChanged = false; }, 0);
     });
   }
 
   updateActivity(id, value, params) {
+    if (!this.canUpdateRow(params.data)) {
+      this.showAccessDenied();
+      return;
+    }
+
     const formData = new FormData();
     formData.append(`deal_activity[status]`, value);
 
@@ -657,7 +730,10 @@ export default class extends BaseAgGrid {
       headers: headers,
       body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+      if (!response.ok || response.redirected) throw new Error(`Activity update failed: HTTP ${response.status}`);
+      return response.json();
+    })
     .then(data => {
       console.log('Activity update success:', data);
       this.refreshRowData(params.node);
@@ -669,6 +745,12 @@ export default class extends BaseAgGrid {
 
   // Called from the inline dropdown in activity cells.
   updateActivityStatus(id, newStatus) {
+    // Do not attempt status updates from read-only users.
+    if (this._activityMenuCanUpdate !== true) {
+      this.showAccessDenied();
+      return;
+    }
+
     const formData = new FormData();
     formData.append('deal_activity[status]', newStatus);
 
@@ -681,7 +763,10 @@ export default class extends BaseAgGrid {
       headers,
       body: formData
     })
-    .then(r => r.json())
+    .then(r => {
+      if (!r.ok || r.redirected) throw new Error(`Activity status update failed: HTTP ${r.status}`);
+      return r.json();
+    })
     .then(() => {
       // Refresh the row that owns this activity
       if (this.gridOptions && this.gridOptions.api) {
@@ -913,9 +998,17 @@ export default class extends BaseAgGrid {
   }
 
   disconnect() {
+    //Clean the listeners to be recreated on new page loads, which removes stale listeners from the page
+    if (this._activityMenuClickHandler) {
+      document.removeEventListener('click', this._activityMenuClickHandler);
+      this._activityMenuClickHandler = null;
+    }
+
     if (this._chartFilterHandler) {
       document.removeEventListener('chart:grid-filter', this._chartFilterHandler);
     }
+
+    super.disconnect();
   }
 
   // Build a single floating menu appended to document.body so it is never clipped
@@ -960,21 +1053,33 @@ export default class extends BaseAgGrid {
     }
 
     // Delegate: open menu when any .activity-badge is clicked
-    document.addEventListener('click', (e) => {
+    if (this._activityMenuClickHandler) return;
+
+    this._activityMenuClickHandler = (e) => {
       const badge = e.target.closest('.activity-badge');
 
       if (badge) {
         e.stopPropagation();
         const id = parseInt(badge.dataset.activityId);
         const backTo = encodeURIComponent(window.location.href);
+        const canUpdate = badge.dataset.canUpdate === 'true';
+
+        if (!canUpdate) this.showAccessDenied();
 
         menu.dataset.activityId = id;
+        this._activityMenuCanUpdate = canUpdate;
         menu.querySelector('#deals-activity-menu-show').href = `/deal_activities/${id}`;
         const entityId = badge.dataset.entityId;
         const dealInvestorId = badge.dataset.dealInvestorId;
         const activityName = badge.dataset.activityName || '';
         // Upload doc owner is DealInvestor; name preset to the deal activity title
         menu.querySelector('#deals-activity-menu-docs').href = `/documents/new?document[owner_id]=${dealInvestorId}&document[owner_type]=DealInvestor&document[entity_id]=${entityId}&document[name]=${activityName}&back_to=${backTo}`;
+
+        menu.querySelectorAll('[data-status]').forEach(btn => {
+          btn.style.display = canUpdate ? '' : 'none';
+        });
+        const divider = menu.querySelector('.dropdown-divider');
+        if (divider) divider.style.display = canUpdate ? '' : 'none';
 
         // Position menu below the badge using viewport coordinates
         const rect = badge.getBoundingClientRect();
@@ -996,7 +1101,9 @@ export default class extends BaseAgGrid {
       if (!menu.contains(e.target)) {
         menu.style.display = 'none';
       }
-    });
+    };
+
+    document.addEventListener('click', this._activityMenuClickHandler);
   }
 
   initTooltips() {

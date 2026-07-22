@@ -21,7 +21,7 @@ class DealInvestorPolicy < DealBasePolicy
 
   def show?
     (user.entity_id == record.investor_entity_id) ||
-      permissioned_employee?
+      permissioned_employee? || support?
   end
 
   def create?
@@ -42,7 +42,7 @@ class DealInvestorPolicy < DealBasePolicy
 
   def update?
     create? ||
-      permissioned_employee?(:update)
+      permissioned_employee?(:update) || support?
   end
 
   def edit?
@@ -51,29 +51,10 @@ class DealInvestorPolicy < DealBasePolicy
 
   def destroy?
     create? ||
-      permissioned_employee?(:destroy)
+      permissioned_employee?(:destroy) || support?
   end
 
   def permissioned_employee?(perm = nil)
-    return support? unless belongs_to_entity?(user, record)
-
-    if user.has_cached_role?(:company_admin)
-      true
-    else
-      @deal ||= Deal.includes(:access_rights).find_by(id: record.deal_id)
-      val = if perm
-              @deal.present? && @deal.access_rights[0].permissions.set?(perm)
-            else
-              @deal.present?
-            end
-      return val if val
-
-      @deal_investor ||= DealInvestor.for_employee(user).includes(:access_rights).find_by(id: record.id)
-      if perm
-        @deal_investor.present? && @deal_investor.access_rights[0].permissions.set?(perm)
-      else
-        @deal_investor.present?
-      end
-    end
+    super
   end
 end
