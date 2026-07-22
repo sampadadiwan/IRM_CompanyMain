@@ -52,6 +52,7 @@ resources :agent_charts do
 end
 resource :portfolio_company_dashboard, only: [:show], controller: "portfolio_company_dashboard" do
   post :send_reminders
+  post :run_validation
 end
 
 resources :ai_checks do

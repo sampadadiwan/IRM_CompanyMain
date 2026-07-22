@@ -14,10 +14,23 @@ class PortfolioCompanyDashboardController < ApplicationController
   #
   # Loads all portfolio reports for the presenter (stat cards, chart, sidebar),
   # then builds a separate filtered+paginated scope for the company table.
-  # Two queries are intentional: presenter needs .includes(:owner), table needs .joins(:investor) for Ransack.
+  # Also computes the look-back period info for the window status indicator bar.
+  #
+  # Two queries are intentional: presenter needs .includes(:owner),
+  # table needs .joins(:investor) for Ransack.
   #
   # @return [void]
   def show
+    # Compute the look-back period for the window status indicator.
+    # Uses PortfolioCompanyAgent's compute_check_period to determine
+    # the active window (T+start to T+end) and the data query range.
+    # Also stores due_period in the hash for the "closed" state's
+    # next-window computation in _window_status.html.erb.
+    agent_instance = PortfolioCompanyAgent.new
+    agent_instance.instance_variable_set(:@support_agent, @support_agent)
+    @period_info = agent_instance.send(:compute_check_period)
+    @period_info[:due_period] = @support_agent.json_fields["due_period"] || "Quarter"
+
     # Full report set for stat cards, chart, and sidebar aggregations
     portfolio_all = portfolio_reports_scope.includes(:owner).to_a
     @presenter = PortfolioDashboardPresenter.new(portfolio_all, @support_agent)
@@ -29,6 +42,36 @@ class PortfolioCompanyDashboardController < ApplicationController
     @pagy, @paginated_reports = pagy(@q.result.order(updated_at: :desc), limit: 10)
     @status_filter = params[:status]
     @search_value = params.dig(:q, :investor_investor_name_cont)
+  end
+
+  # POST /portfolio_company_dashboard/run_validation
+  #
+  # Enqueues a PortfolioValidationJob to run PortfolioCompanyAgent across all
+  # portfolio companies. Accepts an optional check_as_on_date from the dashboard
+  # period dropdown — when present, the agent validates data for that specific
+  # period-end date instead of auto-computing the most recently completed period.
+  #
+  # Uses PortfolioValidationJob (not the shared SupportAgentJob) because the
+  # shared job doesn't accept agent-specific parameters like check_as_on_date.
+  #
+  # @return [void]
+  def run_validation
+    authorize @support_agent, :run?
+
+    # check_as_on_date comes from the period dropdown in _actions.html.erb.
+    # Empty string means "Auto" (let the agent compute); non-empty is an ISO date.
+    check_date = params[:check_as_on_date].presence
+
+    PortfolioValidationJob.perform_later(
+      support_agent_id: @support_agent.id,
+      user_id: current_user.id,
+      entity_id: current_user.entity_id,
+      check_as_on_date: check_date
+    )
+
+    period_label = check_date.present? ? "for #{check_date}" : "for the most recent period"
+    redirect_to portfolio_company_dashboard_path,
+                notice: "Validation started #{period_label}. Results will appear shortly."
   end
 
   # POST /portfolio_company_dashboard/send_reminders

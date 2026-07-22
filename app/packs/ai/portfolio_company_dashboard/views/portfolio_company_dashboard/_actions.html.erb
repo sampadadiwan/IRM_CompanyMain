@@ -9,19 +9,57 @@
     <h6 class="fw-bold mb-3">Agent Actions</h6>
 
     <div class="d-flex flex-column gap-2 mb-4">
-      <%# Run Validation — triggers run_with_steps with Entity target (batch mode) %>
-<%= button_to run_with_steps_support_agent_path(support_agent),
-      method: :post,
-      params: { target_type: "Entity", target_id: support_agent.entity_id },
-      class: "btn btn-outline-primary text-start d-flex align-items-center gap-2",
-      data: { confirm: "Run validation on all portfolio companies?" } do %>
+            <%# Run Validation — triggers run_with_steps with Entity target (batch mode).
+           Includes a "Check period" dropdown that lets the FM select which period-end
+           date to validate against. "Auto" (default) uses the most recently completed
+           period; past period-end dates are shown for historical checks.
+           The selected value is passed as check_as_on_date to the agent. %>
+      <%
+        # Compute the last 4 period-end dates for the dropdown.
+        # Uses the agent's due_period setting (Quarterly by default).
+        due_period = support_agent.json_fields["due_period"] || "Quarter"
+        auto_date = Date.previous_end_of_period(due_period)
+        period_options = [auto_date]
+        3.times { period_options << Date.previous_end_of_period(due_period, period_options.last) }
 
-        <i class="ti ti-player-play"></i>
-        <div>
-          <strong>Run Validation</strong><br>
-          <small class="text-muted">Check all data for completeness</small>
+        # Build human-readable labels: "Q2 - Jun 30, 2026"
+        period_choices = period_options.map do |d|
+          quarter_num = ((d.month - 1) / 3) + 1
+          label = case due_period.to_s.downcase
+                  when "month"   then d.strftime("%B %Y")
+                  when "quarter" then "Q#{quarter_num} - #{d.strftime('%b %d, %Y')}"
+                  when "half year", "half_year", "halfyear"
+                    (d.month <= 6 ? "H1" : "H2") + " - #{d.strftime('%b %d, %Y')}"
+                  when "year"    then d.strftime("%Y")
+                  else d.to_s
+                  end
+          [label, d.to_s]
+        end
+      %>
+      <%# Form posts to the dashboard's own run_validation action (not the shared
+           support_agents run_with_steps). This avoids modifying shared framework
+           files and lets us pass check_as_on_date to PortfolioValidationJob. %>
+      <%= form_with url: run_validation_portfolio_company_dashboard_path,
+                    method: :post,
+                    class: "btn btn-outline-primary text-start p-3",
+                    data: { confirm: "Run validation on all portfolio companies?" } do |f| %>
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="ti ti-player-play"></i>
+          <div>
+            <strong>Run Validation</strong><br>
+            <small class="text-muted">Check all data for completeness</small>
+          </div>
         </div>
+        <div class="mt-2">
+          <label class="form-label small text-muted mb-1">Check period</label>
+          <%= f.select :check_as_on_date,
+                options_for_select([["Auto (#{period_choices.first[0]})", ""]] + period_choices, ""),
+                {},
+                class: "form-select form-select-sm" %>
+        </div>
+        <%= f.submit "Run", class: "btn btn-primary btn-sm mt-2 w-100" %>
       <% end %>
+
 
       <%# Batch progress panel appears here after Run Validation is clicked %>
       <div id="batch_progress_panel"></div>
