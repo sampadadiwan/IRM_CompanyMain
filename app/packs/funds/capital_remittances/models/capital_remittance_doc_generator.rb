@@ -17,6 +17,7 @@ class CapitalRemittanceDocGenerator
     end
 
     @fund_doc_template_name = fund_doc_template.name
+    @end_date = capital_remittance.remittance_date
 
     # Download the Word template and run the document generation pipeline
     fund_doc_template.file.download do |tempfile|
@@ -64,13 +65,18 @@ class CapitalRemittanceDocGenerator
     capital_commitment = capital_remittance.capital_commitment
     capital_commitment.json_fields["remittance_date"] = capital_remittance.remittance_date
     fund_as_of.json_fields["capital_remittance"] = capital_remittance
+    investor_kyc = capital_commitment.investor_kyc
 
     context = {
       date: Time.zone.today.strftime("%d %B %Y"),
       entity: capital_remittance.entity,
       fund: FundTemplateDecorator.decorate(fund_as_of),
       capital_remittance: TemplateDecorator.decorate(capital_remittance),
-      investor_kyc: TemplateDecorator.decorate(capital_commitment.investor_kyc),
+      investor_kyc: TemplateDecorator.decorate(investor_kyc),
+      # Add kyc commitments context
+      kyc_commitments: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_remittance.fund_id)),
+      kyc_commitments_before_end_date: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_remittance.fund_id, commitment_date: ..@end_date)),
+      kyc_commitments_between_dates: TemplateDecorator.decorate_collection(investor_kyc.capital_commitments.where(fund_id: capital_remittance.fund_id, commitment_date: ..@end_date)),
       capital_call: TemplateDecorator.decorate(capital_remittance.capital_call),
       due_date: capital_remittance.capital_call.due_date&.strftime("%d %B %Y"),
       call_date: capital_remittance.capital_call.call_date&.strftime("%d %B %Y"),

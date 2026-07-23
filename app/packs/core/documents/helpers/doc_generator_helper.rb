@@ -71,7 +71,7 @@ module DocGeneratorHelper
   end
 
   # Fetch account entries breakdown for a given field
-  # Extracts and normalizes field name, queries matching account entries, and maps to OpenStruct objects
+  # Extracts and normalizes field name, queries matching account entries, and returns the latest AE per distinct folio_id
   # @param field_name [String] The merge field name (e.g., 'aes_revenue')
   # @param account_entries [ActiveRecord::Relation] The account entries collection to query
   # @param scope_type [Symbol] The scope type (:fund_entries, :kyc_commitments, :folio_commitment, :aes_breakdown)
@@ -115,7 +115,11 @@ module DocGeneratorHelper
       end
     end
 
-    entries.map do |entry|
+    latest_entries_by_folio = entries.group_by(&:folio_id).map do |_folio_id, folio_entries|
+      folio_entries.max_by(&:reporting_date)
+    end.sort_by(&:capital_commitment_id)
+
+    latest_entries_by_folio.map do |entry|
       OpenStruct.new(
         name: entry.name,
         audit_name: dist_fee_map[entry.name.downcase]&.dig(:audit_name) || "",

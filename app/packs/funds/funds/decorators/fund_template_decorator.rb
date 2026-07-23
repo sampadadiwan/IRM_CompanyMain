@@ -54,8 +54,6 @@ class FundTemplateDecorator < TemplateDecorator
     end
   end
 
-  private
-
   def fetch_account_entry(method_name, scope_type)
     # Handles fundae_, kycae_, and folioae_ prefixes for account entry lookups
     # Format: prefix_name[_enttype_type][cumulative] or prefixcumulative_name[_enttype_type]
@@ -1031,7 +1029,8 @@ class FundTemplateDecorator < TemplateDecorator
   def agg_dist_incl_investor_percent = percentage(agg_dist_incl_investor.cents, agg_dist_incl_total.cents)
 
   # Distribution Cash amount of the KYC including the notice date
-  alias agg_dist_incl_kyc dist_cash_kyc
+  def agg_dist_incl_kyc = Money.new(kyc_dist_payments.sum(DIST_CASH_SQL), @currency)
+  memoize :agg_dist_incl_kyc
 
   # Percentage of distribution cash of the KYC including the notice date
   def agg_dist_incl_kyc_percent = percentage(agg_dist_incl_kyc.cents, agg_dist_incl_total.cents)
