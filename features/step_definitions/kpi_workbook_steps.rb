@@ -195,3 +195,121 @@ Then('the KPI data should be updated with the new values') do
 
   puts "All KPIs after refresh: #{Kpi.where(portfolio_company_id: @portfolio_company.id).pluck(:name).tally}"
 end
+
+# --- Steps for KPI parser fixes (branch: feature/kpi-workbook-parser-fixes) ---
+
+# Verifies that KpiReports with each expected tag exist for the portfolio company
+Then('KPI reports should exist with tags {string}') do |tags_string|
+  expected_tags = tags_string.split(',').map(&:strip).sort
+  actual_tags = KpiReport.where(portfolio_company_id: @portfolio_company.id)
+                         .pluck(:tag_list).compact.uniq.sort
+  expect(actual_tags).to match_array(expected_tags),
+    "Expected tags #{expected_tags}, got #{actual_tags}"
+end
+
+# Verifies that each tag has KpiReports for the same set of periods
+Then('each tag should have KPI reports for the same periods') do
+  reports = KpiReport.where(portfolio_company_id: @portfolio_company.id)
+  by_tag = reports.group_by(&:tag_list)
+  periods_per_tag = by_tag.transform_values { |reps| reps.map(&:as_of).sort }
+
+  # All tags should cover the same periods
+  all_period_sets = periods_per_tag.values.uniq
+  expect(all_period_sets.size).to eq(1),
+    "Expected all tags to cover the same periods, got: #{periods_per_tag.inspect}"
+end
+
+# Verifies that child InvestorKpiMappings were created under a parent
+Then('child mappings should be created under {string} with names {string}') do |parent_name, children_string|
+  expected_children = children_string.split(',').map(&:strip).sort
+  parent = InvestorKpiMapping.find_by(
+    standard_kpi_name: parent_name,
+    investor: @portfolio_company
+  )
+  expect(parent).not_to be_nil, "Parent mapping '#{parent_name}' not found"
+
+  actual_children = parent.children.pluck(:reported_kpi_name).sort
+  expect(actual_children).to match_array(expected_children),
+    "Expected children #{expected_children} under '#{parent_name}', got #{actual_children}"
+end
+
+# Verifies the prefixed standard_kpi_name for a child under a specific parent
+Then('the standard KPI name for {string} under {string} should be {string}') do |child_name, parent_name, expected_standard|
+  parent = InvestorKpiMapping.find_by(
+    standard_kpi_name: parent_name,
+    investor: @portfolio_company
+  )
+  expect(parent).not_to be_nil, "Parent mapping '#{parent_name}' not found"
+
+  child = parent.children.find_by(reported_kpi_name: child_name)
+  expect(child).not_to be_nil, "Child '#{child_name}' not found under '#{parent_name}'"
+  expect(child.standard_kpi_name).to eq(expected_standard),
+    "Expected standard name '#{expected_standard}', got '#{child.standard_kpi_name}'"
+end
+
+# Verifies that each auto-created child mapping has at least one Kpi value imported
+Then('child KPIs should have values imported for each child mapping') do
+  child_mappings = InvestorKpiMapping.where(investor: @portfolio_company)
+                                     .where.not(ancestry: nil)
+  expect(child_mappings.count).to be > 0, "No child mappings found"
+
+  child_mappings.each do |cm|
+    kpi_count = Kpi.where(
+      investor_kpi_mapping_id: cm.id,
+      portfolio_company_id: @portfolio_company.id
+    ).count
+    expect(kpi_count).to be > 0,
+      "No KPI values imported for child '#{cm.standard_kpi_name}' (mapping #{cm.id})"
+  end
+end
+
+# Verifies that KpiReports were created for specific month dates
+Then('KPI reports should be created for months {string}') do |dates_string|
+  expected_dates = dates_string.split(',').map { |d| Date.parse(d.strip) }
+  actual_dates = KpiReport.where(portfolio_company_id: @portfolio_company.id)
+                          .pluck(:as_of).uniq.sort
+
+  expected_dates.each do |expected|
+    expect(actual_dates).to include(expected),
+      "Expected KPI report for #{expected}, found: #{actual_dates}"
+  end
+end
+
+# Records the child mapping count for later idempotency check
+And('I note the child mapping count under {string}') do |parent_name|
+  parent = InvestorKpiMapping.find_by(
+    standard_kpi_name: parent_name,
+    investor: @portfolio_company
+  )
+  expect(parent).not_to be_nil, "Parent mapping '#{parent_name}' not found"
+  @child_mapping_count = parent.children.count
+  puts "Child mapping count under '#{parent_name}': #{@child_mapping_count}"
+end
+
+# Re-runs the KpiWorkbookReader (for idempotency tests)
+When('the KpiWorkbookReader processes the file again') do
+  @portfolio_company.reload
+  reader = KpiWorkbookReader.new(
+    @kpi_report, @document,
+    @portfolio_company.investor_kpi_mappings,
+    @user, @portfolio_company
+  )
+  @extracted_kpis = reader.extract_kpis
+end
+
+# Verifies no duplicate child mappings were created on re-upload
+Then('there should be no duplicate child mappings under {string}') do |parent_name|
+  parent = InvestorKpiMapping.find_by(
+    standard_kpi_name: parent_name,
+    investor: @portfolio_company
+  )
+  expect(parent).not_to be_nil, "Parent mapping '#{parent_name}' not found"
+
+  children_names = parent.children.pluck(:standard_kpi_name)
+  duplicates = children_names.tally.select { |_, count| count > 1 }
+  expect(duplicates).to be_empty,
+    "Duplicate child mappings found: #{duplicates}"
+
+  expect(parent.children.count).to eq(@child_mapping_count),
+    "Child count changed from #{@child_mapping_count} to #{parent.children.count} after re-upload"
+end

@@ -116,3 +116,55 @@ Feature: KPI Workbook Reading
     Examples:
       | workbook_file                   | workbook_file2                   | target_kpis                                                                          | count |
       | kpi_extraction/MIS sample.xlsx  | kpi_extraction/MIS sample1_refresh.xlsx | Revenue, Number of Distributors, Net Current Assets, Orders MoM Growth, Returns%      | 17 |
+
+  # --- New scenarios for KPI parser fixes (branch: feature/kpi-workbook-parser-fixes) ---
+
+  Scenario: ACT/BUDGET/IC tag row creates separate KpiReports per tag
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And the KPI workbook file "kpi_extraction/tag_columns.xlsx" for a "Actual" kpi report
+    And the target KPIs are "Revenue, EBITDA"
+    When the KpiWorkbookReader processes the file
+    Then KPI reports should exist with tags "Actual, Budget, IC"
+    And each tag should have KPI reports for the same periods
+
+  Scenario: Indent-based parent-child detection creates child mappings
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And the KPI workbook file "kpi_extraction/indent_children.xlsx" for a kpi report
+    And the target KPIs are "Net Sales, Operating Cost"
+    When the KpiWorkbookReader processes the file
+    Then child mappings should be created under "Net Sales" with names "Enterprise, Mid-Market, SMB"
+    And child mappings should be created under "Operating Cost" with names "Enterprise, Mid-Market"
+    And the standard KPI name for "Enterprise" under "Net Sales" should be "Net Sales - Enterprise"
+    And the standard KPI name for "Enterprise" under "Operating Cost" should be "Operating Cost - Enterprise"
+    And child KPIs should have values imported for each child mapping
+
+  Scenario: Column-based parent-child detection
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And the KPI workbook file "kpi_extraction/column_children.xlsx" for a kpi report
+    And the target KPIs are "Net Sales, Operating Cost"
+    When the KpiWorkbookReader processes the file
+    Then child mappings should be created under "Net Sales" with names "Enterprise, Mid-Market, SMB"
+    And child mappings should be created under "Operating Cost" with names "Enterprise, Mid-Market"
+    And child KPIs should have values imported for each child mapping
+
+  Scenario: Apostrophe date format parsing
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And the KPI workbook file "kpi_extraction/apostrophe_dates.xlsx" for a kpi report
+    And the target KPIs are "Revenue"
+    When the KpiWorkbookReader processes the file
+    Then KPI reports should be created for months "2025-04-30, 2025-05-31, 2025-06-30"
+
+
+  Scenario: Re-upload with parent-child KPIs is idempotent
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And the KPI workbook file "kpi_extraction/indent_children.xlsx" for a kpi report
+    And the target KPIs are "Net Sales"
+    When the KpiWorkbookReader processes the file
+    And I note the child mapping count under "Net Sales"
+    When the KpiWorkbookReader processes the file again
+    Then there should be no duplicate child mappings under "Net Sales"

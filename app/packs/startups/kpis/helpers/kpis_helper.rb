@@ -240,9 +240,23 @@ module KpisHelper
     end
   end
 
+  # Returns the investor KPI mappings for the grid view, sorted so children
+  # appear immediately after their parent using the ancestry gem's tree ordering.
+  #
+  # For fund entities (Investment Fund / Angel Fund), returns the portco's configured
+  # mappings. For other entity types (e.g., portco self-reporting), builds ad-hoc
+  # mappings from the KPI names found in the given reports.
+  #
+  # @param kpi_reports [ActiveRecord::Relation] the KPI reports being displayed
+  # @param investor [Investor] the portfolio company (investor record)
+  # @param current_user [User] the logged-in user
+  # @param category [String, nil] optional category filter (e.g., "Income Statement")
+  # @return [Array<InvestorKpiMapping>] ordered mappings with children after parents
   def set_investor_kpi_mappings(kpi_reports, investor, current_user, category: nil)
     mappings = if ["Investment Fund", "Angel Fund"].include? current_user.entity.entity_type
-                 investor&.investor_kpi_mappings || []
+                 # Sort by ancestry so children appear immediately after their parent
+                 raw = investor&.investor_kpi_mappings&.order(:position) || InvestorKpiMapping.none
+                 raw.sort_by_ancestry(raw)
                else
                  Kpi.where(kpi_report_id: kpi_reports.unscope(:order).pluck("kpi_reports.id")).pluck(:name).uniq.map do |kpi_name|
                    InvestorKpiMapping.new(standard_kpi_name: kpi_name, reported_kpi_name: kpi_name, category: "General")

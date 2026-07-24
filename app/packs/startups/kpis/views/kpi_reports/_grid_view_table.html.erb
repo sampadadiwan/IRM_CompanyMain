@@ -1,12 +1,18 @@
+<%# Grid view table for KPI reports with parent-child hierarchy support.
+    Groups KPIs by investor_kpi_mapping_id (not name) to correctly handle
+    duplicate names under different parents (e.g., "Enterprise" under both
+    Net Sales and Operating Cost). Child rows are visually indented with a
+    tree connector (└) prefix. %>
 <div class="sticky-table-wrapper" style="overflow: auto; max-height: 80vh; position: relative;">
   <%
     view_unapproved = params[:view_unapproved] == 'true'
-    # Group all KPIs by report_id and then by name (lowercase) to avoid N+1 and repetitive group_by
-    kpis_by_report_and_name = {}
+    # Group KPIs by report_id and investor_kpi_mapping_id for precise lookup.
+    # Name-based grouping breaks when duplicate names exist under different parents.
+    kpis_by_report_and_mapping = {}
     kpi_reports.each do |kr|
       kpis = kr.kpis
       kpis = kpis.select(&:approved?) unless view_unapproved
-      kpis_by_report_and_name[kr.id] = kpis.group_by { |k| k.name.downcase }
+      kpis_by_report_and_mapping[kr.id] = kpis.group_by(&:investor_kpi_mapping_id)
     end
   %>
   <table id="kpi_reports_grid" class="table table-bordered table-striped sticky-table">
@@ -44,24 +50,36 @@
         <% end %>
       </tr>
       <% investor_kpi_mappings.each do |ikm| %>
-        <tr>
+        <tr class="<%= 'child-row' if ikm.parent_id.present? %>">
           <td class="sticky-col">
             <div class="d-flex align-items-center gap-2">
-              <input type="checkbox" class="form-check-input" 
-                                 data-kpi-chart-target="kpiCheckbox" 
-                                 data-action="change->kpi-chart#toggleKpi" 
+              <input type="checkbox" class="form-check-input"
+                                 data-kpi-chart-target="kpiCheckbox"
+                                 data-action="change->kpi-chart#toggleKpi"
               data-kpi-name="<%= ikm.standard_kpi_name %>">
-              <%= ikm.id ? link_to(ikm.standard_kpi_name, investor_kpi_mapping_path(ikm.id)) : ikm.standard_kpi_name %>
+              <% if ikm.parent_id.present? %>
+                <span class="text-muted ms-2">└</span>
+              <% end %>
+              <%# Child rows show reported_kpi_name (raw Excel name, e.g., "Enterprise") instead of
+    the full prefixed standard_kpi_name ("Net Sales - Enterprise") because the └ indent
+    already communicates the parent-child relationship. The full prefixed name is retained
+    in the database (standard_kpi_name) for uniqueness, search, exports, and chart labels.
+    Parent rows continue to show standard_kpi_name as before. %>
+              <% display_name = ikm.parent_id.present? ? ikm.reported_kpi_name : ikm.standard_kpi_name %>
+              <%= ikm.id ? link_to(display_name, investor_kpi_mapping_path(ikm.id)) : display_name %>
+
+              <% if ikm.child_count.to_i > 0 %>
+                <small class="badge bg-secondary-subtle text-secondary"><%= ikm.child_count %></small>
+              <% end %>
             </div>
           </td>
           <td>
             <%= ikm.category %>
           </td>
           <% kpi_reports.each do |kpi_report| %>
-            <!-- Find the kpis with the name -->
+            <%# Look up KPIs by mapping ID — handles duplicate names under different parents %>
             <%
-                            report_kpis = kpis_by_report_and_name.dig(kpi_report.id, ikm.standard_kpi_name.downcase) || []
-                            # Sort so approved is first if both exist, but we might want to show both
+                            report_kpis = kpis_by_report_and_mapping.dig(kpi_report.id, ikm.id) || []
                         %>
             <td class="value_<%= report_kpis.first&.id %>">
               <% if report_kpis.any? %>
