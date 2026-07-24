@@ -1324,6 +1324,7 @@ DEPENDENCIES
   sprockets-rails
   sqlite3
   stimulus-rails
+  terminal-table
   to_words
   trailblazer
   turbo-rails
