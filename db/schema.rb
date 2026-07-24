@@ -2858,9 +2858,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_120000) do
     t.text "details"
     t.integer "entity_id"
     t.integer "investor_id"
-    t.bigint "owner_id"
-    t.string "owner_type", default: "User"
     t.date "on"
+    t.bigint "owner_id"
+    t.string "owner_type", default: "Investor"
     t.string "tags", limit: 100
     t.datetime "updated_at", null: false
     t.integer "user_id"
