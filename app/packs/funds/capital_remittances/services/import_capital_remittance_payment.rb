@@ -98,6 +98,8 @@ class ImportCapitalRemittancePayment < ImportUtil
     investor = import_upload.entity.investors.where(investor_name: user_data["Stakeholder"]).first
     raise "Stakeholder not found" unless investor
 
+    raise "Payment Date is mandatory" if user_data["Payment Date"].blank?
+
     # One of the 2 should be present folio_id or virtual_bank_account
     folio_id = user_data["Folio No"]&.to_s
     virtual_bank_account = user_data["Virtual Bank Account"]&.to_s

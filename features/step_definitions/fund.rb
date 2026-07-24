@@ -91,6 +91,11 @@ Given('there is a fund {string} for the entity') do |arg|
   puts "\n####Fund####\n"
   puts @fund.to_json
 end
+Given('there is a feeder fund {string} of the fund') do |name|
+  @feeder_fund = FactoryBot.create(:fund, entity_id: @fund.entity_id, name:, currency: @fund.currency, master_fund: @fund)
+  puts "\n####Feeder Fund####\n"
+  puts @feeder_fund.to_json
+end
 Given('the investors are added to the fund') do
   @user.entity.investors.each do |inv|
     ar = AccessRight.create(owner: @fund, access_type: "Fund", metadata: "Investor",
@@ -427,6 +432,20 @@ Given('Given import file {string} for {string}') do |file, type|
   iu.reload
   # binding.pry if iu.failed_row_count > 0
   iu.failed_row_count.should == 0
+end
+# Same as the step above, but for imports where we expect row failures (eg fail fast tests), so no assertion on failed_row_count
+Given('Given import file {string} for {string} expecting failures') do |file, type|
+  @import_file = file
+  owner = @fund || @entity
+  @import_upload = ImportUpload.create!(entity: @entity, owner:, import_type: type, name: "Import #{type}", user_id: @user.id, import_file: File.open(File.absolute_path("./public/sample_uploads/#{file}")))
+  ImportUploadJob.perform_now(@import_upload.id)
+  @import_upload.reload
+end
+Then('the import upload should be stopped with {string} processed and {string} failed rows') do |processed, failed|
+  @import_upload.processed_row_count.should == processed.to_i
+  @import_upload.failed_row_count.should == failed.to_i
+  # The fail fast status message must be preserved, not overwritten with Completed
+  @import_upload.status.should include("stopped")
 end
 Given('the fund snapshot is created') do
   # Need to ensure that the fund has the entity permission to enable snapshots

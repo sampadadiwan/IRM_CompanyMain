@@ -83,6 +83,10 @@ class InvestorKycPolicy < ApplicationPolicy
     toggle_verified? && user.entity.entity_setting.aml_enabled
   end
 
+  def override_aml_status?
+    toggle_verified? && user.entity.entity_setting.aml_enabled
+  end
+
   def assign_kyc_data?
     create?(:investor_kyc_update)
   end

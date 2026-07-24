@@ -29,6 +29,8 @@ class InvestorKyc < ApplicationRecord
                                 "AML Status; text-col" => "aml_status; text-col",
                                 "Expired; text-col" => "expired; text-col" }.freeze
 
+  AML_STATUSES = %w[no_match potential_match].freeze
+
   SEBI_INVESTOR_CATEGORIES = %i[Internal Domestic Foreign Other].freeze
 
   SEBI_INVESTOR_SUB_CATEGORIES_MAPPING = {
@@ -343,6 +345,15 @@ class InvestorKyc < ApplicationRecord
 
   def generate_aml_report(user_id)
     GenerateAmlReportJob.perform_later(id, user_id) if id.present? && full_name.present?
+  end
+
+  # Lets a fund manually correct an AML status set by the automated IDFy check (e.g. a false
+  # positive from a name match). Once overridden, AmlReportAsyncDownloadJob stops auto-writing
+  # aml_status so a later IDFy run can't silently revert the decision.
+  def override_aml_status!(status:, reason:)
+    self.audit_comment = reason
+    assign_attributes(aml_status: status, aml_manual_override: true, aml_override_reason: reason)
+    save(validate: false)
   end
 
   def full_name_has_changed?

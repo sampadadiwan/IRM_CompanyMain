@@ -126,6 +126,9 @@ class ImportUtil < Trailblazer::Operation
 
     ctx[:custom_field_headers] = custom_field_headers
 
+    # When a fail_fast importer hits a failed row, this holds the 1-based row number that failed
+    stopped_at = nil
+
     # Parse the XL rows
     package = Axlsx::Package.new do |p|
       p.workbook.add_worksheet(name: "Import Results") do |sheet|
@@ -138,14 +141,29 @@ class ImportUtil < Trailblazer::Operation
 
           # This sanitizes each row by stripping and squeezing spaces
           sanitized_row = row[..(headers.length - 1)].map { |x| x&.to_s&.strip&.squeeze(" ") }
+
+          # Fail fast: an earlier row failed, so skip the remaining rows as they may depend on it (eg a Sell based on a failed Buy)
+          if stopped_at
+            sanitized_row << "Skipped - import stopped as row #{stopped_at} failed"
+            import_upload.failed_row_count += 1
+            sheet.add_row(sanitized_row)
+            next
+          end
+
           # Ensure the Audit trail is created as the user who uploaded the file
-          Audited.audit_class.as_user(import_upload.user) do
+          success = Audited.audit_class.as_user(import_upload.user) do
             process_row(headers, custom_field_headers, sanitized_row, import_upload, ctx)
           end
           # add row to results sheet
           sheet.add_row(sanitized_row)
           # To indicate progress
           import_upload.save if (idx % 10).zero?
+
+          # Stop processing further rows if this importer requires fail fast and the row failed
+          if fail_fast && !success
+            stopped_at = idx + 1
+            import_upload.status = "Import stopped: row #{stopped_at} failed; remaining rows skipped"
+          end
         end
       end
     end
@@ -164,9 +182,12 @@ class ImportUtil < Trailblazer::Operation
       if save_row(user_data, import_upload, custom_field_headers, ctx)
         import_upload.processed_row_count += 1
         row << "Success"
+        # Explicit boolean so process_rows can detect a failed row for fail_fast importers
+        true
       else
         import_upload.failed_row_count += 1
         row << "Error"
+        false
       end
     rescue ActiveRecord::Deadlocked => e
       import_upload.status = "Deadlock: #{e.message}"
@@ -181,6 +202,7 @@ class ImportUtil < Trailblazer::Operation
       Rails.logger.debug user_data
       Rails.logger.debug row
       import_upload.failed_row_count += 1
+      false
     end
   end
 
@@ -252,6 +274,12 @@ class ImportUtil < Trailblazer::Operation
   end
 
   def defer_counter_culture_updates
+    false
+  end
+
+  # When true, the import stops at the first failed row and skips all remaining rows.
+  # Override in importers where later rows can depend on earlier ones (eg PortfolioInvestment Sells based on Buys)
+  def fail_fast
     false
   end
 

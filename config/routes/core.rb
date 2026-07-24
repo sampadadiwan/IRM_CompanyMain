@@ -127,6 +127,7 @@ resources :investor_kycs do
   post 'notify_kyc_required', on: :member
   post 'send_kyc_reminder_to_all', on: :collection
   put 'generate_new_aml_report', on: :member
+  put 'override_aml_status', on: :member
   post 'compare_kyc_datas', on: :collection
   put 'assign_kyc_data', on: :member
   get 'edit_my_kyc', on: :collection

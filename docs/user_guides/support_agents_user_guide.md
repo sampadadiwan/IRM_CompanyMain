@@ -30,6 +30,7 @@ Support Agents are AI-powered automation tools that run checks, extract data, ge
    - [Deals Report Agent](#7-9-deals-report-agent)
    - [Investor Presentation Analyst](#7-10-investor-presentation-analyst)
 8. [FAQ](#8-faq)
+9. [AI Governance & Compliance FAQ](#9-ai-governance--compliance-faq)
 
 ---
 
@@ -446,3 +447,42 @@ A: Yes — setup is idempotent. It only creates what's missing and merges new co
 
 **Q: How do I prevent an agent from sending emails during a test run?**
 A: Set the agent's email/recipient field to a test address before running, or temporarily disable the send_report / notify_email field. For entity-wide email suppression during testing, enable **Sandbox Mode** in Entity Settings — all emails will route to the sandbox address instead.
+
+---
+
+## 9. AI Governance & Compliance FAQ
+
+Answers to the AI governance and security questions most commonly asked during client due diligence.
+
+**Q: Does the application use AI / LLM technology?**
+A: Yes. The platform is multi-LLM and supports all major providers: OpenAI (GPT-5 family), Anthropic (Claude family), Google Gemini, and — via OpenRouter — many additional models including Qwen, DeepSeek, Kimi, and MiniMax. API keys are configured per client entity, and each agent can be pinned to a specific model. Several agents (E-Sign Monitor, Distribution Readiness, Data Quality) are fully deterministic and use no LLM at all.
+
+**Q: Provide a high-level description of the AI technology.**
+A: The platform provides Support Agents — AI-powered automation tools used across the platform to run checks, extract data from documents, generate summaries and scores, and send alerts. Each agent targets a specific operational area (KYC, distributions, e-signing, data quality, deal management, portfolio analysis). See the [Agent Reference](#7-agent-reference) in this guide for a full description of each agent.
+
+**Q: Are there documented escalation procedures for legal or compliance violations?**
+A: Yes. Any event in which the AI is abused, manipulated, or has its security controls circumvented is treated as a security incident under our documented Cybersecurity Risk Management Policy and Security Event Review Methodology. Events are classified by severity (Critical / High / Medium / Low); Critical and High events are triaged within 24 hours, and every confirmed incident is documented with its timeline, impact, and remediation.
+
+**Q: What is the risk classification in the event of the AI being abused, manipulated, or having its security controls circumvented?**
+A: Such an event is classified under our standard four-tier severity scheme based on impact, with any cross-tenant data exposure or unauthorized privilege change treated as Critical. By design, however, the impact of AI manipulation is structurally bounded: all AI agents operate strictly within the authenticated user's tenant and role permissions, which are enforced by deterministic application-layer authorization outside the AI model — a manipulated model cannot grant itself access the user does not already have. All data gathering is performed by the application within the tenant's scope (the AI cannot query data belonging to another tenant), AI agents do not autonomously execute financial transactions or modify permissions, and all AI outputs are persisted as auditable reports subject to human review.
+
+**Q: Is the AI assessed for bias?**
+A: Not separately for the specific use cases within CapHive. The platform uses state-of-the-art foundation models from major providers, which undergo bias and safety testing in their respective labs. As an additional safeguard, we recommend manual review of all AI-generated output before it is acted upon.
+
+**Q: Is there real-time human override of the decision process? And is this logged?**
+A: Yes. An in-flight agent run can be cancelled at any time from the agent's page; the cancellation is logged in the run's report, including who cancelled it and when. In addition, AI-generated outputs such as investor scores and note summaries can be manually edited by an administrator after review, and every run — completed or cancelled — is retained in the Execution History audit trail.
+
+**Q: Could the AI decision impact any individual(s)?**
+A: Yes — for example, agents generate reports and scores for portfolio companies and investors. All AI output is decision support, not automated decision-making: nothing is auto-actioned against an individual, and we recommend manual review of all AI-generated output before accepting it.
+
+**Q: Please provide a brief description of the decision making / decision support.**
+A: Agents produce reports, scores, summaries, and alerts that support human decisions — flagging blockers before a distribution, surfacing stale data, scoring investors against a client-defined rubric, or generating pre-board briefing questions. The final decision in every case rests with the platform's human users. See the [Agent Reference](#7-agent-reference) for what each agent produces.
+
+**Q: Is this clearly communicated to the users of the platform?**
+A: Yes. This user guide describes every agent, what it does, and what it produces. Within the platform, each agent's page shows the AI model in use, its configuration, and its full run history, and AI-generated reports are clearly presented as agent output for review.
+
+**Q: What is the highest sensitivity of data the AI will process (including prompts, files, logs, or generated outputs)?**
+A: All the data of a tenant on the platform can potentially be used by the AI. However, every agent is disabled by default and is enabled only if requested by the client — and only for the specific agents the client deems appropriate, via per-agent feature flags. Further, because the platform is multi-LLM with per-tenant API keys, the client may choose an LLM provider that matches their own criteria for data privacy.
+
+**Q: Does the system use any technology that could be seen as privacy intrusive (e.g. user tracking, profiling, recording, or targeting)?**
+A: No. The platform does not track user behaviour, record users, or perform advertising-style profiling or targeting. Agent scoring features evaluate investors and portfolio companies against business rubrics defined by the client, produce transparent written justifications, and are subject to human review and manual override.

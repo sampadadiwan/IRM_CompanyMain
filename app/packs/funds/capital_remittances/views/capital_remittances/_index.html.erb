@@ -72,6 +72,9 @@
             </div>
           </div>
         </div>
+        <% if policy(capital_call).update? && capital_call.capital_remittances.unverified.exists? %>
+          <%= render "/capital_remittances/bulk_actions", capital_call: capital_call %>
+        <% end %>
         <%= render "capital_remittances/filter", data_source: data_source %>
       <% else %>
         <% unless current_user.curr_role_investor? %>

@@ -5,12 +5,19 @@ class FundUnitsController < ApplicationController
 
   # GET /fund_units or /fund_units.json
   def index
+    fetch_rows
+
+    # Step 3: Set breadcrumbs for navigation
+    fund_bread_crumbs("Fund Units")
+  end
+
+  def fetch_rows
+    authorize(FundUnit)
     service = FundUnitList.call(current_user, params) { |relation| policy_scope(relation) }
     @q = service.q
     @fund_units = service.fund_units
 
-    # Step 3: Set breadcrumbs for navigation
-    fund_bread_crumbs("Fund Units")
+    @fund_units
   end
 
   # GET /fund_units/1 or /fund_units/1.json

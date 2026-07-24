@@ -12,7 +12,6 @@ class FundFormula < ApplicationRecord
                        "For; text-col" => "formula_for; text-col",
                        "Formula; text-col" => "formula; text-col",
                        "Entry Type; text-col" => "entry_type; text-col",
-                       "Roll Up; text-col" => "roll_up; text-col",
                        "Enabled; text-col" => "enabled; text-col" }.freeze
 
   DEBUG_COLUMNS = { "Sequence; num-col" => "sequence; num-col",
@@ -21,7 +20,6 @@ class FundFormula < ApplicationRecord
                     "Template; text-col" => "template_field_name; text-col",
                     "Execution (ms); num-col" => "execution_time; num-col",
                     "Entry Type; text-col" => "entry_type; text-col",
-                    "Roll Up; text-col" => "roll_up; text-col",
                     "Enabled; text-col" => "enabled; text-col" }.freeze
 
   belongs_to :fund, optional: true, touch: true
@@ -53,6 +51,18 @@ class FundFormula < ApplicationRecord
   validate :formula_kosher?
   def formula_kosher?
     errors.add(:formula, "You cannot do CRUD operations in a formula") if formula.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
+  # Parses (but does not eval/execute) the formula to catch typos and malformed
+  # Ruby before save. Parser::CurrentRuby just builds an AST in-process — no
+  # subprocess fork like `ruby -c` or `Kernel#eval` would require.
+  validate :formula_syntax_valid?
+  def formula_syntax_valid?
+    return if formula.blank?
+
+    Parser::CurrentRuby.parse(formula)
+  rescue Parser::SyntaxError => e
+    errors.add(:formula, "has invalid Ruby syntax: #{e.message}")
   end
 
   def tag_list=(tags)

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_09_140200) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_24_120000) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -2444,6 +2444,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_09_140200) do
     t.decimal "agreement_committed_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.string "agreement_unit_type", limit: 20
     t.boolean "all_docs_valid", default: false
+    t.boolean "aml_manual_override", default: false, null: false
+    t.text "aml_override_reason"
     t.string "aml_status"
     t.string "bank_account_number", limit: 40
     t.string "bank_account_type", limit: 40

@@ -154,6 +154,31 @@ Scenario Outline: Footer error in Generating Commitment Agreement
     |user	    |entity                         |role       |given  |should	|access | crud |email|footer_error|header_error|
     |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |Approved document already exists for|Error adding Footer:|Error adding Header:|
 
+Scenario Outline: Broken merge field in a template names the specific field in the error email
+  Given Im logged in as a user "<user>" for an entity "<entity>"
+  Given the user has role "company_admin"
+  Given there is an existing investor "entity_type=Family Office"
+  Given there is an existing investor entity "entity_type=Investor Advisor" with employee "first_name=Advisor"
+  Given there is a fund "name=Test fund" for the entity
+  And another user is "<given>" fund advisor access to the fund
+  And the access right has access "<crud>"
+  Given the user has role "<role>"
+  Given the fund has capital commitments from each investor
+  And each Investor has an approved Investor Kyc
+  Given the fund has "2" capital call
+  Given the capital calls are approved
+  Given the fund has "2" capital distribution
+  Given the capital distributions are approved
+  Given the fund has a template "Commitment Agreement Template2" of type "Commitment Template"
+  Given the template "Commitment Agreement Template2" has a corrupted merge field
+  And we Generate Commitment Agreement for the first capital commitment
+  Then we get the email with error "<merge_field_error>"
+  And we get the email with error "<broken_field>"
+
+  Examples:
+    |user	    |entity                         |role       |given  |should	|access | crud |merge_field_error|broken_field|
+    |  	        |entity_type=Investment Fund  |investor   |yes   |true   |show,edit,update,destroy     | create,read,update,destroy |Error evaluating template field|investor_kyc.full_name.gsub|
+
 Scenario Outline: Check header footer and append documents merging in Generating Commitment Agreement
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"

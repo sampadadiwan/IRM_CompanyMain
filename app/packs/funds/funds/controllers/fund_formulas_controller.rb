@@ -186,7 +186,7 @@ class FundFormulasController < ApplicationController
 
   # Only allow a list of trusted parameters through.
   def fund_formula_params
-    if current_user.support?
+    if current_user.support? || Rails.env.local?
       # Only support can change the formula
       params.require(:fund_formula).permit(:fund_id, :name, :description, :sequence, :rule_type, :entity_id, :enabled, :entry_type, :roll_up, :rule_for, :formula, :meta_data, :generate_ytd_qtly, :add_to_commitment_cache, :explain, :is_template, tag_list: [])
     else

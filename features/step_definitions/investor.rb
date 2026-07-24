@@ -854,6 +854,32 @@ Given('the commitment has a corrupted header for the template') do
                    folder: @capital_commitment.document_folder, file: File.new("public/sample_uploads/corrupt.pdf", "r"))
 end
 
+# Rewrites one merge field in the template's .docx so it references
+# `investor_kyc.full_name.gsub`, a real method chain that exists but raises
+# ArgumentError when called with no args (String#gsub requires a pattern).
+# This simulates a template setup mistake and lets us assert that the error
+# email names the exact broken field instead of a bare Ruby error message.
+Given('the template {string} has a corrupted merge field') do |template_name|
+  require "zip"
+
+  template_doc = Document.template.where(name: template_name).last
+  corrupt_path = Rails.root.join("tmp", "corrupted_merge_field_#{SecureRandom.hex(4)}.docx").to_s
+
+  template_doc.file.download { |tempfile| FileUtils.cp(tempfile.path, corrupt_path) }
+
+  Zip::File.open(corrupt_path) do |zip|
+    xml = zip.read("word/document.xml")
+    corrupted_xml = xml.sub("=investor_kyc.full_name", "=investor_kyc.full_name.gsub")
+    raise "Merge field to corrupt not found in template #{template_name}" if corrupted_xml == xml
+
+    zip.get_output_stream("word/document.xml") { |f| f.write(corrupted_xml) }
+  end
+
+  template_doc.file = File.open(corrupt_path, "rb")
+  template_doc.save!
+  FileUtils.rm_f(corrupt_path)
+end
+
 Then('the original document is replaced') do
   @generated_doc = Document.where(owner_tag: "Generated").last
   @generated_doc.should_not

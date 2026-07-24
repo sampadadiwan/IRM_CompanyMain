@@ -67,23 +67,39 @@ module FormTypeHelper
   end
 
   # field_types: hash of field_name => field_type (from get_form_type's 6th return value).
-  # When provided, DateField values are parsed to Date objects so Excel treats them as date cells
-  # and applies locale-sensitive formatting, matching how native date DB columns behave.
+  # When provided, values are cast per field type so Excel treats them as the right kind of
+  # cell (date/number) and applies locale-sensitive formatting, matching how native DB columns
+  # of the same type behave, instead of exporting every custom field as plain text.
   def get_custom_values(model, form_type, custom_field_names, field_types: {})
     if form_type && model&.properties
       model.properties.values_at(*custom_field_names).each_with_index.map do |v, i|
-        if field_types[custom_field_names[i]] == "DateField" && v.present?
-          begin
-            Date.parse(v.to_s)
-          rescue StandardError
-            v.to_s
-          end
-        else
-          v.to_s
-        end
+        custom_value_for_export(v, field_types[custom_field_names[i]])
       end
     else
       []
+    end
+  end
+
+  def custom_value_for_export(v, field_type)
+    return v.to_s if v.blank?
+
+    case field_type
+    when "DateField"
+      begin
+        Date.parse(v.to_s)
+      rescue StandardError
+        v.to_s
+      end
+    when "NumberField", "Money"
+      begin
+        Float(v.to_s)
+      rescue ArgumentError, TypeError
+        v.to_s
+      end
+    when "MultiSelect"
+      v.is_a?(Array) ? v.join(", ") : v.to_s
+    else
+      v.to_s
     end
   end
 

@@ -124,6 +124,20 @@ Scenario Outline: Import portfolio investments
 
 
 @import
+Scenario: Import portfolio investments stops at the first failed row
+  Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given there is a fund "name=SAAS Fund;currency=INR;unit_types=Series A,Series B,Series C1" for the entity
+  And Given I upload an investors file for the fund
+  And Given import file "capital_commitments_multi_currency.xlsx" for "CapitalCommitment"
+  And Given I upload the portfolio companies
+  And Given import file "portfolio_investments_fail_fast.xlsx" for "PortfolioInvestment" expecting failures
+  # Row 1 (Buy) imports, row 2 fails (unknown company), row 3 (Sell) must be skipped
+  Then There should be "1" portfolio investments created
+  And the import upload should be stopped with "1" processed and "2" failed rows
+
+
+@import
 Scenario Outline: Import portfolio valuations
   Given Im logged in as a user "first_name=Test" for an entity "name=Urban;entity_type=Investment Fund"
   Given the user has role "company_admin"

@@ -51,3 +51,27 @@ Scenario Outline: Generate AML report Manually with and without PAN
   Given I click on "KYC Actions"
   Given I mock aml and click on "Generate AML Report"
   Then AML Report is Generated without PAN
+
+Scenario: Manually override AML status with a reason, tracked in the audit trail
+  Given Im logged in as a user "first_name=Testuser2" for an entity "name=Urban13;entity_type=Investment Fund"
+  Given the user has role "company_admin"
+  Given the entity has aml enabled "true"
+  Given there is an existing investor "investor_name=Investor 113"
+  Given I create a new InvestorKyc "PAN=ABCDE9999F;full_name=Some Match Name" to trigger aml report generation
+  Then I should see the "Investor kyc was successfully saved."
+  Given I go to view the KYC
+  Given I click on "KYC Actions"
+  Given I mock aml and click on "Generate AML Report"
+  Then I should see "Potential Match"
+  Given I click on "Override AML status"
+  When I select "No Match" from "AML Status"
+  When I fill in "Reason for override" with "Name match is a different person, verified manually via PAN and DOB."
+  Given I click on "Save Override"
+  Then I should see "AML status overridden."
+  Then I should see "No Match"
+  Then I should see "Manually overridden: Name match is a different person, verified manually via PAN and DOB."
+  Then the aml status override should be recorded in the audit trail with comment "Name match is a different person, verified manually via PAN and DOB."
+  Given I click on "KYC Actions"
+  Given I mock aml and click on "Generate AML Report"
+  Then I should see "No Match"
+  Then I should not see "Potential Match"

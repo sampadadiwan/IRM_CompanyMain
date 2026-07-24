@@ -2,10 +2,10 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "DocQuestions") do |sheet|
   # Create the header row
-  sheet.add_row(["Id", "Tags", "Question", "For", "Document Name", "Type", "Created"])
+  sheet.add_row(["Id", "Tags", "Question", "Extract To", "For", "Document Name", "Type", "Created"])
 
   # Create entries for each item
   @doc_questions.each do |cc|
-    sheet.add_row [cc.id, cc.tags, cc.question, cc.for_class, cc.document_name, cc.qtype, l(cc.created_at)]
+    sheet.add_row [cc.id, cc.tags, cc.question, cc.response_hint, cc.for_class, cc.document_name, cc.qtype, l(cc.created_at)]
   end
 end

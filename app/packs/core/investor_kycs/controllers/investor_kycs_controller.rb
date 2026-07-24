@@ -8,7 +8,7 @@ class InvestorKycsController < ApplicationController
   # Allow unauthenticated investors to access their KYC via a signed magic link.
   skip_before_action :authenticate_user!, only: %i[show edit update extract_docs_data doc_first_upload processing], if: -> { params[:signed_id].present? }
 
-  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
+  before_action :set_investor_kyc, only: %i[show edit update destroy toggle_verified generate_docs generate_new_aml_report override_aml_status send_kyc_reminder notify_kyc_required send_notification validate_docs_with_ai extract_docs_data preview download_kra_data fetch_ckyc_data assign_kyc_data edit_reporting_fields update_reporting_fields request_updates processing doc_first_upload]
   before_action :set_workflowable, only: [:show]  # runs after set_investor_kyc so @investor_kyc is available
   after_action :verify_authorized, except: %i[index search generate_all_docs edit_my_kyc investor_pending]
 
@@ -616,6 +616,20 @@ class InvestorKycsController < ApplicationController
     authorize(@investor_kyc)
     @investor_kyc.generate_aml_report(current_user.id)
     redirect_to investor_kyc_url(@investor_kyc), notice: "AML report generation initiated."
+  end
+
+  def override_aml_status
+    authorize(@investor_kyc)
+    new_status = params[:aml_status]
+    reason = params[:aml_override_reason].to_s.strip
+
+    if InvestorKyc::AML_STATUSES.exclude?(new_status) || reason.blank?
+      redirect_to(investor_kyc_url(@investor_kyc), alert: "Please select a status and provide a reason for the override.")
+      return
+    end
+
+    @investor_kyc.override_aml_status!(status: new_status, reason:)
+    redirect_to investor_kyc_url(@investor_kyc), notice: "AML status overridden."
   end
 
   # DELETE /investor_kycs/1 or /investor_kycs/1.json
