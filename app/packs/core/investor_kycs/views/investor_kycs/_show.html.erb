@@ -235,25 +235,30 @@
                 <% end %>
 
                 <% if investor_kyc.entity.entity_setting.aml_enabled? %>
-                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <%
+                      # A signed magic link always means the investor is filling out their own KYC — even if
+                      # that same person also happens to be a fund employee elsewhere. Never show fund-only
+                      # AML override controls in that context, regardless of what the Pundit policy allows.
+                      viewing_as_investor = current_user&.curr_role_investor? || params[:signed_id].present?
+                      can_override_aml_status = !viewing_as_investor && policy(investor_kyc).override_aml_status?
+                    %>
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3" data-controller="tooltip">
                         <span class="text-muted">AML Status</span>
-                        <div class="text-end">
-                            <span class="fw-bold ">
-                                <% if investor_kyc.aml_status == "no_match" %>
-                                    <span class="badge bg-success"><%= investor_kyc.aml_status.titleize %></span>
-                                <% elsif investor_kyc.aml_status == "potential_match"%>
-                                    <span class="badge bg-warning"><%= investor_kyc.aml_status.titleize %></span>
-                                <% end %>
-                                <% if policy(investor_kyc).override_aml_status? %>
-                                    <button type="button" class="btn btn-sm btn-link p-0 ms-1" data-bs-toggle="modal" data-bs-target="#overrideAmlStatusModal-<%= investor_kyc.id %>" title="Override AML status">
-                                        <i class="ti ti-edit"></i>
-                                    </button>
-                                <% end %>
-                            </span>
-                            <% if investor_kyc.aml_manual_override? %>
-                                <div class="small text-muted">Manually overridden: <%= investor_kyc.aml_override_reason %></div>
+                        <span class="fw-bold ">
+                            <% if investor_kyc.aml_status == "no_match" %>
+                                <span class="badge bg-success"><%= investor_kyc.aml_status.titleize %></span>
+                            <% elsif investor_kyc.aml_status == "potential_match"%>
+                                <span class="badge bg-warning"><%= investor_kyc.aml_status.titleize %></span>
                             <% end %>
-                        </div>
+                            <% if investor_kyc.aml_manual_override? && !viewing_as_investor %>
+                                <i class="ti ti-info-circle text-muted ms-1" data-bs-toggle="tooltip" title="Manually overridden: <%= investor_kyc.aml_override_reason %>"></i>
+                            <% end %>
+                            <% if can_override_aml_status %>
+                                <button type="button" class="btn btn-sm btn-link p-0 ms-1" data-bs-toggle="modal" data-bs-target="#overrideAmlStatusModal-<%= investor_kyc.id %>" title="Override AML status">
+                                    <i class="ti ti-edit"></i>
+                                </button>
+                            <% end %>
+                        </span>
                     </li>
                 <% end %>
 
@@ -309,7 +314,12 @@
 
 <% end %>
 
-<% if investor_kyc.entity.entity_setting.aml_enabled? && policy(investor_kyc).override_aml_status? %>
+<%
+  # A signed magic link always means the investor is filling out their own KYC — even if that
+  # same person also happens to be a fund employee elsewhere — so never render this modal then.
+  aml_override_viewer_is_investor = current_user&.curr_role_investor? || params[:signed_id].present?
+%>
+<% if investor_kyc.entity.entity_setting.aml_enabled? && !aml_override_viewer_is_investor && policy(investor_kyc).override_aml_status? %>
   <div class="modal fade" id="overrideAmlStatusModal-<%= investor_kyc.id %>" tabindex="-1" aria-labelledby="overrideAmlStatusModalLabel-<%= investor_kyc.id %>" aria-hidden="true">
     <div class="modal-dialog" role="document">
       <div class="modal-content">

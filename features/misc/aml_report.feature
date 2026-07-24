@@ -69,7 +69,7 @@ Scenario: Manually override AML status with a reason, tracked in the audit trail
   Given I click on "Save Override"
   Then I should see "AML status overridden."
   Then I should see "No Match"
-  Then I should see "Manually overridden: Name match is a different person, verified manually via PAN and DOB."
+  Then I should see the AML override reason tooltip containing "Manually overridden: Name match is a different person, verified manually via PAN and DOB."
   Then the aml status override should be recorded in the audit trail with comment "Name match is a different person, verified manually via PAN and DOB."
   Given I click on "KYC Actions"
   Given I mock aml and click on "Generate AML Report"
