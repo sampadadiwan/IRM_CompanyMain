@@ -144,6 +144,19 @@ Given('another user has investor access {string} in the investor') do |arg|
 end
 
 
+# Reuses @advisor_user set up by the "there is an existing investor advisor user" step
+# (features/step_definitions/investor_advisor.rb) to submit the investor access form with
+# that user's own email, exercising the UI-only block on granting access to investor_advisor users.
+Given("I fill the investor access form with the existing investor advisor user's details") do
+  fill_in 'investor_access_email', with: @advisor_user.email
+  fill_in 'investor_access_first_name', with: @advisor_user.first_name
+  fill_in 'investor_access_last_name', with: @advisor_user.last_name
+end
+
+Then('no investor access should exist for the investor advisor user') do
+  expect(InvestorAccess.find_by(email: @advisor_user.email)).to be_nil
+end
+
 Given('investor access {string} in the portfolio company') do |arg|
   Investor.portfolio_companies.each do |pc|
     puts "Portfolio Company: #{pc.investor_name}, creating investor access for its employees"

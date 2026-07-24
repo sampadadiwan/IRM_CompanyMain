@@ -43,6 +43,7 @@ export default class extends Controller {
         let viewer_link = $("#viewer_link").val();
         let viewer_watermark = $("#viewer_watermark").val();
         let viewer_content_type = $("#viewer_content_type").val();
+        let viewer_filename = $("#viewer_filename").val();
 
         // Hide the direct download link
         // $(".document_download_icon").hide();
@@ -51,16 +52,16 @@ export default class extends Controller {
         console.log(`pdf_controller connected: ${viewer_link}`);
 
         if (viewer_content_type == "application/pdf") {
-            this.viewPDF(viewer_link, viewer_watermark);
+            this.viewPDF(viewer_link, viewer_watermark, viewer_filename);
         } else {
-            this.officeToPDF(viewer_link, viewer_watermark);
+            this.officeToPDF(viewer_link, viewer_watermark, viewer_filename);
         }
 
         this.init();
 
     }
 
-    viewPDF(viewer_link, viewer_watermark) {
+    viewPDF(viewer_link, viewer_watermark, viewer_filename) {
         WebViewer({
             fullAPI: true,
             licenseKey: 'CapHive Private Limited (altconnects.com):OEM:CapHive::B+:AMS(20230928):70A55F8D0437F80AF360B13AC982537860613F8D8776BD3B95853BA45A955E6D54F2B6F5C7',
@@ -95,7 +96,7 @@ export default class extends Controller {
 
 
                 instance.UI.loadDocument(viewer_link, {
-                    filename: 'myfile.pdf'
+                    filename: viewer_filename || 'myfile.pdf'
                 });
 
                 instance.UI.setFitMode(instance.FitMode.FitWidth);
@@ -149,14 +150,14 @@ export default class extends Controller {
         console.log("initCompleted");
     }
 
-    officeToPDF(viewer_link, viewer_watermark) {
-        this.convertOfficeToPDF(viewer_link, `converted.pdf`, viewer_watermark);
+    officeToPDF(viewer_link, viewer_watermark, viewer_filename) {
+        this.convertOfficeToPDF(viewer_link, `converted.pdf`, viewer_watermark, viewer_filename);
     }
 
-    convertOfficeToPDF(inputUrl, outputName, viewer_watermark, l) {
+    convertOfficeToPDF(inputUrl, outputName, viewer_watermark, viewer_filename, l) {
 
         Core.officeToPDFBuffer(inputUrl, { l }).then(buffer => {
-            this.viewPDF(buffer, viewer_watermark);
+            this.viewPDF(buffer, viewer_watermark, viewer_filename);
         }).catch(err => {
             console.log('An error was encountered! :(', err);
             $(".document_download_icon").show();

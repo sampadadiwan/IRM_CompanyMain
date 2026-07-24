@@ -1,4 +1,4 @@
-
+<%= render ToggleCard.new(title: @investor_access.user, css_class: "show_ia", state: "show") do %>
 
   <table class="table table-bordered dataTable">
 
@@ -55,10 +55,48 @@
   </table>
 
 
-  <div>
-    <%= link_to  t_common(:edit) , edit_investor_access_path(@investor_access), {class: "btn btn-outline-primary" } %> |
-      <%= link_to "Back" , :back, {class: "btn btn-outline-primary" } %> |
 
-        <%= button_to t_common(:delete) , @investor_access, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton"
-          %>
+  <div>
+    <%= link_to  t_common(:edit) , edit_investor_access_path(@investor_access), {class: "btn btn-outline-primary" } %>
+    <%= button_to t_common(:delete) , @investor_access, method: :delete, class: "btn btn-outline-danger" , form_class: "deleteButton"%>
   </div>
+
+
+  <% end %>
+
+
+
+
+  <% if @advisor_access_rights %>
+
+    <div class="table-responsive mt-5">
+      <h4>Fund Access Granted as Investor Advisor</h4>
+      <table class="table table-bordered dataTable">
+        <thead>
+          <tr>
+            <th class="text-col">Fund</th>
+            <th class="text-col">Granted By</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if @advisor_access_rights.present? %>
+            <% @advisor_access_rights.each do |access_right| %>
+              <tr>
+                <td class="text-col">
+                  <%= link_to access_right.owner.name, fund_path(access_right.owner) if access_right.owner %>
+                </td>
+                <td class="text-col">
+                  <%= access_right.granted_by&.full_name %>
+                </td>
+              </tr>
+            <% end %>
+          <% else %>
+            <tr>
+              <td class="text-col" colspan="2">No fund access rights found for this advisor.</td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+
+  <% end %>

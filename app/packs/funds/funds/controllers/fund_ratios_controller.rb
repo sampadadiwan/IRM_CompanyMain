@@ -5,12 +5,7 @@ class FundRatiosController < ApplicationController
 
   # GET /fund_ratios or /fund_ratios.json
   def index
-    result = FundRatioList.call(current_user, params) { |relation| policy_scope(relation) }
-
-    @q = result.q
-    @fund_ratios = result.fund_ratios
-    @fund = result.fund
-    @pivot = result.pivot
+    fetch_rows
 
     # Step 5: Pivot grouping (if requested)
     @pagy, @fund_ratios = pagy(@fund_ratios, limit: params[:per_page]) if params[:pivot].blank? && params[:all].blank? && params[:condensed].blank? && params[:scenarios].blank? && params[:timeseries].blank?
@@ -22,6 +17,20 @@ class FundRatiosController < ApplicationController
       format.xlsx
       format.json
     end
+  end
+
+  # Also used by WithBulkActions#bulk_actions to resolve the same filtered/policy-scoped
+  # relation that the index shows, so "delete" acts on exactly what's in the search results.
+  def fetch_rows
+    authorize(FundRatio)
+    result = FundRatioList.call(current_user, params) { |relation| policy_scope(relation) }
+
+    @q = result.q
+    @fund_ratios = result.fund_ratios
+    @fund = result.fund
+    @pivot = result.pivot
+
+    @fund_ratios
   end
 
   # GET /fund_ratios/1 or /fund_ratios/1.json

@@ -75,7 +75,7 @@
     <div class="form-group col-md-3">
       <%= form.label :meta_data %>
       <%= form.text_field :meta_data, class: "form-control" %>
-      <small class="form-text text-muted">CSV options for selects, checkboxes etc.</small>
+      <small class="form-text text-muted">CSV options for selects, checkboxes etc. For Number fields: "precision,separator" e.g. "2,comma" or "0,none" (blank = no formatting). For Money fields: an ISO currency code e.g. "USD" to override the record's own currency (blank = use record's currency).</small>
     </div>
 
     <div class="form-group col-md-4">

@@ -1,0 +1,6 @@
+<% fmt = custom_field.number_format %>
+<% if fmt && value.present? %>
+    <%= number_with_precision(value.to_d, precision: fmt[:precision], delimiter: fmt[:delimiter]) %>
+<% else %>
+    <%= value %>
+<% end %>

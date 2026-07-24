@@ -24,6 +24,7 @@
     <% end %>
     <% if fund.present? && !current_user.curr_role_investor? %>
       <%= user_guide_info_icon %>
+      <%= render "fund_ratios/bulk_actions" %>
       <button class="btn btn-outline-info d-inline-flex align-items-center" type="button"
               data-bs-toggle="collapse" data-bs-target="#fundRatioAnalytics"
               aria-expanded="false" aria-controls="fundRatioAnalytics">

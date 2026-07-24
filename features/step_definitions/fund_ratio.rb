@@ -349,6 +349,43 @@ Then('the FundRatio should be updated with correct data') do
   expect(@fund_ratio.notes).to eq(@temp_ratio.notes) if @temp_ratio.notes.present?
 end
 
+Then('the fund ratio should have a {string} audit trail entry') do |action|
+  @fund_ratio ||= FundRatio.last
+  expect(@fund_ratio.audits.map(&:action)).to include(action)
+end
+
+When('the fund ratio notes is updated to {string}') do |notes|
+  @fund_ratio ||= FundRatio.last
+  @fund_ratio.update!(notes:)
+end
+
+Then('the fund ratio should have an {string} audit trail entry for {string}') do |action, field|
+  @fund_ratio.reload
+  audit = @fund_ratio.audits.where(action:).last
+  expect(audit).not_to be_nil
+  expect(audit.audited_changes.keys).to include(field)
+end
+
+When('I bulk delete all fund ratios for the fund via the UI') do
+  @fund_ratio_ids = @fund.fund_ratios.pluck(:id)
+  visit(fund_ratios_path(fund_id: @fund.id, q: { s: "id asc" }))
+  find("#fund_ratio_bulk_actions").click
+  click_on("Delete")
+  click_on("Proceed")
+  sleep(2)
+end
+
+Then('all fund ratios for the fund should be soft deleted with a {string} audit trail entry') do |action|
+  expect(@fund_ratio_ids).not_to be_empty
+  @fund_ratio_ids.each do |id|
+    # default (paranoia) scope excludes soft-deleted rows; with_deleted bypasses it to verify the row still exists
+    fr = FundRatio.with_deleted.find(id)
+    expect(fr.deleted_at).not_to be_nil
+    expect(FundRatio.where(id:).count).to eq(0)
+    expect(fr.audits.map(&:action)).to include(action)
+  end
+end
+
 Then('the cashflow CSV documents should be created for the fund ratios') do
   # We expect XIRR and MOIC ratios to have cashflow documents since return_cash_flows was true
   ratios_with_cf = FundRatio.where(name: ['XIRR', 'MOIC', 'Gross Portfolio IRR', 'IRR'])

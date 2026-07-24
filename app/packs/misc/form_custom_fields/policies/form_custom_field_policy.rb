@@ -26,7 +26,7 @@ class FormCustomFieldPolicy < ApplicationPolicy
   end
 
   def update?
-    show?
+    show? && (record.field_type != "Calculation" || user.support?)
   end
 
   def destroy?

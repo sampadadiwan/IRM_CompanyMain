@@ -3,6 +3,11 @@ class InvestorAccess < ApplicationRecord
 
   attr_accessor :call_code
 
+  # Set by InvestorAccessesController#create only, so the UI "add investor access" form
+  # cannot grant access to a user who holds the investor_advisor role. Other creation paths
+  # (CSV import, self-service request_access, admin panel) do not set this and are unaffected.
+  attr_accessor :disallow_investor_advisor
+
   # Make all models searchable
   update_index('investor_access') { self if index_record? }
 
@@ -91,12 +96,19 @@ class InvestorAccess < ApplicationRecord
 
   before_validation :update_user
   validate :ensure_entity_id
+  validate :block_investor_advisor_from_ui, if: :disallow_investor_advisor
 
   # This is to check that a user belonging to entity 1 is not given investor_access in an investor belonging to entity 2
   # This rule however does not hold for investor_advisors. This is because they can switch entity_ids to become
   # the advisor for any entity they have access to
   def ensure_entity_id
     errors.add(:user, "cannot be given access. Belongs to #{user.entity.name} id #{user.entity.id} but is being added to #{investor.investor_entity.name} id #{investor.investor_entity.id}") if user && !user.has_cached_role?(:investor_advisor) && user.entity_id != investor.investor_entity_id
+  end
+
+  # is_investor_advisor is set by update_user (before_validation) from the matched/created user's
+  # rolify role, so it is already accurate by the time this validation runs.
+  def block_investor_advisor_from_ui
+    errors.add(:email, "belongs to a user with the Investor Advisor role and cannot be added as investor access from this page") if is_investor_advisor
   end
 
   def full_name

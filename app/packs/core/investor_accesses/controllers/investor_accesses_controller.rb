@@ -60,7 +60,21 @@ class InvestorAccessesController < ApplicationController
   end
 
   # GET /investor_accesses/1 or /investor_accesses/1.json
-  def show; end
+  def show
+    # Checked against the user's live role rather than InvestorAccess#is_investor_advisor, since
+    # that cached flag is only recomputed on save and can be stale relative to the user's roles.
+    return unless @investor_access.user&.has_cached_role?(:investor_advisor)
+
+    # Fund-level access rights the investor granted this advisor when they were set up as an
+    # investor_advisor (see AddFolioInvestorAdvisor#create_access_rights). entity_id here is the
+    # investor's own firm (investor_entity_id), which is how those grants are scoped.
+    @advisor_access_rights = AccessRight.where(
+      user_id: @investor_access.user_id,
+      entity_id: @investor_access.investor_entity_id,
+      owner_type: "Fund",
+      metadata: "investor_advisor"
+    ).includes(:owner, :granted_by)
+  end
 
   # GET /investor_accesses/new
   def new
@@ -115,6 +129,9 @@ class InvestorAccessesController < ApplicationController
     @investor_access = InvestorAccess.new(investor_access_params)
     @investor_access.entity_id = @investor_access.investor.entity_id
     @investor_access.granted_by = current_user.id
+    # Only this UI "add investor access" action blocks investor_advisor users; other creation
+    # paths (CSV import, self-service request_access, admin panel) do not set this flag.
+    @investor_access.disallow_investor_advisor = true
 
     authorize @investor_access
 

@@ -221,7 +221,7 @@ commands = [
                         <% end %>
                       </li>
                       <li>
-                        <%= link_to fund_formulas_path(fund_id: @fund.id), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: " View the rules set up for allocations / computations for this fund"} do %>
+                        <%= link_to fund_formulas_path(fund_id: @fund.id, all: true), class: "dropdown-item", data: {bs_toggle: "tooltip", bs_title: " View the rules set up for allocations / computations for this fund"} do %>
                           <i class="ti ti-function"></i>Allocation Formulas
                         <% end %>
                       </li>

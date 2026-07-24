@@ -3,7 +3,7 @@ class RansackTable < ViewComponent::Base
   include Pagy::Frontend
   include ApplicationHelper
 
-  def initialize(model, q:, turbo_frame:, pagy:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil, snapshot: nil, actions_column: true)
+  def initialize(model, q:, turbo_frame:, pagy:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", header_css_class: "", table_css_class: "", referrer: nil, snapshot: nil, actions_column: true)
     super()
     @records = records
     @model = model
@@ -12,8 +12,9 @@ class RansackTable < ViewComponent::Base
     @turbo_frame = turbo_frame
     @pagy = pagy
     @actions_column = actions_column
+    @table_css_class = table_css_class
 
-    @ransack_table_header = RansackTableHeader.new(model, q: q, turbo_frame: turbo_frame, default_columns_map: default_columns_map, entity: entity, current_user: current_user, records: records, report_id: report_id, id: id, css_class: css_class, referrer: referrer, snapshot: snapshot, actions_column: actions_column)
+    @ransack_table_header = RansackTableHeader.new(model, q: q, turbo_frame: turbo_frame, default_columns_map: default_columns_map, entity: entity, current_user: current_user, records: records, report_id: report_id, id: id, css_class: header_css_class, referrer: referrer, snapshot: snapshot, actions_column: actions_column)
   end
   # rubocop:enable Naming/MethodParameterName
 end
