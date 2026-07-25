@@ -6,6 +6,10 @@ require "fileutils"
 module DocumentGeneratorBase
   IMAGE_EXTENSIONS = %w[.jpg .jpeg .png .gif].freeze
 
+  # The Document record created by the most recent #upload call, if any.
+  # Portfolio report gen needs this to combine all portfolio reports into one
+  attr_reader :generated_document
+
   def convert(template, context, file_name, to_pdf: true, template_name: nil)
     # Mail Merge
     file_path = File.expand_path("#{file_name}.docx")
@@ -313,6 +317,7 @@ module DocumentGeneratorBase
     generated_document.as_of = as_of
 
     generated_document.save!
+    @generated_document = generated_document
   end
 
   def convert_to_accessible_pdf(file_name, template_name = nil)

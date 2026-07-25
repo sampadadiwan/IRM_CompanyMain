@@ -75,4 +75,6 @@
     </div>
   </div>
 </div>
+<%# show documents used to generate extract %>
+<%= render "documents/index", documents: @portfolio_report_extract.source_documents if @portfolio_report_extract.source_documents.present? %>
 

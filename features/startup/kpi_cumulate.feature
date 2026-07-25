@@ -112,3 +112,40 @@ Feature: KPI Cumulate Functionality
     When I run the KPI cumulate method for "Revenue"
     Then I should see a "Quarter" KPI "Revenue" for "2023-03-31" with value "450.0"
     And the "Quarter" KPI "Revenue" for "2023-03-31" should have 1 record
+
+  # Regression: KpiCumulateJob must trigger the percentage-change job itself (after cumulation)
+  # so the freshly cumulated Quarter/YTD/Year KPIs get MoM/YoY changes too. Cumulatives also
+  # inherit the source KPI's mapping — otherwise the mapping-id validation would reject them.
+  Scenario: Percentage changes are computed over the cumulated KPIs in the same run
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And the following Monthly KPI Reports exist with KPIs:
+      | as_of      | name    | value |
+      | 2023-01-31 | Revenue | 100   |
+      | 2023-02-28 | Revenue | 150   |
+      | 2023-03-31 | Revenue | 200   |
+      | 2023-04-30 | Revenue | 300   |
+      | 2023-05-31 | Revenue | 310   |
+      | 2023-06-30 | Revenue | 320   |
+    When I run the KpiCumulateJob with percentage change computation
+    Then I should see a "Quarter" KPI "Revenue" for "2023-03-31" with value "450.0"
+    And I should see a "Quarter" KPI "Revenue" for "2023-06-30" with value "930.0"
+    And the "Quarter" KPI "Revenue" for "2023-06-30" should have a percentage change
+    And the "Quarter" KPI "Revenue" for "2023-06-30" should be linked to the "Revenue" mapping
+
+  # Regression: a cumulative KPI that fails to save (e.g. a validation error) must surface in the
+  # job's error email — previously the non-bang save swallowed the failure and the company's
+  # cumulative totals silently stopped updating.
+  Scenario: Failed cumulative KPI saves are reported by email instead of being silently dropped
+    Given there is a user "" for an entity "entity_type=Investment Fund"
+    Given the user has role "company_admin"
+    And there is an existing portfolio company "name=MyFavStartup;category=Portfolio Company"
+    And the following Monthly KPI Reports exist with KPIs:
+      | as_of      | name    | value |
+      | 2023-01-31 | Revenue | 100   |
+      | 2023-02-28 | Revenue | 150   |
+      | 2023-03-31 | Revenue | 200   |
+    And cumulative KPI saves will fail
+    When I run the KpiCumulateJob for the portfolio company
+    Then a KPI cumulation error email should be sent

@@ -3266,6 +3266,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_25_120000) do
     t.bigint "portfolio_company_id", null: false
     t.bigint "portfolio_report_id", null: false
     t.bigint "portfolio_report_section_id"
+    t.json "source_document_ids"
     t.date "start_date"
     t.datetime "updated_at", null: false
     t.index ["deleted_at"], name: "index_portfolio_report_extracts_on_deleted_at"

@@ -1,0 +1,70 @@
+<%= render NewCard.new(col_md: "col-md-10") do %>
+  <%= render FormCard.new(header_css_class: "w-100", title: "<span class='d-flex align-items-center justify-content-between w-100 gap-2'>Bulk Generate Portfolio Reports (Legacy) #{user_guide_icon_for('portfolio_report_legacy', tooltip: 'Portfolio Report (Legacy) User Guide')}</span>") do %>
+
+    <div class="alert alert-warning small mb-4">
+      <i class="ti ti-alert-triangle me-1"></i>
+      Data will be sent to an external LLM for narrative generation.
+    </div>
+
+    <div class="mb-4">
+      <h6 class="text-muted mb-3">1. Filter portfolio companies</h6>
+      <%= form_with(url: legacy_bulk_generate_portfolio_reports_path, method: :get, data: { turbo_frame: "legacy_pc_select" }) do %>
+        <%= hidden_field_tag :previewed, true %>
+
+        <div class="row align-items-end">
+          <div class="col-md-4">
+            <div class="form-group">
+              <%= label_tag :fund_ids, "Funds" %>
+              <%= select_tag "fund_ids[]", options_from_collection_for_select(@funds, :id, :name, params[:fund_ids]),
+                    include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group">
+              <%= label_tag :tag_list, "Tags" %>
+              <%= select_tag "tag_list[]", options_for_select(@tags_for_select, params[:tag_list]),
+                    include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="form-group">
+              <%= label_tag :sector, "Sectors" %>
+              <%= select_tag "sector[]", options_for_select(@sectors_for_select, params[:sector]),
+                    include_blank: false, include_hidden: false, class: "form-control select2", multiple: true %>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group mt-2">
+          <button type="submit" class="btn btn-outline-primary">
+            <i class="ti ti-eye me-1"></i>Preview
+          </button>
+          <small class="text-muted ms-2">Selects matching companies below without discarding your other picks.</small>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Not a Turbo submission: this "Next" step renders the options form (a 200, not a redirect),
+        which Turbo Drive would ignore. A native POST navigates to and renders that page. %>
+    <%= form_with url: legacy_bulk_generate_options_portfolio_reports_path, method: :post, data: { turbo: false } do %>
+      <h6 class="text-muted mb-3">2. Review &amp; finalize portfolio companies</h6>
+
+      <div class="mb-4">
+        <%= turbo_frame_tag "legacy_pc_select" do %>
+          <%= select_tag "portfolio_company_ids[]",
+                options_from_collection_for_select(@portfolio_companies, :id, :investor_name, @matching_ids),
+                class: "form-control select2", multiple: true %>
+        <% end %>
+        <small class="text-muted">Every portfolio company for your entity is listed. Preview selects the ones matching your filters — add or remove any before continuing.</small>
+      </div>
+
+      <div class="d-flex align-items-center gap-3">
+        <%= submit_tag "Next", class: "btn btn-primary" %>
+        <%= link_to "Cancel", portfolio_reports_path, class: "btn btn-outline-secondary" %>
+      </div>
+    <% end %>
+
+  <% end %>
+<% end %>

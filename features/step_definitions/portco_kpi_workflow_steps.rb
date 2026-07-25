@@ -141,13 +141,16 @@ end
 
 Given('the KPI report has an unapproved KPI') do
   # @kpi_report must already be set by the shell creation step
+  name = "Revenue"
+  mapping = InvestorKpiMapping.find_or_create_by(standard_kpi_name: name, entity: @entity, investor: @portfolio_company, reported_kpi_name: name)
   FactoryBot.create(:kpi,
     kpi_report: @kpi_report,
     entity: @entity,
     portfolio_company: @portfolio_company,
-    name: 'Revenue',
+    name: name,
     value: 100.0,
-    status: :unapproved)
+    status: :unapproved,
+    investor_kpi_mapping_id: mapping.id)
 end
 
 When('I visit the portco pending dashboard') do

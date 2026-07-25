@@ -19,7 +19,7 @@ This guide provides a comprehensive overview of the Key Performance Indicator (K
 *   **Two-Stage Process**: Data is first **Staged** (Unapproved) and then **Promoted** (Approved) by an authorized user.
 *   **Approved Data Only**: Dashboards, performance tables, and growth calculations only use **Approved** data.
 *   **Smart Matching**: The system skips identical values to avoid duplicates and flags changes for review.
-*   **Automated Calculations**: Quarterly, YTD, and Annual totals are automatically recalculated upon approval.
+*   **Automated Calculations**: Quarterly, YTD, and Annual totals are automatically recalculated upon approval — from monthly Actuals, or from quarterly Actuals if that's all a company reports (never both, so totals aren't duplicated).
 *   **Direct Links**: Portfolio companies should use the link in their reminder email to upload directly to the correct period.
 *   **Save Draft / Submit**: Portfolio companies can save work-in-progress with **Save Draft** and use **Submit Report** when done. The fund is notified automatically upon submission.
 *   **XLSX Validation**: When a portco uploads a workbook, the system immediately checks its structure client-side. If date column headers are missing or invalid, both the **Save Draft** and **Submit Report** buttons are disabled and an error is shown — the portco must fix the file before proceeding.
@@ -212,7 +212,7 @@ Your column headers should use one of these recognized formats:
 ## ⚙️ Automated System Actions
 After approval, the system automatically triggers several high-impact tasks:
 1.  **Growth Metrics**: Recalculates Year-on-Year (YoY) and Month-on-Month (MoM) percentage changes.
-2.  **Cumulative Totals**: Recomputes **Quarterly**, **YTD**, and **Annual** sums based on monthly data.
+2.  **Cumulative Totals**: Recomputes **Quarterly**, **YTD**, and **Annual** sums from monthly Actuals. If a company reports Actuals at Quarter level instead (no monthly data), **YTD** builds up as each quarter comes in and **Annual** is computed once all of Q1–Q4 are in — the system never double-counts a year that already has monthly data.
 3.  **Audit Trail**: Appends approval details (User, Timestamp) to the KPI notes.
 4.  **Search Indexing**: Updates the search engine so new data is immediately findable.
 

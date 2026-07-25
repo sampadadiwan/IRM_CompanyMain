@@ -8,6 +8,11 @@
 # NOTE: 'Year' cumulative records are only created when exactly 12 monthly 'Actual'
 # records exist within the SAME fiscal year. The fiscal year boundary is defined
 # by EntitySetting#start_of_financial_year_date (default: April 1st).
+#
+# Entities that report Actuals directly at Quarter granularity (no monthly 'Actual' data)
+# get YTD and Year derived from their quarters instead - see
+# #process_quarterly_derived_cumulatives. Any fiscal year that already has monthly Actual
+# data is skipped in that path, so the two sources never compute the same period twice.
 module KpiCumulative
   extend ActiveSupport::Concern
 
@@ -75,10 +80,18 @@ module KpiCumulative
   # Performs cumulation by summing monthly 'Actual' KPI values into Quarterly and YTD reports.
   def perform_cumulation(force: false)
     related_kpis = fetch_related_monthly_kpis
-    return if related_kpis.empty?
+    monthly_years = related_kpis.to_set { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
 
-    process_quarterly_cumulatives(related_kpis, force: force)
-    process_yearly_cumulatives(related_kpis, force: force)
+    unless related_kpis.empty?
+      process_quarterly_cumulatives(related_kpis, force: force)
+      process_yearly_cumulatives(related_kpis, force: force)
+    end
+
+    # Some entities report directly at Quarter granularity (no monthly 'Actual' data).
+    # Derive YTD (as quarters accumulate) and Year (once all 4 quarters are present) from
+    # their sum, but only for fiscal years that don't already have monthly Actual data,
+    # so we never compute the same period from both sources.
+    process_quarterly_derived_cumulatives(force: force, skip_years: monthly_years)
   end
 
   # Performs forward fill by taking the latest monthly 'Actual' KPI value and applying it to
@@ -184,6 +197,66 @@ module KpiCumulative
     end
   end
 
+  # Fetches all quarterly KPIs with the 'Actual' tag for this specific KPI name and portfolio
+  # company. These are directly-reported Quarter figures (not auto-generated cumulative ones,
+  # which never carry the 'Actual' tag), so this only matches genuine quarterly source data.
+  #
+  # @return [ActiveRecord::Relation]
+  def fetch_related_quarterly_kpis
+    entity.kpis.approved.joins(:kpi_report).includes(:kpi_report)
+          .where(name: name, portfolio_company_id: portfolio_company_id)
+          .where(kpi_reports: { tag_list: 'Actual', period: 'Quarter' })
+          .order("kpi_reports.as_of ASC")
+  end
+
+  # Returns which fiscal quarter (1-4) a date falls into, based on the entity's
+  # fiscal year start month (from fiscal_year_key).
+  def fiscal_quarter_number(date)
+    fy_start = fiscal_year_key(date, style: :range).first
+    months_since_start = ((date.year - fy_start.year) * 12) + (date.month - fy_start.month)
+    (months_since_start / 3) + 1
+  end
+
+  # Groups directly-reported quarterly 'Actual' KPIs by fiscal year and derives:
+  #  - a 'YTD' cumulative after each quarter that comes in (sum of Q1..that quarter)
+  #  - a 'Year' cumulative once all 4 fiscal quarters are present (sum of Q1..Q4)
+  # This covers entities that report at Quarter granularity without underlying monthly
+  # 'Actual' data. Fiscal years already covered by monthly data are skipped via `skip_years`
+  # so YTD/Year are never computed twice for the same period.
+  def process_quarterly_derived_cumulatives(force: false, skip_years: [])
+    related_quarters = fetch_related_quarterly_kpis
+    return if related_quarters.empty?
+
+    quarters_by_year = related_quarters.group_by { |kpi| fiscal_year_key(kpi.kpi_report.as_of, style: :start_year) }
+
+    quarters_by_year.each do |fiscal_year, kpis_in_year|
+      next if skip_years.include?(fiscal_year)
+
+      quarters_present = kpis_in_year.index_by { |kpi| fiscal_quarter_number(kpi.kpi_report.as_of) }
+
+      quarters_present.keys.sort.each do |quarter|
+        # YTD only makes sense as a contiguous run from Q1, otherwise a missing earlier
+        # quarter would silently be treated as zero.
+        next unless (1..quarter).all? { |q| quarters_present.key?(q) }
+
+        as_of = quarters_present[quarter].kpi_report.as_of
+        next if as_of > Date.current
+
+        ytd_sum = (1..quarter).sum { |q| quarters_present[q].value.to_f }
+        process_cumulative_kpi(nil, ytd_sum, 'YTD', nil, as_of, note: "Auto-generated YTD cumulative (from quarters)", force: force)
+      end
+
+      next unless (1..4).all? { |q| quarters_present.key?(q) }
+
+      year_sum = quarters_present.values.sum { |kpi| kpi.value.to_f }
+      fy_end = fiscal_year_key(quarters_present[4].kpi_report.as_of, style: :range).last
+
+      next if fy_end > Date.current
+
+      process_cumulative_kpi(nil, year_sum, 'Year', nil, fy_end, note: "Auto-generated Year cumulative (from quarters)", force: force)
+    end
+  end
+
   # Groups monthly KPIs by fiscal year and calculates the YTD sum up to each month.
   # Also creates a 'Year' period KPI if all 12 months of the fiscal year are present.
   def process_yearly_cumulatives(related_kpis, force: false)
@@ -274,7 +347,9 @@ module KpiCumulative
 
       cumulative_kpi.value = cumulative_sum
       cumulative_kpi.notes = note
-      cumulative_kpi.save if cumulative_kpi.changed?
+      # Surface a failed update instead of swallowing it — otherwise the cumulative total
+      # silently keeps its old value with no trace of why.
+      record_autofill_save_error(cumulative_kpi, period, end_date) if cumulative_kpi.changed? && !cumulative_kpi.save
       return
     end
 
@@ -301,8 +376,35 @@ module KpiCumulative
       kpi_report: report_for_period
     )
 
+    # Cumulative KPIs inherit the source KPI's mapping (same name/entity, just a different
+    # period). Without a mapping the new record fails Kpi's investor_kpi_mapping_id presence
+    # validation (required for records created after MAPPING_ID_REQUIRED_FROM) and nothing would
+    # be written. Legacy sources that predate mapping assignment may not be linked even though a
+    # mapping exists for the company, so fall back to looking it up by standard name.
+    kpi.investor_kpi_mapping ||= investor_kpi_mapping || fallback_investor_kpi_mapping if kpi.new_record?
+
     kpi.value = cumulative_sum
     kpi.notes = note
-    kpi.save
+    # A failed save must be surfaced, not swallowed: a silently dropped cumulative means the
+    # company's Quarter/YTD/Year totals just stop updating with no trace. The error lands in
+    # @autofill_errors, which KpiCumulateJob rolls into its danger toast and error email.
+    record_autofill_save_error(kpi, period, end_date) unless kpi.save
+  end
+
+  # Legacy source KPIs (created before mapping assignment existed) may drive cumulation without
+  # being linked to their mapping. `name` on a cumulating KPI is already the standard KPI name,
+  # so the (entity, investor, standard_kpi_name) lookup finds the right mapping to inherit.
+  def fallback_investor_kpi_mapping
+    InvestorKpiMapping.find_by(entity_id: entity_id, investor_id: portfolio_company_id, standard_kpi_name: name)
+  end
+
+  # Records a cumulative KPI that failed to save into @autofill_errors so KpiCumulateJob reports
+  # it (danger notification + error email) instead of the failure disappearing silently.
+  def record_autofill_save_error(kpi, period, end_date)
+    msg = "Could not save #{period} cumulative for '#{name}' as of #{end_date}: #{kpi.errors.full_messages.join(', ')}"
+    # A missing mapping is user-fixable — tell them the fix, not just the failure.
+    msg += ". Upload a KPI mapping for '#{name}' for this portfolio company." if kpi.errors[:investor_kpi_mapping_id].present?
+    Rails.logger.error "--- [#{name}] #{msg}"
+    (@autofill_errors ||= []) << { kpi: name, period: period, as_of: end_date, message: msg }
   end
 end

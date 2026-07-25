@@ -4,6 +4,7 @@
 
   <nav class="nav nav-pills nav-justified p-3 mb-3 rounded align-items-center card flex-row" role="tablist">
     <a class="nav-link active" data-bs-toggle="pill" href="#output-templates-tab">Output Templates</a>
+    <a class="nav-link" data-bs-toggle="pill" href="#docs-tab">Templates (Legacy)</a>
     <a class="nav-link"        data-bs-toggle="pill" href="#portfolio-report-extracts-tab">Extracts</a>
   </nav>
 
@@ -71,6 +72,13 @@
           <% end %>
         </p>
       <% end %>
+    </div>
+
+    <div id="docs-tab" class="tab-pane fade in">
+      <div id="docs" class="associated_entity">
+        <%= render "/documents/index", documents: portfolio_report.documents, owner: portfolio_report,
+                entity: portfolio_report.entity %>
+      </div>
     </div>
 
     <%# ── Extracts tab ─────────────────────────────────────────────────────── %>

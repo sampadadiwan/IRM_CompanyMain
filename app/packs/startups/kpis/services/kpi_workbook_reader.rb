@@ -153,8 +153,11 @@ class KpiWorkbookReader
       log_missing_target_kpis
     end
 
-    # Trigger KPI cumulation job after extraction
-    KpiCumulateJob.perform_later(@portfolio_company_id)
+    # Run cumulation synchronously (we're already inside ImportKpiWorkbookJob, so no latency win
+    # from enqueuing). This guarantees Quarter/YTD/Year cumulative KPIs exist before the import
+    # job continues to the percentage-change step and the workflow launch — with perform_later
+    # those steps could run against KPIs whose cumulative totals hadn't been written yet.
+    KpiCumulateJob.perform_now(@portfolio_company_id)
     # Return the extracted results
     @results
   end
@@ -415,6 +418,7 @@ class KpiWorkbookReader
     kpi.assign_attributes(
       value: value,
       display_value: value,
+      investor_kpi_mapping_id: investor_kpi_mapping&.id,
       notes: "Imported from Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
     )
 

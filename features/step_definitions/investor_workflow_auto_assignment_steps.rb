@@ -29,12 +29,15 @@ end
 When('Kpis are imported into the KPI report for {string} as of {string}') do |portco_name, as_of|
   portco = Investor.find_by!(investor_name: portco_name, entity: @entity)
   @kpi_report = KpiReport.find_by!(portfolio_company: portco, as_of: Date.parse(as_of))
+  name = "Revenue"
+  mapping = InvestorKpiMapping.find_or_create_by(standard_kpi_name: name, entity: @entity, investor: portco, reported_kpi_name: name)
   FactoryBot.create(:kpi,
     kpi_report:        @kpi_report,
     entity:            @entity,
     portfolio_company: portco,
-    name:              "Revenue",
-    value:             100.0)
+    name:              name,
+    value:             100.0,
+    investor_kpi_mapping_id: mapping.id)
   @kpi_report.launch_portfolio_company_workflow(@user)
 end
 

@@ -47,8 +47,13 @@ class PortfolioReportDocGenJob < DocGenJob
     "#{template.name} #{start_date} to #{end_date} - #{model}"
   end
 
-  def perform(portfolio_report_extract_id, start_date, end_date,
-              user_id, document_template_ids: nil, options: {})
+  # document_template_ids moved from a keyword arg to a required positional arg (matching the
+  # other doc-gen jobs) because the template is now chosen explicitly in the UI and must flow
+  # through PortfolioReportJob. Pass nil to keep the old behaviour of generating from every
+  # template under the extract's portfolio report. NOTE: jobs enqueued with the old signature
+  # will fail after deploy — drain the low queue or re-enqueue them.
+  def perform(portfolio_report_extract_id, document_template_ids, start_date, end_date,
+              user_id, options: {})
     # This is the report we want to generate
     @portfolio_report_extract_id = portfolio_report_extract_id
     portfolio_report_extract = PortfolioReportExtract.find(@portfolio_report_extract_id)

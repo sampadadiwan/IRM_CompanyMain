@@ -36,6 +36,12 @@ class Kpi < ApplicationRecord
   validates :status, presence: true
   validates :name, uniqueness: { scope: %i[kpi_report_id portfolio_company_id status deleted_at] }, if: -> { approved? }
 
+  # KPIs created before this date predate mapping-id assignment (backfilled by the workbook job),
+  # so they're exempt. Everything created on or after it must carry an investor_kpi_mapping_id.
+  # A fixed cutoff (not Date.current) so a record's exemption never flips as days pass.
+  MAPPING_ID_REQUIRED_FROM = Date.new(2026, 7, 24)
+  validates :investor_kpi_mapping_id, presence: true, if: :require_mapping_id?
+
   scope :no_tag_list, -> { joins(:kpi_report).where('kpi_reports.tag_list': nil) }
   # --- Generic filters -------------------------------------------------
   scope :for_metric,  ->(name)  { where(name:) }
@@ -87,6 +93,12 @@ class Kpi < ApplicationRecord
 
   def to_s
     "#{name}: #{value}"
+  end
+
+  # New records (created_at nil until saved) and anything created on/after the cutoff must have a
+  # mapping id; legacy KPIs created before it are grandfathered in.
+  def require_mapping_id?
+    (created_at || Time.current) >= MAPPING_ID_REQUIRED_FROM.beginning_of_day
   end
 
   def self.ransackable_attributes(_auth_object = nil)

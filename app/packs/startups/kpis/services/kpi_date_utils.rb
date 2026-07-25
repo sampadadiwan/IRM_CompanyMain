@@ -302,18 +302,18 @@ class KpiDateUtils
     return "Year" if /\A(CY)?\d{2,4}\z/.match?(str)                  # CY2021 or 2021
 
     # === Month Formats ===
-    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2,4})\z/.match?(str)
-    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2,4})\z/.match?(str)
+    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2,4})\z/.match?(str) # e.g. JAN 2024
+    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2,4})\z/.match?(str) # e.g. JANUARY 2024
 
     # Special: 3-letter months with 2-digit years
-    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2})\z/.match?(str)
-    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2})\z/.match?(str)
+    return "Month" if /\A(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|SEPT|OCT|NOV|DEC)\s+(\d{2})\z/.match?(str) # e.g. JAN 24
+    return "Month" if /\A(JANUARY|FEBRUARY|MARCH|APRIL|MAY|JUNE|JULY|AUGUST|SEPTEMBER|OCTOBER|NOVEMBER|DECEMBER)\s+(\d{2})\z/.match?(str) # e.g. JANUARY 24
 
     # === Quarter Formats ===
-    return "Quarter" if /\AQ([1-4])(FY|CY)?(\d{2,4})\z/.match?(str)
-    return "Quarter" if /\AQ([1-4])\s+(FY|CY)?(\d{2,4})\z/.match?(str)
-    return "Quarter" if /\A(JAN|APR|JUL|OCT)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str)
-    return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str)
+    return "Quarter" if /\AQ([1-4])(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1FY24 or Q1CY2024 or Q12024
+    return "Quarter" if /\AQ([1-4])\s+(FY|CY)?(\d{2,4})\z/.match?(str) # e.g. Q1 FY24 or Q1 2024
+    return "Quarter" if /\A(JAN|APR|JUL|OCT)-[A-Z]{3,4}\s+(\d{2,4})\z/.match?(str) # e.g. JAN-MAR 2024
+    return "Quarter" if /\A(JFM|AMJ|JAS|OND)\s+(\d{2,4})\z/.match?(str) # e.g. JFM 2024
 
     # === Fallback ===
     "Month"
