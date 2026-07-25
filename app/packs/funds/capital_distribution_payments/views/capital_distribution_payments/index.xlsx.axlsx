@@ -5,14 +5,14 @@ form_type, custom_field_names, custom_headers = get_form_type("CapitalDistributi
 wb.add_worksheet(name: "CapitalDistrbutionPayment") do |sheet|
   # Create the header row
 
-  headers = ["Fund", "Investor", "Capital Distribution", "Folio Currency", "Payment Amount (Folio Currency)", "Face Value For Redemption", "Face Value For Redemption With Fees", "Reinvestment", "Reinvestment with Fees", "Income", "Income with Fees", "Percentage", "Units Quantity", "Gross Payable", "Net Payable", "Gross of Account Entries", "Net of Account Entries", "Payment Date", "Completed", "Folio No", "Bank Account", "IFSC", "Investing Entity", "PAN"] + custom_headers
+  headers = ["Fund", "Investor", "Capital Distribution", "Folio Currency", "Payment Amount (Folio Currency)", "Face Value For Redemption", "Face Value For Redemption With Fees", "Reinvestment", "Reinvestment with Fees", "Income", "Income with Fees", "Expense with Fees", "Tax with Fees", "Percentage", "Units Quantity", "Gross Payable", "Net Payable", "Gross of Account Entries", "Net of Account Entries", "Payment Date", "Completed", "Folio No", "Bank Account", "IFSC", "Investing Entity", "PAN"] + custom_headers
 
   has_tracking_currency = false
   if params[:fund_id].present? || params[:capital_distribution_id].present?
     fund = Fund.find(params[:fund_id]) if params[:fund_id].present?
     fund = CapitalDistribution.find(params[:capital_distribution_id]).fund if params[:capital_distribution_id].present?
     if fund.has_tracking_currency?
-      headers += ["Tracking Net Payable"]
+      headers += ["Tracking Net Payable", "Tracking Gross Payable", "Tracking Reinvestment with Fees", "Tracking Income with Fees", "Tracking Expense with Fees", "Tracking Tax with Fees", "Tracking Display Only with Fees"]
       has_tracking_currency = true
     end
   end
@@ -25,9 +25,10 @@ wb.add_worksheet(name: "CapitalDistrbutionPayment") do |sheet|
     fvfr = cc.cost_of_investment.to_d
     fvfr_with_fees = cc.cost_of_investment_with_fees.to_d
 
-    values = [cc.fund.name, cc.investor_name, cc.capital_distribution.title, cc.capital_commitment.folio_currency, cc.folio_amount, fvfr, fvfr_with_fees, cc.reinvestment, cc.reinvestment_with_fees, cc.income, cc.income_with_fees, cc.percentage, cc.units_quantity, cc.gross_payable, cc.net_payable, cc.gross_of_account_entries, cc.net_of_account_entries, cc.payment_date, cc.completed, cc.folio_id, cc.investor_kyc&.bank_account_number, cc.investor_kyc&.ifsc_code, cc.investor_kyc&.full_name, cc.investor_kyc&.PAN] + custom_field_values
+    values = [cc.fund.name, cc.investor_name, cc.capital_distribution.title, cc.capital_commitment.folio_currency, cc.folio_amount, fvfr, fvfr_with_fees, cc.reinvestment, cc.reinvestment_with_fees, cc.income, cc.income_with_fees, cc.expense_with_fees.to_d, cc.tax_with_fees.to_d, cc.percentage, cc.units_quantity, cc.gross_payable, cc.net_payable, cc.gross_of_account_entries, cc.net_of_account_entries, cc.payment_date, cc.completed, cc.folio_id, cc.investor_kyc&.bank_account_number, cc.investor_kyc&.ifsc_code, cc.investor_kyc&.full_name, cc.investor_kyc&.PAN] + custom_field_values
 
-    values << cc.tracking_net_payable.to_d if has_tracking_currency
+    # Tracking currency columns are only present when the fund has a tracking currency
+    values += [cc.tracking_net_payable.to_d, cc.tracking_gross_payable.to_d, cc.tracking_reinvestment_with_fees.to_d, cc.tracking_income_with_fees.to_d, cc.tracking_expense_with_fees.to_d, cc.tracking_tax_with_fees.to_d, cc.tracking_display_only_with_fees.to_d] if has_tracking_currency
 
     sheet.add_row values
   end

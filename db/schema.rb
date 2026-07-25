@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_24_120000) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_25_120000) do
   create_table "access_rights", charset: "utf8mb4", collation: "utf8mb4_0900_ai_ci", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -872,9 +872,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_120000) do
     t.decimal "reinvestment_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tax_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_display_only_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_expense_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_gross_payable_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_income_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "tracking_net_payable_cents", precision: 20, scale: 4, default: "0.0"
     t.decimal "tracking_reinvestment_with_fees_cents", precision: 20, scale: 2, default: "0.0"
+    t.decimal "tracking_tax_with_fees_cents", precision: 20, scale: 2, default: "0.0"
     t.decimal "units_quantity", precision: 26, scale: 8, default: "0.0"
     t.datetime "updated_at", null: false
     t.index ["capital_commitment_id"], name: "index_capital_distribution_payments_on_capital_commitment_id"

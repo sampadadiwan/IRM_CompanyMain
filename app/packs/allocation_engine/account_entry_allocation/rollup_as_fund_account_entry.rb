@@ -12,7 +12,14 @@ module AccountEntryAllocation
       start_date   = ctx[:start_date]
 
       # Rollup the fund-level entries, by default its only the fund formula name
-      rollups_for_name = [fund_formula.name]
+      # For GenerateAccountEntryMultiple each name in the formula's array produced
+      # its own commitment-level entries, so each prefixed name gets its own fund
+      # rollup — matching what N single-name GenerateAccountEntry formulas produce.
+      rollups_for_name = if fund_formula.rule_type == "GenerateAccountEntryMultiple"
+                           fund_formula.multiple_entry_prefixed_names
+                         else
+                           [fund_formula.name]
+                         end
       if fund_formula.generate_ytd_qtly
         # Add the YTD and Quarterly rollups
         AccountEntryAllocation::CreateAccountEntry::ADDITONAL_AE.each do |ae_name|

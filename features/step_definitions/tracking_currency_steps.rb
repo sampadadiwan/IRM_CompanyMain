@@ -30,6 +30,21 @@ Then('the tracking amounts should be calculated for the fund') do
 
   # Verify Portfolio Investments
   expect(@fund.portfolio_investments.where.not(tracking_amount_cents: 0).count).to be > 0 if @fund.portfolio_investments.exists?
+
+  # Verify Distribution Payments — each tracking column should be populated whenever
+  # its fund-currency source column is non-zero (all converted at the payment_date rate)
+  cdps = @fund.capital_distribution_payments
+  {
+    net_payable_cents: :tracking_net_payable_cents,
+    gross_payable_cents: :tracking_gross_payable_cents,
+    reinvestment_with_fees_cents: :tracking_reinvestment_with_fees_cents,
+    income_with_fees_cents: :tracking_income_with_fees_cents,
+    expense_with_fees_cents: :tracking_expense_with_fees_cents,
+    tax_with_fees_cents: :tracking_tax_with_fees_cents,
+    display_only_with_fees_cents: :tracking_display_only_with_fees_cents
+  }.each do |source, tracking|
+    expect(cdps.where.not(tracking => 0).count).to be > 0 if cdps.where.not(source => 0).exists?
+  end
 end
 
 Given('I trigger the tracking currency job again') do

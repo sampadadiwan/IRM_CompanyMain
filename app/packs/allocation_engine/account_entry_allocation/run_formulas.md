@@ -79,6 +79,69 @@ This is the core execution logic:
 - **Cleanup**: Deletes the temporary SQLite and TSV files.
 - **Notification**: Sends a success notification to the user with direct links to view the generated entries, expenses, and allocations.
 
+## GenerateAccountEntryMultiple Rule Type
+
+A single `GenerateAccountEntryMultiple` formula replaces N single-name `GenerateAccountEntry` formulas. The list of account entry names is embedded in the formula as an array literal:
+
+```ruby
+capital_commitment.quarterly(["Management Fees", "Custody Fees", "Audit Fees"], nil, @start_date, @end_date)
+```
+
+The engine evaluates the formula **once per name** — substituting the array with each single quoted name — creating one account entry per name per commitment, plus one fund-level cumulative rollup per name. The output is identical to running N separate single-name formulas.
+
+### Entry Naming
+
+Each generated entry is named `prefix + name`. The prefix is derived from the period helper wrapping the names array (see `FundFormula::MULTIPLE_PREFIX_BY_METHOD`):
+
+| Period helper in formula | Prefix             | Example entry name           |
+| ------------------------ | ------------------ | ---------------------------- |
+| `quarterly` / `period`   | `Quarterly `       | Quarterly Management Fees    |
+| `year_to_date`           | `YTD `             | YTD Management Fees          |
+| `since_inception`        | `Since Inception ` | Since Inception Management Fees |
+| anything else            | *(none)*           | Management Fees              |
+
+A `name_prefix` entry in the formula's `meta_data` overrides the derived prefix. Note that the override is used verbatim — include the trailing space (`name_prefix=Quarterly ` not `name_prefix=Quarterly`), otherwise the prefix runs into the name (`QuarterlyManagement Fees`).
+
+### How the names array is located
+
+The engine picks the first array of quoted strings that appears as a **method-call argument** (e.g. the first argument of `quarterly(...)`). Guard clauses whose array is a receiver — `["active", "closed"].include?(...)` — are never mistaken for the names list. If no string array appears in argument position, the first string array anywhere in the formula is used. Duplicate names in the array are de-duplicated.
+
+### Constraints
+
+- The formula must contain a non-empty array of quoted names (validated on save).
+- `generate_ytd_qtly` cannot be enabled — its auto-generated formulas key off `fund_formula.name`, which is a batch label here, not an account entry name.
+- Keep each generated name + entry_type combination unique across formulas: rollups (commitment-level and fund-level) aggregate by name + entry_type, not by formula, so two Multiple formulas sharing an entry name and entry type would sum each other's entries. (Same semantics as two single-name `GenerateAccountEntry` formulas sharing a name — just easier to hit now that one formula carries many names.)
+
+### Sequence Diagram
+
+```mermaid
+sequenceDiagram
+    participant RF as RunFormula
+    participant GAE as GenerateAccountEntries
+    participant FF as FundFormula
+    participant CAE as CreateAccountEntry
+    participant BID as BulkInsertData
+    participant RAF as RollupAsFundAccountEntry
+
+    RF->>GAE: call(ctx) [rule_type = GenerateAccountEntryMultiple]
+    GAE->>FF: multiple_entry_names / multiple_entry_prefix
+    FF-->>GAE: ["Management Fees", "Custody Fees"], "Quarterly "
+    GAE->>FF: formula_for_entry_name(name) — once per name
+    FF-->>GAE: formula with array replaced by the single name
+    loop each commitment
+        loop each name
+            GAE->>CAE: call(ctx + formula_override + prefixed name)
+            CAE->>CAE: eval per-name formula, buffer entry in bulk_insert_records
+        end
+    end
+    RF->>BID: call(ctx)
+    BID->>BID: insert_all buffered entries into scratch SQLite
+    BID->>RAF: call(ctx)
+    loop each prefixed name
+        RAF->>RAF: create fund-level cumulative rollup entry
+    end
+```
+
 ## Key Design Patterns
 
 - **Isolation via SQLite**: Using a scratch DB allows for complex SQL queries and bulk inserts without impacting the main system's performance.

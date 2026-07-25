@@ -43,7 +43,11 @@ class CapitalDistributionPayment < ApplicationRecord
   has_one :investor_kyc, through: :capital_commitment
   has_many :noticed_events, as: :record, dependent: :destroy, class_name: "Noticed::Event"
 
-  monetize :tracking_net_payable_cents, :tracking_gross_payable_cents, :tracking_reinvestment_with_fees_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
+  # Tracking currency amounts are populated by TrackingCurrencyJob from the fund-currency
+  # amounts using the exchange rate on the payment_date.
+  monetize :tracking_net_payable_cents, :tracking_gross_payable_cents, :tracking_reinvestment_with_fees_cents,
+           :tracking_income_with_fees_cents, :tracking_expense_with_fees_cents, :tracking_tax_with_fees_cents,
+           :tracking_display_only_with_fees_cents, with_currency: ->(i) { i.fund.tracking_currency.presence || i.fund.currency }
   # Note that cost_of_investment_cents is Face value for redemption
   monetize :folio_amount_cents, :net_of_account_entries_cents, with_currency: ->(i) { i.capital_commitment&.folio_currency || i.fund.currency }
   monetize :income_cents, :income_with_fees_cents, :cost_of_investment_cents, :net_payable_cents, :gross_payable_cents, :cost_of_investment_with_fees_cents, :reinvestment_cents, :reinvestment_with_fees_cents, :gross_of_account_entries_cents, :tax_with_fees_cents, :expense_with_fees_cents, :display_only_with_fees_cents, with_currency: ->(i) { i.fund.currency }

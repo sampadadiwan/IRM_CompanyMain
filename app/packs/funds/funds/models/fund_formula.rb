@@ -5,7 +5,19 @@ class FundFormula < ApplicationRecord
   # Make all models searchable
   update_index('fund_formula') { self if index_record? }
 
-  TYPES = %w[AllocateMasterFundAccountEntry-Name AllocateMasterFundAccountEntryIndividual-Name AllocateMasterFundAccountEntry-EntryType AllocateMasterFundAccountEntryIndividual-EntryType AllocateAccountEntry-Name AllocateAccountEntryIndividual-Name AllocateAccountEntry-EntryType AllocateAccountEntryIndividual-EntryType AllocateAggregatePortfolios AllocatePortfolioInvestment AllocatePortfolioInvestment-Proforma AllocateMasterFundPortfolioInvestment AllocateMasterFundPortfolioInvestment-Proforma GenerateAccountEntry CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund AllocateForPortfolioCompany AllocateForPortfolioCompany-Folio].sort.freeze
+  TYPES = %w[AllocateMasterFundAccountEntry-Name AllocateMasterFundAccountEntryIndividual-Name AllocateMasterFundAccountEntry-EntryType AllocateMasterFundAccountEntryIndividual-EntryType AllocateAccountEntry-Name AllocateAccountEntryIndividual-Name AllocateAccountEntry-EntryType AllocateAccountEntryIndividual-EntryType AllocateAggregatePortfolios AllocatePortfolioInvestment AllocatePortfolioInvestment-Proforma AllocateMasterFundPortfolioInvestment AllocateMasterFundPortfolioInvestment-Proforma GenerateAccountEntry GenerateAccountEntryMultiple CumulateAccountEntry GenerateCustomField Percentage GeneratePortfolioNumbersForFund AllocateForPortfolioCompany AllocateForPortfolioCompany-Folio].sort.freeze
+
+  # Maps the period helper wrapping the names array of a GenerateAccountEntryMultiple
+  # formula to the prefix used when naming the generated entries
+  # ("Management Fees" -> "Quarterly Management Fees").
+  # These match the exact prefixes CreateAccountEntry uses for its auto-generated
+  # Quarterly/YTD/Since Inception entries, so downstream statement templates keep working.
+  MULTIPLE_PREFIX_BY_METHOD = {
+    "quarterly" => "Quarterly ",
+    "period" => "Quarterly ", # period is an alias of quarterly in CommitmentAccountEntry
+    "year_to_date" => "YTD ",
+    "since_inception" => "Since Inception "
+  }.freeze
 
   STANDARD_COLUMNS = { "Sequence; num-col" => "sequence; num-col",
                        "Name; text-col" => "name; text-col",
@@ -63,6 +75,130 @@ class FundFormula < ApplicationRecord
     Parser::CurrentRuby.parse(formula)
   rescue Parser::SyntaxError => e
     errors.add(:formula, "has invalid Ruby syntax: #{e.message}")
+  end
+
+  # GenerateAccountEntryMultiple formulas embed the account entry names as an
+  # array literal, so a parseable non-empty list is required. generate_ytd_qtly
+  # is disallowed because its auto-generated formulas key off fund_formula.name,
+  # which for this rule type is a batch label ("Quarterly Reporting"), not an
+  # account entry name — it would silently produce wrongly named entries.
+  validate :multiple_names_kosher?, if: -> { rule_type == "GenerateAccountEntryMultiple" }
+  def multiple_names_kosher?
+    errors.add(:formula, 'must contain a non-empty array of quoted account entry names, e.g. capital_commitment.quarterly(["Management Fees", "Audit Fees"], nil, @start_date, @end_date)') if multiple_entry_names.blank?
+    errors.add(:generate_ytd_qtly, "cannot be enabled for GenerateAccountEntryMultiple formulas") if generate_ytd_qtly
+  end
+
+  ##############################################################################
+  # GenerateAccountEntryMultiple support
+  #
+  # One formula holds the list of account entry names as an array literal, e.g.
+  #   capital_commitment.quarterly(["Management Fees", "Custody Fees"], nil, @start_date, @end_date)
+  # The allocation engine evaluates the formula once per name — substituting the
+  # array with each single name — creating one account entry per name per
+  # commitment, exactly like N single-name GenerateAccountEntry formulas would.
+  ##############################################################################
+
+  # The account entry names embedded in the formula as its names array literal.
+  # Deduplicated so the generation loop (hash keyed by name) and the rollup
+  # loops (plain array iteration) always agree on the entry count.
+  def multiple_entry_names
+    node = multiple_names_array_node
+    return [] unless node
+
+    node.children.map { |str_node| str_node.children[0] }.uniq
+  end
+
+  # Fully prefixed account entry names this formula generates, e.g.
+  # ["Quarterly Management Fees", "Quarterly Custody Fees"]. Single home of the
+  # "generated name = prefix + name" rule — the engine operations
+  # (GenerateAccountEntries, BulkInsertData, RollupAsFundAccountEntry) all use
+  # this instead of recombining prefix and names themselves.
+  def multiple_entry_prefixed_names
+    prefix = multiple_entry_prefix
+    multiple_entry_names.map { |entry_name| prefix + entry_name }
+  end
+
+  # Prefix applied to each generated entry name. meta_data name_prefix wins so
+  # users can override; otherwise it is derived from the period helper wrapping
+  # the names array; formulas matching neither get no prefix.
+  def multiple_entry_prefix
+    override = meta_data_hash&.[]("name_prefix")
+    return override if override.present?
+
+    MULTIPLE_PREFIX_BY_METHOD[method_wrapping_names_array] || ""
+  end
+
+  # The formula source with the names array literal replaced by the single quoted
+  # name. The engine evals this per-name formula, so each entry's amount and
+  # explanation come out exactly as if it had its own single-name formula.
+  def formula_for_entry_name(name)
+    node = multiple_names_array_node
+    return formula unless node
+
+    range = node.loc.expression
+    # name.inspect quotes and escapes the name safely (handles apostrophes/quotes)
+    formula.dup.tap { |src| src[range.begin_pos...range.end_pos] = name.inspect }
+  end
+
+  # Parses the formula once per instance; all the Multiple helpers walk this
+  # shared AST. Memoized keyed on the formula text so editing the formula on a
+  # long-lived instance (e.g. re-validating after a form edit) reparses.
+  def parsed_formula_ast
+    return nil if formula.blank?
+
+    if @parsed_formula_source != formula
+      @parsed_formula_source = formula
+      @parsed_formula_ast = begin
+        Parser::CurrentRuby.parse(formula)
+      rescue Parser::SyntaxError
+        # Unparseable formulas are reported separately by formula_syntax_valid?
+        nil
+      end
+    end
+    @parsed_formula_ast
+  end
+
+  # Finds the names array node in the formula AST. Prefers the first string
+  # array passed as a METHOD-CALL ARGUMENT — e.g. quarterly(["A", "B"], ...) —
+  # so guard clauses whose array is a receiver, like
+  # ["active", "closed"].include?(status), are never mistaken for the names
+  # list. Falls back to the first string array anywhere for formulas that
+  # build the array standalone.
+  def multiple_names_array_node
+    ast = parsed_formula_ast
+    send_node = find_node(ast) { |node| node.type == :send && node.children[2..].any? { |arg| string_array_node?(arg) } }
+    return send_node.children[2..].find { |arg| string_array_node?(arg) } if send_node
+
+    find_node(ast) { |node| string_array_node?(node) }
+  end
+
+  # True for a non-empty array literal whose elements are all plain strings
+  def string_array_node?(node)
+    node.is_a?(Parser::AST::Node) && node.type == :array && node.children.present? &&
+      node.children.all? { |c| c.is_a?(Parser::AST::Node) && c.type == :str }
+  end
+
+  # The method name (e.g. "quarterly") whose argument list contains the names
+  # array — used by multiple_entry_prefix to derive the entry name prefix.
+  def method_wrapping_names_array
+    array_node = multiple_names_array_node
+    return nil unless array_node
+
+    # children[2..] of a :send node are the call arguments
+    send_node = find_node(parsed_formula_ast) { |node| node.type == :send && node.children[2..].include?(array_node) }
+    send_node&.children&.[](1)&.to_s
+  end
+
+  # Depth-first search returning the first AST node matching the predicate
+  def find_node(node, &)
+    return nil unless node.is_a?(Parser::AST::Node)
+    return node if yield(node)
+
+    node.children.each do |child|
+      found = find_node(child, &)
+      return found if found
+    end
+    nil
   end
 
   def tag_list=(tags)

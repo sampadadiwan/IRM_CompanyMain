@@ -40,9 +40,20 @@ module AccountEntryAllocation
         # Reset the array for new bulk insert records
         ctx[:bulk_insert_cumulative_records] = []
 
+        # For GenerateAccountEntryMultiple each generated name needs its own
+        # commitment-level cumulative rollup; every other rule type keeps the
+        # single rollup under rollup_name (usually the formula name).
+        rollup_names = if fund_formula.rule_type == "GenerateAccountEntryMultiple"
+                         fund_formula.multiple_entry_prefixed_names
+                       else
+                         [rollup_name]
+                       end
+
         # Iterate over each commitment and generate cumulative account entries
         ctx[:commitments].each_with_index do |capital_commitment, _idx|
-          generate_cumulative_ae(ctx, capital_commitment, rollup_name, rollup_entry_type)
+          rollup_names.each do |name|
+            generate_cumulative_ae(ctx, capital_commitment, name, rollup_entry_type)
+          end
         end
 
         # Insert the bulk records if present
@@ -57,8 +68,8 @@ module AccountEntryAllocation
         end
       end
 
-      # For "GenerateAccountEntry" rule_type, we need to rollup the generated entries to the fund level
-      if ["GenerateAccountEntry"].include? fund_formula.rule_type
+      # For "GenerateAccountEntry" rule types (single and multiple), we need to rollup the generated entries to the fund level
+      if %w[GenerateAccountEntry GenerateAccountEntryMultiple].include? fund_formula.rule_type
         ctx[:bulk_insert_records] = []
         AccountEntryAllocation::RollupAsFundAccountEntry.call(ctx)
       end

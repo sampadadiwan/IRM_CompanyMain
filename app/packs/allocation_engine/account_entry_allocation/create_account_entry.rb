@@ -22,7 +22,9 @@ module AccountEntryAllocation
 
     def create_account_entry(ctx, account_entry:, fund_formula:, capital_commitment:, bdg:, parent:, **)
       # This will setup the amount_cents for the account entry
-      formula = fund_formula.formula
+      # GenerateAccountEntryMultiple passes a per-name substituted formula via
+      # ctx[:formula_override]; every other rule type evals the formula as stored.
+      formula = ctx[:formula_override] || fund_formula.formula
       eval_formula(ctx, account_entry:, formula:, capital_commitment:, bdg:, parent:, **)
     rescue SkipRule => e
       Rails.logger.debug { "Skipping #{fund_formula.name} for #{capital_commitment}: #{e.message}" }
