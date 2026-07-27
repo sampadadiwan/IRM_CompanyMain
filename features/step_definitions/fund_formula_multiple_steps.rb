@@ -104,10 +104,29 @@ Given("the fund has a GenerateAccountEntryMultiple formula {string} with entry t
   puts fund_formula.to_json
 end
 
+# Plain single-name formula — used to reproduce interactions between the old
+# GenerateAccountEntry path (incl. generate_ytd_qtly) and Multiple formulas
+# running later in the same allocation run
+Given("the fund has a GenerateAccountEntry formula {string} with entry type {string} and formula:") do |name, entry_type, formula|
+  @fund.fund_formulas.create!(
+    name: name,
+    formula: formula.strip,
+    rule_type: "GenerateAccountEntry",
+    entry_type: entry_type,
+    rule_for: "reporting",
+    enabled: true,
+    roll_up: false
+  )
+end
+
 # Modifier steps for the formula built above — key_values can't be used for
 # meta_data because its value itself contains "=" (e.g. name_prefix=Custom )
 Given("the fund formula {string} has roll_up enabled") do |name|
   @fund.fund_formulas.find_by!(name: name).update!(roll_up: true)
+end
+
+Given("the fund formula {string} has generate_ytd_qtly enabled") do |name|
+  @fund.fund_formulas.find_by!(name: name).update!(generate_ytd_qtly: true)
 end
 
 Given("the fund formula {string} has meta_data {string}") do |name, meta_data|
@@ -123,6 +142,23 @@ Then("each commitment should have a generated account entry {string} with amount
       cumulative: false
     ).last
     expect(ae).to be_present, "expected generated entry '#{name}' for commitment #{capital_commitment.folio_id}"
+    expect(ae.amount_cents).to eq(cents.to_i)
+  end
+end
+
+# Entry-type-scoped variant — needed when the old generate_ytd_qtly path and a
+# Multiple formula generate same-named entries with different entry types in
+# one run (e.g. "Quarterly Management Fees" as Expense and as Reporting)
+Then("each commitment should have a generated account entry {string} of type {string} with amount cents {string}") do |name, entry_type, cents|
+  @fund.capital_commitments.find_each do |capital_commitment|
+    ae = AccountEntry.where(
+      capital_commitment_id: capital_commitment.id,
+      name: name,
+      entry_type: entry_type,
+      generated: true,
+      cumulative: false
+    ).last
+    expect(ae).to be_present, "expected generated entry '#{name}' (#{entry_type}) for commitment #{capital_commitment.folio_id}"
     expect(ae.amount_cents).to eq(cents.to_i)
   end
 end

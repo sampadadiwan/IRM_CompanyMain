@@ -1,4 +1,991 @@
-// @rails/actiontext@8.0.200 downloaded from https://ga.jspm.io/npm:@rails/actiontext@8.0.200/app/assets/javascripts/actiontext.esm.js
+// @rails/actiontext@8.1.300 downloaded from https://cdn.jsdelivr.net/npm/@rails/actiontext@8.1.300/app/assets/javascripts/actiontext.esm.js
 
-var t=typeof globalThis!=="undefined"?globalThis:typeof self!=="undefined"?self:global;var e={exports:{}};(function(e){(function(t){e.exports=t()})((function(e){var r=["0","1","2","3","4","5","6","7","8","9","a","b","c","d","e","f"];function md5cycle(t,e){var r=t[0],i=t[1],s=t[2],n=t[3];r+=(i&s|~i&n)+e[0]-680876936|0;r=(r<<7|r>>>25)+i|0;n+=(r&i|~r&s)+e[1]-389564586|0;n=(n<<12|n>>>20)+r|0;s+=(n&r|~n&i)+e[2]+606105819|0;s=(s<<17|s>>>15)+n|0;i+=(s&n|~s&r)+e[3]-1044525330|0;i=(i<<22|i>>>10)+s|0;r+=(i&s|~i&n)+e[4]-176418897|0;r=(r<<7|r>>>25)+i|0;n+=(r&i|~r&s)+e[5]+1200080426|0;n=(n<<12|n>>>20)+r|0;s+=(n&r|~n&i)+e[6]-1473231341|0;s=(s<<17|s>>>15)+n|0;i+=(s&n|~s&r)+e[7]-45705983|0;i=(i<<22|i>>>10)+s|0;r+=(i&s|~i&n)+e[8]+1770035416|0;r=(r<<7|r>>>25)+i|0;n+=(r&i|~r&s)+e[9]-1958414417|0;n=(n<<12|n>>>20)+r|0;s+=(n&r|~n&i)+e[10]-42063|0;s=(s<<17|s>>>15)+n|0;i+=(s&n|~s&r)+e[11]-1990404162|0;i=(i<<22|i>>>10)+s|0;r+=(i&s|~i&n)+e[12]+1804603682|0;r=(r<<7|r>>>25)+i|0;n+=(r&i|~r&s)+e[13]-40341101|0;n=(n<<12|n>>>20)+r|0;s+=(n&r|~n&i)+e[14]-1502002290|0;s=(s<<17|s>>>15)+n|0;i+=(s&n|~s&r)+e[15]+1236535329|0;i=(i<<22|i>>>10)+s|0;r+=(i&n|s&~n)+e[1]-165796510|0;r=(r<<5|r>>>27)+i|0;n+=(r&s|i&~s)+e[6]-1069501632|0;n=(n<<9|n>>>23)+r|0;s+=(n&i|r&~i)+e[11]+643717713|0;s=(s<<14|s>>>18)+n|0;i+=(s&r|n&~r)+e[0]-373897302|0;i=(i<<20|i>>>12)+s|0;r+=(i&n|s&~n)+e[5]-701558691|0;r=(r<<5|r>>>27)+i|0;n+=(r&s|i&~s)+e[10]+38016083|0;n=(n<<9|n>>>23)+r|0;s+=(n&i|r&~i)+e[15]-660478335|0;s=(s<<14|s>>>18)+n|0;i+=(s&r|n&~r)+e[4]-405537848|0;i=(i<<20|i>>>12)+s|0;r+=(i&n|s&~n)+e[9]+568446438|0;r=(r<<5|r>>>27)+i|0;n+=(r&s|i&~s)+e[14]-1019803690|0;n=(n<<9|n>>>23)+r|0;s+=(n&i|r&~i)+e[3]-187363961|0;s=(s<<14|s>>>18)+n|0;i+=(s&r|n&~r)+e[8]+1163531501|0;i=(i<<20|i>>>12)+s|0;r+=(i&n|s&~n)+e[13]-1444681467|0;r=(r<<5|r>>>27)+i|0;n+=(r&s|i&~s)+e[2]-51403784|0;n=(n<<9|n>>>23)+r|0;s+=(n&i|r&~i)+e[7]+1735328473|0;s=(s<<14|s>>>18)+n|0;i+=(s&r|n&~r)+e[12]-1926607734|0;i=(i<<20|i>>>12)+s|0;r+=(i^s^n)+e[5]-378558|0;r=(r<<4|r>>>28)+i|0;n+=(r^i^s)+e[8]-2022574463|0;n=(n<<11|n>>>21)+r|0;s+=(n^r^i)+e[11]+1839030562|0;s=(s<<16|s>>>16)+n|0;i+=(s^n^r)+e[14]-35309556|0;i=(i<<23|i>>>9)+s|0;r+=(i^s^n)+e[1]-1530992060|0;r=(r<<4|r>>>28)+i|0;n+=(r^i^s)+e[4]+1272893353|0;n=(n<<11|n>>>21)+r|0;s+=(n^r^i)+e[7]-155497632|0;s=(s<<16|s>>>16)+n|0;i+=(s^n^r)+e[10]-1094730640|0;i=(i<<23|i>>>9)+s|0;r+=(i^s^n)+e[13]+681279174|0;r=(r<<4|r>>>28)+i|0;n+=(r^i^s)+e[0]-358537222|0;n=(n<<11|n>>>21)+r|0;s+=(n^r^i)+e[3]-722521979|0;s=(s<<16|s>>>16)+n|0;i+=(s^n^r)+e[6]+76029189|0;i=(i<<23|i>>>9)+s|0;r+=(i^s^n)+e[9]-640364487|0;r=(r<<4|r>>>28)+i|0;n+=(r^i^s)+e[12]-421815835|0;n=(n<<11|n>>>21)+r|0;s+=(n^r^i)+e[15]+530742520|0;s=(s<<16|s>>>16)+n|0;i+=(s^n^r)+e[2]-995338651|0;i=(i<<23|i>>>9)+s|0;r+=(s^(i|~n))+e[0]-198630844|0;r=(r<<6|r>>>26)+i|0;n+=(i^(r|~s))+e[7]+1126891415|0;n=(n<<10|n>>>22)+r|0;s+=(r^(n|~i))+e[14]-1416354905|0;s=(s<<15|s>>>17)+n|0;i+=(n^(s|~r))+e[5]-57434055|0;i=(i<<21|i>>>11)+s|0;r+=(s^(i|~n))+e[12]+1700485571|0;r=(r<<6|r>>>26)+i|0;n+=(i^(r|~s))+e[3]-1894986606|0;n=(n<<10|n>>>22)+r|0;s+=(r^(n|~i))+e[10]-1051523|0;s=(s<<15|s>>>17)+n|0;i+=(n^(s|~r))+e[1]-2054922799|0;i=(i<<21|i>>>11)+s|0;r+=(s^(i|~n))+e[8]+1873313359|0;r=(r<<6|r>>>26)+i|0;n+=(i^(r|~s))+e[15]-30611744|0;n=(n<<10|n>>>22)+r|0;s+=(r^(n|~i))+e[6]-1560198380|0;s=(s<<15|s>>>17)+n|0;i+=(n^(s|~r))+e[13]+1309151649|0;i=(i<<21|i>>>11)+s|0;r+=(s^(i|~n))+e[4]-145523070|0;r=(r<<6|r>>>26)+i|0;n+=(i^(r|~s))+e[11]-1120210379|0;n=(n<<10|n>>>22)+r|0;s+=(r^(n|~i))+e[2]+718787259|0;s=(s<<15|s>>>17)+n|0;i+=(n^(s|~r))+e[9]-343485551|0;i=(i<<21|i>>>11)+s|0;t[0]=r+t[0]|0;t[1]=i+t[1]|0;t[2]=s+t[2]|0;t[3]=n+t[3]|0}function md5blk(t){var e,r=[];for(e=0;e<64;e+=4)r[e>>2]=t.charCodeAt(e)+(t.charCodeAt(e+1)<<8)+(t.charCodeAt(e+2)<<16)+(t.charCodeAt(e+3)<<24);return r}function md5blk_array(t){var e,r=[];for(e=0;e<64;e+=4)r[e>>2]=t[e]+(t[e+1]<<8)+(t[e+2]<<16)+(t[e+3]<<24);return r}function md51(t){var e,r,i,s,n,a,o=t.length,h=[1732584193,-271733879,-1732584194,271733878];for(e=64;e<=o;e+=64)md5cycle(h,md5blk(t.substring(e-64,e)));t=t.substring(e-64);r=t.length;i=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];for(e=0;e<r;e+=1)i[e>>2]|=t.charCodeAt(e)<<(e%4<<3);i[e>>2]|=128<<(e%4<<3);if(e>55){md5cycle(h,i);for(e=0;e<16;e+=1)i[e]=0}s=o*8;s=s.toString(16).match(/(.*?)(.{0,8})$/);n=parseInt(s[2],16);a=parseInt(s[1],16)||0;i[14]=n;i[15]=a;md5cycle(h,i);return h}function md51_array(t){var e,r,i,s,n,a,o=t.length,h=[1732584193,-271733879,-1732584194,271733878];for(e=64;e<=o;e+=64)md5cycle(h,md5blk_array(t.subarray(e-64,e)));t=e-64<o?t.subarray(e-64):new Uint8Array(0);r=t.length;i=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];for(e=0;e<r;e+=1)i[e>>2]|=t[e]<<(e%4<<3);i[e>>2]|=128<<(e%4<<3);if(e>55){md5cycle(h,i);for(e=0;e<16;e+=1)i[e]=0}s=o*8;s=s.toString(16).match(/(.*?)(.{0,8})$/);n=parseInt(s[2],16);a=parseInt(s[1],16)||0;i[14]=n;i[15]=a;md5cycle(h,i);return h}function rhex(t){var e,i="";for(e=0;e<4;e+=1)i+=r[t>>e*8+4&15]+r[t>>e*8&15];return i}function hex(t){var e;for(e=0;e<t.length;e+=1)t[e]=rhex(t[e]);return t.join("")}hex(md51("hello"))!=="5d41402abc4b2a76b9719d911017c592";typeof ArrayBuffer==="undefined"||ArrayBuffer.prototype.slice||function(){function clamp(t,e){t=t|0||0;return t<0?Math.max(t+e,0):Math.min(t,e)}ArrayBuffer.prototype.slice=function(r,i){var s,n,a,o,h=(this||t).byteLength,l=clamp(r,h),c=h;i!==e&&(c=clamp(i,h));if(l>c)return new ArrayBuffer(0);s=c-l;n=new ArrayBuffer(s);a=new Uint8Array(n);o=new Uint8Array(this||t,l,s);a.set(o);return n}}();function toUtf8(t){/[\u0080-\uFFFF]/.test(t)&&(t=unescape(encodeURIComponent(t)));return t}function utf8Str2ArrayBuffer(t,e){var r,i=t.length,s=new ArrayBuffer(i),n=new Uint8Array(s);for(r=0;r<i;r+=1)n[r]=t.charCodeAt(r);return e?n:s}function arrayBuffer2Utf8Str(t){return String.fromCharCode.apply(null,new Uint8Array(t))}function concatenateArrayBuffers(t,e,r){var i=new Uint8Array(t.byteLength+e.byteLength);i.set(new Uint8Array(t));i.set(new Uint8Array(e),t.byteLength);return r?i:i.buffer}function hexToBinaryString(t){var e,r=[],i=t.length;for(e=0;e<i-1;e+=2)r.push(parseInt(t.substr(e,2),16));return String.fromCharCode.apply(String,r)}function SparkMD5(){this.reset()}SparkMD5.prototype.append=function(e){this.appendBinary(toUtf8(e));return this||t};SparkMD5.prototype.appendBinary=function(e){(this||t)._buff+=e;(this||t)._length+=e.length;var r,i=(this||t)._buff.length;for(r=64;r<=i;r+=64)md5cycle((this||t)._hash,md5blk((this||t)._buff.substring(r-64,r)));(this||t)._buff=(this||t)._buff.substring(r-64);return this||t};SparkMD5.prototype.end=function(e){var r,i,s=(this||t)._buff,n=s.length,a=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];for(r=0;r<n;r+=1)a[r>>2]|=s.charCodeAt(r)<<(r%4<<3);this._finish(a,n);i=hex((this||t)._hash);e&&(i=hexToBinaryString(i));this.reset();return i};SparkMD5.prototype.reset=function(){(this||t)._buff="";(this||t)._length=0;(this||t)._hash=[1732584193,-271733879,-1732584194,271733878];return this||t};SparkMD5.prototype.getState=function(){return{buff:(this||t)._buff,length:(this||t)._length,hash:(this||t)._hash.slice()}};SparkMD5.prototype.setState=function(e){(this||t)._buff=e.buff;(this||t)._length=e.length;(this||t)._hash=e.hash;return this||t};SparkMD5.prototype.destroy=function(){delete(this||t)._hash;delete(this||t)._buff;delete(this||t)._length};SparkMD5.prototype._finish=function(e,r){var i,s,n,a=r;e[a>>2]|=128<<(a%4<<3);if(a>55){md5cycle((this||t)._hash,e);for(a=0;a<16;a+=1)e[a]=0}i=(this||t)._length*8;i=i.toString(16).match(/(.*?)(.{0,8})$/);s=parseInt(i[2],16);n=parseInt(i[1],16)||0;e[14]=s;e[15]=n;md5cycle((this||t)._hash,e)};SparkMD5.hash=function(t,e){return SparkMD5.hashBinary(toUtf8(t),e)};SparkMD5.hashBinary=function(t,e){var r=md51(t),i=hex(r);return e?hexToBinaryString(i):i};SparkMD5.ArrayBuffer=function(){this.reset()};SparkMD5.ArrayBuffer.prototype.append=function(e){var r,i=concatenateArrayBuffers((this||t)._buff.buffer,e,true),s=i.length;(this||t)._length+=e.byteLength;for(r=64;r<=s;r+=64)md5cycle((this||t)._hash,md5blk_array(i.subarray(r-64,r)));(this||t)._buff=r-64<s?new Uint8Array(i.buffer.slice(r-64)):new Uint8Array(0);return this||t};SparkMD5.ArrayBuffer.prototype.end=function(e){var r,i,s=(this||t)._buff,n=s.length,a=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];for(r=0;r<n;r+=1)a[r>>2]|=s[r]<<(r%4<<3);this._finish(a,n);i=hex((this||t)._hash);e&&(i=hexToBinaryString(i));this.reset();return i};SparkMD5.ArrayBuffer.prototype.reset=function(){(this||t)._buff=new Uint8Array(0);(this||t)._length=0;(this||t)._hash=[1732584193,-271733879,-1732584194,271733878];return this||t};SparkMD5.ArrayBuffer.prototype.getState=function(){var e=SparkMD5.prototype.getState.call(this||t);e.buff=arrayBuffer2Utf8Str(e.buff);return e};SparkMD5.ArrayBuffer.prototype.setState=function(e){e.buff=utf8Str2ArrayBuffer(e.buff,true);return SparkMD5.prototype.setState.call(this||t,e)};SparkMD5.ArrayBuffer.prototype.destroy=SparkMD5.prototype.destroy;SparkMD5.ArrayBuffer.prototype._finish=SparkMD5.prototype._finish;SparkMD5.ArrayBuffer.hash=function(t,e){var r=md51_array(new Uint8Array(t)),i=hex(r);return e?hexToBinaryString(i):i};return SparkMD5}))})(e);var r=e.exports;const i=File.prototype.slice||File.prototype.mozSlice||File.prototype.webkitSlice;class FileChecksum{static create(t,e){const r=new FileChecksum(t);r.create(e)}constructor(t){this.file=t;this.chunkSize=2097152;this.chunkCount=Math.ceil(this.file.size/this.chunkSize);this.chunkIndex=0}create(t){this.callback=t;this.md5Buffer=new r.ArrayBuffer;this.fileReader=new FileReader;this.fileReader.addEventListener("load",(t=>this.fileReaderDidLoad(t)));this.fileReader.addEventListener("error",(t=>this.fileReaderDidError(t)));this.readNextChunk()}fileReaderDidLoad(t){this.md5Buffer.append(t.target.result);if(!this.readNextChunk()){const t=this.md5Buffer.end(true);const e=btoa(t);this.callback(null,e)}}fileReaderDidError(t){this.callback(`Error reading ${this.file.name}`)}readNextChunk(){if(this.chunkIndex<this.chunkCount||this.chunkIndex==0&&this.chunkCount==0){const t=this.chunkIndex*this.chunkSize;const e=Math.min(t+this.chunkSize,this.file.size);const r=i.call(this.file,t,e);this.fileReader.readAsArrayBuffer(r);this.chunkIndex++;return true}return false}}function getMetaValue(t){const e=findElement(document.head,`meta[name="${t}"]`);if(e)return e.getAttribute("content")}function findElements(t,e){if(typeof t=="string"){e=t;t=document}const r=t.querySelectorAll(e);return toArray(r)}function findElement(t,e){if(typeof t=="string"){e=t;t=document}return t.querySelector(e)}function dispatchEvent(t,e,r={}){const{disabled:i}=t;const{bubbles:s,cancelable:n,detail:a}=r;const o=document.createEvent("Event");o.initEvent(e,s||true,n||true);o.detail=a||{};try{t.disabled=false;t.dispatchEvent(o)}finally{t.disabled=i}return o}function toArray(t){return Array.isArray(t)?t:Array.from?Array.from(t):[].slice.call(t)}class BlobRecord{constructor(t,e,r,i={}){this.file=t;this.attributes={filename:t.name,content_type:t.type||"application/octet-stream",byte_size:t.size,checksum:e};this.xhr=new XMLHttpRequest;this.xhr.open("POST",r,true);this.xhr.responseType="json";this.xhr.setRequestHeader("Content-Type","application/json");this.xhr.setRequestHeader("Accept","application/json");this.xhr.setRequestHeader("X-Requested-With","XMLHttpRequest");Object.keys(i).forEach((t=>{this.xhr.setRequestHeader(t,i[t])}));const s=getMetaValue("csrf-token");s!=void 0&&this.xhr.setRequestHeader("X-CSRF-Token",s);this.xhr.addEventListener("load",(t=>this.requestDidLoad(t)));this.xhr.addEventListener("error",(t=>this.requestDidError(t)))}get status(){return this.xhr.status}get response(){const{responseType:t,response:e}=this.xhr;return t=="json"?e:JSON.parse(e)}create(t){this.callback=t;this.xhr.send(JSON.stringify({blob:this.attributes}))}requestDidLoad(t){if(this.status>=200&&this.status<300){const{response:t}=this;const{direct_upload:e}=t;delete t.direct_upload;this.attributes=t;this.directUploadData=e;this.callback(null,this.toJSON())}else this.requestDidError(t)}requestDidError(t){this.callback(`Error creating Blob for "${this.file.name}". Status: ${this.status}`)}toJSON(){const t={};for(const e in this.attributes)t[e]=this.attributes[e];return t}}class BlobUpload{constructor(t){this.blob=t;this.file=t.file;const{url:e,headers:r}=t.directUploadData;this.xhr=new XMLHttpRequest;this.xhr.open("PUT",e,true);this.xhr.responseType="text";for(const t in r)this.xhr.setRequestHeader(t,r[t]);this.xhr.addEventListener("load",(t=>this.requestDidLoad(t)));this.xhr.addEventListener("error",(t=>this.requestDidError(t)))}create(t){this.callback=t;this.xhr.send(this.file.slice())}requestDidLoad(t){const{status:e,response:r}=this.xhr;e>=200&&e<300?this.callback(null,r):this.requestDidError(t)}requestDidError(t){this.callback(`Error storing "${this.file.name}". Status: ${this.xhr.status}`)}}let s=0;class DirectUpload{constructor(t,e,r,i={}){this.id=++s;this.file=t;this.url=e;this.delegate=r;this.customHeaders=i}create(t){FileChecksum.create(this.file,((e,r)=>{if(e){t(e);return}const i=new BlobRecord(this.file,r,this.url,this.customHeaders);notify(this.delegate,"directUploadWillCreateBlobWithXHR",i.xhr);i.create((e=>{if(e)t(e);else{const e=new BlobUpload(i);notify(this.delegate,"directUploadWillStoreFileWithXHR",e.xhr);e.create((e=>{e?t(e):t(null,i.toJSON())}))}}))}))}}function notify(t,e,...r){if(t&&typeof t[e]=="function")return t[e](...r)}class DirectUploadController{constructor(t,e){this.input=t;this.file=e;this.directUpload=new DirectUpload(this.file,this.url,this);this.dispatch("initialize")}start(t){const e=document.createElement("input");e.type="hidden";e.name=this.input.name;this.input.insertAdjacentElement("beforebegin",e);this.dispatch("start");this.directUpload.create(((r,i)=>{if(r){e.parentNode.removeChild(e);this.dispatchError(r)}else e.value=i.signed_id;this.dispatch("end");t(r)}))}uploadRequestDidProgress(t){const e=t.loaded/t.total*100;e&&this.dispatch("progress",{progress:e})}get url(){return this.input.getAttribute("data-direct-upload-url")}dispatch(t,e={}){e.file=this.file;e.id=this.directUpload.id;return dispatchEvent(this.input,`direct-upload:${t}`,{detail:e})}dispatchError(t){const e=this.dispatch("error",{error:t});e.defaultPrevented||alert(t)}directUploadWillCreateBlobWithXHR(t){this.dispatch("before-blob-request",{xhr:t})}directUploadWillStoreFileWithXHR(t){this.dispatch("before-storage-request",{xhr:t});t.upload.addEventListener("progress",(t=>this.uploadRequestDidProgress(t)))}}const n="input[type=file][data-direct-upload-url]:not([disabled])";class DirectUploadsController{constructor(t){this.form=t;this.inputs=findElements(t,n).filter((t=>t.files.length))}start(t){const e=this.createDirectUploadControllers();const startNextController=()=>{const r=e.shift();if(r)r.start((e=>{if(e){t(e);this.dispatch("end")}else startNextController()}));else{t();this.dispatch("end")}};this.dispatch("start");startNextController()}createDirectUploadControllers(){const t=[];this.inputs.forEach((e=>{toArray(e.files).forEach((r=>{const i=new DirectUploadController(e,r);t.push(i)}))}));return t}dispatch(t,e={}){return dispatchEvent(this.form,`direct-uploads:${t}`,{detail:e})}}const a="data-direct-uploads-processing";const o=new WeakMap;let h=false;function start(){if(!h){h=true;document.addEventListener("click",didClick,true);document.addEventListener("submit",didSubmitForm,true);document.addEventListener("ajax:before",didSubmitRemoteElement)}}function didClick(t){const e=t.target.closest("button, input");e&&e.type==="submit"&&e.form&&o.set(e.form,e)}function didSubmitForm(t){handleFormSubmissionEvent(t)}function didSubmitRemoteElement(t){t.target.tagName=="FORM"&&handleFormSubmissionEvent(t)}function handleFormSubmissionEvent(t){const e=t.target;if(e.hasAttribute(a)){t.preventDefault();return}const r=new DirectUploadsController(e);const{inputs:i}=r;if(i.length){t.preventDefault();e.setAttribute(a,"");i.forEach(disable);r.start((t=>{e.removeAttribute(a);t?i.forEach(enable):submitForm(e)}))}}function submitForm(t){let e=o.get(t)||findElement(t,"input[type=submit], button[type=submit]");if(e){const{disabled:t}=e;e.disabled=false;e.focus();e.click();e.disabled=t}else{e=document.createElement("input");e.type="submit";e.style.display="none";t.appendChild(e);e.click();t.removeChild(e)}o.delete(t)}function disable(t){t.disabled=true}function enable(t){t.disabled=false}function autostart(){window.ActiveStorage&&start()}setTimeout(autostart,1);class AttachmentUpload{constructor(t,e){this.attachment=t;this.element=e;this.directUpload=new DirectUpload(t.file,this.directUploadUrl,this)}start(){this.directUpload.create(this.directUploadDidComplete.bind(this));this.dispatch("start")}directUploadWillStoreFileWithXHR(t){t.upload.addEventListener("progress",(t=>{const e=t.loaded/t.total*100;this.attachment.setUploadProgress(e);e&&this.dispatch("progress",{progress:e})}))}directUploadDidComplete(t,e){if(t)this.dispatchError(t);else{this.attachment.setAttributes({sgid:e.attachable_sgid,url:this.createBlobUrl(e.signed_id,e.filename)});this.dispatch("end")}}createBlobUrl(t,e){return this.blobUrlTemplate.replace(":signed_id",t).replace(":filename",encodeURIComponent(e))}dispatch(t,e={}){e.attachment=this.attachment;return dispatchEvent(this.element,`direct-upload:${t}`,{detail:e})}dispatchError(t){const e=this.dispatch("error",{error:t});e.defaultPrevented||alert(t)}get directUploadUrl(){return this.element.dataset.directUploadUrl}get blobUrlTemplate(){return this.element.dataset.blobUrlTemplate}}addEventListener("trix-attachment-add",(t=>{const{attachment:e,target:r}=t;if(e.file){const t=new AttachmentUpload(e,r);t.start()}}));var l={};export{l as default};
+var sparkMd5 = {
+  exports: {}
+};
 
+(function(module, exports) {
+  (function(factory) {
+    {
+      module.exports = factory();
+    }
+  })((function(undefined$1) {
+    var hex_chr = [ "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f" ];
+    function md5cycle(x, k) {
+      var a = x[0], b = x[1], c = x[2], d = x[3];
+      a += (b & c | ~b & d) + k[0] - 680876936 | 0;
+      a = (a << 7 | a >>> 25) + b | 0;
+      d += (a & b | ~a & c) + k[1] - 389564586 | 0;
+      d = (d << 12 | d >>> 20) + a | 0;
+      c += (d & a | ~d & b) + k[2] + 606105819 | 0;
+      c = (c << 17 | c >>> 15) + d | 0;
+      b += (c & d | ~c & a) + k[3] - 1044525330 | 0;
+      b = (b << 22 | b >>> 10) + c | 0;
+      a += (b & c | ~b & d) + k[4] - 176418897 | 0;
+      a = (a << 7 | a >>> 25) + b | 0;
+      d += (a & b | ~a & c) + k[5] + 1200080426 | 0;
+      d = (d << 12 | d >>> 20) + a | 0;
+      c += (d & a | ~d & b) + k[6] - 1473231341 | 0;
+      c = (c << 17 | c >>> 15) + d | 0;
+      b += (c & d | ~c & a) + k[7] - 45705983 | 0;
+      b = (b << 22 | b >>> 10) + c | 0;
+      a += (b & c | ~b & d) + k[8] + 1770035416 | 0;
+      a = (a << 7 | a >>> 25) + b | 0;
+      d += (a & b | ~a & c) + k[9] - 1958414417 | 0;
+      d = (d << 12 | d >>> 20) + a | 0;
+      c += (d & a | ~d & b) + k[10] - 42063 | 0;
+      c = (c << 17 | c >>> 15) + d | 0;
+      b += (c & d | ~c & a) + k[11] - 1990404162 | 0;
+      b = (b << 22 | b >>> 10) + c | 0;
+      a += (b & c | ~b & d) + k[12] + 1804603682 | 0;
+      a = (a << 7 | a >>> 25) + b | 0;
+      d += (a & b | ~a & c) + k[13] - 40341101 | 0;
+      d = (d << 12 | d >>> 20) + a | 0;
+      c += (d & a | ~d & b) + k[14] - 1502002290 | 0;
+      c = (c << 17 | c >>> 15) + d | 0;
+      b += (c & d | ~c & a) + k[15] + 1236535329 | 0;
+      b = (b << 22 | b >>> 10) + c | 0;
+      a += (b & d | c & ~d) + k[1] - 165796510 | 0;
+      a = (a << 5 | a >>> 27) + b | 0;
+      d += (a & c | b & ~c) + k[6] - 1069501632 | 0;
+      d = (d << 9 | d >>> 23) + a | 0;
+      c += (d & b | a & ~b) + k[11] + 643717713 | 0;
+      c = (c << 14 | c >>> 18) + d | 0;
+      b += (c & a | d & ~a) + k[0] - 373897302 | 0;
+      b = (b << 20 | b >>> 12) + c | 0;
+      a += (b & d | c & ~d) + k[5] - 701558691 | 0;
+      a = (a << 5 | a >>> 27) + b | 0;
+      d += (a & c | b & ~c) + k[10] + 38016083 | 0;
+      d = (d << 9 | d >>> 23) + a | 0;
+      c += (d & b | a & ~b) + k[15] - 660478335 | 0;
+      c = (c << 14 | c >>> 18) + d | 0;
+      b += (c & a | d & ~a) + k[4] - 405537848 | 0;
+      b = (b << 20 | b >>> 12) + c | 0;
+      a += (b & d | c & ~d) + k[9] + 568446438 | 0;
+      a = (a << 5 | a >>> 27) + b | 0;
+      d += (a & c | b & ~c) + k[14] - 1019803690 | 0;
+      d = (d << 9 | d >>> 23) + a | 0;
+      c += (d & b | a & ~b) + k[3] - 187363961 | 0;
+      c = (c << 14 | c >>> 18) + d | 0;
+      b += (c & a | d & ~a) + k[8] + 1163531501 | 0;
+      b = (b << 20 | b >>> 12) + c | 0;
+      a += (b & d | c & ~d) + k[13] - 1444681467 | 0;
+      a = (a << 5 | a >>> 27) + b | 0;
+      d += (a & c | b & ~c) + k[2] - 51403784 | 0;
+      d = (d << 9 | d >>> 23) + a | 0;
+      c += (d & b | a & ~b) + k[7] + 1735328473 | 0;
+      c = (c << 14 | c >>> 18) + d | 0;
+      b += (c & a | d & ~a) + k[12] - 1926607734 | 0;
+      b = (b << 20 | b >>> 12) + c | 0;
+      a += (b ^ c ^ d) + k[5] - 378558 | 0;
+      a = (a << 4 | a >>> 28) + b | 0;
+      d += (a ^ b ^ c) + k[8] - 2022574463 | 0;
+      d = (d << 11 | d >>> 21) + a | 0;
+      c += (d ^ a ^ b) + k[11] + 1839030562 | 0;
+      c = (c << 16 | c >>> 16) + d | 0;
+      b += (c ^ d ^ a) + k[14] - 35309556 | 0;
+      b = (b << 23 | b >>> 9) + c | 0;
+      a += (b ^ c ^ d) + k[1] - 1530992060 | 0;
+      a = (a << 4 | a >>> 28) + b | 0;
+      d += (a ^ b ^ c) + k[4] + 1272893353 | 0;
+      d = (d << 11 | d >>> 21) + a | 0;
+      c += (d ^ a ^ b) + k[7] - 155497632 | 0;
+      c = (c << 16 | c >>> 16) + d | 0;
+      b += (c ^ d ^ a) + k[10] - 1094730640 | 0;
+      b = (b << 23 | b >>> 9) + c | 0;
+      a += (b ^ c ^ d) + k[13] + 681279174 | 0;
+      a = (a << 4 | a >>> 28) + b | 0;
+      d += (a ^ b ^ c) + k[0] - 358537222 | 0;
+      d = (d << 11 | d >>> 21) + a | 0;
+      c += (d ^ a ^ b) + k[3] - 722521979 | 0;
+      c = (c << 16 | c >>> 16) + d | 0;
+      b += (c ^ d ^ a) + k[6] + 76029189 | 0;
+      b = (b << 23 | b >>> 9) + c | 0;
+      a += (b ^ c ^ d) + k[9] - 640364487 | 0;
+      a = (a << 4 | a >>> 28) + b | 0;
+      d += (a ^ b ^ c) + k[12] - 421815835 | 0;
+      d = (d << 11 | d >>> 21) + a | 0;
+      c += (d ^ a ^ b) + k[15] + 530742520 | 0;
+      c = (c << 16 | c >>> 16) + d | 0;
+      b += (c ^ d ^ a) + k[2] - 995338651 | 0;
+      b = (b << 23 | b >>> 9) + c | 0;
+      a += (c ^ (b | ~d)) + k[0] - 198630844 | 0;
+      a = (a << 6 | a >>> 26) + b | 0;
+      d += (b ^ (a | ~c)) + k[7] + 1126891415 | 0;
+      d = (d << 10 | d >>> 22) + a | 0;
+      c += (a ^ (d | ~b)) + k[14] - 1416354905 | 0;
+      c = (c << 15 | c >>> 17) + d | 0;
+      b += (d ^ (c | ~a)) + k[5] - 57434055 | 0;
+      b = (b << 21 | b >>> 11) + c | 0;
+      a += (c ^ (b | ~d)) + k[12] + 1700485571 | 0;
+      a = (a << 6 | a >>> 26) + b | 0;
+      d += (b ^ (a | ~c)) + k[3] - 1894986606 | 0;
+      d = (d << 10 | d >>> 22) + a | 0;
+      c += (a ^ (d | ~b)) + k[10] - 1051523 | 0;
+      c = (c << 15 | c >>> 17) + d | 0;
+      b += (d ^ (c | ~a)) + k[1] - 2054922799 | 0;
+      b = (b << 21 | b >>> 11) + c | 0;
+      a += (c ^ (b | ~d)) + k[8] + 1873313359 | 0;
+      a = (a << 6 | a >>> 26) + b | 0;
+      d += (b ^ (a | ~c)) + k[15] - 30611744 | 0;
+      d = (d << 10 | d >>> 22) + a | 0;
+      c += (a ^ (d | ~b)) + k[6] - 1560198380 | 0;
+      c = (c << 15 | c >>> 17) + d | 0;
+      b += (d ^ (c | ~a)) + k[13] + 1309151649 | 0;
+      b = (b << 21 | b >>> 11) + c | 0;
+      a += (c ^ (b | ~d)) + k[4] - 145523070 | 0;
+      a = (a << 6 | a >>> 26) + b | 0;
+      d += (b ^ (a | ~c)) + k[11] - 1120210379 | 0;
+      d = (d << 10 | d >>> 22) + a | 0;
+      c += (a ^ (d | ~b)) + k[2] + 718787259 | 0;
+      c = (c << 15 | c >>> 17) + d | 0;
+      b += (d ^ (c | ~a)) + k[9] - 343485551 | 0;
+      b = (b << 21 | b >>> 11) + c | 0;
+      x[0] = a + x[0] | 0;
+      x[1] = b + x[1] | 0;
+      x[2] = c + x[2] | 0;
+      x[3] = d + x[3] | 0;
+    }
+    function md5blk(s) {
+      var md5blks = [], i;
+      for (i = 0; i < 64; i += 4) {
+        md5blks[i >> 2] = s.charCodeAt(i) + (s.charCodeAt(i + 1) << 8) + (s.charCodeAt(i + 2) << 16) + (s.charCodeAt(i + 3) << 24);
+      }
+      return md5blks;
+    }
+    function md5blk_array(a) {
+      var md5blks = [], i;
+      for (i = 0; i < 64; i += 4) {
+        md5blks[i >> 2] = a[i] + (a[i + 1] << 8) + (a[i + 2] << 16) + (a[i + 3] << 24);
+      }
+      return md5blks;
+    }
+    function md51(s) {
+      var n = s.length, state = [ 1732584193, -271733879, -1732584194, 271733878 ], i, length, tail, tmp, lo, hi;
+      for (i = 64; i <= n; i += 64) {
+        md5cycle(state, md5blk(s.substring(i - 64, i)));
+      }
+      s = s.substring(i - 64);
+      length = s.length;
+      tail = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+      for (i = 0; i < length; i += 1) {
+        tail[i >> 2] |= s.charCodeAt(i) << (i % 4 << 3);
+      }
+      tail[i >> 2] |= 128 << (i % 4 << 3);
+      if (i > 55) {
+        md5cycle(state, tail);
+        for (i = 0; i < 16; i += 1) {
+          tail[i] = 0;
+        }
+      }
+      tmp = n * 8;
+      tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+      lo = parseInt(tmp[2], 16);
+      hi = parseInt(tmp[1], 16) || 0;
+      tail[14] = lo;
+      tail[15] = hi;
+      md5cycle(state, tail);
+      return state;
+    }
+    function md51_array(a) {
+      var n = a.length, state = [ 1732584193, -271733879, -1732584194, 271733878 ], i, length, tail, tmp, lo, hi;
+      for (i = 64; i <= n; i += 64) {
+        md5cycle(state, md5blk_array(a.subarray(i - 64, i)));
+      }
+      a = i - 64 < n ? a.subarray(i - 64) : new Uint8Array(0);
+      length = a.length;
+      tail = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ];
+      for (i = 0; i < length; i += 1) {
+        tail[i >> 2] |= a[i] << (i % 4 << 3);
+      }
+      tail[i >> 2] |= 128 << (i % 4 << 3);
+      if (i > 55) {
+        md5cycle(state, tail);
+        for (i = 0; i < 16; i += 1) {
+          tail[i] = 0;
+        }
+      }
+      tmp = n * 8;
+      tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+      lo = parseInt(tmp[2], 16);
+      hi = parseInt(tmp[1], 16) || 0;
+      tail[14] = lo;
+      tail[15] = hi;
+      md5cycle(state, tail);
+      return state;
+    }
+    function rhex(n) {
+      var s = "", j;
+      for (j = 0; j < 4; j += 1) {
+        s += hex_chr[n >> j * 8 + 4 & 15] + hex_chr[n >> j * 8 & 15];
+      }
+      return s;
+    }
+    function hex(x) {
+      var i;
+      for (i = 0; i < x.length; i += 1) {
+        x[i] = rhex(x[i]);
+      }
+      return x.join("");
+    }
+    if (hex(md51("hello")) !== "5d41402abc4b2a76b9719d911017c592") ;
+    if (typeof ArrayBuffer !== "undefined" && !ArrayBuffer.prototype.slice) {
+      (function() {
+        function clamp(val, length) {
+          val = val | 0 || 0;
+          if (val < 0) {
+            return Math.max(val + length, 0);
+          }
+          return Math.min(val, length);
+        }
+        ArrayBuffer.prototype.slice = function(from, to) {
+          var length = this.byteLength, begin = clamp(from, length), end = length, num, target, targetArray, sourceArray;
+          if (to !== undefined$1) {
+            end = clamp(to, length);
+          }
+          if (begin > end) {
+            return new ArrayBuffer(0);
+          }
+          num = end - begin;
+          target = new ArrayBuffer(num);
+          targetArray = new Uint8Array(target);
+          sourceArray = new Uint8Array(this, begin, num);
+          targetArray.set(sourceArray);
+          return target;
+        };
+      })();
+    }
+    function toUtf8(str) {
+      if (/[\u0080-\uFFFF]/.test(str)) {
+        str = unescape(encodeURIComponent(str));
+      }
+      return str;
+    }
+    function utf8Str2ArrayBuffer(str, returnUInt8Array) {
+      var length = str.length, buff = new ArrayBuffer(length), arr = new Uint8Array(buff), i;
+      for (i = 0; i < length; i += 1) {
+        arr[i] = str.charCodeAt(i);
+      }
+      return returnUInt8Array ? arr : buff;
+    }
+    function arrayBuffer2Utf8Str(buff) {
+      return String.fromCharCode.apply(null, new Uint8Array(buff));
+    }
+    function concatenateArrayBuffers(first, second, returnUInt8Array) {
+      var result = new Uint8Array(first.byteLength + second.byteLength);
+      result.set(new Uint8Array(first));
+      result.set(new Uint8Array(second), first.byteLength);
+      return returnUInt8Array ? result : result.buffer;
+    }
+    function hexToBinaryString(hex) {
+      var bytes = [], length = hex.length, x;
+      for (x = 0; x < length - 1; x += 2) {
+        bytes.push(parseInt(hex.substr(x, 2), 16));
+      }
+      return String.fromCharCode.apply(String, bytes);
+    }
+    function SparkMD5() {
+      this.reset();
+    }
+    SparkMD5.prototype.append = function(str) {
+      this.appendBinary(toUtf8(str));
+      return this;
+    };
+    SparkMD5.prototype.appendBinary = function(contents) {
+      this._buff += contents;
+      this._length += contents.length;
+      var length = this._buff.length, i;
+      for (i = 64; i <= length; i += 64) {
+        md5cycle(this._hash, md5blk(this._buff.substring(i - 64, i)));
+      }
+      this._buff = this._buff.substring(i - 64);
+      return this;
+    };
+    SparkMD5.prototype.end = function(raw) {
+      var buff = this._buff, length = buff.length, i, tail = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], ret;
+      for (i = 0; i < length; i += 1) {
+        tail[i >> 2] |= buff.charCodeAt(i) << (i % 4 << 3);
+      }
+      this._finish(tail, length);
+      ret = hex(this._hash);
+      if (raw) {
+        ret = hexToBinaryString(ret);
+      }
+      this.reset();
+      return ret;
+    };
+    SparkMD5.prototype.reset = function() {
+      this._buff = "";
+      this._length = 0;
+      this._hash = [ 1732584193, -271733879, -1732584194, 271733878 ];
+      return this;
+    };
+    SparkMD5.prototype.getState = function() {
+      return {
+        buff: this._buff,
+        length: this._length,
+        hash: this._hash.slice()
+      };
+    };
+    SparkMD5.prototype.setState = function(state) {
+      this._buff = state.buff;
+      this._length = state.length;
+      this._hash = state.hash;
+      return this;
+    };
+    SparkMD5.prototype.destroy = function() {
+      delete this._hash;
+      delete this._buff;
+      delete this._length;
+    };
+    SparkMD5.prototype._finish = function(tail, length) {
+      var i = length, tmp, lo, hi;
+      tail[i >> 2] |= 128 << (i % 4 << 3);
+      if (i > 55) {
+        md5cycle(this._hash, tail);
+        for (i = 0; i < 16; i += 1) {
+          tail[i] = 0;
+        }
+      }
+      tmp = this._length * 8;
+      tmp = tmp.toString(16).match(/(.*?)(.{0,8})$/);
+      lo = parseInt(tmp[2], 16);
+      hi = parseInt(tmp[1], 16) || 0;
+      tail[14] = lo;
+      tail[15] = hi;
+      md5cycle(this._hash, tail);
+    };
+    SparkMD5.hash = function(str, raw) {
+      return SparkMD5.hashBinary(toUtf8(str), raw);
+    };
+    SparkMD5.hashBinary = function(content, raw) {
+      var hash = md51(content), ret = hex(hash);
+      return raw ? hexToBinaryString(ret) : ret;
+    };
+    SparkMD5.ArrayBuffer = function() {
+      this.reset();
+    };
+    SparkMD5.ArrayBuffer.prototype.append = function(arr) {
+      var buff = concatenateArrayBuffers(this._buff.buffer, arr, true), length = buff.length, i;
+      this._length += arr.byteLength;
+      for (i = 64; i <= length; i += 64) {
+        md5cycle(this._hash, md5blk_array(buff.subarray(i - 64, i)));
+      }
+      this._buff = i - 64 < length ? new Uint8Array(buff.buffer.slice(i - 64)) : new Uint8Array(0);
+      return this;
+    };
+    SparkMD5.ArrayBuffer.prototype.end = function(raw) {
+      var buff = this._buff, length = buff.length, tail = [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ], i, ret;
+      for (i = 0; i < length; i += 1) {
+        tail[i >> 2] |= buff[i] << (i % 4 << 3);
+      }
+      this._finish(tail, length);
+      ret = hex(this._hash);
+      if (raw) {
+        ret = hexToBinaryString(ret);
+      }
+      this.reset();
+      return ret;
+    };
+    SparkMD5.ArrayBuffer.prototype.reset = function() {
+      this._buff = new Uint8Array(0);
+      this._length = 0;
+      this._hash = [ 1732584193, -271733879, -1732584194, 271733878 ];
+      return this;
+    };
+    SparkMD5.ArrayBuffer.prototype.getState = function() {
+      var state = SparkMD5.prototype.getState.call(this);
+      state.buff = arrayBuffer2Utf8Str(state.buff);
+      return state;
+    };
+    SparkMD5.ArrayBuffer.prototype.setState = function(state) {
+      state.buff = utf8Str2ArrayBuffer(state.buff, true);
+      return SparkMD5.prototype.setState.call(this, state);
+    };
+    SparkMD5.ArrayBuffer.prototype.destroy = SparkMD5.prototype.destroy;
+    SparkMD5.ArrayBuffer.prototype._finish = SparkMD5.prototype._finish;
+    SparkMD5.ArrayBuffer.hash = function(arr, raw) {
+      var hash = md51_array(new Uint8Array(arr)), ret = hex(hash);
+      return raw ? hexToBinaryString(ret) : ret;
+    };
+    return SparkMD5;
+  }));
+})(sparkMd5);
+
+var SparkMD5 = sparkMd5.exports;
+
+const fileSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice;
+
+class FileChecksum {
+  static create(file, callback) {
+    const instance = new FileChecksum(file);
+    instance.create(callback);
+  }
+  constructor(file) {
+    this.file = file;
+    this.chunkSize = 2097152;
+    this.chunkCount = Math.ceil(this.file.size / this.chunkSize);
+    this.chunkIndex = 0;
+  }
+  create(callback) {
+    this.callback = callback;
+    this.md5Buffer = new SparkMD5.ArrayBuffer;
+    this.fileReader = new FileReader;
+    this.fileReader.addEventListener("load", (event => this.fileReaderDidLoad(event)));
+    this.fileReader.addEventListener("error", (event => this.fileReaderDidError(event)));
+    this.readNextChunk();
+  }
+  fileReaderDidLoad(event) {
+    this.md5Buffer.append(event.target.result);
+    if (!this.readNextChunk()) {
+      const binaryDigest = this.md5Buffer.end(true);
+      const base64digest = btoa(binaryDigest);
+      this.callback(null, base64digest);
+    }
+  }
+  fileReaderDidError(event) {
+    this.callback(`Error reading ${this.file.name}`);
+  }
+  readNextChunk() {
+    if (this.chunkIndex < this.chunkCount || this.chunkIndex == 0 && this.chunkCount == 0) {
+      const start = this.chunkIndex * this.chunkSize;
+      const end = Math.min(start + this.chunkSize, this.file.size);
+      const bytes = fileSlice.call(this.file, start, end);
+      this.fileReader.readAsArrayBuffer(bytes);
+      this.chunkIndex++;
+      return true;
+    } else {
+      return false;
+    }
+  }
+}
+
+function getMetaValue(name) {
+  const element = findElement(document.head, `meta[name="${name}"]`);
+  if (element) {
+    return element.getAttribute("content");
+  }
+}
+
+function findElements(root, selector) {
+  if (typeof root == "string") {
+    selector = root;
+    root = document;
+  }
+  const elements = root.querySelectorAll(selector);
+  return toArray(elements);
+}
+
+function findElement(root, selector) {
+  if (typeof root == "string") {
+    selector = root;
+    root = document;
+  }
+  return root.querySelector(selector);
+}
+
+function dispatchEvent(element, type, eventInit = {}) {
+  const {disabled: disabled} = element;
+  const {bubbles: bubbles, cancelable: cancelable, detail: detail} = eventInit;
+  const event = document.createEvent("Event");
+  event.initEvent(type, bubbles || true, cancelable || true);
+  event.detail = detail || {};
+  try {
+    element.disabled = false;
+    element.dispatchEvent(event);
+  } finally {
+    element.disabled = disabled;
+  }
+  return event;
+}
+
+function toArray(value) {
+  if (Array.isArray(value)) {
+    return value;
+  } else if (Array.from) {
+    return Array.from(value);
+  } else {
+    return [].slice.call(value);
+  }
+}
+
+class BlobRecord {
+  constructor(file, checksum, url, customHeaders = {}) {
+    this.file = file;
+    this.attributes = {
+      filename: file.name,
+      content_type: file.type || "application/octet-stream",
+      byte_size: file.size,
+      checksum: checksum
+    };
+    this.xhr = new XMLHttpRequest;
+    this.xhr.open("POST", url, true);
+    this.xhr.responseType = "json";
+    this.xhr.setRequestHeader("Content-Type", "application/json");
+    this.xhr.setRequestHeader("Accept", "application/json");
+    this.xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+    Object.keys(customHeaders).forEach((headerKey => {
+      this.xhr.setRequestHeader(headerKey, customHeaders[headerKey]);
+    }));
+    const csrfToken = getMetaValue("csrf-token");
+    if (csrfToken != undefined) {
+      this.xhr.setRequestHeader("X-CSRF-Token", csrfToken);
+    }
+    this.xhr.addEventListener("load", (event => this.requestDidLoad(event)));
+    this.xhr.addEventListener("error", (event => this.requestDidError(event)));
+  }
+  get status() {
+    return this.xhr.status;
+  }
+  get response() {
+    const {responseType: responseType, response: response} = this.xhr;
+    if (responseType == "json") {
+      return response;
+    } else {
+      return JSON.parse(response);
+    }
+  }
+  create(callback) {
+    this.callback = callback;
+    this.xhr.send(JSON.stringify({
+      blob: this.attributes
+    }));
+  }
+  requestDidLoad(event) {
+    if (this.status >= 200 && this.status < 300) {
+      const {response: response} = this;
+      const {direct_upload: direct_upload} = response;
+      delete response.direct_upload;
+      this.attributes = response;
+      this.directUploadData = direct_upload;
+      this.callback(null, this.toJSON());
+    } else {
+      this.requestDidError(event);
+    }
+  }
+  requestDidError(event) {
+    this.callback(`Error creating Blob for "${this.file.name}". Status: ${this.status}`);
+  }
+  toJSON() {
+    const result = {};
+    for (const key in this.attributes) {
+      result[key] = this.attributes[key];
+    }
+    return result;
+  }
+}
+
+class BlobUpload {
+  constructor(blob) {
+    this.blob = blob;
+    this.file = blob.file;
+    const {url: url, headers: headers} = blob.directUploadData;
+    this.xhr = new XMLHttpRequest;
+    this.xhr.open("PUT", url, true);
+    this.xhr.responseType = "text";
+    for (const key in headers) {
+      this.xhr.setRequestHeader(key, headers[key]);
+    }
+    this.xhr.addEventListener("load", (event => this.requestDidLoad(event)));
+    this.xhr.addEventListener("error", (event => this.requestDidError(event)));
+  }
+  create(callback) {
+    this.callback = callback;
+    this.xhr.send(this.file.slice());
+  }
+  requestDidLoad(event) {
+    const {status: status, response: response} = this.xhr;
+    if (status >= 200 && status < 300) {
+      this.callback(null, response);
+    } else {
+      this.requestDidError(event);
+    }
+  }
+  requestDidError(event) {
+    this.callback(`Error storing "${this.file.name}". Status: ${this.xhr.status}`);
+  }
+}
+
+let id = 0;
+
+class DirectUpload {
+  constructor(file, url, delegate, customHeaders = {}) {
+    this.id = ++id;
+    this.file = file;
+    this.url = url;
+    this.delegate = delegate;
+    this.customHeaders = customHeaders;
+  }
+  create(callback) {
+    FileChecksum.create(this.file, ((error, checksum) => {
+      if (error) {
+        callback(error);
+        return;
+      }
+      const blob = new BlobRecord(this.file, checksum, this.url, this.customHeaders);
+      notify(this.delegate, "directUploadWillCreateBlobWithXHR", blob.xhr);
+      blob.create((error => {
+        if (error) {
+          callback(error);
+        } else {
+          const upload = new BlobUpload(blob);
+          notify(this.delegate, "directUploadWillStoreFileWithXHR", upload.xhr);
+          upload.create((error => {
+            if (error) {
+              callback(error);
+            } else {
+              callback(null, blob.toJSON());
+            }
+          }));
+        }
+      }));
+    }));
+  }
+}
+
+function notify(object, methodName, ...messages) {
+  if (object && typeof object[methodName] == "function") {
+    return object[methodName](...messages);
+  }
+}
+
+class DirectUploadController {
+  constructor(input, file) {
+    this.input = input;
+    this.file = file;
+    this.directUpload = new DirectUpload(this.file, this.url, this);
+    this.dispatch("initialize");
+  }
+  start(callback) {
+    const hiddenInput = document.createElement("input");
+    hiddenInput.type = "hidden";
+    hiddenInput.name = this.input.name;
+    this.input.insertAdjacentElement("beforebegin", hiddenInput);
+    this.dispatch("start");
+    this.directUpload.create(((error, attributes) => {
+      if (error) {
+        hiddenInput.parentNode.removeChild(hiddenInput);
+        this.dispatchError(error);
+      } else {
+        hiddenInput.value = attributes.signed_id;
+      }
+      this.dispatch("end");
+      callback(error);
+    }));
+  }
+  uploadRequestDidProgress(event) {
+    const progress = event.loaded / event.total * 90;
+    if (progress) {
+      this.dispatch("progress", {
+        progress: progress
+      });
+    }
+  }
+  get url() {
+    return this.input.getAttribute("data-direct-upload-url");
+  }
+  dispatch(name, detail = {}) {
+    detail.file = this.file;
+    detail.id = this.directUpload.id;
+    return dispatchEvent(this.input, `direct-upload:${name}`, {
+      detail: detail
+    });
+  }
+  dispatchError(error) {
+    const event = this.dispatch("error", {
+      error: error
+    });
+    if (!event.defaultPrevented) {
+      alert(error);
+    }
+  }
+  directUploadWillCreateBlobWithXHR(xhr) {
+    this.dispatch("before-blob-request", {
+      xhr: xhr
+    });
+  }
+  directUploadWillStoreFileWithXHR(xhr) {
+    this.dispatch("before-storage-request", {
+      xhr: xhr
+    });
+    xhr.upload.addEventListener("progress", (event => this.uploadRequestDidProgress(event)));
+    xhr.upload.addEventListener("loadend", (() => {
+      this.simulateResponseProgress(xhr);
+    }));
+  }
+  simulateResponseProgress(xhr) {
+    let progress = 90;
+    const startTime = Date.now();
+    const updateProgress = () => {
+      const elapsed = Date.now() - startTime;
+      const estimatedResponseTime = this.estimateResponseTime();
+      const responseProgress = Math.min(elapsed / estimatedResponseTime, 1);
+      progress = 90 + responseProgress * 9;
+      this.dispatch("progress", {
+        progress: progress
+      });
+      if (xhr.readyState !== XMLHttpRequest.DONE && progress < 99) {
+        requestAnimationFrame(updateProgress);
+      }
+    };
+    xhr.addEventListener("loadend", (() => {
+      this.dispatch("progress", {
+        progress: 100
+      });
+    }));
+    requestAnimationFrame(updateProgress);
+  }
+  estimateResponseTime() {
+    const fileSize = this.file.size;
+    const MB = 1024 * 1024;
+    if (fileSize < MB) {
+      return 1e3;
+    } else if (fileSize < 10 * MB) {
+      return 2e3;
+    } else {
+      return 3e3 + fileSize / MB * 50;
+    }
+  }
+}
+
+const inputSelector = "input[type=file][data-direct-upload-url]:not([disabled])";
+
+class DirectUploadsController {
+  constructor(form) {
+    this.form = form;
+    this.inputs = findElements(form, inputSelector).filter((input => input.files.length));
+  }
+  start(callback) {
+    const controllers = this.createDirectUploadControllers();
+    const startNextController = () => {
+      const controller = controllers.shift();
+      if (controller) {
+        controller.start((error => {
+          if (error) {
+            callback(error);
+            this.dispatch("end");
+          } else {
+            startNextController();
+          }
+        }));
+      } else {
+        callback();
+        this.dispatch("end");
+      }
+    };
+    this.dispatch("start");
+    startNextController();
+  }
+  createDirectUploadControllers() {
+    const controllers = [];
+    this.inputs.forEach((input => {
+      toArray(input.files).forEach((file => {
+        const controller = new DirectUploadController(input, file);
+        controllers.push(controller);
+      }));
+    }));
+    return controllers;
+  }
+  dispatch(name, detail = {}) {
+    return dispatchEvent(this.form, `direct-uploads:${name}`, {
+      detail: detail
+    });
+  }
+}
+
+const processingAttribute = "data-direct-uploads-processing";
+
+const submitButtonsByForm = new WeakMap;
+
+let started = false;
+
+function start() {
+  if (!started) {
+    started = true;
+    document.addEventListener("click", didClick, true);
+    document.addEventListener("submit", didSubmitForm, true);
+    document.addEventListener("ajax:before", didSubmitRemoteElement);
+  }
+}
+
+function didClick(event) {
+  const button = event.target.closest("button, input");
+  if (button && button.type === "submit" && button.form) {
+    submitButtonsByForm.set(button.form, button);
+  }
+}
+
+function didSubmitForm(event) {
+  handleFormSubmissionEvent(event);
+}
+
+function didSubmitRemoteElement(event) {
+  if (event.target.tagName == "FORM") {
+    handleFormSubmissionEvent(event);
+  }
+}
+
+function handleFormSubmissionEvent(event) {
+  const form = event.target;
+  if (form.hasAttribute(processingAttribute)) {
+    event.preventDefault();
+    return;
+  }
+  const controller = new DirectUploadsController(form);
+  const {inputs: inputs} = controller;
+  if (inputs.length) {
+    event.preventDefault();
+    form.setAttribute(processingAttribute, "");
+    inputs.forEach(disable);
+    controller.start((error => {
+      form.removeAttribute(processingAttribute);
+      if (error) {
+        inputs.forEach(enable);
+      } else {
+        submitForm(form);
+      }
+    }));
+  }
+}
+
+function submitForm(form) {
+  let button = submitButtonsByForm.get(form) || findElement(form, "input[type=submit], button[type=submit]");
+  if (button) {
+    const {disabled: disabled} = button;
+    button.disabled = false;
+    button.focus();
+    button.click();
+    button.disabled = disabled;
+  } else {
+    button = document.createElement("input");
+    button.type = "submit";
+    button.style.display = "none";
+    form.appendChild(button);
+    button.click();
+    form.removeChild(button);
+  }
+  submitButtonsByForm.delete(form);
+}
+
+function disable(input) {
+  input.disabled = true;
+}
+
+function enable(input) {
+  input.disabled = false;
+}
+
+function autostart() {
+  if (window.ActiveStorage) {
+    start();
+  }
+}
+
+setTimeout(autostart, 1);
+
+class AttachmentUpload {
+  constructor(attachment, element, file = attachment.file) {
+    this.attachment = attachment;
+    this.element = element;
+    this.directUpload = new DirectUpload(file, this.directUploadUrl, this);
+    this.file = file;
+  }
+  start() {
+    return new Promise(((resolve, reject) => {
+      this.directUpload.create(((error, attributes) => this.directUploadDidComplete(error, attributes, resolve, reject)));
+      this.dispatch("start");
+    }));
+  }
+  directUploadWillStoreFileWithXHR(xhr) {
+    xhr.upload.addEventListener("progress", (event => {
+      const progress = event.loaded / event.total * 90;
+      if (progress) {
+        this.dispatch("progress", {
+          progress: progress
+        });
+      }
+    }));
+    xhr.upload.addEventListener("loadend", (() => {
+      this.simulateResponseProgress(xhr);
+    }));
+  }
+  simulateResponseProgress(xhr) {
+    let progress = 90;
+    const startTime = Date.now();
+    const updateProgress = () => {
+      const elapsed = Date.now() - startTime;
+      const estimatedResponseTime = this.estimateResponseTime();
+      const responseProgress = Math.min(elapsed / estimatedResponseTime, 1);
+      progress = 90 + responseProgress * 9;
+      this.dispatch("progress", {
+        progress: progress
+      });
+      if (xhr.readyState !== XMLHttpRequest.DONE && progress < 99) {
+        requestAnimationFrame(updateProgress);
+      }
+    };
+    xhr.addEventListener("loadend", (() => {
+      this.dispatch("progress", {
+        progress: 100
+      });
+    }));
+    requestAnimationFrame(updateProgress);
+  }
+  estimateResponseTime() {
+    const fileSize = this.file.size;
+    const MB = 1024 * 1024;
+    if (fileSize < MB) {
+      return 1e3;
+    } else if (fileSize < 10 * MB) {
+      return 2e3;
+    } else {
+      return 3e3 + fileSize / MB * 50;
+    }
+  }
+  directUploadDidComplete(error, attributes, resolve, reject) {
+    if (error) {
+      this.dispatchError(error, reject);
+    } else {
+      resolve({
+        sgid: attributes.attachable_sgid,
+        url: this.createBlobUrl(attributes.signed_id, attributes.filename)
+      });
+      this.dispatch("end");
+    }
+  }
+  createBlobUrl(signedId, filename) {
+    return this.blobUrlTemplate.replace(":signed_id", signedId).replace(":filename", encodeURIComponent(filename));
+  }
+  dispatch(name, detail = {}) {
+    detail.attachment = this.attachment;
+    return dispatchEvent(this.element, `direct-upload:${name}`, {
+      detail: detail
+    });
+  }
+  dispatchError(error, reject) {
+    const event = this.dispatch("error", {
+      error: error
+    });
+    if (!event.defaultPrevented) {
+      reject(error);
+    }
+  }
+  get directUploadUrl() {
+    return this.element.dataset.directUploadUrl;
+  }
+  get blobUrlTemplate() {
+    return this.element.dataset.blobUrlTemplate;
+  }
+}
+
+addEventListener("trix-attachment-add", (event => {
+  const {attachment: attachment, target: target} = event;
+  if (attachment.file) {
+    const upload = new AttachmentUpload(attachment, target, attachment.file);
+    const onProgress = event => attachment.setUploadProgress(event.detail.progress);
+    target.addEventListener("direct-upload:progress", onProgress);
+    upload.start().then((attributes => attachment.setAttributes(attributes))).catch((error => alert(error))).finally((() => target.removeEventListener("direct-upload:progress", onProgress)));
+  }
+}));
+
+export { AttachmentUpload };

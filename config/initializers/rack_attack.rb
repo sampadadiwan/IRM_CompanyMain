@@ -117,7 +117,11 @@ module Rack
       # subject to the login brute-force throttle above, which is what finding M4 required.
       next nil if logged_in?(req)
 
-      bad_request_count = Rails.cache.fetch("rack::attack:404:#{req.ip}", raw: true) { 0 }.to_i
+      # read, NOT fetch-with-block: fetch writes its 0 default with no TTL on
+      # a miss, and since this runs on every request it pre-created the key
+      # before Log404s ever saw a 404 — which skipped Log404s' expiring first
+      # write and made every per-IP counter permanent (nil.to_i is 0 anyway).
+      bad_request_count = Rails.cache.read("rack::attack:404:#{req.ip}", raw: true).to_i
       throttle_request = bad_request_count > 5
 
       if throttle_request
@@ -142,7 +146,9 @@ module Rack
       # login brute-force throttle still applies to them.
       next false if logged_in?(req)
 
-      bad_request_count = Rails.cache.fetch("rack::attack:404:#{req.ip}", raw: true) { 0 }.to_i
+      # read, NOT fetch-with-block — see limit_404_errors above: fetch's
+      # 0-default write had no TTL and made the counter permanent.
+      bad_request_count = Rails.cache.read("rack::attack:404:#{req.ip}", raw: true).to_i
       block_request = bad_request_count > 10
 
       if block_request

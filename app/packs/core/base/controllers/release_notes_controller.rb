@@ -27,7 +27,9 @@ class ReleaseNotesController < ApplicationController
 
   def show
     authorize :release_note, :show?
-    @note_id = params[:id]
+    # File.basename strips any directory components so the id cannot traverse
+    # outside docs/release_notes (e.g. "../../config/secrets")
+    @note_id = File.basename(params[:id].to_s)
     @note_file = Rails.root.join("docs/release_notes", "#{@note_id}.md")
 
     if File.exist?(@note_file)

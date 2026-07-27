@@ -1,5 +1,7 @@
 class CapitalRemittanceVerify < CapitalRemittanceAction
-  step :setup_call_fees
+  # Note: fees are NOT recomputed on verify/unverify. They are set on create/update
+  # (CapitalRemittanceCreate/CapitalRemittanceUpdate), and verifying must not
+  # overwrite them if account entries or fee formulas changed since then.
   step :set_call_amount
   step :toggle_verify
   step :set_status

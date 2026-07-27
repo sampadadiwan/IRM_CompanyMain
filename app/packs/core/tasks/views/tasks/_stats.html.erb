@@ -1,6 +1,7 @@
   <%
     base_query = params[:q].to_unsafe_h rescue {}
-    owner_params = params.slice(:owner_id, :owner_type, :assigned_to_id).to_unsafe_h
+    # permit only scalar values for these keys - to_unsafe_h would also pass nested hashes/arrays into the where clause
+    owner_params = params.permit(:owner_id, :owner_type, :assigned_to_id).to_h
     task_types = {
       completed: {
         path: tasks_path(owner_params.merge(completed: :all, q: base_query.merge(ransack_query_params("completed", :eq, true)).to_json)),

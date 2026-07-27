@@ -67,7 +67,10 @@ module WithCustomField
     # Custom ransacker for searching JSON fields
     ransacker :json_field_value, args: [:key] do |_parent, args|
       key = args.first
-      Arel.sql("(json_fields ->> '#{key}')")
+      # lease_connection.quote escapes the key (including embedded quotes) so a
+      # custom-field name cannot break out of the SQL string literal
+      # (lease_connection is the Rails 8.1 replacement for the soft-deprecated .connection)
+      Arel.sql("(json_fields ->> #{ActiveRecord::Base.lease_connection.quote(key.to_s)})")
     end
 
     # This is used to calculate the start of financial year based on the month offset set in models json fields

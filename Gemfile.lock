@@ -765,7 +765,8 @@ GEM
       hashery (~> 2.0)
       ruby-rc4
       ttfunk
-    playwright-ruby-client (1.50.1)
+    playwright-ruby-client (1.61.0)
+      base64
       concurrent-ruby (>= 1.1.6)
       mime-types (>= 3.0)
     polars-df (0.26.0-aarch64-linux)
@@ -1280,7 +1281,7 @@ DEPENDENCIES
   paranoia
   parser
   pdf-reader
-  playwright-ruby-client (= 1.50.1)
+  playwright-ruby-client (= 1.61.0)
   polars-df
   pragmatic_segmenter
   prometheus_exporter

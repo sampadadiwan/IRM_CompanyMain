@@ -14,7 +14,15 @@ class CapitalRemittancesBulkActionJob < BulkActionJob
     case bulk_action.downcase
 
     when "verify"
-      CapitalRemittanceVerify.call(capital_remittance:)
+      result = CapitalRemittanceVerify.call(capital_remittance:)
+      if result.failure?
+        # Surface per-record failures (e.g. duplicate folio_id or zero committed amount
+        # validations rolling back the save) so BulkActionJob includes them in the
+        # completion notification and error email instead of silently reporting success
+        @error_msg << { msg: result[:errors].presence || capital_remittance.errors.full_messages.join(", "),
+                        folio_id: capital_remittance.folio_id,
+                        capital_remittance_id: capital_remittance.id }
+      end
     else
       msg = "Invalid bulk action"
       send_notification(msg, user_id, :error)

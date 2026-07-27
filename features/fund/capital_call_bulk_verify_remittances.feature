@@ -21,7 +21,7 @@ Feature: Bulk Verify Remittances from Capital Call Show Page
     When I open the bulk verify remittances modal for the capital call
     Then the bulk verify modal should contain "Unverified Remittance"
     And the bulk verify modal should contain "Only unverified remittances are affected"
-    And the bulk verify modal should contain "Status and fees recalculated"
+    And the bulk verify modal should contain "Status recalculated, fees unchanged"
     And the bulk verify modal should contain "Payment notifications sent"
     And the bulk verify modal should contain "Runs in the background"
     When I confirm the bulk verify remittances action
@@ -32,6 +32,13 @@ Feature: Bulk Verify Remittances from Capital Call Show Page
     Given the first remittance is verified
     When I bulk verify pending remittances for the capital call
     Then all remittances for the capital call should be verified
+
+
+  Scenario: Bulk verify reports failures for remittances that cannot be saved
+    Given the last remittance belongs to a commitment with a zero committed amount
+    When I bulk verify pending remittances for the capital call
+    Then all remittances except the invalid remittance should be verified
+    And a bulk verify error email should be sent listing the invalid remittance
 
 
   Scenario: Verify Pending Remittances button is hidden once nothing is left to verify

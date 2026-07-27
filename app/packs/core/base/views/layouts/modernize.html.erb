@@ -35,8 +35,8 @@
 
     <script src="/modernize/libs/jquery/dist/jquery.min.js"></script>
 
-    <script src="https://code.jquery.com/ui/1.13.1/jquery-ui.js"></script>
-    <link rel="stylesheet" href="//code.jquery.com/ui/1.13.1/themes/base/jquery-ui.css">
+    <script src="https://code.jquery.com/ui/1.14.2/jquery-ui.min.js"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.14.2/themes/base/jquery-ui.css">
 
     <!-- For playing videos in docs -->
     <link href="https://vjs.zencdn.net/7.17.0/video-js.css" rel="stylesheet" />
@@ -49,9 +49,9 @@
     <script type="text/javascript" src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
 
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+    <%# Chart.js and chartjs-plugin-datalabels are loaded once via the importmap (4.5.1 / 2.2.0);
+        charts_handler.js exposes window.Chart and window.ChartDataLabels for inline view scripts %>
 
 
     <!-- Tracking -->
@@ -66,29 +66,30 @@
 
 
     <!-- x-spreadsheet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.1.5/dist/xspreadsheet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/x-data-spreadsheet@1.1.9/dist/xspreadsheet.css" />
 
     <!-- x-spreadsheet JS -->
-    <script src="https://unpkg.com/x-data-spreadsheet/dist/xspreadsheet.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/shim.min.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://unpkg.com/x-data-spreadsheet@1.1.9/dist/xspreadsheet.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/shim.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.sheetjs.com/xspreadsheet/xlsxspread.min.js"></script>
 
 
      <!-- Include the JS for AG Grid -->
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@30.2.1/dist/ag-grid-enterprise.min.js"></script>
 
-    <!-- Include the core CSS, this is needed by the grid -->
+    <!-- Include the core CSS, this is needed by the grid (version must match the ag-grid-enterprise JS above) -->
     <link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
+      href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.1/styles/ag-grid.css"/>
     <!-- Include the theme CSS, only need to import the theme you are going to use -->
     <link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-quartz.css"/>
+      href="https://cdn.jsdelivr.net/npm/ag-grid-community@30.2.1/styles/ag-theme-quartz.css"/>
 
-    <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
+    <%# Trix CSS version must match the trix JS served by the action_text-trix gem (see Gemfile.lock) %>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.1.19/dist/trix.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" type="text/css">
 
-    <script src="https://cdn.jsdelivr.net/npm/command-pal"></script>
+    <script src="https://cdn.jsdelivr.net/npm/command-pal@0.2.11"></script>
 
   <title>CapHive</title>
 </head>

@@ -239,7 +239,7 @@ group :test do
   gem "webdrivers"
   # gem "selenium-webdriver"
   gem 'capybara-playwright-driver'
-  gem 'playwright-ruby-client', '1.50.1'
+  gem 'playwright-ruby-client', '1.61.0'
   gem "webmock"
   gem 'terminal-table'
 end

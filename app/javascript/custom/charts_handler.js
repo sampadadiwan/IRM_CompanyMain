@@ -6,9 +6,20 @@ import "highcharts/modules/sankey"
 import "highcharts/modules/heatmap"
 import "highcharts/modules/funnel"
 import "highcharts/modules/accessibility"
+import { Chart, registerables } from "chart.js"
+import ChartDataLabels from "chartjs-plugin-datalabels"
 
 // Make Highcharts globally available for Chartkick and other scripts
 window.Highcharts = Highcharts
+
+// Chart.js is served only via the importmap (single copy). Register all built-in
+// components and expose the constructor globally for inline view scripts that call
+// `new Chart(...)` on DOMContentLoaded/turbo:load (modules execute before both events).
+Chart.register(...registerables)
+window.Chart = Chart
+// Inline view scripts opt in per page via Chart.register(ChartDataLabels); they only
+// need the plugin reachable as a global (previously provided by a CDN UMD script).
+window.ChartDataLabels = ChartDataLabels
 
 // Global Highcharts configuration
 Highcharts.setOptions({

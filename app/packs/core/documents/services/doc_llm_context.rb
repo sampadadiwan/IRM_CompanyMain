@@ -140,7 +140,9 @@ class DocLlmContext < DocLlmBase
 
   # Extract content from PDF files
   def extract_pdf_content(document, file)
-    `pdftotext #{file.path} #{file.path}.txt`
+    # Array form bypasses the shell so paths cannot be interpreted as shell syntax.
+    # nil means the binary is missing - fail loudly like the old backticks did
+    raise Errno::ENOENT, "pdftotext" if system("pdftotext", file.path, "#{file.path}.txt").nil?
     text_content = read_file_with_encoding("#{file.path}.txt")
     "<#{document.name}>#{text_content}</#{document.name}>"
   end

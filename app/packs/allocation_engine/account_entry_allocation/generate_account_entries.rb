@@ -36,6 +36,15 @@ module AccountEntryAllocation
         commitment_cache.computed_fields_cache(capital_commitment, start_date, end_date)
 
         if multiple_name_formulas
+          # CapitalCommitmentShared memoizes quarterly/since_inception/on_date/
+          # get_account_entry per instance+args, and these commitment instances
+          # live for the whole run. An earlier formula in this run (e.g. one with
+          # generate_ytd_qtly) may have called the same helper with the same args
+          # BEFORE its entries were bulk-inserted into the scratch DB, memoizing a
+          # stale sum that excludes them. Flush the memo so each per-name formula
+          # sums the entries actually present in the scratch DB right now.
+          capital_commitment.unmemoize_all
+
           # One account entry per name, each eval'ed with its own single-name formula
           multiple_name_formulas.each do |prefixed_name, per_name_formula|
             build_account_entry(

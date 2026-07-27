@@ -112,6 +112,10 @@ The engine picks the first array of quoted strings that appears as a **method-ca
 - `generate_ytd_qtly` cannot be enabled — its auto-generated formulas key off `fund_formula.name`, which is a batch label here, not an account entry name.
 - Keep each generated name + entry_type combination unique across formulas: rollups (commitment-level and fund-level) aggregate by name + entry_type, not by formula, so two Multiple formulas sharing an entry name and entry type would sum each other's entries. (Same semantics as two single-name `GenerateAccountEntry` formulas sharing a name — just easier to hit now that one formula carries many names.)
 
+### Memoized period helpers
+
+`CapitalCommitmentShared` memoizes `quarterly`, `since_inception`, `on_date`, `get_account_entry` and `cumulative_account_entry` per commitment instance + arguments, and the engine reuses the same commitment instances for the entire run. If an earlier formula in the run calls one of these helpers with the same arguments *before* its generated entries are bulk-inserted into the scratch DB (the `generate_ytd_qtly` variants do exactly this), the stale sum stays memoized. `GenerateAccountEntries` therefore calls `capital_commitment.unmemoize_all` before evaluating a Multiple formula's per-name formulas, so each sum reflects the scratch DB's current contents. Other rule types are untouched and keep the historical memoization behaviour.
+
 ### Sequence Diagram
 
 ```mermaid

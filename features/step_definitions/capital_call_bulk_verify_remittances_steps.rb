@@ -51,3 +51,32 @@ end
 Then('I should not see the {string} button on the remittances tab') do |text|
   expect(page).not_to have_button(text)
 end
+
+Given('the last remittance belongs to a commitment with a zero committed amount') do
+  # Mirror the bad legacy data seen in production: zero out the commitment's committed
+  # amount with update_columns so validations are bypassed at setup time. Verify then
+  # re-copies this amount onto the remittance (set_call_amount), so its save fails the
+  # folio_committed_amount_cents > 0 validation and rolls back.
+  @invalid_remittance = @capital_call.capital_remittances.last
+  @invalid_remittance.capital_commitment.update_columns(folio_committed_amount_cents: 0)
+end
+
+Then('all remittances except the invalid remittance should be verified') do
+  # The bulk job runs synchronously under the :inline ActiveJob adapter, but re-check
+  # with eventually to stay robust against any deferred counter/status updates
+  eventually do
+    expect(@capital_call.capital_remittances.unverified.pluck(:id)).to eq([@invalid_remittance.id])
+  end
+end
+
+Then('a bulk verify error email should be sent listing the invalid remittance') do
+  # BulkActionJob emails the collected per-record errors via EntityMailer#doc_gen_errors.
+  # The email is the job's last action, so retry with eventually — the previous step's
+  # assertion can pass while the job is still finishing in the server thread.
+  eventually do
+    mail = ActionMailer::Base.deliveries.find { |m| m.subject.include?("errors") }
+    expect(mail).to be_present
+    expect(mail.body.encoded).to include(@invalid_remittance.folio_id)
+    expect(mail.body.encoded).to include("Folio committed amount cents must be greater than 0")
+  end
+end

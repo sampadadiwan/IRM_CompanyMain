@@ -157,7 +157,12 @@ export default class extends Controller {
     convertOfficeToPDF(inputUrl, outputName, viewer_watermark, viewer_filename, l) {
 
         Core.officeToPDFBuffer(inputUrl, { l }).then(buffer => {
-            this.viewPDF(buffer, viewer_watermark, viewer_filename);
+            // The buffer is now a PDF; keep the original name but swap the office
+            // extension for .pdf — loadDocument picks its loader from the filename
+            // extension, so passing ".docx" here would re-run OOXML conversion on
+            // the PDF bytes and fail with "not a valid zip archive"
+            let pdf_filename = viewer_filename ? viewer_filename.replace(/\.[^.]+$/, "") + ".pdf" : outputName;
+            this.viewPDF(buffer, viewer_watermark, pdf_filename);
         }).catch(err => {
             console.log('An error was encountered! :(', err);
             $(".document_download_icon").show();
