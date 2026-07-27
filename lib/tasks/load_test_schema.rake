@@ -18,7 +18,8 @@ namespace :db do
     task :dump_test_schema => :environment do
       if Rails.env.test?
         # Dump the schema to db/schema_test.rb
-        ActiveRecord::SchemaDumper.dump(ActiveRecord::Base.connection, File.new("db/schema_test.rb", "w"))
+        ActiveRecord::SchemaDumper.dump(ActiveRecord::Base.lease_connection, File.new("db/schema_test.rb", "w"))
+
       else
         Rake::Task["db:schema:dump"].invoke
       end

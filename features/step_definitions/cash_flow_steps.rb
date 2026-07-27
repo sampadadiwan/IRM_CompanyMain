@@ -185,7 +185,10 @@ end
 # ─── Cash Flow Agent Setup ───────────────────────────────────────────────────
 
 Given('the fund has fresh cash account entries worth {int} cents') do |amount|
+  # SQLite does not auto-increment id in composite primary key tables,
+  # so we generate it manually for the test environment.
   AccountEntry.create!(
+    id:                 AccountEntry.maximum(:id).to_i + 1,
     fund:               @fund,
     entity:             @fund.entity,
     name:               "Cash Balance",
