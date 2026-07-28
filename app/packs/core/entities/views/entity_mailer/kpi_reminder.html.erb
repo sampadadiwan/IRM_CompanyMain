@@ -1,7 +1,18 @@
-Dear User
+<%# Consolidated compliance reminder — lists exactly which items (KPIs, Documents, Valuations) are missing for the period. %>
+Dear User,
 
 <p>
-    The entity <%= @requesting_entity %> has requested you to submit your KPIs on the caphive platform. 
+  <%= @requesting_entity.name %> requires the following submissions for <strong><%= @period_label || "the current period" %></strong>:
+</p>
+
+<ul>
+  <% @missing_items.each do |item| %>
+    <li><%= item %></li>
+  <% end %>
+</ul>
+
+<p>
+  Please submit the above on the Caphive platform at your earliest convenience.
 </p>
 
 Thank you.

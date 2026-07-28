@@ -76,15 +76,15 @@ class PortfolioCompanyDashboardController < ApplicationController
 
   # POST /portfolio_company_dashboard/send_reminders
   #
-  # Sends KPI reminder emails to companies with missing KPI reports only.
-  # Matches PortfolioCompanyAgent's send_kpi_reminder logic but without
-  # the day-based guard (7/14/21) — manual button sends immediately.
+  # Sends consolidated reminder emails to companies with blocking issues.
+  # Each email lists only the missing items (KPIs, Documents, Valuations).
+  # Manual button sends immediately — no window gate.
   # Deduplicates via last_kpi_reminder_sent_at in report json_fields to
   # prevent multiple reminders on the same day.
   #
   # @return [void]
+
   def send_reminders
-    # overdue_companies now returns only KPI-missing companies (not all blocked)
     overdue = @presenter_for_reminders.overdue_companies
 
     # Bulk-load reports and investors to avoid N+1 queries in the loop
@@ -106,9 +106,19 @@ class PortfolioCompanyDashboardController < ApplicationController
       investor = investors[company[:owner_id]]
       next unless investor
 
+      # Build missing items from the report's stored issues.
+      data = last_report&.json_fields&.with_indifferent_access || {}
+      missing_items = []
+      missing_items << "KPIs" if Array(data[:kpi_issues]).any? { |i| i[:severity].to_s == "blocking" }
+      missing_items << "Documents" if Array(data[:document_issues]).any? { |i| i[:severity].to_s == "blocking" }
+      missing_items << "Valuations" if Array(data[:valuation_issues]).any? { |i| i[:severity].to_s == "blocking" }
+      missing_items = ["KPIs"] if missing_items.empty?
+
       EntityMailer.with(
         entity_id: investor.entity_id,
-        requesting_entity_id: @support_agent.entity_id
+        requesting_entity_id: @support_agent.entity_id,
+        missing_items: missing_items,
+        period_label: data[:period_label]
       ).kpi_reminder.deliver_later
 
       if last_report

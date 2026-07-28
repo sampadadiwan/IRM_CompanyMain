@@ -14,7 +14,7 @@
               </div>
               <%= button_to "Send Now", send_reminders_portfolio_company_dashboard_path,
                     method: :post, class: "btn btn-sm btn-primary",
-                    data: { confirm: "Send KPI reminders to #{presenter.overdue_companies.size} overdue companies?" } %>
+                    data: { confirm: "Send reminders to #{presenter.overdue_companies.size} overdue companies?" } %>
             </div>
           <% end %>
           <% if presenter.total_issues > 0 %>

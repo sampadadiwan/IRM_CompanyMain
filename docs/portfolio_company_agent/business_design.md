@@ -3,7 +3,7 @@
 ## Business Design Document
 
 **Date:** 2026-07-21
-**Status:** Draft — pending product sign-off
+**Status:** Implemented — product spec received 2026-07-28
 
 ---
 

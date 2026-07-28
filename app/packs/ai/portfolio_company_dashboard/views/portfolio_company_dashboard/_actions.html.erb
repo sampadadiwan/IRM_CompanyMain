@@ -1,8 +1,8 @@
 <%# Agent action buttons — Run Validation, Send Reminders, and pending companies list.
      - Run Validation: triggers PortfolioCompanyAgent batch run across all portfolio companies.
-     - Send Reminders: emails only companies with missing KPI reports (not all blocked companies).
-       Deduplicates via last_kpi_reminder_sent_at stored in report json_fields.
-     - KPI Reminders Due: lists top 5 companies with missing KPIs sorted by issue count.%>
+     - Send Reminders: emails companies with any missing items (KPIs, documents, valuations).
+       Each email lists only what's missing. Deduplicates via last_kpi_reminder_sent_at.
+     - Overdue Companies: lists top 5 companies with blocking issues sorted by issue count.%>
      
 <div class="card border-0 shadow-sm h-100">
   <div class="card-body">
@@ -64,16 +64,16 @@
       <%# Batch progress panel appears here after Run Validation is clicked %>
       <div id="batch_progress_panel"></div>
 
-      <%# Send Reminders — sends KPI reminder emails to overdue companies %>
+      <%# Send Reminders — sends consolidated reminder emails to overdue companies %>
       <%= button_to send_reminders_portfolio_company_dashboard_path,
             method: :post,
             class: "btn btn-outline-info text-start d-flex align-items-center gap-2",
             disabled: presenter.overdue_companies.empty?,
-            data: { confirm: "Send KPI reminders to #{presenter.overdue_companies.size} companies with missing KPIs?" } do %>
+            data: { confirm: "Send reminders to #{presenter.overdue_companies.size} companies with missing submissions?" } do %>
         <i class="ti ti-mail-forward"></i>
         <div>
           <strong>Send Reminders</strong><br>
-          <small class="text-muted">Email <%= presenter.overdue_companies.size %> companies with missing KPIs</small>
+          <small class="text-muted">Email <%= presenter.overdue_companies.size %> companies with missing submissions</small>
         </div>
       <% end %>
 

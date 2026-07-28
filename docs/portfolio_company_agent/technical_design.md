@@ -3,8 +3,8 @@
 ## Technical Design Document
 
 **Date:** 2026-07-21
-**Status:** Draft — pending product sign-off on open questions
-**Branch:** `feature/portco-standalone-dashboard` (dashboard PR as-is), agent logic redesign as follow-up PR
+**Status:** Implemented — consolidated reminders confirmed by product spec 2026-07-28
+**Branch:** `feature/portco-standalone-dashboard`
 
 ---
 
@@ -254,7 +254,7 @@ The existing "Run Validation" button gets an optional date dropdown for adhoc ru
 │  ┌────────────────────────────────────┐  │
 │  │ ✉ Send Reminders                  │  │
 │  │   Email 5 companies with missing   │  │
-│  │   KPIs                             │  │
+│  │   submissions                      │  │
 │  └────────────────────────────────────┘  │
 │                                          │
 │  ┌────────────────────────────────────┐  │

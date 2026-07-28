@@ -13,33 +13,37 @@ class PortfolioCompanyAgent < SupportAgentService
 
     Steps:
     • KPI Submission Check — verifies that each portfolio company has submitted KPI reports for
-      expected periods. Sends a reminder email if a submission is overdue.
+      the most recently completed period (look-back window).
     • Document Presence — checks that all required documents are uploaded for each company.
     • Valuation Check — flags companies missing a valuation or with a stale valuation date.
+    • Send Reminders — sends a consolidated reminder listing only the missing items
+      (KPIs, documents, valuations) for each company. Skipped when everything is submitted.
 
     Batch processing: runs sequentially per portfolio company; one failure does not block others.
     A batch summary notification is sent after all companies are processed (suppressed for scheduled
     runs). Results are saved as SupportAgentReports and power the portfolio dashboard widget.
   DESC
 
-  # Used when launching for a single portfolio company investor (not a full entity batch).
   SINGLE_LONG_DESCRIPTION = <<~DESC
     Checks data health for this portfolio company — KPI submissions, required document
     presence, and valuation accuracy. Results are saved as a SupportAgentReport and
     displayed on the portfolio dashboard widget.
 
     Steps:
-    • KPI Submission Check — verifies KPI reports have been submitted for expected periods.
+    • KPI Submission Check — verifies KPI reports have been submitted for the most recently completed period.
     • Document Presence — checks that all required documents are uploaded.
     • Valuation Check — flags a missing or stale valuation entry.
+    • Send Reminders — sends a consolidated reminder for any missing items. Skipped when everything is submitted.
   DESC
 
   step :initialize_agent
-  # == Core Functions ==
+  # Ordering matters: all three checks must run before send_kpi_reminder
+  # so ctx[:issues] is fully populated and the consolidated reminder
+  # email can list exactly which items (KPIs, documents, valuations) are missing.
   step :check_kpi_submission
-  step :send_kpi_reminder
   step :check_document_presence
   step :check_valuations
+  step :send_kpi_reminder
   step :generate_progress_reports
 
   def targets(entity_id)
@@ -248,8 +252,9 @@ class PortfolioCompanyAgent < SupportAgentService
   # the period, not necessarily the exact period-end date.
   #
   # Stores the period_info hash in ctx[:period_info] so downstream steps
-  # (send_kpi_reminder, check_valuations) can reuse the same computed period
-  # without recalculating.
+  # (check_document_presence, check_valuations, send_kpi_reminder) can reuse
+  # the same computed period without recalculating.
+
   #
   # @param ctx [Hash] Trailblazer context — receives :period_info and :issues updates
   # @param portfolio_company [Investor] the portfolio company being checked
@@ -298,17 +303,16 @@ class PortfolioCompanyAgent < SupportAgentService
     true
   end
 
-  # Sends a consolidated reminder email when KPIs are missing for the look-back period.
+  # Sends a consolidated reminder email listing all missing items (KPIs,
+  # documents, valuations) for the look-back period.
   #
-  # With the look-back window redesign, reminders are sent on every agent run
-  # within the active window (T+start to T+end). The run frequency is controlled
-  # by AgentSchedule (daily/weekly/bi-weekly), not by day-offset logic.
+  # Runs after all three checks so ctx[:issues] is fully populated.
+  # Checks each category for :blocking issues and builds a missing_items
+  # list. Sends one email per company listing only what's missing.
+  # Skipped when everything is submitted.
   #
-  # The old reminder_days setting (comma-separated offsets like "7,14,21") is no
-  # longer used — reminders fire every run, and the schedule controls spacing.
-  #
-  # Deduplication: prevents double-sending on the same calendar day by checking
-  # last_kpi_reminder_sent_at stored in the previous report's json_fields.
+  # Deduplication: prevents double-sending on the same calendar day by
+  # checking last_kpi_reminder_sent_at in the previous report's json_fields.
   #
   # @param ctx [Hash] Trailblazer context — reads :issues and :period_info
   # @param portfolio_company [Investor] the portfolio company being checked
@@ -321,24 +325,28 @@ class PortfolioCompanyAgent < SupportAgentService
 
     # Guard: check if reminders are enabled via json_fields toggle.
     unless enabled?("send_kpi_reminder")
-      Rails.logger.debug { "[#{self.class.name}] KPI reminder disabled, skipping." }
+      Rails.logger.debug { "[#{self.class.name}] Reminders disabled, skipping." }
       mark_step_skipped(report, :send_kpi_reminder, message: "Disabled") if report
       return true
     end
 
-    # Guard: no reminder needed if KPIs are already submitted.
-    kpi_missing = ctx[:issues][:kpi_issues].any? { |i| i[:severity] == :blocking }
-    unless kpi_missing
+    # Build the list of missing items across all three categories.
+    missing_items = []
+    missing_items << "KPIs" if ctx[:issues][:kpi_issues].any? { |i| i[:severity] == :blocking }
+    missing_items << "Documents" if ctx[:issues][:document_issues].any? { |i| i[:severity] == :blocking }
+    missing_items << "Valuations" if ctx[:issues][:valuation_issues].any? { |i| i[:severity] == :blocking }
+
+    # Guard: no reminder needed if everything is submitted.
+    if missing_items.empty?
       ctx[:issues][:kpi_issues] << {
         key: :reminder, type: :info,
-        message: "KPIs submitted — no reminder needed", severity: :success
+        message: "All items submitted — no reminder needed", severity: :success
       }
-      mark_step_skipped(report, :send_kpi_reminder, message: "KPIs submitted — no reminder needed") if report
+      mark_step_skipped(report, :send_kpi_reminder, message: "All items submitted — no reminder needed") if report
       return true
     end
 
     # Guard: prevent double-sending on the same calendar day.
-    # Checks the most recent report's json_fields for last_kpi_reminder_sent_at.
     last_report = SupportAgentReport
                   .where(owner: portfolio_company, support_agent: support_agent)
                   .order(created_at: :desc).first
@@ -350,22 +358,23 @@ class PortfolioCompanyAgent < SupportAgentService
       return true
     end
 
-    # Send the consolidated reminder email.
-    # The mailer template lists all missing items (KPI, valuation, documents).
+    # Send consolidated reminder with the missing items list.
     period_info = ctx[:period_info]
     EntityMailer.with(
       entity_id: portfolio_company.entity_id,
-      requesting_entity_id: support_agent.entity_id
+      requesting_entity_id: support_agent.entity_id,
+      missing_items: missing_items,
+      period_label: period_info&.dig(:period_label)
     ).kpi_reminder.deliver_later
 
     ctx[:last_kpi_reminder_sent_at] = Time.zone.today.iso8601
     ctx[:issues][:kpi_issues] << {
       key: :reminder, type: :info,
-      message: "Reminder sent for #{period_info&.dig(:period_label) || 'current period'}",
+      message: "Reminder sent for #{period_info&.dig(:period_label) || 'current period'} — missing: #{missing_items.join(', ')}",
       severity: :success
     }
-    Rails.logger.info { "[#{self.class.name}] KPI reminder sent for Investor ID=#{portfolio_company.id} (#{period_info&.dig(:period_label)})" }
-    mark_step_success(report, :send_kpi_reminder, message: "Reminder sent") if report
+    Rails.logger.info { "[#{self.class.name}] Reminder sent for Investor ID=#{portfolio_company.id} (#{period_info&.dig(:period_label)}) — missing: #{missing_items.join(', ')}" }
+    mark_step_success(report, :send_kpi_reminder, message: "Reminder sent (#{missing_items.join(', ')})") if report
     true
   end
 

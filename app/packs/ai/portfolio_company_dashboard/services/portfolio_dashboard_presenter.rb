@@ -155,31 +155,31 @@ class PortfolioDashboardPresenter
     end
   end
 
-  # --- KPI Overdue Companies (for Send Reminders + sidebar list) ---
+  # --- Overdue Companies (for Send Reminders + sidebar list) ---
 
-  # Companies with missing KPI reports only — NOT all blocked companies.
-  # This matches the PortfolioCompanyAgent's send_kpi_reminder step logic
-  # which only sends reminders for KPI issues, not document/valuation issues.
-  # Used by: Send Reminders button count, confirm dialog, and "KPI Reminders Due" sidebar list.
+  # Companies with any blocking issues (KPIs, documents, or valuations).
+  # Matches PortfolioCompanyAgent's send_kpi_reminder step which now sends
+  # consolidated reminders for all missing categories, not just KPIs.
+  # Used by: Send Reminders button count, confirm dialog, and overdue sidebar list.
   #
-  # @return [Array<Hash>] KPI-overdue companies sorted by issues_count descending
+  # @return [Array<Hash>] companies with any blocking issues, sorted by issues_count descending
   def overdue_companies
     @overdue_companies ||= reports
-                           .select { |r| Array(r.json_fields.with_indifferent_access[:kpi_issues]).any? { |i| i[:severity].to_s == "blocking" } }
+                           .select { |r| blocking_count(r).positive? }
                            .map do |r|
-                             data = r.json_fields.with_indifferent_access
-                             run_at = begin
-                               Time.zone.parse(data[:run_at])
-                             rescue StandardError
-                               nil
-                             end
-                             {
-                               name: r.owner&.name || r.owner_name || "Unknown",
-                               owner_id: r.owner_id,
-                               issues_count: blocking_count(r),
-                               days_since_run: run_at ? ((Time.current - run_at) / 1.day).floor : nil
-                             }
-                           end
+      data = r.json_fields.with_indifferent_access
+      run_at = begin
+        Time.zone.parse(data[:run_at])
+      rescue StandardError
+        nil
+      end
+      {
+        name: r.owner&.name || r.owner_name || "Unknown",
+        owner_id: r.owner_id,
+        issues_count: blocking_count(r),
+        days_since_run: run_at ? ((Time.current - run_at) / 1.day).floor : nil
+      }
+    end
                            .sort_by { |c| -c[:issues_count] }
   end
 
