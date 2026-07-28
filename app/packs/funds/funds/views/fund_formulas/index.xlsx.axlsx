@@ -2,7 +2,7 @@ wb = xlsx_package.workbook
 
 wb.add_worksheet(name: "FundFormula") do |sheet|
   # Create the header row
-  sheet.add_row(["Id", "Fund", "Sequence", "Name", "Rule Type", "Rule For", "Generate YTD, Quarterly, Since Inception numbers", "Tag List", "Formula", "Entry Type", "Description", "Rollup", "Enabled", "Metadata", "Template", "Cache", "Execution Time (ms)"])
+  sheet.add_row(["Id", "Fund", "Sequence", "Name", "Rule Type", "Rule For", "Generate YTD, Quarterly, Since Inception numbers", "Tag List", "Formula", "Entry Type", "Description", "AI Description", "Rollup", "Enabled", "Metadata", "Template", "Cache", "Execution Time (ms)"])
 
   # Create entries for each item
   @fund_formulas.each do |fu|
@@ -11,6 +11,7 @@ wb.add_worksheet(name: "FundFormula") do |sheet|
     enabled = fu.enabled ? "Yes" : "No"
     cache = fu.add_to_commitment_cache ? "Yes" : "No"
 
-    sheet.add_row [fu.id, fu.fund.name, fu.sequence, fu.name, fu.rule_type, fu.rule_for, generate_ytd_qtly, fu.tag_list&.join(","), fu.formula, fu.entry_type, fu.description, roll_up, enabled, fu.meta_data, fu.template_field_name, cache, fu.execution_time]
+    # Also download the AI description for each formula
+    sheet.add_row [fu.id, fu.fund.name, fu.sequence, fu.name, fu.rule_type, fu.rule_for, generate_ytd_qtly, fu.tag_list&.join(","), fu.formula, fu.entry_type, fu.description, fu.ai_description.to_s, roll_up, enabled, fu.meta_data, fu.template_field_name, cache, fu.execution_time]
   end
 end
