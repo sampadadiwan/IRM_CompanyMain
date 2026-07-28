@@ -93,6 +93,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.index ["investor_id"], name: "index_account_entries_on_investor_id"
     t.index ["parent_type", "parent_id", "fund_id", "name", "deleted_at", "cumulative"], name: "idx_ae_parent_fund_name_flags"
     t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
+    t.index ["temp_sqlite_id", "allocation_run_id", "entry_type"], name: "idx_account_entries_temp_sqlite_id"
   end
 
   create_table "account_entry_report_insights", force: :cascade do |t|
@@ -1605,6 +1606,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
+    t.date "onboarding_deadline"
     t.string "openai_api_key"
     t.string "openrouter_api_key"
     t.boolean "pan_verification"
@@ -2454,10 +2456,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.string "bank_branch"
     t.string "bank_name", limit: 100
     t.text "bank_verification_response"
+    t.string "bank_verification_state", default: "not_started", null: false
     t.string "bank_verification_status"
     t.boolean "bank_verified", default: false
     t.datetime "birth_date"
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
+    t.datetime "checks_failed_at"
     t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.text "comments"
     t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -2483,11 +2487,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.bigint "investor_user_id"
     t.datetime "investor_user_updated_at"
     t.json "json_fields"
+    t.bigint "kyc_onboarding_id"
     t.string "kyc_type", limit: 15, default: "Individual"
+    t.datetime "last_onboarding_nudge_at"
     t.datetime "link_sent_at"
     t.text "notification_msg"
+    t.integer "onboarding_nudge_count", default: 0, null: false
+    t.boolean "onboarding_nudges_paused", default: false, null: false
+    t.string "onboarding_state"
     t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.text "pan_verification_response"
+    t.string "pan_verification_state", default: "not_started", null: false
     t.string "pan_verification_status"
     t.boolean "pan_verified", default: false
     t.boolean "reminder_sent", default: false
@@ -2502,6 +2512,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.decimal "uncalled_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false
+    t.datetime "verified_at"
     t.bigint "verified_by_id"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
@@ -2509,6 +2520,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
     t.index ["investor_user_id"], name: "index_investor_kycs_on_investor_user_id"
+    t.index ["kyc_onboarding_id"], name: "index_investor_kycs_on_kyc_onboarding_id"
+    t.index ["onboarding_state"], name: "index_investor_kycs_on_onboarding_state"
     t.index ["slug"], name: "index_investor_kycs_on_slug", unique: true
     t.index ["submission_status"], name: "index_investor_kycs_on_submission_status"
     t.index ["verified_by_id"], name: "index_investor_kycs_on_verified_by_id"
@@ -4396,6 +4409,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
   add_foreign_key "investor_kycs", "form_types"
   add_foreign_key "investor_kycs", "investors"
+  add_foreign_key "investor_kycs", "kyc_onboardings"
   add_foreign_key "investor_kycs", "users", column: "investor_user_id"
   add_foreign_key "investor_kycs", "users", column: "verified_by_id"
   add_foreign_key "investor_notice_entries", "entities"

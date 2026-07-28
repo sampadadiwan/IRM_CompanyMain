@@ -32,7 +32,7 @@ class InvestorNotice < ApplicationRecord
 
   delegate :investors, to: :owner
 
-  def self.notices(user)
+  def self.notices(user, gp_entity_id: nil)
     notices = InvestorNotice.joins(:investor_notice_entries, entity: :investor_accesses).where("investor_notices.active=?", true)
 
     notices = notices.where("investor_notice_entries.investor_entity_id=? and investor_notice_entries.active=?", user.entity_id, true)
@@ -40,6 +40,11 @@ class InvestorNotice < ApplicationRecord
     notices = notices.where("investor_accesses.user_id=? and investor_accesses.approved=?", user.id, true)
 
     notices = notices.where("investor_accesses.entity_id=?", ENV.fetch("CAPHIVE_ENTITY_ID", nil)) if user.curr_role == "employee"
+
+    # When the LP has picked a GP in the dashboard GP switcher, only surface
+    # notices published by that GP entity (investor_notices.entity_id is the
+    # GP that created the notice).
+    notices = notices.where("investor_notices.entity_id=?", gp_entity_id) if gp_entity_id.present?
 
     notices
   end

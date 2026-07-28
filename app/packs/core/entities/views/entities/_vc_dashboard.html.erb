@@ -60,6 +60,11 @@
 <%# target="_top" ensures any full-page redirects from within the frame (e.g.
     Devise sign-in redirect) break out of the frame and replace the whole page. %>
 <turbo-frame id="vc_dashboard_frame" target="_top">
+  <%# Notices carousel scoped to the selected GP. Rendered inside the turbo
+      frame (instead of dashboard.html.erb) so switching GPs in the dropdown
+      also swaps the notices shown. %>
+  <%= render "/investor_notices/carousel", gp_entity_id: selected_entity_id %>
+
   <%# Show a contextual banner when the LP is viewing a GP's data rather than
       their own entity, so it is always clear whose data is on screen. %>
   <% if selected_entity && selected_entity.id != current_user.entity_id %>

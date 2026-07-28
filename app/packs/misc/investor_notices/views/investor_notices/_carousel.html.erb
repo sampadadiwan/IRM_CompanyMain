@@ -1,7 +1,12 @@
-<% cache ["InvestorNotice", current_user, current_user.entity], expires_in: 5.day do %>
-<% 
-    active = "active" 
-    notices = InvestorNotice.notices(current_user)
+<%# gp_entity_id (optional) scopes the notices to the GP the LP selected in the
+    vc_dashboard GP switcher; nil keeps the old behaviour of showing notices
+    from every GP the user has access to. Included in the cache key so each
+    GP selection is cached separately. %>
+<% gp_entity_id = local_assigns[:gp_entity_id] %>
+<% cache ["InvestorNotice", current_user, current_user.entity, gp_entity_id], expires_in: 5.day do %>
+<%
+    active = "active"
+    notices = InvestorNotice.notices(current_user, gp_entity_id: gp_entity_id)
     # If user has come in via a subdomain, show that notice first
     notices = notices.to_a.sort_by{|n| n.entity_id == @current_entity.id ? 0:1} if @current_entity
 %>
