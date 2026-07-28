@@ -1,5 +1,9 @@
 ---
 ja:
+  # Shown inside a turbo-frame when its content fails to load (see layouts/_frame_error)
+  turbo_frame_error:
+    message: このセクションを読み込めませんでした。
+    retry: 再試行
   access_right:
     create: アクセス権が付与されました
     destroy: アクセス権が削除されました

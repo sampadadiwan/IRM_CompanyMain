@@ -1,0 +1,14 @@
+// Error card rendered into a broken <turbo-frame> by
+// custom/turbo_frame_error_handler.js (markup in layouts/_frame_error).
+.turbo-frame-error {
+  // Subtle warning treatment so the card stands out from surrounding content
+  // without shouting — only one section failed, the rest of the page works.
+  border: 1px solid var(--bs-warning-border-subtle, #ffe69c);
+  background-color: var(--bs-warning-bg-subtle, #fff9e6);
+  margin: 0.5rem 0;
+
+  .turbo-frame-error-icon {
+    font-size: 1.5rem;
+    color: var(--bs-warning, #ffae1f);
+  }
+}

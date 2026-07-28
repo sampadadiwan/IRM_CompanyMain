@@ -237,7 +237,9 @@ Devise.setup do |config|
   # should add them to the navigational formats lists.
   #
   # The "*/*" below is required to match Internet Explorer requests.
-  config.navigational_formats = ['*/*', :html]
+  # :turbo_stream is navigational so Devise redirects expired-session turbo_stream
+  # form submissions to sign-in (a 302 Turbo Drive follows) instead of a bare 401.
+  config.navigational_formats = ['*/*', :html, :turbo_stream]
 
   # The default HTTP method used to sign out a resource. Default is :delete.
   config.sign_out_via = :put
@@ -250,6 +252,13 @@ Devise.setup do |config|
   # ==> Warden configuration
   # If you want to use other strategies, that are not supported by Devise, or
   # change the failure app, you can configure them inside the config.warden block.
+  #
+  # TurboFailureApp stores the referer (not the frame endpoint) as the
+  # return-to location for expired Turbo Frame requests, so users come back to
+  # the page they were on after re-authenticating.
+  config.warden do |manager|
+    manager.failure_app = TurboFailureApp
+  end
   #
   # config.warden do |manager|
   #   manager.intercept_401 = false
