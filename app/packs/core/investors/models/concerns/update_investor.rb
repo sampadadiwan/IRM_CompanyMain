@@ -4,6 +4,10 @@ module UpdateInvestor
   included do
     after_commit :update_association_name, only: :update?
     before_validation :reassign_entity_on_email_change, if: :persisted?
+    # Primary email is the stakeholder's identity anchor: once users are linked
+    # (via investor_accesses), changing it would repoint the investor_entity and
+    # strand those users on the old entity. Block the change instead.
+    validate :primary_email_locked_when_users_exist, if: :persisted?
 
     # Be very careful using this method, it is used to move all investors associations to a new investor
     def self.merge(old_investor, new_investor, allow_cross_entity: false)
@@ -142,8 +146,14 @@ module UpdateInvestor
   #   → caught by validates :investor_entity_id, uniqueness: { scope: :entity_id }
   #   on the Investor model
   # - Email cleared to blank → early return, no reassignment
+  # - Stakeholder has users → early return; primary_email_locked_when_users_exist
+  #   rejects the save with a validation error
   def reassign_entity_on_email_change
     return if primary_email.blank? || !primary_email_changed?
+    # Blocked by primary_email_locked_when_users_exist — bail out before the
+    # entity lookup so a doomed save doesn't create an orphan Entity as a side
+    # effect (this callback runs before validations get a chance to fail).
+    return if primary_email_locked?
 
     new_entity = with_entity_email_lock(primary_email.strip) { find_or_build_investor_entity }
 
@@ -158,12 +168,25 @@ module UpdateInvestor
 
     return if new_entity.id == investor_entity_id
 
-    # Tell change_investor_entity (after_commit) that this reassignment came from
-    # an email change, so it knows to also move exclusive users along with it.
-    # Other callers that set investor_entity_id directly (e.g. the manual
-    # "Investor Entity Update" admin flow) should NOT move users as a side effect.
-    @reassign_entity_due_to_email_change = true
     self.investor_entity = new_entity
+  end
+
+  # Single source of truth for the email-edit lock, shared by the entity
+  # reassignment guard, the validation below, and the edit form (which hides
+  # the "Edit Email" affordance for locked stakeholders).
+  def primary_email_locked?
+    persisted? && users.exists?
+  end
+
+  # Editing the primary email is only allowed while the stakeholder has no
+  # users. Users hang off investor_accesses and are keyed to the identity
+  # entity that the email resolves to, so an email change under them would
+  # orphan their access. This validation is the authoritative server-side
+  # guard (also covers CSV "Update Only" imports and any direct model updates).
+  def primary_email_locked_when_users_exist
+    return unless primary_email_changed? && primary_email_locked?
+
+    errors.add(:primary_email, "cannot be changed because this stakeholder has users linked to it. Please remove the stakeholder's users before changing the primary email.")
   end
 
   # Find (by email, falling back to pan) or build an Entity to use as this
@@ -214,11 +237,10 @@ module UpdateInvestor
   # Runs via after_commit after the investor's own investor_entity_id is persisted.
   #
   # Covers: entity.investor_accesses, entity.deal_investors, InvestorNoticeEntry
-  # (all scoped by entity_id to this fund).
-  #
-  # Also moves users of this investor's investor_accesses to the new entity,
-  # but only if they have a single investor_access (i.e. they are not shared
-  # across multiple investors). Shared users keep their current entity_id.
+  # (all scoped by entity_id to this fund). Users never need moving here:
+  # primary_email_locked_when_users_exist guarantees email-driven reassignments
+  # only happen for stakeholders with no users, and the manual "Investor Entity
+  # Update" admin flow intentionally moves only the investor's own entity link.
   #
   # NOTE: This is an after_commit callback — if the cascading updates fail, the
   # investor's investor_entity_id is already committed and cannot be rolled back.
@@ -237,26 +259,6 @@ module UpdateInvestor
       entity.investor_accesses.where(investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
       entity.deal_investors.where(investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
       InvestorNoticeEntry.where(entity_id:, investor_entity_id: old_entity_id).update_all(investor_entity_id: investor_entity_id)
-
-      # Only move users when this reassignment came from an email change (see
-      # reassign_entity_on_email_change) — other callers that set
-      # investor_entity_id directly (e.g. the manual "Investor Entity Update"
-      # admin flow) reassign the investor's own entity link only and should not
-      # move any users as a side effect.
-      if @reassign_entity_due_to_email_change
-        @reassign_entity_due_to_email_change = false
-        # Move users of this investor's investor_accesses to the new entity,
-        # but only if they are exclusive to this investor (single investor_access).
-        user_ids = investor_accesses.where.not(user_id: nil).distinct.pluck(:user_id)
-        if user_ids.present?
-          exclusive_user_ids = User.where(id: user_ids)
-                                   .left_joins(:investor_accesses)
-                                   .group(:id)
-                                   .having("COUNT(investor_accesses.id) = 1")
-                                   .pluck(:id)
-          User.where(id: exclusive_user_ids).update_all(entity_id: investor_entity_id)
-        end
-      end
     end
   rescue StandardError => e
     Rails.logger.error "Error updating investor entity: #{e.message}"

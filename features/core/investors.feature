@@ -205,7 +205,7 @@ Scenario Outline: Email update to same entity is a no-op
     |user |entity               |investor                                       |
     |     |entity_type=Company  |category=LP;primary_email=old@example.com      |
 
-Scenario Outline: Email change moves exclusive user to new entity
+Scenario Outline: Email change blocked when stakeholder has users
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   And I am at the investor page
@@ -213,25 +213,27 @@ Scenario Outline: Email change moves exclusive user to new entity
   And the investor has an investor access for user "<user_email>"
   Then I remember the current investor entity
   And I update the investor email to "new@example.com"
-  Then the user "<user_email>" should belong to the new entity
+  Then I should see the "cannot be changed because this stakeholder has users"
+  Then the investor primary email should still be "old@example.com"
+  Then the investor entity should still be the same
+  And no entity should exist with email "new@example.com"
 
   Examples:
-    |user |entity               |investor    | user_email       |
-    |     |entity_type=Company  |category=LP | exclusive@test.com |
+    |user |entity               |investor                                  | user_email       |
+    |     |entity_type=Company  |category=LP;primary_email=old@example.com | blocked@test.com |
 
-Scenario Outline: Email change does NOT move shared user
+Scenario Outline: Edit Email button hidden when stakeholder has users
   Given Im logged in as a user "<user>" for an entity "<entity>"
   Given the user has role "company_admin"
   And I am at the investor page
   When I create a new investor "<investor>"
   And the investor has an investor access for user "<user_email>"
-  And the user "<user_email>" also belongs to another investor
-  Then I remember the current investor entity
-  And I update the investor email to "new@example.com"
-  Then the user "<user_email>" should still belong to the old entity
+  And I visit the edit page for the investor
+  Then I should not see the Edit Email button
+  Then I should see the "cannot be changed because this stakeholder has users"
 
   Examples:
-    |user |entity               |investor    | user_email       |
-    |     |entity_type=Company  |category=LP | shared@test.com  |
+    |user |entity               |investor                                  | user_email      |
+    |     |entity_type=Company  |category=LP;primary_email=old@example.com | locked@test.com |
 
 

@@ -1798,41 +1798,24 @@ Given('the investor has an investor access for user {string}') do |email|
                     approved: true)
 end
 
-Then('the user {string} should belong to the new entity') do |email|
-  user = User.find_by(email: email)
-  new_entity_id = @investor.reload.investor_entity_id
-  expect(user.entity_id).to eq(new_entity_id),
-                            "Expected user #{email} entity_id #{user.entity_id} to match new investor_entity_id #{new_entity_id}"
+Then('the investor primary email should still be {string}') do |email|
+  # Reload from DB — the blocked update must not have persisted the new email
+  expect(@investor.reload.primary_email).to eq(email)
 end
 
-Given('the user {string} also belongs to another investor') do |email|
-  # Create a second investor in a separate entity (different fund) with
-  # investor_entity_id matching the user's entity_id. This gives the user
-  # 2 investor_accesses total (across funds).
-  # Uses insert! to bypass callbacks/validations that would interfere with
-  # the existing scenario investor (Investor.last must remain unchanged).
-  other_entity = FactoryBot.create(:entity, entity_type: "Company")
-  second_investor = FactoryBot.create(:investor, entity: other_entity, investor_entity_id: @test_user.entity_id)
-  InvestorAccess.insert!(
-    {
-      investor_id: second_investor.id,
-      entity_id: other_entity.id,
-      user_id: @test_user.id,
-      email: email,
-      first_name: @test_user.first_name,
-      last_name: @test_user.last_name,
-      approved: true,
-      investor_entity_id: @test_user.entity_id,
-      created_at: Time.current,
-      updated_at: Time.current
-    }
-  )
+Then('no entity should exist with email {string}') do |email|
+  # The users-exist guard bails out of reassign_entity_on_email_change before
+  # the entity lookup, so a blocked save must not leave an orphan Entity behind
+  expect(Entity.where(primary_email: email)).not_to exist
 end
 
-Then('the user {string} should still belong to the old entity') do |email|
-  user = User.find_by(email: email)
-  expect(user.entity_id).to eq(@original_investor_entity_id),
-                            "Expected user #{email} entity_id #{user.entity_id} to remain #{@original_investor_entity_id}"
+When('I visit the edit page for the investor') do
+  @investor ||= Investor.last
+  visit(edit_investor_path(@investor))
+end
+
+Then('I should not see the Edit Email button') do
+  expect(page).not_to have_selector("#editEmailBtn")
 end
 
 Then('I should see the filtered investors with {string}') do |string|
