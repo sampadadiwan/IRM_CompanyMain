@@ -53,6 +53,9 @@
                   <%
                     currencies = fund.entity.exchange_rates.pluck(:from) << fund.entity.currency
                     currency_disabled = !fund.new_record?
+                    # Escape hatch: tracking currency is normally locked after creation, but
+                    # support can pass ?debug=true on the edit URL to correct a bad value
+                    tracking_currency_disabled = currency_disabled && params[:debug] != "true"
                   %>
                   <div class="form-group">
                     <%= form.label :currency %>
@@ -62,7 +65,7 @@
 
                   <div class="form-group">
                     <%= form.label :tracking_currency %>
-                    <%= form.select :tracking_currency, currencies.uniq, {include_blank: true}, class: "form-control", disabled: currency_disabled  %>
+                    <%= form.select :tracking_currency, currencies.uniq, {include_blank: true}, class: "form-control", disabled: tracking_currency_disabled  %>
                     <small>If you want to track the fund in a different currency, leave blank if not applicable</small>
                   </div>
 
