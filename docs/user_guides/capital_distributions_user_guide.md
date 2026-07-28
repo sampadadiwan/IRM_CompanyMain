@@ -387,7 +387,7 @@ You can bulk-load from spreadsheets, mainly for historical data.
 
 **Distributions** — key columns: Fund, Title (unique per fund), Income, Date, Generate Payments, Payments Paid, Reinvestment, Distribution Basis, Face Value for Redemption, and Send Notification. A duplicate title in the same fund is rejected, exchange rates can be supplied for multi-currency funds, and imported distributions don't auto-send notifications.
 
-**Payments** — key columns: Stakeholder (investor), Fund, Capital Distribution (title), Income, Payment Date, Completed, Folio No, Face Value for Redemption, and Reinvestment. The investor must already have a commitment under the given folio, their percentage is captured at import, and adjustments are applied automatically. Each folio appears once per distribution.
+**Payments** — key columns: Fund, Capital Distribution (title), Income, Payment Date, Completed, Folio No, Face Value for Redemption, and Reinvestment. Each row is matched to the investor through the Folio No, so a commitment must already exist under the given folio; the investor's percentage is captured at import, and adjustments are applied automatically. Each folio appears once per distribution.
 
 ---
 

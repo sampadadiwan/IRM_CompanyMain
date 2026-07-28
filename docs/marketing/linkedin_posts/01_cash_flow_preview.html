@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>*,*::before,*::after{box-sizing:border-box}html{-webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased}img,svg{max-width:100%}figure.diagram .frame{background:#FFFFFF !important}</style>
+<title>Fund Ops, Unstacked #1 — The Cash Flow Agent That Refuses to Answer</title>
+<style>
+  :root {
+    --ground: #F4F2EE;
+    --paper: #FFFFFF;
+    --ink: #191919;
+    --muted: #666666;
+    --faint: #8C8C8C;
+    --accent: #0A66C2;
+    --accent-ink: #FFFFFF;
+    --border: #E8E5DF;
+    --border-strong: #D6D2CB;
+    --gate: #B24020;
+    --gate-bg: #FBF1EE;
+    --ok: #44712E;
+    --ok-bg: #F0F5EC;
+    --card-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.05);
+    --cover-a: #0B2E4F;
+    --cover-b: #103E6B;
+    --cover-line: rgba(255,255,255,0.08);
+    --code-bg: #F6F4F0;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #111417;
+      --paper: #1B1F23;
+      --ink: #E9EAEB;
+      --muted: #A5A8AB;
+      --faint: #7E8286;
+      --accent: #70B5F9;
+      --accent-ink: #0E1116;
+      --border: #33383D;
+      --border-strong: #44494E;
+      --gate: #E8846A;
+      --gate-bg: #2A211E;
+      --ok: #9CC284;
+      --ok-bg: #20261C;
+      --card-shadow: 0 0 0 1px rgba(255,255,255,0.07);
+      --cover-a: #0A2540;
+      --cover-b: #0D3157;
+      --cover-line: rgba(255,255,255,0.07);
+      --code-bg: #22272C;
+    }
+  }
+  :root[data-theme="light"] {
+    --ground: #F4F2EE; --paper: #FFFFFF; --ink: #191919; --muted: #666666; --faint: #8C8C8C;
+    --accent: #0A66C2; --accent-ink: #FFFFFF; --border: #E8E5DF; --border-strong: #D6D2CB;
+    --gate: #B24020; --gate-bg: #FBF1EE; --ok: #44712E; --ok-bg: #F0F5EC;
+    --card-shadow: 0 0 0 1px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.05);
+    --cover-a: #0B2E4F; --cover-b: #103E6B; --cover-line: rgba(255,255,255,0.08); --code-bg: #F6F4F0;
+  }
+  :root[data-theme="dark"] {
+    --ground: #111417; --paper: #1B1F23; --ink: #E9EAEB; --muted: #A5A8AB; --faint: #7E8286;
+    --accent: #70B5F9; --accent-ink: #0E1116; --border: #33383D; --border-strong: #44494E;
+    --gate: #E8846A; --gate-bg: #2A211E; --ok: #9CC284; --ok-bg: #20261C;
+    --card-shadow: 0 0 0 1px rgba(255,255,255,0.07);
+    --cover-a: #0A2540; --cover-b: #0D3157; --cover-line: rgba(255,255,255,0.07); --code-bg: #22272C;
+  }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .toolbar {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    max-width: 760px; margin: 0 auto; padding: 14px 20px 4px;
+    font-size: 12px; color: var(--muted);
+  }
+  .toolbar .draft {
+    background: var(--gate); color: #fff; font-weight: 700; letter-spacing: 0.08em;
+    padding: 2px 9px; border-radius: 999px; font-size: 11px;
+  }
+  :root[data-theme="dark"] .toolbar .draft, .toolbar .draft { text-transform: uppercase; }
+  .toolbar .series { font-weight: 600; color: var(--ink); }
+
+  .page { max-width: 760px; margin: 10px auto 60px; padding: 0 12px; }
+
+  .sheet {
+    background: var(--paper); border-radius: 10px; box-shadow: var(--card-shadow);
+    overflow: hidden;
+  }
+
+  /* ── Cover ── */
+  .cover {
+    background:
+      repeating-linear-gradient(90deg, var(--cover-line) 0 1px, transparent 1px 56px),
+      repeating-linear-gradient(0deg, var(--cover-line) 0 1px, transparent 1px 56px),
+      linear-gradient(120deg, var(--cover-a), var(--cover-b));
+    color: #FFFFFF;
+    padding: 56px 48px 44px;
+  }
+  .cover .brand {
+    font-size: 13px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #9FC4E8; margin-bottom: 26px;
+  }
+  .cover h1 {
+    font-size: clamp(28px, 5vw, 42px); line-height: 1.12; margin: 0 0 14px;
+    font-weight: 800; letter-spacing: -0.015em; text-wrap: balance; max-width: 15em;
+  }
+  .cover .sub {
+    font-size: 16px; line-height: 1.55; color: #C9DCEF; max-width: 40em; margin: 0;
+  }
+
+  /* ── Author row ── */
+  .author { display: flex; align-items: center; gap: 12px; padding: 20px 48px; border-bottom: 1px solid var(--border); }
+  .avatar {
+    width: 48px; height: 48px; border-radius: 50%; flex: none;
+    background: linear-gradient(135deg, #0A66C2, #084E94);
+    color: #fff; font-weight: 800; font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .author .who { min-width: 0; }
+  .author .name { font-size: 14px; font-weight: 700; }
+  .author .name span { font-weight: 400; color: var(--muted); }
+  .author .meta { font-size: 12px; color: var(--muted); }
+  .author .follow {
+    margin-left: auto; color: var(--accent); font-weight: 700; font-size: 15px;
+    border: 1px solid var(--accent); border-radius: 999px; padding: 5px 16px; white-space: nowrap;
+  }
+
+  /* ── Article body ── */
+  .article { padding: 8px 48px 20px; }
+  .article > * { max-width: 640px; margin-left: auto; margin-right: auto; }
+  .article p { font-size: 17px; line-height: 1.7; margin: 18px auto; }
+  .article h2 {
+    font-size: 23px; font-weight: 700; letter-spacing: -0.01em;
+    margin: 40px auto 6px; text-wrap: balance;
+  }
+  .article .lede { font-size: 19px; }
+  .article strong { font-weight: 700; }
+  .article em { color: inherit; }
+  .article ol.steps { font-size: 17px; line-height: 1.65; padding-left: 22px; margin: 18px auto; }
+  .article ol.steps li { margin: 9px 0; }
+  .article ul.plain { font-size: 17px; line-height: 1.65; padding-left: 22px; margin: 18px auto; }
+  .article ul.plain li { margin: 7px 0; }
+
+  .pull {
+    border-left: 3px solid var(--accent);
+    padding: 6px 0 6px 22px; margin: 32px auto;
+    font-size: 22px; line-height: 1.45; font-weight: 600; letter-spacing: -0.005em;
+    text-wrap: balance;
+  }
+  .pull .tag { display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+
+  .callout-gate {
+    background: var(--gate-bg); border: 1px solid color-mix(in srgb, var(--gate) 35%, transparent);
+    border-radius: 8px; padding: 16px 20px; margin: 22px auto;
+    font-size: 15.5px; line-height: 1.6;
+  }
+  .callout-gate .label { color: var(--gate); font-weight: 800; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 6px; }
+  .callout-gate code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14px; }
+
+  .formula {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 22px; margin: 22px auto; overflow-x: auto;
+  }
+  .formula table { border-collapse: collapse; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 14.5px; line-height: 2; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .formula td { padding: 0 4px; }
+  .formula td.eq { color: var(--muted); }
+  .formula td.lhs { font-weight: 700; }
+
+  figure.diagram { margin: 26px auto; max-width: 100%; }
+  figure.diagram .frame {
+    background: var(--paper); border: 1px solid var(--border); border-radius: 8px;
+    padding: 18px 12px; overflow-x: auto; display: flex; justify-content: center;
+  }
+  figure.diagram .frame svg { width: 100%; height: auto; max-width: none !important; min-width: 480px; }
+  figure.diagram figcaption { font-size: 13px; color: var(--muted); margin-top: 8px; text-align: center; }
+  pre.mermaid { margin: 0; background: transparent; width: 100%; text-align: center; }
+
+  table.methods {
+    border-collapse: collapse; width: 100%; margin: 20px auto; font-size: 15.5px;
+  }
+  table.methods th, table.methods td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  table.methods th { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  table.methods td:first-child { font-weight: 600; white-space: nowrap; }
+
+  .takeaways {
+    border: 1px solid var(--border-strong); border-radius: 10px; padding: 24px 28px; margin: 30px auto;
+  }
+  .takeaways .label { font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+  .takeaways ol { margin: 8px 0 0; padding-left: 20px; font-size: 16.5px; line-height: 1.6; }
+  .takeaways li { margin: 12px 0; }
+
+  .signoff { font-size: 15px; color: var(--muted); font-style: italic; }
+
+  /* ── Stat band ── */
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px;
+    background: var(--border); border: 1px solid var(--border); border-radius: 10px;
+    overflow: hidden; margin: 28px auto;
+  }
+  .stats .stat { background: var(--paper); padding: 18px 16px; text-align: center; }
+  .stats .num { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; color: var(--accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .stats .lbl { font-size: 12px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+  @media (max-width: 560px) { .stats { grid-template-columns: 1fr; } }
+
+  /* ── Key point bands ── */
+  .keypoint {
+    background: linear-gradient(120deg, var(--cover-a), var(--cover-b));
+    color: #FFFFFF; border-radius: 10px; padding: 26px 30px; margin: 34px auto;
+  }
+  .keypoint .kp-label { font-size: 11px; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9FC4E8; margin-bottom: 8px; }
+  .keypoint .kp-text { font-size: 21px; font-weight: 700; line-height: 1.4; letter-spacing: -0.005em; text-wrap: balance; }
+
+  /* ── Screenshot placeholder ── */
+  .shot {
+    border: 2px dashed var(--border-strong); border-radius: 10px; margin: 24px auto;
+    padding: 34px 20px; text-align: center; color: var(--muted); background: var(--code-bg);
+  }
+  .shot .shot-icon { font-size: 26px; }
+  .shot .shot-title { font-size: 14px; font-weight: 700; color: var(--ink); margin-top: 8px; }
+  .shot .shot-sub { font-size: 12.5px; margin-top: 4px; }
+
+  /* ── Email mock ── */
+  .email-mock { border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden; margin: 24px auto; font-size: 13px; }
+  .email-mock .em-chrome { background: var(--code-bg); border-bottom: 1px solid var(--border); padding: 8px 14px; font-size: 12px; color: var(--muted); display: flex; gap: 8px; align-items: center; }
+  .email-mock .em-chrome .dots { letter-spacing: 2px; color: var(--faint); }
+  .email-mock .em-banner { background: var(--gate); color: #fff; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; font-size: 12px; padding: 10px 16px; }
+  .email-mock table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+  .email-mock th { text-align: left; font-size: 11px; letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted); padding: 10px 14px 6px; border-bottom: 1px solid var(--border); }
+  .email-mock td { padding: 9px 14px; border-bottom: 1px solid var(--border); }
+  .email-mock tr:last-child td { border-bottom: 0; }
+  .pill { display: inline-block; font-size: 11px; font-weight: 800; padding: 2px 10px; border-radius: 999px; letter-spacing: 0.04em; }
+  .pill.shortfall { background: var(--gate-bg); color: var(--gate); }
+  .pill.watch { background: color-mix(in srgb, #B7791F 14%, var(--paper)); color: #B7791F; }
+  .pill.surplus { background: var(--ok-bg); color: var(--ok); }
+  .pill.blocked { background: var(--code-bg); color: var(--muted); }
+
+  /* ── CTA panel ── */
+  .cta {
+    background: linear-gradient(120deg, var(--cover-a), var(--cover-b));
+    border-radius: 10px; color: #FFFFFF; text-align: center;
+    padding: 40px 32px; margin: 34px auto;
+  }
+  .cta h3 { font-size: 24px; font-weight: 800; letter-spacing: -0.01em; margin: 0 0 10px; text-wrap: balance; }
+  .cta p { font-size: 15.5px; line-height: 1.6; color: #C9DCEF; max-width: 34em; margin: 0 auto 22px; }
+  .cta .btn {
+    display: inline-block; background: #FFFFFF; color: #0B2E4F; font-weight: 800; font-size: 15px;
+    border-radius: 999px; padding: 12px 30px;
+  }
+  .cta .alt { display: block; font-size: 13px; color: #9FC4E8; margin-top: 14px; }
+
+  hr.article-rule { border: 0; border-top: 1px solid var(--border); margin: 34px auto; max-width: 640px; }
+
+  /* ── Engagement bar ── */
+  .engage { border-top: 1px solid var(--border); padding: 10px 48px 14px; }
+  .engage .counts { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); padding: 6px 2px 10px; border-bottom: 1px solid var(--border); }
+  .engage .reax { letter-spacing: -3px; font-size: 14px; }
+  .engage .actions { display: flex; justify-content: space-around; padding-top: 6px; }
+  .engage .actions span { display: flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 600; color: var(--muted); padding: 10px 14px; border-radius: 6px; }
+  .engage .actions svg { width: 18px; height: 18px; fill: currentColor; }
+
+  /* ── Section labels between sheets ── */
+  .rail-label {
+    font-size: 12px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--muted); margin: 34px 6px 10px;
+  }
+
+  /* ── Feed teaser card ── */
+  .feed-card { max-width: 555px; margin: 0 auto; }
+  .feed-card .fhead { display: flex; gap: 10px; padding: 14px 16px 6px; }
+  .feed-card .avatar { width: 48px; height: 48px; border-radius: 50%; font-size: 17px; }
+  .feed-card .name { font-size: 14px; font-weight: 700; line-height: 1.3; }
+  .feed-card .meta { font-size: 12px; color: var(--muted); line-height: 1.35; }
+  .feed-card .body { padding: 6px 16px 12px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: break-word; }
+  .feed-card .body .tags { color: var(--accent); font-weight: 600; }
+  .fold {
+    display: flex; align-items: center; gap: 10px; margin: 10px 0;
+    color: var(--gate); font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+  }
+  .fold::before, .fold::after { content: ""; flex: 1; border-top: 2px dashed color-mix(in srgb, var(--gate) 55%, transparent); }
+
+  /* ── Comment ── */
+  .comment { display: flex; gap: 10px; padding: 14px 16px 18px; max-width: 555px; margin: 0 auto; }
+  .comment .avatar { width: 36px; height: 36px; font-size: 13px; }
+  .comment .bubble { background: var(--ground); border-radius: 0 10px 10px 10px; padding: 10px 14px; font-size: 13.5px; line-height: 1.5; }
+  .comment .bubble .cname { font-weight: 700; font-size: 13px; }
+  .comment .bubble .chead { color: var(--muted); font-size: 11.5px; margin-bottom: 6px; }
+  .comment .bubble .link { color: var(--accent); font-weight: 600; }
+
+  /* ── Review rail ── */
+  .review { padding: 18px 22px 22px; }
+  .review .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 7px;
+    border: 1px solid var(--border-strong); border-radius: 999px;
+    font-size: 12.5px; font-weight: 600; padding: 5px 12px; color: var(--ink);
+  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); flex: none; }
+  .chip.info .dot { background: var(--accent); }
+  .review .note { font-size: 13px; color: var(--muted); margin: 14px 2px 0; line-height: 1.55; }
+
+  @media (max-width: 620px) {
+    .cover { padding: 36px 22px 30px; }
+    .author, .article, .engage { padding-left: 22px; padding-right: 22px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .sheet { transition: box-shadow 0.2s ease; }
+  }
+</style>
+
+<div class="toolbar">
+  <span class="draft">Draft preview</span>
+  <span class="series">Fund Ops, Unstacked #1</span>
+  <span>·</span>
+  <span>LinkedIn Article / blog — rendered as it will appear</span>
+</div>
+
+<div class="page">
+  <div class="sheet">
+
+    <header class="cover">
+      <div class="brand">CapHive · Fund Ops, Unstacked</div>
+      <h1>The Cash Flow Agent That Refuses to Answer</h1>
+      <p class="sub">Fund runway and capital call sizing across SPVs — and why the most important feature is a gate that says "not with this data."</p>
+    </header>
+
+    <div class="author">
+      <div class="avatar">CH</div>
+      <div class="who">
+        <div class="name">CapHive <span>· Company</span></div>
+        <div class="meta">Fund administration, built for complex structures</div>
+        <div class="meta">7 min read · Fund Ops, Unstacked #1 · 🌐</div>
+      </div>
+      <div class="follow">+ Follow</div>
+    </div>
+
+    <article class="article">
+      <p class="lede">It's Thursday afternoon. Your CFO needs one number: can Fund II cover next month's deployment without a capital call?</p>
+
+      <p>The number exists — in pieces. Cash sits in the fund's own entity and in three SPVs underneath it. Each has its own ledger. One SPV's balances were last updated… nobody is quite sure when.</p>
+
+      <p>So the answer gets stitched together by hand: exports, a spreadsheet, a few messages to whoever owns each ledger. By the time it's assembled, it's already stale. And the capital call it justifies — its size, its timing — inherits every one of those weaknesses.</p>
+
+      <p>We built an agent for exactly this. And the design decision we're proudest of is not what it computes. <strong>It's when it refuses to.</strong></p>
+
+      <div class="stats">
+        <div class="stat"><div class="num">30 days</div><div class="lbl">default freshness gate on cash data — older, and the fund is blocked</div></div>
+        <div class="stat"><div class="num">90 days</div><div class="lbl">forward window for expenses, runway, and call sizing</div></div>
+        <div class="stat"><div class="num">0</div><div class="lbl">AI models involved in computing the numbers</div></div>
+      </div>
+
+      <h2>Where cash truth actually lives</h2>
+      <p>For a fund of any real structure, "how much cash do we have" is not one query. It's a roll-up:</p>
+      <ul class="plain">
+        <li>The fund's main entity holds accounts.</li>
+        <li>Each SPV underneath it holds accounts.</li>
+        <li>Deployments in the pipeline are committed but not yet wired.</li>
+        <li>A reserve buffer is supposed to stay untouched.</li>
+      </ul>
+      <p>Every one of those moves on its own schedule, maintained by different people. The traditional answer is a quarterly spreadsheet ritual. The failure mode is not that the math is hard — it's that the inputs are quietly out of date.</p>
+
+      <h2>What the agent does</h2>
+      <p>CapHive's Cash Flow Assistant runs on a schedule — weekly or monthly — and for every configured fund:</p>
+      <ol class="steps">
+        <li><strong>Verifies data freshness</strong> for the fund and every SPV under it, against per-fund thresholds you control.</li>
+        <li><strong>Rolls up cash</strong> from the latest balances across all of those entities.</li>
+        <li><strong>Totals upcoming deployments</strong> from the committed-but-unexecuted pipeline.</li>
+        <li><strong>Forecasts 90 days of expenses</strong> from your ledger history.</li>
+        <li><strong>Computes the position</strong>: net position, runway in days, and a status — surplus, watch, or shortfall.</li>
+        <li><strong>Sizes the capital call</strong> for any fund in shortfall.</li>
+        <li><strong>Delivers</strong>: one consolidated email to your team, plus a report filed in each fund's private Reports folder.</li>
+      </ol>
+
+      <figure class="diagram">
+        <div class="frame">
+<svg id="svg-pipeline" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="flowchart" style="max-width: 706.852px; background-color: transparent;" viewBox="0 0 706.8515625 804.75" role="graphics-document document" aria-roledescription="flowchart-v2"><style>#svg-pipeline{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#svg-pipeline .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#svg-pipeline .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#svg-pipeline .error-icon{fill:#552222;}#svg-pipeline .error-text{fill:#552222;stroke:#552222;}#svg-pipeline .edge-thickness-normal{stroke-width:1px;}#svg-pipeline .edge-thickness-thick{stroke-width:3.5px;}#svg-pipeline .edge-pattern-solid{stroke-dasharray:0;}#svg-pipeline .edge-thickness-invisible{stroke-width:0;fill:none;}#svg-pipeline .edge-pattern-dashed{stroke-dasharray:3;}#svg-pipeline .edge-pattern-dotted{stroke-dasharray:2;}#svg-pipeline .marker{fill:#666;stroke:#666;}#svg-pipeline .marker.cross{stroke:#666;}#svg-pipeline svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;}#svg-pipeline p{margin:0;}#svg-pipeline .label{font-family:"trebuchet ms",verdana,arial,sans-serif;color:#000000;}#svg-pipeline .cluster-label text{fill:#333;}#svg-pipeline .cluster-label span{color:#333;}#svg-pipeline .cluster-label span p{background-color:transparent;}#svg-pipeline .label text,#svg-pipeline span{fill:#000000;color:#000000;}#svg-pipeline .node rect,#svg-pipeline .node circle,#svg-pipeline .node ellipse,#svg-pipeline .node polygon,#svg-pipeline .node path{fill:#eee;stroke:#999;stroke-width:1px;}#svg-pipeline .rough-node .label text,#svg-pipeline .node .label text,#svg-pipeline .image-shape .label,#svg-pipeline .icon-shape .label{text-anchor:middle;}#svg-pipeline .node .katex path{fill:#000;stroke:#000;stroke-width:1px;}#svg-pipeline .rough-node .label,#svg-pipeline .node .label,#svg-pipeline .image-shape .label,#svg-pipeline .icon-shape .label{text-align:center;}#svg-pipeline .node.clickable{cursor:pointer;}#svg-pipeline .root .anchor path{fill:#666!important;stroke-width:0;stroke:#666;}#svg-pipeline .arrowheadPath{fill:#333333;}#svg-pipeline .edgePath .path{stroke:#666;stroke-width:1px;}#svg-pipeline .flowchart-link{stroke:#666;fill:none;}#svg-pipeline .edgeLabel{background-color:white;text-align:center;}#svg-pipeline .edgeLabel p{background-color:white;}#svg-pipeline .edgeLabel rect{opacity:0.5;background-color:white;fill:white;}#svg-pipeline .labelBkg{background-color:rgba(255, 255, 255, 0.5);}#svg-pipeline .cluster rect{fill:hsl(0, 0%, 98.9215686275%);stroke:#707070;stroke-width:1px;}#svg-pipeline .cluster text{fill:#333;}#svg-pipeline .cluster span{color:#333;}#svg-pipeline div.mermaidTooltip{position:absolute;text-align:center;max-width:200px;padding:2px;font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:12px;background:hsl(-160, 0%, 93.3333333333%);border:1px solid #707070;border-radius:2px;pointer-events:none;z-index:100;}#svg-pipeline .flowchartTitleText{text-anchor:middle;font-size:18px;fill:#000000;}#svg-pipeline rect.text{fill:none;stroke-width:0;}#svg-pipeline .icon-shape,#svg-pipeline .image-shape{background-color:white;text-align:center;}#svg-pipeline .icon-shape p,#svg-pipeline .image-shape p{background-color:white;padding:2px;}#svg-pipeline .icon-shape .label rect,#svg-pipeline .image-shape .label rect{opacity:0.5;background-color:white;fill:white;}#svg-pipeline .label-icon{display:inline-block;height:1em;overflow:visible;vertical-align:-0.125em;}#svg-pipeline .node .label-icon path{fill:currentColor;stroke:revert;stroke-width:revert;}#svg-pipeline .node .neo-node{stroke:#999;}#svg-pipeline [data-look="neo"].node rect,#svg-pipeline [data-look="neo"].cluster rect,#svg-pipeline [data-look="neo"].node polygon{stroke:url(#svg-pipeline-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-pipeline [data-look="neo"].swimlane.cluster rect{filter:none;}#svg-pipeline [data-look="neo"].node path{stroke:url(#svg-pipeline-gradient);stroke-width:1px;}#svg-pipeline [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-pipeline [data-look="neo"].node .neo-line path{stroke:#999;filter:none;}#svg-pipeline [data-look="neo"].node circle{stroke:url(#svg-pipeline-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-pipeline [data-look="neo"].node circle .state-start{fill:#000000;}#svg-pipeline [data-look="neo"].icon-shape .icon{fill:url(#svg-pipeline-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-pipeline [data-look="neo"].icon-shape .icon-neo path{stroke:url(#svg-pipeline-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-pipeline :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g><marker id="svg-pipeline_flowchart-v2-pointEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-pointStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="4.5" refY="5" markerUnits="userSpaceOnUse" markerWidth="8" markerHeight="8" orient="auto"><path d="M 0 5 L 10 10 L 10 0 z" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-pointEnd-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="11.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="10.5" markerHeight="14" orient="auto"><path d="M 0 0 L 11.5 7 L 0 14 z" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-pointStart-margin" class="marker flowchart-v2" viewBox="0 0 11.5 14" refX="1" refY="7" markerUnits="userSpaceOnUse" markerWidth="11.5" markerHeight="14" orient="auto"><polygon points="0,7 11.5,14 11.5,0" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-circleEnd" class="marker flowchart-v2" viewBox="0 0 10 10" refX="11" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-circleStart" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-1" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 1; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-circleEnd-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refY="5" refX="12.25" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-circleStart-margin" class="marker flowchart-v2" viewBox="0 0 10 10" refX="-2" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto"><circle cx="5" cy="5" r="5" class="arrowMarkerPath" style="stroke-width: 0; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-crossEnd" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="12" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-crossStart" class="marker cross flowchart-v2" viewBox="0 0 11 11" refX="-1" refY="5.2" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto"><path d="M 1,1 l 9,9 M 10,1 l -9,9" class="arrowMarkerPath" style="stroke-width: 2; stroke-dasharray: 1, 0;"/></marker><marker id="svg-pipeline_flowchart-v2-crossEnd-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="17.7" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5;"/></marker><marker id="svg-pipeline_flowchart-v2-crossStart-margin" class="marker cross flowchart-v2" viewBox="0 0 15 15" refX="-3.5" refY="7.5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto"><path d="M 1,1 L 14,14 M 1,14 L 14,1" class="arrowMarkerPath" style="stroke-width: 2.5; stroke-dasharray: 1, 0;"/></marker><g class="root"><g class="clusters"/><g class="edgePaths"><path d="M288,62L288,65.75C288,69.5,288,77,288,83.833C288,90.667,288,96.833,288,99.917L288,103" id="svg-pipeline-L_L_G_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_L_G_0" data-points="W3sieCI6Mjg4LCJ5Ijo2Mn0seyJ4IjoyODgsInkiOjg0LjV9LHsieCI6Mjg4LCJ5IjoxMDd9XQ==" data-look="classic" marker-end="url(#svg-pipeline_flowchart-v2-pointEnd)"/><path d="M235.148,254.898L218.957,269.457C202.765,284.015,170.383,313.133,154.191,334.775C138,356.417,138,370.583,138,377.667L138,384.75" id="svg-pipeline-L_G_B_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_G_B_0" data-points="W3sieCI6MjM1LjE0Nzg3MTg3MzYyODgsInkiOjI1NC44OTc4NzE4NzM2Mjg4fSx7IngiOjEzOCwieSI6MzQyLjI1fSx7IngiOjEzOCwieSI6Mzg4Ljc1fV0=" data-look="classic" marker-end="url(#svg-pipeline_flowchart-v2-pointEnd)"/><path d="M340.852,254.898L357.043,269.457C373.235,284.015,405.617,313.133,421.809,332.775C438,352.417,438,362.583,438,367.667L438,372.75" id="svg-pipeline-L_G_C_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_G_C_0" data-points="W3sieCI6MzQwLjg1MjEyODEyNjM3MTIsInkiOjI1NC44OTc4NzE4NzM2Mjg4fSx7IngiOjQzOCwieSI6MzQyLjI1fSx7IngiOjQzOCwieSI6Mzc2Ljc1fV0=" data-look="classic" marker-end="url(#svg-pipeline_flowchart-v2-pointEnd)"/><path d="M438,502.75L438,506.5C438,510.25,438,517.75,438,524.583C438,531.417,438,537.583,438,540.667L438,543.75" id="svg-pipeline-L_C_R_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_C_R_0" data-points="W3sieCI6NDM4LCJ5Ijo1MDIuNzV9LHsieCI6NDM4LCJ5Ijo1MjUuMjV9LHsieCI6NDM4LCJ5Ijo1NDcuNzV9XQ==" data-look="classic" marker-end="url(#svg-pipeline_flowchart-v2-pointEnd)"/><path d="M337.024,673.75L331.013,677.5C325.003,681.25,312.982,688.75,306.971,695.583C300.961,702.417,300.961,708.583,300.961,711.667L300.961,714.75" id="svg-pipeline-L_R_E_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_R_E_0" data-points="W3sieCI6MzM3LjAyMzg0ODY4NDIxMDUsInkiOjY3My43NX0seyJ4IjozMDAuOTYwOTM3NSwieSI6Njk2LjI1fSx7IngiOjMwMC45NjA5Mzc1LCJ5Ijo3MTguNzV9XQ==" data-look="classic" marker-end="url(#svg-pipeline_flowchart-v2-pointEnd)"/><path d="M538.976,673.75L544.987,677.5C550.997,681.25,563.018,688.75,569.029,695.583C575.039,702.417,575.039,708.583,575.039,711.667L575.039,714.75" id="svg-pipeline-L_R_W_0" class="edge-thickness-normal edge-pattern-solid edge-thickness-normal edge-pattern-solid flowchart-link" style=";" data-edge="true" data-et="edge" data-id="L_R_W_0" data-points="W3sieCI6NTM4Ljk3NjE1MTMxNTc4OTUsInkiOjY3My43NX0seyJ4Ijo1NzUuMDM5MDYyNSwieSI6Njk2LjI1fSx7IngiOjU3NS4wMzkwNjI1LCJ5Ijo3MTguNzV9XQ==" data-look="classic" marker-end="url(#svg-pipeline_flowchart-v2-pointEnd)"/></g><g class="edgeLabels"><g class="edgeLabel"><g class="label" data-id="L_L_G_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(138, 342.25)"><g class="label" data-id="L_G_B_0" transform="translate(-16.8984375, -12)"><foreignObject width="33.796875" height="24"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"><p>stale</p></span></div></foreignObject></g></g><g class="edgeLabel" transform="translate(438, 342.25)"><g class="label" data-id="L_G_C_0" transform="translate(-17.7890625, -12)"><foreignObject width="35.578125" height="24"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"><p>fresh</p></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_C_R_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_R_E_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g><g class="edgeLabel"><g class="label" data-id="L_R_W_0" transform="translate(0, 0)"><foreignObject width="0" height="0"><div xmlns="http://www.w3.org/1999/xhtml" class="labelBkg" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="edgeLabel"></span></div></foreignObject></g></g></g><g class="nodes"><g class="node default" id="svg-pipeline-flowchart-L-0" data-look="classic" transform="translate(288, 35)"><rect class="basic label-container" style="" x="-116.0546875" y="-27" width="232.109375" height="54"/><g class="label" style="" transform="translate(-86.0546875, -12)"><rect/><foreignObject width="172.109375" height="24"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel"><p>Ledgers — fund + SPVs</p></span></div></foreignObject></g></g><g class="node default" id="svg-pipeline-flowchart-G-1" data-look="classic" transform="translate(288, 207.375)"><polygon points="100.375,0 200.75,-100.375 100.375,-200.75 0,-100.375" class="label-container" transform="translate(-99.875, 100.375)"/><g class="label" style="" transform="translate(-61.375, -24)"><rect/><foreignObject width="122.75" height="48"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel"><p>Staleness gate<br />is the data fresh?</p></span></div></foreignObject></g></g><g class="node default" id="svg-pipeline-flowchart-B-3" data-look="classic" transform="translate(138, 439.75)"><rect class="basic label-container" style="" x="-130" y="-51" width="260" height="102"/><g class="label" style="" transform="translate(-100, -36)"><rect/><foreignObject width="200" height="72"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"><span class="nodeLabel"><p>Fund BLOCKED<br />fix-it email sent days in advance</p></span></div></foreignObject></g></g><g class="node default" id="svg-pipeline-flowchart-C-5" data-look="classic" transform="translate(438, 439.75)"><rect class="basic label-container" style="" x="-130" y="-63" width="260" height="126"/><g class="label" style="" transform="translate(-100, -48)"><rect/><foreignObject width="200" height="96"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"><span class="nodeLabel"><p>Deterministic math<br />cash · 90-day expenses · buffer<br />(no AI in the numbers)</p></span></div></foreignObject></g></g><g class="node default" id="svg-pipeline-flowchart-R-7" data-look="classic" transform="translate(438, 610.75)"><rect class="basic label-container" style="" x="-130" y="-63" width="260" height="126"/><g class="label" style="" transform="translate(-100, -48)"><rect/><foreignObject width="200" height="96"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table; white-space: break-spaces; line-height: 1.5; max-width: 200px; text-align: center; width: 200px;"><span class="nodeLabel"><p>Net position · runway in days<br />surplus / watch / shortfall<br />recommended capital call</p></span></div></foreignObject></g></g><g class="node default" id="svg-pipeline-flowchart-E-9" data-look="classic" transform="translate(300.9609375, 757.75)"><rect class="basic label-container" style="" x="-110.265625" y="-39" width="220.53125" height="78"/><g class="label" style="" transform="translate(-80.265625, -24)"><rect/><foreignObject width="160.53125" height="48"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel"><p>📧 Consolidated email<br />+ report in fund folder</p></span></div></foreignObject></g></g><g class="node default" id="svg-pipeline-flowchart-W-11" data-look="classic" transform="translate(575.0390625, 757.75)"><rect class="basic label-container" style="" x="-123.8125" y="-39" width="247.625" height="78"/><g class="label" style="" transform="translate(-93.8125, -24)"><rect/><foreignObject width="187.625" height="48"><div xmlns="http://www.w3.org/1999/xhtml" style="display: table-cell; white-space: nowrap; line-height: 1.5; max-width: 200px; text-align: center;"><span class="nodeLabel"><p>💬 Chat: what-if scenarios<br />via deterministic calculator</p></span></div></foreignObject></g></g></g></g></g><defs><filter id="svg-pipeline-drop-shadow" height="130%" width="130%"><feDropShadow dx="4" dy="4" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><defs><filter id="svg-pipeline-drop-shadow-small" height="150%" width="150%"><feDropShadow dx="2" dy="2" stdDeviation="0" flood-opacity="0.06" flood-color="#000000"/></filter></defs><linearGradient id="svg-pipeline-gradient" gradientUnits="objectBoundingBox" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="hsl(0, 0%, 83.3333333333%)" stop-opacity="1"/><stop offset="100%" stop-color="hsl(0, 0%, 88.9215686275%)" stop-opacity="1"/></linearGradient></svg>
+        </div>
+        <figcaption>The run pipeline: freshness first, math second, delivery last.</figcaption>
+      </figure>
+
+      <div class="pull">
+        <span class="tag">Key line</span>
+        A confident answer computed on stale data is worse than no answer at all.
+      </div>
+
+      <h2>The staleness gate</h2>
+      <p>Here is the feature that matters most, and the one you won't see demoed often.</p>
+      <p>Before the agent computes anything, it checks how fresh the underlying data is — for the fund's entity <em>and every SPV under it</em>. Cash balances older than the fund's threshold (30 days by default), or a deployment pipeline that hasn't been updated within its own threshold? That fund is <strong>blocked</strong> for the run.</p>
+      <p>Blocked means blocked. No partial numbers, no "best effort" runway, no silently dropping one SPV from the total. And the report says exactly why:</p>
+      <div class="callout-gate">
+        <span class="label">Fund II — blocked this run</span>
+        <code>Entity "Fund II SPV-3": cash data is 45 days old, maximum allowed is 30.</code>
+      </div>
+      <p>That is a deliberately uncomfortable design. A dashboard that always shows a number feels better — right up until a capital call gets sized off a balance that was true six weeks ago.</p>
+
+      <div class="keypoint">
+        <div class="kp-label">Key point 01</div>
+        <div class="kp-text">Freshness is a gate, not a warning. A warning gets ignored on a busy Thursday; a gate cannot be.</div>
+      </div>
+
+      <h2>It warns you before it blocks you</h2>
+      <p>A gate alone would just move the frustration: run day arrives, half the funds are blocked, everyone scrambles.</p>
+      <p>So the agent works ahead of its own schedule. In the days before each scheduled run, it checks freshness daily and emails the team a preview: which funds would be blocked if the run happened now, and precisely which entity's data is the problem. The stale ledger gets updated <em>before</em> the run, and the report arrives complete.</p>
+      <p>Deadline pressure, applied automatically, while there's still time to act.</p>
+
+      <div class="shot">
+        <div class="shot-icon">🖼️</div>
+        <div class="shot-title">Product screenshot placeholder</div>
+        <div class="shot-sub">Drop in: the staleness reminder email — fund-by-fund freshness preview, days before the scheduled run</div>
+      </div>
+
+      <h2>No AI in the numbers</h2>
+      <p>Underneath, this agent is deliberately boring — and that's the point. The figures are pure, deterministic ledger arithmetic. No AI model ever touches them:</p>
+      <div class="formula">
+        <table>
+          <tr><td class="lhs">Net position</td><td class="eq">=</td><td>Cash − Deployments − 90-day expenses − Buffer</td></tr>
+          <tr><td class="lhs">Runway (days)</td><td class="eq">=</td><td>Cash ÷ average daily outflow</td></tr>
+          <tr><td class="lhs">Recommended call</td><td class="eq">=</td><td>|shortfall| + buffer&nbsp;&nbsp;<em>(shortfall funds only)</em></td></tr>
+        </table>
+      </div>
+      <p>Same inputs, same answer, every time — and every figure traces back to identifiable ledger entries. Note the capital call formula: it doesn't just plug the hole, it restores the reserve too — because a call that only covers the gap leaves you exposed the following quarter.</p>
+      <p>Statuses are just as mechanical: <strong>shortfall</strong> if the net position is negative, <strong>watch</strong> if runway is under 90 days, <strong>surplus</strong> otherwise.</p>
+
+      <div class="keypoint">
+        <div class="kp-label">Key point 02</div>
+        <div class="kp-text">If a number moves money, it must be reproducible. Same inputs, same answer, traceable to the ledger.</div>
+      </div>
+
+      <h2>The AI is only the interface</h2>
+      <p>There <em>is</em> an AI layer — as the conversation, never the calculator.</p>
+      <p>A chat assistant sits on top of the latest run, so anyone on the team can ask "Which funds are running low?" or "Show me the cash breakdown for Fund II" in plain language, and get an answer grounded in the most recent completed report.</p>
+      <p>And for hypotheticals — "What if the Acme deal falls through?", "What if we call more capital?", "What if expenses run 20% hot?" — the assistant is <strong>required</strong> to invoke a deterministic scenario calculator that re-runs the real formulas against the real baseline with your hypothetical adjustments applied. The language model is never allowed to do the arithmetic itself.</p>
+
+      <figure class="diagram">
+        <div class="frame">
+<svg id="svg-whatif" width="100%" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="max-width: 917px; background-color: transparent;" viewBox="-50 -10 917 471" role="graphics-document document" aria-roledescription="sequence"><g><rect x="667" y="385" fill="#eaeaea" stroke="#666" width="150" height="65" name="D" rx="3" ry="3" class="actor actor-bottom"/><text x="742" y="417.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="742" dy="0">Baseline</tspan></text></g><g><rect x="467" y="385" fill="#eaeaea" stroke="#666" width="150" height="65" name="T" rx="3" ry="3" class="actor actor-bottom"/><text x="542" y="417.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="542" dy="0">Calculator (code)</tspan></text></g><g><rect x="265" y="385" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-bottom"/><text x="340" y="417.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="340" dy="0">Chat (LLM)</tspan></text></g><g><rect x="0" y="385" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-bottom"/><text x="75" y="417.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">CFO</tspan></text></g><g><line id="actor3" x1="742" y1="65" x2="742" y2="385" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="D" data-et="life-line" data-id="D"/><g id="root-3" data-et="participant" data-type="participant" data-id="D"><rect x="667" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="D" rx="3" ry="3" class="actor actor-top"/><text x="742" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="742" dy="0">Baseline</tspan></text></g></g><g><line id="actor2" x1="542" y1="65" x2="542" y2="385" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="T" data-et="life-line" data-id="T"/><g id="root-2" data-et="participant" data-type="participant" data-id="T"><rect x="467" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="T" rx="3" ry="3" class="actor actor-top"/><text x="542" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="542" dy="0">Calculator (code)</tspan></text></g></g><g><line id="actor1" x1="340" y1="65" x2="340" y2="385" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="A" data-et="life-line" data-id="A"/><g id="root-1" data-et="participant" data-type="participant" data-id="A"><rect x="265" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="A" rx="3" ry="3" class="actor actor-top"/><text x="340" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="340" dy="0">Chat (LLM)</tspan></text></g></g><g><line id="actor0" x1="75" y1="65" x2="75" y2="385" class="actor-line 200" stroke-width="0.5px" stroke="#999" name="U" data-et="life-line" data-id="U"/><g id="root-0" data-et="participant" data-type="participant" data-id="U"><rect x="0" y="0" fill="#eaeaea" stroke="#666" width="150" height="65" name="U" rx="3" ry="3" class="actor actor-top"/><text x="75" y="32.5" dominant-baseline="central" alignment-baseline="central" class="actor actor-box" style="text-anchor: middle; font-size: 16px; font-weight: 400;"><tspan x="75" dy="0">CFO</tspan></text></g></g><style>#svg-whatif{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;fill:#000000;}@keyframes edge-animation-frame{from{stroke-dashoffset:0;}}@keyframes dash{to{stroke-dashoffset:0;}}#svg-whatif .edge-animation-slow{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 50s linear infinite;stroke-linecap:round;}#svg-whatif .edge-animation-fast{stroke-dasharray:9,5!important;stroke-dashoffset:900;animation:dash 20s linear infinite;stroke-linecap:round;}#svg-whatif .error-icon{fill:#552222;}#svg-whatif .error-text{fill:#552222;stroke:#552222;}#svg-whatif .edge-thickness-normal{stroke-width:1px;}#svg-whatif .edge-thickness-thick{stroke-width:3.5px;}#svg-whatif .edge-pattern-solid{stroke-dasharray:0;}#svg-whatif .edge-thickness-invisible{stroke-width:0;fill:none;}#svg-whatif .edge-pattern-dashed{stroke-dasharray:3;}#svg-whatif .edge-pattern-dotted{stroke-dasharray:2;}#svg-whatif .marker{fill:#666;stroke:#666;}#svg-whatif .marker.cross{stroke:#666;}#svg-whatif svg{font-family:"trebuchet ms",verdana,arial,sans-serif;font-size:16px;}#svg-whatif p{margin:0;}#svg-whatif .actor{stroke:hsl(0, 0%, 83%);fill:#eee;stroke-width:1;}#svg-whatif rect.actor.outer-path[data-look="neo"]{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-whatif rect.note[data-look="neo"]{stroke:#999;fill:#666;filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-whatif text.actor&gt;tspan{fill:#333;stroke:none;}#svg-whatif .actor-line{stroke:hsl(0, 0%, 83%);}#svg-whatif .innerArc{stroke-width:1.5;stroke-dasharray:none;}#svg-whatif .messageLine0{stroke-width:1.5;stroke-dasharray:none;stroke:#333;}#svg-whatif .messageLine1{stroke-width:1.5;stroke-dasharray:2,2;stroke:#333;}#svg-whatif [id$="-arrowhead"] path{fill:#333;stroke:#333;}#svg-whatif .sequenceNumber{fill:white;}#svg-whatif [id$="-sequencenumber"]{fill:#333;}#svg-whatif [id$="-crosshead"] path{fill:#333;stroke:#333;}#svg-whatif .messageText{fill:#333;stroke:none;}#svg-whatif .labelBox{stroke:hsl(0, 0%, 83%);fill:#eee;filter:none;}#svg-whatif .labelText,#svg-whatif .labelText&gt;tspan{fill:#333;stroke:none;}#svg-whatif .loopText,#svg-whatif .loopText&gt;tspan{fill:#333;stroke:none;}#svg-whatif .sectionTitle,#svg-whatif .sectionTitle&gt;tspan{fill:#333;stroke:none;}#svg-whatif .loopLine{stroke-width:2px;stroke-dasharray:2,2;stroke:hsl(0, 0%, 83%);fill:hsl(0, 0%, 83%);}#svg-whatif .note{stroke:#999;fill:#666;}#svg-whatif .noteText,#svg-whatif .noteText&gt;tspan{fill:#fff;stroke:none;font-weight:normal;}#svg-whatif .activation0{fill:#f4f4f4;stroke:#666;}#svg-whatif .activation1{fill:#f4f4f4;stroke:#666;}#svg-whatif .activation2{fill:#f4f4f4;stroke:#666;}#svg-whatif .actorPopupMenu{position:absolute;}#svg-whatif .actorPopupMenuPanel{position:absolute;fill:#eee;box-shadow:0px 8px 16px 0px rgba(0,0,0,0.2);filter:drop-shadow(3px 5px 2px rgb(0 0 0 / 0.4));}#svg-whatif .actor-man circle,#svg-whatif line{fill:#eee;stroke-width:2px;}#svg-whatif g rect.rect{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));stroke:#999;}#svg-whatif .node .neo-node{stroke:#999;}#svg-whatif [data-look="neo"].node rect,#svg-whatif [data-look="neo"].cluster rect,#svg-whatif [data-look="neo"].node polygon{stroke:url(#svg-whatif-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-whatif [data-look="neo"].swimlane.cluster rect{filter:none;}#svg-whatif [data-look="neo"].node path{stroke:url(#svg-whatif-gradient);stroke-width:1px;}#svg-whatif [data-look="neo"].node .outer-path{filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-whatif [data-look="neo"].node .neo-line path{stroke:#999;filter:none;}#svg-whatif [data-look="neo"].node circle{stroke:url(#svg-whatif-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-whatif [data-look="neo"].node circle .state-start{fill:#000000;}#svg-whatif [data-look="neo"].icon-shape .icon{fill:url(#svg-whatif-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-whatif [data-look="neo"].icon-shape .icon-neo path{stroke:url(#svg-whatif-gradient);filter:drop-shadow( 1px 2px 2px rgba(185,185,185,1));}#svg-whatif :root{--mermaid-font-family:"trebuchet ms",verdana,arial,sans-serif;}</style><g/><defs><symbol id="svg-whatif-computer" width="24" height="24"><path transform="scale(.5)" d="M2 2v13h20v-13h-20zm18 11h-16v-9h16v9zm-10.228 6l.466-1h3.524l.467 1h-4.457zm14.228 3h-24l2-6h2.104l-1.33 4h18.45l-1.297-4h2.073l2 6zm-5-10h-14v-7h14v7z"/></symbol></defs><defs><symbol id="svg-whatif-database" fill-rule="evenodd" clip-rule="evenodd"><path transform="scale(.5)" d="M12.258.001l.256.004.255.005.253.008.251.01.249.012.247.015.246.016.242.019.241.02.239.023.236.024.233.027.231.028.229.031.225.032.223.034.22.036.217.038.214.04.211.041.208.043.205.045.201.046.198.048.194.05.191.051.187.053.183.054.18.056.175.057.172.059.168.06.163.061.16.063.155.064.15.066.074.033.073.033.071.034.07.034.069.035.068.035.067.035.066.035.064.036.064.036.062.036.06.036.06.037.058.037.058.037.055.038.055.038.053.038.052.038.051.039.05.039.048.039.047.039.045.04.044.04.043.04.041.04.04.041.039.041.037.041.036.041.034.041.033.042.032.042.03.042.029.042.027.042.026.043.024.043.023.043.021.043.02.043.018.044.017.043.015.044.013.044.012.044.011.045.009.044.007.045.006.045.004.045.002.045.001.045v17l-.001.045-.002.045-.004.045-.006.045-.007.045-.009.044-.011.045-.012.044-.013.044-.015.044-.017.043-.018.044-.02.043-.021.043-.023.043-.024.043-.026.043-.027.042-.029.042-.03.042-.032.042-.033.042-.034.041-.036.041-.037.041-.039.041-.04.041-.041.04-.043.04-.044.04-.045.04-.047.039-.048.039-.05.039-.051.039-.052.038-.053.038-.055.038-.055.038-.058.037-.058.037-.06.037-.06.036-.062.036-.064.036-.064.036-.066.035-.067.035-.068.035-.069.035-.07.034-.071.034-.073.033-.074.033-.15.066-.155.064-.16.063-.163.061-.168.06-.172.059-.175.057-.18.056-.183.054-.187.053-.191.051-.194.05-.198.048-.201.046-.205.045-.208.043-.211.041-.214.04-.217.038-.22.036-.223.034-.225.032-.229.031-.231.028-.233.027-.236.024-.239.023-.241.02-.242.019-.246.016-.247.015-.249.012-.251.01-.253.008-.255.005-.256.004-.258.001-.258-.001-.256-.004-.255-.005-.253-.008-.251-.01-.249-.012-.247-.015-.245-.016-.243-.019-.241-.02-.238-.023-.236-.024-.234-.027-.231-.028-.228-.031-.226-.032-.223-.034-.22-.036-.217-.038-.214-.04-.211-.041-.208-.043-.204-.045-.201-.046-.198-.048-.195-.05-.19-.051-.187-.053-.184-.054-.179-.056-.176-.057-.172-.059-.167-.06-.164-.061-.159-.063-.155-.064-.151-.066-.074-.033-.072-.033-.072-.034-.07-.034-.069-.035-.068-.035-.067-.035-.066-.035-.064-.036-.063-.036-.062-.036-.061-.036-.06-.037-.058-.037-.057-.037-.056-.038-.055-.038-.053-.038-.052-.038-.051-.039-.049-.039-.049-.039-.046-.039-.046-.04-.044-.04-.043-.04-.041-.04-.04-.041-.039-.041-.037-.041-.036-.041-.034-.041-.033-.042-.032-.042-.03-.042-.029-.042-.027-.042-.026-.043-.024-.043-.023-.043-.021-.043-.02-.043-.018-.044-.017-.043-.015-.044-.013-.044-.012-.044-.011-.045-.009-.044-.007-.045-.006-.045-.004-.045-.002-.045-.001-.045v-17l.001-.045.002-.045.004-.045.006-.045.007-.045.009-.044.011-.045.012-.044.013-.044.015-.044.017-.043.018-.044.02-.043.021-.043.023-.043.024-.043.026-.043.027-.042.029-.042.03-.042.032-.042.033-.042.034-.041.036-.041.037-.041.039-.041.04-.041.041-.04.043-.04.044-.04.046-.04.046-.039.049-.039.049-.039.051-.039.052-.038.053-.038.055-.038.056-.038.057-.037.058-.037.06-.037.061-.036.062-.036.063-.036.064-.036.066-.035.067-.035.068-.035.069-.035.07-.034.072-.034.072-.033.074-.033.151-.066.155-.064.159-.063.164-.061.167-.06.172-.059.176-.057.179-.056.184-.054.187-.053.19-.051.195-.05.198-.048.201-.046.204-.045.208-.043.211-.041.214-.04.217-.038.22-.036.223-.034.226-.032.228-.031.231-.028.234-.027.236-.024.238-.023.241-.02.243-.019.245-.016.247-.015.249-.012.251-.01.253-.008.255-.005.256-.004.258-.001.258.001zm-9.258 20.499v.01l.001.021.003.021.004.022.005.021.006.022.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.023.018.024.019.024.021.024.022.025.023.024.024.025.052.049.056.05.061.051.066.051.07.051.075.051.079.052.084.052.088.052.092.052.097.052.102.051.105.052.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.048.144.049.147.047.152.047.155.047.16.045.163.045.167.043.171.043.176.041.178.041.183.039.187.039.19.037.194.035.197.035.202.033.204.031.209.03.212.029.216.027.219.025.222.024.226.021.23.02.233.018.236.016.24.015.243.012.246.01.249.008.253.005.256.004.259.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.021.224-.024.22-.026.216-.027.212-.028.21-.031.205-.031.202-.034.198-.034.194-.036.191-.037.187-.039.183-.04.179-.04.175-.042.172-.043.168-.044.163-.045.16-.046.155-.046.152-.047.148-.048.143-.049.139-.049.136-.05.131-.05.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.053.083-.051.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.05.023-.024.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.023.01-.022.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.127l-.077.055-.08.053-.083.054-.085.053-.087.052-.09.052-.093.051-.095.05-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.045-.118.044-.12.043-.122.042-.124.042-.126.041-.128.04-.13.04-.132.038-.134.038-.135.037-.138.037-.139.035-.142.035-.143.034-.144.033-.147.032-.148.031-.15.03-.151.03-.153.029-.154.027-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.01-.179.008-.179.008-.181.006-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.006-.179-.008-.179-.008-.178-.01-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.027-.153-.029-.151-.03-.15-.03-.148-.031-.146-.032-.145-.033-.143-.034-.141-.035-.14-.035-.137-.037-.136-.037-.134-.038-.132-.038-.13-.04-.128-.04-.126-.041-.124-.042-.122-.042-.12-.044-.117-.043-.116-.045-.113-.045-.112-.046-.109-.047-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.05-.093-.052-.09-.051-.087-.052-.085-.053-.083-.054-.08-.054-.077-.054v4.127zm0-5.654v.011l.001.021.003.021.004.021.005.022.006.022.007.022.009.022.01.022.011.023.012.023.013.023.015.024.016.023.017.024.018.024.019.024.021.024.022.024.023.025.024.024.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.052.11.051.114.051.119.052.123.05.127.051.131.05.135.049.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.044.171.042.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.022.23.02.233.018.236.016.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.012.241-.015.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.048.139-.05.136-.049.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.051.051-.049.023-.025.023-.024.021-.025.02-.024.019-.024.018-.024.017-.024.015-.023.014-.023.013-.024.012-.022.01-.023.01-.023.008-.022.006-.022.006-.022.004-.021.004-.022.001-.021.001-.021v-4.139l-.077.054-.08.054-.083.054-.085.052-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.049-.105.048-.106.047-.109.047-.111.046-.114.045-.115.044-.118.044-.12.044-.122.042-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.035-.143.033-.144.033-.147.033-.148.031-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.025-.161.024-.162.023-.163.022-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.011-.178.009-.179.009-.179.007-.181.007-.182.005-.182.004-.184.003-.184.002h-.37l-.184-.002-.184-.003-.182-.004-.182-.005-.181-.007-.179-.007-.179-.009-.178-.009-.176-.011-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.022-.162-.023-.161-.024-.159-.025-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.031-.146-.033-.145-.033-.143-.033-.141-.035-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.04-.126-.041-.124-.042-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.047-.105-.048-.102-.049-.1-.049-.097-.05-.095-.051-.093-.051-.09-.051-.087-.053-.085-.052-.083-.054-.08-.054-.077-.054v4.139zm0-5.666v.011l.001.02.003.022.004.021.005.022.006.021.007.022.009.023.01.022.011.023.012.023.013.023.015.023.016.024.017.024.018.023.019.024.021.025.022.024.023.024.024.025.052.05.056.05.061.05.066.051.07.051.075.052.079.051.084.052.088.052.092.052.097.052.102.052.105.051.11.052.114.051.119.051.123.051.127.05.131.05.135.05.139.049.144.048.147.048.152.047.155.046.16.045.163.045.167.043.171.043.176.042.178.04.183.04.187.038.19.037.194.036.197.034.202.033.204.032.209.03.212.028.216.027.219.025.222.024.226.021.23.02.233.018.236.017.24.014.243.012.246.01.249.008.253.006.256.003.259.001.26-.001.257-.003.254-.006.25-.008.247-.01.244-.013.241-.014.237-.016.233-.018.231-.02.226-.022.224-.024.22-.025.216-.027.212-.029.21-.03.205-.032.202-.033.198-.035.194-.036.191-.037.187-.039.183-.039.179-.041.175-.042.172-.043.168-.044.163-.045.16-.045.155-.047.152-.047.148-.048.143-.049.139-.049.136-.049.131-.051.126-.05.123-.051.118-.052.114-.051.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.052.07-.051.065-.051.06-.051.056-.05.051-.049.023-.025.023-.025.021-.024.02-.024.019-.024.018-.024.017-.024.015-.023.014-.024.013-.023.012-.023.01-.022.01-.023.008-.022.006-.022.006-.022.004-.022.004-.021.001-.021.001-.021v-4.153l-.077.054-.08.054-.083.053-.085.053-.087.053-.09.051-.093.051-.095.051-.097.05-.1.049-.102.048-.105.048-.106.048-.109.046-.111.046-.114.046-.115.044-.118.044-.12.043-.122.043-.124.042-.126.041-.128.04-.13.039-.132.039-.134.038-.135.037-.138.036-.139.036-.142.034-.143.034-.144.033-.147.032-.148.032-.15.03-.151.03-.153.028-.154.028-.156.027-.158.026-.159.024-.161.024-.162.023-.163.023-.165.021-.166.02-.167.019-.169.018-.169.017-.171.016-.173.015-.173.014-.175.013-.175.012-.177.01-.178.01-.179.009-.179.007-.181.006-.182.006-.182.004-.184.003-.184.001-.185.001-.185-.001-.184-.001-.184-.003-.182-.004-.182-.006-.181-.006-.179-.007-.179-.009-.178-.01-.176-.01-.176-.012-.175-.013-.173-.014-.172-.015-.171-.016-.17-.017-.169-.018-.167-.019-.166-.02-.165-.021-.163-.023-.162-.023-.161-.024-.159-.024-.157-.026-.156-.027-.155-.028-.153-.028-.151-.03-.15-.03-.148-.032-.146-.032-.145-.033-.143-.034-.141-.034-.14-.036-.137-.036-.136-.037-.134-.038-.132-.039-.13-.039-.128-.041-.126-.041-.124-.041-.122-.043-.12-.043-.117-.044-.116-.044-.113-.046-.112-.046-.109-.046-.106-.048-.105-.048-.102-.048-.1-.05-.097-.049-.095-.051-.093-.051-.09-.052-.087-.052-.085-.053-.083-.053-.08-.054-.077-.054v4.153zm8.74-8.179l-.257.004-.254.005-.25.008-.247.011-.244.012-.241.014-.237.016-.233.018-.231.021-.226.022-.224.023-.22.026-.216.027-.212.028-.21.031-.205.032-.202.033-.198.034-.194.036-.191.038-.187.038-.183.04-.179.041-.175.042-.172.043-.168.043-.163.045-.16.046-.155.046-.152.048-.148.048-.143.048-.139.049-.136.05-.131.05-.126.051-.123.051-.118.051-.114.052-.11.052-.106.052-.101.052-.096.052-.092.052-.088.052-.083.052-.079.052-.074.051-.07.052-.065.051-.06.05-.056.05-.051.05-.023.025-.023.024-.021.024-.02.025-.019.024-.018.024-.017.023-.015.024-.014.023-.013.023-.012.023-.01.023-.01.022-.008.022-.006.023-.006.021-.004.022-.004.021-.001.021-.001.021.001.021.001.021.004.021.004.022.006.021.006.023.008.022.01.022.01.023.012.023.013.023.014.023.015.024.017.023.018.024.019.024.02.025.021.024.023.024.023.025.051.05.056.05.06.05.065.051.07.052.074.051.079.052.083.052.088.052.092.052.096.052.101.052.106.052.11.052.114.052.118.051.123.051.126.051.131.05.136.05.139.049.143.048.148.048.152.048.155.046.16.046.163.045.168.043.172.043.175.042.179.041.183.04.187.038.191.038.194.036.198.034.202.033.205.032.21.031.212.028.216.027.22.026.224.023.226.022.231.021.233.018.237.016.241.014.244.012.247.011.25.008.254.005.257.004.26.001.26-.001.257-.004.254-.005.25-.008.247-.011.244-.012.241-.014.237-.016.233-.018.231-.021.226-.022.224-.023.22-.026.216-.027.212-.028.21-.031.205-.032.202-.033.198-.034.194-.036.191-.038.187-.038.183-.04.179-.041.175-.042.172-.043.168-.043.163-.045.16-.046.155-.046.152-.048.148-.048.143-.048.139-.049.136-.05.131-.05.126-.051.123-.051.118-.051.114-.052.11-.052.106-.052.101-.052.096-.052.092-.052.088-.052.083-.052.079-.052.074-.051.07-.052.065-.051.06-.05.056-.05.051-.05.023-.025.023-.024.021-.024.02-.025.019-.024.018-.024.017-.023.015-.024.014-.023.013-.023.012-.023.01-.023.01-.022.008-.022.006-.023.006-.021.004-.022.004-.021.001-.021.001-.021-.001-.021-.001-.021-.004-.021-.004-.022-.006-.021-.006-.023-.008-.022-.01-.022-.01-.023-.012-.023-.013-.023-.014-.023-.015-.024-.017-.023-.018-.024-.019-.024-.02-.025-.021-.024-.023-.024-.023-.025-.051-.05-.056-.05-.06-.05-.065-.051-.07-.052-.074-.051-.079-.052-.083-.052-.088-.052-.092-.052-.096-.052-.101-.052-.106-.052-.11-.052-.114-.052-.118-.051-.123-.051-.126-.051-.131-.05-.136-.05-.139-.049-.143-.048-.148-.048-.152-.048-.155-.046-.16-.046-.163-.045-.168-.043-.172-.043-.175-.042-.179-.041-.183-.04-.187-.038-.191-.038-.194-.036-.198-.034-.202-.033-.205-.032-.21-.031-.212-.028-.216-.027-.22-.026-.224-.023-.226-.022-.231-.021-.233-.018-.237-.016-.241-.014-.244-.012-.247-.011-.25-.008-.254-.005-.257-.004-.26-.001-.26.001z"/></symbol></defs><defs><symbol id="svg-whatif-clock" width="24" height="24"><path transform="scale(.5)" d="M12 2c5.514 0 10 4.486 10 10s-4.486 10-10 10-10-4.486-10-10 4.486-10 10-10zm0-2c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.848 12.459c.202.038.202.333.001.372-1.907.361-6.045 1.111-6.547 1.111-.719 0-1.301-.582-1.301-1.301 0-.512.77-5.447 1.125-7.445.034-.192.312-.181.343.014l.985 6.238 5.394 1.011z"/></symbol></defs><defs><marker id="svg-whatif-arrowhead" refX="7.9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M -1 0 L 10 5 L 0 10 z"/></marker></defs><defs><marker id="svg-whatif-crosshead" markerWidth="15" markerHeight="8" orient="auto" refX="4" refY="4.5"><path fill="none" stroke="#000000" stroke-width="1pt" d="M 1,2 L 6,7 M 6,2 L 1,7" style="stroke-dasharray: 0, 0;"/></marker></defs><defs><marker id="svg-whatif-filled-head" refX="15.5" refY="7" markerWidth="20" markerHeight="28" orient="auto"><path d="M 18,7 L9,13 L14,7 L9,1 Z"/></marker></defs><defs><marker id="svg-whatif-sequencenumber" refX="15" refY="15" markerWidth="60" markerHeight="40" orient="auto"><circle cx="15" cy="15" r="6"/></marker></defs><defs><marker id="svg-whatif-solidTopArrowHead" refX="7.9" refY="7.25" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 8 L 0 8 z"/></marker></defs><defs><marker id="svg-whatif-solidBottomArrowHead" refX="7.9" refY="0.75" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 10 0 L 0 8 z"/></marker></defs><defs><marker id="svg-whatif-stickTopArrowHead" refX="7.5" refY="7" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 0 L 7 7" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><defs><marker id="svg-whatif-stickBottomArrowHead" refX="7.5" refY="0" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto-start-reverse"><path d="M 0 7 L 7 0" stroke="black" stroke-width="1.5" fill="none"/></marker></defs><text x="206" y="80" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">"What if Acme falls through?"</text><line x1="76" y1="111" x2="336" y2="111" class="messageLine0" data-et="message" data-id="i0" data-from="U" data-to="A" stroke-width="2" stroke="none" marker-end="url(#svg-whatif-arrowhead)" style="fill: none;"/><text x="440" y="126" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">remove "Acme"</text><line x1="341" y1="155" x2="538" y2="155" class="messageLine0" data-et="message" data-id="i1" data-from="A" data-to="T" stroke-width="2" stroke="none" marker-end="url(#svg-whatif-arrowhead)" style="fill: none;"/><text x="641" y="170" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">load figures</text><line x1="543" y1="201" x2="738" y2="201" class="messageLine0" data-et="message" data-id="i2" data-from="T" data-to="D" stroke-width="2" stroke="none" marker-end="url(#svg-whatif-arrowhead)" style="fill: none;"/><text x="543" y="216" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">re-run formulas</text><path d="M 543,245 C 603,235 603,275 543,265" class="messageLine0" data-et="message" data-id="i3" data-from="T" data-to="T" stroke-width="2" stroke="none" marker-end="url(#svg-whatif-arrowhead)" style="fill: none;"/><text x="443" y="290" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">baseline vs. scenario</text><line x1="541" y1="319" x2="344" y2="319" class="messageLine1" data-et="message" data-id="i4" data-from="T" data-to="A" stroke-width="2" stroke="none" marker-end="url(#svg-whatif-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/><text x="209" y="334" text-anchor="middle" dominant-baseline="middle" alignment-baseline="middle" class="messageText" dy="1em" style="font-size: 16px; font-weight: 400;">computed, never guessed</text><line x1="339" y1="365" x2="79" y2="365" class="messageLine1" data-et="message" data-id="i5" data-from="A" data-to="U" stroke-width="2" stroke="none" marker-end="url(#svg-whatif-arrowhead)" style="stroke-dasharray: 3, 3; fill: none;"/></svg>
+        </div>
+        <figcaption>Every "what if" runs through deterministic code. The model translates the question; it never does the math.</figcaption>
+      </figure>
+
+      <div class="keypoint">
+        <div class="kp-label">Key point 03</div>
+        <div class="kp-text">The model asks the question. The code computes the answer. That division of labour is the whole trust model.</div>
+      </div>
+
+      <h2>A forecast that's honest about its own confidence</h2>
+      <p>The 90-day expense forecast adapts to how much history your ledgers actually contain:</p>
+      <table class="methods">
+        <tr><th>Expense history</th><th>Method used</th></tr>
+        <tr><td>4+ months</td><td>Trend-based projection</td></tr>
+        <tr><td>2–3 months</td><td>Recency-weighted average</td></tr>
+        <tr><td>1 month</td><td>Repeat of the latest month</td></tr>
+        <tr><td>None</td><td>Zero — explicitly flagged "no data"</td></tr>
+      </table>
+      <p>The report tells you which method it used. A forecast built on one month of data should not present itself with the same confidence as one built on a year — so it doesn't.</p>
+
+      <h2>What lands in your inbox</h2>
+      <p>One consolidated email per run:</p>
+
+      <div class="email-mock">
+        <div class="em-chrome"><span class="dots">●●●</span> Cash Flow Report — 4 funds · weekly run</div>
+        <div class="em-banner">⚠ Action required — 1 fund in shortfall</div>
+        <table>
+          <tr><th>Fund</th><th>Status</th><th>Net position</th><th>Runway</th><th>Action</th></tr>
+          <tr><td>Fund I</td><td><span class="pill surplus">Surplus</span></td><td>+ 41.2 Cr</td><td>180+ days</td><td>—</td></tr>
+          <tr><td>Fund II</td><td><span class="pill shortfall">Shortfall</span></td><td>− 12.6 Cr</td><td>54 days</td><td>Call 15.1 Cr</td></tr>
+          <tr><td>Fund III</td><td><span class="pill watch">Watch</span></td><td>+ 3.4 Cr</td><td>71 days</td><td>Monitor</td></tr>
+          <tr><td>Opportunities Fund</td><td><span class="pill blocked">Blocked</span></td><td>—</td><td>—</td><td>Update stale data</td></tr>
+        </table>
+      </div>
+      <figcaption style="font-size:13px; color:var(--muted); text-align:center; margin:-14px auto 22px; max-width:640px;">The consolidated email, illustrated with fictional funds and figures.</figcaption>
+
+      <ul class="plain">
+        <li>A status banner up top — <strong>Action Required / Monitor / All Clear</strong> — triage in one glance.</li>
+        <li>A portfolio summary table: one row per fund — status, net position, runway, recommended action.</li>
+        <li>A detail section per fund: cash with a per-entity breakdown and last-updated dates, deployment pipeline, expense forecast and its method, buffer, net position.</li>
+        <li>Blocked funds shown honestly: dashes, and "Update stale data" as the action.</li>
+      </ul>
+
+      <div class="takeaways">
+        <div class="label">Takeaways</div>
+        <ol>
+          <li><strong>A confident answer on stale data is worse than no answer.</strong> Build refusal into your reporting — a system that can say "not with this data" is a system you can trust when it does answer.</li>
+          <li><strong>Use AI as the interface, never the calculator.</strong> Numbers that drive money movements belong in deterministic, auditable code.</li>
+          <li><strong>Warn before the deadline, not after.</strong> A staleness reminder three days early beats a blocked report on run day.</li>
+          <li><strong>Size capital calls to close the gap <em>and</em> restore the reserve.</strong> Plugging only the hole leaves you exposed next quarter.</li>
+          <li><strong>Make forecasts disclose their own confidence.</strong> If the method degraded because history is thin, the report should say so.</li>
+        </ol>
+      </div>
+
+      <div class="cta">
+        <h3>See it on your own fund structure</h3>
+        <p>Bring one fund, its SPVs, and your current spreadsheet ritual. We'll show you the staleness gate, the runway math, and the what-if calculator running on a structure like yours — in 30 minutes.</p>
+        <span class="btn">Call us for a demo</span>
+        <span class="alt">Or DM us here on LinkedIn — we answer these ourselves.</span>
+      </div>
+
+      <hr class="article-rule">
+
+      <p>One question before you go, for your next ops review: when your cash position finally lands in the spreadsheet, how old is the oldest number in it?</p>
+      <p>And would you trust an agent more — or less — because it sometimes refuses to answer?</p>
+      <p class="signoff">Fund Ops, Unstacked #1 — one CapHive feature, properly explained, each week.</p>
+    </article>
+
+    <div class="engage">
+      <div class="counts"><span class="reax">👍💡❤️</span> <span>124</span> <span style="margin-left:auto;">18 comments · 9 reposts</span></div>
+      <div class="actions">
+        <span><svg viewBox="0 0 24 24"><path d="M19.46 11l-3.91-3.91a7 7 0 01-1.69-2.74l-.49-1.47A2.76 2.76 0 0010.76 1 2.75 2.75 0 008 3.74v1.12a9.19 9.19 0 00.46 2.85L8.89 9H4.12A2.12 2.12 0 002 11.12a2.16 2.16 0 00.92 1.76A2.11 2.11 0 002 14.62a2.14 2.14 0 001.28 2 2 2 0 00-.28 1 2.12 2.12 0 002 2.12v.14A2.12 2.12 0 007.12 22h7.49a8.08 8.08 0 003.58-.84l.31-.16H21V11zM19 19h-1l-.73.37a6.14 6.14 0 01-2.69.63H7.72a1 1 0 01-1-.72l-.25-.87-.85-.41A1 1 0 015 17l.17-1-.76-.74A1 1 0 014.27 14l.66-1.09-.73-1.1a.49.49 0 01.08-.7.48.48 0 01.34-.11h7.05l-1.31-3.92A7 7 0 0110 4.86V3.75a.77.77 0 01.75-.75.75.75 0 01.71.51L12 5a9 9 0 002.13 3.5l4.5 4.5H19z"/></svg>Like</span>
+        <span><svg viewBox="0 0 24 24"><path d="M7 9h10v1H7zm0 4h7v-1H7zm16-2a6.78 6.78 0 01-2.84 5.61L12 22v-4H8A7 7 0 018 4h8a7 7 0 017 7zm-2 0a5 5 0 00-5-5H8a5 5 0 000 10h6v2.28L19 15a4.79 4.79 0 002-4z"/></svg>Comment</span>
+        <span><svg viewBox="0 0 24 24"><path d="M13.96 5H6c-.55 0-1 .45-1 1v10H3V6c0-1.66 1.34-3 3-3h7.96L12 .91 13.41.5l3.34 3.35-3.34 3.35L12 5.79zM10.04 19H18c.55 0 1-.45 1-1V8h2v10c0 1.66-1.34 3-3 3h-7.96L12 23.09l-1.41.41-3.34-3.35 3.34-3.35L12 18.21z"/></svg>Repost</span>
+        <span><svg viewBox="0 0 24 24"><path d="M21 3L0 10l7.66 4.26L16 8l-6.26 8.34L14 24l7-21z"/></svg>Send</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="rail-label">Feed teaser — posted to the company page, links to the article</div>
+  <div class="sheet feed-card">
+    <div class="fhead">
+      <div class="avatar">CH</div>
+      <div>
+        <div class="name">CapHive</div>
+        <div class="meta">2,481 followers</div>
+        <div class="meta">1h · 🌐</div>
+      </div>
+    </div>
+    <div class="body">Most GPs size capital calls from a spreadsheet stitched together across SPV ledgers.
+
+We built an agent for that.
+
+Its most important feature: 𝗶𝘁 𝗿𝗲𝗳𝘂𝘀𝗲𝘀 𝘁𝗼 𝗮𝗻𝘀𝘄𝗲𝗿 𝘄𝗵𝗲𝗻 𝘆𝗼𝘂𝗿 𝗱𝗮𝘁𝗮 𝗶𝘀 𝘀𝘁𝗮𝗹𝗲.<div class="fold">…see more — fold: everything above is what a skimmer sees</div>In the full write-up (link in comments):
+
+→ The staleness gate — one out-of-date SPV ledger blocks the whole fund. No partial numbers.
+→ Why the numbers never touch an AI model — and why the AI layer must call a deterministic calculator for every "what if".
+→ How the recommended capital call is sized to close the gap AND restore the reserve.
+
+Would you trust an agent more, or less, because it sometimes refuses to answer? 👇
+
+<span class="tags">#PrivateEquity #FundOperations #CFO #FundAdministration #VentureCapital</span></div>
+  </div>
+
+  <div class="rail-label">First comment — carries the link so the post body stays link-free</div>
+  <div class="sheet">
+    <div class="comment">
+      <div class="avatar">CH</div>
+      <div class="bubble">
+        <div class="cname">CapHive <span class="chead">· Author</span></div>
+        Full article: <span class="link">&lt;link&gt;</span><br>
+        If you'd like to see the Cash Flow Assistant running on your own fund structure, my DMs are open.
+      </div>
+    </div>
+  </div>
+
+  <div class="rail-label">Pre-publish review</div>
+  <div class="sheet review">
+    <div class="chips">
+      <span class="chip info"><span class="dot"></span>Persona: CFO / Head of Fund Finance</span>
+      <span class="chip info"><span class="dot"></span>Format: Article + feed teaser</span>
+      <span class="chip"><span class="dot"></span>Teaser hook survives the 3-line fold</span>
+      <span class="chip"><span class="dot"></span>Quantified: 30-day gate · 90-day window · runway in days</span>
+      <span class="chip"><span class="dot"></span>Tech depth = customer guarantee</span>
+      <span class="chip"><span class="dot"></span>Generous, product-independent takeaways</span>
+      <span class="chip"><span class="dot"></span>Compliance: fictional names, no return claims</span>
+    </div>
+    <p class="note">To publish: screenshot or export the two diagrams from this page as images for the article body, use the cover block above as the article cover, paste the teaser text to the feed, and add the link as the first comment. Engagement numbers shown are illustrative placeholders.</p>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,9 +1,14 @@
 class ImportAccountEntry < ImportUtil
-  STANDARD_HEADERS = ["Investor", "Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount (Folio Currency)", "Amount (Fund Currency)", "Notes", "Rule For", "Parent Type", "Parent Id"].freeze
+  STANDARD_HEADERS = ["Fund", "Folio No", "Reporting Date", "Entry Type", "Name", "Amount (Folio Currency)", "Amount (Fund Currency)", "Notes", "Rule For", "Parent Type", "Parent Id"].freeze
   attr_accessor :account_entries
 
   def standard_headers
     STANDARD_HEADERS
+  end
+
+  # Older templates may still carry an Investor column - ignore it so it does not become a custom field
+  def ignore_headers
+    ["Investor"]
   end
 
   def initialize(**)
@@ -18,7 +23,8 @@ class ImportAccountEntry < ImportUtil
     # Get the Fund
     folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor = get_fields(user_data, import_upload)
 
-    if fund && ((investor_name && capital_commitment) || investor_name.blank?)
+    # The entry is commitment level if a folio is given, else fund level
+    if fund && (folio_id.blank? || capital_commitment)
       # ret_val = prepare_record(user_data, import_upload, custom_field_headers)
       save_account_entry(user_data, import_upload, custom_field_headers)
     else
@@ -62,7 +68,6 @@ class ImportAccountEntry < ImportUtil
     name = user_data["Name"].presence
     entry_type = user_data["Entry Type"].presence
     reporting_date = Date.local_parse(user_data["Reporting Date"]) if user_data["Reporting Date"].present?
-    investor_name = user_data["Investor"]
     folio_amount_cents = user_data["Amount (Folio Currency)"].to_d * 100
     fund_amount_cents = user_data["Amount (Fund Currency)"].to_d * 100
     period = user_data["Period"]
@@ -77,8 +82,11 @@ class ImportAccountEntry < ImportUtil
 
     @funds.add(fund)
 
-    capital_commitment = investor_name.present? ? fund.capital_commitments.where(investor_name:, folio_id:).first : nil
+    # Map the row to the commitment purely via the folio id - the investor is derived from the commitment.
+    # Note this could be an entry for a commitment (folio given) or for a fund (no folio)
+    capital_commitment = folio_id.present? ? fund.capital_commitments.where(folio_id:).first : nil
     investor = capital_commitment&.investor
+    investor_name = capital_commitment&.investor_name
     raise "Commitment not found" if folio_id.present? && capital_commitment.nil?
 
     [folio_id, name, entry_type, reporting_date, period, investor_name, folio_amount_cents, fund_amount_cents, fund, capital_commitment, investor, rule_for, parent_type, parent_id, ref_id, cumulative]

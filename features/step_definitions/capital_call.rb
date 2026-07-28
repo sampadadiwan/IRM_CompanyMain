@@ -644,8 +644,6 @@ Then('the capital remittance payments must have the data in the sheet') do
 
     cc.fund.name.should
     user_data["Fund"]
-    cc.capital_remittance.investor.investor_name.should
-    user_data["Stakeholder"]
     cc.capital_remittance.folio_id.should
     user_data["Folio No"].to_s
     cc.folio_amount_cents.should
@@ -794,11 +792,9 @@ Then('I should see the remittance payments upload errors') do
     row[headers.length].include?("Success").should == true if idx < 7
     row[headers.length].include?("Fund not found").should == true if idx == 7
     row[headers.length].include?("Capital Call not found").should == true if idx == 8
-    row[headers.length].include?("Stakeholder not found").should == true if idx == 9
-    row[headers.length].include?("Folio No or Virtual Bank Account must be specified").should == true if idx == 10
-    row[headers.length].include?("Stakeholder commitment not found for folio C999").should == true if idx == 11
-    row[headers.length].include?("Stakeholder commitment not found for virtual bank account 99998888").should == true if idx == 12
-    row[headers.length].include?("Stakeholder commitment not found").should == true if idx == 13
+    row[headers.length].include?("Folio No or Virtual Bank Account must be specified").should == true if idx == 9
+    row[headers.length].include?("Commitment not found for folio C999").should == true if idx == 10
+    row[headers.length].include?("Commitment not found for virtual bank account 99998888").should == true if idx == 11
   end
 end
 
@@ -1038,8 +1034,9 @@ Then('the corresponding remittances should be created') do
       user_data = [headers, row].transpose.to_h
 
       puts "Checking import of #{user_data}"
-      remittance.investor.investor_name.should
-      user_data["Stakeholder"].strip
+      # The investor is now derived from the folio's commitment, so check the folio instead of the Stakeholder column
+      remittance.folio_id.should
+      user_data["Folio No"].to_s
       remittance.fund.name.should
       user_data["Fund"]
       remittance.capital_call.name.should
@@ -1112,8 +1109,9 @@ Then('the corresponding remittances should be created with fees') do
       user_data = [headers, row].transpose.to_h
 
       puts "Checking import of #{user_data}"
-      remittance.investor.investor_name.should
-      user_data["Stakeholder"].strip
+      # The investor is now derived from the folio's commitment, so check the folio instead of the Stakeholder column
+      remittance.folio_id.should
+      user_data["Folio No"].to_s
       remittance.fund.name.should
       user_data["Fund"]
       remittance.capital_call.name.should

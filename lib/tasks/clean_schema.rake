@@ -33,8 +33,19 @@ namespace :db do
 
     File.write(schema_path, content)
 
-    # Keep schema_test.rb in sync
-    FileUtils.cp(schema_path, Rails.root.join("db/schema_test.rb"))
+    # Keep schema_test.rb in sync, with SQLite-only rewrites on top:
+    # MySQL partitioned tables use a composite primary key (eg ["id", "reporting_date"])
+    # with an auto_increment id. SQLite cannot autoincrement a column inside a composite
+    # primary key, so rewrite those tables back to the default autoincrementing id pk.
+    test_content = content.gsub(/primary_key: \[[^\]]*"id"[^\]]*\],\s*/, "")
+    test_content = test_content.gsub(/^\s*t\.bigint "id", null: false\n/, "")
+
+    # SQLite string comparisons are case-sensitive by default, unlike MySQL's default
+    # collation. Restore NOCASE on columns the app queries with different casing
+    # (eg account_entries.name is stored as "Cash in Hand" but queried as "Cash In Hand").
+    test_content = test_content.sub(/(create_table "account_entries".*?t\.string "name", limit: 125)/m) { "#{Regexp.last_match(1)}, collation: \"NOCASE\"" }
+    test_content = test_content.sub(/(create_table "investor_kpi_mappings".*?t\.string "ancestry")/m) { "#{Regexp.last_match(1)}, collation: \"NOCASE\"" }
+    File.write(Rails.root.join("db/schema_test.rb"), test_content)
   end
 end
 

@@ -41,7 +41,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.index ["user_id"], name: "index_access_rights_on_user_id"
   end
 
-  create_table "account_entries", primary_key: ["id", "reporting_date"], force: :cascade do |t|
+  create_table "account_entries", force: :cascade do |t|
     t.bigint "allocation_run_id"
     t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
     t.bigint "capital_commitment_id"
@@ -60,11 +60,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.bigint "fund_id", null: false
     t.boolean "generated", default: false
     t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
-    t.bigint "id", null: false
     t.bigint "import_upload_id"
     t.bigint "investor_id"
     t.json "json_fields"
-    t.string "name", limit: 125
+    t.string "name", limit: 125, collation: "NOCASE"
     t.text "notes"
     t.bigint "parent_id"
     t.string "parent_name"
@@ -2410,7 +2409,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
   end
 
   create_table "investor_kpi_mappings", force: :cascade do |t|
-    t.string "ancestry"
+    t.string "ancestry", collation: "NOCASE"
     t.string "autofill"
     t.boolean "base_for_common_size", default: false, null: false
     t.string "category", limit: 40
