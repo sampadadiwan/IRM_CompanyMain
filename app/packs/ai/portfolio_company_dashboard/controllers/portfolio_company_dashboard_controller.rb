@@ -57,9 +57,6 @@ class PortfolioCompanyDashboardController < ApplicationController
   # @return [void]
   def run_validation
     authorize @support_agent, :run?
-
-    # check_as_on_date comes from the period dropdown in _actions.html.erb.
-    # Empty string means "Auto" (let the agent compute); non-empty is an ISO date.
     check_date = params[:check_as_on_date].presence
 
     PortfolioValidationJob.perform_later(
@@ -69,9 +66,7 @@ class PortfolioCompanyDashboardController < ApplicationController
       check_as_on_date: check_date
     )
 
-    period_label = check_date.present? ? "for #{check_date}" : "for the most recent period"
-    redirect_to portfolio_company_dashboard_path,
-                notice: "Validation started #{period_label}. Results will appear shortly."
+    head :ok
   end
 
   # POST /portfolio_company_dashboard/send_reminders
@@ -128,10 +123,7 @@ class PortfolioCompanyDashboardController < ApplicationController
       sent += 1
     end
 
-    message = "Reminders sent to #{sent} overdue #{'company'.pluralize(sent)}."
-    message += " #{skipped} already reminded today." if skipped.positive?
-
-    redirect_to portfolio_company_dashboard_path, notice: message
+    head :ok
   end
 
   private

@@ -310,6 +310,10 @@ Each reminder is a single consolidated email listing everything that's missing:
 
 Reminders are sent once per agent run. If the agent is scheduled weekly, companies receive at most one reminder per week. No duplicate reminders on the same day.
 
+### Last-Sent Warning (Send Reminders Button)
+
+The dashboard's Send Reminders button shows when reminders were last sent (e.g., "Last sent: Jul 28, 2026 (1 day ago)"). When clicked, the confirm dialog warns: "Last reminders were sent on Jul 28, 2026 (1 day ago). Send again to 5 companies?" This prevents accidental over-reminding.
+
 ---
 
 ## 10. What the Agent Checks

@@ -183,6 +183,19 @@ class PortfolioDashboardPresenter
                            .sort_by { |c| -c[:issues_count] }
   end
 
+  # @return [Date, nil] the most recent date any reminder was sent
+  def last_reminder_sent_at
+    @last_reminder_sent_at ||= begin
+      dates = reports.filter_map do |r|
+        date_str = r.json_fields&.dig("last_kpi_reminder_sent_at")
+        Date.parse(date_str) if date_str.present?
+      rescue Date::Error
+        nil
+      end
+      dates.max
+    end
+  end
+
   # --- Per-Report Helpers (used by table rows) ---
 
   # @param report [SupportAgentReport]

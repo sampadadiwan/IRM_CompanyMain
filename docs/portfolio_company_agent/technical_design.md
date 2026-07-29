@@ -326,10 +326,11 @@ States:
 
 | File | Change |
 |------|--------|
-| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb` | Add period-end dropdown to Run Validation button |
-| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/show.html.erb` | Add active window indicator bar |
-| `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb` | Accept `check_as_on_date` param for adhoc runs |
-| `app/packs/ai/portfolio_company_dashboard/services/portfolio_dashboard_presenter.rb` | Pass period info to views for window indicator |
+| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_actions.html.erb` | Period dropdown, Send Reminders with last-sent warning, consistent hover styling |
+| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/_stats.html.erb` | 7 compact stat cards (h4 numbers, py-1 px-3 padding) |
+| `app/packs/ai/portfolio_company_dashboard/views/portfolio_company_dashboard/show.html.erb` | Active window indicator bar |
+| `app/packs/ai/portfolio_company_dashboard/controllers/portfolio_company_dashboard_controller.rb` | `run_validation` and `send_reminders` respond with `head :ok` (no page reload); accepts `check_as_on_date` |
+| `app/packs/ai/portfolio_company_dashboard/services/portfolio_dashboard_presenter.rb` | Dashboard aggregations + `last_reminder_sent_at` for Send Reminders warning |
 
 ### Scheduler
 
