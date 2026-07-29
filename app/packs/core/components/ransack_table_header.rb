@@ -2,7 +2,9 @@ class RansackTableHeader < ViewComponent::Base
   include Ransack::Helpers::FormHelper
   include ApplicationHelper
 
-  def initialize(model, q:, turbo_frame:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil, snapshot: nil, actions_column: true)
+  # sortable: false renders plain header labels (no Ransack sort links/arrows),
+  # for tables where sorting is handled client-side by jQuery DataTables.
+  def initialize(model, q:, turbo_frame:, default_columns_map: nil, entity: nil, current_user: nil, records: nil, report_id: nil, id: "", css_class: "", referrer: nil, snapshot: nil, actions_column: true, sortable: true)
     super()
     @model = model
     @q = q.presence || @model.ransack
@@ -15,6 +17,7 @@ class RansackTableHeader < ViewComponent::Base
     @referrer = referrer
     @snapshot = snapshot
     @default_columns_map = default_columns_map
+    @sortable = sortable
     # fetch columns uses @referrer in the cache key, it should have a value assigned before use
     @columns = fetch_columns(@entity, default_columns_map)
     @actions_column = actions_column
