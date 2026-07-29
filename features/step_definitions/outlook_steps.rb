@@ -11,6 +11,9 @@ Given('an investor exists in that fund') do
 end
 
 Given('an approved investor access exists for {string} for that investor') do |email|
+  # Set the primary email BEFORE creating the access: once the access links a
+  # user, primary_email is locked (primary_email_locked_when_users_exist)
+  @investor.update!(primary_email: email)
   @investor_access = InvestorAccess.create!(
     investor: @investor,
     entity_id: @entity.id,
@@ -19,7 +22,6 @@ Given('an approved investor access exists for {string} for that investor') do |e
     email: email,
     approved: true
   )
-  @investor.update!(primary_email: email)
 end
 
 Given('another investor exists in that fund') do

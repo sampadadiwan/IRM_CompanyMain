@@ -1,7 +1,10 @@
 Given('the KPI workbook file {string} for a kpi report') do |workbook_file| # Store the workbook file path for later use
   @workbook_file = "public/sample_uploads/#{workbook_file}"
   expect(File.exist?(@workbook_file)).to be(true), "Test file not found: #{@workbook_file}"
-  @kpi_report = KpiReport.create(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: ['Actual'])
+  # user is required on KpiReport; create! surfaces validation errors instead of leaving an
+  # unsaved report around (an unsaved owner makes the document save blow up much later)
+  # tag_list is a plain string column on KpiReport ("Actual"/"Budget"/"IC"), not an array
+  @kpi_report = KpiReport.create!(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: 'Actual', user: @user)
 
   @document = @kpi_report.documents.build(entity_id: @entity.id, name: "KPI", user_id: @user.id, file: File.open(@workbook_file), owner: @kpi_report)
 
@@ -11,7 +14,10 @@ end
 Given('the KPI workbook file {string} for a {string} kpi report') do |workbook_file, tag|
   @workbook_file = "public/sample_uploads/#{workbook_file}"
   expect(File.exist?(@workbook_file)).to be(true), "Test file not found: #{@workbook_file}"
-  @kpi_report = KpiReport.create(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: [tag])
+  # user is required on KpiReport; create! surfaces validation errors instead of leaving an
+  # unsaved report around (an unsaved owner makes the document save blow up much later)
+  # tag_list is a plain string column on KpiReport ("Actual"/"Budget"/"IC"), not an array
+  @kpi_report = KpiReport.create!(entity_id: @entity.id, portfolio_company_id: @portfolio_company.id, as_of: Date.today, tag_list: tag, user: @user)
 
   @document = @kpi_report.documents.build(entity_id: @entity.id, name: "KPI", user_id: @user.id, file: File.open(@workbook_file), owner: @kpi_report)
 
@@ -209,7 +215,9 @@ end
 
 # Verifies that each tag has KpiReports for the same set of periods
 Then('each tag should have KPI reports for the same periods') do
-  reports = KpiReport.where(portfolio_company_id: @portfolio_company.id)
+  # Exclude the seed report created in the Given step (as_of today) — only compare
+  # the reports the KpiWorkbookReader created from the workbook periods
+  reports = KpiReport.where(portfolio_company_id: @portfolio_company.id).where.not(id: @kpi_report&.id)
   by_tag = reports.group_by(&:tag_list)
   periods_per_tag = by_tag.transform_values { |reps| reps.map(&:as_of).sort }
 
