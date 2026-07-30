@@ -1,9 +1,12 @@
 class ImportInvestorKpiMapping < ImportUtil
-  # Defines the standard headers expected in the import file.
+  # Standard headers expected in the mapping bulk import CSV/Excel file.
+  # "FX Conversion" added for KPI currency conversion — tells the parser which
+  # FX rate method to apply per mapping (Not Applicable / Report Date / Average Rate).
   STANDARD_HEADERS = [
     "Stakeholder", "Reported Kpi Name", "Standard Kpi Name", "Category",
-    "Data Type", "Denomination", "Parent Standard Kpi Name", "Position", "Show In Report",
-    "Lower Threshold", "Upper Threshold", "Auto Fill", "Compute Formula", "Update Only"
+    "Data Type", "Denomination", "FX Conversion", "Parent Standard Kpi Name", "Position",
+    "Show In Report", "Lower Threshold", "Upper Threshold", "Auto Fill", "Compute Formula",
+    "Update Only"
   ].freeze
 
   # Returns the standard headers for the import file.
@@ -102,10 +105,20 @@ class ImportInvestorKpiMapping < ImportUtil
     autofill = nil if autofill == "na"
     raise "Invalid autofill value '#{autofill}' for InvestorKpiMapping" if autofill.present? && InvestorKpiMapping.autofills.keys.exclude?(autofill)
 
+    # Parse FX conversion method from import. Accepts "Not Applicable", "Report Date", "Average Rate".
+    # Blank/missing defaults to "not_applicable" for backward compatibility — existing CSVs without
+    # this column will work unchanged, and portcos reporting in the same currency as the fund skip conversion.
+    fx_conversion = user_data["FX Conversion"].to_s.downcase.strip.tr(" ", "_")
+    fx_conversion = "not_applicable" if fx_conversion.blank? || fx_conversion == "na"
+    raise "Invalid FX Conversion value '#{user_data['FX Conversion']}' for InvestorKpiMapping" if InvestorKpiMapping.fx_conversion_methods.keys.exclude?(fx_conversion)
+
     attributes = {
       category: user_data["Category"].presence,
       data_type: data_type,
       denomination: user_data["Denomination"].presence,
+      # FX conversion method determines how KPI values are converted from portco's reporting
+      # currency to the fund's base currency during upload (not_applicable / report_date / average_rate).
+      fx_conversion_method: fx_conversion,
       show_in_report: user_data["Show In Report"].to_s.downcase == "yes",
       lower_threshold: user_data["Lower Threshold"].presence,
       upper_threshold: user_data["Upper Threshold"].presence,

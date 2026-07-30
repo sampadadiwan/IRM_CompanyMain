@@ -398,6 +398,24 @@ class KpiWorkbookReader
       value = value.to_d * multiplier
     end
 
+    # FX conversion: convert from portco's kpi_currency to fund's base currency
+    fx_rate = resolve_fx_rate(investor_kpi_mapping, kpi_report)
+    original_value = nil
+    if fx_rate
+      original_value = value.to_d
+      value = value.to_d * fx_rate
+    elsif investor_kpi_mapping.present? && !investor_kpi_mapping.fx_not_applicable?
+      kpi_currency = @portfolio_company.json_fields&.dig('kpi_currency')
+      fund_currency = @portfolio_company.entity.currency
+      if kpi_currency.present? && kpi_currency != fund_currency
+        msg = "Missing FX rate for #{kpi_currency}→#{fund_currency} on #{kpi_report.as_of}, storing unconverted"
+        Rails.logger.warn(msg)
+        @error_msg << { msg: msg, portfolio_company: @portfolio_company.name, document: @document.name,
+                        document_id: @document.id, kpi_name: raw_kpi_name, sheet: sheet, period: period,
+                        parsed_period: parsed_period, old_value: nil, new_value: nil, row: row_index, col: col_index }
+      end
+    end
+
     # Check if an approved KPI with the same value already exists.
     # If it does, we don't even need to create an unapproved one.
     # Scoped by mapping ID to handle duplicate names under different parents.
@@ -418,6 +436,8 @@ class KpiWorkbookReader
     kpi.assign_attributes(
       value: value,
       display_value: value,
+      original_value: original_value,
+      fx_rate_used: fx_rate,
       investor_kpi_mapping_id: investor_kpi_mapping&.id,
       notes: "Imported from Document #{@document.id}, Sheet: #{sheet}, Period: #{period}, Date: #{parsed_period}, Row: #{row_index}, Col: #{col_index}"
     )
@@ -688,6 +708,51 @@ class KpiWorkbookReader
     normalized = normalize_kpi_name(mapping.reported_kpi_name)
     @kpi_name_to_kpi_mappings[normalized] = mapping
     @target_kpis << normalized unless @target_kpis.include?(normalized)
+  end
+
+  # Resolves the FX rate for a KPI based on the mapping's fx_conversion_method.
+  # Returns nil if currencies are the same, method is not_applicable, or rate is missing.
+  # @param investor_kpi_mapping [InvestorKpiMapping] the mapping with fx_conversion_method
+  # @param kpi_report [KpiReport] the report (provides as_of date and period)
+  # @return [BigDecimal, nil] the FX rate to multiply by, or nil if no conversion needed
+  def resolve_fx_rate(investor_kpi_mapping, kpi_report)
+    kpi_currency = @portfolio_company.json_fields&.dig('kpi_currency')
+    fund_currency = @portfolio_company.entity.currency
+    return nil if kpi_currency.blank? || kpi_currency == fund_currency
+    return nil if investor_kpi_mapping.fx_not_applicable?
+
+    entity_id = @portfolio_company.entity_id
+
+    if investor_kpi_mapping.fx_report_date?
+      ExchangeRate.get_rate(kpi_currency, fund_currency, kpi_report.as_of, entity_id)
+    elsif investor_kpi_mapping.fx_average_rate?
+      opening_date = period_start_date(kpi_report)
+      closing_date = kpi_report.as_of
+      opening_rate = ExchangeRate.get_rate(kpi_currency, fund_currency, opening_date, entity_id)
+      closing_rate = ExchangeRate.get_rate(kpi_currency, fund_currency, closing_date, entity_id)
+      return nil unless opening_rate && closing_rate
+
+      (opening_rate + closing_rate) / 2.0
+    end
+  end
+
+  # Calculates the period start date for average rate FX conversion.
+  # @param kpi_report [KpiReport] the report with as_of and period
+  # @return [Date] the opening date of the period
+  def period_start_date(kpi_report)
+    as_of = kpi_report.as_of
+    case kpi_report.period&.downcase
+    when 'quarter'
+      as_of.beginning_of_quarter
+    when 'half year'
+      as_of - 6.months + 1.day
+    when 'year'
+      as_of.beginning_of_year
+    when 'ytd'
+      @portfolio_company.start_of_financial_year_date(as_of)
+    else
+      as_of.beginning_of_month
+    end
   end
 
   # Checks for target KPIs that were not found in any sheet and logs errors

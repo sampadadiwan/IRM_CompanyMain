@@ -86,7 +86,9 @@ class InvestorKpiMappingsController < ApplicationController
   end
 
   # Only allow a list of trusted parameters through.
+  # fx_conversion_method added for KPI currency conversion — controls how values are
+  # converted from portco's reporting currency to fund's base currency at upload time.
   def investor_kpi_mapping_params
-    params.require(:investor_kpi_mapping).permit(:entity_id, :investor_id, :reported_kpi_name, :position, :category, :standard_kpi_name, :autofill, :compute_formula, :base_for_common_size, :lower_threshold, :upper_threshold, :data_type, :denomination, :parent_id, :show_in_report, :form_type_id, rag_rules: {}, properties: {})
+    params.require(:investor_kpi_mapping).permit(:entity_id, :investor_id, :reported_kpi_name, :position, :category, :standard_kpi_name, :autofill, :compute_formula, :base_for_common_size, :lower_threshold, :upper_threshold, :data_type, :denomination, :fx_conversion_method, :parent_id, :show_in_report, :form_type_id, rag_rules: {}, properties: {})
   end
 end
