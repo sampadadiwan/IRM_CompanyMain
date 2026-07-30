@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_30_115611) do
   create_table "access_rights", force: :cascade do |t|
     t.string "access_to_category", limit: 20
     t.string "access_to_email", limit: 30
@@ -39,60 +39,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.index ["owner_type", "owner_id", "user_id"], name: "index_access_rights_on_owner_and_user"
     t.index ["owner_type", "owner_id"], name: "index_access_rights_on_owner"
     t.index ["user_id"], name: "index_access_rights_on_user_id"
-  end
-
-  create_table "account_entries", force: :cascade do |t|
-    t.bigint "allocation_run_id"
-    t.decimal "amount_cents", precision: 30, scale: 8, default: "0.0"
-    t.bigint "capital_commitment_id"
-    t.string "commitment_name"
-    t.datetime "created_at", precision: nil, null: false
-    t.boolean "cumulative", default: false
-    t.datetime "deleted_at", precision: nil
-    t.bigint "entity_id", null: false
-    t.string "entry_type", limit: 60
-    t.bigint "exchange_rate_id"
-    t.text "explanation"
-    t.decimal "folio_amount_cents", precision: 30, scale: 8, default: "0.0"
-    t.string "folio_id", limit: 40
-    t.bigint "form_type_id"
-    t.bigint "fund_formula_id"
-    t.bigint "fund_id", null: false
-    t.boolean "generated", default: false
-    t.virtual "generated_deleted", type: :datetime, precision: nil, null: false, as: "ifnull(`deleted_at`,'1900-01-01 00:00:00')"
-    t.bigint "import_upload_id"
-    t.bigint "investor_id"
-    t.json "json_fields"
-    t.string "name", limit: 125, collation: "NOCASE"
-    t.text "notes"
-    t.bigint "parent_id"
-    t.string "parent_name"
-    t.string "parent_type"
-    t.string "period", limit: 25
-    t.integer "ref_id", default: 0, null: false
-    t.date "reporting_date", null: false
-    t.string "rule_for", limit: 10, default: "Accounting"
-    t.bigint "temp_sqlite_id"
-    t.decimal "tracking_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "updated_at", precision: nil, null: false
-    t.index ["allocation_run_id"], name: "index_account_entries_on_allocation_run_id"
-    t.index ["capital_commitment_id", "name", "reporting_date"], name: "idx_ae_cc_name_date"
-    t.index ["capital_commitment_id"], name: "index_account_entries_on_capital_commitment_id"
-    t.index ["entity_id", "deleted_at", "name"], name: "idx_ae_entity_deleted_name"
-    t.index ["entity_id"], name: "index_account_entries_on_entity_id"
-    t.index ["exchange_rate_id"], name: "index_account_entries_on_exchange_rate_id"
-    t.index ["form_type_id"], name: "index_account_entries_on_form_type_id"
-    t.index ["fund_formula_id"], name: "index_account_entries_on_fund_formula_id"
-    t.index ["fund_id", "entry_type", "reporting_date"], name: "idx_fund_id_and_entry_type_and_reporting_date"
-    t.index ["fund_id", "generated", "reporting_date", "fund_formula_id"], name: "idx_ae_fund_gen_date_formula"
-    t.index ["fund_id", "name", "reporting_date"], name: "idx_fund_id_and_name_and_reporting_date"
-    t.index ["fund_id", "reporting_date", "fund_formula_id", "deleted_at"], name: "idx_ae_fund_date_formula_deleted"
-    t.index ["fund_id"], name: "index_account_entries_on_fund_id"
-    t.index ["import_upload_id"], name: "index_account_entries_on_import_upload_id"
-    t.index ["investor_id"], name: "index_account_entries_on_investor_id"
-    t.index ["parent_type", "parent_id", "fund_id", "name", "deleted_at", "cumulative"], name: "idx_ae_parent_fund_name_flags"
-    t.index ["reporting_date"], name: "index_account_entries_on_reporting_date"
-    t.index ["temp_sqlite_id", "allocation_run_id", "entry_type"], name: "idx_account_entries_temp_sqlite_id"
   end
 
   create_table "account_entry_report_insights", force: :cascade do |t|
@@ -394,31 +340,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.index ["entity_id"], name: "index_ai_checks_on_entity_id"
     t.index ["owner_type", "owner_id"], name: "index_compliance_checks_on_owner"
     t.index ["parent_type", "parent_id"], name: "index_compliance_checks_on_parent"
-  end
-
-  create_table "ai_kpi_shadow_runs", force: :cascade do |t|
-    t.integer "ai_count", default: 0, null: false
-    t.integer "ai_only_count", default: 0, null: false
-    t.datetime "created_at", null: false
-    t.integer "det_count", default: 0, null: false
-    t.integer "det_only_count", default: 0, null: false
-    t.json "details"
-    t.bigint "document_id", null: false
-    t.bigint "entity_id", null: false
-    t.integer "input_tokens", default: 0, null: false
-    t.bigint "kpi_report_id", null: false
-    t.integer "match_count", default: 0, null: false
-    t.float "match_rate", default: 0.0, null: false
-    t.integer "mismatch_count", default: 0, null: false
-    t.integer "output_tokens", default: 0, null: false
-    t.bigint "portfolio_company_id", null: false
-    t.datetime "run_at", null: false
-    t.datetime "updated_at", null: false
-    t.index ["document_id"], name: "index_ai_kpi_shadow_runs_on_document_id"
-    t.index ["entity_id"], name: "index_ai_kpi_shadow_runs_on_entity_id"
-    t.index ["mismatch_count"], name: "index_ai_kpi_shadow_runs_on_mismatch_count"
-    t.index ["portfolio_company_id"], name: "index_ai_kpi_shadow_runs_on_portfolio_company_id"
-    t.index ["run_at"], name: "index_ai_kpi_shadow_runs_on_run_at"
   end
 
   create_table "ai_portfolio_reports", force: :cascade do |t|
@@ -1327,7 +1248,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.json "json_fields"
     t.string "name"
     t.string "slug"
-    t.integer "stagnant_days", default: 7, null: false
     t.date "start_date"
     t.string "status", limit: 20
     t.string "tags", limit: 100
@@ -1369,7 +1289,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.string "fee_type", limit: 20
     t.boolean "formula", default: false
     t.bigint "fund_id", null: false
-    t.string "name", limit: 65
+    t.string "name", limit: 50
     t.string "notes"
     t.string "parent_ids"
     t.string "parent_type"
@@ -1554,7 +1474,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
   end
 
   create_table "entity_settings", force: :cascade do |t|
-    t.boolean "ai_kpi_reader_shadow", default: false, null: false
     t.boolean "aml_enabled", default: false
     t.string "anthropic_api_key"
     t.string "append_to_commitment_agreement"
@@ -1605,7 +1524,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.integer "month_offset_for_fy"
     t.string "non_individual_kyc_doc_list"
     t.integer "notification_retention_months", default: 2
-    t.date "onboarding_deadline"
     t.string "openai_api_key"
     t.string "openrouter_api_key"
     t.boolean "pan_verification"
@@ -1621,7 +1539,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.boolean "trial"
     t.date "trial_end_date"
     t.datetime "updated_at", null: false
-    t.boolean "use_ai_kpi_reader", default: false, null: false
     t.string "valuation_math"
     t.string "value_bridge_cols"
     t.string "whatsapp_endpoint"
@@ -1750,13 +1667,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
   end
 
   create_table "favorites", force: :cascade do |t|
-    t.boolean "blocked", default: false, null: false
     t.datetime "created_at", null: false
-    t.bigint "favoritable_id"
-    t.string "favoritable_type"
-    t.bigint "favoritor_id"
-    t.string "favoritor_type"
-    t.string "scope", default: "favorite", null: false
     t.string "title", null: false
     t.datetime "updated_at", null: false
     t.string "url", null: false
@@ -2422,6 +2333,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.string "denomination", limit: 20
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
+    t.string "fx_conversion_method", limit: 20, default: "not_applicable", null: false
     t.bigint "import_upload_id"
     t.bigint "investor_id", null: false
     t.json "json_fields"
@@ -2455,12 +2367,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.string "bank_branch"
     t.string "bank_name", limit: 100
     t.text "bank_verification_response"
-    t.string "bank_verification_state", default: "not_started", null: false
     t.string "bank_verification_status"
     t.boolean "bank_verified", default: false
     t.datetime "birth_date"
     t.decimal "call_amount_cents", precision: 20, scale: 2, default: "0.0"
-    t.datetime "checks_failed_at"
     t.decimal "collected_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.text "comments"
     t.decimal "committed_amount_cents", precision: 20, scale: 2, default: "0.0"
@@ -2486,17 +2396,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.bigint "investor_user_id"
     t.datetime "investor_user_updated_at"
     t.json "json_fields"
-    t.bigint "kyc_onboarding_id"
     t.string "kyc_type", limit: 15, default: "Individual"
-    t.datetime "last_onboarding_nudge_at"
     t.datetime "link_sent_at"
     t.text "notification_msg"
-    t.integer "onboarding_nudge_count", default: 0, null: false
-    t.boolean "onboarding_nudges_paused", default: false, null: false
-    t.string "onboarding_state"
     t.decimal "other_fee_cents", precision: 12, scale: 2, default: "0.0"
     t.text "pan_verification_response"
-    t.string "pan_verification_state", default: "not_started", null: false
     t.string "pan_verification_status"
     t.boolean "pan_verified", default: false
     t.boolean "reminder_sent", default: false
@@ -2511,7 +2415,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.decimal "uncalled_amount_cents", precision: 20, scale: 2, default: "0.0"
     t.datetime "updated_at", null: false
     t.boolean "verified", default: false
-    t.datetime "verified_at"
     t.bigint "verified_by_id"
     t.index ["deleted_at"], name: "index_investor_kycs_on_deleted_at"
     t.index ["document_folder_id"], name: "index_investor_kycs_on_document_folder_id"
@@ -2519,8 +2422,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.index ["form_type_id"], name: "index_investor_kycs_on_form_type_id"
     t.index ["investor_id"], name: "index_investor_kycs_on_investor_id"
     t.index ["investor_user_id"], name: "index_investor_kycs_on_investor_user_id"
-    t.index ["kyc_onboarding_id"], name: "index_investor_kycs_on_kyc_onboarding_id"
-    t.index ["onboarding_state"], name: "index_investor_kycs_on_onboarding_state"
     t.index ["slug"], name: "index_investor_kycs_on_slug", unique: true
     t.index ["submission_status"], name: "index_investor_kycs_on_submission_status"
     t.index ["verified_by_id"], name: "index_investor_kycs_on_verified_by_id"
@@ -2720,12 +2621,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.string "display_value", limit: 30
     t.bigint "entity_id", null: false
     t.bigint "form_type_id"
+    t.decimal "fx_rate_used", precision: 20, scale: 8
     t.bigint "import_upload_id"
     t.bigint "investor_kpi_mapping_id"
     t.json "json_fields"
     t.bigint "kpi_report_id", null: false
     t.string "name", limit: 100
     t.string "notes"
+    t.decimal "original_value", precision: 20, scale: 6
     t.bigint "owner_id"
     t.decimal "percentage_change", precision: 6, scale: 2, default: "0.0"
     t.bigint "portfolio_company_id"
@@ -2763,57 +2666,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_kyc_data_on_entity_id"
     t.index ["investor_kyc_id"], name: "index_kyc_data_on_investor_kyc_id"
-  end
-
-  create_table "kyc_inspection_records", force: :cascade do |t|
-    t.string "agent_name", null: false
-    t.string "check_name", null: false
-    t.datetime "created_at", null: false
-    t.json "details"
-    t.bigint "entity_id", null: false
-    t.bigint "investor_kyc_id"
-    t.bigint "kyc_onboarding_id"
-    t.text "resolution_note"
-    t.datetime "resolved_at"
-    t.bigint "resolved_by_id"
-    t.string "severity", null: false
-    t.string "status", default: "open", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id", "investor_kyc_id", "check_name", "created_at"], name: "idx_kyc_inspection_records_idempotency"
-    t.index ["entity_id", "status", "severity"], name: "idx_inspection_entity_status_severity"
-    t.index ["entity_id"], name: "index_kyc_inspection_records_on_entity_id"
-    t.index ["investor_kyc_id"], name: "index_kyc_inspection_records_on_investor_kyc_id"
-    t.index ["kyc_onboarding_id"], name: "index_kyc_inspection_records_on_kyc_onboarding_id"
-    t.index ["resolved_by_id"], name: "index_kyc_inspection_records_on_resolved_by_id"
-  end
-
-  create_table "kyc_onboarding_wizards", force: :cascade do |t|
-    t.datetime "created_at", null: false
-    t.integer "current_step", default: 1, null: false
-    t.bigint "kyc_onboarding_id", null: false
-    t.json "segment_data"
-    t.text "staged_file_data"
-    t.string "status", default: "draft", null: false
-    t.datetime "updated_at", null: false
-    t.index ["kyc_onboarding_id"], name: "idx_kyc_onboarding_wizards_onboarding_unique", unique: true
-    t.index ["kyc_onboarding_id"], name: "index_kyc_onboarding_wizards_on_kyc_onboarding_id"
-  end
-
-  create_table "kyc_onboardings", force: :cascade do |t|
-    t.datetime "completed_at"
-    t.datetime "created_at", null: false
-    t.bigint "entity_id", null: false
-    t.string "last_weekly_report_sent_week"
-    t.datetime "launched_at"
-    t.integer "max_open_window_days", default: 30, null: false
-    t.string "name", null: false
-    t.json "nudge_schedule_days"
-    t.date "onboarding_deadline"
-    t.integer "stale_threshold_days", default: 14, null: false
-    t.string "status", default: "draft", null: false
-    t.datetime "updated_at", null: false
-    t.index ["entity_id", "name"], name: "idx_kyc_onboardings_entity_name", unique: true
-    t.index ["entity_id"], name: "index_kyc_onboardings_on_entity_id"
   end
 
   create_table "messages", force: :cascade do |t|
@@ -3574,30 +3426,62 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.index ["secondary_sale_form_type_id"], name: "index_secondary_sales_on_secondary_sale_form_type_id"
   end
 
-  create_table "simulation_events", force: :cascade do |t|
+  create_table "skill_candidates", force: :cascade do |t|
+    t.bigint "agent_chat_session_id", null: false
+    t.bigint "applied_version_id"
+    t.string "change_summary", limit: 500
+    t.string "content_hash", limit: 64, null: false
     t.datetime "created_at", null: false
-    t.string "event_type", null: false
-    t.bigint "investor_kyc_id"
-    t.string "message", null: false
-    t.json "payload"
-    t.bigint "simulation_run_id", null: false
-    t.integer "virtual_day", null: false
-    t.index ["investor_kyc_id"], name: "index_simulation_events_on_investor_kyc_id"
-    t.index ["simulation_run_id", "virtual_day"], name: "index_simulation_events_on_simulation_run_id_and_virtual_day"
-    t.index ["simulation_run_id"], name: "index_simulation_events_on_simulation_run_id"
+    t.text "proposed_content", null: false
+    t.datetime "reviewed_at"
+    t.bigint "reviewed_by_user_id"
+    t.bigint "skill_id", null: false
+    t.string "status", limit: 32, default: "pending", null: false
+    t.datetime "updated_at", null: false
+    t.index ["agent_chat_session_id"], name: "idx_skill_candidates_session"
+    t.index ["applied_version_id"], name: "fk_rails_11e45fe45b"
+    t.index ["content_hash"], name: "idx_skill_candidates_content_hash"
+    t.index ["reviewed_by_user_id"], name: "fk_rails_cba648231e"
+    t.index ["skill_id"], name: "idx_skill_candidates_skill"
+    t.index ["status"], name: "idx_skill_candidates_status"
   end
 
-  create_table "simulation_runs", force: :cascade do |t|
+  create_table "skill_versions", force: :cascade do |t|
+    t.string "change_reason", limit: 500
+    t.text "content", null: false
+    t.string "content_hash", limit: 64, null: false
     t.datetime "created_at", null: false
-    t.bigint "kyc_onboarding_id", null: false
-    t.json "response_config"
-    t.string "scenario_key", null: false
-    t.string "status", default: "pending", null: false
-    t.json "stub_config"
+    t.bigint "created_by_user_id"
+    t.bigint "skill_id", null: false
+    t.bigint "source_candidate_id"
+    t.integer "version_number", null: false
+    t.index ["content_hash"], name: "idx_skill_versions_content_hash"
+    t.index ["created_by_user_id"], name: "fk_rails_2e3725f011"
+    t.index ["skill_id", "created_at"], name: "idx_skill_versions_skill_created"
+    t.index ["skill_id", "version_number"], name: "idx_skill_versions_unique_version", unique: true
+  end
+
+  create_table "skills", force: :cascade do |t|
+    t.string "agent_type", null: false
+    t.string "category"
+    t.datetime "created_at", null: false
+    t.bigint "current_version_id"
+    t.string "description", limit: 500
+    t.bigint "entity_id"
+    t.datetime "last_used_at"
+    t.string "name", null: false
+    t.string "scope", limit: 32, default: "global", null: false
+    t.string "status", limit: 32, default: "active", null: false
     t.datetime "updated_at", null: false
-    t.integer "virtual_day", default: 0, null: false
-    t.index ["kyc_onboarding_id"], name: "index_simulation_runs_on_kyc_onboarding_id"
-    t.index ["status"], name: "index_simulation_runs_on_status"
+    t.integer "usage_count", default: 0, null: false
+    t.bigint "user_id"
+    t.index ["agent_type", "entity_id", "status"], name: "idx_skills_agent_entity_status"
+    t.index ["agent_type", "user_id", "status"], name: "idx_skills_agent_user_status"
+    t.index ["agent_type"], name: "idx_skills_agent_type"
+    t.index ["current_version_id"], name: "idx_skills_current_version"
+    t.index ["entity_id"], name: "fk_rails_45517eb2c4"
+    t.index ["name", "agent_type", "scope", "entity_id", "user_id"], name: "idx_skills_unique_identity", unique: true
+    t.index ["user_id"], name: "fk_rails_ee47b87d76"
   end
 
   create_table "solid_cache_entries", force: :cascade do |t|
@@ -3877,6 +3761,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.bigint "advisor_entity_id"
     t.string "advisor_entity_roles", limit: 100
     t.string "call_code", limit: 3, default: "91"
+    t.datetime "confirmation_sent_at"
+    t.string "confirmation_token"
+    t.datetime "confirmed_at"
     t.integer "consumed_timestep"
     t.datetime "created_at", null: false
     t.string "curr_role", limit: 20
@@ -3923,6 +3810,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.string "unlock_token"
     t.datetime "updated_at", null: false
     t.boolean "whatsapp_enabled", default: false
+    t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["deleted_at"], name: "index_users_on_deleted_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["entity_id"], name: "index_users_on_entity_id"
@@ -4160,10 +4048,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
     t.index ["entity_id"], name: "index_workflow_templates_on_entity_id"
   end
 
-  add_foreign_key "access_rights", "entities"
-  add_foreign_key "access_rights", "investors", column: "access_to_investor_id"
-  add_foreign_key "access_rights", "users"
-  add_foreign_key "access_rights", "users", column: "granted_by_id"
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
   add_foreign_key "agent_charts", "entities"
@@ -4189,8 +4073,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
   add_foreign_key "aggregate_portfolio_investments", "investors", column: "portfolio_company_id"
   add_foreign_key "ai_checks", "ai_rules"
   add_foreign_key "ai_checks", "entities"
-  add_foreign_key "ai_kpi_shadow_runs", "documents"
-  add_foreign_key "ai_kpi_shadow_runs", "entities"
   add_foreign_key "ai_portfolio_reports", "folders"
   add_foreign_key "ai_portfolio_reports", "investment_criteria_templates"
   add_foreign_key "ai_presentations", "entities"
@@ -4408,7 +4290,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
   add_foreign_key "investor_kycs", "folders", column: "document_folder_id"
   add_foreign_key "investor_kycs", "form_types"
   add_foreign_key "investor_kycs", "investors"
-  add_foreign_key "investor_kycs", "kyc_onboardings"
   add_foreign_key "investor_kycs", "users", column: "investor_user_id"
   add_foreign_key "investor_kycs", "users", column: "verified_by_id"
   add_foreign_key "investor_notice_entries", "entities"
@@ -4443,12 +4324,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
   add_foreign_key "kpis", "kpi_reports"
   add_foreign_key "kyc_data", "entities"
   add_foreign_key "kyc_data", "investor_kycs"
-  add_foreign_key "kyc_inspection_records", "entities"
-  add_foreign_key "kyc_inspection_records", "investor_kycs"
-  add_foreign_key "kyc_inspection_records", "kyc_onboardings"
-  add_foreign_key "kyc_inspection_records", "users", column: "resolved_by_id"
-  add_foreign_key "kyc_onboarding_wizards", "kyc_onboardings"
-  add_foreign_key "kyc_onboardings", "entities"
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
@@ -4534,8 +4409,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_27_052532) do
   add_foreign_key "secondary_sales", "form_types", column: "interest_form_type_id"
   add_foreign_key "secondary_sales", "form_types", column: "offer_form_type_id"
   add_foreign_key "secondary_sales", "form_types", column: "secondary_sale_form_type_id"
-  add_foreign_key "simulation_events", "simulation_runs"
-  add_foreign_key "simulation_runs", "kyc_onboardings"
+  add_foreign_key "skill_candidates", "agent_chat_sessions", on_delete: :cascade
+  add_foreign_key "skill_candidates", "skill_versions", column: "applied_version_id", on_delete: :nullify
+  add_foreign_key "skill_candidates", "skills", on_delete: :cascade
+  add_foreign_key "skill_candidates", "users", column: "reviewed_by_user_id", on_delete: :nullify
+  add_foreign_key "skill_versions", "skills", on_delete: :cascade
+  add_foreign_key "skill_versions", "users", column: "created_by_user_id", on_delete: :nullify
+  add_foreign_key "skills", "entities", on_delete: :cascade
+  add_foreign_key "skills", "skill_versions", column: "current_version_id", on_delete: :nullify
+  add_foreign_key "skills", "users", on_delete: :cascade
   add_foreign_key "stamp_papers", "entities"
   add_foreign_key "stock_adjustments", "entities"
   add_foreign_key "stock_adjustments", "investment_instruments"

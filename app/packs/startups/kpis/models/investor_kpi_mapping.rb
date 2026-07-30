@@ -1,9 +1,15 @@
+# frozen_string_literal: true
+
+# Defines what KPIs to track per portfolio company, including name translation,
+# parent-child hierarchy, data types, denominations, and FX conversion method.
+# @see Kpi
+# @see KpiReport
 class InvestorKpiMapping < ApplicationRecord
   include WithCustomField
 
   has_ancestry
 
-  HIGHLIGHT_KPI_CF = "highlight_kpi".freeze
+  HIGHLIGHT_KPI_CF = "highlight_kpi"
 
   belongs_to :entity
   belongs_to :investor
@@ -24,6 +30,12 @@ class InvestorKpiMapping < ApplicationRecord
   enum :data_type, { money: 'money', numeric: 'numeric', percentage: 'percentage' }
   enum :denomination, { millions: 'millions', crores: 'crores', lakhs: 'lakhs', thousands: 'thousands' }
   enum :autofill, { cumulate: 'cumulate', forward_fill: 'forward_fill', compute: 'compute' }, prefix: true
+  FX_CONVERSION_METHODS = %w[not_applicable report_date average_rate].freeze
+  enum :fx_conversion_method, {
+    not_applicable: 'not_applicable',
+    report_date: 'report_date',
+    average_rate: 'average_rate'
+  }, default: :not_applicable, prefix: :fx
 
   scope :cumulate, -> { where(autofill: 'cumulate') }
   scope :forward_fill, -> { where(autofill: 'forward_fill') }
@@ -37,11 +49,40 @@ class InvestorKpiMapping < ApplicationRecord
     self.standard_kpi_name = standard_kpi_name.strip
   end
 
+  # @return [void]
+  before_validation :set_default_fx_conversion_method, on: :create
+
+  # Sets IAS 21-aligned FX conversion default based on KPI category.
+  # @return [void]
+  def set_default_fx_conversion_method
+    return if fx_conversion_method_changed?
+
+    self.fx_conversion_method = case category
+                                when 'Income Statement', 'Cashflow Statement'
+                                  'average_rate'
+                                when 'Balance Sheet'
+                                  'report_date'
+                                else
+                                  'not_applicable'
+                                end
+  end
+
   validate :formula_kosher?
   def formula_kosher?
     return false if compute_formula.blank?
 
     errors.add(:compute_formula, "You cannot do CRUD operations in a formula") if compute_formula.downcase.match?(SAFE_EVAL_REGEX)
+  end
+
+  # @return [void]
+  validate :fx_not_applicable_for_percentages
+
+  # Ensures percentage KPIs are never currency-converted (25% is 25% in any currency).
+  # @return [void]
+  def fx_not_applicable_for_percentages
+    return unless percentage? && !fx_not_applicable?
+
+    errors.add(:fx_conversion_method, "must be 'Not Applicable' for percentage KPIs")
   end
 
   after_commit :update_parent_child_count
