@@ -201,7 +201,7 @@ class GeneratePortfolioReportExtractsJob < LlmReportJob
   # @return [Array<Note>] A list of notes.
   def filtered_notes(portfolio_company, portfolio_report, start_date, end_date)
     report_tags = portfolio_report.tags.to_s.split(',').map(&:strip)
-    notes = portfolio_company.notes.where(created_at: start_date..end_date)
+    notes = portfolio_company.notes.where(on: start_date..end_date)
     filter_by_report_tags(notes, report_tags)
   end
 

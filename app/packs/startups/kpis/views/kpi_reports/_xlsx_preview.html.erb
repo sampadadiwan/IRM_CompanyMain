@@ -17,7 +17,10 @@
       data-controller="xlsx-preview"
       data-upload-id="custom_file_kp_is"
       data-headers='<%= @kpi_report.headers if @kpi_report.respond_to?(:headers) %>'
-      data-xlsx-preview-tabs="true">
+      data-xlsx-preview-tabs="true"
+      <%# KpiWorkbookReader scans every sheet, unlike the sheet-0-only importers,
+          so the preview must not single out one sheet as "used for import". %>
+      data-xlsx-preview-all-sheets="true">
 
     <div data-xlsx-preview-target="card" class="card mt-3 d-none">
       <div class="card-header fw-bold">
