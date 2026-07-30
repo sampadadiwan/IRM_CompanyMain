@@ -41,8 +41,11 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.0/dist/chart.min.js"></script>
 
     <!-- Tracking -->
+    <!-- NOTE: no local /js/clarity.js here — that file was deleted when the
+         Clarity loader moved inline (CDN) into the modernize layout. The stale
+         reference 404'd on EVERY admin page load, and those 404s fed the
+         Rack::Attack scanner counter, blocking super users' office IPs. -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-4CPQNX69HM"></script>
-    <script src="/js/clarity.js"></script>
 
     <!-- PDFTron -->
     <script src='/lib/webviewer.min.js'></script>
@@ -84,7 +87,8 @@
 <body data-controller="confirm" data-turbo-prefetch="false">
   <!-- Preloader -->
   <div class="preloader">
-    <img src="/img/favicon.png" alt="loader" class="lds-ripple img-fluid" />
+    <%# /img/favicon.png never existed (a guaranteed 404 per admin page load); the real icon is /favicon.png %>
+    <img src="/favicon.png" alt="loader" class="lds-ripple img-fluid" />
   </div>
   <div id="main-wrapper">
 
