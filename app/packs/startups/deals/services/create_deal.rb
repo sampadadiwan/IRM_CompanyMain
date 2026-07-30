@@ -5,11 +5,16 @@ class CreateDeal < DealActions
   step :create_deal_documents_folder
   left :handle_errors, Output(:failure) => End(:failure)
 
-  def active_deal(ctx, deal:, **)
+  def active_deal(ctx, deal:, current_user: nil, **)
     ApplicationRecord.transaction do
       unless deal.save
         Rails.logger.error deal.errors.full_messages
         ctx[:errors] = deal.errors.full_messages.join(", ")
+        raise ActiveRecord::Rollback
+      end
+
+      unless grant_creator_access_right(deal, current_user)
+        ctx[:errors] = "Could not grant full access to deal creator"
         raise ActiveRecord::Rollback
       end
 
@@ -27,6 +32,28 @@ class CreateDeal < DealActions
   end
 
   private
+
+  def grant_creator_access_right(deal, current_user)
+    return true if current_user.blank?
+    return true unless current_user.curr_role == "employee"
+    return true if current_user.has_cached_role?(:company_admin)
+
+    access_right = AccessRight.find_or_initialize_by(
+      owner: deal,
+      entity_id: deal.entity_id,
+      user_id: current_user.id
+    )
+
+    # Preserve explicit admin-managed overrides when an access right already exists.
+    return true unless access_right.new_record?
+
+    access_right.access_type = "Deal"
+    access_right.granted_by = current_user
+    access_right.notify = false
+    access_right.permissions = 0
+    %i[create read update destroy].each { |perm| access_right.permissions.set(perm) }
+    access_right.save
+  end
 
   def create_activity_template_records(ctx, deal)
     # Skip entirely when the user checked "No Templates" at creation time.
