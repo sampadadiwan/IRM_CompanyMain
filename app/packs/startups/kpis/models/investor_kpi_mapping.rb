@@ -53,9 +53,11 @@ class InvestorKpiMapping < ApplicationRecord
   before_validation :set_default_fx_conversion_method, on: :create
 
   # Sets IAS 21-aligned FX conversion default based on KPI category.
+  # Percentage KPIs are always not_applicable (25% is 25% in any currency).
   # @return [void]
   def set_default_fx_conversion_method
     return if fx_conversion_method_changed?
+    return self.fx_conversion_method = 'not_applicable' if percentage?
 
     self.fx_conversion_method = case category
                                 when 'Income Statement', 'Cashflow Statement'
