@@ -63,12 +63,15 @@
      <!-- Include the JS for AG Grid -->
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-enterprise@30.2.1/dist/ag-grid-enterprise.min.js"></script>
 
-    <!-- Include the core CSS, this is needed by the grid -->
+    <!-- Include the core CSS, this is needed by the grid.
+         CSS pinned to 32.3.9: last release shipping the legacy quartz theme (grids get their
+         theme class from AgGridHelper#get_ag_theme, which always emits ag-theme-quartz);
+         v33+ removed legacy theme CSS and quartz does not exist in v30. -->
     <link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>
+      href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.9/styles/ag-grid.css"/>
     <!-- Include the theme CSS, only need to import the theme you are going to use -->
     <link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>
+      href="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.9/styles/ag-theme-quartz.css"/>
 
     <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.0/dist/trix.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" type="text/css">
