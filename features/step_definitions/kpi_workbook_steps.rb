@@ -202,7 +202,74 @@ Then('the KPI data should be updated with the new values') do
   puts "All KPIs after refresh: #{Kpi.where(portfolio_company_id: @portfolio_company.id).pluck(:name).tally}"
 end
 
-# --- Steps for KPI parser fixes (branch: feature/kpi-workbook-parser-fixes) ---
+# --- Steps for KPI parser fixes ---
+# Changed in feature/kpi-multi-column-detection: replaced auto-creation steps
+# (child mappings should be created, no duplicate child mappings) with explicit
+# mapping setup + value import assertions. The parser no longer creates mappings —
+# all parent-child hierarchy must be pre-configured via bulk import.
+
+# Creates parent-child KPI mappings from a table with parent_name and reported_kpi_name.
+# standard_kpi_name is auto-prefixed as "Parent - Child" when parent is set,
+# mirroring the ImportInvestorKpiMapping bulk import behavior.
+And('the following parent-child KPI mappings exist for the portfolio company:') do |table|
+  parents = {}
+  table.hashes.each do |row|
+    reported = row['reported_kpi_name'].strip
+    parent_name = row['parent_name'].to_s.strip
+
+    attrs = {
+      entity_id: @portfolio_company.entity_id,
+      reported_kpi_name: reported,
+      standard_kpi_name: reported
+    }
+
+    if parent_name.present?
+      parent = parents[parent_name]
+      raise "Parent '#{parent_name}' not found — define it before its children" unless parent
+
+      attrs[:parent] = parent
+      # Auto-prefix: "Enterprise" → "Net Sales - Enterprise" (same as ImportInvestorKpiMapping)
+      attrs[:standard_kpi_name] = "#{parent.standard_kpi_name} - #{reported}"
+    end
+
+    mapping = @portfolio_company.investor_kpi_mappings.create!(attrs)
+    parents[reported] = mapping if parent_name.blank?
+  end
+  @portfolio_company.reload
+end
+
+# Verifies that at least one Kpi value was imported for a mapping by standard_kpi_name
+Then('KPI values should be imported for mapping {string}') do |standard_name|
+  mapping = InvestorKpiMapping.find_by(
+    standard_kpi_name: standard_name,
+    investor: @portfolio_company
+  )
+  expect(mapping).not_to be_nil, "Mapping '#{standard_name}' not found"
+
+  kpi_count = Kpi.where(
+    investor_kpi_mapping_id: mapping.id,
+    portfolio_company_id: @portfolio_company.id
+  ).count
+  expect(kpi_count).to be > 0,
+    "No KPI values imported for mapping '#{standard_name}' (mapping #{mapping.id})"
+end
+
+# Verifies the first imported Kpi value for a mapping matches the expected value
+Then('the KPI for mapping {string} should have value {float}') do |standard_name, expected_value|
+  mapping = InvestorKpiMapping.find_by(
+    standard_kpi_name: standard_name,
+    investor: @portfolio_company
+  )
+  expect(mapping).not_to be_nil, "Mapping '#{standard_name}' not found"
+
+  kpi = Kpi.where(
+    investor_kpi_mapping_id: mapping.id,
+    portfolio_company_id: @portfolio_company.id
+  ).order(:id).first
+  expect(kpi).not_to be_nil, "No KPI found for mapping '#{standard_name}'"
+  expect(kpi.value.to_f).to eq(expected_value),
+    "Expected #{expected_value} for '#{standard_name}', got #{kpi.value.to_f}"
+end
 
 # Verifies that KpiReports with each expected tag exist for the portfolio company
 Then('KPI reports should exist with tags {string}') do |tags_string|
@@ -305,19 +372,17 @@ When('the KpiWorkbookReader processes the file again') do
   @extracted_kpis = reader.extract_kpis
 end
 
-# Verifies no duplicate child mappings were created on re-upload
-Then('there should be no duplicate child mappings under {string}') do |parent_name|
-  parent = InvestorKpiMapping.find_by(
-    standard_kpi_name: parent_name,
-    investor: @portfolio_company
-  )
-  expect(parent).not_to be_nil, "Parent mapping '#{parent_name}' not found"
+# Replaces "I note the child mapping count" / "no duplicate child mappings" steps from PR #1560.
+# With explicit mapping-only approach, idempotency is about KPI values not duplicating on re-upload,
+# not about auto-created mappings not duplicating.
+And('I note the KPI count for the portfolio company') do
+  @kpi_count = Kpi.where(portfolio_company_id: @portfolio_company.id).count
+  puts "KPI count before re-upload: #{@kpi_count}"
+end
 
-  children_names = parent.children.pluck(:standard_kpi_name)
-  duplicates = children_names.tally.select { |_, count| count > 1 }
-  expect(duplicates).to be_empty,
-    "Duplicate child mappings found: #{duplicates}"
-
-  expect(parent.children.count).to eq(@child_mapping_count),
-    "Child count changed from #{@child_mapping_count} to #{parent.children.count} after re-upload"
+# Verifies re-upload did not create additional KPI records
+Then('the KPI count should not have increased') do
+  new_count = Kpi.where(portfolio_company_id: @portfolio_company.id).count
+  expect(new_count).to eq(@kpi_count),
+    "KPI count changed from #{@kpi_count} to #{new_count} after re-upload — expected no duplicates"
 end

@@ -235,8 +235,10 @@ module KpisHelper
     when "projected" then "bg-info-subtle text-info badge-tag-projected"
     when /^ic /      then "bg-warning-subtle text-warning badge-tag-ic-case"
     when /^audited/  then "bg-danger-subtle text-danger badge-tag-audited"
-    when "budget"    then "bg-success-subtle text-success badge-tag-budget"
-    else                  "bg-secondary-subtle text-secondary badge-tag-other"
+    when "budget" then "bg-success-subtle text-success badge-tag-budget"
+    # Forecast gets its own cyan/info badge to distinguish from Budget (green)
+    when "forecast" then "bg-info-subtle text-info badge-tag-forecast"
+    else "bg-secondary-subtle text-secondary badge-tag-other"
     end
   end
 
