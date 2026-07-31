@@ -19,6 +19,7 @@
 
 
   <%
+    edit_mode = note.persisted?
     note_context = params[:embedded_note_context].presence
     note_context ||= "deal_investor_tab" if params[:from] == "deal_details"
     restricted_embedded_context = note_context.in?(%w[deal_tab deal_investor_tab])
@@ -37,7 +38,18 @@
       owner_options = investor_owner_options
     end
 
-    owner_type_disabled = restricted_embedded_context
+    # Ensure current owner remains visible even if it is not in the default scoped options.
+    if edit_mode && owner_options.present? && note.owner_id.present? && owner_options.none? { |(_label, value)| value.to_s == note.owner_id.to_s }
+      owner_label = case effective_owner_type
+                    when "DealInvestor", "Investor"
+                      note.owner&.respond_to?(:investor_name) ? note.owner.investor_name : note.owner_id.to_s
+                    else
+                      note.owner_id.to_s
+                    end
+      owner_options.unshift([owner_label, note.owner_id])
+    end
+
+    owner_type_disabled = restricted_embedded_context || edit_mode
     owner_type_options = if note_context.blank?
       [["User", "User"], ["Investor", "Investor"]]
     elsif effective_owner_type == "Investor"
@@ -46,9 +58,17 @@
       [["Deal Investor", "DealInvestor"]]
     end
 
-    owner_locked = effective_owner_type == "DealInvestor" && note.owner_id.present? && note_context == "deal_investor_tab"
+    # In edit mode, owner type is display-only and must reflect the current persisted owner type.
+    owner_type_options = [[effective_owner_type == "DealInvestor" ? "Deal Investor" : effective_owner_type, effective_owner_type]] if edit_mode
+
+    owner_locked = edit_mode || (effective_owner_type == "DealInvestor" && note.owner_id.present? && note_context == "deal_investor_tab")
     show_for_field = effective_owner_type != "User"
-    show_name_field = note_context.blank? && effective_owner_type == "User"
+    show_name_field = effective_owner_type == "User"
+    owner_name_value = if edit_mode && effective_owner_type == "User"
+      note.owner&.respond_to?(:full_name) ? note.owner.full_name : note.owner&.to_s
+    else
+      current_user.full_name
+    end
   %>
 
   <div data-controller="note-owner">
@@ -87,7 +107,7 @@
 
     <div class="form-group <%= show_name_field ? '' : 'd-none' %>" data-note-owner-target="ownerNameGroup">
       <%= form.label :owner_name, "Name" %>
-      <%= text_field_tag :owner_name, current_user.full_name, class: "form-control", disabled: true %>
+      <%= text_field_tag :owner_name, owner_name_value, class: "form-control", disabled: true %>
     </div>
   </div>
 

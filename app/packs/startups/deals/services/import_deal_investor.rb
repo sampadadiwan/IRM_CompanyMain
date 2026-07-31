@@ -222,6 +222,8 @@ class ImportDealInvestor < ImportUtil
   #                   Reminder Emails, Reminder Date
   # -----------------------------------------------------------------------
   def process_notes(import_upload, sheet)
+    # Get the owner deal and entity_id for the notes
+    deal      = import_upload.owner
     entity_id = import_upload.entity_id
     headers   = sheet[:headers]
 
@@ -233,12 +235,18 @@ class ImportDealInvestor < ImportUtil
       investor = Investor.where(investor_name:, entity_id:).first
       next if investor.nil?
 
+      # We need to find the DealInvestor record for this investor in the context of the current deal, because notes are associated with DealInvestor, not directly with Investor.
+      deal_investor = DealInvestor.find_by(deal_id: deal.id, investor_id: investor.id)
+      raise "DealInvestor for investor '#{investor_name}' not found in this deal" if deal_investor.nil?
+
       details_text = user_data["Details"].to_s.strip
       next if details_text.blank?
 
+      # Attach the note to the DealInvestor, and create a Reminder if either Reminder Emails or Reminder Date is present.
       note = Note.new(
         entity_id:,
-        investor_id: investor.id,
+        owner_id: deal_investor.id,
+        owner_type: "DealInvestor",
         user_id: import_upload.user_id,
         on: parse_date(user_data["On"]),
         tags: user_data["Tags"].presence&.strip

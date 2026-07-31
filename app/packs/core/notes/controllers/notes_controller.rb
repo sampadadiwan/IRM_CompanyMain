@@ -116,6 +116,8 @@ class NotesController < ApplicationController
   # PATCH/PUT /notes/1 or /notes/1.json
   def update
     np = normalized_note_params
+    # Owner is immutable after creation; keep persisted owner linkage on edit.
+    np = np.except(:owner_id, :owner_type)
     if params[:note] && params[:note][:reminder_attributes] && params[:note][:reminder_attributes][:email].present?
       @note.build_reminder(entity_id: @note.entity_id, note: "Reminder for #{@note}") unless @note.reminder
     else
