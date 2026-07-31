@@ -4,7 +4,7 @@ class ImportInvestorKpiMapping < ImportUtil
   # FX rate method to apply per mapping (Not Applicable / Report Date / Average Rate).
   STANDARD_HEADERS = [
     "Stakeholder", "Reported Kpi Name", "Standard Kpi Name", "Category",
-    "Data Type", "Denomination", "FX Conversion", "Parent Standard Kpi Name", "Position",
+    "Data Type", "Denomination", "Fx Conversion", "Parent Standard Kpi Name", "Position",
     "Show In Report", "Lower Threshold", "Upper Threshold", "Auto Fill", "Compute Formula",
     "Update Only"
   ].freeze
