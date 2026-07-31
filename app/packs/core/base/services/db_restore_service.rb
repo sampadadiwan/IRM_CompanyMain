@@ -30,6 +30,14 @@ class DbRestoreService
     new.run!(instance_name: instance_name, stop_instance_flag: stop_instance_flag)
   end
 
+  # Terminates the named restore instance. Used to recover from a stale disk-full
+  # DbCheckInstance: the box is only stopped between runs, so its disk accumulates
+  # cruft over days until scp/restore fails. Terminating it forces run! to launch a
+  # fresh instance with a clean disk on the next attempt.
+  def self.terminate_instance!(instance_name: INSTANCE_NAME)
+    new.terminate_instance!(instance_name: instance_name)
+  end
+
   # Main method to orchestrate the DB restore process.
   # 1. Ensures the backup script is present locally.
   # 2. Finds or launches an EC2 instance for the restore process.
@@ -97,7 +105,34 @@ class DbRestoreService
     end
   end
 
+  # Terminates the instance matching instance_name, if one exists. Refuses to touch the
+  # real production primary — that instance must never be destroyed by this verifier.
+  def terminate_instance!(instance_name: INSTANCE_NAME)
+    raise "✗ Refusing to terminate the production primary #{PRIMARY_INSTANCE_NAME}" if instance_name == PRIMARY_INSTANCE_NAME
+    raise "✗ Refusing to terminate instance - #{instance_name}. We only terminate #{INSTANCE_NAME}" unless instance_name == INSTANCE_NAME
+
+    instance = find_instance(instance_name)
+    return Rails.logger.info { "[DbRestoreService] No #{instance_name} instance found to terminate" } unless instance
+
+    instance_id = instance.instance_id
+    Rails.logger.info { "[DbRestoreService] Terminating instance #{instance_id} (#{instance_name})..." }
+    ec2.terminate_instances(instance_ids: [instance_id])
+    ec2.wait_until(:instance_terminated, instance_ids: [instance_id])
+    Rails.logger.info { "[DbRestoreService] ✓ Instance #{instance_id} terminated" }
+  rescue Aws::EC2::Errors::InvalidInstanceIDNotFound => e
+    Rails.logger.info { "[DbRestoreService] Instance already gone: #{e.message}" }
+  end
+
   private
+
+  # Shared SSH/SCP connection options. Restore instances are throwaway and frequently
+  # reuse a subnet private IP, so a recycled instance presents a new host key while
+  # ~/.ssh/known_hosts still holds the previous one — Net::SSH then aborts with a
+  # "fingerprint does not match" error. These boxes are single-use and reached over a
+  # private subnet, so skip host-key verification rather than fail on the stale key.
+  def ssh_opts(timeout:)
+    { keys: [KEY_PATH], timeout: timeout, verify_host_key: :never }
+  end
 
   # Ensures the backup script is present locally. If not, it generates the script using a Rake task.
   def ensure_script_present!
@@ -283,15 +318,15 @@ class DbRestoreService
     tmp_path = "/home/ubuntu/tmp/db_backup.sh"
     final_path = "/home/ubuntu/db_backup.sh"
 
-    Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
+    Net::SSH.start(ip, SSH_USER, **ssh_opts(timeout: 10)) do |ssh|
       ssh.exec!("mkdir -p /home/ubuntu/tmp")
     end
 
-    Net::SCP.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |scp|
+    Net::SCP.start(ip, SSH_USER, **ssh_opts(timeout: 10)) do |scp|
       scp.upload!(LOCAL_SCRIPT_PATH.to_s, tmp_path)
     end
 
-    Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
+    Net::SSH.start(ip, SSH_USER, **ssh_opts(timeout: 10)) do |ssh|
       ssh.exec!("sudo mv #{tmp_path} #{final_path}")
       ssh.exec!("sudo chmod +x #{final_path}")
     end
@@ -302,7 +337,7 @@ class DbRestoreService
     Rails.logger.debug { "→ Running script on #{ip} (this may take a few minutes...)" }
     sanitized_ip = ip.tr('.', '_')
     timestamp = Time.zone.now.strftime('%Y%m%d_%H%M%S')
-    Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 1800) do |ssh|
+    Net::SSH.start(ip, SSH_USER, **ssh_opts(timeout: 1800)) do |ssh|
       File.open("log/db_restore_#{sanitized_ip}_#{timestamp}.log", "wb") do |f|
         ssh.open_channel do |channel|
           channel.exec("sudo bash #{REMOTE_SCRIPT_PATH} restore_primary") do |_ch, success|
@@ -344,7 +379,7 @@ class DbRestoreService
     db_pass = Rails.application.credentials['DB_PASS']
     db_name = ActiveRecord::Base.connection.current_database
     Rails.logger.info { "[DbRestoreService] Querying restored MySQL on #{ip} (db: #{db_name})" }
-    raw = Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 30) do |ssh|
+    raw = Net::SSH.start(ip, SSH_USER, **ssh_opts(timeout: 30)) do |ssh|
       ssh.exec!("mysql -u#{db_user} -p#{db_pass} -sN #{db_name} -e \"SELECT COUNT(*) FROM users\"")
     end
     # ssh.exec! returns nil when the channel closes without producing output (e.g. auth failure,
@@ -430,7 +465,7 @@ class DbRestoreService
   def cleanup_remote_services(ip)
     Rails.logger.debug { "→ Cleaning up remote services on #{ip}" }
 
-    Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
+    Net::SSH.start(ip, SSH_USER, **ssh_opts(timeout: 10)) do |ssh|
       kill_elasticsearch_processes(ssh)
       stop_and_disable_service(ssh, "node_exporter.service")
       stop_and_disable_service(ssh, "redis.service")
@@ -523,7 +558,7 @@ class DbRestoreService
   # Cleans up temporary files on the remote instance after the restore process.
   def cleanup(ip)
     Rails.logger.debug { "→ Cleaning up /tmp/xb* on #{ip}" }
-    Net::SSH.start(ip, SSH_USER, keys: [KEY_PATH], timeout: 10) do |ssh|
+    Net::SSH.start(ip, SSH_USER, **ssh_opts(timeout: 10)) do |ssh|
       ssh.exec!("sudo rm -rf /tmp/xb*")
       # The restore script ARMS the baked backup cron (/etc/db_backup_enabled)
       # on whatever host it restores. That is only correct for the REAL primary
@@ -535,7 +570,7 @@ class DbRestoreService
         Rails.logger.debug "  → Primary restore: leaving backup cron ARMED"
       else
         ssh.exec!("sudo rm -f /etc/db_backup_enabled")
-        Rails.logger.debug "  → Non-primary (#{@instance_name}): backup cron disarmed"
+        Rails.logger.debug { "  → Non-primary (#{@instance_name}): backup cron disarmed" }
       end
       Rails.logger.debug "✓ Cleanup successful"
     end

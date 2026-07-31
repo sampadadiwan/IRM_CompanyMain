@@ -83,10 +83,27 @@ class ImportInvestorKpiMapping < ImportUtil
     raise "Standard Kpi Name is required" if user_data["Standard Kpi Name"].blank?
     raise "Reported Kpi Name is required" if user_data["Reported Kpi Name"].blank?
 
+    standard_name = user_data["Standard Kpi Name"]
+
+    # When a parent is specified, search by the prefixed name first
+    # (e.g., "Net Sales - Enterprise") since set_investor_kpi_mapping_attributes
+    # auto-prefixes on first import. Without this, re-imports search for
+    # "Enterprise" but the DB has "Net Sales - Enterprise" — causing duplicates.
+    if user_data["Parent Standard Kpi Name"].present?
+      prefixed_name = "#{user_data['Parent Standard Kpi Name']} - #{standard_name}"
+      existing = InvestorKpiMapping.find_by(
+        entity: import_upload.entity,
+        investor: investor,
+        standard_kpi_name: prefixed_name,
+        reported_kpi_name: user_data["Reported Kpi Name"]
+      )
+      return existing if existing
+    end
+
     InvestorKpiMapping.find_or_initialize_by(
       entity: import_upload.entity,
       investor: investor,
-      standard_kpi_name: user_data["Standard Kpi Name"],
+      standard_kpi_name: standard_name,
       reported_kpi_name: user_data["Reported Kpi Name"]
     )
   end
@@ -129,12 +146,27 @@ class ImportInvestorKpiMapping < ImportUtil
     }
 
     # Handle parent KPI mapping if provided.
+    # When a parent is set, the standard_kpi_name is automatically prefixed as
+    # "Parent - Child" (e.g., "Net Sales - Enterprise") to ensure uniqueness.
+    # This handles cases where the same child name (e.g., "Enterprise") appears
+    # under multiple parents (e.g., Net Sales and Operating Cost). The FM only
+    # needs to type the child name in the Standard Kpi Name column — the prefix
+    # is added automatically. The reported_kpi_name stays as the raw child name
+    # for matching against Excel cells during upload parsing.
     if user_data["Parent Standard Kpi Name"].present?
       parent_kpi_mapping = InvestorKpiMapping.find_by(standard_kpi_name: user_data["Parent Standard Kpi Name"],
                                                       entity: import_upload.entity, investor: investor)
       raise "Parent KPI Mapping with standard name '#{user_data['Parent Standard Kpi Name']}' for investor '#{investor}' not found" unless parent_kpi_mapping
 
       attributes[:parent_id] = parent_kpi_mapping.id
+
+      # Auto-prefix standard_kpi_name with parent name for uniqueness.
+      # Only prefix if not already prefixed (idempotent for re-imports).
+      parent_prefix = "#{user_data['Parent Standard Kpi Name']} - "
+      current_std_name = investor_kpi_mapping.standard_kpi_name
+      unless current_std_name&.start_with?(parent_prefix)
+        investor_kpi_mapping.standard_kpi_name = "#{parent_prefix}#{current_std_name}"
+      end
     else
       attributes[:parent_id] = nil
     end

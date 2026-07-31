@@ -103,7 +103,10 @@ export default class extends Controller {
       const periodCount = periodColumns.length;
 
       reportedKpis.forEach((kpiObj) => {
-        const row = data.find((r) => normalize(r[0]) === normalize(kpiObj.reported_kpi_name));
+        // Changed from r[0] to r.some() — the old code only checked column A for KPI name matches,
+        // so children in column B (column-based parent-child layout) were falsely reported as "Missing"
+        // in the preview even though the server-side parser (multi-column scan) found them.
+        const row = data.find((r) => r.some((cell) => normalize(cell) === normalize(kpiObj.reported_kpi_name)));
         if (!row) return;
 
         const nonBlankCount = row

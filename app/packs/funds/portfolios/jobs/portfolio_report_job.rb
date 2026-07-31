@@ -65,10 +65,13 @@ class PortfolioReportJob < LlmReportJob
 
         # Now generate the actual report using the template. Run synchronously (not perform_later)
         # so that, once every company in the batch is done, we can merge the generated documents
-        # across companies below.
-        doc_gen_job = PortfolioReportDocGenJob.new(portfolio_report_extract.id, template_id, start_date, end_date, user_id)
+        # across companies below. The silent variant suppresses the doc gen job's own per-company
+        # toasts and error email so this job can report the whole batch once, below.
+        doc_gen_job = PortfolioReportDocGenSilentJob.new(portfolio_report_extract.id, template_id, start_date, end_date, user_id)
         doc_gen_job.perform_now
-        generated_documents.concat(doc_gen_job.generated_documents)
+        # generated_documents is nil when the doc gen job bailed out on invalid inputs.
+        generated_documents.concat(doc_gen_job.generated_documents.to_a)
+        @errors.concat(doc_gen_job.error_msg.map { |error| { msg: error[:msg], model: error[:model].to_s } })
       end
 
       # All companies share a single output template, so the run always ends with exactly one

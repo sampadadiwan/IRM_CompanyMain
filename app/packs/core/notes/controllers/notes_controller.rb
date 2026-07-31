@@ -69,7 +69,7 @@ class NotesController < ApplicationController
     @note.owner_id = current_user.id if @note.owner_type == "User"
     @note.entity_id ||= @note.owner&.entity_id
     @note.user_id ||= current_user.id
-    @note.on = Time.zone.today
+    # On should be blank by default
     @note.reminder = Reminder.new(entity_id: @note.entity_id)
 
     @bread_crumbs = { Notes: notes_path }

@@ -1,5 +1,4 @@
-require 'rubyXL'
-require 'rubyXL/convenience_methods'
+# frozen_string_literal: true
 
 # This class, `KpiWorkbookReader`, is responsible for extracting KPI (Key Performance Indicator) data
 # from an Excel workbook using the Roo gem. It processes multiple sheets in the workbook, identifies
@@ -32,6 +31,10 @@ require 'rubyXL/convenience_methods'
 
 class KpiWorkbookReader
   # Maps common abbreviations found in Excel tag rows to canonical KpiReport tag values.
+  # Used by detect_tag_row to identify ACT/BUDGET/IC labels in rows below the date header.
+  # Some Excel files have Actual and Budget columns side by side in the same sheet —
+  # this mapping normalizes the various labels (e.g., "ACT", "Actuals", "FC") to their
+  # canonical form so each column's values are saved to the correct KpiReport.
   TAG_SYNONYMS = {
     "act" => "Actual",
     "actual" => "Actual",
@@ -56,15 +59,21 @@ class KpiWorkbookReader
     # We need to cleanup the file before processing it to remove blank/hidden rows & cols. Note this will update the file on S3
     # ConvertKpiToCsvJob.perform_now(@kpi_report.id, @user.id, @document.id, action: 'cleanup')
 
-    # Index the @kpi_mappings by normalized KPI names for quick lookup
-    # Normalize kpi_mappings to be case-/space-insensitive
-    @kpi_name_to_kpi_mappings = @kpi_mappings.index_by do |mapping|
+    # Index the @kpi_mappings by normalized reported_kpi_name for lookup.
+    # Uses group_by instead of index_by because the same reported_kpi_name can
+    # appear under different parents (e.g., "Enterprise" under both Net Sales and
+    # Operating Cost). group_by stores an Array of mappings per normalized name,
+    # and process_data_rows uses parent context to pick the correct one.
+    @kpi_name_to_kpi_mappings = @kpi_mappings.group_by do |mapping|
       normalize_kpi_name(mapping.reported_kpi_name)
     end
 
     Rails.logger.debug { "Document: #{@document.name}" }
-    # Normalize reported_kpi_name for consistent matching
-    @target_kpis = kpi_mappings.map { |kpi_mapping| normalize_kpi_name(kpi_mapping.reported_kpi_name) }
+    # Normalize reported_kpi_name for consistent matching.
+    # Using .uniq because the same reported_kpi_name under different parents
+    # would otherwise appear multiple times (we only need it once for the
+    # inclusion check in process_data_rows).
+    @target_kpis = kpi_mappings.map { |kpi_mapping| normalize_kpi_name(kpi_mapping.reported_kpi_name) }.uniq
     Rails.logger.debug { "Target KPIs: #{@target_kpis.inspect}" }
 
     @portfolio_company = portfolio_company
@@ -74,15 +83,6 @@ class KpiWorkbookReader
     @results = {}
     # Initialize error messages array to store processing errors
     @error_msg = []
-    # Row-level mapping for child KPIs with duplicate names across parents
-    # (e.g., "Enterprise" under both Net Sales and Operating Cost).
-    # Keys are [sheet_name, row_index], values are InvestorKpiMapping records.
-    @row_to_mapping = {}
-
-    # Column index for column-based child KPIs (e.g., children in column B while
-    # parents are in column A). Set by detect_column_based_children, nil if not detected.
-    @child_col = nil
-
     # Initialize a set to keep track of target KPIs found in the workbook
     @found_kpis = Set.new
   end
@@ -92,7 +92,6 @@ class KpiWorkbookReader
       file_path = file.path
       # Open the workbook using Roo gem
       @workbook = Roo::Spreadsheet.open(file_path)
-      @indent_map = build_indent_map(file_path)
 
       # Iterate through each sheet in the workbook
       @workbook.sheets.each do |sheet|
@@ -111,11 +110,12 @@ class KpiWorkbookReader
             next
           end
 
-          Rails.logger.debug { "Header row index: #{header_row_index}" }
           # Clean and normalize the header row
           header = clean_row(@workbook.row(header_row_index)).map { |h| normalize_kpi_name(h) }
 
-          # Detect a tag row (ACT/BUDGET labels) below the header
+          # Detect a tag row (ACT/BUDGET/IC labels) in the 1-2 rows below the header.
+          # When present, each column gets its own tag so Actual and Budget values
+          # are saved to separate KpiReports instead of all using the report-level tag.
           tag_detection = detect_tag_row(header_row_index)
           if tag_detection
             @column_tags = tag_detection[:column_tags]
@@ -126,17 +126,13 @@ class KpiWorkbookReader
             data_start_row = header_row_index + 1
           end
 
-          # Detect the column containing KPI names (needed for column-based child detection)
-          kpi_col = detect_kpi_name_column(data_start_row)
+          # Detect where date columns begin in the header. All columns before
+          # this index are KPI name/label columns; all from this index onward
+          # are value columns. This replaces the old single-column majority vote.
+          @first_date_col = detect_first_date_column(header)
 
-          # Detect parent-child relationships from indent formatting BEFORE
-          # processing data rows — this auto-creates InvestorKpiMapping records
-          # for indented child KPIs so the parser can import their values.
-          detect_parent_child_relationships(sheet, data_start_row, kpi_col)
-          # Process the data rows below the header (and tag row, if present).
-          # Pass kpi_col so process_data_rows uses the same primary KPI column
-          # detected before child mappings expanded @target_kpis.
-          process_data_rows(sheet, data_start_row, header, kpi_col)
+          # Process the data rows below the header (and tag row, if present)
+          process_data_rows(sheet, data_start_row, header)
         rescue StandardError => e
           msg = if e.message.include?("invalid value for Float():")
                   "The xlsx sheet you are trying to import seems to be invalid. Please correct and try again. Sheet: '#{sheet}'"
@@ -153,11 +149,8 @@ class KpiWorkbookReader
       log_missing_target_kpis
     end
 
-    # Run cumulation synchronously (we're already inside ImportKpiWorkbookJob, so no latency win
-    # from enqueuing). This guarantees Quarter/YTD/Year cumulative KPIs exist before the import
-    # job continues to the percentage-change step and the workflow launch — with perform_later
-    # those steps could run against KPIs whose cumulative totals hadn't been written yet.
-    KpiCumulateJob.perform_now(@portfolio_company_id)
+    # Trigger KPI cumulation job after extraction
+    KpiCumulateJob.perform_later(@portfolio_company_id)
     # Return the extracted results
     @results
   end
@@ -177,6 +170,14 @@ class KpiWorkbookReader
   # only ~3 distinct values. Row 5 has 12+ distinct monthly periods. By scoring
   # on distinct count, Row 5 wins. For simple single-row headers, the best row
   # and the first row are the same, so there is no regression.
+  #
+  # Cells must contain at least one letter or date separator (/ or -) before
+  # checking date_like?. Pure numeric cells (20, 25, 30) were matching
+  # Date.local_parse fallback and causing data rows to outscore the real header
+  # row. Slashes and dashes are allowed so MM/DD/YYYY and YYYY-MM-DD formats
+  # (common when Roo reads CSV-converted Excel files) pass through.
+  #
+  # @return [Integer, nil] the 1-based row index of the detected header, or nil
   def detect_header_row
     max_scan_rows = 10
     best_row = nil
@@ -189,9 +190,12 @@ class KpiWorkbookReader
 
       # Count distinct date-like values — a real period header row has many
       # unique periods (Apr, May, Jun...) while a grouping/label row repeats
-      # the same FY tag across many columns
+      # the same FY tag across many columns.
+      # Require at least one letter or date separator (/ or -) to avoid pure
+      # numeric cells (20, 25, 30) matching the lenient Date.local_parse fallback.
+      # Slashes/dashes allow MM/DD/YYYY and YYYY-MM-DD formats from CSV-converted files.
       distinct_date_count = period_candidates
-                            .select { |val| val.present? && !val.to_s.strip.match?(/\A[\d.]+\z/) && KpiDateUtils.date_like?(val) }
+                            .select { |val| val.present? && val.to_s.strip.match?(%r{[a-z/-]}i) && KpiDateUtils.date_like?(val) }
                             .map { |val| val.to_s.strip.downcase }
                             .uniq
                             .size
@@ -206,25 +210,56 @@ class KpiWorkbookReader
     best_row if best_score >= 2
   end
 
+  # Detects a tag row (ACT/BUDGET/IC labels) in the 1-2 rows immediately below
+  # the date header. Some Excel files have Actual and Budget columns side by side
+  # in the same sheet, with a dedicated row of labels like:
+  #
+  #   Header row: | Apr'25 | May'25 | Jun'25 | Apr'25 | May'25 | Jun'25 |
+  #   Tag row:    | ACT    | ACT    | ACT    | BUDGET | BUDGET | BUDGET |
+  #
+  # When detected, each column gets its own tag so values are saved to the
+  # correct KpiReport (Actual vs Budget vs IC) instead of all going to
+  # the report-level tag.
+  #
+  # Detection criteria: >50% of non-empty cells in the candidate row must match
+  # a TAG_SYNONYMS entry. This avoids false positives on data rows that happen
+  # to contain words like "actual".
+  #
+  # Also strips trailing "Case" noise word before lookup — some companies use
+  # "IC Case", "Budget Case", "Actual Case" instead of bare tags (PR #1564).
+  #
   # @param header_row_index [Integer] the row index of the detected date header
   # @return [Hash, nil] { tag_row_index:, column_tags: { col_index => "Actual"|"Budget"|"IC" } }
+  #   or nil if no tag row is found
   def detect_tag_row(header_row_index)
+    # Check the 2 rows immediately after the header for tag labels
     [header_row_index + 1, header_row_index + 2].each do |candidate_row|
       next if candidate_row > @workbook.last_row
 
       row = clean_row(@workbook.row(candidate_row))
+      # Skip the first column (KPI name label) and check the rest
       value_cells = row[1..] || []
 
+      # Collect non-empty cells with their original index
       non_empty = value_cells.each_with_index.select { |cell, _| cell.present? }
       next if non_empty.size < 2
 
       tag_matches = {}
       non_empty.each do |cell, idx|
-        normalized = cell.to_s.strip.downcase.gsub(/\s+/, ' ')
-        canonical_tag = TAG_SYNONYMS[normalized]
-        tag_matches[idx + 1] = canonical_tag if canonical_tag
+        # Normalize for lookup: lowercase, collapse whitespace, strip trailing "Case".
+        # "IC Case" → "ic", "Budget Case" → "budget", "Actual Case" → "actual"
+        normalized = cell.to_s.strip.downcase.gsub(/\s+/, ' ').gsub(/\s*case\b/, '')
+        next unless TAG_SYNONYMS.key?(normalized)
+
+        # Preserve original Excel text (title-cased) instead of canonical synonym.
+        # Only normalize "Actuals" → "Actual" (singular/plural, system default).
+        tag_value = cell.to_s.strip
+        tag_value = "Actual" if tag_value == "Actuals"
+        # +1 because value_cells starts from index 1 of the original row
+        tag_matches[idx + 1] = tag_value
       end
 
+      # Accept as tag row if >50% of non-empty cells matched a known tag synonym
       if tag_matches.size > non_empty.size / 2
         Rails.logger.debug { "Tag row detected at row #{candidate_row}: #{tag_matches.inspect}" }
         return { tag_row_index: candidate_row, column_tags: tag_matches }
@@ -235,47 +270,107 @@ class KpiWorkbookReader
   end
 
   # Processes rows of KPI data beneath the header.
-  # Reads the KPI name from either the primary column or the child column
-  # (for column-based parent-child layouts where children are in a separate column).
-  # kpi_col is passed from extract_kpis to ensure the same primary column is used
-  # after child mappings have been registered (which expands @target_kpis and would
-  # cause detect_kpi_name_column to pick the child column instead).
-  def process_data_rows(sheet, start_row, header, kpi_col)
+  #
+  # Instead of picking a single "majority" KPI name column, this method scans
+  # ALL columns to the left of the first date column for KPI name matches.
+  # This handles Excel layouts where parents are in column A and children are
+  # in column B (or additional qualifier columns in C/D). Typically there are
+  # only 1-5 columns before dates start (dates usually begin around column D/E).
+  #
+  # For each row, every pre-date column is checked against @target_kpis. The
+  # FIRST match found (scanning left to right) is used as the KPI name for
+  # that row. Rows with no matching KPI name in any pre-date column are skipped.
+  #
+  # Parent tracking: maintains @current_parent_mapping as rows are processed.
+  # When a parent KPI is found (a mapping with no parent), it becomes the
+  # current parent. When a child KPI name matches multiple mappings under
+  # different parents (e.g., "Enterprise" under both Net Sales and Operating
+  # Cost), the current parent is used to pick the correct mapping. This
+  # avoids the need for positional hacks like @row_to_mapping.
+  #
+  # All KPI mappings (including parent-child hierarchy) must be pre-configured
+  # via the InvestorKpiMapping bulk import — the parser does NOT auto-create
+  # child mappings. It only imports values for KPIs that already have mappings.
+  #
+  # @param sheet [String] sheet name
+  # @param start_row [Integer] first data row index (after header + optional tag row)
+  # @param header [Array] cleaned/normalized header row
+  def process_data_rows(sheet, start_row, header)
+    # Track the current parent mapping as we scan rows top-to-bottom.
+    # Used to disambiguate child KPIs with the same reported_kpi_name
+    # under different parents (e.g., "Enterprise" under Net Sales vs Operating Cost).
+    @current_parent_mapping = nil
+
     (start_row..@workbook.last_row).each do |row_index|
       Rails.logger.debug { "Row index: #{row_index},  #{@workbook.row(row_index)}" }
       row = clean_row(@workbook.row(row_index))
       # Skip empty rows or rows where all cells are blank
       next if row.empty? || row.all?(&:blank?)
 
-      # For column-based children: if primary column is blank, read from child column
-      raw_kpi_name = row[kpi_col]
-      raw_kpi_name = row[@child_col] if raw_kpi_name.blank? && @child_col
+      # Scan all columns before the first date column for a KPI name match.
+      # The first match (left to right) wins. This handles layouts where
+      # parent KPIs are in column A and child KPIs are in column B — both
+      # columns are checked against existing mappings.
+      raw_kpi_name = nil
+      (0...@first_date_col).each do |col_index|
+        cell = row[col_index]
+        next if cell.blank?
 
-      # Normalize the KPI name for consistent matching
+        normalized = normalize_kpi_name(cell)
+        if @target_kpis.include?(normalized)
+          raw_kpi_name = cell
+          break
+        end
+      end
+
+      # Skip rows where no pre-date column matched a configured KPI mapping
+      next if raw_kpi_name.blank?
+
       kpi_name = normalize_kpi_name(raw_kpi_name)
 
-      # Skip rows where the KPI name is not in the target list
-      next unless @target_kpis.include?(kpi_name)
+      # Resolve the correct InvestorKpiMapping for this row.
+      # When the same reported_kpi_name exists under multiple parents,
+      # use @current_parent_mapping to pick the right one.
+      mapping = resolve_mapping(kpi_name)
+      next unless mapping
+
+      # Update parent tracking: if this mapping has no parent (it IS a parent),
+      # remember it so subsequent child rows can be disambiguated.
+      @current_parent_mapping = mapping if mapping.parent_id.blank?
 
       # Add the normalized KPI name to the set of found KPIs
       @found_kpis.add(kpi_name)
 
-      # Process the row to extract KPI values
-      process_kpi_row(sheet, row, row_index, header, raw_kpi_name, kpi_name)
+      # Process the row to extract KPI values, passing the resolved mapping
+      process_kpi_row(sheet, row, row_index, header, raw_kpi_name, mapping)
     end
   end
 
-  # Processes a single row of KPI data
-  def process_kpi_row(sheet, row, row_index, header, raw_kpi_name, _kpi_name)
+  # Processes a single row of KPI data, extracting values from all date columns.
+  #
+  # Value extraction starts from @first_date_col (the first date column detected
+  # in the header row). All columns before that are KPI name columns, all columns
+  # from @first_date_col onward are value columns.
+  #
+  # Per-column tags: when a tag row is detected (ACT/BUDGET/IC labels below the
+  # header), each column gets its own tag via @column_tags. This allows Actual and
+  # Budget values in the same row to be saved to separate KpiReports. Falls back
+  # to the report-level tag_list when no per-column tag is detected.
+  #
+  # @param sheet [String] sheet name
+  # @param row [Array] cleaned row data
+  # @param row_index [Integer] 1-based row index
+  # @param header [Array] cleaned/normalized header row
+  # @param raw_kpi_name [String] KPI name as it appears in the Excel cell
+  # @param investor_kpi_mapping [InvestorKpiMapping] the resolved mapping for this row,
+  #   already disambiguated by parent context in process_data_rows
+  def process_kpi_row(sheet, row, row_index, header, raw_kpi_name, investor_kpi_mapping)
     seen_periods = {}
-    # Iterate through each value in the row (excluding the KPI name column)
-    # Start value extraction after the KPI name column(s). For column-based children,
-    # skip both column A (parent) and column B (child) to avoid treating the child
-    # name as a numeric value.
-    value_start_col = @child_col ? @child_col + 1 : 1
+    # Start value extraction from the first date column — all columns before
+    # this are KPI name/label columns and should not be treated as values.
+    value_start_col = @first_date_col
     row[value_start_col..].each_with_index do |value, col_index|
       raw_period = header[col_index + value_start_col]
-
       period = raw_period&.to_s&.strip
       # Skip blank periods, blank values, or invalid values like "n/a"
       next if period.blank? || value.blank? || value.downcase == "n/a" || value.downcase == "na"
@@ -292,9 +387,12 @@ class KpiWorkbookReader
 
       period_type = KpiDateUtils.detect_period_type(period)
 
-      # Determine the tag for this column: per-column tag if detected, else report-level tag
+      # Determine the tag for this column: per-column tag if detected via tag row,
+      # else fall back to the report-level tag_list.
+      # Note: @kpi_report.tag_list is a String (e.g., "Actual"), NOT an Array.
+      # Using it directly (not .first) avoids a bug where .first on a String
+      # returns just the first character ("A" instead of "Actual").
       col_tag = @column_tags[col_index + value_start_col]
-
       effective_tag = col_tag || @kpi_report.tag_list
 
       # Skip future 'Actual' KPIs
@@ -303,7 +401,8 @@ class KpiWorkbookReader
         next
       end
 
-      # Check for duplicate periods in the same row (scoped by tag to allow same period for ACT + BUDGET)
+      # Check for duplicate periods in the same row (scoped by tag so same period
+      # for ACT + BUDGET columns don't collide — they go to separate KpiReports)
       dedup_key = "#{parsed_period}:#{period_type}:#{effective_tag}"
       if seen_periods[dedup_key].present?
         log_duplicate_period_warning(sheet, period, header)
@@ -314,8 +413,11 @@ class KpiWorkbookReader
 
       # Find or create a KPI report for the parsed period and tag
       kpi_report = find_or_create_kpi_report(parsed_period, period, tag: effective_tag)
-      # Save the KPI entry into the database
-      save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row, row_index, col_index)
+      # Save the KPI entry into the database, passing the already-resolved mapping
+      # so save_kpi_entry doesn't need to re-lookup (and risk picking the wrong
+      # mapping when duplicate reported_kpi_names exist under different parents)
+      save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, row, row_index, col_index,
+                     mapping: investor_kpi_mapping)
     end
   end
 
@@ -326,12 +428,28 @@ class KpiWorkbookReader
     @error_msg << { msg: msg, document: @document.name, document_id: @document.id, portfolio_company: @portfolio_company.name, kpi_name: nil, sheet: sheet, period: period, parsed_period: nil, old_value: nil, new_value: nil, row: nil, col: nil }
   end
 
+  # Finds or creates a KPI report for the given period and tag.
+  #
+  # When per-column tags are detected (ACT/BUDGET side by side), the tag parameter
+  # carries the column-specific tag (e.g., "Actual" or "Budget"). This creates
+  # separate KpiReports per tag so values don't collide. Falls back to the
+  # report-level tag_list when no per-column tag is provided.
+  #
+  # The results cache key includes the tag to prevent Actual and Budget values
+  # for the same period from sharing a single KpiReport.
+  #
+  # @param parsed_period [Date] the parsed date for this period
+  # @param period [String] the raw period string from the header
   # @param tag [String, nil] canonical tag ("Actual"/"Budget"/"IC") from column detection
+  # @return [KpiReport] the found or created report
   def find_or_create_kpi_report(parsed_period, period, tag: nil)
     # Detect the type of period (e.g., month, quarter, year)
     period_type = KpiDateUtils.detect_period_type(period)
 
+    # Use the per-column tag if provided, otherwise fall back to report-level tag
     effective_tag_list = tag || @kpi_report.tag_list
+    # Cache key includes tag so same period with different tags (ACT vs BUDGET)
+    # get separate KpiReports
     key = "#{parsed_period}:#{period_type}:#{effective_tag_list}"
     # Find or create a KPI report for the portfolio company, period, and tag
     @results[key] ||= KpiReport.where(
@@ -353,31 +471,37 @@ class KpiWorkbookReader
 
   # Saves a single KPI data point into the database as an unapproved record.
   #
-  # Uses row-level mapping (@row_to_mapping) for positional disambiguation when
-  # the same KPI name appears under different parents (e.g., "Enterprise" under
-  # both Net Sales and Operating Cost). Falls back to name-based lookup for
-  # parent KPIs and single-occurrence children.
+  # Receives the already-resolved InvestorKpiMapping via the `mapping:` keyword
+  # argument, passed down from process_data_rows → process_kpi_row. This avoids
+  # re-looking up by reported_kpi_name, which would fail to disambiguate when
+  # the same name exists under different parents.
   #
-  # Scopes the KPI query by investor_kpi_mapping_id to prevent value overwrites
-  # when duplicate names exist — each parent-child combination gets its own
-  # Kpi record even if the raw Excel name is identical.
+  # Queries are scoped by investor_kpi_mapping_id to prevent value overwrites
+  # when the same KPI name exists under different parents (e.g., "Enterprise"
+  # under both Net Sales and Operating Cost). Each parent-child combination
+  # gets its own Kpi record even if the raw Excel name is identical.
   #
   # @param kpi_report [KpiReport] the target report for this period
   # @param raw_kpi_name [String] the KPI name as it appears in the Excel cell
   # @param value [String, Numeric] the raw cell value
-  # @param sheet [String] sheet name (used as part of @row_to_mapping key)
+  # @param sheet [String] sheet name
   # @param period [String] the raw period string from the header
   # @param parsed_period [Date] the parsed date for this period
   # @param _row [Array] unused (the full row data)
-  # @param row_index [Integer] 1-based row index (used as part of @row_to_mapping key)
+  # @param row_index [Integer] 1-based row index
   # @param col_index [Integer] 0-based column index
-  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, _row, row_index, col_index)
-    # Prefer row-level mapping (handles duplicate names under different parents,
-    # e.g., "Enterprise" under Net Sales vs "Enterprise" under Operating Cost)
-    investor_kpi_mapping = @row_to_mapping[[sheet, row_index]] ||
-                           @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)]
+  # @param mapping [InvestorKpiMapping] the pre-resolved mapping for this KPI row
+  def save_kpi_entry(kpi_report, raw_kpi_name, value, sheet, period, parsed_period, _row, row_index, col_index,
+                     mapping: nil)
+    # Use the pre-resolved mapping passed from process_kpi_row. Falls back to
+    # name-based lookup only as a safety net (should not happen in normal flow).
+    investor_kpi_mapping = mapping || @kpi_name_to_kpi_mappings[normalize_kpi_name(raw_kpi_name)]&.first
 
     standard_name = investor_kpi_mapping.standard_kpi_name
+
+    # Find or initialize an unapproved KPI for this report, standard name, AND mapping ID.
+    # Scoping by investor_kpi_mapping_id is critical when the same reported_kpi_name appears
+    # under different parents — without it, the second parent's value would overwrite the first's.
     kpi = kpi_report.kpis.unapproved.where(
       name: standard_name,
       portfolio_company_id: @portfolio_company_id,
@@ -387,6 +511,7 @@ class KpiWorkbookReader
 
     kpi.investor_kpi_mapping = investor_kpi_mapping if investor_kpi_mapping.present?
 
+    # Apply denomination multiplier (e.g., if mapping says "crores", multiply raw value by 10M)
     if investor_kpi_mapping.present? && investor_kpi_mapping.denomination.present?
       multiplier = case investor_kpi_mapping.denomination
                    when 'millions' then 1_000_000
@@ -398,7 +523,9 @@ class KpiWorkbookReader
       value = value.to_d * multiplier
     end
 
-    # FX conversion: convert from portco's kpi_currency to fund's base currency
+    # FX conversion: convert from portco's kpi_currency to fund's base currency.
+    # Runs after denomination scaling — denomination adjusts the number magnitude,
+    # FX converts the currency. Both are applied in sequence.
     fx_rate = resolve_fx_rate(investor_kpi_mapping, kpi_report)
     original_value = nil
     if fx_rate
@@ -418,7 +545,7 @@ class KpiWorkbookReader
 
     # Check if an approved KPI with the same value already exists.
     # If it does, we don't even need to create an unapproved one.
-    # Scoped by mapping ID to handle duplicate names under different parents.
+    # Also scoped by mapping ID to handle duplicate names under different parents.
     existing_approved = kpi_report.kpis.approved.find_by(
       name: standard_name,
       portfolio_company_id: @portfolio_company_id,
@@ -432,7 +559,9 @@ class KpiWorkbookReader
 
     Rails.logger.debug { "#{kpi.persisted? ? 'Updating' : 'Creating'} Unapproved KPI: #{kpi.name}, value: #{value}" }
 
-    # Assign attributes to the KPI entry
+    # Assign attributes to the KPI entry.
+    # original_value: pre-conversion value in portco's kpi_currency (nil if no conversion).
+    # fx_rate_used: the FX rate applied for audit trail and re-computation (nil if no conversion).
     kpi.assign_attributes(
       value: value,
       display_value: value,
@@ -457,257 +586,81 @@ class KpiWorkbookReader
     kpi.to_s.downcase.gsub(/\s+/, '') # You can also .gsub('%', '') if needed
   end
 
-  # Detects the column containing KPI names
-  def detect_kpi_name_column(start_row, max_cols_to_scan = 3, sample_size = 10)
-    target_kpi_set = @target_kpis.to_set
-    kpi_match_counts = Hash.new(0)
-    non_empty_counts = Hash.new(0)
+  # Finds the 0-based index of the first date column in the header row.
+  #
+  # All columns before this index are treated as KPI name/label columns
+  # (scanned for mapping matches). All columns from this index onward are
+  # treated as value columns (date periods with numeric data).
+  #
+  # This replaces the old detect_kpi_name_column approach which picked a
+  # single "majority" column — that approach missed KPI names in adjacent
+  # columns (e.g., parents in column A, children in column B).
+  #
+  # Uses the same guard as detect_header_row: cells must contain at least one
+  # letter or date separator (/ or -) before checking date_like? to avoid pure
+  # numeric cells (20, 25, 30) matching the lenient Date.local_parse fallback.
+  # Slashes/dashes allow MM/DD/YYYY and YYYY-MM-DD formats from CSV-converted files.
+  #
+  # Falls back to column index 1 if no date column is found (assumes column A
+  # is the KPI name and column B onward are values — the most common layout).
+  #
+  # @param header [Array] the cleaned header row
+  # @return [Integer] 0-based column index where date columns begin
+  def detect_first_date_column(header)
+    header.each_with_index do |cell, idx|
+      # Skip the first column (always a KPI label, never a date)
+      next if idx.zero?
+      next if cell.blank?
 
-    # Scan a sample of rows to determine the most likely KPI column
-    (start_row..[start_row + sample_size, @workbook.last_row].min).each do |row_index|
-      row = clean_row(@workbook.row(row_index))
-      (0...max_cols_to_scan).each do |col_index|
-        cell = row[col_index]
-        next if cell.nil? || cell.to_s.strip.empty?
+      # Require at least one letter or date separator (/ or -) before checking
+      # date_like? to avoid pure numeric cells matching Date.local_parse fallback
+      next unless cell.to_s.strip.match?(%r{[a-z/-]}i)
 
-        non_empty_counts[col_index] += 1
-        # Favor columns whose values match target KPI names
-        kpi_match_counts[col_index] += 1 if target_kpi_set.include?(normalize_kpi_name(cell))
+      if KpiDateUtils.date_like?(cell)
+        Rails.logger.debug { "First date column detected at index #{idx}: '#{cell}'" }
+        return idx
       end
     end
 
-    # Prefer the column with the most KPI name matches; fall back to non-empty count.
-    if kpi_match_counts.values.any?(&:positive?)
-      # Use [count, -col] to prefer leftmost column when counts are equal
-      kpi_match_counts.max_by { |col, count| [count, -col] }&.first || 0
-    else
-      # Use [count, -col] to prefer leftmost column when counts are equal
-      non_empty_counts.max_by { |col, count| [count, -col] }&.first || 0
-    end
+    # Fallback: if no date column found, assume column 0 is KPI name
+    # and column 1 onward are values (most common single-column layout)
+    Rails.logger.warn { "No date column detected in header, falling back to column index 1" }
+    1
   end
 
-  # Builds a map of Excel cell indent levels from the workbook using rubyXL.
+  # Resolves the correct InvestorKpiMapping for a given normalized KPI name.
   #
-  # Reads `cell.text_indent` formatting from the first non-empty cell in
-  # columns A-C of each row. The Roo gem (used for value extraction) cannot
-  # read cell formatting, so rubyXL is used for this one-time pass.
+  # Since @kpi_name_to_kpi_mappings is a group_by hash (one name can map to
+  # multiple mappings under different parents), this method picks the right one:
   #
-  # Row indices are converted from rubyXL 0-based to Roo 1-based (+1).
+  # 1. If only one mapping exists for this name → return it (common case)
+  # 2. If multiple mappings exist (same reported_kpi_name, different parents):
+  #    a. Try to find one whose parent matches @current_parent_mapping
+  #    b. Fall back to the first mapping if no parent context is available
   #
-  # @param file_path [String] path to the Excel file on disk
-  # @return [Hash<Array(String, Integer), Integer>] `{ [sheet_name, row_index] => indent_level }`
-  #   Only entries with indent > 0 are stored.
-  def build_indent_map(file_path)
-    indent_map = {}
-    workbook = RubyXL::Parser.parse(file_path)
-    workbook.worksheets.each do |ws|
-      ws.each_with_index do |row, row_idx|
-        next unless row
+  # @param kpi_name [String] the normalized KPI name
+  # @return [InvestorKpiMapping, nil] the resolved mapping, or nil if not found
+  def resolve_mapping(kpi_name)
+    mappings = @kpi_name_to_kpi_mappings[kpi_name]
+    return nil if mappings.blank?
 
-        cell = (0..2).filter_map { |c| row[c] }.first
-        next unless cell
+    # Single mapping — no disambiguation needed (most common case)
+    return mappings.first if mappings.size == 1
 
-        indent = cell.text_indent.to_i
-        indent_map[[ws.sheet_name, row_idx + 1]] = indent if indent.positive?
-      end
-    end
-    indent_map
-  end
-
-  # Detects whether the sheet uses a two-column parent-child layout where parent
-  # KPI names are in one column (e.g., A) and child KPI names are in the adjacent
-  # column (e.g., B). In this pattern, when column A has a value column B is empty,
-  # and when column B has a value column A is empty.
-  #
-  # Detection criteria: at least 2 rows where the primary KPI column is blank but
-  # the next column has a non-numeric, non-date text value.
-  #
-  # @param start_row [Integer] first data row index
-  # @param kpi_col [Integer] the primary KPI name column index (from detect_kpi_name_column)
-  # @return [Integer, nil] the child column index, or nil if not detected
-  def detect_column_based_children(start_row, kpi_col)
-    child_col = kpi_col + 1
-    child_hits = 0
-
-    (start_row..[start_row + 20, @workbook.last_row].min).each do |row_index|
-      row = clean_row(@workbook.row(row_index))
-      next if row.empty? || row.all?(&:blank?)
-
-      primary_blank = row[kpi_col].blank?
-      child_value = row[child_col]&.strip
-
-      # Row where primary column is blank but next column has a text value
-      # (not purely numeric and not a date) — likely a child KPI name
-      next unless primary_blank && child_value.present? &&
-                  !child_value.match?(/\A[\d.,]+\z/) &&
-                  !KpiDateUtils.date_like?(child_value)
-
-      child_hits += 1
+    # Multiple mappings with same reported_kpi_name but different parents.
+    # Use @current_parent_mapping to pick the correct one.
+    if @current_parent_mapping
+      parent_match = mappings.find { |m| m.parent_id == @current_parent_mapping.id }
+      return parent_match if parent_match
     end
 
-    if child_hits >= 1
-      Rails.logger.info { "KpiWorkbookReader: Column-based children detected in column #{child_col}" }
-      child_col
+    # Fallback: no parent context available, or no mapping matched the current parent.
+    # Return the first mapping and log a warning since we can't disambiguate.
+    Rails.logger.warn do
+      "KpiWorkbookReader: Multiple mappings for '#{kpi_name}' but could not disambiguate " \
+        "by parent (current_parent: #{@current_parent_mapping&.standard_kpi_name}). Using first match."
     end
-  end
-
-  # Walks data rows to detect parent-child KPI hierarchy from either:
-  # 1. Excel cell indentation (indent > 0 in @indent_map), OR
-  # 2. Column-based layout (parent in column A, child in column B)
-  #
-  # Maintains a parent stack of `[indent_level, kpi_name]` pairs. When a child
-  # row is detected (by either method), auto-creates a child mapping via
-  # {#create_child_mapping} and registers it for value extraction.
-  # Subtotal rows (matching `/\Atotal\s/i`) are skipped unless they are
-  # explicitly configured as target KPIs.
-  #
-  # Must run BEFORE {#process_data_rows} so child mappings exist when values are extracted.
-  #
-  # @param sheet [String] sheet name (used as part of @row_to_mapping key)
-  # @param start_row [Integer] first data row index (after header and optional tag row)
-  # @param kpi_col [Integer] the primary KPI name column index
-  # @return [void]
-  def detect_parent_child_relationships(sheet, start_row, kpi_col = 0)
-    parent_stack = []
-    # Check if this sheet uses a two-column parent-child layout
-    # (e.g., parents in column A, children in column B)
-    @child_col = detect_column_based_children(start_row, kpi_col)
-
-    (start_row..@workbook.last_row).each do |row_index|
-      row = clean_row(@workbook.row(row_index))
-      next if row.empty? || row.all?(&:blank?)
-
-      indent = @indent_map[[sheet, row_index]] || 0
-      primary_name = row[kpi_col]&.strip
-      child_name = @child_col ? row[@child_col]&.strip : nil
-
-      # Determine if this is a column-based child row:
-      # primary column is blank, child column has a text value
-      is_column_child = @child_col && primary_name.blank? && child_name.present?
-
-      # Get the effective KPI name for this row
-      raw_name = is_column_child ? child_name : primary_name
-      next if raw_name.blank?
-
-      # For column-based children, treat them as indent level 1
-      effective_indent = is_column_child ? 1 : indent
-
-      parent_stack.pop while parent_stack.any? && parent_stack.last[0] >= effective_indent
-
-      if raw_name.match?(/\Atotal\s/i) && @target_kpis.exclude?(normalize_kpi_name(raw_name))
-        Rails.logger.debug { "KpiWorkbookReader: Subtotal row detected: '#{raw_name}' (sheet: #{sheet}, row: #{row_index})" }
-        next
-      end
-
-      # Child detected by indent OR by column position
-      if parent_stack.any? && (effective_indent.positive? || is_column_child)
-        parent_name = parent_stack.last[1]
-        parent_mapping = @kpi_name_to_kpi_mappings[normalize_kpi_name(parent_name)]
-        child_mapping = parent_mapping ? create_child_mapping(raw_name, parent_mapping) : nil
-
-        if child_mapping
-          register_mapping(child_mapping)
-          @row_to_mapping[[sheet, row_index]] = child_mapping
-          detection_method = is_column_child ? 'column' : 'indent'
-          Rails.logger.info do
-            "KpiWorkbookReader: Auto-created child mapping '#{raw_name}' under '#{parent_name}' " \
-              "(sheet: #{sheet}, row: #{row_index}, method: #{detection_method})"
-          end
-        end
-      end
-
-      parent_stack.push([effective_indent, raw_name])
-    end
-  end
-
-  # Creates or updates an InvestorKpiMapping as a child of the given parent mapping.
-  #
-  # Child mappings use a "Parent - Child" naming convention for `standard_kpi_name`
-  # (e.g., "Net Sales - Enterprise", "Operating Cost - Enterprise"). This provides:
-  # - **Uniqueness** — same child name under different parents becomes distinct
-  # - **Searchability** — "Net Sales - Enterprise" is meaningful in cross-company search
-  # - **Consistency** — matches fund managers' existing manual naming practice
-  #
-  # The `reported_kpi_name` retains the raw Excel name ("Enterprise") for import matching.
-  #
-  # Handles three scenarios:
-  # 1. **Re-upload** — finds existing mapping by prefixed standard name (idempotent)
-  # 2. **Existing flat mapping** — a parentless mapping with the raw name gets adopted
-  #    under this parent, and its standard name is updated to the prefixed format
-  # 3. **New child** — creates a mapping inheriting category, data_type, and denomination
-  #    from the parent
-  #
-  # Note: The ancestry gem stores hierarchy in a string `ancestry` column, not a `parent_id`
-  # column. The `parent` and `parent_id` methods are virtual accessors provided by the gem.
-  # `parent:` works in `update!` and create calls (gem setter), but not in query keys.
-  #
-  # @param child_name [String] raw KPI name from the Excel cell
-  # @param parent_mapping [InvestorKpiMapping] the parent's mapping record (must be persisted)
-  # @return [InvestorKpiMapping, nil] the child mapping, or nil if creation failed
-  def create_child_mapping(child_name, parent_mapping)
-    normalized = normalize_kpi_name(child_name)
-    existing = @kpi_name_to_kpi_mappings[normalized]
-    # Already registered with the correct parent — no work needed
-    return existing if existing && existing.parent_id == parent_mapping.id
-
-    # Standard name uses "Parent - Child" format for uniqueness and searchability.
-    # e.g., "Enterprise" under Net Sales becomes "Net Sales - Enterprise",
-    # while "Enterprise" under Operating Cost becomes "Operating Cost - Enterprise".
-    prefixed_name = "#{parent_mapping.standard_kpi_name} - #{child_name.strip}"
-
-    # Search by standard name (parent-prefixed) for idempotent re-uploads
-    mapping = InvestorKpiMapping.find_by(
-      entity: parent_mapping.entity,
-      investor: parent_mapping.investor,
-      standard_kpi_name: prefixed_name
-    )
-    return mapping if mapping
-
-    # Check if a flat (parentless) mapping exists with the raw name — adopt it
-    flat_mapping = InvestorKpiMapping.find_by(
-      entity: parent_mapping.entity,
-      investor: parent_mapping.investor,
-      reported_kpi_name: child_name.strip,
-      ancestry: nil
-    )
-    if flat_mapping
-      flat_mapping.update!(parent: parent_mapping, standard_kpi_name: prefixed_name)
-      return flat_mapping
-    end
-
-    # No match — create a new record
-    InvestorKpiMapping.create!(
-      entity: parent_mapping.entity,
-      investor: parent_mapping.investor,
-      reported_kpi_name: child_name.strip,
-      standard_kpi_name: prefixed_name,
-      parent: parent_mapping,
-      category: parent_mapping.category,
-      data_type: parent_mapping.data_type,
-      denomination: parent_mapping.denomination,
-      show_in_report: true
-    )
-  rescue ActiveRecord::RecordInvalid => e
-    Rails.logger.warn { "KpiWorkbookReader: Failed to create child mapping '#{child_name}': #{e.message}" }
-    nil
-  end
-
-  # Registers a newly created child mapping so the parser imports its values.
-  #
-  # Adds the mapping to @kpi_name_to_kpi_mappings (keyed by normalized
-  # reported_kpi_name) and to @target_kpis so {#process_data_rows} recognises
-  # the child's raw Excel name as a valid KPI to import.
-  #
-  # Note: for duplicate child names (e.g., "Enterprise" under two parents),
-  # the last registration wins in @kpi_name_to_kpi_mappings. The @row_to_mapping
-  # hash provides the correct positional disambiguation in {#save_kpi_entry}.
-  #
-  # @param mapping [InvestorKpiMapping] the child mapping to register
-  # @return [void]
-  def register_mapping(mapping)
-    normalized = normalize_kpi_name(mapping.reported_kpi_name)
-    @kpi_name_to_kpi_mappings[normalized] = mapping
-    @target_kpis << normalized unless @target_kpis.include?(normalized)
+    mappings.first
   end
 
   # Resolves the FX rate for a KPI based on the mapping's fx_conversion_method.
@@ -755,13 +708,17 @@ class KpiWorkbookReader
     end
   end
 
-  # Checks for target KPIs that were not found in any sheet and logs errors
+  # Checks for target KPIs that were not found in any sheet and logs errors.
+  # Called after all sheets have been processed to report which configured
+  # KPI mappings had no matching rows in the uploaded Excel file.
   def log_missing_target_kpis
+    # Determine which target KPIs were not found in the processed sheets (normalize both sides)
     missing_kpis = @target_kpis.map { |k| normalize_kpi_name(k) } - @found_kpis.to_a.map { |k| normalize_kpi_name(k) }
 
     return unless missing_kpis.any?
 
     missing_kpis.each do |missing_kpi|
+      # Find the original reported KPI name for the missing normalized KPI (case-insensitive, space-insensitive)
       original_kpi_mapping = @kpi_mappings.find do |mapping|
         normalize_kpi_name(mapping.reported_kpi_name) == normalize_kpi_name(missing_kpi)
       end
