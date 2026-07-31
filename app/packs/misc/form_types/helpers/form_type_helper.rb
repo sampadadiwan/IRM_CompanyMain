@@ -98,6 +98,8 @@ module FormTypeHelper
       end
     when "MultiSelect"
       v.is_a?(Array) ? v.join(", ") : v.to_s
+    when "CheckBox"
+      ["true", true, "1", 1].include?(v) ? "Yes" : "No"
     else
       v.to_s
     end

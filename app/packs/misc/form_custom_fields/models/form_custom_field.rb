@@ -3,7 +3,7 @@ class FormCustomField < ApplicationRecord
 
   VALID_FIELD_TYPES = %w[TextField NumberField DateField TextArea CheckBox Radio Select
                          DataList MultiSelect Money File Header GridColumns Calculation].freeze
-  OPTION_FIELD_TYPES = %w[Select Radio CheckBox DataList MultiSelect].freeze
+  OPTION_FIELD_TYPES = %w[Select Radio DataList MultiSelect].freeze
   VALID_CONDITION_CRITERIAS = %w[eq not_eq contains lt lte gt gte].freeze
   VALID_CONDITION_STATES = %w[show].freeze
   VALID_FORMATS = %w[email phone url alphanumeric pan gstin ifsc].freeze
